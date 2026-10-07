@@ -256,10 +256,11 @@ hover, focus or pressed frames were provided; a `hover` token `#00A3FF` exists i
 | 404 mobile  | 43.61                            | 73.91 (rows → footer) | centred in 375             |
 
 > Assumption: with the header and sidebar out of scope, the composition is centred horizontally
-> in the page body at every breakpoint, and the digits sit 76 px below the top of the content
-> area on desktop and tablet (the value 5xx desktop and tablet share) and 43.61 px on mobile. The
-> pixel comparison is made per element against the composition-relative numbers, not against
-> absolute frame coordinates.
+> in the page body at every breakpoint, and one offset replaces the per-frame values above: the
+> digits sit 76 px below the top of the content area on desktop and tablet for all three
+> variants (the value the 5xx desktop and 404 tablet frames use; the 95 px and 139 px of the 404
+> and 403 desktop frames are not reproduced) and 43.61 px on mobile. The pixel comparison is made
+> per element against the composition-relative numbers, not against absolute frame coordinates.
 
 ### 4.7 Discrepancies inside the design
 

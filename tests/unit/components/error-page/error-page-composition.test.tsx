@@ -1,14 +1,17 @@
 import '@testing-library/jest-dom';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 
 import ErrorPageComposition from '@/components/error-page/error-page-composition';
 import type { ErrorPageVariantId } from '@/components/types/error-page';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 jest.mock('@/assets/illustrations/error-page/curve.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/illustrations/error-page/diamond.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/illustrations/error-page/dot-columns.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/illustrations/error-page/dot-rows.svg', () => ({ ReactComponent: 'svg' }));
+
+const DIGITS_ID = 'error-page-digits';
 
 const VARIANTS: [ErrorPageVariantId, string, string][] = [
   ['notFound', '404', 'Error 404'],
@@ -23,20 +26,20 @@ interface CompositionParts {
   heading: HTMLElement;
 }
 
-const compositionParts = (title: string): CompositionParts => {
-  const [, composition, illustration] = screen.getAllByRole('generic', { hidden: true });
-  const digits = screen
+const compositionParts = (container: HTMLElement, title: string): CompositionParts => {
+  const heading = screen.getByRole('heading', { level: 1, name: title });
+  const generics = within(container).getAllByRole('generic', { hidden: true });
+  const digits = generics.find((element) => element.id === DIGITS_ID);
+  assertInstanceOf(digits, HTMLElement);
+  const composition = generics.find(
+    (element) => element.contains(digits) && element.contains(heading)
+  );
+  assertInstanceOf(composition, HTMLElement);
+  const illustration = within(composition)
     .getAllByRole('generic', { hidden: true })
-    .find((element) => element.id === 'error-page-digits');
-  expect(composition).toBeInstanceOf(HTMLElement);
-  expect(illustration).toBeInstanceOf(HTMLElement);
-  expect(digits).toBeInstanceOf(HTMLElement);
-  return {
-    composition: composition as HTMLElement,
-    illustration: illustration as HTMLElement,
-    digits: digits as HTMLElement,
-    heading: screen.getByRole('heading', { level: 1, name: title }),
-  };
+    .find((element) => element.getAttribute('aria-hidden') === 'true' && element !== digits);
+  assertInstanceOf(illustration, HTMLElement);
+  return { composition, illustration, digits, heading };
 };
 
 const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
@@ -45,8 +48,8 @@ describe('ErrorPageComposition', () => {
   it.each(VARIANTS)(
     'stacks the illustration, the digits and the card in order for %s',
     (variant, code, title) => {
-      renderWithProviders(<ErrorPageComposition variant={variant} />);
-      const { composition, illustration, digits, heading } = compositionParts(title);
+      const { container } = renderWithProviders(<ErrorPageComposition variant={variant} />);
+      const { composition, illustration, digits, heading } = compositionParts(container, title);
 
       expect(illustration).toHaveAttribute('aria-hidden', 'true');
       expect(illustration).toHaveTextContent(/^$/);
@@ -62,8 +65,8 @@ describe('ErrorPageComposition', () => {
   );
 
   it('positions the composition as the isolated origin of its decoration', () => {
-    renderWithProviders(<ErrorPageComposition variant="notFound" />);
-    const { composition } = compositionParts('Error 404');
+    const { container } = renderWithProviders(<ErrorPageComposition variant="notFound" />);
+    const { composition } = compositionParts(container, 'Error 404');
 
     expect(composition).toHaveStyle({
       position: 'relative',

@@ -1,30 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Meta } from '@storybook/react-webpack5';
 
 import NotFound from '@/components/not-found/not-found';
+import statusPageStories from '@stories/status-page-story';
 
-const meta: Meta<typeof NotFound> = {
+export default {
   title: 'Pages/NotFound',
   component: NotFound,
   tags: ['autodocs'],
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The 404 page for any unknown path (issue #309): the designed 404 error page in a ' +
-          '`<main>` landmark with the footer. It also sets the document title.',
-      },
-      story: { inline: false },
-    },
-    layout: 'fullscreen',
-  },
-};
+  parameters: statusPageStories.parameters('The 404 page for any unknown path', '404'),
+} satisfies Meta<typeof NotFound>;
 
-export default meta;
+export const Default = statusPageStories.desktop;
 
-type Story = StoryObj<typeof NotFound>;
-
-export const Default: Story = {};
-
-export const Mobile: Story = {
-  globals: { viewport: { value: 'xs', isRotated: false } },
-};
+export const Mobile = statusPageStories.mobile;

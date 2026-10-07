@@ -300,7 +300,8 @@ The en home label "Go to homepage" reuses the existing en value of `not_found.ct
   `UILiveStatus` carries the visually hidden object but also `role="status"`.
 - Carried from readiness 1 and still true: `isRouteErrorResponse` needs the router-produced
   shape; svgo `preset-default` includes `removeViewBox`; the integration chain test path is
-  `tests/integration/services/security-events/`; jscpd 70 in `.jscpd.json` vs 75 in CLAUDE.md.
+  `tests/integration/services/security-events/`; jscpd `minTokens` is 70 in both `.jscpd.json`
+  and CLAUDE.md, which explains why it is 70 and not 75.
 
 ### 3.2 Inaccurate
 
@@ -392,7 +393,7 @@ No finding was rejected.
 | I-3  | The a11y edit hook also blocks `.ts` under `*/components/*`; running `accessibility-lead` once from the main loop covers both.                                         |
 | I-4  | Closed: AD§6.1 counts the eleven eager colour tokens (about 0.3 to 0.4 kB raw).                                                                                        |
 | I-5  | Brief and research name an `ErrorPageLoader` class; the downstream `errorPageLoader` instance wins.                                                                    |
-| I-6  | CLAUDE.md documents jscpd `minTokens` 75 while `.jscpd.json` says 70; out of scope for #309.                                                                           |
+| I-6  | CLAUDE.md and `.jscpd.json` agree on jscpd `minTokens` 70 (CLAUDE.md records why not 75); no documentation drift to fix.                                               |
 | I-7  | The 320 px tab check reaches the tab by DOM order from `main h1` because `src` ships no test ids; a DOM reorder must update the spec.                                  |
 | I-8  | The `forbidden-tablet` screen adds three baselines with no parity claim; the PR stage now commits nine 403 / 5xx baselines.                                            |
 | I-9  | The Figma base64 export is inline in the tool response; the Story 6.1 reviewer decodes it into the scratch directory. Any other fetch path needs explicit permission.  |

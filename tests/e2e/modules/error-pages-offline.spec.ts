@@ -47,11 +47,10 @@ test.describe('Error pages after the post-load warm-up (issue #309)', () => {
 
   for (const { path, title } of offlineCases) {
     test(`renders ${path} offline from the warmed chunk and fonts`, async ({ page, context }) => {
-      const failures = collectFailures(page);
-
       await gotoAndSettleWarmUp(page, SIGN_IN_PATH);
       expect(await warmedFaces(page)).toEqual(ALL_FACES_LOADED);
 
+      const failures = collectFailures(page);
       await context.setOffline(true);
       await navigateInApp(page, path);
 

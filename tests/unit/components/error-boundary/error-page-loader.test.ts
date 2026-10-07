@@ -4,6 +4,7 @@ import { createElement, type ReactElement } from 'react';
 
 import errorPageLoader from '@/components/error-boundary/error-page-loader';
 import type { ErrorPageProps } from '@/components/types/error-page';
+import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import { paletteColors } from '@/styles/colors';
 
 jest.mock('@/components/error-page', () => ({
@@ -23,15 +24,21 @@ describe('errorPageLoader', () => {
     );
   });
 
-  it('shares one loaded module between calls', async () => {
-    const first = await errorPageLoader.load();
-    const second = await errorPageLoader.load();
+  it('shares one in-flight chunk promise between calls', async () => {
+    const load = jest.spyOn(ChunkRetryLoader.prototype, 'load');
 
-    render(createElement(second.default, { variant: 'serverError', landmark: 'main' }));
+    await errorPageLoader.load();
+    await errorPageLoader.load();
 
-    expect(typeof first.default).toBe('function');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      `serverError main ${paletteColors.primary.main}`
+    const [contentFirst, shellFirst, contentSecond, shellSecond] = load.mock.results.map(
+      (result) => result.value
     );
+    expect(load).toHaveBeenCalledTimes(4);
+    expect(load.mock.contexts[2]).toBe(load.mock.contexts[0]);
+    expect(load.mock.contexts[1]).not.toBe(load.mock.contexts[0]);
+    expect(contentSecond).toBe(contentFirst);
+    expect(shellSecond).toBe(shellFirst);
+    expect(contentFirst).not.toBe(shellFirst);
+    load.mockRestore();
   });
 });

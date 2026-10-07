@@ -332,9 +332,9 @@ configuration per status.
 A user who opens any unknown path sees the designed 404 page.
 
 - **Acceptance:**
-  - `ROUTE_PATHS.notFound` (`'*'`) still loads `@/components/not-found/not-found` with
-    `webpackChunkName: "not-found"`, `guard: 'public'`, and the page renders the 404
-    configuration.
+  - `ROUTE_PATHS.notFound` (`'*'`) still loads `@/components/not-found/not-found`, now named
+    `webpackChunkName: "error-page"` (the one chunk all three status routes share, FR-5),
+    `guard: 'public'`, and the page renders the 404 configuration.
   - Digits `4 0 4`, title "Помилка 404", description "Сторінки не існує", one primary
     "На головну".
   - `UIBackToMain`, the `h4`-styled heading and the text button are removed from the page.
@@ -355,7 +355,8 @@ A user sent to `/forbidden` sees the designed 403 page.
 - **Acceptance:**
   - Digits `4 0 3` in `#1B2327` with a `#999999` shadow, title "В доступі відмовлено",
     description "На жаль, у вас немає прав доступу до цієї сторінки".
-  - An outlined "На головну" followed by a primary "Запросити доступ" in one row (FR-7).
+  - An outlined "На головну" followed by a primary "Запросити доступ" in one row on desktop and
+    tablet, stacked full width with "Запросити доступ" first below 768 px (FR-7).
   - The route is public: it renders without an auth token and does not redirect to `/sign-in`.
   - The HTTP response for `/forbidden` is the SPA shell (status 200 from `serve`); the page is
     a client-side state, not a server 403.
@@ -394,16 +395,17 @@ Developers and RBAC (#114) can address the 403 and 5xx pages by stable route key
   - `ROUTE_PATHS` gains `forbidden: '/forbidden'` and `serverError: '/server-error'`; existing
     keys and values are unchanged.
   - The `app.shell` contract in `src/routes/app-routes.ts` gains two `guard: 'public'` routes
-    whose `load` is a dynamic `import()` named `webpackChunkName: "forbidden"` and
-    `"server-error"`.
+    whose `load` is a dynamic `import()` named `webpackChunkName: "error-page"`, the same name
+    the 404 route and the `RouteError` loader (FR-6) use, so the three status routes share one
+    `error-page` chunk.
   - `src/routes/registry.ts`, `src/routes/route-composer.tsx` and `src/routes/routes.tsx` are
     not edited.
   - The composer attaches an `errorElement` to both new routes, as to every mapped page.
 - **Test cases:**
   - P1 (unit): `route-paths.test.ts` asserts both new values; `registry.test.ts` finds both
     routes in `app.shell` with `guard: 'public'`.
-  - P2 (unit, tooling): `performance-serving.test.ts` pins both `webpackChunkName` imports and
-    still pins the `not-found` import path.
+  - P2 (unit, tooling): `performance-serving.test.ts` pins all three status-route imports
+    (`not-found`, `forbidden`, `server-error`) to the one `error-page` chunk name.
   - N1 (unit): neither new route is wrapped in `ProtectedRoute`.
   - E1 (CI): `make check-e2e-route-coverage` passes with the new rows (FR-17) and fails if a
     row is removed.
@@ -474,7 +476,10 @@ A user can leave every error page with one visible, labelled action.
 - **Acceptance:**
   - 404 and 5xx: one primary "На головну" link, `href="/"`, fill `#1EAEFF`, label `#FFFFFF`.
   - 403: an outlined "На головну" link (`#FFFFFF` fill, 1 px `#969B9D` border, label
-    `#1B2327`) followed by the primary "Запросити доступ" button, 8 px apart, centred as a row.
+    `#1B2327`) and the primary "Запросити доступ" button. On desktop and tablet (768 px and
+    up) the DOM order is home then request, 8 px apart, centred as a row. Below 768 px (Figma
+    403 mobile frame 172:6730) the DOM order is request then home, stacked full width (311 px
+    in the 375 frame) with a 6 px gap; focus order follows the DOM order at each width.
   - Every home action is an anchor with `href="/"`; activating it navigates to `/` (which then
     applies the existing auth redirect).
   - Labels have no text transform, letter-spacing 0, Golos.
@@ -484,7 +489,8 @@ A user can leave every error page with one visible, labelled action.
   - P1 (E2E): clicking "На головну" on each page lands on `/` or on its auth redirect.
   - P2 (E2E): keyboard only: Tab reaches "На головну", Enter navigates.
   - N1 (unit): the 404 and 5xx pages render no "Запросити доступ".
-  - E1 (unit): on the 403 page the DOM order is "На головну" then "Запросити доступ".
+  - E1 (unit): on the 403 page the DOM order is "На головну" then "Запросити доступ" from
+    768 px up, and "Запросити доступ" then "На головну" below 768 px.
 - **Verify:** `e2e testing / test`; `unit testing / unit`; visual.
 
 #### FR-8: Inert "Запросити доступ"
@@ -592,7 +598,9 @@ A screen-reader or keyboard user gets one heading, the description, and operable
   - Both button styles show a visible `:focus-visible` outline at least 2 px wide with at least
     3:1 contrast against `#FFFFFF` and `#FBFBFB` (WCAG 2.4.7, 1.4.11). This applies to the
     actions, never to the `h1`.
-  - Tab order: home action, then "Запросити доступ" (403), then the footer links.
+  - Tab order: the 403 actions in DOM order (home then "Запросити доступ" from 768 px up,
+    "Запросити доступ" then home below 768 px; FR-7), the single home action on 404 and 5xx,
+    then the footer links.
   - Touch targets are at least 44 x 44 CSS px at every breakpoint.
 - **Test cases:**
   - P1 (unit): `getAllByRole('heading', { level: 1 })` has length 1 and has focus after mount.
@@ -603,8 +611,8 @@ A screen-reader or keyboard user gets one heading, the description, and operable
   - N1 (unit): the digit glyphs sit only inside the `aria-hidden` `#error-page-digits` box, and
     the status code reaches the accessibility tree exactly once, through the visually hidden
     `error_page.<variant>.code` line (`getByText('Код помилки: 403')` and the 404 / 5xx twins).
-  - E1 (a11y-e2e): `expectTabOrder` on `/forbidden` visits the home link, "Запросити доступ"
-    and both footer links in order, each `:focus-visible` and declared `visibleFocus: true`, so
+  - E1 (a11y-e2e): at desktop width `expectTabOrder` on `/forbidden` visits the home link,
+    "Запросити доступ" and both footer links in order, each `:focus-visible` and declared `visibleFocus: true`, so
     the computed style must change on focus and a missing ring fails; on the catch-all and
     `/server-error` a single-stop `expectTabOrder` with `visibleFocus: true` checks the
     contained home link.
@@ -720,8 +728,9 @@ the top of the digit frame. Appendix A holds the full reference; F§1 to F§3 ar
   - From 320 to 374 px the composition fits the viewport: no horizontal page scroll, the card
     and digits are fully visible, the actions are at least 44 px tall, and the yellow tab's
     horizontal extent stays inside the card's. Geometry is not parity-checked in that range.
-  - 403 and 5xx use the same mobile rules; the 403 row may wrap to two lines below 401 px of
-    card content width, keeping the 8 px gap.
+  - 403 and 5xx use the same mobile rules, except that the 403 actions do not form a row: they
+    stack full width with a 6 px gap and "Запросити доступ" first in DOM and focus order (FR-7,
+    Figma 403 mobile frame 172:6730).
 - **Test cases:**
   - P1 (visual): 404 at 375 matches its baseline in three engines.
   - P2 (Fable): appendix A.3 elements within the NFR-3 tolerance at 375.
@@ -968,9 +977,9 @@ n/a there and is covered by its NFR-1 line box and the NFR-4 raster crop instead
   `app-providers.tsx -> @mui/material/styles` edge (`performance-serving.test.ts`); the Rspack
   raw hint passes with `raw.maxInitialEntrypointBytes` unchanged at 470,000 B; no value in
   `config/performance-budget.json` changes.
-- **NFR-11:** the eager gzip delta in the CI `bundle-size` comment is at most 2,048 B; each new
-  chunk (`error-page`, `forbidden`, `server-error`, reworked `not-found`) stays under 130,000 B
-  gzip and 400,000 B raw; the decoration assets total at most 20 kB raw (the curve rebuilt as
+- **NFR-11:** the eager gzip delta in the CI `bundle-size` comment is at most 2,048 B; the one
+  shared `error-page` chunk (the three status pages and the `RouteError` status branch) stays
+  under 130,000 B gzip and 400,000 B raw; the decoration assets total at most 20 kB raw (the curve rebuilt as
   one stroked path, about 7 kB, R§8.4).
 - **NFR-12 (Lighthouse):** `/forbidden` and `/server-error` join the audited URLs and pass the
   existing `lighthouserc` assertions: desktop performance, accessibility and best practices

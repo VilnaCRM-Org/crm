@@ -65,7 +65,9 @@ test.describe('Catch-all (404) route E2E Tests (issue #309)', () => {
 
     await homeLinkOf(page).click();
 
-    await expect(page).toHaveURL(new RegExp(`(${ROUTE_PATHS.home}|${ROUTE_PATHS.signIn})$`));
+    await expect
+      .poll(() => new URL(page.url()).pathname)
+      .toMatch(new RegExp(`^(${ROUTE_PATHS.home}|${ROUTE_PATHS.signIn})$`));
     await expect(page.locator('h1').filter({ hasText: notFoundTitle })).toHaveCount(0);
   });
 

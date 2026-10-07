@@ -2,13 +2,13 @@ import type { CSSObject } from '@emotion/react';
 import { touchRippleClasses } from '@mui/material/ButtonBase';
 
 import type { ErrorPageActionStyleSheet, ErrorPageGeometry } from '@/components/types/error-page';
+import UI_BUTTON_PHONE_MEDIA from '@/components/ui-button/phone-media';
 import { customColors, paletteColors } from '@/styles/colors';
 
 import ERROR_PAGE_GEOMETRY from './error-page-geometry';
 import ERROR_PAGE_MEDIA from './error-page-media';
 import responsiveStyles from './responsive-styles';
 
-const THEME_PHONE_MEDIA = '@media (max-width: 375px)';
 const OUTLINED_BORDER_WIDTH = 1;
 const ROOT_FONT_SIZE = 16;
 const STACK_GAP = 6;
@@ -35,7 +35,7 @@ class ErrorPageActionStyles {
           this.outlined(tablet),
           this.outlined(mobile)
         ),
-        [THEME_PHONE_MEDIA]: { ...this.outlined(mobile), marginBottom: 0 },
+        [UI_BUTTON_PHONE_MEDIA]: { ...this.outlined(mobile), marginBottom: 0 },
       },
       stacked: { [ERROR_PAGE_MEDIA.mobile]: { width: '100%' } },
     };

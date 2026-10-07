@@ -1,12 +1,12 @@
 import '@testing-library/jest-dom';
 import { act, render, type RenderResult, screen } from '@testing-library/react';
-import i18next, { type i18n as I18nType } from 'i18next';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
+import type { i18n as I18nType } from 'i18next';
+import { I18nextProvider } from 'react-i18next';
 
 import ErrorPageCard from '@/components/error-page/error-page-card';
 import type { ErrorPageVariantId } from '@/components/types/error-page';
-import localization from '@/i18n/localization.json';
 
+import createLocaleI18n from '../../utils/create-locale-i18n';
 import { winningMediaValueFor } from '../../utils/emotion-style-rules';
 
 interface CardCopy {
@@ -54,20 +54,7 @@ const EN_COPY: Record<ErrorPageVariantId, CardCopy> = {
 const VARIANTS: ErrorPageVariantId[] = ['notFound', 'forbidden', 'serverError'];
 const MOBILE_QUERY = '(max-width:767.95px)';
 
-const createBilingualI18n = (): I18nType => {
-  const instance = i18next.createInstance();
-  instance.use(initReactI18next).init({
-    lng: 'uk',
-    fallbackLng: 'uk',
-    resources: {
-      uk: { translation: localization.uk.translation },
-      en: { translation: localization.en.translation },
-    },
-    interpolation: { escapeValue: false },
-    initAsync: false,
-  });
-  return instance;
-};
+const createBilingualI18n = (): I18nType => createLocaleI18n('uk', ['en']);
 
 const renderCard = (variant: ErrorPageVariantId, i18n: I18nType): RenderResult =>
   render(

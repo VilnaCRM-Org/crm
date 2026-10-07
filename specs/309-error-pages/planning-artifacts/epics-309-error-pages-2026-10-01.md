@@ -1530,8 +1530,8 @@ Runs after Story 6.1 reports zero unresolved defects.
    Story 3.4); the Story 6.1 en layout pass results; the `h1` shown without a
    focus outline; no hover, focus or pressed designs.
 4. **Follow-ups section:** the "Запросити доступ" access-request flow TODO (RBAC #114); the app
-   shell (header, sidebar); 403 and 5xx tablet and mobile frames; Storybook svgr support and an
-   `ErrorPage` story; any footer deviation from 6.1.
+   shell (header, sidebar); 403 and 5xx tablet and mobile frames; any footer deviation from 6.1.
+   The Storybook stories are not a follow-up: they shipped in this PR (see Out of Scope).
 5. Attach the Fable parity report, the local verification actually run, and the statement
    that commits were taken with `HUSKY=0` and a manual commitlint (Story Conventions), with CI
    as the verifier.
@@ -1545,8 +1545,12 @@ Runs after Story 6.1 reports zero unresolved defects.
 - Parity claims for 403 and 5xx below 1440 px; hover, pressed and disabled designs.
 - Changes to `ErrorFallback`, `UIErrorBoundary`, `AuthErrorBoundary`, `recoveryStrategyDetector`,
   `UIFooter` or the bootstrap path in `src/index.tsx`.
-- Storybook stories; mobile device-lane specs; any budget, threshold or `quality.*` change;
-  ui-toolkit adoption of the error boundary, footer or button.
+- Mobile device-lane specs; any budget, threshold or `quality.*` change; ui-toolkit adoption of
+  the error boundary, footer or button.
+- Storybook stories were planned out of scope, but they shipped in this PR: the story-coverage
+  gate from #316 (`tests/unit/tooling/storybook-story-coverage.test.ts`) landed on `main` during
+  delivery and requires a story for every rendered component, so each error-page component,
+  the three status pages and the route-error components carry one.
 
 ## Final Validation
 

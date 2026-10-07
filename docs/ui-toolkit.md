@@ -248,28 +248,28 @@ R10 (no contained `:focus-visible` outline, by `focusOutline` and `submitFocusOu
 which are 768, 1024 and 1440 in both breakpoint sets, and its text-variant button has no `sm`
 rule.
 
-| CRM primitive or theme                            | Importers  | Status  | Reason        |
-| ------------------------------------------------- | ---------- | ------- | ------------- |
-| `ui-breakpoints`                                  | 17 (lazy)  | adopted | named exports |
-| `ui-container`                                    | 2          | adopted | -             |
-| `ui-typography`                                   | 11         | adopted | -             |
-| `ui-skeleton-text`, `-block`, `-button`, `-input` | 1          | adopted | -             |
-| `ui-back-to-main`                                 | 2          | adopted | -             |
-| `ui-button`                                       | 7          | local   | R2 R3 R13 R14 |
-| `ui-form`                                         | 2          | local   | R3 R14 R15    |
-| `ui-footer`                                       | 3          | local   | R16           |
-| `ui-link`                                         | 2          | local   | R2 R5 R17     |
-| `ui-form-input-field`, `ui-text-field-form`       | 1          | local   | R18           |
-| `ui-text-field`, `ui-input`                       | 0          | local   | R6            |
-| `auth-skeleton`                                   | 2          | local   | R3 R11 R19    |
-| `ui-color-theme`                                  | 1 (orphan) | local   | R9            |
-| `error-boundary`, `ui-error-boundary`             | 5 (eager)  | local   | R7            |
-| `ui-live-status`                                  | eager      | local   | R8            |
-| `ui-offline-notice`                               | -          | local   | R8            |
-| `ui-async-section`, `route-fallback`              | -          | local   | R8            |
-| layouts, not-found, `error-page`                  | -          | local   | R8            |
-| `render-with-theme`                               | tests only | local   | R8            |
-| `src/styles/theme.ts` (app theme)                 | eager      | local   | R8            |
+| CRM primitive or theme                                  | Importers  | Status  | Reason        |
+| ------------------------------------------------------- | ---------- | ------- | ------------- |
+| `ui-breakpoints`                                        | 17 (lazy)  | adopted | named exports |
+| `ui-container`                                          | 2          | adopted | -             |
+| `ui-typography`                                         | 11         | adopted | -             |
+| `ui-skeleton-text`, `-block`, `-button`, `-input`       | 1          | adopted | -             |
+| `ui-back-to-main`                                       | 2          | adopted | -             |
+| `ui-button`                                             | 7          | local   | R2 R3 R13 R14 |
+| `ui-form`                                               | 2          | local   | R3 R14 R15    |
+| `ui-footer`                                             | 3          | local   | R16           |
+| `ui-link`                                               | 2          | local   | R2 R5 R17     |
+| `ui-form-input-field`, `ui-text-field-form`             | 1          | local   | R18           |
+| `ui-text-field`, `ui-input`                             | 0          | local   | R6            |
+| `auth-skeleton`                                         | 2          | local   | R3 R11 R19    |
+| `ui-color-theme`                                        | 1 (orphan) | local   | R9            |
+| `error-boundary`, `ui-error-boundary`                   | 5 (eager)  | local   | R7            |
+| `ui-live-status`                                        | eager      | local   | R8            |
+| `ui-offline-notice`                                     | -          | local   | R8            |
+| `ui-async-section`, `route-fallback`                    | -          | local   | R8            |
+| layouts, not-found, forbidden, server-error, error-page | -          | local   | R8            |
+| `render-with-theme`                                     | tests only | local   | R8            |
+| `src/styles/theme.ts` (app theme)                       | eager      | local   | R8            |
 
 `ui-color-theme` stays local until a CRM consumer reads a toolkit-only palette key, or upstream
 ships a CRM-distinct palette; either one reverses R9.

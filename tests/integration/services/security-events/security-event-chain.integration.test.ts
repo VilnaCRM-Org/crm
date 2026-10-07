@@ -153,14 +153,14 @@ describe('security-event chain (integration)', () => {
     expect(hint.extra).toMatchObject({ event: 'error_boundary_catch', reason: 'app' });
   });
 
-  it('reports a 404 route error on the route surface through the boundary reporter', async () => {
+  it('reports a route error on the route surface through the boundary reporter', async () => {
     const { Sentry, observabilityCore } = await loadChain();
     const boundaryErrorReporter = (
       await import('@/services/error-reporting/boundary-error-reporter')
     ).default;
     observabilityCore.init();
     await untilSdkLoaded(Sentry);
-    const routeError = new Error('404 Not Found');
+    const routeError = new Error('route failed');
 
     boundaryErrorReporter.report(routeError, { surface: 'route' });
 
