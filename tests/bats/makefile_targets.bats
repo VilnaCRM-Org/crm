@@ -66,7 +66,7 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'docker build -t crm-dev -f Dockerfile --target base .'
 
-  while IFS='|' read -r target expected_commands; do
+  while IFS='|' read -r target expected_commands <&4; do
     [ -n "$target" ] || continue
 
     reset_command_log
@@ -82,7 +82,7 @@ EOF
       fi
       [ -z "$expected" ] || assert_log_contains "$expected"
     done
-  done <<'EOF'
+  done 4<<'EOF'
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
 check-auth-seed-gate|docker build -t crm-auth-seed-probe -f Dockerfile --target production .|dev node scripts/ci/check-auth-seed-gate.mjs --dir ./dist-auth-seed-probe --expect absent --token auth-seed-gate-probe-token
@@ -112,9 +112,10 @@ lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSIO
 husky|bun x husky|
 storybook-start|bun x storybook dev -p 6006 --host 0.0.0.0 --no-open|
 storybook-build|bun x storybook build|
+check-storybook-static|node scripts/ci/check-storybook-static.mjs storybook-static /crm/|
 update|docker compose exec -T dev bun update|
 check-node-version|docker compose exec -T dev node check-node-version.js|
-pr-comments|get-pr-comments.sh 78 markdown|
+pr-comments|get-pr-comments.sh|
 down|docker compose down --remove-orphans|
 sh|docker compose exec dev sh|
 ps|docker compose ps|

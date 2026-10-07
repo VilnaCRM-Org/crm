@@ -752,9 +752,10 @@ bundled npm and its `node_modules` were the bulk of the image findings, and the 
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
 base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
 `serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libcrypto3`, `libssl3`, `libgcc` and
-`libstdc++`, a `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the
-resolved `/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
+`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
+`libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
+`node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
+`/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
@@ -2444,11 +2445,64 @@ its ESLint gate.
 ## Storybook
 
 ```bash
-make storybook-start    # Start on port 6006
-make storybook-build    # Build static files
+make storybook-start          # Start on port 6006
+make storybook-build          # Build static files into storybook-static/
+make check-storybook-static   # Fail if the build would 404 under a sub-path
 ```
 
 Stories location: `src/**/*.stories.@(js|jsx|ts|tsx)`
+
+**Published catalogue (issue #310):** every push to `main` publishes Storybook to GitHub Pages
+at <https://vilnacrm-org.github.io/crm/> through
+[`storybook-deploy.yml`](.github/workflows/storybook-deploy.yml), modelled on the UI kit's
+(<https://vilnacrm-org.github.io/ui-toolkit/>). The `build` job (`contents: read`) runs
+`make start-dev`, `make storybook-build` and `make check-storybook-static`, then uploads
+`storybook-static/` — the dev service bind-mounts the checkout, so the build is already on the
+runner and needs no copy out of the container. The `deploy` job (`pages: write`,
+`id-token: write`, `environment: github-pages`) runs only for `refs/heads/main` and reports the
+page URL. Nothing deploys from a pull request or a fork: the workflow has no `pull_request`
+trigger, and `workflow_dispatch` needs write access. The concurrency group is
+`github-pages-<ref>`, so a manual run from another branch cannot evict a pending `main` deploy.
+
+Pages serves the catalogue under the `/crm/` sub-path, so a root-absolute asset reference 404s
+there while it works on `localhost:6006`.
+[`scripts/ci/check-storybook-static.mjs`](scripts/ci/check-storybook-static.mjs), given the base
+path `/crm/` (`STORYBOOK_PAGES_BASE`), fails the build on an empty `index.json`, a missing
+`index.html` / `iframe.html`, an HTML `src`/`href`, inline module `import`, CSS `url()`,
+JavaScript dynamic `import()` of a `.js` / `.mjs` chunk, `<base href>` or webpack runtime
+public path that is root-absolute outside `/crm/`, and a reference to a file the build does not
+contain.
+`storybook testing` runs the same gate on pull requests whose diff reaches the Storybook build
+inputs in its path filter — all of `src/` (stories import the auth feature, hooks, `lib/` and
+assets, not just `src/components/`), `.storybook/`, the gate script, the image and the
+lockfile. The preview
+imports `src/styles/fonts.css`, so stories render in Golos and Inter as the app does; the
+builder emits the fonts under `static/media/` with an empty `publicPath`, which resolves them
+relative to `iframe.html`.
+
+**Every rendered component ships a story.** Stories are colocated with the component
+(`<folder>/<name>.stories.tsx`), and
+[`tests/unit/tooling/storybook-story-coverage.test.ts`](tests/unit/tooling/storybook-story-coverage.test.ts)
+fails when a `.tsx` file under `src/` (excluding `*.stories.tsx`, `*.test.tsx` and files under
+`/types/`) is neither imported by a story nor listed in its `EXEMPT`
+map with a reason — which today holds only wiring that renders nothing of its own (the entry,
+the app root, providers, the router builders, `ProtectedRoute`, `FormProviderBridge`,
+`renderWithTheme` and the auth `AuthSkeleton` re-export). The map is checked both ways: an
+entry for a missing file or for a component that has a story fails too, and story titles must
+be unique. Shared router decorators live in `.storybook/router-decorators.tsx`.
+`.storybook/main.ts` mirrors the RSBuild resolution the stories need — the `@auth` alias, the
+mixed SVG import (default URL plus `ReactComponent`, via `.storybook/svg-url-loader.cjs` chained
+into `@svgr/webpack`) and legacy decorators with metadata, because the auth forms reach the DI
+graph through a lazy `import()` that webpack still compiles. Stories render against no backend,
+so a valid login or registration submit cannot succeed there; the registration result views
+have their own stories. Story callbacks use the shared `noop` from
+`.storybook/story-callbacks.ts` rather than `storybook/test`'s `fn()`, because
+dependency-cruiser's `not-to-dev-dep` forbids `src/` value-importing a devDependency. Stories
+import the `.storybook/` helpers through the `@stories/*` alias.
+
+**Admin step:** Settings → Pages → Source must be **GitHub Actions**, which creates the
+`github-pages` environment; restrict its deployment branches to `main` (see
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), "GitHub Pages").
 
 ## Docker Commands
 
