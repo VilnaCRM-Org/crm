@@ -16,51 +16,97 @@ const loadTheme = (): Promise<typeof Theme> =>
   );
 
 describe('auth provider buttons styles', () => {
-  it('lays the mobile buttons out column-first in two rows, then as one row from md', async () => {
+  it('pins every styles token, including the column-first two-row mobile grid', async () => {
     const styles = await loadStyles();
 
-    expect(styles.servicesList).toEqual({
-      padding: 0,
-      '& .MuiButton-root': {
-        margin: 0,
+    expect(styles).toEqual({
+      thirdPartyWrapper: {
+        marginTop: '1.0625rem',
+        '@media (min-width:1024px)': {
+          marginTop: '1.5rem',
+        },
       },
-      '@media (min-width:375px)': {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-        gridTemplateRows: 'repeat(2, auto)',
-        gridAutoFlow: 'column',
-        gap: '0.5rem',
+      dividerText: {
+        fontFamily: 'Inter, sans-serif',
+        fontWeight: 500,
+        fontStyle: 'normal',
+        fontSize: '0.875rem',
+        lineHeight: '1.125rem',
+        letterSpacing: 0,
+        textTransform: 'uppercase',
+        color: '#57595B',
+        '@media (min-width:1024px)': {
+          fontWeight: 400,
+          fontSize: '1.125rem',
+        },
+        '@media (min-width:1440px)': {
+          fontWeight: 500,
+          fontSize: '0.875rem',
+          lineHeight: '1.125rem',
+        },
       },
-      '@media (min-width:768px)': {
+      servicesList: {
+        padding: 0,
+        '& .MuiButton-root': {
+          margin: 0,
+        },
+        '@media (min-width:375px)': {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          gridTemplateRows: 'repeat(2, auto)',
+          gridAutoFlow: 'column',
+          gap: '0.5rem',
+        },
+        '@media (min-width:768px)': {
+          display: 'flex',
+          flexWrap: 'nowrap',
+          justifyContent: 'space-between',
+          gap: 0,
+        },
+      },
+      servicesItem: {
         display: 'flex',
-        flexWrap: 'nowrap',
-        justifyContent: 'space-between',
-        gap: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        borderRadius: '0.75rem',
+        '@media (max-width:374px)': {
+          '&:not(:last-child)': {
+            marginBottom: '1rem',
+          },
+        },
+        '@media (min-width:768px)': {
+          maxWidth: '8.0625rem',
+        },
+        '@media (min-width:1440px)': {
+          maxWidth: '6.25rem',
+        },
       },
-    });
-  });
-
-  it('pins the 58px desktop and 75px tablet button paddings', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.serviceItemButton).toMatchObject({
-      padding: '1.0625rem 4.0625rem',
-      '@media (min-width:1024px)': {
-        padding: '1.3125rem 3rem 1.25rem',
+      serviceItemButton: {
+        width: '100%',
+        height: '100%',
+        padding: '1.0625rem 4.0625rem',
+        '&:hover, &:focus-visible': {
+          borderColor: '#1EAEFF',
+        },
+        '@media (min-width:1024px)': {
+          padding: '1.3125rem 3rem 1.25rem',
+        },
+        '@media (min-width:1440px)': {
+          padding: '17px 39px',
+        },
       },
-      '@media (min-width:1440px)': {
-        padding: '17px 39px',
-      },
-    });
-  });
-
-  it('keeps 24px between the submit button and the divider from the lg breakpoint', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.thirdPartyWrapper).toEqual({
-      marginTop: '1.0625rem',
-      '@media (min-width:1024px)': {
-        marginTop: '1.5rem',
+      serviceItemButtonIcon: {
+        width: '1.375rem',
+        height: '1.375rem',
+        '@media (min-width:768px)': {
+          width: '2rem',
+          height: '2rem',
+        },
+        '@media (min-width:1440px)': {
+          width: '1.375rem',
+          height: '1.375rem',
+        },
       },
     });
   });

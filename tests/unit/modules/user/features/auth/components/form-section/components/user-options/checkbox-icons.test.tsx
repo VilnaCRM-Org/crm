@@ -37,7 +37,7 @@ const declarationOf = (label: string, suffix = ''): CSSStyleDeclaration => {
 // that test is the only one Stryker credits with covering both `styled()` calls. It has to
 // assert on both boxes, or the checked one has no test that can reach it.
 describe('remember-me checkbox geometry', () => {
-  it('pins the 1.25rem square on both boxes', async () => {
+  it('pins the 1.25rem square on both boxes and the 1.5rem square from md', async () => {
     await renderIcons();
     const unchecked = declarationOf(UNCHECKED_LABEL);
     const checked = declarationOf(CHECKED_LABEL);
@@ -46,10 +46,6 @@ describe('remember-me checkbox geometry', () => {
     expect(unchecked.getPropertyValue('height')).toBe('1.25rem');
     expect(checked.getPropertyValue('width')).toBe('1.25rem');
     expect(checked.getPropertyValue('height')).toBe('1.25rem');
-  });
-
-  it('grows both boxes to the 1.5rem design square from the md breakpoint', async () => {
-    await renderIcons();
 
     [UNCHECKED_LABEL, CHECKED_LABEL].forEach((label) => {
       const declaration = mediaStyleRuleFor(iconElement(label), 'min-width:768px');
