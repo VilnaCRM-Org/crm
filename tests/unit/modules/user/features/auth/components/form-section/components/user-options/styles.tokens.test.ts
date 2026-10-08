@@ -73,24 +73,38 @@ describe('user options styles', () => {
     expect(styles.forgotPasswordLink).toEqual({
       display: 'inline-flex',
       alignItems: 'center',
-      minHeight: '1.5rem',
-      fontFamily: 'Inter, sans-serif',
+      minHeight: '1.25rem',
+      fontFamily: 'Golos',
       fontWeight: 500,
-      fontSize: '0.875rem',
-      lineHeight: '1.2857',
+      fontSize: '0.9375rem',
+      lineHeight: '1.125rem',
+      letterSpacing: 0,
       color: '#0074B5',
-      textDecoration: 'underline',
-      textDecorationThickness: '1px',
+      textDecoration: 'none',
+      textDecorationThickness: '2px',
       textUnderlineOffset: '0.2em',
+      '@media (min-width:768px)': {
+        minHeight: '1.5rem',
+      },
+      '@media (min-width:1024px)': {
+        fontWeight: 600,
+        fontSize: '1.125rem',
+        lineHeight: '1.375rem',
+      },
+      '@media (min-width:1440px)': {
+        fontWeight: 500,
+        fontSize: '0.9375rem',
+        lineHeight: '1.125rem',
+      },
       '&:hover': {
         color: '#00588A',
-        textDecorationThickness: '2px',
+        textDecoration: 'underline',
       },
       '&:focus-visible': {
         outline: '2px solid #404142',
         outlineOffset: '2px',
         borderRadius: '2px',
-        textDecorationThickness: '2px',
+        textDecoration: 'underline',
       },
     });
   });

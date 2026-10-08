@@ -57,34 +57,46 @@ export default {
   forgotPasswordLink: {
     display: 'inline-flex',
     alignItems: 'center',
-    minHeight: '1.5rem',
+    minHeight: '1.25rem',
 
-    fontFamily: `Inter, sans-serif`,
+    fontFamily: 'Golos',
     fontWeight: 500,
-    fontSize: '0.875rem',
-    lineHeight: '1.2857',
+    fontSize: '0.9375rem',
+    lineHeight: '1.125rem',
+    letterSpacing: 0,
 
     // Literal token rather than the MUI theme: `renderWithTheme` replaces the theme instead of
     // merging it, so `theme.palette.primary.main` inside UILink resolves to MUI's default blue.
     color: paletteColors.primary.linkText,
 
-    // The underline must live here: ui-link/theme.ts sets `textDecoration: 'none'` in
-    // `styleOverrides.root`, which outranks the `underline` prop. Without it the link is
-    // distinguished from the adjacent label by colour alone (WCAG 1.4.1).
-    textDecoration: 'underline',
-    textDecorationThickness: '1px',
+    textDecoration: 'none',
+    textDecorationThickness: '2px',
     textUnderlineOffset: '0.2em',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      minHeight: '1.5rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      fontWeight: 600,
+      fontSize: '1.125rem',
+      lineHeight: '1.375rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      fontWeight: 500,
+      fontSize: '0.9375rem',
+      lineHeight: '1.125rem',
+    },
 
     '&:hover': {
       color: paletteColors.primary.linkTextHover,
-      textDecorationThickness: '2px',
+      textDecoration: 'underline',
     },
 
     '&:focus-visible': {
       outline: `2px solid ${customColors.text.primary}`,
       outlineOffset: '2px',
       borderRadius: '2px',
-      textDecorationThickness: '2px',
+      textDecoration: 'underline',
     },
   },
 };
