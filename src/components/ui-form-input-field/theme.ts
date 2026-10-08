@@ -89,7 +89,7 @@ export default createTheme({
             maxHeight: '4rem',
             paddingTop: '1.4375rem',
             paddingBottom: '1.4375rem',
-            paddingLeft: '1.6875rem',
+            paddingLeft: '1.75rem',
           },
         },
       },

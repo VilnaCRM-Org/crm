@@ -46,10 +46,12 @@ describe('auth form shared skeleton styles', () => {
       fontFamily: 'Golos',
       backgroundColor: '#FBFBFB',
       '@media (min-width:768px)': {
+        justifyContent: 'flex-start',
         paddingTop: '8.4375rem',
         paddingBottom: '8.4375rem',
       },
       '@media (min-width:1440px)': {
+        justifyContent: 'center',
         paddingTop: '3.4375rem',
         paddingBottom: '3.4375rem',
       },
@@ -62,7 +64,7 @@ describe('auth form shared skeleton styles', () => {
     expect(formWrapper).toEqual({
       position: 'relative',
       width: '100%',
-      padding: '1.5rem 1.5rem 1.375rem',
+      padding: '1.5rem 1.4375rem 1.375rem',
       margin: '0 auto',
       backgroundColor: '#FFFFFF',
       border: '1px solid #EAECEE',

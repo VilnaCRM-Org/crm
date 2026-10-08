@@ -83,7 +83,7 @@ export default {
       marginTop: '2.0625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '1.1875rem',
+      marginTop: '1.25rem',
     },
   },
   dividerText: {
@@ -105,23 +105,25 @@ export default {
       marginBottom: '1.5rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '1.5625rem',
+      marginTop: '1.5rem',
       marginBottom: '1.125rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '0.875rem',
       marginBottom: '1.5rem',
     },
   },
   socialContainer: {
     display: 'block',
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
-      display: 'flex',
-      flexWrap: 'wrap',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: '0.5rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      display: 'flex',
       flexWrap: 'nowrap',
       justifyContent: 'space-between',
+      gap: 0,
     },
   },
   socialButton: {
@@ -134,18 +136,7 @@ export default {
       marginBottom: 0,
     },
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
-      maxWidth: '9.625rem',
-      marginTop: '0.5rem',
       marginBottom: 0,
-      '&:nth-of-type(2n+1)': {
-        marginRight: '0.3rem',
-      },
-      '&:nth-of-type(-n+2)': {
-        marginTop: 0,
-      },
-      '&:last-child': {
-        marginBottom: 0,
-      },
     },
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT_UPPER}px)`]: {
       height: '4.75rem',
@@ -154,16 +145,13 @@ export default {
       maxWidth: '8.0625rem',
       height: '5.375rem',
       margin: 0,
-      '&:nth-of-type(2n+1)': {
-        margin: 0,
-      },
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      height: '4.75rem',
+      height: '4.6875rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       maxWidth: '6.25rem',
-      height: '3.75rem',
+      height: '3.625rem',
     },
   },
   switcherSkeleton: {
@@ -178,7 +166,7 @@ export default {
       width: '17rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '1.5rem',
+      marginTop: '1.625rem',
       height: '1.125rem',
       width: '14rem',
     },

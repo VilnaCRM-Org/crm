@@ -32,7 +32,7 @@ export default {
       fontSize: '1.125rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      margin: '1.5rem auto 0',
+      margin: '1.625rem auto 0',
 
       fontWeight: 500,
       fontSize: '0.9375rem',

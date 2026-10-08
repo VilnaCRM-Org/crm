@@ -37,7 +37,7 @@ describe('form section styles', () => {
         fontSize: '1.125rem',
       },
       '@media (min-width:1440px)': {
-        margin: '1.5rem auto 0',
+        margin: '1.625rem auto 0',
         fontWeight: 500,
         fontSize: '0.9375rem',
         lineHeight: 1.2,

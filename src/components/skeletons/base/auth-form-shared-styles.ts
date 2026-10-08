@@ -28,10 +28,12 @@ export const formSection = {
   fontFamily: 'Golos',
   backgroundColor: '#FBFBFB',
   [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    justifyContent: 'flex-start',
     paddingTop: '8.4375rem',
     paddingBottom: '8.4375rem',
   },
   [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    justifyContent: 'center',
     paddingTop: '3.4375rem',
     paddingBottom: '3.4375rem',
   },
@@ -40,7 +42,7 @@ export const formSection = {
 export const formWrapper = {
   position: 'relative',
   width: '100%',
-  padding: '1.5rem 1.5rem 1.375rem',
+  padding: '1.5rem 1.4375rem 1.375rem',
   margin: '0 auto',
   backgroundColor: paletteColors.background.default,
   border: `1px solid ${paletteColors.border.default}`,

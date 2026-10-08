@@ -13,12 +13,15 @@ export default {
     columnGap: '1rem',
     rowGap: '0.5rem',
     marginTop: '1rem',
+    marginBottom: '0.4375rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '1.4375rem',
+      marginBottom: '-0.5625rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '0.8125rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginTop: '-0.1875rem',
+      marginBottom: 0,
     },
   },
 

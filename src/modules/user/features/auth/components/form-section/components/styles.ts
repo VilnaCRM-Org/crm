@@ -91,8 +91,12 @@ export default {
     minWidth: '2rem',
     minHeight: '2rem',
 
-    marginInlineEnd: 0,
+    marginInlineEnd: '-0.25rem',
     p: 0,
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginInlineEnd: '0.125rem',
+    },
 
     '&:hover, &:focus-visible': {
       backgroundColor: 'transparent',

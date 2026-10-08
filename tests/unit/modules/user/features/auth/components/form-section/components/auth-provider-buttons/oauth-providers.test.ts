@@ -53,8 +53,8 @@ describe('oauthProviders', () => {
 
     expect(providers.map((provider) => provider.label)).toEqual([
       'Google',
-      'GitHub',
       'Facebook',
+      'GitHub',
       'Twitter',
     ]);
 

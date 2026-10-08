@@ -1,5 +1,5 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { paletteColors } from '@/styles/colors';
+import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
   errorBannerFocus: {
@@ -16,6 +16,7 @@ export default {
     fontWeight: '700',
     letterSpacing: 0,
     lineHeight: '1',
+    color: customColors.text.dark,
 
     marginBottom: '0.5rem',
 
@@ -36,6 +37,7 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: '1.67',
     letterSpacing: 0,
+    color: customColors.text.dark,
 
     marginBottom: '1.0625rem',
 
@@ -91,7 +93,7 @@ export default {
       maxHeight: '3.875rem',
       paddingTop: '1.25rem',
       paddingBottom: '1.25rem',
-      marginTop: '1.1875rem',
+      marginTop: '1.25rem',
 
       fontFamily: 'Golos',
       fontWeight: 600,

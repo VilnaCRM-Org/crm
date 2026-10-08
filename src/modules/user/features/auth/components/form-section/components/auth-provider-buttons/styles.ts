@@ -6,10 +6,7 @@ export default {
     marginTop: '1.0625rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '1.5625rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '0.875rem',
+      marginTop: '1.5rem',
     },
   },
 
@@ -25,7 +22,7 @@ export default {
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       fontWeight: 400,
-      fontSize: '1.0625rem',
+      fontSize: '1.125rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       fontWeight: 500,
@@ -42,13 +39,18 @@ export default {
     },
 
     [`@media (min-width:375px)`]: {
-      display: 'flex',
-      flexWrap: 'wrap',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gridTemplateRows: 'repeat(2, auto)',
+      gridAutoFlow: 'column',
+      gap: '0.5rem',
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      display: 'flex',
       flexWrap: 'nowrap',
       justifyContent: 'space-between',
+      gap: 0,
     },
   },
   servicesItem: {
@@ -65,26 +67,8 @@ export default {
       },
     },
 
-    [`@media (min-width:375px)`]: {
-      maxWidth: '9.625rem',
-      marginTop: '0.5rem',
-
-      '&:nth-of-type(2n+1)': {
-        marginRight: '0.3rem',
-      },
-
-      '&:nth-of-type(-n+2)': {
-        marginTop: 0,
-      },
-    },
-
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       maxWidth: '8.0625rem',
-      margin: 0,
-
-      '&:nth-of-type(2n+1)': {
-        margin: 0,
-      },
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
@@ -101,10 +85,10 @@ export default {
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      padding: '1.375rem 3rem 1.25rem',
+      padding: '1.3125rem 3rem 1.25rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      padding: '18px 39px',
+      padding: '17px 39px',
     },
   },
   serviceItemButtonIcon: {

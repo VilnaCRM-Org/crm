@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { customColors } from '@/styles/colors';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 const UNCHECKED_LABEL = 'remember me box';
 const CHECKED_LABEL = 'remember me box, checked';
@@ -46,6 +46,17 @@ describe('remember-me checkbox geometry', () => {
     expect(unchecked.getPropertyValue('height')).toBe('1.25rem');
     expect(checked.getPropertyValue('width')).toBe('1.25rem');
     expect(checked.getPropertyValue('height')).toBe('1.25rem');
+  });
+
+  it('grows both boxes to the 1.5rem design square from the md breakpoint', async () => {
+    await renderIcons();
+
+    [UNCHECKED_LABEL, CHECKED_LABEL].forEach((label) => {
+      const declaration = mediaStyleRuleFor(iconElement(label), 'min-width:768px');
+
+      expect(declaration?.getPropertyValue('width')).toBe('1.5rem');
+      expect(declaration?.getPropertyValue('height')).toBe('1.5rem');
+    });
   });
 });
 

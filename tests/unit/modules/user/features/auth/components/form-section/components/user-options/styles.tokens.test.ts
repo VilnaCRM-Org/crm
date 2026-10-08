@@ -21,11 +21,14 @@ describe('user options styles', () => {
       columnGap: '1rem',
       rowGap: '0.5rem',
       marginTop: '1rem',
+      marginBottom: '0.4375rem',
       '@media (min-width:768px)': {
         marginTop: '1.4375rem',
+        marginBottom: '-0.5625rem',
       },
-      '@media (min-width:1024px)': {
-        marginTop: '0.8125rem',
+      '@media (min-width:1440px)': {
+        marginTop: '-0.1875rem',
+        marginBottom: 0,
       },
     });
   });

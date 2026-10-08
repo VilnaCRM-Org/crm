@@ -29,6 +29,7 @@ describe('ui-form styles', () => {
         fontWeight: '700',
         letterSpacing: 0,
         lineHeight: '1',
+        color: '#1A1C1E',
         marginBottom: '0.5rem',
         '@media (min-width:768px)': {
           marginBottom: '0.9375rem',
@@ -45,6 +46,7 @@ describe('ui-form styles', () => {
         fontSize: '0.9375rem',
         lineHeight: '1.67',
         letterSpacing: 0,
+        color: '#1A1C1E',
         marginBottom: '1.0625rem',
         '@media (min-width:480px)': {
           fontSize: '1rem',
@@ -91,7 +93,7 @@ describe('ui-form styles', () => {
           maxHeight: '3.875rem',
           paddingTop: '1.25rem',
           paddingBottom: '1.25rem',
-          marginTop: '1.1875rem',
+          marginTop: '1.25rem',
           fontFamily: 'Golos',
           fontWeight: 600,
           fontSize: '1.125rem',
