@@ -140,9 +140,11 @@ Exception (i) stays a review item: this chore adds no dependency-cruiser rule fo
 ### FR-1 — Class-naming suffixes follow the board
 
 `config/class-naming-policy.js`, the `CLAUDE.md` role table and its Copilot mirror approve
-`*Transformer` ("translates a transport or failure payload into a named entity or outcome, and
-back, for one Data provider"; lineage "Miro `[Transformer]` (`GraphQLTransformer`); enterprise
-Message Translator") and no longer approve `Controller`, which no `src/` class uses.
+`*Transformer` with the role "translates transport payloads into outcomes" and the lineage "Miro
+Transformer (#332)", and no longer approve `Controller`, which no `src/` class uses. A
+`*Transformer` translates a transport or failure payload into a named entity or outcome, and
+back, for one Data provider: the board's `[Transformer]` (`GraphQLTransformer`) and the
+enterprise Message Translator.
 
 ### FR-2 — Object shapes are interfaces
 
