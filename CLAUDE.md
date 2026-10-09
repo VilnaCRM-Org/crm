@@ -754,7 +754,10 @@ base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in
 `FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
 `libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
+`/usr/local/lib/node_modules/serve` tree. `serve@14.2.6` pins `compression@1.8.1` exactly, which
+carries CVE-2026-87776, so the `serve-tools` stage sets `dependencies.compression` to `1.8.2` in
+the installed package and re-runs a production-only `npm install`; drop that step once a `serve`
+release ships the fix. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
