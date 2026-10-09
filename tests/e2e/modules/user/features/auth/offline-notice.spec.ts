@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test';
 
+import gotoAndSettleWarmUp from '@tests/e2e/utils/error-page-warm-up';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import { t } from '../../../../utils/initialize-localization';
@@ -16,9 +17,10 @@ function submitButton(page: Page, label: string): ReturnType<Page['locator']> {
   return page.locator('form button[type="submit"]', { hasText: label });
 }
 
-// Going offline before the page has finished loading would abort the lazy page chunk and the
-// web fonts still in flight — a different failure from the one under test. Wait for the form
-// to be interactive and every font face to be settled first.
+// Going offline before the page has finished loading would abort the lazy page chunk, the
+// web fonts or the post-load error-page warm-up still in flight — a different failure from the
+// one under test. Navigate through the warm-up helper, then wait for the form to be interactive
+// and every font face to be settled.
 async function settleOnline(page: Page, label: string): Promise<ReturnType<Page['locator']>> {
   const submit = submitButton(page, label);
   await expect(submit).toBeEnabled();
@@ -42,7 +44,7 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
       page,
       context,
     }) => {
-      await page.goto(url);
+      await gotoAndSettleWarmUp(page, url);
       const submit = await settleOnline(page, label);
       await expect(page.getByText(offlineNotice)).toHaveCount(0);
 
@@ -61,7 +63,7 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
   }
 
   test('keeps the offline notice inside the form, after its heading', async ({ page, context }) => {
-    await page.goto(SIGN_IN_URL);
+    await gotoAndSettleWarmUp(page, SIGN_IN_URL);
     await settleOnline(page, signInSubmit);
 
     await context.setOffline(true);

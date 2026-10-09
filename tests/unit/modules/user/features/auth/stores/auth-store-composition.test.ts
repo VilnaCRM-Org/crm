@@ -19,6 +19,14 @@ describe('auth stores composition root', () => {
     expect(clearSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('forgets a remembered sandbox demo session on logout', () => {
+    localStorage.setItem('vilnacrm.sandbox-demo-session', 'demo@vilnacrm.com');
+
+    authActions.logout();
+
+    expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBeNull();
+  });
+
   it('exposes action wrappers that delegate to the resolved AuthStoreActions', async () => {
     await authActions.loginUser({ email: 'a@b.c', password: 'p' });
     await authActions.registerUser({ fullName: 'A', email: 'a@b.c', password: 'p' });

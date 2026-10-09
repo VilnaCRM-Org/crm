@@ -3,6 +3,8 @@ import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 type FeatureFlagModule = typeof import('@/config/runtime/feature-flag-service');
 
+const PROBE_FLAG = 'probeFlag';
+
 function loadFeatureFlagService(): Promise<FeatureFlagModule> {
   jest.resetModules();
 
@@ -14,51 +16,56 @@ describe('featureFlagService', () => {
     clearConfigBlock();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   afterAll(() => {
     clearConfigBlock();
   });
 
-  it('falls back to the compiled-in default when no runtime configuration is present', async () => {
+  it('declares no flags, so its names and snapshot are empty', async () => {
     const { default: featureFlagService, FeatureFlagService } = await loadFeatureFlagService();
 
     expect(featureFlagService).toBeInstanceOf(FeatureFlagService);
-    expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: false });
+    expect(featureFlagService.names()).toEqual([]);
+    expect(featureFlagService.snapshot()).toEqual({});
   });
 
   it('enables a flag the runtime configuration turns on', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ forgotPassword: true }));
+    writeConfigBlock(buildFeatureFlagConfig({ [PROBE_FLAG]: true }));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.isEnabled('forgotPassword')).toBe(true);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: true });
+    expect(featureFlagService.isEnabled(PROBE_FLAG as never)).toBe(true);
   });
 
   it('disables a flag the runtime configuration turns off', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ forgotPassword: false }));
+    writeConfigBlock(buildFeatureFlagConfig({ [PROBE_FLAG]: false }));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: false });
+    expect(featureFlagService.isEnabled(PROBE_FLAG as never)).toBe(false);
   });
 
   it.each([
     ['the string "true"', 'true'],
     ['the number 1', 1],
     ['null', null],
-  ])('ignores %s and keeps the default, because it is not a boolean', async (_label, value) => {
-    writeConfigBlock(JSON.stringify({ flags: { forgotPassword: value } }));
+  ])('ignores %s and falls back to the compiled-in default', async (_label, value) => {
+    writeConfigBlock(buildFeatureFlagConfig({ [PROBE_FLAG]: value }));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
+    expect(featureFlagService.isEnabled(PROBE_FLAG as never)).toBeUndefined();
   });
 
-  it('names every flag it knows about', async () => {
-    const { default: featureFlagService } = await loadFeatureFlagService();
+  it('snapshots every named flag through isEnabled', async () => {
+    writeConfigBlock(buildFeatureFlagConfig({ [PROBE_FLAG]: true, otherFlag: false }));
 
-    expect(featureFlagService.names()).toEqual(['forgotPassword']);
+    const { default: featureFlagService } = await loadFeatureFlagService();
+    jest.spyOn(featureFlagService, 'names').mockReturnValue([PROBE_FLAG as never]);
+
+    expect(featureFlagService.snapshot()).toEqual({ [PROBE_FLAG]: true });
   });
 });

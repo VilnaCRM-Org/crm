@@ -1,3 +1,4 @@
+import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import type { AuthStateVar } from '@auth/stores/auth-var';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthRequestErrors from '@auth/utils/auth-request-errors';
@@ -8,4 +9,5 @@ export interface AuthStoreActionsDeps {
   readonly authRequestErrors: AuthRequestErrors;
   readonly authState: AuthStateVar;
   readonly securitySignals: AuthSecuritySignals;
+  readonly sandboxDemoSession: SandboxDemoSessionProvider;
 }

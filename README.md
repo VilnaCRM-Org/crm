@@ -353,13 +353,15 @@ rebuild:
 
 ```bash
   APP_CONFIG_GRAPHQL_URL=https://api.example.com/graphql \
-  APP_CONFIG_FLAG_FORGOT_PASSWORD=false \
   docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --force-recreate prod
 ```
 
 The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
 not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
-deployment never starts serving. Build-time `REACT_APP_*` values remain as defaults.
+deployment never starts serving. No feature flag is declared today, so any non-empty
+`APP_CONFIG_FLAG_*` variable fails the start — an environment that still sets
+`APP_CONFIG_FLAG_FORGOT_PASSWORD` from the removed `forgotPassword` flag must unset it.
+Build-time `REACT_APP_*` values remain as defaults.
 See [runtime configuration](src/config/runtime/README.md) and
 [feature flags](docs/feature-flags.md).
 

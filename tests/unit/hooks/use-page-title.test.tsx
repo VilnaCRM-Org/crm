@@ -24,7 +24,7 @@ const SIGN_UP_KEY = 'sign_up.title';
 const SIGN_IN_KEY = 'sign_in.title';
 const TRANSLATIONS: Record<string, Record<string, string>> = {
   en: { [SIGN_UP_KEY]: 'Registration', [SIGN_IN_KEY]: 'Authentication' },
-  uk: { [SIGN_UP_KEY]: 'Реєстрація', [SIGN_IN_KEY]: 'Аутентифікація' },
+  uk: { [SIGN_UP_KEY]: 'Реєєстрація', [SIGN_IN_KEY]: 'Аунтефикація' },
 };
 
 let mockI18n: MockI18n;
@@ -86,7 +86,7 @@ describe('usePageTitle', () => {
     mockI18n.language = 'uk';
     subscribedListener?.();
 
-    expect(document.title).toBe('Реєстрація - VilnaCRM');
+    expect(document.title).toBe('Реєєстрація - VilnaCRM');
   });
 
   it('unsubscribes the very listener it subscribed, from the same event, on unmount', () => {

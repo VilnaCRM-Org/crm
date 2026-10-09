@@ -1,9 +1,7 @@
 import appConfigSource from './app-config-source';
 import type { FeatureFlag } from './types/feature-flag';
 
-const FEATURE_FLAG_DEFAULTS: Readonly<Record<FeatureFlag, boolean>> = Object.freeze({
-  forgotPassword: false,
-});
+const FEATURE_FLAG_DEFAULTS: Readonly<Record<FeatureFlag, boolean>> = Object.freeze({});
 
 export class FeatureFlagService {
   public isEnabled(flag: FeatureFlag): boolean {

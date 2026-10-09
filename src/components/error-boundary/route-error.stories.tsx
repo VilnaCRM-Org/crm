@@ -6,7 +6,7 @@ import RouteError from '@/components/error-boundary/route-error';
 import { DataRouterStory } from '@stories/router-decorators';
 
 type RouteErrorStoryProps = {
-  failure: 'render' | 'not-found' | 'server';
+  failure: 'render' | 'not-found' | 'forbidden' | 'server' | 'conflict';
   landmark: 'main' | 'region';
 };
 
@@ -16,7 +16,9 @@ function RenderFailure(): JSX.Element {
 
 const RESPONSES = {
   'not-found': { status: 404, statusText: 'Not Found' },
+  forbidden: { status: 403, statusText: 'Forbidden' },
   server: { status: 503, statusText: 'Service Unavailable' },
+  conflict: { status: 409, statusText: 'Conflict' },
 } as const;
 
 const loaderFor = (failure: RouteErrorStoryProps['failure']): { loader?: () => never } =>
@@ -53,18 +55,21 @@ const meta: Meta<typeof RouteErrorStory> = {
     landmark: 'main',
   },
   argTypes: {
-    failure: { control: 'inline-radio', options: ['render', 'not-found', 'server'] },
+    failure: {
+      control: 'inline-radio',
+      options: ['render', 'not-found', 'forbidden', 'server', 'conflict'],
+    },
     landmark: { control: 'inline-radio', options: ['main', 'region'] },
   },
   parameters: {
     docs: {
       description: {
         component:
-          'The `errorElement` the route composer attaches to every route (issue #116). It reads ' +
-          'the route error, classifies it into a recovery strategy and renders ErrorFallback: ' +
-          '"Try again" re-navigates to the same location, a 4xx response offers only the ' +
-          'homepage link, and a 5xx response is retryable. The story mounts a one-route data ' +
-          'router whose page throws.',
+          'The `errorElement` the route composer attaches to every route (issues #116, #309). ' +
+          'A 404, 403 or 5xx response renders the designed error page, loaded lazily; any ' +
+          'other route error is classified into a recovery strategy and renders ErrorFallback, ' +
+          'whose "Try again" re-navigates to the same location and whose 4xx case offers only ' +
+          'the homepage link. The story mounts a one-route data router whose page throws.',
       },
       story: { inline: false },
     },
@@ -82,6 +87,14 @@ export const NotFoundResponse: Story = {
   args: { failure: 'not-found' },
 };
 
+export const ForbiddenResponse: Story = {
+  args: { failure: 'forbidden' },
+};
+
 export const ServerErrorResponse: Story = {
   args: { failure: 'server' },
+};
+
+export const OtherClientErrorResponse: Story = {
+  args: { failure: 'conflict' },
 };

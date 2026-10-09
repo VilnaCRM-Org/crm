@@ -129,6 +129,8 @@ WORKDIR /app
 FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS serve-tools
 
 RUN npm install -g serve@14.2.6
+RUN npm --prefix /usr/local/lib/node_modules/serve pkg set dependencies.compression=1.8.2 && \
+    npm --prefix /usr/local/lib/node_modules/serve install --omit=dev --ignore-scripts
 
 
 # -------- Static Server Stage --------

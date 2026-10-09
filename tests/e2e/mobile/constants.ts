@@ -39,8 +39,8 @@ export const hidePasswordLabel: string = t('auth.password.hide');
 // a suffix in every locale — match each rendered label exactly instead of prefixing.
 export const OAUTH_PROVIDER_LABELS: readonly string[] = [
   'Google',
-  'GitHub',
   'Facebook',
+  'GitHub',
   'Twitter',
 ].map((provider) => t('auth.oauth.continue_with', { provider }));
 

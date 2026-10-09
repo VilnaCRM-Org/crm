@@ -104,6 +104,11 @@ const APPROVED_SUFFIXES = [
   },
   { suffix: 'Cache', role: 'memoized instances keyed by arguments', lineage: 'PoEAA Identity Map' },
   { suffix: 'Loader', role: 'loads a resource or module on demand', lineage: 'lazy-loading idiom' },
+  {
+    suffix: 'Prefetcher',
+    role: 'loads resources ahead of demand after load',
+    lineage: 'resource-prefetch idiom (#309)',
+  },
   { suffix: 'Client', role: 'outbound transport client', lineage: 'enterprise Gateway' },
   { suffix: 'API', role: 'typed façade over one remote API', lineage: 'enterprise Gateway' },
   { suffix: 'Provider', role: 'supplies a value or capability', lineage: 'provider idiom' },

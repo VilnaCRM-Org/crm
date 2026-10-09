@@ -1,7 +1,7 @@
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 
 type MockI18n = {
   language: string;
@@ -40,6 +40,11 @@ jest.mock('@/components/layouts/app-layout', () => {
   return { __esModule: true, default: (): JSX.Element => <Outlet /> };
 });
 
+jest.mock('@/providers/mui-theme/mui-theme-shell', () => ({
+  __esModule: true,
+  default: ({ children }: { children: ReactNode }): JSX.Element => <>{children}</>,
+}));
+
 jest.mock('@/components/error-boundary/route-error', () => ({
   __esModule: true,
   default: (): JSX.Element => <div>route error</div>,
@@ -48,6 +53,16 @@ jest.mock('@/components/error-boundary/route-error', () => ({
 jest.mock('@/components/not-found/not-found', () => ({
   __esModule: true,
   default: (): JSX.Element => <div>not found page</div>,
+}));
+
+jest.mock('@/components/forbidden/forbidden', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>forbidden page</div>,
+}));
+
+jest.mock('@/components/server-error/server-error', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>server error page</div>,
 }));
 
 jest.mock('@/features/home', () => ({

@@ -76,6 +76,12 @@ Out of scope, with where to report instead:
   unless the flaw is in code it inherited unchanged
 - a vulnerability in a development-only dependency that no production artifact ships — it is
   tracked by the weekly full-tree audit below, not disclosed as an advisory
+- signing in to a pull-request sandbox with the published demo credentials
+  (`demo@vilnacrm.com` / `Demo1234`, issue #309) — they are public by design, and a sandbox is an
+  S3 website with no backend and no data. Making them sign anyone in on any other host, or
+  restoring a demo session there, **is** in scope: the demo login ships in the production bundle
+  and must stay inert off `sandbox-crm-*` S3 website hosts
+  ([ADR-019](docs/adr/019-sandbox-demo-session.md))
 
 ## Automated controls
 

@@ -14,7 +14,7 @@ const meta: Meta<typeof FormField> = {
     name: 'email',
     type: 'email',
     autoComplete: 'email',
-    label: 'Електронна пошта',
+    label: 'E-mail',
     placeholder: 'vilnaCRM@gmail.com',
     rules: REQUIRED_RULES,
   },

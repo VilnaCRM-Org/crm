@@ -15,6 +15,7 @@ const AUTH_TOKENS = Object.freeze({
   AuthSecuritySignals: Symbol('AuthSecuritySignals'),
   AuthStateVar: Symbol('AuthStateVar'),
   AuthStoreActionsDeps: Symbol('AuthStoreActionsDeps'),
+  SandboxDemoSessionProvider: Symbol('SandboxDemoSessionProvider'),
 } as const);
 
 export default AUTH_TOKENS;

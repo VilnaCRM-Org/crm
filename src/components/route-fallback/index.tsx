@@ -7,10 +7,7 @@ import UILiveStatus from '@/components/ui-live-status';
 
 import styles from './styles';
 
-const Wrapper = styled('div')<{ minHeight: string }>(({ minHeight }) => ({
-  ...styles.wrapper,
-  minHeight,
-}));
+const Wrapper = styled('div')(styles.wrapper);
 const Pill = styled('div')(styles.pill);
 const Spinner = styled('div')(styles.spinner);
 
@@ -44,7 +41,7 @@ export default function RouteFallback({
   return (
     <>
       {pending && (
-        <Wrapper minHeight={minHeight}>
+        <Wrapper style={{ minHeight }}>
           <Pill>
             <Spinner aria-hidden="true" />
           </Pill>

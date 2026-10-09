@@ -32,7 +32,7 @@ export class AppConfig implements AppConfigReader {
   // Object.freeze is shallow, so the nested flag object has to be frozen separately for `get()`
   // to actually honour the readonly contract its interface advertises.
   private freeze(values: AppConfigValues): AppConfigValues {
-    const flags = values.flags === undefined ? {} : { flags: Object.freeze({ ...values.flags }) };
+    const flags = values.flags === undefined ? {} : { flags: Object.freeze(values.flags) };
 
     return Object.freeze({ ...values, ...flags });
   }

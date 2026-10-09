@@ -25,6 +25,8 @@ jobs:
             label: homepage
           - make_cmd: test-load-signup
             label: signup
+          - make_cmd: test-load-error-pages
+            label: error pages
 
     name: ${{ matrix.label }} load testing
 

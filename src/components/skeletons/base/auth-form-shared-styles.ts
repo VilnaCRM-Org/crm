@@ -21,7 +21,7 @@ export const formSection = {
   flexGrow: 1,
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'center',
+  justifyContent: 'flex-start',
   paddingTop: '0.5rem',
   paddingX: '0.375rem',
   paddingBottom: '1.5rem',
@@ -32,6 +32,7 @@ export const formSection = {
     paddingBottom: '8.4375rem',
   },
   [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    justifyContent: 'center',
     paddingTop: '3.4375rem',
     paddingBottom: '3.4375rem',
   },
@@ -40,7 +41,7 @@ export const formSection = {
 export const formWrapper = {
   position: 'relative',
   width: '100%',
-  padding: '1.5rem 1.5rem 1.375rem',
+  padding: '1.4375rem 1.4375rem 1.375rem',
   margin: '0 auto',
   backgroundColor: paletteColors.background.default,
   border: `1px solid ${paletteColors.border.default}`,
@@ -56,6 +57,27 @@ export const formWrapper = {
   },
   [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
     maxWidth: '31.375rem',
-    padding: '2.1rem 2.4375rem 1.9375rem',
+    padding: '2.125rem 2.4375rem 1.9375rem',
+  },
+};
+
+export const formWrapperBottomPadding = {
+  signIn: {
+    paddingBottom: '1.3125rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      paddingBottom: '1.9375rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      paddingBottom: '2rem',
+    },
+  },
+  signUp: {
+    paddingBottom: '1.4375rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      paddingBottom: '2.125rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      paddingBottom: '1.875rem',
+    },
   },
 };

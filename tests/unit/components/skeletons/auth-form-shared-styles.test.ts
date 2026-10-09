@@ -39,7 +39,7 @@ describe('auth form shared skeleton styles', () => {
       flexGrow: 1,
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       paddingTop: '0.5rem',
       paddingX: '0.375rem',
       paddingBottom: '1.5rem',
@@ -50,6 +50,7 @@ describe('auth form shared skeleton styles', () => {
         paddingBottom: '8.4375rem',
       },
       '@media (min-width:1440px)': {
+        justifyContent: 'center',
         paddingTop: '3.4375rem',
         paddingBottom: '3.4375rem',
       },
@@ -62,7 +63,7 @@ describe('auth form shared skeleton styles', () => {
     expect(formWrapper).toEqual({
       position: 'relative',
       width: '100%',
-      padding: '1.5rem 1.5rem 1.375rem',
+      padding: '1.4375rem 1.4375rem 1.375rem',
       margin: '0 auto',
       backgroundColor: '#FFFFFF',
       border: '1px solid #EAECEE',
@@ -78,7 +79,33 @@ describe('auth form shared skeleton styles', () => {
       },
       '@media (min-width:1440px)': {
         maxWidth: '31.375rem',
-        padding: '2.1rem 2.4375rem 1.9375rem',
+        padding: '2.125rem 2.4375rem 1.9375rem',
+      },
+    });
+  });
+
+  it('pins every per-page formWrapper bottom padding token', async () => {
+    const { formWrapperBottomPadding } =
+      await import('@/components/skeletons/base/auth-form-shared-styles');
+
+    expect(formWrapperBottomPadding).toEqual({
+      signIn: {
+        paddingBottom: '1.3125rem',
+        '@media (min-width:768px)': {
+          paddingBottom: '1.9375rem',
+        },
+        '@media (min-width:1440px)': {
+          paddingBottom: '2rem',
+        },
+      },
+      signUp: {
+        paddingBottom: '1.4375rem',
+        '@media (min-width:1024px)': {
+          paddingBottom: '2.125rem',
+        },
+        '@media (min-width:1440px)': {
+          paddingBottom: '1.875rem',
+        },
       },
     });
   });

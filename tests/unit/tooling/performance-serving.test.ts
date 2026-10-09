@@ -133,9 +133,14 @@ describe('performance serving config', () => {
     expect(appRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/features\/home'\)/
     );
-    expect(appRoutesSource).toMatch(
-      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/components\/not-found\/not-found'\)/
-    );
+    ['not-found/not-found', 'forbidden/forbidden', 'server-error/server-error'].forEach((page) => {
+      expect(appRoutesSource).toMatch(
+        new RegExp(
+          String.raw`import\(\s*/\* webpackChunkName: "error-page" \*/\s*` +
+            String.raw`'@/components/${page}'\)`
+        )
+      );
+    });
     expect(authRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-up'\)/
     );
@@ -147,6 +152,8 @@ describe('performance serving config', () => {
     expect(routesSource).not.toContain('import SignUp');
     expect(routesSource).not.toContain('import SignIn');
     expect(routesSource).not.toContain('import Home');
+    expect(appRoutesSource).not.toContain('import Forbidden');
+    expect(appRoutesSource).not.toContain('import ServerError');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
 
@@ -186,9 +193,48 @@ describe('performance serving config', () => {
     // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
     expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
     expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/components/error-boundary/error-page-loader.ts')).toContain(
+      'new ThemedChunkLoader<ErrorPageProps>('
+    );
+    expect(readFile('src/components/error-boundary/error-page-loader.ts')).toMatch(
+      /import\(\s*\/\* webpackChunkName: "error-page" \*\/\s*'@\/components\/error-page'\)/
+    );
     expect(readFile('src/providers/mui-theme/mui-theme-shell-loader.ts')).toContain(
       'webpackChunkName: "mui-theme"'
     );
+  });
+
+  it('warms the shared error-page chunk and its font faces after load (issue #309)', () => {
+    const appRoutesSource = readFile('src/routes/app-routes.ts');
+    const errorPageLoaderSource = readFile('src/components/error-boundary/error-page-loader.ts');
+    const entrySource = readFile('src/index.tsx');
+    const errorRouteChunks = appRoutesSource.match(
+      /webpackChunkName: "error-page" \*\/\s*'@\/components\/(not-found|forbidden|server-error)\//g
+    );
+
+    expect(errorRouteChunks).toHaveLength(3);
+    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(4);
+    expect(errorPageLoaderSource).toContain('webpackChunkName: "error-page"');
+
+    const renderAt = entrySource.lastIndexOf('root.render(');
+    const prefetchAt = entrySource.indexOf(
+      [
+        'new PostLoadPrefetcher([',
+        '    errorPageLoader,',
+        '    new FontFaceLoader(document.fonts, ERROR_PAGE_FONT_FACES),',
+        '  ]).attach(window);',
+      ].join('\n')
+    );
+
+    expect(prefetchAt).toBeGreaterThan(renderAt);
+    expect(renderAt).toBeGreaterThan(entrySource.indexOf('} else {'));
+    expect(entrySource).toContain(
+      "import errorPageLoader from '@/components/error-boundary/error-page-loader';"
+    );
+    expect(entrySource).toContain(
+      "import ERROR_PAGE_FONT_FACES from '@/components/error-page/config/error-page-fonts';"
+    );
+    expect(entrySource).not.toContain('ReloadingChunkLoader');
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {

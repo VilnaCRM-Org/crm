@@ -22,15 +22,9 @@ route lane calls [`expectNoAxeViolations`][route-helper] on every route in
 `src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane uses
 [`expectTabOrder`][keyboard-helper] to assert tab order, `:focus-visible`, a visible focus change
 and Space/Enter activation. Both Playwright lanes ride the `accessibility testing` check.
-Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in` and
-`/sign-up` as a second signal, not the primary gate.
-
-The component lane renders the `UI*` components and pages listed in [`tests/unit/a11y/`][unit]
-and also runs inside `make test-unit-all`. The route lane scans every route in
-`src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane asserts tab
-order, `:focus-visible`, a visible focus change and Space/Enter activation. Lighthouse keeps its
-0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in` and `/sign-up` as a second
-signal, not the primary gate.
+Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
+`/sign-up`, `/forbidden`, `/server-error` and the catch-all 404 (`/definitely-not-a-route`) as a
+second signal, not the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are
@@ -99,11 +93,33 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Four `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Seven `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
-[issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Fixing them changes rendered
+[issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
+pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
+`#1EAEFF` at 2.46:1) and the decorative status digits (`#error-page-digits > span`, `#1EAEFF` and
+`#FFC01E` on `#FBFBFB` at 2.37:1 and 1.58:1). The digits are `aria-hidden` decoration; the status
+is announced by the page heading and a visually hidden status-code line. Fixing them changes rendered
 colour and therefore every visual baseline, which is why they are design-owned work rather than
-part of the gate's own pull request.
+part of the gate's own pull request. One more covers the sign-in "Забули пароль?" link
+(`form a.MuiLink-root[href="/password-recovery"]`), the toolkit brand text link at `#1EAEFF` on
+white (2.45:1). The colour is the product owner's decision (ui-toolkit DEV-67); the accessible
+alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1).
+
+A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
+`grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
+as the Figma frames draw them. axe does not evaluate `::placeholder`, so no exception entry
+exists for it. Every field keeps a visible label; the placeholders copy Figma
+(`vilnaCRM@gmail.com` and `Михайло Светський` are example values, not instructions), apart from
+the password placeholder, which uses Ukrainian "Введіть пароль" instead of the frame's Russian
+text, by the user's decision for issue #309.
+
+The checked remember-me checkbox is the second such gap: the toolkit fill `#1EAEFF` against the
+white page, and the white tick against that fill, are each 2.45:1, under the 3:1 of SC 1.4.11,
+by the product owner's decision
+(ui-toolkit DEV-67). axe's `color-contrast` rule does not evaluate non-text contrast, so no
+exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
+3:1.
 
 ## Adding coverage
 

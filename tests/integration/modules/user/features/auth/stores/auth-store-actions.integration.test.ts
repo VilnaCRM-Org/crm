@@ -1,3 +1,4 @@
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar from '@auth/stores/auth-var';
@@ -40,6 +41,7 @@ const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).login({
     email: 'a@b.c',
     password: 'p',
@@ -51,6 +53,7 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
     fullName: 'A',
     email: 'a@b.c',
@@ -97,6 +100,49 @@ describe('AuthStoreActions integration coverage', () => {
   it('treats a thrown abort-marker register rejection as aborted', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
     expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+  });
+
+  it('signs the demo credentials in without reaching the repository', async () => {
+    const login = jest.fn();
+
+    await new AuthStoreActions({
+      repository: makeRepo({ login }),
+      authRequestErrors,
+      authState: AuthStateVar,
+      securitySignals,
+      sandboxDemoSession: sandboxDemoSessionProvider,
+    }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' });
+
+    expect(login).not.toHaveBeenCalled();
+    expect(AuthStateVar.get()).toMatchObject({
+      loginLoading: false,
+      email: 'demo@vilnacrm.com',
+      token: 'sandbox-demo-session-token',
+    });
+    expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBe('demo@vilnacrm.com');
+    sandboxDemoSessionProvider.signOut();
+  });
+
+  it('settles a canceled demo-credential login as aborted instead of signing in', async () => {
+    const aborted = { kind: 'network', displayMessage: '', retryable: false, aborted: true };
+    const login = jest.fn().mockResolvedValue({ ok: false, error: aborted });
+    const controller = new AbortController();
+    controller.abort();
+
+    await new AuthStoreActions({
+      repository: makeRepo({ login }),
+      authRequestErrors,
+      authState: AuthStateVar,
+      securitySignals,
+      sandboxDemoSession: sandboxDemoSessionProvider,
+    }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' }, controller.signal);
+
+    expect(login).toHaveBeenCalledTimes(1);
+    expect(AuthStateVar.get()).toMatchObject({
+      loginLoading: false,
+      token: null,
+      loginError: null,
+    });
   });
 
   it('tags an opaque observability identity after a successful login', async () => {
