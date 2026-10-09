@@ -1,11 +1,13 @@
 import type { LoginUserDto } from '@auth/types/credentials';
 
-export type LoginSubmitter = {
+export interface LoginSubmitter {
   error: string;
   isSubmitting: boolean;
   handleLogin: (data: LoginUserDto) => Promise<void>;
-};
+}
 
 export type LoginUser = (data: LoginUserDto, signal?: AbortSignal) => Promise<void>;
 
-export type LoginActions = { loginUser: LoginUser };
+export interface LoginActions {
+  loginUser: LoginUser;
+}

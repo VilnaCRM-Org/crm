@@ -12,22 +12,24 @@ const UK_GITHUB = 'Продовжити через GitHub';
 
 jest.mock('@auth/components/form-section/components/auth-provider-buttons/oauth-providers', () => ({
   __esModule: true,
-  default: [
-    {
-      label: 'Google',
-      SvgComponent: (): null => null,
-      onClick: (): void => {
-        mockClicks.push('Google');
+  default: {
+    items: [
+      {
+        label: 'Google',
+        SvgComponent: (): null => null,
+        onClick: (): void => {
+          mockClicks.push('Google');
+        },
       },
-    },
-    {
-      label: 'GitHub',
-      SvgComponent: (): null => null,
-      onClick: (): void => {
-        mockClicks.push('GitHub');
+      {
+        label: 'GitHub',
+        SvgComponent: (): null => null,
+        onClick: (): void => {
+          mockClicks.push('GitHub');
+        },
       },
-    },
-  ],
+    ],
+  },
 }));
 
 describe('AuthProviderButtons', () => {

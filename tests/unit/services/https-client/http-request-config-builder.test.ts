@@ -30,14 +30,18 @@ describe('HttpRequestConfigBuilder', () => {
   });
 
   it('overrides a caller-provided X-Request-Id with the generated correlation id', () => {
-    const config = builder.create('GET', undefined, { 'X-Request-Id': 'caller-id' });
+    const config = builder.create('GET', undefined, {
+      items: [{ name: 'X-Request-Id', value: 'caller-id' }],
+    });
     const headers = config.headers as Record<string, string>;
 
     expect(headers['X-Request-Id']).toBe('test-request-id');
   });
 
   it('replaces a differently-cased caller correlation header with the generated id', () => {
-    const config = builder.create('GET', undefined, { 'x-request-id': 'caller-id' });
+    const config = builder.create('GET', undefined, {
+      items: [{ name: 'x-request-id', value: 'caller-id' }],
+    });
     const headers = config.headers as Record<string, string>;
 
     expect(headers['X-Request-Id']).toBe('test-request-id');
@@ -46,7 +50,7 @@ describe('HttpRequestConfigBuilder', () => {
 
   it('takes the header name and the id from the injected correlation-id provider', () => {
     const injected: CorrelationIdProvider = {
-      header: 'X-Trace-Id',
+      header: 'X-Request-Id',
       currentId: '',
       next: (): string => 'injected-id',
     };
@@ -54,15 +58,29 @@ describe('HttpRequestConfigBuilder', () => {
     const config = new HttpRequestConfigBuilder(injected, sessionCorrelation).create(
       'GET',
       undefined,
-      {
-        'x-trace-id': 'caller-id',
-      }
+      { items: [{ name: 'x-request-id', value: 'caller-id' }] }
     );
     const headers = config.headers as Record<string, string>;
 
-    expect(headers['X-Trace-Id']).toBe('injected-id');
-    expect(headers['x-trace-id']).toBeUndefined();
-    expect(headers['X-Request-Id']).toBeUndefined();
+    expect(headers['X-Request-Id']).toBe('injected-id');
+    expect(headers['x-request-id']).toBeUndefined();
+  });
+
+  it('forwards every caller header that is not a correlation header', () => {
+    jest.spyOn(sessionCorrelation, 'id').mockReturnValueOnce('test-session-id');
+    const config = builder.create('GET', undefined, {
+      items: [
+        { name: 'X-Tenant', value: 'tenant-a' },
+        { name: 'Accept', value: 'text/plain' },
+      ],
+    });
+
+    expect(config.headers).toEqual({
+      'X-Tenant': 'tenant-a',
+      Accept: 'text/plain',
+      'X-Request-Id': 'test-request-id',
+      'X-Correlation-Id': 'test-session-id',
+    });
   });
 
   it('resolves the correlation id per request rather than once per builder', () => {

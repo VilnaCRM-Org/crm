@@ -6,7 +6,9 @@ import UIForm from '@/components/ui-form';
 import UIFormInputField from '@/components/ui-form-input-field';
 import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
 
-type DemoValues = { email: string };
+interface DemoValues {
+  email: string;
+}
 
 const DEFAULT_VALUES: DemoValues = { email: '' };
 

@@ -1,15 +1,15 @@
-import type { RequestConfig, RequestMethod } from './https-client';
+import type { RequestConfig, RequestHeaders, RequestMethod } from './https-client';
 
 interface RequestOptions {
-  headers?: Record<string, string>;
+  headers?: RequestHeaders;
   signal?: AbortSignal | undefined;
 }
 
-interface RequestArgs<R> {
+interface RequestArgs<T, R> {
   url: string;
   method: RequestMethod;
   config: RequestConfig<R>;
-  body?: unknown;
+  body?: T;
 }
 
 export type { RequestOptions, RequestArgs };

@@ -25,7 +25,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'HTTP_404',
           message: 'HTTP error 404',
-          original: response,
+          cause: response,
         });
       });
 
@@ -36,7 +36,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'HTTP_500',
           message: 'HTTP error 500',
-          original: response,
+          cause: response,
         });
       });
 
@@ -47,7 +47,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'HTTP_401',
           message: 'HTTP error 401',
-          original: response,
+          cause: response,
         });
       });
 
@@ -58,7 +58,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'HTTP_403',
           message: 'HTTP error 403',
-          original: response,
+          cause: response,
         });
       });
 
@@ -69,7 +69,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'HTTP_400',
           message: 'HTTP error 400',
-          original: response,
+          cause: response,
         });
       });
 
@@ -80,7 +80,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'HTTP_200',
           message: 'HTTP error 200',
-          original: response,
+          cause: response,
         });
       });
     });
@@ -97,7 +97,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'AUTH_ERROR',
           message: 'Authentication failed',
-          original: apiError,
+          cause: apiError,
         });
       });
 
@@ -108,7 +108,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'VALIDATION_ERROR',
           message: 'Validation failed',
-          original: apiError,
+          cause: apiError,
         });
       });
 
@@ -125,7 +125,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'NETWORK_ERROR',
           message: 'Request failed',
-          original: apiError,
+          cause: apiError,
         });
       });
 
@@ -136,7 +136,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'EMPTY_MESSAGE_ERROR',
           message: '',
-          original: apiError,
+          cause: apiError,
         });
       });
 
@@ -147,7 +147,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'ERROR_CODE_123',
           message: 'Test error',
-          original: apiError,
+          cause: apiError,
         });
       });
 
@@ -157,8 +157,8 @@ describe('ErrorParser', () => {
 
         expect(result.code).toBe('TEST_CODE');
         expect(result.message).toBe('Test message');
-        expect(result.original).toBe(apiError);
-        expect(result.original).toBeInstanceOf(ApiError);
+        expect(result.cause).toBe(apiError);
+        expect(result.cause).toBeInstanceOf(ApiError);
       });
 
       it('should handle ApiError with long message', () => {
@@ -169,7 +169,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'LONG_MESSAGE_ERROR',
           message: longMessage,
-          original: apiError,
+          cause: apiError,
         });
       });
 
@@ -183,7 +183,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'AUTH_ERROR_UA',
           message: 'Помилка автентифікації',
-          original: apiError,
+          cause: apiError,
         });
       });
     });
@@ -196,7 +196,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'JS_ERROR',
           message: 'Something went wrong',
-          original: error,
+          cause: error,
         });
       });
 
@@ -207,7 +207,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'JS_ERROR',
           message: 'Type error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -218,7 +218,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'JS_ERROR',
           message: 'Variable not defined',
-          original: error,
+          cause: error,
         });
       });
 
@@ -229,7 +229,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'JS_ERROR',
           message: '',
-          original: error,
+          cause: error,
         });
       });
 
@@ -247,7 +247,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'JS_ERROR',
           message: 'Custom error message',
-          original: error,
+          cause: error,
         });
       });
     });
@@ -259,7 +259,7 @@ describe('ErrorParser', () => {
 
         expect(result.code).toBe('UNKNOWN_ERROR');
         expect(result.message).toBe('An unknown error occurred');
-        expect(result.original).toBe(error);
+        expect(result.cause).toBe(error);
       });
 
       it('should parse number error', () => {
@@ -269,7 +269,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -280,7 +280,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -291,7 +291,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -302,7 +302,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -313,7 +313,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -324,7 +324,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -335,7 +335,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -345,7 +345,7 @@ describe('ErrorParser', () => {
 
         expect(result.code).toBe('UNKNOWN_ERROR');
         expect(result.message).toBe('An unknown error occurred');
-        expect(result.original).toBe(plainObject);
+        expect(result.cause).toBe(plainObject);
       });
 
       it('should handle all unknown error return properties', () => {
@@ -354,7 +354,7 @@ describe('ErrorParser', () => {
 
         expect(result).toHaveProperty('code', 'UNKNOWN_ERROR');
         expect(result).toHaveProperty('message', 'An unknown error occurred');
-        expect(result).toHaveProperty('original', unknownError);
+        expect(result).toHaveProperty('cause', unknownError);
       });
 
       it('should construct unknown error object with all required fields', () => {
@@ -364,13 +364,13 @@ describe('ErrorParser', () => {
         const expectedResult: ParsedError = {
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: plainValue,
+          cause: plainValue,
         };
 
         expect(parsed).toMatchObject(expectedResult);
         expect(parsed.code).toStrictEqual('UNKNOWN_ERROR');
         expect(parsed.message).toStrictEqual('An unknown error occurred');
-        expect(parsed.original).toStrictEqual(plainValue);
+        expect(parsed.cause).toStrictEqual(plainValue);
       });
     });
 
@@ -382,7 +382,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
 
@@ -393,7 +393,7 @@ describe('ErrorParser', () => {
         expect(result).toEqual({
           code: 'UNKNOWN_ERROR',
           message: 'An unknown error occurred',
-          original: error,
+          cause: error,
         });
       });
     });

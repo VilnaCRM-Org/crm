@@ -22,26 +22,26 @@ export default class FetchHttpsClient implements HttpsClient {
   constructor(@inject(HTTP_TOKENS.HttpsClientDeps) private readonly deps: HttpsClientDeps) {}
 
   public get<R>(url: string, config: RequestConfig<R>): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'GET', config });
+    return this.request<undefined, R>({ url, method: 'GET', config });
   }
 
   public post<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'POST', body: data, config });
+    return this.request<T, R>({ url, method: 'POST', body: data, config });
   }
 
   public put<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'PUT', body: data, config });
+    return this.request<T, R>({ url, method: 'PUT', body: data, config });
   }
 
   public patch<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'PATCH', body: data, config });
+    return this.request<T, R>({ url, method: 'PATCH', body: data, config });
   }
 
   public delete<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'DELETE', body: data, config });
+    return this.request<T, R>({ url, method: 'DELETE', body: data, config });
   }
 
-  private async request<R>(args: RequestArgs<R>): Promise<R | undefined> {
+  private async request<T, R>(args: RequestArgs<T, R>): Promise<R | undefined> {
     const { config, method } = args;
     if (config.signal?.aborted) this.throwAbortError();
     const budgetMs = config.timeoutMs ?? this.deps.deadlines.defaultTimeoutMs();
@@ -55,8 +55,8 @@ export default class FetchHttpsClient implements HttpsClient {
     });
   }
 
-  private async attempt<R>(
-    { url, method, config, body }: RequestArgs<R>,
+  private async attempt<T, R>(
+    { url, method, config, body }: RequestArgs<T, R>,
     timeoutMs: number
   ): Promise<R | undefined> {
     const deadline = this.deps.deadlines.create(config.signal, timeoutMs);

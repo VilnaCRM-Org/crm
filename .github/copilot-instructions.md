@@ -50,6 +50,16 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **Types live in type-only files** (`types.ts` or a `types/` folder) that hold only
   `interface`, `type`, `import type`, and `declare`. Logic files declare no types, and a type
   file is imported only with `import type`.
+- **Typed boundaries (TB-1, ADR-022)**: a value that crosses a layer (component props, hook
+  parameters and results, Data provider / Transformer / Repository / State / Guard / Factory
+  signatures, DI values, published state, telemetry payloads, interface members in type files)
+  carries a named type. ESLint fails an anonymous object type or `type X = { … }` (use
+  `interface`), a tuple, a bare array (cross a named collection interface), `any`, `object`,
+  `Record`, an index signature, a string-keyed mapped type or `unknown` (only a caught-error
+  parameter and `error` / `cause` members keep it), and an inline `Partial` / `Pick` / `Omit` /
+  `Required` (name the derivation once in a type-only file). Never satisfy it with a cast, a
+  disable, an allowlist or a narrower glob; the selectors live in
+  `config/typed-boundary-policy.js` and each has a must-fail fixture.
 - **Components take collaborators from `useService(TOKEN)`** (`@/providers/di`), never through
   `new` or a value import of a service, repository, mapper, factory, or error handler. The auth
   render path, `src/routes/route-{composer,mapper}.tsx`, and the entrypoint are the only
@@ -88,6 +98,62 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **apt stages install from a fixed-timestamp snapshot archive** (`UBUNTU_SNAPSHOT` in
   `Playwright.Dockerfile`, `DEBIAN_SNAPSHOT` in the `rca` stage, issue #300), so exact package
   pins stay resolvable. Bump the ARG and re-pin together; never unpin or use the live archive.
+
+## Class-naming role table
+
+Every class in non-React `src/**/*.ts` ends in one of these suffixes, row for row the table in
+`config/class-naming-policy.js` and `CLAUDE.md`. There is no `*Controller`: a UI flow is
+coordinated by a hook, not a class.
+
+| Suffix         | Role                                        | Pattern lineage                   |
+| -------------- | ------------------------------------------- | --------------------------------- |
+| `*Repository`  | persistence / API boundary of an aggregate  | DDD / PoEAA                       |
+| `*Service`     | domain-qualified operation                  | DDD domain service                |
+| `*Factory`     | encapsulated construction                   | GoF Factory                       |
+| `*Builder`     | step-wise construction of an object         | GoF Builder                       |
+| `*Mapper`      | translation between representations         | PoEAA Data Mapper                 |
+| `*Transformer` | translates transport payloads into outcomes | Miro Transformer (#332)           |
+| `*Adapter`     | conforms one interface to another           | GoF Adapter                       |
+| `*Strategy`    | interchangeable algorithm                   | GoF Strategy                      |
+| `*Handler`     | processes a request or event                | Chain of Responsibility           |
+| `*Guard`       | precondition: boolean, type, or throwing    | type-guard idiom                  |
+| `*Validator`   | validates input against rules               | DDD Specification                 |
+| `*Validators`  | catalog of validators, one singleton        | repo idiom (form validations)     |
+| `*Normalizer`  | canonicalizes a value into one shape        | enterprise Normalizer             |
+| `*Parser`      | parses a serialized form                    | parser idiom                      |
+| `*Processor`   | transforms a payload in a pipeline          | enterprise integration            |
+| `*Detector`    | classifies or recognizes a condition        | recognizer idiom                  |
+| `*Monitor`     | observes a rolling window of events         | observer idiom (#159)             |
+| `*Reporter`    | emits telemetry or signals to a sink        | observer idiom (#115, #159)       |
+| `*Signals`     | publishes one flow’s security signals       | repo idiom (#159)                 |
+| `*Scrubber`    | redacts sensitive fields                    | repo idiom (#115)                 |
+| `*Selectors`   | read-only projections over state            | Redux / Zustand selectors         |
+| `*Store`       | state container                             | Flux / Zustand                    |
+| `*Actions`     | state transitions of a store                | Flux                              |
+| `*Var`         | container-free reactive state cell          | Apollo makeVar idiom              |
+| `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
+| `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
+| `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
+| `*Client`      | outbound transport client                   | enterprise Gateway                |
+| `*API`         | typed façade over one remote API            | enterprise Gateway                |
+| `*Provider`    | supplies a value or capability              | provider idiom                    |
+| `*Providers`   | catalog of providers, one singleton         | provider idiom (OAuth)            |
+| `*Source`      | reads a value from where it is stored       | data-source idiom (#145)          |
+| `*Seed`        | test-only preloaded value, compile-guarded  | repo idiom (#158)                 |
+| `*Registrar`   | DI composition root of one area             | registry idiom (#109)             |
+| `*Core`        | container-free half of a two-layer boundary | repo idiom (#115, #155, #159)     |
+| `*Config`      | typed configuration value object            | repo idiom (env / runtime config) |
+| `*Env`         | raw environment reader                      | repo idiom (#112)                 |
+| `*Url`         | URL value object                            | DDD Value Object                  |
+| `*Target`      | resolved destination value object           | DDD Value Object (#150)           |
+| `*Correlation` | session-scoped correlation identifier       | DDD Value Object (#159)           |
+| `*Deadline`    | time-bounded abort scope of one request     | gRPC / Go context deadline (#147) |
+| `*Navigator`   | adapter over browser navigation             | GoF Adapter (window)              |
+| `*Error`       | thrown error class                          | JavaScript Error subclass         |
+| `*Errors`      | catalog of error constructors or codes      | repo idiom                        |
+| `*Signal`      | error subclass carrying one typed event     | repo idiom (#159)                 |
+| `*Styles`      | Emotion style object holder                 | repo idiom                        |
+| `*Impl`        | concrete implementation of an interface     | repo idiom (AuthRepositoryImpl)   |
 
 ## Quality gates
 

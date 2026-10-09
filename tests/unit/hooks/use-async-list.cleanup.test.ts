@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react';
 
+import type { AsyncListItems } from '@/hooks/types/use-async-list';
 import useAsyncList, { asyncListLoader } from '@/hooks/use-async-list';
 
 describe('useAsyncList unmount cleanup', () => {
@@ -10,7 +11,9 @@ describe('useAsyncList unmount cleanup', () => {
   it('deactivates the subscription it handed the loader when the component unmounts', () => {
     const run = jest.spyOn(asyncListLoader, 'run');
 
-    const { unmount } = renderHook(() => useAsyncList(() => new Promise<string[]>(() => {})));
+    const { unmount } = renderHook(() =>
+      useAsyncList(() => new Promise<AsyncListItems<string>>(() => {}))
+    );
     const subscription = run.mock.calls[0]?.[1];
 
     expect(subscription).toEqual({ active: true });
@@ -23,7 +26,9 @@ describe('useAsyncList unmount cleanup', () => {
   it('hands the loader a subscription that stays active while the component is mounted', () => {
     const run = jest.spyOn(asyncListLoader, 'run');
 
-    const { rerender } = renderHook(() => useAsyncList(() => new Promise<string[]>(() => {})));
+    const { rerender } = renderHook(() =>
+      useAsyncList(() => new Promise<AsyncListItems<string>>(() => {}))
+    );
     rerender();
 
     expect(run).toHaveBeenCalledTimes(1);

@@ -1,6 +1,8 @@
 import styled from '@emotion/styled';
 import type { JSX } from 'react';
 
+import type { UILiveStatusProps } from '@/components/types/ui-live-status';
+
 const visuallyHidden = {
   border: 0,
   clip: 'rect(0 0 0 0)',
@@ -15,7 +17,7 @@ const visuallyHidden = {
 
 const VisuallyHiddenStatus = styled('span')(visuallyHidden);
 
-export default function UILiveStatus({ message }: { message: string }): JSX.Element {
+export default function UILiveStatus({ message }: UILiveStatusProps): JSX.Element {
   return (
     <VisuallyHiddenStatus role="status" aria-atomic="true">
       {message}

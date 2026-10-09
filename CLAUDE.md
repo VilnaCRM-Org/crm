@@ -754,7 +754,10 @@ base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in
 `FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
 `libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
+`/usr/local/lib/node_modules/serve` tree. `serve@14.2.6` pins `compression@1.8.1` exactly, which
+carries CVE-2026-87776, so the `serve-tools` stage sets `dependencies.compression` to `1.8.2` in
+the installed package and re-runs a production-only `npm install`; drop that step once a `serve`
+release ships the fix. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
@@ -1426,6 +1429,68 @@ ignored return value, throw the constructed error. Never `eslint-disable` (the
 to clear a finding; a rule that turns out noisy is removed by a reviewed change to this section,
 the list and its fixtures together.
 
+### Typed boundaries (TB-1, issue #332, ADR-022)
+
+Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
+file, a class, or a named alias in a type-only file whose whole body is a union of named types or
+literals, a callback type, or one generic or derived type over named arguments. The boundary
+positions are component props, exported hook parameters and results, the constructor, method
+parameters, return types and non-private properties of Data provider, Transformer, Repository,
+State, Guard and Factory classes, DI-registered values, published state, events and telemetry
+payloads, and every member of an interface in a type-only file. The gate fails at those
+positions:
+
+- **(a)** an anonymous object type, including an object member of a union — each variant is a
+  named `interface`, and `type X = { … }` is an `interface`;
+- **(b)** a tuple;
+- **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
+  collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
+  and an array of primitives never crosses;
+- **(d)** `any`, `object`, `Record<…>`, an index signature, a string-keyed mapped type
+  (`{ [k in string]: T }`), or `unknown` — `unknown` stays only as the parameter of a method that
+  narrows a caught error, and as an `error` / `cause` member;
+- **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
+  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+
+Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
+`AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
+types that obey the rule, and `T | null` / `T | undefined`. Exceptions: generated codegen types
+stay below the Data provider (review item), `declare module` blocks and `.d.ts` files, and
+private or function-local values.
+
+**Enforcement.** Two `no-restricted-syntax` arrays are built by
+[`config/typed-boundary-policy.js`](config/typed-boundary-policy.js), the single source for the
+config and the fixtures: `typedBoundarySelectors` (five code entries) is spread into **every**
+`src` block that sets the rule — flat config replaces the rule per file, and the hooks block
+needs it too, since hooks are exempt from #100 but not from TB-1 — and
+`typedBoundaryTypeFileSelectors` (five entries) into the type-only block, rooted at `Program`
+so a `declare module` augmentation is never matched. `@typescript-eslint/consistent-type-definitions`
+is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
+
+**Gate integrity.** [`scripts/ci/eslint-gate-fixtures.mjs`](scripts/ci/eslint-gate-fixtures.mjs)
+carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
+function or arrow exported later, a non-private class arrow property), and the must-pass controls
+(a named collection interface, a private method, a `#private` arrow property, `normalize(error:
+unknown)`, a `declare module`, a named derivation, a mapped type over a named key union). The
+universe test fails a selector edited without its fixture, asserts every `src` code probe resolves
+all five code selectors, and `tests/unit/config/eslint-policy.test.ts` pins each array on every
+block, the base `src` block included.
+[`tests/unit/tooling/typed-boundary-alternatives.test.ts`](tests/unit/tooling/typed-boundary-alternatives.test.ts)
+lints a snippet for every holder × position alternative and every type-file root the policy
+generates, so a single dead alternative fails by name.
+
+**Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
+alias. A function expression on a top-level `const`, an `export { x as default }` of a nested
+function, an inline callback inside a parameter's own interface, test-builder return values and
+the generated-types exception are review items. An `unknown` **parameter** in a code file is not
+gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so
+(d) gates `unknown` as a code-file return and class property, and in type-only files as a member
+or a method / call-signature return; an `unknown` parameter outside a narrowing method is a
+review item.
+
+**No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
+cast, an allowlist entry or a narrower glob.
+
 ### Test liveness (issue #167)
 
 The Jest 100/100/100/100 `coverageThreshold` measures execution, not verification: a test
@@ -1858,7 +1923,7 @@ export class AuthStateVar {
   public get(): AuthState {
     /* read */
   }
-  public set(partial: Partial<AuthState>): void {
+  public set(partial: AuthStatePatch): void {
     /* merge + notify */
   }
 }
@@ -2028,6 +2093,7 @@ type files, stories, tests) must end in one of these:
 | `*Factory`     | encapsulated construction                   | GoF Factory                       |
 | `*Builder`     | step-wise construction of an object         | GoF Builder                       |
 | `*Mapper`      | translation between representations         | PoEAA Data Mapper                 |
+| `*Transformer` | translates transport payloads into outcomes | Miro Transformer (#332)           |
 | `*Adapter`     | conforms one interface to another           | GoF Adapter                       |
 | `*Strategy`    | interchangeable algorithm                   | GoF Strategy                      |
 | `*Handler`     | processes a request or event                | Chain of Responsibility           |
@@ -2064,7 +2130,6 @@ type files, stories, tests) must end in one of these:
 | `*Correlation` | session-scoped correlation identifier       | DDD Value Object (#159)           |
 | `*Deadline`    | time-bounded abort scope of one request     | gRPC / Go context deadline (#147) |
 | `*Navigator`   | adapter over browser navigation             | GoF Adapter (window)              |
-| `*Controller`  | coordinates a UI interaction flow           | MVC Controller                    |
 | `*Error`       | thrown error class                          | JavaScript Error subclass         |
 | `*Errors`      | catalog of error constructors or codes      | repo idiom                        |
 | `*Signal`      | error subclass carrying one typed event     | repo idiom (#159)                 |

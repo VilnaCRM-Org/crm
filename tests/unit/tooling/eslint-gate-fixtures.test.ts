@@ -36,6 +36,7 @@ interface GateReport {
   probes: Record<string, { severity: number; selectors: string[] }>;
   universe: string[];
   fixtures: FixtureResult[];
+  typedBoundary: { code: string[]; typeFile: string[]; codeProbes: string[] };
 }
 
 const report: GateReport = JSON.parse(
@@ -60,6 +61,31 @@ describe('custom ESLint selector coverage (issue #189)', () => {
           'TSInterfaceDeclaration', // #88 (logic files)
           'VariableDeclaration:not([declare=true])', // #88 (type-only files)
         ])
+      );
+    });
+  });
+
+  describe('TB-1 scope: typed-boundary arrays reach every rule-replacing block (#332)', () => {
+    it('ships five code entries and five type-file entries', () => {
+      expect(report.typedBoundary.code).toHaveLength(5);
+      expect(report.typedBoundary.typeFile).toHaveLength(5);
+    });
+
+    it.each(report.typedBoundary.codeProbes)(
+      'code probe %s resolves all five typed-boundary code selectors',
+      (name) => {
+        expect(report.probes[name]?.selectors).toEqual(
+          expect.arrayContaining(report.typedBoundary.code)
+        );
+      }
+    );
+
+    it('the type-only probe resolves all five type-file selectors and no code selector', () => {
+      const selectors = report.probes.typeOnly?.selectors ?? [];
+
+      expect(selectors).toEqual(expect.arrayContaining(report.typedBoundary.typeFile));
+      expect(selectors.filter((selector) => report.typedBoundary.code.includes(selector))).toEqual(
+        []
       );
     });
   });

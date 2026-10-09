@@ -217,13 +217,13 @@ describe('ErrorHandler', () => {
       });
     });
 
-    describe('error with original property', () => {
-      it('should handle error with original Error object', () => {
+    describe('error with cause property', () => {
+      it('should handle error with cause Error object', () => {
         const originalError = new Error('Original error');
         const error: ParsedError = {
           code: ERROR_CODES.AUTH_INVALID,
           message: 'Auth failed',
-          original: originalError,
+          cause: originalError,
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -234,12 +234,12 @@ describe('ErrorHandler', () => {
         });
       });
 
-      it('should handle error with original as object', () => {
-        const original = { status: 401, message: 'Unauthorized' };
+      it('should handle error with cause as object', () => {
+        const cause = { status: 401, message: 'Unauthorized' };
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_401,
           message: 'Unauthorized',
-          original,
+          cause,
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -250,11 +250,11 @@ describe('ErrorHandler', () => {
         });
       });
 
-      it('should handle error with original as string', () => {
+      it('should handle error with cause as string', () => {
         const error: ParsedError = {
           code: ERROR_CODES.JS_ERROR,
           message: 'JS error',
-          original: 'string error',
+          cause: 'string error',
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -265,11 +265,11 @@ describe('ErrorHandler', () => {
         });
       });
 
-      it('should handle error with original as server error', () => {
+      it('should handle error with cause as server error', () => {
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_500,
           message: 'Server error',
-          original: { status: 500, data: 'error' },
+          cause: { status: 500, data: 'error' },
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -378,7 +378,7 @@ describe('ErrorHandler', () => {
         const error: ParsedError = {
           code: ERROR_CODES.AUTH_INVALID,
           message: 'Invalid email or password',
-          original: new Error('Login failed'),
+          cause: new Error('Login failed'),
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -393,7 +393,7 @@ describe('ErrorHandler', () => {
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_401,
           message: 'Session expired',
-          original: { status: 401, message: 'Token expired' },
+          cause: { status: 401, message: 'Token expired' },
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -408,7 +408,7 @@ describe('ErrorHandler', () => {
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_500,
           message: 'Database connection failed',
-          original: new Error('Connection timeout'),
+          cause: new Error('Connection timeout'),
         };
 
         const result = errorHandler.handleAuthError(error);
@@ -423,7 +423,7 @@ describe('ErrorHandler', () => {
         const error: ParsedError = {
           code: ERROR_CODES.JS_ERROR,
           message: 'Network request failed',
-          original: new TypeError('Failed to fetch'),
+          cause: new TypeError('Failed to fetch'),
         };
 
         const result = errorHandler.handleAuthError(error);

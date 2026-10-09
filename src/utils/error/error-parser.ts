@@ -4,7 +4,7 @@ import { ApiError } from '@/modules/user';
 import type ParsedError from '@/utils/error/types';
 import type { Matcher } from '@/utils/types/error/error-parser';
 
-const UNKNOWN_ERROR: Omit<ParsedError, 'original'> = {
+const UNKNOWN_ERROR: Omit<ParsedError, 'cause'> = {
   code: 'UNKNOWN_ERROR',
   message: 'An unknown error occurred',
 };
@@ -22,7 +22,7 @@ export default class ErrorParser {
           return {
             code: `HTTP_${response.status}`,
             message: `HTTP error ${response.status}`,
-            original: response,
+            cause: response,
           };
         },
       },
@@ -30,14 +30,14 @@ export default class ErrorParser {
         match: (error): boolean => error instanceof ApiError,
         parse: (error): ParsedError => {
           const apiError = error as ApiError;
-          return { code: apiError.code, message: apiError.message, original: apiError };
+          return { code: apiError.code, message: apiError.message, cause: apiError };
         },
       },
       {
         match: (error): boolean => error instanceof Error,
         parse: (error): ParsedError => {
           const jsError = error as Error;
-          return { code: 'JS_ERROR', message: jsError.message, original: jsError };
+          return { code: 'JS_ERROR', message: jsError.message, cause: jsError };
         },
       },
     ];
@@ -49,6 +49,6 @@ export default class ErrorParser {
 
   private parse(error: unknown): ParsedError {
     const matched = this.matchers.find((matcher) => matcher.match(error));
-    return matched ? matched.parse(error) : { ...UNKNOWN_ERROR, original: error };
+    return matched ? matched.parse(error) : { ...UNKNOWN_ERROR, cause: error };
   }
 }

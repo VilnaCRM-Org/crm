@@ -222,7 +222,7 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe(ApiErrorCodes.AUTH);
     expect(result.message).toBe('API error');
-    expect(result.original).toBe(error);
+    expect(result.cause).toBe(error);
   });
 
   it('should parse AuthenticationError with parseHttpError', () => {
@@ -239,7 +239,7 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe('JS_ERROR');
     expect(result.message).toBe('Test error message');
-    expect(result.original).toBe(error);
+    expect(result.cause).toBe(error);
   });
 
   it('should parse unknown error types', () => {
@@ -248,7 +248,7 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
-    expect(result.original).toBe(error);
+    expect(result.cause).toBe(error);
   });
 
   it('should parse null', () => {
@@ -256,7 +256,7 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
-    expect(result.original).toBeNull();
+    expect(result.cause).toBeNull();
   });
 
   it('should parse undefined', () => {
@@ -264,7 +264,7 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
-    expect(result.original).toBeUndefined();
+    expect(result.cause).toBeUndefined();
   });
 
   it('should parse number', () => {
@@ -272,7 +272,7 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
-    expect(result.original).toBe(123);
+    expect(result.cause).toBe(123);
   });
 
   it('should parse object', () => {
@@ -281,6 +281,6 @@ describe('ErrorParser', () => {
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
-    expect(result.original).toBe(error);
+    expect(result.cause).toBe(error);
   });
 });

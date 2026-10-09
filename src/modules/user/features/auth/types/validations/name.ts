@@ -1,1 +1,4 @@
-export type NameRule = { check: (value: string) => boolean; messageKey: string };
+export interface NameRule {
+  check: (value: string) => boolean;
+  messageKey: string;
+}
