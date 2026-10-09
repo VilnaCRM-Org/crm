@@ -55,7 +55,10 @@ interface RestrictedImportOptions {
 }
 
 const configs: Record<string, ResolvedConfig> = JSON.parse(
-  execFileSync('node', ['scripts/ci/print-eslint-policy-config.mjs'], { encoding: 'utf8' })
+  execFileSync('node', ['scripts/ci/print-eslint-policy-config.mjs'], {
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 16,
+  })
 );
 
 const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
@@ -64,6 +67,7 @@ const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
     JSON.parse(
       execFileSync('node', ['node_modules/eslint/bin/eslint.js', '--print-config', file], {
         encoding: 'utf8',
+        maxBuffer: 1024 * 1024 * 16,
       })
     ),
   ])
