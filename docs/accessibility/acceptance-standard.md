@@ -109,12 +109,14 @@ alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1).
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
 as the Figma frames draw them. axe does not evaluate `::placeholder`, so no exception entry
-exists for it. Every field keeps a visible label; the placeholders copy Figma verbatim
-(`vilnaCRM@gmail.com` and `Михайло Светський` are example values, not instructions), by the
-user's decision for issue #309.
+exists for it. Every field keeps a visible label; the placeholders copy Figma
+(`vilnaCRM@gmail.com` and `Михайло Светський` are example values, not instructions), apart from
+the password placeholder, which uses Ukrainian "Введіть пароль" instead of the frame's Russian
+text, by the user's decision for issue #309.
 
-The checked remember-me checkbox is the second such gap: the toolkit fill `#1EAEFF` and its white
-tick are 2.45:1 against white, under the 3:1 of SC 1.4.11, by the product owner's decision
+The checked remember-me checkbox is the second such gap: the toolkit fill `#1EAEFF` against the
+white page, and the white tick against that fill, are each 2.45:1, under the 3:1 of SC 1.4.11,
+by the product owner's decision
 (ui-toolkit DEV-67). axe's `color-contrast` rule does not evaluate non-text contrast, so no
 exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
 3:1.

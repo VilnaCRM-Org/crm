@@ -430,10 +430,11 @@ CRM-side delta sits on the seam: `src/index.css` paints every `a:visited` with
 colours still apply), as the error-page home link already does.
 
 **Accepted accessibility conflict.** The brand tone is 2.45:1 on white, and its toolkit hover
-`#297FFF` 3.77:1, both under the 4.5:1 of SC 1.4.3; the checked checkbox fill and its white tick
-are 2.45:1 against the 3:1 of SC 1.4.11. This is the product owner's explicit choice (toolkit
-DEV-67), and the conflict is accepted and recorded rather than open: the link now always renders
-on `/sign-in`, by the user's decision to remove the `forgotPassword` flag (#309). The axe route
+`#297FFF` 3.77:1, both under the 4.5:1 of SC 1.4.3; the checked checkbox fill against white, and
+its white tick against that fill, are each 2.45:1 against the 3:1 of SC 1.4.11. This is the
+product owner's explicit choice (toolkit DEV-67), and the conflict is accepted and recorded
+rather than open: the link now always renders on `/sign-in`, by the user's decision to remove
+the `forgotPassword` flag (#309). The axe route
 scan therefore sees it, and `A11Y_EXCEPTIONS` carries one `color-contrast` entry scoped to that
 link alone (`form a.MuiLink-root[href="/password-recovery"]`), tracked by CRM issue #276 —
 never a rule-wide exception. The entry is deleted when #276 closes or the link moves to the
