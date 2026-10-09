@@ -30,8 +30,10 @@ ESLint gate, fixes the about 115 existing sites, and aligns the class-naming suf
 Miro board. It lands first, before the #315, #330 and #331 feature bundles, so their new code is
 written against the gate and none of them carries a repo-wide refactor.
 
-The chore adds no runtime behaviour: every change is a type, a lint rule, a fixture, a test or a
-document.
+The chore adds no user-visible behaviour: every change is a type, a lint rule, a fixture, a test,
+a document, or a runtime reshape that TB-1 itself requires — a list crossing a boundary becomes a
+named collection's `items`, and an `unknown` member not named `error` / `cause` is renamed. Each
+reshape is listed in the architecture §5, and every caller and test moves with it.
 
 ## 2. Goals and non-goals
 
@@ -164,8 +166,9 @@ Two fixes carry names #331 builds on: `AuthResult<T> = AuthOkResult<T> | AuthFai
 
 ## 4. Non-functional requirements
 
-- **NFR-1 — No behaviour change.** Unit, integration, mutation, e2e and visual results are
-  unchanged; no baseline moves.
+- **NFR-1 — No user-visible behaviour change.** Every unit, integration, e2e, visual, Lighthouse
+  and a11y suite stays green, no visual or Lighthouse baseline moves, and the mutation gate stays
+  at 100% over the files the TB-1 reshapes touch (architecture §5).
 - **NFR-2 — No suppression.** No `eslint-disable`, cast, `!`, `@ts-expect-error`, `any`,
   allowlist entry, `warn` downgrade or narrowed glob.
 - **NFR-3 — Gates green.** `make lint` passes, including `lint-docs`, `lint-md` and the ADR-drift

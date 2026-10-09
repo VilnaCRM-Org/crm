@@ -76,3 +76,7 @@ Verdict: PASS
 
 - Final check (2026-10-08): the `src/services/*` non-goal now reads "no rename or restructure";
   its 29 TB-1 sites are in Story 1.2's burn-down (27 criteria); the DoD is inlined; PASS.
+- Post-implementation (2026-10-09): the FR/NFR gate found that TB-1 itself forces runtime
+  reshapes (named collections' `items`, `original` → `cause`), which contradicted the "no runtime
+  behaviour" wording. PRD §1 / NFR-1, architecture §1, §5 and §9 and two Story 1.2 criteria now
+  say "no user-visible behaviour" and list every reshape; PASS stands.

@@ -40,7 +40,8 @@ verified against the versions `bun.lock` resolves, ESLint 9.39.5 and parser 8.71
 
 One lint gate, written in the repository's existing `no-restricted-syntax` style, plus one
 stock rule. Each part lands at `error` on a clean tree in the same change that fixes its sites,
-so no allowlist, `warn` tier or narrowed glob ever exists. Nothing changes at runtime.
+so no allowlist, `warn` tier or narrowed glob ever exists. Nothing user-visible changes; the
+runtime reshapes TB-1 forces are listed in §5.
 
 ## 2. The rule (TB-1)
 
@@ -245,6 +246,22 @@ export type AuthStatePatch = Partial<AuthState>;
 An `interface` is not assignable to an index-signature type where the equivalent alias was; the
 receiving type is then named, never cast.
 
+**Runtime reshapes TB-1 forces.** Where TB-1 forbids a value's runtime shape, the value is
+reshaped rather than exempted. No user-visible output changes, and every caller and test moves
+with it:
+
+- (c) `FeatureFlagService.names()` returns `FeatureFlagNames { items }`.
+- (d) `RequestConfig.headers` is `RequestHeaders { items: RequestHeader[] }`;
+  `HttpRequestConfigBuilder` maps it to the `fetch` header record privately.
+- (d) `ParsedError.original` is renamed `cause` (`error-parser`, `auth-error-factory`).
+- (c) `AuthRequestErrors.createValidationUiError` takes `ValidationMessageSet { items }`.
+- (c) `OAuthProviders.list()` returns `OAuthProviderList { items }`.
+- (c) `RouteComposer.compose` and `RouteValidator.validate` take `RouteModuleRegistry`, and
+  `compose` returns `ComposedRoutes { items }`.
+- (c) the `useAsyncList` loader, and the scaffold templates, resolve `AsyncListLoad { items }`.
+- (d) `BoundaryErrorReporter.report` drops its `String()` coercion: `CaptureContext.surface` is
+  now typed `string`, so no other value can reach it.
+
 `src/services/*` is not renamed, moved or restructured. Its TB-1 sites (29 of the 127 dry-run
 entries, in 13 files) are fixed type-only, like every other site.
 
@@ -289,8 +306,10 @@ entries, in 13 files) are fixed type-only, like every other site.
 ## 9. Gate compliance
 
 - **ADR drift:** ADR-022 lands in Story 1.1, before Story 1.2 touches `src/config/**`.
-- **Metrics, jscpd, mutation:** types and lint only; no function, branch or runtime value
-  changes, so no mutant is added or removed.
+- **Metrics, jscpd, mutation:** the TB-1 reshapes of §5 add and remove a few mutants (a
+  collection's `items` access, the `toHeaderMap` loop, the dropped `String()` coercion); the
+  incremental mutation gate re-scores those files and must stay at 100%, and the metrics and
+  jscpd gates run over them as usual.
 - **Visual:** no rendered output changes.
 - **Ratchet (#188):** `tsconfig.json` flags and every budget stay; the gate only adds.
 
