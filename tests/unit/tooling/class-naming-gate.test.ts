@@ -38,6 +38,27 @@ const lint = (code: string): string[] =>
 const messagesFor = (code: string, marker: string): number =>
   lint(code).filter((message) => message.includes(marker)).length;
 
+const ROLE_ROW = /^\| `\*(\w+)`\s*\| (.+?)\s*\| .+\|$/;
+
+const roleTableRows = (markdown: string): Array<{ suffix: string; role: string }> =>
+  markdown
+    .slice(markdown.indexOf('| Suffix'))
+    .split('\n')
+    .map((line) => ROLE_ROW.exec(line))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map(([, suffix = '', role = '']) => ({ suffix, role }));
+
+const listSourceFiles = (directory: string): string[] =>
+  fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      return listSourceFiles(entryPath);
+    }
+
+    return /\.tsx?$/.test(entry.name) ? [entryPath] : [];
+  });
+
 const UNNAMED = 'Unnamed class';
 const VAGUE = 'Vague class name';
 const BARE = 'Domain-less Service';
@@ -140,6 +161,16 @@ describe('class-naming policy (issue #129) — the real ESLint selectors compile
     }
   );
 
+  it('approves a Transformer with a domain noun and rejects a bare one (issue #332)', () => {
+    expect(lint('class PasswordRecoveryTransformer {}')).toEqual([]);
+    expect(messagesFor('class Transformer {}', UNSUFFIXED)).toBe(1);
+  });
+
+  it('no longer approves a Controller, so no frontend controller can be named (#332)', () => {
+    expect(policy.APPROVED_SUFFIXES.map((entry) => entry.suffix)).not.toContain('Controller');
+    expect(messagesFor('class ResetPasswordController {}', UNSUFFIXED)).toBe(1);
+  });
+
   it('matches the suffix as a whole word at the end, not anywhere inside the name', () => {
     expect(messagesFor('class ManagerOfLogins {}', VAGUE)).toBe(0);
     expect(messagesFor('class ManagerOfLogins {}', UNSUFFIXED)).toBe(1);
@@ -164,6 +195,23 @@ describe('class-naming policy (issue #129) — wiring and documentation', () => 
       expect(section).toContain(`| \`*${entry.suffix}\``);
       expect(section).toContain(entry.role);
     });
+  });
+
+  it.each(['CLAUDE.md', '.github/copilot-instructions.md'])(
+    'mirrors the policy row for row in the %s role table',
+    (file) => {
+      expect(roleTableRows(readRepoFile(file))).toEqual(
+        policy.APPROVED_SUFFIXES.map(({ suffix, role }) => ({ suffix, role }))
+      );
+    }
+  );
+
+  it('leaves no class in src/ named with the retired Controller suffix', () => {
+    const offenders = listSourceFiles(path.join(repoRoot, 'src')).filter((file) =>
+      /\bclass\s+\w*Controller\b/.test(fs.readFileSync(file, 'utf-8'))
+    );
+
+    expect(offenders).toEqual([]);
   });
 
   it('documents every banned name in CLAUDE.md', () => {

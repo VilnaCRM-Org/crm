@@ -19,6 +19,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-015: TypeScript strictness is ratcheted flag-by-flag, gated against regression](./015-typescript-strictness-ratchet.md)
 - [ADR-016: UI toolkit installed from a digest-verified tarball and consumed through CRM seams](./016-ui-toolkit-installation.md)
 - [ADR-017: The MUI theme engine loads with the page chunk, not before first paint](./017-mui-theme-off-the-eager-path.md)
+- [ADR-022: Every value that crosses a layer carries a named type, gated by ESLint](./022-typed-boundaries.md)
 
 ## Writing a new ADR
 
