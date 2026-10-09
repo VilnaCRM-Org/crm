@@ -1,5 +1,6 @@
 import observabilityCore from '@/services/observability/observability-core';
-import { AuthStateVar, authActions } from '@auth/stores';
+import { useAuthStore, authActions } from '@auth/stores';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 describe('auth stores composition root', () => {
   let clearSpy: jest.SpyInstance;
@@ -10,7 +11,7 @@ describe('auth stores composition root', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
-    AuthStateVar.reset();
+    resetClientStores();
   });
 
   it('clears the observability identity on logout', () => {
@@ -27,6 +28,6 @@ describe('auth stores composition root', () => {
     authActions.logout();
     authActions.reset();
 
-    expect(AuthStateVar.get()).toMatchObject({ token: null, user: null, loginError: null });
+    expect(useAuthStore.getState()).toMatchObject({ token: null, user: null, loginError: null });
   });
 });

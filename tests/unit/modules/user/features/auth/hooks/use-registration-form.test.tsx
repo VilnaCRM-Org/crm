@@ -1,12 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 
 import useRegistrationForm from '@auth/hooks/use-registration-form';
-import { AuthStateVar } from '@auth/stores';
+import { useAuthStore } from '@auth/stores';
 import { buildRegistrationResponse } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 describe('useRegistrationForm', () => {
   beforeEach(() => {
-    AuthStateVar.reset();
+    resetClientStores();
   });
 
   it('exposes registration state and handlers, starting on the form view', () => {
@@ -24,7 +25,7 @@ describe('useRegistrationForm', () => {
 
   it('reports the store error through errorText and notifies view change subscribers', () => {
     const onViewChange = jest.fn();
-    AuthStateVar.set({
+    useAuthStore.setState({
       registerError: { kind: 'unknown', displayMessage: 'boom', retryable: false },
     });
 
@@ -37,7 +38,7 @@ describe('useRegistrationForm', () => {
   });
 
   it('keeps showSubmitLoader on while the request is in flight', () => {
-    AuthStateVar.set({ registerLoading: true });
+    useAuthStore.setState({ registerLoading: true });
 
     const { result } = renderHook(() => useRegistrationForm());
 
@@ -46,7 +47,7 @@ describe('useRegistrationForm', () => {
   });
 
   it('keeps showSubmitLoader on after success until the result is cleared', () => {
-    AuthStateVar.set({
+    useAuthStore.setState({
       registerLoading: false,
       user: buildRegistrationResponse(),
     });

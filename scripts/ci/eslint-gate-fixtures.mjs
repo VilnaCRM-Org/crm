@@ -26,7 +26,6 @@ const PROBES = {
   env: 'src/config/env/__probe__.ts', // env config (#112 process.env)
   routes: 'src/routes/__probe__.tsx', // route shell (#116 route-object shape)
   routerSite: 'src/routes/routes.tsx', // the ONLY sanctioned createBrowserRouter site (#116)
-  stateBridgeSite: 'src/lib/state/use-reactive-var.ts', // the ONLY sanctioned useSyncExternalStore bridge (#110)
 };
 
 const UI_TOOLKIT_SEAMS = {
@@ -923,15 +922,6 @@ const FIXTURES = [
   },
   // Must-PASS exemptions
   {
-    id: 'use-sync-external-store-bridge-site-exempt',
-    file: PROBES.stateBridgeSite,
-    code: "import { useSyncExternalStore } from 'react';\nexport default function useReactiveVar() { return useSyncExternalStore(() => () => {}, () => 1); }",
-    covers: [],
-    expect: 'pass',
-    rule: 'no-restricted-syntax',
-    tag: '',
-  },
-  {
     id: 'router-factory-import-routes-site-exempt',
     file: PROBES.routerSite,
     code: "import { createBrowserRouter } from 'react-router';\nexport default createBrowserRouter([]);",
@@ -942,7 +932,7 @@ const FIXTURES = [
   },
   // Client-state primitive (#110, ADR-008, ADR-023) — a Zustand store in a hook passes, and a
   // hand-rolled useSyncExternalStore subscription (named import, aliased import, React.member)
-  // fails in a component, a logic file and a hook alike; only the one sanctioned bridge passes.
+  // fails in a component, a logic file and a hook alike; no file is exempt.
   {
     id: 'zustand-create-hook-allowed',
     file: PROBES.hook,

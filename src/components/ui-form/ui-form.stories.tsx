@@ -4,7 +4,7 @@ import { useFormContext } from 'react-hook-form';
 
 import UIForm from '@/components/ui-form';
 import UIFormInputField from '@/components/ui-form-input-field';
-import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
+import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 
 type DemoValues = { email: string };
 
@@ -80,8 +80,8 @@ export const SubmitDisabled: Story = {
 
 export const Offline: Story = {
   beforeEach: () => {
-    connectivityStateVar.setOnline(false);
-    return (): void => connectivityStateVar.setOnline(true);
+    useConnectivityStore.setState({ online: false });
+    return (): void => useConnectivityStore.setState({ online: true });
   },
   parameters: {
     docs: {

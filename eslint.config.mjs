@@ -364,8 +364,7 @@ const routeObjectShapeSelectors = [
 // store hook, so a store cannot hand-roll its own `useSyncExternalStore` subscription — as a named
 // or aliased import, a `React.` member, a computed `React['…']` member, or a destructured
 // property. Re-included in EVERY src-scoped block, like the router-construction selectors,
-// because flat config replaces `no-restricted-syntax` per file; `src/lib/state/use-reactive-var.ts`
-// still gets its own block below that omits exactly these selectors until Story 1.2 deletes it.
+// because flat config replaces `no-restricted-syntax` per file; no file is exempt.
 const clientStateSelectors = [
   {
     selector:
@@ -1196,24 +1195,6 @@ export default [
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
         ...clientStateSelectors,
-      ],
-    },
-  },
-
-  // Source (issue #110): `src/lib/state/use-reactive-var.ts` IS the sanctioned
-  // `useSyncExternalStore` bridge, so the client-state selectors are lifted here (and only
-  // here). Every other selector the hooks block carries is re-included (flat config replaces,
-  // does not merge), and the block is ordered after the hooks block so it wins for this file.
-  {
-    files: ['src/lib/state/use-reactive-var.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...dataTestidSelectors,
-        ...typeDeclarationSelectors,
-        ...noProcessEnvSelectors,
-        ...noRawIntlSelectors,
-        ...routerConstructionSelectors,
       ],
     },
   },

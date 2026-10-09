@@ -10,9 +10,10 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 
 import SignIn from '@/modules/user/features/auth/routes/sign-in';
 import ROUTE_PATHS from '@/routes/route-paths';
-import authStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import { buildToken } from '@tests/builders';
 import renderWithProviders, { testI18n, testTheme } from '@tests/unit/utils/render-with-providers';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 jest.mock('@auth/components/form-section/auth-forms/use-login-submitter', () => ({
   __esModule: true,
@@ -97,7 +98,7 @@ describe('SignIn page', () => {
   });
 
   describe('post-login redirect (issue #150)', () => {
-    beforeEach(() => authStateVar.reset());
+    beforeEach(() => resetClientStores());
 
     it('returns to the preserved protected destination once a token arrives', async () => {
       renderSignInRoute();
@@ -106,7 +107,7 @@ describe('SignIn page', () => {
       ).toBeInTheDocument();
       expect(screen.queryByText(DESTINATION_TEXT)).not.toBeInTheDocument();
 
-      act(() => authStateVar.set({ token: buildToken() }));
+      act(() => useAuthStore.setState({ token: buildToken() }));
 
       expect(await screen.findByText(DESTINATION_TEXT)).toBeInTheDocument();
       expect(
@@ -115,7 +116,7 @@ describe('SignIn page', () => {
     });
 
     it('stays on the sign-in page when it mounts with a token already present', async () => {
-      authStateVar.set({ token: buildToken() });
+      useAuthStore.setState({ token: buildToken() });
 
       renderSignInRoute();
 
