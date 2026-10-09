@@ -423,7 +423,11 @@ focus outline on `:focus-visible`. `appearance="text"` drops the fixed 1130 px f
 `src/components/ui-text-link` (`UITextLink`, `href` and `children` only), used by the
 sign-in "Забули пароль?" link, which renders unconditionally since the `forgotPassword` flag was
 removed (#309). It points at `/password-recovery`, which lands on the not-found page until #315
-registers the route. CRM's `ui-link` keeps its local seam and stays on the register.
+registers the route. CRM's `ui-link` keeps its local seam and stays on the register. One
+CRM-side delta sits on the seam: `src/index.css` paints every `a:visited` with
+`--mui-palette-deep-blue`, which outranks the toolkit's class-only colour, so the seam passes
+`sx` that keeps `#1EAEFF` on `:visited:not(:hover):not(:active)` (the toolkit hover and active
+colours still apply), as the error-page home link already does.
 
 **Accepted accessibility conflict.** The brand tone is 2.45:1 on white, and its toolkit hover
 `#297FFF` 3.77:1, both under the 4.5:1 of SC 1.4.3; the checked checkbox fill and its white tick

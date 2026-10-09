@@ -17,6 +17,7 @@ describe('UITextLink seam', () => {
       href: '/password-recovery',
       appearance: 'text',
       tone: 'brand',
+      sx: { '&:visited:not(:hover):not(:active)': { color: '#1EAEFF' } },
       children: 'Forgot password?',
     });
   });

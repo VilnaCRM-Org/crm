@@ -336,7 +336,7 @@
             "required": "Це поле обов'язкове"
           },
           "password_input": {
-            "placeholder": "Введите пароль",
+            "placeholder": "Введіть пароль",
             "label": "Пароль"
           },
           "submit_button": "Увійти до аккаунту",

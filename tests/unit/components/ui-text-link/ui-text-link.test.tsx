@@ -48,4 +48,15 @@ describe('UITextLink', () => {
     expect(focusStyle?.getPropertyValue('outline-offset')).toBe('2px');
     expect(pointerFocusStyle?.getPropertyValue('outline')).toBe('none');
   });
+
+  it('keeps the brand colour once the link is visited', () => {
+    render(<UITextLink href="/password-recovery">{label}</UITextLink>);
+
+    const visitedStyle = ruleFor(
+      screen.getByRole('link', { name: label }),
+      ':visited:not(:hover):not(:active)'
+    );
+
+    expect(visitedStyle?.getPropertyValue('color')).toBe('#1EAEFF');
+  });
 });
