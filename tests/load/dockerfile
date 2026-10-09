@@ -14,7 +14,7 @@ RUN xk6 build \
     --with github.com/avitalique/xk6-file@v1.5.0
 
 FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
-RUN apk add --no-cache ca-certificates=20260909-r0 tzdata=2026d-r0 \
+RUN apk add --no-cache ca-certificates=20260909-r0 tzdata=2026e-r0 \
     && addgroup -g 1000 k6 \
     && adduser -u 1000 -G k6 -D k6 \
     && mkdir -p /loadTests/results \
