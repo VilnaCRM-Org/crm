@@ -1,6 +1,6 @@
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
-import AuthStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository, LoginResult, RegisterResult } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
@@ -13,6 +13,7 @@ import {
   buildToken,
   buildUser,
 } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const FALLBACK_MESSAGE = 'Handled by the auth error handler';
 
@@ -69,7 +70,7 @@ const makeActions = (over: Partial<AuthRepository>): AuthStoreActions =>
       ...over,
     } as unknown as AuthRepository,
     authRequestErrors,
-    authState: AuthStateVar,
+    authState: useAuthStore,
     securitySignals,
   });
 
@@ -82,28 +83,28 @@ const rejectRegister = (error: unknown): Promise<void> =>
 const staleLoginError: AuthError = { kind: 'server', displayMessage: 'stale', retryable: false };
 
 describe('AuthStoreActions in-flight state', () => {
-  beforeEach(() => AuthStateVar.reset());
-  afterEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
+  afterEach(() => resetClientStores());
 
   it('flags login as loading and clears the previous error before awaiting', async () => {
-    AuthStateVar.set({ loginLoading: false, loginError: staleLoginError });
+    useAuthStore.setState({ loginLoading: false, loginError: staleLoginError });
     const deferred = defer<LoginResult>();
 
     const pending = makeActions({
       login: jest.fn().mockReturnValue(deferred.promise),
     }).login(credentials);
 
-    expect(AuthStateVar.get().loginLoading).toBe(true);
-    expect(AuthStateVar.get().loginError).toBeNull();
+    expect(useAuthStore.getState().loginLoading).toBe(true);
+    expect(useAuthStore.getState().loginError).toBeNull();
 
     deferred.settle({ ok: true, value: { email, token } });
     await pending;
 
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, token, email });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, token, email });
   });
 
   it('flags registration as loading and clears the previous error and user', async () => {
-    AuthStateVar.set({
+    useAuthStore.setState({
       registerLoading: false,
       registerError: staleLoginError,
       user: { email, fullName },
@@ -114,34 +115,37 @@ describe('AuthStoreActions in-flight state', () => {
       register: jest.fn().mockReturnValue(deferred.promise),
     }).register(registration);
 
-    expect(AuthStateVar.get().registerLoading).toBe(true);
-    expect(AuthStateVar.get().registerError).toBeNull();
-    expect(AuthStateVar.get().user).toBeNull();
+    expect(useAuthStore.getState().registerLoading).toBe(true);
+    expect(useAuthStore.getState().registerError).toBeNull();
+    expect(useAuthStore.getState().user).toBeNull();
 
     deferred.settle({ ok: true, value: { email, fullName } });
     await pending;
 
-    expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, user: { email, fullName } });
+    expect(useAuthStore.getState()).toMatchObject({
+      registerLoading: false,
+      user: { email, fullName },
+    });
   });
 
   it('lands registration back on a settled, not-loading state after a rejection', async () => {
     await rejectRegister(new Error('boom'));
 
-    expect(AuthStateVar.get().registerLoading).toBe(false);
-    expect(AuthStateVar.get().registerError).toEqual(NORMALIZED);
+    expect(useAuthStore.getState().registerLoading).toBe(false);
+    expect(useAuthStore.getState().registerError).toEqual(NORMALIZED);
   });
 });
 
 describe('AuthStoreActions auth-error recognition', () => {
-  beforeEach(() => AuthStateVar.reset());
-  afterEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
+  afterEach(() => resetClientStores());
 
   it('passes a fully shaped auth error through untouched', async () => {
     const error: AuthError = { kind: 'validation', displayMessage: 'Bad input', retryable: false };
 
     await rejectLogin(error);
 
-    expect(AuthStateVar.get().loginError).toEqual(error);
+    expect(useAuthStore.getState().loginError).toEqual(error);
   });
 
   it.each([
@@ -163,13 +167,13 @@ describe('AuthStoreActions auth-error recognition', () => {
   ])('rewrites the kind of a rejection whose %s', async (_label, error, expected) => {
     await rejectLogin(error);
 
-    expect(AuthStateVar.get().loginError).toEqual(expected);
+    expect(useAuthStore.getState().loginError).toEqual(expected);
   });
 
   it('normalizes a null rejection without dereferencing it', async () => {
     await expect(rejectLogin(null)).resolves.toBeUndefined();
 
-    expect(AuthStateVar.get().loginError).toEqual(NORMALIZED);
+    expect(useAuthStore.getState().loginError).toEqual(NORMALIZED);
   });
 
   it('normalizes a callable rejection even when it carries the auth-error shape', async () => {
@@ -181,32 +185,32 @@ describe('AuthStoreActions auth-error recognition', () => {
 
     await rejectLogin(callable);
 
-    expect(AuthStateVar.get().loginError).toEqual(NORMALIZED);
+    expect(useAuthStore.getState().loginError).toEqual(NORMALIZED);
   });
 });
 
 describe('AuthStoreActions abort recognition', () => {
-  beforeEach(() => AuthStateVar.reset());
-  afterEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
+  afterEach(() => resetClientStores());
 
   it('does not treat an aborted flag on a callable rejection as an abort', async () => {
     const callable = Object.assign(() => undefined, { aborted: true });
 
     await rejectLogin(callable);
 
-    expect(AuthStateVar.get().loginError).toEqual(NORMALIZED);
-    expect(AuthStateVar.get().loginLoading).toBe(false);
+    expect(useAuthStore.getState().loginError).toEqual(NORMALIZED);
+    expect(useAuthStore.getState().loginLoading).toBe(false);
   });
 
   it('does not treat a falsy aborted marker as an abort', async () => {
     await rejectLogin({ aborted: false, reason: 'declined' });
 
-    expect(AuthStateVar.get().loginError).toEqual(NORMALIZED);
+    expect(useAuthStore.getState().loginError).toEqual(NORMALIZED);
   });
 
   it('still treats a truthy aborted marker object as an abort', async () => {
     await rejectLogin({ aborted: true });
 
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 });

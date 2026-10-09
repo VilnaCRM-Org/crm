@@ -6,7 +6,7 @@ import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type LoginAPI from '@auth/repositories/login-api';
 import type RegistrationAPI from '@auth/repositories/registration-api';
-import { AuthStateVar, AuthStoreSelectors, authActions } from '@auth/stores';
+import { useAuthStore, AuthStoreSelectors, authActions } from '@auth/stores';
 import {
   buildClientMutationId,
   buildCredentials,
@@ -16,6 +16,7 @@ import {
   buildToken,
   buildUser,
 } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 import { PRELOADED_AUTH_TOKEN_WINDOW_KEY } from '@tests/utils/seed-preloaded-auth-token';
 
 import server, { GRAPHQL_URL } from '../../../../../mocks/server';
@@ -39,7 +40,7 @@ function createDelayedPromise(ms: number): Promise<void> {
 
 describe('Auth Store Integration', () => {
   beforeEach(() => {
-    authActions.reset();
+    resetClientStores();
   });
 
   afterEach(() => {
@@ -50,7 +51,7 @@ describe('Auth Store Integration', () => {
 
   describe('initial state', () => {
     it('should have correct initial state', () => {
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
 
       expect(state.email).toBe('');
       expect(state.token).toBeNull();
@@ -71,10 +72,10 @@ describe('Auth Store Integration', () => {
       );
 
       const promise = authActions.loginUser(buildCredentials());
-      expect(AuthStateVar.get().loginLoading).toBe(true);
+      expect(useAuthStore.getState().loginLoading).toBe(true);
 
       await promise;
-      expect(AuthStateVar.get().loginLoading).toBe(false);
+      expect(useAuthStore.getState().loginLoading).toBe(false);
     });
 
     it('should update state on successful login', async () => {
@@ -84,7 +85,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(credentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
 
       expect(state.loginLoading).toBe(false);
       expect(state.email).toBe(credentials.email);
@@ -97,7 +98,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser({ email: 'USER@TEST.COM', password: 'pass' });
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.email).toBe('user@test.com');
     });
 
@@ -109,13 +110,13 @@ describe('Auth Store Integration', () => {
       server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: firstToken })));
 
       await authActions.loginUser(firstCredentials);
-      expect(AuthStateVar.get().token).toBe(firstToken);
+      expect(useAuthStore.getState().token).toBe(firstToken);
 
       server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: secondToken })));
 
       await authActions.loginUser(secondCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.token).toBe(secondToken);
       expect(state.email).toBe(secondCredentials.email);
     });
@@ -131,7 +132,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.token).toBeNull();
       expect(state.loginError).toBeTruthy();
@@ -142,7 +143,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.token).toBeNull();
       expect(state.loginError).toBeTruthy();
@@ -157,7 +158,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser({ email: 'invalid', password: '123' });
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -170,14 +171,14 @@ describe('Auth Store Integration', () => {
       );
 
       await authActions.loginUser(buildCredentials());
-      expect(AuthStateVar.get().loginError).toBeTruthy();
+      expect(useAuthStore.getState().loginError).toBeTruthy();
 
       const newToken = buildToken();
       server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: newToken })));
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginError).toBeNull();
       expect(state.token).toBe(newToken);
     });
@@ -191,7 +192,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -209,7 +210,7 @@ describe('Auth Store Integration', () => {
 
         await authActions.loginUser(buildCredentials());
 
-        const state = AuthStateVar.get();
+        const state = useAuthStore.getState();
         expect(state.loginLoading).toBe(false);
         expect(state.loginError).toBeTruthy();
       }
@@ -223,12 +224,12 @@ describe('Auth Store Integration', () => {
       server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
 
       await authActions.loginUser(credentials);
-      expect(AuthStateVar.get().token).toBe(token);
-      expect(AuthStateVar.get().email).toBe(credentials.email);
+      expect(useAuthStore.getState().token).toBe(token);
+      expect(useAuthStore.getState().email).toBe(credentials.email);
 
       authActions.logout();
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.token).toBeNull();
       expect(state.email).toBe('');
       expect(state.loginError).toBeNull();
@@ -253,7 +254,7 @@ describe('Auth Store Integration', () => {
       abortController.abort();
       await promise;
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -267,7 +268,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
       expect(state.token).toBeNull();
@@ -278,7 +279,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginError).toBeTruthy();
       expect(state.token).toBeNull();
     });
@@ -290,7 +291,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
@@ -304,12 +305,12 @@ describe('Auth Store Integration', () => {
       );
 
       const promise = authActions.registerUser(registrationCredentials);
-      expect(AuthStateVar.get().registerLoading).toBe(true);
+      expect(useAuthStore.getState().registerLoading).toBe(true);
 
       await promise;
-      expect(AuthStateVar.get().registerLoading).toBe(false);
+      expect(useAuthStore.getState().registerLoading).toBe(false);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
@@ -334,7 +335,7 @@ describe('Auth Store Integration', () => {
         expect.stringContaining('https://go.apollo.dev/c/err')
       );
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -357,7 +358,7 @@ describe('Auth Store Integration', () => {
         issueCount: 1,
       });
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -371,7 +372,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -385,7 +386,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -395,7 +396,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -406,7 +407,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -422,7 +423,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials, abortController.signal);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
@@ -435,7 +436,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials(), abortController.signal);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -448,7 +449,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -461,7 +462,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -472,7 +473,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -483,7 +484,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -494,7 +495,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -505,7 +506,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -518,7 +519,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -532,7 +533,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(credentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(AuthStoreSelectors.email(state)).toBe(credentials.email);
       expect(AuthStoreSelectors.token(state)).toBe(token);
       expect(AuthStoreSelectors.loginLoading(state)).toBe(false);
@@ -542,19 +543,19 @@ describe('Auth Store Integration', () => {
       expect(AuthStoreSelectors.isAuthenticated(state)).toBe(true);
 
       authActions.logout();
-      const loggedOut = AuthStateVar.get();
+      const loggedOut = useAuthStore.getState();
       expect(AuthStoreSelectors.isAuthenticated(loggedOut)).toBe(false);
     });
 
     it('should select registerUser from state', async () => {
       const user = buildRegistrationResponse();
-      AuthStateVar.set({ user });
+      useAuthStore.setState({ user });
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(AuthStoreSelectors.registerUser(state)).toEqual(user);
 
-      AuthStateVar.set({ user: null });
-      expect(AuthStoreSelectors.registerUser(AuthStateVar.get())).toBeNull();
+      useAuthStore.setState({ user: null });
+      expect(AuthStoreSelectors.registerUser(useAuthStore.getState())).toBeNull();
     });
   });
 
@@ -569,7 +570,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(credentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.token).toBe(token);
       expect(state.email).toBe(credentials.email);
     });
@@ -582,13 +583,13 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
 
     it('resetRegistration clears registration fields; retryable selector reads it', async () => {
-      AuthStateVar.set({
+      useAuthStore.setState({
         token: 'keep-me',
         email: 'keep@me.com',
         user: { fullName: 'X', email: 'x@y.com' },
@@ -596,11 +597,11 @@ describe('Auth Store Integration', () => {
         registerLoading: true,
       });
 
-      expect(AuthStoreSelectors.registerRetryable(AuthStateVar.get())).toBe(true);
+      expect(AuthStoreSelectors.registerRetryable(useAuthStore.getState())).toBe(true);
 
       authActions.resetRegistration();
 
-      const state = AuthStateVar.get();
+      const state = useAuthStore.getState();
       expect(state.token).toBe('keep-me');
       expect(state.email).toBe('keep@me.com');
       expect(state.user).toBeNull();
@@ -617,7 +618,7 @@ describe('Auth Store Integration', () => {
       try {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
-          expect(mod.AuthStateVar.get().token).toBe(token);
+          expect(mod.useAuthStore.getState().token).toBe(token);
         });
       } finally {
         if (originalEnv === undefined) {
@@ -635,7 +636,7 @@ describe('Auth Store Integration', () => {
         window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = token;
         try {
           const mod = await import('@auth/stores');
-          expect(mod.AuthStateVar.get().token).toBe(token);
+          expect(mod.useAuthStore.getState().token).toBe(token);
         } finally {
           delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
         }
@@ -650,7 +651,7 @@ describe('Auth Store Integration', () => {
       try {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
-          expect(mod.AuthStateVar.get().token).toBe(token);
+          expect(mod.useAuthStore.getState().token).toBe(token);
         });
       } finally {
         if (originalEnv === undefined) {
@@ -674,8 +675,8 @@ describe('Auth Store Integration', () => {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
 
-          expect(mod.AuthStateVar.get().token).toBeNull();
-          expect(AuthStoreSelectors.isAuthenticated(mod.AuthStateVar.get())).toBe(false);
+          expect(mod.useAuthStore.getState().token).toBeNull();
+          expect(AuthStoreSelectors.isAuthenticated(mod.useAuthStore.getState())).toBe(false);
         });
       } finally {
         process.env.NODE_ENV = originalNodeEnv;

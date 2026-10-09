@@ -1,15 +1,16 @@
 import '../../../../../setup';
 
 import container from '@/config/dependency-injection-config';
-import { AuthStateVar, authActions } from '@auth/stores';
+import { useAuthStore, authActions } from '@auth/stores';
 import { buildCredentials, buildUser } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 import server, { defaultLoginResponse } from '../../../../../mocks/server';
 
 describe('deferred auth actions integration', () => {
   afterEach(() => {
     server.resetHandlers();
-    AuthStateVar.reset();
+    resetClientStores();
   });
 
   it('surfaces a retryable error when the DI graph fails to load, then recovers', async () => {
@@ -26,13 +27,13 @@ describe('deferred auth actions integration', () => {
       'Auth module failed to load; surfacing retryable error to the user.',
       chunkLoadFailure
     );
-    expect(AuthStateVar.get()).toMatchObject({
+    expect(useAuthStore.getState()).toMatchObject({
       loginLoading: false,
       loginError: { kind: 'network', retryable: true },
     });
 
     await authActions.registerUser(registration);
-    expect(AuthStateVar.get()).toMatchObject({
+    expect(useAuthStore.getState()).toMatchObject({
       registerLoading: false,
       registerError: { kind: 'network', retryable: true },
     });
@@ -42,7 +43,7 @@ describe('deferred auth actions integration', () => {
     resolveSpy.mockRestore();
 
     await authActions.loginUser(credentials);
-    expect(AuthStateVar.get().token).toBe(defaultLoginResponse.token);
+    expect(useAuthStore.getState().token).toBe(defaultLoginResponse.token);
     expect(consoleError).toHaveBeenCalledTimes(2);
   });
 });

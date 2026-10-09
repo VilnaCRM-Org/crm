@@ -3,9 +3,10 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import observabilityCore from '@/services/observability/observability-core';
 import { authActions } from '@auth/stores';
-import AuthStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import useSignOut from '@auth/stores/use-sign-out';
 import { buildToken } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const settlePendingPromises = (): Promise<void> =>
   new Promise((resolve) => {
@@ -13,10 +14,10 @@ const settlePendingPromises = (): Promise<void> =>
   });
 
 describe('useSignOut', () => {
-  beforeEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
   afterEach(() => {
     jest.restoreAllMocks();
-    act(() => AuthStateVar.reset());
+    act(() => resetClientStores());
   });
 
   it('starts with no sign-out in progress', () => {
@@ -27,7 +28,7 @@ describe('useSignOut', () => {
 
   it('marks the sign-out at once and logs out on the auth store singleton', async () => {
     const token = buildToken();
-    AuthStateVar.set({ token });
+    useAuthStore.setState({ token });
     const logout = jest.spyOn(authActions, 'logout');
     const { result } = renderHook(() => useSignOut());
 
@@ -38,13 +39,13 @@ describe('useSignOut', () => {
     expect(result.current.signedOut).toBe(true);
     await waitFor(() => expect(logout).toHaveBeenCalledTimes(1));
     expect(logout.mock.contexts[0]).toBe(authActions);
-    expect(AuthStateVar.get().token).toBeNull();
+    expect(useAuthStore.getState().token).toBeNull();
     expect(result.current.signedOut).toBe(true);
   });
 
   it('clears the sign-out and reports the error when the auth store cannot load', async () => {
     const token = buildToken();
-    AuthStateVar.set({ token });
+    useAuthStore.setState({ token });
     const error = new Error(buildToken());
     jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(error);
     const captureError = jest
@@ -62,6 +63,6 @@ describe('useSignOut', () => {
     expect(captureError).toHaveBeenCalledWith(error, { source: 'auth:sign-out' });
     expect(result.current.signedOut).toBe(false);
     expect(logout).not.toHaveBeenCalled();
-    expect(AuthStateVar.get().token).toBe(token);
+    expect(useAuthStore.getState().token).toBe(token);
   });
 });

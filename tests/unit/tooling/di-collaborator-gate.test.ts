@@ -222,7 +222,7 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     '@/services/https-client/http-error-guard',
     '@/services/observability/observability-core',
     '@auth/utils/auth-request-errors',
-    '@auth/stores/auth-var',
+    '@auth/stores/use-auth-store',
     '@auth/repositories',
     '@auth/stores',
     '@/services/error',

@@ -13,7 +13,7 @@ export default class AuthStoreActions {
   ) {}
 
   public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
-    this.deps.authState.set({ loginLoading: true, loginError: null });
+    this.deps.authState.setState({ loginLoading: true, loginError: null });
     try {
       const result = await this.deps.repository.login(credentials, signal);
       this.applyLogin(result);
@@ -24,7 +24,7 @@ export default class AuthStoreActions {
   }
 
   public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
-    this.deps.authState.set({ registerLoading: true, registerError: null, user: null });
+    this.deps.authState.setState({ registerLoading: true, registerError: null, user: null });
     try {
       const result = await this.deps.repository.register(credentials, signal);
       this.applyRegister(result);
@@ -75,7 +75,7 @@ export default class AuthStoreActions {
 
   private applyLogin(result: LoginResult): void {
     if (result.ok) {
-      this.deps.authState.set({
+      this.deps.authState.setState({
         loginLoading: false,
         email: result.value.email,
         token: result.value.token,
@@ -84,40 +84,44 @@ export default class AuthStoreActions {
       return;
     }
     if (result.error.aborted) {
-      this.deps.authState.set({ loginLoading: false });
+      this.deps.authState.setState({ loginLoading: false });
       return;
     }
-    this.deps.authState.set({ loginLoading: false, loginError: result.error });
+    this.deps.authState.setState({ loginLoading: false, loginError: result.error });
   }
 
   private applyLoginRejection(error: unknown): void {
     if (this.isAborted(error)) {
-      this.deps.authState.set({ loginLoading: false });
+      this.deps.authState.setState({ loginLoading: false });
       return;
     }
     this.deps.securitySignals.loginFailed(error);
-    this.deps.authState.set({ loginLoading: false, loginError: this.toAuthError(error) });
+    this.deps.authState.setState({ loginLoading: false, loginError: this.toAuthError(error) });
   }
 
   private applyRegister(result: RegisterResult): void {
     if (result.ok) {
-      this.deps.authState.set({ registerLoading: false, user: result.value, registerError: null });
+      this.deps.authState.setState({
+        registerLoading: false,
+        user: result.value,
+        registerError: null,
+      });
       return;
     }
     if (result.error.aborted) {
-      this.deps.authState.set({ registerLoading: false });
+      this.deps.authState.setState({ registerLoading: false });
       return;
     }
-    this.deps.authState.set({ registerLoading: false, registerError: result.error });
+    this.deps.authState.setState({ registerLoading: false, registerError: result.error });
   }
 
   private applyRegisterRejection(error: unknown): void {
     if (this.isAborted(error)) {
-      this.deps.authState.set({ registerLoading: false });
+      this.deps.authState.setState({ registerLoading: false });
       return;
     }
     this.deps.securitySignals.registerFailed(error);
-    this.deps.authState.set({
+    this.deps.authState.setState({
       registerLoading: false,
       registerError: this.toAuthError(error),
     });

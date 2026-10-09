@@ -1,14 +1,15 @@
 import { act, renderHook } from '@testing-library/react';
 
-import AuthStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import useAuthToken from '@auth/stores/use-auth-token';
 import { buildToken } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 describe('useAuthToken', () => {
-  beforeEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
   afterEach(() => {
     jest.restoreAllMocks();
-    act(() => AuthStateVar.reset());
+    act(() => resetClientStores());
   });
 
   it('re-renders on token changes but skips unrelated field changes', () => {
@@ -20,44 +21,37 @@ describe('useAuthToken', () => {
     expect(result.current).toBeNull();
 
     const firstToken = buildToken();
-    act(() => AuthStateVar.set({ token: firstToken }));
+    act(() => useAuthStore.setState({ token: firstToken }));
     expect(result.current).toBe(firstToken);
 
     const callsAfterToken = hookCalls;
-    act(() => AuthStateVar.set({ loginLoading: true }));
+    act(() => useAuthStore.setState({ loginLoading: true }));
     expect(hookCalls).toBe(callsAfterToken);
 
     const secondToken = buildToken();
-    act(() => AuthStateVar.set({ token: secondToken }));
+    act(() => useAuthStore.setState({ token: secondToken }));
     expect(result.current).toBe(secondToken);
   });
 
   it('stops notifying after unmount', () => {
-    const { result, unmount } = renderHook(() => useAuthToken());
-    expect(result.current).toBeNull();
+    let hookCalls = 0;
+    const { unmount } = renderHook(() => {
+      hookCalls += 1;
+      return useAuthToken();
+    });
+    unmount();
+    const callsAfterUnmount = hookCalls;
 
     const afterUnmountToken = buildToken();
-    unmount();
-    act(() => AuthStateVar.set({ token: afterUnmountToken }));
-    expect(AuthStateVar.get().token).toBe(afterUnmountToken);
-  });
+    act(() => useAuthStore.setState({ token: afterUnmountToken }));
 
-  it('subscribes to the auth reactive var once and unsubscribes on unmount', () => {
-    const reactiveVar = AuthStateVar.reactiveVar();
-    const unsubscribe = jest.fn();
-    const subscribe = jest.spyOn(reactiveVar, 'subscribe').mockReturnValue(unsubscribe);
-
-    const { unmount } = renderHook(() => useAuthToken());
-    expect(subscribe).toHaveBeenCalledTimes(1);
-    expect(unsubscribe).not.toHaveBeenCalled();
-
-    unmount();
-    expect(unsubscribe).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().token).toBe(afterUnmountToken);
+    expect(hookCalls).toBe(callsAfterUnmount);
   });
 
   it('reads a token that was set before the consumer mounted', () => {
     const token = buildToken();
-    AuthStateVar.set({ token });
+    useAuthStore.setState({ token });
 
     const { result } = renderHook(() => useAuthToken());
 

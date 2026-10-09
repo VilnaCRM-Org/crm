@@ -4,21 +4,17 @@
  *
  * @jest-environment @stryker-mutator/jest-runner/jest-env/node
  */
-import type { AuthStateVar } from '@auth/stores/auth-var';
+import type useAuthStore from '@auth/stores/use-auth-store';
 import { buildToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const ENV_KEY = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
 const SEED_TOKEN = buildToken();
 
-const loadFresh = async (): Promise<AuthStateVar> => {
-  let instance: AuthStateVar | undefined;
-  await jest.isolateModulesAsync(async () => {
-    instance = (await import('@auth/stores/auth-var')).default;
-  });
-  return instance as AuthStateVar;
-};
+const loadFresh = (): Promise<typeof useAuthStore> =>
+  loadIsolated(async () => (await import('@auth/stores/use-auth-store')).default);
 
-describe('auth-var seed token without a window global', () => {
+describe('useAuthStore seed token without a window global', () => {
   const originalEnvToken = process.env[ENV_KEY];
 
   afterEach(() => {
@@ -35,7 +31,7 @@ describe('auth-var seed token without a window global', () => {
 
     const fresh = await loadFresh();
 
-    expect(fresh.get().token).toBe(SEED_TOKEN);
+    expect(fresh.getState().token).toBe(SEED_TOKEN);
   });
 
   it('reads no token when window is not declared and no env token is set', async () => {
@@ -43,6 +39,6 @@ describe('auth-var seed token without a window global', () => {
 
     const fresh = await loadFresh();
 
-    expect(fresh.get().token).toBeNull();
+    expect(fresh.getState().token).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { ApolloClient, InMemoryCache, type NormalizedCacheObject } from '@apollo/client';
 import { instanceCachingFactory, type DependencyContainer } from 'tsyringe';
+import type { StoreApi } from 'zustand';
 
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
@@ -18,9 +19,10 @@ import {
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
-import authStateVar, { type AuthStateVar } from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
+import type { AuthState } from '@auth/types/auth-store';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
@@ -39,16 +41,16 @@ class UserModuleRegistrar implements ModuleRegistrar {
     this.registerAuthState(container);
   }
 
-  // The reactive auth state stays a container-free module singleton so the auth page paints
-  // without tsyringe (issue #115). Registering that instance as a value is what lets the
-  // container-resolved store actions inject it instead of value-importing it (issue #130).
+  // The auth store stays a container-free module singleton so the auth page paints without
+  // tsyringe (issue #115). Registering it as a value is what lets the container-resolved store
+  // actions inject it instead of value-importing it (issue #130).
   private registerAuthState(container: DependencyContainer): void {
-    container.register(AUTH_TOKENS.AuthStateVar, { useValue: authStateVar });
+    container.register<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore, { useValue: useAuthStore });
     container.register<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps, {
       useFactory: (c) => ({
         repository: c.resolve<AuthRepository>(AUTH_TOKENS.AuthRepository),
         authRequestErrors: c.resolve<AuthRequestErrors>(AUTH_TOKENS.AuthRequestErrors),
-        authState: c.resolve<AuthStateVar>(AUTH_TOKENS.AuthStateVar),
+        authState: c.resolve<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore),
         securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
       }),
     });
