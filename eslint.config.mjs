@@ -360,48 +360,36 @@ const routeObjectShapeSelectors = [
 
 // The selector families every `src/routes/**/*.tsx` file carries (issue #116); the three route
 // blocks below add or omit the #128 `new` ban and the router-construction ban per file.
-// Source (issue #110, ADR-008): client/UI state has exactly one sanctioned primitive — the
-// dependency-free reactive var in `src/lib/state/` — and exactly one React bridge,
-// `useReactiveVar`, so a store cannot hand-roll its own `useSyncExternalStore` subscription
-// (the re-arming listener logic `use-auth-token.ts` used to carry) — as a named or aliased
-// import, a `React.` member, a computed `React['…']` member, or a destructured property — or
-// pull in zustand, which
-// the docs once promised and the code never used. Re-included in EVERY src-scoped block, like
-// the router-construction selectors, because flat config replaces `no-restricted-syntax` per
-// file; `src/lib/state/use-reactive-var.ts`, the single sanctioned bridge, gets its own block
-// below that omits exactly these selectors.
+// Source (issue #110, ADR-008; ADR-023 for Zustand): client/UI state is read through a Zustand
+// store hook, so a store cannot hand-roll its own `useSyncExternalStore` subscription — as a named
+// or aliased import, a `React.` member, a computed `React['…']` member, or a destructured
+// property. Re-included in EVERY src-scoped block, like the router-construction selectors,
+// because flat config replaces `no-restricted-syntax` per file; `src/lib/state/use-reactive-var.ts`
+// still gets its own block below that omits exactly these selectors until Story 1.2 deletes it.
 const clientStateSelectors = [
-  {
-    selector:
-      'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
-      'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
-    message:
-      'Client/UI state uses the reactive-var primitive in src/lib/state (ADR-008); zustand is ' +
-      'not a dependency of this project (issue #110).',
-  },
   {
     selector:
       'ImportDeclaration[source.value="react"] > ' +
       'ImportSpecifier[imported.name="useSyncExternalStore"]',
     message:
-      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
-      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+      'Read client state through a Zustand store hook (ADR-023); useSyncExternalStore is not ' +
+      'used in src (issue #110).',
   },
   {
     selector:
       'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
       '[computed=true][property.value="useSyncExternalStore"])',
     message:
-      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
-      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+      'Read client state through a Zustand store hook (ADR-023); useSyncExternalStore is not ' +
+      'used in src (issue #110).',
   },
   {
     selector:
       'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
       '[key.value="useSyncExternalStore"])',
     message:
-      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
-      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+      'Read client state through a Zustand store hook (ADR-023); useSyncExternalStore is not ' +
+      'used in src (issue #110).',
   },
 ];
 

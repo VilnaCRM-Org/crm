@@ -1,8 +1,11 @@
 # ADR-008: Frontend state architecture: server, client, and session state
 
-- Status: Approved
+- Status: Superseded
 - Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-17
+
+> **Superseded by [ADR-023](./023-zustand-client-state.md)** (2026-10-09). Client and session state
+> now live in Zustand stores; the server-state and session-token rules below carry forward.
 
 **Technical Story**: Three state mechanisms were in flight with no rule for which to use when.
 `package.json` shipped `zustand`, `CLAUDE.md`, `AGENTS.md` and [ADR-002](./002-zustand-over-redux.md)
