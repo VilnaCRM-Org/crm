@@ -1,3 +1,5 @@
 export type FeatureFlag = never;
 
-export type FeatureFlagValues = Readonly<Partial<Record<FeatureFlag, boolean>>>;
+export type FeatureFlagValues = [FeatureFlag] extends [never]
+  ? Readonly<Record<string, never>>
+  : Readonly<Partial<Record<FeatureFlag, boolean | undefined>>>;

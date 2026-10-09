@@ -205,7 +205,10 @@ stays local (R2 R5 R17), and the ESLint gate lets only the new seam import the s
 tone is 2.45:1 on white, under SC 1.4.3, and the checked box is 2.45:1, under SC 1.4.11; that is
 the product owner's decision (toolkit DEV-67), accepted and recorded in
 [`docs/ui-toolkit.md`](../ui-toolkit.md). The visible link is covered by one `color-contrast`
-entry in `A11Y_EXCEPTIONS` scoped to that link alone and tracked by #276.
+entry in `A11Y_EXCEPTIONS` scoped to that link alone and tracked by #276. The checked box needs
+no entry, because axe's `color-contrast` rule does not evaluate non-text contrast; it is tracked
+under #276 as a known gap of its own and is resolved when #276 closes or the toolkit checkbox fill
+reaches 3:1 against white.
 
 ### Deviations from the issue text
 
@@ -271,9 +274,9 @@ Seven deviations, each recorded here and in the pull-request description:
   failure is escalated to the maintainer.
 - The adopted components carry about 26 kB raw of toolkit code, and three unused module-scope
   `createTheme` calls, into the lazily loaded auth, home, not-found and footer chunks.
-- The adopted components change the accessibility tree (`aria-hidden` leaves and icon wrapper,
-  an `aria-label` on back-to-main) and the back-to-main focus ring colour; each is recorded
-  above as accepted.
+- The adopted components change the accessibility tree (`aria-hidden` skeleton leaves and
+  back-to-main icon wrapper) and the back-to-main focus ring colour; each is recorded above as
+  accepted.
 - A future toolkit release can change an adopted component's values; only the visual baselines
   and the seams' direct unit tests would catch it, so every bump re-runs them.
 - The breakpoints chunk also builds the unused website theme (upstream follow-up 1).

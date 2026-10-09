@@ -168,7 +168,7 @@ strip_config_block() {
   [ "$status" -ne 0 ]
   [[ "$stderr" == *"APP_CONFIG_GRAPHQL_URL must be an absolute URL"* ]]
   [ -z "$output" ]
-  [ "$(config_block "$artifact")" = "" ]
+  diff "$SHELL_SOURCE" "$artifact"
 }
 
 @test "a non-http scheme fails the renderer with a message on stderr" {
@@ -201,7 +201,7 @@ strip_config_block() {
   [ "$status" -ne 0 ]
   [[ "$stderr" == *'APP_CONFIG_FLAG_DEMO_FLAG must be exactly "true" or "false"'* ]]
   [ -z "$output" ]
-  [ "$(config_block "$artifact")" = "" ]
+  diff "$(flag_fixture invalid-boolean-pristine)" "$artifact"
 }
 
 @test "an unknown feature flag fails the renderer and lists the known flags on stderr" {

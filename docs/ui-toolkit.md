@@ -433,7 +433,9 @@ on `/sign-in`, by the user's decision to remove the `forgotPassword` flag (#309)
 scan therefore sees it, and `A11Y_EXCEPTIONS` carries one `color-contrast` entry scoped to that
 link alone (`form a.MuiLink-root[href="/password-recovery"]`), tracked by CRM issue #276 —
 never a rule-wide exception. The entry is deleted when #276 closes or the link moves to the
-accessible alternative, `tone="accessible"` (`#0074B5`, 5.04:1).
+accessible alternative, `tone="accessible"` (`#0074B5`, 5.04:1). The checkbox fill has no entry
+because axe does not evaluate non-text contrast; it is tracked under #276 as a known gap and is
+resolved when #276 closes or the toolkit checkbox fill reaches 3:1 against white.
 
 ## Fonts
 

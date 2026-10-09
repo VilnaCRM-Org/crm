@@ -40,9 +40,12 @@ describe('UITextLink', () => {
   it('draws the keyboard focus outline in the high-contrast dark ink', () => {
     render(<UITextLink href="/password-recovery">{label}</UITextLink>);
 
-    const focusStyle = ruleFor(screen.getByRole('link', { name: label }), ':focus');
+    const link = screen.getByRole('link', { name: label });
+    const focusStyle = ruleFor(link, ':focus');
+    const pointerFocusStyle = ruleFor(link, ':focus:not(:focus-visible)');
 
     expect(focusStyle?.getPropertyValue('outline')).toBe('2px solid #404142');
     expect(focusStyle?.getPropertyValue('outline-offset')).toBe('2px');
+    expect(pointerFocusStyle?.getPropertyValue('outline')).toBe('none');
   });
 });

@@ -22,7 +22,9 @@ describe('user options styles', () => {
       rowGap: '0.5rem',
       marginTop: '1rem',
       marginBottom: '0.4375rem',
-      paddingRight: '0.75rem',
+      '@media (min-width:375px)': {
+        paddingRight: '0.75rem',
+      },
       '@media (min-width:768px)': {
         marginTop: '1.4375rem',
         marginBottom: '-0.5625rem',

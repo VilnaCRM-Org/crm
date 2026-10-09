@@ -113,6 +113,12 @@ exists for it. Every field keeps a visible label; the placeholders copy Figma ve
 (`vilnaCRM@gmail.com` and `Михайло Светський` are example values, not instructions), by the
 user's decision for issue #309.
 
+The checked remember-me checkbox is the second such gap: the toolkit fill `#1EAEFF` and its white
+tick are 2.45:1 against white, under the 3:1 of SC 1.4.11, by the product owner's decision
+(ui-toolkit DEV-67). axe's `color-contrast` rule does not evaluate non-text contrast, so no
+exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
+3:1.
+
 ## Adding coverage
 
 - **A new `UI*` component**: add a row to `componentCases` in

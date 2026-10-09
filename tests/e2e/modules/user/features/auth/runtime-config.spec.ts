@@ -8,6 +8,7 @@ import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 const SIGN_IN_URL = '/sign-in';
 const LOGIN_PATH = '/api/users';
 const RUNTIME_API_PREFIX = '/runtime-config-api';
+const BUILD_TIME_API_ORIGIN = new URL(process.env.REACT_APP_MOCKOON_URL ?? '').origin;
 
 const forgotPasswordLabel: string = t('sign_in.form.forgot_password');
 
@@ -58,8 +59,10 @@ test.describe('Runtime configuration', () => {
     await page.goto(SIGN_IN_URL);
 
     const login = await submitSignIn(page);
+    const loginUrl = new URL(login.url());
 
-    expect(new URL(login.url()).pathname).toBe(LOGIN_PATH);
+    expect(loginUrl.origin).toBe(BUILD_TIME_API_ORIGIN);
+    expect(loginUrl.pathname).toBe(LOGIN_PATH);
   });
 
   test('posts sign-in to the runtime-configured API base URL from the same artifact', async ({
