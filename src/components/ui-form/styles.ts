@@ -15,13 +15,14 @@ export default {
     fontFamily: 'Golos',
     fontWeight: '700',
     letterSpacing: 0,
-    lineHeight: '1',
+    lineHeight: '1.625rem',
     color: customColors.text.dark,
 
-    marginBottom: '0.5rem',
+    marginBottom: '0.375rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginBottom: '0.9375rem',
+      lineHeight: '1',
 
       fontWeight: 600,
       fontSize: '1.875rem',
@@ -35,15 +36,18 @@ export default {
     fontFamily: 'Golos',
     fontWeight: 400,
     fontSize: '0.9375rem',
-    lineHeight: '1.67',
+    lineHeight: '1.5625rem',
     letterSpacing: 0,
     color: customColors.text.dark,
 
-    marginBottom: '1.0625rem',
+    marginBottom: '1rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',
       lineHeight: '1.625',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '1.0625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginBottom: '1.25rem',
@@ -86,8 +90,6 @@ export default {
 
       paddingTop: '1.5rem',
       paddingBottom: '1.5rem',
-
-      marginTop: '2.0625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       maxHeight: '3.875rem',

@@ -8,6 +8,7 @@ export default function SignInFormSection(): JSX.Element {
   return (
     <AuthFormSection
       oauthInert={false}
+      page="signIn"
       switcher={<AuthSwitcher to="/sign-up" labelKey="sign_up.form.switcher_text_no_account" />}
     >
       <LoginForm />

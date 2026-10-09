@@ -53,6 +53,7 @@ export default createTheme({
             letterSpacing: 0,
 
             color: customColors.text.secondary,
+            opacity: 1,
 
             [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
               fontWeight: 400,

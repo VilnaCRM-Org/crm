@@ -14,10 +14,15 @@ export default {
     rowGap: '0.5rem',
     marginTop: '1rem',
     marginBottom: '0.4375rem',
+    paddingRight: '0.75rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '1.4375rem',
       marginBottom: '-0.5625rem',
+      paddingRight: 0,
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      marginBottom: '-0.625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       marginTop: '-0.1875rem',
@@ -42,7 +47,7 @@ export default {
         fontSize: '1rem',
         lineHeight: '1.125',
       },
-      [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
         fontSize: '0.875rem',
         lineHeight: '1.2857',
       },

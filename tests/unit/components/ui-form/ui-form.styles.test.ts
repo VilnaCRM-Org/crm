@@ -28,11 +28,12 @@ describe('ui-form styles', () => {
         fontFamily: 'Golos',
         fontWeight: '700',
         letterSpacing: 0,
-        lineHeight: '1',
+        lineHeight: '1.625rem',
         color: '#1A1C1E',
-        marginBottom: '0.5rem',
+        marginBottom: '0.375rem',
         '@media (min-width:768px)': {
           marginBottom: '0.9375rem',
+          lineHeight: '1',
           fontWeight: 600,
           fontSize: '1.875rem',
         },
@@ -44,13 +45,16 @@ describe('ui-form styles', () => {
         fontFamily: 'Golos',
         fontWeight: 400,
         fontSize: '0.9375rem',
-        lineHeight: '1.67',
+        lineHeight: '1.5625rem',
         letterSpacing: 0,
         color: '#1A1C1E',
-        marginBottom: '1.0625rem',
+        marginBottom: '1rem',
         '@media (min-width:480px)': {
           fontSize: '1rem',
           lineHeight: '1.625',
+        },
+        '@media (min-width:768px)': {
+          marginBottom: '1.0625rem',
         },
         '@media (min-width:1024px)': {
           marginBottom: '1.25rem',
@@ -87,7 +91,6 @@ describe('ui-form styles', () => {
           maxHeight: '4.375rem',
           paddingTop: '1.5rem',
           paddingBottom: '1.5rem',
-          marginTop: '2.0625rem',
         },
         '@media (min-width:1440px)': {
           maxHeight: '3.875rem',

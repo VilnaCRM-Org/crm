@@ -2,6 +2,7 @@ import {
   fieldGapMargins as sharedFieldGapMargins,
   formSection as sharedFormSection,
   formWrapper as sharedFormWrapper,
+  formWrapperBottomPadding as sharedFormWrapperBottomPadding,
 } from '@/components/skeletons/base/auth-form-shared-styles';
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors } from '@/styles/colors';
@@ -12,6 +13,7 @@ export const fieldGapMargins = sharedFieldGapMargins;
 export default {
   formSection: sharedFormSection,
   formWrapper: sharedFormWrapper,
+  formWrapperBottomPadding: sharedFormWrapperBottomPadding,
   formSwitcherButton: {
     display: 'block',
     padding: 0,
@@ -29,7 +31,9 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       margin: '2.75rem auto 0',
 
+      fontWeight: 600,
       fontSize: '1.125rem',
+      lineHeight: 'normal',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       margin: '1.625rem auto 0',

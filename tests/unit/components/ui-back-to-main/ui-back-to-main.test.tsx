@@ -42,6 +42,23 @@ describe('UIBackToMain', () => {
     expect(within(link).getByText(englishLabel)).toBeInTheDocument();
   });
 
+  it('top-aligns the link from a div wrapping the band', () => {
+    renderWithProviders(<UIBackToMain />);
+
+    const wrapper = screen
+      .getAllByRole('generic')
+      .find((element) => element.id === 'back-to-main-band') as HTMLElement;
+    const selectors = Array.from(wrapper.classList, (name) => `.${name} .MuiButtonBase-root`);
+    const rule = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .filter((cssRule): cssRule is CSSStyleRule => cssRule instanceof CSSStyleRule)
+      .find((cssRule) => selectors.includes(cssRule.selectorText));
+
+    expect(wrapper.tagName).toBe('DIV');
+    expect(wrapper).toContainElement(screen.getByRole('link', { name: englishLabel }));
+    expect(rule?.style.getPropertyValue('vertical-align')).toBe('top');
+  });
+
   it('wraps the link in a section band', () => {
     renderWithProviders(<UIBackToMain />);
 

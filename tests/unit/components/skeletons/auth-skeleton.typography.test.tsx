@@ -41,8 +41,8 @@ describe('AuthSkeleton typography parity', () => {
     );
     const titleSxExpected = {
       width: '7.5rem',
-      height: '1.375rem',
-      marginBottom: '0.5rem',
+      height: '1.625rem',
+      marginBottom: '0.375rem',
       [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: expect.objectContaining({
         height: '1.875rem',
         width: '10.3125rem',

@@ -40,7 +40,7 @@ export default {
 
     [`@media (min-width:375px)`]: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gridTemplateColumns: 'minmax(0, 154fr) minmax(0, 153fr)',
       gridTemplateRows: 'repeat(2, auto)',
       gridAutoFlow: 'column',
       gap: '0.5rem',

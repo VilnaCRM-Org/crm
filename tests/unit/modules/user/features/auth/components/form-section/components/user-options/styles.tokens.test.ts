@@ -22,9 +22,14 @@ describe('user options styles', () => {
       rowGap: '0.5rem',
       marginTop: '1rem',
       marginBottom: '0.4375rem',
+      paddingRight: '0.75rem',
       '@media (min-width:768px)': {
         marginTop: '1.4375rem',
         marginBottom: '-0.5625rem',
+        paddingRight: 0,
+      },
+      '@media (min-width:1024px)': {
+        marginBottom: '-0.625rem',
       },
       '@media (min-width:1440px)': {
         marginTop: '-0.1875rem',
@@ -50,7 +55,7 @@ describe('user options styles', () => {
           fontSize: '1rem',
           lineHeight: '1.125',
         },
-        '@media (min-width:1024px)': {
+        '@media (min-width:1440px)': {
           fontSize: '0.875rem',
           lineHeight: '1.2857',
         },

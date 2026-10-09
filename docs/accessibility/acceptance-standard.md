@@ -106,6 +106,13 @@ part of the gate's own pull request. One more covers the sign-in "Забули �
 white (2.45:1). The colour is the product owner's decision (ui-toolkit DEV-67); the accessible
 alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1).
 
+A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
+`grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
+as the Figma frames draw them. axe does not evaluate `::placeholder`, so no exception entry
+exists for it. Every field keeps a visible label; the placeholders copy Figma verbatim
+(`vilnaCRM@gmail.com` and `Михайло Светський` are example values, not instructions), by the
+user's decision for issue #309.
+
 ## Adding coverage
 
 - **A new `UI*` component**: add a row to `componentCases` in

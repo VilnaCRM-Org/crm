@@ -19,8 +19,8 @@ export default {
   },
   titleSkeleton: {
     width: '7.5rem',
-    height: '1.375rem',
-    marginBottom: '0.5rem',
+    height: '1.625rem',
+    marginBottom: '0.375rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       height: '1.875rem',
       width: '10.3125rem',
@@ -28,7 +28,10 @@ export default {
     },
   },
   subtitleWrapper: {
-    marginBottom: '1.0625rem',
+    marginBottom: '1rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '1.0625rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginBottom: '1.25rem',
     },
@@ -78,9 +81,6 @@ export default {
     marginTop: '1rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '2.125rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '2.0625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       marginTop: '1.25rem',

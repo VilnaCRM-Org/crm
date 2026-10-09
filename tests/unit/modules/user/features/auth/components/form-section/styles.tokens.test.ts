@@ -1,6 +1,7 @@
 import {
   formSection as sharedFormSection,
   formWrapper as sharedFormWrapper,
+  formWrapperBottomPadding as sharedFormWrapperBottomPadding,
 } from '@/components/skeletons/base/auth-form-shared-styles';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
@@ -15,6 +16,7 @@ describe('form section styles', () => {
 
     expect(styles.formSection).toEqual(sharedFormSection);
     expect(styles.formWrapper).toEqual(sharedFormWrapper);
+    expect(styles.formWrapperBottomPadding).toEqual(sharedFormWrapperBottomPadding);
   });
 
   it('pins every formSwitcherButton token', async () => {
@@ -34,7 +36,9 @@ describe('form section styles', () => {
       textTransform: 'none',
       '@media (min-width:1024px)': {
         margin: '2.75rem auto 0',
+        fontWeight: 600,
         fontSize: '1.125rem',
+        lineHeight: 'normal',
       },
       '@media (min-width:1440px)': {
         margin: '1.625rem auto 0',
@@ -45,13 +49,14 @@ describe('form section styles', () => {
     });
   });
 
-  it('exposes exactly the three documented style slots', async () => {
+  it('exposes exactly the four documented style slots', async () => {
     const styles = await loadStyles();
 
     expect(Object.keys(styles).sort()).toEqual([
       'formSection',
       'formSwitcherButton',
       'formWrapper',
+      'formWrapperBottomPadding',
     ]);
   });
 });

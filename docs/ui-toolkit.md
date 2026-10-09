@@ -318,7 +318,11 @@ What each adopted row renders, and what it changes:
   label-in-name holds without the duplicate; the icon wrapper is `aria-hidden`,
   which leaves the accessibility tree unchanged because the image was already hidden; and the
   label's font stack, `var(--ui-toolkit-font-golos, 'Golos')`, has no generic fallback while Golos
-  loads. No recorded baseline focuses the link, so the focus ring moves none.
+  loads. No recorded baseline focuses the link, so the focus ring moves none. One CRM-side delta
+  sits on the seam (#309): it wraps the toolkit band in a plain `div#back-to-main-band` whose rule
+  top-aligns the inline-flex link, because inside the toolkit's block container the link sat on a
+  line-box strut and the band measured 65.86 px instead of Figma's 64 px (56 px on mobile). The
+  fix belongs upstream; the wrapper goes when a release removes the strut.
 
 The Storybook preview theme and the unit-test `testTheme` stay CRM's. The adopted components
 either read no toolkit theme or opt out of it with `inheritTheme`, and the fallback theme

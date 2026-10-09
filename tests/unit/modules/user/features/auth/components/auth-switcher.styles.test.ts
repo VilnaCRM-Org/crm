@@ -30,7 +30,9 @@ describe('auth switcher styles', () => {
         textTransform: 'none',
         '@media (min-width:1024px)': {
           margin: '2.75rem auto 0',
+          fontWeight: 600,
           fontSize: '1.125rem',
+          lineHeight: 'normal',
         },
         '@media (min-width:1440px)': {
           margin: '1.625rem auto 0',
