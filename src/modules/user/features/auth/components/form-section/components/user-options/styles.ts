@@ -1,5 +1,5 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { customColors, paletteColors } from '@/styles/colors';
+import { customColors } from '@/styles/colors';
 
 export default {
   authOptionsWrapper: {
@@ -47,56 +47,15 @@ export default {
         lineHeight: '1.2857',
       },
     },
-  },
 
-  rememberMeCheckbox: {
-    padding: 0,
-    marginRight: '0.8125rem',
-  },
+    '& .MuiCheckbox-root .ui-checkbox-box': {
+      width: '1.25rem',
+      height: '1.25rem',
 
-  forgotPasswordLink: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    minHeight: '1.25rem',
-
-    fontFamily: 'Golos',
-    fontWeight: 500,
-    fontSize: '0.9375rem',
-    lineHeight: '1.125rem',
-    letterSpacing: 0,
-
-    // Literal token rather than the MUI theme: `renderWithTheme` replaces the theme instead of
-    // merging it, so `theme.palette.primary.main` inside UILink resolves to MUI's default blue.
-    color: paletteColors.primary.linkText,
-
-    textDecoration: 'none',
-    textDecorationThickness: '2px',
-    textUnderlineOffset: '0.2em',
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      minHeight: '1.5rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      fontWeight: 600,
-      fontSize: '1.125rem',
-      lineHeight: '1.375rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: '1.125rem',
-    },
-
-    '&:hover': {
-      color: paletteColors.primary.linkTextHover,
-      textDecoration: 'underline',
-    },
-
-    '&:focus-visible': {
-      outline: `2px solid ${customColors.text.primary}`,
-      outlineOffset: '2px',
-      borderRadius: '2px',
-      textDecoration: 'underline',
+      [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+        width: '1.5rem',
+        height: '1.5rem',
+      },
     },
   },
 };

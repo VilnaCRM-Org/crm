@@ -53,6 +53,32 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
     await expect(backToMain).toHaveCSS('outline-color', 'rgb(26, 28, 30)');
   });
 
+  test('the remember-me box paints a 2px dark focus ring from the keyboard', async ({ page }) => {
+    const checkbox = page.getByRole('checkbox', { name: rememberMeLabel });
+    const box = checkbox.locator('..').locator('.ui-checkbox-box');
+
+    await page.getByRole('button', { name: showPasswordLabel }).focus();
+    await page.keyboard.press('Tab');
+
+    await expect(checkbox).toBeFocused();
+    await expect(box).toHaveCSS('outline-style', 'solid');
+    await expect(box).toHaveCSS('outline-width', '2px');
+    await expect(box).toHaveCSS('outline-color', 'rgb(64, 65, 66)');
+    await expect(box).toHaveCSS('outline-offset', '2px');
+  });
+
+  test('the remember-me box paints no focus ring after a pointer click', async ({ page }) => {
+    const checkbox = page.getByRole('checkbox', { name: rememberMeLabel });
+
+    await checkbox.click();
+
+    await expect(checkbox).toBeChecked();
+    await expect(checkbox.locator('..').locator('.ui-checkbox-box')).toHaveCSS(
+      'outline-style',
+      'none'
+    );
+  });
+
   test('Space toggles the password visibility from the keyboard', async ({ page }) => {
     const password = page.locator('#password');
     const toggle = page.getByRole('button', { name: showPasswordLabel });

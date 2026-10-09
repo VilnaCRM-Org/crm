@@ -68,11 +68,11 @@ only form Bun can install that carries the built output, it answers the lockfile
 integrity with a committed record, and the v0.5.0 installation changed nothing a user can see.
 The v0.6.0 adoption below accepts the deltas it lists. The artifacts that implement it:
 
-- The pin: `package.json` names the v0.6.0 release tarball URL, and both `bun.lock` lines carry
-  the same URL; the first pin was v0.5.0. The package is not in `trustedDependencies`, so Bun
-  runs none of its lifecycle scripts.
-- The manifest: `config/ui-toolkit-checksums.json` holds the SHA-256 of 334 installed files
-  (333 under `build/` plus `package.json`; `LICENSE` and `README.md` are not hashed), the
+- The pin: `package.json` names the v0.8.0 release tarball URL, and both `bun.lock` lines carry
+  the same URL; the first pin was v0.5.0, then v0.6.0. The package is not in
+  `trustedDependencies`, so Bun runs none of its lifecycle scripts.
+- The manifest: `config/ui-toolkit-checksums.json` holds the SHA-256 of 338 installed files
+  (337 under `build/` plus `package.json`; `LICENSE` and `README.md` are not hashed), the
   release tarball's own digest (`tarballSha256`) and the outcome of the release-digest
   cross-check (`releaseChecksum`).
 - The two scripts: `scripts/ci/verify-ui-toolkit.mjs` and `scripts/ci/update-ui-toolkit.mjs`,
@@ -159,9 +159,10 @@ baselines; the accessibility deltas after it move none:
   SC 1.4.11) to `#1A1C1E` (about 17:1). The toolkit exposes no prop to keep the old colour, and
   the Figma node for the band (15:999) defines no focus state, so there is no design value to
   diverge from.
-- The back-to-main link carries an `aria-label` equal to its visible text, so its accessible
-  name is unchanged and label-in-name holds; its icon wrapper is `aria-hidden`, which leaves the
-  accessibility tree unchanged because the image was already hidden.
+- The back-to-main link carried an `aria-label` equal to its visible text, so its accessible
+  name was unchanged and label-in-name held; since v0.8.0 it carries none and is named by that
+  text alone. Its icon wrapper is `aria-hidden`, which leaves the accessibility tree unchanged
+  because the image was already hidden.
 - Each skeleton leaf is `aria-hidden="true"`: an empty decorative shape, with no spoken content
   lost. The loading state is still exposed by CRM's named `AuthSkeleton` section.
 - The leaves' shimmer is static under `prefers-reduced-motion: reduce` and gains a `GrayText`
@@ -179,6 +180,30 @@ mobile Lighthouse floor are measured in CI.
 The button, form, footer, link, fields, `AuthSkeleton`, colour theme, app theme and fonts stay
 local. Each reason is in the keep-local register of [`docs/ui-toolkit.md`](../ui-toolkit.md),
 and the upstream change that would remove it is in that page's adoption section.
+
+### The v0.8.0 bump: checkbox and text-link adoption (#309)
+
+v0.8.0 is pinned (it carries v0.7.0, ui-toolkit #186, and ui-toolkit #204). For the seams
+adopted in v0.6.0 the only observable change is that `UiBackToMain` no longer copies its label
+into `aria-label` (ui-toolkit #199): the link is named by its visible text alone.
+
+`ui-checkbox` is adopted behind `src/components/ui-checkbox`, replacing the remember-me box CRM
+drew itself. The toolkit component is the Figma checkbox (nodes 7:94 and 7:95): a 24 px box with
+an 8 px radius and a `#D0D4D8` border, filled `#1EAEFF` with the white 16 px tick when checked,
+which CRM's local box drew in the disabled grey instead. Since v0.8.0 the toolkit draws the tick
+and a 2 px `#404142` keyboard focus ring offset 2 px itself, with forced-colours handling, so CRM
+deleted its own tick and outline. CRM keeps one delta through the seam's `sx`: the box is 20 px
+below 768 px, as the mobile sign-in frame 15:1043 draws it, the consumer override the toolkit
+README documents.
+
+The toolkit `ui-link` is adopted for one surface only, behind a new narrow seam
+`src/components/ui-text-link` that renders it with `appearance="text"` and `tone="brand"`: the
+sign-in "Забули пароль?" link (Figma 15:793, 15:959, 19:855), still behind the `forgotPassword`
+flag. CRM's own `src/components/ui-link` stays local (R2 R5 R17), and the ESLint gate lets only the
+new seam import the subpath. The brand tone is 2.46:1 on white, under SC 1.4.3, and the checked
+box is 2.46:1, under SC 1.4.11; that is the product owner's decision (toolkit DEV-67), recorded
+with its follow-up conditions in [`docs/ui-toolkit.md`](../ui-toolkit.md), and it must be
+settled before the flag is enabled in a deployed environment.
 
 ### Deviations from the issue text
 

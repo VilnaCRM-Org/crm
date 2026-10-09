@@ -2,17 +2,19 @@
 
 CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`. Since v0.6.0 it
 reads the breakpoints theme from it and renders seven toolkit components, each behind the CRM
-seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Every
-other CRM primitive stays local, with its reason recorded below. The decision, its options and
+seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Since
+v0.8.0 it also renders the toolkit checkbox and the toolkit text link, each behind its own seam
+(see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
+reason recorded below. The decision, its options and
 its deviations from issue
 [#250](https://github.com/VilnaCRM-Org/crm/issues/250) are in
 [ADR-016](./adr/016-ui-toolkit-installation.md).
 
 ## What is installed
 
-- **Pin:** v0.6.0, the latest toolkit release, installed from its GitHub release tarball:
-  `https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz`.
-  The first pin was v0.5.0.
+- **Pin:** v0.8.0, the latest toolkit release, installed from its GitHub release tarball:
+  `https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz`.
+  The first pin was v0.5.0, then v0.6.0.
   The toolkit is not published to a registry, and a git dependency cannot be used: its entry
   points live in a gitignored `build/`, and Bun does not build a git dependency.
 - **Where the pin lives:** the same URL appears in five machine-read places: the `package.json`
@@ -56,10 +58,14 @@ import {
   | `ui-typography`                    | `src/components/ui-typography/index.tsx`       |
   | `ui-skeleton-<leaf>` (four leaves) | `src/components/skeletons/ui-skeleton-<leaf>/` |
   | `ui-back-to-main`                  | `src/components/ui-back-to-main/index.tsx`     |
+  | `ui-checkbox`                      | `src/components/ui-checkbox/index.tsx`         |
+  | `ui-link` (`appearance="text"`)    | `src/components/ui-text-link/index.tsx`        |
 
   The four leaves are `text`, `block`, `button` and `input`; each seam is its folder's
-  `index.tsx`. A seam passes its props through `React.createElement` or by name, never as a JSX
-  spread, which `react/jsx-props-no-spreading` rejects.
+  `index.tsx`. The `ui-link` subpath is adopted for the standalone text link only: its seam is
+  `ui-text-link`, never CRM's own `src/components/ui-link`, which stays local (R2 R5 R17). A
+  seam passes its props through `React.createElement` or by name, never as a JSX spread, which
+  `react/jsx-props-no-spreading` rejects.
 
 - **Theme subpath:** `ui-breakpoints` is read by named export only: `crmBreakpointsTheme` and
   `heightBreakpoints`, in `src/components/ui-breakpoints/index.ts`.
@@ -86,7 +92,7 @@ import {
 
 `make lint-ui-toolkit` runs inside `make lint`, in the dev container, and needs no network. It
 reads [`config/ui-toolkit-checksums.json`](../config/ui-toolkit-checksums.json), which holds the
-SHA-256 of 334 installed files (333 under `build/` plus `package.json`; `LICENSE` and
+SHA-256 of 338 installed files (337 under `build/` plus `package.json`; `LICENSE` and
 `README.md` are not hashed), the release tarball's digest (`tarballSha256`) and the outcome of
 the release-digest cross-check (`releaseChecksum`). It fails closed, naming the class, on any of:
 
@@ -100,7 +106,7 @@ the release-digest cross-check (`releaseChecksum`). It fails closed, naming the 
 | `missing`  | a manifest path is absent from the install                |
 | `extra`    | an installed file is neither in the manifest nor unhashed |
 
-On success it prints `ui-toolkit integrity: OK (v0.6.0, 334 artifacts verified, 0 extra files)`.
+On success it prints `ui-toolkit integrity: OK (v0.8.0, 338 artifacts verified, 0 extra files)`.
 
 **What it proves, precisely:** installed build artifacts are verifiable offline;
 `bun install --frozen-lockfile` itself fetches unverified bytes. `bun.lock` pins the tarball's
@@ -173,7 +179,12 @@ order:
    toolkit's CONSUMING.md and `website`'s docs use: bun names the dependency from the
    tarball's own manifest, rewrites `package.json` and both `bun.lock` lines, and installs the
    new tree into the dev container's `node_modules` volume. The recipe never hand-edits
-   `package.json` and then runs a plain `bun install`; `bun add` does both in one step.
+   `package.json` and then runs a plain `bun install`; `bun add` does both in one step. Bun
+   1.3.5 refuses the bare URL when it replaces an existing URL pin, with `DependencyLoop`
+   naming the old and the new tarball; name the package instead,
+   `bun add "@vilnacrm/ui-toolkit@<new release URL>"`. Keep `bun.lock` to the two toolkit
+   lines: if the add also re-hoists unrelated packages, restore it, change only those two
+   URLs, and confirm `bun install --frozen-lockfile` accepts the result unchanged.
 2. Edit `TOOLKIT_URL` in `scripts/ci/check-lockfile-registries.sh` to the same URL. This is
    the one manual edit, and the verifier's `drift` class fails until it matches.
 3. Run the refresher, then both gates:
@@ -203,6 +214,9 @@ script, test or constant changes. Running `make update-ui-toolkit` to clear a re
 This is the one register of the CRM primitives and themes, adopted or local, with the reason
 each local one stays local. The reason codes belong to this register only, and each holds for
 v0.6.0. A code keeps its number while its reason is true, and a retired code is never reused.
+v0.7.0 closed the upstream issues behind several codes (ui-toolkit #186 closes #191 to #199);
+the v0.8.0 bump adopted only the checkbox and the text link, and each local row stays local
+until a design-checked swap re-measures its reason against the pinned release.
 
 - **R2** website-theme fallback: CRM's app theme fails the toolkit's `isUiTheme` guard, so a
   component that styles from the toolkit theme without `inheritTheme` falls back to the
@@ -255,10 +269,12 @@ rule.
 | `ui-typography`                                         | 11         | adopted | -             |
 | `ui-skeleton-text`, `-block`, `-button`, `-input`       | 1          | adopted | -             |
 | `ui-back-to-main`                                       | 2          | adopted | -             |
+| `ui-checkbox`                                           | 1          | adopted | -             |
+| `ui-text-link` (toolkit `ui-link`, `appearance="text"`) | 1          | adopted | -             |
 | `ui-button`                                             | 7          | local   | R2 R3 R13 R14 |
 | `ui-form`                                               | 2          | local   | R3 R14 R15    |
 | `ui-footer`                                             | 3          | local   | R16           |
-| `ui-link`                                               | 2          | local   | R2 R5 R17     |
+| `ui-link`                                               | 1          | local   | R2 R5 R17     |
 | `ui-form-input-field`, `ui-text-field-form`             | 1          | local   | R18           |
 | `ui-text-field`, `ui-input`                             | 0          | local   | R6            |
 | `auth-skeleton`                                         | 2          | local   | R3 R11 R19    |
@@ -297,8 +313,9 @@ What each adopted row renders, and what it changes:
   MUI theme, to `normal`, which matches Figma (node 15:1104 and the 15:999 band: Golos Text Medium
   15/18, letter-spacing 0), and the affected sub-1024 px visual baselines of sign-in, sign-up,
   not-found and the mobile lane are re-recorded for it; the keyboard focus ring is `#1A1C1E` (about
-  17:1 on white) instead of `#1EAEFF` (2.46:1, under the 3:1 of SC 1.4.11); the link carries an
-  `aria-label` equal to its visible text, so label-in-name holds; the icon wrapper is `aria-hidden`,
+  17:1 on white) instead of `#1EAEFF` (2.46:1, under the 3:1 of SC 1.4.11); since v0.8.0 the link
+  carries no `aria-label` and is named by its visible text alone (ui-toolkit [#199][tk199]), so
+  label-in-name holds without the duplicate; the icon wrapper is `aria-hidden`,
   which leaves the accessibility tree unchanged because the image was already hidden; and the
   label's font stack, `var(--ui-toolkit-font-golos, 'Golos')`, has no generic fallback while Golos
   loads. No recorded baseline focuses the link, so the focus ring moves none.
@@ -368,6 +385,50 @@ ui-toolkit #186 builds the fallback theme lazily and moves component styles to p
 objects; a release carrying it is a pin bump through the [recipe](#bumping-the-toolkit) that
 removes those `createTheme` calls from CRM's chunks.
 
+## Adoption in v0.8.0
+
+v0.8.0 is pinned; it also carries v0.7.0 (ui-toolkit
+[#186](https://github.com/VilnaCRM-Org/ui-toolkit/pull/186), the CRM swap blockers) and
+[#204](https://github.com/VilnaCRM-Org/ui-toolkit/pull/204) (the checkbox tick and focus ring,
+the text-link appearance). Its `package.json` changes only the version: no peer or exports-map
+change.
+
+**What the bump changes for the seams adopted in v0.6.0**, read from the source diff between
+the two tags and held by each seam's unit test:
+
+- `ui-container`, `ui-typography`, the four skeleton leaves and `ui-breakpoints`: no observable
+  change. Their breakpoint values still resolve to 768, 1024 and 1440, and the fallback theme a
+  non-toolkit theme falls back to is now built lazily instead of at module scope.
+- `ui-back-to-main`: the link no longer copies its label into `aria-label`; it is named by its
+  visible text alone, which is the fix CRM asked for in ui-toolkit [#199][tk199]. Markup and
+  styles are otherwise unchanged.
+
+**The checkbox.** `ui-checkbox` renders the Figma tick (node 7:94) itself, as an encoded
+`data:image/svg+xml` background, and a 2 px `#404142` focus ring offset 2 px on keyboard focus
+(`:focus-within` with a `:has(:focus-visible)` guard, so a pointer click draws none; Firefox
+before 121 has no `:has()` and also draws it on click). Under forced colours the ring uses
+`CanvasText` and the checked box keeps its fill. CRM's own tick and focus outline are deleted;
+the seam keeps one delta through `sx`, the 20 px box below 768 px from the mobile frame 15:1043,
+which the toolkit README ("Checkbox size and focus") documents as the consumer override.
+
+**The text link.** `ui-link` with `appearance="text"` and `tone="brand"` is the Figma sign-in
+link (nodes 15:793, 15:959, 19:855): Golos 500 15/18 below 768 px and from 1440 px, Golos 600
+18/normal from 768 to 1439.95 px, `#1EAEFF`, no underline in any state, and a 2 px `#404142`
+focus outline on `:focus-visible`. `appearance="text"` drops the fixed 1130 px font-size rule
+(R17) and the `sm` rule, so neither applies to it. It is adopted behind a new narrow seam,
+`src/components/ui-text-link` (`UITextLink`, `href` and `children` only), used by the
+sign-in "Забули пароль?" link behind the `forgotPassword` flag. CRM's `ui-link` keeps its
+local seam and stays on the register.
+
+**Accepted accessibility conflict.** The brand tone is 2.46:1 on white, and its toolkit hover
+`#297FFF` 3.77:1, both under the 4.5:1 of SC 1.4.3; the checked checkbox fill and its white tick
+are 2.46:1 against the 3:1 of SC 1.4.11. This is the product owner's explicit choice (toolkit
+DEV-67); the accessible alternative is `tone="accessible"` (`#0074B5`, 5.04:1). The link is
+hidden while `forgotPassword` is off, so no axe route scan sees it; the first axe-scanned test
+that renders it adds a `color-contrast` entry to `A11Y_EXCEPTIONS` scoped to that link and
+tracked by CRM issue #276, never a rule-wide exception. The conflict has to be settled before
+`forgotPassword` is enabled in any deployed environment (#315).
+
 ## Fonts
 
 The toolkit's fonts and `styles.css` are not wired. Since v0.6.0 its `styles.css` declares
@@ -383,7 +444,9 @@ the budget.
 
 ## Upstream follow-ups
 
-This list is the one source for them. Statuses are as of 2026-09-30. The blockers that keep
+This list is the one source for them. Statuses are as of 2026-09-30; v0.7.0 since closed the
+issues in the table below (ui-toolkit #186) and #199 is taken in v0.8.0 (see
+[Adoption in v0.8.0](#adoption-in-v080)). The blockers that keep
 the remaining rows of the [keep-local register](#keep-local-register) local are filed upstream:
 
 | Blocker                                                   | Reasons | Issue         |

@@ -538,6 +538,8 @@ const uiToolkitSeams = [
   { subpath: 'ui-skeleton-button', file: 'src/components/skeletons/ui-skeleton-button/index.tsx' },
   { subpath: 'ui-skeleton-input', file: 'src/components/skeletons/ui-skeleton-input/index.tsx' },
   { subpath: 'ui-back-to-main', file: 'src/components/ui-back-to-main/index.tsx' },
+  { subpath: 'ui-checkbox', file: 'src/components/ui-checkbox/index.tsx' },
+  { subpath: 'ui-link', file: 'src/components/ui-text-link/index.tsx' },
 ];
 const uiToolkitForbiddenPaths = [
   {
@@ -576,8 +578,9 @@ const uiToolkitImportPatterns = (seamSubpath) => [
     ],
     message:
       'Import ui-toolkit only through its CRM seam (src/components/ui-container, ' +
-      'ui-typography, skeletons/ui-skeleton-*, ui-back-to-main, ui-breakpoints); a subpath the ' +
-      'product owner has not adopted stays forbidden (ADR-016, docs/ui-toolkit.md).',
+      'ui-typography, skeletons/ui-skeleton-*, ui-back-to-main, ui-checkbox, ui-text-link, ' +
+      'ui-breakpoints); a subpath the product owner has not adopted stays forbidden ' +
+      '(ADR-016, docs/ui-toolkit.md).',
   },
 ];
 const uiToolkitSeamComponentPaths = (seamSubpath) =>
