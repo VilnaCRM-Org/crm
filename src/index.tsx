@@ -7,7 +7,7 @@ import ErrorFallback from '@/components/error-boundary/error-fallback';
 import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
 import appConfigSource from '@/config/runtime/app-config-source';
 import BrowserConnectivityAdapter from '@/lib/connectivity/browser-connectivity-adapter';
-import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
+import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
 import type { RecoverableError } from '@/lib/reliability/types/recoverable-error';
 import AppProviders from '@/providers/app-providers';
@@ -28,7 +28,7 @@ const root = createRoot(rootElement);
 
 observabilityCore.init();
 muiThemeShellLoader.load().catch(() => undefined);
-new BrowserConnectivityAdapter(connectivityStateVar).attach(window);
+new BrowserConnectivityAdapter(useConnectivityStore).attach(window);
 
 const BOOTSTRAP_RECOVERY: RecoverableError = {
   recoverable: true,

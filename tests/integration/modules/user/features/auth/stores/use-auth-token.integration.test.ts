@@ -2,14 +2,15 @@ import '../../../../../setup';
 
 import { act, renderHook } from '@testing-library/react';
 
-import AuthStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import useAuthToken from '@auth/stores/use-auth-token';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 describe('useAuthToken integration coverage', () => {
-  beforeEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
   afterEach(() => {
     jest.restoreAllMocks();
-    act(() => AuthStateVar.reset());
+    act(() => resetClientStores());
   });
 
   it('slices the token for consumers and skips unrelated updates', () => {
@@ -20,11 +21,11 @@ describe('useAuthToken integration coverage', () => {
     });
     expect(result.current).toBeNull();
 
-    act(() => AuthStateVar.set({ token: 'sliced' }));
+    act(() => useAuthStore.setState({ token: 'sliced' }));
     expect(result.current).toBe('sliced');
 
     const callsAfterToken = hookCalls;
-    act(() => AuthStateVar.set({ loginLoading: true }));
+    act(() => useAuthStore.setState({ loginLoading: true }));
     expect(hookCalls).toBe(callsAfterToken);
   });
 
@@ -33,22 +34,21 @@ describe('useAuthToken integration coverage', () => {
     expect(result.current).toBeNull();
 
     unmount();
-    act(() => AuthStateVar.set({ token: 'after-unmount' }));
-    expect(AuthStateVar.get().token).toBe('after-unmount');
+    act(() => useAuthStore.setState({ token: 'after-unmount' }));
+    expect(useAuthStore.getState().token).toBe('after-unmount');
   });
 
   it('survives a subscriber that unmounts the consumer in the same broadcast', () => {
-    const reactiveVar = AuthStateVar.reactiveVar();
     let unmountHook = (): void => {};
-    const unsubscribeProbe = reactiveVar.subscribe((): void => unmountHook());
+    const unsubscribeProbe = useAuthStore.subscribe((): void => unmountHook());
 
     const { result, unmount } = renderHook(() => useAuthToken());
     unmountHook = unmount;
 
-    act(() => AuthStateVar.set({ token: 'race' }));
+    act(() => useAuthStore.setState({ token: 'race' }));
 
     expect(result.current).toBeNull();
-    expect(AuthStateVar.get().token).toBe('race');
+    expect(useAuthStore.getState().token).toBe('race');
     unsubscribeProbe();
   });
 });

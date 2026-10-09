@@ -1,8 +1,7 @@
-import useReactiveVar from '@/lib/state/use-reactive-var';
 import type { AuthState } from '@auth/types/auth-store';
 
-import authStateVar from './auth-var';
+import useAuthStore from './use-auth-store';
 
 export default function useAuthState(): AuthState {
-  return useReactiveVar(authStateVar.reactiveVar(), (state: AuthState): AuthState => state);
+  return useAuthStore();
 }

@@ -2,8 +2,9 @@ import '../../../../../setup';
 
 import { act, renderHook } from '@testing-library/react';
 
-import { AuthStateVar, authActions, useAuthState, useAuthToken } from '@auth/stores';
+import { useAuthStore, authActions, useAuthState, useAuthToken } from '@auth/stores';
 import { buildCredentials, buildUser } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 import server, { defaultLoginResponse } from '../../../../../mocks/server';
 
@@ -11,23 +12,23 @@ describe('auth stores composition root integration', () => {
   afterEach(() => {
     server.resetHandlers();
     act(() => {
-      AuthStateVar.reset();
+      resetClientStores();
     });
   });
 
   it('drives login and registration through the real repository and clears state', async () => {
     await authActions.loginUser(buildCredentials());
-    expect(AuthStateVar.get().token).toBe(defaultLoginResponse.token);
+    expect(useAuthStore.getState().token).toBe(defaultLoginResponse.token);
 
     await authActions.registerUser(buildUser());
-    expect(AuthStateVar.get().registerError).toBeNull();
+    expect(useAuthStore.getState().registerError).toBeNull();
 
     authActions.resetRegistration();
     authActions.clearLoginError();
     authActions.logout();
     authActions.reset();
 
-    expect(AuthStateVar.get()).toMatchObject({
+    expect(useAuthStore.getState()).toMatchObject({
       token: null,
       user: null,
       loginError: null,

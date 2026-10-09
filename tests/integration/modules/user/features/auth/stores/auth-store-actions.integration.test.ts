@@ -1,11 +1,12 @@
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
-import AuthStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const authRequestErrors = new AuthRequestErrors({
   handle: (e: unknown) => ({ displayMessage: String(e), retryable: false }),
@@ -38,7 +39,7 @@ const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({
     repository: makeRepo(over),
     authRequestErrors,
-    authState: AuthStateVar,
+    authState: useAuthStore,
     securitySignals,
   }).login({
     email: 'a@b.c',
@@ -49,7 +50,7 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({
     repository: makeRepo(over),
     authRequestErrors,
-    authState: AuthStateVar,
+    authState: useAuthStore,
     securitySignals,
   }).register({
     fullName: 'A',
@@ -58,24 +59,24 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   });
 
 describe('AuthStoreActions integration coverage', () => {
-  beforeEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
 
   it('preserves a structured auth error thrown by login', async () => {
     const error: AuthError = { kind: 'server', displayMessage: 'Down', retryable: true };
     await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: error });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: error });
   });
 
   it('normalizes a non-Error thrown login rejection', async () => {
     await loginWith({ login: jest.fn().mockRejectedValue('boom') });
-    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
   it('normalizes a thrown Error with an undefined message', async () => {
     const error = new Error();
     error.message = undefined as unknown as string;
     await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
   it.each([
@@ -86,24 +87,27 @@ describe('AuthStoreActions integration coverage', () => {
     ['a cancel message', new Error('User cancelled the request')],
   ])('treats a thrown login rejection with %s as aborted', async (_label, error) => {
     await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 
   it('normalizes a generic thrown register error', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue(new Error('Unexpected failure')) });
-    expect(AuthStateVar.get().registerError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().registerError).toMatchObject({
+      kind: 'unknown',
+      retryable: false,
+    });
   });
 
   it('treats a thrown abort-marker register rejection as aborted', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
-    expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
   it('tags an opaque observability identity after a successful login', async () => {
     await loginWith({});
 
     expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 
   it('applies a repository-reported error result to the auth state', async () => {
@@ -113,6 +117,6 @@ describe('AuthStoreActions integration coverage', () => {
       retryable: false,
     };
     await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error }) });
-    expect(AuthStateVar.get().loginError).toEqual(error);
+    expect(useAuthStore.getState().loginError).toEqual(error);
   });
 });

@@ -9,8 +9,13 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
-const STATE_HOME = 'src/lib/state';
-const BRIDGE = `${STATE_HOME}/use-reactive-var.ts`;
+const AUTH_STORE = 'src/modules/user/features/auth/stores/use-auth-store.ts';
+const CONNECTIVITY_STORE = 'src/lib/connectivity/use-connectivity-store.ts';
+const RETIRED_FILES = [
+  'src/lib/state',
+  'src/modules/user/features/auth/stores/auth-var.ts',
+  'src/lib/connectivity/connectivity-state-var.ts',
+];
 const ADR = 'docs/adr/023-zustand-client-state.md';
 const PREVIOUS_ADR = 'docs/adr/008-frontend-state-architecture.md';
 const SUPERSEDED_ADR = 'docs/adr/002-zustand-over-redux.md';
@@ -30,25 +35,39 @@ const sourceFilesMatching = (pattern: RegExp): string[] =>
   walkSource('src').filter((file) => pattern.test(readFile(file)));
 
 describe('frontend state architecture contract (issue #110, ADR-008, ADR-023)', () => {
-  it('subscribes React to a store only through the one sanctioned bridge', () => {
-    expect(sourceFilesMatching(/useSyncExternalStore/)).toEqual([BRIDGE]);
+  it('declares zustand as a production dependency and locks it', () => {
+    const manifest = JSON.parse(readFile('package.json')) as Record<string, unknown>;
+    const dependencies = manifest.dependencies as Record<string, string>;
+    const devDependencies = (manifest.devDependencies ?? {}) as Record<string, string>;
+
+    expect(dependencies.zustand).toBe('^5.0.15');
+    expect(Object.keys(devDependencies)).not.toContain('zustand');
+    expect(readFile('bun.lock')).toContain('"zustand": ["zustand@5.0.15"');
   });
 
-  it('keeps the reactive-var primitive in the neutral state home, off the auth feature', () => {
-    const home = fs.readdirSync(path.join(projectRoot, STATE_HOME)).sort();
+  it('imports zustand only from its root specifier, so no middleware subpath can appear', () => {
+    const importers = sourceFilesMatching(/from\s+['"]zustand['"]/);
 
-    expect(home).toEqual([
-      'reactive-var-factory.ts',
-      'reactive-var-state.ts',
-      'types',
-      'use-reactive-var.ts',
-    ]);
-    expect(readFile('src/modules/user/features/auth/stores/auth-var.ts')).toContain(
-      "from '@/lib/state/reactive-var-factory'"
-    );
+    expect(importers).toEqual(expect.arrayContaining([AUTH_STORE, CONNECTIVITY_STORE]));
+    expect(sourceFilesMatching(/['"]zustand\//)).toEqual([]);
+  });
+
+  it('creates both stores with create<State>() and no middleware', () => {
+    expect(readFile(AUTH_STORE)).toContain('create<AuthState>()(');
+    expect(readFile(CONNECTIVITY_STORE)).toContain('create<ConnectivityState>()(');
+  });
+
+  it('subscribes React to a store nowhere in src, since zustand owns the bridge', () => {
+    expect(sourceFilesMatching(/useSyncExternalStore/)).toEqual([]);
+  });
+
+  it('deletes the reactive-var primitive and every name that used it', () => {
+    RETIRED_FILES.forEach((retired) => {
+      expect(fs.existsSync(path.join(projectRoot, retired))).toBe(false);
+    });
     expect(
-      fs.existsSync(path.join(projectRoot, 'src/modules/user/features/auth/stores/reactive-var.ts'))
-    ).toBe(false);
+      sourceFilesMatching(/ReactiveVarFactory|useReactiveVar|AuthStateVar|ConnectivityStateVar/)
+    ).toEqual([]);
   });
 
   it('supersedes ADR-008 with ADR-023 and indexes it, leaving ADR-002 superseded', () => {

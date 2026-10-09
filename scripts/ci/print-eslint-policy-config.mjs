@@ -21,7 +21,6 @@ const SAMPLES = [
   'tests/e2e/modules/back-to-main.spec.ts', // Playwright spec — test-liveness gates (#167, #118, #144)
   'src/routes/route-composer.tsx', // route shell carve-out — TB-1 route block (#332)
   'src/services/locale-formatter/locale-formatter-core.ts', // sanctioned Intl boundary (#155, #332)
-  'src/lib/state/use-reactive-var.ts', // sanctioned useSyncExternalStore bridge (#110, #332)
   'src/config/env/raw-env.ts', // process.env boundary (#112, #332)
   'src/services/observability/apollo-link-factory.ts', // restricted-library adapter (#130, #332)
 ];

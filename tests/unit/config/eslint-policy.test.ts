@@ -126,7 +126,6 @@ const groupsFor = (file: string): string[] =>
 
 const ROUTE_COMPOSER_TSX = 'src/routes/route-composer.tsx';
 const LOCALE_FORMATTER_TS = 'src/services/locale-formatter/locale-formatter-core.ts';
-const REACTIVE_VAR_BRIDGE_TS = 'src/lib/state/use-reactive-var.ts';
 const ENV_TS = 'src/config/env/raw-env.ts';
 const RESTRICTED_ADAPTER_TS = 'src/services/observability/apollo-link-factory.ts';
 
@@ -216,7 +215,6 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
       HOOK_TS,
       ROUTE_COMPOSER_TSX,
       LOCALE_FORMATTER_TS,
-      REACTIVE_VAR_BRIDGE_TS,
       ENV_TS,
       RESTRICTED_ADAPTER_TS,
       ROUTE_SHELL_TSX,
