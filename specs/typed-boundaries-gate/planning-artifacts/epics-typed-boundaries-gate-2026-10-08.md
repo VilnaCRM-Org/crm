@@ -113,11 +113,11 @@ So that the feature bundles that follow are written against TB-1 from their firs
 - **Given** a `declare module` block, **when** the gate runs, **then** it is not reported.
 - **Given** the wired arrays, **when** first run, **then** the site count is noted in the PR.
 - **Given** `src/` after the fixes, **when** `make lint-eslint` runs, **then** TB-1 reports zero.
-- **Given** the `src/services/**` sites, **when** fixed, **then** only types change, no file moves.
+- **Given** the `src/services/**` sites, **when** fixed, **then** no file moves or is renamed.
 - **Given** `auth-error.ts:18`, **when** fixed, **then** it is `AuthOkResult<T> | AuthFailedResult`.
 - **Given** `auth-var.ts:36`, **when** fixed, **then** `AuthStateVar.set` takes `AuthStatePatch`.
 - **Given** the policy test, **when** it runs, **then** each array is pinned on every §3.4 block.
-- **Given** CI, **when** every suite runs, **then** results, scores and baselines are unchanged.
+- **Given** CI, **when** every suite runs, **then** it passes and no score or baseline drops.
 - **Given** the diff, **when** read, **then** it adds no cast, `any`, disable, allowlist or glob.
 - **Given** `CLAUDE.md` and the Copilot file, **when** read, **then** both carry the TB-1 section.
 - **Given** the `src/config/**` edits, **when** CI checks ADR drift, **then** ADR-022 satisfies it.

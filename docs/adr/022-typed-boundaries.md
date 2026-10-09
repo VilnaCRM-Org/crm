@@ -32,8 +32,10 @@ first Transformer the bundles write would fail the allowlist.
   root-cause-not-suppression policy applies to every gate.
 - A gate that goes dead must fail loudly, as every `no-restricted-syntax` selector already does
   through the issue-#189 fixture rot guard and the issue-#165 policy pin.
-- The chore changes no runtime behaviour, so the mutation, visual and Lighthouse results stay as
-  they are.
+- The chore changes no user-visible behaviour, so the visual and Lighthouse results stay as they
+  are. Where TB-1 forbids a runtime shape (a list crossing a boundary, an `unknown` member not
+  named `error` / `cause`), the value is reshaped, and the mutation gate stays at 100% over the
+  touched files.
 - The class-naming vocabulary follows the Miro layer board, the architecture source of truth.
 
 ## Considered Options
