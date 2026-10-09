@@ -38,7 +38,7 @@ describe('UIBackToMain', () => {
     const link = screen.getByRole('link', { name: englishLabel });
 
     expect(link).toHaveAttribute('href', '/');
-    expect(link).toHaveAttribute('aria-label', englishLabel);
+    expect(link).not.toHaveAttribute('aria-label');
     expect(within(link).getByText(englishLabel)).toBeInTheDocument();
   });
 
@@ -55,7 +55,7 @@ describe('UIBackToMain', () => {
 
     const link = screen.getByRole('link', { name: ukrainianLabel });
 
-    expect(link).toHaveAttribute('aria-label', ukrainianLabel);
+    expect(link).not.toHaveAttribute('aria-label');
     expect(within(link).getByText(ukrainianLabel)).toBeInTheDocument();
   });
 
