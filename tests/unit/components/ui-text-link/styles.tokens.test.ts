@@ -1,13 +1,10 @@
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
-type TextLinkStyles = (typeof import('@/components/ui-text-link/styles'))['default'];
-
-const loadStyles = (): Promise<TextLinkStyles> =>
-  loadIsolated(async () => (await import('@/components/ui-text-link/styles')).default);
-
 describe('text link styles', () => {
   it('keeps the brand colour on a visited link outside hover and press', async () => {
-    const styles = await loadStyles();
+    const styles = await loadIsolated(
+      async () => (await import('@/components/ui-text-link/styles')).default
+    );
 
     expect(styles).toEqual({
       link: {
