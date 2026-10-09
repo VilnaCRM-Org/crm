@@ -1,7 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 
+import type { RequestIdHeader } from '@/services/types/observability/observability';
+
 export class CorrelationIdProvider {
-  public readonly header: string = 'X-Request-Id';
+  public readonly header: RequestIdHeader = 'X-Request-Id';
 
   public currentId: string = '';
 

@@ -1,6 +1,6 @@
 # ADR-022: Every value that crosses a layer carries a named type, gated by ESLint
 
-- Status: Proposed
+- Status: Approved
 - Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-10-09
 
@@ -59,8 +59,9 @@ Factory or helper class, DI-registered values, published state, events and telem
 interface members in type-only files, and test-builder results — is a named type: an exported
 `interface` in a type-only file, a class, or a named alias in a type-only file. At those
 positions anonymous object literals, tuples, bare arrays, `any` / `object` / `Record<…>` / index
-signatures, and inline `Omit` / `Pick` / `Partial` / `Required` are forbidden. `unknown` stays
-only as the parameter of a narrowing method and as an `error` / `cause` member. Generated
+signatures / string-keyed mapped types, and inline `Omit` / `Pick` / `Partial` / `Required` are
+forbidden. `unknown` stays only as the parameter of a narrowing method and as an `error` /
+`cause` member. Generated
 contract types, `declare module` blocks, `.d.ts` files, private members and function-local values
 are the only exceptions.
 
@@ -97,6 +98,10 @@ follow row for row, and `tests/unit/tooling/class-naming-gate.test.ts` checks bo
   review items.
 - Test-builder results and the generated-type confinement have no lint enforcement; both are
   review items.
+- An `unknown` parameter in a code file is not gated, because syntax cannot tell a caught-error
+  narrowing method from any other; the gate covers `unknown` returns, class properties, type-file
+  members and method / call-signature returns, and an `unknown` parameter elsewhere is a review
+  item.
 - An `interface` is not assignable to an index-signature type where the equivalent alias was, so
   some receiving types have to be named during the burn-down.
 - More type-only declarations to read: each list crosses as a named collection interface.

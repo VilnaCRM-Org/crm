@@ -1,6 +1,13 @@
 import type { ZodType } from 'zod';
 
-export type RequestHeaders = { readonly [name in string]: string };
+export interface RequestHeader {
+  readonly name: string;
+  readonly value: string;
+}
+
+export interface RequestHeaders {
+  readonly items: readonly RequestHeader[];
+}
 
 export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 

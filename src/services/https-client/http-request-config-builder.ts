@@ -68,23 +68,29 @@ export default class HttpRequestConfigBuilder {
     return Object.keys(headers).some((name) => name.toLowerCase() === normalizedTarget);
   }
 
-  private withoutHeader(
-    headers: Record<string, string> | undefined,
-    target: string
-  ): Record<string, string> {
+  private withoutHeader(headers: Record<string, string>, target: string): Record<string, string> {
     const normalizedTarget = target.toLowerCase();
     const result: Record<string, string> = {};
-    for (const [name, value] of Object.entries(headers ?? {})) {
+    for (const [name, value] of Object.entries(headers)) {
       if (name.toLowerCase() !== normalizedTarget) result[name] = value;
     }
     return result;
   }
 
+  private toHeaderMap(headers: RequestHeaders | undefined): Record<string, string> {
+    const map: Record<string, string> = {};
+    for (const header of headers?.items ?? []) map[header.name] = header.value;
+    return map;
+  }
+
   private createHeaders(
     contentType: string | undefined,
-    customHeaders?: Record<string, string>
+    customHeaders: RequestHeaders | undefined
   ): Record<string, string> {
-    const withoutRequestId = this.withoutHeader(customHeaders, this.correlationIds.header);
+    const withoutRequestId = this.withoutHeader(
+      this.toHeaderMap(customHeaders),
+      this.correlationIds.header
+    );
     const nextHeaders = this.withoutHeader(withoutRequestId, this.sessionCorrelation.header);
     nextHeaders[this.correlationIds.header] = this.correlationIds.next();
     nextHeaders[this.sessionCorrelation.header] = this.sessionCorrelation.id();

@@ -25,14 +25,21 @@ const EXPORTED_FUNCTIONS = [
 ];
 const FUNCTIONS = [METHOD, ...EXPORTED_FUNCTIONS];
 
+const CONSTRUCTOR = `MethodDefinition[kind='constructor'] > FunctionExpression`;
+
 const returnPosition = (fn) => `${fn} > TSTypeAnnotation`;
 const parameterPositions = (fn) => [
   `${fn} > Identifier > TSTypeAnnotation`,
   `${fn} > AssignmentPattern > Identifier > TSTypeAnnotation`,
   `${fn} > RestElement > TSTypeAnnotation`,
   `${fn} > ObjectPattern > TSTypeAnnotation`,
-  `${fn} > TSParameterProperty > Identifier > TSTypeAnnotation`,
 ];
+const PARAMETER_PROPERTY_POSITION = [
+  CONSTRUCTOR,
+  'TSParameterProperty',
+  'Identifier',
+  'TSTypeAnnotation',
+].join(' > ');
 const PROPERTY_POSITION = `PropertyDefinition${NON_PRIVATE} > TSTypeAnnotation`;
 
 const UNKNOWN_POSITIONS = [
@@ -41,12 +48,14 @@ const UNKNOWN_POSITIONS = [
 ];
 const ALL_POSITIONS = [
   ...FUNCTIONS.flatMap((fn) => [returnPosition(fn), ...parameterPositions(fn)]),
+  PARAMETER_PROPERTY_POSITION,
   PROPERTY_POSITION,
 ];
 
 const ARRAY_REFERENCE = 'TSTypeReference[typeName.name=/^(Array|ReadonlyArray)$/]';
 const RECORD_REFERENCE = "TSTypeReference[typeName.name='Record']";
 const DERIVED_REFERENCE = 'TSTypeReference[typeName.name=/^(Partial|Pick|Omit|Required)$/]';
+const CATCH_ALL_MAP = 'TSMappedType[constraint.type=/^TS(String|Number|Symbol)Keyword$/]';
 
 const TYPE_FILE_ROOTS = [
   'Program > ExportNamedDeclaration',
@@ -81,11 +90,11 @@ function typedBoundarySelectors() {
     },
     {
       selector: [
-        over(ALL_POSITIONS, ['TSObjectKeyword', RECORD_REFERENCE]),
+        over(ALL_POSITIONS, ['TSObjectKeyword', RECORD_REFERENCE, CATCH_ALL_MAP]),
         over(UNKNOWN_POSITIONS, ['TSUnknownKeyword']),
       ].join(', '),
       message:
-        'TB-1 (d): no object, Record or unknown payload at a boundary ' +
+        'TB-1 (d): no object, Record, string-keyed map or unknown payload at a boundary ' +
         `(unknown only narrows a caught error parameter). ${NAME_IT}`,
     },
     {
@@ -132,10 +141,13 @@ function typedBoundaryTypeFileSelectors() {
         'TSObjectKeyword',
         RECORD_REFERENCE,
         'TSIndexSignature',
+        CATCH_ALL_MAP,
         'TSPropertySignature:not([key.name=/^(error|cause)$/]) > TSTypeAnnotation TSUnknownKeyword',
+        'TSMethodSignature > TSTypeAnnotation TSUnknownKeyword',
+        'TSCallSignatureDeclaration > TSTypeAnnotation TSUnknownKeyword',
       ]),
       message:
-        'TB-1 (d): no object, Record, index signature or unknown member ' +
+        'TB-1 (d): no object, Record, index signature, string-keyed map or unknown member ' +
         '(unknown only as `error` / `cause`); name the shape (ADR-022).',
     },
     {
@@ -153,4 +165,7 @@ function typedBoundaryTypeFileSelectors() {
 module.exports = {
   typedBoundarySelectors,
   typedBoundaryTypeFileSelectors,
+  TB_FUNCTION_HOLDERS: FUNCTIONS,
+  TB_CODE_POSITIONS: ALL_POSITIONS,
+  TB_TYPE_FILE_ROOTS: TYPE_FILE_ROOTS,
 };
