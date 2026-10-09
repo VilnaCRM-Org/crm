@@ -1235,6 +1235,20 @@ const TB_FIXTURES = [
     'TB-1 (b)'
   ),
   tbFail(
+    'tuple-array-pattern-param',
+    PROBES.hook,
+    'export function useX([x]: [string]): string { return x; }',
+    S.tbTuple,
+    'TB-1 (b)'
+  ),
+  tbFail(
+    'object-defaulted-destructured-param',
+    PROBES.hook,
+    'export function useX({ x }: { x: string } = { x: "" }): string { return x; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
     'tuple-hook-return',
     PROBES.hook,
     'export function useX(): [string, number] { return ["", 1]; }',
@@ -1412,6 +1426,20 @@ const TB_FIXTURES = [
     'export interface Toast { onLoad: (items: Toast[]) => void }',
     S.tbTypeArray,
     'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-call-signature-array',
+    PROBES.typeOnly,
+    'export interface ToastSource { (): Toast[]; }',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-local-alias-exported-later',
+    PROBES.typeOnly,
+    'type Outcome = Sent | { kind: "failed" };\nexport type { Outcome };',
+    S.tbTypeObject,
+    'TB-1 (a)'
   ),
   tbFail(
     'type-file-alias-array',

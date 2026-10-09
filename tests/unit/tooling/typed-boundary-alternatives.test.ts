@@ -40,9 +40,12 @@ const HOLDER_SNIPPETS: ReadonlyArray<(params: string, annotation: string) => str
 const SLOT_SNIPPETS: Readonly<Record<string, readonly [string, string]>> = {
   ' > TSTypeAnnotation': ['', `: ${LITERAL}`],
   ' > Identifier > TSTypeAnnotation': [`a: ${LITERAL}`, ''],
-  ' > AssignmentPattern > Identifier > TSTypeAnnotation': [`a: ${LITERAL} = { x: "" }`, ''],
-  ' > RestElement > TSTypeAnnotation': [`...a: ${LITERAL}`, ''],
   ' > ObjectPattern > TSTypeAnnotation': [`{ x }: ${LITERAL}`, ''],
+  ' > ArrayPattern > TSTypeAnnotation': [`[a]: ${LITERAL}`, ''],
+  ' > AssignmentPattern > Identifier > TSTypeAnnotation': [`a: ${LITERAL} = { x: "" }`, ''],
+  ' > AssignmentPattern > ObjectPattern > TSTypeAnnotation': [`{ x }: ${LITERAL} = { x: "" }`, ''],
+  ' > AssignmentPattern > ArrayPattern > TSTypeAnnotation': [`[a]: ${LITERAL} = []`, ''],
+  ' > RestElement > TSTypeAnnotation': [`...a: ${LITERAL}`, ''],
 };
 
 const holderCase = (position: string): PositionCase | null => {
@@ -57,6 +60,10 @@ const holderCase = (position: string): PositionCase | null => {
 };
 
 const classMemberCase = (position: string): PositionCase | null => {
+  if (position.includes('TSParameterProperty > AssignmentPattern')) {
+    return { position, code: `class C { constructor(public a: ${LITERAL} = { x: "" }) {} }` };
+  }
+
   if (position.includes('TSParameterProperty')) {
     return { position, code: `class C { constructor(public a: ${LITERAL}) {} }` };
   }
@@ -74,12 +81,15 @@ const TYPE_FILE_SNIPPETS: Readonly<Record<string, string>> = {
   'Program > ExportNamedDeclaration': `export interface T { m: ${LITERAL} }`,
   'Program > ExportDefaultDeclaration': `export default interface T { m: ${LITERAL} }`,
   'Program > TSInterfaceDeclaration': `interface T { m: ${LITERAL} }`,
+  'Program > TSTypeAliasDeclaration': `type T = Item | ${LITERAL};\nexport type { T };`,
 };
 
 describe('TB-1 selector alternatives (issue #332)', () => {
   it('has a snippet for every code position the policy generates', () => {
     expect(codeCases.filter((testCase) => testCase.code === '').map((c) => c.position)).toEqual([]);
-    expect(codeCases).toHaveLength(policy.TB_FUNCTION_HOLDERS.length * 5 + 2);
+    expect(codeCases).toHaveLength(
+      policy.TB_FUNCTION_HOLDERS.length * Object.keys(SLOT_SNIPPETS).length + 3
+    );
   });
 
   it.each(codeCases)('fires for an anonymous object at $position', ({ position, code }) => {
@@ -91,18 +101,17 @@ describe('TB-1 selector alternatives (issue #332)', () => {
   });
 
   it.each(policy.TB_TYPE_FILE_ROOTS)('fires for a nested literal under %s', (root) => {
-    expect(
-      reportsFor(TYPE_FILE_SNIPPETS[root] ?? '', `${root} TSInterfaceBody TSTypeLiteral`)
-    ).toBe(1);
+    expect(reportsFor(TYPE_FILE_SNIPPETS[root] ?? '', `${root} TSTypeLiteral`)).toBe(1);
   });
 
   it('never reaches into a module augmentation from any type-file root', () => {
-    const augmentation = `declare module "x" { interface T { m: ${LITERAL} } }`;
+    const augmentation = [
+      `declare module "x" { interface T { m: ${LITERAL} }`,
+      `type U = ${LITERAL}; }`,
+    ].join('\n');
 
     expect(
-      policy.TB_TYPE_FILE_ROOTS.map((root) =>
-        reportsFor(augmentation, `${root} TSInterfaceBody TSTypeLiteral`)
-      )
-    ).toEqual([0, 0, 0]);
+      policy.TB_TYPE_FILE_ROOTS.map((root) => reportsFor(augmentation, `${root} TSTypeLiteral`))
+    ).toEqual(policy.TB_TYPE_FILE_ROOTS.map(() => 0));
   });
 });

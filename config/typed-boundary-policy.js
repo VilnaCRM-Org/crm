@@ -28,18 +28,16 @@ const FUNCTIONS = [METHOD, ...EXPORTED_FUNCTIONS];
 const CONSTRUCTOR = `MethodDefinition[kind='constructor'] > FunctionExpression`;
 
 const returnPosition = (fn) => `${fn} > TSTypeAnnotation`;
+const PATTERNS = ['Identifier', 'ObjectPattern', 'ArrayPattern'];
 const parameterPositions = (fn) => [
-  `${fn} > Identifier > TSTypeAnnotation`,
-  `${fn} > AssignmentPattern > Identifier > TSTypeAnnotation`,
+  ...PATTERNS.map((pattern) => `${fn} > ${pattern} > TSTypeAnnotation`),
+  ...PATTERNS.map((pattern) => `${fn} > AssignmentPattern > ${pattern} > TSTypeAnnotation`),
   `${fn} > RestElement > TSTypeAnnotation`,
-  `${fn} > ObjectPattern > TSTypeAnnotation`,
 ];
-const PARAMETER_PROPERTY_POSITION = [
-  CONSTRUCTOR,
-  'TSParameterProperty',
-  'Identifier',
-  'TSTypeAnnotation',
-].join(' > ');
+const PARAMETER_PROPERTY_POSITIONS = [
+  `${CONSTRUCTOR} > TSParameterProperty > Identifier > TSTypeAnnotation`,
+  `${CONSTRUCTOR} > TSParameterProperty > AssignmentPattern > Identifier > TSTypeAnnotation`,
+];
 const PROPERTY_POSITION = `PropertyDefinition${NON_PRIVATE} > TSTypeAnnotation`;
 
 const UNKNOWN_POSITIONS = [
@@ -48,7 +46,7 @@ const UNKNOWN_POSITIONS = [
 ];
 const ALL_POSITIONS = [
   ...FUNCTIONS.flatMap((fn) => [returnPosition(fn), ...parameterPositions(fn)]),
-  PARAMETER_PROPERTY_POSITION,
+  ...PARAMETER_PROPERTY_POSITIONS,
   PROPERTY_POSITION,
 ];
 
@@ -61,13 +59,22 @@ const TYPE_FILE_ROOTS = [
   'Program > ExportNamedDeclaration',
   'Program > ExportDefaultDeclaration',
   'Program > TSInterfaceDeclaration',
+  'Program > TSTypeAliasDeclaration',
 ];
 
 const over = (positions, nodes) =>
   positions.flatMap((position) => nodes.map((node) => `${position} ${node}`)).join(', ');
 
+const rootedPart = (root, part) => {
+  const declaration = root.slice(root.lastIndexOf(' ') + 1);
+
+  return part.startsWith(`${declaration} `)
+    ? `${root.slice(0, -declaration.length)}${part}`
+    : `${root} ${part}`;
+};
+
 const underTypeFileRoots = (parts) =>
-  TYPE_FILE_ROOTS.flatMap((root) => parts.map((part) => `${root} ${part}`)).join(', ');
+  TYPE_FILE_ROOTS.flatMap((root) => parts.map((part) => rootedPart(root, part))).join(', ');
 
 const NAME_IT =
   'Declare the named type in a type-only file (ADR-022, CLAUDE.md "Typed boundaries").';
@@ -128,6 +135,7 @@ function typedBoundaryTypeFileSelectors() {
         "TSArrayType[elementType.type!='TSTypeReference']",
         'TSArrayType TSArrayType',
         'TSMethodSignature TSArrayType',
+        'TSCallSignatureDeclaration TSArrayType',
         'TSFunctionType TSArrayType',
         'TSTypeAliasDeclaration TSArrayType',
         ARRAY_REFERENCE,
