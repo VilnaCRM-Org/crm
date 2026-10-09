@@ -146,9 +146,18 @@ The code-file column is `typedBoundarySelectors`, the type-file column
 `typedBoundaryTypeFileSelectors`; in type-only files `unknown` stays allowed on an `error` or
 `cause` member.
 
-Type-file selectors are rooted at `Program > Export…Declaration` or `Program >
-TSInterfaceDeclaration`, so `declare module` augmentation is never matched (exception (ii)), and
-a named alias whose whole body is a derivation passes entry (e).
+Type-file selectors are rooted at the four top-level declaration kinds of a type-only file:
+`Program > ExportNamedDeclaration`, `Program > ExportDefaultDeclaration`,
+`Program > TSInterfaceDeclaration` and `Program > TSTypeAliasDeclaration`. A part that starts at
+the alias node itself (`TSTypeAliasDeclaration > …`) is rooted directly at `Program` for the
+fourth root. A `declare module` body is never a direct child of `Program`, so augmentation is
+never matched (exception (ii)), and a named alias whose whole body is a derivation passes entry
+(e).
+
+Every top-level declaration of a type-only file is a boundary, exported or not: a type-only file
+exists to declare shapes for other files, so a local alias there either feeds an exported shape
+or is re-exported later (`export type { Alias }`). Exception (iii), private members and
+function-local values, applies to code files only.
 
 ### 3.2 Wiring
 
