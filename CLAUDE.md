@@ -201,7 +201,8 @@ deterministic (the nightly flake audit is the one caller that opts into retries 
 flake budget (issue #186)"), and these two checks are single-job (no sharding).
 
 **Known sizing gap, deliberately not fixed here:** the auth switcher link (18 px tall), the
-remember-me checkbox (20 px) and the password toggle (32 px) fall under the 44 px floor, so the
+sign-in forgot-password link (18 px, 22 px from 768 px), the remember-me checkbox (20 px) and the
+password toggle (32 px) fall under the 44 px floor, so the
 sizing gate covers the primary controls only (text inputs, submit button, provider buttons).
 Enlarging them changes rendered height and invalidates every recorded desktop baseline — a
 design-owned follow-up, out of scope for a test-coverage change.
@@ -502,10 +503,11 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries six `color-contrast` entries rooted in the Figma palette tokens
-(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, and the
-error-page primary actions and decorative status digits, issue #309), tracked in issue #276 and
-deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
+The allowlist today carries seven `color-contrast` entries rooted in the Figma palette tokens
+(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
+error-page primary actions and decorative status digits, and the sign-in "Забули пароль?" brand
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309), tracked in issue #276
+and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
 button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
 entry carries all four fields.
 
@@ -2355,12 +2357,12 @@ initializes i18next at module evaluation and `src/config/i18n-config.js` is `req
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
 change.
 
-**Reading a flag** — components use the container-free bridge; the flag name is a `FeatureFlag`
-union member, so a typo is a compile error:
-
-```typescript
-const showForgotPassword = useFeatureFlag('forgotPassword');
-```
+**Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
+flag is declared today: the last one, `forgotPassword`, was removed in #309 when the sign-in
+"Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
+block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
+to a non-empty value fails container start and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is

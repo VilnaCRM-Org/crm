@@ -46,6 +46,12 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
   },
   {
     ruleId: 'color-contrast',
+    selector: 'form a.MuiLink-root[href="/password-recovery"]',
+    reason: 'Forgot-password link: toolkit brand #1EAEFF on white is 2.45:1; product-owner DEV-67.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
     selector: 'footer a.MuiLink-root > p.MuiTypography-root',
     reason:
       'Footer links: MUI default #1976D2 on #F4F5F6 is 4.21:1; UILink theme drops the palette.',

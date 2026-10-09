@@ -845,13 +845,10 @@ Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are regi
 `useValue` over module singletons rather than decorated `@injectable()` — the observability
 render-path pattern (issue #115).
 
-Read a flag from a component through the container-free bridge:
-
-```typescript
-import useFeatureFlag from '@/hooks/use-feature-flag';
-
-const showForgotPassword = useFeatureFlag('forgotPassword');
-```
+Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
+flag is declared today: `forgotPassword`, the last one, was removed in #309, and an environment
+that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`

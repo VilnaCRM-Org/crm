@@ -6,9 +6,9 @@ export default {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // The row can carry a second item once the forgotPassword flag is on; wrapping keeps it
-    // within a 320px viewport under the WCAG 1.4.12 text-spacing overrides, and the column gap
-    // guarantees the 2.5.8 spacing exception the inline link relies on.
+    // The row carries the checkbox and the forgot-password link; wrapping keeps both within a
+    // 320px viewport under the WCAG 1.4.12 text-spacing overrides, and the column gap guarantees
+    // the 2.5.8 spacing exception the inline link relies on.
     flexWrap: 'wrap',
     columnGap: '1rem',
     rowGap: '0.5rem',

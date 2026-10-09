@@ -16,7 +16,7 @@ type FakeRoute = {
 const SHELL = [
   '<html><head>',
   `<script id="${APP_CONFIG_ELEMENT_ID}" type="application/json">`,
-  '{ "flags": { "forgotPassword": false } }',
+  '{ "flags": {} }',
   '</script>',
   '</head><body></body></html>',
 ].join('');
@@ -60,7 +60,7 @@ describe('overrideRuntimeConfig', () => {
   it('replaces the runtime configuration block in the served document', async () => {
     const graphqlUrl = buildHttpUrl('/graphql');
     const fulfill = jest.fn().mockResolvedValue(undefined);
-    const { handler } = await registerHandler({ graphqlUrl, flags: { forgotPassword: true } });
+    const { handler } = await registerHandler({ graphqlUrl, flags: {} });
 
     await handler(documentRoute(SHELL, fulfill));
 
@@ -69,7 +69,7 @@ describe('overrideRuntimeConfig', () => {
 
     expect(renderedConfig(options.body)).toEqual({
       graphqlUrl,
-      flags: { forgotPassword: true },
+      flags: {},
     });
     expect(options.body).toContain('<html><head>');
     expect(options.body).toContain('</body></html>');

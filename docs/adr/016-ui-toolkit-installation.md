@@ -198,12 +198,14 @@ README documents.
 
 The toolkit `ui-link` is adopted for one surface only, behind a new narrow seam
 `src/components/ui-text-link` that renders it with `appearance="text"` and `tone="brand"`: the
-sign-in "Забули пароль?" link (Figma 15:793, 15:959, 19:855), still behind the `forgotPassword`
-flag. CRM's own `src/components/ui-link` stays local (R2 R5 R17), and the ESLint gate lets only the
-new seam import the subpath. The brand tone is 2.46:1 on white, under SC 1.4.3, and the checked
-box is 2.46:1, under SC 1.4.11; that is the product owner's decision (toolkit DEV-67), recorded
-with its follow-up conditions in [`docs/ui-toolkit.md`](../ui-toolkit.md), and it must be
-settled before the flag is enabled in a deployed environment.
+sign-in "Забули пароль?" link (Figma 15:793, 15:959, 19:855). The link renders unconditionally:
+the `forgotPassword` flag that hid it was removed by the user's decision (#309), so until #315
+registers `/password-recovery` it lands on the not-found page. CRM's own `src/components/ui-link`
+stays local (R2 R5 R17), and the ESLint gate lets only the new seam import the subpath. The brand
+tone is 2.45:1 on white, under SC 1.4.3, and the checked box is 2.45:1, under SC 1.4.11; that is
+the product owner's decision (toolkit DEV-67), accepted and recorded in
+[`docs/ui-toolkit.md`](../ui-toolkit.md). The visible link is covered by one `color-contrast`
+entry in `A11Y_EXCEPTIONS` scoped to that link alone and tracked by #276.
 
 ### Deviations from the issue text
 

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import UICheckbox from '@/components/ui-checkbox';
 import UITextLink from '@/components/ui-text-link';
-import useFeatureFlag from '@/hooks/use-feature-flag';
 import ROUTE_PATHS from '@/routes/route-paths';
 
 import styles from './styles';
@@ -12,7 +11,6 @@ import styles from './styles';
 export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);
   const { t } = useTranslation();
-  const showForgotPassword = useFeatureFlag('forgotPassword');
 
   const handleCheckboxChange = useCallback(
     (): void => {
@@ -30,11 +28,9 @@ export default function UserOptions(): JSX.Element {
         sx={styles.rememberMeLabel}
       />
 
-      {showForgotPassword && (
-        <UITextLink href={ROUTE_PATHS.passwordRecovery}>
-          {t('sign_in.form.forgot_password')}
-        </UITextLink>
-      )}
+      <UITextLink href={ROUTE_PATHS.passwordRecovery}>
+        {t('sign_in.form.forgot_password')}
+      </UITextLink>
     </Box>
   );
 }

@@ -11,6 +11,7 @@ const LOGIN_API_URL = '**/api/users';
 const backToMainLabel: string = t('buttons.back_to_main');
 const showPasswordLabel: string = t('auth.password.show');
 const rememberMeLabel: string = t('sign_in.form.remember_me');
+const forgotPasswordLabel: string = t('sign_in.form.forgot_password');
 const submitLabel: string = t('sign_in.form.submit_button');
 
 const credentials = buildCredentials();
@@ -38,6 +39,7 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
       { locator: page.locator('#password'), visibleFocus: true },
       { locator: page.getByRole('button', { name: showPasswordLabel }) },
       { locator: page.getByRole('checkbox', { name: rememberMeLabel }) },
+      { locator: page.getByRole('link', { name: forgotPasswordLabel }), visibleFocus: true },
       { locator: page.getByRole('button', { name: submitLabel }), visibleFocus: true },
     ]);
   });

@@ -1,5 +1,3 @@
-export type FeatureFlag = 'forgotPassword';
+export type FeatureFlag = never;
 
-export interface FeatureFlagValues {
-  readonly forgotPassword?: boolean | undefined;
-}
+export type FeatureFlagValues = Readonly<Partial<Record<FeatureFlag, boolean>>>;

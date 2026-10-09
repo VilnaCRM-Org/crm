@@ -417,17 +417,19 @@ link (nodes 15:793, 15:959, 19:855): Golos 500 15/18 below 768 px and from 1440 
 focus outline on `:focus-visible`. `appearance="text"` drops the fixed 1130 px font-size rule
 (R17) and the `sm` rule, so neither applies to it. It is adopted behind a new narrow seam,
 `src/components/ui-text-link` (`UITextLink`, `href` and `children` only), used by the
-sign-in "Забули пароль?" link behind the `forgotPassword` flag. CRM's `ui-link` keeps its
-local seam and stays on the register.
+sign-in "Забули пароль?" link, which renders unconditionally since the `forgotPassword` flag was
+removed (#309). It points at `/password-recovery`, which lands on the not-found page until #315
+registers the route. CRM's `ui-link` keeps its local seam and stays on the register.
 
-**Accepted accessibility conflict.** The brand tone is 2.46:1 on white, and its toolkit hover
+**Accepted accessibility conflict.** The brand tone is 2.45:1 on white, and its toolkit hover
 `#297FFF` 3.77:1, both under the 4.5:1 of SC 1.4.3; the checked checkbox fill and its white tick
-are 2.46:1 against the 3:1 of SC 1.4.11. This is the product owner's explicit choice (toolkit
-DEV-67); the accessible alternative is `tone="accessible"` (`#0074B5`, 5.04:1). The link is
-hidden while `forgotPassword` is off, so no axe route scan sees it; the first axe-scanned test
-that renders it adds a `color-contrast` entry to `A11Y_EXCEPTIONS` scoped to that link and
-tracked by CRM issue #276, never a rule-wide exception. The conflict has to be settled before
-`forgotPassword` is enabled in any deployed environment (#315).
+are 2.45:1 against the 3:1 of SC 1.4.11. This is the product owner's explicit choice (toolkit
+DEV-67), and the conflict is accepted and recorded rather than open: the link now always renders
+on `/sign-in`, by the user's decision to remove the `forgotPassword` flag (#309). The axe route
+scan therefore sees it, and `A11Y_EXCEPTIONS` carries one `color-contrast` entry scoped to that
+link alone (`form a.MuiLink-root[href="/password-recovery"]`), tracked by CRM issue #276 —
+never a rule-wide exception. The entry is deleted when #276 closes or the link moves to the
+accessible alternative, `tone="accessible"` (`#0074B5`, 5.04:1).
 
 ## Fonts
 

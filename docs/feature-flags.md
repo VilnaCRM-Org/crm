@@ -14,12 +14,9 @@ production container renders that block from `APP_CONFIG_FLAG_*` environment var
 start-up, so the same image behaves differently per environment. See
 `src/config/runtime/README.md` for the mechanism.
 
-```ts
-// In a React component or hook
-import useFeatureFlag from '@/hooks/use-feature-flag';
-
-const showForgotPassword = useFeatureFlag('forgotPassword');
-```
+A React component or hook reads a flag through `useFeatureFlag(name)` from
+`@/hooks/use-feature-flag`, the container-free bridge; `name` is a member of the `FeatureFlag`
+union. A container-resolved class injects the service instead:
 
 ```ts
 // In a container-resolved class
@@ -71,9 +68,12 @@ Set the variable on the target environment and restart the container. No rebuild
 a new artifact:
 
 ```sh
-APP_CONFIG_FLAG_FORGOT_PASSWORD=true docker compose -f docker-compose.yml \
+APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>=true docker compose -f docker-compose.yml \
   -f docker-compose.test.yml up -d --force-recreate prod
 ```
+
+`<UPPER_SNAKE_NAME>` is the flag's name in upper snake case; the line is a template, not a
+command to paste.
 
 Roll forward one environment at a time (staging, then production). To disable, set the variable
 back to `false` (or clear it, which restores the declared default) and restart. Because the value
@@ -94,24 +94,26 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 3. Delete `APP_CONFIG_FLAG_<NAME>` from `.env.example` (and your local `.env`) and
    `docker-compose.test.yml`.
 4. Delete the flag-specific tests and collapse the remaining ones onto the surviving behaviour.
-5. Unset the variable in every environment. Leaving it set is harmless — the renderer will reject
-   it on the next restart, which is the intended signal that the environment is stale.
+5. Unset the variable in every environment **before** the removal deploys. Leaving it set to a
+   non-empty value is not harmless: the renderer rejects it as an unknown flag, the entrypoint
+   exits non-zero and the container does not start. That failure is the intended signal that the
+   environment is stale, but it is an outage if nobody unsets the variable first.
 
 ## Current flags
 
-| Flag             | Default | Meaning                                                       |
-| ---------------- | ------- | ------------------------------------------------------------- |
-| `forgotPassword` | `false` | Shows the "Forgot password?" link on the sign-in options row. |
+None. The mechanism stays in place for the next rollout: the `FeatureFlag` union is `never`,
+`FEATURE_FLAG_DEFAULTS` is empty, the committed block ships `{ "flags": {} }`, and the schema's
+`flags` object is strict, so a block or an environment that still names a removed flag fails fast.
 
-`forgotPassword` is the worked example of stage 1. The link points at
-`ROUTE_PATHS.passwordRecovery`, and the recovery route does not exist yet — which is exactly why
-the flag defaults to `false`. Enable it only once the recovery flow is implemented, then follow
-stage 3 and delete the flag.
-
-That precondition is enforced, not merely documented:
-`tests/unit/tooling/runtime-config-contract.test.ts` fails the build if the committed default for
-`forgotPassword` is ever flipped to `true` while no route contract registers
-`ROUTE_PATHS.passwordRecovery`. A flag that gates a link should carry the same kind of gate.
+`forgotPassword`, the first flag, gated the sign-in "Forgot password?" link. Issue #309 removed
+it by a product decision to show the link in the form before the recovery flow (#315) exists, so
+it skipped stage 2. The link points at `ROUTE_PATHS.passwordRecovery` and lands on the
+not-found page until #315 registers the route. The contract test that tied the flag's shipped
+default to that route went with the flag; `tests/unit/tooling/runtime-config-contract.test.ts`
+now pins that the link is rendered, the route is unregistered, and its row in
+`tests/e2e/route-coverage.tsv` stays allowlisted with a reason naming #315. Any environment that
+still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
+`Known flags: (none).` and must unset it.
 
 ## Rules
 
@@ -123,4 +125,4 @@ That precondition is enforced, not merely documented:
 - **No nesting.** Do not gate a flag on another flag; the combinations are untestable.
 - **No flag in a hot loop.** Read it once per component, not per iteration.
 - **Give it an owner and a removal trigger** in the pull request that introduces it — "remove when
-  the recovery flow ships", not "remove eventually".
+  the new flow is enabled in production", not "remove eventually".

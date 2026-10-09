@@ -93,7 +93,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Six `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Seven `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -101,7 +101,10 @@ pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-conta
 `#FFC01E` on `#FBFBFB` at 2.37:1 and 1.58:1). The digits are `aria-hidden` decoration; the status
 is announced by the page heading and a visually hidden status-code line. Fixing them changes rendered
 colour and therefore every visual baseline, which is why they are design-owned work rather than
-part of the gate's own pull request.
+part of the gate's own pull request. One more covers the sign-in "Забули пароль?" link
+(`form a.MuiLink-root[href="/password-recovery"]`), the toolkit brand text link at `#1EAEFF` on
+white (2.45:1). The colour is the product owner's decision (ui-toolkit DEV-67); the accessible
+alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1).
 
 ## Adding coverage
 
