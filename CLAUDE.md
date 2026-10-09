@@ -11,10 +11,10 @@ This template is used for all VilnaCRM microservices.
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Material-UI v9, Emotion (CSS-in-JS)
-- **State Management**: three categories with one primitive each (ADR-008, issue #110) —
-  server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in the
-  dependency-free reactive var from `src/lib/state/` read through `useReactiveVar`, and the
-  in-memory session token in `AuthStateVar`; see `docs/state-architecture.md`
+- **State Management**: three categories with one primitive each (ADR-023, issues #110, #334) —
+  server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in
+  Zustand stores (`create`, no middleware) read through selectors, and the in-memory session
+  token in `useAuthStore`; see `docs/state-architecture.md`
 - **Routing**: React Router v7 (the `react-router` package; `react-router-dom` was folded into it)
 - **DI Container**: tsyringe with reflect-metadata decorators
 - **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
@@ -1396,7 +1396,7 @@ not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`
   deletes a guard the tests exercise.
 - `function-return-type` (3): a component returning an element or `null` is idiomatic React.
 - `todo-tag` (2): process, not a defect.
-- `no-invariant-returns` (1): fires on the deliberate echo API of `ReactiveVarState.write`.
+- `no-invariant-returns` (1): fired only on the echo API of the retired reactive-var primitive (ADR-023).
 - `pseudo-random` (1): backoff jitter is not a security context.
 - `concise-regex`, `redundant-type-aliases` (1 each): style.
 
@@ -1757,7 +1757,7 @@ src/
 │   └── user/
 │       ├── features/        # Feature-specific code
 │       │   └── auth/
-│       │       ├── stores/        # AuthStateVar (reactive var) + composition root
+│       │       ├── stores/        # useAuthStore (Zustand) + composition root
 │       │       ├── repositories/  # AuthRepository, API clients, error factory
 │       │       └── types/         # Auth types (AuthError, AuthStore, ...)
 │       ├── store/           # Shared response/error mappers
@@ -1849,21 +1849,16 @@ private async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-var.ts — dependency-free reactive state over the src/lib/state ReactiveVarFactory
-// (no @apollo/client, no zustand; ADR-008). Instance methods on a module-singleton instance
-// keep the paint path container-free (no tsyringe in the auth chunk) while satisfying the
-// no-static convention (issue #100). React reads it through useReactiveVar
-// (@/lib/state/use-reactive-var), the one sanctioned useSyncExternalStore bridge.
-export class AuthStateVar {
-  public get(): AuthState {
-    /* read */
-  }
-  public set(partial: Partial<AuthState>): void {
-    /* merge + notify */
-  }
-}
-const authStateVar = new AuthStateVar();
-export default authStateVar;
+// use-auth-store.ts — a Zustand store (`create`, no middleware; ADR-023) in a hook file, so the
+// no-static convention (issue #100) does not apply and the paint path stays container-free (no
+// tsyringe in the auth chunk). React reads it through selectors; writers call `setState` with an
+// `AuthStatePatch`. The DI graph receives it by value as `AUTH_TOKENS.AuthStore`.
+export const CLEARED_AUTH_STATE: AuthState = {/* cleared fields */};
+const useAuthStore = create<AuthState>()(() => ({
+  ...CLEARED_AUTH_STATE,
+  token: preloadedAuthTokenSeed.read(),
+}));
+export default useAuthStore;
 
 // auth-store-selectors.ts — selectors grouped in a class, exported as a singleton (no free functions)
 class AuthStoreSelectors {
@@ -1922,7 +1917,7 @@ list and needs no entry (issue #116): `UIErrorBoundary`
 `AppErrorBoundary` needed is gone with it; its functional descendants `ErrorFallback` and
 `RouteError` can call `useService` and stay gated too. Both gates read the same carve-out list,
 so they never disagree about which file is exempt. The carve-outs keep their module singletons
-(`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`, `routeComposer`,
+(`formValidators`, `useAuthToken`, `use-auth-store`, `auth-store-selectors`, `routeComposer`,
 `boundaryErrorReporter`) — do not migrate them onto `useService`. The carve-out is itself
 enforced by two rules:
 
@@ -1968,12 +1963,11 @@ container — collaborators are injected, not reached for.
   `@injectable()` classes registered in `dependency-injection-config.ts` against a token
   in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
   `@inject`.
-- Render-path state primitives that must stay container-free for the auth-page Lighthouse
-  budget (`auth-var`, `auth-store-selectors`, `use-auth-token`) are instance classes exported
-  as a **module singleton** (`export default new X()`), so call sites stay `X.method(...)` and
-  no tsyringe is pulled into the paint path. The shared primitive they compose,
-  `ReactiveVarFactory` / `ReactiveVarState` in `src/lib/state/`, is a constructible class —
-  one instance per store — and `use-reactive-var.ts` is a hook.
+- Render-path state helpers that must stay container-free for the auth-page Lighthouse
+  budget (`auth-store-selectors`) are instance classes exported as a **module singleton**
+  (`export default new X()`), so call sites stay `X.method(...)` and no tsyringe is pulled into
+  the paint path. The stores themselves are Zustand hooks in `use-*-store.ts` files
+  (`use-auth-store.ts`, `use-connectivity-store.ts`), exempt like any hook.
 - Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
   methods on a singleton class rather than free functions.
 
@@ -2045,8 +2039,6 @@ type files, stories, tests) must end in one of these:
 | `*Selectors`   | read-only projections over state            | Redux / Zustand selectors         |
 | `*Store`       | state container                             | Flux / Zustand                    |
 | `*Actions`     | state transitions of a store                | Flux                              |
-| `*Var`         | container-free reactive state cell          | Apollo makeVar idiom              |
-| `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
 | `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
 | `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
 | `*Client`      | outbound transport client                   | enterprise Gateway                |
@@ -2110,7 +2102,7 @@ class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
    the class name (`ApiErrorGuard` → `api-error-guard.ts`).
 5. Run `make format && make lint`; fix a finding by renaming, never with a suppression.
 6. Rename nothing on the container-free auth render path in a way that pulls tsyringe or a token
-   module into the paint chunk — `ReactiveVarFactory` / `AuthStateVar` keep their names.
+   module into the paint chunk — `useAuthStore` and `useConnectivityStore` keep their names.
 
 **Enforcement.** Four `no-restricted-syntax` selectors, all at `error`, spread into the same
 `src/**/*.ts` override blocks as the #100 / #180 gates (flat config replaces rather than merges
@@ -2214,8 +2206,7 @@ Three different things are outside the gate, and the distinction matters when yo
   gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
   class to register it), token modules, and index barrels.
 - **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
-  **container-free render-path singletons** — `auth-var` (its `ReactiveVarFactory` now
-  lives in `src/lib/state/`, outside the gated globs), `auth-store-selectors`,
+  **container-free render-path singletons** — `auth-store-selectors`,
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
@@ -2967,7 +2958,7 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
     `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
     telemetry; only the final failure reaches the observability boundary.
 
-    Offline is client state (ADR-008): `ConnectivityStateVar` in `src/lib/connectivity/`, seeded
+    Offline is client state (ADR-023): `useConnectivityStore` in `src/lib/connectivity/`, seeded
     and driven by `BrowserConnectivityAdapter.attach(window)` in `src/index.tsx`, read through
     `useConnectivity()` (`src/hooks/`). `UIForm` disables its submit while offline and mounts
     `UIOfflineNotice` — an **always-mounted** `role="status"` region inside the `<form>`, after

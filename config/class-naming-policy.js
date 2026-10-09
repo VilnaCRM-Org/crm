@@ -96,12 +96,6 @@ const APPROVED_SUFFIXES = [
   },
   { suffix: 'Store', role: 'state container', lineage: 'Flux / Zustand' },
   { suffix: 'Actions', role: 'state transitions of a store', lineage: 'Flux' },
-  { suffix: 'Var', role: 'container-free reactive state cell', lineage: 'Apollo makeVar idiom' },
-  {
-    suffix: 'State',
-    role: 'listener bookkeeping of a reactive cell',
-    lineage: 'repo idiom (auth render path)',
-  },
   { suffix: 'Cache', role: 'memoized instances keyed by arguments', lineage: 'PoEAA Identity Map' },
   { suffix: 'Loader', role: 'loads a resource or module on demand', lineage: 'lazy-loading idiom' },
   { suffix: 'Client', role: 'outbound transport client', lineage: 'enterprise Gateway' },
