@@ -747,12 +747,11 @@ instead of via module mocking.
 - **Behavioral collaborators** → `@injectable()` class + token in the owning area's
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
   with `@inject`/`container.resolve`.
-- **Render-path state primitives** that must stay container-free for the auth-page
-  Lighthouse budget (`auth-var`, `auth-store-selectors`, `use-auth-token`) → instance class
-  exported as a **module singleton** (`export default new X()`); call sites remain
-  `X.method(...)` and no tsyringe enters the paint path. The shared primitive they compose,
-  `ReactiveVarFactory` / `ReactiveVarState` in `src/lib/state/`, is a constructible class
-  instead — one instance per store — and `use-reactive-var.ts` is a hook.
+- **Render-path state helpers** that must stay container-free for the auth-page
+  Lighthouse budget (`auth-store-selectors`) → instance class exported as a **module
+  singleton** (`export default new X()`); call sites remain `X.method(...)` and no tsyringe
+  enters the paint path. The stores themselves are Zustand hooks in `use-*-store.ts` files
+  (`use-auth-store.ts`, `use-connectivity-store.ts`), exempt like any hook.
 - **Pure helpers / validators / type guards / style helpers / lazy loaders** → instance
   methods on a singleton class, never free functions.
 - **Exempt:** React components (`*.tsx`, incl. class error boundaries using
@@ -928,10 +927,9 @@ contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
-container-resolved class. Those inside a gated directory (`auth-var` — its
-`ReactiveVarFactory` lives in `src/lib/state/`, outside the gated globs —
-`auth-store-selectors`, `response-schemas`, `map-registration-error`, the
-auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
+container-resolved class. Those inside a gated directory (`auth-store-selectors`,
+`response-schemas`, `map-registration-error`, the auth lazy loaders,
+`registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
 issue #116), `url-builder`, `locale-formatter-core`, and the observability
 core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by explicit path in
@@ -1031,37 +1029,33 @@ passes both gates as written. Hooks (`use-*.ts`) are outside the static
 gate; that is not license to `new` a collaborator there — expect review to flag it. Never
 satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
 
-### Client-state store pattern (reactive var, ADR-008)
+### Client-state store pattern (Zustand, ADR-023)
 
 State is one of three categories — server (a repository over Apollo / `HttpsClient`),
-client/UI (a reactive var), session (`AuthStateVar`) — and the category decides the
+client/UI (a Zustand store), session (`useAuthStore`) — and the category decides the
 primitive; the decision rule and a worked example per category are in
-[`docs/state-architecture.md`](docs/state-architecture.md). A client/UI store is a `*Var`
-class over `ReactiveVarFactory` from `src/lib/state/`, exported as a module singleton, with
-named actions and no I/O; React subscribes through `useReactiveVar`, the one sanctioned
-`useSyncExternalStore` bridge. `zustand` is not a dependency, and an import of it or a
-hand-rolled `useSyncExternalStore` fails `make lint-eslint`. See
+[`docs/state-architecture.md`](docs/state-architecture.md). A client/UI store is created with
+`create<State>()(…)` and no middleware in a `use-*-store.ts` hook file, with named patch types
+at every writer; React reads it through a selector. `zustand` is imported from its root
+specifier only (no `persist`, no `devtools`), and a hand-rolled `useSyncExternalStore` fails
+`make lint-eslint`. A test that writes a store calls `resetClientStores()`
+(`tests/utils/reset-client-stores.ts`) in `beforeEach`. See
 `src/modules/user/features/auth/stores/` for the reference store.
 
 ```typescript
-// Store: src/modules/[Module]/features/[Feature]/stores/[feature]-var.ts
-export class FeatureFilterVar {
-  private readonly state = new ReactiveVarFactory().create<FeatureFilter>(CLEARED_FILTER);
+// Store: src/modules/[Module]/features/[Feature]/stores/use-feature-filter-store.ts
+export const CLEARED_FILTER: FeatureFilter = { query: '' };
 
-  public reactiveVar(): ReactiveVar<FeatureFilter> {
-    return this.state;
-  }
-
-  public setQuery(query: string): void {
-    this.state({ ...this.state(), query });
-  }
-}
-export default new FeatureFilterVar();
+const useFeatureFilterStore = create<FeatureFilter>()(() => ({ ...CLEARED_FILTER }));
+export default useFeatureFilterStore;
 
 // Hook: src/modules/[Module]/features/[Feature]/stores/use-feature-query.ts
 export default function useFeatureQuery(): string {
-  return useReactiveVar(featureFilterVar.reactiveVar(), (filter) => filter.query);
+  return useFeatureFilterStore((filter: FeatureFilter): string => filter.query);
 }
+
+// Writer: pass a named patch
+useFeatureFilterStore.setState({ query } satisfies FeatureFilterPatch);
 ```
 
 Server-backed actions stay off the store: the composition root
@@ -1432,9 +1426,9 @@ nvm use         # If using nvm
 3. Check the auth state:
 
    ```typescript
-   import { AuthStateVar } from '@auth/stores';
+   import { useAuthStore } from '@auth/stores';
 
-   const authState = AuthStateVar.get();
+   const authState = useAuthStore.getState();
    console.log('Auth state:', authState);
    ```
 
@@ -1668,9 +1662,9 @@ build goes red. Know them before you touch a config file:
 
 ### API Authentication
 
-- Access token is stored only in the in-memory reactive auth state (`AuthStateVar`, read
+- Access token is stored only in the in-memory auth store (`useAuthStore`, read
   through `useAuthToken`); it is never persisted to `localStorage`, cookies, or disk, has
-  no refresh, and only `authActions.logout()` clears it (ADR-008)
+  no refresh, and only `authActions.logout()` clears it (ADR-023)
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
   `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual
