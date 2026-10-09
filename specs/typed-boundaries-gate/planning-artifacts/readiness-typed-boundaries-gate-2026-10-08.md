@@ -21,7 +21,7 @@ inputDocuments:
 
 # Implementation readiness: typed-boundaries gate (chore), iteration 2
 
-**Checker:** BMad implementation-readiness, non-interactive. **Date:** 2026-10-08.
+**Checker:** BMad implementation-readiness, non-interactive. **Date:** 2026-10-09.
 
 ## Summary
 
@@ -80,3 +80,7 @@ Verdict: PASS
   reshapes (named collections' `items`, `original` → `cause`), which contradicted the "no runtime
   behaviour" wording. PRD §1 / NFR-1, architecture §1, §5 and §9 and two Story 1.2 criteria now
   say "no user-visible behaviour" and list every reshape; PASS stands.
+- Post-implementation (2026-10-09, FR/NFR gate iteration 3): PRD §1 records the two out-of-scope
+  CI fixes (the load-test `tzdata` pin and the `compression@1.8.2` CVE fix in the production
+  `serve` runtime), and architecture §3.1 names the fourth type-file root and decides that every
+  top-level declaration of a type-only file is a boundary.

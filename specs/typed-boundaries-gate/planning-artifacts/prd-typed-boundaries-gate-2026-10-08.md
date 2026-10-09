@@ -35,6 +35,12 @@ a document, or a runtime reshape that TB-1 itself requires — a list crossing a
 named collection's `items`, and an `unknown` member not named `error` / `cause` is renamed. Each
 reshape is listed in the architecture §5, and every caller and test moves with it.
 
+Two out-of-scope fixes ride along because they turned the PR's CI red on `main` and block the
+chore's own gates: the load-test image re-pins `tzdata` to `2026e-r0` (Alpine dropped `2026d-r0`),
+and the production image's `serve-tools` stage moves `compression` to `1.8.2` to close the HIGH
+CVE-2026-87776 that `serve@14.2.6` pins in. The second is a production runtime change: it adds
+only `destroy`, the Trivy image scan is green, and every runtime suite passes on it.
+
 ## 2. Goals and non-goals
 
 ### Goals
