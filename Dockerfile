@@ -130,13 +130,12 @@ FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927
 
 RUN npm install -g serve@14.2.6
 
-RUN cd /tmp && npm pack compression@1.8.2 --silent \
+RUN npm pack compression@1.8.2 --silent --pack-destination /tmp \
     && rm -rf /usr/local/lib/node_modules/serve/node_modules/compression \
     && mkdir /usr/local/lib/node_modules/serve/node_modules/compression \
-    && tar -xzf compression-1.8.2.tgz --strip-components=1 -C /usr/local/lib/node_modules/serve/node_modules/compression \
-    && cd /usr/local/lib/node_modules/serve/node_modules/compression \
-    && npm pkg delete devDependencies scripts \
-    && npm install --omit=dev --ignore-scripts --no-audit --no-fund \
+    && tar -xzf /tmp/compression-1.8.2.tgz --strip-components=1 -C /usr/local/lib/node_modules/serve/node_modules/compression \
+    && npm --prefix /usr/local/lib/node_modules/serve/node_modules/compression pkg delete devDependencies scripts \
+    && npm --prefix /usr/local/lib/node_modules/serve/node_modules/compression install --omit=dev --ignore-scripts --no-audit --no-fund \
     && rm -f /tmp/compression-1.8.2.tgz
 
 
