@@ -115,6 +115,12 @@ so no allowlist, `warn` tier or narrowed glob ever exists. Nothing changes at ru
 > **No suppression.** Satisfy TB-1 by declaring the named type, never with `eslint-disable`, a
 > cast, a scope narrowing or an allowlist entry.
 
+The gate reads (d) as covering `any` and a string-keyed mapped type (`{ readonly [k in
+string]: T }`) as well: the mapped type is an index signature in another spelling, so a
+`TSMappedType` constrained by `string`, `number` or `symbol` fails with the index signatures.
+In code files (d) also rejects an `unknown` return; in type-only files an `unknown` member or
+method / call-signature return (only `error` / `cause` members keep it).
+
 TB-2 (board types at component boundaries) is not part of this chore: its naming check fails on
 `LoginUserDto` and `RegisterUserDto`, so it lands with their rename in #315 Story 0.2.
 
@@ -127,13 +133,13 @@ Both sit in `eslint.config.mjs` beside `typeDeclarationSelectors`. The shared fr
 contract's §4.1 item 1, including the three F8 function shapes (a top-level function or arrow
 exported later, and a non-private class arrow property).
 
-| Entry | Code files                              | Type-only files                                |
-| ----- | --------------------------------------- | ---------------------------------------------- |
-| (a)   | an object literal type at a signature   | a nested object literal in an exported shape   |
-| (b)   | a tuple                                 | a tuple                                        |
-| (c)   | an array, `Array`, `ReadonlyArray`      | an array of a non-named element                |
-| (d)   | `object`, `Record`, an `unknown` return | `object`, `Record`, index signature, `unknown` |
-| (e)   | `Partial`, `Pick`, `Omit`, `Required`   | the same inside an interface body              |
+| Entry | Code files                               | Type-only files                              |
+| ----- | ---------------------------------------- | -------------------------------------------- |
+| (a)   | an object literal type at a signature    | a nested object literal in an exported shape |
+| (b)   | a tuple                                  | a tuple                                      |
+| (c)   | an array, `Array`, `ReadonlyArray`       | an array of a non-named element              |
+| (d)   | `any`, `object`, `Record`, catch-all map | `any`, `object`, `Record`, index signature   |
+| (e)   | `Partial`, `Pick`, `Omit`, `Required`    | the same inside an interface body            |
 
 The code-file column is `typedBoundarySelectors`, the type-file column
 `typedBoundaryTypeFileSelectors`; in type-only files `unknown` stays allowed on an `error` or
