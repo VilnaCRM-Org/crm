@@ -38,7 +38,7 @@ describe('appConfig', () => {
   it('reads an empty configuration when the block is absent', async () => {
     const { default: appConfig } = await loadAppConfig();
 
-    expect(appConfig.get()).toEqual({});
+    expect(appConfig.get()).toStrictEqual({});
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
     expect(Object.isFrozen(appConfig.get())).toBe(true);

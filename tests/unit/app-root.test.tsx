@@ -1,7 +1,7 @@
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 
 type MockI18n = {
   language: string;
@@ -39,6 +39,11 @@ jest.mock('@/components/layouts/app-layout', () => {
   const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): JSX.Element => <Outlet /> };
 });
+
+jest.mock('@/providers/mui-theme/mui-theme-shell', () => ({
+  __esModule: true,
+  default: ({ children }: { children: ReactNode }): JSX.Element => <>{children}</>,
+}));
 
 jest.mock('@/components/error-boundary/route-error', () => ({
   __esModule: true,
