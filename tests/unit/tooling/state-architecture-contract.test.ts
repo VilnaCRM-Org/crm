@@ -100,18 +100,34 @@ describe('frontend state architecture contract (issue #110, ADR-008, ADR-023)', 
     expect(adr).toContain('no-shared-ui-to-http-client');
   });
 
-  it('keeps the contributor guides on the reactive var, never on a Zustand store', () => {
-    for (const doc of CONTRIBUTOR_DOCS) {
+  it('points every contributor guide at the Zustand stores, never at the reactive var', () => {
+    for (const doc of [...CONTRIBUTOR_DOCS, GUIDE, '.claude/skills/AI-AGENT-GUIDE.md']) {
       const text = readFile(doc);
 
-      expect(text).not.toMatch(/Zustand Store Pattern/);
-      expect(text).not.toMatch(/useAuthStore/);
-      expect(text).not.toMatch(/State Management\*\*: Zustand/);
-      expect(text).not.toMatch(/Stores use Zustand/);
+      expect(text).not.toMatch(/useReactiveVar/);
+      expect(text).not.toMatch(/AuthStateVar/);
+      expect(text).not.toMatch(/ReactiveVarFactory/);
     }
-    expect(readFile('CLAUDE.md')).toContain('src/lib/state/');
-    expect(readFile('AGENTS.md')).toContain('useReactiveVar');
-    expect(readFile('.claude/react-sdlc.yml')).toMatch(/^\s+state: reactive-var$/m);
+    expect(readFile('CLAUDE.md')).toContain('useAuthStore');
+    expect(readFile('AGENTS.md')).toContain('useAuthStore');
+    expect(readFile('.claude/react-sdlc.yml')).toMatch(/^\s+state: zustand$/m);
+  });
+
+  it('documents the store, a selector, a patch and the reset helper in the guide', () => {
+    const guide = readFile(GUIDE);
+
+    expect(guide).toContain('create<ContactFilter>()(');
+    expect(guide).toContain('useContactFilterStore((filter');
+    expect(guide).toContain('ContactFilterPatch');
+    expect(guide).toContain('resetClientStores()');
+    expect(guide.slice(guide.indexOf('## What fails CI'))).not.toContain("from 'zustand'");
+  });
+
+  it('drops the reactive-var suffixes from the class-naming policy', () => {
+    const policy = readFile('config/class-naming-policy.js');
+
+    expect(policy).not.toContain("suffix: 'Var'");
+    expect(policy).not.toContain("suffix: 'State'");
   });
 
   it('names the gates in the guide so a reader can map a failure to its rule', () => {

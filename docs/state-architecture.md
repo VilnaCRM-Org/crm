@@ -1,8 +1,9 @@
 # Where does my state go?
 
-The binding decision is [ADR-008](./adr/008-frontend-state-architecture.md). This page is the
-short form a contributor or agent applies while writing code: three categories, one decision
-rule, one worked example each, and the gates that fail the wrong choice.
+The binding decision is [ADR-023](./adr/023-zustand-client-state.md), which carries the
+server-state and session rules of [ADR-008](./adr/008-frontend-state-architecture.md) forward.
+This page is the short form a contributor or agent applies while writing code: three categories,
+one decision rule, one worked example each, and the gates that fail the wrong choice.
 
 ## The decision rule
 
@@ -25,7 +26,7 @@ for what the user-service schema models, REST for what it does not (token exchan
 files); the full criterion is in
 [`src/api/contracts/README.md`](../src/api/contracts/README.md). **Cache rule:** `cache-first`
 by default, identity on `id`, `typePolicies` declared next to the client in the module's
-`config/di.ts` (ADR-008 lists the after-mutation rules).
+`config/di.ts` (ADR-023 lists the after-mutation rules).
 
 React reaches a repository through `useService` and a feature hook; it never imports
 `@apollo/client` or the HTTP client and never sees a transport type:
@@ -49,59 +50,75 @@ export default function useContactList(): AsyncListState<Contact> {
 
 ## Client/UI state
 
-**Owner:** a `*Var` class over the reactive var from `src/lib/state/`, exported as a module
-singleton, with named actions and no I/O. React subscribes through `useReactiveVar` with a
-selector; the hook memoizes the selected slice on the store value and the selector identity, so
-a selector may return a field, the whole value, or a derived object without re-render loops:
+**Owner:** a Zustand store, created with `create<State>()(…)` and no middleware in a
+`use-*-store.ts` hook file, with the initial value as its only logic. React reads it through a
+selector, so a consumer re-renders only when its slice changes; writers hand it a named patch
+type with `setState`:
 
 ```typescript
-// src/modules/contacts/features/contact-list/stores/contact-filter-var.ts
-import ReactiveVarFactory from '@/lib/state/reactive-var-factory';
-import type { ReactiveVar } from '@/lib/state/types/reactive-var';
+// src/modules/contacts/features/contact-list/stores/use-contact-filter-store.ts
+import { create } from 'zustand';
+
 import type { ContactFilter } from '@/modules/contacts/features/contact-list/types/contact-filter';
 
-const CLEARED_FILTER: ContactFilter = { query: '', owner: null };
+export const CLEARED_FILTER: ContactFilter = { query: '', owner: null };
 
-export class ContactFilterVar {
-  private readonly state: ReactiveVar<ContactFilter> =
-    new ReactiveVarFactory().create<ContactFilter>(CLEARED_FILTER);
+const useContactFilterStore = create<ContactFilter>()(() => ({ ...CLEARED_FILTER }));
 
-  public reactiveVar(): ReactiveVar<ContactFilter> {
-    return this.state;
-  }
-
-  public get(): ContactFilter {
-    return this.state();
-  }
-
-  public setQuery(query: string): void {
-    this.state({ ...this.state(), query });
-  }
-
-  public reset(): void {
-    this.state(CLEARED_FILTER);
-  }
-}
-
-export default new ContactFilterVar();
+export default useContactFilterStore;
 
 // src/modules/contacts/features/contact-list/stores/use-contact-query.ts
-import useReactiveVar from '@/lib/state/use-reactive-var';
+import type { ContactFilter } from '@/modules/contacts/features/contact-list/types/contact-filter';
 
-import contactFilterVar from './contact-filter-var';
+import useContactFilterStore from './use-contact-filter-store';
 
 export default function useContactQuery(): string {
-  return useReactiveVar(contactFilterVar.reactiveVar(), (filter) => filter.query);
+  return useContactFilterStore((filter: ContactFilter): string => filter.query);
 }
 ```
 
-The reference implementation is `src/modules/user/features/auth/stores/` — `auth-var.ts`,
-`use-auth-state.ts`, `use-auth-token.ts`.
+A writer passes a patch whose type is named in a type-only file, and `setState` merges it
+shallowly:
+
+```typescript
+// src/modules/contacts/features/contact-list/stores/contact-filter-actions.ts
+import type { ContactFilterPatch } from '@/modules/contacts/features/contact-list/types/contact-filter';
+
+import useContactFilterStore, { CLEARED_FILTER } from './use-contact-filter-store';
+
+export default class ContactFilterActions {
+  public setQuery(query: string): void {
+    const patch: ContactFilterPatch = { query };
+    useContactFilterStore.setState(patch);
+  }
+
+  public reset(): void {
+    useContactFilterStore.setState(CLEARED_FILTER);
+  }
+}
+```
+
+A selector returns a field or the stable state object, never a fresh object, so Zustand v5
+needs no `useShallow`. Middleware is out: `persist`, `devtools` and every other `zustand/*`
+subpath are rejected, and `zustand` is imported from its root specifier only.
+
+A behavioural class that needs the store receives it through DI: register the hook by value under
+a token typed `StoreApi<State>` (as `AUTH_TOKENS.AuthStore` does) and inject it. It never
+value-imports the hook.
+
+Every test that writes a store resets it first. `resetClientStores()` in
+`tests/utils/reset-client-stores.ts` writes each store's initial state back; call it in
+`beforeEach`, and add a new store to it when you add one. It is deliberately not in a global
+setup file, because a setup import would load the store modules before the tests that isolate
+them.
+
+The reference implementation is `src/modules/user/features/auth/stores/` — `use-auth-store.ts`,
+`use-auth-state.ts`, `use-auth-token.ts` — and `src/lib/connectivity/use-connectivity-store.ts`.
 
 ## Session state
 
-Session state is its own category, not a kind of client/UI state: `AuthStateVar` is built on
-the same reactive-var primitive, but the token has a written persistence contract that no other
+Session state is its own category, not a kind of client/UI state: `useAuthStore` is built the
+same way as any other store, but the token has a written persistence contract that no other
 store carries — it is in memory only, lives as long as the page, is never written to storage or
 a cookie, has no refresh, and is cleared by `authActions.logout()` alone. A `401` surfaces as
 an `AuthError` on the calling flow. Read it with `useAuthToken()` (re-renders only when the
@@ -110,14 +127,14 @@ new ADR, not a `localStorage` line.
 
 ## What fails CI
 
-| You wrote                                             | What fails                            |
-| ----------------------------------------------------- | ------------------------------------- |
-| `import { create } from 'zustand'`                    | ESLint `clientStateSelectors`         |
-| `useSyncExternalStore(...)` outside `src/lib/state/`  | ESLint `clientStateSelectors`         |
-| `import { useQuery } from '@apollo/client'` in React  | `no-apollo-client-outside-data-layer` |
-| `src/hooks/use-x.ts` importing the HTTP client        | `no-shared-ui-to-http-client`         |
-| A feature component importing the HTTP client         | `no-feature-direct-http-client`       |
-| `CLAUDE.md` / `AGENTS.md` naming Zustand as the store | `state-architecture-contract.test.ts` |
+| You wrote                                            | What fails                            |
+| ---------------------------------------------------- | ------------------------------------- |
+| `useSyncExternalStore(...)` anywhere in `src/`       | ESLint `clientStateSelectors`         |
+| `import { useQuery } from '@apollo/client'` in React | `no-apollo-client-outside-data-layer` |
+| `src/hooks/use-x.ts` importing the HTTP client       | `no-shared-ui-to-http-client`         |
+| A feature component importing the HTTP client        | `no-feature-direct-http-client`       |
+| A gated class importing `use-auth-store`             | `injectable-classes-no-value-imports` |
+| `CLAUDE.md` / `AGENTS.md` naming the reactive var    | `state-architecture-contract.test.ts` |
 
 The ESLint rows fail `make lint-eslint`, the dependency-cruiser rows `make lint-deps`, and the
 last row `make test-unit-all`.
