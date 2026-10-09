@@ -78,8 +78,9 @@ Verdict: PASS
   its 29 TB-1 sites are in Story 1.2's burn-down (27 criteria); the DoD is inlined; PASS.
 - Post-implementation (2026-10-09): the FR/NFR gate found that TB-1 itself forces runtime
   reshapes (named collections' `items`, `original` → `cause`), which contradicted the "no runtime
-  behaviour" wording. PRD §1 / NFR-1, architecture §1, §5 and §9 and two Story 1.2 criteria now
-  say "no user-visible behaviour" and list every reshape; PASS stands.
+  behaviour" wording. PRD §1 / NFR-1 and architecture §1, §5 and §9 now say "no user-visible
+  behaviour" and list every reshape, and two Story 1.2 criteria were reworded to match ("no file
+  moves or is renamed"; "it passes and no score or baseline drops"); PASS stands.
 - Post-implementation (2026-10-09, FR/NFR gate iteration 3): PRD §1 records the two out-of-scope
   CI fixes (the load-test `tzdata` pin and the `compression@1.8.2` CVE fix in the production
   `serve` runtime), and architecture §3.1 names the fourth type-file root and decides that every
