@@ -1,4 +1,4 @@
-import type { HttpErrorParams } from '@/services/types/https-client/http-error';
+import type { HttpErrorJson, HttpErrorParams } from '@/services/types/https-client/http-error';
 
 export class HttpError extends Error {
   public readonly status: number;
@@ -16,7 +16,7 @@ export class HttpError extends Error {
     }
   }
 
-  public toJSON(): { name: string; message: string; status: number; cause?: unknown } {
+  public toJSON(): HttpErrorJson {
     return { name: this.name, message: this.message, status: this.status, cause: this.cause };
   }
 }

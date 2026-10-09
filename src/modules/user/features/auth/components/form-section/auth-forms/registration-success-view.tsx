@@ -8,7 +8,13 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
-import type { Props } from '@auth/types/auth-forms/registration-success-view';
+import type {
+  MessageContainerProps,
+  Props,
+  SuccessActionButtonProps,
+  SuccessLabelProps,
+  SuccessTitleProps,
+} from '@auth/types/auth-forms/registration-success-view';
 
 import styles from './registration-notification.success-styles';
 
@@ -20,7 +26,7 @@ const headingFocusStyles = {
   },
 };
 
-function FocusableSuccessHeading({ title }: { title: string }): JSX.Element {
+function FocusableSuccessHeading({ title }: SuccessTitleProps): JSX.Element {
   const focusOnMount = useFocusOnMount<HTMLDivElement>();
   return (
     <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
@@ -31,7 +37,7 @@ function FocusableSuccessHeading({ title }: { title: string }): JSX.Element {
   );
 }
 
-function ConfettiTop({ label }: { label: string }): JSX.Element {
+function ConfettiTop({ label }: SuccessLabelProps): JSX.Element {
   return (
     <Box sx={styles.successTopImgBox}>
       <Box component={ConfettiImage} role="img" aria-label={label} sx={styles.successTopConfetti} />
@@ -39,7 +45,7 @@ function ConfettiTop({ label }: { label: string }): JSX.Element {
   );
 }
 
-function GearsImage({ label }: { label: string }): JSX.Element {
+function GearsImage({ label }: SuccessLabelProps): JSX.Element {
   return (
     <Box sx={styles.gears}>
       <Box component={SettingsImage} role="img" aria-label={label} sx={styles.successGears} />
@@ -59,11 +65,7 @@ function SuccessActionButton({
   buttonLabel,
   disabled,
   onBack,
-}: {
-  buttonLabel: string;
-  disabled: boolean;
-  onBack: () => void;
-}): JSX.Element {
+}: SuccessActionButtonProps): JSX.Element {
   return (
     <UIButton
       sx={styles.messageButton}
@@ -87,13 +89,7 @@ function MessageContainer({
   buttonLabel,
   disabled,
   onBack,
-}: {
-  title: string;
-  description: string;
-  buttonLabel: string;
-  disabled: boolean;
-  onBack: () => void;
-}): JSX.Element {
+}: MessageContainerProps): JSX.Element {
   return (
     <Box sx={styles.messageContainer}>
       <FocusableSuccessHeading title={title} />

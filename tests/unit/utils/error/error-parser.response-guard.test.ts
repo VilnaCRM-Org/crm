@@ -20,7 +20,7 @@ describe('ErrorParser — Response availability guard', () => {
     expect(parser.parseHttpError(error)).toEqual({
       code: 'JS_ERROR',
       message: 'Something unexpected happened',
-      original: error,
+      cause: error,
     });
   });
 
@@ -32,7 +32,7 @@ describe('ErrorParser — Response availability guard', () => {
     expect(parser.parseHttpError(value)).toEqual({
       code: 'UNKNOWN_ERROR',
       message: 'An unknown error occurred',
-      original: value,
+      cause: value,
     });
   });
 
@@ -43,7 +43,7 @@ describe('ErrorParser — Response availability guard', () => {
     expect(parser.parseHttpError(response)).toEqual({
       code: 'HTTP_404',
       message: 'HTTP error 404',
-      original: response,
+      cause: response,
     });
   });
 });

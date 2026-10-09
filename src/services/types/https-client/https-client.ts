@@ -1,5 +1,7 @@
 import type { ZodType } from 'zod';
 
+export type RequestHeaders = { readonly [name in string]: string };
+
 export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 // Per-request config. The response `schema` is required so every REST body is validated
@@ -10,7 +12,7 @@ export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 export interface RequestConfig<R> {
   schema: ZodType<R>;
   signal?: AbortSignal | undefined;
-  headers?: Record<string, string>;
+  headers?: RequestHeaders;
   timeoutMs?: number;
   retry?: boolean;
 }

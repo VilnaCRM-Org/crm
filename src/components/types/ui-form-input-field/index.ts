@@ -9,28 +9,34 @@ import type {
   RegisterOptions,
 } from 'react-hook-form';
 
-export type CustomTextField<T extends FieldValues> = TextFieldProps & {
+export type FieldRules<T extends FieldValues> = Omit<
+  RegisterOptions<T, Path<T>>,
+  'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
+>;
+
+export interface CustomTextFieldOwnProps<T extends FieldValues> {
   control: Control<T>;
-  rules: Omit<
-    RegisterOptions<T, Path<T>>,
-    'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
-  >;
+  rules: FieldRules<T>;
   defaultValue?: PathValue<T, Path<T>> | undefined;
   name: Path<T>;
-};
+}
 
-export type RenderFieldArgs<T extends FieldValues> = {
+export type CustomTextField<T extends FieldValues> = TextFieldProps & CustomTextFieldOwnProps<T>;
+
+export type ForwardedTextFieldProps<T extends FieldValues> = Omit<
+  CustomTextField<T>,
+  'control' | 'rules' | 'defaultValue' | 'name'
+>;
+
+export interface RenderFieldArgs<T extends FieldValues> {
   field: ControllerRenderProps<T, Path<T>>;
   fieldState: ControllerFieldState;
-};
+}
 
-export type ControlledFieldProps<T extends FieldValues> = {
+export interface ControlledFieldProps<T extends FieldValues> {
   control: Control<T>;
-  rules: Omit<
-    RegisterOptions<T, Path<T>>,
-    'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
-  >;
+  rules: FieldRules<T>;
   defaultValue?: PathValue<T, Path<T>> | undefined;
   name: Path<T>;
-  textFieldProps: Omit<CustomTextField<T>, 'control' | 'rules' | 'defaultValue' | 'name'>;
-};
+  textFieldProps: ForwardedTextFieldProps<T>;
+}

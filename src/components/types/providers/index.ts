@@ -8,6 +8,10 @@ export interface MuiThemeShellProps {
   children?: ReactNode;
 }
 
-export type ComponentModule = { default: ComponentType };
+export interface ComponentModule {
+  default: ComponentType;
+}
 
-export type MuiThemeShellModule = { default: ComponentType<MuiThemeShellProps> };
+export interface MuiThemeShellModule {
+  default: ComponentType<MuiThemeShellProps>;
+}

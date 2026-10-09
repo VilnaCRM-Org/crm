@@ -1,10 +1,11 @@
 import observabilityCore from '@/services/observability/observability-core';
 import securityEventCore from '@/services/security-events/security-event-core';
 import type { ErrorReporter } from '@/services/types/error-reporting';
+import type { CaptureContext } from '@/services/types/observability/observability';
 
 export class BoundaryErrorReporter implements ErrorReporter {
-  public report(error: Error, context?: Record<string, unknown>): void {
-    securityEventCore.boundaryCatch(String(context?.surface ?? 'app'));
+  public report(error: Error, context?: CaptureContext): void {
+    securityEventCore.boundaryCatch(context?.surface ?? 'app');
     observabilityCore.captureError(error, context);
   }
 }

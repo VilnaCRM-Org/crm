@@ -19,7 +19,7 @@ describe('ErrorParser unknown fallback', () => {
     expect(new ErrorParser().parseHttpError(original)).toEqual({
       code: 'UNKNOWN_ERROR',
       message: 'An unknown error occurred',
-      original,
+      cause: original,
     });
   });
 

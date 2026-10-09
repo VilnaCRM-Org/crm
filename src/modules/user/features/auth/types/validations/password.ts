@@ -1,4 +1,7 @@
 export type ValidationPswdMessageKey =
   'invalidLength' | 'numberRequired' | 'uppercaseRequired' | 'lowercaseRequired' | 'fieldRequired';
 
-export type Rule = { check: (value: string) => boolean; key: ValidationPswdMessageKey };
+export interface Rule {
+  check: (value: string) => boolean;
+  key: ValidationPswdMessageKey;
+}

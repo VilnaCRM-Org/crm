@@ -19,7 +19,9 @@ const PendingPage = lazy(
   (): Promise<{ default: () => JSX.Element }> => new Promise<never>(() => undefined)
 );
 
-type RootLayoutStoryProps = { pageLoading: boolean };
+interface RootLayoutStoryProps {
+  pageLoading: boolean;
+}
 
 function RootLayoutStory({ pageLoading }: RootLayoutStoryProps): JSX.Element {
   return (

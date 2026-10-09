@@ -25,7 +25,7 @@ export default class ObservabilityService implements ObservabilityServiceContrac
     this.core.captureError(error, context);
   }
 
-  public report(error: Error, context?: Record<string, unknown>): void {
+  public report(error: Error, context?: CaptureContext): void {
     this.core.report(error, context);
   }
 

@@ -15,7 +15,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('HTTP_404');
       expect(result.message).toBe('HTTP error 404');
-      expect(result.original).toBe(mockResponse);
+      expect(result.cause).toBe(mockResponse);
     });
 
     it('should handle Response instance with status 500', () => {
@@ -28,7 +28,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('HTTP_500');
       expect(result.message).toBe('HTTP error 500');
-      expect(result.original).toBe(mockResponse);
+      expect(result.cause).toBe(mockResponse);
     });
 
     it('should handle Response instance with status 200', () => {
@@ -38,7 +38,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('HTTP_200');
       expect(result.message).toBe('HTTP error 200');
-      expect(result.original).toBe(mockResponse);
+      expect(result.cause).toBe(mockResponse);
     });
 
     it('should handle Response instance with status 401', () => {
@@ -48,7 +48,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('HTTP_401');
       expect(result.message).toBe('HTTP error 401');
-      expect(result.original).toBe(mockResponse);
+      expect(result.cause).toBe(mockResponse);
     });
 
     it('should handle ApiError instance', () => {
@@ -62,7 +62,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe(ApiErrorCodes.AUTH);
       expect(result.message).toBe('Authentication failed');
-      expect(result.original).toBe(apiError);
+      expect(result.cause).toBe(apiError);
     });
 
     it('should handle ApiError with different error codes', () => {
@@ -76,7 +76,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe(ApiErrorCodes.NETWORK);
       expect(result.message).toBe('Network error occurred');
-      expect(result.original).toBe(apiError);
+      expect(result.cause).toBe(apiError);
     });
 
     it('should handle regular Error instance', () => {
@@ -86,7 +86,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Something went wrong');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
 
     it('should handle Error instance with empty message', () => {
@@ -96,7 +96,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
 
     it('should handle unknown error types - string', () => {
@@ -106,7 +106,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(unknownError);
+      expect(result.cause).toBe(unknownError);
     });
 
     it('should handle unknown error types - number', () => {
@@ -116,7 +116,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(unknownError);
+      expect(result.cause).toBe(unknownError);
     });
 
     it('should handle unknown error types - object', () => {
@@ -126,7 +126,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(unknownError);
+      expect(result.cause).toBe(unknownError);
     });
 
     it('should handle null', () => {
@@ -134,7 +134,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBeNull();
+      expect(result.cause).toBeNull();
     });
 
     it('should handle undefined', () => {
@@ -142,7 +142,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBeUndefined();
+      expect(result.cause).toBeUndefined();
     });
 
     it('should handle boolean', () => {
@@ -150,7 +150,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(false);
+      expect(result.cause).toBe(false);
     });
 
     it('should handle array', () => {
@@ -160,7 +160,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(unknownError);
+      expect(result.cause).toBe(unknownError);
     });
 
     it('should handle function', () => {
@@ -170,7 +170,7 @@ describe('ErrorParser Integration', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(unknownError);
+      expect(result.cause).toBe(unknownError);
     });
   });
 });

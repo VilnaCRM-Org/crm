@@ -2,7 +2,11 @@ import styled from '@emotion/styled';
 import { type JSX, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { ErrorFallbackProps } from '@/components/types/error-boundary';
+import type {
+  ErrorDiagnosticsProps,
+  ErrorFallbackProps,
+  RecoveryActionsProps,
+} from '@/components/types/error-boundary';
 import ROUTE_PATHS from '@/routes/route-paths';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
@@ -19,11 +23,7 @@ const ActionButton = styled('button')(styles.button);
 const ActionLink = styled('a')(styles.link);
 const Details = styled('details')(styles.details);
 
-function RecoveryButton({
-  recovery,
-  reset,
-  reload,
-}: Pick<ErrorFallbackProps, 'recovery' | 'reset' | 'reload'>): JSX.Element | null {
+function RecoveryButton({ recovery, reset, reload }: RecoveryActionsProps): JSX.Element | null {
   const { t } = useTranslation();
   const { strategy } = recovery;
 
@@ -44,11 +44,7 @@ function RecoveryButton({
   return null;
 }
 
-function RecoveryActions({
-  recovery,
-  reset,
-  reload,
-}: Pick<ErrorFallbackProps, 'recovery' | 'reset' | 'reload'>): JSX.Element {
+function RecoveryActions({ recovery, reset, reload }: RecoveryActionsProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
@@ -59,7 +55,7 @@ function RecoveryActions({
   );
 }
 
-function ErrorDiagnostics({ error }: Pick<ErrorFallbackProps, 'error'>): JSX.Element | null {
+function ErrorDiagnostics({ error }: ErrorDiagnosticsProps): JSX.Element | null {
   const { t } = useTranslation();
 
   if (process.env.NODE_ENV === 'production' || error == null) return null;

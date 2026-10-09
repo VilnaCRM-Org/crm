@@ -27,7 +27,7 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
     this.safe(() => sentryClient.captureException(error, this.withCorrelation(context)));
   }
 
-  public report(error: Error, context?: Record<string, unknown>): void {
+  public report(error: Error, context?: CaptureContext): void {
     this.captureError(error, context);
   }
 
@@ -63,13 +63,9 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
   }
 
   private withCorrelation(context?: CaptureContext): CaptureContext {
-    const header = correlationIdProvider.header;
-    const requestId = context?.[header] ?? correlationIdProvider.currentId;
-    const enriched: CaptureContext = {
-      ...context,
-      [sessionCorrelation.header]: sessionCorrelation.id(),
-    };
-    if (requestId) enriched[header] = requestId;
+    const requestId = context?.['X-Request-Id'] ?? correlationIdProvider.currentId;
+    const enriched: CaptureContext = { ...context, 'X-Correlation-Id': sessionCorrelation.id() };
+    if (requestId) enriched['X-Request-Id'] = requestId;
     return enriched;
   }
 

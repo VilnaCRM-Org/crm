@@ -1,6 +1,10 @@
 import React from 'react';
 
-import type { UIErrorBoundaryProps, UIErrorBoundaryState } from '@/components/types/error-boundary';
+import type {
+  UIErrorBoundaryProps,
+  UIErrorBoundaryState,
+  UIErrorBoundaryStatePatch,
+} from '@/components/types/error-boundary';
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
 import recoveryStrategyDetector from '@/lib/reliability/recovery-strategy-detector';
 
@@ -16,7 +20,7 @@ export default class UIErrorBoundary extends React.Component<
 > {
   public override state: UIErrorBoundaryState = { attempt: 0 };
 
-  public static getDerivedStateFromError(thrown: unknown): Partial<UIErrorBoundaryState> {
+  public static getDerivedStateFromError(thrown: unknown): UIErrorBoundaryStatePatch {
     return { error: toError(thrown), recovery: recoveryStrategyDetector.classify(thrown) };
   }
 

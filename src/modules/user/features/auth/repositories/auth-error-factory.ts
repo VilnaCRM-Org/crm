@@ -26,7 +26,7 @@ export default class AuthErrorFactory {
 
   public fromUiError(error: UiError, cause?: unknown): AuthError {
     const parsed = this.errorParser.parseHttpError(cause);
-    const status = this.statusOf(parsed.original);
+    const status = this.statusOf(parsed.cause);
     return {
       kind: KIND_BY_CODE[parsed.code] ?? 'unknown',
       displayMessage: error.displayMessage,

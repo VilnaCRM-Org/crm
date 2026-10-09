@@ -58,14 +58,6 @@ describe('BoundaryErrorReporter', () => {
     expect(captureError).toHaveBeenCalledWith(error, { surface });
   });
 
-  it('stringifies a surface that is not a string instead of dropping it', () => {
-    const { boundaryCatch } = spyOnCores();
-
-    boundaryErrorReporter.report(new Error(buildToken()), { surface: 42 });
-
-    expect(boundaryCatch).toHaveBeenCalledWith('42');
-  });
-
   it('passes the context object through to the capture untouched', () => {
     const { captureError } = spyOnCores();
     const context = { surface: 'route', componentStack: buildToken() };

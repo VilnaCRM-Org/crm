@@ -21,3 +21,7 @@ export interface AuthErrorFallbackProps extends Pick<
 > {
   fallback?: AuthErrorFallbackContent;
 }
+
+export interface ErrorDetailsProps {
+  error: Error;
+}

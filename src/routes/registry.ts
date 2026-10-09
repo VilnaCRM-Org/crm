@@ -1,8 +1,8 @@
 import authRoutes from '@auth/routes';
 
 import appRoutes from './app-routes';
-import type { RouteModule } from './types/route-module';
+import type { RouteModuleRegistry } from './types/route-module';
 
-const routeModules: readonly RouteModule[] = [appRoutes, authRoutes];
+const routeModules: RouteModuleRegistry = { items: [appRoutes, authRoutes] };
 
 export default routeModules;

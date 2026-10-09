@@ -111,6 +111,30 @@ const toolkitGroupFor = (file: string): string[] => {
 const groupsFor = (file: string): string[] =>
   restrictedImportsFor(file).patterns.flatMap(({ group }) => group);
 
+const ROUTE_COMPOSER_TSX = 'src/routes/route-composer.tsx';
+const LOCALE_FORMATTER_TS = 'src/services/locale-formatter/locale-formatter-core.ts';
+const REACTIVE_VAR_BRIDGE_TS = 'src/lib/state/use-reactive-var.ts';
+const ENV_TS = 'src/config/env/raw-env.ts';
+const RESTRICTED_ADAPTER_TS = 'src/services/observability/apollo-link-factory.ts';
+
+// One distinctive fragment per TB-1 entry (issue #332). The code array's fragments appear on
+// every block that replaces `no-restricted-syntax` for code; the type-file array's on the
+// type-only block.
+const TB_CODE_FRAGMENTS = [
+  'TSTypeLiteral',
+  'TSTupleType',
+  'TSArrayType',
+  "TSTypeReference[typeName.name='Record']",
+  'TSTypeReference[typeName.name=/^(Partial|Pick|Omit|Required)$/]',
+];
+const TB_TYPE_FILE_FRAGMENTS = [
+  'Program > ExportNamedDeclaration TSTypeLiteral TSTypeLiteral',
+  'Program > ExportNamedDeclaration TSTupleType',
+  "Program > ExportNamedDeclaration TSArrayType[elementType.type!='TSTypeReference']",
+  'Program > ExportNamedDeclaration TSIndexSignature',
+  'Program > ExportNamedDeclaration TSInterfaceBody TSTypeReference',
+];
+
 const SRC_PROBES = [
   LOGIC_TS,
   COMPONENT_TSX,
@@ -170,6 +194,44 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     const nrs = rulesFor(TYPE_ONLY_TS)['no-restricted-syntax'];
     expect(severityOf(nrs)).toBe(2);
     expect(jsonOf(nrs)).toContain('VariableDeclaration:not([declare=true])');
+  });
+
+  it('pins the typed-boundary gate (TB-1) at error on every src block', () => {
+    [
+      LOGIC_TS,
+      COMPONENT_TSX,
+      HOOK_TS,
+      ROUTE_COMPOSER_TSX,
+      LOCALE_FORMATTER_TS,
+      REACTIVE_VAR_BRIDGE_TS,
+      ENV_TS,
+      RESTRICTED_ADAPTER_TS,
+    ].forEach((file) => {
+      const nrs = rulesFor(file)['no-restricted-syntax'];
+      expect(severityOf(nrs)).toBe(2);
+      TB_CODE_FRAGMENTS.forEach((fragment) => {
+        expect(hasSelectorContaining(nrs, fragment)).toBe(true);
+      });
+      TB_TYPE_FILE_FRAGMENTS.forEach((fragment) => {
+        expect(hasSelectorContaining(nrs, fragment)).toBe(false);
+      });
+    });
+
+    const typeFileNrs = rulesFor(TYPE_ONLY_TS)['no-restricted-syntax'];
+    expect(severityOf(typeFileNrs)).toBe(2);
+    TB_TYPE_FILE_FRAGMENTS.forEach((fragment) => {
+      expect(hasSelectorContaining(typeFileNrs, fragment)).toBe(true);
+    });
+    expect(hasSelectorContaining(typeFileNrs, 'PropertyDefinition')).toBe(false);
+  });
+
+  it('pins consistent-type-definitions (TB-1) at error with the interface style on src', () => {
+    [LOGIC_TS, COMPONENT_TSX, TYPE_ONLY_TS, HOOK_TS].forEach((file) => {
+      expect(rulesFor(file)['@typescript-eslint/consistent-type-definitions']).toEqual([
+        2,
+        'interface',
+      ]);
+    });
   });
 
   it('keeps eslint-comments/no-use and max-len pinned on logic files', () => {

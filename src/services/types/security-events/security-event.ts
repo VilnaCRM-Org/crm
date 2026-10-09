@@ -24,7 +24,9 @@ export interface SecurityEvent {
   readonly severity: SecurityEventSeverity;
 }
 
-export type SecurityEventPayload = SecurityEvent & Partial<AuthFailureWindow>;
+export type OptionalAuthFailureWindow = Partial<AuthFailureWindow>;
+
+export type SecurityEventPayload = SecurityEvent & OptionalAuthFailureWindow;
 
 export interface SecurityEventRecorder {
   authFailure(category: AuthFailureCategory, reason: AuthFailureReason): void;
