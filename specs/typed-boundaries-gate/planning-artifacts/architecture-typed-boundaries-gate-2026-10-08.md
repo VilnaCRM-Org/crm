@@ -27,10 +27,14 @@ inputDocuments:
 **Author:** BMad (Architect) **Date:** 2026-10-08 **Feature:** `typed-boundaries-gate`
 
 The [PRD](./prd-typed-boundaries-gate-2026-10-08.md) decides _what_; this document decides
-_how_. The selector strings, the probes and the site list are those of the planning contract
-`crm-worktrees/_planning-shared/miro-layer-contract.md` §4.1, verified against ESLint 9.39.4 and
-`@typescript-eslint/parser` 8.65.0; this chore drops its items 6 (the dependency-cruiser rule)
-and the `explicit-module-boundary-types` half of items 5 and 7.
+_how_. The selector strings, the probes and the site list come from the planning contract
+`crm-worktrees/_planning-shared/miro-layer-contract.md` §4.1, a working note outside this
+repository; this chore drops its items 6 (the dependency-cruiser rule) and the
+`explicit-module-boundary-types` half of items 5 and 7. The committed sources of truth are
+`config/typed-boundary-policy.js` (the selector strings), `scripts/ci/eslint-gate-fixtures.mjs`
+(the fixtures and probes) and §5 below (the measured site count). The contract's selectors were
+first checked against ESLint 9.39.4 and `@typescript-eslint/parser` 8.65.0; the implementation is
+verified against the versions `bun.lock` resolves, ESLint 9.39.5 and parser 8.71.0.
 
 ## 1. Approach
 
@@ -205,7 +209,13 @@ The dry run (contract §4.1 item 8, `tb-gate-dry-run-sites.json`) counts about 1
 
 The count predates the F8 positions and the hooks, locale-formatter and `use-reactive-var`
 blocks, so the story re-measures it with `make lint-eslint` once the arrays are wired and fixes
-every extra site in the same change. A fix names the shape in a type-only file: an interface for
+every extra site in the same change.
+
+**Measured.** With the arrays wired, the gate reported **141 sites in 71 files** on the
+pre-change `src/` (commit `0e54782c`): 41 anonymous object types (a), 41 `Record` / `object` /
+index-signature / `unknown` positions (d), 39 `type X = { … }` aliases
+(`consistent-type-definitions`), 11 inline derived types (e) and 9 bare arrays (c). After the
+burn-down it reports zero. A fix names the shape in a type-only file: an interface for
 an object, a named collection interface for a list, a named interface or map type for a record,
 a named alias for a derivation; `unknown` stays only as a narrowing parameter or an `error` /
 `cause` member. Two fixes carry names #331 builds on (verification D5):
