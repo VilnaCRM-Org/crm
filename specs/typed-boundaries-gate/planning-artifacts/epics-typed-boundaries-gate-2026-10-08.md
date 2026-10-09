@@ -25,10 +25,13 @@ NFR-1 to NFR-3) and the [architecture](./architecture-typed-boundaries-gate-2026
 the former #315 Stories 0.3 to 0.6: Stories 0.3 to 0.5 are merged into Story 1.2, and
 `explicit-module-boundary-types` and the generated-types rule are dropped.
 
-**Definition of done.** The #315 bundle's shared definition applies: no threshold, allowlist or
-glob is edited to pass; no `eslint-disable`, cast, `!`, `@ts-expect-error` or `any`; local gates
-are `make format`, ESLint, Prettier and `tsc` on the changed files and the focused Jest files a
-story names; the full `make lint` and every suite run in CI only.
+**Definition of done.** Four rules, for every story:
+
+1. No threshold, allowlist or glob is edited to pass.
+2. No `eslint-disable`, cast, `!`, `@ts-expect-error` or `any`.
+3. Local gates are `make format`, ESLint, Prettier and `tsc` on the changed files and the focused
+   Jest files a story names.
+4. The full `make lint` and every suite run in CI only.
 
 ### FR coverage map
 
@@ -91,8 +94,8 @@ So that the feature bundles that follow are written against TB-1 from their firs
 **Files:** `eslint.config.mjs` (MODIFY: the two arrays of architecture §3.1 in every block of
 §3.2, `consistent-type-definitions`), `scripts/ci/eslint-gate-fixtures.mjs` and
 `tests/unit/config/eslint-policy.test.ts` (MODIFY: §3.4), the `src/**` files of the site list
-and the type-only files their fixes need (§5), `CLAUDE.md` and `.github/copilot-instructions.md`
-(MODIFY: the TB-1 section).
+(its 29 `src/services/**` sites in 13 files included) and the type-only files their fixes need
+(§5), `CLAUDE.md` and `.github/copilot-instructions.md` (MODIFY: the TB-1 section).
 
 **Gates:** the focused Jest files `tests/unit/tooling/eslint-gate-fixtures.test.ts` and
 `tests/unit/config/eslint-policy.test.ts`; ESLint and `tsc` over the changed files; CI
@@ -110,6 +113,7 @@ and the type-only files their fixes need (§5), `CLAUDE.md` and `.github/copilot
 - **Given** a `declare module` block, **when** the gate runs, **then** it is not reported.
 - **Given** the wired arrays, **when** first run, **then** the site count is noted in the PR.
 - **Given** `src/` after the fixes, **when** `make lint-eslint` runs, **then** TB-1 reports zero.
+- **Given** the `src/services/**` sites, **when** fixed, **then** only types change, no file moves.
 - **Given** `auth-error.ts:18`, **when** fixed, **then** it is `AuthOkResult<T> | AuthFailedResult`.
 - **Given** `auth-var.ts:36`, **when** fixed, **then** `AuthStateVar.set` takes `AuthStatePatch`.
 - **Given** the policy test, **when** it runs, **then** each array is pinned on every §3.4 block.

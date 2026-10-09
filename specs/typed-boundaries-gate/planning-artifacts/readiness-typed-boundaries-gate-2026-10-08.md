@@ -43,7 +43,7 @@ per the over-engineering review, Part 3 item 2:
 
 ## Checks
 
-- **Parser** (`parseStoriesWithWarnings`): 1 epic, 2 stories, 26 criteria, `warnings: []`; every
+- **Parser** (`parseStoriesWithWarnings`): 1 epic, 2 stories, 27 criteria, `warnings: []`; every
   criterion is one line.
 - **TB-1** is pasted verbatim in the PRD and the architecture: sha256 `eb676341…`, equal to the
   contract §4.
@@ -71,3 +71,8 @@ per the over-engineering review, Part 3 item 2:
 Result: 0 Critical, 0 High, 1 Medium, 3 Low.
 
 Verdict: PASS
+
+## History
+
+- Final check (2026-10-08): the `src/services/*` non-goal now reads "no rename or restructure";
+  its 29 TB-1 sites are in Story 1.2's burn-down (27 criteria); the DoD is inlined; PASS.
