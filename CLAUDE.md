@@ -2028,6 +2028,7 @@ type files, stories, tests) must end in one of these:
 | `*Factory`     | encapsulated construction                   | GoF Factory                       |
 | `*Builder`     | step-wise construction of an object         | GoF Builder                       |
 | `*Mapper`      | translation between representations         | PoEAA Data Mapper                 |
+| `*Transformer` | translates transport payloads into outcomes | Miro Transformer (#332)           |
 | `*Adapter`     | conforms one interface to another           | GoF Adapter                       |
 | `*Strategy`    | interchangeable algorithm                   | GoF Strategy                      |
 | `*Handler`     | processes a request or event                | Chain of Responsibility           |
@@ -2064,7 +2065,6 @@ type files, stories, tests) must end in one of these:
 | `*Correlation` | session-scoped correlation identifier       | DDD Value Object (#159)           |
 | `*Deadline`    | time-bounded abort scope of one request     | gRPC / Go context deadline (#147) |
 | `*Navigator`   | adapter over browser navigation             | GoF Adapter (window)              |
-| `*Controller`  | coordinates a UI interaction flow           | MVC Controller                    |
 | `*Error`       | thrown error class                          | JavaScript Error subclass         |
 | `*Errors`      | catalog of error constructors or codes      | repo idiom                        |
 | `*Signal`      | error subclass carrying one typed event     | repo idiom (#159)                 |
