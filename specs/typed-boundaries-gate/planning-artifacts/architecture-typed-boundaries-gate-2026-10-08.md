@@ -162,8 +162,8 @@ block (`:1007`).
 
 `'@typescript-eslint/consistent-type-definitions': ['error', 'interface']` for `src/**`; its
 autofix turns `type X = { … }` into an interface. No `explicit-module-boundary-types`:
-`explicit-function-return-type` is already `error` for every TypeScript file
-(`eslint.config.mjs:697-781`), so a public method cannot hide an inferred return.
+`explicit-function-return-type` is already `error` for every TypeScript file,
+so a public method cannot hide an inferred return.
 
 ### 3.4 Fixtures, probes and the policy pin
 
@@ -221,7 +221,7 @@ a named alias for a derivation; `unknown` stays only as a narrowing parameter or
 `cause` member. Two fixes carry names #331 builds on (verification D5):
 
 ```ts
-// @auth/types/auth-error.ts (the auth-error.ts:18 site)
+// @auth/types/auth-error.ts
 export interface AuthOkResult<T> {
   readonly ok: true;
   readonly value: T;
@@ -232,7 +232,7 @@ export interface AuthFailedResult {
 }
 export type AuthResult<T> = AuthOkResult<T> | AuthFailedResult;
 
-// @auth/types/auth-store.ts (the auth-var.ts:36 site): AuthStateVar.set(patch: AuthStatePatch)
+// @auth/types/auth-store.ts: AuthStateVar.set(partial: AuthStatePatch)
 export type AuthStatePatch = Partial<AuthState>;
 ```
 
@@ -251,7 +251,7 @@ entries, in 13 files) are fixed type-only, like every other site.
   open PR #311 (018) or by the planned bundles (#315 019, #331 020, #330 021); if taken, the next
   free one. It is required: the burn-down edits `src/config/env/`, `src/config/runtime/` and
   `src/routes/route-composer.tsx`, ADR-drift significant paths (`config/docs-policy.json`).
-  Status `Proposed`, Deciders `[@kravalg](https://github.com/kravalg)`. Considered options: a
+  Status `Approved`, Deciders `[@kravalg](https://github.com/kravalg)`. Considered options: a
   review-only rule vs an ESLint gate with fixtures; burn-down first vs an allowlist;
   `explicit-module-boundary-types` vs the existing `explicit-function-return-type`; a
   dependency-cruiser rule for generated types vs review. Outcome: §3 to §5.
@@ -263,6 +263,9 @@ entries, in 13 files) are fixed type-only, like every other site.
   `export { x as default }` of a nested function, an inline callback inside a parameter's own
   interface) stay review items.
 - Position 8 (test builders) and exception (i) have no lint enforcement; both are review items.
+- An `unknown` parameter in a code file is not gated: syntax cannot tell a caught-error narrowing
+  method from any other, so (d) covers `unknown` returns, class properties, type-file members and
+  method / call-signature returns, and an `unknown` parameter elsewhere is a review item.
 
 ## 8. Files
 

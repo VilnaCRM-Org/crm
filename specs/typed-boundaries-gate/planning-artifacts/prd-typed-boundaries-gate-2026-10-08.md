@@ -45,7 +45,7 @@ document.
 ### Non-goals
 
 - `@typescript-eslint/explicit-module-boundary-types`: `explicit-function-return-type` is already
-  `error` on every TypeScript file (`eslint.config.mjs:697-781`) and `strict` types parameters.
+  `error` on every TypeScript file and `strict` types parameters.
 - A dependency-cruiser rule confining generated contract types: no existing gate needs it.
 - The TB-2 naming check and the `LoginUserDto` → `SignInDto` rename: #315 Story 0.2 owns them,
   because the check fails on the old names.
@@ -155,7 +155,7 @@ Each selector has a must-fail fixture and the must-pass controls of the contract
 
 Every existing site is fixed at its source, so `make lint-eslint` reports zero TB-1 findings.
 Two fixes carry names #331 builds on: `AuthResult<T> = AuthOkResult<T> | AuthFailedResult`
-(`auth-error.ts:18`) and `AuthStateVar.set(patch: AuthStatePatch)` (`auth-var.ts:36`).
+(`@auth/types/auth-error.ts`) and `AuthStateVar.set(partial: AuthStatePatch)` (`auth-var.ts`).
 
 ### FR-6 — TB-1 is documented
 

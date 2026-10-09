@@ -25,8 +25,8 @@ const createObservability = (): jest.Mocked<ObservabilityService> => ({
   reportVital: jest.fn(),
 });
 
-const stubCorrelationIds = (header: string, id: string): CorrelationIdProvider => ({
-  header,
+const stubCorrelationIds = (id: string): CorrelationIdProvider => ({
+  header: 'X-Request-Id',
   currentId: id,
   next: (): string => id,
 });
@@ -131,9 +131,9 @@ describe('ApolloLinkFactory', () => {
     });
   });
 
-  it('reads the header name and id from the injected correlation id provider', (done) => {
+  it('reads the request id from the injected correlation id provider', (done) => {
     const observability = createObservability();
-    const correlationIds = stubCorrelationIds('X-Trace-Id', 'trace-1');
+    const correlationIds = stubCorrelationIds('trace-1');
     const factory = new ApolloLinkFactory({
       observability: observability,
       correlationIds: correlationIds,
@@ -157,12 +157,12 @@ describe('ApolloLinkFactory', () => {
     ).subscribe({
       error: () => {
         expect(headers).toEqual({
-          'X-Trace-Id': 'trace-1',
+          'X-Request-Id': 'trace-1',
           [sessionCorrelation.header]: sessionCorrelation.id(),
         });
         expect(observability.captureError).toHaveBeenCalledWith(networkError, {
           source: 'apollo:network',
-          'X-Trace-Id': 'trace-1',
+          'X-Request-Id': 'trace-1',
         });
         done();
       },

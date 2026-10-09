@@ -1443,8 +1443,9 @@ positions:
 - **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
   collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
   and an array of primitives never crosses;
-- **(d)** `object`, `Record<…>`, an index signature, or `unknown` — `unknown` stays only as the
-  parameter of a method that narrows a caught error, and as an `error` / `cause` member;
+- **(d)** `object`, `Record<…>`, an index signature, a string-keyed mapped type
+  (`{ [k in string]: T }`), or `unknown` — `unknown` stays only as the parameter of a method that
+  narrows a caught error, and as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
   type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
 
@@ -1467,14 +1468,22 @@ is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
 carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
 function or arrow exported later, a non-private class arrow property), and the must-pass controls
 (a named collection interface, a private method, a `#private` arrow property, `normalize(error:
-unknown)`, a `declare module`, a named derivation). The universe test fails a selector edited
-without its fixture, asserts every `src` code probe resolves all five code selectors, and
-`tests/unit/config/eslint-policy.test.ts` pins each array on every block.
+unknown)`, a `declare module`, a named derivation, a mapped type over a named key union). The
+universe test fails a selector edited without its fixture, asserts every `src` code probe resolves
+all five code selectors, and `tests/unit/config/eslint-policy.test.ts` pins each array on every
+block, the base `src` block included.
+[`tests/unit/tooling/typed-boundary-alternatives.test.ts`](tests/unit/tooling/typed-boundary-alternatives.test.ts)
+lints a snippet for every holder × position alternative and every type-file root the policy
+generates, so a single dead alternative fails by name.
 
 **Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
 alias. A function expression on a top-level `const`, an `export { x as default }` of a nested
 function, an inline callback inside a parameter's own interface, test-builder return values and
-the generated-types exception are review items.
+the generated-types exception are review items. An `unknown` **parameter** in a code file is not
+gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so
+(d) gates `unknown` as a code-file return and class property, and in type-only files as a member
+or a method / call-signature return; an `unknown` parameter outside a narrowing method is a
+review item.
 
 **No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
 cast, an allowlist entry or a narrower glob.
@@ -1911,7 +1920,7 @@ export class AuthStateVar {
   public get(): AuthState {
     /* read */
   }
-  public set(partial: Partial<AuthState>): void {
+  public set(partial: AuthStatePatch): void {
     /* merge + notify */
   }
 }

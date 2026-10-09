@@ -1,7 +1,7 @@
 import appConfigSource from './app-config-source';
 import type { FeatureFlag, FeatureFlagNames, FeatureFlagSnapshot } from './types/feature-flag';
 
-const FEATURE_FLAG_DEFAULTS: Readonly<Record<FeatureFlag, boolean>> = Object.freeze({
+const FEATURE_FLAG_DEFAULTS: FeatureFlagSnapshot = Object.freeze({
   forgotPassword: false,
 });
 

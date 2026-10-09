@@ -31,6 +31,7 @@ const PLAYWRIGHT_SPEC = 'tests/e2e/modules/back-to-main.spec.ts';
 const ROUTE_SHELL_TSX = 'src/routes/routes.tsx';
 const CONTAINER_SEAM_TSX = 'src/components/ui-container/index.tsx';
 const BREAKPOINTS_SEAM_TS = 'src/components/ui-breakpoints/index.ts';
+const BASE_SRC_JS = 'src/i18n.js';
 const UI_TOOLKIT = '@vilnacrm/ui-toolkit';
 const UI_TOOLKIT_SUBPATHS = `${UI_TOOLKIT}/*`;
 
@@ -58,7 +59,7 @@ const configs: Record<string, ResolvedConfig> = JSON.parse(
 );
 
 const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
-  [ROUTE_SHELL_TSX, CONTAINER_SEAM_TSX, BREAKPOINTS_SEAM_TS].map((file) => [
+  [ROUTE_SHELL_TSX, CONTAINER_SEAM_TSX, BREAKPOINTS_SEAM_TS, BASE_SRC_JS].map((file) => [
     file,
     JSON.parse(
       execFileSync('node', ['node_modules/eslint/bin/eslint.js', '--print-config', file], {
@@ -80,6 +81,14 @@ const hasSelectorContaining = (rule: unknown, fragment: string): boolean =>
 // config, which must fail loudly here instead of surfacing as a confusing property access.
 const rulesFor = (file: string): Record<string, unknown> => {
   const resolved = configs[file];
+  if (!resolved) {
+    throw new Error(`No resolved ESLint config for probe file ${file}`);
+  }
+  return resolved.rules;
+};
+
+const anyRulesFor = (file: string): Record<string, unknown> => {
+  const resolved = configs[file] ?? printedConfigs[file];
   if (!resolved) {
     throw new Error(`No resolved ESLint config for probe file ${file}`);
   }
@@ -206,8 +215,10 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
       REACTIVE_VAR_BRIDGE_TS,
       ENV_TS,
       RESTRICTED_ADAPTER_TS,
+      ROUTE_SHELL_TSX,
+      BASE_SRC_JS,
     ].forEach((file) => {
-      const nrs = rulesFor(file)['no-restricted-syntax'];
+      const nrs = anyRulesFor(file)['no-restricted-syntax'];
       expect(severityOf(nrs)).toBe(2);
       TB_CODE_FRAGMENTS.forEach((fragment) => {
         expect(hasSelectorContaining(nrs, fragment)).toBe(true);

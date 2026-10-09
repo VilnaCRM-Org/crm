@@ -4,6 +4,10 @@ import type {
   SecurityEventSeverity,
 } from '@/services/types/security-events/security-event';
 
+export type RequestIdHeader = 'X-Request-Id';
+
+export type CorrelationIdHeader = 'X-Correlation-Id';
+
 export interface ObservabilityUser {
   id: string;
   tenantId?: string;

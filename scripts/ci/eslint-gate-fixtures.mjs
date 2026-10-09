@@ -1320,6 +1320,13 @@ const TB_FIXTURES = [
     S.tbCatchAll,
     'TB-1 (d)'
   ),
+  tbFail(
+    'catch-all-mapped-string-param',
+    PROBES.logic,
+    'class ToastMapper { public take(headers: { readonly [name in string]: string }): void {} }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
   // (e) inline derived types
   tbFail(
     'derived-partial-param',
@@ -1442,6 +1449,27 @@ const TB_FIXTURES = [
     'TB-1 (d)'
   ),
   tbFail(
+    'type-file-mapped-string-alias',
+    PROBES.typeOnly,
+    'export type RequestHeaders = { readonly [name in string]: string };',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-method-unknown-return',
+    PROBES.typeOnly,
+    'export interface ErrorParser { parse(): unknown; }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-call-signature-unknown-return',
+    PROBES.typeOnly,
+    'export interface ErrorReader { (): Promise<unknown>; }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
     'type-file-derived-in-interface',
     PROBES.typeOnly,
     'export interface Toast { draft: Omit<Item, "id"> }',
@@ -1475,6 +1503,16 @@ const TB_FIXTURES = [
     'control-unknown-narrowing-parameter',
     PROBES.logic,
     'class ErrorNormalizer { public normalize(error: unknown): string { return String(error); } }'
+  ),
+  tbPass(
+    'control-interface-narrowing-parameter',
+    PROBES.typeOnly,
+    'import type { ParsedError } from "./parsed-error";\nexport interface ErrorParser { parse(error: unknown): ParsedError; }'
+  ),
+  tbPass(
+    'control-mapped-type-over-named-keys',
+    PROBES.typeOnly,
+    'import type { FeatureFlag } from "./feature-flag";\nexport type FlagValues = { readonly [flag in FeatureFlag]: boolean };'
   ),
   tbPass(
     'control-error-and-cause-members',

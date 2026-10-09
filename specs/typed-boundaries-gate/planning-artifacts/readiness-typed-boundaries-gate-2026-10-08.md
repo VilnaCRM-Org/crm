@@ -29,9 +29,9 @@ The chore carries the TB-1 gate that #315 Epic 0 used to own (former Stories 0.3
 per the over-engineering review, Part 3 item 2:
 
 - **Dropped:** `@typescript-eslint/explicit-module-boundary-types`, because
-  `explicit-function-return-type` is already `error` on every TypeScript file
-  (`eslint.config.mjs:697-781`); the `generated-contracts-below-data-provider` rule with its
-  `exclude` → `doNotFollow` switch, because no existing gate needs it.
+  `explicit-function-return-type` is already `error` on every TypeScript file; the
+  `generated-contracts-below-data-provider` rule with its `exclude` → `doNotFollow` switch,
+  because no existing gate needs it.
 - **Merged:** the type-file and code-file burn-downs and `consistent-type-definitions` into one
   story, Story 1.2.
 - **Kept:** the selector wiring in every `src` block (the hooks, locale-formatter and

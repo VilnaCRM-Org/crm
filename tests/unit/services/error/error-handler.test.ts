@@ -217,8 +217,8 @@ describe('ErrorHandler', () => {
       });
     });
 
-    describe('error with original property', () => {
-      it('should handle error with original Error object', () => {
+    describe('error with cause property', () => {
+      it('should handle error with cause Error object', () => {
         const originalError = new Error('Original error');
         const error: ParsedError = {
           code: ERROR_CODES.AUTH_INVALID,
@@ -234,7 +234,7 @@ describe('ErrorHandler', () => {
         });
       });
 
-      it('should handle error with original as object', () => {
+      it('should handle error with cause as object', () => {
         const cause = { status: 401, message: 'Unauthorized' };
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_401,
@@ -250,7 +250,7 @@ describe('ErrorHandler', () => {
         });
       });
 
-      it('should handle error with original as string', () => {
+      it('should handle error with cause as string', () => {
         const error: ParsedError = {
           code: ERROR_CODES.JS_ERROR,
           message: 'JS error',
@@ -265,7 +265,7 @@ describe('ErrorHandler', () => {
         });
       });
 
-      it('should handle error with original as server error', () => {
+      it('should handle error with cause as server error', () => {
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_500,
           message: 'Server error',
