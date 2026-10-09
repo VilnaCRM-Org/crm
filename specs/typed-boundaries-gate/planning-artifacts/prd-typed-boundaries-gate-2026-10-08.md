@@ -50,7 +50,7 @@ document.
 - The TB-2 naming check and the `LoginUserDto` → `SignInDto` rename: #315 Story 0.2 owns them,
   because the check fails on the old names.
 - The `data-providers/` and `transformers/` folders: #315 Story 0.1 owns them.
-- Any change to `src/services/*`.
+- No rename or restructure of `src/services/*`; its TB-1 type sites are fixed like any other.
 
 ## 3. Requirements
 
@@ -173,7 +173,7 @@ Two fixes carry names #331 builds on: `AuthResult<T> = AuthOkResult<T> | AuthFai
 
 ## 5. Dependencies and order
 
-- Lands before #315, #330 and #331. They list "chore typed-boundaries-gate (lands first)" as a
+- Lands before #315, #330 and #331. They list "chore #332 (typed-boundaries gate)" as a
   prerequisite and add no selector.
 - The site list is a dry run (`tb-gate-dry-run-sites.json`, 127 entries in 61 files, 12 of them
   `declare module` augmentation that stays out of scope). The real count is re-measured once the

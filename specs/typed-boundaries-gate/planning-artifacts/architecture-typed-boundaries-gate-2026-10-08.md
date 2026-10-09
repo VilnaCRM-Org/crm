@@ -229,6 +229,9 @@ export type AuthStatePatch = Partial<AuthState>;
 An `interface` is not assignable to an index-signature type where the equivalent alias was; the
 receiving type is then named, never cast.
 
+`src/services/*` is not renamed, moved or restructured. Its TB-1 sites (29 of the 127 dry-run
+entries, in 13 files) are fixed type-only, like every other site.
+
 ## 6. Documentation and ADR
 
 - **`CLAUDE.md`**, Code Quality: a "Typed boundaries (TB-1)" section with the TB-1 text, both
