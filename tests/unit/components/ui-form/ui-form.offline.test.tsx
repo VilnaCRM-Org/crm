@@ -1,8 +1,9 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 
 import UIForm from '@/components/ui-form';
-import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
+import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import renderWithI18n from '@tests/unit/utils/render-with-i18n';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 type Values = { name: string };
 
@@ -26,9 +27,7 @@ const mountForm = (onSubmit = jest.fn()): jest.Mock => {
 };
 
 describe('UIForm offline behaviour', () => {
-  afterEach(() => {
-    act(() => connectivityStateVar.setOnline(true));
-  });
+  beforeEach(() => resetClientStores());
 
   it('keeps the submit enabled and the status region empty while online', () => {
     mountForm();
@@ -41,7 +40,7 @@ describe('UIForm offline behaviour', () => {
   it('disables the submit and shows the offline notice inside the form after the heading', () => {
     mountForm();
 
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
 
     const button = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
     expect(button).toBeDisabled();
@@ -54,7 +53,7 @@ describe('UIForm offline behaviour', () => {
 
   it('does not fire the submit handler while offline', async () => {
     const onSubmit = mountForm();
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await act(async () => Promise.resolve());
@@ -64,7 +63,7 @@ describe('UIForm offline behaviour', () => {
 
   it('describes the submit by the notice region so the reason reaches the button', () => {
     mountForm();
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
 
     const button = screen.getByRole('button', { name: 'Submit' });
     const notice = screen.getByText(OFFLINE);
@@ -81,7 +80,7 @@ describe('UIForm offline behaviour', () => {
     act(() => button.focus());
     expect(button).toHaveFocus();
 
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
 
     const notice = screen.getByText(OFFLINE);
     const region = screen.getAllByRole('status').find((candidate) => candidate.contains(notice));
@@ -93,27 +92,27 @@ describe('UIForm offline behaviour', () => {
     const field = screen.getByLabelText('name');
     act(() => field.focus());
 
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
 
     expect(field).toHaveFocus();
   });
 
   it('does not move focus when the connection comes back', () => {
     mountForm();
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
     const field = screen.getByLabelText('name');
     act(() => field.focus());
 
-    act(() => connectivityStateVar.setOnline(true));
+    act(() => useConnectivityStore.setState({ online: true }));
 
     expect(field).toHaveFocus();
   });
 
   it('re-enables the submit when the connection comes back', async () => {
     const onSubmit = mountForm();
-    act(() => connectivityStateVar.setOnline(false));
+    act(() => useConnectivityStore.setState({ online: false }));
 
-    act(() => connectivityStateVar.setOnline(true));
+    act(() => useConnectivityStore.setState({ online: true }));
 
     const button = screen.getByRole('button', { name: 'Submit' });
     expect(button).toBeEnabled();

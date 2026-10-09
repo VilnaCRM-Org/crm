@@ -1,7 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
 
-import { AuthStateVar } from '@auth/stores';
+import { useAuthStore } from '@auth/stores';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 /**
  * The sibling suite's `t` returns the key it was handed, which makes a translated i18n key and an
@@ -21,7 +22,7 @@ const errorFor = async (displayMessage: string): Promise<string> => {
   const { default: useLoginSubmitter } =
     await import('@auth/components/form-section/auth-forms/use-login-submitter');
 
-  AuthStateVar.set({
+  useAuthStore.setState({
     loginError: { kind: 'authentication', displayMessage, retryable: false },
   });
 
@@ -38,7 +39,7 @@ const UNKNOWN = 'login:T(auth.error.unknown)';
 
 describe('useLoginSubmitter i18n key detection', () => {
   beforeEach(() => {
-    AuthStateVar.reset();
+    resetClientStores();
   });
 
   afterEach(() => {

@@ -2,8 +2,9 @@ import { act, renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
-import { AuthStateVar, authActions } from '@auth/stores';
+import { useAuthStore, authActions } from '@auth/stores';
 import { buildCredentials } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
   if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
@@ -21,7 +22,7 @@ function createDeferred(): { promise: Promise<void>; resolve: () => void } {
 
 describe('useLoginSubmitter', () => {
   beforeEach(() => {
-    AuthStateVar.reset();
+    resetClientStores();
   });
 
   afterEach(() => {
@@ -36,7 +37,7 @@ describe('useLoginSubmitter', () => {
   });
 
   it('never interpolates raw backend text into the localized login error', () => {
-    AuthStateVar.set({
+    useAuthStore.setState({
       loginError: { kind: 'authentication', displayMessage: 'Bad credentials', retryable: false },
     });
 
@@ -53,7 +54,7 @@ describe('useLoginSubmitter', () => {
       return key;
     }) as unknown as TFunction;
 
-    AuthStateVar.set({
+    useAuthStore.setState({
       loginError: { kind: 'authentication', displayMessage: 'some.missing.key', retryable: false },
     });
 
@@ -63,7 +64,7 @@ describe('useLoginSubmitter', () => {
   });
 
   it('translates an i18n-key shaped login error', () => {
-    AuthStateVar.set({
+    useAuthStore.setState({
       loginError: {
         kind: 'authentication',
         displayMessage: 'auth.error.unknown',
@@ -77,14 +78,14 @@ describe('useLoginSubmitter', () => {
   });
 
   it('clears the login error on unmount', () => {
-    AuthStateVar.set({
+    useAuthStore.setState({
       loginError: { kind: 'authentication', displayMessage: 'still here', retryable: false },
     });
 
     const { unmount } = renderHook(() => useLoginSubmitter(t));
     unmount();
 
-    expect(AuthStateVar.get().loginError).toBeNull();
+    expect(useAuthStore.getState().loginError).toBeNull();
   });
 
   it('invokes the loginUser action when handleLogin is called', async () => {
@@ -129,7 +130,7 @@ describe('useLoginSubmitter', () => {
           return;
         }
 
-        AuthStateVar.set({ loginError: lateError });
+        useAuthStore.setState({ loginError: lateError });
       });
 
     const { result, unmount } = renderHook(() => useLoginSubmitter(t));
@@ -146,6 +147,6 @@ describe('useLoginSubmitter', () => {
       await pendingLogin;
     });
 
-    expect(AuthStateVar.get().loginError).toBeNull();
+    expect(useAuthStore.getState().loginError).toBeNull();
   });
 });

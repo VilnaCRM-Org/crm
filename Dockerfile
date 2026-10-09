@@ -130,6 +130,14 @@ FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927
 
 RUN npm install -g serve@14.2.6
 
+RUN npm pack compression@1.8.2 --silent --pack-destination /tmp \
+    && rm -rf /usr/local/lib/node_modules/serve/node_modules/compression \
+    && mkdir /usr/local/lib/node_modules/serve/node_modules/compression \
+    && tar -xzf /tmp/compression-1.8.2.tgz --strip-components=1 -C /usr/local/lib/node_modules/serve/node_modules/compression \
+    && npm --prefix /usr/local/lib/node_modules/serve/node_modules/compression pkg delete devDependencies scripts \
+    && npm --prefix /usr/local/lib/node_modules/serve/node_modules/compression install --omit=dev --ignore-scripts --no-audit --no-fund \
+    && rm -f /tmp/compression-1.8.2.tgz
+
 
 # -------- Static Server Stage --------
 FROM mirror.gcr.io/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base

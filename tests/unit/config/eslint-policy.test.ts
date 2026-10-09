@@ -199,12 +199,12 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
   });
 
   it('pins the client-state gate (issue #110) at error on components, logic, hooks', () => {
-    const zustand = 'ImportDeclaration[source.value=/^zustand(\\/|$)/]';
+    const zustand = 'source.value=/^zustand(\\/|$)/';
     const bridge = 'ImportSpecifier[imported.name="useSyncExternalStore"]';
     [COMPONENT_TSX, LOGIC_TS, HOOK_TS].forEach((file) => {
       const nrs = rulesFor(file)['no-restricted-syntax'];
       expect(severityOf(nrs)).toBe(2);
-      expect(hasSelectorContaining(nrs, zustand)).toBe(true);
+      expect(hasSelectorContaining(nrs, zustand)).toBe(false);
       expect(hasSelectorContaining(nrs, bridge)).toBe(true);
     });
   });

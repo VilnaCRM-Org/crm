@@ -4,7 +4,7 @@ project:
   repo: 'VilnaCRM-Org/crm'
 framework:
   ui: react-mui
-  state: reactive-var
+  state: zustand
   di: tsyringe
   router: react-router
   bundler: rsbuild

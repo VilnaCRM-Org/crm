@@ -26,7 +26,6 @@ const PROBES = {
   env: 'src/config/env/__probe__.ts', // env config (#112 process.env)
   routes: 'src/routes/__probe__.tsx', // route shell (#116 route-object shape)
   routerSite: 'src/routes/routes.tsx', // the ONLY sanctioned createBrowserRouter site (#116)
-  stateBridgeSite: 'src/lib/state/use-reactive-var.ts', // the ONLY sanctioned useSyncExternalStore bridge (#110)
 };
 
 const UI_TOOLKIT_SEAMS = {
@@ -111,9 +110,6 @@ const S = {
   routeObjectWithoutErrorElement:
     'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
     ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
-  zustandImport:
-    'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
-    'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
   useSyncExternalStoreImport:
     'ImportDeclaration[source.value="react"] > ' +
     'ImportSpecifier[imported.name="useSyncExternalStore"]',
@@ -926,15 +922,6 @@ const FIXTURES = [
   },
   // Must-PASS exemptions
   {
-    id: 'use-sync-external-store-bridge-site-exempt',
-    file: PROBES.stateBridgeSite,
-    code: "import { useSyncExternalStore } from 'react';\nexport default function useReactiveVar() { return useSyncExternalStore(() => () => {}, () => 1); }",
-    covers: [],
-    expect: 'pass',
-    rule: 'no-restricted-syntax',
-    tag: '',
-  },
-  {
     id: 'router-factory-import-routes-site-exempt',
     file: PROBES.routerSite,
     code: "import { createBrowserRouter } from 'react-router';\nexport default createBrowserRouter([]);",
@@ -943,35 +930,17 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: '',
   },
-  // Client-state primitive (#110, ADR-008) — zustand (root and subpath) and a hand-rolled
-  // useSyncExternalStore subscription (named import, aliased import, React.member) fail in a
-  // component, a logic file and a hook alike; only the one sanctioned bridge passes.
+  // Client-state primitive (#110, ADR-008, ADR-023) — a Zustand store in a hook passes, and a
+  // hand-rolled useSyncExternalStore subscription (named import, aliased import, React.member)
+  // fails in a component, a logic file and a hook alike; no file is exempt.
   {
-    id: 'zustand-import-component',
-    file: PROBES.component,
-    code: "import { create } from 'zustand';\nexport default create(() => ({}));",
-    covers: [S.zustandImport],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issue #110',
-  },
-  {
-    id: 'zustand-dynamic-import-logic',
-    file: PROBES.logic,
-    code: "export default class StoreLoader { public async load(): Promise<unknown> { return import('zustand'); } }",
-    covers: [S.zustandImport],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issue #110',
-  },
-  {
-    id: 'zustand-subpath-import-hook',
+    id: 'zustand-create-hook-allowed',
     file: PROBES.hook,
-    code: "import { devtools } from 'zustand/middleware';\nexport default devtools;",
-    covers: [S.zustandImport],
-    expect: 'fail',
+    code: "import { create } from 'zustand';\nconst useCounterStore = create<{ count: number }>()(() => ({ count: 0 }));\nexport default useCounterStore;",
+    covers: [],
+    expect: 'pass',
     rule: 'no-restricted-syntax',
-    tag: 'issue #110',
+    tag: 'issue #334',
   },
   {
     id: 'use-sync-external-store-import-hook',
