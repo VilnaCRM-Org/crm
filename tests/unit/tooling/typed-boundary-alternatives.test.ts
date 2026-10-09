@@ -19,10 +19,12 @@ const tsParser = require('@typescript-eslint/parser') as unknown;
 const LITERAL = '{ x: string }';
 
 const reportsFor = (code: string, selector: string): number =>
-  new Linter({ configType: 'flat' }).verify(code, {
-    languageOptions: { parser: tsParser as never, ecmaVersion: 'latest', sourceType: 'module' },
-    rules: { 'no-restricted-syntax': ['error', selector] },
-  }).length;
+  new Linter({ configType: 'flat' })
+    .verify(code, {
+      languageOptions: { parser: tsParser as never, ecmaVersion: 'latest', sourceType: 'module' },
+      rules: { 'no-restricted-syntax': ['error', selector] },
+    })
+    .filter((message) => message.ruleId === 'no-restricted-syntax').length;
 
 const HOLDER_SNIPPETS: ReadonlyArray<(params: string, annotation: string) => string> = [
   (params, annotation): string => `class C { public m(${params})${annotation} {} }`,

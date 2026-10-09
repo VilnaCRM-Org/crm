@@ -1321,6 +1321,13 @@ const TB_FIXTURES = [
     'TB-1 (d)'
   ),
   tbFail(
+    'catch-all-any-return',
+    PROBES.logic,
+    'class ToastMapper { public read(): Promise<any> { return Promise.resolve(null); } }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
     'catch-all-mapped-string-param',
     PROBES.logic,
     'class ToastMapper { public take(headers: { readonly [name in string]: string }): void {} }',
@@ -1445,6 +1452,13 @@ const TB_FIXTURES = [
     'type-file-unknown-member',
     PROBES.typeOnly,
     'export interface Toast { payload: unknown }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-any-member',
+    PROBES.typeOnly,
+    'export interface Toast { payload: any }',
     S.tbTypeCatchAll,
     'TB-1 (d)'
   ),

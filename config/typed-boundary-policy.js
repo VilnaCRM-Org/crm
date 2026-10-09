@@ -90,11 +90,11 @@ function typedBoundarySelectors() {
     },
     {
       selector: [
-        over(ALL_POSITIONS, ['TSObjectKeyword', RECORD_REFERENCE, CATCH_ALL_MAP]),
+        over(ALL_POSITIONS, ['TSAnyKeyword', 'TSObjectKeyword', RECORD_REFERENCE, CATCH_ALL_MAP]),
         over(UNKNOWN_POSITIONS, ['TSUnknownKeyword']),
       ].join(', '),
       message:
-        'TB-1 (d): no object, Record, string-keyed map or unknown payload at a boundary ' +
+        'TB-1 (d): no any, object, Record, string-keyed map or unknown payload at a boundary ' +
         `(unknown only narrows a caught error parameter). ${NAME_IT}`,
     },
     {
@@ -138,6 +138,7 @@ function typedBoundaryTypeFileSelectors() {
     },
     {
       selector: underTypeFileRoots([
+        'TSAnyKeyword',
         'TSObjectKeyword',
         RECORD_REFERENCE,
         'TSIndexSignature',
@@ -147,7 +148,7 @@ function typedBoundaryTypeFileSelectors() {
         'TSCallSignatureDeclaration > TSTypeAnnotation TSUnknownKeyword',
       ]),
       message:
-        'TB-1 (d): no object, Record, index signature, string-keyed map or unknown member ' +
+        'TB-1 (d): no any, object, Record, index signature, string-keyed map or unknown member ' +
         '(unknown only as `error` / `cause`); name the shape (ADR-022).',
     },
     {

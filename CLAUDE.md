@@ -1443,7 +1443,7 @@ positions:
 - **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
   collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
   and an array of primitives never crosses;
-- **(d)** `object`, `Record<…>`, an index signature, a string-keyed mapped type
+- **(d)** `any`, `object`, `Record<…>`, an index signature, a string-keyed mapped type
   (`{ [k in string]: T }`), or `unknown` — `unknown` stays only as the parameter of a method that
   narrows a caught error, and as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a

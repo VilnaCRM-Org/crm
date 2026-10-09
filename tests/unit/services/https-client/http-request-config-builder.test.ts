@@ -67,6 +67,7 @@ describe('HttpRequestConfigBuilder', () => {
   });
 
   it('forwards every caller header that is not a correlation header', () => {
+    jest.spyOn(sessionCorrelation, 'id').mockReturnValueOnce('test-session-id');
     const config = builder.create('GET', undefined, {
       items: [
         { name: 'X-Tenant', value: 'tenant-a' },
@@ -78,7 +79,7 @@ describe('HttpRequestConfigBuilder', () => {
       'X-Tenant': 'tenant-a',
       Accept: 'text/plain',
       'X-Request-Id': 'test-request-id',
-      'X-Correlation-Id': 'test-request-id',
+      'X-Correlation-Id': 'test-session-id',
     });
   });
 

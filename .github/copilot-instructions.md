@@ -54,9 +54,9 @@ make test-mutation    # Stryker; the enforced floor is 100%
   parameters and results, Data provider / Transformer / Repository / State / Guard / Factory
   signatures, DI values, published state, telemetry payloads, interface members in type files)
   carries a named type. ESLint fails an anonymous object type or `type X = { … }` (use
-  `interface`), a tuple, a bare array (cross a named collection interface), `object`, `Record`,
-  an index signature, a string-keyed mapped type or `unknown` (only a caught-error parameter
-  and `error` / `cause` members keep it), and an inline `Partial` / `Pick` / `Omit` /
+  `interface`), a tuple, a bare array (cross a named collection interface), `any`, `object`,
+  `Record`, an index signature, a string-keyed mapped type or `unknown` (only a caught-error
+  parameter and `error` / `cause` members keep it), and an inline `Partial` / `Pick` / `Omit` /
   `Required` (name the derivation once in a type-only file). Never satisfy it with a cast, a
   disable, an allowlist or a narrower glob; the selectors live in
   `config/typed-boundary-policy.js` and each has a must-fail fixture.
