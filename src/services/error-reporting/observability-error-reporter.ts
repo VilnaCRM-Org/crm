@@ -2,7 +2,10 @@ import { inject, injectable } from 'tsyringe';
 
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { ErrorReporter } from '@/services/types/error-reporting';
-import type { ObservabilityService } from '@/services/types/observability/observability';
+import type {
+  CaptureContext,
+  ObservabilityService,
+} from '@/services/types/observability/observability';
 
 @injectable()
 export default class ObservabilityErrorReporter implements ErrorReporter {
@@ -19,7 +22,7 @@ export default class ObservabilityErrorReporter implements ErrorReporter {
     this.observability = observability ?? core;
   }
 
-  public report(error: Error, context?: Record<string, unknown>): void {
+  public report(error: Error, context?: CaptureContext): void {
     this.observability?.captureError(error, context);
   }
 }

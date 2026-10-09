@@ -80,7 +80,7 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual(['forgotPassword']);
+    expect(flags.names()).toEqual({ items: ['forgotPassword'] });
     expect(flags.isEnabled('forgotPassword')).toBe(false);
     expect(flags.snapshot()).toEqual({ forgotPassword: false });
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);

@@ -12,6 +12,7 @@
 import { ESLint, Linter } from 'eslint';
 import classNamingPolicy from '../../config/class-naming-policy.js';
 import diCollaboratorPolicy from '../../config/di-collaborator-policy.js';
+import typedBoundaryPolicy from '../../config/typed-boundary-policy.js';
 import flatConfig from '../../eslint.config.mjs';
 
 const eslint = new ESLint({ cwd: process.cwd() });
@@ -27,7 +28,35 @@ const PROBES = {
   routes: 'src/routes/__probe__.tsx', // route shell (#116 route-object shape)
   routerSite: 'src/routes/routes.tsx', // the ONLY sanctioned createBrowserRouter site (#116)
   stateBridgeSite: 'src/lib/state/use-reactive-var.ts', // the ONLY sanctioned useSyncExternalStore bridge (#110)
+  localeFormatter: 'src/services/locale-formatter/__probe__.ts', // the sanctioned Intl boundary (#155)
+  restrictedAdapter: 'src/services/observability/apollo-link-factory.ts', // injectable adapter over Apollo (#130)
+  authComponent: 'src/modules/user/features/auth/components/__probe__.tsx', // #128 carve-out: falls to the all-src block
+  nonReactLogic: 'src/lib/__probe__.ts', // non-React .ts outside the #130 DI logic globs
+  routeComposer: 'src/routes/route-composer.tsx', // route shell carve-out (#116)
 };
+
+// Probes that resolve to a code-file block: every one must carry all five TB-1 code selectors
+// (issue #332), so a block that loses `typedBoundarySelectors` fails by name. The type-only probe
+// is governed by the separate type-file array.
+const TB_CODE_PROBES = [
+  'logic',
+  'component',
+  'hook',
+  'env',
+  'routes',
+  'routerSite',
+  'stateBridgeSite',
+  'localeFormatter',
+  'restrictedAdapter',
+  'authComponent',
+  'nonReactLogic',
+  'routeComposer',
+];
+
+const TB_CODE = typedBoundaryPolicy.typedBoundarySelectors().map((entry) => entry.selector);
+const TB_TYPE_FILE = typedBoundaryPolicy
+  .typedBoundaryTypeFileSelectors()
+  .map((entry) => entry.selector);
 
 const UI_TOOLKIT_SEAMS = {
   container: 'src/components/ui-container/index.tsx',
@@ -123,6 +152,18 @@ const S = {
   useSyncExternalStoreDestructured:
     'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
     '[key.value="useSyncExternalStore"])',
+  // issue #332 (ADR-022, TB-1) — BUILT by config/typed-boundary-policy.js like the #129 and #130
+  // selectors; tests/unit/config/eslint-policy.test.ts pins their wiring per block.
+  tbObject: TB_CODE[0],
+  tbTuple: TB_CODE[1],
+  tbArray: TB_CODE[2],
+  tbCatchAll: TB_CODE[3],
+  tbDerived: TB_CODE[4],
+  tbTypeObject: TB_TYPE_FILE[0],
+  tbTypeTuple: TB_TYPE_FILE[1],
+  tbTypeArray: TB_TYPE_FILE[2],
+  tbTypeCatchAll: TB_TYPE_FILE[3],
+  tbTypeDerived: TB_TYPE_FILE[4],
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -1083,6 +1124,386 @@ const FIXTURES = [
   },
 ];
 
+// TB-1 (issue #332, ADR-022). Code entries run on the logic, hook and component probes; the
+// type-file entries on the type-only probe. A tag of `TB-1 (x)` pins the entry that fired, so a
+// fixture cannot pass because a sibling entry reported the same node.
+const tbFail = (id, file, code, covers, tag) => ({
+  id: `tb1-${id}`,
+  file,
+  code,
+  covers: [covers],
+  expect: 'fail',
+  rule: 'no-restricted-syntax',
+  tag,
+});
+const tbPass = (id, file, code) => ({
+  id: `tb1-${id}`,
+  file,
+  code,
+  covers: [],
+  expect: 'pass',
+  rule: 'no-restricted-syntax',
+  tag: '',
+});
+
+const TB_FIXTURES = [
+  // (a) anonymous objects at a code boundary: parameter, return, property, hook, component
+  tbFail(
+    'object-method-param',
+    PROBES.logic,
+    'class ToastMapper { public map(a: { x: string }): void {} }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-method-return',
+    PROBES.logic,
+    'class ToastMapper { public map(): Promise<{ x: string }> { return Promise.resolve({ x: "" }); } }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-constructor-parameter-property',
+    PROBES.logic,
+    'class ToastMapper { constructor(private readonly deps: { x: string }) {} }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-class-property',
+    PROBES.logic,
+    'class ToastMapper { public readonly state: { x: string } = { x: "" }; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-hook-return',
+    PROBES.hook,
+    'export function useX(): { x: string } { return { x: "" }; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-component-props',
+    PROBES.component,
+    'export default function Panel(props: { x: string }): null { return null; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-component-destructured',
+    PROBES.component,
+    'export default function Panel({ x }: { x: string }): null { return x ? null : null; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'object-defaulted-and-rest-params',
+    PROBES.hook,
+    'export function useX(a: { x: string } = { x: "" }, ...rest: { y: string }[]): void {}',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  // the three verification-F8 shapes: a component or function exported later, a class arrow property
+  tbFail(
+    'f8-component-exported-later',
+    PROBES.component,
+    'const Panel = ({ x }: { x: string }): null => (x ? null : null);\nexport default Panel;',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'f8-function-exported-later',
+    PROBES.hook,
+    'function useX(a: { x: string }): void {}\nexport default useX;',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'f8-class-arrow-property',
+    PROBES.logic,
+    'class ToastMapper { public map = (a: { x: string }): void => {}; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  // (b) tuples
+  tbFail(
+    'tuple-return',
+    PROBES.logic,
+    'class ToastMapper { public pair(): [string, number] { return ["", 1]; } }',
+    S.tbTuple,
+    'TB-1 (b)'
+  ),
+  tbFail(
+    'tuple-hook-return',
+    PROBES.hook,
+    'export function useX(): [string, number] { return ["", 1]; }',
+    S.tbTuple,
+    'TB-1 (b)'
+  ),
+  // (c) bare arrays
+  tbFail(
+    'array-return',
+    PROBES.logic,
+    'class ToastMapper { public all(): string[] { return []; } }',
+    S.tbArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'array-readonly-generic-param',
+    PROBES.logic,
+    'class ToastMapper { public take(items: ReadonlyArray<string>): void {} }',
+    S.tbArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'array-generic-return',
+    PROBES.logic,
+    'class ToastMapper { public all(): Array<string> { return []; } }',
+    S.tbArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'array-nested-in-promise',
+    PROBES.logic,
+    'class ToastMapper { public all(): Promise<readonly string[]> { return Promise.resolve([]); } }',
+    S.tbArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'array-hook-parameter',
+    PROBES.hook,
+    'export function useX(items: readonly string[]): void {}',
+    S.tbArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'array-component-prop',
+    PROBES.component,
+    'export default function Panel(props: string[]): null { return null; }',
+    S.tbArray,
+    'TB-1 (c)'
+  ),
+  // (d) catch-all payloads: object, Record, and an unknown return or property
+  tbFail(
+    'catch-all-object-param',
+    PROBES.logic,
+    'class ToastMapper { public take(value: object): void {} }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'catch-all-record-return',
+    PROBES.logic,
+    'class ToastMapper { public all(): Record<string, string> { return {}; } }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'catch-all-unknown-return',
+    PROBES.logic,
+    'class ToastMapper { public read(): unknown { return null; } }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'catch-all-unknown-property',
+    PROBES.logic,
+    'class ToastMapper { public readonly payload: unknown = null; }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'catch-all-hook-record',
+    PROBES.hook,
+    'export function useX(): Record<string, string> { return {}; }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  // (e) inline derived types
+  tbFail(
+    'derived-partial-param',
+    PROBES.logic,
+    'import type { Toast } from "./toast";\nclass ToastMapper { public patch(a: Partial<Toast>): void {} }',
+    S.tbDerived,
+    'TB-1 (e)'
+  ),
+  tbFail(
+    'derived-omit-return',
+    PROBES.logic,
+    'import type { Toast } from "./toast";\nclass ToastMapper { public draft(): Omit<Toast, "id"> { throw new Error(); } }',
+    S.tbDerived,
+    'TB-1 (e)'
+  ),
+  tbFail(
+    'derived-pick-component',
+    PROBES.component,
+    'import type { Toast } from "./toast";\nexport default function Panel(props: Pick<Toast, "id">): null { return null; }',
+    S.tbDerived,
+    'TB-1 (e)'
+  ),
+  // type-only files: nested literals, tuples, arrays of non-named elements, catch-alls, derivations
+  tbFail(
+    'type-file-nested-literal-in-interface',
+    PROBES.typeOnly,
+    'export interface Toast { meta: { x: string } }',
+    S.tbTypeObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'type-file-literal-union-member',
+    PROBES.typeOnly,
+    'export type Outcome = { kind: "sent" } | { kind: "failed" };',
+    S.tbTypeObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'type-file-default-interface-nested-literal',
+    PROBES.typeOnly,
+    'export default interface Toast { meta: { x: string } }',
+    S.tbTypeObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'type-file-tuple',
+    PROBES.typeOnly,
+    'export interface Toast { pair: [string, number] }',
+    S.tbTypeTuple,
+    'TB-1 (b)'
+  ),
+  tbFail(
+    'type-file-primitive-array',
+    PROBES.typeOnly,
+    'export interface Toast { tags: readonly string[] }',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-nested-array',
+    PROBES.typeOnly,
+    'export interface Toast { rows: readonly Row[][] }',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-method-array',
+    PROBES.typeOnly,
+    'export interface ToastRepository { list(): Promise<readonly Toast[]>; }',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-callback-array',
+    PROBES.typeOnly,
+    'export interface Toast { onLoad: (items: Toast[]) => void }',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-alias-array',
+    PROBES.typeOnly,
+    'export type ToastList = readonly Toast[];',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-array-generic',
+    PROBES.typeOnly,
+    'export interface Toast { all: ReadonlyArray<Toast> }',
+    S.tbTypeArray,
+    'TB-1 (c)'
+  ),
+  tbFail(
+    'type-file-record',
+    PROBES.typeOnly,
+    'export interface Toast { bag: Record<string, string> }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-index-signature',
+    PROBES.typeOnly,
+    'export interface Toast { [key: string]: string }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-object-keyword',
+    PROBES.typeOnly,
+    'export interface Toast { payload: object }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-unknown-member',
+    PROBES.typeOnly,
+    'export interface Toast { payload: unknown }',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-derived-in-interface',
+    PROBES.typeOnly,
+    'export interface Toast { draft: Omit<Item, "id"> }',
+    S.tbTypeDerived,
+    'TB-1 (e)'
+  ),
+  tbFail(
+    'type-file-derived-in-union',
+    PROBES.typeOnly,
+    'export type Toast = Item | Partial<Other>;',
+    S.tbTypeDerived,
+    'TB-1 (e)'
+  ),
+  // must-pass controls: the sanctioned spellings TB-1 leaves open
+  tbPass(
+    'control-named-collection-interface',
+    PROBES.typeOnly,
+    'export interface RecoveryCode { readonly value: string }\nexport interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }'
+  ),
+  tbPass(
+    'control-private-method-literal',
+    PROBES.logic,
+    'class ToastMapper { private map(a: { a: string }): void {} public run(): void { this.map({ a: "" }); } }'
+  ),
+  tbPass(
+    'control-hash-private-arrow-property',
+    PROBES.logic,
+    'class ToastMapper { #map = (a: { a: string }): void => {}; public run(): void { this.#map({ a: "" }); } }'
+  ),
+  tbPass(
+    'control-unknown-narrowing-parameter',
+    PROBES.logic,
+    'class ErrorNormalizer { public normalize(error: unknown): string { return String(error); } }'
+  ),
+  tbPass(
+    'control-error-and-cause-members',
+    PROBES.typeOnly,
+    'export interface Failure { readonly error: unknown; readonly cause?: unknown }'
+  ),
+  tbPass(
+    'control-error-and-cause-class-properties',
+    PROBES.logic,
+    'class ToastError extends Error { public override readonly cause?: unknown; public readonly error: unknown = null; }'
+  ),
+  tbPass(
+    'control-declare-module-augmentation',
+    PROBES.typeOnly,
+    'declare module "@mui/material/styles" { interface Palette { tone: { main: string }; tones: string[] } }'
+  ),
+  tbPass(
+    'control-named-derivation-alias',
+    PROBES.typeOnly,
+    'import type { ToastItem } from "./toast-item";\nexport type ToastDraft = Omit<ToastItem, "id">;'
+  ),
+  tbPass(
+    'control-generic-with-named-argument',
+    PROBES.logic,
+    'import type { RecoveryOutcome } from "./recovery-outcome";\nclass ToastMapper { public run(): Promise<RecoveryOutcome> { throw new Error(); } }'
+  ),
+];
+FIXTURES.push(...TB_FIXTURES);
+
 /** @param {unknown} entry a resolved rule value @returns {unknown} its severity (index 0 of an array form) */
 function severityOf(entry) {
   return Array.isArray(entry) ? entry[0] : entry;
@@ -1193,4 +1614,11 @@ const fixtures = await Promise.all(
   }))
 );
 
-process.stdout.write(JSON.stringify({ probes, universe, fixtures }));
+process.stdout.write(
+  JSON.stringify({
+    probes,
+    universe,
+    fixtures,
+    typedBoundary: { code: TB_CODE, typeFile: TB_TYPE_FILE, codeProbes: TB_CODE_PROBES },
+  })
+);

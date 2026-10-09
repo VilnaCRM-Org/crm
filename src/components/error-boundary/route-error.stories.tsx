@@ -5,10 +5,10 @@ import { data } from 'react-router';
 import RouteError from '@/components/error-boundary/route-error';
 import { DataRouterStory } from '@stories/router-decorators';
 
-type RouteErrorStoryProps = {
+interface RouteErrorStoryProps {
   failure: 'render' | 'not-found' | 'server';
   landmark: 'main' | 'region';
-};
+}
 
 function RenderFailure(): JSX.Element {
   throw new Error('Route component failed to render');

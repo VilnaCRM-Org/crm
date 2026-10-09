@@ -6,6 +6,8 @@ export interface AppConfigValues {
   readonly flags?: FeatureFlagValues | undefined;
 }
 
+export type AppConfigUrlKey = 'apiBaseUrl' | 'graphqlUrl';
+
 export interface AppConfigReader {
   get(): AppConfigValues;
   apiBaseUrl(): string | undefined;

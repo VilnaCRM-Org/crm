@@ -1,3 +1,9 @@
+import type {
+  SecurityEventCategory,
+  SecurityEventName,
+  SecurityEventSeverity,
+} from '@/services/types/security-events/security-event';
+
 export interface ObservabilityUser {
   id: string;
   tenantId?: string;
@@ -10,7 +16,23 @@ export interface WebVitalMetric {
   id: string;
 }
 
-export type CaptureContext = Record<string, unknown>;
+export interface CaptureContext {
+  surface?: string | undefined;
+  stage?: string | undefined;
+  source?: string | undefined;
+  pattern?: string | undefined;
+  componentStack?: string | null | undefined;
+  'X-Request-Id'?: string | undefined;
+  'X-Correlation-Id'?: string | undefined;
+  event?: SecurityEventName | undefined;
+  category?: SecurityEventCategory | undefined;
+  reason?: string | undefined;
+  severity?: SecurityEventSeverity | undefined;
+  failureCount?: number | undefined;
+  windowMs?: number | undefined;
+  threshold?: number | undefined;
+  thresholdCrossed?: boolean | undefined;
+}
 
 export interface ObservabilityService {
   init(): void;

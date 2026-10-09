@@ -28,7 +28,7 @@ describe('error module exports', () => {
 
       expect(result).toHaveProperty('code');
       expect(result).toHaveProperty('message');
-      expect(result).toHaveProperty('original');
+      expect(result).toHaveProperty('cause');
     });
   });
 
@@ -37,15 +37,15 @@ describe('error module exports', () => {
       const parsedError: ParsedError = {
         code: 'TEST_CODE',
         message: 'Test message',
-        original: new Error('Original error'),
+        cause: new Error('Original error'),
       };
 
       expect(parsedError.code).toBe('TEST_CODE');
       expect(parsedError.message).toBe('Test message');
-      expect(parsedError.original).toBeInstanceOf(Error);
+      expect(parsedError.cause).toBeInstanceOf(Error);
     });
 
-    it('should allow ParsedError without original property', () => {
+    it('should allow ParsedError without cause property', () => {
       const parsedError: ParsedError = {
         code: 'TEST_CODE',
         message: 'Test message',
@@ -53,7 +53,7 @@ describe('error module exports', () => {
 
       expect(parsedError.code).toBe('TEST_CODE');
       expect(parsedError.message).toBe('Test message');
-      expect(parsedError.original).toBeUndefined();
+      expect(parsedError.cause).toBeUndefined();
     });
   });
 
@@ -64,7 +64,7 @@ describe('error module exports', () => {
 
       expect(result.code).toBe('HTTP_404');
       expect(result.message).toBe('HTTP error 404');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
   });
 });

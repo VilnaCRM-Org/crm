@@ -13,7 +13,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('HTTP_404');
       expect(result.message).toBe('HTTP error 404');
-      expect(result.original).toBe(response);
+      expect(result.cause).toBe(response);
     });
 
     it('should parse Response instance with status 500', () => {
@@ -23,7 +23,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('HTTP_500');
       expect(result.message).toBe('HTTP error 500');
-      expect(result.original).toBe(response);
+      expect(result.cause).toBe(response);
     });
 
     it('should parse Response instance with status 401', () => {
@@ -33,7 +33,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('HTTP_401');
       expect(result.message).toBe('HTTP error 401');
-      expect(result.original).toBe(response);
+      expect(result.cause).toBe(response);
     });
 
     it('should parse Response instance with status 200', () => {
@@ -43,7 +43,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('HTTP_200');
       expect(result.message).toBe('HTTP error 200');
-      expect(result.original).toBe(response);
+      expect(result.cause).toBe(response);
     });
   });
 
@@ -59,7 +59,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('AUTH_FAILED');
       expect(result.message).toBe('Authentication failed');
-      expect(result.original).toBe(apiError);
+      expect(result.cause).toBe(apiError);
     });
 
     it('should parse ApiError with custom message', () => {
@@ -69,7 +69,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('CUSTOM_ERROR');
       expect(result.message).toBe('Custom error message');
-      expect(result.original).toBe(apiError);
+      expect(result.cause).toBe(apiError);
     });
 
     it('should parse ApiError with network error code', () => {
@@ -79,7 +79,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('NETWORK_ERROR');
       expect(result.message).toBe('Network error');
-      expect(result.original).toBe(apiError);
+      expect(result.cause).toBe(apiError);
     });
   });
 
@@ -91,7 +91,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Something went wrong');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
 
     it('should parse TypeError', () => {
@@ -101,7 +101,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Type mismatch');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
 
     it('should parse RangeError', () => {
@@ -111,7 +111,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Value out of range');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
 
     it('should parse Error with empty message', () => {
@@ -121,7 +121,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('');
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
 
     it('should parse Error with very long message', () => {
@@ -132,7 +132,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe(longMessage);
-      expect(result.original).toBe(error);
+      expect(result.cause).toBe(error);
     });
   });
 
@@ -142,7 +142,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe('string error');
+      expect(result.cause).toBe('string error');
     });
 
     it('should parse number error', () => {
@@ -150,7 +150,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(42);
+      expect(result.cause).toBe(42);
     });
 
     it('should parse null error', () => {
@@ -158,7 +158,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(null);
+      expect(result.cause).toBe(null);
     });
 
     it('should parse undefined error', () => {
@@ -166,7 +166,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(undefined);
+      expect(result.cause).toBe(undefined);
     });
 
     it('should parse object error', () => {
@@ -175,7 +175,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(obj);
+      expect(result.cause).toBe(obj);
     });
 
     it('should parse array error', () => {
@@ -184,7 +184,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(arr);
+      expect(result.cause).toBe(arr);
     });
 
     it('should parse boolean error', () => {
@@ -192,7 +192,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(false);
+      expect(result.cause).toBe(false);
     });
 
     it('should parse symbol error', () => {
@@ -201,7 +201,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
-      expect(result.original).toBe(sym);
+      expect(result.cause).toBe(sym);
     });
   });
 });

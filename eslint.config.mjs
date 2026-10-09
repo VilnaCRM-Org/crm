@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import classNamingPolicy from './config/class-naming-policy.js';
 import diCollaboratorPolicy from './config/di-collaborator-policy.js';
+import typedBoundaryPolicy from './config/typed-boundary-policy.js';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const tsconfigPath = path.join(rootDir, 'tsconfig.json');
@@ -103,6 +104,14 @@ const typeDeclarationSelectors = [
       'No type declarations in logic files — move this type alias to the nearest feature/area `types/` folder (e.g. `@auth/types/<group>/<name>`), not beside the component (issue #88).',
   },
 ];
+
+// Source (issue #332, ADR-022, TB-1): every value that crosses a layer carries a named type.
+// Both arrays are BUILT by config/typed-boundary-policy.js (the single source the fixtures read).
+// `typedBoundarySelectors` is spread into every `src` block that sets `no-restricted-syntax` —
+// flat config replaces the rule per file, so a block that omits it silently un-gates its files,
+// hooks included. `typedBoundaryTypeFileSelectors` goes only into the type-only block.
+const typedBoundarySelectors = typedBoundaryPolicy.typedBoundarySelectors();
+const typedBoundaryTypeFileSelectors = typedBoundaryPolicy.typedBoundaryTypeFileSelectors();
 
 // Source (issue #100): non-React application code (services, repositories, mappers,
 // factories, stores, utils) must not use `static` members or standalone functions.
@@ -408,6 +417,7 @@ const clientStateSelectors = [
 const routeShellSelectors = [
   ...dataTestidSelectors,
   ...typeDeclarationSelectors,
+  ...typedBoundarySelectors,
   ...noRawIntlSelectors,
   ...suspenseFallbackSelectors,
   ...routeObjectShapeSelectors,
@@ -868,6 +878,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noRawIntlSelectors,
         ...suspenseFallbackSelectors,
         ...routerConstructionSelectors,
@@ -883,6 +894,15 @@ export default [
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'error',
+    },
+  },
+
+  // Source (issue #332, ADR-022): `type X = { … }` is an `interface`. The stock rule autofixes
+  // it, so the object-alias half of TB-1 needs no selector of its own.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
     },
   },
 
@@ -938,6 +958,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noRawIntlSelectors,
         ...noNewBehavioralClassInComponentSelectors,
         ...suspenseFallbackSelectors,
@@ -1043,6 +1064,7 @@ export default [
           selector: "TSPropertySignature[key.value='data-testid']",
           message: 'No data-testid prop type in source — expose an id prop instead (issue #90).',
         },
+        ...typedBoundaryTypeFileSelectors,
       ],
     },
   },
@@ -1065,6 +1087,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...classNamingSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
@@ -1090,6 +1113,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...classNamingSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...noUninjectedCollaboratorSelectors,
@@ -1110,6 +1134,7 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         noUninjectedCollaboratorSelectors[0],
@@ -1141,6 +1166,7 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
         ...clientStateSelectors,
@@ -1177,6 +1203,7 @@ export default [
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noUninjectedCollaboratorSelectors,
         ...routerConstructionSelectors,
@@ -1204,6 +1231,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
@@ -1223,6 +1251,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,

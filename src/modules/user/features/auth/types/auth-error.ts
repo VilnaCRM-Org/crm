@@ -15,4 +15,14 @@ export interface AuthError {
   readonly aborted?: boolean;
 }
 
-export type AuthResult<T> = { ok: true; value: T } | { ok: false; error: AuthError };
+export interface AuthOkResult<T> {
+  readonly ok: true;
+  readonly value: T;
+}
+
+export interface AuthFailedResult {
+  readonly ok: false;
+  readonly error: AuthError;
+}
+
+export type AuthResult<T> = AuthOkResult<T> | AuthFailedResult;

@@ -1,17 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 
-import type { AsyncListApply, AsyncListState, AsyncListSubscription } from './types/use-async-list';
+import type {
+  AsyncListApply,
+  AsyncListLoad,
+  AsyncListState,
+  AsyncListSubscription,
+} from './types/use-async-list';
 
 const INITIAL_STATE = { items: [], isLoading: true, hasError: false };
 
 class AsyncListLoader {
   public async run<T>(
-    load: () => Promise<readonly T[]>,
+    load: AsyncListLoad<T>,
     subscription: AsyncListSubscription,
     apply: AsyncListApply<T>
   ): Promise<void> {
     try {
-      const items = await load();
+      const { items } = await load();
       if (subscription.active) {
         apply({ items, isLoading: false, hasError: false });
       }
@@ -25,7 +30,7 @@ class AsyncListLoader {
 
 export const asyncListLoader = new AsyncListLoader();
 
-export default function useAsyncList<T>(load: () => Promise<readonly T[]>): AsyncListState<T> {
+export default function useAsyncList<T>(load: AsyncListLoad<T>): AsyncListState<T> {
   const [state, setState] = useState<AsyncListState<T>>(INITIAL_STATE);
   const loadRef = useRef(load);
 

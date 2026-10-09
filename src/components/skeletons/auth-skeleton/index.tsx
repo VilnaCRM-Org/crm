@@ -8,7 +8,12 @@ import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-import type { AuthSkeletonProps, Wrap } from '@/components/types/auth-skeleton';
+import type {
+  AuthSkeletonProps,
+  SkeletonAnimatedWrapProps,
+  SkeletonWrapProps,
+  Wrap,
+} from '@/components/types/auth-skeleton';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -24,7 +29,7 @@ const buildWrap =
   (baseSx) =>
     disableAnimation ? [baseSx, STATIC_SX] : [baseSx];
 
-function TitleBlock({ wrap }: { wrap: Wrap }): JSX.Element {
+function TitleBlock({ wrap }: SkeletonWrapProps): JSX.Element {
   return (
     <>
       <UISkeletonText id="auth-skeleton-title" size="l" sx={wrap(styles.titleSkeleton)} />
@@ -40,13 +45,7 @@ function TitleBlock({ wrap }: { wrap: Wrap }): JSX.Element {
   );
 }
 
-function FieldRows({
-  wrap,
-  disableAnimation,
-}: {
-  wrap: Wrap;
-  disableAnimation: boolean;
-}): JSX.Element {
+function FieldRows({ wrap, disableAnimation }: SkeletonAnimatedWrapProps): JSX.Element {
   return (
     <>
       {[1, 2, 3].map((id) => (
@@ -63,7 +62,7 @@ function FieldRows({
   );
 }
 
-function SocialBlocks({ wrap }: { wrap: Wrap }): JSX.Element {
+function SocialBlocks({ wrap }: SkeletonWrapProps): JSX.Element {
   return (
     <Box sx={styles.socialContainer}>
       {SOCIAL_BUTTONS.map((button) => (
@@ -77,7 +76,7 @@ function SocialBlocks({ wrap }: { wrap: Wrap }): JSX.Element {
   );
 }
 
-function DividerBlock({ wrap }: { wrap: Wrap }): JSX.Element {
+function DividerBlock({ wrap }: SkeletonWrapProps): JSX.Element {
   return (
     <Divider id="auth-skeleton-divider" role="presentation" sx={styles.divider}>
       <UISkeletonText id="auth-skeleton-divider-text" size="l" sx={wrap(styles.dividerText)} />
@@ -85,13 +84,7 @@ function DividerBlock({ wrap }: { wrap: Wrap }): JSX.Element {
   );
 }
 
-function FormBody({
-  wrap,
-  disableAnimation,
-}: {
-  wrap: Wrap;
-  disableAnimation: boolean;
-}): JSX.Element {
+function FormBody({ wrap, disableAnimation }: SkeletonAnimatedWrapProps): JSX.Element {
   return (
     <Box sx={wrap({ ...styles.formWrapper, ...styles.formWrapperPulse })}>
       <TitleBlock wrap={wrap} />

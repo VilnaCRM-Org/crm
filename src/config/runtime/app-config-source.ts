@@ -1,3 +1,6 @@
+import type { AppConfigUrlKey, AppConfigValues } from './types/app-config';
+import type { FeatureFlagValues } from './types/feature-flag';
+
 export const APP_CONFIG_ELEMENT_ID = 'app-runtime-config';
 
 const ERROR_PREFIX = `The #${APP_CONFIG_ELEMENT_ID} runtime configuration block`;
@@ -5,13 +8,13 @@ const ERROR_PREFIX = `The #${APP_CONFIG_ELEMENT_ID} runtime configuration block`
 class AppConfigSource {
   private cachedText: string | undefined;
 
-  private cachedValues: Record<string, unknown> = {};
+  private cachedValues: AppConfigValues = {};
 
-  public load(): Record<string, unknown> {
+  public load(): AppConfigValues {
     return this.snapshot();
   }
 
-  public snapshot(): Record<string, unknown> {
+  public snapshot(): AppConfigValues {
     const text = this.readText();
 
     if (text !== this.cachedText) {
@@ -22,7 +25,7 @@ class AppConfigSource {
     return this.cachedValues;
   }
 
-  public text(key: string): string | undefined {
+  public text(key: AppConfigUrlKey): string | undefined {
     const value = this.snapshot()[key];
 
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -32,13 +35,13 @@ class AppConfigSource {
   // path reads endpoints before the zod layer exists, so a value that is not an absolute http(s)
   // URL is reported as absent and the caller falls back to its build-time default, rather than
   // being handed to fetch as-is.
-  public url(key: string): string | undefined {
+  public url(key: AppConfigUrlKey): string | undefined {
     const value = this.text(key);
 
     return value !== undefined && this.isHttpUrl(value) ? value : undefined;
   }
 
-  public flags(): Record<string, unknown> {
+  public flags(): FeatureFlagValues {
     const value = this.snapshot().flags;
 
     return this.isRecord(value) ? value : {};
@@ -51,7 +54,7 @@ class AppConfigSource {
     return element?.textContent?.trim() ?? '';
   }
 
-  private parse(text: string): Record<string, unknown> {
+  private parse(text: string): AppConfigValues {
     const parsed = text ? this.parseJson(text) : {};
 
     if (!this.isRecord(parsed)) {
@@ -69,7 +72,7 @@ class AppConfigSource {
     }
   }
 
-  private isRecord(value: unknown): value is Record<string, unknown> {
+  private isRecord(value: unknown): value is AppConfigValues {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 

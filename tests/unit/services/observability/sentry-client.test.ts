@@ -46,12 +46,12 @@ describe('SentryClient', () => {
     const client = new SentryClient();
     const error = new Error('early');
 
-    client.captureException(error, { requestId: 'r1' });
+    client.captureException(error, { source: 'r1' });
     expect(Sentry.captureException).not.toHaveBeenCalled();
 
     await client.init();
 
-    expect(Sentry.captureException).toHaveBeenCalledWith(error, { extra: { requestId: 'r1' } });
+    expect(Sentry.captureException).toHaveBeenCalledWith(error, { extra: { source: 'r1' } });
   });
 
   it('buffers identity set before the SDK loads and applies it on init', async () => {
@@ -115,11 +115,11 @@ describe('SentryClient', () => {
     await client.init();
     const error = new Error('boom');
 
-    client.captureException(error, { requestId: 'r1' });
+    client.captureException(error, { source: 'r1' });
     client.captureException(error);
 
     expect(Sentry.captureException).toHaveBeenNthCalledWith(1, error, {
-      extra: { requestId: 'r1' },
+      extra: { source: 'r1' },
     });
     expect(Sentry.captureException).toHaveBeenNthCalledWith(2, error, undefined);
   });

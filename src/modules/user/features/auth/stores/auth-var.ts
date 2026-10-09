@@ -1,7 +1,7 @@
 import preloadedAuthTokenSeed from '@/config/env/preloaded-auth-token';
 import ReactiveVarFactory from '@/lib/state/reactive-var-factory';
 import type { ReactiveVar } from '@/lib/state/types/reactive-var';
-import type { AuthState } from '@auth/types/auth-store';
+import type { AuthState, AuthStatePatch } from '@auth/types/auth-store';
 
 const CLEARED_STATE: AuthState = {
   email: '',
@@ -33,7 +33,7 @@ export class AuthStateVar {
     return this.state();
   }
 
-  public set(partial: Partial<AuthState>): void {
+  public set(partial: AuthStatePatch): void {
     this.state({ ...this.state(), ...partial });
   }
 

@@ -1,8 +1,8 @@
 import type { AppRouteObject } from './types/app-route';
-import type { RouteModule } from './types/route-module';
+import type { RouteModule, RouteModuleRegistry } from './types/route-module';
 
 class RouteValidator {
-  public validate(modules: readonly RouteModule[]): void {
+  public validate({ items: modules }: RouteModuleRegistry): void {
     this.assertUniqueIds(modules);
     modules.forEach((module) => module.routes.forEach((route) => this.assertRoute(route, false)));
   }

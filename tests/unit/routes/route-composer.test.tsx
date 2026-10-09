@@ -49,7 +49,7 @@ const routeErrorInfo = (overrides: Partial<ErrorInfoArg> = {}): ErrorInfoArg => 
 
 describe('route composer', () => {
   it('wraps every route in a single RootLayout with a route error boundary (invariant A)', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     const root = rootOf(tree);
 
     expect(tree).toHaveLength(1);
@@ -60,7 +60,7 @@ describe('route composer', () => {
   });
 
   it('nests protected routes under ProtectedRoute then AppLayout (invariants B, D)', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     const { guard, layout } = protectedBranchOf(tree);
 
     expect(typeOf(guard)).toBe(ProtectedRoute);
@@ -69,7 +69,7 @@ describe('route composer', () => {
   });
 
   it('keeps public routes directly under RootLayout, never under AppLayout (invariant B)', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     // Everything that is not the protected layout branch is a flat public route.
     const flat = (rootOf(tree).children ?? []).filter((child) => !isLayout(child));
 
@@ -83,7 +83,7 @@ describe('route composer', () => {
   });
 
   it('attaches a RouteError errorElement to every route object in the tree (issue #116)', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     const routes = walk(tree);
 
     expect(routes.length).toBeGreaterThan(1);
@@ -93,7 +93,7 @@ describe('route composer', () => {
   });
 
   it('renders the protected guard and AppLayout boundaries as a main landmark', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     const { guard, layout } = protectedBranchOf(tree);
 
     expect(landmarkOf(guard)).toBe('main');
@@ -101,7 +101,7 @@ describe('route composer', () => {
   });
 
   it('renders page boundaries under AppLayout as a region, never a nested main', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     const { layout } = protectedBranchOf(tree);
     const pages = layout.children ?? [];
 
@@ -110,7 +110,7 @@ describe('route composer', () => {
   });
 
   it('renders open route boundaries as a main landmark', () => {
-    const tree = routeComposer.compose(registry);
+    const tree = routeComposer.compose(registry).items;
     const flat = (rootOf(tree).children ?? []).filter((child) => !isLayout(child));
 
     expect(flat.length).toBeGreaterThan(0);
@@ -121,13 +121,13 @@ describe('route composer', () => {
     const modules: RouteModule[] = [
       { id: 'only-public', routes: [{ path: '/p', guard: 'public', load: page }] },
     ];
-    const tree = routeComposer.compose(modules);
+    const tree = routeComposer.compose({ items: modules }).items;
 
     expect(rootOf(tree).children?.some(isLayout)).toBe(false);
   });
 
   it('composes a module that declares no routes into a childless root (edge: empty module)', () => {
-    const tree = routeComposer.compose([{ id: 'empty', routes: [] }]);
+    const tree = routeComposer.compose({ items: [{ id: 'empty', routes: [] }] }).items;
     const root = rootOf(tree);
 
     expect(tree).toHaveLength(1);
@@ -149,7 +149,7 @@ describe('route composer', () => {
         ],
       },
     ];
-    const tree = routeComposer.compose(modules);
+    const tree = routeComposer.compose({ items: modules }).items;
     const parent = rootOf(tree).children?.find((child) => child.path === '/parent') as RouteObject;
     const child = parent.children?.[0] as RouteObject;
 
@@ -166,7 +166,9 @@ describe('route composer', () => {
       { id, routes: [{ path: '/second', guard: 'public', load: page }] },
     ];
 
-    expect(() => routeComposer.compose(modules)).toThrow(`Duplicate route module id: ${id}`);
+    expect(() => routeComposer.compose({ items: modules })).toThrow(
+      `Duplicate route module id: ${id}`
+    );
   });
 
   it('refuses to compose a nested route that declares its own guard', () => {
@@ -184,7 +186,7 @@ describe('route composer', () => {
       },
     ];
 
-    expect(() => routeComposer.compose(modules)).toThrow(
+    expect(() => routeComposer.compose({ items: modules })).toThrow(
       'Nested routes must not declare a guard (guards are top-level only)'
     );
   });
@@ -203,7 +205,7 @@ describe('route composer', () => {
         ],
       },
     ];
-    const tree = routeComposer.compose(modules);
+    const tree = routeComposer.compose({ items: modules }).items;
     const { layout } = protectedBranchOf(tree);
     const parent = layout.children?.[0] as RouteObject;
     const child = parent.children?.[0] as RouteObject;

@@ -59,6 +59,6 @@ describe('featureFlagService', () => {
   it('names every flag it knows about', async () => {
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.names()).toEqual(['forgotPassword']);
+    expect(featureFlagService.names()).toEqual({ items: ['forgotPassword'] });
   });
 });

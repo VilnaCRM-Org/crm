@@ -15,7 +15,7 @@ jest.mock('@/modules/{{module}}/features/{{feature}}/stores', () => ({
 const loader = {{camelCase feature}}Loader as jest.Mocked<typeof {{camelCase feature}}Loader>;
 
 const repositoryOf = (items: readonly {{pascalCase feature}}Item[]): {{pascalCase feature}}Repository => ({
-  list: () => Promise.resolve(items),
+  list: () => Promise.resolve({ items }),
 });
 
 describe('use{{pascalCase feature}}', () => {

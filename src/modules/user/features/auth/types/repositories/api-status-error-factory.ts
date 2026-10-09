@@ -3,11 +3,39 @@ export interface HttpErrorLike {
   message: string;
 }
 
-export type StatusErrorSpec =
-  | { kind: 'validation'; status: 400 | 422; prefix: 'Invalid' | 'Unprocessable' }
-  | { kind: 'auth' }
-  | { kind: 'api'; status: number; code: string; message: string }
-  | { kind: 'conflict' }
-  | { kind: 'service' };
+export interface ValidationStatusErrorSpec {
+  kind: 'validation';
+  status: 400 | 422;
+  prefix: 'Invalid' | 'Unprocessable';
+}
 
-export type StatusErrorInput = { error: HttpErrorLike; context: string };
+export interface AuthStatusErrorSpec {
+  kind: 'auth';
+}
+
+export interface ApiStatusErrorSpec {
+  kind: 'api';
+  status: number;
+  code: string;
+  message: string;
+}
+
+export interface ConflictStatusErrorSpec {
+  kind: 'conflict';
+}
+
+export interface ServiceStatusErrorSpec {
+  kind: 'service';
+}
+
+export type StatusErrorSpec =
+  | ValidationStatusErrorSpec
+  | AuthStatusErrorSpec
+  | ApiStatusErrorSpec
+  | ConflictStatusErrorSpec
+  | ServiceStatusErrorSpec;
+
+export interface StatusErrorInput {
+  error: HttpErrorLike;
+  context: string;
+}

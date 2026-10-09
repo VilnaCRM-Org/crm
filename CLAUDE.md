@@ -1426,6 +1426,59 @@ ignored return value, throw the constructed error. Never `eslint-disable` (the
 to clear a finding; a rule that turns out noisy is removed by a reviewed change to this section,
 the list and its fixtures together.
 
+### Typed boundaries (TB-1, issue #332, ADR-022)
+
+Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
+file, a class, or a named alias in a type-only file whose whole body is a union of named types or
+literals, a callback type, or one generic or derived type over named arguments. The boundary
+positions are component props, exported hook parameters and results, the constructor, method
+parameters, return types and non-private properties of Data provider, Transformer, Repository,
+State, Guard and Factory classes, DI-registered values, published state, events and telemetry
+payloads, and every member of an interface in a type-only file. The gate fails at those
+positions:
+
+- **(a)** an anonymous object type, including an object member of a union — each variant is a
+  named `interface`, and `type X = { … }` is an `interface`;
+- **(b)** a tuple;
+- **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
+  collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
+  and an array of primitives never crosses;
+- **(d)** `object`, `Record<…>`, an index signature, or `unknown` — `unknown` stays only as the
+  parameter of a method that narrows a caught error, and as an `error` / `cause` member;
+- **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
+  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+
+Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
+`AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
+types that obey the rule, and `T | null` / `T | undefined`. Exceptions: generated codegen types
+stay below the Data provider (review item), `declare module` blocks and `.d.ts` files, and
+private or function-local values.
+
+**Enforcement.** Two `no-restricted-syntax` arrays are built by
+[`config/typed-boundary-policy.js`](config/typed-boundary-policy.js), the single source for the
+config and the fixtures: `typedBoundarySelectors` (five code entries) is spread into **every**
+`src` block that sets the rule — flat config replaces the rule per file, and the hooks block
+needs it too, since hooks are exempt from #100 but not from TB-1 — and
+`typedBoundaryTypeFileSelectors` (five entries) into the type-only block, rooted at `Program`
+so a `declare module` augmentation is never matched. `@typescript-eslint/consistent-type-definitions`
+is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
+
+**Gate integrity.** [`scripts/ci/eslint-gate-fixtures.mjs`](scripts/ci/eslint-gate-fixtures.mjs)
+carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
+function or arrow exported later, a non-private class arrow property), and the must-pass controls
+(a named collection interface, a private method, a `#private` arrow property, `normalize(error:
+unknown)`, a `declare module`, a named derivation). The universe test fails a selector edited
+without its fixture, asserts every `src` code probe resolves all five code selectors, and
+`tests/unit/config/eslint-policy.test.ts` pins each array on every block.
+
+**Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
+alias. A function expression on a top-level `const`, an `export { x as default }` of a nested
+function, an inline callback inside a parameter's own interface, test-builder return values and
+the generated-types exception are review items.
+
+**No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
+cast, an allowlist entry or a narrower glob.
+
 ### Test liveness (issue #167)
 
 The Jest 100/100/100/100 `coverageThreshold` measures execution, not verification: a test

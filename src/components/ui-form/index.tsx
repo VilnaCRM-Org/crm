@@ -3,8 +3,9 @@ import { type JSX } from 'react';
 import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
 
 import type {
+  ErrorBannerProps,
   FormBodyProps,
-  FormHeaderProps,
+  FormHeaderSectionProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
   UIFormProps,
@@ -21,7 +22,7 @@ import SubmitSpinner from './submit-spinner';
 import useOfflineSubmit from './use-offline-submit';
 import useUIForm from './use-ui-form';
 
-function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
+function ErrorBanner({ error }: ErrorBannerProps): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLDivElement>();
   if (!error) return null;
   return (
@@ -33,7 +34,7 @@ function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
   );
 }
 
-function FormHeader({ header }: { header: FormHeaderProps }): JSX.Element {
+function FormHeader({ header }: FormHeaderSectionProps): JSX.Element {
   const { title, subtitle, showTitle, showSubtitle, titleComponent } = header;
   return (
     <>

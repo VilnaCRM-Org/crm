@@ -1,10 +1,13 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
+import type { AsyncListItems } from '@/hooks/types/use-async-list';
 import useAsyncList, { asyncListLoader } from '@/hooks/use-async-list';
 
 describe('useAsyncList', () => {
   it('starts in the loading state before the loader settles', () => {
-    const { result } = renderHook(() => useAsyncList(() => new Promise<string[]>(() => {})));
+    const { result } = renderHook(() =>
+      useAsyncList(() => new Promise<AsyncListItems<string>>(() => {}))
+    );
 
     expect(result.current).toEqual({ items: [], isLoading: true, hasError: false });
   });
@@ -12,7 +15,7 @@ describe('useAsyncList', () => {
   it('exposes the resolved items once the loader settles', async () => {
     const items = ['alpha', 'beta'];
 
-    const { result } = renderHook(() => useAsyncList(() => Promise.resolve(items)));
+    const { result } = renderHook(() => useAsyncList(() => Promise.resolve({ items })));
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.items).toEqual(items);
@@ -30,7 +33,7 @@ describe('useAsyncList', () => {
   });
 
   it('runs the loader once even when the caller passes a new function each render', async () => {
-    const load = jest.fn().mockResolvedValue([]);
+    const load = jest.fn().mockResolvedValue({ items: [] });
 
     const { result, rerender } = renderHook(() => useAsyncList(() => load()));
 
@@ -42,16 +45,16 @@ describe('useAsyncList', () => {
   });
 
   it('unmounts cleanly while a load is still in flight', async () => {
-    let settle: (items: string[]) => void = () => {};
-    const pending = new Promise<string[]>((resolve) => {
+    let settle: (result: AsyncListItems<string>) => void = () => {};
+    const pending = new Promise<AsyncListItems<string>>((resolve) => {
       settle = resolve;
     });
 
     const { unmount } = renderHook(() => useAsyncList(() => pending));
     unmount();
-    settle(['late']);
+    settle({ items: ['late'] });
 
-    await expect(pending).resolves.toEqual(['late']);
+    await expect(pending).resolves.toEqual({ items: ['late'] });
   });
 });
 
@@ -62,7 +65,7 @@ describe('AsyncListLoader cancellation guard', () => {
   it('applies the resolved items while the subscription is active', async () => {
     const apply = jest.fn();
 
-    await asyncListLoader.run(() => Promise.resolve(['alpha']), { active: true }, apply);
+    await asyncListLoader.run(() => Promise.resolve({ items: ['alpha'] }), { active: true }, apply);
 
     expect(apply).toHaveBeenCalledWith({
       items: ['alpha'],
@@ -82,7 +85,11 @@ describe('AsyncListLoader cancellation guard', () => {
   it('suppresses the resolved update once the subscription is cancelled', async () => {
     const apply = jest.fn();
 
-    await asyncListLoader.run(() => Promise.resolve(['alpha']), { active: false }, apply);
+    await asyncListLoader.run(
+      () => Promise.resolve({ items: ['alpha'] }),
+      { active: false },
+      apply
+    );
 
     expect(apply).not.toHaveBeenCalled();
   });
@@ -98,14 +105,14 @@ describe('AsyncListLoader cancellation guard', () => {
   it('observes cancellation that happens while the loader is in flight', async () => {
     const apply = jest.fn();
     const subscription = { active: true };
-    let settle: (items: string[]) => void = () => {};
-    const pending = new Promise<string[]>((resolve) => {
+    let settle: (result: AsyncListItems<string>) => void = () => {};
+    const pending = new Promise<AsyncListItems<string>>((resolve) => {
       settle = resolve;
     });
 
     const running = asyncListLoader.run(() => pending, subscription, apply);
     subscription.active = false;
-    settle(['late']);
+    settle({ items: ['late'] });
     await running;
 
     expect(apply).not.toHaveBeenCalled();

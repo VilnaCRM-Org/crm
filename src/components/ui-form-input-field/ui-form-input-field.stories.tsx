@@ -4,15 +4,17 @@ import { useForm } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
 
-type DemoValues = { email: string };
+interface DemoValues {
+  email: string;
+}
 
-type DemoProps = {
+interface DemoProps {
   label: string;
   placeholder: string;
   helperText: string;
   disabled: boolean;
   showError: boolean;
-};
+}
 
 const REQUIRED_MESSAGE = 'Вкажіть електронну пошту';
 

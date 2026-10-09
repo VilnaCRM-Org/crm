@@ -3,14 +3,14 @@ import ROUTE_PATHS from '@/routes/route-paths';
 
 describe('route registry', () => {
   it('collects the module route contracts in composition order with unique ids', () => {
-    const ids = registry.map((module) => module.id);
+    const ids = registry.items.map((module) => module.id);
 
     expect(ids).toEqual(['app.shell', 'user.auth']);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('declares every route with a loader and a locatable target', () => {
-    registry.forEach((module) => {
+    registry.items.forEach((module) => {
       module.routes.forEach((route) => {
         expect(typeof route.load).toBe('function');
         expect(route.index === true || typeof route.path === 'string').toBe(true);
@@ -19,7 +19,7 @@ describe('route registry', () => {
   });
 
   it('declares the app-shell home (protected) and 404 (public) routes', () => {
-    const shell = registry.find((module) => module.id === 'app.shell');
+    const shell = registry.items.find((module) => module.id === 'app.shell');
     // Select by stable identity, not array position, so reordering can't silently
     // pass with the wrong fixtures.
     const home = shell?.routes.find((route) => route.index === true);
@@ -32,7 +32,7 @@ describe('route registry', () => {
   });
 
   it('declares the auth pages as public routes carrying their title metadata', () => {
-    const auth = registry.find((module) => module.id === 'user.auth');
+    const auth = registry.items.find((module) => module.id === 'user.auth');
 
     expect(auth?.routes.map((route) => route.path)).toEqual([
       ROUTE_PATHS.signUp,

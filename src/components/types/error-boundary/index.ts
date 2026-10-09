@@ -30,18 +30,23 @@ export interface UIErrorBoundaryState {
   attempt: number;
 }
 
+export type UIErrorBoundaryStatePatch = Partial<UIErrorBoundaryState>;
+
 export interface RouteErrorProps {
   landmark: FallbackLandmark;
 }
 
-export type ErrorFallbackStyleToken =
-  | 'container'
-  | 'messageBlock'
-  | 'heading'
-  | 'description'
-  | 'actions'
-  | 'button'
-  | 'link'
-  | 'details';
+export interface ErrorFallbackStyleSheet {
+  container: CSSObject;
+  messageBlock: CSSObject;
+  heading: CSSObject;
+  description: CSSObject;
+  actions: CSSObject;
+  button: CSSObject;
+  link: CSSObject;
+  details: CSSObject;
+}
 
-export type ErrorFallbackStyleSheet = Record<ErrorFallbackStyleToken, CSSObject>;
+export type RecoveryActionsProps = Pick<ErrorFallbackProps, 'recovery' | 'reset' | 'reload'>;
+
+export type ErrorDiagnosticsProps = Pick<ErrorFallbackProps, 'error'>;

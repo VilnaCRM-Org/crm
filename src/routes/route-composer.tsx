@@ -11,20 +11,23 @@ import routeMapper from './route-mapper';
 import ROUTE_PATHS from './route-paths';
 import routeValidator from './route-validator';
 import type { AppRouteObject } from './types/app-route';
-import type { RouteModule } from './types/route-module';
+import type { ComposedRoutes } from './types/composed-routes';
+import type { RouteModuleRegistry } from './types/route-module';
 
 class RouteComposer {
-  public compose(modules: readonly RouteModule[]): RouteObject[] {
-    routeValidator.validate(modules);
-    const routes = modules.flatMap((module) => module.routes);
-    return [
-      {
-        path: ROUTE_PATHS.home,
-        element: <RootLayout />,
-        errorElement: <RouteError landmark="main" />,
-        children: this.children(routes),
-      },
-    ];
+  public compose(registry: RouteModuleRegistry): ComposedRoutes {
+    routeValidator.validate(registry);
+    const routes = registry.items.flatMap((module) => module.routes);
+    return {
+      items: [
+        {
+          path: ROUTE_PATHS.home,
+          element: <RootLayout />,
+          errorElement: <RouteError landmark="main" />,
+          children: this.children(routes),
+        },
+      ],
+    };
   }
 
   public routeErrorHandler(): ClientOnErrorFunction {
