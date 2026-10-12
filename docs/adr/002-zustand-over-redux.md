@@ -92,8 +92,9 @@ categories, and the category decides the primitive:
   `use-*-store.ts` hook file (`useConnectivityStore` in `src/lib/connectivity/`), read through a
   selector and written with `setState(patch)`. No logic lives in the store.
 - **Session state** — `useAuthStore` in `src/modules/user/features/auth/stores/`, read through
-  `useAuthState` / `useAuthToken`. `AuthStoreActions` receives it by value under
-  `AUTH_TOKENS.AuthStore` (`StoreApi<AuthState>`), so the paint path stays container-free.
+  `useAuthState` / `useAuthToken`. It is registered by value under `AUTH_TOKENS.AuthStore`
+  (`StoreApi<AuthState>`) and reaches `AuthStoreActions` as `deps.authState` through the
+  `AUTH_TOKENS.AuthStoreActionsDeps` factory, so the paint path stays container-free.
 
 **No middleware.** `persist`, `devtools`, `immer` and every other `zustand/*` subpath are
 rejected: the access token is memory-only (a reload clears it, `authActions.logout()` writes

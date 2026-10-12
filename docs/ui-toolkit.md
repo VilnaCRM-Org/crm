@@ -3,9 +3,10 @@
 CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`. Since v0.6.0 it
 reads the breakpoints theme from it and renders seven toolkit components, each behind the CRM
 seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Every
-other CRM primitive stays local, with its reason recorded below. The decision, its options and
-its deviations from issue
-[#250](https://github.com/VilnaCRM-Org/crm/issues/250) are in this guide.
+other CRM primitive stays local, with its reason recorded below. The installation was scoped by
+issue [#250](https://github.com/VilnaCRM-Org/crm/issues/250); why it is a release tarball is under
+[What is installed](#what-is-installed), and why each remaining primitive stays local is in the
+[keep-local register](#keep-local-register).
 
 ## What is installed
 

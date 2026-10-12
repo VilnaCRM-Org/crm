@@ -119,8 +119,10 @@ A selector returns a field or the stable state object, never a fresh object, so 
 needs no `useShallow`. Middleware is out: `persist`, `devtools` and every other `zustand/*`
 subpath are rejected, and `zustand` is imported from its root specifier only.
 
-The auth store is wired the same way: `AUTH_TOKENS.AuthStore` (`StoreApi<AuthState>`) is what
-`AuthStoreActions` injects.
+The auth store is registered by value under `AUTH_TOKENS.AuthStore` (`StoreApi<AuthState>`).
+`AuthStoreActions` has more collaborators than the store, so it injects one deps object,
+`AUTH_TOKENS.AuthStoreActionsDeps`, whose factory in `src/modules/user/config/di.ts` resolves
+`AUTH_TOKENS.AuthStore` into `deps.authState`.
 
 Every test that writes a store resets it first. `resetClientStores()` in
 `tests/utils/reset-client-stores.ts` writes each store's initial state back; call it in

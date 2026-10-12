@@ -79,7 +79,10 @@ export default class HttpRequestConfigBuilder {
 
   private toHeaderMap(headers: RequestHeaders | undefined): Record<string, string> {
     const map: Record<string, string> = {};
-    for (const header of headers?.items ?? []) map[header.name] = header.value;
+    for (const header of headers?.items ?? []) {
+      const previous = map[header.name];
+      map[header.name] = previous === undefined ? header.value : `${previous}, ${header.value}`;
+    }
     return map;
   }
 

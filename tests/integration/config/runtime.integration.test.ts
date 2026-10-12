@@ -5,6 +5,7 @@ import type { DependencyContainer } from 'tsyringe';
 import type { AppConfig } from '@/config/runtime/app-config';
 import { APP_CONFIG_ELEMENT_ID } from '@/config/runtime/app-config-source';
 import type { FeatureFlagService } from '@/config/runtime/feature-flag-service';
+import type { AppConfigValues } from '@/config/runtime/types/app-config';
 import type GraphQLUrl from '@/utils/get-graphql-url';
 import { buildAppConfigValues, buildFeatureFlagConfig, buildHttpUrl } from '@tests/builders';
 
@@ -76,7 +77,11 @@ describe('runtime configuration Integration', () => {
     const appConfig = container.resolve<AppConfig>(tokens.appConfig);
     const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
 
-    expect(appConfigSource.load()).toEqual({});
+    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
+    appConfigSource.validated(parse);
+
+    expect(parse).toHaveBeenCalledWith({});
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
@@ -94,10 +99,14 @@ describe('runtime configuration Integration', () => {
       'document'
     ) as PropertyDescriptor;
 
+    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
     delete globals.document;
 
     try {
-      expect(appConfigSource.snapshot()).toEqual({});
+      appConfigSource.validated(parse);
+
+      expect(parse).toHaveBeenCalledWith({});
     } finally {
       Object.defineProperty(globalThis, 'document', descriptor);
     }

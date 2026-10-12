@@ -83,6 +83,24 @@ describe('HttpRequestConfigBuilder', () => {
     });
   });
 
+  it('combines repeated caller headers in order instead of keeping only the last', () => {
+    jest.spyOn(sessionCorrelation, 'id').mockReturnValueOnce('test-session-id');
+    const config = builder.create('GET', undefined, {
+      items: [
+        { name: 'Accept', value: 'application/json' },
+        { name: 'X-Tenant', value: 'tenant-a' },
+        { name: 'Accept', value: 'text/plain' },
+      ],
+    });
+
+    expect(config.headers).toEqual({
+      Accept: 'application/json, text/plain',
+      'X-Tenant': 'tenant-a',
+      'X-Request-Id': 'test-request-id',
+      'X-Correlation-Id': 'test-session-id',
+    });
+  });
+
   it('resolves the correlation id per request rather than once per builder', () => {
     const ids = ['first-id', 'second-id'];
     const injected: CorrelationIdProvider = {

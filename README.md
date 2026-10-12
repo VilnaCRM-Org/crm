@@ -417,10 +417,11 @@ polyfill mode; `make check-browser-support` fails when the query, the resolved f
 table drift apart, and the `compat/compat` ESLint rule fails the build when `src/` reaches for a
 Web API that any listed browser lacks. The floor is Baseline 2023 Widely available and
 `polyfill` stays `off`: a CRM runs on managed, evergreen browsers, so shims for older ones would
-spend initial-bundle budget on browsers no user runs, and `compat/compat` is what keeps `off`
-safe. Raising or lowering the floor is a reviewed change to the policy file and this table
-together; the policy file is an ADR-drift surface, so the change also adds an ADR or carries the
-documented waiver.
+spend initial-bundle budget on browsers no user runs. `compat/compat` keeps `off` safe for the
+Web/DOM APIs `src/` uses; it does not check ES built-in methods, and SWC down-levels syntax
+only, so an ES built-in newer than the floor stays a review concern. Raising or lowering the
+floor is a reviewed change to the policy file and this table together; the policy file is an
+ADR-drift surface, so the change also adds an ADR or carries the documented waiver.
 
 ## Documentation
 

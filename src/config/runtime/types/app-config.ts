@@ -8,6 +8,8 @@ export interface AppConfigValues {
 
 export type AppConfigUrlKey = 'apiBaseUrl' | 'graphqlUrl';
 
+export type AppConfigParse = (raw: unknown) => AppConfigValues;
+
 export interface AppConfigReader {
   get(): AppConfigValues;
   apiBaseUrl(): string | undefined;

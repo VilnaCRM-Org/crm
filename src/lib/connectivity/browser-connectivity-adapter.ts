@@ -9,7 +9,12 @@ export default class BrowserConnectivityAdapter {
   constructor(private readonly connectivity: StoreApi<ConnectivityState>) {}
 
   public attach(host: ConnectivityHost): () => void {
-    const sync = (): void => this.connectivity.setState({ online: host.navigator.onLine });
+    const sync = (): void => {
+      const online = host.navigator.onLine;
+      this.connectivity.setState((state: ConnectivityState): ConnectivityState =>
+        state.online === online ? state : { online }
+      );
+    };
     sync();
     host.addEventListener('online', sync);
     host.addEventListener('offline', sync);

@@ -22,6 +22,10 @@ const EXPORTED_FUNCTIONS = [
   'Program > FunctionDeclaration',
   'Program > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
   `PropertyDefinition${NON_PRIVATE} > ArrowFunctionExpression`,
+  'ExportDefaultDeclaration > FunctionExpression',
+  'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression',
+  'Program > VariableDeclaration > VariableDeclarator > FunctionExpression',
+  `PropertyDefinition${NON_PRIVATE} > FunctionExpression`,
 ];
 const FUNCTIONS = [METHOD, ...EXPORTED_FUNCTIONS];
 
@@ -54,6 +58,8 @@ const ARRAY_REFERENCE = 'TSTypeReference[typeName.name=/^(Array|ReadonlyArray)$/
 const RECORD_REFERENCE = "TSTypeReference[typeName.name='Record']";
 const DERIVED_REFERENCE = 'TSTypeReference[typeName.name=/^(Partial|Pick|Omit|Required)$/]';
 const CATCH_ALL_MAP = 'TSMappedType[constraint.type=/^TS(String|Number|Symbol)Keyword$/]';
+const CATCH_ALL_KEYWORD = ':matches(TSStringKeyword, TSNumberKeyword, TSSymbolKeyword)';
+const CATCH_ALL_UNION_MAP = `TSMappedType > TSUnionType.constraint:has(> ${CATCH_ALL_KEYWORD})`;
 
 const TYPE_FILE_ROOTS = [
   'Program > ExportNamedDeclaration',
@@ -96,7 +102,13 @@ function typedBoundarySelectors() {
     },
     {
       selector: [
-        over(ALL_POSITIONS, ['TSAnyKeyword', 'TSObjectKeyword', RECORD_REFERENCE, CATCH_ALL_MAP]),
+        over(ALL_POSITIONS, [
+          'TSAnyKeyword',
+          'TSObjectKeyword',
+          RECORD_REFERENCE,
+          CATCH_ALL_MAP,
+          CATCH_ALL_UNION_MAP,
+        ]),
         over(UNKNOWN_POSITIONS, ['TSUnknownKeyword']),
       ].join(', '),
       message:
@@ -150,6 +162,7 @@ function typedBoundaryTypeFileSelectors() {
         RECORD_REFERENCE,
         'TSIndexSignature',
         CATCH_ALL_MAP,
+        CATCH_ALL_UNION_MAP,
         'TSPropertySignature:not([key.name=/^(error|cause)$/]) > TSTypeAnnotation TSUnknownKeyword',
         'TSMethodSignature > TSTypeAnnotation TSUnknownKeyword',
         'TSCallSignatureDeclaration > TSTypeAnnotation TSUnknownKeyword',

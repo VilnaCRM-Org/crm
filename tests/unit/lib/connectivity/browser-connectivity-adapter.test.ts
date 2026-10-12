@@ -55,6 +55,21 @@ describe('BrowserConnectivityAdapter', () => {
     expect(connectivity.getState()).toEqual({ online: true });
   });
 
+  it('leaves the store untouched when a signal repeats the current flag', () => {
+    const connectivity = useConnectivityStore;
+    const host = createHost(true);
+    const before = connectivity.getState();
+    const listener = jest.fn();
+    const unsubscribe = connectivity.subscribe(listener);
+
+    new BrowserConnectivityAdapter(connectivity).attach(host);
+    host.fire('online');
+    unsubscribe();
+
+    expect(listener).not.toHaveBeenCalled();
+    expect(connectivity.getState()).toBe(before);
+  });
+
   it('trusts the navigator flag over the event name', () => {
     const connectivity = useConnectivityStore;
     const host = createHost(true);

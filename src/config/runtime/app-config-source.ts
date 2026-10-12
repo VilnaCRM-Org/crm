@@ -1,5 +1,5 @@
-import type { AppConfigUrlKey, AppConfigValues } from './types/app-config';
-import type { FeatureFlagValues } from './types/feature-flag';
+import type { AppConfigParse, AppConfigUrlKey, AppConfigValues } from './types/app-config';
+import type { FeatureFlag } from './types/feature-flag';
 
 export const APP_CONFIG_ELEMENT_ID = 'app-runtime-config';
 
@@ -8,25 +8,18 @@ const ERROR_PREFIX = `The #${APP_CONFIG_ELEMENT_ID} runtime configuration block`
 class AppConfigSource {
   private cachedText: string | undefined;
 
-  private cachedValues: AppConfigValues = {};
+  private cachedValues: Record<string, unknown> = {};
 
-  public load(): AppConfigValues {
-    return this.snapshot();
+  public load(): void {
+    this.raw();
   }
 
-  public snapshot(): AppConfigValues {
-    const text = this.readText();
-
-    if (text !== this.cachedText) {
-      this.cachedValues = this.parse(text);
-      this.cachedText = text;
-    }
-
-    return this.cachedValues;
+  public validated(parse: AppConfigParse): AppConfigValues {
+    return parse(this.raw());
   }
 
   public text(key: AppConfigUrlKey): string | undefined {
-    const value = this.snapshot()[key];
+    const value = this.raw()[key];
 
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;
   }
@@ -41,20 +34,27 @@ class AppConfigSource {
     return value !== undefined && this.isHttpUrl(value) ? value : undefined;
   }
 
-  public flags(): FeatureFlagValues {
-    const value = this.snapshot().flags;
+  public flag(name: FeatureFlag): boolean | undefined {
+    const flags = this.raw().flags;
+    const value = this.isRecord(flags) ? flags[name] : undefined;
 
-    return this.isRecord(value) ? value : {};
+    return typeof value === 'boolean' ? value : undefined;
   }
 
-  private readText(): string {
+  private raw(): Record<string, unknown> {
     const element =
       typeof document === 'undefined' ? null : document.getElementById(APP_CONFIG_ELEMENT_ID);
+    const text = element?.textContent?.trim() ?? '';
 
-    return element?.textContent?.trim() ?? '';
+    if (text !== this.cachedText) {
+      this.cachedValues = this.parse(text);
+      this.cachedText = text;
+    }
+
+    return this.cachedValues;
   }
 
-  private parse(text: string): AppConfigValues {
+  private parse(text: string): Record<string, unknown> {
     const parsed = text ? this.parseJson(text) : {};
 
     if (!this.isRecord(parsed)) {
@@ -72,7 +72,7 @@ class AppConfigSource {
     }
   }
 
-  private isRecord(value: unknown): value is AppConfigValues {
+  private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 

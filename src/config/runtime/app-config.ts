@@ -8,13 +8,7 @@ export class AppConfig implements AppConfigReader {
   private readonly values: AppConfigValues;
 
   constructor() {
-    const result = AppConfigSchema.safeParse(appConfigSource.snapshot());
-
-    if (!result.success) {
-      throw new Error(`Invalid runtime configuration:\n${z.prettifyError(result.error)}`);
-    }
-
-    this.values = this.freeze(result.data);
+    this.values = this.freeze(appConfigSource.validated((raw) => this.parse(raw)));
   }
 
   public get(): AppConfigValues {
@@ -27,6 +21,16 @@ export class AppConfig implements AppConfigReader {
 
   public graphqlUrl(): string | undefined {
     return this.values.graphqlUrl;
+  }
+
+  private parse(raw: unknown): AppConfigValues {
+    const result = AppConfigSchema.safeParse(raw);
+
+    if (!result.success) {
+      throw new Error(`Invalid runtime configuration:\n${z.prettifyError(result.error)}`);
+    }
+
+    return result.data;
   }
 
   // Object.freeze is shallow, so the nested flag object has to be frozen separately for `get()`

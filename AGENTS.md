@@ -928,12 +928,13 @@ contract module and passed to collaborators as data.
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
 container-resolved class. Those inside a gated directory (`auth-store-selectors`,
-`response-schemas`, `map-registration-error`, the auth lazy loaders,
+`response-schemas`, `map-registration-error`, `load-registration-notification`,
 `registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
-issue #116), `url-builder`, `locale-formatter-core`, and the observability
-core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by explicit path in
-`EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
+issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
+`auth-failure-monitor` leaf, and the observability
+core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) are exempt by
+explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
 load-bearing, so do not delete it. The form-section `validations/*` singletons live under
