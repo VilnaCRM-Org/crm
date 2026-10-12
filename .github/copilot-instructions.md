@@ -130,8 +130,6 @@ coordinated by a hook, not a class.
 | `*Selectors`   | read-only projections over state            | Redux / Zustand selectors         |
 | `*Store`       | state container                             | Flux / Zustand                    |
 | `*Actions`     | state transitions of a store                | Flux                              |
-| `*Var`         | container-free reactive state cell          | Apollo makeVar idiom              |
-| `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
 | `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
 | `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
 | `*Client`      | outbound transport client                   | enterprise Gateway                |
