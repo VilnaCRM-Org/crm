@@ -6,8 +6,10 @@ stepsCompleted:
   - 'step-02-design-epics'
   - 'step-03-create-stories'
   - 'step-04-final-validation'
+iteration: 2
 project_name: 'crm'
 date: '2026-10-01'
+revised: '2026-10-12'
 issue: 309
 branch: 'feat/309-error-pages'
 base: 'origin/main cff55203'
@@ -117,11 +119,12 @@ true` tab stops; tab order; 44 px targets; on a short landscape viewport the pag
 - NFR-10: the eager graph keeps its single `@mui/*` edge; no budget value changes.
 - NFR-11: eager gzip delta at most 2,048 B; each new chunk under the per-asset budgets;
   decoration assets at most 20 kB raw in total.
-- NFR-12: `/forbidden` and `/server-error` join the Lighthouse URLs and pass the existing
-  `lighthouserc` assertions (desktop 0.95 performance, accessibility, best practices and 0.90
-  SEO; mobile 0.84 median-run performance and 0.90 accessibility, best practices and SEO) and
-  the resource budgets; the profile's mobile 85 for the two error routes is read from the LHCI
-  report and recorded in the PR; no request is added to the existing three.
+- NFR-12: `/forbidden`, `/server-error` and the catch-all 404 page (`/definitely-not-a-route`,
+  added in review) join the Lighthouse URLs and pass the existing `lighthouserc` assertions
+  (desktop 0.95 performance, accessibility, best practices and 0.90 SEO; mobile 0.84 median-run
+  performance and 0.90 accessibility, best practices and SEO) and the resource budgets; the
+  profile's mobile 85 for the three error routes is read from the LHCI report and recorded in
+  the PR; no request is added to the existing three.
 - NFR-13: `RouteFallback` deferred paint covers the lazy page; memlab reports no leak.
 - NFR-14: `make lint-i18n` passes.
 - NFR-15: Jest coverage 100 / 100 / 100 / 100.
@@ -1129,14 +1132,15 @@ Dependency: depends on Story 3.2
 - **Given** `lighthouse/constants.js`, **When** the tooling test loads it, **Then** `pages`
   equals the six expanded URLs in order `/`, `/sign-up`, `/sign-in`, `/forbidden`,
   `/server-error`, `/definitely-not-a-route` (the 404 URL was added in review; PRD FR-17).
-- **Given** the CI Lighthouse runs, **When** they audit the two error routes, **Then** they pass
+- **Given** the CI Lighthouse runs, **When** they audit the three error routes (`/forbidden`,
+  `/server-error`, `/definitely-not-a-route`), **Then** they pass
   the existing `lighthouserc` assertions (desktop: performance, accessibility and best
   practices 0.95, SEO 0.90; mobile: performance 0.84 `median-run`, accessibility, best
   practices and SEO 0.90) and the resource-summary budgets; a green job proves only these.
 - **Given** the LHCI report of the mobile job, **When** the PR body is written, **Then** it
-  records the two error routes' mobile category scores and states whether each reaches the
-  profile's `quality.lighthouse_mobile` 85; the three existing URLs are not re-scored by this
-  story.
+  records the mobile category scores of the three error routes (`/forbidden`, `/server-error`,
+  `/definitely-not-a-route`) and states whether each reaches the profile's
+  `quality.lighthouse_mobile` 85; the three existing URLs are not re-scored by this story.
 - **Given** an error route that misses a floor, **When** that is found, **Then** the PR raises
   it to the product owner as an explicit question; no floor, budget or `lighthouserc` value is
   changed and the URL is not removed.

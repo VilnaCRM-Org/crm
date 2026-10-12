@@ -16,8 +16,10 @@ stepsCompleted:
   - 'step-10-nonfunctional'
   - 'step-11-polish'
   - 'step-12-complete'
+iteration: 2
 project_name: 'crm'
 date: '2026-10-01'
+revised: '2026-10-12'
 issue: 309
 branch: 'feat/309-error-pages'
 base: 'origin/main cff55203'
@@ -1241,10 +1243,10 @@ covers the post-load warm-up; section 22 there gives the design notes for the ro
   The demo credentials ship in every bundle and are public by design (SECURITY.md). Known limit,
   recorded in ADR-019: no emitted-bundle check proves the provider is inert in production. The
   seed gate proves it is present, and the host check is covered by unit tests only.
-- **NFR-24 (supply chain):** two pins move and nothing else. `@vilnacrm/ui-toolkit` 0.6.0 →
-  0.8.0 (FR-24), and the transitive `compression` of `serve@14.2.6` is pinned to 1.8.2 in the
-  `serve-tools` stage (CVE-2026-87776). The k6 image's `tzdata` is re-pinned 2026d-r0 → 2026e-r0
-  because the Alpine branch dropped the old version. `supply-chain-gates.test.ts` pins the
+- **NFR-24 (supply chain):** three pins change and nothing else: (1) `@vilnacrm/ui-toolkit`
+  0.6.0 → 0.8.0 (FR-24); (2) the transitive `compression` of `serve@14.2.6`, newly pinned to
+  1.8.2 in the `serve-tools` stage (CVE-2026-87776); (3) the k6 image's `tzdata`, re-pinned
+  2026d-r0 → 2026e-r0 because the Alpine branch dropped the old version. `supply-chain-gates.test.ts` pins the
   repins; `supply-chain security / *` stays green.
 - **NFR-25 (backward compatibility):** an environment that still sets
   `APP_CONFIG_FLAG_FORGOT_PASSWORD` to any non-empty value now fails container start
