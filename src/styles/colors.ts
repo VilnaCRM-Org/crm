@@ -48,6 +48,7 @@ export const customColors = {
   brand: {
     blue: '#1EAEFF',
     yellow: '#FFC01E',
+    darkPrimary: '#1B2327',
   },
   status: {
     online: '#4CAF50',
@@ -57,11 +58,27 @@ export const customColors = {
   },
   decorative: {
     divider: '#57595B',
+    curve: '#00A3FF',
+    diamond: '#01A6FF',
+    dot: '#0B315E',
+    dotGrid: '#E1E7EA',
   },
   text: {
     primary: '#404142',
     secondary: '#969B9D',
     dark: '#1A1C1E',
+    heading: '#000000',
+  },
+  surface: {
+    page: '#FBFBFB',
+  },
+  digitShadow: {
+    primary: '#0E87CC',
+    dark: '#999999',
+    secondary: '#CC9300',
+  },
+  shadow: {
+    card: 'rgba(55, 64, 78, 0.07)',
   },
   checkbox: {
     main: '#D0D4D8',

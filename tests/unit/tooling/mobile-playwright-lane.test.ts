@@ -111,4 +111,12 @@ describe('mobile visual baselines', () => {
 
     expect(listFiles(snapshotDir).sort()).toEqual(expected);
   });
+
+  it('records exactly one error-page baseline per page per mobile project', () => {
+    const expected = MOBILE_PROJECTS.flatMap((project) =>
+      ['not-found', 'forbidden', 'server-error'].map((page) => `uk-${page}-${project}-linux.png`)
+    ).sort();
+
+    expect(listFiles('tests/visual/mobile/error-pages.spec.ts-snapshots').sort()).toEqual(expected);
+  });
 });

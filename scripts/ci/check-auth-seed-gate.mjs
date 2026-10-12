@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Preloaded-auth-token seed gate (issue #158).
+ * Preloaded-auth-token seed gate (issue #158) and sandbox-support check (issue #309).
  *
  * Scans an emitted bundle and asserts whether the test-only auth seed seam
  * (src/config/env/preloaded-auth-token.ts) survived the build:
@@ -8,7 +8,11 @@
  *   --expect absent   a deployable build: the window key, the opt-in flag name and the
  *                     token literal must all be gone, dead-code-eliminated by the
  *                     `NODE_ENV === 'production' && ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'`
- *                     guard.
+ *                     guard. The same build must still carry what a pull-request sandbox
+ *                     needs, because sandboxes are built from it (ADR-019): the runtime-gated
+ *                     demo login (src/config/env/sandbox-demo-session-provider.ts, found by its
+ *                     storage key and demo email) and a 404.html that is a byte copy of
+ *                     index.html.
  *   --expect present  the ephemeral Playwright/Lighthouse build: the seam must still be
  *                     there, otherwise the `absent` run proves nothing (it would pass just
  *                     as well against a bundle that never contained the seam).
@@ -30,22 +34,37 @@ const SKIPPED_EXTENSION = '.map';
 const WINDOW_KEY = '__PRELOADED_AUTH_TOKEN__';
 const OPT_IN_FLAG = 'ENABLE_PRELOADED_AUTH_TOKEN_SEED';
 const ENV_TOKEN_VAR = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
+const SANDBOX_DEMO_MARKERS = ['vilnacrm.sandbox-demo-session', 'demo@vilnacrm.com'];
+const SHELL_DOCUMENT = 'index.html';
+const FALLBACK_DOCUMENT = '404.html';
 
-function parseArgs(argv) {
+const FLAGS = new Map([
+  ['--dir', 'dir'],
+  ['--expect', 'expect'],
+  ['--token', 'token'],
+]);
+const EXPECTATIONS = ['absent', 'present'];
+
+// Checked in order; the first rule an invocation breaks is the error it reports.
+const ARGUMENT_RULES = [
+  [(args) => !args.dir, '--dir <distDir> is required'],
+  [(args) => !EXPECTATIONS.includes(args.expect), '--expect must be "absent" or "present"'],
+  [(args) => !args.token?.trim(), '--token <probeValue> is required'],
+];
+
+function readFlags(argv) {
   const args = { dir: null, expect: null, token: null };
   for (let i = 0; i < argv.length; i += 1) {
-    const key = argv[i];
-    if (key === '--dir') args.dir = argv[(i += 1)];
-    else if (key === '--expect') args.expect = argv[(i += 1)];
-    else if (key === '--token') args.token = argv[(i += 1)];
+    const field = FLAGS.get(argv[i]);
+    if (field !== undefined) args[field] = argv[(i += 1)];
   }
-  if (!args.dir) throw new Error('check-auth-seed-gate: --dir <distDir> is required');
-  if (args.expect !== 'absent' && args.expect !== 'present') {
-    throw new Error('check-auth-seed-gate: --expect must be "absent" or "present"');
-  }
-  if (!args.token || !args.token.trim()) {
-    throw new Error('check-auth-seed-gate: --token <probeValue> is required');
-  }
+  return args;
+}
+
+function parseArgs(argv) {
+  const args = readFlags(argv);
+  const broken = ARGUMENT_RULES.find(([breaks]) => breaks(args));
+  if (broken) throw new Error(`check-auth-seed-gate: ${broken[1]}`);
   return args;
 }
 
@@ -117,6 +136,44 @@ function assertAbsent(files, token) {
   );
 }
 
+// The 404.html deep-link fallback must be the shell itself: a missing or stale copy would answer
+// a sandbox deep link with S3's error page or with a page the router cannot boot from.
+function fallbackDocumentProblem(dir) {
+  const fallback = join(dir, FALLBACK_DOCUMENT);
+  const shell = join(dir, SHELL_DOCUMENT);
+  if (!existsSync(fallback)) return `${FALLBACK_DOCUMENT} is missing`;
+  if (!existsSync(shell)) return `${SHELL_DOCUMENT} is missing`;
+  if (!readFileSync(fallback).equals(readFileSync(shell))) {
+    return `${FALLBACK_DOCUMENT} is not a byte copy of ${SHELL_DOCUMENT}`;
+  }
+  return null;
+}
+
+function assertSandboxSupport(dir, files) {
+  const missing = [...findIdentifiers(files, SANDBOX_DEMO_MARKERS)]
+    .filter(([, matches]) => matches.length === 0)
+    .map(([identifier]) => `missing ${identifier}`);
+  const problems = [...missing, fallbackDocumentProblem(dir)].filter((problem) => problem !== null);
+
+  if (problems.length > 0) {
+    console.error(
+      `❌ The deployable bundle cannot serve a pull-request sandbox (${files.length} assets ` +
+        `scanned): ${problems.join(', ')}.`
+    );
+    console.error(
+      '\nSandboxes are built from this bundle, so it must keep the runtime-gated demo login and\n' +
+        'emit 404.html as a byte copy of index.html; without them a sandbox has no login and no\n' +
+        'deep links (ADR-019, issue #309).'
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(
+    `✅ The deployable bundle keeps the sandbox demo login and the ${FALLBACK_DOCUMENT} fallback.`
+  );
+}
+
 function assertPresent(files, token) {
   const required = [WINDOW_KEY, token];
   const hits = findIdentifiers(files, required);
@@ -144,5 +201,9 @@ function assertPresent(files, token) {
 const args = parseArgs(process.argv.slice(2));
 const assets = collectAssets(args.dir);
 
-if (args.expect === 'absent') assertAbsent(assets, args.token);
-else assertPresent(assets, args.token);
+if (args.expect === 'absent') {
+  assertAbsent(assets, args.token);
+  assertSandboxSupport(args.dir, assets);
+} else {
+  assertPresent(assets, args.token);
+}

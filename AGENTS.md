@@ -845,13 +845,10 @@ Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are regi
 `useValue` over module singletons rather than decorated `@injectable()` — the observability
 render-path pattern (issue #115).
 
-Read a flag from a component through the container-free bridge:
-
-```typescript
-import useFeatureFlag from '@/hooks/use-feature-flag';
-
-const showForgotPassword = useFeatureFlag('forgotPassword');
-```
+Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
+flag is declared today: `forgotPassword`, the last one, was removed in #309, and an environment
+that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -1494,19 +1491,27 @@ Every page-level route is code-split by the module-owned route registry (issue #
 route contract declares a dynamic `import()` loader named via `webpackChunkName`, the composer
 wraps it in `React.lazy` and attaches a per-route `errorElement` (`<RouteError />`,
 issue #116), and the route-level `Suspense` boundary in `root-layout.tsx` ships a non-null
-deferred `RouteFallback`. The `performance serving` golden test
-(`tests/unit/tooling/performance-serving.test.ts`) fails CI if a page loader loses its named
-dynamic `import()` or that boundary reverts to `fallback={null}`; the issue-#116 ESLint
-selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}` or a `<Suspense>`
-without a `fallback` anywhere in `src/**`, and a router built outside `src/routes/routes.tsx`.
-Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale
-or disabling the gate.
+deferred `RouteFallback`. `RouteError` dispatches on status first (issue #309, ADR-018):
+`errorPageStatusDetector` reads a status from a router error response, a render-thrown
+`Response` or a `data()` value — so a guard may throw `data(null, { status: 403 })` or navigate
+to `/forbidden` — and renders the lazy designed `ErrorPage` for 403, 404 and 500 to 599, so a
+5xx route response shows the 5xx page with only a homepage link and no in-place Try again —
+unless the lazy `ErrorPage` chunk still fails after its retry, when `RouteErrorPage` falls back to
+`RouteErrorFallback` and its retry or reload button for the original route error; every other
+error renders `RouteErrorFallback` → `ErrorFallback` exactly as before. The
+`performance serving` golden test (`tests/unit/tooling/performance-serving.test.ts`) fails CI if a
+page loader loses its named dynamic `import()` or that boundary reverts to `fallback={null}`; the
+issue-#116 ESLint selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}`
+or a `<Suspense>` without a `fallback` anywhere in `src/**`, and a router built outside
+`src/routes/routes.tsx`. Satisfy a budget by reducing/splitting the bundle, never by raising a
+limit without rationale or disabling the gate.
 
 ### Load Testing with K6
 
 ```bash
 # Edit scenario in tests/load/config.json.dist
 make test-load
+make test-load-error-pages
 ```
 
 **Scenarios**:
@@ -1689,6 +1694,12 @@ build goes red. Know them before you touch a config file:
 - `make check-auth-seed-gate` (run by the `security testing` workflow) scans the **emitted
   bundle** rather than config source text: it fails when a deployable build carries the seam,
   and equally when an opted-in build has lost it, so the gate cannot pass vacuously
+- The pull-request sandbox's demo login (`demo@vilnacrm.com` / `Demo1234`, issue #309) is
+  **runtime**-gated, not compiled out: it ships in the production bundle and activates only
+  outside a production build or on a `sandbox-crm-*` S3 website host. Off those hosts it signs
+  nobody in and restores nothing, which unit tests pin against the production domain, localhost
+  and look-alike hosts. On a sandbox the demo session is remembered in `localStorage` (the demo
+  email only) until sign-out; real tokens stay memory-only
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Browser Security Headers (issue #113)

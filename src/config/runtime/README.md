@@ -13,8 +13,11 @@ values remain as defaults; runtime values win.
 The configuration is an inline JSON block in the HTML shell, `public/index.html`:
 
 ```json
-{ "flags": { "forgotPassword": false } }
+{ "flags": {} }
 ```
+
+No feature flag is declared today, so the committed `flags` object is empty (see
+`docs/feature-flags.md`, "Current flags").
 
 It is carried by a `script` element with `id="app-runtime-config"` and
 `type="application/json"` — a data block, not executable code, so it stays valid under a strict
@@ -116,12 +119,7 @@ observability render-path leaves (issue #115). Registering the instance as a val
 container-resolved classes inject it instead of value-importing it (issue #130), while the auth
 paint path can still read a flag without loading tsyringe.
 
-React components read a flag through `useFeatureFlag` (`@/hooks/use-feature-flag`):
-
-```ts
-const showForgotPassword = useFeatureFlag('forgotPassword');
-```
-
+React components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`).
 The flag name is a `FeatureFlag` union member, so a typo is a compile error. Flag lifecycle —
 introduce, roll out, remove — is documented in `docs/feature-flags.md`.
 

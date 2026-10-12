@@ -337,6 +337,21 @@ Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set,
 out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
 `test-harness` stage.
 
+### Pull-request sandboxes and the demo login
+
+The `sandbox` workflow triggers the `sandbox-crm-creation` AWS CodePipeline, which builds the pull
+request with `make build-out` — the same production bundle that ships — and syncs it to an S3
+static website. A sandbox has no backend, so two things make it reviewable (issue #309,
+[ADR-019](docs/adr/019-sandbox-demo-session.md)):
+
+- **A demo login.** On a sandbox, sign in with `demo@vilnacrm.com` / `Demo1234` to reach every
+  protected page. The session is client-only and never calls the API, and it survives a reload
+  until you sign out. The demo code ships in every production bundle but only activates on a
+  `sandbox-crm-*` S3 website host; anywhere else those credentials go to the API like any others.
+- **Deep links.** Every build emits `404.html` as a copy of `index.html`, so S3 answers
+  `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
+  still reports HTTP status 404 for those responses; the page itself renders normally.
+
 ### The browser security-header gate
 
 Every production response carries the header baseline — `Content-Security-Policy`,

@@ -1,3 +1,6 @@
+import sandboxDemoSessionProvider, {
+  type SandboxDemoSessionProvider,
+} from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar, { AuthStateVar as AuthStateVarClass } from '@auth/stores/auth-var';
@@ -46,6 +49,7 @@ const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).login({
     email,
     password,
@@ -57,6 +61,7 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
     fullName,
     email,
@@ -93,6 +98,7 @@ describe('AuthStoreActions', () => {
       authRequestErrors,
       authState: injectedState,
       securitySignals,
+      sandboxDemoSession: sandboxDemoSessionProvider,
     }).login({ email, password });
 
     expect(injectedState.get()).toMatchObject({ loginLoading: false, email, token });
@@ -240,6 +246,114 @@ describe('AuthStoreActions', () => {
       expect(emitted).not.toContain(password);
       expect(emitted).not.toContain(token);
       expect(emitted).not.toContain(email);
+    });
+  });
+
+  describe('sandbox demo session (#309)', () => {
+    const demoSession = { email, token };
+
+    const actionsWith = (
+      repository: AuthRepository,
+      session: { email: string; token: string } | null
+    ): { actions: AuthStoreActions; signIn: jest.Mock } => {
+      const signIn = jest.fn().mockReturnValue(session);
+      const actions = new AuthStoreActions({
+        repository,
+        authRequestErrors,
+        authState: AuthStateVar,
+        securitySignals,
+        sandboxDemoSession: { signIn } as unknown as SandboxDemoSessionProvider,
+      });
+
+      return { actions, signIn };
+    };
+
+    it('publishes no demo session for a login canceled before it ran', async () => {
+      const repository = makeRepo({
+        login: jest.fn().mockResolvedValue({ ok: false, error: abortError }),
+      });
+      const { actions, signIn } = actionsWith(repository, demoSession);
+      const controller = new AbortController();
+      controller.abort();
+
+      await actions.login({ email, password }, controller.signal);
+
+      expect(signIn).not.toHaveBeenCalled();
+      expect(repository.login).toHaveBeenCalledWith({ email, password }, controller.signal);
+      expect(AuthStateVar.get()).toMatchObject({
+        loginLoading: false,
+        token: null,
+        loginError: null,
+      });
+      expect(observability.setUser).not.toHaveBeenCalled();
+      expect(recorder.authFailure).not.toHaveBeenCalled();
+    });
+
+    it('still signs in with the demo session under a live, unaborted signal', async () => {
+      const repository = makeRepo();
+      const { actions } = actionsWith(repository, demoSession);
+
+      await actions.login({ email, password }, new AbortController().signal);
+
+      expect(repository.login).not.toHaveBeenCalled();
+      expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, email, token });
+    });
+
+    it('signs in with the demo session without calling the repository', async () => {
+      const repository = makeRepo();
+      const { actions, signIn } = actionsWith(repository, demoSession);
+
+      await actions.login({ email, password });
+
+      expect(signIn).toHaveBeenCalledWith({ email, password });
+      expect(repository.login).not.toHaveBeenCalled();
+      expect(AuthStateVar.get()).toMatchObject({
+        loginLoading: false,
+        email,
+        token,
+        loginError: null,
+      });
+    });
+
+    it('settles the demo login like a real one: an opaque identity and no failure', async () => {
+      const { actions } = actionsWith(makeRepo(), demoSession);
+
+      await actions.login({ email, password });
+
+      expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
+      expect(recorder.authFailure).not.toHaveBeenCalled();
+    });
+
+    it('falls through to the repository with credentials and signal on no match', async () => {
+      const repository = makeRepo();
+      const { actions } = actionsWith(repository, null);
+      const signal = new AbortController().signal;
+
+      await actions.login({ email, password }, signal);
+
+      expect(repository.login).toHaveBeenCalledWith({ email, password }, signal);
+      expect(AuthStateVar.get()).toMatchObject({ email, token });
+    });
+
+    it('signs in with the published demo credentials through the real provider', async () => {
+      const repository = makeRepo();
+      const demoEmail = 'demo@vilnacrm.com';
+
+      await new AuthStoreActions({
+        repository,
+        authRequestErrors,
+        authState: AuthStateVar,
+        securitySignals,
+        sandboxDemoSession: sandboxDemoSessionProvider,
+      }).login({ email: demoEmail, password: 'Demo1234' });
+
+      expect(repository.login).not.toHaveBeenCalled();
+      expect(AuthStateVar.get()).toMatchObject({
+        email: demoEmail,
+        token: 'sandbox-demo-session-token',
+      });
+      expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBe(demoEmail);
+      sandboxDemoSessionProvider.signOut();
     });
   });
 });

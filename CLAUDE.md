@@ -166,10 +166,12 @@ more project names.
   overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
-- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in` and `/sign-up`
-  captured with `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the
-  asset and raster regressions that CSS-scaled desktop snapshots average away. Baselines live in
-  `tests/visual/mobile/auth.spec.ts-snapshots/`, one per mobile project.
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up` and
+  the three error pages (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so
+  the baselines are true 2.625× / 3× rasters and catch the asset and raster regressions that
+  CSS-scaled desktop snapshots average away. Baselines live in
+  `tests/visual/mobile/auth.spec.ts-snapshots/` and
+  `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
 
 Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
 `e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in
@@ -199,7 +201,8 @@ deterministic (the nightly flake audit is the one caller that opts into retries 
 flake budget (issue #186)"), and these two checks are single-job (no sharding).
 
 **Known sizing gap, deliberately not fixed here:** the auth switcher link (18 px tall), the
-remember-me checkbox (20 px) and the password toggle (32 px) fall under the 44 px floor, so the
+sign-in forgot-password link (18 px, 22 px from 768 px), the remember-me checkbox (20 px) and the
+password toggle (32 px) fall under the 44 px floor, so the
 sizing gate covers the primary controls only (text inputs, submit button, provider buttons).
 Enlarging them changes rendered height and invalidates every recorded desktop baseline — a
 design-owned follow-up, out of scope for a test-coverage change.
@@ -243,12 +246,20 @@ under Code Quality and [`docs/accessibility/acceptance-standard.md`](docs/access
 ### Performance Tests
 
 ```bash
-make test-memory-leak   # Memlab memory leak tests
-make test-load          # K6 load testing
-make lighthouse-desktop # Lighthouse audit (desktop)
-make lighthouse-mobile  # Lighthouse audit (mobile)
-make test-mutation      # Stryker mutation testing
+make test-memory-leak      # Memlab memory leak tests
+make test-load             # K6 load testing (homepage)
+make test-load-signup      # K6 load testing (signup API)
+make test-load-error-pages # K6 load testing (403, 5xx and 404 error pages)
+make lighthouse-desktop    # Lighthouse audit (desktop)
+make lighthouse-mobile     # Lighthouse audit (mobile)
+make test-mutation         # Stryker mutation testing
 ```
+
+The error pages (`/forbidden`, `/server-error` and the catch-all 404, probed at
+`/definitely-not-a-route`) ride every performance lane: `lighthouse/constants.js` audits all
+three on desktop and mobile under the unchanged budgets, `make test-load-error-pages` (the
+`error pages load testing` job) requests all three under the homepage's k6 budgets, and the
+`tests/memory-leak/tests/error-pages.js` memlab scenario walks them from `/sign-in` and back.
 
 Load test scenarios (configurable in `./test/load/config.json.dist`):
 
@@ -492,9 +503,11 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries four `color-contrast` entries rooted in the Figma palette tokens
-(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette), tracked in
-issue #276 and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
+The allowlist today carries seven `color-contrast` entries rooted in the Figma palette tokens
+(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
+error-page primary actions and decorative status digits, and the sign-in "Забули пароль?" brand
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309), tracked in issue #276
+and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
 button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
 entry carries all four fields.
 
@@ -758,6 +771,9 @@ base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
+`serve@14.2.6` pins `compression` exactly at 1.8.1 (CVE-2026-87776, fixed in 1.8.2), so the
+same stage rewrites that one dependency of the installed `serve` and reinstalls its production
+tree; drop the repin once a `serve` release depends on a fixed `compression`.
 `NO_UPDATE_CHECK=1` stops `serve` from contacting the npm registry at container start, and the
 `serve` bump (`14.2.0` → `14.2.6`) negotiates Brotli where the client accepts it, so measured
 transfer sizes can only shrink against the Lighthouse resource budgets.
@@ -2049,6 +2065,7 @@ type files, stories, tests) must end in one of these:
 | `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
 | `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
 | `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
+| `*Prefetcher`  | loads resources ahead of demand after load  | resource-prefetch idiom (#309)    |
 | `*Client`      | outbound transport client                   | enterprise Gateway                |
 | `*API`         | typed façade over one remote API            | enterprise Gateway                |
 | `*Provider`    | supplies a value or capability              | provider idiom                    |
@@ -2340,12 +2357,12 @@ initializes i18next at module evaluation and `src/config/i18n-config.js` is `req
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
 change.
 
-**Reading a flag** — components use the container-free bridge; the flag name is a `FeatureFlag`
-union member, so a typo is a compile error:
-
-```typescript
-const showForgotPassword = useFeatureFlag('forgotPassword');
-```
+**Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
+flag is declared today: the last one, `forgotPassword`, was removed in #309 when the sign-in
+"Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
+block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
+to a non-empty value fails container start and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2371,7 +2388,7 @@ wiring — it contains no route-array literal and no feature/module page imports
 - **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a
   `RouteModule` whose routes lazy-`load` the feature's pages (per-route code
   splitting preserved). The auth feature: `@auth/routes`. The app shell's own
-  routes (home + 404) live in `src/routes/app-routes.ts`.
+  routes (home, 404, 403 and 5xx) live in `src/routes/app-routes.ts`.
 - **Registry** — `src/routes/registry.ts` collects the contracts (one-line
   append per new module).
 - **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
@@ -2417,7 +2434,7 @@ artifact. Nothing in the build or the dev server regenerates it — it is refres
 verified in CI.
 
 - **Source of truth**: `src/**/i18n/{en,uk}.json`, one catalog folder per feature or component
-  (for example `src/modules/user/features/auth/i18n/` and `src/components/not-found/i18n/`).
+  (for example `src/modules/user/features/auth/i18n/` and `src/components/error-page/i18n/`).
   Both locales are mandatory and their key sets must stay identical.
 - **Derived artifact**: `src/i18n/localization.json`, the merge of every catalog into
   `{ [locale]: { translation: … } }` by `scripts/localization-generator.js`. It is committed,
@@ -2646,6 +2663,64 @@ as they are for the issue-#188 ratchet.
 
 **No suppression:** satisfy the gate by keeping the seam gated, never by relaxing the scan,
 narrowing its file set, or moving a read out of the guarded method.
+
+### Sandbox demo login and deep-link fallback (issue #309, ADR-019)
+
+A pull-request sandbox is built by the `sandbox-crm-creation` pipeline in
+`VilnaCRM-Org/crm-infrastructure` with `make build-out` — the same `production` target that
+ships — and synced to an S3 static website with no backend, whose error document is `404.html`.
+Without help every deep link returns S3's own error page and no login can ever succeed, so no
+protected page (the 403 page included) can be reviewed there. Two runtime pieces fix that
+without a separate build:
+
+- **A deep-link fallback.** `scripts/spa-fallback-document-plugin.ts` is registered for every
+  build and copies the built `index.html` byte for byte to `404.html`, so S3 answers a deep link
+  with the SPA shell and the router renders the route.
+- **A host-gated demo login.**
+  [`src/config/env/sandbox-demo-session-provider.ts`](src/config/env/sandbox-demo-session-provider.ts)
+  (`SandboxDemoSessionProvider`) is active only when `NODE_ENV !== 'production'` or the hostname
+  is a sandbox S3 website: it starts with `sandbox-crm-`, ends with `.amazonaws.com`, and has an
+  `s3-website` / `s3-website-<region>` label (plain `startsWith` / `endsWith` / `split`, no
+  regex). While active, `signIn` accepts exactly `demo@vilnacrm.com` / `Demo1234`, `restore`
+  re-creates the demo session, and `signOut` forgets it; inactive, `signIn` and `restore` return
+  `null` and nothing is stored.
+
+Wiring: `AuthStoreActions.login` receives the provider through `AuthStoreActionsDeps`
+(registered by value under `AUTH_TOKENS.SandboxDemoSessionProvider`) and asks it before the
+repository — unless the login's `AbortSignal` is already aborted, in which case the attempt
+settles as aborted through the repository and no session is published. A match settles like any
+successful login (`applyLogin`, then `loginSettled`) with no network call. On a match the
+provider writes the demo **email** (never the password or a token) to `localStorage` under
+`vilnacrm.sandbox-demo-session`; `AuthStateVar` calls `restore()` when it is created, so a reload
+or a deep link stays signed in; the auth composition root's `logout` calls `signOut()`. Every
+storage call is wrapped, so unavailable storage just means no persistence. The provider has no
+dependencies, so neither tsyringe nor zod reaches the auth paint path.
+
+**Proof for production.** The demo code now ships, so the guard is behavioural, not
+dead-code elimination: `tests/unit/config/env/sandbox-demo-session-provider.test.ts` pins that a
+production `NODE_ENV` on the production domain, `localhost`, a host with no location, and
+look-alikes (`sandbox-crm-x.evil.com`, an `amazonaws.com` host without an `s3-website` label, a
+`.amazonaws.com.evil.com` suffix, another bucket's S3 website) signs nobody in and restores
+nothing, and that the real sandbox endpoint does both.
+`tests/unit/scripts/spa-fallback-document-plugin.test.ts` pins that the fallback plugin is
+registered unconditionally. `make check-auth-seed-gate` closes the bundling half: its
+`--expect absent` scan of the shipped `production` image (and of the token-set, unflagged source
+build) keeps every #158 assertion and additionally fails unless the emitted bundle still contains
+the provider's storage key `vilnacrm.sandbox-demo-session` and the demo email — both survive
+minification — and a `404.html` byte-identical to `index.html`.
+
+**Honest scope:** the demo login ships in every production bundle and is inert only because of
+the hostname check. On a sandbox anyone who reads the published credentials signs in; that is
+acceptable only because a sandbox has no backend and no data, and the demo token is a non-secret
+placeholder the API would reject. The demo session is persisted in `localStorage` — only on
+sandbox hosts and in development — while real tokens stay memory-only. S3 serves `404.html` with
+HTTP status **404**, so a deep link renders in a browser while a crawler or a status probe sees
+a 404 status. Production's CDN rewrites extension-less paths to `index.html`, so it normally
+never serves `404.html`. A development build (`NODE_ENV=development`) accepts the demo
+credentials on any host.
+
+**No suppression:** keep the hostname check anchored and regex-free, keep the marker free of
+secrets, and never widen the active hosts beyond the sandbox S3 website pattern.
 
 ### Browser security-header baseline (issue #113)
 
@@ -2918,7 +2993,15 @@ replaces.
     boundary: the shell mounts it with `surface="app"`, `AuthErrorBoundary` composes it with
     `surface="auth"`,
     and every route the composer emits carries `errorElement: <RouteError landmark=… />`
-    (`"region"` under `AppLayout`, `"main"` elsewhere). `ErrorFallback` renders a focused `<h1>`,
+    (`"region"` under `AppLayout`, `"main"` elsewhere). `RouteError` dispatches on status before
+    this model (issue #309, ADR-018): `errorPageStatusDetector` reads a status from a router
+    error response, a render-thrown `Response` or a `data()` value — so a guard may throw
+    `data(null, { status: 403 })` or navigate to `/forbidden` — and renders the lazy designed
+    `ErrorPage` for 403, 404 and 500 to 599, so a 5xx route response shows the 5xx page with
+    only a homepage link and no in-place Try again; every other error, and every status error
+    once the error-page chunk has failed twice, renders `RouteErrorFallback` → `ErrorFallback`
+    exactly as before. The status page is pre-warmed after load (pattern 15).
+    `ErrorFallback` renders a focused `<h1>`,
     a `role="alert"` message, a strategy-gated button (`retry`/`reset` → Try again, `reload` →
     Reload the page, otherwise none) and an **unconditional** homepage anchor; it is keyed by
     `attempt` so a failed retry remounts and re-announces, and focus returns to
@@ -2987,6 +3070,18 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
     `tests/unit/routes/route-mapper.test.tsx` pins the guard-dependent choice,
     `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
     `route.load` through `React.lazy`.
+
+    Post-load warm-up (issue #309, ADR-018): `PostLoadPrefetcher` (`src/lib/reliability/`),
+    attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the
+    error-page font faces (`FontFaceLoader` over `ERROR_PAGE_FONT_FACES`) 2 s after the first
+    `pointerdown` or `keydown` after `load` while online, re-arming on the next `online` event
+    otherwise. Never move it back to a timer: a post-load timer makes every page download and
+    evaluate the chunk inside its own Lighthouse run. Failures are silent and do not poison
+    the `ChunkRetryLoader` memo. The three error routes share the `error-page` chunk name with
+    `errorPageLoader`, so one request warms them all and a later 404, 403 or 5xx renders with no
+    network; `performance-serving.test.ts` pins the shared name and the entry wiring, and
+    `tests/e2e/modules/error-pages-offline.spec.ts` renders all three offline. Never prefetch
+    through a `ReloadingChunkLoader`: a warm-up must never be able to reload the page.
 
 ## Node Version Management
 

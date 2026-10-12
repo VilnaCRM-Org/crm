@@ -297,3 +297,4 @@ module singleton that composes the observability and security-event cores off th
   carve-out that lists `boundary-error-reporter`
 - [`scripts/ci/eslint-gate-fixtures.mjs`](../../scripts/ci/eslint-gate-fixtures.mjs) — the
   must-fail fixtures for the five selectors
+- [ADR-018: Route error responses with a known status render the designed error pages](./018-route-error-status-pages.md)

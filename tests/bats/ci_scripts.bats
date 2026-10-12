@@ -110,6 +110,12 @@ setup() {
   [ "$status" -eq 0 ]
   assert_log_contains 'make create-k6-helper-container-dind K6_HELPER_NAME=crm-k6-helper-signup'
   assert_log_contains 'make run-load-tests-dind K6_HELPER_NAME=crm-k6-helper-signup K6_TEST_SCRIPT=/loadTests/signup.js K6_RESULTS_FILE=/loadTests/results/signup.html'
+
+  reset_command_log
+  run_ci_script "$script_path" test-load-error-pages
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make create-k6-helper-container-dind K6_HELPER_NAME=crm-k6-helper-error-pages'
+  assert_log_contains 'make run-load-tests-dind K6_HELPER_NAME=crm-k6-helper-error-pages K6_TEST_SCRIPT=/loadTests/error-pages.js K6_RESULTS_FILE=/loadTests/results/error-pages.html'
 }
 
 # Route-coverage inventory gate (issue #169): scripts/ci/check-e2e-route-coverage.ts,

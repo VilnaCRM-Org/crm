@@ -1,3 +1,4 @@
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
@@ -42,6 +43,7 @@ class DeferredAuthActions implements AuthActions {
 
   public logout(): void {
     observabilityCore.clearUser();
+    sandboxDemoSessionProvider.signOut();
     AuthStateVar.reset();
   }
 

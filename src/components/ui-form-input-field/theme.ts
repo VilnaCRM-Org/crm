@@ -53,6 +53,7 @@ export default createTheme({
             letterSpacing: 0,
 
             color: customColors.text.secondary,
+            opacity: 1,
 
             [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
               fontWeight: 400,
@@ -89,7 +90,7 @@ export default createTheme({
             maxHeight: '4rem',
             paddingTop: '1.4375rem',
             paddingBottom: '1.4375rem',
-            paddingLeft: '1.6875rem',
+            paddingLeft: '1.75rem',
           },
         },
       },

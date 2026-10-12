@@ -8,6 +8,8 @@ import type { FeatureFlagService } from '@/config/runtime/feature-flag-service';
 import type GraphQLUrl from '@/utils/get-graphql-url';
 import { buildAppConfigValues, buildFeatureFlagConfig, buildHttpUrl } from '@tests/builders';
 
+const PROBE_FLAG = 'probeFlag';
+
 type RuntimeGraph = {
   container: DependencyContainer;
   tokens: { appConfig: symbol; featureFlagService: symbol; graphQlUrl: symbol };
@@ -49,6 +51,10 @@ describe('runtime configuration Integration', () => {
     document.getElementById(APP_CONFIG_ELEMENT_ID)?.remove();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   afterAll(() => {
     process.env = { ...ORIGINAL_ENV };
     document.getElementById(APP_CONFIG_ELEMENT_ID)?.remove();
@@ -69,7 +75,7 @@ describe('runtime configuration Integration', () => {
     );
   });
 
-  it('exposes empty configuration and default flags when no block is rendered', async () => {
+  it('exposes empty configuration and no flags when no block is rendered', async () => {
     const { container, tokens } = await loadRuntimeGraph();
     const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
     const { default: urlBuilder } = await import('@/utils/url-builder');
@@ -80,9 +86,9 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual(['forgotPassword']);
-    expect(flags.isEnabled('forgotPassword')).toBe(false);
-    expect(flags.snapshot()).toEqual({ forgotPassword: false });
+    expect(flags.names()).toEqual([]);
+    expect(flags.isEnabled(PROBE_FLAG as never)).toBeUndefined();
+    expect(flags.snapshot()).toEqual({});
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
   });
 
@@ -112,26 +118,22 @@ describe('runtime configuration Integration', () => {
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(buildTimeUrl);
   });
 
-  it('lets a rendered block override the build-time urls and flag defaults', async () => {
+  it('lets a rendered block override the build-time urls', async () => {
     const apiBaseUrl = buildHttpUrl();
     const graphqlUrl = buildHttpUrl('/graphql');
     process.env.REACT_APP_GRAPHQL_URL = buildHttpUrl('/build-time-graphql');
     renderRuntimeConfig(
-      JSON.stringify(
-        buildAppConfigValues({ apiBaseUrl, graphqlUrl, flags: { forgotPassword: true } })
-      )
+      JSON.stringify(buildAppConfigValues({ apiBaseUrl, graphqlUrl, flags: {} }))
     );
 
     const { container, tokens } = await loadRuntimeGraph();
     const { default: urlBuilder } = await import('@/utils/url-builder');
     const appConfig = container.resolve<AppConfig>(tokens.appConfig);
 
-    expect(appConfig.get()).toEqual({ apiBaseUrl, graphqlUrl, flags: { forgotPassword: true } });
+    expect(appConfig.get()).toEqual({ apiBaseUrl, graphqlUrl, flags: {} });
     expect(appConfig.apiBaseUrl()).toBe(apiBaseUrl);
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(graphqlUrl);
-    expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({
-      forgotPassword: true,
-    });
+    expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({});
     expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });
 
@@ -157,15 +159,33 @@ describe('runtime configuration Integration', () => {
     }
   );
 
-  it('keeps the flag default when the rendered block omits the flag', async () => {
+  it('accepts the empty flags object the committed block ships', async () => {
     renderRuntimeConfig(buildFeatureFlagConfig({}));
 
     const { container, tokens } = await loadRuntimeGraph();
 
     expect(container.resolve<AppConfig>(tokens.appConfig).get()).toEqual({ flags: {} });
-    expect(
-      container.resolve<FeatureFlagService>(tokens.featureFlagService).isEnabled('forgotPassword')
-    ).toBe(false);
+  });
+
+  it('reads flag values through the container-resolved service on every call', async () => {
+    renderRuntimeConfig(buildFeatureFlagConfig({}));
+
+    const { container, tokens } = await loadRuntimeGraph();
+    const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
+    jest.spyOn(flags, 'names').mockReturnValue([PROBE_FLAG as never]);
+    document.getElementById(APP_CONFIG_ELEMENT_ID)?.remove();
+    renderRuntimeConfig(buildFeatureFlagConfig({ [PROBE_FLAG]: true }));
+
+    expect(flags.isEnabled(PROBE_FLAG as never)).toBe(true);
+    expect(flags.snapshot()).toEqual({ [PROBE_FLAG]: true });
+  });
+
+  it('fails fast when the rendered block declares a flag the build no longer knows', async () => {
+    renderRuntimeConfig(buildFeatureFlagConfig({ retiredFlag: true }));
+
+    await expect(import('@/config/dependency-injection-config')).rejects.toThrow(
+      /Invalid runtime configuration[\s\S]*retiredFlag/
+    );
   });
 
   it('fails fast when the rendered block violates the schema', async () => {

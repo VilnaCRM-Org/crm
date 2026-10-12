@@ -13,6 +13,14 @@ describe('ROUTE_PATHS', () => {
     expect(ROUTE_PATHS.signIn).toBe('/sign-in');
   });
 
+  it('forbidden is "/forbidden"', () => {
+    expect(ROUTE_PATHS.forbidden).toBe('/forbidden');
+  });
+
+  it('serverError is "/server-error"', () => {
+    expect(ROUTE_PATHS.serverError).toBe('/server-error');
+  });
+
   it('notFound is "*"', () => {
     expect(ROUTE_PATHS.notFound).toBe('*');
   });

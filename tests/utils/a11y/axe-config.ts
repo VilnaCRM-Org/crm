@@ -46,9 +46,29 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
   },
   {
     ruleId: 'color-contrast',
+    selector: 'form a.MuiLink-root[href="/password-recovery"]',
+    reason: 'Forgot-password link: toolkit brand #1EAEFF on white is 2.45:1; product-owner DEV-67.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
     selector: 'footer a.MuiLink-root > p.MuiTypography-root',
     reason:
       'Footer links: MUI default #1976D2 on #F4F5F6 is 4.21:1; UILink theme drops the palette.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
+    selector: '#error-page-actions > .MuiButton-contained',
+    reason:
+      'Error-page primary action: white on Figma primary #1EAEFF is 2.46:1; token owned by design.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
+    selector: '#error-page-digits > span',
+    reason:
+      'Error-page status digits: #1EAEFF / #FFC01E on #FBFBFB are 2.37:1 / 1.58:1; design-owned.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
 ];

@@ -121,6 +121,35 @@ Three invariants keep that guard real, and breaking any of them is a security re
 bundle: one build must not contain the seam, and the opted-in build must, so the scan cannot pass
 against the wrong artifact.
 
+## The sandbox demo session (issue #309)
+
+`sandbox-demo-session-provider.ts` (`SandboxDemoSessionProvider`) gives a pull-request sandbox — a
+static S3 website with no backend — a working login. It is **runtime**-gated, unlike the seed
+above: the production bundle carries it, and it is active only when
+
+```ts
+process.env.NODE_ENV !== 'production' || isSandboxHost(location.hostname);
+```
+
+where a sandbox host starts with `sandbox-crm-`, ends with `.amazonaws.com`, and has an
+`s3-website` or `s3-website-<region>` label. The check is plain `startsWith` / `endsWith` /
+`split`, so it has no regular expression to backtrack. While active:
+
+- `signIn({ email, password })` returns the demo session for exactly `demo@vilnacrm.com` /
+  `Demo1234` and remembers the demo **email** (never the password or a token) in `localStorage`
+  under `vilnacrm.sandbox-demo-session`;
+- `restore()` turns that marker back into the demo session, so `AuthStateVar` starts signed in
+  after a reload or a deep link;
+- `signOut()` removes the marker; the auth composition root's `logout` calls it.
+
+Inactive, `signIn` and `restore` return `null` and nothing is written. Every storage call is
+wrapped, so a browser that refuses storage simply gets no persistence. The location and the
+storage are constructor parameters defaulting to `globalThis`, so tests drive the host without
+touching globals. The auth module's composition root registers the singleton by value under
+`AUTH_TOKENS.SandboxDemoSessionProvider`; `AuthStoreActions.login` asks it before the repository
+unless the login's signal is already aborted. See
+[ADR-019](../../../docs/adr/019-sandbox-demo-session.md).
+
 ## Adding a variable
 
 1. Add the `REACT_APP_*` key to `.env.example` (the tracked template) and to your local `.env`

@@ -1,4 +1,5 @@
 import preloadedAuthTokenSeed from '@/config/env/preloaded-auth-token';
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ReactiveVarFactory from '@/lib/state/reactive-var-factory';
 import type { ReactiveVar } from '@/lib/state/types/reactive-var';
 import type { AuthState } from '@auth/types/auth-store';
@@ -19,9 +20,11 @@ export class AuthStateVar {
   private readonly state: ReactiveVar<AuthState>;
 
   constructor() {
+    const demoSession = sandboxDemoSessionProvider.restore();
     this.state = new ReactiveVarFactory().create<AuthState>({
       ...this.cleared,
-      token: preloadedAuthTokenSeed.read(),
+      email: demoSession?.email ?? this.cleared.email,
+      token: demoSession?.token ?? preloadedAuthTokenSeed.read(),
     });
   }
 

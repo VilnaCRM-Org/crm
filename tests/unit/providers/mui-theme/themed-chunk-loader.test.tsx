@@ -1,10 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
+import type { FallbackLandmark } from '@/components/types/error-boundary';
 import type { ComponentModule, MuiThemeShellModule } from '@/components/types/providers';
 import type { ModuleLoader } from '@/lib/reliability/types/module-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 import { buildToken } from '@tests/builders';
+
+type ForwardedProps = { variant: string; landmark: FallbackLandmark };
 
 const contentModule = (text: string): ComponentModule => ({
   default: (): ReactNode => <p>{text}</p>,
@@ -35,6 +38,26 @@ describe('ThemedChunkLoader', () => {
     render(<Themed />);
 
     expect(screen.getByRole('region', { name: label })).toContainElement(screen.getByText(text));
+  });
+
+  it('forwards the rendered props to the content inside the theme shell', async () => {
+    const label = buildToken();
+    const variant = buildToken();
+    const landmark: FallbackLandmark = 'region';
+    const content: ComponentModule<ForwardedProps> = {
+      default: ({ variant: shown, landmark: role }): ReactNode => <p>{`${shown}:${role}`}</p>,
+    };
+    const loader = new ThemedChunkLoader<ForwardedProps>(
+      resolving(content),
+      resolving(shellModule(label))
+    );
+
+    const { default: Themed } = await loader.load();
+    render(<Themed variant={variant} landmark={landmark} />);
+
+    expect(screen.getByRole('region', { name: label })).toContainElement(
+      screen.getByText(`${variant}:${landmark}`)
+    );
   });
 
   it('requests the content and the shell together rather than one after the other', () => {

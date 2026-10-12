@@ -8,6 +8,8 @@ import { PRELOADED_AUTH_TOKEN_WINDOW_KEY } from '@tests/utils/seed-preloaded-aut
 
 const ENV_KEY = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
 const OPT_IN_KEY = 'ENABLE_PRELOADED_AUTH_TOKEN_SEED';
+const DEMO_STORAGE_KEY = 'vilnacrm.sandbox-demo-session';
+const DEMO_EMAIL = 'demo@vilnacrm.com';
 const CLEARED = {
   email: '',
   token: null,
@@ -57,6 +59,29 @@ describe('initial seeded token', () => {
   afterEach(() => {
     Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
     delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
+    localStorage.removeItem(DEMO_STORAGE_KEY);
+  });
+
+  it('starts fully cleared when nothing seeds or restores a session', () => {
+    expect(new AuthStateVar().get()).toEqual(CLEARED);
+  });
+
+  it('restores a remembered sandbox demo session ahead of the preloaded seed', () => {
+    window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = buildToken();
+    localStorage.setItem(DEMO_STORAGE_KEY, DEMO_EMAIL);
+
+    expect(new AuthStateVar().get()).toEqual({
+      ...CLEARED,
+      email: DEMO_EMAIL,
+      token: 'sandbox-demo-session-token',
+    });
+  });
+
+  it('restores no demo session in a production build served off a sandbox host', () => {
+    process.env.NODE_ENV = 'production';
+    localStorage.setItem(DEMO_STORAGE_KEY, DEMO_EMAIL);
+
+    expect(new AuthStateVar().get()).toEqual(CLEARED);
   });
 
   it('seeds from the preloaded sources outside a production build', () => {

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { container, type DependencyContainer } from 'tsyringe';
 
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import runtimeConfigRegistrar from '@/config/runtime/di';
 import userModuleRegistrar from '@/modules/user/config/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
@@ -8,6 +9,7 @@ import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import GraphQLUrl from '@/utils/get-graphql-url';
 import authStateVar from '@auth/stores/auth-var';
+import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 
 const GRAPHQL_CLIENT_TOKENS = [AUTH_TOKENS.GraphQLUrl, AUTH_TOKENS.ApolloClient];
 const ERROR_FACTORY_TOKENS = [AUTH_TOKENS.ApiStatusErrorFactory, AUTH_TOKENS.ApiErrorFactory];
@@ -23,7 +25,11 @@ const RESPONSE_MAPPER_TOKENS = [
 ];
 const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
-const AUTH_STATE_TOKENS = [AUTH_TOKENS.AuthStateVar, AUTH_TOKENS.AuthStoreActionsDeps];
+const AUTH_STATE_TOKENS = [
+  AUTH_TOKENS.AuthStateVar,
+  AUTH_TOKENS.SandboxDemoSessionProvider,
+  AUTH_TOKENS.AuthStoreActionsDeps,
+];
 const EVERY_TOKEN = [
   ...GRAPHQL_CLIENT_TOKENS,
   ...ERROR_FACTORY_TOKENS,
@@ -102,6 +108,18 @@ describe('user module composition root', () => {
     const child = registeredContainer();
 
     expect(child.resolve(AUTH_TOKENS.AuthStateVar)).toBe(authStateVar);
+  });
+
+  it('hands the container-free sandbox demo seed to the store actions by value', () => {
+    const child = registeredContainer();
+    child.register(AUTH_TOKENS.AuthRepository, { useValue: {} });
+    child.register(AUTH_TOKENS.AuthRequestErrors, { useValue: {} });
+    child.register(AUTH_TOKENS.AuthSecuritySignals, { useValue: {} });
+
+    expect(child.resolve(AUTH_TOKENS.SandboxDemoSessionProvider)).toBe(sandboxDemoSessionProvider);
+    expect(
+      child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps).sandboxDemoSession
+    ).toBe(sandboxDemoSessionProvider);
   });
 
   it('registers the mappers as singletons rather than per-resolve instances', () => {

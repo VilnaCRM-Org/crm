@@ -9,11 +9,12 @@ import type { AuthFormSectionProps } from '@auth/types/auth-form-section';
 export default function AuthFormSection({
   children,
   oauthInert,
+  page,
   switcher,
 }: AuthFormSectionProps): JSX.Element {
   return (
     <Box component="section" sx={styles.formSection}>
-      <Box sx={styles.formWrapper}>
+      <Box id="auth-form-card" sx={[styles.formWrapper, styles.formWrapperBottomPadding[page]]}>
         {children}
         <InertBox id="auth-provider-buttons-container" inert={oauthInert}>
           <AuthProviderButtons />

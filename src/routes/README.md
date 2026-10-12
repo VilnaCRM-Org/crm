@@ -21,7 +21,7 @@ route set discoverable (audit, nav, sitemap).
 | ----------------------- | ------------------------------------------------------------- |
 | `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
 | `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape   |
-| `app-routes.ts`         | The app shell's own contract (home + 404)                     |
+| `app-routes.ts`         | The app shell's own contract (home, 404, 403, 5xx)            |
 | `registry.ts`           | Collects every module contract into one list                  |
 | `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index   |
 | `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement` |
@@ -93,10 +93,25 @@ caught by its own route and the surrounding layout survives. The `landmark`
 follows the tree: pages under `AppLayout` render the fallback as an
 `aria-labelledby` `<section>` (`'region'`), because `AppLayout` already owns
 the page's `<main>` and two would nest; open routes and the layouts render
-`<main>`. `RouteError` is presentational — it classifies `useRouteError()`
-with `recoveryStrategyDetector`, its **Try again** re-navigates to the current
-location so the route really re-renders, and the fallback always offers a
-homepage link. Reporting lives at the router seam:
+`<main>`. `RouteError` is presentational and dispatches on status first
+(issue #309, ADR-018): `errorPageStatusDetector` reads a status from a router
+error response, a render-thrown `Response` or a `data()` value, and maps 403,
+404 and 500 to 599 to the designed `ErrorPage` (`@/components/error-page`),
+which `RouteErrorPage` lazy-loads through `errorPageLoader` with the same
+`landmark`. A 5xx route response therefore shows the 5xx page, whose only
+action is the homepage link, and offers no in-place retry. Every other error
+renders `RouteErrorFallback`, the previous body unchanged: it classifies
+`useRouteError()` with `recoveryStrategyDetector`, its **Try again**
+re-navigates to the current location so the route really re-renders, and the
+fallback always offers a homepage link. When the error-page chunk still fails
+after its retry, status errors render that fallback for the rest of the
+session. The `*`, `/forbidden` and `/server-error` routes in `app-routes.ts`
+deliberately share the `webpackChunkName: "error-page"` of `errorPageLoader`:
+`PostLoadPrefetcher`, attached from `src/index.tsx`, loads that one chunk 2 s
+after the first interaction on a loaded page, so every error page a navigation
+then reaches renders with no network.
+Do not give those routes their own chunk names; `performance-serving.test.ts`
+pins the shared name. Reporting lives at the router seam:
 `routeComposer.routeErrorHandler()` builds the callback that `routes.tsx`
 exports as `onRouteError` and `src/app.tsx` passes to
 `<RouterProvider onError>`; it reports through the container-free

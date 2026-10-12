@@ -94,12 +94,27 @@ export const PAGES = {
   SIGN_UP: '/sign-up',
   SIGN_IN: '/sign-in',
   NOT_FOUND: '/definitely-not-a-route',
+  FORBIDDEN: '/forbidden',
+  SERVER_ERROR: '/server-error',
 } as const;
 
-// The catch-all route is a static, text-only page, so a desktop/mobile pair is enough to
-// catch a regression; the full screenSizes matrix would add binary baselines without adding
-// signal (issue #169).
+// The catch-all route renders the 404 error page, so its three Figma frames (desktop, tablet,
+// mobile) are enough to catch a regression; the full screenSizes matrix would add binary
+// baselines without adding signal (issues #169, #309).
 export const notFoundScreens: ReadonlyArray<ScreenSize> = [
-  { width: 1536, height: 864, name: 'desktop' },
-  { width: 393, height: 873, name: 'mobile' },
+  { width: 1440, height: 1000, name: 'desktop' },
+  { width: 1024, height: 1366, name: 'tablet' },
+  { width: 375, height: 1082, name: 'mobile' },
+];
+
+export const forbiddenScreens: ReadonlyArray<ScreenSize> = [
+  { width: 1440, height: 940, name: 'forbidden-desktop' },
+  { width: 1024, height: 1366, name: 'forbidden-tablet' },
+  { width: 375, height: 1082, name: 'forbidden-mobile' },
+];
+
+export const serverErrorScreens: ReadonlyArray<ScreenSize> = [
+  { width: 1440, height: 940, name: 'server-error-desktop' },
+  { width: 1024, height: 1366, name: 'server-error-tablet' },
+  { width: 375, height: 1082, name: 'server-error-mobile' },
 ];

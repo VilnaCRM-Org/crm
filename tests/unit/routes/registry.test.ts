@@ -31,6 +31,21 @@ describe('route registry', () => {
     expect(notFound?.guard).toBe('public');
   });
 
+  it('declares the 403 and 5xx error pages as public app-shell routes (#309)', () => {
+    const shell = registry.find((module) => module.id === 'app.shell');
+    const forbidden = shell?.routes.find((route) => route.path === ROUTE_PATHS.forbidden);
+    const serverError = shell?.routes.find((route) => route.path === ROUTE_PATHS.serverError);
+
+    expect(forbidden?.guard).toBe('public');
+    expect(serverError?.guard).toBe('public');
+    expect(shell?.routes.map((route) => route.path)).toEqual([
+      undefined,
+      ROUTE_PATHS.forbidden,
+      ROUTE_PATHS.serverError,
+      ROUTE_PATHS.notFound,
+    ]);
+  });
+
   it('declares the auth pages as public routes carrying their title metadata', () => {
     const auth = registry.find((module) => module.id === 'user.auth');
 

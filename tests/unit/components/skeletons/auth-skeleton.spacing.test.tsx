@@ -31,6 +31,10 @@ function toRem(value: string | number): number {
 }
 
 function lineBoxHeightRem(fontSize: string, lineHeight: string | number): number {
+  if (typeof lineHeight === 'string' && lineHeight.endsWith('rem')) {
+    return toRem(lineHeight);
+  }
+
   return toRem(fontSize) * Number(lineHeight);
 }
 
@@ -201,7 +205,13 @@ describe('AuthSkeleton spacing parity', () => {
     };
     const lgSubtitle = uiFormStyles.formSubtitle[lgKey] as { marginBottom: string };
 
+    const mdKey = `@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`;
+    const mdSubtitle = uiFormStyles.formSubtitle[mdKey] as { marginBottom: string };
+
     expect(authSkeletonStyles.subtitleWrapper.marginBottom).toBe(baseSubtitle.marginBottom);
+    expect(
+      (authSkeletonStyles.subtitleWrapper[mdKey] as { marginBottom: string }).marginBottom
+    ).toBe(mdSubtitle.marginBottom);
     expect(
       (authSkeletonStyles.subtitleWrapper[lgKey] as { marginBottom: string }).marginBottom
     ).toBe(lgSubtitle.marginBottom);

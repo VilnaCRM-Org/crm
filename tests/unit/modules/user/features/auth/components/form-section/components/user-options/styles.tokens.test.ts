@@ -21,11 +21,21 @@ describe('user options styles', () => {
       columnGap: '1rem',
       rowGap: '0.5rem',
       marginTop: '1rem',
+      marginBottom: '0.4375rem',
+      '@media (min-width:375px)': {
+        paddingRight: '0.75rem',
+      },
       '@media (min-width:768px)': {
         marginTop: '1.4375rem',
+        marginBottom: '-0.5625rem',
+        paddingRight: 0,
       },
       '@media (min-width:1024px)': {
-        marginTop: '0.8125rem',
+        marginBottom: '-0.625rem',
+      },
+      '@media (min-width:1440px)': {
+        marginTop: '-0.1875rem',
+        marginBottom: 0,
       },
     });
   });
@@ -47,59 +57,25 @@ describe('user options styles', () => {
           fontSize: '1rem',
           lineHeight: '1.125',
         },
-        '@media (min-width:1024px)': {
+        '@media (min-width:1440px)': {
           fontSize: '0.875rem',
           lineHeight: '1.2857',
+        },
+      },
+      '& .MuiCheckbox-root .ui-checkbox-box': {
+        width: '1.25rem',
+        height: '1.25rem',
+        '@media (min-width:768px)': {
+          width: '1.5rem',
+          height: '1.5rem',
         },
       },
     });
   });
 
-  it('pins every rememberMeCheckbox token', async () => {
+  it('exposes exactly the two documented style slots', async () => {
     const styles = await loadStyles();
 
-    expect(styles.rememberMeCheckbox).toEqual({
-      padding: 0,
-      marginRight: '0.8125rem',
-    });
-  });
-
-  it('pins every forgotPasswordLink token', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.forgotPasswordLink).toEqual({
-      display: 'inline-flex',
-      alignItems: 'center',
-      minHeight: '1.5rem',
-      fontFamily: 'Inter, sans-serif',
-      fontWeight: 500,
-      fontSize: '0.875rem',
-      lineHeight: '1.2857',
-      color: '#0074B5',
-      textDecoration: 'underline',
-      textDecorationThickness: '1px',
-      textUnderlineOffset: '0.2em',
-      '&:hover': {
-        color: '#00588A',
-        textDecorationThickness: '2px',
-      },
-      '&:focus-visible': {
-        outline: '2px solid #404142',
-        outlineOffset: '2px',
-        borderRadius: '2px',
-        textDecorationThickness: '2px',
-      },
-    });
-  });
-
-  it('exposes exactly the four documented style slots', async () => {
-    const styles = await loadStyles();
-
-    expect(Object.keys(styles).sort()).toEqual([
-      'authOptionsWrapper',
-      'forgotPasswordLink',
-      'rememberMeCheckbox',
-      'rememberMeLabel',
-    ]);
+    expect(Object.keys(styles).sort()).toEqual(['authOptionsWrapper', 'rememberMeLabel']);
   });
 });

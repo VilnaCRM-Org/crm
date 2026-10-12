@@ -41,7 +41,7 @@ fi
 #     (registry.npmjs.org.evil.com) fail.
 ALLOWED='^https://registry\.npmjs\.org(/|$)'
 TOOLKIT_PKG='@vilnacrm/ui-toolkit'
-TOOLKIT_URL='https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz'
+TOOLKIT_URL='https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz'
 WORKSPACE_TOKEN="\"$TOOLKIT_PKG\": \"$TOOLKIT_URL\""
 PACKAGE_TOKEN="\"$TOOLKIT_PKG\": [\"$TOOLKIT_PKG@$TOOLKIT_URL\", {"
 rogue_urls=$(awk -v ws="$WORKSPACE_TOKEN" -v pk="$PACKAGE_TOKEN" '{

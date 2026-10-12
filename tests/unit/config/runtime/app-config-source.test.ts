@@ -70,7 +70,7 @@ describe('appConfigSource', () => {
 
     it.each([
       ['an array', '[1, 2, 3]'],
-      ['a string', '"forgotPassword"'],
+      ['a string', '"probeFlag"'],
       ['a number', '42'],
       ['null', 'null'],
     ])('throws when the configuration block contains %s', async (_label, json) => {
@@ -181,17 +181,17 @@ describe('appConfigSource', () => {
 
   describe('flags', () => {
     it('returns the flags object when the configuration declares one', async () => {
-      writeConfigBlock(JSON.stringify({ flags: { forgotPassword: true } }));
+      writeConfigBlock(JSON.stringify({ flags: { probeFlag: true } }));
 
       const source = await loadSource();
 
-      expect(source.flags()).toEqual({ forgotPassword: true });
+      expect(source.flags()).toEqual({ probeFlag: true });
     });
 
     it.each([
       ['absent', {}],
       ['an array', { flags: [] }],
-      ['a string', { flags: 'forgotPassword' }],
+      ['a string', { flags: 'probeFlag' }],
       ['null', { flags: null }],
     ])('is empty when flags is %s', async (_label, values) => {
       writeConfigBlock(JSON.stringify(values));
