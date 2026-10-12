@@ -37,7 +37,10 @@ describe('committed runtime configuration defaults (public/index.html)', () => {
     // Sorted on both sides: the contract is set equality, so declaring the same flags in a
     // different order than FEATURE_FLAG_DEFAULTS is valid and must not fail here.
     expect(Object.keys(values.flags ?? {}).sort()).toEqual(
-      [...featureFlagService.names().items].sort()
+      featureFlagService
+        .names()
+        .items.map(({ name }) => name)
+        .sort()
     );
   });
 });

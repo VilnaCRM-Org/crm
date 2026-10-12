@@ -1,7 +1,11 @@
 export type FeatureFlag = 'forgotPassword';
 
+export interface FeatureFlagName {
+  readonly name: FeatureFlag;
+}
+
 export interface FeatureFlagNames {
-  readonly items: readonly FeatureFlag[];
+  readonly items: readonly FeatureFlagName[];
 }
 
 export interface FeatureFlagSnapshot {

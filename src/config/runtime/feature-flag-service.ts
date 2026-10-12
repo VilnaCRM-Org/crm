@@ -11,11 +11,13 @@ export class FeatureFlagService {
   }
 
   public names(): FeatureFlagNames {
-    return { items: Object.keys(FEATURE_FLAG_DEFAULTS) as FeatureFlag[] };
+    const flags = Object.keys(FEATURE_FLAG_DEFAULTS) as FeatureFlag[];
+
+    return { items: flags.map((name) => ({ name })) };
   }
 
   public snapshot(): FeatureFlagSnapshot {
-    const entries = this.names().items.map((flag) => [flag, this.isEnabled(flag)]);
+    const entries = this.names().items.map(({ name }) => [name, this.isEnabled(name)]);
 
     return Object.fromEntries(entries) as FeatureFlagSnapshot;
   }
