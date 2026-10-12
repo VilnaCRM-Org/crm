@@ -60,7 +60,11 @@ const unionFlagNames = (): string[] => {
     .sort();
 };
 
-const registeredFlagNames = (): string[] => [...featureFlagService.names().items].sort();
+const registeredFlagNames = (): string[] =>
+  featureFlagService
+    .names()
+    .items.map(({ name }) => name)
+    .sort();
 
 const appConfigEnvKeys = (relativePath: string): string[] =>
   readFile(relativePath)

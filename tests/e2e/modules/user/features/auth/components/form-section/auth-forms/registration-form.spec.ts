@@ -26,9 +26,18 @@ test.describe('Registration Form', () => {
     await fillInput(emailInput, userData.email);
     await fillInput(passwordInput, userData.password);
 
-    await page.route(REGISTRATION_API_URL, successResponse);
+    let release: () => void = () => {};
+    const inFlight = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(REGISTRATION_API_URL, async (route) => {
+      await inFlight;
+      return successResponse(route);
+    });
 
     await signupButton.click();
+    await expect(signupButton).toBeDisabled();
+    release();
 
     await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
   });
@@ -45,15 +54,21 @@ test.describe('Registration Form', () => {
   test('displays server error on registration failure', async ({ page }) => {
     const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
 
-    await page.route(
-      REGISTRATION_API_URL,
-      serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' })
-    );
+    let release: () => void = () => {};
+    const inFlight = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(REGISTRATION_API_URL, async (route) => {
+      await inFlight;
+      return serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' })(route);
+    });
 
     await fillInput(initialsInput, userData.fullName);
     await fillInput(emailInput, userData.email);
     await fillInput(passwordInput, userData.password);
     await signupButton.click();
+    await expect(signupButton).toBeDisabled();
+    release();
 
     await expect(page.locator('[role="alert"]')).toBeVisible();
   });
