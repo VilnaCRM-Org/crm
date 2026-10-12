@@ -1,6 +1,6 @@
 # ADR-002: Zustand vs Redux for Client State Management
 
-- Status: Superseded
+- Status: Approved
 
 - Deciders: @kravalg
 
@@ -78,10 +78,40 @@ concerns.
   `@reduxjs` dependency, and no Redux primitive (`createSlice`, `configureStore`) remains in
   `src/`. Auth state now lives in `src/modules/user/features/auth/stores/`.
 
+## Current rules
+
+Zustand holds client/UI state and the session token again (issue
+[#334](https://github.com/VilnaCRM-Org/crm/issues/334)). State is exactly one of three
+categories, and the category decides the primitive:
+
+- **Server state** — owned by the backend. A repository (`@injectable`) over `ApolloClient`
+  (GraphQL) or `HttpsClient` (REST), read from React through a hook that consumes it via
+  `useService`; never `useQuery` in a component. The transport rule is in
+  [`src/api/contracts/README.md`](../../src/api/contracts/README.md).
+- **Client/UI state** — a Zustand store created with `create<State>()(…)` in a
+  `use-*-store.ts` hook file (`useConnectivityStore` in `src/lib/connectivity/`), read through a
+  selector and written with `setState(patch)`. No logic lives in the store.
+- **Session state** — `useAuthStore` in `src/modules/user/features/auth/stores/`, read through
+  `useAuthState` / `useAuthToken`. `AuthStoreActions` receives it by value under
+  `AUTH_TOKENS.AuthStore` (`StoreApi<AuthState>`), so the paint path stays container-free.
+
+**No middleware.** `persist`, `devtools`, `immer` and every other `zustand/*` subpath are
+rejected: the access token is memory-only (a reload clears it, `authActions.logout()` writes
+`CLEARED_AUTH_STATE`), and the rest add bytes the stores do not need. `zustand` is imported only
+from its root specifier. The preloaded-auth-token seed is read once inside the auth store
+initializer, so the seed-gate invariants hold. `useSyncExternalStore` stays banned in `src`:
+Zustand calls it inside `node_modules`. `docs/state-architecture.md` is the contributor guide,
+and `tests/unit/tooling/state-architecture-contract.test.ts` pins these rules.
+
 ## Update history
 
-- **2026-09-17** — **Superseded by [ADR-008](./008-frontend-state-architecture.md)**
-  ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)). The Redux → Zustand migration
+- **2026-10-12** — **Approved again** for
+  [#334](https://github.com/VilnaCRM-Org/crm/issues/334). The bespoke reactive var that replaced
+  the Zustand store in September is retired, and the stores above are the client-state
+  primitive. The ADRs numbered 004 and later were removed from the repository at the same time;
+  the rules they carried for state live in "Current rules" above.
+- **2026-09-17** — **Superseded** ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)) by a
+  since-removed record. The Redux → Zustand migration
   this record decided did happen ([#46](https://github.com/VilnaCRM-Org/crm/pull/46)), but the
   Zustand store it produced was replaced weeks later by an Apollo `makeVar`-shaped reactive var
   when registration moved to GraphQL ([#42](https://github.com/VilnaCRM-Org/crm/pull/42)), and
@@ -89,9 +119,9 @@ concerns.
   path. From that point `zustand` shipped in `package.json` without a single import in `src/`,
   while this ADR, `CLAUDE.md` and `AGENTS.md` still named it the canonical store. The Module
   Federation premise never held either: the packages are installed but `rsbuild.config.ts`
-  registers no plugin, and a unit test asserts it stays that way. ADR-008 sanctions the
-  reactive var as the one client/UI-state primitive, removes `zustand`, and adds the gates
-  that keep the docs and the code agreeing. The comparison table below is kept as the
+  registers no plugin, and a unit test asserts it stays that way. That record sanctioned the
+  reactive var as the one client/UI-state primitive, removed `zustand`, and added the gates
+  that keep the docs and the code agreeing. The comparison table above is kept as the
   historical evaluation.
 - **2026-08-13** — Marked the follow-up Done. It had continued to present completed work as
   pending. Recorded while adding the documentation drift gates in

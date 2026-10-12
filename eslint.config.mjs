@@ -105,7 +105,7 @@ const typeDeclarationSelectors = [
   },
 ];
 
-// Source (issue #332, ADR-022, TB-1): every value that crosses a layer carries a named type.
+// Source (issue #332, TB-1): every value that crosses a layer carries a named type.
 // Both arrays are BUILT by config/typed-boundary-policy.js (the single source the fixtures read).
 // `typedBoundarySelectors` is spread into every `src` block that sets `no-restricted-syntax` —
 // flat config replaces the rule per file, so a block that omits it silently un-gates its files,
@@ -369,7 +369,7 @@ const routeObjectShapeSelectors = [
 
 // The selector families every `src/routes/**/*.tsx` file carries (issue #116); the three route
 // blocks below add or omit the #128 `new` ban and the router-construction ban per file.
-// Source (issue #110, ADR-008; ADR-023 for Zustand): client/UI state is read through a Zustand
+// Source (issue #110; ADR-002 for Zustand): client/UI state is read through a Zustand
 // store hook, so a store cannot hand-roll its own `useSyncExternalStore` subscription — as a named
 // or aliased import, a `React.` member, a computed `React['…']` member, or a destructured
 // property. Re-included in EVERY src-scoped block, like the router-construction selectors,
@@ -380,7 +380,7 @@ const clientStateSelectors = [
       'ImportDeclaration[source.value="react"] > ' +
       'ImportSpecifier[imported.name="useSyncExternalStore"]',
     message:
-      'Read client state through a Zustand store hook (ADR-023); useSyncExternalStore is not ' +
+      'Read client state through a Zustand store hook (ADR-002); useSyncExternalStore is not ' +
       'used in src (issue #110).',
   },
   {
@@ -388,7 +388,7 @@ const clientStateSelectors = [
       'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
       '[computed=true][property.value="useSyncExternalStore"])',
     message:
-      'Read client state through a Zustand store hook (ADR-023); useSyncExternalStore is not ' +
+      'Read client state through a Zustand store hook (ADR-002); useSyncExternalStore is not ' +
       'used in src (issue #110).',
   },
   {
@@ -396,7 +396,7 @@ const clientStateSelectors = [
       'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
       '[key.value="useSyncExternalStore"])',
     message:
-      'Read client state through a Zustand store hook (ADR-023); useSyncExternalStore is not ' +
+      'Read client state through a Zustand store hook (ADR-002); useSyncExternalStore is not ' +
       'used in src (issue #110).',
   },
 ];
@@ -541,26 +541,26 @@ const uiToolkitForbiddenPaths = [
     name: uiToolkitPackage,
     message:
       'Never import the ui-toolkit root barrel — it pulls the whole kit (swiper included) into ' +
-      'the bundle. Import the CRM seam under src/components instead (ADR-016).',
+      'the bundle. Import the CRM seam under src/components instead (docs/ui-toolkit.md).',
   },
   {
     name: `${uiToolkitPackage}/styles.css`,
     message:
       'Never import the ui-toolkit stylesheet — CRM ships its own woff2 fonts ' +
-      '(ADR-016, docs/ui-toolkit.md "Fonts").',
+      '(docs/ui-toolkit.md "Fonts").',
   },
   {
     name: `${uiToolkitPackage}/ui-color-theme`,
     message:
       'Never import the ui-toolkit colour theme — it is the website palette; CRM keeps its own ' +
-      'theme in src/styles (ADR-016).',
+      'theme in src/styles (docs/ui-toolkit.md).',
   },
   {
     name: `${uiToolkitPackage}/ui-breakpoints`,
     importNames: ['default'],
     message:
       'The ui-breakpoints default export is the website theme (xs 375, sm 640) — import the ' +
-      'named crmBreakpointsTheme / heightBreakpoints instead (ADR-016).',
+      'named crmBreakpointsTheme / heightBreakpoints instead (docs/ui-toolkit.md).',
   },
 ];
 const uiToolkitImportPatterns = (seamSubpath) => [
@@ -574,7 +574,7 @@ const uiToolkitImportPatterns = (seamSubpath) => [
     message:
       'Import ui-toolkit only through its CRM seam (src/components/ui-container, ' +
       'ui-typography, skeletons/ui-skeleton-*, ui-back-to-main, ui-breakpoints); a subpath the ' +
-      'product owner has not adopted stays forbidden (ADR-016, docs/ui-toolkit.md).',
+      'product owner has not adopted stays forbidden (docs/ui-toolkit.md).',
   },
 ];
 const uiToolkitSeamComponentPaths = (seamSubpath) =>
@@ -585,7 +585,7 @@ const uiToolkitSeamComponentPaths = (seamSubpath) =>
           allowImportNames: ['default'],
           message:
             'A ui-toolkit component seam imports its subpath default export only — the ' +
-            'component itself (ADR-016).',
+            'component itself (docs/ui-toolkit.md).',
         },
       ]
     : [];
@@ -884,7 +884,7 @@ export default [
     },
   },
 
-  // Source (issue #332, ADR-022): `type X = { … }` is an `interface`. The stock rule autofixes
+  // Source (issue #332): `type X = { … }` is an `interface`. The stock rule autofixes
   // it, so the object-alias half of TB-1 needs no selector of its own.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],

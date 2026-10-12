@@ -1,7 +1,7 @@
 # Where does my state go?
 
-The binding decision is [ADR-023](./adr/023-zustand-client-state.md), which carries the
-server-state and session rules of [ADR-008](./adr/008-frontend-state-architecture.md) forward.
+The binding decision is [ADR-002](./adr/002-zustand-over-redux.md) ("Current rules"), which
+names Zustand the client-state primitive and keeps the server-state and session rules below.
 This page is the short form a contributor or agent applies while writing code: three categories,
 one decision rule, one worked example each, and the gates that fail the wrong choice.
 
@@ -26,7 +26,11 @@ for what the user-service schema models, REST for what it does not (token exchan
 files); the full criterion is in
 [`src/api/contracts/README.md`](../src/api/contracts/README.md). **Cache rule:** `cache-first`
 by default, identity on `id`, `typePolicies` declared next to the client in the module's
-`config/di.ts` (ADR-023 lists the after-mutation rules).
+`config/di.ts`. A repository method that must observe a fresh value passes `network-only` and
+says why in its name (`refresh*`). **After a mutation:** prefer returning the mutated entity;
+`cache.modify` for a list the response cannot express; `refetchQueries` only when the server
+derives something the client cannot; never `cache.evict` from a component. A repository maps
+transport failures to the typed reliability errors; a hook never inspects an Apollo error.
 
 React reaches a repository through `useService` and a feature hook; it never imports
 `@apollo/client` or the HTTP client and never sees a transport type:

@@ -147,7 +147,7 @@ const S = {
   useSyncExternalStoreDestructured:
     'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
     '[key.value="useSyncExternalStore"])',
-  // issue #332 (ADR-022, TB-1) — BUILT by config/typed-boundary-policy.js like the #129 and #130
+  // issue #332 (TB-1) — BUILT by config/typed-boundary-policy.js like the #129 and #130
   // selectors; tests/unit/config/eslint-policy.test.ts pins their wiring per block.
   tbObject: TB_CODE[0],
   tbTuple: TB_CODE[1],
@@ -637,7 +637,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-stylesheet',
@@ -646,7 +646,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-colour-theme',
@@ -655,7 +655,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-unadopted-subpath',
@@ -664,7 +664,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-adopted-subpath-outside-seam',
@@ -673,7 +673,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-subpath-in-feature-hook',
@@ -682,7 +682,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-seam-foreign-subpath',
@@ -691,7 +691,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-seam-own-subpath',
@@ -709,7 +709,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-breakpoints-default',
@@ -718,7 +718,7 @@ const FIXTURES = [
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',
-    tag: 'ADR-016',
+    tag: 'docs/ui-toolkit.md',
   },
   {
     id: 'ui-toolkit-breakpoints-named',
@@ -970,7 +970,7 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: '',
   },
-  // Client-state primitive (#110, ADR-008, ADR-023) — a Zustand store in a hook passes, and a
+  // Client-state primitive (#110, #334, ADR-002) — a Zustand store in a hook passes, and a
   // hand-rolled useSyncExternalStore subscription (named import, aliased import, React.member)
   // fails in a component, a logic file and a hook alike; no file is exempt.
   {
@@ -1092,7 +1092,7 @@ const FIXTURES = [
   },
 ];
 
-// TB-1 (issue #332, ADR-022). Code entries run on the logic, hook and component probes; the
+// TB-1 (issue #332). Code entries run on the logic, hook and component probes; the
 // type-file entries on the type-only probe. A tag of `TB-1 (x)` pins the entry that fired, so a
 // fixture cannot pass because a sibling entry reported the same node.
 const tbFail = (id, file, code, covers, tag) => ({
