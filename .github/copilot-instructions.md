@@ -53,13 +53,16 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **Typed boundaries (TB-1, issue #332)**: a value that crosses a layer (component props, hook
   parameters and results, Data provider / Transformer / Repository / State / Guard / Factory
   signatures, DI values, published state, telemetry payloads, interface members in type files)
-  carries a named type. ESLint fails an anonymous object type or `type X = { … }` (use
+  carries a named type. The gate is wider than that list: it checks every top-level function in
+  `src` bound directly to a declaration, exported or not, and every non-private method, the
+  constructor and its parameter properties (private ones included), and non-private properties
+  of any class. ESLint fails an anonymous object type or `type X = { … }` (use
   `interface`), a tuple, a bare array (cross a named collection interface), `any`, `object`,
   `Record`, an index signature, a mapped type over `string`, `number` or `symbol` keys, an
-  `unknown` return, class property or type-file member (only `error` / `cause` members keep
-  it; `unknown` parameters are not gated), and an inline `Partial` / `Pick` / `Omit` /
-  `Required` (name the derivation once in a type-only file). Never satisfy it with a cast, a
-  disable, an allowlist or a narrower glob; the selectors live in
+  `unknown` return, class property, type-file member or type-alias body (only `error` /
+  `cause` members keep it; `unknown` parameters are not gated), and an inline `Partial` /
+  `Pick` / `Omit` / `Required` (name the derivation once in a type-only file). Never satisfy
+  it with a cast, a disable, an allowlist or a narrower glob; the selectors live in
   `config/typed-boundary-policy.js` and each has a must-fail fixture.
 - **Components take collaborators from `useService(TOKEN)`** (`@/providers/di`), never through
   `new` or a value import of a service, repository, mapper, factory, or error handler. The auth

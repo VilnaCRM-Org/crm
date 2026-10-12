@@ -1515,6 +1515,27 @@ const TB_FIXTURES = [
     'TB-1 (d)'
   ),
   tbFail(
+    'type-file-unknown-alias',
+    PROBES.typeOnly,
+    'export type Payload = unknown;',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-unknown-in-alias-generic',
+    PROBES.typeOnly,
+    'export type Payload = Promise<unknown>;',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'type-file-callback-alias-unknown-return',
+    PROBES.typeOnly,
+    'export type PayloadReader = () => unknown;',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
     'type-file-derived-in-interface',
     PROBES.typeOnly,
     'export interface Toast { draft: Omit<Item, "id"> }',
@@ -1553,6 +1574,26 @@ const TB_FIXTURES = [
     'control-interface-narrowing-parameter',
     PROBES.typeOnly,
     'import type { ParsedError } from "./parsed-error";\nexport interface ErrorParser { parse(error: unknown): ParsedError; }'
+  ),
+  tbPass(
+    'control-callback-alias-unknown-parameter',
+    PROBES.typeOnly,
+    'export type ErrorPredicate = (error: unknown) => boolean;'
+  ),
+  tbPass(
+    'control-nullable-callback-alias-unknown-parameter',
+    PROBES.typeOnly,
+    'export type ErrorPredicate = ((error: unknown) => boolean) | null;'
+  ),
+  tbPass(
+    'control-alias-type-parameter-default',
+    PROBES.typeOnly,
+    'import type { Wrapper } from "./wrapper";\nexport type Box<T = unknown> = Wrapper<T>;'
+  ),
+  tbPass(
+    'control-callback-type-parameter-default',
+    PROBES.typeOnly,
+    'export type Factory = <T = unknown>(value: T) => T;'
   ),
   tbPass(
     'control-mapped-type-over-named-keys',

@@ -420,8 +420,10 @@ Web API that any listed browser lacks. The floor is Baseline 2023 Widely availab
 spend initial-bundle budget on browsers no user runs. `compat/compat` keeps `off` safe for the
 Web/DOM APIs `src/` uses; it does not check ES built-in methods, and SWC down-levels syntax
 only, so an ES built-in newer than the floor stays a review concern. Raising or lowering the
-floor is a reviewed change to the policy file and this table together; the policy file is an
-ADR-drift surface, so the change also adds an ADR or carries the documented waiver.
+floor is a reviewed change to the policy file, `package.json`'s `browserslist.production`
+query (the gate requires it to equal the policy's `queries`, order included) and this table
+together; the policy file is an ADR-drift surface, so the change also adds an ADR or carries
+the documented waiver.
 
 ## Documentation
 
