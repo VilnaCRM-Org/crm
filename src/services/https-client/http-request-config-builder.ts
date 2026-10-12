@@ -70,20 +70,21 @@ export default class HttpRequestConfigBuilder {
 
   private withoutHeader(headers: Record<string, string>, target: string): Record<string, string> {
     const normalizedTarget = target.toLowerCase();
-    const result: Record<string, string> = {};
-    for (const [name, value] of Object.entries(headers)) {
-      if (name.toLowerCase() !== normalizedTarget) result[name] = value;
-    }
-    return result;
+    return Object.fromEntries(
+      Object.entries(headers).filter(([name]) => name.toLowerCase() !== normalizedTarget)
+    );
   }
 
   private toHeaderMap(headers: RequestHeaders | undefined): Record<string, string> {
-    const map: Record<string, string> = {};
+    const merged = new Map<string, string>();
     for (const header of headers?.items ?? []) {
-      const previous = map[header.name];
-      map[header.name] = previous === undefined ? header.value : `${previous}, ${header.value}`;
+      const previous = merged.get(header.name);
+      merged.set(
+        header.name,
+        previous === undefined ? header.value : `${previous}, ${header.value}`
+      );
     }
-    return map;
+    return Object.fromEntries(merged);
   }
 
   private createHeaders(

@@ -1433,12 +1433,19 @@ the list and its fixtures together.
 
 Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
 file, a class, or a named alias in a type-only file whose whole body is a union of named types or
-literals, a callback type, or one generic or derived type over named arguments. The boundary
-positions are component props, exported hook parameters and results, the constructor, method
-parameters, return types and non-private properties of Data provider, Transformer, Repository,
-State, Guard and Factory classes, DI-registered values, published state, events and telemetry
-payloads, and every member of an interface in a type-only file. The gate fails at those
-positions:
+literals, a callback type, or one generic or derived type over named arguments. The boundaries
+this protects are component props, hook parameters and results, the signatures of Data
+provider, Transformer, Repository, State, Guard and Factory classes, DI-registered values,
+published state, events and telemetry payloads. The gate is syntactic and wider than that list:
+it knows neither a class's role nor whether a function is exported. In every gated `src` code
+file it checks the parameter and return annotations of every **top-level** function (a
+`function` declaration, or an arrow or function expression bound directly to a top-level
+variable or default-exported), **exported or not**, so components, hooks and module-local
+helpers alike; of every non-private method, the constructor included, of **every** class; of
+every constructor parameter property, whatever its modifier, `private readonly` included; and
+of every non-private arrow or function-expression class property, plus the annotation of every
+non-private class property. In a type-only file it checks every member of an exported or
+top-level interface or alias. The gate fails at those positions:
 
 - **(a)** an anonymous object type, including an object member of a union — each variant is a
   named `interface`, and `type X = { … }` is an `interface`;
@@ -1457,8 +1464,11 @@ positions:
 Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
 `AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
 types that obey the rule, and `T | null` / `T | undefined`. Exceptions: generated codegen types
-stay below the Data provider (review item), `declare module` blocks and `.d.ts` files, and
-private or function-local values.
+stay below the Data provider (review item), `declare module` blocks and `.d.ts` files,
+`private` / `#private` methods and properties (a constructor parameter property is gated
+whatever its modifier, so `@inject(TOKEN) private readonly x: T` still needs a named `T`), and
+functions and values nested inside a function body or wrapped in a call. A module-level
+function is gated whether or not it is exported.
 
 **Enforcement.** Two `no-restricted-syntax` arrays are built by
 [`config/typed-boundary-policy.js`](config/typed-boundary-policy.js), the single source for the
@@ -1473,8 +1483,9 @@ is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
 carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
 function, arrow or function expression exported later, a non-private class arrow or
 function-expression property), and the must-pass controls (a named collection interface, a
-private method, a `#private` arrow property, `normalize(error: unknown)`, a `declare module`, a
-named derivation, a mapped type over a named key union). The
+private method, a `#private` arrow property, `normalize(error: unknown)`, a callback alias with an
+`unknown` parameter (bare and nullable), a `declare module`, a named derivation, a mapped type over
+a named key union). The
 universe test fails a selector edited without its fixture, asserts every `src` code probe resolves
 all five code selectors, and `tests/unit/config/eslint-policy.test.ts` pins each array on every
 block, the base `src` block included.
@@ -1488,10 +1499,14 @@ alias. A component or function passed as an argument (`forwardRef(function UIBut
 parameter's own interface, test-builder return values and the generated-types exception are
 review items. An `unknown` **parameter** in a code file is not
 gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so
-(d) gates `unknown` as a code-file return and class property, and in type-only files as a member
-or a method / call-signature return; an `unknown` parameter outside a narrowing method is a
-review item. So are three catch-all mapped types (d) cannot see syntactically: a nested or
-parenthesised key union (`"a" | ("b" | string)`), `[k in PropertyKey]` and `[k in keyof any]`.
+(d) gates `unknown` as a code-file return and class property, and in type-only files as a member,
+a method / call-signature return or anywhere in an alias body except a callback parameter or a
+type-parameter default; an `unknown` parameter outside a narrowing method is a
+review item. So is any catch-all mapped type whose key constraint is neither a bare `string`,
+`number` or `symbol` keyword nor a flat union holding one — (d) matches only those two shapes.
+Examples: a nested or parenthesised key union (`"a" | ("b" | string)`), an intersection
+(`[k in string & {}]`), `[k in PropertyKey]`, `[k in keyof any]`, a template literal
+(``[k in `${string}`]``) and an alias of a keyword (`[k in K]` with `type K = string`).
 
 **No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
 cast, an allowlist entry or a narrower glob.
@@ -1661,9 +1676,11 @@ Three checks keep the promise honest, all reading that one query:
   browser. This is what makes `polyfill: "off"` safe.
 - SWC down-levels syntax against the same query during the production build.
 
-**Raising or lowering the floor** is a reviewed change to `config/browser-support.json` and the
-README table together — never a lone query edit, and never a suppression. The policy file is an
-ADR-drift surface, so the pull request also adds an ADR or carries the documented waiver.
+**Raising or lowering the floor** is a reviewed change to `config/browser-support.json`, the
+`browserslist.production` query in `package.json` (which must equal the policy's `queries`
+exactly, order included) and the README table together — never a lone query edit, and never a
+suppression. The policy file is an ADR-drift surface, so the pull request also adds an ADR or
+carries the documented waiver.
 
 ### Localization Parity (issue #151)
 

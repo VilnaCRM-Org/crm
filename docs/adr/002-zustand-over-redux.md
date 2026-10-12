@@ -19,7 +19,7 @@ Module Federation architecture?
 
 1. Reduced boilerplate for simple client-only state
 2. Smaller bundle size impact on micro frontend performance
-3. Compatibility with Module Federation (singleton-friendly, no providers)
+3. Singleton-friendly stores that need no React provider
 4. Developer experience and TypeScript support
 5. Learning curve for team onboarding
 6. Integration with existing Apollo Client setup
@@ -34,21 +34,21 @@ Module Federation architecture?
 
 ## Decision Outcome
 
-**Chosen option: Zustand**, because it enables minimal boilerplate state management with
-excellent Module Federation compatibility, while Apollo Client handles all server state
-concerns.
+**Chosen option: Zustand**, because it gives provider-free client stores with minimal
+boilerplate and a small bundle, while server state stays behind repositories over Apollo Client
+and `HttpsClient`. The 2026-01 rationale also cited Module Federation compatibility; that
+premise never held (`rsbuild.config.ts` registers no federation plugin, and
+`tests/unit/tooling/auth-runtime-deps.test.ts` keeps it that way), so it is not part of the
+basis for the 2026-10-12 approval. The binding rules are in "Current rules" below.
 
 ### Positive Consequences
 
-- Independent store creation without providers (ideal for Module Federation)
+- Independent store creation without providers
 - ~95% reduction in state management boilerplate
 - Smaller bundle impact (~2KB vs ~10–14KB for Redux Toolkit + react-redux)
   (as of 2026-01, measured via [Bundlephobia: zustand][zst] and
   [Bundlephobia: @reduxjs/toolkit][rtk] + [react-redux][rr])
 - Excellent TypeScript inference without extra annotations
-- Redux DevTools compatibility for debugging
-- Optional middleware for persistence and immer (require separate setup; immer requires the
-  'immer' package)
 
 ### Negative Consequences
 
@@ -110,7 +110,10 @@ and `tests/unit/tooling/state-architecture-contract.test.ts` pins these rules.
   [#334](https://github.com/VilnaCRM-Org/crm/issues/334). The bespoke reactive var that replaced
   the Zustand store in September is retired, and the stores above are the client-state
   primitive. The ADRs numbered 003 and later were removed from the repository at the same time;
-  the rules they carried for state live in "Current rules" above.
+  the rules they carried for state live in "Current rules" above. The Decision Outcome and
+  consequences were restated without the Module Federation premise and without the middleware
+  this record now rejects; the Context, Decision Drivers wording beyond driver 3 and the
+  comparison table remain the 2026-01 evaluation.
 - **2026-09-17** — **Superseded** ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)) by a
   since-removed record. The Redux → Zustand migration
   this record decided did happen ([#46](https://github.com/VilnaCRM-Org/crm/pull/46)), but the

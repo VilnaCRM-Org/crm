@@ -9,6 +9,10 @@ jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 describe('HttpRequestConfigBuilder', () => {
   const builder = new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('does not serialize null bodies into the request payload', () => {
     const config = builder.create('POST', null, undefined);
 
@@ -99,6 +103,32 @@ describe('HttpRequestConfigBuilder', () => {
       'X-Request-Id': 'test-request-id',
       'X-Correlation-Id': 'test-session-id',
     });
+  });
+
+  it('forwards a caller header named after an Object.prototype member unchanged', () => {
+    jest.spyOn(sessionCorrelation, 'id').mockReturnValueOnce('test-session-id');
+    const config = builder.create('GET', undefined, {
+      items: [
+        { name: 'constructor', value: 'first' },
+        { name: 'toString', value: 'second' },
+      ],
+    });
+
+    expect(config.headers).toEqual({
+      constructor: 'first',
+      toString: 'second',
+      Accept: 'application/json',
+      'X-Request-Id': 'test-request-id',
+      'X-Correlation-Id': 'test-session-id',
+    });
+  });
+
+  it('keeps a caller header named __proto__ as an own header', () => {
+    const config = builder.create('GET', undefined, {
+      items: [{ name: '__proto__', value: 'kept' }],
+    });
+
+    expect(Object.getOwnPropertyDescriptor(config.headers, '__proto__')?.value).toBe('kept');
   });
 
   it('resolves the correlation id per request rather than once per builder', () => {

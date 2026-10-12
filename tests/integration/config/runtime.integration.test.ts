@@ -201,14 +201,14 @@ describe('runtime configuration Integration', () => {
     );
   });
 
-  it('rejects a malformed block at boot, before any consumer reads it', async () => {
+  it('load() rejects a malformed block', async () => {
     renderRuntimeConfig('{ "flags": ');
     const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
 
     expect(() => appConfigSource.load()).toThrow(/does not contain valid JSON/);
   });
 
-  it('accepts a well-formed block at boot', async () => {
+  it('load() accepts a well-formed block', async () => {
     renderRuntimeConfig(JSON.stringify(buildAppConfigValues()));
     const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
 

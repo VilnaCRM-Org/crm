@@ -61,6 +61,12 @@ const CATCH_ALL_MAP = 'TSMappedType[constraint.type=/^TS(String|Number|Symbol)Ke
 const CATCH_ALL_KEYWORD = ':matches(TSStringKeyword, TSNumberKeyword, TSSymbolKeyword)';
 const CATCH_ALL_UNION_MAP = `TSMappedType > TSUnionType.constraint:has(> ${CATCH_ALL_KEYWORD})`;
 
+const CALLBACK_PARAMETER =
+  ':matches(Identifier, RestElement, ObjectPattern, ArrayPattern, AssignmentPattern)';
+const ALIAS_BODY_UNKNOWN =
+  `TSUnknownKeyword:not(:matches(TSFunctionType, TSConstructorType) > ${CALLBACK_PARAMETER} ` +
+  'TSUnknownKeyword):not(TSTypeParameterDeclaration TSUnknownKeyword)';
+
 const TYPE_FILE_ROOTS = [
   'Program > ExportNamedDeclaration',
   'Program > ExportDefaultDeclaration',
@@ -166,10 +172,13 @@ function typedBoundaryTypeFileSelectors() {
         'TSPropertySignature:not([key.name=/^(error|cause)$/]) > TSTypeAnnotation TSUnknownKeyword',
         'TSMethodSignature > TSTypeAnnotation TSUnknownKeyword',
         'TSCallSignatureDeclaration > TSTypeAnnotation TSUnknownKeyword',
+        'TSTypeAliasDeclaration > TSUnknownKeyword',
+        `TSTypeAliasDeclaration > :not(TSTypeParameterDeclaration) ${ALIAS_BODY_UNKNOWN}`,
       ]),
       message:
-        'TB-1 (d): no any, object, Record, index signature, string-keyed map or unknown member ' +
-        '(unknown only as `error` / `cause`); name the shape (issue #332).',
+        'TB-1 (d): no any, object, Record, index signature, string-keyed map or unknown member, ' +
+        'return or alias body (unknown only as `error` / `cause` or a parameter); ' +
+        'name the shape (issue #332).',
     },
     {
       selector: underTypeFileRoots([
