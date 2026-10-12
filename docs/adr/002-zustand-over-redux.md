@@ -108,7 +108,7 @@ and `tests/unit/tooling/state-architecture-contract.test.ts` pins these rules.
 - **2026-10-12** — **Approved again** for
   [#334](https://github.com/VilnaCRM-Org/crm/issues/334). The bespoke reactive var that replaced
   the Zustand store in September is retired, and the stores above are the client-state
-  primitive. The ADRs numbered 004 and later were removed from the repository at the same time;
+  primitive. The ADRs numbered 003 and later were removed from the repository at the same time;
   the rules they carried for state live in "Current rules" above.
 - **2026-09-17** — **Superseded** ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)) by a
   since-removed record. The Redux → Zustand migration
