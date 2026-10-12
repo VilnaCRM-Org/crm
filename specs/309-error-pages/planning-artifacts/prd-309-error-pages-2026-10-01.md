@@ -140,9 +140,10 @@ The brief's metrics are binding acceptance criteria, mapped in section 11:
 - The desktop, tablet and mobile compositions (FR-12 to FR-15) and the footer (FR-16).
 - Unit, jest-axe, E2E, Playwright a11y and visual coverage and the route-coverage manifest rows
   (FR-17).
-- Lighthouse desktop and mobile audits of `/forbidden` and `/server-error`, added to
-  `lighthouse/constants.js` (FR-17, NFR-12), as the product owner's "reachable by
-  E2E/visual/Lighthouse" decision and the accessibility definition of done require.
+- Lighthouse desktop and mobile audits of `/forbidden`, `/server-error` and the catch-all 404
+  page (`/definitely-not-a-route`), added to `lighthouse/constants.js` (FR-17, NFR-12), as the
+  product owner's "reachable by E2E/visual/Lighthouse" decision and the accessibility definition
+  of done require. The 404 URL was added in review (section 15).
 - Documentation and the reliability ADR update (FR-18).
 - Fable pixel verification and a pull request that flags every design deviation (FR-19, FR-20).
 
@@ -716,8 +717,10 @@ the top of the digit frame. Appendix A holds the full reference; F§1 to F§3 ar
   - Card rhythm: top 26.48, title 26, gap 3.74, description 25, gap 16, button 50, bottom 26.48.
   - Title Golos 700 22 px; description Golos 400 15 / 25; button 132 x 50, padding 16 / 24,
     label Golos 500 15 / 18.
-  - Title and description keep a 16 px text inset from the card's inner edges
-    (`max-width: calc(100% - 32px)`); the actions row is not inset.
+  - The title keeps a 16 px text inset from the card's inner edges; the description keeps the
+    frames' 261.65 px text box (`descInset` 43.695 px each side of the 350.348 px card, amended in
+    review on 2026-10-07, see the correction in section 4); the 404 and 5xx actions row is not
+    inset, and the 403 stacked actions use a 20 px inset.
   - Yellow tab at O(19.216, 222.478), 311.174 x 166.304, radii 23.652 23.652 0 0; it is placed
     by its insets from the card edges (left 19.216, right 19.958), so it always stays behind the
     card when the composition narrows below 375 px.
@@ -804,8 +807,10 @@ the top of the digit frame. Appendix A holds the full reference; F§1 to F§3 ar
   - Visual specs cover 404 at 1440, 1024 and 375, 403 at 1440 and 1024 (the 1024 screen is a
     regression baseline without a parity claim) and 5xx at 1440; the six existing not-found
     baselines are regenerated.
-  - `lighthouse/constants.js` audits `/forbidden` and `/server-error` beside `/`, `/sign-up`
-    and `/sign-in`, and `tests/unit/tooling/lighthouse-constants.test.ts` pins the five URLs.
+  - `lighthouse/constants.js` audits `/forbidden`, `/server-error` and the catch-all 404 page
+    (`/definitely-not-a-route`) beside `/`, `/sign-up` and `/sign-in`, and
+    `tests/unit/tooling/lighthouse-constants.test.ts` pins the six URLs (amended in review: the
+    plan named five, without the 404 URL).
   - `tests/e2e/route-coverage.tsv` has e2e, visual and a11y rows for `forbidden` and
     `serverError`, and no `allowlisted` row for either.
 - **Test cases:**
@@ -965,6 +970,11 @@ n/a there and is covered by its NFR-1 line box and the NFR-4 raster crop instead
   1.58:1), selector `#error-page-digits > span`. Both are listed in the acceptance standard's
   "Current exceptions". No other exception is added or widened; the back-to-main exception must
   not match any error-page element.
+- **NFR-8 amendment (review, 2026-10-09):** the sign-in and sign-up Figma parity (FR-23) adds a
+  third new entry, `form a.MuiLink-root[href="/password-recovery"]` (the toolkit brand `#1EAEFF`
+  on white, 2.45:1), by the product-owner decision DEV-67 and under the same #276 tracking URL.
+  The diff therefore adds three scoped `color-contrast` entries, and the acceptance standard's
+  "Current exceptions" lists all seven entries `axe-config.ts` carries.
 - **NFR-9:** 0 axe violations outside NFR-8 in the jest-axe lane (three variants) and the route
   lane (three routes, three engines).
 
@@ -981,15 +991,18 @@ n/a there and is covered by its NFR-1 line box and the NFR-4 raster crop instead
   shared `error-page` chunk (the three status pages and the `RouteError` status branch) stays
   under 130,000 B gzip and 400,000 B raw; the decoration assets total at most 20 kB raw (the curve rebuilt as
   one stroked path, about 7 kB, R§8.4).
-- **NFR-12 (Lighthouse):** `/forbidden` and `/server-error` join the audited URLs and pass the
+- **NFR-12 (Lighthouse):** `/forbidden`, `/server-error` and the catch-all 404 page
+  (`/definitely-not-a-route`, added in review) join the audited URLs and pass the
   existing `lighthouserc` assertions: desktop performance, accessibility and best practices
   0.95 and SEO 0.90 (`lighthouse/lighthouserc.desktop.js`); mobile performance 0.84
   (`median-run`) and accessibility, best practices and SEO 0.90
   (`lighthouse/lighthouserc.mobile.js`); plus the resource-summary budgets. A green
   `performance testing / lighthouse desktop|mobile` job proves exactly those assertions. The
-  profile's stricter `quality.lighthouse_mobile` 85 binds the two error routes only, and is
+  profile's stricter `quality.lighthouse_mobile` 85 binds the three error routes only, and is
   checked by reading their mobile category scores in the LHCI report and recording them in the
-  PR body. The three existing URLs are not re-scored by this requirement (nothing in #309
+  PR body. `performance-testing.yml` uploads the LHCI reports on every run (not only on
+  failure), so the scores of a green run stay readable as the `lighthouse-<formFactor>-reports`
+  artifact. The three existing URLs are not re-scored by this requirement (nothing in #309
   changes them); the change adds no request to them. If an error route cannot meet a floor,
   that is raised to the product owner as an explicit question in the PR, never solved by a budget, floor or
   URL-list change.
@@ -1036,8 +1049,9 @@ relax. No `gate-relaxation` label is applied.
 ### 10.7 Security and delivery
 
 - **NFR-20:** all assets are committed and same-origin; no `figma.com/api/mcp/asset` URL, no
-  remote font, no inline script, no new runtime dependency (no ADR-drift trigger from
-  `package.json`).
+  remote font, no inline script, no new runtime dependency. The error pages themselves add no
+  dependency; the review-stage scope in section 15 moves two existing pins (NFR-24), which is
+  why `package.json` does trigger the ADR-drift gate and ADR-016 is updated.
 - **NFR-21 (CI):** green on the PR head: `static testing / static`, `unit testing / unit`,
   `integration testing / integration`, `mutation testing` (merge and enforce gate),
   `e2e testing / test`, `visual tests / test`, `accessibility testing / a11y-unit`,
@@ -1071,7 +1085,7 @@ relax. No `gate-relaxation` label is applied.
 | M-6        | Coverage 100, mutation 100                 | NFR-15, NFR-16                        |
 | M-7        | Static gates 0, no relaxation              | NFR-17, NFR-18                        |
 | M-8        | `lint-i18n`, route coverage                | FR-17, NFR-14                         |
-| M-9        | Axe clean apart from two scoped exceptions | NFR-8, NFR-9                          |
+| M-9        | Axe clean apart from the scoped exceptions | NFR-8, NFR-9                          |
 | M-10       | One eager MUI edge, raw budget unchanged   | NFR-10                                |
 | M-11       | Eager gzip delta ≤ 2,048 B                 | NFR-11                                |
 
@@ -1113,6 +1127,141 @@ The architecture is complete in
 [`architecture-309-error-pages-2026-10-01.md`](./architecture-309-error-pages-2026-10-01.md) and
 recorded as ADR-018. Implement and deliver against it, closing the requirements and acceptance
 criteria in section 9 and the NFRs in section 10.
+
+## 15. Amendment: scope added during review of PR #311 (added after implementation)
+
+The BMAD FR/NFR review gate on PR #311 (2026-10-12) found behaviour shipped by the pull request
+that sections 9 and 10 never required, so it was not traceable. Each item was a product-owner or
+maintainer request during review, or a repair without which no branch could go green. This
+section gives each one a requirement and its verification. Section 21 of the architecture
+covers the post-load warm-up; section 22 there gives the design notes for the rows below.
+
+### 15.1 Functional requirements
+
+#### FR-21: Sandbox demo session (ADR-019)
+
+- **Acceptance:**
+  - `SandboxDemoSessionProvider` (`src/config/env/sandbox-demo-session-provider.ts`) is active
+    only when `NODE_ENV !== 'production'` or the hostname starts with `sandbox-crm-`, ends with
+    `.amazonaws.com` and has an `s3-website` or `s3-website-<region>` label, checked without a
+    regular expression.
+  - While active, signing in with exactly `demo@vilnacrm.com` / `Demo1234` settles as a
+    successful login with no network call. The `localStorage` key
+    `vilnacrm.sandbox-demo-session` stores the demo email only, `AuthStateVar` restores the
+    session from it on creation, and sign-out removes it. A refused storage means no
+    persistence, never an error.
+  - While inactive (production and every other host), `signIn` and `restore` return `null`, and
+    the token stays memory-only as before.
+  - The provider reaches `AuthStoreActions` through DI (`AUTH_TOKENS.SandboxDemoSessionProvider`),
+    never by a value import.
+- **Test cases:**
+  - P1 (unit): the demo credentials sign in on a sandbox host and in development, and the
+    marker restores the session.
+  - N1 (unit): a look-alike outside AWS, another bucket prefix, a non-website S3 host, a non-S3
+    AWS host, a near-miss label and a `.amazonaws.com.evil.com` suffix stay inactive.
+  - N2 (unit): wrong credentials fall through to the repository; the password is never stored.
+  - E1 (unit): a throwing `localStorage` returns no session and raises nothing.
+  - P2 (integration): login, restore and logout across the composed auth store.
+- **Verify:** `tests/unit/config/env/sandbox-demo-session-provider.test.ts`,
+  `tests/integration/config/sandbox-demo-session-provider.integration.test.ts`,
+  `tests/unit/modules/user/features/auth/stores/auth-var.test.ts`,
+  `tests/unit/modules/user/features/auth/stores/auth-store-actions.test.ts`;
+  `unit testing / unit`, `integration testing / integration`.
+
+#### FR-22: `404.html` SPA shell in every build (ADR-019)
+
+- **Acceptance:** `scripts/spa-fallback-document-plugin.ts`, registered in `rsbuild.config.ts`
+  for every build, copies `index.html` byte for byte to `404.html` after the build, so an S3
+  website whose error document is `404.html` boots the SPA on any deep link. `serve.json` and
+  production routing are unchanged.
+- **Test cases:**
+  - P1 (unit): the plugin writes a byte-identical copy.
+  - P2 (CI): `make check-auth-seed-gate` fails unless the shipped `production` image carries a
+    `404.html` identical to `index.html` and the demo provider's storage key and email.
+- **Verify:** `tests/unit/scripts/spa-fallback-document-plugin.test.ts`,
+  `tests/unit/scripts/check-auth-seed-gate.test.ts`; `security testing / preloaded-auth seed gate`.
+
+#### FR-23: Sign-in and sign-up Figma parity
+
+- **Acceptance:** the auth forms match frames 15:249 / 83:5837, 15:860 / 83:5873 and
+  15:1043 / 83:5909 within about 1.5 px at 1440, 1024 and 375 (OAuth order Google, Facebook,
+  GitHub, Twitter; the mobile 2×2 provider grid fills column-first without a DOM reorder; the
+  remember-me, divider, title, input and switcher spacing listed in the PR body). The
+  "Forgot password?" link is always rendered (FR-25). Desktop and mobile auth baselines are
+  re-recorded from CI, never from a reused prod container.
+- **Test cases:**
+  - P1 (unit): the per-breakpoint style tokens of the provider buttons, user options, form
+    section, switcher, skeleton and checkbox.
+  - P2 (visual): the auth baselines in three engines and both mobile projects.
+  - E1 (a11y): `sign-in-keyboard.a11y.spec.ts` keeps the Tab order across the column-first grid
+    (WCAG 2.4.3, 1.3.2).
+- **Verify:** the `styles.tokens.test.ts` and `auth-skeleton.*.test.tsx` suites under
+  `tests/unit/`; `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts`; `visual tests / test`,
+  `accessibility testing / a11y-e2e`.
+
+#### FR-24: ui-toolkit v0.8.0 adoption (`UICheckbox`, `UITextLink`)
+
+- **Acceptance:** `@vilnacrm/ui-toolkit` is pinned to the v0.8.0 release tarball; the remember-me
+  checkbox and the forgot-password link are rendered through the `UICheckbox` and `UITextLink`
+  seams; `config/ui-toolkit-checksums.json` matches the installed bytes; ADR-016 and
+  `docs/ui-toolkit.md` record the adoption; `eslint.config.mjs` allows only those two seams to
+  import the new toolkit entries.
+- **Test cases:** P1 (unit) the two seams' props and tokens; P2 (CI) `make lint-ui-toolkit` and
+  `make lint-lockfile` pass against the new pin.
+- **Verify:** `tests/unit/components/ui-checkbox/*`, `tests/unit/components/ui-text-link/*`,
+  `tests/bats/lockfile_registries.bats`; `static testing / static`.
+
+#### FR-25: `forgotPassword` flag removed
+
+- **Acceptance:** the `FeatureFlag` union is `never`, `FEATURE_FLAG_DEFAULTS` is empty, the
+  committed runtime block ships `{ "flags": {} }`, and the sign-in form always renders the
+  forgot-password link to `ROUTE_PATHS.passwordRecovery`, which stays unregistered (and
+  allowlisted in `tests/e2e/route-coverage.tsv` with a reason naming #315) until #315 lands.
+- **Test cases:** P1 (unit) the link renders; N1 (tooling) the route is unregistered and its
+  manifest row allowlisted; N2 (bats) an `APP_CONFIG_FLAG_FORGOT_PASSWORD` value is rejected at
+  container start (NFR-25).
+- **Verify:** `tests/unit/tooling/runtime-config-contract.test.ts`,
+  `tests/unit/config/runtime/feature-flag-service.test.ts`, `tests/bats/render_app_config.bats`;
+  `unit testing / unit`, `bats testing / bats`.
+
+#### FR-26: Error-page load scenario
+
+- **Acceptance:** `tests/load/error-pages.js` loads `/forbidden`, `/server-error` and an unknown
+  URL against the prod container under the shared k6 thresholds; `make test-load-error-pages`
+  runs it and `load-testing.yml` runs it as the "error pages" matrix entry. No existing
+  threshold in `tests/load/config.json.dist` changes.
+- **Test cases:** P1 (tooling) the scenario, target and matrix entry are wired together.
+- **Verify:** `tests/unit/tooling/load-test-wiring.test.ts`, `tests/bats/make-target-coverage.tsv`;
+  `load testing / error pages load testing`.
+
+### 15.2 Non-functional requirements
+
+- **NFR-23 (security, demo session):** the demo provider persists no token and no password;
+  the marker is the public demo email only. Production behaviour is unchanged off sandbox hosts.
+  The demo credentials ship in every bundle and are public by design (SECURITY.md). Known limit,
+  recorded in ADR-019: no emitted-bundle check proves the provider is inert in production. The
+  seed gate proves it is present, and the host check is covered by unit tests only.
+- **NFR-24 (supply chain):** two pins move and nothing else. `@vilnacrm/ui-toolkit` 0.6.0 →
+  0.8.0 (FR-24), and the transitive `compression` of `serve@14.2.6` is pinned to 1.8.2 in the
+  `serve-tools` stage (CVE-2026-87776). The k6 image's `tzdata` is re-pinned 2026d-r0 → 2026e-r0
+  because the Alpine branch dropped the old version. `supply-chain-gates.test.ts` pins the
+  repins; `supply-chain security / *` stays green.
+- **NFR-25 (backward compatibility):** an environment that still sets
+  `APP_CONFIG_FLAG_FORGOT_PASSWORD` to any non-empty value now fails container start
+  (`Known flags: (none).`). The variable must be unset in every environment before this change
+  deploys; `docs/feature-flags.md` stage 3 step 5 states it.
+
+### 15.3 Traceability
+
+| Item                                  | Requirement   | Evidence                                   |
+| ------------------------------------- | ------------- | ------------------------------------------ |
+| Sandbox review login                  | FR-21, NFR-23 | ADR-019, SECURITY.md, CONTRIBUTING.md      |
+| Deep links on the sandbox             | FR-22         | ADR-019, seed gate                         |
+| Auth forms match Figma                | FR-23, NFR-8  | PR body "Sign-in and sign-up Figma parity" |
+| Toolkit v0.8.0                        | FR-24, NFR-24 | ADR-016, `docs/ui-toolkit.md`              |
+| Forgot-password link without the flag | FR-25, NFR-25 | `docs/feature-flags.md`                    |
+| Error pages under load                | FR-26         | `tests/load/usage.md`                      |
+| Lighthouse 404 URL, score evidence    | FR-17, NFR-12 | `lighthouse/constants.js`, LHCI artifact   |
 
 ## Appendix A: Parity reference
 

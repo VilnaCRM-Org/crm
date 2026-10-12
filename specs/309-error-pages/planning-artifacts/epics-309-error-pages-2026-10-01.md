@@ -109,9 +109,10 @@ true` tab stops; tab order; 44 px targets; on a short landscape viewport the pag
 - NFR-6: deterministic rendering for the visual lane; `retries: 0`; flake budget 0.
 - NFR-7: WCAG 2.1 AA, including 1.4.4 and 1.4.10 (320 px reflow checks), 1.4.12 (the
   text-spacing spec of Story 3.3), 2.4.7 and 2.5.3.
-- NFR-8: exactly two new scoped `A11Y_EXCEPTIONS` entries, both tracked by #276: white on
-  `#1EAEFF` (`#error-page-actions > .MuiButton-contained`) and the decorative status digits
-  (`#error-page-digits > span`, 2.37:1 and 1.58:1).
+- NFR-8: two new scoped `A11Y_EXCEPTIONS` entries for the error pages, both tracked by #276:
+  white on `#1EAEFF` (`#error-page-actions > .MuiButton-contained`) and the decorative status
+  digits (`#error-page-digits > span`, 2.37:1 and 1.58:1). The review-stage auth parity adds a
+  third (`form a.MuiLink-root[href="/password-recovery"]`, DEV-67; PRD NFR-8 amendment).
 - NFR-9: 0 axe violations outside NFR-8 in the jest-axe and route lanes.
 - NFR-10: the eager graph keeps its single `@mui/*` edge; no budget value changes.
 - NFR-11: eager gzip delta at most 2,048 B; each new chunk under the per-asset budgets;
@@ -129,7 +130,8 @@ true` tab stops; tab order; 44 px targets; on a short landscape viewport the pag
 - NFR-18: 0 jscpd clones (`minTokens` 70), 0 rust-code-analysis failures, 0 markdown findings.
 - NFR-19: the console gate stays installed with an empty allowlist; E2E uses the console fixture
   (language-switch output is covered by the unit card test; the app has no switcher UI).
-- NFR-20: committed same-origin assets only; no Figma MCP asset URL; no new dependency.
+- NFR-20: committed same-origin assets only; no Figma MCP asset URL; no new dependency (the
+  review-stage pin moves are PRD NFR-24).
 - NFR-21: every listed CI check is green on the PR head.
 - NFR-22: no heavy suite runs locally; baselines never come from a reused prod container.
 
@@ -912,8 +914,9 @@ Dependency: depends on Story 2.4
 **Acceptance Criteria:**
 
 - **Given** `app-routes.ts`, **When** it is read, **Then** the catch-all still loads
-  `@/components/not-found/not-found` with `webpackChunkName: "not-found"` and `guard: 'public'`,
-  unedited.
+  `@/components/not-found/not-found` with `guard: 'public'` and `webpackChunkName: "error-page"`
+  (amended by architecture section 21: all three status routes share the `error-page` chunk
+  that `errorPageLoader` uses, so the plan's "unedited `not-found`" no longer holds).
 - **Given** `/definitely-not-a-route` and `/a/b/c?x=1#y`, **When** they open, **Then** `main h1`
   equals `t('error_page.not_found.title')`, the description is shown, exactly one
   `main a[href="/"]` named `t('error_page.actions.home')` exists, the `h1` is focused and the
@@ -943,7 +946,8 @@ FR-17, NFR-5, NFR-7 (1.4.10), NFR-9, AR-11, AR-18.
 - `src/routes/route-paths.ts`: `forbidden: '/forbidden'` and `serverError: '/server-error'`
   before `notFound`; existing keys unchanged; no comment added.
 - `src/routes/app-routes.ts`: two `guard: 'public'` entries before the catch-all, lazy
-  `import()`s named `forbidden` and `server-error` (AD§11.2 shape).
+  `import()`s named `error-page` (amended by architecture section 21; the plan named them
+  `forbidden` and `server-error`).
 - `src/components/forbidden/forbidden.tsx`, `src/components/server-error/server-error.tsx`
   (new): `<ErrorPage variant="forbidden" landmark="main" />` and the `serverError` twin.
 - `tests/unit/components/forbidden/forbidden.test.tsx`,
@@ -958,8 +962,8 @@ ROUTE_PATHS.notFound, ROUTE_PATHS.signUp, ROUTE_PATHS.signIn]` (today it pins th
   existing paths at lines 78 to 82 and would go red).
 - `tests/unit/app.test.tsx`, `app-root.test.tsx`, `app.router-wiring.test.tsx`: mocks for the
   two new page module paths where those files mock every page.
-- `tests/unit/tooling/performance-serving.test.ts`: pins the `forbidden` and `server-error`
-  `webpackChunkName` imports; keeps the `not-found` pin.
+- `tests/unit/tooling/performance-serving.test.ts`: pins all three status-route imports to the
+  shared `error-page` `webpackChunkName` (amended by architecture section 21).
 - `tests/e2e/modules/error-pages.spec.ts` (new): AD§15.4 cases.
 - `tests/e2e/a11y/routes.a11y.spec.ts`: `routeScans` gains `forbidden` and `serverError`
   (`ready: 'main h1'`, no `seedAuth`).
@@ -1123,8 +1127,8 @@ Dependency: depends on Story 3.2
 **Acceptance Criteria:**
 
 - **Given** `lighthouse/constants.js`, **When** the tooling test loads it, **Then** `pages`
-  equals the five expanded URLs in order `/`, `/sign-up`, `/sign-in`, `/forbidden`,
-  `/server-error`.
+  equals the six expanded URLs in order `/`, `/sign-up`, `/sign-in`, `/forbidden`,
+  `/server-error`, `/definitely-not-a-route` (the 404 URL was added in review; PRD FR-17).
 - **Given** the CI Lighthouse runs, **When** they audit the two error routes, **Then** they pass
   the existing `lighthouserc` assertions (desktop: performance, accessibility and best
   practices 0.95, SEO 0.90; mobile: performance 0.84 `median-run`, accessibility, best
@@ -1393,10 +1397,11 @@ Dependency: depends on Story 2.2, Story 3.3, Story 4.2, Story 5.1
   `app-routes.ts` as "home + 404" (CLAUDE.md, AGENTS.md, copilot instructions and
   `src/routes/README.md` agree).
 - **Given** `docs/accessibility/acceptance-standard.md`, **When** its Lighthouse sentences are
-  read, **Then** both name `/`, `/sign-in`, `/sign-up`, `/forbidden` and `/server-error`, the
-  same five routes as `lighthouse/constants.js`.
-- **Given** a new `make` target, **When** the docs are reviewed, **Then** none is referenced
-  (none exists).
+  read, **Then** they name the same six routes as `lighthouse/constants.js` (amended in review:
+  the catch-all 404 URL joined the five planned).
+- **Given** a new `make` target, **When** the docs are reviewed, **Then** it is referenced where
+  it is used (amended in review: `test-load-error-pages`, PRD FR-26, is in `tests/load/usage.md`
+  and `tests/bats/make-target-coverage.tsv`).
 
 Commit group: D (commit point: the end of this story).
 

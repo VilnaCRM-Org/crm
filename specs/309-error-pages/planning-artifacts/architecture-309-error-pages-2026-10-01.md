@@ -1475,9 +1475,11 @@ the designed page when a route errors, so the page is fetched before it is neede
   request, whichever `ChunkRetryLoader` instance asks.
 - **When.** `PostLoadPrefetcher` (`src/lib/reliability/post-load-prefetcher.ts`) is attached once
   from `src/index.tsx`, after `root.render`, in the success branch only. It waits for the window
-  `load` event (or schedules at once when `document.readyState` is already `complete`), then
-  2 000 ms, then loads every target in parallel. Offline at that moment, it waits for the next
-  `online` event and the same delay. `requestIdleCallback` and `navigator.connection.saveData`
+  `load` event (or continues at once when `document.readyState` is already `complete`), then for
+  the first `pointerdown` or `keydown` (`{ once: true }`), then 2 000 ms, then loads every target
+  in parallel. Offline at that moment, it waits for the next `online` event. The user-intent
+  step was added in review: a page nobody touches pays nothing, which keeps the Lighthouse
+  `resource-summary` script budget of `/sign-in` untouched. `requestIdleCallback` and `navigator.connection.saveData`
   fail `compat/compat` against the Safari 16.4 floor, so the timing is a fixed delay.
 - **Failure.** Each target's rejection is swallowed with no log, so nothing reaches the e2e
   `pageerror` gate or the Jest console gate. `FontFaceLoader.load` is `async`, so a font source
@@ -1500,7 +1502,8 @@ the designed page when a route errors, so the page is fetched before it is neede
   request in flight), and `offline-notice.spec.ts` navigates through it too, so its
   `setOffline(true)` can never cut the warm-up request mid-flight — Firefox reports an aborted
   script load as a console error, which the e2e guard rejects.
-- **Budgets.** Worst case on an audited URL, if Lighthouse captures the warm-up: about 8 KB gzip
+- **Budgets.** Lighthouse dispatches no `pointerdown` or `keydown`, so the warm-up does not run
+  on an audited URL. If a future audit did trigger it, the worst case would be about 8 KB gzip
   of script and up to two unused Golos weights (about 46 KB), inside every
   `resource-summary` budget; the eager entrypoint grows by the two small classes only. No budget
   is edited.
@@ -1509,3 +1512,48 @@ the designed page when a route errors, so the page is fetched before it is neede
   but does not close the window in which `React.lazy` caches the `ErrorFallback` after a
   double chunk failure, and an offline client-side navigation to an unwarmed public route still
   reaches `ReloadingChunkLoader`.
+
+## 22. Amendment: review-stage scope and superseded statements (BMAD FR/NFR gate, 2026-10-12)
+
+The FR/NFR review gate on PR #311 found statements in this bundle that the implementation
+superseded, and shipped scope with no requirement. The requirements are PRD section 15
+(FR-21 to FR-26, NFR-23 to NFR-25). This section records where the design lives and which
+planning statements no longer hold.
+
+### 22.1 Design of the review-stage scope
+
+- **Sandbox demo session (FR-21, NFR-23).** `SandboxDemoSessionProvider` in `src/config/env/`
+  takes the location and the storage as constructor parameters (defaulting to `globalThis`)
+  and checks the host with `startsWith`, `endsWith` and `split`, without a regular expression.
+  The user module's `config/di.ts` registers it by value under
+  `AUTH_TOKENS.SandboxDemoSessionProvider`. `AuthStoreActions` receives it through
+  `AuthStoreActionsDeps` and asks it before the repository. `AuthStateVar` calls `restore()` at
+  creation, and the composition root's `logout` calls `signOut()`. The provider stays
+  container-free, so the auth paint path pulls in no tsyringe. ADR-019 is the decision record.
+- **`404.html` (FR-22).** A build-time rsbuild plugin (`scripts/spa-fallback-document-plugin.ts`),
+  not a runtime path. `make check-auth-seed-gate` asserts the copy on the emitted image.
+- **Auth parity and toolkit v0.8.0 (FR-23, FR-24).** Style-token changes in the auth feature and
+  the two toolkit seams (`src/components/ui-checkbox/`, `src/components/ui-text-link/`). ADR-016
+  records the seams, and `eslint.config.mjs` lets only those two files import the new toolkit
+  entries.
+- **Flag removal (FR-25, NFR-25).** `FeatureFlag = never` keeps the runtime-config mechanism and
+  its strict schema for the next flag.
+- **Load scenario (FR-26).** `tests/load/error-pages.js` takes its options from the shared
+  `ScenarioUtils`, which builds its thresholds through `ThresholdsBuilder`.
+  The only config change is a new `errorPages` block in `tests/load/config.json.dist`.
+
+### 22.2 Superseded planning statements
+
+| Where                                       | Planning statement                                | Shipped (authoritative)                                                |
+| ------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| §8.3 geometry note, epics Story 2.3         | mobile description `max-width: calc(100% - 32px)` | `descInset` 43.695 px, a 261.65 px box (PRD FR-14, section 4 note)     |
+| §11.1, epics Story 3.2                      | `route-paths.ts`: "no comment added"              | the `passwordRecovery` comment was rewritten for the #315 link         |
+| §11.4 Lighthouse row, epics Stories 3.4/5.2 | `pages` gains two URLs; the test pins five        | three URLs added (with `/definitely-not-a-route`); the test pins six   |
+| §11.4 Lighthouse row                        | mobile 85 read for "the two error routes"         | read for the three error routes; reports uploaded on every run         |
+| §15.5 a11y result, epics NFR-8              | "two new scoped entries"                          | three: the two error-page entries plus the DEV-67 forgot-password link |
+| epics Story 3.1, 3.2                        | chunks `not-found`, `forbidden`, `server-error`   | one shared `error-page` chunk (section 21)                             |
+| §21 "When"                                  | warm-up 2 s after `load`                          | after `load`, the first `pointerdown`/`keydown`, then 2 s (corrected)  |
+| PRD NFR-20                                  | no ADR-drift trigger from `package.json`          | the toolkit pin moves (NFR-24); ADR-016 updated                        |
+| epics Story 5.2                             | no new `make` target                              | `test-load-error-pages` (FR-26)                                        |
+
+Where a planning statement and this table disagree, the table and the code win.
