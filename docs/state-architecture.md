@@ -82,22 +82,35 @@ export default function useContactQuery(): string {
 ```
 
 A writer passes a patch whose type is named in a type-only file, and `setState` merges it
-shallowly:
+shallowly. A behavioural class receives the store through DI — the module's `config/di.ts`
+registers `useContactFilterStore` by value under a token typed `StoreApi<ContactFilter>` — and
+never value-imports the hook:
 
 ```typescript
 // src/modules/contacts/features/contact-list/stores/contact-filter-actions.ts
-import type { ContactFilterPatch } from '@/modules/contacts/features/contact-list/types/contact-filter';
+import { inject, injectable } from 'tsyringe';
+import type { StoreApi } from 'zustand';
 
-import useContactFilterStore, { CLEARED_FILTER } from './use-contact-filter-store';
+import CONTACTS_TOKENS from '@/modules/contacts/config/tokens';
+import type {
+  ContactFilter,
+  ContactFilterPatch,
+} from '@/modules/contacts/features/contact-list/types/contact-filter';
 
+@injectable()
 export default class ContactFilterActions {
+  constructor(
+    @inject(CONTACTS_TOKENS.ContactFilterStore)
+    private readonly store: StoreApi<ContactFilter>
+  ) {}
+
   public setQuery(query: string): void {
     const patch: ContactFilterPatch = { query };
-    useContactFilterStore.setState(patch);
+    this.store.setState(patch);
   }
 
   public reset(): void {
-    useContactFilterStore.setState(CLEARED_FILTER);
+    this.store.setState(this.store.getInitialState(), true);
   }
 }
 ```
@@ -106,9 +119,8 @@ A selector returns a field or the stable state object, never a fresh object, so 
 needs no `useShallow`. Middleware is out: `persist`, `devtools` and every other `zustand/*`
 subpath are rejected, and `zustand` is imported from its root specifier only.
 
-A behavioural class that needs the store receives it through DI: register the hook by value under
-a token typed `StoreApi<State>` (as `AUTH_TOKENS.AuthStore` does) and inject it. It never
-value-imports the hook.
+The auth store is wired the same way: `AUTH_TOKENS.AuthStore` (`StoreApi<AuthState>`) is what
+`AuthStoreActions` injects.
 
 Every test that writes a store resets it first. `resetClientStores()` in
 `tests/utils/reset-client-stores.ts` writes each store's initial state back; call it in

@@ -1645,7 +1645,7 @@ source of truth for the polyfill mode, the exact `browserslist.production` query
 per-family floors; `rsbuild.config.ts` reads `polyfill` from it and refuses to build on an
 unknown value. The matrix is **Baseline 2023 Widely available** (Chrome/Edge/Firefox 111,
 Safari and iOS Safari 16.4, Samsung Internet 22, Opera 97, latest Chrome/Firefox for Android)
-and is documented in [ADR-003](docs/adr/003-browser-support-matrix.md).
+and is documented, with its rationale, in the README "Supported browsers" section.
 
 Three checks keep the promise honest, all reading that one query:
 
@@ -1656,8 +1656,9 @@ Three checks keep the promise honest, all reading that one query:
   browser. This is what makes `polyfill: "off"` safe.
 - SWC down-levels syntax against the same query during the production build.
 
-**Raising or lowering the floor** is a reviewed change to `config/browser-support.json`, the
-README table, and ADR-003 together — never a lone query edit, and never a suppression.
+**Raising or lowering the floor** is a reviewed change to `config/browser-support.json` and the
+README table together — never a lone query edit, and never a suppression. The policy file is an
+ADR-drift surface, so the pull request also adds an ADR or carries the documented waiver.
 
 ### Localization Parity (issue #151)
 
