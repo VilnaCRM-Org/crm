@@ -2405,8 +2405,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
    rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, and an
    `APP_CONFIG_FLAG_*` variable naming a flag that does not exist; the entrypoint exits non-zero,
    so a misconfigured deployment never serves.
-2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before `createRoot`, so a
-   malformed block throws immediately instead of silently degrading to defaults.
+2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before rendering the app, so
+   a malformed block is reported and rendered through the shell's `ErrorFallback` instead of
+   silently degrading to defaults.
 3. **Container-resolved code** — `appConfig` zod-validates with `z.prettifyError`, and a unit test
    validates the **committed** block in `public/index.html` against the schema so the shipped
    default cannot drift from the contract.

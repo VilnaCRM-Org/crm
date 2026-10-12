@@ -71,9 +71,9 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
    which rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, and an
    `APP_CONFIG_FLAG_*` variable naming a flag that does not exist. The entrypoint exits non-zero,
    so a misconfigured deployment never starts serving.
-2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before `createRoot`, so a
-   malformed or non-object JSON block throws immediately with a named error instead of silently
-   degrading to defaults.
+2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before rendering the app, so
+   a malformed or non-object JSON block raises a named error that is reported and rendered through
+   the shell's `ErrorFallback` instead of silently degrading to defaults.
 3. **Container-resolved code** — `appConfig` validates the same raw block, received through
    `appConfigSource.validated`, against the zod schema when the DI graph loads, and
    `tests/unit/config/runtime/app-config-defaults.test.ts` validates the **committed** block in
