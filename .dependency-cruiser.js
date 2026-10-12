@@ -374,7 +374,7 @@ module.exports = {
     {
       name: 'no-apollo-client-outside-data-layer',
       comment:
-        'Server state is owned by repositories (ADR-008, issue #110): the only value imports of ' +
+        'Server state is owned by repositories (ADR-002, issue #110): the only value imports of ' +
         '@apollo/client are the module composition root that builds the client, the ' +
         'observability link factory that wraps it, and the repositories layer that uses it. ' +
         'React code reaches ' +
@@ -400,7 +400,7 @@ module.exports = {
       name: 'no-shared-ui-to-http-client',
       comment:
         'Shared components, hooks, providers, routes and lib must not reach the HTTP transport ' +
-        '(ADR-008, issue #110): server data enters React through a repository resolved via ' +
+        '(ADR-002, issue #110): server data enters React through a repository resolved via ' +
         'useService, so a shared hook cannot become an ad-hoc data layer. The feature and store ' +
         'sides of the same boundary are no-feature-direct-http-client and ' +
         'no-store-direct-http-client; the thrown HttpError class stays importable for instanceof.',

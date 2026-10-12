@@ -16,9 +16,7 @@ const RETIRED_FILES = [
   'src/modules/user/features/auth/stores/auth-var.ts',
   'src/lib/connectivity/connectivity-state-var.ts',
 ];
-const ADR = 'docs/adr/023-zustand-client-state.md';
-const PREVIOUS_ADR = 'docs/adr/008-frontend-state-architecture.md';
-const SUPERSEDED_ADR = 'docs/adr/002-zustand-over-redux.md';
+const ADR = 'docs/adr/002-zustand-over-redux.md';
 const GUIDE = 'docs/state-architecture.md';
 const CONTRIBUTOR_DOCS = ['CLAUDE.md', 'AGENTS.md', '.github/copilot-instructions.md'];
 
@@ -34,7 +32,7 @@ function walkSource(dir: string, acc: string[] = []): string[] {
 const sourceFilesMatching = (pattern: RegExp): string[] =>
   walkSource('src').filter((file) => pattern.test(readFile(file)));
 
-describe('frontend state architecture contract (issue #110, ADR-008, ADR-023)', () => {
+describe('frontend state architecture contract (issues #110, #334, ADR-002)', () => {
   it('declares zustand as a production dependency and locks it', () => {
     const manifest = JSON.parse(readFile('package.json')) as Record<string, unknown>;
     const dependencies = manifest.dependencies as Record<string, string>;
@@ -70,19 +68,17 @@ describe('frontend state architecture contract (issue #110, ADR-008, ADR-023)', 
     ).toEqual([]);
   });
 
-  it('supersedes ADR-008 with ADR-023 and indexes it, leaving ADR-002 superseded', () => {
-    const previous = readFile(PREVIOUS_ADR);
+  it('records Zustand in an approved ADR-002, indexed, with the retired records gone', () => {
     const adr = readFile(ADR);
-    const superseded = readFile(SUPERSEDED_ADR);
     const index = readFile('docs/adr/README.md');
 
     expect(adr).toMatch(/^- Status: Approved$/m);
-    expect(adr).toMatch(/^- Deciders: \[@kravalg\]\(https:\/\/github\.com\/kravalg\)$/m);
-    expect(previous).toMatch(/^- Status: Superseded$/m);
-    expect(previous).toContain('023-zustand-client-state.md');
-    expect(superseded).toMatch(/^- Status: Superseded$/m);
-    expect(superseded).toContain('008-frontend-state-architecture.md');
-    expect(index).toContain('./023-zustand-client-state.md');
+    expect(adr).toContain('## Current rules');
+    expect(index).toContain('./002-zustand-over-redux.md');
+    ['008-frontend-state-architecture.md', '023-zustand-client-state.md'].forEach((retired) => {
+      expect(fs.existsSync(path.join(projectRoot, 'docs/adr', retired))).toBe(false);
+      expect(index).not.toContain(retired);
+    });
   });
 
   it('defines exactly the three state categories in the ADR and the guide', () => {
@@ -96,8 +92,6 @@ describe('frontend state architecture contract (issue #110, ADR-008, ADR-023)', 
     expect(adr).toContain('useAuthStore');
     expect(adr).toContain('AUTH_TOKENS.AuthStore');
     expect(adr).toContain('persist');
-    expect(adr).toContain('no-apollo-client-outside-data-layer');
-    expect(adr).toContain('no-shared-ui-to-http-client');
   });
 
   it('points every contributor guide at the Zustand stores, never at the reactive var', () => {

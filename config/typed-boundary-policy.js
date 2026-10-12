@@ -1,5 +1,5 @@
 /**
- * Issue #332 (ADR-022) — TB-1, typed boundaries: every value that crosses a layer carries a
+ * Issue #332 — TB-1, typed boundaries: every value that crosses a layer carries a
  * named type, never an anonymous object, tuple, bare array, catch-all or inline derivation.
  *
  * This module is the SINGLE SOURCE OF TRUTH for the two `no-restricted-syntax` selector arrays.
@@ -76,8 +76,7 @@ const rootedPart = (root, part) => {
 const underTypeFileRoots = (parts) =>
   TYPE_FILE_ROOTS.flatMap((root) => parts.map((part) => rootedPart(root, part))).join(', ');
 
-const NAME_IT =
-  'Declare the named type in a type-only file (ADR-022, CLAUDE.md "Typed boundaries").';
+const NAME_IT = 'Declare the named type in a type-only file (CLAUDE.md "Typed boundaries").';
 
 /** @returns {{selector: string, message: string}[]} TB-1 entries (a) to (e) for code files */
 function typedBoundarySelectors() {
@@ -108,7 +107,7 @@ function typedBoundarySelectors() {
       selector: over(ALL_POSITIONS, [DERIVED_REFERENCE]),
       message:
         'TB-1 (e): no inline Partial, Pick, Omit or Required at a boundary; ' +
-        'name the derivation once in a type-only file and use the name (ADR-022).',
+        'name the derivation once in a type-only file and use the name (issue #332).',
     },
   ];
 }
@@ -124,11 +123,11 @@ function typedBoundaryTypeFileSelectors() {
       ]),
       message:
         'TB-1 (a): no nested object literal in an exported shape; ' +
-        'name each variant as an interface (ADR-022).',
+        'name each variant as an interface (issue #332).',
     },
     {
       selector: underTypeFileRoots(['TSTupleType']),
-      message: 'TB-1 (b): no tuple in an exported shape; name an interface (ADR-022).',
+      message: 'TB-1 (b): no tuple in an exported shape; name an interface (issue #332).',
     },
     {
       selector: underTypeFileRoots([
@@ -142,7 +141,7 @@ function typedBoundaryTypeFileSelectors() {
       ]),
       message:
         'TB-1 (c): an array is a property of a named collection interface ' +
-        'whose element type is a named interface or class (ADR-022).',
+        'whose element type is a named interface or class (issue #332).',
     },
     {
       selector: underTypeFileRoots([
@@ -157,7 +156,7 @@ function typedBoundaryTypeFileSelectors() {
       ]),
       message:
         'TB-1 (d): no any, object, Record, index signature, string-keyed map or unknown member ' +
-        '(unknown only as `error` / `cause`); name the shape (ADR-022).',
+        '(unknown only as `error` / `cause`); name the shape (issue #332).',
     },
     {
       selector: underTypeFileRoots([
@@ -166,7 +165,7 @@ function typedBoundaryTypeFileSelectors() {
       ]),
       message:
         'TB-1 (e): no inline Partial, Pick, Omit or Required inside an interface; ' +
-        'name the derivation once as an alias (ADR-022).',
+        'name the derivation once as an alias (issue #332).',
     },
   ];
 }

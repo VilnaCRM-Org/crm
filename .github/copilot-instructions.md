@@ -9,7 +9,7 @@ before proposing any change, and follow every `.claude/skills/*/SKILL.md` that m
 
 - React 19, TypeScript (`strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`,
   `noImplicitReturns`, `exactOptionalPropertyTypes`),
-  Material UI v9 with Emotion, Zustand stores for client state (ADR-023),
+  Material UI v9 with Emotion, Zustand stores for client state (ADR-002),
   React Router v7 (the `react-router` package).
 - tsyringe with `reflect-metadata` for dependency injection.
 - i18next v26 with react-i18next; `uk` is the main language, `en` the fallback.
@@ -50,7 +50,7 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **Types live in type-only files** (`types.ts` or a `types/` folder) that hold only
   `interface`, `type`, `import type`, and `declare`. Logic files declare no types, and a type
   file is imported only with `import type`.
-- **Typed boundaries (TB-1, ADR-022)**: a value that crosses a layer (component props, hook
+- **Typed boundaries (TB-1, issue #332)**: a value that crosses a layer (component props, hook
   parameters and results, Data provider / Transformer / Repository / State / Guard / Factory
   signatures, DI values, published state, telemetry payloads, interface members in type files)
   carries a named type. ESLint fails an anonymous object type or `type X = { … }` (use

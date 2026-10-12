@@ -11,7 +11,7 @@ This template is used for all VilnaCRM microservices.
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Material-UI v9, Emotion (CSS-in-JS)
-- **State Management**: three categories with one primitive each (ADR-023, issues #110, #334) —
+- **State Management**: three categories with one primitive each (ADR-002, issues #110, #334) —
   server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in
   Zustand stores (`create`, no middleware) read through selectors, and the in-memory session
   token in `useAuthStore`; see `docs/state-architecture.md`
@@ -1399,7 +1399,7 @@ not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`
   deletes a guard the tests exercise.
 - `function-return-type` (3): a component returning an element or `null` is idiomatic React.
 - `todo-tag` (2): process, not a defect.
-- `no-invariant-returns` (1): fired only on the echo API of the retired reactive-var primitive (ADR-023).
+- `no-invariant-returns` (1): fired only on the echo API of the retired reactive-var primitive (#334).
 - `pseudo-random` (1): backoff jitter is not a security context.
 - `concise-regex`, `redundant-type-aliases` (1 each): style.
 
@@ -1429,7 +1429,7 @@ ignored return value, throw the constructed error. Never `eslint-disable` (the
 to clear a finding; a rule that turns out noisy is removed by a reviewed change to this section,
 the list and its fixtures together.
 
-### Typed boundaries (TB-1, issue #332, ADR-022)
+### Typed boundaries (TB-1, issue #332)
 
 Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
 file, a class, or a named alias in a type-only file whose whole body is a union of named types or
@@ -1785,12 +1785,11 @@ it paints nothing for the first 150 ms so fast chunk loads never flash a loader 
 layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
 announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
 `message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
-it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either
-([ADR-017](docs/adr/017-mui-theme-off-the-eager-path.md)): `RouteMapper` and the footer loader
-wrap each lazy surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel
-with it, and the paint-path components style themselves with `@emotion/styled`, never `Box` or
-another `@mui/material` import. To add a page, follow the registry ("Adding a page"
-below); never eagerly import a page. Three checks fail CI on a regression:
+it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either:
+`RouteMapper` and the footer loader wrap each lazy surface in a `ThemedChunkLoader` that fetches
+the `mui-theme` chunk in parallel with it, and the paint-path components style themselves with
+`@emotion/styled`, never `Box` or another `@mui/material` import. To add a page, follow the
+registry ("Adding a page" below); never eagerly import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
   ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
@@ -1889,7 +1888,7 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
    `config/{di,tokens}.ts`.
 3. `reflect-metadata` is imported once, at the top of the aggregator
    `src/config/dependency-injection-config.ts` — never in `src/index.tsx`, so the polyfill
-   loads with the container and stays out of the auth paint path (ADR-011).
+   loads with the container and stays out of the auth paint path.
 4. Use `@injectable()` on classes; register them in the owning area's `di.ts`.
 5. Resolve / inject via the area's namespaced tokens, e.g.
    `@inject(HTTP_TOKENS.HttpsClient)` or `container.resolve<Type>(AUTH_TOKENS.AuthRepository)`.
@@ -1914,7 +1913,7 @@ private async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// use-auth-store.ts — a Zustand store (`create`, no middleware; ADR-023) in a hook file, so the
+// use-auth-store.ts — a Zustand store (`create`, no middleware; ADR-002) in a hook file, so the
 // no-static convention (issue #100) does not apply and the paint path stays container-free (no
 // tsyringe in the auth chunk). React reads it through selectors; writers call `setState` with an
 // `AuthStatePatch`. The DI graph receives it by value as `AUTH_TOKENS.AuthStore`.
@@ -2962,7 +2961,7 @@ replaces.
     the matching backend alert rule as described in the "Client security events" section of
     [`SECURITY.md`](SECURITY.md).
 
-14. **Reliability model (issue #116, ADR-007)**: `RecoverableError`
+14. **Reliability model (issue #116)**: `RecoverableError`
     (`src/lib/reliability/types/recoverable-error.ts`: `recoverable`, `strategy` of `retry` /
     `reset` / `reload` / `navigate-home` / `none`, an i18n `messageKey` — never a raw
     `error.message` — `severity`, optional `cause`) is what a boundary renders from.
@@ -2993,7 +2992,7 @@ replaces.
     asserts it — never a file-wide spy. Chunk-load recovery with a reload policy is pattern 15
     (issue #147); never auto-reload a protected route, because the auth token is memory-only.
 
-15. **Runtime resilience (issue #147, ADR-009)**: every request runs under a `RequestDeadline`
+15. **Runtime resilience (issue #147)**: every request runs under a `RequestDeadline`
     (`src/lib/reliability/request-deadline.ts`; the `*Deadline` suffix is "time-bounded abort
     scope of one request"): one `AbortController`, a timer for `REACT_APP_REQUEST_TIMEOUT_MS`
     (default 10 000 ms, via `RequestDeadlineFactory`, registered by value under
@@ -3023,7 +3022,7 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
     `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
     telemetry; only the final failure reaches the observability boundary.
 
-    Offline is client state (ADR-023): `useConnectivityStore` in `src/lib/connectivity/`, seeded
+    Offline is client state (ADR-002): `useConnectivityStore` in `src/lib/connectivity/`, seeded
     and driven by `BrowserConnectivityAdapter.attach(window)` in `src/index.tsx`, read through
     `useConnectivity()` (`src/hooks/`). `UIForm` disables its submit while offline and mounts
     `UIOfflineNotice` — an **always-mounted** `role="status"` region inside the `<form>`, after

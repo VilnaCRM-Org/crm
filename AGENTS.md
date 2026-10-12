@@ -1029,7 +1029,7 @@ passes both gates as written. Hooks (`use-*.ts`) are outside the static
 gate; that is not license to `new` a collaborator there — expect review to flag it. Never
 satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
 
-### Client-state store pattern (Zustand, ADR-023)
+### Client-state store pattern (Zustand, ADR-002)
 
 State is one of three categories — server (a repository over Apollo / `HttpsClient`),
 client/UI (a Zustand store), session (`useAuthStore`) — and the category decides the
@@ -1664,7 +1664,7 @@ build goes red. Know them before you touch a config file:
 
 - Access token is stored only in the in-memory auth store (`useAuthStore`, read
   through `useAuthToken`); it is never persisted to `localStorage`, cookies, or disk, has
-  no refresh, and only `authActions.logout()` clears it (ADR-023)
+  no refresh, and only `authActions.logout()` clears it (ADR-002)
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
   `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual

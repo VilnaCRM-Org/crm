@@ -33,7 +33,7 @@ The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
 path (mobile Lighthouse budget).
 
-The mapper does not hand `route.load` to `React.lazy` bare (issue #147, ADR-009):
+The mapper does not hand `route.load` to `React.lazy` bare (issue #147):
 every page loader is wrapped in a `ChunkRetryLoader`, which re-imports once when the
 chunk fails to load, and a **public** route's loader is further wrapped in a
 `ReloadingChunkLoader`, which reloads the document once per session (a
@@ -102,7 +102,7 @@ exports as `onRouteError` and `src/app.tsx` passes to
 `<RouterProvider onError>`; it reports through the container-free
 `boundaryErrorReporter` with `surface: 'route'`, so the shell never touches the
 DI container. Suspense fallbacks are `<RouteFallback />`, never `null` — see
-"Route-level splitting" and pattern 14 in `CLAUDE.md`, and ADR-007.
+"Route-level splitting" and pattern 14 in `CLAUDE.md`.
 
 ## Adding a page
 
