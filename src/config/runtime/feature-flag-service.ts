@@ -7,9 +7,7 @@ const FEATURE_FLAG_DEFAULTS: FeatureFlagSnapshot = Object.freeze({
 
 export class FeatureFlagService {
   public isEnabled(flag: FeatureFlag): boolean {
-    const value = appConfigSource.flags()[flag];
-
-    return typeof value === 'boolean' ? value : FEATURE_FLAG_DEFAULTS[flag];
+    return appConfigSource.flag(flag) ?? FEATURE_FLAG_DEFAULTS[flag];
   }
 
   public names(): FeatureFlagNames {

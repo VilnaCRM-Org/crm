@@ -1194,6 +1194,27 @@ const TB_FIXTURES = [
     S.tbObject,
     'TB-1 (a)'
   ),
+  tbFail(
+    'function-expression-hook-exported-later',
+    PROBES.hook,
+    'const useX = function (a: { x: string }): void {};\nexport default useX;',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'function-expression-component-props',
+    PROBES.component,
+    'export const Panel = function ({ x }: { x: string }): null { return x ? null : null; };',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
+  tbFail(
+    'function-expression-class-property',
+    PROBES.logic,
+    'class ToastMapper { public map = function (a: { x: string }): void {}; }',
+    S.tbObject,
+    'TB-1 (a)'
+  ),
   // (b) tuples
   tbFail(
     'tuple-return',
@@ -1313,6 +1334,13 @@ const TB_FIXTURES = [
     'catch-all-mapped-string-param',
     PROBES.logic,
     'class ToastMapper { public take(headers: { readonly [name in string]: string }): void {} }',
+    S.tbCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
+    'catch-all-mapped-union-param',
+    PROBES.logic,
+    'class ToastMapper { public take(headers: { readonly [name in string | number]: string }): void {} }',
     S.tbCatchAll,
     'TB-1 (d)'
   ),
@@ -1466,6 +1494,13 @@ const TB_FIXTURES = [
     'TB-1 (d)'
   ),
   tbFail(
+    'type-file-mapped-union-alias',
+    PROBES.typeOnly,
+    'export type RequestHeaders = { readonly [name in number | symbol]: string };',
+    S.tbTypeCatchAll,
+    'TB-1 (d)'
+  ),
+  tbFail(
     'type-file-method-unknown-return',
     PROBES.typeOnly,
     'export interface ErrorParser { parse(): unknown; }',
@@ -1523,6 +1558,11 @@ const TB_FIXTURES = [
     'control-mapped-type-over-named-keys',
     PROBES.typeOnly,
     'import type { FeatureFlag } from "./feature-flag";\nexport type FlagValues = { readonly [flag in FeatureFlag]: boolean };'
+  ),
+  tbPass(
+    'control-mapped-type-over-literal-keys',
+    PROBES.typeOnly,
+    'export type FlagValues = { readonly [flag in "a" | "b"]: boolean };'
   ),
   tbPass(
     'control-error-and-cause-members',

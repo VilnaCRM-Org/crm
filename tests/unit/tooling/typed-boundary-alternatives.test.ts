@@ -35,6 +35,10 @@ const HOLDER_SNIPPETS: ReadonlyArray<(params: string, annotation: string) => str
   (params, annotation): string => `function f(${params})${annotation} {}`,
   (params, annotation): string => `const f = (${params})${annotation} => null;`,
   (params, annotation): string => `class C { public f = (${params})${annotation} => null; }`,
+  (params, annotation): string => `export default (function (${params})${annotation} {});`,
+  (params, annotation): string => `export const f = function (${params})${annotation} {};`,
+  (params, annotation): string => `const f = function (${params})${annotation} {};`,
+  (params, annotation): string => `class C { public f = function (${params})${annotation} {}; }`,
 ];
 
 const SLOT_SNIPPETS: Readonly<Record<string, readonly [string, string]>> = {

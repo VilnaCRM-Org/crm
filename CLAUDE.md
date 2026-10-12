@@ -1446,9 +1446,11 @@ positions:
 - **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
   collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
   and an array of primitives never crosses;
-- **(d)** `any`, `object`, `Record<…>`, an index signature, a string-keyed mapped type
-  (`{ [k in string]: T }`), or `unknown` — `unknown` stays only as the parameter of a method that
-  narrows a caught error, and as an `error` / `cause` member;
+- **(d)** `any`, `object`, `Record<…>`, an index signature, a mapped type over `string`, `number`
+  or `symbol` keys (`{ [k in string]: T }`, or a flat key union with one of them as a direct
+  member), or
+  `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
+  as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
   type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
 
@@ -1469,9 +1471,10 @@ is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
 
 **Gate integrity.** [`scripts/ci/eslint-gate-fixtures.mjs`](scripts/ci/eslint-gate-fixtures.mjs)
 carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
-function or arrow exported later, a non-private class arrow property), and the must-pass controls
-(a named collection interface, a private method, a `#private` arrow property, `normalize(error:
-unknown)`, a `declare module`, a named derivation, a mapped type over a named key union). The
+function, arrow or function expression exported later, a non-private class arrow or
+function-expression property), and the must-pass controls (a named collection interface, a
+private method, a `#private` arrow property, `normalize(error: unknown)`, a `declare module`, a
+named derivation, a mapped type over a named key union). The
 universe test fails a selector edited without its fixture, asserts every `src` code probe resolves
 all five code selectors, and `tests/unit/config/eslint-policy.test.ts` pins each array on every
 block, the base `src` block included.
@@ -1480,13 +1483,15 @@ lints a snippet for every holder × position alternative and every type-file roo
 generates, so a single dead alternative fails by name.
 
 **Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
-alias. A function expression on a top-level `const`, an `export { x as default }` of a nested
-function, an inline callback inside a parameter's own interface, test-builder return values and
-the generated-types exception are review items. An `unknown` **parameter** in a code file is not
+alias. A component or function passed as an argument (`forwardRef(function UIButton(…))`,
+`memo(…)`), an `export { x as default }` of a nested function, an inline callback inside a
+parameter's own interface, test-builder return values and the generated-types exception are
+review items. An `unknown` **parameter** in a code file is not
 gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so
 (d) gates `unknown` as a code-file return and class property, and in type-only files as a member
 or a method / call-signature return; an `unknown` parameter outside a narrowing method is a
-review item.
+review item. So are three catch-all mapped types (d) cannot see syntactically: a nested or
+parenthesised key union (`"a" | ("b" | string)`), `[k in PropertyKey]` and `[k in keyof any]`.
 
 **No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
 cast, an allowlist entry or a narrower glob.
@@ -1828,7 +1833,7 @@ src/
 │       ├── store/           # Shared response/error mappers
 │       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
-├── lib/             # Framework-agnostic contracts (reliability, the state primitive), container-free
+├── lib/             # Container-free shared contracts (reliability, connectivity store)
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
 ├── config/          # DI configuration, tokens, API config
@@ -2275,8 +2280,9 @@ Three different things are outside the gate, and the distinction matters when yo
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
-  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the
-  observability core / correlation-id / sentry / pii-scrubber / web-vitals leaves.
+  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
+  `security-event-core` and its `auth-failure-monitor` leaf, and the observability core /
+  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves.
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a

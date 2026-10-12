@@ -1,4 +1,5 @@
 import { APP_CONFIG_ELEMENT_ID } from '@/config/runtime/app-config-source';
+import type { AppConfigValues } from '@/config/runtime/types/app-config';
 import { buildAppConfigValues, buildHttpUrl } from '@tests/builders';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
@@ -33,39 +34,67 @@ describe('appConfigSource', () => {
     expect(APP_CONFIG_ELEMENT_ID).toBe('app-runtime-config');
   });
 
-  describe('snapshot', () => {
-    it('is empty when the configuration block is absent from the document', async () => {
+  describe('validated', () => {
+    it('hands an empty record to the parser when the block is absent', async () => {
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
       const source = await loadSource();
 
-      expect(source.snapshot()).toEqual({});
+      source.validated(parse);
+
+      expect(parse).toHaveBeenCalledWith({});
     });
 
-    it('parses the JSON object carried by the configuration block', async () => {
+    it('hands the JSON object carried by the configuration block to the parser', async () => {
       const values = buildAppConfigValues({
         apiBaseUrl: buildHttpUrl('/api'),
         graphqlUrl: buildHttpUrl('/graphql'),
       });
       writeConfigBlock(JSON.stringify(values));
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
 
       const source = await loadSource();
+      source.validated(parse);
 
-      expect(source.snapshot()).toEqual(values);
+      expect(parse).toHaveBeenCalledWith(values);
     });
 
-    it('is empty when the configuration block holds only whitespace', async () => {
-      writeConfigBlock('   \n\t  ');
+    it("returns the parser's own result", async () => {
+      const values = buildAppConfigValues({ apiBaseUrl: buildHttpUrl('/api') });
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => values);
 
       const source = await loadSource();
 
-      expect(source.snapshot()).toEqual({});
+      expect(source.validated(parse)).toBe(values);
+    });
+
+    it('passes raw values through to the parser without narrowing them', async () => {
+      writeConfigBlock('{"apiBaseUrl":1,"extra":true}');
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
+      const source = await loadSource();
+      source.validated(parse);
+
+      expect(parse).toHaveBeenCalledWith({ apiBaseUrl: 1, extra: true });
+    });
+
+    it('hands an empty record to the parser when the block holds only whitespace', async () => {
+      writeConfigBlock('   \n\t  ');
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
+      const source = await loadSource();
+      source.validated(parse);
+
+      expect(parse).toHaveBeenCalledWith({});
     });
 
     it('throws a named error when the configuration block is not valid JSON', async () => {
       writeConfigBlock('{ "flags": ');
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
 
       const source = await loadSource();
 
-      expect(() => source.snapshot()).toThrow(INVALID_JSON_PREFIX);
+      expect(() => source.validated(parse)).toThrow(INVALID_JSON_PREFIX);
+      expect(parse).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -75,29 +104,35 @@ describe('appConfigSource', () => {
       ['null', 'null'],
     ])('throws when the configuration block contains %s', async (_label, json) => {
       writeConfigBlock(json);
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
 
       const source = await loadSource();
 
-      expect(() => source.snapshot()).toThrow(NOT_AN_OBJECT_MESSAGE);
+      expect(() => source.validated(parse)).toThrow(NOT_AN_OBJECT_MESSAGE);
+      expect(parse).not.toHaveBeenCalled();
     });
 
     it('parses again only when the configuration text changes', async () => {
       const first = buildAppConfigValues({ apiBaseUrl: buildHttpUrl('/first') });
       const second = buildAppConfigValues({ apiBaseUrl: buildHttpUrl('/second') });
       const element = writeConfigBlock(JSON.stringify(first));
+      const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
 
       const source = await loadSource();
       const parseSpy = jest.spyOn(JSON, 'parse');
 
       try {
-        expect(source.snapshot()).toEqual(first);
-        expect(source.snapshot()).toEqual(first);
-        expect(source.snapshot()).toBe(source.snapshot());
+        source.validated(parse);
+        source.validated(parse);
+
+        expect(parse).toHaveBeenNthCalledWith(1, first);
+        expect(parse.mock.calls[0]?.[0]).toBe(parse.mock.calls[1]?.[0]);
         expect(parseSpy).toHaveBeenCalledTimes(1);
 
         element.textContent = JSON.stringify(second);
+        source.validated(parse);
 
-        expect(source.snapshot()).toEqual(second);
+        expect(parse).toHaveBeenNthCalledWith(3, second);
         expect(parseSpy).toHaveBeenCalledTimes(2);
       } finally {
         parseSpy.mockRestore();
@@ -106,14 +141,29 @@ describe('appConfigSource', () => {
   });
 
   describe('load', () => {
-    it('returns the same snapshot instance', async () => {
+    it('accepts a valid configuration block', async () => {
       const values = buildAppConfigValues({ graphqlUrl: buildHttpUrl('/graphql') });
       writeConfigBlock(JSON.stringify(values));
 
       const source = await loadSource();
 
-      expect(source.load()).toEqual(values);
-      expect(source.load()).toBe(source.snapshot());
+      expect(() => source.load()).not.toThrow();
+    });
+
+    it('fails fast when the configuration block is not a JSON object', async () => {
+      writeConfigBlock('[1, 2, 3]');
+
+      const source = await loadSource();
+
+      expect(() => source.load()).toThrow(NOT_AN_OBJECT_MESSAGE);
+    });
+
+    it('fails fast when the configuration block is not valid JSON', async () => {
+      writeConfigBlock('{ "flags": ');
+
+      const source = await loadSource();
+
+      expect(() => source.load()).toThrow(INVALID_JSON_PREFIX);
     });
   });
 
@@ -179,13 +229,13 @@ describe('appConfigSource', () => {
     });
   });
 
-  describe('flags', () => {
-    it('returns the flags object when the configuration declares one', async () => {
-      writeConfigBlock(JSON.stringify({ flags: { forgotPassword: true } }));
+  describe('flag', () => {
+    it.each([true, false])('returns the declared boolean %s', async (forgotPassword) => {
+      writeConfigBlock(JSON.stringify({ flags: { forgotPassword } }));
 
       const source = await loadSource();
 
-      expect(source.flags()).toEqual({ forgotPassword: true });
+      expect(source.flag('forgotPassword')).toBe(forgotPassword);
     });
 
     it.each([
@@ -193,12 +243,24 @@ describe('appConfigSource', () => {
       ['an array', { flags: [] }],
       ['a string', { flags: 'forgotPassword' }],
       ['null', { flags: null }],
-    ])('is empty when flags is %s', async (_label, values) => {
+    ])('is undefined when flags is %s', async (_label, values) => {
       writeConfigBlock(JSON.stringify(values));
 
       const source = await loadSource();
 
-      expect(source.flags()).toEqual({});
+      expect(source.flag('forgotPassword')).toBeUndefined();
+    });
+
+    it.each([
+      ['a string', 'true'],
+      ['a number', 1],
+      ['null', null],
+    ])('is undefined when the flag value is %s', async (_label, forgotPassword) => {
+      writeConfigBlock(JSON.stringify({ flags: { forgotPassword } }));
+
+      const source = await loadSource();
+
+      expect(source.flag('forgotPassword')).toBeUndefined();
     });
   });
 });

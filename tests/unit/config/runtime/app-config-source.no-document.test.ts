@@ -1,11 +1,13 @@
 /**
  * jsdom 26 exposes `document` as a non-configurable accessor, so the no-document branch of
- * `readText` can only be reached from an environment that never declares one. Stryker's enriched
+ * `raw` can only be reached from an environment that never declares one. Stryker's enriched
  * node environment, not bare `node`: the plain one reports no coverage back to the mutation
  * runner and fails its dry run.
  *
  * @jest-environment @stryker-mutator/jest-runner/jest-env/node
  */
+import type { AppConfigValues } from '@/config/runtime/types/app-config';
+
 type AppConfigSourceModule = typeof import('@/config/runtime/app-config-source');
 type AppConfigSourceSingleton = AppConfigSourceModule['default'];
 
@@ -22,8 +24,11 @@ describe('appConfigSource without a document', () => {
   });
 
   it('reads nothing when there is no document to read from', async () => {
+    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
     const source = await loadSource();
 
-    expect(source.snapshot()).toEqual({});
+    source.validated(parse);
+
+    expect(parse).toHaveBeenCalledWith({});
   });
 });

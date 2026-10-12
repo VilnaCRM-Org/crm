@@ -54,6 +54,17 @@ describe('HttpRequestConfigBuilder header and body-init resolution', () => {
     expect(config.headers).toMatchObject({ Accept: 'text/csv' });
   });
 
+  it('joins repeated caller headers of the same name in order', () => {
+    const config = builder.create('GET', undefined, {
+      items: [
+        { name: 'Accept', value: 'application/json' },
+        { name: 'Accept', value: 'text/csv' },
+      ],
+    });
+
+    expect(config.headers).toMatchObject({ Accept: 'application/json, text/csv' });
+  });
+
   it('skips body-init constructors the runtime does not expose', () => {
     const globalObject = globalThis as Record<string, unknown>;
     const originalStream = globalObject.ReadableStream;

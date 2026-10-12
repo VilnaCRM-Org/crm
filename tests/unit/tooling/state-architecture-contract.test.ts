@@ -109,12 +109,14 @@ describe('frontend state architecture contract (issues #110, #334, ADR-002)', ()
 
   it('documents the store, a selector, a patch and the reset helper in the guide', () => {
     const guide = readFile(GUIDE);
+    const ciSectionStart = guide.indexOf('## What fails CI');
 
     expect(guide).toContain('create<ContactFilter>()(');
     expect(guide).toContain('useContactFilterStore((filter');
     expect(guide).toContain('ContactFilterPatch');
     expect(guide).toContain('resetClientStores()');
-    expect(guide.slice(guide.indexOf('## What fails CI'))).not.toContain("from 'zustand'");
+    expect(ciSectionStart).toBeGreaterThanOrEqual(0);
+    expect(guide.slice(ciSectionStart)).not.toContain("from 'zustand'");
   });
 
   it('drops the reactive-var suffixes from the class-naming policy', () => {
