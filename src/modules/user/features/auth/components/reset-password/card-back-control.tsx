@@ -8,7 +8,7 @@ import type { CardBackControlProps } from '@auth/types/password-recovery/compone
 import InCardLink from './in-card-link';
 import styles from './styles';
 
-export default function CardBackControl({ to, onClick }: CardBackControlProps): JSX.Element {
+export default function CardBackControl(props: CardBackControlProps): JSX.Element {
   const { t } = useTranslation();
   const content = (
     <>
@@ -17,15 +17,21 @@ export default function CardBackControl({ to, onClick }: CardBackControlProps): 
     </>
   );
 
-  if (to !== undefined) {
+  if (props.to !== undefined) {
     return (
-      <InCardLink to={to} variant="text" sx={styles.backControl}>
+      <InCardLink to={props.to} variant="text" sx={styles.backControl}>
         {content}
       </InCardLink>
     );
   }
   return (
-    <UIButton type="button" variant="text" onClick={onClick} disableRipple sx={styles.backControl}>
+    <UIButton
+      type="button"
+      variant="text"
+      onClick={props.onClick}
+      disableRipple
+      sx={styles.backControl}
+    >
       {content}
     </UIButton>
   );

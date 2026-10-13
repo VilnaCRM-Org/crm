@@ -10,6 +10,7 @@ import type {
   ResetPasswordAction,
   ResetPasswordCallbackDeps,
   ResetPasswordCallbacks,
+  ResetPasswordSettled,
   ResetPasswordState,
   ResetPasswordView,
 } from '@auth/types/password-recovery/state';
@@ -27,37 +28,42 @@ const REQUEST_STEP: RecoveryProviderStep<RestorePasswordDto, ResetPasswordOutcom
   signal
 ) => provider.requestReset(dto, signal);
 
-function settle(view: ResetPasswordView, outcome: ResetPasswordOutcome | null): ResetPasswordView {
+function settle(
+  view: ResetPasswordView,
+  { email, outcome }: ResetPasswordSettled
+): ResetPasswordView {
   if (outcome === null) return view;
+  const accepted = { ...view, submittedEmail: email };
   return outcome.kind === 'sent'
-    ? { ...view, step: 'sent', maskedEmail: outcome.maskedEmail }
-    : { ...view, failure: outcome.failure };
+    ? { ...accepted, step: 'sent', maskedEmail: outcome.maskedEmail }
+    : { ...accepted, failure: outcome.failure };
 }
 
 function reduceResetPassword(
   view: ResetPasswordView,
   action: ResetPasswordAction
 ): ResetPasswordView {
-  if (action.type === 'submitted') return { ...view, submittedEmail: action.email, failure: null };
+  if (action.type === 'submitted') return { ...view, failure: null };
   if (action.type === 'back') return { ...view, step: 'form', failure: null };
-  return settle(view, action.outcome);
+  return settle(view, action);
 }
 
 function useResetCallbacks(deps: ResetPasswordCallbackDeps): ResetPasswordCallbacks {
   const { dispatch, submitter } = deps;
-  const settleWith = async (pending: Promise<ResetPasswordOutcome | null>): Promise<void> =>
-    dispatch({ type: 'settled', outcome: await pending });
+  const settleWith = async (
+    email: string,
+    pending: Promise<ResetPasswordOutcome | null>
+  ): Promise<void> => {
+    dispatch({ type: 'submitted' });
+    dispatch({ type: 'settled', email, outcome: await pending });
+  };
 
   return {
     submit: (dto: RestorePasswordDto): Promise<void> => {
       const email = dto.email.trim();
-      dispatch({ type: 'submitted', email });
-      return settleWith(submitter.submit({ email }));
+      return settleWith(email, submitter.submit({ email }));
     },
-    retry: (): Promise<void> => {
-      dispatch({ type: 'submitted', email: deps.submittedEmail });
-      return settleWith(submitter.retry());
-    },
+    retry: (): Promise<void> => settleWith(deps.submittedEmail, submitter.retry()),
     backToForm: (): void => dispatch({ type: 'back' }),
   };
 }

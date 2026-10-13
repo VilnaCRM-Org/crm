@@ -140,6 +140,15 @@ describe('pending password-reset mutations on the stateless mock', () => {
     expect(result.data).toEqual({ confirmPasswordResetUser: { user: null, clientMutationId } });
   });
 
+  it('accepts a newPassword without a lowercase letter, as the upstream pattern does', async () => {
+    const { result } = await execute(server, CONFIRM_RESET, {
+      token: faker.string.alphanumeric(32),
+      newPassword: 'UPPERCASE1',
+    });
+
+    expect(result.errors).toBeUndefined();
+  });
+
   it.each([
     ['an invalid e-mail', REQUEST_RESET, { email: 'not-an-email' }, 'email: '],
     [
@@ -149,6 +158,12 @@ describe('pending password-reset mutations on the stateless mock', () => {
       'newPassword: ',
     ],
     ['an empty token', CONFIRM_RESET, { token: '', newPassword: 'Upper1234' }, 'token: '],
+    [
+      'a whitespace-only token',
+      CONFIRM_RESET,
+      { token: ' \t ', newPassword: 'Upper1234' },
+      'token: ',
+    ],
     [
       'a token over 255 characters',
       CONFIRM_RESET,
