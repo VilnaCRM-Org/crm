@@ -1,6 +1,7 @@
 import type { SxProps, Theme } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import type { CreateNewPasswordDto } from '@/modules/user/types/user/create-new-password-dto';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
 import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
 
@@ -45,4 +46,16 @@ export interface ResetPasswordEmailFieldProps {
 export interface ResetPasswordSentStepProps {
   maskedEmail: string | null;
   onBack: () => void;
+}
+
+export interface CreateNewPasswordFormProps {
+  token: string;
+  onSubmit: (dto: CreateNewPasswordDto) => Promise<void>;
+  onRetry: () => Promise<void>;
+  failure: RecoveryFailure | null;
+  isSubmitting: boolean;
+}
+
+export interface CreateNewPasswordFieldsProps {
+  failure: RecoveryFailure | null;
 }
