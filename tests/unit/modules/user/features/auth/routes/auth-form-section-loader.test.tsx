@@ -3,6 +3,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { Component, Suspense, type ReactElement, type ReactNode } from 'react';
+import { MemoryRouter } from 'react-router';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import authRoutes from '@auth/routes';
@@ -119,11 +120,13 @@ describe('auth form-section lazy loading', () => {
         const Page = formSectionRoute.page;
 
         render(
-          <LazyErrorBoundary>
-            <Suspense fallback={<p>loading</p>}>
-              <Page />
-            </Suspense>
-          </LazyErrorBoundary>
+          <MemoryRouter initialEntries={[formSectionRoute.path]}>
+            <LazyErrorBoundary>
+              <Suspense fallback={<p>loading</p>}>
+                <Page />
+              </Suspense>
+            </LazyErrorBoundary>
+          </MemoryRouter>
         );
 
         expect(await screen.findByText(error.message)).toBeInTheDocument();

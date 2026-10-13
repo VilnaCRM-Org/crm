@@ -208,9 +208,12 @@ describe('runtime configuration contract', () => {
 
     const rows = routeCoverageRows('passwordRecovery');
 
-    expect(rows.map(([, suite]) => suite)).toEqual(['e2e', 'e2e']);
-    expect(rows.map(([, , spec]) => spec)).toContain(
-      'tests/e2e/modules/user/features/auth/password-recovery.spec.ts'
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e', 'visual']));
+    expect(rows.map(([, , spec]) => spec)).toEqual(
+      expect.arrayContaining([
+        'tests/e2e/modules/user/features/auth/password-recovery.spec.ts',
+        'tests/visual/visual-comparison.password-recovery.spec.ts',
+      ])
     );
   });
 });

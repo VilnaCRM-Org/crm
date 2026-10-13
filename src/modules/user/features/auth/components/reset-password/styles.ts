@@ -22,6 +22,12 @@ export default {
       flexShrink: 0,
       color: customColors.text.primary,
     },
+
+    '&:focus-visible, &.Mui-focusVisible': {
+      outline: `2px solid ${customColors.text.primary}`,
+      outlineOffset: '2px',
+      borderRadius: '0.25rem',
+    },
   },
 
   resultHeading: {

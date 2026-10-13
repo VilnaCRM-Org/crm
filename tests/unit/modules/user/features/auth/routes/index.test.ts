@@ -14,10 +14,15 @@ describe('auth route contract', () => {
     expect((await loadAuthRoutes()).id).toBe('user.auth');
   });
 
-  it('declares exactly the sign-up and sign-in routes, in that order', async () => {
+  it('declares exactly the sign-up, sign-in and both recovery routes, in that order', async () => {
     const { routes } = await loadAuthRoutes();
 
-    expect(routes.map((route) => route.path)).toEqual([ROUTE_PATHS.signUp, ROUTE_PATHS.signIn]);
+    expect(routes.map((route) => route.path)).toEqual([
+      ROUTE_PATHS.signUp,
+      ROUTE_PATHS.signIn,
+      ROUTE_PATHS.passwordRecovery,
+      ROUTE_PATHS.passwordReset,
+    ]);
   });
 
   it('titles each route with its own localized page-title key', async () => {
@@ -26,13 +31,15 @@ describe('auth route contract', () => {
     expect(routes.map((route) => route.meta)).toEqual([
       { titleKey: 'sign_up.title' },
       { titleKey: 'sign_in.title' },
+      { titleKey: 'password_recovery.title' },
+      { titleKey: 'password_reset.title' },
     ]);
   });
 
-  it('leaves both routes public and lazily loaded', async () => {
+  it('leaves every route public and lazily loaded', async () => {
     const { routes } = await loadAuthRoutes();
 
-    expect(routes.map((route) => route.guard)).toEqual(['public', 'public']);
+    expect(routes.map((route) => route.guard)).toEqual(['public', 'public', 'public', 'public']);
     routes.forEach((route) => {
       expect(typeof route.load).toBe('function');
     });
