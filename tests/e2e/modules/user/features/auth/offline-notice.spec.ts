@@ -8,6 +8,7 @@ import { t } from '../../../../utils/initialize-localization';
 const SIGN_IN_URL = '/sign-in';
 const SIGN_UP_URL = '/sign-up';
 const PASSWORD_RECOVERY_URL = '/password-recovery';
+const PASSWORD_RESET_URL = '/password-reset?token=e2eOfflineToken0000000000000000';
 
 const offlineNotice: string = t('offline_notice.offline');
 const restoredNotice: string = t('offline_notice.restored');
@@ -42,6 +43,7 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
     [SIGN_IN_URL, signInSubmit],
     [SIGN_UP_URL, signUpSubmit],
     [PASSWORD_RECOVERY_URL, recoverySubmit],
+    [PASSWORD_RESET_URL, recoverySubmit],
   ] as const) {
     test(`disables the submit on ${url} while offline and restores it online`, async ({
       page,

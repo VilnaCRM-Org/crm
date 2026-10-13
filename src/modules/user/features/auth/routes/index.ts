@@ -22,6 +22,12 @@ const authRoutes: RouteModule = {
       load: () => import(/* webpackChunkName: "reset-password" */ './reset-password'),
       meta: { titleKey: 'password_recovery.title' },
     },
+    {
+      path: ROUTE_PATHS.passwordReset,
+      guard: 'public',
+      load: () => import(/* webpackChunkName: "create-new-password" */ './create-new-password'),
+      meta: { titleKey: 'password_reset.title' },
+    },
   ],
 };
 

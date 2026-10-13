@@ -49,12 +49,13 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 | `signUp`           | `/sign-up`           | `@auth/routes` (user.auth) | public    |
 | `signIn`           | `/sign-in`           | `@auth/routes` (user.auth) | public    |
 | `passwordRecovery` | `/password-recovery` | `@auth/routes` (user.auth) | public    |
+| `passwordReset`    | `/password-reset`    | `@auth/routes` (user.auth) | public    |
 | `forbidden`        | `/forbidden`         | `app-routes.ts`            | public    |
 | `serverError`      | `/server-error`      | `app-routes.ts`            | public    |
 | `notFound`         | `*`                  | `app-routes.ts`            | public    |
 
-`/password-recovery` (issue #315) renders the `ResetPassword` page; signed-in users are not
-redirected away from it.
+`/password-recovery` and `/password-reset` (issue #315) render the `ResetPassword` and
+`CreateNewPassword` pages; signed-in users are not redirected away from either.
 
 ## The contract
 
