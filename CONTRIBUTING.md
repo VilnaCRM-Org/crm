@@ -341,8 +341,7 @@ out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere bu
 
 The `sandbox` workflow triggers the `sandbox-crm-creation` AWS CodePipeline, which builds the pull
 request with `make build-out` — the same production bundle that ships — and syncs it to an S3
-static website. A sandbox has no backend, so two things make it reviewable (issue #309,
-[ADR-019](docs/adr/019-sandbox-demo-session.md)):
+static website. A sandbox has no backend, so two things make it reviewable (issue #309):
 
 - **A demo login.** On a sandbox, sign in with `demo@vilnacrm.com` / `Demo1234` to reach every
   protected page. The session is client-only and never calls the API, and it survives a reload

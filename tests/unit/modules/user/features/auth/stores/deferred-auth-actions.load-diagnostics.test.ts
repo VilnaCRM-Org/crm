@@ -1,5 +1,5 @@
 import type { ObservabilityCore } from '@/services/observability/observability-core';
-import type AuthStateVarSingleton from '@auth/stores/auth-var';
+import type useAuthStoreHook from '@auth/stores/use-auth-store';
 import type { AuthActions } from '@auth/types/auth-store';
 import { buildCredentials, buildUser } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
@@ -24,7 +24,7 @@ const registration = buildUser();
 
 interface Loaded {
   authActions: AuthActions;
-  AuthStateVar: typeof AuthStateVarSingleton;
+  useAuthStore: typeof useAuthStoreHook;
   observability: ObservabilityCore;
 }
 
@@ -52,21 +52,21 @@ describe('deferred auth actions load-failure diagnostics', () => {
   });
 
   it('surfaces the retryable load-failure error verbatim on login', async () => {
-    const { authActions, AuthStateVar } = await loadBarrel();
+    const { authActions, useAuthStore } = await loadBarrel();
 
     await authActions.loginUser(credentials);
 
-    expect(AuthStateVar.get().loginError).toEqual(LOAD_FAILURE);
-    expect(AuthStateVar.get().loginLoading).toBe(false);
+    expect(useAuthStore.getState().loginError).toEqual(LOAD_FAILURE);
+    expect(useAuthStore.getState().loginLoading).toBe(false);
   });
 
   it('surfaces the retryable load-failure error verbatim on registration', async () => {
-    const { authActions, AuthStateVar } = await loadBarrel();
+    const { authActions, useAuthStore } = await loadBarrel();
 
     await authActions.registerUser(registration);
 
-    expect(AuthStateVar.get().registerError).toEqual(LOAD_FAILURE);
-    expect(AuthStateVar.get().registerLoading).toBe(false);
+    expect(useAuthStore.getState().registerError).toEqual(LOAD_FAILURE);
+    expect(useAuthStore.getState().registerLoading).toBe(false);
   });
 
   it('logs the load failure with its diagnostic message and the raw cause', async () => {
@@ -89,7 +89,7 @@ describe('deferred auth actions load-failure diagnostics', () => {
   });
 
   it('leaves the state untouched by diagnostics when the graph loads', async () => {
-    const { authActions, AuthStateVar, observability } = await loadBarrel();
+    const { authActions, useAuthStore, observability } = await loadBarrel();
     const captureSpy = jest
       .spyOn(observability, 'captureError')
       .mockImplementation(() => undefined);
@@ -100,7 +100,7 @@ describe('deferred auth actions load-failure diagnostics', () => {
 
     await authActions.loginUser(credentials);
 
-    expect(AuthStateVar.get().loginError).toBeNull();
+    expect(useAuthStore.getState().loginError).toBeNull();
     expect(captureSpy).not.toHaveBeenCalled();
     expect(consoleSpy).not.toHaveBeenCalled();
   });

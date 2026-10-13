@@ -4,9 +4,9 @@ import type { JSX } from 'react';
 import RouteErrorFallback from '@/components/error-boundary/route-error-fallback';
 import { DataRouterStory } from '@stories/router-decorators';
 
-type RouteErrorFallbackStoryProps = {
+interface RouteErrorFallbackStoryProps {
   landmark: 'main' | 'region';
-};
+}
 
 function RenderFailure(): JSX.Element {
   throw new Error('Route component failed to render');

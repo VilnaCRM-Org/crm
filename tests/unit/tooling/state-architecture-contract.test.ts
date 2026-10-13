@@ -9,10 +9,14 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx']);
-const STATE_HOME = 'src/lib/state';
-const BRIDGE = `${STATE_HOME}/use-reactive-var.ts`;
-const ADR = 'docs/adr/008-frontend-state-architecture.md';
-const SUPERSEDED_ADR = 'docs/adr/002-zustand-over-redux.md';
+const AUTH_STORE = 'src/modules/user/features/auth/stores/use-auth-store.ts';
+const CONNECTIVITY_STORE = 'src/lib/connectivity/use-connectivity-store.ts';
+const RETIRED_FILES = [
+  'src/lib/state',
+  'src/modules/user/features/auth/stores/auth-var.ts',
+  'src/lib/connectivity/connectivity-state-var.ts',
+];
+const ADR = 'docs/adr/002-zustand-over-redux.md';
 const GUIDE = 'docs/state-architecture.md';
 const CONTRIBUTOR_DOCS = ['CLAUDE.md', 'AGENTS.md', '.github/copilot-instructions.md'];
 
@@ -28,51 +32,53 @@ function walkSource(dir: string, acc: string[] = []): string[] {
 const sourceFilesMatching = (pattern: RegExp): string[] =>
   walkSource('src').filter((file) => pattern.test(readFile(file)));
 
-describe('frontend state architecture contract (issue #110, ADR-008)', () => {
-  it('declares no zustand dependency in any package.json dependency map', () => {
+describe('frontend state architecture contract (issues #110, #334, ADR-002)', () => {
+  it('declares zustand as a production dependency and locks it', () => {
     const manifest = JSON.parse(readFile('package.json')) as Record<string, unknown>;
-    const maps = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+    const dependencies = manifest.dependencies as Record<string, string>;
+    const devDependencies = (manifest.devDependencies ?? {}) as Record<string, string>;
 
-    for (const map of maps) {
-      expect(Object.keys((manifest[map] ?? {}) as Record<string, string>)).not.toContain('zustand');
-    }
-    expect(readFile('bun.lock')).not.toContain('"zustand"');
+    expect(dependencies.zustand).toBe('^5.0.15');
+    expect(Object.keys(devDependencies)).not.toContain('zustand');
+    expect(readFile('bun.lock')).toContain('"zustand": ["zustand@5.0.15"');
   });
 
-  it('imports zustand nowhere under src/', () => {
-    expect(sourceFilesMatching(/from\s+['"]zustand(\/|['"])/)).toEqual([]);
+  it('imports zustand only from its root specifier, so no middleware subpath can appear', () => {
+    const importers = sourceFilesMatching(/from\s+['"]zustand['"]/);
+
+    expect(importers).toEqual(expect.arrayContaining([AUTH_STORE, CONNECTIVITY_STORE]));
+    expect(sourceFilesMatching(/['"]zustand\//)).toEqual([]);
   });
 
-  it('subscribes React to a store only through the one sanctioned bridge', () => {
-    expect(sourceFilesMatching(/useSyncExternalStore/)).toEqual([BRIDGE]);
+  it('creates both stores with create<State>() and no middleware', () => {
+    expect(readFile(AUTH_STORE)).toContain('create<AuthState>()(');
+    expect(readFile(CONNECTIVITY_STORE)).toContain('create<ConnectivityState>()(');
   });
 
-  it('keeps the reactive-var primitive in the neutral state home, off the auth feature', () => {
-    const home = fs.readdirSync(path.join(projectRoot, STATE_HOME)).sort();
+  it('subscribes React to a store nowhere in src, since zustand owns the bridge', () => {
+    expect(sourceFilesMatching(/useSyncExternalStore/)).toEqual([]);
+  });
 
-    expect(home).toEqual([
-      'reactive-var-factory.ts',
-      'reactive-var-state.ts',
-      'types',
-      'use-reactive-var.ts',
-    ]);
-    expect(readFile('src/modules/user/features/auth/stores/auth-var.ts')).toContain(
-      "from '@/lib/state/reactive-var-factory'"
-    );
+  it('deletes the reactive-var primitive and every name that used it', () => {
+    RETIRED_FILES.forEach((retired) => {
+      expect(fs.existsSync(path.join(projectRoot, retired))).toBe(false);
+    });
     expect(
-      fs.existsSync(path.join(projectRoot, 'src/modules/user/features/auth/stores/reactive-var.ts'))
-    ).toBe(false);
+      sourceFilesMatching(/ReactiveVarFactory|useReactiveVar|AuthStateVar|ConnectivityStateVar/)
+    ).toEqual([]);
   });
 
-  it('supersedes ADR-002 with ADR-008 and indexes both', () => {
-    const superseded = readFile(SUPERSEDED_ADR);
+  it('records Zustand in an approved ADR-002, indexed, with the retired records gone', () => {
     const adr = readFile(ADR);
     const index = readFile('docs/adr/README.md');
 
-    expect(superseded).toMatch(/^- Status: Superseded$/m);
-    expect(superseded).toContain('008-frontend-state-architecture.md');
     expect(adr).toMatch(/^- Status: Approved$/m);
-    expect(index).toContain('./008-frontend-state-architecture.md');
+    expect(adr).toContain('## Current rules');
+    expect(index).toContain('./002-zustand-over-redux.md');
+    ['008-frontend-state-architecture.md', '023-zustand-client-state.md'].forEach((retired) => {
+      expect(fs.existsSync(path.join(projectRoot, 'docs/adr', retired))).toBe(false);
+      expect(index).not.toContain(retired);
+    });
   });
 
   it('defines exactly the three state categories in the ADR and the guide', () => {
@@ -83,23 +89,41 @@ describe('frontend state architecture contract (issue #110, ADR-008)', () => {
       expect(adr).toContain(`**${category}**`);
       expect(guide).toContain(category);
     }
-    expect(adr).toContain('useReactiveVar');
-    expect(adr).toContain('no-apollo-client-outside-data-layer');
-    expect(adr).toContain('no-shared-ui-to-http-client');
+    expect(adr).toContain('useAuthStore');
+    expect(adr).toContain('AUTH_TOKENS.AuthStore');
+    expect(adr).toContain('persist');
   });
 
-  it('keeps the contributor guides on the reactive var, never on a Zustand store', () => {
-    for (const doc of CONTRIBUTOR_DOCS) {
+  it('points every contributor guide at the Zustand stores, never at the reactive var', () => {
+    for (const doc of [...CONTRIBUTOR_DOCS, GUIDE, '.claude/skills/AI-AGENT-GUIDE.md']) {
       const text = readFile(doc);
 
-      expect(text).not.toMatch(/Zustand Store Pattern/);
-      expect(text).not.toMatch(/useAuthStore/);
-      expect(text).not.toMatch(/State Management\*\*: Zustand/);
-      expect(text).not.toMatch(/Stores use Zustand/);
+      expect(text).not.toMatch(/useReactiveVar/);
+      expect(text).not.toMatch(/AuthStateVar/);
+      expect(text).not.toMatch(/ReactiveVarFactory/);
     }
-    expect(readFile('CLAUDE.md')).toContain('src/lib/state/');
-    expect(readFile('AGENTS.md')).toContain('useReactiveVar');
-    expect(readFile('.claude/react-sdlc.yml')).toMatch(/^\s+state: reactive-var$/m);
+    expect(readFile('CLAUDE.md')).toContain('useAuthStore');
+    expect(readFile('AGENTS.md')).toContain('useAuthStore');
+    expect(readFile('.claude/react-sdlc.yml')).toMatch(/^\s+state: zustand$/m);
+  });
+
+  it('documents the store, a selector, a patch and the reset helper in the guide', () => {
+    const guide = readFile(GUIDE);
+    const ciSectionStart = guide.indexOf('## What fails CI');
+
+    expect(guide).toContain('create<ContactFilter>()(');
+    expect(guide).toContain('useContactFilterStore((filter');
+    expect(guide).toContain('ContactFilterPatch');
+    expect(guide).toContain('resetClientStores()');
+    expect(ciSectionStart).toBeGreaterThanOrEqual(0);
+    expect(guide.slice(ciSectionStart)).not.toContain("from 'zustand'");
+  });
+
+  it('drops the reactive-var suffixes from the class-naming policy', () => {
+    const policy = readFile('config/class-naming-policy.js');
+
+    expect(policy).not.toContain("suffix: 'Var'");
+    expect(policy).not.toContain("suffix: 'State'");
   });
 
   it('names the gates in the guide so a reader can map a failure to its rule', () => {

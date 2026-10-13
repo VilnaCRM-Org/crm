@@ -7,9 +7,10 @@ import ErrorFallback from '@/components/error-boundary/error-fallback';
 import errorPageLoader from '@/components/error-boundary/error-page-loader';
 import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
 import ERROR_PAGE_FONT_FACES from '@/components/error-page/config/error-page-fonts';
+import type { ErrorPageModule } from '@/components/types/error-page';
 import appConfigSource from '@/config/runtime/app-config-source';
 import BrowserConnectivityAdapter from '@/lib/connectivity/browser-connectivity-adapter';
-import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
+import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import FontFaceLoader from '@/lib/reliability/font-face-loader';
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
 import PostLoadPrefetcher from '@/lib/reliability/post-load-prefetcher';
@@ -32,7 +33,7 @@ const root = createRoot(rootElement);
 
 observabilityCore.init();
 muiThemeShellLoader.load().catch(() => undefined);
-new BrowserConnectivityAdapter(connectivityStateVar).attach(window);
+new BrowserConnectivityAdapter(useConnectivityStore).attach(window);
 
 const BOOTSTRAP_RECOVERY: RecoverableError = {
   recoverable: true,
@@ -78,8 +79,7 @@ if (configError) {
       </UIErrorBoundary>
     </React.StrictMode>
   );
-  new PostLoadPrefetcher([
-    errorPageLoader,
-    new FontFaceLoader(document.fonts, ERROR_PAGE_FONT_FACES),
-  ]).attach(window);
+  new PostLoadPrefetcher<ErrorPageModule | void>({
+    items: [errorPageLoader, new FontFaceLoader(document.fonts, ERROR_PAGE_FONT_FACES)],
+  }).attach(window);
 }

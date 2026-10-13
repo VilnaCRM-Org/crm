@@ -6,14 +6,14 @@ import ERROR_PAGE_VARIANTS, {
   ERROR_PAGE_TITLE_ID,
 } from '@/components/error-page/config/error-page-variants';
 import cardStyles from '@/components/error-page/styles/card-styles';
-import type { ErrorPageProps } from '@/components/types/error-page';
+import type { ErrorPageVariantProps } from '@/components/types/error-page';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import ErrorPageActions from './error-page-actions';
 
 const styles = cardStyles.build();
 
-export default function ErrorPageCard({ variant }: Pick<ErrorPageProps, 'variant'>): JSX.Element {
+export default function ErrorPageCard({ variant }: ErrorPageVariantProps): JSX.Element {
   const { t } = useTranslation();
   const focusTitle = useFocusOnMount<HTMLHeadingElement>();
   const { titleKey, codeKey, descriptionKey } = ERROR_PAGE_VARIANTS[variant];

@@ -8,7 +8,7 @@ import errorFallbackStyles from '@/components/error-boundary/styles';
 import UITypography from '@/components/ui-typography';
 import type { RecoveryStrategy } from '@/lib/reliability/types/recoverable-error';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
-import type { AuthErrorFallbackProps } from '@auth/types/auth-error-boundary';
+import type { AuthErrorFallbackProps, ErrorDetailsProps } from '@auth/types/auth-error-boundary';
 
 const DEFAULT_FALLBACK_KEY = 'auth.error.default';
 
@@ -44,7 +44,7 @@ const Message = styled('pre')({
 const shouldShowErrorDetails = (error: Error | undefined): error is Error =>
   Boolean(error) && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test');
 
-function ErrorDetails({ error }: { error: Error }): JSX.Element {
+function ErrorDetails({ error }: ErrorDetailsProps): JSX.Element {
   const { t } = useTranslation();
 
   return (

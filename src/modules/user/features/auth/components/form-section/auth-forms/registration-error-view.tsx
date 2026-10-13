@@ -1,5 +1,4 @@
 import { Box, Typography } from '@mui/material';
-import type { SxProps, Theme } from '@mui/material/styles';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,7 +7,13 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
-import type { Props } from '@auth/types/auth-forms/registration-error-view';
+import type {
+  ErrorActionButtonProps,
+  ErrorButtonsProps,
+  ErrorLabelProps,
+  ErrorMessageProps,
+  Props,
+} from '@auth/types/auth-forms/registration-error-view';
 
 import styles from './registration-notification.error-styles';
 
@@ -22,7 +27,7 @@ const headingFocusStyles = {
 
 const buttonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 
-function ErrorImageBlock({ label }: { label: string }): JSX.Element {
+function ErrorImageBlock({ label }: ErrorLabelProps): JSX.Element {
   return (
     <Box sx={styles.imageWrapperError}>
       <Box component={ErrorImage} role="img" aria-label={label} sx={styles.errorImage} />
@@ -36,13 +41,7 @@ function ErrorActionButton({
   disabled,
   onClick,
   label,
-}: {
-  sx: SxProps<Theme>;
-  variant: 'contained' | 'outlined';
-  disabled: boolean;
-  onClick: () => void;
-  label: string;
-}): JSX.Element {
+}: ErrorActionButtonProps): JSX.Element {
   return (
     <UIButton sx={sx} variant={variant} type="button" disabled={disabled} onClick={onClick}>
       <Typography component="span" sx={buttonTextStyles}>
@@ -59,14 +58,7 @@ function ErrorButtons({
   onBack,
   retryLabel,
   backLabel,
-}: {
-  isSubmitting: boolean;
-  isClosing: boolean;
-  onRetry?: (() => void) | undefined;
-  onBack: () => void;
-  retryLabel: string;
-  backLabel: string;
-}): JSX.Element {
+}: ErrorButtonsProps): JSX.Element {
   return (
     <Box sx={styles.buttonsBox}>
       {onRetry != null && (
@@ -89,7 +81,7 @@ function ErrorButtons({
   );
 }
 
-function ErrorMessage({ title, text }: { title: string; text: string }): JSX.Element {
+function ErrorMessage({ title, text }: ErrorMessageProps): JSX.Element {
   return (
     <>
       <UITypography component="h2" sx={styles.messageTitle}>

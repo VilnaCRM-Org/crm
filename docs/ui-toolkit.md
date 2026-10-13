@@ -5,10 +5,10 @@ reads the breakpoints theme from it and renders seven toolkit components, each b
 seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Since
 v0.8.0 it also renders the toolkit checkbox and the toolkit text link, each behind its own seam
 (see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
-reason recorded below. The decision, its options and
-its deviations from issue
-[#250](https://github.com/VilnaCRM-Org/crm/issues/250) are in
-[ADR-016](./adr/016-ui-toolkit-installation.md).
+reason recorded below. The installation was scoped by issue
+[#250](https://github.com/VilnaCRM-Org/crm/issues/250); why it is a release tarball is under
+[What is installed](#what-is-installed), and why each remaining primitive stays local is in the
+[keep-local register](#keep-local-register).
 
 ## What is installed
 
@@ -203,9 +203,10 @@ refuses when the installed tree from step 1 differs from it, so a stale or modif
 `node_modules` fails the bump instead of entering the manifest. The machine-read part of the
 diff is exactly: one `package.json` line, the two `bun.lock` lines (plus any peer-range change
 the new release makes, which is then a reviewed peer decision), the gate literal and the
-manifest. The bump also edits the version named in `docs/ui-toolkit.md` and records the new pin
-in ADR-016: changing the `dependencies` map trips the ADR drift gate (`config/docs-policy.json`,
-`architectureDrift.manifestKeys`), which the ADR edit satisfies without the escape hatch. No
+manifest. The bump also edits the version named in `docs/ui-toolkit.md`. Changing the
+`dependencies` map trips the ADR drift gate (`config/docs-policy.json`,
+`architectureDrift.manifestKeys`): record the decision in an ADR or use the documented escape
+hatch. No
 script, test or constant changes. Running `make update-ui-toolkit` to clear a red
 `lint-ui-toolkit` without re-reviewing the release is forbidden.
 
@@ -226,7 +227,7 @@ until a design-checked swap re-measures its reason against the pinned release.
 - **R5** different API surface: `UiLink` requires `href` and drops `component`, so the swap
   needs an adapter (out of scope).
 - **R6** no `src` importer; nothing to swap.
-- **R7** eager path under the 470,000 B budget; ADR-007 reliability model not upstream.
+- **R7** eager path under the 470,000 B budget; reliability model (issue #116) not upstream.
 - **R8** no toolkit counterpart.
 - **R9** whole-object value differs: 10 palette keys differ (`success` changes, 9 keys are
   added), and the seam has no production consumer.

@@ -8,8 +8,10 @@ export interface MuiThemeShellProps {
   children?: ReactNode;
 }
 
-export type ComponentModule<TProps extends object = Record<never, never>> = {
+export interface ComponentModule<TProps> {
   default: ComponentType<TProps>;
-};
+}
 
-export type MuiThemeShellModule = { default: ComponentType<MuiThemeShellProps> };
+export interface MuiThemeShellModule {
+  default: ComponentType<MuiThemeShellProps>;
+}

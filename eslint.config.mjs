@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import classNamingPolicy from './config/class-naming-policy.js';
 import diCollaboratorPolicy from './config/di-collaborator-policy.js';
+import typedBoundaryPolicy from './config/typed-boundary-policy.js';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const tsconfigPath = path.join(rootDir, 'tsconfig.json');
@@ -103,6 +104,14 @@ const typeDeclarationSelectors = [
       'No type declarations in logic files — move this type alias to the nearest feature/area `types/` folder (e.g. `@auth/types/<group>/<name>`), not beside the component (issue #88).',
   },
 ];
+
+// Source (issue #332, TB-1): every value that crosses a layer carries a named type.
+// Both arrays are BUILT by config/typed-boundary-policy.js (the single source the fixtures read).
+// `typedBoundarySelectors` is spread into every `src` block that sets `no-restricted-syntax` —
+// flat config replaces the rule per file, so a block that omits it silently un-gates its files,
+// hooks included. `typedBoundaryTypeFileSelectors` goes only into the type-only block.
+const typedBoundarySelectors = typedBoundaryPolicy.typedBoundarySelectors();
+const typedBoundaryTypeFileSelectors = typedBoundaryPolicy.typedBoundaryTypeFileSelectors();
 
 // Source (issue #100): non-React application code (services, repositories, mappers,
 // factories, stores, utils) must not use `static` members or standalone functions.
@@ -360,54 +369,42 @@ const routeObjectShapeSelectors = [
 
 // The selector families every `src/routes/**/*.tsx` file carries (issue #116); the three route
 // blocks below add or omit the #128 `new` ban and the router-construction ban per file.
-// Source (issue #110, ADR-008): client/UI state has exactly one sanctioned primitive — the
-// dependency-free reactive var in `src/lib/state/` — and exactly one React bridge,
-// `useReactiveVar`, so a store cannot hand-roll its own `useSyncExternalStore` subscription
-// (the re-arming listener logic `use-auth-token.ts` used to carry) — as a named or aliased
-// import, a `React.` member, a computed `React['…']` member, or a destructured property — or
-// pull in zustand, which
-// the docs once promised and the code never used. Re-included in EVERY src-scoped block, like
-// the router-construction selectors, because flat config replaces `no-restricted-syntax` per
-// file; `src/lib/state/use-reactive-var.ts`, the single sanctioned bridge, gets its own block
-// below that omits exactly these selectors.
+// Source (issue #110; ADR-002 for Zustand): client/UI state is read through a Zustand
+// store hook, so a store cannot hand-roll its own `useSyncExternalStore` subscription — as a named
+// or aliased import, a `React.` member, a computed `React['…']` member, or a destructured
+// property. Re-included in EVERY src-scoped block, like the router-construction selectors,
+// because flat config replaces `no-restricted-syntax` per file; no file is exempt.
 const clientStateSelectors = [
-  {
-    selector:
-      'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
-      'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
-    message:
-      'Client/UI state uses the reactive-var primitive in src/lib/state (ADR-008); zustand is ' +
-      'not a dependency of this project (issue #110).',
-  },
   {
     selector:
       'ImportDeclaration[source.value="react"] > ' +
       'ImportSpecifier[imported.name="useSyncExternalStore"]',
     message:
-      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
-      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+      'Read client state through a Zustand store hook (ADR-002); useSyncExternalStore is not ' +
+      'used in src (issue #110).',
   },
   {
     selector:
       'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
       '[computed=true][property.value="useSyncExternalStore"])',
     message:
-      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
-      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+      'Read client state through a Zustand store hook (ADR-002); useSyncExternalStore is not ' +
+      'used in src (issue #110).',
   },
   {
     selector:
       'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
       '[key.value="useSyncExternalStore"])',
     message:
-      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
-      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+      'Read client state through a Zustand store hook (ADR-002); useSyncExternalStore is not ' +
+      'used in src (issue #110).',
   },
 ];
 
 const routeShellSelectors = [
   ...dataTestidSelectors,
   ...typeDeclarationSelectors,
+  ...typedBoundarySelectors,
   ...noRawIntlSelectors,
   ...suspenseFallbackSelectors,
   ...routeObjectShapeSelectors,
@@ -546,26 +543,26 @@ const uiToolkitForbiddenPaths = [
     name: uiToolkitPackage,
     message:
       'Never import the ui-toolkit root barrel — it pulls the whole kit (swiper included) into ' +
-      'the bundle. Import the CRM seam under src/components instead (ADR-016).',
+      'the bundle. Import the CRM seam under src/components instead (docs/ui-toolkit.md).',
   },
   {
     name: `${uiToolkitPackage}/styles.css`,
     message:
       'Never import the ui-toolkit stylesheet — CRM ships its own woff2 fonts ' +
-      '(ADR-016, docs/ui-toolkit.md "Fonts").',
+      '(docs/ui-toolkit.md "Fonts").',
   },
   {
     name: `${uiToolkitPackage}/ui-color-theme`,
     message:
       'Never import the ui-toolkit colour theme — it is the website palette; CRM keeps its own ' +
-      'theme in src/styles (ADR-016).',
+      'theme in src/styles (docs/ui-toolkit.md).',
   },
   {
     name: `${uiToolkitPackage}/ui-breakpoints`,
     importNames: ['default'],
     message:
       'The ui-breakpoints default export is the website theme (xs 375, sm 640) — import the ' +
-      'named crmBreakpointsTheme / heightBreakpoints instead (ADR-016).',
+      'named crmBreakpointsTheme / heightBreakpoints instead (docs/ui-toolkit.md).',
   },
 ];
 const uiToolkitImportPatterns = (seamSubpath) => [
@@ -580,7 +577,7 @@ const uiToolkitImportPatterns = (seamSubpath) => [
       'Import ui-toolkit only through its CRM seam (src/components/ui-container, ' +
       'ui-typography, skeletons/ui-skeleton-*, ui-back-to-main, ui-checkbox, ui-text-link, ' +
       'ui-breakpoints); a subpath the product owner has not adopted stays forbidden ' +
-      '(ADR-016, docs/ui-toolkit.md).',
+      '(docs/ui-toolkit.md).',
   },
 ];
 const uiToolkitSeamComponentPaths = (seamSubpath) =>
@@ -591,7 +588,7 @@ const uiToolkitSeamComponentPaths = (seamSubpath) =>
           allowImportNames: ['default'],
           message:
             'A ui-toolkit component seam imports its subpath default export only — the ' +
-            'component itself (ADR-016).',
+            'component itself (docs/ui-toolkit.md).',
         },
       ]
     : [];
@@ -871,6 +868,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noRawIntlSelectors,
         ...suspenseFallbackSelectors,
         ...routerConstructionSelectors,
@@ -886,6 +884,15 @@ export default [
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'error',
+    },
+  },
+
+  // Source (issue #332): `type X = { … }` is an `interface`. The stock rule autofixes
+  // it, so the object-alias half of TB-1 needs no selector of its own.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
     },
   },
 
@@ -941,6 +948,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noRawIntlSelectors,
         ...noNewBehavioralClassInComponentSelectors,
         ...suspenseFallbackSelectors,
@@ -1046,6 +1054,7 @@ export default [
           selector: "TSPropertySignature[key.value='data-testid']",
           message: 'No data-testid prop type in source — expose an id prop instead (issue #90).',
         },
+        ...typedBoundaryTypeFileSelectors,
       ],
     },
   },
@@ -1068,6 +1077,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...classNamingSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
@@ -1093,6 +1103,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...classNamingSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...noUninjectedCollaboratorSelectors,
@@ -1113,6 +1124,7 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         noUninjectedCollaboratorSelectors[0],
@@ -1144,6 +1156,7 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
         ...clientStateSelectors,
@@ -1180,6 +1193,7 @@ export default [
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noUninjectedCollaboratorSelectors,
         ...routerConstructionSelectors,
@@ -1207,28 +1221,11 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...typedBoundarySelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
         ...clientStateSelectors,
-      ],
-    },
-  },
-
-  // Source (issue #110): `src/lib/state/use-reactive-var.ts` IS the sanctioned
-  // `useSyncExternalStore` bridge, so the client-state selectors are lifted here (and only
-  // here). Every other selector the hooks block carries is re-included (flat config replaces,
-  // does not merge), and the block is ordered after the hooks block so it wins for this file.
-  {
-    files: ['src/lib/state/use-reactive-var.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...dataTestidSelectors,
-        ...typeDeclarationSelectors,
-        ...noProcessEnvSelectors,
-        ...noRawIntlSelectors,
-        ...routerConstructionSelectors,
       ],
     },
   },

@@ -4,11 +4,22 @@ import sandboxDemoSessionProvider, {
   SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { SandboxDemoHost } from '@/config/env/types/sandbox-demo-session';
-import { AuthStateVar } from '@auth/stores/auth-var';
+import type { AuthState } from '@auth/types/auth-store';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+import {
+  PRELOADED_AUTH_TOKEN_WINDOW_KEY,
+  preloadedAuthTokenEnvVar,
+} from '@tests/utils/seed-preloaded-auth-token';
 
 const STORAGE_KEY = 'vilnacrm.sandbox-demo-session';
 const demoCredentials = { email: 'demo@vilnacrm.com', password: 'Demo1234' };
 const sandboxHost = 'sandbox-crm-prod-main.s3-website.eu-central-1.amazonaws.com';
+
+const loadAuthState = async (): Promise<AuthState> => {
+  const store = await loadIsolated(() => import('@auth/stores/use-auth-store'));
+
+  return store.default.getState();
+};
 
 const refusingStorage: SandboxDemoHost['localStorage'] = {
   getItem: () => {
@@ -27,6 +38,8 @@ describe('sandbox demo session provider Integration', () => {
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
+    delete process.env[preloadedAuthTokenEnvVar];
+    delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
   });
 
   afterEach(() => {
@@ -37,12 +50,12 @@ describe('sandbox demo session provider Integration', () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it('keeps a demo sign-in across a reload of the auth state until sign-out', () => {
+  it('keeps a demo sign-in across a reload of the auth store until sign-out', async () => {
     expect(sandboxDemoSessionProvider.signIn(demoCredentials)).not.toBeNull();
-    expect(new AuthStateVar().get()).toMatchObject({ email: demoCredentials.email });
+    expect(await loadAuthState()).toMatchObject({ email: demoCredentials.email });
 
     expect(sandboxDemoSessionProvider.signOut()).toBe(true);
-    expect(new AuthStateVar().get()).toMatchObject({ email: '', token: null });
+    expect(await loadAuthState()).toMatchObject({ email: '', token: null });
   });
 
   it('is active in a production build only on a sandbox S3 website host', () => {

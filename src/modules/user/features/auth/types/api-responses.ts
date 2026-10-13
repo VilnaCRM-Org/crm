@@ -1,8 +1,10 @@
-export type LoginResponse = { token: string };
+export interface LoginResponse {
+  token: string;
+}
 
-export type RegistrationResponse = {
+export interface RegistrationResponse {
   fullName?: string | undefined;
   email?: string | undefined;
-};
+}
 
 export type SafeUserInfo = RegistrationResponse;

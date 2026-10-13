@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type TextLinkProps = {
+export interface TextLinkProps {
   href: string;
   children: ReactNode;
-};
+}

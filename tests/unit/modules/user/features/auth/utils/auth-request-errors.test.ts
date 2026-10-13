@@ -51,7 +51,11 @@ describe('AuthRequestErrors', () => {
 
   it('creates joined validation errors', () => {
     expect(
-      authRequestErrors.createValidationUiError(['email invalid', 'password weak'], false, '\n')
+      authRequestErrors.createValidationUiError(
+        { items: [{ text: 'email invalid' }, { text: 'password weak' }] },
+        false,
+        '\n'
+      )
     ).toEqual({
       displayMessage: 'email invalid\npassword weak',
       retryable: false,

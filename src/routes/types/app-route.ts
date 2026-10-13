@@ -2,7 +2,9 @@ import type { ComponentType } from 'react';
 
 export type RouteGuard = 'protected' | 'public';
 
-export type PageModule = { default: ComponentType };
+export interface PageModule {
+  default: ComponentType;
+}
 
 export interface PageLoader {
   load(): Promise<PageModule>;

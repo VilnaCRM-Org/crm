@@ -38,7 +38,7 @@ const makeBundle = (files: Record<string, string>): string => {
   return dir;
 };
 
-// What every deployable build ships besides the app itself (ADR-019): the runtime-gated sandbox
+// What every deployable build ships besides the app itself (issue #309): the runtime-gated sandbox
 // demo provider and a 404.html that is a byte copy of index.html.
 const shippable = (files: Record<string, string> = {}): string =>
   makeBundle({
@@ -142,7 +142,7 @@ describe('check-auth-seed-gate', () => {
 
     expect(failure.status).toBe(1);
     expect(failure.output).toContain(`missing ${marker}`);
-    expect(failure.output).toContain('ADR-019');
+    expect(failure.output).toContain('issue #309');
   });
 
   it.each([

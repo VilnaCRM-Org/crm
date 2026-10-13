@@ -11,7 +11,7 @@ describe('error page variant table', () => {
 
     expect(variants).toEqual({
       notFound: {
-        glyphs: ['4', '0', '4'],
+        glyphs: { first: '4', second: '0', third: '4' },
         digitColor: '#1EAEFF',
         digitShadowColor: '#0E87CC',
         titleKey: 'error_page.not_found.title',
@@ -22,7 +22,7 @@ describe('error page variant table', () => {
         mobileCard: { gapTitle: 3.74, gapActions: 16, bottom: 26.48 },
       },
       forbidden: {
-        glyphs: ['4', '0', '3'],
+        glyphs: { first: '4', second: '0', third: '3' },
         digitColor: '#1B2327',
         digitShadowColor: '#999999',
         titleKey: 'error_page.forbidden.title',
@@ -33,7 +33,7 @@ describe('error page variant table', () => {
         mobileCard: { gapTitle: 8, gapActions: 16, bottom: 24 },
       },
       serverError: {
-        glyphs: ['5', 'x', 'x'],
+        glyphs: { first: '5', second: 'x', third: 'x' },
         digitColor: '#FFC01E',
         digitShadowColor: '#CC9300',
         titleKey: 'error_page.server_error.title',

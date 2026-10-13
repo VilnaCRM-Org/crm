@@ -1,3 +1,4 @@
+import type { CaptureContext } from '@/services/types/observability/observability';
 import type {
   SentryApi,
   SentryBreadcrumb,
@@ -19,7 +20,7 @@ export class SentryClient {
 
   private readonly pending: Array<{
     error: unknown;
-    context?: Record<string, unknown> | undefined;
+    context?: CaptureContext | undefined;
   }> = [];
 
   private pendingUser?: { value: SentryUser | null } | undefined;
@@ -32,7 +33,7 @@ export class SentryClient {
     await this.startSdk(options);
   }
 
-  public captureException(error: unknown, context?: Record<string, unknown>): void {
+  public captureException(error: unknown, context?: CaptureContext): void {
     if (this.sdk) {
       const hint: SentryCaptureHint | undefined = context ? { extra: context } : undefined;
       this.sdk.captureException(error, hint);
@@ -74,7 +75,7 @@ export class SentryClient {
     }
   }
 
-  private buffer(error: unknown, context?: Record<string, unknown>): void {
+  private buffer(error: unknown, context?: CaptureContext): void {
     if (this.pending.length >= this.maxPending) return;
     this.pending.push({ error, context });
   }

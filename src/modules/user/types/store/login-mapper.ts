@@ -1,7 +1,14 @@
-import type { UiError } from '@/services/error';
 import type { LoginResponse } from '@auth';
 
-export type LoginSuccessPayload = LoginResponse & { email: string };
+import type { MappingFailure } from './mapping-failure';
 
-export type LoginMappingResult =
-  { ok: true; value: LoginSuccessPayload } | { ok: false; error: UiError };
+export interface LoginSuccessPayload extends LoginResponse {
+  email: string;
+}
+
+export interface LoginMappingSuccess {
+  ok: true;
+  value: LoginSuccessPayload;
+}
+
+export type LoginMappingResult = LoginMappingSuccess | MappingFailure;

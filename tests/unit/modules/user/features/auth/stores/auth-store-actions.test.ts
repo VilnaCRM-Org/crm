@@ -1,15 +1,19 @@
+import { createStore } from 'zustand';
+
 import sandboxDemoSessionProvider, {
   type SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
-import AuthStateVar, { AuthStateVar as AuthStateVarClass } from '@auth/stores/auth-var';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
+import type { AuthState } from '@auth/types/auth-store';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
 import { buildEmail, buildFullName, buildPassword, buildToken } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const email = buildEmail();
 const token = buildToken();
@@ -47,7 +51,7 @@ const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({
     repository: makeRepo(over),
     authRequestErrors,
-    authState: AuthStateVar,
+    authState: useAuthStore,
     securitySignals,
     sandboxDemoSession: sandboxDemoSessionProvider,
   }).login({
@@ -59,7 +63,7 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({
     repository: makeRepo(over),
     authRequestErrors,
-    authState: AuthStateVar,
+    authState: useAuthStore,
     securitySignals,
     sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
@@ -76,11 +80,11 @@ const abortError = {
 };
 
 describe('AuthStoreActions', () => {
-  beforeEach(() => AuthStateVar.reset());
+  beforeEach(() => resetClientStores());
 
   it('sets the session and tags an opaque observability identity on successful login', async () => {
     await loginWith({});
-    expect(AuthStateVar.get()).toMatchObject({
+    expect(useAuthStore.getState()).toMatchObject({
       loginLoading: false,
       email,
       token,
@@ -89,9 +93,8 @@ describe('AuthStoreActions', () => {
     expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
   });
 
-  it('writes state through the injected auth state var, not the module singleton', async () => {
-    const injectedState = new AuthStateVarClass();
-    injectedState.reset();
+  it('writes state through the injected auth store, not the module singleton', async () => {
+    const injectedState = createStore<AuthState>()(() => ({ ...CLEARED_AUTH_STATE }));
 
     await new AuthStoreActions({
       repository: makeRepo(),
@@ -101,8 +104,8 @@ describe('AuthStoreActions', () => {
       sandboxDemoSession: sandboxDemoSessionProvider,
     }).login({ email, password });
 
-    expect(injectedState.get()).toMatchObject({ loginLoading: false, email, token });
-    expect(AuthStateVar.get()).toMatchObject({ email: '', token: null });
+    expect(injectedState.getState()).toMatchObject({ loginLoading: false, email, token });
+    expect(useAuthStore.getState()).toMatchObject({ email: '', token: null });
   });
 
   it('stores a structured error and tags no identity when login fails', async () => {
@@ -112,18 +115,18 @@ describe('AuthStoreActions', () => {
       retryable: false,
     };
     await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error }) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: error });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: error });
     expect(observability.setUser).not.toHaveBeenCalled();
   });
 
   it('keeps login error null when the repository reports an abort', async () => {
     await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error: abortError }) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 
   it('sets the user on successful registration', async () => {
     await registerWith({});
-    expect(AuthStateVar.get()).toMatchObject({
+    expect(useAuthStore.getState()).toMatchObject({
       registerLoading: false,
       user: { email },
       registerError: null,
@@ -133,35 +136,35 @@ describe('AuthStoreActions', () => {
   it('stores a structured error returned by the register repository', async () => {
     const error: AuthError = { kind: 'conflict', displayMessage: 'Exists', retryable: false };
     await registerWith({ register: jest.fn().mockResolvedValue({ ok: false, error }) });
-    expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: error });
+    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: error });
   });
 
   it('keeps register error null when the repository reports an abort', async () => {
     await registerWith({ register: jest.fn().mockResolvedValue({ ok: false, error: abortError }) });
-    expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
   it('preserves a structured auth error thrown by the login repository', async () => {
     const error: AuthError = { kind: 'server', displayMessage: 'Down', retryable: true };
     await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: error });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: error });
   });
 
   it('normalizes a generic thrown login error to an unknown auth error', async () => {
     await loginWith({ login: jest.fn().mockRejectedValue(new Error('Unexpected failure')) });
-    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
   it('normalizes a non-Error thrown login rejection', async () => {
     await loginWith({ login: jest.fn().mockRejectedValue('boom') });
-    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
   it('normalizes a thrown Error with an undefined message', async () => {
     const error = new Error();
     error.message = undefined as unknown as string;
     await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
   it.each([
@@ -172,17 +175,20 @@ describe('AuthStoreActions', () => {
     ['a cancel message', new Error('User cancelled the request')],
   ])('treats a thrown login rejection with %s as aborted', async (_label, error) => {
     await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 
   it('normalizes a generic thrown register error to an unknown auth error', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue(new Error('Unexpected failure')) });
-    expect(AuthStateVar.get().registerError).toMatchObject({ kind: 'unknown', retryable: false });
+    expect(useAuthStore.getState().registerError).toMatchObject({
+      kind: 'unknown',
+      retryable: false,
+    });
   });
 
   it('treats a thrown abort-marker register rejection as aborted', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
-    expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
   describe('security-event instrumentation (#159)', () => {
@@ -260,7 +266,7 @@ describe('AuthStoreActions', () => {
       const actions = new AuthStoreActions({
         repository,
         authRequestErrors,
-        authState: AuthStateVar,
+        authState: useAuthStore,
         securitySignals,
         sandboxDemoSession: { signIn } as unknown as SandboxDemoSessionProvider,
       });
@@ -280,7 +286,7 @@ describe('AuthStoreActions', () => {
 
       expect(signIn).not.toHaveBeenCalled();
       expect(repository.login).toHaveBeenCalledWith({ email, password }, controller.signal);
-      expect(AuthStateVar.get()).toMatchObject({
+      expect(useAuthStore.getState()).toMatchObject({
         loginLoading: false,
         token: null,
         loginError: null,
@@ -296,7 +302,7 @@ describe('AuthStoreActions', () => {
       await actions.login({ email, password }, new AbortController().signal);
 
       expect(repository.login).not.toHaveBeenCalled();
-      expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, email, token });
+      expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, email, token });
     });
 
     it('signs in with the demo session without calling the repository', async () => {
@@ -307,7 +313,7 @@ describe('AuthStoreActions', () => {
 
       expect(signIn).toHaveBeenCalledWith({ email, password });
       expect(repository.login).not.toHaveBeenCalled();
-      expect(AuthStateVar.get()).toMatchObject({
+      expect(useAuthStore.getState()).toMatchObject({
         loginLoading: false,
         email,
         token,
@@ -332,7 +338,7 @@ describe('AuthStoreActions', () => {
       await actions.login({ email, password }, signal);
 
       expect(repository.login).toHaveBeenCalledWith({ email, password }, signal);
-      expect(AuthStateVar.get()).toMatchObject({ email, token });
+      expect(useAuthStore.getState()).toMatchObject({ email, token });
     });
 
     it('signs in with the published demo credentials through the real provider', async () => {
@@ -342,13 +348,13 @@ describe('AuthStoreActions', () => {
       await new AuthStoreActions({
         repository,
         authRequestErrors,
-        authState: AuthStateVar,
+        authState: useAuthStore,
         securitySignals,
         sandboxDemoSession: sandboxDemoSessionProvider,
       }).login({ email: demoEmail, password: 'Demo1234' });
 
       expect(repository.login).not.toHaveBeenCalled();
-      expect(AuthStateVar.get()).toMatchObject({
+      expect(useAuthStore.getState()).toMatchObject({
         email: demoEmail,
         token: 'sandbox-demo-session-token',
       });

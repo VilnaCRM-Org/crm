@@ -1,7 +1,16 @@
-export type AuthSkeletonProps = {
-  disableAnimation?: boolean;
-};
+import type { SxProps, Theme } from '@mui/material';
+import type { SystemStyleObject } from '@mui/system';
 
-export type Wrap = <T extends object>(
-  baseSx: T
-) => (T | { readonly animation: 'none'; readonly backgroundSize: '100% 100%' })[];
+export interface AuthSkeletonProps {
+  disableAnimation?: boolean;
+}
+
+export type Wrap = (baseSx: SystemStyleObject<Theme>) => SxProps<Theme>;
+
+export interface SkeletonWrapProps {
+  wrap: Wrap;
+}
+
+export interface SkeletonAnimatedWrapProps extends SkeletonWrapProps {
+  disableAnimation: boolean;
+}

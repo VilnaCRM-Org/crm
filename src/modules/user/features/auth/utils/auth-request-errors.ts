@@ -1,6 +1,7 @@
 import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type { ValidationMessageSet } from '@auth/types/auth-request-errors';
 import type { UiError } from '@auth/utils/auth-error-handler';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 
@@ -29,9 +30,13 @@ export default class AuthRequestErrors {
     return this.isUiError(error) ? error : this.authErrorHandler.handle(error);
   }
 
-  public createValidationUiError(errors: string[], retryable: boolean, separator: string): UiError {
+  public createValidationUiError(
+    messages: ValidationMessageSet,
+    retryable: boolean,
+    separator: string
+  ): UiError {
     return {
-      displayMessage: errors.join(separator),
+      displayMessage: messages.items.map(({ text }) => text).join(separator),
       retryable,
     };
   }

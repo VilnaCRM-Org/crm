@@ -3,8 +3,9 @@ import type { TFunction } from 'i18next';
 import { Activity, type ReactNode } from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
-import { AuthStateVar, authActions } from '@auth/stores';
+import { authActions } from '@auth/stores';
 import { buildCredentials } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const t = ((key: string): string => key) as unknown as TFunction;
 
@@ -19,7 +20,7 @@ function neverSettlingLogin(signals: AbortSignal[]): void {
 
 describe('useLoginSubmitter request tracking', () => {
   beforeEach(() => {
-    AuthStateVar.reset();
+    resetClientStores();
   });
 
   afterEach(() => {

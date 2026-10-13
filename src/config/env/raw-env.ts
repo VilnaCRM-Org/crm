@@ -1,4 +1,4 @@
-import type { AuthFailureAlertEnv } from './types/env';
+import type { AuthFailureAlertEnv, RawEnvSnapshot } from './types/env';
 
 class RawEnv {
   public mainLanguage(): string {
@@ -36,7 +36,7 @@ class RawEnv {
     };
   }
 
-  public snapshot(): Record<string, string | undefined> {
+  public snapshot(): RawEnvSnapshot {
     const authFailureAlert = this.authFailureAlert();
     return {
       nodeEnv: process.env.NODE_ENV,

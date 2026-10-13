@@ -71,7 +71,7 @@ describe('PostLoadPrefetcher', () => {
     const host = createHost('loading');
     const targets = [createTarget(), createTarget()];
 
-    new PostLoadPrefetcher(targets).attach(host);
+    new PostLoadPrefetcher({ items: targets }).attach(host);
 
     expect(registeredTypes(host)).toEqual(['load']);
     expect(host.addEventListener).toHaveBeenCalledWith('load', expect.any(Function), {
@@ -94,7 +94,7 @@ describe('PostLoadPrefetcher', () => {
     const host = createHost('complete');
     const target = createTarget();
 
-    new PostLoadPrefetcher([target]).attach(host);
+    new PostLoadPrefetcher({ items: [target] }).attach(host);
     host.fire('load');
     host.fire('online');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS * 10);
@@ -107,7 +107,7 @@ describe('PostLoadPrefetcher', () => {
     const host = createHost('complete');
     const target = createTarget();
 
-    new PostLoadPrefetcher([target]).attach(host);
+    new PostLoadPrefetcher({ items: [target] }).attach(host);
     host.fire('keydown');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
@@ -119,7 +119,7 @@ describe('PostLoadPrefetcher', () => {
     const host = createHost('interactive');
     const target = createTarget();
 
-    new PostLoadPrefetcher([target]).attach(host);
+    new PostLoadPrefetcher({ items: [target] }).attach(host);
     host.fire('pointerdown');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
@@ -131,7 +131,7 @@ describe('PostLoadPrefetcher', () => {
     const host = createHost('complete');
     const target = createTarget();
 
-    new PostLoadPrefetcher([target]).attach(host);
+    new PostLoadPrefetcher({ items: [target] }).attach(host);
     host.fire('pointerdown');
     host.fire('keydown');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS * 2);
@@ -142,7 +142,7 @@ describe('PostLoadPrefetcher', () => {
   it('attaches only once however often attach is called', () => {
     const host = createHost('loading');
     const target = createTarget();
-    const prefetcher = new PostLoadPrefetcher([target]);
+    const prefetcher = new PostLoadPrefetcher({ items: [target] });
 
     prefetcher.attach(host);
     prefetcher.attach(host);
@@ -159,7 +159,7 @@ describe('PostLoadPrefetcher', () => {
     host.onLine = false;
     const target = createTarget();
 
-    new PostLoadPrefetcher([target]).attach(host);
+    new PostLoadPrefetcher({ items: [target] }).attach(host);
     host.fire('pointerdown');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
@@ -179,7 +179,7 @@ describe('PostLoadPrefetcher', () => {
     failing.load.mockRejectedValue(chunkFailure());
     const healthy = createTarget();
 
-    new PostLoadPrefetcher([failing, healthy]).attach(host);
+    new PostLoadPrefetcher({ items: [failing, healthy] }).attach(host);
     host.fire('pointerdown');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS);
     await Promise.resolve();
@@ -198,7 +198,7 @@ describe('PostLoadPrefetcher', () => {
       .mockResolvedValue(loaded);
     const loader = new ChunkRetryLoader(importModule);
 
-    new PostLoadPrefetcher([loader]).attach(host);
+    new PostLoadPrefetcher({ items: [loader] }).attach(host);
     host.fire('keydown');
     jest.advanceTimersByTime(PREFETCH_DELAY_MS);
     await jest.runAllTimersAsync();

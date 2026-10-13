@@ -166,7 +166,7 @@ describe('performance serving config', () => {
     expect(rootLayoutSource).not.toContain('fallback={null}');
   });
 
-  it('keeps the MUI theme engine off the eager path (ADR-017)', () => {
+  it('keeps the MUI theme engine off the eager path', () => {
     const eagerMuiImports = new Set<string>();
     const visited = new Set<string>();
     const pending = ['src/index.tsx'];
@@ -219,10 +219,9 @@ describe('performance serving config', () => {
     const renderAt = entrySource.lastIndexOf('root.render(');
     const prefetchAt = entrySource.indexOf(
       [
-        'new PostLoadPrefetcher([',
-        '    errorPageLoader,',
-        '    new FontFaceLoader(document.fonts, ERROR_PAGE_FONT_FACES),',
-        '  ]).attach(window);',
+        'new PostLoadPrefetcher<ErrorPageModule | void>({',
+        '    items: [errorPageLoader, new FontFaceLoader(document.fonts, ERROR_PAGE_FONT_FACES)],',
+        '  }).attach(window);',
       ].join('\n')
     );
 

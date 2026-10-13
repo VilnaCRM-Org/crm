@@ -9,7 +9,7 @@
  *                     token literal must all be gone, dead-code-eliminated by the
  *                     `NODE_ENV === 'production' && ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'`
  *                     guard. The same build must still carry what a pull-request sandbox
- *                     needs, because sandboxes are built from it (ADR-019): the runtime-gated
+ *                     needs, because sandboxes are built from it (issue #309): the runtime-gated
  *                     demo login (src/config/env/sandbox-demo-session-provider.ts, found by its
  *                     storage key and demo email) and a 404.html that is a byte copy of
  *                     index.html.
@@ -163,7 +163,7 @@ function assertSandboxSupport(dir, files) {
     console.error(
       '\nSandboxes are built from this bundle, so it must keep the runtime-gated demo login and\n' +
         'emit 404.html as a byte copy of index.html; without them a sandbox has no login and no\n' +
-        'deep links (ADR-019, issue #309).'
+        'deep links (issue #309).'
     );
     process.exitCode = 1;
     return;

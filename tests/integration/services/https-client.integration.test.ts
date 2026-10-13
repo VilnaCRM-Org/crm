@@ -47,9 +47,22 @@ describe('HttpRequestConfigBuilder header and body-init resolution', () => {
   const builder = new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
 
   it('keeps a caller-supplied Accept header instead of defaulting to JSON', () => {
-    const config = builder.create('GET', undefined, { Accept: 'text/csv' });
+    const config = builder.create('GET', undefined, {
+      items: [{ name: 'Accept', value: 'text/csv' }],
+    });
 
     expect(config.headers).toMatchObject({ Accept: 'text/csv' });
+  });
+
+  it('joins repeated caller headers of the same name in order', () => {
+    const config = builder.create('GET', undefined, {
+      items: [
+        { name: 'Accept', value: 'application/json' },
+        { name: 'Accept', value: 'text/csv' },
+      ],
+    });
+
+    expect(config.headers).toMatchObject({ Accept: 'application/json, text/csv' });
   });
 
   it('skips body-init constructors the runtime does not expose', () => {
@@ -400,7 +413,12 @@ describe('FetchHttpsClient Integration', () => {
 
       await client.get(TEST_URL, {
         schema: passthrough,
-        headers: { 'X-Custom': 'keep', 'x-request-id': 'caller-drops' },
+        headers: {
+          items: [
+            { name: 'X-Custom', value: 'keep' },
+            { name: 'x-request-id', value: 'caller-drops' },
+          ],
+        },
       });
 
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {

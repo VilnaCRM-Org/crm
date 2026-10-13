@@ -5,9 +5,17 @@ export interface PrefetchListenerOptions {
   passive?: true;
 }
 
+export interface PrefetchDocument {
+  readonly readyState: DocumentReadyState;
+}
+
+export interface PrefetchNavigator {
+  readonly onLine: boolean;
+}
+
 export interface PrefetchHost {
-  readonly document: { readonly readyState: DocumentReadyState };
-  readonly navigator: { readonly onLine: boolean };
+  readonly document: PrefetchDocument;
+  readonly navigator: PrefetchNavigator;
   addEventListener(
     type: PrefetchHostEvent,
     listener: () => void,

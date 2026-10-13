@@ -1,7 +1,7 @@
 import type { RegistrationView } from '@auth/components/form-section/types';
 import type { RegisterUserDto } from '@auth/types/credentials';
 
-export type UseRegistrationFormResult = {
+export interface UseRegistrationFormResult {
   view: RegistrationView;
   errorText: string;
   formKey: number;
@@ -11,4 +11,4 @@ export type UseRegistrationFormResult = {
   handleSuccessShown: () => void;
   handleBackToForm: () => void;
   handleRetry: () => void;
-};
+}

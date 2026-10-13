@@ -6,6 +6,13 @@ describe('ERROR_PAGE_FONT_FACES', () => {
       async () => (await import('@/components/error-page/config/error-page-fonts')).default
     );
 
-    expect(faces).toEqual(['400 1em Golos', '500 1em Golos', '600 1em Golos', '700 1em Golos']);
+    expect(faces).toEqual({
+      items: [
+        { descriptor: '400 1em Golos' },
+        { descriptor: '500 1em Golos' },
+        { descriptor: '600 1em Golos' },
+        { descriptor: '700 1em Golos' },
+      ],
+    });
   });
 });

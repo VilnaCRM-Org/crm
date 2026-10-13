@@ -27,7 +27,7 @@ class RouteMapper {
 
   // Every page chunk is retried once. A public page may then reload the document to pick up a
   // fresh deploy; a protected page may not, because the in-memory auth token would not survive
-  // the reload (ADR-007) — its second failure goes to the route error boundary instead.
+  // the reload (issue #116) — its second failure goes to the route error boundary instead.
   private loaderFor(route: AppRouteObject): PageLoader {
     const retrying = new ThemedChunkLoader(
       new ChunkRetryLoader<PageModule>(route.load),

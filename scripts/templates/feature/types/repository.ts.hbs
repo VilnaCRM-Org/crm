@@ -3,6 +3,10 @@ export interface {{pascalCase feature}}Item {
   readonly title: string;
 }
 
+export interface {{pascalCase feature}}ItemSet {
+  readonly items: readonly {{pascalCase feature}}Item[];
+}
+
 export interface {{pascalCase feature}}Repository {
-  list(): Promise<readonly {{pascalCase feature}}Item[]>;
+  list(): Promise<{{pascalCase feature}}ItemSet>;
 }

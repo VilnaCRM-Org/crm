@@ -20,7 +20,7 @@ const meta: Meta<typeof ErrorPage> = {
     docs: {
       description: {
         component:
-          'The designed error page (issue #309, ADR-018) shared by the catch-all 404, ' +
+          'The designed error page (issue #309) shared by the catch-all 404, ' +
           '`/forbidden` and `/server-error`, and shown by RouteError for a 404, 403 or 5xx ' +
           'response: the status digits over the decorative illustration, a card whose heading ' +
           'takes focus on mount, the variant actions, and the footer. It has three ' +

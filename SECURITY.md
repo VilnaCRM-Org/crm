@@ -81,7 +81,7 @@ Out of scope, with where to report instead:
   S3 website with no backend and no data. Making them sign anyone in on any other host, or
   restoring a demo session there, **is** in scope: the demo login ships in the production bundle
   and must stay inert off `sandbox-crm-*` S3 website hosts
-  ([ADR-019](docs/adr/019-sandbox-demo-session.md))
+  (`src/config/env/sandbox-demo-session-provider.ts`)
 
 ## Automated controls
 

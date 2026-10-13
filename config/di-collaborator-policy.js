@@ -166,12 +166,6 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free URL builder consumed by api-config at module load.',
   },
   {
-    path: 'src/modules/user/features/auth/stores/auth-var.ts',
-    reason:
-      'Dependency-free reactive auth state; composes the src/lib/state ReactiveVarFactory off ' +
-      'the container (ADR-008).',
-  },
-  {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',
     reason: 'Container-free selector singleton consumed directly by auth components.',
   },

@@ -8,7 +8,7 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import GraphQLUrl from '@/utils/get-graphql-url';
-import authStateVar from '@auth/stores/auth-var';
+import useAuthStore from '@auth/stores/use-auth-store';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 
 const GRAPHQL_CLIENT_TOKENS = [AUTH_TOKENS.GraphQLUrl, AUTH_TOKENS.ApolloClient];
@@ -26,7 +26,7 @@ const RESPONSE_MAPPER_TOKENS = [
 const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
 const AUTH_STATE_TOKENS = [
-  AUTH_TOKENS.AuthStateVar,
+  AUTH_TOKENS.AuthStore,
   AUTH_TOKENS.SandboxDemoSessionProvider,
   AUTH_TOKENS.AuthStoreActionsDeps,
 ];
@@ -100,14 +100,14 @@ describe('user module composition root', () => {
     expectAllRegistered(registeredContainer(), REPOSITORY_TOKENS);
   });
 
-  it('binds the reactive auth state and the store action dependency bundle', () => {
+  it('binds the auth store and the store action dependency bundle', () => {
     expectAllRegistered(registeredContainer(), AUTH_STATE_TOKENS);
   });
 
-  it('binds the container-free auth state singleton by value, not by construction', () => {
+  it('binds the container-free auth store singleton by value, not by construction', () => {
     const child = registeredContainer();
 
-    expect(child.resolve(AUTH_TOKENS.AuthStateVar)).toBe(authStateVar);
+    expect(child.resolve(AUTH_TOKENS.AuthStore)).toBe(useAuthStore);
   });
 
   it('hands the container-free sandbox demo seed to the store actions by value', () => {

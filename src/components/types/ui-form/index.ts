@@ -7,13 +7,15 @@ import type {
   UseFormReturn,
 } from 'react-hook-form';
 
+export type UIFormOptions<T extends FieldValues> = Omit<UseFormProps<T>, 'defaultValues'>;
+
 export type TitleHeadingComponent = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   defaultValues: DefaultValues<T>;
   children: ReactNode;
-  formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
+  formOptions?: UIFormOptions<T>;
   isSubmitting?: boolean;
   error?: string | null | undefined;
   submitLabel: string;
@@ -28,28 +30,36 @@ export interface UIFormProps<T extends FieldValues> {
   titleComponent?: TitleHeadingComponent;
 }
 
-export type SubmitHandlerOptions<T extends FieldValues> = {
+export interface SubmitHandlerOptions<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   methods: UseFormReturn<T>;
   defaultValues: DefaultValues<T>;
   resetOnSuccess: boolean;
-};
+}
 
-export type SubmitControlsProps = {
+export interface SubmitControlsProps {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
   describedBy: string;
   buttonRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
-};
+}
 
-export type FormHeaderProps = {
+export interface ErrorBannerProps {
+  error?: string | null;
+}
+
+export interface FormHeaderSectionProps {
+  header: FormHeaderProps;
+}
+
+export interface FormHeaderProps {
   title: ReactNode;
   subtitle?: ReactNode;
   showTitle: boolean;
   showSubtitle: boolean;
   titleComponent?: TitleHeadingComponent | undefined;
-};
+}
 
 export interface OfflineSubmit {
   online: boolean;
@@ -60,7 +70,7 @@ export interface OfflineSubmit {
 
 export interface UseUIFormOptions<T extends FieldValues> {
   defaultValues: DefaultValues<T>;
-  formOptions: Omit<UseFormProps<T>, 'defaultValues'>;
+  formOptions: UIFormOptions<T>;
   isSubmitting?: boolean | undefined;
 }
 
@@ -69,7 +79,7 @@ export interface UseUIFormResult<T extends FieldValues> {
   submitting: boolean;
 }
 
-export type FormBodyProps<T extends FieldValues> = {
+export interface FormBodyProps<T extends FieldValues> {
   header: FormHeaderProps;
   submittingLabel: string;
   announceSubmitting: boolean;
@@ -79,4 +89,4 @@ export type FormBodyProps<T extends FieldValues> = {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
-};
+}

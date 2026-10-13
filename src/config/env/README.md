@@ -138,7 +138,7 @@ where a sandbox host starts with `sandbox-crm-`, ends with `.amazonaws.com`, and
 - `signIn({ email, password })` returns the demo session for exactly `demo@vilnacrm.com` /
   `Demo1234` and remembers the demo **email** (never the password or a token) in `localStorage`
   under `vilnacrm.sandbox-demo-session`;
-- `restore()` turns that marker back into the demo session, so `AuthStateVar` starts signed in
+- `restore()` turns that marker back into the demo session, so `useAuthStore` starts signed in
   after a reload or a deep link;
 - `signOut()` removes the marker; the auth composition root's `logout` calls it.
 
@@ -147,8 +147,8 @@ wrapped, so a browser that refuses storage simply gets no persistence. The locat
 storage are constructor parameters defaulting to `globalThis`, so tests drive the host without
 touching globals. The auth module's composition root registers the singleton by value under
 `AUTH_TOKENS.SandboxDemoSessionProvider`; `AuthStoreActions.login` asks it before the repository
-unless the login's signal is already aborted. See
-[ADR-019](../../../docs/adr/019-sandbox-demo-session.md).
+unless the login's signal is already aborted. The reviewer instructions are in
+[CONTRIBUTING.md](../../../CONTRIBUTING.md#pull-request-sandboxes-and-the-demo-login).
 
 ## Adding a variable
 

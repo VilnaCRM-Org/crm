@@ -47,6 +47,11 @@ const APPROVED_SUFFIXES = [
   { suffix: 'Factory', role: 'encapsulated construction', lineage: 'GoF Factory' },
   { suffix: 'Builder', role: 'step-wise construction of an object', lineage: 'GoF Builder' },
   { suffix: 'Mapper', role: 'translation between representations', lineage: 'PoEAA Data Mapper' },
+  {
+    suffix: 'Transformer',
+    role: 'translates transport payloads into outcomes',
+    lineage: 'Miro Transformer (#332)',
+  },
   { suffix: 'Adapter', role: 'conforms one interface to another', lineage: 'GoF Adapter' },
   { suffix: 'Strategy', role: 'interchangeable algorithm', lineage: 'GoF Strategy' },
   { suffix: 'Handler', role: 'processes a request or event', lineage: 'Chain of Responsibility' },
@@ -96,12 +101,6 @@ const APPROVED_SUFFIXES = [
   },
   { suffix: 'Store', role: 'state container', lineage: 'Flux / Zustand' },
   { suffix: 'Actions', role: 'state transitions of a store', lineage: 'Flux' },
-  { suffix: 'Var', role: 'container-free reactive state cell', lineage: 'Apollo makeVar idiom' },
-  {
-    suffix: 'State',
-    role: 'listener bookkeeping of a reactive cell',
-    lineage: 'repo idiom (auth render path)',
-  },
   { suffix: 'Cache', role: 'memoized instances keyed by arguments', lineage: 'PoEAA Identity Map' },
   { suffix: 'Loader', role: 'loads a resource or module on demand', lineage: 'lazy-loading idiom' },
   {
@@ -160,7 +159,6 @@ const APPROVED_SUFFIXES = [
     lineage: 'gRPC / Go context deadline idiom (#147)',
   },
   { suffix: 'Navigator', role: 'adapter over browser navigation', lineage: 'GoF Adapter (window)' },
-  { suffix: 'Controller', role: 'coordinates a UI interaction flow', lineage: 'MVC Controller' },
   { suffix: 'Error', role: 'thrown error class', lineage: 'JavaScript Error subclass' },
   { suffix: 'Errors', role: 'catalog of error constructors or codes', lineage: 'repo idiom' },
   {

@@ -7,7 +7,7 @@ export const ERROR_PAGE_DIGITS_ID = 'error-page-digits';
 
 const ERROR_PAGE_VARIANTS = {
   notFound: {
-    glyphs: ['4', '0', '4'],
+    glyphs: { first: '4', second: '0', third: '4' },
     digitColor: paletteColors.primary.main,
     digitShadowColor: customColors.digitShadow.primary,
     titleKey: 'error_page.not_found.title',
@@ -18,7 +18,7 @@ const ERROR_PAGE_VARIANTS = {
     mobileCard: { gapTitle: 3.74, gapActions: 16, bottom: 26.48 },
   },
   forbidden: {
-    glyphs: ['4', '0', '3'],
+    glyphs: { first: '4', second: '0', third: '3' },
     digitColor: customColors.brand.darkPrimary,
     digitShadowColor: customColors.digitShadow.dark,
     titleKey: 'error_page.forbidden.title',
@@ -29,7 +29,7 @@ const ERROR_PAGE_VARIANTS = {
     mobileCard: { gapTitle: 8, gapActions: 16, bottom: 24 },
   },
   serverError: {
-    glyphs: ['5', 'x', 'x'],
+    glyphs: { first: '5', second: 'x', third: 'x' },
     digitColor: paletteColors.secondary.main,
     digitShadowColor: customColors.digitShadow.secondary,
     titleKey: 'error_page.server_error.title',

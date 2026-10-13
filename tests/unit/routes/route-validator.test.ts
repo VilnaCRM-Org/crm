@@ -14,7 +14,7 @@ describe('route validator', () => {
       { id: 'b', routes: [{ path: '/b', guard: 'protected', load: page }] },
     ];
 
-    expect(() => routeValidator.validate(modules)).not.toThrow();
+    expect(() => routeValidator.validate({ items: modules })).not.toThrow();
   });
 
   it('rejects duplicate module ids (negative)', () => {
@@ -23,7 +23,9 @@ describe('route validator', () => {
       { id: 'dupe', routes: [{ path: '/y', load: page }] },
     ];
 
-    expect(() => routeValidator.validate(modules)).toThrow('Duplicate route module id: dupe');
+    expect(() => routeValidator.validate({ items: modules })).toThrow(
+      'Duplicate route module id: dupe'
+    );
   });
 
   it('rejects a route with neither path nor index (negative)', () => {
@@ -33,7 +35,7 @@ describe('route validator', () => {
       { id: 'a', routes: [{ load: page } as unknown as AppRouteObject] },
     ];
 
-    expect(() => routeValidator.validate(modules)).toThrow(
+    expect(() => routeValidator.validate({ items: modules })).toThrow(
       'Route must declare a path or be an index route'
     );
   });
@@ -52,7 +54,7 @@ describe('route validator', () => {
       },
     ];
 
-    expect(() => routeValidator.validate(modules)).toThrow(
+    expect(() => routeValidator.validate({ items: modules })).toThrow(
       'Nested routes must not declare a guard'
     );
   });

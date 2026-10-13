@@ -1,5 +1,13 @@
 export type FeatureFlag = never;
 
-export type FeatureFlagValues = [FeatureFlag] extends [never]
-  ? Readonly<Record<string, never>>
-  : Readonly<Partial<Record<FeatureFlag, boolean | undefined>>>;
+export interface FeatureFlagName {
+  readonly name: FeatureFlag;
+}
+
+export interface FeatureFlagNames {
+  readonly items: readonly FeatureFlagName[];
+}
+
+export type FeatureFlagSnapshot = { readonly [Flag in FeatureFlag]: boolean };
+
+export type FeatureFlagValues = { readonly [Flag in FeatureFlag]?: boolean | undefined };

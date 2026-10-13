@@ -11,10 +11,10 @@ This template is used for all VilnaCRM microservices.
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Material-UI v9, Emotion (CSS-in-JS)
-- **State Management**: three categories with one primitive each (ADR-008, issue #110) —
-  server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in the
-  dependency-free reactive var from `src/lib/state/` read through `useReactiveVar`, and the
-  in-memory session token in `AuthStateVar`; see `docs/state-architecture.md`
+- **State Management**: three categories with one primitive each (ADR-002, issues #110, #334) —
+  server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in
+  Zustand stores (`create`, no middleware) read through selectors, and the in-memory session
+  token in `useAuthStore`; see `docs/state-architecture.md`
 - **Routing**: React Router v7 (the `react-router` package; `react-router-dom` was folded into it)
 - **DI Container**: tsyringe with reflect-metadata decorators
 - **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
@@ -767,7 +767,10 @@ base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in
 `FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
 `libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
+`/usr/local/lib/node_modules/serve` tree. `serve@14.2.6` pins `compression@1.8.1` exactly, which
+carries CVE-2026-87776, so the `serve-tools` stage sets `dependencies.compression` to `1.8.2` in
+the installed package and re-runs a production-only `npm install`; drop that step once a `serve`
+release ships the fix. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
@@ -1412,7 +1415,7 @@ not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`
   deletes a guard the tests exercise.
 - `function-return-type` (3): a component returning an element or `null` is idiomatic React.
 - `todo-tag` (2): process, not a defect.
-- `no-invariant-returns` (1): fires on the deliberate echo API of `ReactiveVarState.write`.
+- `no-invariant-returns` (1): fired only on the echo API of the retired reactive-var primitive (#334).
 - `pseudo-random` (1): backoff jitter is not a security context.
 - `concise-regex`, `redundant-type-aliases` (1 each): style.
 
@@ -1441,6 +1444,90 @@ ignored return value, throw the constructed error. Never `eslint-disable` (the
 `eslint-suppressions` workflow rejects it), never narrow the scope, and never drop a rule
 to clear a finding; a rule that turns out noisy is removed by a reviewed change to this section,
 the list and its fixtures together.
+
+### Typed boundaries (TB-1, issue #332)
+
+Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
+file, a class, or a named alias in a type-only file whose whole body is a union of named types or
+literals, a callback type, one generic or derived type over named arguments, or a mapped type
+over a named key union. The boundaries
+this protects are component props, hook parameters and results, the signatures of Data
+provider, Transformer, Repository, State, Guard and Factory classes, DI-registered values,
+published state, events and telemetry payloads. The gate is syntactic and wider than that list:
+it knows neither a class's role nor whether a function is exported. In every gated `src` code
+file it checks the parameter and return annotations of every **top-level** function (a
+`function` declaration, or an arrow or function expression bound directly to a top-level
+variable or default-exported), **exported or not**, so components, hooks and module-local
+helpers alike; of every non-private method, the constructor included, of **every** class; of
+every constructor parameter property, whatever its modifier, `private readonly` included; and
+of every non-private arrow or function-expression class property, plus the annotation of every
+non-private class property. In a type-only file it checks every member of an exported or
+top-level interface or alias. The gate fails at those positions:
+
+- **(a)** an anonymous object type, including an object member of a union — each variant is a
+  named `interface`, and `type X = { … }` is an `interface`;
+- **(b)** a tuple;
+- **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
+  collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
+  and an array of primitives never crosses;
+- **(d)** `any`, `object`, `Record<…>`, an index signature, a mapped type over `string`, `number`
+  or `symbol` keys (`{ [k in string]: T }`, or a flat key union with one of them as a direct
+  member), or
+  `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
+  as an `error` / `cause` member;
+- **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
+  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+
+Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
+`AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
+types that obey the rule, and `T | null` / `T | undefined`. Exceptions: generated codegen types
+stay below the Data provider (review item), `declare module` blocks and `.d.ts` files,
+`private` / `#private` methods and properties (a constructor parameter property is gated
+whatever its modifier, so `@inject(TOKEN) private readonly x: T` still needs a named `T`), and
+functions and values nested inside a function body or wrapped in a call. A module-level
+function is gated whether or not it is exported.
+
+**Enforcement.** Two `no-restricted-syntax` arrays are built by
+[`config/typed-boundary-policy.js`](config/typed-boundary-policy.js), the single source for the
+config and the fixtures: `typedBoundarySelectors` (five code entries) is spread into **every**
+`src` block that sets the rule — flat config replaces the rule per file, and the hooks block
+needs it too, since hooks are exempt from #100 but not from TB-1 — and
+`typedBoundaryTypeFileSelectors` (five entries) into the type-only block, rooted at `Program`
+so a `declare module` augmentation is never matched. `@typescript-eslint/consistent-type-definitions`
+is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
+
+**Gate integrity.** [`scripts/ci/eslint-gate-fixtures.mjs`](scripts/ci/eslint-gate-fixtures.mjs)
+carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
+function, arrow or function expression exported later, a non-private class arrow or
+function-expression property), and the must-pass controls (a named collection interface, a
+private method, a `#private` arrow property, `normalize(error: unknown)`, a callback alias with an
+`unknown` parameter (bare and nullable), a `declare module`, a named derivation, a mapped type over
+a named key union). The
+universe test fails a selector edited without its fixture, asserts every `src` code probe resolves
+all five code selectors, and `tests/unit/config/eslint-policy.test.ts` pins each array on every
+block, the base `src` block included.
+[`tests/unit/tooling/typed-boundary-alternatives.test.ts`](tests/unit/tooling/typed-boundary-alternatives.test.ts)
+lints a snippet for every holder × position alternative and every type-file root the policy
+generates, so a single dead alternative fails by name.
+
+**Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
+alias. A component or function passed as an argument (`forwardRef(function UIButton(…))`,
+`memo(…)`), a function-type annotation on a variable (`export const useX: (p: { … }) => R`),
+an `export { x as default }` of a nested function, an inline callback inside a
+parameter's own interface, test-builder return values and the generated-types exception are
+review items. An `unknown` **parameter** in a code file is not
+gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so
+(d) gates `unknown` as a code-file return and class property, and in type-only files as a member,
+a method / call-signature return or anywhere in an alias body except a callback parameter or a
+type-parameter default; an `unknown` parameter outside a narrowing method is a
+review item. So is any catch-all mapped type whose key constraint is neither a bare `string`,
+`number` or `symbol` keyword nor a flat union holding one — (d) matches only those two shapes.
+Examples: a nested or parenthesised key union (`"a" | ("b" | string)`), an intersection
+(`[k in string & {}]`), `[k in PropertyKey]`, `[k in keyof any]`, a template literal
+(``[k in `${string}`]``) and an alias of a keyword (`[k in K]` with `type K = string`).
+
+**No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
+cast, an allowlist entry or a narrower glob.
 
 ### Test liveness (issue #167)
 
@@ -1596,7 +1683,7 @@ source of truth for the polyfill mode, the exact `browserslist.production` query
 per-family floors; `rsbuild.config.ts` reads `polyfill` from it and refuses to build on an
 unknown value. The matrix is **Baseline 2023 Widely available** (Chrome/Edge/Firefox 111,
 Safari and iOS Safari 16.4, Samsung Internet 22, Opera 97, latest Chrome/Firefox for Android)
-and is documented in [ADR-003](docs/adr/003-browser-support-matrix.md).
+and is documented, with its rationale, in the README "Supported browsers" section.
 
 Three checks keep the promise honest, all reading that one query:
 
@@ -1608,7 +1695,10 @@ Three checks keep the promise honest, all reading that one query:
 - SWC down-levels syntax against the same query during the production build.
 
 **Raising or lowering the floor** is a reviewed change to `config/browser-support.json`, the
-README table, and ADR-003 together — never a lone query edit, and never a suppression.
+`browserslist.production` query in `package.json` (which must equal the policy's `queries`
+exactly, order included) and the README table together — never a lone query edit, and never a
+suppression. The policy file is an ADR-drift surface, so the pull request also adds an ADR or
+carries the documented waiver.
 
 ### Localization Parity (issue #151)
 
@@ -1736,12 +1826,11 @@ it paints nothing for the first 150 ms so fast chunk loads never flash a loader 
 layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
 announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
 `message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
-it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either
-([ADR-017](docs/adr/017-mui-theme-off-the-eager-path.md)): `RouteMapper` and the footer loader
-wrap each lazy surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel
-with it, and the paint-path components style themselves with `@emotion/styled`, never `Box` or
-another `@mui/material` import. To add a page, follow the registry ("Adding a page"
-below); never eagerly import a page. Three checks fail CI on a regression:
+it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either:
+`RouteMapper` and the footer loader wrap each lazy surface in a `ThemedChunkLoader` that fetches
+the `mui-theme` chunk in parallel with it, and the paint-path components style themselves with
+`@emotion/styled`, never `Box` or another `@mui/material` import. To add a page, follow the
+registry ("Adding a page" below); never eagerly import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
   ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
@@ -1773,13 +1862,13 @@ src/
 │   └── user/
 │       ├── features/        # Feature-specific code
 │       │   └── auth/
-│       │       ├── stores/        # AuthStateVar (reactive var) + composition root
+│       │       ├── stores/        # useAuthStore (Zustand) + composition root
 │       │       ├── repositories/  # AuthRepository, API clients, error factory
 │       │       └── types/         # Auth types (AuthError, AuthStore, ...)
 │       ├── store/           # Shared response/error mappers
 │       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
-├── lib/             # Framework-agnostic contracts (reliability, the state primitive), container-free
+├── lib/             # Container-free shared contracts (reliability, connectivity store)
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
 ├── config/          # DI configuration, tokens, API config
@@ -1840,7 +1929,7 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
    `config/{di,tokens}.ts`.
 3. `reflect-metadata` is imported once, at the top of the aggregator
    `src/config/dependency-injection-config.ts` — never in `src/index.tsx`, so the polyfill
-   loads with the container and stays out of the auth paint path (ADR-011).
+   loads with the container and stays out of the auth paint path.
 4. Use `@injectable()` on classes; register them in the owning area's `di.ts`.
 5. Resolve / inject via the area's namespaced tokens, e.g.
    `@inject(HTTP_TOKENS.HttpsClient)` or `container.resolve<Type>(AUTH_TOKENS.AuthRepository)`.
@@ -1865,21 +1954,17 @@ private async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-var.ts — dependency-free reactive state over the src/lib/state ReactiveVarFactory
-// (no @apollo/client, no zustand; ADR-008). Instance methods on a module-singleton instance
-// keep the paint path container-free (no tsyringe in the auth chunk) while satisfying the
-// no-static convention (issue #100). React reads it through useReactiveVar
-// (@/lib/state/use-reactive-var), the one sanctioned useSyncExternalStore bridge.
-export class AuthStateVar {
-  public get(): AuthState {
-    /* read */
-  }
-  public set(partial: Partial<AuthState>): void {
-    /* merge + notify */
-  }
-}
-const authStateVar = new AuthStateVar();
-export default authStateVar;
+// use-auth-store.ts — a Zustand store (`create`, no middleware; ADR-002) in a hook file, so the
+// no-static convention (issue #100) does not apply and the paint path stays container-free (no
+// tsyringe in the auth chunk). React reads it through selectors; writers hold it as an
+// `AuthStateWriter`, whose `setState` takes an `AuthStatePatch`. The DI graph receives it by value
+// as `AUTH_TOKENS.AuthStore`.
+export const CLEARED_AUTH_STATE: AuthState = {/* cleared fields */};
+const useAuthStore = create<AuthState>()(() => ({
+  ...CLEARED_AUTH_STATE,
+  token: preloadedAuthTokenSeed.read(),
+}));
+export default useAuthStore;
 
 // auth-store-selectors.ts — selectors grouped in a class, exported as a singleton (no free functions)
 class AuthStoreSelectors {
@@ -1938,7 +2023,7 @@ list and needs no entry (issue #116): `UIErrorBoundary`
 `AppErrorBoundary` needed is gone with it; its functional descendants `ErrorFallback` and
 `RouteError` can call `useService` and stay gated too. Both gates read the same carve-out list,
 so they never disagree about which file is exempt. The carve-outs keep their module singletons
-(`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`, `routeComposer`,
+(`formValidators`, `useAuthToken`, `use-auth-store`, `auth-store-selectors`, `routeComposer`,
 `boundaryErrorReporter`) — do not migrate them onto `useService`. The carve-out is itself
 enforced by two rules:
 
@@ -1984,12 +2069,11 @@ container — collaborators are injected, not reached for.
   `@injectable()` classes registered in `dependency-injection-config.ts` against a token
   in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
   `@inject`.
-- Render-path state primitives that must stay container-free for the auth-page Lighthouse
-  budget (`auth-var`, `auth-store-selectors`, `use-auth-token`) are instance classes exported
-  as a **module singleton** (`export default new X()`), so call sites stay `X.method(...)` and
-  no tsyringe is pulled into the paint path. The shared primitive they compose,
-  `ReactiveVarFactory` / `ReactiveVarState` in `src/lib/state/`, is a constructible class —
-  one instance per store — and `use-reactive-var.ts` is a hook.
+- Render-path state helpers that must stay container-free for the auth-page Lighthouse
+  budget (`auth-store-selectors`) are instance classes exported as a **module singleton**
+  (`export default new X()`), so call sites stay `X.method(...)` and no tsyringe is pulled into
+  the paint path. The stores themselves are Zustand hooks in `use-*-store.ts` files
+  (`use-auth-store.ts`, `use-connectivity-store.ts`), exempt like any hook.
 - Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
   methods on a singleton class rather than free functions.
 
@@ -2044,6 +2128,7 @@ type files, stories, tests) must end in one of these:
 | `*Factory`     | encapsulated construction                   | GoF Factory                       |
 | `*Builder`     | step-wise construction of an object         | GoF Builder                       |
 | `*Mapper`      | translation between representations         | PoEAA Data Mapper                 |
+| `*Transformer` | translates transport payloads into outcomes | Miro Transformer (#332)           |
 | `*Adapter`     | conforms one interface to another           | GoF Adapter                       |
 | `*Strategy`    | interchangeable algorithm                   | GoF Strategy                      |
 | `*Handler`     | processes a request or event                | Chain of Responsibility           |
@@ -2061,8 +2146,6 @@ type files, stories, tests) must end in one of these:
 | `*Selectors`   | read-only projections over state            | Redux / Zustand selectors         |
 | `*Store`       | state container                             | Flux / Zustand                    |
 | `*Actions`     | state transitions of a store                | Flux                              |
-| `*Var`         | container-free reactive state cell          | Apollo makeVar idiom              |
-| `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
 | `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
 | `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
 | `*Prefetcher`  | loads resources ahead of demand after load  | resource-prefetch idiom (#309)    |
@@ -2081,7 +2164,6 @@ type files, stories, tests) must end in one of these:
 | `*Correlation` | session-scoped correlation identifier       | DDD Value Object (#159)           |
 | `*Deadline`    | time-bounded abort scope of one request     | gRPC / Go context deadline (#147) |
 | `*Navigator`   | adapter over browser navigation             | GoF Adapter (window)              |
-| `*Controller`  | coordinates a UI interaction flow           | MVC Controller                    |
 | `*Error`       | thrown error class                          | JavaScript Error subclass         |
 | `*Errors`      | catalog of error constructors or codes      | repo idiom                        |
 | `*Signal`      | error subclass carrying one typed event     | repo idiom (#159)                 |
@@ -2127,7 +2209,7 @@ class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
    the class name (`ApiErrorGuard` → `api-error-guard.ts`).
 5. Run `make format && make lint`; fix a finding by renaming, never with a suppression.
 6. Rename nothing on the container-free auth render path in a way that pulls tsyringe or a token
-   module into the paint chunk — `ReactiveVarFactory` / `AuthStateVar` keep their names.
+   module into the paint chunk — `useAuthStore` and `useConnectivityStore` keep their names.
 
 **Enforcement.** Four `no-restricted-syntax` selectors, all at `error`, spread into the same
 `src/**/*.ts` override blocks as the #100 / #180 gates (flat config replaces rather than merges
@@ -2231,13 +2313,13 @@ Three different things are outside the gate, and the distinction matters when yo
   gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
   class to register it), token modules, and index barrels.
 - **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
-  **container-free render-path singletons** — `auth-var` (its `ReactiveVarFactory` now
-  lives in `src/lib/state/`, outside the gated globs), `auth-store-selectors`,
+  **container-free render-path singletons** — `auth-store-selectors`,
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
-  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the
-  observability core / correlation-id / sentry / pii-scrubber / web-vitals leaves.
+  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
+  `security-event-core` and its `auth-failure-monitor` leaf, and the observability core /
+  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves.
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
@@ -2343,8 +2425,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
    rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, and an
    `APP_CONFIG_FLAG_*` variable naming a flag that does not exist; the entrypoint exits non-zero,
    so a misconfigured deployment never serves.
-2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before `createRoot`, so a
-   malformed block throws immediately instead of silently degrading to defaults.
+2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before rendering the app, so
+   a malformed block is reported and rendered through the shell's `ErrorFallback` instead of
+   silently degrading to defaults.
 3. **Container-resolved code** — `appConfig` zod-validates with `z.prettifyError`, and a unit test
    validates the **committed** block in `public/index.html` against the schema so the shipped
    default cannot drift from the contract.
@@ -2664,7 +2747,7 @@ as they are for the issue-#188 ratchet.
 **No suppression:** satisfy the gate by keeping the seam gated, never by relaxing the scan,
 narrowing its file set, or moving a read out of the guarded method.
 
-### Sandbox demo login and deep-link fallback (issue #309, ADR-019)
+### Sandbox demo login and deep-link fallback (issue #309)
 
 A pull-request sandbox is built by the `sandbox-crm-creation` pipeline in
 `VilnaCRM-Org/crm-infrastructure` with `make build-out` — the same `production` target that
@@ -2691,7 +2774,7 @@ repository — unless the login's `AbortSignal` is already aborted, in which cas
 settles as aborted through the repository and no session is published. A match settles like any
 successful login (`applyLogin`, then `loginSettled`) with no network call. On a match the
 provider writes the demo **email** (never the password or a token) to `localStorage` under
-`vilnacrm.sandbox-demo-session`; `AuthStateVar` calls `restore()` when it is created, so a reload
+`vilnacrm.sandbox-demo-session`; `useAuthStore` calls `restore()` when it is created, so a reload
 or a deep link stays signed in; the auth composition root's `logout` calls `signOut()`. Every
 storage call is wrapped, so unavailable storage just means no persistence. The provider has no
 dependencies, so neither tsyringe nor zod reaches the auth paint path.
@@ -2981,7 +3064,7 @@ replaces.
     the matching backend alert rule as described in the "Client security events" section of
     [`SECURITY.md`](SECURITY.md).
 
-14. **Reliability model (issue #116, ADR-007)**: `RecoverableError`
+14. **Reliability model (issue #116)**: `RecoverableError`
     (`src/lib/reliability/types/recoverable-error.ts`: `recoverable`, `strategy` of `retry` /
     `reset` / `reload` / `navigate-home` / `none`, an i18n `messageKey` — never a raw
     `error.message` — `severity`, optional `cause`) is what a boundary renders from.
@@ -2994,7 +3077,7 @@ replaces.
     `surface="auth"`,
     and every route the composer emits carries `errorElement: <RouteError landmark=… />`
     (`"region"` under `AppLayout`, `"main"` elsewhere). `RouteError` dispatches on status before
-    this model (issue #309, ADR-018): `errorPageStatusDetector` reads a status from a router
+    this model (issue #309): `errorPageStatusDetector` reads a status from a router
     error response, a render-thrown `Response` or a `data()` value — so a guard may throw
     `data(null, { status: 403 })` or navigate to `/forbidden` — and renders the lazy designed
     `ErrorPage` for 403, 404 and 500 to 599, so a 5xx route response shows the 5xx page with
@@ -3020,7 +3103,7 @@ replaces.
     asserts it — never a file-wide spy. Chunk-load recovery with a reload policy is pattern 15
     (issue #147); never auto-reload a protected route, because the auth token is memory-only.
 
-15. **Runtime resilience (issue #147, ADR-009)**: every request runs under a `RequestDeadline`
+15. **Runtime resilience (issue #147)**: every request runs under a `RequestDeadline`
     (`src/lib/reliability/request-deadline.ts`; the `*Deadline` suffix is "time-bounded abort
     scope of one request"): one `AbortController`, a timer for `REACT_APP_REQUEST_TIMEOUT_MS`
     (default 10 000 ms, via `RequestDeadlineFactory`, registered by value under
@@ -3050,7 +3133,7 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
     `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
     telemetry; only the final failure reaches the observability boundary.
 
-    Offline is client state (ADR-008): `ConnectivityStateVar` in `src/lib/connectivity/`, seeded
+    Offline is client state (ADR-002): `useConnectivityStore` in `src/lib/connectivity/`, seeded
     and driven by `BrowserConnectivityAdapter.attach(window)` in `src/index.tsx`, read through
     `useConnectivity()` (`src/hooks/`). `UIForm` disables its submit while offline and mounts
     `UIOfflineNotice` — an **always-mounted** `role="status"` region inside the `<form>`, after
@@ -3071,7 +3154,7 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
     `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
     `route.load` through `React.lazy`.
 
-    Post-load warm-up (issue #309, ADR-018): `PostLoadPrefetcher` (`src/lib/reliability/`),
+    Post-load warm-up (issue #309): `PostLoadPrefetcher` (`src/lib/reliability/`),
     attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the
     error-page font faces (`FontFaceLoader` over `ERROR_PAGE_FONT_FACES`) 2 s after the first
     `pointerdown` or `keydown` after `load` while online, re-arming on the next `online` event

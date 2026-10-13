@@ -26,7 +26,7 @@ describe('SentryClient capture buffering is gated on the DSN', () => {
     const client = new SentryClient();
     const dropped = new Error('captured while telemetry was disabled');
 
-    client.captureException(dropped, { requestId: 'req-dropped' });
+    client.captureException(dropped, { source: 'req-dropped' });
     expect(Sentry.captureException).not.toHaveBeenCalled();
 
     process.env.REACT_APP_SENTRY_DSN = DSN;

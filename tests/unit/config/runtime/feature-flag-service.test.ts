@@ -28,8 +28,15 @@ describe('featureFlagService', () => {
     const { default: featureFlagService, FeatureFlagService } = await loadFeatureFlagService();
 
     expect(featureFlagService).toBeInstanceOf(FeatureFlagService);
-    expect(featureFlagService.names()).toEqual([]);
+    expect(featureFlagService.names()).toEqual({ items: [] });
     expect(featureFlagService.snapshot()).toEqual({});
+  });
+
+  it('names each declared flag as a FeatureFlagName', async () => {
+    const { default: featureFlagService } = await loadFeatureFlagService();
+    jest.spyOn(Object, 'keys').mockReturnValueOnce([PROBE_FLAG]);
+
+    expect(featureFlagService.names()).toEqual({ items: [{ name: PROBE_FLAG }] });
   });
 
   it('enables a flag the runtime configuration turns on', async () => {
@@ -64,7 +71,9 @@ describe('featureFlagService', () => {
     writeConfigBlock(buildFeatureFlagConfig({ [PROBE_FLAG]: true, otherFlag: false }));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
-    jest.spyOn(featureFlagService, 'names').mockReturnValue([PROBE_FLAG as never]);
+    jest
+      .spyOn(featureFlagService, 'names')
+      .mockReturnValue({ items: [{ name: PROBE_FLAG as never }] });
 
     expect(featureFlagService.snapshot()).toEqual({ [PROBE_FLAG]: true });
   });

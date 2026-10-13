@@ -944,7 +944,12 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should not override an explicitly provided Content-Type header', async () => {
-      const customHeaders = { 'Content-Type': 'text/plain', Accept: 'application/xml' };
+      const customHeaders = {
+        items: [
+          { name: 'Content-Type', value: 'text/plain' },
+          { name: 'Accept', value: 'application/xml' },
+        ],
+      };
       mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
 
       await client.post(

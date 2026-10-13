@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next';
 import { type JSX, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,9 +7,9 @@ import InertBox from '@auth/components/form-section/inert-box';
 import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
 import type {
+  RegistrationFormPanelProps,
   RegistrationFormProps,
-  RegistrationFormState,
-  Validators,
+  RegistrationNotificationPanelProps,
 } from '@auth/types/auth-forms/registration-form';
 import type { RegisterUserDto } from '@auth/types/credentials';
 import registrationNotificationLoader from '@auth/utils/load-registration-notification';
@@ -21,15 +20,7 @@ const RegistrationNotification = lazy(() => registrationNotificationLoader.load(
 
 const DEFAULT_VALUES: RegisterUserDto = { fullName: '', email: '', password: '' };
 
-function RegistrationFormPanel({
-  form,
-  t,
-  validators,
-}: {
-  form: RegistrationFormState;
-  t: TFunction;
-  validators: Validators;
-}): JSX.Element {
+function RegistrationFormPanel({ form, t, validators }: RegistrationFormPanelProps): JSX.Element {
   return (
     <InertBox key={form.formKey} id={`reg-form-${form.formKey}`} inert={form.view !== 'form'}>
       <UIForm<RegisterUserDto>
@@ -54,10 +45,7 @@ function RegistrationFormPanel({
 function RegistrationNotificationPanel({
   form,
   t,
-}: {
-  form: RegistrationFormState;
-  t: TFunction;
-}): JSX.Element | null {
+}: RegistrationNotificationPanelProps): JSX.Element | null {
   if (form.view === 'form') return null;
   return (
     <Suspense

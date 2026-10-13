@@ -34,7 +34,7 @@ describe('sentry client (integration)', () => {
     const { Sentry, sentryClient } = await loadClient();
     const early = new Error('early');
 
-    sentryClient.captureException(early, { requestId: 'r1' });
+    sentryClient.captureException(early, { source: 'r1' });
     sentryClient.setUser({ id: 'buffered' });
     sentryClient.addBreadcrumb({ message: 'before-load' });
     expect(Sentry.captureException).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ describe('sentry client (integration)', () => {
 
     expect(Sentry.init).toHaveBeenCalledTimes(1);
     expect(Sentry.captureException).toHaveBeenNthCalledWith(1, early, {
-      extra: { requestId: 'r1' },
+      extra: { source: 'r1' },
     });
     expect(Sentry.setUser).toHaveBeenNthCalledWith(1, { id: 'buffered' });
     const [setUserOrder = Number.POSITIVE_INFINITY] = (Sentry.setUser as jest.Mock).mock
@@ -57,14 +57,14 @@ describe('sentry client (integration)', () => {
     expect(setUserOrder).toBeLessThan(captureOrder);
 
     const late = new Error('late');
-    sentryClient.captureException(late, { requestId: 'r2' });
+    sentryClient.captureException(late, { source: 'r2' });
     sentryClient.captureException(late);
     sentryClient.setUser({ id: 'live' });
     sentryClient.clearUser();
     sentryClient.addBreadcrumb({ message: 'crumb' });
 
     expect(Sentry.captureException).toHaveBeenNthCalledWith(2, late, {
-      extra: { requestId: 'r2' },
+      extra: { source: 'r2' },
     });
     expect(Sentry.captureException).toHaveBeenNthCalledWith(3, late, undefined);
     expect(Sentry.setUser).toHaveBeenNthCalledWith(2, { id: 'live' });

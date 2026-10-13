@@ -5,6 +5,7 @@ import type { DependencyContainer } from 'tsyringe';
 import type { AppConfig } from '@/config/runtime/app-config';
 import { APP_CONFIG_ELEMENT_ID } from '@/config/runtime/app-config-source';
 import type { FeatureFlagService } from '@/config/runtime/feature-flag-service';
+import type { AppConfigValues } from '@/config/runtime/types/app-config';
 import type GraphQLUrl from '@/utils/get-graphql-url';
 import { buildAppConfigValues, buildFeatureFlagConfig, buildHttpUrl } from '@tests/builders';
 
@@ -82,11 +83,15 @@ describe('runtime configuration Integration', () => {
     const appConfig = container.resolve<AppConfig>(tokens.appConfig);
     const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
 
-    expect(appConfigSource.load()).toEqual({});
+    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
+    appConfigSource.validated(parse);
+
+    expect(parse).toHaveBeenCalledWith({});
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual([]);
+    expect(flags.names()).toEqual({ items: [] });
     expect(flags.isEnabled(PROBE_FLAG as never)).toBeUndefined();
     expect(flags.snapshot()).toEqual({});
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
@@ -100,10 +105,14 @@ describe('runtime configuration Integration', () => {
       'document'
     ) as PropertyDescriptor;
 
+    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
     delete globals.document;
 
     try {
-      expect(appConfigSource.snapshot()).toEqual({});
+      appConfigSource.validated(parse);
+
+      expect(parse).toHaveBeenCalledWith({});
     } finally {
       Object.defineProperty(globalThis, 'document', descriptor);
     }
@@ -167,12 +176,22 @@ describe('runtime configuration Integration', () => {
     expect(container.resolve<AppConfig>(tokens.appConfig).get()).toEqual({ flags: {} });
   });
 
+  it('names each declared flag through the container-resolved service', async () => {
+    renderRuntimeConfig(buildFeatureFlagConfig({}));
+
+    const { container, tokens } = await loadRuntimeGraph();
+    const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
+    jest.spyOn(Object, 'keys').mockReturnValueOnce([PROBE_FLAG]);
+
+    expect(flags.names()).toEqual({ items: [{ name: PROBE_FLAG }] });
+  });
+
   it('reads flag values through the container-resolved service on every call', async () => {
     renderRuntimeConfig(buildFeatureFlagConfig({}));
 
     const { container, tokens } = await loadRuntimeGraph();
     const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
-    jest.spyOn(flags, 'names').mockReturnValue([PROBE_FLAG as never]);
+    jest.spyOn(flags, 'names').mockReturnValue({ items: [{ name: PROBE_FLAG as never }] });
     document.getElementById(APP_CONFIG_ELEMENT_ID)?.remove();
     renderRuntimeConfig(buildFeatureFlagConfig({ [PROBE_FLAG]: true }));
 
@@ -210,5 +229,19 @@ describe('runtime configuration Integration', () => {
     await expect(import('@/config/dependency-injection-config')).rejects.toThrow(
       /must contain a JSON object/
     );
+  });
+
+  it('load() rejects a malformed block', async () => {
+    renderRuntimeConfig('{ "flags": ');
+    const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
+
+    expect(() => appConfigSource.load()).toThrow(/does not contain valid JSON/);
+  });
+
+  it('load() accepts a well-formed block', async () => {
+    renderRuntimeConfig(JSON.stringify(buildAppConfigValues()));
+    const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
+
+    expect(() => appConfigSource.load()).not.toThrow();
   });
 });

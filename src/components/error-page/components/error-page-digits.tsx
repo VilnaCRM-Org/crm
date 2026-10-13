@@ -7,13 +7,13 @@ import ERROR_PAGE_VARIANTS, {
 import digitStyles, {
   ERROR_PAGE_DIGIT_SHADOW_VAR,
 } from '@/components/error-page/styles/digit-styles';
-import type { ErrorPageProps } from '@/components/types/error-page';
+import type { ErrorPageVariantProps } from '@/components/types/error-page';
 
 const styles = digitStyles.build();
 
-export default function ErrorPageDigits({ variant }: Pick<ErrorPageProps, 'variant'>): JSX.Element {
+export default function ErrorPageDigits({ variant }: ErrorPageVariantProps): JSX.Element {
   const { glyphs, digitColor, digitShadowColor } = ERROR_PAGE_VARIANTS[variant];
-  const [first, second, third] = glyphs;
+  const { first, second, third } = glyphs;
 
   return (
     <Box

@@ -5,10 +5,10 @@ import RouteErrorPage from '@/components/error-boundary/route-error-page';
 import type { ErrorPageVariantId } from '@/components/types/error-page';
 import { DataRouterStory } from '@stories/router-decorators';
 
-type RouteErrorPageStoryProps = {
+interface RouteErrorPageStoryProps {
   variant: ErrorPageVariantId;
   landmark: 'main' | 'region';
-};
+}
 
 function RenderFailure(): JSX.Element {
   throw new Error('Route component failed to render');

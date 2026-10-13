@@ -25,7 +25,7 @@ function loadProviders(): Promise<IsolatedProviders> {
     const browserNavigator = (await import('@auth/utils/browser-navigator')).default;
     const providers = (
       await import('@auth/components/form-section/components/auth-provider-buttons/oauth-providers')
-    ).default;
+    ).default.items;
 
     return { providers, urlBuilder, browserNavigator };
   });

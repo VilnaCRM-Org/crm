@@ -7,13 +7,14 @@ import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
 import observabilityCore from '@/services/observability/observability-core';
 import ProtectedRoute from '@auth/components/protected-route';
-import { AuthStateVar, authActions } from '@auth/stores';
+import { useAuthStore, authActions } from '@auth/stores';
 import { buildToken } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 function seedToken(token: string | null): void {
   act(() => {
-    AuthStateVar.reset();
-    AuthStateVar.set({ token });
+    resetClientStores();
+    useAuthStore.setState({ token });
   });
 }
 
@@ -67,7 +68,7 @@ const clickSignOut = async (): Promise<void> => {
 describe('ProtectedRoute', () => {
   afterEach(() => {
     act(() => {
-      AuthStateVar.reset();
+      resetClientStores();
     });
     jest.restoreAllMocks();
   });
@@ -109,7 +110,7 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('focus main:true')).toBeInTheDocument();
     expect(logout).toHaveBeenCalledTimes(1);
     expect(logout.mock.contexts[0]).toBe(authActions);
-    expect(AuthStateVar.get().token).toBeNull();
+    expect(useAuthStore.getState().token).toBeNull();
     expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
   });
 
@@ -146,7 +147,7 @@ describe('ProtectedRoute', () => {
     await clickSignOut();
 
     act(() => {
-      AuthStateVar.reset();
+      resetClientStores();
     });
 
     expect(screen.getByText('sign in page from:/')).toBeInTheDocument();

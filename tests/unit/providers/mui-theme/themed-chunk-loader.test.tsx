@@ -9,7 +9,7 @@ import { buildToken } from '@tests/builders';
 
 type ForwardedProps = { variant: string; landmark: FallbackLandmark };
 
-const contentModule = (text: string): ComponentModule => ({
+const contentModule = (text: string): ComponentModule<Record<never, never>> => ({
   default: (): ReactNode => <p>{text}</p>,
 });
 
@@ -61,7 +61,9 @@ describe('ThemedChunkLoader', () => {
   });
 
   it('requests the content and the shell together rather than one after the other', () => {
-    const content = jest.fn(() => new Promise<ComponentModule>(() => undefined));
+    const content = jest.fn(
+      () => new Promise<ComponentModule<Record<never, never>>>(() => undefined)
+    );
     const shell = jest.fn(() => new Promise<MuiThemeShellModule>(() => undefined));
 
     void new ThemedChunkLoader({ load: content }, { load: shell }).load();
@@ -73,7 +75,7 @@ describe('ThemedChunkLoader', () => {
   it('rejects with the content failure', async () => {
     const failure = new Error(buildToken());
     const loader = new ThemedChunkLoader(
-      rejecting<ComponentModule>(failure),
+      rejecting<ComponentModule<Record<never, never>>>(failure),
       resolving(shellModule(buildToken()))
     );
 

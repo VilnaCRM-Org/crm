@@ -1,3 +1,4 @@
+import type { AppConfigValues } from '@/config/runtime/types/app-config';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type AppConfigSource = (typeof import('@/config/runtime/app-config-source'))['default'];
@@ -18,7 +19,13 @@ describe('app config source with an unreadable config element', () => {
     stubConfigElement(null);
     const appConfigSource = await loadAppConfigSource();
 
-    expect(appConfigSource.load()).toEqual({});
+    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
+
+    expect(() => appConfigSource.load()).not.toThrow();
+
+    appConfigSource.validated(parse);
+
+    expect(parse).toHaveBeenCalledWith({});
   });
 
   it('reports no value for a key when the element carries no text content', async () => {
@@ -26,7 +33,7 @@ describe('app config source with an unreadable config element', () => {
     const appConfigSource = await loadAppConfigSource();
 
     expect(appConfigSource.text('apiBaseUrl')).toBeUndefined();
-    expect(appConfigSource.flags()).toEqual({});
+    expect(appConfigSource.flag('probeFlag' as never)).toBeUndefined();
   });
 
   it('still parses an element that does carry a JSON block', async () => {

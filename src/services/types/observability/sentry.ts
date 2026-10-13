@@ -1,24 +1,12 @@
-import type { WebVitalMetric } from './observability';
+import type { Breadcrumb, Event, User } from '@sentry/react';
 
-export interface SentryUser {
-  [key: string]: unknown;
-  id: string;
-}
+import type { CaptureContext, WebVitalMetric } from './observability';
 
-export interface SentryBreadcrumb {
-  category?: string;
-  message?: string;
-  level?: string;
-  data?: Record<string, unknown>;
-}
+export type SentryUser = User;
 
-export interface SentryEvent {
-  [key: string]: unknown;
-  request?: Record<string, unknown>;
-  extra?: Record<string, unknown>;
-  contexts?: Record<string, unknown>;
-  user?: Record<string, unknown>;
-}
+export type SentryBreadcrumb = Breadcrumb;
+
+export type SentryEvent = Event;
 
 export type SentryBeforeSend = (event: SentryEvent) => SentryEvent | null;
 
@@ -32,7 +20,7 @@ export interface SentryInitOptions {
 }
 
 export interface SentryCaptureHint {
-  extra?: Record<string, unknown>;
+  extra?: CaptureContext;
 }
 
 export interface SentryApi {

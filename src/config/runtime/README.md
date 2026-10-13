@@ -55,11 +55,11 @@ absorb. So the split mirrors `raw-env.ts` / `env.ts` exactly.
 - **`appConfigSource`** (`@/config/runtime/app-config-source`) — dependency-free singleton and the
   only place that touches the DOM block. It memoizes on the block's text, so repeated reads are
   free and a test that rewrites the block is picked up. Import it **directly** on the paint path.
-- **`appConfig`** (`@/config/runtime/app-config`) — parses the same snapshot through the zod
-  schema **once** at module load, freezes it, and **fails fast** with an aggregated
-  (`z.prettifyError`) message. It is registered as `RUNTIME_TOKENS.AppConfig` and injected into
-  `GraphQLUrl`, which lives behind the dynamic-import DI composition root — so `zod` never reaches
-  the auth paint path.
+- **`appConfig`** (`@/config/runtime/app-config`) — validates the same raw block, received
+  through `appConfigSource.validated`, against the zod schema **once** at module load, freezes it,
+  and **fails fast** with an aggregated (`z.prettifyError`) message. It is registered as
+  `RUNTIME_TOKENS.AppConfig` and injected into `GraphQLUrl`, which lives behind the dynamic-import
+  DI composition root — so `zod` never reaches the auth paint path.
 
 The `AppConfigValues` interface is hand-authored rather than `z.infer`, because a `types/` file
 may not import the runtime schema (dependency-cruiser `type-files-no-runtime-imports`, issue #88).
@@ -74,13 +74,13 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
    which rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, and an
    `APP_CONFIG_FLAG_*` variable naming a flag that does not exist. The entrypoint exits non-zero,
    so a misconfigured deployment never starts serving.
-2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before `createRoot`, so a
-   malformed or non-object JSON block throws immediately with a named error instead of silently
-   degrading to defaults.
-3. **Container-resolved code** — `appConfig` zod-validates the same snapshot when the DI graph
-   loads, and `tests/unit/config/runtime/app-config-defaults.test.ts` validates the **committed**
-   block in `public/index.html` against the schema, so the shipped default cannot drift from the
-   contract.
+2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before rendering the app, so
+   a malformed or non-object JSON block raises a named error that is reported and rendered through
+   the shell's `ErrorFallback` instead of silently degrading to defaults.
+3. **Container-resolved code** — `appConfig` validates the same raw block, received through
+   `appConfigSource.validated`, against the zod schema when the DI graph loads, and
+   `tests/unit/config/runtime/app-config-defaults.test.ts` validates the **committed** block in
+   `public/index.html` against the schema, so the shipped default cannot drift from the contract.
 
 ## Settings
 

@@ -4,6 +4,12 @@ export interface AsyncListState<T> {
   readonly hasError: boolean;
 }
 
+export interface AsyncListItems<T> {
+  readonly items: readonly T[];
+}
+
+export type AsyncListLoad<T> = () => Promise<AsyncListItems<T>>;
+
 export interface AsyncListSubscription {
   active: boolean;
 }

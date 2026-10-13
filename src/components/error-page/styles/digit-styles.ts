@@ -45,7 +45,7 @@ class ErrorPageDigitStyles {
   }
 
   private glyphs({ digits }: ErrorPageGeometry): CSSObject {
-    const [first, second, third] = digits.glyphs;
+    const { first, second, third } = digits.glyphs;
 
     return {
       '& > span:nth-of-type(1)': this.position(first),

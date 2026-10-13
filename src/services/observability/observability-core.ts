@@ -27,7 +27,7 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
     this.safe(() => sentryClient.captureException(error, this.withCorrelation(context)));
   }
 
-  public report(error: Error, context?: Record<string, unknown>): void {
+  public report(error: Error, context?: CaptureContext): void {
     this.captureError(error, context);
   }
 

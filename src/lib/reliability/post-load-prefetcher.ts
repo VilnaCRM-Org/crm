@@ -1,16 +1,16 @@
-import type { ModuleLoader } from './types/module-loader';
+import type { ModuleLoaders } from './types/module-loader';
 import type { PrefetchHost, PrefetchHostEvent } from './types/prefetch-host';
 
 const PREFETCH_DELAY_MS = 2000;
 
-export default class PostLoadPrefetcher {
+export default class PostLoadPrefetcher<TModule> {
   private readonly intentEvents: readonly PrefetchHostEvent[] = ['pointerdown', 'keydown'];
 
   private attached = false;
 
   private started = false;
 
-  constructor(private readonly targets: readonly ModuleLoader<unknown>[]) {}
+  constructor(private readonly targets: ModuleLoaders<TModule>) {}
 
   public attach(host: PrefetchHost): void {
     if (this.attached) return;
@@ -42,6 +42,6 @@ export default class PostLoadPrefetcher {
       return;
     }
 
-    Promise.allSettled(this.targets.map((target) => target.load()));
+    Promise.allSettled(this.targets.items.map((target) => target.load()));
   }
 }

@@ -1,6 +1,6 @@
 # ADR-002: Zustand vs Redux for Client State Management
 
-- Status: Superseded
+- Status: Approved
 
 - Deciders: @kravalg
 
@@ -19,7 +19,7 @@ Module Federation architecture?
 
 1. Reduced boilerplate for simple client-only state
 2. Smaller bundle size impact on micro frontend performance
-3. Compatibility with Module Federation (singleton-friendly, no providers)
+3. Singleton-friendly stores that need no React provider
 4. Developer experience and TypeScript support
 5. Learning curve for team onboarding
 6. Integration with existing Apollo Client setup
@@ -34,21 +34,21 @@ Module Federation architecture?
 
 ## Decision Outcome
 
-**Chosen option: Zustand**, because it enables minimal boilerplate state management with
-excellent Module Federation compatibility, while Apollo Client handles all server state
-concerns.
+**Chosen option: Zustand**, because it gives provider-free client stores with minimal
+boilerplate and a small bundle, while server state stays behind repositories over Apollo Client
+and `HttpsClient`. The 2026-01 rationale also cited Module Federation compatibility; that
+premise never held (`rsbuild.config.ts` registers no federation plugin, and
+`tests/unit/tooling/auth-runtime-deps.test.ts` keeps it that way), so it is not part of the
+basis for the 2026-10-12 approval. The binding rules are in "Current rules" below.
 
 ### Positive Consequences
 
-- Independent store creation without providers (ideal for Module Federation)
+- Independent store creation without providers
 - ~95% reduction in state management boilerplate
 - Smaller bundle impact (~2KB vs ~10–14KB for Redux Toolkit + react-redux)
   (as of 2026-01, measured via [Bundlephobia: zustand][zst] and
   [Bundlephobia: @reduxjs/toolkit][rtk] + [react-redux][rr])
 - Excellent TypeScript inference without extra annotations
-- Redux DevTools compatibility for debugging
-- Optional middleware for persistence and immer (require separate setup; immer requires the
-  'immer' package)
 
 ### Negative Consequences
 
@@ -78,10 +78,44 @@ concerns.
   `@reduxjs` dependency, and no Redux primitive (`createSlice`, `configureStore`) remains in
   `src/`. Auth state now lives in `src/modules/user/features/auth/stores/`.
 
+## Current rules
+
+Zustand holds client/UI state and the session token again (issue
+[#334](https://github.com/VilnaCRM-Org/crm/issues/334)). State is exactly one of three
+categories, and the category decides the primitive:
+
+- **Server state** — owned by the backend. A repository (`@injectable`) over `ApolloClient`
+  (GraphQL) or `HttpsClient` (REST), read from React through a hook that consumes it via
+  `useService`; never `useQuery` in a component. The transport rule is in
+  [`src/api/contracts/README.md`](../../src/api/contracts/README.md).
+- **Client/UI state** — a Zustand store created with `create<State>()(…)` in a
+  `use-*-store.ts` hook file (`useConnectivityStore` in `src/lib/connectivity/`), read through a
+  selector and written with `setState(patch)`. No logic lives in the store.
+- **Session state** — `useAuthStore` in `src/modules/user/features/auth/stores/`, read through
+  `useAuthState` / `useAuthToken`. It is registered by value under `AUTH_TOKENS.AuthStore`
+  (`StoreApi<AuthState>`) and reaches `AuthStoreActions` as `deps.authState` through the
+  `AUTH_TOKENS.AuthStoreActionsDeps` factory, so the paint path stays container-free.
+
+**No middleware.** `persist`, `devtools`, `immer` and every other `zustand/*` subpath are
+rejected: the access token is memory-only (a reload clears it, `authActions.logout()` writes
+`CLEARED_AUTH_STATE`), and the rest add bytes the stores do not need. `zustand` is imported only
+from its root specifier. The preloaded-auth-token seed is read once inside the auth store
+initializer, so the seed-gate invariants hold. `useSyncExternalStore` stays banned in `src`:
+Zustand calls it inside `node_modules`. `docs/state-architecture.md` is the contributor guide,
+and `tests/unit/tooling/state-architecture-contract.test.ts` pins these rules.
+
 ## Update history
 
-- **2026-09-17** — **Superseded by [ADR-008](./008-frontend-state-architecture.md)**
-  ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)). The Redux → Zustand migration
+- **2026-10-12** — **Approved again** for
+  [#334](https://github.com/VilnaCRM-Org/crm/issues/334). The bespoke reactive var that replaced
+  the Zustand store in September is retired, and the stores above are the client-state
+  primitive. The ADRs numbered 003 and later were removed from the repository at the same time;
+  the rules they carried for state live in "Current rules" above. The Decision Outcome and
+  consequences were restated without the Module Federation premise and without the middleware
+  this record now rejects; the Context, Decision Drivers wording beyond driver 3 and the
+  comparison table remain the 2026-01 evaluation.
+- **2026-09-17** — **Superseded** ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)) by a
+  since-removed record. The Redux → Zustand migration
   this record decided did happen ([#46](https://github.com/VilnaCRM-Org/crm/pull/46)), but the
   Zustand store it produced was replaced weeks later by an Apollo `makeVar`-shaped reactive var
   when registration moved to GraphQL ([#42](https://github.com/VilnaCRM-Org/crm/pull/42)), and
@@ -89,9 +123,9 @@ concerns.
   path. From that point `zustand` shipped in `package.json` without a single import in `src/`,
   while this ADR, `CLAUDE.md` and `AGENTS.md` still named it the canonical store. The Module
   Federation premise never held either: the packages are installed but `rsbuild.config.ts`
-  registers no plugin, and a unit test asserts it stays that way. ADR-008 sanctions the
-  reactive var as the one client/UI-state primitive, removes `zustand`, and adds the gates
-  that keep the docs and the code agreeing. The comparison table below is kept as the
+  registers no plugin, and a unit test asserts it stays that way. That record sanctioned the
+  reactive var as the one client/UI-state primitive, removed `zustand`, and added the gates
+  that keep the docs and the code agreeing. The comparison table above is kept as the
   historical evaluation.
 - **2026-08-13** — Marked the follow-up Done. It had continued to present completed work as
   pending. Recorded while adding the documentation drift gates in

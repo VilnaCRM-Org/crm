@@ -15,9 +15,15 @@ export interface AuthErrorBoundaryProps {
   onError?: ((error: Error, info: ErrorInfo) => void) | undefined;
 }
 
-export interface AuthErrorFallbackProps extends Pick<
+export type AuthErrorFallbackBaseProps = Pick<
   ErrorFallbackProps,
   'error' | 'recovery' | 'reset' | 'reload'
-> {
+>;
+
+export interface AuthErrorFallbackProps extends AuthErrorFallbackBaseProps {
   fallback?: AuthErrorFallbackContent;
+}
+
+export interface ErrorDetailsProps {
+  error: Error;
 }

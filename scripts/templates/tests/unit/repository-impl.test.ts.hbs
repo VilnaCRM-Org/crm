@@ -4,7 +4,7 @@ describe('{{pascalCase feature}}RepositoryImpl', () => {
   it('resolves the list the scaffolded stub returns', async () => {
     const repository = new {{pascalCase feature}}RepositoryImpl();
 
-    await expect(repository.list()).resolves.toEqual([]);
+    await expect(repository.list()).resolves.toEqual({ items: [] });
   });
 
   it('never rejects, so callers do not need a catch to render', async () => {

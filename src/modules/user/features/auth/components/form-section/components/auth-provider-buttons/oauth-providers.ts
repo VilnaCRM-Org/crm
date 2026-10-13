@@ -3,7 +3,7 @@ import { ReactComponent as Facebook } from '@auth/assets/social-links/facebook-c
 import { ReactComponent as GitHub } from '@auth/assets/social-links/github-color.svg';
 import { ReactComponent as Google } from '@auth/assets/social-links/google-color.svg';
 import { ReactComponent as Twitter } from '@auth/assets/social-links/twitter-color.svg';
-import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
+import type { OAuthProviderList } from '@auth/types/auth-provider-buttons/oauth-providers';
 import browserNavigator from '@auth/utils/browser-navigator';
 
 const PROVIDERS = [
@@ -14,12 +14,14 @@ const PROVIDERS = [
 ] as const;
 
 class OAuthProviders {
-  public list(): ReadonlyArray<OAuthProvider> {
-    return PROVIDERS.map((p) => ({
-      label: p.label,
-      SvgComponent: p.SvgComponent,
-      onClick: () => this.signInWithProvider(p.key),
-    }));
+  public list(): OAuthProviderList {
+    return {
+      items: PROVIDERS.map((p) => ({
+        label: p.label,
+        SvgComponent: p.SvgComponent,
+        onClick: () => this.signInWithProvider(p.key),
+      })),
+    };
   }
 
   private signInWithProvider(service: (typeof PROVIDERS)[number]['key']): void {

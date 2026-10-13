@@ -747,12 +747,11 @@ instead of via module mocking.
 - **Behavioral collaborators** → `@injectable()` class + token in the owning area's
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
   with `@inject`/`container.resolve`.
-- **Render-path state primitives** that must stay container-free for the auth-page
-  Lighthouse budget (`auth-var`, `auth-store-selectors`, `use-auth-token`) → instance class
-  exported as a **module singleton** (`export default new X()`); call sites remain
-  `X.method(...)` and no tsyringe enters the paint path. The shared primitive they compose,
-  `ReactiveVarFactory` / `ReactiveVarState` in `src/lib/state/`, is a constructible class
-  instead — one instance per store — and `use-reactive-var.ts` is a hook.
+- **Render-path state helpers** that must stay container-free for the auth-page
+  Lighthouse budget (`auth-store-selectors`) → instance class exported as a **module
+  singleton** (`export default new X()`); call sites remain `X.method(...)` and no tsyringe
+  enters the paint path. The stores themselves are Zustand hooks in `use-*-store.ts` files
+  (`use-auth-store.ts`, `use-connectivity-store.ts`), exempt like any hook.
 - **Pure helpers / validators / type guards / style helpers / lazy loaders** → instance
   methods on a singleton class, never free functions.
 - **Exempt:** React components (`*.tsx`, incl. class error boundaries using
@@ -818,6 +817,90 @@ and a domain-less bare `Service` are banned outright; an abstract `Base*` superc
 allowlist carve-out. The gate is syntactic — it cannot tell whether a `*Mapper` really maps — so
 role ↔ name truthfulness stays a review concern, as does the naming of classes inside `use-*.ts`
 hook files, which the `src/**/*.ts` gate ignores.
+
+### Typed boundaries (TB-1, issue #332)
+
+Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
+file, a class, or a named alias in a type-only file whose whole body is a union of named types or
+literals, a callback type, one generic or derived type over named arguments, or a mapped type
+over a named key union. The boundaries
+this protects are component props, hook parameters and results, the signatures of Data
+provider, Transformer, Repository, State, Guard and Factory classes, DI-registered values,
+published state, events and telemetry payloads. The gate is syntactic and wider than that list:
+it knows neither a class's role nor whether a function is exported. In every gated `src` code
+file it checks the parameter and return annotations of every **top-level** function (a
+`function` declaration, or an arrow or function expression bound directly to a top-level
+variable or default-exported), **exported or not**, so components, hooks and module-local
+helpers alike; of every non-private method, the constructor included, of **every** class; of
+every constructor parameter property, whatever its modifier, `private readonly` included; and
+of every non-private arrow or function-expression class property, plus the annotation of every
+non-private class property. In a type-only file it checks every member of an exported or
+top-level interface or alias. The gate fails at those positions:
+
+- **(a)** an anonymous object type, including an object member of a union — each variant is a
+  named `interface`, and `type X = { … }` is an `interface`;
+- **(b)** a tuple;
+- **(c)** a bare array (`T[]`, `Array<T>`, `ReadonlyArray<T>`) — a collection crosses as a named
+  collection interface (`interface RecoveryCodeSet { readonly items: readonly RecoveryCode[] }`),
+  and an array of primitives never crosses;
+- **(d)** `any`, `object`, `Record<…>`, an index signature, a mapped type over `string`, `number`
+  or `symbol` keys (`{ [k in string]: T }`, or a flat key union with one of them as a direct
+  member), or
+  `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
+  as an `error` / `cause` member;
+- **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
+  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+
+Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
+`AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
+types that obey the rule, and `T | null` / `T | undefined`. Exceptions: generated codegen types
+stay below the Data provider (review item), `declare module` blocks and `.d.ts` files,
+`private` / `#private` methods and properties (a constructor parameter property is gated
+whatever its modifier, so `@inject(TOKEN) private readonly x: T` still needs a named `T`), and
+functions and values nested inside a function body or wrapped in a call. A module-level
+function is gated whether or not it is exported.
+
+**Enforcement.** Two `no-restricted-syntax` arrays are built by
+[`config/typed-boundary-policy.js`](config/typed-boundary-policy.js), the single source for the
+config and the fixtures: `typedBoundarySelectors` (five code entries) is spread into **every**
+`src` block that sets the rule — flat config replaces the rule per file, and the hooks block
+needs it too, since hooks are exempt from #100 but not from TB-1 — and
+`typedBoundaryTypeFileSelectors` (five entries) into the type-only block, rooted at `Program`
+so a `declare module` augmentation is never matched. `@typescript-eslint/consistent-type-definitions`
+is `error` (`interface`) for `src/**`. Both run in `make lint-eslint`.
+
+**Gate integrity.** [`scripts/ci/eslint-gate-fixtures.mjs`](scripts/ci/eslint-gate-fixtures.mjs)
+carries one must-fail fixture per entry, one per function shape the positions cover (a top-level
+function, arrow or function expression exported later, a non-private class arrow or
+function-expression property), and the must-pass controls (a named collection interface, a
+private method, a `#private` arrow property, `normalize(error: unknown)`, a callback alias with an
+`unknown` parameter (bare and nullable), a `declare module`, a named derivation, a mapped type over
+a named key union). The
+universe test fails a selector edited without its fixture, asserts every `src` code probe resolves
+all five code selectors, and `tests/unit/config/eslint-policy.test.ts` pins each array on every
+block, the base `src` block included.
+[`tests/unit/tooling/typed-boundary-alternatives.test.ts`](tests/unit/tooling/typed-boundary-alternatives.test.ts)
+lints a snippet for every holder × position alternative and every type-file root the policy
+generates, so a single dead alternative fails by name.
+
+**Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
+alias. A component or function passed as an argument (`forwardRef(function UIButton(…))`,
+`memo(…)`), a function-type annotation on a variable (`export const useX: (p: { … }) => R`),
+an `export { x as default }` of a nested function, an inline callback inside a
+parameter's own interface, test-builder return values and the generated-types exception are
+review items. An `unknown` **parameter** in a code file is not
+gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so
+(d) gates `unknown` as a code-file return and class property, and in type-only files as a member,
+a method / call-signature return or anywhere in an alias body except a callback parameter or a
+type-parameter default; an `unknown` parameter outside a narrowing method is a
+review item. So is any catch-all mapped type whose key constraint is neither a bare `string`,
+`number` or `symbol` keyword nor a flat union holding one — (d) matches only those two shapes.
+Examples: a nested or parenthesised key union (`"a" | ("b" | string)`), an intersection
+(`[k in string & {}]`), `[k in PropertyKey]`, `[k in keyof any]`, a template literal
+(``[k in `${string}`]``) and an alias of a keyword (`[k in K]` with `type K = string`).
+
+**No suppression:** satisfy TB-1 by declaring the named type — never with `eslint-disable`, a
+cast, an allowlist entry or a narrower glob.
 
 ### Runtime Configuration and Feature Flags (issue #145)
 
@@ -925,14 +1008,14 @@ contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
-container-resolved class. Those inside a gated directory (`auth-var` — its
-`ReactiveVarFactory` lives in `src/lib/state/`, outside the gated globs —
-`auth-store-selectors`, `response-schemas`, `map-registration-error`, the
-auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
+container-resolved class. Those inside a gated directory (`auth-store-selectors`,
+`response-schemas`, `map-registration-error`, `load-registration-notification`,
+`registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
-issue #116), `url-builder`, `locale-formatter-core`, and the observability
-core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by explicit path in
-`EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
+issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
+`auth-failure-monitor` leaf, and the observability
+core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) are exempt by
+explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
 load-bearing, so do not delete it. The form-section `validations/*` singletons live under
@@ -1028,37 +1111,33 @@ passes both gates as written. Hooks (`use-*.ts`) are outside the static
 gate; that is not license to `new` a collaborator there — expect review to flag it. Never
 satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
 
-### Client-state store pattern (reactive var, ADR-008)
+### Client-state store pattern (Zustand, ADR-002)
 
 State is one of three categories — server (a repository over Apollo / `HttpsClient`),
-client/UI (a reactive var), session (`AuthStateVar`) — and the category decides the
+client/UI (a Zustand store), session (`useAuthStore`) — and the category decides the
 primitive; the decision rule and a worked example per category are in
-[`docs/state-architecture.md`](docs/state-architecture.md). A client/UI store is a `*Var`
-class over `ReactiveVarFactory` from `src/lib/state/`, exported as a module singleton, with
-named actions and no I/O; React subscribes through `useReactiveVar`, the one sanctioned
-`useSyncExternalStore` bridge. `zustand` is not a dependency, and an import of it or a
-hand-rolled `useSyncExternalStore` fails `make lint-eslint`. See
+[`docs/state-architecture.md`](docs/state-architecture.md). A client/UI store is created with
+`create<State>()(…)` and no middleware in a `use-*-store.ts` hook file, with named patch types
+at every writer; React reads it through a selector. `zustand` is imported from its root
+specifier only (no `persist`, no `devtools`), and a hand-rolled `useSyncExternalStore` fails
+`make lint-eslint`. A test that writes a store calls `resetClientStores()`
+(`tests/utils/reset-client-stores.ts`) in `beforeEach`. See
 `src/modules/user/features/auth/stores/` for the reference store.
 
 ```typescript
-// Store: src/modules/[Module]/features/[Feature]/stores/[feature]-var.ts
-export class FeatureFilterVar {
-  private readonly state = new ReactiveVarFactory().create<FeatureFilter>(CLEARED_FILTER);
+// Store: src/modules/[Module]/features/[Feature]/stores/use-feature-filter-store.ts
+export const CLEARED_FILTER: FeatureFilter = { query: '' };
 
-  public reactiveVar(): ReactiveVar<FeatureFilter> {
-    return this.state;
-  }
-
-  public setQuery(query: string): void {
-    this.state({ ...this.state(), query });
-  }
-}
-export default new FeatureFilterVar();
+const useFeatureFilterStore = create<FeatureFilter>()(() => ({ ...CLEARED_FILTER }));
+export default useFeatureFilterStore;
 
 // Hook: src/modules/[Module]/features/[Feature]/stores/use-feature-query.ts
 export default function useFeatureQuery(): string {
-  return useReactiveVar(featureFilterVar.reactiveVar(), (filter) => filter.query);
+  return useFeatureFilterStore((filter: FeatureFilter): string => filter.query);
 }
+
+// Writer: pass a named patch
+useFeatureFilterStore.setState({ query } satisfies FeatureFilterPatch);
 ```
 
 Server-backed actions stay off the store: the composition root
@@ -1429,9 +1508,9 @@ nvm use         # If using nvm
 3. Check the auth state:
 
    ```typescript
-   import { AuthStateVar } from '@auth/stores';
+   import { useAuthStore } from '@auth/stores';
 
-   const authState = AuthStateVar.get();
+   const authState = useAuthStore.getState();
    console.log('Auth state:', authState);
    ```
 
@@ -1491,7 +1570,7 @@ Every page-level route is code-split by the module-owned route registry (issue #
 route contract declares a dynamic `import()` loader named via `webpackChunkName`, the composer
 wraps it in `React.lazy` and attaches a per-route `errorElement` (`<RouteError />`,
 issue #116), and the route-level `Suspense` boundary in `root-layout.tsx` ships a non-null
-deferred `RouteFallback`. `RouteError` dispatches on status first (issue #309, ADR-018):
+deferred `RouteFallback`. `RouteError` dispatches on status first (issue #309):
 `errorPageStatusDetector` reads a status from a router error response, a render-thrown
 `Response` or a `data()` value — so a guard may throw `data(null, { status: 403 })` or navigate
 to `/forbidden` — and renders the lazy designed `ErrorPage` for 403, 404 and 500 to 599, so a
@@ -1673,9 +1752,9 @@ build goes red. Know them before you touch a config file:
 
 ### API Authentication
 
-- Access token is stored only in the in-memory reactive auth state (`AuthStateVar`, read
+- Access token is stored only in the in-memory auth store (`useAuthStore`, read
   through `useAuthToken`); it is never persisted to `localStorage`, cookies, or disk, has
-  no refresh, and only `authActions.logout()` clears it (ADR-008)
+  no refresh, and only `authActions.logout()` clears it (ADR-002)
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
   `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual

@@ -8,7 +8,11 @@ export interface SandboxDemoSession {
   readonly token: string;
 }
 
+export type SandboxDemoLocation = Pick<Location, 'hostname'>;
+
+export type SandboxDemoStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
 export interface SandboxDemoHost {
-  readonly location?: Pick<Location, 'hostname'> | undefined;
-  readonly localStorage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+  readonly location?: SandboxDemoLocation | undefined;
+  readonly localStorage: SandboxDemoStorage;
 }

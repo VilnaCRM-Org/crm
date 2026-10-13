@@ -8,7 +8,7 @@ import ERROR_PAGE_VARIANTS, {
   ERROR_PAGE_ACTIONS_ID,
 } from '@/components/error-page/config/error-page-variants';
 import actionStyles from '@/components/error-page/styles/action-styles';
-import type { ErrorPageProps } from '@/components/types/error-page';
+import type { ErrorPageVariantProps } from '@/components/types/error-page';
 import UIButton from '@/components/ui-button';
 import ROUTE_PATHS from '@/routes/route-paths';
 
@@ -29,9 +29,7 @@ function RequestAccessButton(): JSX.Element {
   );
 }
 
-export default function ErrorPageActions({
-  variant,
-}: Pick<ErrorPageProps, 'variant'>): JSX.Element {
+export default function ErrorPageActions({ variant }: ErrorPageVariantProps): JSX.Element {
   const { t } = useTranslation();
   const stacked = useMediaQuery(ERROR_PAGE_MEDIA.mobile);
   const { homeAppearance, requestAccess } = ERROR_PAGE_VARIANTS[variant];

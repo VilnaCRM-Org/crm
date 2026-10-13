@@ -1,10 +1,10 @@
 import type { CSSObject } from '@emotion/react';
 
 import type { FallbackLandmark } from '@/components/types/error-boundary';
+import type { ComponentModule } from '@/components/types/providers';
 
 export type ErrorPageVariantId = 'notFound' | 'forbidden' | 'serverError';
 export type ErrorPageHomeAppearance = 'contained' | 'outlined';
-export type ErrorPageBreakpoint = 'desktop' | 'tablet' | 'mobile';
 
 export interface ErrorPageCardRhythm {
   gapTitle: number;
@@ -12,8 +12,14 @@ export interface ErrorPageCardRhythm {
   bottom: number;
 }
 
+export interface ErrorPageGlyphs {
+  first: string;
+  second: string;
+  third: string;
+}
+
 export interface ErrorPageVariant {
-  glyphs: readonly [string, string, string];
+  glyphs: ErrorPageGlyphs;
   digitColor: string;
   digitShadowColor: string;
   titleKey: string;
@@ -29,6 +35,10 @@ export interface ErrorPageProps {
   landmark: FallbackLandmark;
 }
 
+export type ErrorPageVariantProps = Pick<ErrorPageProps, 'variant'>;
+
+export type ErrorPageModule = ComponentModule<ErrorPageProps>;
+
 export interface ErrorPagePageGeometry {
   paddingTop: number;
   paddingBottom: number;
@@ -43,13 +53,19 @@ export interface ErrorPageGlyphPosition {
   y: number;
 }
 
+export interface ErrorPageGlyphPositions {
+  first: ErrorPageGlyphPosition;
+  second: ErrorPageGlyphPosition;
+  third: ErrorPageGlyphPosition;
+}
+
 export interface ErrorPageDigitGeometry {
   width: number;
   height: number;
   fontSize: number;
   lineHeight: number;
   shadowOffset: number;
-  glyphs: readonly [ErrorPageGlyphPosition, ErrorPageGlyphPosition, ErrorPageGlyphPosition];
+  glyphs: ErrorPageGlyphPositions;
 }
 
 export interface ErrorPageCardSurfaceGeometry {
@@ -118,28 +134,55 @@ export interface ErrorPageGeometry {
   dotRows: ErrorPageDotRowsGeometry | null;
 }
 
-export type ErrorPageGeometryTable = Record<ErrorPageBreakpoint, ErrorPageGeometry>;
+export interface ErrorPageGeometryTable {
+  desktop: ErrorPageGeometry;
+  tablet: ErrorPageGeometry;
+  mobile: ErrorPageGeometry;
+}
 
 export interface ErrorPageMediaQueries {
   tablet: string;
   mobile: string;
 }
 
-export type ErrorPageStyleToken = 'landmark' | 'composition';
-export type ErrorPageStyleSheet = Record<ErrorPageStyleToken, CSSObject>;
+export interface ErrorPageStyleSheet {
+  landmark: CSSObject;
+  composition: CSSObject;
+}
 
-export type ErrorPageCardStyleToken = 'card' | 'title' | 'description' | 'statusCode';
-export type ErrorPageCardStyleSheet = Record<ErrorPageCardStyleToken, CSSObject>;
-export type ErrorPageCardRhythmSheet = Record<'card' | 'description', CSSObject>;
+export interface ErrorPageCardStyleSheet {
+  card: CSSObject;
+  title: CSSObject;
+  description: CSSObject;
+  statusCode: CSSObject;
+}
 
-export type ErrorPageDigitStyleToken = 'digits' | 'glyphs';
-export type ErrorPageDigitStyleSheet = Record<ErrorPageDigitStyleToken, CSSObject>;
+export interface ErrorPageCardRhythmSheet {
+  card: CSSObject;
+  description: CSSObject;
+}
 
-export type ErrorPageIllustrationStyleToken = 'layer' | 'tab' | 'curve' | 'diamond';
-export type ErrorPageIllustrationStyleSheet = Record<ErrorPageIllustrationStyleToken, CSSObject>;
+export interface ErrorPageDigitStyleSheet {
+  digits: CSSObject;
+  glyphs: CSSObject;
+}
 
-export type ErrorPageDotStyleToken = 'dot' | 'dotColumns' | 'dotRows';
-export type ErrorPageDotStyleSheet = Record<ErrorPageDotStyleToken, CSSObject>;
+export interface ErrorPageIllustrationStyleSheet {
+  layer: CSSObject;
+  tab: CSSObject;
+  curve: CSSObject;
+  diamond: CSSObject;
+}
 
-export type ErrorPageActionStyleToken = 'row' | 'contained' | 'outlined' | 'stacked';
-export type ErrorPageActionStyleSheet = Record<ErrorPageActionStyleToken, CSSObject>;
+export interface ErrorPageDotStyleSheet {
+  dot: CSSObject;
+  dotColumns: CSSObject;
+  dotRows: CSSObject;
+}
+
+export interface ErrorPageActionStyleSheet {
+  row: CSSObject;
+  contained: CSSObject;
+  outlined: CSSObject;
+  stacked: CSSObject;
+}

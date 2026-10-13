@@ -417,8 +417,15 @@ This matrix is not a comment — it is enforced. [`config/browser-support.json`]
 is the single source of truth for the floors, the `browserslist.production` query, and the
 polyfill mode; `make check-browser-support` fails when the query, the resolved floors, or this
 table drift apart, and the `compat/compat` ESLint rule fails the build when `src/` reaches for a
-Web API that any listed browser lacks. Rationale and the polyfill trade-off are recorded in
-[ADR-003](docs/adr/003-browser-support-matrix.md).
+Web API that any listed browser lacks. The floor is Baseline 2023 Widely available and
+`polyfill` stays `off`: a CRM runs on managed, evergreen browsers, so shims for older ones would
+spend initial-bundle budget on browsers no user runs. `compat/compat` keeps `off` safe for the
+Web/DOM APIs `src/` uses; it does not check ES built-in methods, and SWC down-levels syntax
+only, so an ES built-in newer than the floor stays a review concern. Raising or lowering the
+floor is a reviewed change to the policy file, `package.json`'s `browserslist.production`
+query (the gate requires it to equal the policy's `queries`, order included) and this table
+together; the policy file is an ADR-drift surface, so the change also adds an ADR or carries
+the documented waiver.
 
 ## Documentation
 

@@ -3,7 +3,7 @@ import { inject, injectable } from 'tsyringe';
 import type { CorrelationIdProvider } from '@/services/observability/correlation-id-provider';
 import type { SessionCorrelation } from '@/services/observability/session-correlation';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { RequestMethod } from '@/services/types/https-client/https-client';
+import type { RequestHeaders, RequestMethod } from '@/services/types/https-client/https-client';
 
 @injectable()
 export default class HttpRequestConfigBuilder {
@@ -17,7 +17,7 @@ export default class HttpRequestConfigBuilder {
   public create(
     method: RequestMethod,
     body: unknown,
-    headers: Record<string, string> | undefined
+    headers: RequestHeaders | undefined
   ): RequestInit {
     const hasBody = body !== undefined && body !== null;
     const normalizedMethod = String(method).toUpperCase();
@@ -68,23 +68,33 @@ export default class HttpRequestConfigBuilder {
     return Object.keys(headers).some((name) => name.toLowerCase() === normalizedTarget);
   }
 
-  private withoutHeader(
-    headers: Record<string, string> | undefined,
-    target: string
-  ): Record<string, string> {
+  private withoutHeader(headers: Record<string, string>, target: string): Record<string, string> {
     const normalizedTarget = target.toLowerCase();
-    const result: Record<string, string> = {};
-    for (const [name, value] of Object.entries(headers ?? {})) {
-      if (name.toLowerCase() !== normalizedTarget) result[name] = value;
+    return Object.fromEntries(
+      Object.entries(headers).filter(([name]) => name.toLowerCase() !== normalizedTarget)
+    );
+  }
+
+  private toHeaderMap(headers: RequestHeaders | undefined): Record<string, string> {
+    const merged = new Map<string, string>();
+    for (const header of headers?.items ?? []) {
+      const previous = merged.get(header.name);
+      merged.set(
+        header.name,
+        previous === undefined ? header.value : `${previous}, ${header.value}`
+      );
     }
-    return result;
+    return Object.fromEntries(merged);
   }
 
   private createHeaders(
     contentType: string | undefined,
-    customHeaders?: Record<string, string>
+    customHeaders: RequestHeaders | undefined
   ): Record<string, string> {
-    const withoutRequestId = this.withoutHeader(customHeaders, this.correlationIds.header);
+    const withoutRequestId = this.withoutHeader(
+      this.toHeaderMap(customHeaders),
+      this.correlationIds.header
+    );
     const nextHeaders = this.withoutHeader(withoutRequestId, this.sessionCorrelation.header);
     nextHeaders[this.correlationIds.header] = this.correlationIds.next();
     nextHeaders[this.sessionCorrelation.header] = this.sessionCorrelation.id();

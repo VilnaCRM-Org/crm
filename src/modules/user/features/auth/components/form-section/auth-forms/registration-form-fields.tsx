@@ -1,18 +1,14 @@
-import type { TFunction } from 'i18next';
 import type { JSX } from 'react';
 
 import FormField from '@auth/components/form-section/components/form-field';
 import PasswordField from '@auth/components/form-section/components/password-field';
-import type { Validators } from '@auth/types/auth-forms/registration-form-fields';
+import type { RegistrationFormFieldsProps } from '@auth/types/auth-forms/registration-form-fields';
 import type { RegisterUserDto } from '@auth/types/credentials';
 
 export default function RegistrationFormFields({
   t,
   validators,
-}: {
-  t: TFunction;
-  validators: Validators;
-}): JSX.Element {
+}: RegistrationFormFieldsProps): JSX.Element {
   return (
     <>
       <FormField<RegisterUserDto>

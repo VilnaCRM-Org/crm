@@ -33,7 +33,7 @@ The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
 path (mobile Lighthouse budget).
 
-The mapper does not hand `route.load` to `React.lazy` bare (issue #147, ADR-009):
+The mapper does not hand `route.load` to `React.lazy` bare (issue #147):
 every page loader is wrapped in a `ChunkRetryLoader`, which re-imports once when the
 chunk fails to load, and a **public** route's loader is further wrapped in a
 `ReloadingChunkLoader`, which reloads the document once per session (a
@@ -94,7 +94,7 @@ follows the tree: pages under `AppLayout` render the fallback as an
 `aria-labelledby` `<section>` (`'region'`), because `AppLayout` already owns
 the page's `<main>` and two would nest; open routes and the layouts render
 `<main>`. `RouteError` is presentational and dispatches on status first
-(issue #309, ADR-018): `errorPageStatusDetector` reads a status from a router
+(issue #309): `errorPageStatusDetector` reads a status from a router
 error response, a render-thrown `Response` or a `data()` value, and maps 403,
 404 and 500 to 599 to the designed `ErrorPage` (`@/components/error-page`),
 which `RouteErrorPage` lazy-loads through `errorPageLoader` with the same
@@ -117,7 +117,7 @@ exports as `onRouteError` and `src/app.tsx` passes to
 `<RouterProvider onError>`; it reports through the container-free
 `boundaryErrorReporter` with `surface: 'route'`, so the shell never touches the
 DI container. Suspense fallbacks are `<RouteFallback />`, never `null` — see
-"Route-level splitting" and pattern 14 in `CLAUDE.md`, and ADR-007.
+"Route-level splitting" and pattern 14 in `CLAUDE.md`.
 
 ## Adding a page
 

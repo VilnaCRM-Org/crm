@@ -16,11 +16,11 @@ const LARGE_DIGITS: ErrorPageDigitGeometry = {
   fontSize: 244.5,
   lineHeight: 293.4,
   shadowOffset: 4,
-  glyphs: [
-    { x: 0, y: 0 },
-    { x: 147, y: 36 },
-    { x: 301, y: 0 },
-  ],
+  glyphs: {
+    first: { x: 0, y: 0 },
+    second: { x: 147, y: 36 },
+    third: { x: 301, y: 0 },
+  },
 };
 
 const LARGE_CARD_SURFACE: ErrorPageCardSurfaceGeometry = {
@@ -91,11 +91,11 @@ const ERROR_PAGE_GEOMETRY: ErrorPageGeometryTable = {
       fontSize: 154.462,
       lineHeight: 185.355,
       shadowOffset: 2.527,
-      glyphs: [
-        { x: 27.739, y: 14.582 },
-        { x: 120.606, y: 37.324 },
-        { x: 217.896, y: 14.582 },
-      ],
+      glyphs: {
+        first: { x: 27.739, y: 14.582 },
+        second: { x: 120.606, y: 37.324 },
+        third: { x: 217.896, y: 14.582 },
+      },
     },
     card: {
       border: 0.739,
