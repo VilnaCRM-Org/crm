@@ -8,7 +8,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import FormSection from '@auth/routes/create-new-password/create-new-password-form-section';
 import type { CreateNewPasswordOutcome } from '@auth/types/password-recovery/outcome';
 import { buildResetToken } from '@tests/builders';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -36,7 +36,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-const i18n = createLocaleI18n('uk');
+const i18n = createRecoveryLocaleI18n('uk');
 
 const mountAt = (entry: string): ReturnType<typeof createMemoryRouter> => {
   const router = createMemoryRouter(

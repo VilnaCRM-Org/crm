@@ -4,6 +4,7 @@ import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
+import appI18n from '@/i18n';
 import ResetPassword from '@auth/routes/reset-password';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 
@@ -42,5 +43,14 @@ describe('ResetPassword page', () => {
 
     expect(await screen.findByText('request section')).toBeInTheDocument();
     expect(document.title).toBe('Забули пароль? - VilnaCRM');
+  });
+
+  it('registers the recovery catalog on the app i18n instance when the route module loads', () => {
+    expect(appI18n.getResource('uk', 'translation', 'password_recovery.title')).toBe(
+      'Забули пароль?'
+    );
+    expect(appI18n.getResource('en', 'translation', 'password_recovery.title')).toBe(
+      'Forgot your password?'
+    );
   });
 });
