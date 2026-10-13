@@ -272,6 +272,21 @@ with it:
 - (c) the `useAsyncList` loader, and the scaffold templates, resolve `AsyncListLoad { items }`.
 - (d) `BoundaryErrorReporter.report` drops its `String()` coercion: `CaptureContext.surface` is
   now typed `string`, so no other value can reach it.
+- (d) the correlation headers are named literal types: `CorrelationIdProvider.header` is
+  `RequestIdHeader` (`'X-Request-Id'`) and `SessionCorrelation.header` is `CorrelationIdHeader`
+  (`'X-Correlation-Id'`), declared in `services/types/observability/observability.ts`.
+
+Merging `main` (#311, the issue-#309 error pages) brought new code under the gate, reshaped the
+same way:
+
+- (b) the error-page glyphs are `ErrorPageGlyphs { first, second, third }` and their positions
+  `ErrorPageGlyphPositions` instead of three-element tuples (`types/error-page`,
+  `error-page-variants`, `error-page-geometry`, `error-page-digits`, `digit-styles`); the three
+  glyphs render in the same order.
+- (c) `FontFaceLoader` takes `FontFaceQueries { items: FontFaceQuery[] }`, each a
+  `{ descriptor }`, instead of a string array, and `ERROR_PAGE_FONT_FACES` is that collection.
+- (c) `PostLoadPrefetcher` takes `ModuleLoaders { items }` instead of an array of loaders, and its
+  `PrefetchHost` names `PrefetchDocument` and `PrefetchNavigator` instead of nested literals.
 
 `src/services/*` is not renamed, moved or restructured. Its TB-1 sites (29 of the 127 dry-run
 entries, in 13 files) are fixed type-only, like every other site.
