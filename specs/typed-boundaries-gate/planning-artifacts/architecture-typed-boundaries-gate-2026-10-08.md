@@ -99,7 +99,9 @@ runtime reshapes TB-1 forces are listed in §5.
 > - Named third-party types (`ReactNode` for `children`, `AbortSignal`, `TFunction`, `SxProps`,
 >   `ApolloClient`, `RefObject<UserEntity>`).
 > - Generics whose arguments are named types (`Promise<RecoveryOutcome>`).
-> - Callback types whose parameters and results obey this rule.
+> - Callback types whose parameters and results obey this rule. One exception: a named callback
+>   alias in a type-only file may take an `unknown` parameter (an error callback), which the
+>   type-file selector exempts.
 > - `T | null` and `T | undefined`, written inline, where `T` is itself allowed here
 >   (`RecoveryFailure | null`, `string | undefined`).
 >

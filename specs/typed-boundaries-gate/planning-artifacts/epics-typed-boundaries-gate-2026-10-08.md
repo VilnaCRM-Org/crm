@@ -23,8 +23,9 @@ revised: '2026-10-13'
 
 One epic, two stories, from the [PRD](./prd-typed-boundaries-gate-2026-10-08.md) (FR-1 to FR-6,
 NFR-1 to NFR-3) and the [architecture](./architecture-typed-boundaries-gate-2026-10-08.md)
-(`§n`). The chore lands before #315, #330 and #331, which list it as a prerequisite. It replaces
-the former #315 Stories 0.3 to 0.6: Stories 0.3 to 0.5 are merged into Story 1.2, and
+(§3 gate design, §4 class-naming suffixes, §5 burn-down, §6 documentation and ADR drift). The
+chore lands before #315, #330 and #331, which list it as a prerequisite. It replaces the
+former #315 Stories 0.3 to 0.6: Stories 0.3 to 0.5 are merged into Story 1.2, and
 `explicit-module-boundary-types` and the generated-types rule are dropped.
 
 **Definition of done.** Four rules, for every story:
@@ -60,7 +61,7 @@ As a maintainer,
 I want the suffix policy speaking the board's language,
 So that `*Transformer` is an approved role and no frontend controller can be named.
 
-**Dispatch:** Independent. **Status:** Ready.
+**Dispatch:** Independent. **Status:** Done (PR #333).
 
 **Requirements:** FR-1, FR-6 (no ADR), NFR-2, NFR-3.
 
@@ -90,12 +91,13 @@ As a reader of any boundary in `src/`,
 I want every value that crosses a layer to carry a named type, enforced by the build,
 So that the feature bundles that follow are written against TB-1 from their first commit.
 
-**Dispatch:** Depends on: 1.1. **Status:** Ready.
+**Dispatch:** Depends on: 1.1. **Status:** Done (PR #333).
 
 **Requirements:** FR-2, FR-3, FR-4, FR-5, FR-6 (CLAUDE.md, AGENTS.md), NFR-1, NFR-2, NFR-3.
 
-**Files:** `eslint.config.mjs` (MODIFY: the two arrays of architecture §3.1 in every block of
-§3.2, `consistent-type-definitions`), `scripts/ci/eslint-gate-fixtures.mjs` and
+**Files:** `config/typed-boundary-policy.js` (ADD: the single source of both arrays),
+`eslint.config.mjs` (MODIFY: the two arrays of architecture §3.1 in every block of §3.2,
+`consistent-type-definitions`), `scripts/ci/eslint-gate-fixtures.mjs` and
 `tests/unit/config/eslint-policy.test.ts` (MODIFY: §3.4), the `src/**` files of the site list
 (its 29 `src/services/**` sites in 13 files included) and the type-only files their fixes need
 (§5), `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` (MODIFY: the TB-1
