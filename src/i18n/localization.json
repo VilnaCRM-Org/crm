@@ -194,11 +194,15 @@
       },
       "password_recovery": {
         "back": "Back",
-        "submit_button": "Submit",
+        "submit_button": "Confirm",
         "errors": {
           "rate_limited": "Too many requests. Please try again later.",
-          "transient": "The request could not be sent. Check your connection and try again."
-        }
+          "transient": "The request could not be sent. Check your connection and try again.",
+          "email_rejected": "Check the e-mail address and try again"
+        },
+        "title": "Forgot your password?",
+        "body": "Enter the e-mail address of your account",
+        "submitting": "Sending…"
       }
     }
   },
@@ -400,8 +404,12 @@
         "submit_button": "Підтвердити",
         "errors": {
           "rate_limited": "Забагато запитів. Спробуйте пізніше.",
-          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
-        }
+          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз.",
+          "email_rejected": "Перевірте адресу електронної пошти та спробуйте ще раз"
+        },
+        "title": "Забули пароль?",
+        "body": "Введіть адресу поштової скриньки вашого акаунту",
+        "submitting": "Надсилання…"
       }
     }
   }

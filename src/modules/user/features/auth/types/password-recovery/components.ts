@@ -1,6 +1,9 @@
 import type { SxProps, Theme } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
+import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
+
 export type InCardLinkVariant = 'text' | 'contained';
 
 export interface InCardLinkProps {
@@ -24,4 +27,17 @@ export interface RecoveryResultViewProps {
   title: string;
   body: string;
   action: RecoveryResultAction;
+}
+
+export interface ResetPasswordFormProps {
+  defaultValues: RestorePasswordDto;
+  onSubmit: (dto: RestorePasswordDto) => Promise<void>;
+  onRetry: () => Promise<void>;
+  failure: RecoveryFailure | null;
+  isSubmitting: boolean;
+  focusTitle: boolean;
+}
+
+export interface ResetPasswordEmailFieldProps {
+  failure: RecoveryFailure | null;
 }
