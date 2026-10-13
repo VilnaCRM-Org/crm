@@ -184,13 +184,13 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "peerDependencies": {} }],
+    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }],
   }
 }
 EOF
   run sh "$SCRIPT" "$FIX/toolkit-other-pkg.lock"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz"* ]]
+  [[ "$output" == *"https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz"* ]]
 }
 
 @test "another repository's release asset under the ui-toolkit name is rejected (exit 1)" {
@@ -198,7 +198,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/evil-org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/evil-org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }],
   }
 }
 EOF
@@ -214,19 +214,19 @@ EOF
   "workspaces": {
     "": {
       "dependencies": {
-        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.1/vilnacrm-ui-toolkit-0.6.0.tgz",
+        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.1/vilnacrm-ui-toolkit-0.8.0.tgz",
       },
     },
   },
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0-evil.tgz", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0-evil.tgz", { "peerDependencies": {} }],
   }
 }
 EOF
   run sh "$SCRIPT" "$FIX/toolkit-wrong-tag.lock"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"/download/v0.6.1/vilnacrm-ui-toolkit-0.6.0.tgz"* ]]
-  [[ "$output" == *"/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0-evil.tgz"* ]]
+  [[ "$output" == *"/download/v0.8.1/vilnacrm-ui-toolkit-0.8.0.tgz"* ]]
+  [[ "$output" == *"/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0-evil.tgz"* ]]
 }
 
 @test "ui-toolkit from the lookalike host github.com.evil.example is rejected (exit 1)" {
@@ -234,7 +234,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com.evil.example/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com.evil.example/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }],
   }
 }
 EOF
@@ -248,7 +248,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@github:VilnaCRM-Org/ui-toolkit#v0.6.0", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@github:VilnaCRM-Org/ui-toolkit#v0.8.0", { "peerDependencies": {} }],
   }
 }
 EOF
@@ -262,7 +262,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "tarball": "https://evil.example/ui-toolkit.tgz" }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "tarball": "https://evil.example/ui-toolkit.tgz" }],
   }
 }
 EOF
@@ -278,12 +278,12 @@ EOF
   "workspaces": {
     "": {
       "dependencies": {
-        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz",
+        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz",
       },
     },
   },
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "peerDependencies": { "react": "^19.0.0" } }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": { "react": "^19.0.0" } }],
 
     "ok": ["ok@1.0.0", "", {}, "https://registry.npmjs.org/ok/-/ok-1.0.0.tgz"],
   }

@@ -15,11 +15,7 @@ const HttpUrl = z.url({ protocol: /^https?$/ });
 const AppConfigSchema = z.strictObject({
   apiBaseUrl: HttpUrl.optional(),
   graphqlUrl: HttpUrl.optional(),
-  flags: z
-    .strictObject({
-      forgotPassword: z.boolean().optional(),
-    })
-    .optional(),
+  flags: z.strictObject({}).optional(),
 });
 
 export default AppConfigSchema;

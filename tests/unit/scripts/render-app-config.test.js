@@ -14,7 +14,8 @@ const projectRoot = path.resolve(__dirname, '../../..');
 
 const API_BASE_URL_VAR = 'APP_CONFIG_API_BASE_URL';
 const GRAPHQL_URL_VAR = 'APP_CONFIG_GRAPHQL_URL';
-const FORGOT_PASSWORD_VAR = `${FLAG_ENV_PREFIX}FORGOT_PASSWORD`;
+const DEMO_FLAG_VAR = `${FLAG_ENV_PREFIX}DEMO_FLAG`;
+const RETIRED_FLAG_VAR = `${FLAG_ENV_PREFIX}FORGOT_PASSWORD`;
 const UNKNOWN_FLAG_VAR = `${FLAG_ENV_PREFIX}DARK_MODE`;
 
 const blockPattern = () =>
@@ -34,7 +35,7 @@ const shell = (body, openTag = `<script id="${CONFIG_ELEMENT_ID}" type="applicat
     '</html>',
   ].join('\n');
 
-const defaultShell = () => shell('{ "flags": { "forgotPassword": false } }');
+const defaultShell = () => shell('{ "flags": { "demoFlag": false } }');
 
 const readBlockBody = (html) => {
   const match = blockPattern().exec(html);
@@ -56,7 +57,7 @@ describe('scripts/render-app-config.js', () => {
     it('replaces the committed block with compact JSON', () => {
       const rendered = renderAppConfig(defaultShell(), {});
 
-      expect(readBlockBody(rendered)).toBe('{"flags":{"forgotPassword":false}}');
+      expect(readBlockBody(rendered)).toBe('{"flags":{"demoFlag":false}}');
     });
 
     it('leaves every byte outside the block untouched', () => {
@@ -68,13 +69,13 @@ describe('scripts/render-app-config.js', () => {
 
     it('matches the block regardless of attribute order', () => {
       const html = shell(
-        '{ "flags": { "forgotPassword": false } }',
+        '{ "flags": { "demoFlag": false } }',
         `<script type="application/json" id="${CONFIG_ELEMENT_ID}">`
       );
 
-      const rendered = renderAppConfig(html, { [FORGOT_PASSWORD_VAR]: 'true' });
+      const rendered = renderAppConfig(html, { [DEMO_FLAG_VAR]: 'true' });
 
-      expect(readBlockConfig(rendered)).toEqual({ flags: { forgotPassword: true } });
+      expect(readBlockConfig(rendered)).toEqual({ flags: { demoFlag: true } });
     });
 
     it('throws when the HTML shell has no runtime configuration block', () => {
@@ -124,7 +125,7 @@ describe('scripts/render-app-config.js', () => {
       });
 
       expect(readBlockConfig(rendered)).toEqual({
-        flags: { forgotPassword: false },
+        flags: { demoFlag: false },
         apiBaseUrl,
         graphqlUrl,
       });
@@ -185,21 +186,21 @@ describe('scripts/render-app-config.js', () => {
       ['true', true],
       ['false', false],
     ])('applies the flag value %s', (raw, expected) => {
-      const rendered = renderAppConfig(defaultShell(), { [FORGOT_PASSWORD_VAR]: raw });
+      const rendered = renderAppConfig(defaultShell(), { [DEMO_FLAG_VAR]: raw });
 
-      expect(readBlockConfig(rendered).flags.forgotPassword).toBe(expected);
+      expect(readBlockConfig(rendered).flags.demoFlag).toBe(expected);
     });
 
     it.each([['TRUE'], ['1'], ['yes'], ['on'], ['False ']])('rejects %p as a flag value', (raw) => {
-      expect(() => renderAppConfig(defaultShell(), { [FORGOT_PASSWORD_VAR]: raw })).toThrow(
+      expect(() => renderAppConfig(defaultShell(), { [DEMO_FLAG_VAR]: raw })).toThrow(
         /must be exactly "true" or "false"/
       );
     });
 
     it('keeps the committed default when a flag variable is empty', () => {
-      const rendered = renderAppConfig(defaultShell(), { [FORGOT_PASSWORD_VAR]: '   ' });
+      const rendered = renderAppConfig(defaultShell(), { [DEMO_FLAG_VAR]: '   ' });
 
-      expect(readBlockConfig(rendered).flags.forgotPassword).toBe(false);
+      expect(readBlockConfig(rendered).flags.demoFlag).toBe(false);
     });
 
     it('rejects a flag variable naming a flag the committed block does not declare', () => {
@@ -209,10 +210,10 @@ describe('scripts/render-app-config.js', () => {
     });
 
     it('lists the known flags when rejecting an unknown flag', () => {
-      const html = shell('{ "flags": { "forgotPassword": false, "auditLog": true } }');
+      const html = shell('{ "flags": { "demoFlag": false, "auditLog": true } }');
 
       expect(() => renderAppConfig(html, { [UNKNOWN_FLAG_VAR]: 'true' })).toThrow(
-        /Known flags: auditLog, forgotPassword\./
+        /Known flags: auditLog, demoFlag\./
       );
     });
 
@@ -229,13 +230,13 @@ describe('scripts/render-app-config.js', () => {
         APP_CONFIG_NOT_A_FLAG: 'true',
       });
 
-      expect(readBlockConfig(rendered)).toEqual({ flags: { forgotPassword: false } });
+      expect(readBlockConfig(rendered)).toEqual({ flags: { demoFlag: false } });
     });
   });
 
   describe('toCamelCase', () => {
     it.each([
-      ['FORGOT_PASSWORD', 'forgotPassword'],
+      ['DEMO_FLAG', 'demoFlag'],
       ['NEW_CHECKOUT_V2_BETA', 'newCheckoutV2Beta'],
       ['FLAG_2FA', 'flag2fa'],
       ['SINGLE', 'single'],
@@ -279,7 +280,7 @@ describe('scripts/render-app-config.js', () => {
       const env = {
         [API_BASE_URL_VAR]: `${buildHttpUrl()}/?next=</script>&token=$&`,
         [GRAPHQL_URL_VAR]: buildHttpUrl('/graphql'),
-        [FORGOT_PASSWORD_VAR]: 'true',
+        [DEMO_FLAG_VAR]: 'true',
       };
 
       const once = renderAppConfig(defaultShell(), env);
@@ -297,20 +298,20 @@ describe('scripts/render-app-config.js', () => {
       const graphqlUrl = buildHttpUrl('/graphql');
       const html = committedShell();
 
-      const rendered = renderAppConfig(html, {
-        [GRAPHQL_URL_VAR]: graphqlUrl,
-        [FORGOT_PASSWORD_VAR]: 'true',
-      });
+      const rendered = renderAppConfig(html, { [GRAPHQL_URL_VAR]: graphqlUrl });
 
-      expect(readBlockConfig(rendered)).toEqual({
-        flags: { forgotPassword: true },
-        graphqlUrl,
-      });
+      expect(readBlockConfig(rendered)).toEqual({ flags: {}, graphqlUrl });
       expect(stripBlockBody(rendered)).toBe(stripBlockBody(html));
     });
 
-    it('declares forgotPassword as the committed default so the flag variable is accepted', () => {
-      expect(readBlockConfig(committedShell())).toEqual({ flags: { forgotPassword: false } });
+    it('ships an empty flags object as the committed default', () => {
+      expect(readBlockConfig(committedShell())).toEqual({ flags: {} });
+    });
+
+    it('rejects the retired APP_CONFIG_FLAG_FORGOT_PASSWORD, listing no known flags', () => {
+      expect(() => renderAppConfig(committedShell(), { [RETIRED_FLAG_VAR]: 'false' })).toThrow(
+        /names unknown feature flag "forgotPassword"\. Known flags: \(none\)\./
+      );
     });
   });
 });

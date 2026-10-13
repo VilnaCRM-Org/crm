@@ -19,6 +19,8 @@ const routeScans: readonly RouteScan[] = [
   { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', seedAuth: true },
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
+  { key: 'forbidden', path: ROUTE_PATHS.forbidden, ready: 'main h1' },
+  { key: 'serverError', path: ROUTE_PATHS.serverError, ready: 'main h1' },
   { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1' },
 ];
 

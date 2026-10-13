@@ -99,7 +99,7 @@ describe('appConfigSource', () => {
 
     it.each([
       ['an array', '[1, 2, 3]'],
-      ['a string', '"forgotPassword"'],
+      ['a string', '"probeFlag"'],
       ['a number', '42'],
       ['null', 'null'],
     ])('throws when the configuration block contains %s', async (_label, json) => {
@@ -230,37 +230,37 @@ describe('appConfigSource', () => {
   });
 
   describe('flag', () => {
-    it.each([true, false])('returns the declared boolean %s', async (forgotPassword) => {
-      writeConfigBlock(JSON.stringify({ flags: { forgotPassword } }));
+    it.each([true, false])('returns the declared boolean %s', async (probeFlag) => {
+      writeConfigBlock(JSON.stringify({ flags: { probeFlag } }));
 
       const source = await loadSource();
 
-      expect(source.flag('forgotPassword')).toBe(forgotPassword);
+      expect(source.flag('probeFlag' as never)).toBe(probeFlag);
     });
 
     it.each([
       ['absent', {}],
       ['an array', { flags: [] }],
-      ['a string', { flags: 'forgotPassword' }],
+      ['a string', { flags: 'probeFlag' }],
       ['null', { flags: null }],
     ])('is undefined when flags is %s', async (_label, values) => {
       writeConfigBlock(JSON.stringify(values));
 
       const source = await loadSource();
 
-      expect(source.flag('forgotPassword')).toBeUndefined();
+      expect(source.flag('probeFlag' as never)).toBeUndefined();
     });
 
     it.each([
       ['a string', 'true'],
       ['a number', 1],
       ['null', null],
-    ])('is undefined when the flag value is %s', async (_label, forgotPassword) => {
-      writeConfigBlock(JSON.stringify({ flags: { forgotPassword } }));
+    ])('is undefined when the flag value is %s', async (_label, probeFlag) => {
+      writeConfigBlock(JSON.stringify({ flags: { probeFlag } }));
 
       const source = await loadSource();
 
-      expect(source.flag('forgotPassword')).toBeUndefined();
+      expect(source.flag('probeFlag' as never)).toBeUndefined();
     });
   });
 });

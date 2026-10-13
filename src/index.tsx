@@ -4,11 +4,16 @@ import { createRoot } from 'react-dom/client';
 import '@/styles/fonts.css';
 
 import ErrorFallback from '@/components/error-boundary/error-fallback';
+import errorPageLoader from '@/components/error-boundary/error-page-loader';
 import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
+import ERROR_PAGE_FONT_FACES from '@/components/error-page/config/error-page-fonts';
+import type { ErrorPageModule } from '@/components/types/error-page';
 import appConfigSource from '@/config/runtime/app-config-source';
 import BrowserConnectivityAdapter from '@/lib/connectivity/browser-connectivity-adapter';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
+import FontFaceLoader from '@/lib/reliability/font-face-loader';
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
+import PostLoadPrefetcher from '@/lib/reliability/post-load-prefetcher';
 import type { RecoverableError } from '@/lib/reliability/types/recoverable-error';
 import AppProviders from '@/providers/app-providers';
 import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
@@ -74,4 +79,7 @@ if (configError) {
       </UIErrorBoundary>
     </React.StrictMode>
   );
+  new PostLoadPrefetcher<ErrorPageModule | void>({
+    items: [errorPageLoader, new FontFaceLoader(document.fonts, { items: ERROR_PAGE_FONT_FACES })],
+  }).attach(window);
 }

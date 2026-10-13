@@ -22,7 +22,7 @@ describe('appConfig', () => {
     const values = buildAppConfigValues({
       apiBaseUrl: buildHttpUrl('/api'),
       graphqlUrl: buildHttpUrl('/graphql'),
-      flags: { forgotPassword: true },
+      flags: {},
     });
     writeConfigBlock(JSON.stringify(values));
 
@@ -38,23 +38,22 @@ describe('appConfig', () => {
   it('reads an empty configuration when the block is absent', async () => {
     const { default: appConfig } = await loadAppConfig();
 
-    expect(appConfig.get()).toEqual({});
+    expect(appConfig.get()).toStrictEqual({});
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
     expect(Object.isFrozen(appConfig.get())).toBe(true);
   });
 
   it('freezes the nested flags object, not just the top level', async () => {
-    writeConfigBlock(JSON.stringify({ flags: { forgotPassword: true } }));
+    writeConfigBlock(JSON.stringify({ flags: {} }));
 
     const { default: appConfig } = await loadAppConfig();
     const flags = appConfig.get().flags;
 
+    expect(flags).toEqual({});
     expect(Object.isFrozen(flags)).toBe(true);
-    expect(() => {
-      (flags as { forgotPassword: boolean }).forgotPassword = false;
-    }).toThrow(TypeError);
-    expect(appConfig.get().flags?.forgotPassword).toBe(true);
+    expect(Reflect.set(flags as object, 'probeFlag', true)).toBe(false);
+    expect(appConfig.get().flags).toEqual({});
   });
 
   it('fails fast and names the field when a URL is malformed', async () => {
@@ -104,11 +103,11 @@ describe('appConfig', () => {
     );
   });
 
-  it('fails fast and names the flag when a flag value is not a boolean', async () => {
-    writeConfigBlock(JSON.stringify({ flags: { forgotPassword: 'yes' } }));
+  it('fails fast and names a flag the configuration declares but the build does not', async () => {
+    writeConfigBlock(JSON.stringify({ flags: { retiredFlag: false } }));
 
     await expect(loadAppConfig()).rejects.toThrow(
-      /Invalid runtime configuration[\s\S]*forgotPassword/
+      /Invalid runtime configuration[\s\S]*retiredFlag/
     );
   });
 

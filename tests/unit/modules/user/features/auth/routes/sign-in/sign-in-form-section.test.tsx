@@ -46,6 +46,14 @@ describe('SignInFormSection', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('draws the card with the sign-in bottom padding', () => {
+    renderWithProviders(<SignInFormSection />);
+
+    expect(
+      screen.getAllByRole('generic').find((element) => element.id === 'auth-form-card')
+    ).toHaveStyle({ paddingBottom: '1.3125rem' });
+  });
+
   it('composes the login form with the sign-up switcher', () => {
     renderWithProviders(<SignInFormSection />);
 

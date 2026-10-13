@@ -15,7 +15,7 @@ type MockI18n = {
 
 const TITLES: Record<string, Record<string, string>> = {
   en: { 'sign_up.title': 'Registration', 'sign_in.title': 'Authentication' },
-  uk: { 'sign_up.title': 'Реєстрація', 'sign_in.title': 'Аутентифікація' },
+  uk: { 'sign_up.title': 'Реєєстрація', 'sign_in.title': 'Аунтефикація' },
 };
 
 let mockI18n: MockI18n;
@@ -63,7 +63,7 @@ describe('usePageTitle', () => {
     mockI18n.language = 'uk';
     languageChangedHandler?.();
 
-    expect(document.title).toBe('Реєстрація - VilnaCRM');
+    expect(document.title).toBe('Реєєстрація - VilnaCRM');
   });
 
   it('unsubscribes from languageChanged on unmount (AC4)', () => {

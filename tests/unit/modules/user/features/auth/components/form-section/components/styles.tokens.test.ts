@@ -105,8 +105,11 @@ describe('form section component styles', () => {
     expect(styles.passwordButton).toEqual({
       minWidth: '2rem',
       minHeight: '2rem',
-      marginInlineEnd: 0,
+      marginInlineEnd: '-0.25rem',
       p: 0,
+      '@media (min-width:768px)': {
+        marginInlineEnd: '0.125rem',
+      },
       '&:hover, &:focus-visible': {
         backgroundColor: 'transparent',
       },

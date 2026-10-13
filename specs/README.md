@@ -23,6 +23,7 @@ specs/
 | `makefile-playwright-targets` | Planned     |
 | `sign-up-sign-in-pages`       | In progress |
 | `enterprise-app-shell`        | Implemented |
+| `309-error-pages`             | In progress |
 
 ## Conventions
 

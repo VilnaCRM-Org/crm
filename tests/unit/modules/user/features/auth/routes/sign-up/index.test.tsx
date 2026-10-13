@@ -122,6 +122,14 @@ describe('SignUp page', () => {
     expect(document.title).toBe('Registration - VilnaCRM');
   });
 
+  it('draws the card with the sign-up bottom padding', () => {
+    renderWithProviders(<SignUpFormSection />);
+
+    expect(
+      screen.getAllByRole('generic').find((element) => element.id === 'auth-form-card')
+    ).toHaveStyle({ paddingBottom: '1.4375rem' });
+  });
+
   it('marks the OAuth row inert once the registration view leaves the form (AC5)', () => {
     renderWithProviders(<SignUpFormSection />);
 

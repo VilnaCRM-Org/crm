@@ -1,3 +1,4 @@
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import useAuthStore from '@auth/stores/use-auth-store';
@@ -72,6 +73,7 @@ const makeActions = (over: Partial<AuthRepository>): AuthStoreActions =>
     authRequestErrors,
     authState: useAuthStore,
     securitySignals,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   });
 
 const rejectLogin = (error: unknown): Promise<void> =>

@@ -22,13 +22,16 @@ describe('lighthouse constants', () => {
     process.env = originalEnv;
   });
 
-  it('expands the base URL into the protected, sign-up, and sign-in Lighthouse pages', () => {
+  it('expands the base URL into the protected, auth and error-page Lighthouse pages', () => {
     const { pages } = jest.requireActual<{ pages: string[] }>(constantsModulePath);
 
     expect(pages).toEqual([
       'http://prod:3001',
       'http://prod:3001/sign-up',
       'http://prod:3001/sign-in',
+      'http://prod:3001/forbidden',
+      'http://prod:3001/server-error',
+      'http://prod:3001/definitely-not-a-route',
     ]);
   });
 });

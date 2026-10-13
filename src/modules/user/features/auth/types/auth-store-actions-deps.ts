@@ -1,5 +1,6 @@
 import type { StoreApi } from 'zustand';
 
+import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthState } from '@auth/types/auth-store';
 import type AuthRequestErrors from '@auth/utils/auth-request-errors';
@@ -10,4 +11,5 @@ export interface AuthStoreActionsDeps {
   readonly authRequestErrors: AuthRequestErrors;
   readonly authState: StoreApi<AuthState>;
   readonly securitySignals: AuthSecuritySignals;
+  readonly sandboxDemoSession: SandboxDemoSessionProvider;
 }

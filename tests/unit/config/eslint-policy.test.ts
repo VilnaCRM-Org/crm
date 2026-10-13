@@ -32,6 +32,8 @@ const ROUTE_SHELL_TSX = 'src/routes/routes.tsx';
 const CONTAINER_SEAM_TSX = 'src/components/ui-container/index.tsx';
 const BREAKPOINTS_SEAM_TS = 'src/components/ui-breakpoints/index.ts';
 const BASE_SRC_JS = 'src/i18n.js';
+const TEXT_LINK_SEAM_TSX = 'src/components/ui-text-link/index.tsx';
+const LOCAL_LINK_TSX = 'src/components/ui-link/index.tsx';
 const UI_TOOLKIT = '@vilnacrm/ui-toolkit';
 const UI_TOOLKIT_SUBPATHS = `${UI_TOOLKIT}/*`;
 
@@ -62,7 +64,14 @@ const configs: Record<string, ResolvedConfig> = JSON.parse(
 );
 
 const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
-  [ROUTE_SHELL_TSX, CONTAINER_SEAM_TSX, BREAKPOINTS_SEAM_TS, BASE_SRC_JS].map((file) => [
+  [
+    ROUTE_SHELL_TSX,
+    CONTAINER_SEAM_TSX,
+    BREAKPOINTS_SEAM_TS,
+    BASE_SRC_JS,
+    TEXT_LINK_SEAM_TSX,
+    LOCAL_LINK_TSX,
+  ].map((file) => [
     file,
     JSON.parse(
       execFileSync('node', ['node_modules/eslint/bin/eslint.js', '--print-config', file], {
@@ -155,6 +164,8 @@ const SRC_PROBES = [
   ROUTE_SHELL_TSX,
   CONTAINER_SEAM_TSX,
   BREAKPOINTS_SEAM_TS,
+  TEXT_LINK_SEAM_TSX,
+  LOCAL_LINK_TSX,
 ];
 const NON_SEAM_SRC_PROBES = [LOGIC_TS, COMPONENT_TSX, TYPE_ONLY_TS, HOOK_TS, ROUTE_SHELL_TSX];
 const ALWAYS_FORBIDDEN_TOOLKIT_GROUP = [
@@ -366,6 +377,17 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
       ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
       `!${UI_TOOLKIT}/ui-breakpoints`,
     ]);
+  });
+
+  it('lets only the text-link seam through ui-link, never the local UILink (#309)', () => {
+    expect(toolkitGroupFor(TEXT_LINK_SEAM_TSX)).toEqual([
+      ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
+      `!${UI_TOOLKIT}/ui-link`,
+    ]);
+    expect(restrictedImportsFor(TEXT_LINK_SEAM_TSX).paths).toContainEqual(
+      expect.objectContaining({ name: `${UI_TOOLKIT}/ui-link`, allowImportNames: ['default'] })
+    );
+    expect(toolkitGroupFor(LOCAL_LINK_TSX)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
   });
 
   it('limits a ui-toolkit component seam to its subpath default export (#250)', () => {

@@ -8,7 +8,7 @@ const STATIC_BACKGROUND_SIZE = '100% 100%';
 const FIELD_GAP = '0.5rem';
 const LAST_FIELD_GAP = '0px';
 const TITLE_WIDTH = '7.5rem';
-const TITLE_HEIGHT = '1.375rem';
+const TITLE_HEIGHT = '1.625rem';
 const CARD_BORDER_RADIUS = '16px';
 
 jest.mock('react-i18next', () => ({

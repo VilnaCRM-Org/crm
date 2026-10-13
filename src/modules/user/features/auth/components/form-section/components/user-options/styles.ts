@@ -1,24 +1,34 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { customColors, paletteColors } from '@/styles/colors';
+import { customColors } from '@/styles/colors';
 
 export default {
   authOptionsWrapper: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // The row can carry a second item once the forgotPassword flag is on; wrapping keeps it
-    // within a 320px viewport under the WCAG 1.4.12 text-spacing overrides, and the column gap
-    // guarantees the 2.5.8 spacing exception the inline link relies on.
+    // The row carries the checkbox and the forgot-password link; wrapping keeps both within a
+    // 320px viewport under the WCAG 1.4.12 text-spacing overrides, and the column gap guarantees
+    // the 2.5.8 spacing exception the inline link relies on.
     flexWrap: 'wrap',
     columnGap: '1rem',
     rowGap: '0.5rem',
     marginTop: '1rem',
+    marginBottom: '0.4375rem',
 
+    [`@media (min-width:375px)`]: {
+      paddingRight: '0.75rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '1.4375rem',
+      marginBottom: '-0.5625rem',
+      paddingRight: 0,
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '0.8125rem',
+      marginBottom: '-0.625rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginTop: '-0.1875rem',
+      marginBottom: 0,
     },
   },
 
@@ -39,49 +49,20 @@ export default {
         fontSize: '1rem',
         lineHeight: '1.125',
       },
-      [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
         fontSize: '0.875rem',
         lineHeight: '1.2857',
       },
     },
-  },
 
-  rememberMeCheckbox: {
-    padding: 0,
-    marginRight: '0.8125rem',
-  },
+    '& .MuiCheckbox-root .ui-checkbox-box': {
+      width: '1.25rem',
+      height: '1.25rem',
 
-  forgotPasswordLink: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    minHeight: '1.5rem',
-
-    fontFamily: `Inter, sans-serif`,
-    fontWeight: 500,
-    fontSize: '0.875rem',
-    lineHeight: '1.2857',
-
-    // Literal token rather than the MUI theme: `renderWithTheme` replaces the theme instead of
-    // merging it, so `theme.palette.primary.main` inside UILink resolves to MUI's default blue.
-    color: paletteColors.primary.linkText,
-
-    // The underline must live here: ui-link/theme.ts sets `textDecoration: 'none'` in
-    // `styleOverrides.root`, which outranks the `underline` prop. Without it the link is
-    // distinguished from the adjacent label by colour alone (WCAG 1.4.1).
-    textDecoration: 'underline',
-    textDecorationThickness: '1px',
-    textUnderlineOffset: '0.2em',
-
-    '&:hover': {
-      color: paletteColors.primary.linkTextHover,
-      textDecorationThickness: '2px',
-    },
-
-    '&:focus-visible': {
-      outline: `2px solid ${customColors.text.primary}`,
-      outlineOffset: '2px',
-      borderRadius: '2px',
-      textDecorationThickness: '2px',
+      [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+        width: '1.5rem',
+        height: '1.5rem',
+      },
     },
   },
 };

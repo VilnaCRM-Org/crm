@@ -17,7 +17,7 @@ jest.mock('@auth/assets/social-links/github-color.svg', mockSvgModule);
 jest.mock('@auth/assets/social-links/facebook-color.svg', mockSvgModule);
 jest.mock('@auth/assets/social-links/twitter-color.svg', mockSvgModule);
 
-const PROVIDER_LABELS = ['Google', 'GitHub', 'Facebook', 'Twitter'];
+const PROVIDER_LABELS = ['Google', 'Facebook', 'GitHub', 'Twitter'];
 const OAUTH_BASE_URL = 'https://oauth.vilnacrm.test';
 
 // `urlBuilder.build` returns its argument unchanged when no base URL resolves, so asserting the

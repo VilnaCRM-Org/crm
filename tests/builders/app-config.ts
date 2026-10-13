@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 
 import type { AppConfigReader, AppConfigValues } from '@/config/runtime/types/app-config';
-import type { FeatureFlag } from '@/config/runtime/types/feature-flag';
 
 export function buildHttpUrl(path = ''): string {
   return `${faker.internet.url({ appendSlash: false })}${path}`;
@@ -23,6 +22,6 @@ export function buildAppConfigReader(values: AppConfigValues = {}): AppConfigRea
   };
 }
 
-export function buildFeatureFlagConfig(flags: Partial<Record<FeatureFlag, boolean>>): string {
+export function buildFeatureFlagConfig(flags: Readonly<Record<string, unknown>>): string {
   return JSON.stringify({ flags });
 }

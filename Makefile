@@ -124,6 +124,8 @@ K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
 K6_SIGNUP_SCRIPT            ?= /loadTests/signup.js
 K6_SIGNUP_RESULTS_FILE		?= /loadTests/results/signup.html
+K6_ERROR_PAGES_SCRIPT       ?= /loadTests/error-pages.js
+K6_ERROR_PAGES_RESULTS_FILE ?= /loadTests/results/error-pages.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
 K6_RUN_COMMAND              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)"
 LOAD_TESTS_RUN              = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
@@ -131,6 +133,7 @@ LOAD_TESTS_RUN_SIGNUP       = \
 	@echo "🧪 Running comprehensive signup load tests (positive, negative, rate limit)..." && \
 	$(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_SIGNUP_RESULTS_FILE)" $(K6_SIGNUP_SCRIPT) && \
 	echo "✅ All signup tests completed successfully!"
+LOAD_TESTS_RUN_ERROR_PAGES  = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_ERROR_PAGES_RESULTS_FILE)" $(K6_ERROR_PAGES_SCRIPT)
 
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
@@ -890,6 +893,7 @@ ci-test-memory-leak: ## Run memory leak tests using the dedicated memlab compose
 
 ci-test-load: prepare-results-dir ## Run K6 load tests assuming ci-prod-setup already started the prod environment
 	$(LOAD_TESTS_RUN)
+	$(LOAD_TESTS_RUN_ERROR_PAGES)
 
 ci-test-lighthouse-desktop: ## Run Lighthouse desktop audit assuming ci-prod-setup already started the prod environment
 	$(LHCI_DESKTOP)
@@ -945,6 +949,9 @@ test-load: start-prod wait-for-prod-health prepare-results-dir ## This command e
 test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive signup load tests with scenario selection via env vars.
                        ## Use run_smoke/run_average/run_stress/run_spike/run_ratelimit before invoking this target.
 	$(LOAD_TESTS_RUN_SIGNUP)
+
+test-load-error-pages: start-prod wait-for-prod-health prepare-results-dir ## Execute load tests against the 403, 5xx and catch-all 404 error pages of the prod container.
+	$(LOAD_TESTS_RUN_ERROR_PAGES)
 
 lighthouse-desktop: lighthouse-setup ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
 	$(LHCI_DESKTOP)

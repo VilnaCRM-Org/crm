@@ -85,7 +85,7 @@ EOF
   done 4<<'EOF'
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
-check-auth-seed-gate|docker build -t crm-auth-seed-probe -f Dockerfile --target production .|dev node scripts/ci/check-auth-seed-gate.mjs --dir ./dist-auth-seed-probe --expect absent --token auth-seed-gate-probe-token
+check-auth-seed-gate|docker build -t crm-auth-seed-probe -f Dockerfile --target production .|dev node scripts/ci/check-auth-seed-gate.mjs --dir ./dist-auth-seed-probe --expect absent --token auth-seed-gate-probe-token|docker compose -f docker-compose.yml run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=auth-seed-gate-probe-token -e ENABLE_PRELOADED_AUTH_TOKEN_SEED=true dev sh -c bun x rsbuild build && node scripts/ci/check-auth-seed-gate.mjs --dir dist --expect present --token auth-seed-gate-probe-token
 build-out|docker build -t rsbuild-bundle -f Dockerfile --target production .|docker cp fake-container-id:/app/dist ./out
 format|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
 fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml} --write --ignore-path .prettierignore|
@@ -191,6 +191,7 @@ test-a11y|docker compose exec -T dev env TEST_ENV=client node ./node_modules/jes
 ci-test-visual|playwright test ./tests/visual|
 ci-test-memory-leak|docker compose -p memleak -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
 ci-test-load|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)|/loadTests/homepage.js
+ci-test-load|export=/loadTests/results/error-pages.html|/loadTests/error-pages.js
 ci-test-lighthouse-desktop|docker compose exec -T dev bun x lhci autorun --config=./lighthouse/lighthouserc.desktop.js|
 ci-test-lighthouse-mobile|docker compose exec -T dev bun x lhci autorun --config=./lighthouse/lighthouserc.mobile.js|
 test-integration-watch|docker compose exec -T dev env TEST_ENV=integration node ./node_modules/jest/bin/jest.js --watch|
