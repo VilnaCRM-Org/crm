@@ -12,6 +12,7 @@ const POSITIVE_TABINDEX = '[tabindex]:not([tabindex="0"]):not([tabindex="-1"])';
 interface RouteScan {
   key: keyof typeof ROUTE_PATHS;
   path: string;
+  query?: () => string;
   ready: string;
   seedAuth?: boolean;
 }
@@ -27,7 +28,8 @@ const routeScans: readonly RouteScan[] = [
   },
   {
     key: 'passwordReset',
-    path: `${ROUTE_PATHS.passwordReset}?token=${buildResetToken()}`,
+    path: ROUTE_PATHS.passwordReset,
+    query: (): string => `?token=${buildResetToken()}`,
     ready: 'form #newPassword',
   },
   { key: 'forbidden', path: ROUTE_PATHS.forbidden, ready: 'main h1' },
@@ -39,7 +41,7 @@ async function openRoute(page: Page, scan: RouteScan): Promise<void> {
   if (scan.seedAuth) {
     await seedPreloadedAuthToken(page);
   }
-  await page.goto(scan.path, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(scan.ready).first()).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
 }

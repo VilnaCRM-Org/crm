@@ -164,21 +164,30 @@ test.describe('Create new password (issue #315)', () => {
     await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(0);
   });
 
-  for (const [name, answer] of [
-    ['an HTTP 503', (route: Route): Promise<void> => route.fulfill({ status: 503, body: '' })],
-    ['an aborted request', (route: Route): Promise<void> => route.abort('failed')],
-  ] as const) {
-    test(`retries once after ${name}`, async ({ page }) => {
-      const bodies = await answerConfirms(page, answer);
-      await openWithToken(page);
+  async function expectRetryAfter(page: Page, answer: Answer): Promise<void> {
+    const bodies = await answerConfirms(page, answer);
+    await openWithToken(page);
 
-      await submitPasswords(page);
-      await expect(page.getByRole('alert')).toHaveText(transient);
-      await page.getByRole('button', { name: tryAgain }).click();
+    await submitPasswords(page);
+    await expect(page.getByRole('alert')).toHaveText(transient);
+    await page.getByRole('button', { name: tryAgain }).click();
 
-      await expect.poll(() => bodies.length).toBe(2);
-    });
+    await expect.poll(() => bodies.length).toBe(2);
   }
+
+  test('retries once after an HTTP 503', async ({ page }) => {
+    await expectRetryAfter(page, (route) => route.fulfill({ status: 503, body: '' }));
+  });
+
+  test.describe('dropped connection', () => {
+    // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
+    // behaviour under test and the second POST proves the first one never reached the backend.
+    test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
+
+    test('retries once after an aborted request', async ({ page }) => {
+      await expectRetryAfter(page, (route) => route.abort('failed'));
+    });
+  });
 
   test('aborts a request in flight when Назад is activated', async ({ page }) => {
     let aborted = false;
@@ -212,20 +221,20 @@ test.describe('Create new password (issue #315)', () => {
     await expect(page).toHaveURL('/');
   });
 
-  for (const [name, reach] of [
+  for (const [name, entry, linkName, ready, destination] of [
     [
       'Назад on the form',
-      async (page: Page): Promise<void> => {
-        await openWithToken(page);
-        await page.getByRole('link', { name: backLabel }).click();
-      },
+      (): string => `/password-reset?token=${buildResetToken()}`,
+      backLabel,
+      heading,
+      '/sign-in',
     ],
     [
       'Запросити нове посилання on the invalid-link state',
-      async (page: Page): Promise<void> => {
-        await page.goto('/password-reset');
-        await page.getByRole('link', { name: requestNew }).click();
-      },
+      (): string => '/password-reset',
+      requestNew,
+      invalidTitle,
+      '/password-recovery',
     ],
   ] as const) {
     test(`navigates from ${name} without a document load`, async ({ page }) => {
@@ -234,13 +243,15 @@ test.describe('Create new password (issue #315)', () => {
       await page.evaluate(() => {
         (window as unknown as { resetSentinel: boolean }).resetSentinel = true;
       });
-      await page.evaluate(() => {
-        window.history.pushState({}, '', '/password-reset');
+      await page.evaluate((url: string) => {
+        window.history.pushState({}, '', url);
         window.dispatchEvent(new PopStateEvent('popstate'));
-      });
+      }, entry());
+      await expect(page.getByRole('heading', { level: 1, name: ready })).toBeVisible();
 
-      await reach(page);
+      await page.getByRole('link', { name: linkName }).click();
 
+      await expect(page).toHaveURL(destination);
       await expect(page.getByRole('main')).toBeFocused();
       expect(
         await page.evaluate(() => (window as unknown as { resetSentinel?: boolean }).resetSentinel)
