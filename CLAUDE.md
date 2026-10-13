@@ -1449,7 +1449,8 @@ the list and its fixtures together.
 
 Every value that crosses a layer carries a **named type**: an exported `interface` in a type-only
 file, a class, or a named alias in a type-only file whose whole body is a union of named types or
-literals, a callback type, or one generic or derived type over named arguments. The boundaries
+literals, a callback type, one generic or derived type over named arguments, or a mapped type
+over a named key union. The boundaries
 this protects are component props, hook parameters and results, the signatures of Data
 provider, Transformer, Repository, State, Guard and Factory classes, DI-registered values,
 published state, events and telemetry payloads. The gate is syntactic and wider than that list:
@@ -1511,7 +1512,8 @@ generates, so a single dead alternative fails by name.
 
 **Honest limits.** The gate is syntactic: it cannot tell an interface element from a primitive
 alias. A component or function passed as an argument (`forwardRef(function UIButton(…))`,
-`memo(…)`), an `export { x as default }` of a nested function, an inline callback inside a
+`memo(…)`), a function-type annotation on a variable (`export const useX: (p: { … }) => R`),
+an `export { x as default }` of a nested function, an inline callback inside a
 parameter's own interface, test-builder return values and the generated-types exception are
 review items. An `unknown` **parameter** in a code file is not
 gated either: the gate cannot tell a caught-error narrowing method from any other by syntax, so

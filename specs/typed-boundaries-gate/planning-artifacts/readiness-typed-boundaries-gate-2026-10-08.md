@@ -5,7 +5,8 @@ project_name: crm
 date: 2026-10-09
 feature: typed-boundaries-gate
 issue: 332
-iteration: 2
+iteration: 3
+revised: '2026-10-13'
 author: 'implementation-readiness checker, autonomous run'
 inputDocuments:
   - specs/typed-boundaries-gate/planning-artifacts/prd-typed-boundaries-gate-2026-10-08.md

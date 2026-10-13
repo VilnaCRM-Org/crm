@@ -11,6 +11,8 @@ inputDocuments:
   - specs/typed-boundaries-gate/planning-artifacts/architecture-typed-boundaries-gate-2026-10-08.md
   - crm-worktrees/_planning-shared/miro-layer-contract.md (§4.1)
   - crm-worktrees/_planning-shared/tb-gate-dry-run-sites.json
+iteration: 2
+revised: '2026-10-13'
 ---
 
 # Epics and stories: typed-boundaries gate (chore)
@@ -63,7 +65,9 @@ So that `*Transformer` is an approved role and no frontend controller can be nam
 **Requirements:** FR-1, FR-6 (no ADR), NFR-2, NFR-3.
 
 **Files:** `config/class-naming-policy.js`, `tests/unit/tooling/class-naming-gate.test.ts`,
-`CLAUDE.md` and `.github/copilot-instructions.md` (role table) (MODIFY).
+`CLAUDE.md` and `.github/copilot-instructions.md` (role table), `docs/adr/README.md`,
+`docs/adr/002-zustand-over-redux.md` (MODIFY); every `docs/adr/0NN-*.md` numbered 003 or
+higher (DELETE).
 
 **Gates:** `make lint-docs`, `make lint-md`; the focused Jest file
 `tests/unit/tooling/class-naming-gate.test.ts`.
