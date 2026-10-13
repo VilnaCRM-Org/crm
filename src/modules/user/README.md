@@ -14,7 +14,9 @@ barrel — never a deep internal path.
 - `ApiError` — the module's public error type (consumed by the shared
   `error-parser`).
 - `AuthRepository` (type) — the public repository interface.
-- `LoginResponse`, `SafeUserInfo` (types) — public response shapes.
+- `LoginResponse` (type) — the public login response shape.
+- `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`
+  (types) — the board's User domain, see "The User domain types" below.
 
 Two deliberate deviations from the issue's illustrative example, both forced by
 this codebase:
@@ -47,6 +49,19 @@ this codebase:
 Everything else is **private** to the module and must not cross the boundary:
 `repositories/*-impl.ts`, `store/*-mapper.ts`, the `lib/api-errors/*`
 subclasses, factories, and every file under `types/**` and `utils/**`.
+
+### The User domain types (TB-2)
+
+`src/modules/user/types/user/` holds the `[type]` cards of the Miro board's User module frame,
+one type-only file per card: `UserEntity`, `SignInDto`, `SignUpDto` (which `extends SignInDto`),
+`RestorePasswordDto` and `CreateNewPasswordDto`. They are plain `readonly` data interfaces with
+no logic; the business rules stay in user-service.
+
+TB-2: a board type crosses component and form boundaries as itself (`UIForm<SignInDto>`), and
+form values may only `extends` a DTO to add UI-only fields. The `*Dto` and `*Entity` names are
+reserved for this folder;
+[`tests/unit/tooling/domain-type-names.test.ts`](../../../tests/unit/tooling/domain-type-names.test.ts)
+fails when an interface or alias with either suffix is declared anywhere else in `src/`.
 
 ## Two sanctioned exceptions
 
@@ -228,8 +243,8 @@ live in user-service.
 **Decision.** `UserEntity` and the DTOs (`SignInDto`, `SignUpDto`, `RestorePasswordDto`,
 `CreateNewPasswordDto`) are data-only interfaces in `src/modules/user/types/user/`, exported
 from the module barrel. `RestorePasswordDto` is the forgotten-password request;
-`LoginUserDto` and `RegisterUserDto` become `SignInDto` and `SignUpDto`, and the forms are typed
-by the DTOs.
+the sign-in and sign-up credential types of the auth feature were renamed to `SignInDto` and
+`SignUpDto`, and the forms are typed by the DTOs.
 
 **Rejected.** Per-feature DTO copies; a parallel `*FormValues` copy of each DTO; behaviour or
 validation on the domain types.
