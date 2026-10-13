@@ -40,11 +40,7 @@ describe('LocalizationGenerator', () => {
 
     Object.assign(fs, mockFs);
 
-    generator = new LocalizationGenerator(
-      defaultConfig.i18nFolderName,
-      defaultConfig.modulesPath,
-      defaultConfig.localizationFile
-    );
+    generator = new LocalizationGenerator(defaultConfig);
   });
 
   describe('constructor', () => {
@@ -58,15 +54,21 @@ describe('LocalizationGenerator', () => {
     });
 
     it('should initialize with custom values', () => {
-      const customGenerator = new LocalizationGenerator(
-        'custom-i18n',
-        'custom/modules',
-        'custom.json'
-      );
+      const customGenerator = new LocalizationGenerator({
+        i18nFolderName: 'custom-i18n',
+        modulesPath: 'custom/modules',
+        localizationFile: 'custom.json',
+        outputPath: 'custom/out',
+        requiredLocales: ['de'],
+        lazyCatalogs: [],
+      });
 
       expect(customGenerator.i18nFolderName).toBe('custom-i18n');
       expect(customGenerator.modulesPath).toBe('custom/modules');
       expect(customGenerator.localizationFile).toBe('custom.json');
+      expect(customGenerator.pathToWriteLocalization).toBe('custom/out');
+      expect(customGenerator.requiredLocales).toEqual(['de']);
+      expect([...customGenerator.lazyCatalogDirs]).toEqual([]);
     });
   });
 
@@ -152,14 +154,11 @@ describe('LocalizationGenerator', () => {
 
     it('should skip a catalog folder declared lazy so it never joins the merged catalog', () => {
       fs.existsSync.mockReturnValue(true);
-      const lazyGenerator = new LocalizationGenerator(
-        'i18n',
-        'src',
-        'localization.json',
-        'src/i18n',
-        ['en', 'uk'],
-        ['modules/recovery/i18n']
-      );
+      const lazyGenerator = new LocalizationGenerator({
+        outputPath: 'src/i18n',
+        requiredLocales: ['en', 'uk'],
+        lazyCatalogs: ['modules/recovery/i18n'],
+      });
       mockReaddirWithStructure({
         src: [directoryEntry('modules', true)],
         'src/modules': [directoryEntry('feature', true), directoryEntry('recovery', true)],

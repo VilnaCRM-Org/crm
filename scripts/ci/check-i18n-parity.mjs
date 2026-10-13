@@ -338,14 +338,14 @@ function regenerateInMemory(scanRoot, lazyCatalogs) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-parity-'));
   try {
     const LocalizationGenerator = requireCjs('../localization-generator.js');
-    const generator = new LocalizationGenerator(
-      CATALOG_DIR,
-      scanRoot,
-      MERGED_FILE,
-      path.relative(process.cwd(), temp),
-      REQUIRED_LOCALES,
-      lazyCatalogs
-    );
+    const generator = new LocalizationGenerator({
+      i18nFolderName: CATALOG_DIR,
+      modulesPath: scanRoot,
+      localizationFile: MERGED_FILE,
+      outputPath: path.relative(process.cwd(), temp),
+      requiredLocales: REQUIRED_LOCALES,
+      lazyCatalogs,
+    });
     const result = silenceWarnings(() => generator.generateLocalizationFile());
     return result ? result.localizationObj : {};
   } finally {
@@ -532,14 +532,12 @@ function isPathEntry(value) {
   return typeof value === 'string' && value.trim() !== '';
 }
 
+function isOwnerList(owners) {
+  return Array.isArray(owners) && owners.length > 0 && owners.every(isPathEntry);
+}
+
 function isLazyCatalogEntry(entry) {
-  return (
-    isPlainObject(entry) &&
-    isPathEntry(entry.catalog) &&
-    Array.isArray(entry.owners) &&
-    entry.owners.length > 0 &&
-    entry.owners.every(isPathEntry)
-  );
+  return isPlainObject(entry) && isPathEntry(entry.catalog) && isOwnerList(entry.owners);
 }
 
 function loadPolicy() {

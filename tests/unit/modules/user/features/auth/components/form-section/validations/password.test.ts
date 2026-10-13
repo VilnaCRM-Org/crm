@@ -2,7 +2,7 @@ import { TFunction } from 'i18next';
 
 import formValidators from '@/modules/user/features/auth/components/form-section/validations';
 
-import emptyUser from './constants';
+import emptyUser, { EMPTY_FIELD_VALUES } from './constants';
 
 describe('password validation', () => {
   const tMock = ((key: string) => key) as unknown as TFunction;
@@ -31,20 +31,8 @@ describe('password validation', () => {
   });
 
   describe('required validation', () => {
-    it('should return required error for empty string', () => {
-      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.required');
-    });
-
-    it('should return required error for undefined', () => {
-      expect(validators.password(undefined as unknown as string, emptyUser)).toBe(
-        'sign_up.form.password_input.required'
-      );
-    });
-
-    it('should return required error for null', () => {
-      expect(validators.password(null as unknown as string, emptyUser)).toBe(
-        'sign_up.form.password_input.required'
-      );
+    it.each(EMPTY_FIELD_VALUES)('should return required error for %s', (_, password) => {
+      expect(validators.password(password, emptyUser)).toBe('sign_up.form.password_input.required');
     });
   });
 
