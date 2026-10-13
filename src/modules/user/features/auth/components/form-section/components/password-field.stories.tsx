@@ -9,7 +9,7 @@ const meta: Meta<typeof PasswordField> = {
   component: PasswordField,
   tags: ['autodocs'],
   args: {
-    label: 'Пароль',
+    label: 'Створіть пароль',
     placeholder: 'Створіть пароль',
     autoComplete: 'new-password',
   },

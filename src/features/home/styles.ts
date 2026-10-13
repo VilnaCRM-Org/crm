@@ -1,4 +1,5 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
+import UI_BUTTON_PHONE_MEDIA from '@/components/ui-button/phone-media';
 import { customColors, paletteColors } from '@/styles/colors';
 
 const { lg } = breakpointsTheme.breakpoints.values;
@@ -41,7 +42,7 @@ export default {
     [`@media (max-width: ${lg}px)`]: {
       padding: signOutPadding,
     },
-    '@media (max-width: 375px)': {
+    [UI_BUTTON_PHONE_MEDIA]: {
       padding: signOutPadding,
       marginBottom: 0,
     },

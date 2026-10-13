@@ -8,8 +8,8 @@ import browserNavigator from '@auth/utils/browser-navigator';
 
 const PROVIDERS = [
   { key: 'google', label: 'Google', SvgComponent: Google },
-  { key: 'github', label: 'GitHub', SvgComponent: GitHub },
   { key: 'facebook', label: 'Facebook', SvgComponent: Facebook },
+  { key: 'github', label: 'GitHub', SvgComponent: GitHub },
   { key: 'twitter', label: 'Twitter', SvgComponent: Twitter },
 ] as const;
 

@@ -14,10 +14,26 @@
         "go_home": "Go to homepage",
         "details": "Error details"
       },
-      "not_found": {
-        "title": "Page not found",
-        "description": "The page you're looking for doesn't exist.",
-        "cta": "Go to homepage"
+      "error_page": {
+        "not_found": {
+          "title": "Error 404",
+          "description": "This page does not exist",
+          "code": "Error code: 404"
+        },
+        "forbidden": {
+          "title": "Access denied",
+          "description": "Unfortunately, you do not have permission to access this page",
+          "code": "Error code: 403"
+        },
+        "server_error": {
+          "title": "Server error",
+          "description": "The server is temporarily unavailable. Please try again later.",
+          "code": "Error code: 5xx"
+        },
+        "actions": {
+          "home": "Go to homepage",
+          "request_access": "Request access"
+        }
       },
       "route_fallback": {
         "loading": "Loading page"
@@ -193,10 +209,26 @@
         "go_home": "На головну сторінку",
         "details": "Деталі помилки"
       },
-      "not_found": {
-        "title": "Сторінку не знайдено",
-        "description": "Сторінку, яку ви шукаєте, не існує.",
-        "cta": "На головну сторінку"
+      "error_page": {
+        "not_found": {
+          "title": "Помилка 404",
+          "description": "Сторінки не існує",
+          "code": "Код помилки: 404"
+        },
+        "forbidden": {
+          "title": "В доступі відмовлено",
+          "description": "На жаль, у вас немає прав доступу до цієї сторінки",
+          "code": "Код помилки: 403"
+        },
+        "server_error": {
+          "title": "Помилка сервера",
+          "description": "Сервер тимчасово недоступний. Спробуйте пізніше.",
+          "code": "Код помилки: 5xx"
+        },
+        "actions": {
+          "home": "На головну",
+          "request_access": "Запросити доступ"
+        }
       },
       "route_fallback": {
         "loading": "Завантаження сторінки"
@@ -240,26 +272,26 @@
         "loadingForm": "Завантаження форми автентифікації"
       },
       "sign_up": {
-        "title": "Реєстрація",
-        "subtitle": "Створіть обліковий запис у VilnaCRM",
+        "title": "Реєєстрація",
+        "subtitle": "Створіть аккаунт у VilnaCRM",
         "socials_main_heading": "Або",
         "form": {
           "name_input": {
             "label": "Ваше ім’я та прізвище",
-            "placeholder": "Михайло Світський",
+            "placeholder": "Михайло Светський",
             "special_characters_error": "Будь ласка, використовуйте лише літери",
             "required": "Це поле обов'язкове",
             "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
           },
           "email_input": {
-            "label": "Електронна пошта",
+            "label": "E-mail",
             "placeholder": "vilnaCRM@gmail.com",
             "required": "Це поле обов'язкове",
             "email_format_error": "Будь ласка, переконайтеся, що email містить '@' та '.'",
             "invalid_message": "Будь ласка, введіть коректну електронну адресу"
           },
           "password_input": {
-            "label": "Пароль",
+            "label": "Створіть пароль",
             "placeholder": "Створіть пароль",
             "required": "Це поле обов'язкове",
             "error_length": "Будь ласка, введіть від 8 до 64 символів",
@@ -281,8 +313,8 @@
           "submitting": "Обробка…",
           "submit_button": "Реєстрація",
           "error_text": "Виникла помилка. Перевірте ще раз",
-          "switcher_text_have_account": "У вас вже є обліковий запис?",
-          "switcher_text_no_account": "У вас немає облікового запису?"
+          "switcher_text_have_account": "У вас вже є аккаунт?",
+          "switcher_text_no_account": "У Вас немає аккаунту?"
         },
         "errors": {
           "load_failed": "Не вдалося відкрити форму реєстрації. Спробуйте ще раз.",
@@ -291,23 +323,23 @@
         }
       },
       "sign_in": {
-        "title": "Аутентифікація",
-        "subtitle": "Увійдіть до свого облікового запису у два кліки",
+        "title": "Аунтефикація",
+        "subtitle": "Увійдіть до свого аккаунту за два кліки",
         "errors": {
           "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
           "login": "Помилка входу: {{reason}}"
         },
         "form": {
           "email_input": {
-            "placeholder": "Введіть електронну пошту",
-            "label": "Електронна пошта",
+            "placeholder": "vilnaCRM@gmail.com",
+            "label": "E-mail",
             "required": "Це поле обов'язкове"
           },
           "password_input": {
             "placeholder": "Введіть пароль",
             "label": "Пароль"
           },
-          "submit_button": "Увійти до облікового запису",
+          "submit_button": "Увійти до аккаунту",
           "submitting": "Вхід…",
           "remember_me": "Запамʼятати мене",
           "forgot_password": "Забули пароль?"

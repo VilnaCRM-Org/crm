@@ -3,8 +3,8 @@ import type { JSX } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Outlet, Route, Routes } from 'react-router';
 
+import ErrorPage from '@/components/error-page';
 import AppLayout from '@/components/layouts/app-layout';
-import NotFound from '@/components/not-found/not-found';
 import UIBackToMain from '@/components/ui-back-to-main';
 import UIButton from '@/components/ui-button';
 import UIForm from '@/components/ui-form';
@@ -20,6 +20,10 @@ import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations'
 
 jest.mock('@/assets/icons/arrows/back-arrow.svg', () => 'back-arrow-mock.svg');
 jest.mock('@/assets/icons/logo/vilna-logo.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/illustrations/error-page/curve.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/illustrations/error-page/diamond.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/illustrations/error-page/dot-columns.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/illustrations/error-page/dot-rows.svg', () => ({ ReactComponent: 'svg' }));
 
 interface DemoFields {
   email: string;
@@ -103,7 +107,26 @@ const componentCases: ComponentCase[] = [
   },
   { name: 'UIBackToMain', element: <UIBackToMain />, withProviders: true },
   { name: 'UIForm with a labelled field', element: <DemoForm />, withProviders: true },
-  { name: 'NotFound page', element: <NotFound />, withProviders: true },
+  {
+    name: 'ErrorPage 404 as the main landmark',
+    element: <ErrorPage variant="notFound" landmark="main" />,
+    withProviders: true,
+  },
+  {
+    name: 'ErrorPage 403 as the main landmark',
+    element: <ErrorPage variant="forbidden" landmark="main" />,
+    withProviders: true,
+  },
+  {
+    name: 'ErrorPage 5xx as the main landmark',
+    element: <ErrorPage variant="serverError" landmark="main" />,
+    withProviders: true,
+  },
+  {
+    name: 'ErrorPage 403 as a region',
+    element: <ErrorPage variant="forbidden" landmark="region" />,
+    withProviders: true,
+  },
   { name: 'Home page', element: <HomeRoutes />, withProviders: true },
 ];
 

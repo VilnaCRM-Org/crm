@@ -11,6 +11,7 @@ export default function SignUpFormSection(): JSX.Element {
   return (
     <AuthFormSection
       oauthInert={view !== 'form'}
+      page="signUp"
       switcher={<AuthSwitcher to="/sign-in" labelKey="sign_up.form.switcher_text_have_account" />}
     >
       <RegistrationForm onViewChange={setView} />

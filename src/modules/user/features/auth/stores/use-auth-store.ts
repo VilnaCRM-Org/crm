@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import preloadedAuthTokenSeed from '@/config/env/preloaded-auth-token';
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import type { AuthState } from '@auth/types/auth-store';
 
 export const CLEARED_AUTH_STATE: AuthState = {
@@ -13,9 +14,14 @@ export const CLEARED_AUTH_STATE: AuthState = {
   registerError: null,
 };
 
-const useAuthStore = create<AuthState>()(() => ({
-  ...CLEARED_AUTH_STATE,
-  token: preloadedAuthTokenSeed.read(),
-}));
+const useAuthStore = create<AuthState>()(() => {
+  const demoSession = sandboxDemoSessionProvider.restore();
+
+  return {
+    ...CLEARED_AUTH_STATE,
+    email: demoSession?.email ?? CLEARED_AUTH_STATE.email,
+    token: demoSession?.token ?? preloadedAuthTokenSeed.read(),
+  };
+});
 
 export default useAuthStore;

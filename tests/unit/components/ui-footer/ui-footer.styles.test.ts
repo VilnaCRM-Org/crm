@@ -1,11 +1,13 @@
-import styles from '@/components/ui-footer/styles';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 /**
  * Style modules are design contracts: the literal IS the test case, so these are pinned values
  * rather than Faker data. A dropped or edited token fails here instead of silently shipping.
  */
 describe('ui-footer styles', () => {
-  it('pins every styles token', () => {
+  it('pins every styles token', async () => {
+    const { default: styles } = await loadIsolated(() => import('@/components/ui-footer/styles'));
+
     expect(styles).toEqual({
       footerSection: {
         borderTop: '1px solid #E1E7EA',

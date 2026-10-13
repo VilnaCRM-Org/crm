@@ -12,6 +12,7 @@ import {
   originsFromEnv,
   responseHeaders,
 } from './scripts/security-headers';
+import { pluginSpaFallbackDocument } from './scripts/spa-fallback-document-plugin';
 
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
@@ -127,6 +128,7 @@ export default defineConfig({
         svgo: true,
       },
     }),
+    pluginSpaFallbackDocument(),
   ],
   html: {
     template: './public/index.html',

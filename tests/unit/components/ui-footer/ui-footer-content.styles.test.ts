@@ -1,11 +1,15 @@
-import styles from '@/components/ui-footer/ui-footer-content/styles';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 /**
  * Style modules are design contracts: the literal IS the test case, so these are pinned values
  * rather than Faker data. A dropped or edited token fails here instead of silently shipping.
  */
 describe('ui-footer content styles', () => {
-  it('pins every styles token', () => {
+  it('pins every styles token', async () => {
+    const { default: styles } = await loadIsolated(
+      () => import('@/components/ui-footer/ui-footer-content/styles')
+    );
+
     expect(styles).toEqual({
       footerDesktopWrapper: {
         '@media (min-width:768px)': {

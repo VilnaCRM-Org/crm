@@ -1,6 +1,7 @@
 import { createTheme } from '@mui/material';
 
 import breakpointsTheme from '@/components/ui-breakpoints';
+import { customColors } from '@/styles/colors';
 
 export default createTheme({
   components: {
@@ -8,6 +9,10 @@ export default createTheme({
       styleOverrides: {
         root: {
           marginBottom: '14px',
+
+          '&::before, &::after': {
+            borderTopColor: customColors.checkbox.main,
+          },
 
           [`@media (max-width:${breakpointsTheme.breakpoints.values.md - 1}px)`]: {
             marginBottom: '0.875rem',

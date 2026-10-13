@@ -1,6 +1,7 @@
 import { buttonClasses } from '@mui/material/Button';
 import { circularProgressClasses } from '@mui/material/CircularProgress';
 
+import UI_BUTTON_PHONE_MEDIA from '@/components/ui-button/phone-media';
 import buttonTheme from '@/components/ui-button/theme';
 import { customColors, paletteColors } from '@/styles/colors';
 
@@ -60,5 +61,15 @@ describe('ui-button contained theme', () => {
 
   it('preserves the pill geometry', () => {
     expect(getContained().borderRadius).toBe('57px');
+  });
+});
+
+describe('ui-button outlined theme', () => {
+  it('re-pads the outlined button under the shared phone query', () => {
+    const overrides = buttonTheme.components?.MuiButton?.styleOverrides;
+    const outlined = (overrides as { outlined: CssBlock }).outlined;
+
+    expect(UI_BUTTON_PHONE_MEDIA).toBe('@media (max-width: 375px)');
+    expect(outlined[UI_BUTTON_PHONE_MEDIA]).toEqual({ padding: '17px 65px', marginBottom: '8px' });
   });
 });

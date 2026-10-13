@@ -1,0 +1,23 @@
+{
+  "error_page": {
+    "not_found": {
+      "title": "Error 404",
+      "description": "This page does not exist",
+      "code": "Error code: 404"
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "description": "Unfortunately, you do not have permission to access this page",
+      "code": "Error code: 403"
+    },
+    "server_error": {
+      "title": "Server error",
+      "description": "The server is temporarily unavailable. Please try again later.",
+      "code": "Error code: 5xx"
+    },
+    "actions": {
+      "home": "Go to homepage",
+      "request_access": "Request access"
+    }
+  }
+}

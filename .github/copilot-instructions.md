@@ -75,7 +75,14 @@ make test-mutation    # Stryker; the enforced floor is 100%
   route object in `src/routes/**` with an `element` but no `errorElement`. Use
   `<RouteFallback />` for loading and let the composer attach `<RouteError />`; a boundary
   renders a `RecoverableError` from `src/lib/reliability/` and reports through the
-  `boundaryErrorReporter` prop, never `console.error`.
+  `boundaryErrorReporter` prop, never `console.error`. `RouteError` dispatches on status first
+  (issue #309): `errorPageStatusDetector` reads a status from a router error response,
+  a render-thrown `Response` or a `data()` value — so a guard may throw
+  `data(null, { status: 403 })` or navigate to `/forbidden` — and renders the lazy designed
+  `ErrorPage` for 403, 404 and 500 to 599, so a 5xx route response shows the 5xx page with only
+  a homepage link and no in-place Try again; every other error, and every status error once the
+  error-page chunk has failed twice, renders `RouteErrorFallback` → `ErrorFallback` exactly as
+  before.
 - **Classes receive collaborators through DI**: a token in the area's `tokens.ts`, a
   registration in its `di.ts` composition root, and a constructor `@inject`. Allowed value
   imports are `import type`, the base class, tokens, config data, error classes, constant maps,
@@ -136,6 +143,7 @@ coordinated by a hook, not a class.
 | `*Actions`     | state transitions of a store                | Flux                              |
 | `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
 | `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
+| `*Prefetcher`  | loads resources ahead of demand after load  | resource-prefetch idiom (#309)    |
 | `*Client`      | outbound transport client                   | enterprise Gateway                |
 | `*API`         | typed façade over one remote API            | enterprise Gateway                |
 | `*Provider`    | supplies a value or capability              | provider idiom                    |

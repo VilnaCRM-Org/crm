@@ -33,7 +33,7 @@ describe('app config source with an unreadable config element', () => {
     const appConfigSource = await loadAppConfigSource();
 
     expect(appConfigSource.text('apiBaseUrl')).toBeUndefined();
-    expect(appConfigSource.flag('forgotPassword')).toBeUndefined();
+    expect(appConfigSource.flag('probeFlag' as never)).toBeUndefined();
   });
 
   it('still parses an element that does carry a JSON block', async () => {

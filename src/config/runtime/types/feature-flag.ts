@@ -1,4 +1,4 @@
-export type FeatureFlag = 'forgotPassword';
+export type FeatureFlag = never;
 
 export interface FeatureFlagName {
   readonly name: FeatureFlag;
@@ -8,10 +8,6 @@ export interface FeatureFlagNames {
   readonly items: readonly FeatureFlagName[];
 }
 
-export interface FeatureFlagSnapshot {
-  readonly forgotPassword: boolean;
-}
+export type FeatureFlagSnapshot = { readonly [Flag in FeatureFlag]: boolean };
 
-export interface FeatureFlagValues {
-  readonly forgotPassword?: boolean | undefined;
-}
+export type FeatureFlagValues = { readonly [Flag in FeatureFlag]?: boolean | undefined };

@@ -10,7 +10,7 @@ const meta: Meta<typeof AuthProviderButtons> = {
     docs: {
       description: {
         component:
-          'The "or continue with" divider and the Google, GitHub, Facebook and Twitter OAuth ' +
+          'The "or continue with" divider and the Google, Facebook, GitHub and Twitter OAuth ' +
           'buttons. Each icon-only button is named "Continue with <provider>" and opens the ' +
           'provider sign-in in a new tab.',
       },
