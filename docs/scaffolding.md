@@ -80,8 +80,10 @@ folder names live. Both the generator and `.dependency-cruiser.js` read it, so t
 and the gate that judges it cannot disagree.
 
 - **Module root** — `config`, `features`, `hooks`, `lib`, `store`, `types`, `utils`.
-- **Feature root** — `assets`, `components`, `hooks`, `i18n`, `repositories`, `routes`,
-  `stores`, `types`, `utils`.
+- **Feature root** — `assets`, `components`, `data-providers`, `hooks`, `i18n`,
+  `repositories`, `routes`, `stores`, `transformers`, `types`, `utils`. `data-providers` and
+  `transformers` hold the Miro board's `[Data provider]` and `[Transformer]` classes; the
+  generator does not create them.
 - **`tests/` root** — `apollo-server`, `builders`, `e2e`, `integration`, `load`,
   `memory-leak`, `mutation`, `unit`, `utils`, `visual`.
 - **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`.
