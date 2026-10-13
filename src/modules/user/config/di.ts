@@ -18,6 +18,7 @@ import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
   AuthErrorFactory,
+  GraphQLPasswordRecoveryRepository,
   LoginAPI,
   RegistrationAPI,
 } from '@auth/repositories';
@@ -105,6 +106,10 @@ class UserModuleRegistrar implements ModuleRegistrar {
       useFactory: (c) => this.buildAuthRepositoryDeps(c),
     });
     container.registerSingleton(AUTH_TOKENS.AuthRepository, AuthRepositoryImpl);
+    container.registerSingleton(
+      AUTH_TOKENS.PasswordRecoveryRepository,
+      GraphQLPasswordRecoveryRepository
+    );
   }
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {
