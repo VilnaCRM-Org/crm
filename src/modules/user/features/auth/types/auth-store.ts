@@ -14,6 +14,10 @@ export interface AuthState {
 
 export type AuthStatePatch = Partial<AuthState>;
 
+export interface AuthStateWriter {
+  setState(patch: AuthStatePatch): void;
+}
+
 export interface AuthActions {
   loginUser: (credentials: LoginUserDto, signal?: AbortSignal) => Promise<void>;
   registerUser: (credentials: RegisterUserDto, signal?: AbortSignal) => Promise<void>;

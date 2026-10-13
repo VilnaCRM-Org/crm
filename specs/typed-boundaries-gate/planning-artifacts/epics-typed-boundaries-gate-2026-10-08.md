@@ -52,28 +52,27 @@ the former #315 Stories 0.3 to 0.6: Stories 0.3 to 0.5 are merged into Story 1.2
 **Goal.** Make TB-1 a build failure on a clean tree and align the class-naming suffixes with the
 Miro board, before any feature bundle writes new code.
 
-### Story 1.1: Record ADR-022 and align the class-naming suffixes
+### Story 1.1: Align the class-naming suffixes
 
 As a maintainer,
-I want the typed-boundary decision recorded and the suffix policy speaking the board's language,
-So that the ADR-drift gate passes on the burn-down and no frontend controller can be named.
+I want the suffix policy speaking the board's language,
+So that `*Transformer` is an approved role and no frontend controller can be named.
 
 **Dispatch:** Independent. **Status:** Ready.
 
-**Requirements:** FR-1, FR-6 (ADR), NFR-2, NFR-3.
+**Requirements:** FR-1, FR-6 (no ADR), NFR-2, NFR-3.
 
-**Files:** `docs/adr/022-typed-boundaries.md` (NEW), `docs/adr/README.md`,
-`config/class-naming-policy.js`, `tests/unit/tooling/class-naming-gate.test.ts`, `CLAUDE.md` and
-`.github/copilot-instructions.md` (role table) (MODIFY).
+**Files:** `config/class-naming-policy.js`, `tests/unit/tooling/class-naming-gate.test.ts`,
+`CLAUDE.md` and `.github/copilot-instructions.md` (role table) (MODIFY).
 
-**Gates:** `make lint-adr`, `make lint-docs`, `make lint-md`; the focused Jest file
+**Gates:** `make lint-docs`, `make lint-md`; the focused Jest file
 `tests/unit/tooling/class-naming-gate.test.ts`.
 
 **Acceptance criteria:**
 
-- **Given** `docs/adr/`, **when** the number is chosen, **then** it is the next unclaimed (022).
-- **Given** the new ADR, **when** `make lint-adr` runs, **then** it passes, Deciders `@kravalg`.
-- **Given** the ADR, **when** read, **then** it records TB-1, the gate and the rejected options.
+- **Given** `docs/adr/`, **when** listed, **then** it holds no ADR numbered 003 or higher.
+- **Given** `docs/adr/README.md`, **when** `make lint-adr` runs, **then** it indexes ADR-001/002.
+- **Given** the TB-1 rule, **when** a contributor looks for it, **then** `CLAUDE.md` holds it.
 - **Given** the policy file, **when** read, **then** `Transformer` is approved, `Controller` not.
 - **Given** `class PasswordRecoveryTransformer {}`, **when** the gate lints it, **then** it passes.
 - **Given** a bare `class Transformer {}`, **when** the naming gate lints it, **then** it fails.
@@ -120,15 +119,15 @@ So that the feature bundles that follow are written against TB-1 from their firs
 - **Given** CI, **when** every suite runs, **then** it passes and no score or baseline drops.
 - **Given** the diff, **when** read, **then** it adds no cast, `any`, disable, allowlist or glob.
 - **Given** `CLAUDE.md` and the Copilot file, **when** read, **then** both carry the TB-1 section.
-- **Given** the `src/config/**` edits, **when** CI checks ADR drift, **then** ADR-022 satisfies it.
+- **Given** the `src/config/**` edits, **when** CI checks ADR drift, **then** the ADR-002 edit does.
 
 ## Order
 
 ```mermaid
 flowchart LR
-  s11["1.1 ADR-022 + suffixes"] --> s12["1.2 TB-1 gate + burn-down"]
+  s11["1.1 suffixes"] --> s12["1.2 TB-1 gate + burn-down"]
   s12 --> f315["#315 Epic 0 (next bundle)"]
 ```
 
-Story 1.1 lands first because Story 1.2 touches ADR-drift significant paths. #315, then #330,
+Story 1.1 lands first because Story 1.2 depends on it. #315, then #330,
 then #331 follow; none of them adds a selector.

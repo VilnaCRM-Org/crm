@@ -12,7 +12,8 @@ interface OfflineCase {
 }
 
 const SIGN_IN_PATH = '/sign-in';
-const ALL_FACES_LOADED = ERROR_PAGE_FONT_FACES.map(() => true);
+const FACE_DESCRIPTORS = ERROR_PAGE_FONT_FACES.items.map(({ descriptor }) => descriptor);
+const ALL_FACES_LOADED = FACE_DESCRIPTORS.map(() => true);
 
 const offlineCases: readonly OfflineCase[] = [
   { path: '/definitely-not-a-route', title: t('error_page.not_found.title') },
@@ -36,7 +37,7 @@ async function navigateInApp(page: Page, path: string): Promise<void> {
 async function warmedFaces(page: Page): Promise<boolean[]> {
   return page.evaluate(
     (faces) => faces.map((face) => document.fonts.check(face)),
-    ERROR_PAGE_FONT_FACES
+    FACE_DESCRIPTORS
   );
 }
 

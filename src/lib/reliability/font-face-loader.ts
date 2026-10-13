@@ -8,6 +8,6 @@ export default class FontFaceLoader implements ModuleLoader<void> {
   ) {}
 
   public async load(): Promise<void> {
-    await Promise.all(this.faces.items.map((face) => this.fonts.load(face)));
+    await Promise.all(this.faces.items.map((face) => this.fonts.load(face.descriptor)));
   }
 }

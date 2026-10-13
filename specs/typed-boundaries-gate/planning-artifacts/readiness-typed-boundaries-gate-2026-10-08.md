@@ -48,8 +48,10 @@ per the over-engineering review, Part 3 item 2:
 - **TB-1** is pasted verbatim in the PRD and the architecture: sha256 `eb676341…`, equal to the
   contract §4.
 - **ADR drift:** Story 1.2 edits `src/config/env/`, `src/config/runtime/` and
-  `src/routes/route-composer.tsx`, significant paths in `config/docs-policy.json`; ADR-022 lands
-  in Story 1.1, before them.
+  `src/routes/route-composer.tsx`, significant paths in `config/docs-policy.json`. No ADR records
+  TB-1 (the owner's 2026-10-12 decision: ADRs numbered 003 and up are deleted); the gate is
+  satisfied by the pull request's edits to `docs/adr/002-zustand-over-redux.md` and
+  `docs/adr/README.md`, and the rule lives in `CLAUDE.md`, "Typed boundaries".
 - **Traceability:** FR-1 to FR-6 and NFR-1 to NFR-3 each map to a story (epics coverage map) and
   to an architecture section (§10).
 - **Gates:** no threshold, glob or allowlist is relaxed; the chore only adds rules.
@@ -85,3 +87,9 @@ Verdict: PASS
   CI fixes (the load-test `tzdata` pin and the `compression@1.8.2` CVE fix in the production
   `serve` runtime), and architecture §3.1 names the fourth type-file root and decides that every
   top-level declaration of a type-only file is a boundary.
+- Post-implementation (2026-10-13, FR/NFR gate): the owner's decision of 2026-10-12, reconfirmed
+  on 2026-10-13, removed every ADR numbered 003 and up. ADR-022 is no longer a deliverable: PRD
+  FR-6, architecture §6, §8 and §9 and Story 1.1 now record that the rule lives in `CLAUDE.md`
+  ("Typed boundaries") and `config/typed-boundary-policy.js`, and that the ADR-drift gate is
+  satisfied by the pull request's `docs/adr/002-zustand-over-redux.md` and `docs/adr/README.md`
+  edits. Story 1.1 still has 9 criteria (27 in total); PASS stands.

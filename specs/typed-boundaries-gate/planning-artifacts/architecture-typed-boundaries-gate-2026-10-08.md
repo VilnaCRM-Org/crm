@@ -274,19 +274,30 @@ with it:
 `src/services/*` is not renamed, moved or restructured. Its TB-1 sites (29 of the 127 dry-run
 entries, in 13 files) are fixed type-only, like every other site.
 
-## 6. Documentation and ADR
+## 6. Documentation and ADR drift
 
 - **`CLAUDE.md`**, Code Quality: a "Typed boundaries (TB-1)" section with the TB-1 text, both
   arrays, the stock rule, the fixtures and the pin, and the rule that the only escape is declaring
   the named type. `.github/copilot-instructions.md` mirrors it.
-- **ADR-022** (`docs/adr/022-typed-boundaries.md`), the next number not claimed on `main`, by
-  open PR #311 (018) or by the planned bundles (#315 019, #331 020, #330 021); if taken, the next
-  free one. It is required: the burn-down edits `src/config/env/`, `src/config/runtime/` and
-  `src/routes/route-composer.tsx`, ADR-drift significant paths (`config/docs-policy.json`).
-  Status `Approved`, Deciders `[@kravalg](https://github.com/kravalg)`. Considered options: a
-  review-only rule vs an ESLint gate with fixtures; burn-down first vs an allowlist;
-  `explicit-module-boundary-types` vs the existing `explicit-function-return-type`; a
-  dependency-cruiser rule for generated types vs review. Outcome: §3 to §5.
+- **No ADR for TB-1.** The repository owner decided on 2026-10-12, and reconfirmed on 2026-10-13,
+  that every ADR numbered 003 and up is deleted and that decisions "can be written in a README or
+  nowhere". Only ADR-001 and ADR-002 remain, so no ADR-022 is written and no new ADR is a
+  deliverable of this chore.
+- **The rule's home** is `CLAUDE.md`, "Typed boundaries (TB-1, issue #332)", mirrored in
+  `AGENTS.md` and `.github/copilot-instructions.md`. `config/typed-boundary-policy.js` is the
+  single source of truth for the selectors; `eslint.config.mjs`, the fixtures in
+  `scripts/ci/eslint-gate-fixtures.mjs` and the policy pin read it. The options a TB-1 ADR would
+  have weighed (a review-only rule vs an ESLint gate with fixtures; burn-down first vs an
+  allowlist; `explicit-module-boundary-types` vs the existing `explicit-function-return-type`;
+  a dependency-cruiser rule for generated types vs review) are answered by the PRD non-goals,
+  NFR-2 and §3 to §5.
+- **ADR-drift gate.** The burn-down edits `src/config/env/`, `src/config/runtime/` and
+  `src/routes/route-composer.tsx`, ADR-drift significant paths (`config/docs-policy.json`), so the
+  pull request must also touch `docs/adr/**`. PR #333 does: it edits
+  `docs/adr/002-zustand-over-redux.md` (re-approved with a "Current rules" section) and
+  `docs/adr/README.md`. The gate ignores deletions, so the removed ADRs do not count; the
+  `[no-adr]` pull-request-body line and the `adr:not-required` label stay the one documented
+  escape hatch and are not needed.
 
 ## 7. Honest limits
 
@@ -301,20 +312,21 @@ entries, in 13 files) are fixed type-only, like every other site.
 
 ## 8. Files
 
-| File                                                     | Kind   | Story    |
-| -------------------------------------------------------- | ------ | -------- |
-| `docs/adr/022-typed-boundaries.md`, `docs/adr/README.md` | NEW    | 1.1      |
-| `config/class-naming-policy.js`                          | MODIFY | 1.1      |
-| `tests/unit/tooling/class-naming-gate.test.ts`           | MODIFY | 1.1      |
-| `CLAUDE.md`, `.github/copilot-instructions.md`           | MODIFY | 1.1, 1.2 |
-| `eslint.config.mjs`                                      | MODIFY | 1.2      |
-| `scripts/ci/eslint-gate-fixtures.mjs`                    | MODIFY | 1.2      |
-| `tests/unit/config/eslint-policy.test.ts`                | MODIFY | 1.2      |
-| about 60 `src/**` files of the site list, new type files | MODIFY | 1.2      |
+| File                                                       | Kind   | Story    |
+| ---------------------------------------------------------- | ------ | -------- |
+| `docs/adr/002-zustand-over-redux.md`, `docs/adr/README.md` | MODIFY | PR #333  |
+| `config/class-naming-policy.js`                            | MODIFY | 1.1      |
+| `tests/unit/tooling/class-naming-gate.test.ts`             | MODIFY | 1.1      |
+| `CLAUDE.md`, `.github/copilot-instructions.md`             | MODIFY | 1.1, 1.2 |
+| `eslint.config.mjs`                                        | MODIFY | 1.2      |
+| `scripts/ci/eslint-gate-fixtures.mjs`                      | MODIFY | 1.2      |
+| `tests/unit/config/eslint-policy.test.ts`                  | MODIFY | 1.2      |
+| about 60 `src/**` files of the site list, new type files   | MODIFY | 1.2      |
 
 ## 9. Gate compliance
 
-- **ADR drift:** ADR-022 lands in Story 1.1, before Story 1.2 touches `src/config/**`.
+- **ADR drift:** no ADR records TB-1 (§6). The PR's edits to `docs/adr/002-zustand-over-redux.md`
+  and `docs/adr/README.md` satisfy the gate for the `src/config/**` edits of Story 1.2.
 - **Metrics, jscpd, mutation:** the TB-1 reshapes of §5 add and remove a few mutants (a
   collection's `items` access, the `toHeaderMap` loop, the dropped `String()` coercion); the
   incremental mutation gate re-scores those files and must stay at 100%, and the metrics and

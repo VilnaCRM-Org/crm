@@ -2,7 +2,7 @@ import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provid
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
-import type { AuthActions } from '@auth/types/auth-store';
+import type { AuthActions, AuthStateWriter } from '@auth/types/auth-store';
 import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
 
 import type AuthStoreActions from './auth-store-actions';
@@ -17,6 +17,8 @@ class DeferredAuthActions implements AuthActions {
   // The DI graph is a lazy chunk like any page: one chunk-load failure is retried before the
   // user sees the retryable load error, and a failed load is forgotten so the next action can
   // try again (issue #147).
+  private readonly state: AuthStateWriter = useAuthStore;
+
   private readonly loader = new ChunkRetryLoader(() => this.load());
 
   private readonly loadFailure: AuthError = {
@@ -26,17 +28,17 @@ class DeferredAuthActions implements AuthActions {
   };
 
   public async loginUser(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
-    useAuthStore.setState({ loginLoading: true, loginError: null });
+    this.state.setState({ loginLoading: true, loginError: null });
     const actions = await this.resolveSafely((error) =>
-      useAuthStore.setState({ loginLoading: false, loginError: error })
+      this.state.setState({ loginLoading: false, loginError: error })
     );
     if (actions) await actions.login(credentials, signal);
   }
 
   public async registerUser(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
-    useAuthStore.setState({ registerLoading: true, registerError: null, user: null });
+    this.state.setState({ registerLoading: true, registerError: null, user: null });
     const actions = await this.resolveSafely((error) =>
-      useAuthStore.setState({ registerLoading: false, registerError: error })
+      this.state.setState({ registerLoading: false, registerError: error })
     );
     if (actions) await actions.register(credentials, signal);
   }
@@ -44,19 +46,19 @@ class DeferredAuthActions implements AuthActions {
   public logout(): void {
     observabilityCore.clearUser();
     sandboxDemoSessionProvider.signOut();
-    useAuthStore.setState(CLEARED_AUTH_STATE);
+    this.state.setState(CLEARED_AUTH_STATE);
   }
 
   public reset(): void {
-    useAuthStore.setState(CLEARED_AUTH_STATE);
+    this.state.setState(CLEARED_AUTH_STATE);
   }
 
   public resetRegistration(): void {
-    useAuthStore.setState({ user: null, registerError: null, registerLoading: false });
+    this.state.setState({ user: null, registerError: null, registerLoading: false });
   }
 
   public clearLoginError(): void {
-    useAuthStore.setState({ loginError: null });
+    this.state.setState({ loginError: null });
   }
 
   private async resolveSafely(

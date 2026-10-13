@@ -220,8 +220,7 @@ describe('performance serving config', () => {
     const prefetchAt = entrySource.indexOf(
       [
         'new PostLoadPrefetcher<ErrorPageModule | void>({',
-        '    items: [errorPageLoader, new FontFaceLoader(document.fonts, ' +
-          '{ items: ERROR_PAGE_FONT_FACES })],',
+        '    items: [errorPageLoader, new FontFaceLoader(document.fonts, ERROR_PAGE_FONT_FACES)],',
         '  }).attach(window);',
       ].join('\n')
     );
