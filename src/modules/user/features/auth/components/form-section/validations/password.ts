@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { FieldValues, Validate } from 'react-hook-form';
 
 import type {
+  PasswordRuleResult,
   PasswordRuleResultSet,
   Rule,
   ValidationPswdMessageKey,
@@ -20,7 +21,9 @@ class PasswordValidator {
   }
 
   public evaluate(value: string): PasswordRuleResultSet {
-    return { items: this.rules.map((rule) => ({ key: rule.key, met: rule.check(value) })) };
+    const items: PasswordRuleResult[] = [];
+    for (const rule of this.rules) items.push({ key: rule.key, met: rule.check(value) });
+    return { items };
   }
 
   private buildMessages(t: TFunction): Record<ValidationPswdMessageKey, string> {

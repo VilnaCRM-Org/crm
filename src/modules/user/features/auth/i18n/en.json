@@ -141,6 +141,10 @@
   },
   "password_recovery": {
     "back": "Back",
-    "submit_button": "Submit"
+    "submit_button": "Submit",
+    "errors": {
+      "rate_limited": "Too many requests. Please try again later.",
+      "transient": "The request could not be sent. Check your connection and try again."
+    }
   }
 }
