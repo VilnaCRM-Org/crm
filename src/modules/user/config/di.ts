@@ -15,6 +15,7 @@ import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
+import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
@@ -119,6 +120,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
       AUTH_TOKENS.PasswordRecoveryRepository,
       GraphQLPasswordRecoveryRepository
     );
+    container.registerSingleton(AUTH_TOKENS.PasswordRecoveryProvider, PasswordRecoveryProvider);
   }
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {

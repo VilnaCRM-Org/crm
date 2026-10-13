@@ -140,6 +140,25 @@ are in `config/module-shape.json`, the DI-collaborator gate and the component ga
 interface per flow (one implementation needs none of them); error translation inside the
 repository (the board puts it on the Data provider ⇄ Transformer edge).
 
+### The Data provider loads through `AuthProviderLoader`
+
+**Context.** The auth render path cannot reach `@/providers/di` (`useService`), and only the
+feature's composition root, `@auth/stores/index.ts`, may import the DI container. Sign-in already
+solves this with `DeferredAuthActions`, which loads the container on the first auth action.
+
+**Decision.** `AuthProviderLoader` sits beside `DeferredAuthActions` in `@auth/stores/index.ts`
+and serves the board's `[Data provider]` layer: `resolve(token)` imports
+`@/config/dependency-injection-config` through a `ChunkRetryLoader` on the first call (memoized,
+a failed import forgotten), resolves the token from the container, and on a final failure
+captures it once with the source `auth:provider-load` and rethrows. `useAuthProviderLoader`
+builds one loader per page mount in a `useState` initializer, so no module-level instance exists
+and a test hands the hook a stub loader. The pages therefore reach `PasswordRecoveryProvider`
+without tsyringe, zod, Apollo or the repository on the paint path.
+
+**Rejected.** `useService` (forbidden on the auth paint path); a module-level loader singleton
+(untestable without module mocking); adding the provider's steps to `DeferredAuthActions` (it
+writes the auth store, and the recovery outcomes are page-local).
+
 ### GraphQL through the container's Apollo client
 
 **Context.** Both steps are user-service GraphQL mutations. The variables carry an e-mail, a

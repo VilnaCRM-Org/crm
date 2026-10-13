@@ -19,6 +19,7 @@ const AUTH_TOKENS = Object.freeze({
   PasswordRecoveryRepository: Symbol('PasswordRecoveryRepository'),
   PasswordRecoveryTransformer: Symbol('PasswordRecoveryTransformer'),
   UserServiceErrorTransformer: Symbol('UserServiceErrorTransformer'),
+  PasswordRecoveryProvider: Symbol('PasswordRecoveryProvider'),
 } as const);
 
 export default AUTH_TOKENS;
