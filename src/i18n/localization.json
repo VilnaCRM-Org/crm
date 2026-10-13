@@ -191,6 +191,10 @@
         "logo_alt": "VilnaCRM logo",
         "privacy": "Privacy Policy",
         "usage_policy": "Terms of Use"
+      },
+      "password_recovery": {
+        "back": "Back",
+        "submit_button": "Submit"
       }
     }
   },
@@ -386,6 +390,10 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
+      },
+      "password_recovery": {
+        "back": "Назад",
+        "submit_button": "Підтвердити"
       }
     }
   }
