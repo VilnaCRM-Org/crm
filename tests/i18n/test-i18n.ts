@@ -9,7 +9,7 @@ testI18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   resources: {
-    en: { translation: enTranslations.en.translation },
+    en: { translation: structuredClone(enTranslations.en.translation) },
   },
   interpolation: { escapeValue: false },
   initAsync: false,

@@ -9,7 +9,7 @@ import ResetPasswordForm from '@auth/components/reset-password/reset-password-fo
 import type { ResetPasswordFormProps } from '@auth/types/password-recovery/components';
 import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
 import { buildEmail } from '@tests/builders';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -23,7 +23,7 @@ jest.mock('@auth/assets/eye-off.svg', () => ({
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-const i18n = createLocaleI18n('uk');
+const i18n = createRecoveryLocaleI18n('uk');
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return (

@@ -4,7 +4,7 @@ import { I18nextProvider } from 'react-i18next';
 
 import useRecoveryFailureBanner from '@auth/hooks/use-recovery-failure-banner';
 import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 
 const TRANSIENT = "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз.";
 
@@ -12,7 +12,7 @@ const bannerFor = (
   failure: RecoveryFailure | null,
   retry: () => Promise<void> = jest.fn()
 ): ReturnType<typeof useRecoveryFailureBanner> => {
-  const i18n = createLocaleI18n('uk');
+  const i18n = createRecoveryLocaleI18n('uk');
   const wrapper = ({ children }: { children: ReactNode }): ReactNode =>
     createElement(I18nextProvider, { i18n }, children);
   return renderHook(() => useRecoveryFailureBanner(failure, retry), { wrapper }).result.current;

@@ -7,7 +7,7 @@ import { I18nextProvider } from 'react-i18next';
 
 import PasswordField from '@auth/components/form-section/components/password-field';
 import PasswordPolicyRules from '@auth/components/form-section/components/password-policy-rules';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 jest.mock('@auth/assets/eye.svg', () => ({
@@ -25,7 +25,7 @@ interface Values {
   confirmPassword: string;
 }
 
-const i18n = createLocaleI18n('uk');
+const i18n = createRecoveryLocaleI18n('uk');
 const MISMATCH = 'Паролі не збігаються';
 
 function Harness(): JSX.Element {
@@ -145,6 +145,8 @@ describe('PasswordPolicyRules', () => {
     render(<Harness />);
 
     const list = screen.getByRole('list');
+    expect(list.tagName).toBe('UL');
+    expect(list).toHaveAttribute('role', 'list');
     expect(list).toHaveAttribute('id', 'rules-id');
     expect(list).not.toHaveAttribute('aria-live');
     expect(screen.queryByRole('status')).not.toBeInTheDocument();

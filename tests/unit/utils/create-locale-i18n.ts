@@ -8,14 +8,17 @@ type Locale = keyof typeof localization;
 /**
  * Builds a synchronous i18next instance that starts in one real locale from the merged catalog,
  * so a test asserts the shipped translation rather than a key or a hand-written copy of the
- * string. `alsoLoaded` adds further locales a test can switch to with `changeLanguage`.
+ * string. `alsoLoaded` adds further locales a test can switch to with `changeLanguage`. Lazy route
+ * catalogs are deliberately absent, exactly as on an eager page: a test of a route that registers
+ * one opts in through `createRecoveryLocaleI18n`. Each instance gets its own copy of the catalog,
+ * so a catalog registered into one instance never leaks into the shared module object.
  */
 const createLocaleI18n = (locale: Locale, alsoLoaded: readonly Locale[] = []): I18nType => {
   const instance = i18n.createInstance();
   const resources = Object.fromEntries(
     [locale, ...alsoLoaded].map((loaded) => [
       loaded,
-      { translation: localization[loaded].translation },
+      { translation: structuredClone(localization[loaded].translation) },
     ])
   );
   instance.use(initReactI18next).init({

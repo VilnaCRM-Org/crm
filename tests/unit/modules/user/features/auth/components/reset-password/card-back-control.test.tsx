@@ -6,7 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
 import CardBackControl from '@auth/components/reset-password/card-back-control';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -20,7 +20,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
 
 const renderControl = (element: ReactElement): ReturnType<typeof render> =>
   render(
-    <I18nextProvider i18n={createLocaleI18n('uk')}>
+    <I18nextProvider i18n={createRecoveryLocaleI18n('uk')}>
       <MemoryRouter>
         <main>{element}</main>
       </MemoryRouter>

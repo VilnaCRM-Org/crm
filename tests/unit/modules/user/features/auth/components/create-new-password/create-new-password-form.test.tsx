@@ -8,7 +8,7 @@ import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import CreateNewPasswordForm from '@auth/components/create-new-password/create-new-password-form';
 import type { CreateNewPasswordFormProps } from '@auth/types/password-recovery/components';
 import { buildResetToken } from '@tests/builders';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -22,7 +22,7 @@ jest.mock('@auth/assets/eye-off.svg', () => ({
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-const i18n = createLocaleI18n('uk');
+const i18n = createRecoveryLocaleI18n('uk');
 const VALID = 'Password1';
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {

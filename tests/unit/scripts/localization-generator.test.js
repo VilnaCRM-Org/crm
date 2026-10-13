@@ -149,6 +149,41 @@ describe('LocalizationGenerator', () => {
 
       expect(result).toEqual([path.join('src', 'modules', 'feature', 'i18n')]);
     });
+
+    it('should skip a catalog folder declared lazy so it never joins the merged catalog', () => {
+      fs.existsSync.mockReturnValue(true);
+      const lazyGenerator = new LocalizationGenerator(
+        'i18n',
+        'src',
+        'localization.json',
+        'src/i18n',
+        ['en', 'uk'],
+        ['modules/recovery/i18n']
+      );
+      mockReaddirWithStructure({
+        src: [directoryEntry('modules', true)],
+        'src/modules': [directoryEntry('feature', true), directoryEntry('recovery', true)],
+        'src/modules/feature': [directoryEntry('i18n', true)],
+        'src/modules/recovery': [directoryEntry('i18n', true)],
+      });
+
+      const result = lazyGenerator.getFeaturePaths();
+
+      expect(result).toEqual([path.join('src', 'modules', 'feature', 'i18n')]);
+    });
+
+    it('should read the lazy catalog folders from the repository policy by default', () => {
+      const policy = jest.requireActual('../../../config/i18n-catalog-policy.json');
+
+      const defaultGenerator = new LocalizationGenerator();
+
+      expect([...defaultGenerator.lazyCatalogDirs]).toEqual(
+        policy.lazyCatalogs.map((entry) => path.resolve('src', entry.catalog))
+      );
+      expect(policy.lazyCatalogs.map((entry) => entry.catalog)).toEqual([
+        'modules/user/features/auth/routes/recovery-catalog/i18n',
+      ]);
+    });
   });
 
   describe('getLocalizationFromFolder', () => {
