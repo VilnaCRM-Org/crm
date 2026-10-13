@@ -49,3 +49,5 @@ passwordReset	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-reset with 
 passwordReset	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the new-password form and the invalid-link state with the keyboard only.
 passwordRecovery	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the request step with taps only on Pixel 7 and iPhone 14 and measures its touch targets and overflow.
 passwordReset	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the reset step with taps only on Pixel 7 and iPhone 14, toggles visibility and checks the keyboard-height viewport.
+passwordRecovery	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the request form, the sent step at three sizes, and the card width against /sign-in.
+passwordReset	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the new-password form, the invalid-link state and the /sign-in notice at three sizes.
