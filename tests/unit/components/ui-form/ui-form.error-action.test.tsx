@@ -71,6 +71,17 @@ describe('UIForm error action and title ref', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toHaveFocus();
   });
 
+  it('draws a dark focus ring on the action when the keyboard reaches it', async () => {
+    renderForm({ error: ERROR_TEXT, errorAction: { label: 'Retry', onClick: jest.fn() } });
+
+    await userEvent.tab();
+
+    const action = screen.getByRole('button', { name: 'Retry' });
+    expect(action).toHaveFocus();
+    expect(action).toHaveClass('Mui-focusVisible');
+    expect(action).toHaveStyle({ outline: '2px solid #404142', outlineOffset: '2px' });
+  });
+
   it('renders no action button without an errorAction', () => {
     renderForm({ error: ERROR_TEXT });
 
@@ -83,6 +94,29 @@ describe('UIForm error action and title ref', () => {
 
     const heading = screen.getByRole('heading', { level: 1, name: 'Title' });
     expect(titleRef).toHaveBeenCalledWith(heading);
+    expect(heading).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('focuses the title through its ref when no banner is shown', () => {
+    const focusTitle: RefCallback<HTMLElement> = (node) => node?.focus();
+    renderForm({ titleRef: focusTitle });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Title' })).toHaveFocus();
+  });
+
+  it('leaves focus on the banner when it mounts together with a focusing titleRef', () => {
+    const focusTitle = jest.fn<void, [HTMLElement | null]>((node) => node?.focus());
+    renderForm({ error: ERROR_TEXT, titleRef: focusTitle });
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Title' });
+    const alert = screen.getByRole('alert');
+    const banner = screen
+      .getAllByRole('generic')
+      .find((element) => element.getAttribute('tabindex') === '-1' && element.contains(alert));
+    expect(banner).toBeDefined();
+    expect(banner).toHaveFocus();
+    expect(heading).not.toHaveFocus();
+    expect(focusTitle).not.toHaveBeenCalled();
     expect(heading).toHaveAttribute('tabindex', '-1');
   });
 

@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { type JSX } from 'react';
+import { type JSX, useState } from 'react';
 import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
 
 import type {
@@ -39,8 +39,9 @@ function ErrorBanner({ error, action }: ErrorBannerProps): JSX.Element | null {
   );
 }
 
-function FormHeader({ header }: FormHeaderSectionProps): JSX.Element {
+function FormHeader({ header, bannerShown }: FormHeaderSectionProps): JSX.Element {
   const { title, subtitle, showTitle, showSubtitle, titleComponent, titleRef } = header;
+  const [bannerAtMount] = useState(bannerShown);
   return (
     <>
       {showTitle && title && (
@@ -48,7 +49,7 @@ function FormHeader({ header }: FormHeaderSectionProps): JSX.Element {
           variant="h4"
           component={titleComponent}
           sx={styles.formTitle}
-          ref={titleRef}
+          ref={bannerAtMount ? undefined : titleRef}
           tabIndex={titleRef ? -1 : undefined}
         >
           {title}
@@ -112,7 +113,7 @@ function FormBody<T extends FieldValues>({
   return (
     <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
       <ErrorBanner error={error} action={errorAction} />
-      <FormHeader header={header} />
+      <FormHeader header={header} bannerShown={Boolean(error)} />
       <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
       {children}
       <SubmitControls

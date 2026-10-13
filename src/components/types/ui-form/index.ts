@@ -59,6 +59,7 @@ export interface ErrorBannerProps {
 
 export interface FormHeaderSectionProps {
   header: FormHeaderProps;
+  bannerShown: boolean;
 }
 
 export interface FormHeaderProps {

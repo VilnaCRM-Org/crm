@@ -46,7 +46,7 @@ export default function PasswordPolicyRules({ id, name }: PasswordPolicyRulesPro
   const { items } = passwordValidator.evaluate(typeof value === 'string' ? value : '');
 
   return (
-    <Box component="ul" id={id} sx={styles.list}>
+    <Box component="ul" role="list" id={id} sx={styles.list}>
       {items.map(({ key, met }) => (
         <PasswordRuleItem key={key} label={labels[key]} met={met} />
       ))}

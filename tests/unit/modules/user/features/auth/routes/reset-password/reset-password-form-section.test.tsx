@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router';
 
 import ResetPasswordFormSection from '@auth/routes/reset-password/reset-password-form-section';
 import type { ResetPasswordOutcome } from '@auth/types/password-recovery/outcome';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -35,7 +35,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-const i18n = createLocaleI18n('uk');
+const i18n = createRecoveryLocaleI18n('uk');
 const EMAIL = 'eirene@gmail.com';
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
@@ -77,7 +77,7 @@ describe('ResetPasswordFormSection', () => {
 
     const heading = await screen.findByRole('heading', { level: 1, name: 'Перевірте пошту' });
     expect(heading).toHaveFocus();
-    expect(screen.getByRole('status')).toHaveTextContent('eir*****@gmail.com');
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('eir*****@gmail.com'));
     expect(screen.getByRole('link', { name: 'До входу' })).toHaveAttribute('href', '/sign-in');
     await expectNoA11yViolations(view.container);
   });
