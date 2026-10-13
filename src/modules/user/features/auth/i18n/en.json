@@ -161,7 +161,7 @@
   },
   "password_policy": {
     "rules": {
-      "length": "From 8 to 64 characters",
+      "length": "8 to 64 characters",
       "digit": "At least one digit",
       "uppercase": "At least one uppercase Latin letter (A–Z)",
       "lowercase": "At least one lowercase letter"
@@ -169,6 +169,23 @@
     "state": {
       "met": "met",
       "unmet": "not met"
+    }
+  },
+  "password_reset": {
+    "title": "Create a new password",
+    "body": "Choose a new password for your account",
+    "submitting": "Saving…",
+    "new_password": {
+      "label": "New password",
+      "placeholder": "Enter a new password"
+    },
+    "confirm_password": {
+      "label": "Confirm password",
+      "placeholder": "Repeat the new password"
+    },
+    "errors": {
+      "mismatch": "The passwords do not match",
+      "policy_rejected": "The password does not meet the requirements. Check the rules below"
     }
   }
 }
