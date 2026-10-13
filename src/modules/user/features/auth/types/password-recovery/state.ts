@@ -33,11 +33,11 @@ export interface ResetPasswordState extends ResetPasswordView {
 
 export interface ResetPasswordSubmitted {
   readonly type: 'submitted';
-  readonly email: string;
 }
 
 export interface ResetPasswordSettled {
   readonly type: 'settled';
+  readonly email: string;
   readonly outcome: ResetPasswordOutcome | null;
 }
 

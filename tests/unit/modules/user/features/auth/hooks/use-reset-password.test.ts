@@ -68,7 +68,7 @@ describe('useResetPassword', () => {
 
     expect(requestReset).toHaveBeenCalledTimes(2);
     expect(requestReset.mock.calls[1]?.[0]).toEqual({ email });
-    expect(result.current.step).toBe('sent');
+    expect(result.current).toMatchObject({ step: 'sent', failure: null, submittedEmail: email });
   });
 
   it('maps a rejected loader to a retryable network failure', async () => {
@@ -106,5 +106,28 @@ describe('useResetPassword', () => {
 
     expect(requestReset).toHaveBeenCalledTimes(1);
     expect(result.current.step).toBe('sent');
+  });
+
+  it('keeps the accepted e-mail when a concurrent submit of another one is refused', async () => {
+    const { loader, requestReset } = harness(NETWORK);
+    const accepted = buildEmail();
+    const refused = `other.${buildEmail()}`;
+    const { result } = renderHook(() => useResetPassword(loader));
+
+    await act(async () => {
+      const { submit } = result.current.callbacks;
+      await Promise.all([submit({ email: accepted }), submit({ email: refused })]);
+    });
+    expect(result.current.submittedEmail).toBe(accepted);
+
+    requestReset.mockResolvedValue(SENT);
+    await act(() => result.current.callbacks.retry());
+    act(() => result.current.callbacks.backToForm());
+
+    expect(requestReset.mock.calls.map(([dto]) => dto)).toEqual([
+      { email: accepted },
+      { email: accepted },
+    ]);
+    expect(result.current).toMatchObject({ step: 'form', submittedEmail: accepted });
   });
 });

@@ -113,7 +113,7 @@ export const resolvers = {
       _: unknown,
       { input }: { input: ConfirmPasswordResetInput }
     ): Promise<PasswordResetPayload> => {
-      if (input.token.length === 0 || input.token.length > MAX_TOKEN_LENGTH) {
+      if (input.token.trim().length === 0 || input.token.length > MAX_TOKEN_LENGTH) {
         rejectViolation('token', 'This value should not be blank or longer than 255 characters.');
       }
       if (!PASSWORD_REGEX.test(input.newPassword)) {
