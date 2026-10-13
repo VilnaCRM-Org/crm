@@ -52,6 +52,24 @@ describe('CardBackControl', () => {
   });
 
   it.each([
+    ['link' as const, <CardBackControl key="link" to="/sign-in" />],
+    ['button' as const, <CardBackControl key="button" onClick={jest.fn()} />],
+  ])('draws a visible focus ring on keyboard focus in %s mode', async (role, element) => {
+    renderControl(element);
+
+    await userEvent.tab();
+
+    const control = screen.getByRole(role, { name: 'Назад' });
+    expect(control).toHaveFocus();
+    expect(control).toHaveClass('Mui-focusVisible');
+    expect(control).toHaveStyle({
+      outline: '2px solid #404142',
+      outlineOffset: '2px',
+      borderRadius: '0.25rem',
+    });
+  });
+
+  it.each([
     ['link', <CardBackControl key="link" to="/sign-in" />],
     ['button', <CardBackControl key="button" onClick={jest.fn()} />],
   ])('has no axe violations in %s mode', async (_mode, element) => {
