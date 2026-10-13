@@ -120,15 +120,12 @@ section).
 - **Given** the wired arrays, **when** first run, **then** the site count is noted in the PR.
 - **Given** `src/` after the fixes, **when** `make lint-eslint` runs, **then** TB-1 reports zero.
 - **Given** the `src/services/**` sites, **when** fixed, **then** no file moves or is renamed.
-- **Given** `auth-error.ts:18`, **when** fixed, **then** it is the named alias
-  `AuthResult<T> = AuthOkResult<T> | AuthFailedResult`.
-- **Given** the auth-store writers, **when** fixed, **then** each writes through
-  `AuthStateWriter.setState`, which takes `AuthStatePatch`.
+- **Given** `auth-error.ts:18`, **when** fixed, **then** the result union is named `AuthResult<T>`.
+- **Given** the auth-store writers, **when** fixed, **then** each passes an `AuthStatePatch`.
 - **Given** the policy test, **when** it runs, **then** each array is pinned on every §3.4 block.
 - **Given** CI, **when** every suite runs, **then** it passes and no score or baseline drops.
 - **Given** the diff, **when** read, **then** it adds no cast, `any`, disable, allowlist or glob.
-- **Given** `CLAUDE.md`, `AGENTS.md` and the Copilot file, **when** read, **then** each carries
-  the TB-1 section.
+- **Given** `CLAUDE.md`, `AGENTS.md`, the Copilot file, **when** read, **then** each has TB-1.
 - **Given** the `src/config/**` edits, **when** CI checks ADR drift, **then** the ADR-002 edit does.
 
 ## Order

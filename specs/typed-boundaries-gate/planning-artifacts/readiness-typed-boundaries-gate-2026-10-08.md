@@ -46,8 +46,9 @@ per the over-engineering review, Part 3 item 2:
 
 - **Parser** (`parseStoriesWithWarnings`): 1 epic, 2 stories, 27 criteria, `warnings: []`; every
   criterion is one line.
-- **TB-1** is pasted verbatim in the PRD and the architecture: sha256 `eb676341…`, equal to the
-  contract §4.
+- **TB-1** is pasted verbatim in the PRD and the architecture: sha256 `b64b417d…` over the
+  quoted block, re-hashed on 2026-10-13 after both copies took the gate's (d) wording (the
+  catch-all mapped types, `error` / `cause` by member name, the callback-alias parameter).
 - **ADR drift:** Story 1.2 edits `src/config/env/`, `src/config/runtime/` and
   `src/routes/route-composer.tsx`, significant paths in `config/docs-policy.json`. No ADR records
   TB-1 (the owner's 2026-10-12 decision: ADRs numbered 003 and up are deleted); the gate is

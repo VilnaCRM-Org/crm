@@ -84,11 +84,14 @@ runtime reshapes TB-1 forces are listed in §5.
 >     `interface RecoveryCode { readonly value: string }`.
 >   - Arrays of primitives or literals (`readonly string[]`) are forbidden everywhere at a
 >     boundary.
-> - **(d) Catch-all payloads.** `any`, `object`, `Record<…>` and index signatures
->   (`[key: string]: …`). `unknown` is allowed in exactly two places:
+> - **(d) Catch-all payloads.** `any`, `object`, `Record<…>`, index signatures
+>   (`[key: string]: …`) and mapped types over `string`, `number` or `symbol` keys
+>   (`{ [k in string]: T }`, or a flat key union with one of them as a direct member).
+>   `unknown` is allowed in exactly three places:
 >   - the parameter (never the return) of a method whose role is to narrow a caught error (a
 >     `*Transformer`, `*Guard` or `*Detector`);
->   - the `error` / `cause` property of an error type.
+>   - a member named `error` or `cause`, whatever type declares it;
+>   - a parameter of a named callback alias in a type-only file (an error callback).
 > - **(e) Inline derived types.** `Omit`, `Pick`, `Partial` and `Required` written at the
 >   boundary. Name the derivation once in a type-only file
 >   (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
@@ -99,9 +102,7 @@ runtime reshapes TB-1 forces are listed in §5.
 > - Named third-party types (`ReactNode` for `children`, `AbortSignal`, `TFunction`, `SxProps`,
 >   `ApolloClient`, `RefObject<UserEntity>`).
 > - Generics whose arguments are named types (`Promise<RecoveryOutcome>`).
-> - Callback types whose parameters and results obey this rule. One exception: a named callback
->   alias in a type-only file may take an `unknown` parameter (an error callback), which the
->   type-file selector exempts.
+> - Callback types whose parameters and results obey this rule.
 > - `T | null` and `T | undefined`, written inline, where `T` is itself allowed here
 >   (`RecoveryFailure | null`, `string | undefined`).
 >
@@ -271,7 +272,8 @@ with it:
 - (c) `OAuthProviders.list()` returns `OAuthProviderList { items }`.
 - (c) `RouteComposer.compose` and `RouteValidator.validate` take `RouteModuleRegistry`, and
   `compose` returns `ComposedRoutes { items }`.
-- (c) the `useAsyncList` loader, and the scaffold templates, resolve `AsyncListLoad { items }`.
+- (c) the `useAsyncList` loader (`AsyncListLoad<T>`), and the scaffold templates, resolve
+  `AsyncListItems<T> { items }`.
 - (d) `BoundaryErrorReporter.report` drops its `String()` coercion: `CaptureContext.surface` is
   now typed `string`, so no other value can reach it.
 - (d) the correlation headers are named literal types: `CorrelationIdProvider.header` is

@@ -109,10 +109,11 @@ TB-1, verbatim from the planning contract §4:
 > - **(d) Catch-all payloads.** `any`, `object`, `Record<…>`, index signatures
 >   (`[key: string]: …`) and mapped types over `string`, `number` or `symbol` keys
 >   (`{ [k in string]: T }`, or a flat key union with one of them as a direct member).
->   `unknown` is allowed in exactly two places:
+>   `unknown` is allowed in exactly three places:
 >   - the parameter (never the return) of a method whose role is to narrow a caught error (a
 >     `*Transformer`, `*Guard` or `*Detector`);
->   - a member named `error` or `cause`, whatever type declares it.
+>   - a member named `error` or `cause`, whatever type declares it;
+>   - a parameter of a named callback alias in a type-only file (an error callback).
 > - **(e) Inline derived types.** `Omit`, `Pick`, `Partial` and `Required` written at the
 >   boundary. Name the derivation once in a type-only file
 >   (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
