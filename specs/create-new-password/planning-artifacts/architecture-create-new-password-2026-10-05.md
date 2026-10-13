@@ -2029,3 +2029,30 @@ stories stage:
 4. **Landing order #315 → #330 → #331.** This bundle owns the shared pieces of §6.5.1, `AuthCard`,
    `InCardLink`, `CardBackControl`, `SignInNotice`, the `UIForm` additions, `useAbortableSubmit`,
    `UserServiceErrorTransformer` and `AuthProviderLoader`; #330 and #331 import them.
+
+## 18. Implementation drift (recorded 2026-10-13)
+
+Where the shipped code differs from this document, the code is authoritative and the gap is
+justified below. No class ends in `Controller`, `Service` or `Handler`; every new class, hook and
+component maps to a board layer of §1.1 and §3.5.
+
+1. **No feature flag (§5.14).** Issue #309 removed the `forgotPassword` flag before this branch,
+   so the sign-in link already rendered and Story 4.1 reduced to documentation. Both routes ship
+   unflagged; production depends on user-service serving the mutations.
+2. **`useRecoveryRun` (§5.3).** Provider resolution and the load-failure outcome live in one
+   shared hook used by `useResetPassword` and `useCreateNewPassword`, which keeps jscpd at zero.
+3. **Flow hooks split for the metrics caps (§5.3).** Each flow hook is a small set of top-level
+   functions and sub-hooks in its own file (`useResetPassword` reduces by the outcome `kind`);
+   no class is declared, matching `use-login-submitter.ts`.
+4. **`AuthCard` takes an optional `page` (§5.9).** It keeps the `auth-form-card` id and the
+   per-page bottom padding, so sign-in and sign-up render the same DOM.
+5. **Chevron asset (§7.2).** The Figma asset download was not available to the build agent; the
+   24 × 24 `chevron-left.svg` reuses the repository's back-arrow path with `currentColor`.
+6. **Mock token check (§5.16).** The stateless mock also rejects a token outside 1 to 255
+   characters with a `token:` violation, so the bound the client enforces is exercised.
+7. **Password with a line break (§5.8).** The client length rule counts a newline while the API
+   regex's `.` does not match one; this gap predates the feature and is left for a follow-up.
+8. **Sign-in link navigation.** The "Забули пароль?" link is the shared `UITextLink`, a plain
+   `href`, so it performs a document load; the in-card links navigate client-side.
+9. **Visual baselines (Story 4.4).** The specs are committed; the baselines are taken from the
+   branch's CI `visual tests` artifact.
