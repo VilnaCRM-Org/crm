@@ -17,11 +17,9 @@ export default function RecoveryResultView({
 
   return (
     <>
-      <Box sx={styles.resultHeading}>
-        <UITypography component="h1" ref={focusOnMount} tabIndex={-1} sx={styles.resultTitle}>
-          {title}
-        </UITypography>
-      </Box>
+      <UITypography component="h1" ref={focusOnMount} tabIndex={-1} sx={styles.resultTitle}>
+        {title}
+      </UITypography>
       <Box role="status" aria-live="polite">
         <UITypography sx={styles.resultBody}>{body}</UITypography>
       </Box>
