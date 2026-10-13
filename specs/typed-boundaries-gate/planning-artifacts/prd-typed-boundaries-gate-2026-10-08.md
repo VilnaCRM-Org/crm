@@ -16,6 +16,8 @@ inputDocuments:
   - tests/unit/config/eslint-policy.test.ts
   - tests/unit/tooling/class-naming-gate.test.ts
   - CLAUDE.md
+iteration: 2
+revised: '2026-10-13'
 ---
 
 # PRD: typed-boundaries gate (chore)
@@ -45,7 +47,9 @@ only `destroy`, the Trivy image scan is green, and every runtime suite passes on
 
 ### Goals
 
-1. `make lint-eslint` fails on any TB-1 violation in `src/`, at `error`, on a clean tree.
+1. `make lint-eslint` fails, at `error` on a clean tree, on every TB-1 shape at the positions
+   the gate checks in `src/` (`CLAUDE.md` "Typed boundaries"); shapes outside them, such as a
+   function-type annotation on a variable, stay review items (architecture §7).
 2. A selector cannot go dead unnoticed: each one has a must-fail fixture and a policy pin.
 3. `*Transformer` is an approved class suffix and the unused `Controller` is not.
 4. Contributors find TB-1 in `CLAUDE.md` and `.github/copilot-instructions.md`.

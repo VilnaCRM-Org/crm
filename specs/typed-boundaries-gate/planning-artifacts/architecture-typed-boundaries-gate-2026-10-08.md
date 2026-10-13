@@ -20,6 +20,8 @@ inputDocuments:
   - tests/unit/tooling/class-naming-gate.test.ts
   - docs/adr/README.md
   - docs/adr/template.md
+iteration: 2
+revised: '2026-10-13'
 ---
 
 # Architecture: typed-boundaries gate (chore)
@@ -168,8 +170,7 @@ that sets the rule (line numbers as of 2026-10-08):
 - all `src` (`:856`), components (`:937`), the three routes blocks (`:959`, `:976`, `:991`);
 - non-React `.ts` (`:1061`), DI logic (`:1086`), `RESTRICTED_LIBRARY_ADAPTERS` (`:1107`);
 - `src/config/env` (`:1138`), `src/services/locale-formatter/**` (`:1163`);
-- the hooks block `src/**/use-*.ts` (`:1192`), which also covers the Zustand store hooks; the
-  `src/lib/state/use-reactive-var.ts` block left with the reactive var (#334).
+- the hooks block `src/**/use-*.ts` (`:1192`), which also covers the Zustand store hooks.
 
 Hooks are exempt from #100 but not from TB-1: without the spread in the hooks block no hook
 would be checked (verification F1). `...typedBoundaryTypeFileSelectors` goes into the type-only
@@ -303,9 +304,9 @@ entries, in 13 files) are fixed type-only, like every other site.
 ## 7. Honest limits
 
 - The gate is syntactic: it cannot tell an interface element from a primitive alias element.
-- Shapes outside the listed positions (a function expression on a top-level `const`, an
-  `export { x as default }` of a nested function, an inline callback inside a parameter's own
-  interface) stay review items.
+- Shapes outside the listed positions (a function-type annotation on a variable, as in
+  `export const useX: (p: { … }) => R = …`, an `export { x as default }` of a nested function,
+  an inline callback inside a parameter's own interface) stay review items.
 - Position 8 (test builders) and exception (i) have no lint enforcement; both are review items.
 - An `unknown` parameter in a code file is not gated: syntax cannot tell a caught-error narrowing
   method from any other, so (d) covers `unknown` returns, class properties, type-file members and
