@@ -32,6 +32,13 @@ describe('featureFlagService', () => {
     expect(featureFlagService.snapshot()).toEqual({});
   });
 
+  it('names each declared flag as a FeatureFlagName', async () => {
+    const { default: featureFlagService } = await loadFeatureFlagService();
+    jest.spyOn(Object, 'keys').mockReturnValueOnce([PROBE_FLAG]);
+
+    expect(featureFlagService.names()).toEqual({ items: [{ name: PROBE_FLAG }] });
+  });
+
   it('enables a flag the runtime configuration turns on', async () => {
     writeConfigBlock(buildFeatureFlagConfig({ [PROBE_FLAG]: true }));
 

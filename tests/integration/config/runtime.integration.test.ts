@@ -176,6 +176,16 @@ describe('runtime configuration Integration', () => {
     expect(container.resolve<AppConfig>(tokens.appConfig).get()).toEqual({ flags: {} });
   });
 
+  it('names each declared flag through the container-resolved service', async () => {
+    renderRuntimeConfig(buildFeatureFlagConfig({}));
+
+    const { container, tokens } = await loadRuntimeGraph();
+    const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
+    jest.spyOn(Object, 'keys').mockReturnValueOnce([PROBE_FLAG]);
+
+    expect(flags.names()).toEqual({ items: [{ name: PROBE_FLAG }] });
+  });
+
   it('reads flag values through the container-resolved service on every call', async () => {
     renderRuntimeConfig(buildFeatureFlagConfig({}));
 
