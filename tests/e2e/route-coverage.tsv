@@ -41,3 +41,5 @@ forbidden	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page
 serverError	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /server-error by client-side navigation with no failed request.
 passwordRecovery	e2e	tests/e2e/modules/user/features/auth/password-recovery.spec.ts	Drives the request step on /password-recovery: one request per submit, the masked sent step, field and banner errors, Retry, Назад and До входу without a document load.
 passwordRecovery	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-recovery and asserts the in-form offline notice and disabled submit.
+passwordReset	e2e	tests/e2e/modules/user/features/auth/password-reset.spec.ts	Drives /password-reset: the token strip, one confirm request, the sign-in notice, the invalid-link state, field and banner errors, and Назад without a document load.
+passwordReset	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-reset with a token and asserts the in-form offline notice and disabled submit.

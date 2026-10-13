@@ -82,6 +82,7 @@ describe('route composer', () => {
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
       ROUTE_PATHS.passwordRecovery,
+      ROUTE_PATHS.passwordReset,
     ]);
   });
 

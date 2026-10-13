@@ -53,12 +53,14 @@ describe('route registry', () => {
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
       ROUTE_PATHS.passwordRecovery,
+      ROUTE_PATHS.passwordReset,
     ]);
     expect(auth?.routes.every((route) => route.guard === 'public')).toBe(true);
     expect(auth?.routes.map((route) => route.meta?.titleKey)).toEqual([
       'sign_up.title',
       'sign_in.title',
       'password_recovery.title',
+      'password_reset.title',
     ]);
   });
 });
