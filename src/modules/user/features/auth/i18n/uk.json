@@ -95,6 +95,9 @@
       "submitting": "Вхід…",
       "remember_me": "Запамʼятати мене",
       "forgot_password": "Забули пароль?"
+    },
+    "notices": {
+      "password_reset": "Пароль змінено. Увійдіть з новим паролем."
     }
   },
   "notifications": {
