@@ -138,5 +138,22 @@
     "logo_alt": "VilnaCRM logo",
     "privacy": "Privacy Policy",
     "usage_policy": "Terms of Use"
+  },
+  "password_recovery": {
+    "back": "Back",
+    "submit_button": "Confirm",
+    "errors": {
+      "rate_limited": "Too many requests. Please try again later.",
+      "transient": "The request could not be sent. Check your connection and try again.",
+      "email_rejected": "Check the e-mail address and try again"
+    },
+    "title": "Forgot your password?",
+    "body": "Enter the e-mail address of your account",
+    "submitting": "Sending…",
+    "sent": {
+      "title": "Check your e-mail",
+      "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
+      "to_sign_in": "Go to sign-in"
+    }
   }
 }

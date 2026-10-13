@@ -41,6 +41,21 @@ chunk fails to load, and a **public** route's loader is further wrapped in a
 protected route never auto-reloads — the auth token is memory-only — so its second
 failure reaches the route `errorElement` and its **Reload the page** button.
 
+## Registered routes
+
+| Key                | Path                 | Contract                   | Guard     |
+| ------------------ | -------------------- | -------------------------- | --------- |
+| `home`             | `/` (index)          | `app-routes.ts`            | protected |
+| `signUp`           | `/sign-up`           | `@auth/routes` (user.auth) | public    |
+| `signIn`           | `/sign-in`           | `@auth/routes` (user.auth) | public    |
+| `passwordRecovery` | `/password-recovery` | `@auth/routes` (user.auth) | public    |
+| `forbidden`        | `/forbidden`         | `app-routes.ts`            | public    |
+| `serverError`      | `/server-error`      | `app-routes.ts`            | public    |
+| `notFound`         | `*`                  | `app-routes.ts`            | public    |
+
+`/password-recovery` (issue #315) renders the `ResetPassword` page; signed-in users are not
+redirected away from it.
+
 ## The contract
 
 ```ts
