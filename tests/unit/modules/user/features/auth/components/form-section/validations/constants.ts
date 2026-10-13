@@ -1,5 +1,5 @@
-import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
+import type { SignUpDto } from '@/modules/user';
 
-const emptyUser: RegisterUserDto = {} as RegisterUserDto;
+const emptyUser: SignUpDto = {} as SignUpDto;
 
 export default emptyUser;

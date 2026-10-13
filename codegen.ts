@@ -7,9 +7,12 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 // This file is build config only — the generated output lives in src/api/generated/graphql.ts
 // and must never be hand-edited (see src/api/contracts/README.md).
 const schemaPath = process.env.CODEGEN_SCHEMA_PATH ?? '.codegen-cache/schema.graphql';
+// Upstream declarations the pinned SDL does not carry yet; the contract pin bump deletes them
+// (see "Pending contracts" in src/api/contracts/README.md).
+const pendingSchemaPath = 'src/api/contracts/pending/*.graphql';
 
 const config: CodegenConfig = {
-  schema: schemaPath,
+  schema: [schemaPath, pendingSchemaPath],
   documents: ['src/modules/**/*.graphql'],
   ignoreNoDocuments: false,
   generates: {
