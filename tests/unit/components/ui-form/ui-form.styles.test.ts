@@ -16,6 +16,10 @@ describe('ui-form styles', () => {
     const { default: styles } = await import('@/components/ui-form/styles');
 
     expect(styles).toEqual({
+      errorAction: {
+        marginBottom: '1rem',
+        textTransform: 'none',
+      },
       errorBannerFocus: {
         outline: 'none',
         '&:focus-visible': {
