@@ -13,6 +13,22 @@ export interface User {
   initials: string;
 }
 
+export interface RequestPasswordResetInput {
+  email: string;
+  clientMutationId?: string | null;
+}
+
+export interface ConfirmPasswordResetInput {
+  token: string;
+  newPassword: string;
+  clientMutationId?: string | null;
+}
+
+export interface PasswordResetPayload {
+  user: null;
+  clientMutationId: string | null;
+}
+
 interface CreateUserPayload {
   user: User;
   clientMutationId: string;

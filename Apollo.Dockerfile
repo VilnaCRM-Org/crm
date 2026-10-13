@@ -31,6 +31,7 @@ USER root
 
 COPY --from=builder --chown=node:node /app/docker/apollo-server/out ./docker/apollo-server/out
 COPY --chown=node:node docker/apollo-server/bootstrap.mjs ./docker/apollo-server/bootstrap.mjs
+COPY --chown=node:node src/api/contracts/pending ./src/api/contracts/pending
 
 USER node
 

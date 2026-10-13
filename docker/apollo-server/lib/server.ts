@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
 import { ApolloServer, BaseContext } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
@@ -25,6 +26,7 @@ export interface StartServerResult {
 }
 
 const parsedTimeout = Number(process.env.GRACEFUL_SHUTDOWN_TIMEOUT);
+const PENDING_SCHEMA_FILE_PATH = path.resolve('src/api/contracts/pending/password-reset.graphql');
 const TIMEOUT = Number.isFinite(parsedTimeout) ? Math.max(1000, Math.floor(parsedTimeout)) : 10000;
 
 export async function startServer({
@@ -41,7 +43,7 @@ export async function startServer({
   }
 
   const server = new ApolloServer<BaseContext>({
-    typeDefs,
+    typeDefs: [typeDefs, fs.readFileSync(PENDING_SCHEMA_FILE_PATH, 'utf-8')],
     resolvers,
     csrfPrevention: true,
     formatError,

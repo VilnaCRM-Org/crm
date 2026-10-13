@@ -77,6 +77,33 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 4. `make contract-diff` must pass — the semantic gates below classify what the bump actually
    changed, for the OpenAPI spec and the GraphQL schema alike.
 
+## Pending contracts
+
+A pending contract is an upstream declaration the pinned version does not carry yet. It is
+copied verbatim from user-service, read by codegen (`codegen.ts` lists `src/api/contracts/pending`
+beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies the folder,
+`docker/apollo-server/lib/server.ts` passes it as a second `typeDefs` entry), and deleted by the
+pin bump that brings the declarations in. graphql-codegen and Apollo Server merge an identical
+duplicate silently, so nothing fails if the file outlives its pin; the deletion is a listed step
+of that bump.
+
+`src/api/contracts/pending/password-reset.graphql`:
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** `VilnaCRM-Org/user-service@63041e4a` (`.github/graphql-spec/spec` on
+  `main`), unchanged through `f82bbef5`.
+- **Mock answers:** `{ user: null, clientMutationId }` for a valid input; an input violation as
+  one GraphQL error `<property>: <reason>` on HTTP 200, with
+  `extensions: { code: 'BAD_USER_INPUT', status: 422 }`.
+- **Removed by:** the contract pin bump to the first user-service release that declares both
+  mutations (Follow-up 5.3).
+
+The mock is stateless: `requestPasswordResetUser` and `confirmPasswordResetUser` answer every
+valid input with the same payload, so domain refusals, `429`, `503` and aborts are exercised in
+the browser lanes (`page.route`) and the integration suite (msw) instead. Deleting the extension
+means removing the file, its `codegen.ts` entry, the `Apollo.Dockerfile` copy and the
+`server.ts` read; the two resolvers stay.
+
 ## Semantic breaking-change gate (issue #177)
 
 `make codegen-check` is **syntactic**: it proves the pins agree and that `src/api/generated/**`
