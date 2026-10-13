@@ -92,13 +92,14 @@ So that the feature bundles that follow are written against TB-1 from their firs
 
 **Dispatch:** Depends on: 1.1. **Status:** Ready.
 
-**Requirements:** FR-2, FR-3, FR-4, FR-5, FR-6 (CLAUDE.md), NFR-1, NFR-2, NFR-3.
+**Requirements:** FR-2, FR-3, FR-4, FR-5, FR-6 (CLAUDE.md, AGENTS.md), NFR-1, NFR-2, NFR-3.
 
 **Files:** `eslint.config.mjs` (MODIFY: the two arrays of architecture §3.1 in every block of
 §3.2, `consistent-type-definitions`), `scripts/ci/eslint-gate-fixtures.mjs` and
 `tests/unit/config/eslint-policy.test.ts` (MODIFY: §3.4), the `src/**` files of the site list
 (its 29 `src/services/**` sites in 13 files included) and the type-only files their fixes need
-(§5), `CLAUDE.md` and `.github/copilot-instructions.md` (MODIFY: the TB-1 section).
+(§5), `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` (MODIFY: the TB-1
+section).
 
 **Gates:** the focused Jest files `tests/unit/tooling/eslint-gate-fixtures.test.ts` and
 `tests/unit/config/eslint-policy.test.ts`; ESLint and `tsc` over the changed files; CI
@@ -117,13 +118,15 @@ So that the feature bundles that follow are written against TB-1 from their firs
 - **Given** the wired arrays, **when** first run, **then** the site count is noted in the PR.
 - **Given** `src/` after the fixes, **when** `make lint-eslint` runs, **then** TB-1 reports zero.
 - **Given** the `src/services/**` sites, **when** fixed, **then** no file moves or is renamed.
-- **Given** `auth-error.ts:18`, **when** fixed, **then** it is `AuthOkResult<T> | AuthFailedResult`.
+- **Given** `auth-error.ts:18`, **when** fixed, **then** it is the named alias
+  `AuthResult<T> = AuthOkResult<T> | AuthFailedResult`.
 - **Given** the auth-store writers, **when** fixed, **then** each writes through
   `AuthStateWriter.setState`, which takes `AuthStatePatch`.
 - **Given** the policy test, **when** it runs, **then** each array is pinned on every §3.4 block.
 - **Given** CI, **when** every suite runs, **then** it passes and no score or baseline drops.
 - **Given** the diff, **when** read, **then** it adds no cast, `any`, disable, allowlist or glob.
-- **Given** `CLAUDE.md` and the Copilot file, **when** read, **then** both carry the TB-1 section.
+- **Given** `CLAUDE.md`, `AGENTS.md` and the Copilot file, **when** read, **then** each carries
+  the TB-1 section.
 - **Given** the `src/config/**` edits, **when** CI checks ADR drift, **then** the ADR-002 edit does.
 
 ## Order

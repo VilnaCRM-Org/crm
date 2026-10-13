@@ -84,7 +84,7 @@ TB-1, verbatim from the planning contract §4:
 >    the Data provider, Transformer, Repository, State, Guard, Factory or helper roles (the layer
 >    map of the planning contract §2);
 > 4. every value registered in or resolved from the DI container;
-> 5. published state: reactive-var state, outlet context, router navigation state, toast and
+> 5. published state: Zustand store state, outlet context, router navigation state, toast and
 >    notice payloads;
 > 6. events and telemetry payloads (security signals, observability);
 > 7. every member of an interface in a type-only file;
@@ -106,11 +106,13 @@ TB-1, verbatim from the planning contract §4:
 >     `interface RecoveryCode { readonly value: string }`.
 >   - Arrays of primitives or literals (`readonly string[]`) are forbidden everywhere at a
 >     boundary.
-> - **(d) Catch-all payloads.** `any`, `object`, `Record<…>` and index signatures
->   (`[key: string]: …`). `unknown` is allowed in exactly two places:
+> - **(d) Catch-all payloads.** `any`, `object`, `Record<…>`, index signatures
+>   (`[key: string]: …`) and mapped types over `string`, `number` or `symbol` keys
+>   (`{ [k in string]: T }`, or a flat key union with one of them as a direct member).
+>   `unknown` is allowed in exactly two places:
 >   - the parameter (never the return) of a method whose role is to narrow a caught error (a
 >     `*Transformer`, `*Guard` or `*Detector`);
->   - the `error` / `cause` property of an error type.
+>   - a member named `error` or `cause`, whatever type declares it.
 > - **(e) Inline derived types.** `Omit`, `Pick`, `Partial` and `Required` written at the
 >   boundary. Name the derivation once in a type-only file
 >   (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
