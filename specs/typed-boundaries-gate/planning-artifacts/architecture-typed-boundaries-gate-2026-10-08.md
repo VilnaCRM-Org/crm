@@ -168,7 +168,8 @@ that sets the rule (line numbers as of 2026-10-08):
 - all `src` (`:856`), components (`:937`), the three routes blocks (`:959`, `:976`, `:991`);
 - non-React `.ts` (`:1061`), DI logic (`:1086`), `RESTRICTED_LIBRARY_ADAPTERS` (`:1107`);
 - `src/config/env` (`:1138`), `src/services/locale-formatter/**` (`:1163`);
-- the hooks block `src/**/use-*.ts` (`:1192`) and `src/lib/state/use-reactive-var.ts` (`:1219`).
+- the hooks block `src/**/use-*.ts` (`:1192`), which also covers the Zustand store hooks; the
+  `src/lib/state/use-reactive-var.ts` block left with the reactive var (#334).
 
 Hooks are exempt from #100 but not from TB-1: without the spread in the hooks block no hook
 would be checked (verification F1). `...typedBoundaryTypeFileSelectors` goes into the type-only
@@ -196,8 +197,8 @@ so a public method cannot hide an inferred return.
 - **Scope assertion:** every `src` code probe resolves all five `typedBoundarySelectors`, so a
   block that loses the array fails by name.
 - **Policy pin** (`tests/unit/config/eslint-policy.test.ts`): one distinctive selector per array
-  at `error` on the logic, component, route, type-only, hooks, locale-formatter and
-  `use-reactive-var` blocks, and `consistent-type-definitions` at `error`.
+  at `error` on the logic, component, route, type-only, hooks and locale-formatter blocks, and
+  `consistent-type-definitions` at `error`.
 
 ## 4. Class-naming suffixes
 
@@ -223,9 +224,9 @@ The dry run (contract §4.1 item 8, `tb-gate-dry-run-sites.json`) counts about 1
 | inline derived (types / code)                  | 6 / 3, 2 / 2  |
 | anonymous literals (code)                      | 3 / 3         |
 
-The count predates the F8 positions and the hooks, locale-formatter and `use-reactive-var`
-blocks, so the story re-measures it with `make lint-eslint` once the arrays are wired and fixes
-every extra site in the same change.
+The count predates the F8 positions and the hooks and locale-formatter blocks, so the story
+re-measures it with `make lint-eslint` once the arrays are wired and fixes every extra site in the
+same change.
 
 **Measured.** With the arrays wired, the gate reported **141 sites in 71 files** on the
 pre-change `src/` (commit `0e54782c`): 41 anonymous object types (a), 41 `Record` / `object` /
@@ -248,7 +249,7 @@ export interface AuthFailedResult {
 }
 export type AuthResult<T> = AuthOkResult<T> | AuthFailedResult;
 
-// @auth/types/auth-store.ts: AuthStateVar.set(partial: AuthStatePatch)
+// @auth/types/auth-store.ts: writers call AuthStateWriter.setState(patch: AuthStatePatch)
 export type AuthStatePatch = Partial<AuthState>;
 ```
 

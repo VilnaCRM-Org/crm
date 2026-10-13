@@ -34,8 +34,8 @@ per the over-engineering review, Part 3 item 2:
   because no existing gate needs it.
 - **Merged:** the type-file and code-file burn-downs and `consistent-type-definitions` into one
   story, Story 1.2.
-- **Kept:** the selector wiring in every `src` block (the hooks, locale-formatter and
-  `use-reactive-var` blocks included), the must-fail fixtures, the scope assertion, the policy
+- **Kept:** the selector wiring in every `src` block (the hooks and locale-formatter blocks
+  included), the must-fail fixtures, the scope assertion, the policy
   pin, `*Transformer` in and `Controller` out of the class-naming policy and the `CLAUDE.md`
   table, and the `CLAUDE.md` TB-1 section.
 - **Not here:** the TB-2 naming check stays in #315 (Story 0.2), where `LoginUserDto` and

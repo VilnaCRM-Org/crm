@@ -119,3 +119,18 @@ describe('TB-1 selector alternatives (issue #332)', () => {
     ).toEqual(policy.TB_TYPE_FILE_ROOTS.map(() => 0));
   });
 });
+
+describe('TB-1 documentation mirrors (issue #332)', () => {
+  const { readFileSync } = require('node:fs') as typeof import('node:fs');
+  const { join } = require('node:path') as typeof import('node:path');
+
+  it.each(['CLAUDE.md', 'AGENTS.md', '.github/copilot-instructions.md'])(
+    'documents the rule and its policy source in %s',
+    (file) => {
+      const text = readFileSync(join(__dirname, '..', '..', '..', file), 'utf8');
+
+      expect(text).toContain('Typed boundaries (TB-1, issue #332)');
+      expect(text).toContain('config/typed-boundary-policy.js');
+    }
+  );
+});
