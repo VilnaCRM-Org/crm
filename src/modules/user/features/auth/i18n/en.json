@@ -155,5 +155,17 @@
       "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
       "to_sign_in": "Go to sign-in"
     }
+  },
+  "password_policy": {
+    "rules": {
+      "length": "From 8 to 64 characters",
+      "digit": "At least one digit",
+      "uppercase": "At least one uppercase Latin letter (A–Z)",
+      "lowercase": "At least one lowercase letter"
+    },
+    "state": {
+      "met": "met",
+      "unmet": "not met"
+    }
   }
 }
