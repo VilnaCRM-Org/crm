@@ -62,7 +62,7 @@ runtime reshapes TB-1 forces are listed in §5.
 >    the Data provider, Transformer, Repository, State, Guard, Factory or helper roles (the layer
 >    map of the planning contract §2);
 > 4. every value registered in or resolved from the DI container;
-> 5. published state: reactive-var state, outlet context, router navigation state, toast and
+> 5. published state: Zustand store state, outlet context, router navigation state, toast and
 >    notice payloads;
 > 6. events and telemetry payloads (security signals, observability);
 > 7. every member of an interface in a type-only file;

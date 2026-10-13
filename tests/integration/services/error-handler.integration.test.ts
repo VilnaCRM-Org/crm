@@ -1,6 +1,7 @@
 import '../setup';
 import { ErrorHandler } from '@/services/error';
 import type { ObservabilityService } from '@/services/types/observability/observability';
+import type ParsedError from '@/utils/error/types';
 
 const createObservability = (): jest.Mocked<ObservabilityService> => ({
   init: jest.fn(),
@@ -15,10 +16,10 @@ const errorHandler = new ErrorHandler(observability);
 
 describe('ErrorHandler Coverage Tests', () => {
   it('should return fallback error for unknown error codes', () => {
-    const unknownError = {
+    const unknownError: ParsedError = {
       code: 'UNKNOWN_CODE_9999',
       message: 'Unknown error',
-      original: new Error('test'),
+      cause: new Error('test'),
     };
 
     const result = errorHandler.handleAuthError(unknownError);
@@ -28,10 +29,10 @@ describe('ErrorHandler Coverage Tests', () => {
   });
 
   it('should handle error with completely invalid code', () => {
-    const invalidError = {
+    const invalidError: ParsedError = {
       code: '',
       message: 'Invalid',
-      original: null,
+      cause: null,
     };
 
     const result = errorHandler.handleAuthError(invalidError);
@@ -41,10 +42,10 @@ describe('ErrorHandler Coverage Tests', () => {
   });
 
   it('should handle errors with special characters in code', () => {
-    const specialError = {
+    const specialError: ParsedError = {
       code: '!@#$%^&*()',
       message: 'Special',
-      original: {},
+      cause: {},
     };
 
     const result = errorHandler.handleAuthError(specialError);
@@ -54,10 +55,10 @@ describe('ErrorHandler Coverage Tests', () => {
   });
 
   it('should return mapped error for known error codes', () => {
-    const networkError = {
+    const networkError: ParsedError = {
       code: 'NETWORK_ERROR',
       message: 'Network failed',
-      original: new Error('net'),
+      cause: new Error('net'),
     };
 
     const result = errorHandler.handleAuthError(networkError);
