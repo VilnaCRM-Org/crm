@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { buildResetToken } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
@@ -19,6 +20,16 @@ const routeScans: readonly RouteScan[] = [
   { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', seedAuth: true },
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
+  {
+    key: 'passwordRecovery',
+    path: ROUTE_PATHS.passwordRecovery,
+    ready: 'form button[type="submit"]',
+  },
+  {
+    key: 'passwordReset',
+    path: `${ROUTE_PATHS.passwordReset}?token=${buildResetToken()}`,
+    ready: 'form #newPassword',
+  },
   { key: 'forbidden', path: ROUTE_PATHS.forbidden, ready: 'main h1' },
   { key: 'serverError', path: ROUTE_PATHS.serverError, ready: 'main h1' },
   { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1' },

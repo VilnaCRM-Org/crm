@@ -43,3 +43,7 @@ passwordRecovery	e2e	tests/e2e/modules/user/features/auth/password-recovery.spec
 passwordRecovery	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-recovery and asserts the in-form offline notice and disabled submit.
 passwordReset	e2e	tests/e2e/modules/user/features/auth/password-reset.spec.ts	Drives /password-reset: the token strip, one confirm request, the sign-in notice, the invalid-link state, field and banner errors, and Назад without a document load.
 passwordReset	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-reset with a token and asserts the in-form offline notice and disabled submit.
+passwordRecovery	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-recovery with axe against the WCAG 2.1 AA tag set.
+passwordRecovery	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the request form, the Retry banner and the sent step with the keyboard only.
+passwordReset	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-reset with a token, once the new-password form is visible, with axe.
+passwordReset	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the new-password form and the invalid-link state with the keyboard only.
