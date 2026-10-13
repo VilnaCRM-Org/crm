@@ -155,7 +155,7 @@ enterprise Message Translator.
 
 Two `no-restricted-syntax` arrays, `typedBoundarySelectors` (code files) and
 `typedBoundaryTypeFileSelectors` (type-only files), are spread into every `src` block that sets
-the rule, including the hooks, locale-formatter and `use-reactive-var` blocks.
+the rule, including the hooks and locale-formatter blocks.
 
 ### FR-4 — Fixtures and a policy pin guard the gate
 
@@ -166,7 +166,8 @@ Each selector has a must-fail fixture and the must-pass controls of the contract
 
 Every existing site is fixed at its source, so `make lint-eslint` reports zero TB-1 findings.
 Two fixes carry names #331 builds on: `AuthResult<T> = AuthOkResult<T> | AuthFailedResult`
-(`@auth/types/auth-error.ts`) and `AuthStateVar.set(partial: AuthStatePatch)` (`auth-var.ts`).
+(`@auth/types/auth-error.ts`) and `AuthStateWriter.setState(patch: AuthStatePatch)`
+(`@auth/types/auth-store.ts`), through which every auth-store write passes.
 
 ### FR-6 — TB-1 is documented
 

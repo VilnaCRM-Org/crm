@@ -114,7 +114,8 @@ So that the feature bundles that follow are written against TB-1 from their firs
 - **Given** `src/` after the fixes, **when** `make lint-eslint` runs, **then** TB-1 reports zero.
 - **Given** the `src/services/**` sites, **when** fixed, **then** no file moves or is renamed.
 - **Given** `auth-error.ts:18`, **when** fixed, **then** it is `AuthOkResult<T> | AuthFailedResult`.
-- **Given** `auth-var.ts:36`, **when** fixed, **then** `AuthStateVar.set` takes `AuthStatePatch`.
+- **Given** the auth-store writers, **when** fixed, **then** each writes through
+  `AuthStateWriter.setState`, which takes `AuthStatePatch`.
 - **Given** the policy test, **when** it runs, **then** each array is pinned on every §3.4 block.
 - **Given** CI, **when** every suite runs, **then** it passes and no score or baseline drops.
 - **Given** the diff, **when** read, **then** it adds no cast, `any`, disable, allowlist or glob.
