@@ -35,8 +35,10 @@ const LOGIC_SOURCE_GLOBS = [
   'src/services/**/*.ts',
   'src/utils/**/*.ts',
   'src/modules/*/store/**/*.ts',
+  'src/modules/*/features/*/data-providers/**/*.ts',
   'src/modules/*/features/*/repositories/**/*.ts',
   'src/modules/*/features/*/stores/**/*.ts',
+  'src/modules/*/features/*/transformers/**/*.ts',
   'src/modules/*/features/*/utils/**/*.ts',
 ];
 
@@ -44,7 +46,7 @@ const LOGIC_SOURCE_PATHS = [
   '^src/services/',
   '^src/utils/',
   '^src/modules/[^/]+/store/',
-  '^src/modules/[^/]+/features/[^/]+/(?:repositories|stores|utils)/',
+  '^src/modules/[^/]+/features/[^/]+/(?:data-providers|repositories|stores|transformers|utils)/',
 ];
 
 /**

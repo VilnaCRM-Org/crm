@@ -9,11 +9,13 @@
     "allowedFolders": [
       "assets",
       "components",
+      "data-providers",
       "hooks",
       "i18n",
       "repositories",
       "routes",
       "stores",
+      "transformers",
       "types",
       "utils"
     ]
@@ -38,11 +40,13 @@
     "featureAllowedFolders": [
       "assets",
       "components",
+      "data-providers",
       "hooks",
       "i18n",
       "repositories",
       "routes",
       "stores",
+      "transformers",
       "types",
       "utils"
     ]
