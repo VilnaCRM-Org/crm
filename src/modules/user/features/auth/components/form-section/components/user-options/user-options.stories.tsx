@@ -11,8 +11,7 @@ const meta: Meta<typeof UserOptions> = {
       description: {
         component:
           'The row under the sign-in password: the "remember me" checkbox and the ' +
-          'password-recovery link, which lands on the not-found page until issue #315 ' +
-          'registers the route.',
+          'link to the password-recovery page (issue #315).',
       },
       story: { inline: false },
     },
