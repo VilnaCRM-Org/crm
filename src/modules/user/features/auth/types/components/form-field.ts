@@ -11,4 +11,14 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
   autoComplete: string;
   defaultValue?: PathValue<T, Path<T>>;
   inputProps?: InputProps;
+  describedBy?: string | undefined;
+}
+
+export interface FormFieldHtmlInputProps {
+  'aria-describedby': string;
+}
+
+export interface FormFieldSlotProps {
+  input: InputProps;
+  htmlInput?: FormFieldHtmlInputProps;
 }

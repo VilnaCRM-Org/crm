@@ -36,7 +36,7 @@ jest.mock('@auth/components/form-section/inert-box', () => ({
 
 describe('SignInFormSection', () => {
   it('keeps the OAuth provider row interactive', () => {
-    renderWithProviders(<SignInFormSection />);
+    renderWithProviders(<SignInFormSection notice={null} />);
 
     expect(
       screen.getByRole('group', { name: 'auth-provider-buttons-container inert=false' })
@@ -47,7 +47,7 @@ describe('SignInFormSection', () => {
   });
 
   it('draws the card with the sign-in bottom padding', () => {
-    renderWithProviders(<SignInFormSection />);
+    renderWithProviders(<SignInFormSection notice={null} />);
 
     expect(
       screen.getAllByRole('generic').find((element) => element.id === 'auth-form-card')
@@ -55,7 +55,7 @@ describe('SignInFormSection', () => {
   });
 
   it('composes the login form with the sign-up switcher', () => {
-    renderWithProviders(<SignInFormSection />);
+    renderWithProviders(<SignInFormSection notice={null} />);
 
     expect(screen.getByRole('form', { name: 'Login' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
