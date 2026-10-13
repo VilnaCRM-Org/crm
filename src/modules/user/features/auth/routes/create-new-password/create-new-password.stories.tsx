@@ -1,29 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Meta } from '@storybook/react-webpack5';
 
-import { withMemoryRouter } from '@stories/router-decorators';
+import authPageStories from '@stories/auth-page-story';
 
 import CreateNewPassword from '.';
 
-const meta: Meta<typeof CreateNewPassword> = {
+export default {
   title: 'Auth/Pages/CreateNewPassword',
   component: CreateNewPassword,
   tags: ['autodocs'],
-  decorators: [withMemoryRouter('/password-reset?token=storyResetToken')],
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The /password-reset route page (issue #315): AuthPageLayout around the lazily ' +
-          'loaded confirm-step section and the document title.',
-      },
-      story: { inline: false },
-    },
-    layout: 'fullscreen',
-  },
-};
+  decorators: authPageStories.decorators('/password-reset?token=storyResetToken'),
+  parameters: authPageStories.parameters(
+    'The /password-reset route page (issue #315): AuthPageLayout around the lazily ' +
+      'loaded confirm-step section and the document title.'
+  ),
+} satisfies Meta<typeof CreateNewPassword>;
 
-export default meta;
-
-type Story = StoryObj<typeof CreateNewPassword>;
-
-export const Default: Story = {};
+export const Default = authPageStories.default;

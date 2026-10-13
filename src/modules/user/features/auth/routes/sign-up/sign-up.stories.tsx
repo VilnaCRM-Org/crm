@@ -1,29 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Meta } from '@storybook/react-webpack5';
 
-import { withMemoryRouter } from '@stories/router-decorators';
+import authPageStories from '@stories/auth-page-story';
 
 import SignUp from '.';
 
-const meta: Meta<typeof SignUp> = {
+export default {
   title: 'Auth/Pages/SignUp',
   component: SignUp,
   tags: ['autodocs'],
-  decorators: [withMemoryRouter('/sign-up')],
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The /sign-up route page: AuthPageLayout around the lazily loaded sign-up form ' +
-          'section, and the document title.',
-      },
-      story: { inline: false },
-    },
-    layout: 'fullscreen',
-  },
-};
+  decorators: authPageStories.decorators('/sign-up'),
+  parameters: authPageStories.parameters(
+    'The /sign-up route page: AuthPageLayout around the lazily loaded sign-up form ' +
+      'section, and the document title.'
+  ),
+} satisfies Meta<typeof SignUp>;
 
-export default meta;
-
-type Story = StoryObj<typeof SignUp>;
-
-export const Default: Story = {};
+export const Default = authPageStories.default;
