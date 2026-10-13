@@ -1,3 +1,5 @@
+import type { InjectionToken } from 'tsyringe';
+
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
@@ -81,6 +83,22 @@ class DeferredAuthActions implements AuthActions {
     const { default: container } = await import('@/config/dependency-injection-config');
     const { default: ActionsClass } = await import('./auth-store-actions');
     return container.resolve(ActionsClass);
+  }
+}
+
+export class AuthProviderLoader {
+  private readonly container = new ChunkRetryLoader(
+    () => import('@/config/dependency-injection-config')
+  );
+
+  public async resolve<T>(token: InjectionToken<T>): Promise<T> {
+    try {
+      const { default: container } = await this.container.load();
+      return container.resolve<T>(token);
+    } catch (error) {
+      observabilityCore.captureError(error, { source: 'auth:provider-load' });
+      throw error;
+    }
   }
 }
 
