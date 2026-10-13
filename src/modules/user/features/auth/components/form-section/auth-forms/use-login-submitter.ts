@@ -1,9 +1,9 @@
 import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
 import type { LoginActions, LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
-import type { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer, { UNKNOWN_KEY } from './login-error-message';
 
@@ -52,7 +52,7 @@ function useAbortableLogin(actions: LoginActions): LoginSubmitter['handleLogin']
   const loginControllersRef = useLoginControllers();
 
   return useCallback(
-    async (data: LoginUserDto): Promise<void> => {
+    async (data: SignInDto): Promise<void> => {
       const controller = new AbortController();
       loginControllersRef.current.add(controller);
 

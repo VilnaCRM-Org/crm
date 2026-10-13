@@ -2,8 +2,8 @@ import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import formValidators from '@auth/components/form-section/validations';
-import type { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer from './login-error-message';
 import LoginFormFields from './login-form-fields';
@@ -11,7 +11,7 @@ import useLoginSubmitter from './use-login-submitter';
 
 export { LoginErrorMessageNormalizer };
 
-const LOGIN_DEFAULTS: LoginUserDto = { email: '', password: '' };
+const LOGIN_DEFAULTS: SignInDto = { email: '', password: '' };
 
 export default function LoginForm(): JSX.Element {
   const { t } = useTranslation();
@@ -19,7 +19,7 @@ export default function LoginForm(): JSX.Element {
   const validators = formValidators.create(t);
 
   return (
-    <UIForm<LoginUserDto>
+    <UIForm<SignInDto>
       onSubmit={handleLogin}
       defaultValues={LOGIN_DEFAULTS}
       error={error}

@@ -1,4 +1,4 @@
-import type { RegisterUserDto } from '@auth/types/credentials';
+import type { SignUpDto } from '@/modules/user';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import emptyUser from './constants';
@@ -18,9 +18,9 @@ const loadFullNameValidator = (): Promise<FullNameValidator> =>
     async () => (await import('@auth/components/form-section/validations/name')).default
   );
 
-const loadValidate = async (): Promise<(value: string, values: RegisterUserDto) => unknown> => {
+const loadValidate = async (): Promise<(value: string, values: SignUpDto) => unknown> => {
   const fullNameValidator = await loadFullNameValidator();
-  return fullNameValidator.create<RegisterUserDto>(t);
+  return fullNameValidator.create<SignUpDto>(t);
 };
 
 describe('full name separator pattern', () => {

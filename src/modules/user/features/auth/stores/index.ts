@@ -1,9 +1,10 @@
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthActions, AuthStateWriter } from '@auth/types/auth-store';
-import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
 
 import type AuthStoreActions from './auth-store-actions';
 import useAuthState from './use-auth-state';
@@ -27,7 +28,7 @@ class DeferredAuthActions implements AuthActions {
     retryable: true,
   };
 
-  public async loginUser(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
+  public async loginUser(credentials: SignInDto, signal?: AbortSignal): Promise<void> {
     this.state.setState({ loginLoading: true, loginError: null });
     const actions = await this.resolveSafely((error) =>
       this.state.setState({ loginLoading: false, loginError: error })
@@ -35,7 +36,7 @@ class DeferredAuthActions implements AuthActions {
     if (actions) await actions.login(credentials, signal);
   }
 
-  public async registerUser(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
+  public async registerUser(credentials: SignUpDto, signal?: AbortSignal): Promise<void> {
     this.state.setState({ registerLoading: true, registerError: null, user: null });
     const actions = await this.resolveSafely((error) =>
       this.state.setState({ registerLoading: false, registerError: error })

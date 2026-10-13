@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 import type { MutableRefObject } from 'react';
 
+import type { SignUpDto } from '@/modules/user';
 import useRegistrationHandlers from '@auth/hooks/use-registration-handlers';
-import type { RegisterUserDto } from '@auth/types/credentials';
 import { buildUser } from '@tests/builders';
 
-const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.resolve());
+const registerUser = jest.fn<Promise<void>, [SignUpDto]>(() => Promise.resolve());
 const resetRegistration = jest.fn();
 
 // The mock mirrors the real store: methods ON the singleton, not detached wrappers. That
@@ -34,11 +34,11 @@ describe('useRegistrationHandlers', () => {
     current: () => Handlers;
     setView: jest.Mock;
     setFormKey: jest.Mock;
-    lastSubmittedDataRef: MutableRefObject<RegisterUserDto | null>;
+    lastSubmittedDataRef: MutableRefObject<SignUpDto | null>;
   } => {
     const setView = jest.fn();
     const setFormKey = jest.fn();
-    const lastSubmittedDataRef = { current: null } as MutableRefObject<RegisterUserDto | null>;
+    const lastSubmittedDataRef = { current: null } as MutableRefObject<SignUpDto | null>;
 
     const { result } = renderHook(() =>
       useRegistrationHandlers({ setView, setFormKey, lastSubmittedDataRef })
@@ -49,7 +49,7 @@ describe('useRegistrationHandlers', () => {
 
   it('handleRegister normalizes fullName, stores it in ref, and registers', async () => {
     const { current, lastSubmittedDataRef } = buildHook();
-    const data: RegisterUserDto = { email: 'a@b.com', password: 'pw', fullName: '   Alice Bob   ' };
+    const data: SignUpDto = { email: 'a@b.com', password: 'pw', fullName: '   Alice Bob   ' };
 
     await act(() => current().handleRegister(data));
 
@@ -81,7 +81,7 @@ describe('useRegistrationHandlers', () => {
 
   it('handleRetry resets and re-registers the last submitted data when available', () => {
     const { current, lastSubmittedDataRef } = buildHook();
-    const last: RegisterUserDto = buildUser();
+    const last: SignUpDto = buildUser();
     lastSubmittedDataRef.current = last;
 
     act(() => current().handleRetry());
@@ -102,7 +102,7 @@ describe('useRegistrationHandlers', () => {
   it('keeps the same handler object when rerendered with stable dependency refs', () => {
     const setView = jest.fn();
     const setFormKey = jest.fn();
-    const lastSubmittedDataRef = { current: null } as MutableRefObject<RegisterUserDto | null>;
+    const lastSubmittedDataRef = { current: null } as MutableRefObject<SignUpDto | null>;
 
     const { result, rerender } = renderHook(
       ({
