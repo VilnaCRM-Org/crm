@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, RefCallback, RefObject } from 'react';
 import type {
   SubmitHandler,
   FieldValues,
@@ -9,6 +9,11 @@ import type {
 
 export type UIFormOptions<T extends FieldValues> = Omit<UseFormProps<T>, 'defaultValues'>;
 
+export interface FormErrorAction {
+  readonly label: string;
+  readonly onClick: () => void;
+}
+
 export type TitleHeadingComponent = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 export interface UIFormProps<T extends FieldValues> {
@@ -18,6 +23,7 @@ export interface UIFormProps<T extends FieldValues> {
   formOptions?: UIFormOptions<T>;
   isSubmitting?: boolean;
   error?: string | null | undefined;
+  errorAction?: FormErrorAction | undefined;
   submitLabel: string;
   title: ReactNode;
   subtitle?: ReactNode;
@@ -28,6 +34,7 @@ export interface UIFormProps<T extends FieldValues> {
   submittingLabel: string;
   submittingAnnouncement?: boolean;
   titleComponent?: TitleHeadingComponent;
+  titleRef?: RefCallback<HTMLElement> | undefined;
 }
 
 export interface SubmitHandlerOptions<T extends FieldValues> {
@@ -47,6 +54,7 @@ export interface SubmitControlsProps {
 
 export interface ErrorBannerProps {
   error?: string | null;
+  action?: FormErrorAction | undefined;
 }
 
 export interface FormHeaderSectionProps {
@@ -59,6 +67,7 @@ export interface FormHeaderProps {
   showTitle: boolean;
   showSubtitle: boolean;
   titleComponent?: TitleHeadingComponent | undefined;
+  titleRef?: RefCallback<HTMLElement> | undefined;
 }
 
 export interface OfflineSubmit {
@@ -86,6 +95,7 @@ export interface FormBodyProps<T extends FieldValues> {
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;
   error: string | null;
+  errorAction?: FormErrorAction | undefined;
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
