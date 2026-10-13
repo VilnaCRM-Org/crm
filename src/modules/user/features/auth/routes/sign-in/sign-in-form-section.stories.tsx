@@ -22,4 +22,8 @@ const meta: Meta<typeof SignInFormSection> = {
 
 export default meta;
 
-export const Default: StoryObj<typeof SignInFormSection> = {};
+export const Default: StoryObj<typeof SignInFormSection> = { args: { notice: null } };
+
+export const PasswordResetNotice: StoryObj<typeof SignInFormSection> = {
+  args: { notice: 'password_reset' },
+};

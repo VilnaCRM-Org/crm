@@ -148,6 +148,9 @@
           "submitting": "Signing in…",
           "remember_me": "Remember me",
           "forgot_password": "Forgot password?"
+        },
+        "notices": {
+          "password_reset": "Your password has been changed. Sign in with your new password."
         }
       },
       "notifications": {
@@ -372,6 +375,9 @@
           "submitting": "Вхід…",
           "remember_me": "Запамʼятати мене",
           "forgot_password": "Забули пароль?"
+        },
+        "notices": {
+          "password_reset": "Пароль змінено. Увійдіть з новим паролем."
         }
       },
       "notifications": {

@@ -126,4 +126,35 @@ describe('SignIn page', () => {
       expect(screen.queryByText(DESTINATION_TEXT)).not.toBeInTheDocument();
     });
   });
+
+  it('shows the password-reset notice after the lazy section mounts and focuses main', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          { pathname: ROUTE_PATHS.signIn, state: { focusMain: true, notice: 'password_reset' } },
+        ]}
+      >
+        <ThemeProvider theme={testTheme}>
+          <I18nextProvider i18n={testI18n}>
+            <Routes>
+              <Route path={ROUTE_PATHS.signIn} element={<SignIn />} />
+            </Routes>
+          </I18nextProvider>
+        </ThemeProvider>
+      </MemoryRouter>
+    );
+
+    const notice = await screen.findByText(
+      'Your password has been changed. Sign in with your new password.'
+    );
+    expect(notice).toHaveAttribute('role', 'status');
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('renders no notice region on a resting visit', async () => {
+    renderWithProviders(<SignIn />);
+
+    await screen.findByRole('heading', { level: 1, name: 'Authentication' });
+    expect(screen.queryByText(/Your password has been changed/)).not.toBeInTheDocument();
+  });
 });
