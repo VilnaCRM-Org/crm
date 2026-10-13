@@ -208,6 +208,18 @@
           "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
           "to_sign_in": "Go to sign-in"
         }
+      },
+      "password_policy": {
+        "rules": {
+          "length": "From 8 to 64 characters",
+          "digit": "At least one digit",
+          "uppercase": "At least one uppercase Latin letter (A–Z)",
+          "lowercase": "At least one lowercase letter"
+        },
+        "state": {
+          "met": "met",
+          "unmet": "not met"
+        }
       }
     }
   },
@@ -419,6 +431,18 @@
           "title": "Перевірте пошту",
           "body": "Ми надіслали листа на адресу {{email}}. Перевірте пошту та дотримуйтесь інструкцій у листі.",
           "to_sign_in": "До входу"
+        }
+      },
+      "password_policy": {
+        "rules": {
+          "length": "Від 8 до 64 символів",
+          "digit": "Принаймні одна цифра",
+          "uppercase": "Принаймні одна велика латинська літера (A–Z)",
+          "lowercase": "Принаймні одна мала літера"
+        },
+        "state": {
+          "met": "виконано",
+          "unmet": "не виконано"
         }
       }
     }
