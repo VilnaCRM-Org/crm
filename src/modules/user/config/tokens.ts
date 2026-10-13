@@ -17,6 +17,8 @@ const AUTH_TOKENS = Object.freeze({
   AuthStoreActionsDeps: Symbol('AuthStoreActionsDeps'),
   SandboxDemoSessionProvider: Symbol('SandboxDemoSessionProvider'),
   PasswordRecoveryRepository: Symbol('PasswordRecoveryRepository'),
+  PasswordRecoveryTransformer: Symbol('PasswordRecoveryTransformer'),
+  UserServiceErrorTransformer: Symbol('UserServiceErrorTransformer'),
 } as const);
 
 export default AUTH_TOKENS;
