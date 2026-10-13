@@ -1,26 +1,18 @@
-import { useCallback, useReducer } from 'react';
+import { useReducer } from 'react';
 
 import useAbortableSubmit from '@/hooks/use-abortable-submit';
-import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
-import type PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
+import useRecoveryRun from '@auth/hooks/use-recovery-run';
 import type { AuthProviderLoader } from '@auth/stores';
+import type { ResetPasswordOutcome } from '@auth/types/password-recovery/outcome';
 import type {
-  RecoveryFailedOutcome,
-  ResetPasswordOutcome,
-} from '@auth/types/password-recovery/outcome';
-import type {
+  RecoveryProviderStep,
   ResetPasswordAction,
   ResetPasswordCallbackDeps,
   ResetPasswordCallbacks,
   ResetPasswordState,
   ResetPasswordView,
 } from '@auth/types/password-recovery/state';
-
-const LOAD_FAILURE: RecoveryFailedOutcome = {
-  kind: 'failed',
-  failure: { reason: 'network', retryable: true },
-};
 
 const INITIAL_VIEW: ResetPasswordView = {
   step: 'form',
@@ -29,19 +21,11 @@ const INITIAL_VIEW: ResetPasswordView = {
   failure: null,
 };
 
-async function requestReset(
-  loader: AuthProviderLoader,
-  dto: RestorePasswordDto,
-  signal: AbortSignal
-): Promise<ResetPasswordOutcome> {
-  let provider: PasswordRecoveryProvider;
-  try {
-    provider = await loader.resolve<PasswordRecoveryProvider>(AUTH_TOKENS.PasswordRecoveryProvider);
-  } catch {
-    return LOAD_FAILURE;
-  }
-  return provider.requestReset(dto, signal);
-}
+const REQUEST_STEP: RecoveryProviderStep<RestorePasswordDto, ResetPasswordOutcome> = (
+  provider,
+  dto,
+  signal
+) => provider.requestReset(dto, signal);
 
 function settle(view: ResetPasswordView, outcome: ResetPasswordOutcome | null): ResetPasswordView {
   if (outcome === null) return view;
@@ -80,12 +64,7 @@ function useResetCallbacks(deps: ResetPasswordCallbackDeps): ResetPasswordCallba
 
 export default function useResetPassword(loader: AuthProviderLoader): ResetPasswordState {
   const [view, dispatch] = useReducer(reduceResetPassword, INITIAL_VIEW);
-  const run = useCallback(
-    (dto: RestorePasswordDto, signal: AbortSignal): Promise<ResetPasswordOutcome> =>
-      requestReset(loader, dto, signal),
-    [loader]
-  );
-  const submitter = useAbortableSubmit(run);
+  const submitter = useAbortableSubmit(useRecoveryRun(loader, REQUEST_STEP));
   const callbacks = useResetCallbacks({ dispatch, submitter, submittedEmail: view.submittedEmail });
 
   return { ...view, isSubmitting: submitter.isSubmitting, callbacks };
