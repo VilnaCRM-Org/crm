@@ -55,6 +55,7 @@ only `destroy`, the Trivy image scan is green, and every runtime suite passes on
 - `@typescript-eslint/explicit-module-boundary-types`: `explicit-function-return-type` is already
   `error` on every TypeScript file and `strict` types parameters.
 - A dependency-cruiser rule confining generated contract types: no existing gate needs it.
+- A new ADR for TB-1: ADRs numbered 003 and up are deleted by the owner's 2026-10-12 decision.
 - The TB-2 naming check and the `LoginUserDto` → `SignInDto` rename: #315 Story 0.2 owns them,
   because the check fails on the old names.
 - The `data-providers/` and `transformers/` folders: #315 Story 0.1 owns them.
@@ -170,7 +171,12 @@ Two fixes carry names #331 builds on: `AuthResult<T> = AuthOkResult<T> | AuthFai
 ### FR-6 — TB-1 is documented
 
 `CLAUDE.md` gains a "Typed boundaries (TB-1)" section under Code Quality, mirrored in
-`.github/copilot-instructions.md`, and an ADR records the decision.
+`AGENTS.md` and `.github/copilot-instructions.md`; with `config/typed-boundary-policy.js`, the
+single source of truth for the selectors, that is where the rule lives. No ADR records it: the
+repository owner decided on 2026-10-12 (reconfirmed 2026-10-13) that every ADR numbered 003 and up
+is deleted and that decisions can be written in a README or nowhere, so ADR-022 is not a
+deliverable. The ADR-drift gate is satisfied by the pull request's edits to
+`docs/adr/002-zustand-over-redux.md` and `docs/adr/README.md`.
 
 ## 4. Non-functional requirements
 
@@ -180,7 +186,8 @@ Two fixes carry names #331 builds on: `AuthResult<T> = AuthOkResult<T> | AuthFai
 - **NFR-2 — No suppression.** No `eslint-disable`, cast, `!`, `@ts-expect-error`, `any`,
   allowlist entry, `warn` downgrade or narrowed glob.
 - **NFR-3 — Gates green.** `make lint` passes, including `lint-docs`, `lint-md` and the ADR-drift
-  gate, which the `src/config/**` and `src/routes/route-composer.tsx` fixes trigger.
+  gate, which the `src/config/**` and `src/routes/route-composer.tsx` fixes trigger and the
+  pull request's `docs/adr/**` edits satisfy (FR-6).
 
 ## 5. Dependencies and order
 

@@ -6,6 +6,10 @@ import sandboxDemoSessionProvider, {
 import type { SandboxDemoHost } from '@/config/env/types/sandbox-demo-session';
 import type { AuthState } from '@auth/types/auth-store';
 import loadIsolated from '@tests/unit/utils/isolated-module';
+import {
+  PRELOADED_AUTH_TOKEN_WINDOW_KEY,
+  preloadedAuthTokenEnvVar,
+} from '@tests/utils/seed-preloaded-auth-token';
 
 const STORAGE_KEY = 'vilnacrm.sandbox-demo-session';
 const demoCredentials = { email: 'demo@vilnacrm.com', password: 'Demo1234' };
@@ -34,6 +38,8 @@ describe('sandbox demo session provider Integration', () => {
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
+    delete process.env[preloadedAuthTokenEnvVar];
+    delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
   });
 
   afterEach(() => {

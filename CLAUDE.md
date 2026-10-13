@@ -1954,8 +1954,9 @@ Auth state pattern (`src/modules/user/features/auth/stores/`):
 ```typescript
 // use-auth-store.ts — a Zustand store (`create`, no middleware; ADR-002) in a hook file, so the
 // no-static convention (issue #100) does not apply and the paint path stays container-free (no
-// tsyringe in the auth chunk). React reads it through selectors; writers call `setState` with an
-// `AuthStatePatch`. The DI graph receives it by value as `AUTH_TOKENS.AuthStore`.
+// tsyringe in the auth chunk). React reads it through selectors; writers hold it as an
+// `AuthStateWriter`, whose `setState` takes an `AuthStatePatch`. The DI graph receives it by value
+// as `AUTH_TOKENS.AuthStore`.
 export const CLEARED_AUTH_STATE: AuthState = {/* cleared fields */};
 const useAuthStore = create<AuthState>()(() => ({
   ...CLEARED_AUTH_STATE,

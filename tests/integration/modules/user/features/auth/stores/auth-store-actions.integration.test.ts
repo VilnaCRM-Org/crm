@@ -1,7 +1,7 @@
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
-import useAuthStore from '@auth/stores/use-auth-store';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
@@ -62,7 +62,10 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   });
 
 describe('AuthStoreActions integration coverage', () => {
-  beforeEach(() => resetClientStores());
+  beforeEach(() => {
+    resetClientStores();
+    useAuthStore.setState(CLEARED_AUTH_STATE, true);
+  });
 
   it('preserves a structured auth error thrown by login', async () => {
     const error: AuthError = { kind: 'server', displayMessage: 'Down', retryable: true };
