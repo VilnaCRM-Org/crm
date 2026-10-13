@@ -194,57 +194,6 @@
         "logo_alt": "VilnaCRM logo",
         "privacy": "Privacy Policy",
         "usage_policy": "Terms of Use"
-      },
-      "password_recovery": {
-        "back": "Back",
-        "submit_button": "Confirm",
-        "errors": {
-          "rate_limited": "Too many requests. Please try again later.",
-          "transient": "The request could not be sent. Check your connection and try again.",
-          "email_rejected": "Check the e-mail address and try again"
-        },
-        "title": "Forgot your password?",
-        "body": "Enter the e-mail address of your account",
-        "submitting": "Sending…",
-        "sent": {
-          "title": "Check your e-mail",
-          "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
-          "to_sign_in": "Go to sign-in"
-        }
-      },
-      "password_policy": {
-        "rules": {
-          "length": "8 to 64 characters",
-          "digit": "At least one digit",
-          "uppercase": "At least one uppercase Latin letter (A–Z)",
-          "lowercase": "At least one lowercase letter"
-        },
-        "state": {
-          "met": "met",
-          "unmet": "not met"
-        }
-      },
-      "password_reset": {
-        "title": "Create a new password",
-        "body": "Choose a new password for your account",
-        "submitting": "Saving…",
-        "new_password": {
-          "label": "New password",
-          "placeholder": "Enter a new password"
-        },
-        "confirm_password": {
-          "label": "Confirm password",
-          "placeholder": "Repeat the new password"
-        },
-        "errors": {
-          "mismatch": "The passwords do not match",
-          "policy_rejected": "The password does not meet the requirements. Check the rules below"
-        },
-        "invalid": {
-          "title": "This link is no longer valid",
-          "body": "The password reset link is invalid or has expired. Request a new one.",
-          "request_new": "Request a new link"
-        }
       }
     }
   },
@@ -443,57 +392,6 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
-      },
-      "password_recovery": {
-        "back": "Назад",
-        "submit_button": "Підтвердити",
-        "errors": {
-          "rate_limited": "Забагато запитів. Спробуйте пізніше.",
-          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз.",
-          "email_rejected": "Перевірте адресу електронної пошти та спробуйте ще раз"
-        },
-        "title": "Забули пароль?",
-        "body": "Введіть адресу поштової скриньки вашого акаунту",
-        "submitting": "Надсилання…",
-        "sent": {
-          "title": "Перевірте пошту",
-          "body": "Ми надіслали листа на адресу {{email}}. Перевірте пошту та дотримуйтесь інструкцій у листі.",
-          "to_sign_in": "До входу"
-        }
-      },
-      "password_policy": {
-        "rules": {
-          "length": "Від 8 до 64 символів",
-          "digit": "Принаймні одна цифра",
-          "uppercase": "Принаймні одна велика латинська літера (A–Z)",
-          "lowercase": "Принаймні одна мала літера"
-        },
-        "state": {
-          "met": "виконано",
-          "unmet": "не виконано"
-        }
-      },
-      "password_reset": {
-        "title": "Створіть новий пароль",
-        "body": "Придумайте новий пароль для вашого акаунту",
-        "submitting": "Збереження…",
-        "new_password": {
-          "label": "Новий пароль",
-          "placeholder": "Введіть новий пароль"
-        },
-        "confirm_password": {
-          "label": "Підтвердьте пароль",
-          "placeholder": "Повторіть новий пароль"
-        },
-        "errors": {
-          "mismatch": "Паролі не збігаються",
-          "policy_rejected": "Пароль не відповідає вимогам. Перевірте правила нижче"
-        },
-        "invalid": {
-          "title": "Посилання недійсне",
-          "body": "Посилання для відновлення пароля недійсне або його термін дії минув. Запросіть нове посилання.",
-          "request_new": "Запросити нове посилання"
-        }
       }
     }
   }

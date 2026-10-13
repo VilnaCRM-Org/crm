@@ -6,6 +6,7 @@ import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
+import { authFormsCacheGroup } from './scripts/auth-forms-chunk-group';
 import {
   documentHeaders,
   loadPolicy,
@@ -142,6 +143,9 @@ export default defineConfig({
   },
   splitChunks: {
     preset: 'default',
+    cacheGroups: {
+      authForms: authFormsCacheGroup(),
+    },
   },
   performance: {
     buildCache: true,

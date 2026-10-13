@@ -6,7 +6,8 @@ import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
 import CardBackControl from '@auth/components/reset-password/card-back-control';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 jest.mock('@auth/assets/chevron-left.svg', () => ({
@@ -19,7 +20,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
 
 const renderControl = (element: ReactElement): ReturnType<typeof render> =>
   render(
-    <I18nextProvider i18n={createLocaleI18n('uk')}>
+    <I18nextProvider i18n={createRecoveryLocaleI18n('uk')}>
       <MemoryRouter>
         <main>{element}</main>
       </MemoryRouter>
@@ -37,6 +38,14 @@ describe('CardBackControl', () => {
     expect(screen.getByRole('link', { name: 'Назад' })).toContainHTML('aria-hidden="true"');
   });
 
+  it('keeps its ink colour once the link target is visited', () => {
+    renderControl(<CardBackControl to="/sign-in" />);
+
+    const visited = styleRuleFor(screen.getByRole('link', { name: 'Назад' }), ':visited');
+
+    expect(visited?.getPropertyValue('color')).toBe('#404142');
+  });
+
   it('renders a native button in button mode and calls onClick on Enter and Space', async () => {
     const onClick = jest.fn();
     renderControl(<CardBackControl onClick={onClick} />);
@@ -49,6 +58,24 @@ describe('CardBackControl', () => {
     await userEvent.keyboard(' ');
 
     await waitFor(() => expect(onClick).toHaveBeenCalledTimes(2));
+  });
+
+  it.each([
+    ['link' as const, <CardBackControl key="link" to="/sign-in" />],
+    ['button' as const, <CardBackControl key="button" onClick={jest.fn()} />],
+  ])('draws a visible focus ring on keyboard focus in %s mode', async (role, element) => {
+    renderControl(element);
+
+    await userEvent.tab();
+
+    const control = screen.getByRole(role, { name: 'Назад' });
+    expect(control).toHaveFocus();
+    expect(control).toHaveClass('Mui-focusVisible');
+    expect(control).toHaveStyle({
+      outline: '2px solid #404142',
+      outlineOffset: '2px',
+      borderRadius: '0.25rem',
+    });
   });
 
   it.each([

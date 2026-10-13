@@ -134,25 +134,34 @@ test.describe('Password recovery request step (issue #315)', () => {
     });
   }
 
-  for (const [name, answer] of [
-    ['an HTTP 503', (route: Route): Promise<void> => route.fulfill({ status: 503, body: '' })],
-    ['an aborted request', (route: Route): Promise<void> => route.abort('failed')],
-  ] as const) {
-    test(`retries once with the same e-mail after ${name}`, async ({ page }) => {
-      test.info().annotations.push({ type: 'issue', description: '#315' });
-      const bodies = await answerResets(page, answer);
-      await page.goto(RECOVERY_URL);
+  async function expectSameEmailRetryAfter(page: Page, answer: Answer): Promise<void> {
+    test.info().annotations.push({ type: 'issue', description: '#315' });
+    const bodies = await answerResets(page, answer);
+    await page.goto(RECOVERY_URL);
 
-      await submitEmail(page);
-      await expect(page.getByRole('alert')).toHaveText(transient);
-      expect(bodies).toHaveLength(1);
+    await submitEmail(page);
+    await expect(page.getByRole('alert')).toHaveText(transient);
+    expect(bodies).toHaveLength(1);
 
-      await page.getByRole('button', { name: tryAgain }).click();
+    await page.getByRole('button', { name: tryAgain }).click();
 
-      await expect.poll(() => bodies.length).toBe(2);
-      expect(bodies[1]?.variables?.input?.email).toBe(EMAIL);
-    });
+    await expect.poll(() => bodies.length).toBe(2);
+    expect(bodies[1]?.variables?.input?.email).toBe(EMAIL);
   }
+
+  test('retries once with the same e-mail after an HTTP 503', async ({ page }) => {
+    await expectSameEmailRetryAfter(page, (route) => route.fulfill({ status: 503, body: '' }));
+  });
+
+  test.describe('dropped connection', () => {
+    // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
+    // behaviour under test and the second POST proves the first one never reached the backend.
+    test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
+
+    test('retries once with the same e-mail after an aborted request', async ({ page }) => {
+      await expectSameEmailRetryAfter(page, (route) => route.abort('failed'));
+    });
+  });
 
   test('aborts a request in flight when Назад is activated', async ({ page }) => {
     let aborted = false;

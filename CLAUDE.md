@@ -166,10 +166,11 @@ more project names.
   overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
-- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up` and
-  the three error pages (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so
-  the baselines are true 2.625× / 3× rasters and catch the asset and raster regressions that
-  CSS-scaled desktop snapshots average away. Baselines live in
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
+  two password recovery pages (`/password-recovery`, `/password-reset`) and the three error pages
+  (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so the baselines are true
+  2.625× / 3× rasters and catch the asset and raster regressions that CSS-scaled desktop snapshots
+  average away. Baselines live in
   `tests/visual/mobile/auth.spec.ts-snapshots/` and
   `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
 
@@ -1719,6 +1720,25 @@ Both are plain Node over the working tree — no Docker and no dev container, li
 `make lint-lockfile` and `make check-env-sync`. Catalogs are discovered by walking `src/`
 for folders named `i18n`, so a new feature is covered the moment it ships one.
 
+**Lazy catalogs are gated like eager ones, and scoped to their owners.** The single policy list
+[`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) names each catalog a route
+chunk registers at runtime instead of the merged file (see "Localization" under Architecture),
+as a `{ "catalog", "owners" }` entry; both the generator and the gate read it
+(`I18N_CATALOG_POLICY` overrides the path for fixtures). A lazy catalog still goes through checks
+1, 2 and the extra rejections below; check 3 expects it **absent** from
+`src/i18n/localization.json`, so a lazy key that leaks into the merged file is reported stale.
+Check 4 resolves a call site against the merged catalog plus **only** the lazy catalogs whose
+`owners` (files or folders under `src/`) cover that file. A lazy key used anywhere else fails as
+`[lazy-key-scope]`: the catalog exists at runtime only once an owning route module has registered
+it, so the same `t('password_policy.rules.length')` in a sign-up component would render the raw
+key on `/sign-up`. The owners are the two recovery route folders, the recovery component folders,
+`password-policy-rules.tsx`, `use-recovery-failure-banner.ts`, and the auth route contract
+`routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
+through `usePageTitle` after its module has registered the catalog). Adding an owner is a reviewed
+policy edit and must name a file only the registering routes import. A policy entry that names no
+discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
+unreadable or malformed policy fails the run before any check.
+
 **What the gate enforces:**
 
 1. **Locale completeness** — every `src/**/i18n/` catalog holds exactly the required locales
@@ -1845,6 +1865,26 @@ registry ("Adding a page" below); never eagerly import a page. Three checks fail
 - `RouteFallback`
   ([`tests/unit/components/route-fallback/route-fallback.test.tsx`](tests/unit/components/route-fallback/route-fallback.test.tsx))
   pins the deferred-paint and live-region behavior.
+
+**Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
+subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
+two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds one
+top-level `splitChunks.cacheGroups` entry, `authForms`, built by
+[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
+per module: its `test` admits a module only when both the `sign-in-form-section` and the
+`sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`. Its
+`chunks` filter also admits the two recovery form-section chunks, so a recovery route that needs
+one of those shared modules depends on the same `auth-forms` chunk — already cached after the
+usual `/sign-in` → "Forgot password" → `/password-recovery` path — instead of carrying its own
+copy. The trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads the whole
+`auth-forms` chunk, including sign-in/sign-up-only shared modules it does not run; no recovery
+URL is in the Lighthouse budget, `/sign-in` is. The chunk names live in that file and
+`tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule; the
+`performance serving` test pins the wiring and that the names equal the loaders'
+`webpackChunkName` values, so renaming a loader's chunk cannot silently disable the group. Chunk
+sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
+clears the mobile floor is decided by CI Lighthouse, not by a local build.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same
@@ -2519,9 +2559,30 @@ verified in CI.
 - **Source of truth**: `src/**/i18n/{en,uk}.json`, one catalog folder per feature or component
   (for example `src/modules/user/features/auth/i18n/` and `src/components/error-page/i18n/`).
   Both locales are mandatory and their key sets must stay identical.
-- **Derived artifact**: `src/i18n/localization.json`, the merge of every catalog into
+- **Derived artifact**: `src/i18n/localization.json`, the merge of every **eager** catalog into
   `{ [locale]: { translation: … } }` by `scripts/localization-generator.js`. It is committed,
   so a catalog edit is only half a change until the merged file is regenerated.
+- **Lazy catalogs**: a catalog listed in
+  [`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) (`lazyCatalogs`, paths
+  relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file
+  into the eager `index.js` every page downloads. Its route chunk imports it instead and
+  registers both locales synchronously when the route module evaluates — before the page's
+  `usePageTitle` runs — through a container-free `*Loader` singleton calling
+  `addResourceBundle`. The one lazy catalog today is the password-recovery copy
+  (`password_recovery.*`, `password_reset.*`, `password_policy.*`), owned by
+  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by the
+  `reset-password` and `create-new-password` route modules. The recovery keys were 3,742 B of the
+  minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about
+  3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone does not
+  restore the `/sign-in` headroom (that base already scored a median of about 0.8375 against the
+  0.84 mobile floor). Keep a key eager when a page outside those routes renders it
+  (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces
+  it. Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the
+  merged catalog only, exactly like an eager page, and tests of the recovery routes and their
+  components use `createRecoveryLocaleI18n`, so a lazy key leaking into an eager page renders raw
+  in that page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which
+  reads the policy and registers every lazy catalog from its JSON files) keep the copy available
+  for every story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.
