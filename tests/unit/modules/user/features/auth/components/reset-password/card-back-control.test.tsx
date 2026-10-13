@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router';
 
 import CardBackControl from '@auth/components/reset-password/card-back-control';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 jest.mock('@auth/assets/chevron-left.svg', () => ({
@@ -35,6 +36,14 @@ describe('CardBackControl', () => {
     expect(link).toHaveStyle({ minHeight: '1.5rem', color: 'rgb(64, 65, 66)' });
     expect(link).toHaveStyle({ fontSize: '0.9375rem', fontWeight: '500', lineHeight: '1.125rem' });
     expect(screen.getByRole('link', { name: 'Назад' })).toContainHTML('aria-hidden="true"');
+  });
+
+  it('keeps its ink colour once the link target is visited', () => {
+    renderControl(<CardBackControl to="/sign-in" />);
+
+    const visited = styleRuleFor(screen.getByRole('link', { name: 'Назад' }), ':visited');
+
+    expect(visited?.getPropertyValue('color')).toBe('#404142');
   });
 
   it('renders a native button in button mode and calls onClick on Enter and Space', async () => {

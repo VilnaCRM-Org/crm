@@ -23,18 +23,12 @@ export default {
       color: customColors.text.primary,
     },
 
+    '&:visited': { color: customColors.text.primary },
+
     '&:focus-visible, &.Mui-focusVisible': {
       outline: `2px solid ${customColors.text.primary}`,
       outlineOffset: '2px',
       borderRadius: '0.25rem',
-    },
-  },
-
-  resultHeading: {
-    outline: 'none',
-    '&:focus-visible': {
-      outline: `2px solid ${paletteColors.primary.main}`,
-      outlineOffset: '2px',
     },
   },
 
@@ -46,6 +40,7 @@ export default {
     letterSpacing: 0,
     color: customColors.text.dark,
     margin: '1rem 0 0.5rem',
+    '&:focus': { outline: 'none' },
   },
 
   resultBody: {
@@ -63,6 +58,10 @@ export default {
     width: '100%',
     height: '3.875rem',
     borderRadius: '3.5625rem',
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    textAlign: 'center',
+    '&:visited': { color: paletteColors.background.default },
 
     fontFamily: 'Golos',
     fontWeight: 600,
