@@ -6,14 +6,14 @@ const POLICY_LAZY_CATALOGS = require('../config/i18n-catalog-policy.json').lazyC
 );
 
 class LocalizationGenerator {
-  constructor(
+  constructor({
     i18nFolderName = 'i18n',
     modulesPath = 'src',
     localizationFile = 'localization.json',
     outputPath = 'src/i18n',
     requiredLocales = ['en', 'uk'],
-    lazyCatalogs = POLICY_LAZY_CATALOGS
-  ) {
+    lazyCatalogs = POLICY_LAZY_CATALOGS,
+  } = {}) {
     this.modulesPath = modulesPath;
     this.i18nFolderName = i18nFolderName;
     this.localizationFile = localizationFile;
