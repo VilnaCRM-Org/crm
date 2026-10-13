@@ -41,3 +41,8 @@ export interface ResetPasswordFormProps {
 export interface ResetPasswordEmailFieldProps {
   failure: RecoveryFailure | null;
 }
+
+export interface ResetPasswordSentStepProps {
+  maskedEmail: string | null;
+  onBack: () => void;
+}

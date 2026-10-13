@@ -149,6 +149,11 @@
     },
     "title": "Forgot your password?",
     "body": "Enter the e-mail address of your account",
-    "submitting": "Sending…"
+    "submitting": "Sending…",
+    "sent": {
+      "title": "Check your e-mail",
+      "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
+      "to_sign_in": "Go to sign-in"
+    }
   }
 }
