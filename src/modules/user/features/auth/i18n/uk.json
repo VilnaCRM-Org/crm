@@ -138,5 +138,9 @@
     "logo_alt": "Логотип VilnaCRM",
     "privacy": "Політика конфіденційності",
     "usage_policy": "Умови користування"
+  },
+  "password_recovery": {
+    "back": "Назад",
+    "submit_button": "Підтвердити"
   }
 }

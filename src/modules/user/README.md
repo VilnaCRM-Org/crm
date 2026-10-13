@@ -241,6 +241,20 @@ touches `useAuthStore`.
 
 **Rejected.** Redirecting signed-in users away (breaks a link opened in a signed-in browser).
 
+### The "Назад" colour overrides the Figma token
+
+**Context.** Figma `72:5605` draws the "Назад" row of the recovery cards in `Font/300`
+`#969B9D`, about 2.8:1 on white, below WCAG 1.4.3.
+
+**Decision.** `CardBackControl` renders the text and chevron in `Font/200` `#404142`
+(`customColors.text.primary`, about 10:1), keeping the Golos Medium 15/18 type of the frame. The
+design owner is asked to confirm the token. The primary result links ("До входу", "Запросити
+нове посилання") keep the Figma pill, white on `#1EAEFF` (2.45:1); one scoped `color-contrast`
+entry in `A11Y_EXCEPTIONS` covers exactly those two links under issue #276.
+
+**Rejected.** Shipping the Figma grey (fails WCAG 1.4.3); a second contrast exception for the
+back row.
+
 ### No feature flag
 
 **Context.** The planning bundle kept a `forgotPassword` flag `false` by default and enabled it
