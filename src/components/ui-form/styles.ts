@@ -10,6 +10,15 @@ export default {
     },
   },
 
+  errorAction: {
+    marginBottom: '1rem',
+    textTransform: 'none',
+    '&:focus-visible, &.Mui-focusVisible': {
+      outline: `2px solid ${customColors.text.primary}`,
+      outlineOffset: '2px',
+    },
+  },
+
   formTitle: {
     fontSize: '1.375rem',
     fontFamily: 'Golos',

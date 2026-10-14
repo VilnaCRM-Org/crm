@@ -3,7 +3,7 @@ import { TFunction } from 'i18next';
 import formValidators from '@auth/components/form-section/validations';
 import emailValidator from '@auth/components/form-section/validations/email';
 
-import emptyUser from './constants';
+import emptyUser, { EMPTY_FIELD_VALUES } from './constants';
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,
@@ -160,20 +160,8 @@ describe('email validation', () => {
     });
 
     describe('empty email', () => {
-      it('should return required error for empty string', () => {
-        expect(validators.email('', emptyUser)).toBe('sign_up.form.email_input.required');
-      });
-
-      it('should return required error for undefined', () => {
-        expect(validators.email(undefined as unknown as string, emptyUser)).toBe(
-          'sign_up.form.email_input.required'
-        );
-      });
-
-      it('should return required error for null', () => {
-        expect(validators.email(null as unknown as string, emptyUser)).toBe(
-          'sign_up.form.email_input.required'
-        );
+      it.each(EMPTY_FIELD_VALUES)('should return required error for %s', (_, email) => {
+        expect(validators.email(email, emptyUser)).toBe('sign_up.form.email_input.required');
       });
     });
 
