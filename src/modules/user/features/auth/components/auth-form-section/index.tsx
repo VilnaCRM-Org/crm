@@ -1,8 +1,9 @@
+import { Box } from '@mui/material';
 import type { JSX } from 'react';
 
-import AuthCard from '@auth/components/auth-card';
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
 import InertBox from '@auth/components/form-section/inert-box';
+import styles from '@auth/components/form-section/styles';
 import type { AuthFormSectionProps } from '@auth/types/auth-form-section';
 
 export default function AuthFormSection({
@@ -12,11 +13,14 @@ export default function AuthFormSection({
   switcher,
 }: AuthFormSectionProps): JSX.Element {
   return (
-    <AuthCard page={page} after={switcher}>
-      {children}
-      <InertBox id="auth-provider-buttons-container" inert={oauthInert}>
-        <AuthProviderButtons />
-      </InertBox>
-    </AuthCard>
+    <Box component="section" sx={styles.formSection}>
+      <Box id="auth-form-card" sx={[styles.formWrapper, styles.formWrapperBottomPadding[page]]}>
+        {children}
+        <InertBox id="auth-provider-buttons-container" inert={oauthInert}>
+          <AuthProviderButtons />
+        </InertBox>
+      </Box>
+      {switcher}
+    </Box>
   );
 }

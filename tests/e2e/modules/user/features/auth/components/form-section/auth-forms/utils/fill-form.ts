@@ -1,6 +1,6 @@
 import { Locator, Page, expect } from '@playwright/test';
 
-import type { SignUpDto } from '@/modules/user';
+import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 
 import {
   placeholderInitials,
@@ -18,7 +18,7 @@ type FieldExpectation<T extends 'email' | 'password'> = {
   errorText: string;
 } & Record<T, string>;
 
-export async function fillInitialsInput(page: Page, user: SignUpDto): Promise<void> {
+export async function fillInitialsInput(page: Page, user: RegisterUserDto): Promise<void> {
   const initialsInput: Locator = page.getByPlaceholder(placeholderInitials);
   await page.locator('button', { hasText: signUpButton }).click();
 
@@ -49,13 +49,13 @@ async function assertFieldErrors<T extends 'email' | 'password'>(
   }
 }
 
-export async function fillEmailInput(page: Page, user: SignUpDto): Promise<void> {
+export async function fillEmailInput(page: Page, user: RegisterUserDto): Promise<void> {
   const emailInput: Locator = page.getByPlaceholder(placeholderEmail);
   await assertFieldErrors(page, emailInput, expectationsEmail, 'email');
   await emailInput.fill(user.email);
 }
 
-export async function fillPasswordInput(page: Page, user: SignUpDto): Promise<void> {
+export async function fillPasswordInput(page: Page, user: RegisterUserDto): Promise<void> {
   const passwordInput: Locator = page.getByPlaceholder(placeholderPassword);
   await assertFieldErrors(page, passwordInput, expectationsPassword, 'password');
   await passwordInput.fill(user.password);

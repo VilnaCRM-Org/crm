@@ -1,29 +1,18 @@
 import type { TFunction } from 'i18next';
 import { FieldValues, Validate } from 'react-hook-form';
 
-import type {
-  PasswordRuleResult,
-  PasswordRuleResultSet,
-  Rule,
-  ValidationPswdMessageKey,
-} from '@auth/types/validations/password';
+import type { Rule, ValidationPswdMessageKey } from '@auth/types/validations/password';
 
 class PasswordValidator {
   private readonly rules: Rule[] = [
     { check: (v) => v.length >= 8 && v.length <= 64, key: 'invalidLength' },
     { check: (v) => /[0-9]/.test(v), key: 'numberRequired' },
-    { check: (v) => /[A-Z]/.test(v), key: 'uppercaseRequired' },
+    { check: (v) => /\p{Lu}/u.test(v), key: 'uppercaseRequired' },
     { check: (v) => /\p{Ll}/u.test(v), key: 'lowercaseRequired' },
   ];
 
   public create<TFieldValues extends FieldValues>(t: TFunction): Validate<string, TFieldValues> {
     return (value: string) => this.run(value, this.buildMessages(t));
-  }
-
-  public evaluate(value: string): PasswordRuleResultSet {
-    const items: PasswordRuleResult[] = [];
-    for (const rule of this.rules) items.push({ key: rule.key, met: rule.check(value) });
-    return { items };
   }
 
   private buildMessages(t: TFunction): Record<ValidationPswdMessageKey, string> {

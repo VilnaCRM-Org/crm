@@ -102,7 +102,8 @@
             "error_length": "Please enter a password between 8 and 64 characters",
             "error_numbers": "Please include at least one digit",
             "error_uppercase": "Please add at least one uppercase Latin letter (A–Z)",
-            "error_lowercase": "Please include at least one lowercase letter"
+            "error_lowercase": "Please include at least one lowercase letter",
+            "error_line_break": "Please remove line breaks from the password"
           },
           "password_tip": {
             "alt": "Password tip icon",
@@ -148,6 +149,9 @@
           "submitting": "Signing in…",
           "remember_me": "Remember me",
           "forgot_password": "Forgot password?"
+        },
+        "notices": {
+          "password_reset": "Your password has been changed. Sign in with your new password."
         }
       },
       "notifications": {
@@ -191,23 +195,6 @@
         "logo_alt": "VilnaCRM logo",
         "privacy": "Privacy Policy",
         "usage_policy": "Terms of Use"
-      },
-      "password_recovery": {
-        "back": "Back",
-        "submit_button": "Confirm",
-        "errors": {
-          "rate_limited": "Too many requests. Please try again later.",
-          "transient": "The request could not be sent. Check your connection and try again.",
-          "email_rejected": "Check the e-mail address and try again"
-        },
-        "title": "Forgot your password?",
-        "body": "Enter the e-mail address of your account",
-        "submitting": "Sending…",
-        "sent": {
-          "title": "Check your e-mail",
-          "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
-          "to_sign_in": "Go to sign-in"
-        }
       }
     }
   },
@@ -314,7 +301,8 @@
             "error_length": "Будь ласка, введіть від 8 до 64 символів",
             "error_numbers": "Будь ласка, додайте принаймні одну цифру",
             "error_uppercase": "Будь ласка, додайте принаймні одну велику латинську літеру (A–Z)",
-            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру"
+            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру",
+            "error_line_break": "Будь ласка, приберіть розриви рядків із пароля"
           },
           "password_tip": {
             "alt": "Іконка підказки пароля",
@@ -360,6 +348,9 @@
           "submitting": "Вхід…",
           "remember_me": "Запамʼятати мене",
           "forgot_password": "Забули пароль?"
+        },
+        "notices": {
+          "password_reset": "Пароль змінено. Увійдіть з новим паролем."
         }
       },
       "notifications": {
@@ -403,23 +394,6 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
-      },
-      "password_recovery": {
-        "back": "Назад",
-        "submit_button": "Підтвердити",
-        "errors": {
-          "rate_limited": "Забагато запитів. Спробуйте пізніше.",
-          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз.",
-          "email_rejected": "Перевірте адресу електронної пошти та спробуйте ще раз"
-        },
-        "title": "Забули пароль?",
-        "body": "Введіть адресу поштової скриньки вашого акаунту",
-        "submitting": "Надсилання…",
-        "sent": {
-          "title": "Перевірте пошту",
-          "body": "Ми надіслали листа на адресу {{email}}. Перевірте пошту та дотримуйтесь інструкцій у листі.",
-          "to_sign_in": "До входу"
-        }
       }
     }
   }

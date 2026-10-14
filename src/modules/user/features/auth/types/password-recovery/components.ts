@@ -1,6 +1,7 @@
 import type { SxProps, Theme } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import type { CreateNewPasswordDto } from '@/modules/user/types/user/create-new-password-dto';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
 import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
 
@@ -13,10 +14,17 @@ export interface InCardLinkProps {
   children: ReactNode;
 }
 
-export interface CardBackControlProps {
-  to?: string | undefined;
-  onClick?: (() => void) | undefined;
+export interface CardBackLinkProps {
+  to: string;
+  onClick?: never;
 }
+
+export interface CardBackButtonProps {
+  to?: never;
+  onClick: () => void;
+}
+
+export type CardBackControlProps = CardBackLinkProps | CardBackButtonProps;
 
 export interface RecoveryResultAction {
   readonly label: string;
@@ -45,4 +53,16 @@ export interface ResetPasswordEmailFieldProps {
 export interface ResetPasswordSentStepProps {
   maskedEmail: string | null;
   onBack: () => void;
+}
+
+export interface CreateNewPasswordFormProps {
+  token: string;
+  onSubmit: (dto: CreateNewPasswordDto) => Promise<void>;
+  onRetry: () => Promise<void>;
+  failure: RecoveryFailure | null;
+  isSubmitting: boolean;
+}
+
+export interface CreateNewPasswordFieldsProps {
+  failure: RecoveryFailure | null;
 }

@@ -10,11 +10,6 @@ export default {
     },
   },
 
-  errorAction: {
-    marginBottom: '1rem',
-    textTransform: 'none',
-  },
-
   formTitle: {
     fontSize: '1.375rem',
     fontFamily: 'Golos',

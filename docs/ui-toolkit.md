@@ -423,8 +423,8 @@ focus outline on `:focus-visible`. `appearance="text"` drops the fixed 1130 px f
 (R17) and the `sm` rule, so neither applies to it. It is adopted behind a new narrow seam,
 `src/components/ui-text-link` (`UITextLink`, `href` and `children` only), used by the
 sign-in "Забули пароль?" link, which renders unconditionally since the `forgotPassword` flag was
-removed (#309). It points at `/password-recovery`, which lands on the not-found page until #315
-registers the route. CRM's `ui-link` keeps its local seam and stays on the register. One
+removed (#309). It points at `/password-recovery`, the recovery page #315 registers. CRM's `ui-link`
+keeps its local seam and stays on the register. One
 CRM-side delta sits on the seam: `src/index.css` paints every `a:visited` with
 `--mui-palette-deep-blue`, which outranks the toolkit's class-only colour, so the seam passes
 `sx` that keeps `#1EAEFF` on `:visited:not(:hover):not(:active)` (the toolkit hover and active

@@ -15,6 +15,7 @@ export class PiiScrubber {
     /[^\s@]+@[^\s@]+\.[^\s@]+/g,
     /bearer\s+[\w.\-~+/]+=*/gi,
     /eyJ[\w-]+\.[\w-]+\.[\w-]+/g,
+    /(?<=token=)[^&#\s]+/gi,
   ];
 
   public scrub(event: SentryEvent): SentryEvent {

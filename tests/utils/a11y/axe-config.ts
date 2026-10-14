@@ -71,12 +71,4 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
       'Error-page status digits: #1EAEFF / #FFC01E on #FBFBFB are 2.37:1 / 1.58:1; design-owned.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
-  {
-    ruleId: 'color-contrast',
-    selector:
-      '#auth-form-card > a.MuiButton-contained[href="/sign-in"], ' +
-      '#auth-form-card > a.MuiButton-contained[href="/password-recovery"]',
-    reason: 'Submit button is white on the Figma primary #1EAEFF (2.45:1); token owned by design.',
-    trackingUrl: PALETTE_CONTRAST_ISSUE,
-  },
 ];

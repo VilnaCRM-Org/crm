@@ -7,13 +7,11 @@ import { t } from '../../../../utils/initialize-localization';
 
 const SIGN_IN_URL = '/sign-in';
 const SIGN_UP_URL = '/sign-up';
-const PASSWORD_RECOVERY_URL = '/password-recovery';
 
 const offlineNotice: string = t('offline_notice.offline');
 const restoredNotice: string = t('offline_notice.restored');
 const signInSubmit: string = t('sign_in.form.submit_button');
 const signUpSubmit: string = t('sign_up.form.submit_button');
-const recoverySubmit: string = t('password_recovery.submit_button');
 
 function submitButton(page: Page, label: string): ReturnType<Page['locator']> {
   return page.locator('form button[type="submit"]', { hasText: label });
@@ -41,7 +39,6 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
   for (const [url, label] of [
     [SIGN_IN_URL, signInSubmit],
     [SIGN_UP_URL, signUpSubmit],
-    [PASSWORD_RECOVERY_URL, recoverySubmit],
   ] as const) {
     test(`disables the submit on ${url} while offline and restores it online`, async ({
       page,
