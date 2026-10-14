@@ -1,19 +1,8 @@
-import { useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
-
+import useServerFieldError from '@auth/hooks/use-server-field-error';
 import type { ServerFieldErrorProps } from '@auth/types/components/server-field-error';
 
-export default function ServerFieldError({ name, message }: ServerFieldErrorProps): null {
-  const { setError, setFocus, clearErrors, getFieldState } = useFormContext();
-
-  useEffect(() => {
-    if (message !== null) {
-      setError(name, { type: 'server', message });
-      setFocus(name);
-      return;
-    }
-    if (getFieldState(name).error?.type === 'server') clearErrors(name);
-  }, [message, name, setError, setFocus, clearErrors, getFieldState]);
+export default function ServerFieldError(props: ServerFieldErrorProps): null {
+  useServerFieldError(props);
 
   return null;
 }
