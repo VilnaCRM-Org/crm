@@ -170,8 +170,8 @@ Stages 5 and 6 and all correction passes ran on Opus.
 ## Main-agent decisions
 
 - **2026-10-05, the user's decision: mock GraphQL until user-service releases.** "We will mock it
-  to work in the front end as the user service is not released." The frontend is built and
-  working now against mocked GraphQL: one pending schema extension, copied verbatim from
+  to work in the front end as the user service is not released." The plan builds the frontend
+  against mocked GraphQL: one pending schema extension, copied verbatim from
   user-service `main`, feeds codegen and the local Apollo mock until the pin bump deletes it.
   GraphQL-only stays; no REST. The shipped `forgotPassword` default stays `false` so production
   never reaches a flow its user-service cannot serve; the test stack enables it. The pin bump is
@@ -193,6 +193,12 @@ Stages 5 and 6 and all correction passes ran on Opus.
   renders in `#404142` instead of the failing Figma grey.
 - The six follow-ups are kept outside the bmalph story grammar so Ralph never dispatches them.
 - The ADR is ADR-019 because open PR #311 claims ADR-018.
+
+> Revision 2026-10-13: no ADR-019 and no flag. Every ADR from 003 up was deleted on PR #333 (user
+> decision); the durable decisions live in the `## Password recovery decisions` section of
+> `src/modules/user/README.md` and the drift gate passes through a `[no-adr]` line in the
+> pull-request body (PRD NFR-16). Issue #309 deleted the `forgotPassword` flag before this
+> feature was built, so the flag decisions above no longer apply and both routes ship unflagged.
 
 ## Open questions, warnings, blockers
 

@@ -213,6 +213,12 @@ used or mismatched).
   ADR recording the GraphQL transport, the pending extension, uniform response, token handling
   and retry policy.
 
+Revision 2026-10-13: no ADR and no flag step. Every ADR from 003 up was deleted on PR #333 (user
+decision), so the durable decisions above live in the `## Password recovery decisions` section of
+`src/modules/user/README.md` and the drift gate passes through a `[no-adr]` line in the
+pull-request body (PRD NFR-16). Issue #309 deleted the `forgotPassword` flag before this feature
+was built, so both routes ship unflagged.
+
 > Assumption: the password policy for sign-up is not changed here. Registration hits the same
 > user-service rules, so the recommendation to the PRD and architecture stages is one shared
 > password policy for both forms; whether sign-up adopts it is their decision (research Q3).

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -33,9 +33,21 @@ function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   );
 }
 
-const mountForm = (
-  overrides: Partial<CreateNewPasswordFormProps> = {}
-): CreateNewPasswordFormProps => {
+interface MountedForm extends CreateNewPasswordFormProps {
+  readonly rerenderWith: (overrides: Partial<CreateNewPasswordFormProps>) => void;
+}
+
+const formFor = (props: CreateNewPasswordFormProps): JSX.Element => (
+  <CreateNewPasswordForm
+    token={props.token}
+    onSubmit={props.onSubmit}
+    onRetry={props.onRetry}
+    failure={props.failure}
+    isSubmitting={props.isSubmitting}
+  />
+);
+
+const mountForm = (overrides: Partial<CreateNewPasswordFormProps> = {}): MountedForm => {
   const props: CreateNewPasswordFormProps = {
     token: buildResetToken(),
     onSubmit: jest.fn().mockResolvedValue(undefined),
@@ -44,18 +56,11 @@ const mountForm = (
     isSubmitting: false,
     ...overrides,
   };
-  render(
-    <CreateNewPasswordForm
-      token={props.token}
-      onSubmit={props.onSubmit}
-      onRetry={props.onRetry}
-      failure={props.failure}
-      isSubmitting={props.isSubmitting}
-    />,
-    { wrapper: Wrapper }
-  );
-  return props;
+  const { rerender } = render(formFor(props), { wrapper: Wrapper });
+  return { ...props, rerenderWith: (next) => rerender(formFor({ ...props, ...next })) };
 };
+
+const MISMATCH = 'Паролі не збігаються';
 
 const newPassword = (): HTMLElement => screen.getByLabelText('Новий пароль');
 const confirmation = (): HTMLElement => screen.getByLabelText('Підтвердьте пароль');
@@ -122,6 +127,54 @@ describe('CreateNewPasswordForm', () => {
     await waitFor(() => expect(screen.queryByText('Паролі не збігаються')).not.toBeInTheDocument());
   });
 
+  it('shows the mismatch again when the new password diverges after matching', async () => {
+    mountForm();
+    await userEvent.type(newPassword(), VALID);
+    await userEvent.type(confirmation(), `${VALID}x`);
+    await userEvent.click(submit());
+    await userEvent.type(newPassword(), 'x');
+    await waitFor(() => expect(screen.queryByText(MISMATCH)).not.toBeInTheDocument());
+
+    await userEvent.type(newPassword(), 'y');
+
+    expect(await screen.findByText(MISMATCH)).toBeInTheDocument();
+  });
+
+  it('rechecks a touched confirmation on a new-password change before any submit', async () => {
+    const { onSubmit } = mountForm();
+    await userEvent.type(newPassword(), VALID);
+    await userEvent.type(confirmation(), `${VALID}x`);
+    await userEvent.tab();
+    expect(await screen.findByText(MISMATCH)).toBeInTheDocument();
+
+    fireEvent.change(newPassword(), { target: { value: `${VALID}x` } });
+
+    await waitFor(() => expect(screen.queryByText(MISMATCH)).not.toBeInTheDocument());
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('rechecks an untouched confirmation once the form was submitted', async () => {
+    mountForm();
+    fireEvent.change(newPassword(), { target: { value: VALID } });
+    fireEvent.change(confirmation(), { target: { value: `${VALID}x` } });
+    fireEvent.click(submit());
+    expect(await screen.findByText(MISMATCH)).toBeInTheDocument();
+
+    fireEvent.change(newPassword(), { target: { value: `${VALID}x` } });
+
+    await waitFor(() => expect(screen.queryByText(MISMATCH)).not.toBeInTheDocument());
+  });
+
+  it('leaves an untouched confirmation alone while the new password changes', async () => {
+    mountForm();
+    fireEvent.change(confirmation(), { target: { value: `${VALID}x` } });
+
+    fireEvent.change(newPassword(), { target: { value: VALID } });
+
+    await waitFor(() => expect(newPassword()).toHaveValue(VALID));
+    expect(screen.queryByText(MISMATCH)).not.toBeInTheDocument();
+  });
+
   it('hands the DTO values to onSubmit on a valid submit', async () => {
     const { onSubmit, token } = mountForm();
     await userEvent.type(newPassword(), VALID);
@@ -137,8 +190,14 @@ describe('CreateNewPasswordForm', () => {
   });
 
   it('puts a policy rejection on the new-password field and keeps both values', async () => {
-    mountForm({ failure: { reason: 'policy_rejected', retryable: false } });
+    const { rerenderWith } = mountForm();
+    await userEvent.type(newPassword(), VALID);
+    await userEvent.type(confirmation(), VALID);
 
+    rerenderWith({ failure: { reason: 'policy_rejected', retryable: false } });
+
+    expect(newPassword()).toHaveValue(VALID);
+    expect(confirmation()).toHaveValue(VALID);
     expect(
       await screen.findByText('Пароль не відповідає вимогам. Перевірте правила нижче')
     ).toBeInTheDocument();

@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-08
+revised: 2026-10-13
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -993,12 +993,13 @@ apollo-server suite; no browser lane depends on it.
 > `src/modules/user/README.md` instead, and `make check-adr-drift` passes through a `[no-adr]`
 > line in the pull-request body. ADR numbers cited below no longer exist as files.
 
-An ADR records the durable decisions (GraphQL transport, classification of GraphQL errors in the
-data-access layer, uniform outcome, token in memory with URL strip and no cache write, no transport
-retry, shared API-mirroring policy, signed-in access allowed, the pending schema extension and
-its removal, no runtime flag) and is listed in `docs/adr/README.md` with
-`@kravalg` as decider; the change touches `.dependency-cruiser.js` (the two feature folders), a
-path the drift gate treats as significant, while nothing under `src/config/**` changes.
+The `## Password recovery decisions` section of `src/modules/user/README.md` records the durable
+decisions (GraphQL transport, classification of GraphQL errors in the data-access layer, uniform
+outcome, token in memory with URL strip and no cache write, no transport retry, shared
+API-mirroring policy, signed-in access allowed, the pending schema extension and its removal, no
+runtime flag); no ADR is added. The change touches `.dependency-cruiser.js` (the two feature
+folders), a path the drift gate treats as significant, while nothing under `src/config/**`
+changes, so the pull-request body carries the `[no-adr]` line.
 `docs/feature-flags.md`, `src/api/contracts/README.md` (the pending contract), the user module
 README and the routes README are updated; `make lint-docs` and markdownlint report zero
 findings. Commit headers stay ≤ 100 characters with the issue scope; the repository is

@@ -33,6 +33,8 @@ import { collectKeyReferences, pluralFamily, resolvesKey } from './i18n-key-scan
 import { findDuplicateKeys } from './json-duplicate-keys.mjs';
 
 const requireCjs = createRequire(import.meta.url);
+const LocalizationGenerator = requireCjs('../localization-generator.js');
+const catalogMerger = new LocalizationGenerator();
 
 const REQUIRED_LOCALES = ['en', 'uk'];
 const CATALOG_DIR = 'i18n';
@@ -83,16 +85,6 @@ function leafKeys(value) {
 
 function pluralFamilies(value) {
   return new Set([...leafKeys(value)].map(pluralFamily));
-}
-
-function mergeInto(target, source) {
-  for (const [key, value] of Object.entries(source)) {
-    target[key] =
-      isPlainObject(value) && isPlainObject(target[key])
-        ? mergeInto({ ...target[key] }, value)
-        : value;
-  }
-  return target;
 }
 
 function formatKeys(keys) {
@@ -337,7 +329,6 @@ function silenceWarnings(run) {
 function regenerateInMemory(scanRoot, lazyCatalogs) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-parity-'));
   try {
-    const LocalizationGenerator = requireCjs('../localization-generator.js');
     const generator = new LocalizationGenerator({
       i18nFolderName: CATALOG_DIR,
       modulesPath: scanRoot,
@@ -422,8 +413,8 @@ function translationsWith(merged, lazyCatalogs) {
     REQUIRED_LOCALES.map((locale) => [
       locale,
       lazyCatalogs.reduce(
-        (translation, catalog) => mergeInto(translation, catalog.locales[locale] ?? {}),
-        mergeInto({}, localeTranslation(merged, locale) ?? {})
+        (translation, catalog) => catalogMerger.deepMerge(translation, catalog.locales[locale]),
+        structuredClone(localeTranslation(merged, locale) ?? {})
       ),
     ])
   );

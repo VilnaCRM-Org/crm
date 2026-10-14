@@ -45,7 +45,9 @@ async function openNewPasswordForm(page: Page): Promise<void> {
 async function expectDarkRing(page: Page, name: string): Promise<void> {
   const target = page.getByRole('button', { name });
   await expect(target).toBeFocused();
+  await expect(target).toHaveCSS('outline-style', 'solid');
   await expect(target).toHaveCSS('outline-width', '2px');
+  await expect(target).toHaveCSS('outline-color', 'rgb(64, 65, 66)');
 }
 
 test.describe('Password recovery keyboard contract (issue #315)', () => {

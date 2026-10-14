@@ -56,9 +56,10 @@ async function openReset(page: Page): Promise<Locator> {
   return page.getByRole('button', { name: submitLabel });
 }
 
-async function expectHeightAtLeast(locator: Locator, minimum: number): Promise<void> {
+async function expectTargetAtLeast(locator: Locator, minimum: number): Promise<void> {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
+  expect(box?.width ?? 0).toBeGreaterThanOrEqual(minimum);
   expect(box?.height ?? 0).toBeGreaterThanOrEqual(minimum);
 }
 
@@ -118,14 +119,14 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await answer(page, 'RequestPasswordReset', (route) => route.fulfill({ status: 503, body: '' }));
     const submit = await openRequest(page);
 
-    await expectHeightAtLeast(page.getByPlaceholder(emailPlaceholder), MIN_TOUCH_TARGET_PX);
-    await expectHeightAtLeast(submit, MIN_TOUCH_TARGET_PX);
-    await expectHeightAtLeast(page.getByRole('link', { name: backLabel }), MIN_SMALL_TARGET_PX);
+    await expectTargetAtLeast(page.getByPlaceholder(emailPlaceholder), MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(submit, MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(page.getByRole('link', { name: backLabel }), MIN_SMALL_TARGET_PX);
 
     await typeByTap(page.getByPlaceholder(emailPlaceholder), EMAIL);
     await submit.tap();
     await expect(page.getByRole('alert')).toHaveText(transient);
-    await expectHeightAtLeast(page.getByRole('button', { name: tryAgain }), MIN_SMALL_TARGET_PX);
+    await expectTargetAtLeast(page.getByRole('button', { name: tryAgain }), MIN_SMALL_TARGET_PX);
   });
 
   test('keeps the sent-step link tappable', async ({ page }) => {
@@ -134,15 +135,15 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await typeByTap(page.getByPlaceholder(emailPlaceholder), EMAIL);
     await submit.tap();
 
-    await expectHeightAtLeast(page.getByRole('link', { name: toSignIn }), MIN_SMALL_TARGET_PX);
+    await expectTargetAtLeast(page.getByRole('link', { name: toSignIn }), MIN_SMALL_TARGET_PX);
   });
 
   test('keeps the reset controls tappable', async ({ page }) => {
     const submit = await openReset(page);
 
-    await expectHeightAtLeast(page.getByLabel(newPasswordLabel), MIN_TOUCH_TARGET_PX);
-    await expectHeightAtLeast(page.getByLabel(confirmLabel), MIN_TOUCH_TARGET_PX);
-    await expectHeightAtLeast(submit, MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(page.getByLabel(newPasswordLabel), MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(page.getByLabel(confirmLabel), MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(submit, MIN_TOUCH_TARGET_PX);
   });
 
   test('renders both pages without horizontal overflow', async ({ page }) => {
@@ -156,6 +157,8 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
   test('keeps the submit reachable at keyboard height', async ({ page }) => {
     const size = page.viewportSize();
     const submit = await openReset(page);
+    const field = page.getByLabel(newPasswordLabel);
+    await field.tap();
     await page.setViewportSize({
       width: size?.width ?? 390,
       height: Math.round((size?.height ?? 664) * KEYBOARD_VIEWPORT_RATIO),
@@ -163,6 +166,7 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
 
     await submit.scrollIntoViewIfNeeded();
 
+    await expect(field).toBeFocused();
     await expect(submit).toBeInViewport();
   });
 });

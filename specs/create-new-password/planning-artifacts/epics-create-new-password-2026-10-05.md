@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-08
+revised: 2026-10-13
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'

@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import path from 'node:path';
 
 import { ApolloServer, BaseContext } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
@@ -18,6 +17,7 @@ export type ApolloServerInstance = ApolloServer<BaseContext> | undefined;
 
 interface StartServerOptions {
   schemaFilePath: string;
+  pendingSchemaFilePath: string;
 }
 
 export interface StartServerResult {
@@ -26,11 +26,11 @@ export interface StartServerResult {
 }
 
 const parsedTimeout = Number(process.env.GRACEFUL_SHUTDOWN_TIMEOUT);
-const PENDING_SCHEMA_FILE_PATH = path.resolve('src/api/contracts/pending/password-reset.graphql');
 const TIMEOUT = Number.isFinite(parsedTimeout) ? Math.max(1000, Math.floor(parsedTimeout)) : 10000;
 
 export async function startServer({
   schemaFilePath,
+  pendingSchemaFilePath,
 }: StartServerOptions): Promise<StartServerResult> {
   const typeDefs: string = fs.readFileSync(schemaFilePath, 'utf-8');
 
@@ -43,7 +43,7 @@ export async function startServer({
   }
 
   const server = new ApolloServer<BaseContext>({
-    typeDefs: [typeDefs, fs.readFileSync(PENDING_SCHEMA_FILE_PATH, 'utf-8')],
+    typeDefs: [typeDefs, fs.readFileSync(pendingSchemaFilePath, 'utf-8')],
     resolvers,
     csrfPrevention: true,
     formatError,
@@ -161,9 +161,11 @@ export async function setupUnhandledRejectionHandler(server: ApolloServerInstanc
 
 let isShuttingDown = false;
 
-export async function initializeServer(schemaFilePath: string): Promise<ApolloServer<BaseContext>> {
+export async function initializeServer(
+  options: StartServerOptions
+): Promise<ApolloServer<BaseContext>> {
   try {
-    const { server } = await startServer({ schemaFilePath });
+    const { server } = await startServer(options);
 
     await setupUnhandledRejectionHandler(server);
 
