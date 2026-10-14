@@ -26,17 +26,16 @@ function InvalidLink(): JSX.Element {
 }
 
 export default function CreateNewPasswordFormSection(): JSX.Element {
-  const token = useResetToken();
-  const state = useCreateNewPassword(useAuthProviderLoader(), token);
+  const state = useCreateNewPassword(useAuthProviderLoader(), useResetToken());
 
   return (
     <AuthCard>
       <CardBackControl to={ROUTE_PATHS.signIn} />
-      {state.view === 'invalid' || token === null ? (
+      {state.view === 'invalid' ? (
         <InvalidLink />
       ) : (
         <CreateNewPasswordForm
-          token={token}
+          token={state.token}
           onSubmit={state.callbacks.submit}
           onRetry={state.callbacks.retry}
           failure={state.failure}

@@ -65,7 +65,7 @@ describe('ResetPasswordFormSection', () => {
   it('renders the request form with Назад linking to /sign-in', async () => {
     const view = render(<ResetPasswordFormSection />, { wrapper: Wrapper });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Забули пароль?' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Забули пароль?' })).not.toHaveFocus();
     expect(screen.getByRole('link', { name: 'Назад' })).toHaveAttribute('href', '/sign-in');
     await expectNoA11yViolations(view.container);
   });

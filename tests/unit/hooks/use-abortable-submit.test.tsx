@@ -18,6 +18,47 @@ const deferred = (): Deferred => {
 };
 
 describe('useAbortableSubmit', () => {
+  it('starts idle before any submit', () => {
+    const run = jest.fn(async () => 'never');
+    const { result } = renderHook(() => useAbortableSubmit(run));
+
+    expect(result.current.isSubmitting).toBe(false);
+  });
+
+  it('submits through the run of the latest render', async () => {
+    const first = jest.fn(async (input: string) => `first:${input}`);
+    const latest = jest.fn(async (input: string) => `latest:${input}`);
+    const { result, rerender } = renderHook(({ run }) => useAbortableSubmit(run), {
+      initialProps: { run: first },
+    });
+
+    rerender({ run: latest });
+
+    await act(async () => {
+      await expect(result.current.submit('input')).resolves.toBe('latest:input');
+    });
+    expect(first).not.toHaveBeenCalled();
+  });
+
+  it('retries through the run of the latest render', async () => {
+    const first = jest.fn(async (input: string) => `first:${input}`);
+    const latest = jest.fn(async (input: string) => `latest:${input}`);
+    const { result, rerender } = renderHook(({ run }) => useAbortableSubmit(run), {
+      initialProps: { run: first },
+    });
+    await act(async () => {
+      await result.current.submit('input');
+    });
+
+    rerender({ run: latest });
+
+    await act(async () => {
+      await expect(result.current.retry()).resolves.toBe('latest:input');
+    });
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(latest).toHaveBeenCalledTimes(1);
+  });
+
   it('runs with the input and a fresh signal and tracks isSubmitting', async () => {
     const pending = deferred();
     const run = jest.fn<Promise<string>, [string, AbortSignal]>(() => pending.promise);
@@ -68,6 +109,19 @@ describe('useAbortableSubmit', () => {
     expect(run).toHaveBeenCalledTimes(2);
     expect(run.mock.calls[1]?.[0]).toBe('input');
     expect(run.mock.calls[1]?.[1]).not.toBe(run.mock.calls[0]?.[1]);
+  });
+
+  it('resolves null and runs nothing on a retry after the last input is forgotten', async () => {
+    const run = jest.fn(async (input: string) => input);
+    const { result } = renderHook(() => useAbortableSubmit(run));
+
+    await act(async () => {
+      await result.current.submit('input');
+    });
+    act(() => result.current.forget());
+
+    await expect(result.current.retry()).resolves.toBeNull();
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('resolves null and runs nothing on a retry before any submit', async () => {

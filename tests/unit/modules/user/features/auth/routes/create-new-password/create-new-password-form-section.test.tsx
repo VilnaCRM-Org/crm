@@ -85,6 +85,9 @@ describe('CreateNewPasswordFormSection', () => {
 
     const heading = await screen.findByRole('heading', { level: 1, name: 'Посилання недійсне' });
     expect(heading).toHaveFocus();
+    expect(
+      screen.getByText(/^Посилання для відновлення пароля недійсне або його термін дії минув\./)
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Запросити нове посилання' })).toHaveAttribute(
       'href',
       '/password-recovery'

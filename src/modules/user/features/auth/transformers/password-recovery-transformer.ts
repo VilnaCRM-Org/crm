@@ -10,7 +10,6 @@ import type {
   RecoveryStep,
 } from '@auth/types/password-recovery/outcome';
 
-const TOKEN_VIOLATION = 'token_violation';
 const MASK = '*****';
 const CONFIRMED_OUTCOME: RecoveryConfirmedOutcome = { kind: 'confirmed' };
 
@@ -21,7 +20,6 @@ const STEP_REASONS = {
   ]),
   confirm: new Map<string, RecoveryFailureReason>([
     ['violation', 'policy_rejected'],
-    [TOKEN_VIOLATION, 'invalid_link'],
     ['refused', 'invalid_link'],
   ]),
 };
@@ -45,9 +43,14 @@ export default class PasswordRecoveryTransformer {
   }
 
   public fromFailure(step: RecoveryStep, failure: UserServiceFailure): RecoveryFailedOutcome {
-    const key = this.isTokenViolation(failure) ? TOKEN_VIOLATION : failure.reason;
-    const reason = STEP_REASONS[step].get(key) ?? SHARED_REASONS.get(key) ?? 'server';
+    const reason = this.reasonOf(step, failure);
     return { kind: 'failed', failure: { reason, retryable: RETRYABLE_REASONS.has(reason) } };
+  }
+
+  private reasonOf(step: RecoveryStep, failure: UserServiceFailure): RecoveryFailureReason {
+    if (this.isTokenViolation(failure)) return 'invalid_link';
+    const { reason } = failure;
+    return STEP_REASONS[step].get(reason) ?? SHARED_REASONS.get(reason) ?? 'server';
   }
 
   private isTokenViolation(failure: UserServiceFailure): boolean {
