@@ -32,7 +32,11 @@ const homeHeading: string = t('home.heading');
 interface ConfirmBody {
   readonly operationName?: string;
   readonly variables?: {
-    readonly input?: { readonly token?: string; readonly newPassword?: string };
+    readonly input?: {
+      readonly token?: string;
+      readonly newPassword?: string;
+      readonly clientMutationId?: string;
+    };
   };
 }
 
@@ -266,6 +270,10 @@ test.describe('Create new password (issue #315)', () => {
     await expect.poll(() => bodies.length).toBe(2);
     expect(bodies[1]?.variables?.input?.token).toBe(bodies[0]?.variables?.input?.token);
     expect(bodies[1]?.variables?.input?.newPassword).toBe(NEW_PASSWORD);
+    expect(bodies[1]?.variables?.input?.clientMutationId).toEqual(expect.any(String));
+    expect(bodies[1]?.variables?.input?.clientMutationId).not.toBe(
+      bodies[0]?.variables?.input?.clientMutationId
+    );
   }
 
   test('retries once after an HTTP 503', async ({ page }) => {
