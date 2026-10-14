@@ -1,7 +1,9 @@
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
@@ -9,6 +11,7 @@ import CreateNewPasswordForm from '@auth/components/create-new-password/create-n
 import type { CreateNewPasswordFormProps } from '@auth/types/password-recovery/components';
 import { buildResetToken } from '@tests/builders';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -89,6 +92,29 @@ describe('CreateNewPasswordForm', () => {
     expect(submit()).toHaveAttribute('type', 'submit');
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain(token);
+  });
+
+  it('ties the rule list to the new password when the module loads in the test', async () => {
+    const FreshForm = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@auth/components/create-new-password/create-new-password-form'))
+        .default;
+    });
+
+    render(
+      <FreshForm
+        token={buildResetToken()}
+        onSubmit={jest.fn()}
+        onRetry={jest.fn()}
+        failure={null}
+        isSubmitting={false}
+      />,
+      { wrapper: Wrapper }
+    );
+
+    expect(newPassword()).toHaveAttribute('aria-describedby', 'new-password-rules');
+    expect(screen.getByRole('list')).toHaveAttribute('id', 'new-password-rules');
   });
 
   it('names the first unmet rule on the new-password field and does not submit', async () => {

@@ -1,10 +1,12 @@
 import { renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import useRecoveryRun from '@auth/hooks/use-recovery-run';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { RecoveryProviderStep } from '@auth/types/password-recovery/state';
 import { buildEmail } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 interface StepCall {
   readonly dto: string;
@@ -75,5 +77,23 @@ describe('useRecoveryRun', () => {
     await result.current(buildEmail(), new AbortController().signal);
     expect(nextStep.step).toHaveBeenCalledTimes(1);
     expect(first.step).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useRecoveryRun loaded inside the test', () => {
+  it('evaluates the load-failure outcome it returns for a rejected provider load', async () => {
+    const freshUseRecoveryRun = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@auth/hooks/use-recovery-run')).default;
+    });
+    const loader = {
+      resolve: jest.fn().mockRejectedValue(new Error('chunk failed')),
+    } as unknown as AuthProviderLoader;
+    const { result } = renderHook(() => freshUseRecoveryRun(loader, echoStep()));
+
+    await expect(result.current(buildEmail(), new AbortController().signal)).resolves.toEqual({
+      kind: 'failed',
+      failure: { reason: 'network', retryable: true },
+    });
   });
 });

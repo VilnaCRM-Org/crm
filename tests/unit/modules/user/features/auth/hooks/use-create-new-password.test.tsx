@@ -1,5 +1,6 @@
 import { act, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import { type JSX, StrictMode } from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
@@ -14,6 +15,7 @@ import type {
   ResetTokenHandle,
 } from '@auth/types/password-recovery/state';
 import { buildPassword, buildResetToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const navigate = jest.fn();
 
@@ -255,5 +257,38 @@ describe('useCreateNewPassword', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     expect(confirmReset).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useCreateNewPassword loaded inside the test', () => {
+  const loadFresh = (): Promise<typeof useCreateNewPassword> =>
+    loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@auth/hooks/use-create-new-password')).default;
+    });
+
+  beforeEach(() => navigate.mockReset());
+
+  it('evaluates the invalid-link state it returns for a null token', async () => {
+    const freshUseCreateNewPassword = await loadFresh();
+    const { loader } = harness({ kind: 'confirmed' });
+
+    const { result } = renderHook(() => freshUseCreateNewPassword(loader, tokenHandle(null)));
+
+    expect(result.current).toStrictEqual({ view: 'invalid' });
+  });
+
+  it('evaluates the sign-in arrival state it navigates with on success', async () => {
+    const freshUseCreateNewPassword = await loadFresh();
+    const { loader } = harness({ kind: 'confirmed' });
+    const token = buildResetToken();
+    const { result } = renderHook(() => freshUseCreateNewPassword(loader, tokenHandle(token)));
+
+    await act(() => formState(result.current).callbacks.submit(formValues(token)));
+
+    expect(navigate).toHaveBeenCalledWith('/sign-in', {
+      replace: true,
+      state: { focusMain: true, notice: 'password_reset' },
+    });
   });
 });

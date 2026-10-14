@@ -5,7 +5,7 @@ import { ApolloServer } from '@apollo/server';
 import { faker } from '@faker-js/faker';
 import { GraphQLError } from 'graphql';
 
-import { buildEmail, buildPassword } from '@tests/builders';
+import { buildClientMutationId, buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 
 import { formatError } from '../../docker/apollo-server/lib/format-error';
 import { resolvers } from '../../docker/apollo-server/lib/resolvers';
@@ -67,7 +67,7 @@ describe('pending password-reset mutations on the stateless mock', () => {
   });
 
   it('answers a valid reset request with a null user and the echoed clientMutationId', async () => {
-    const clientMutationId = faker.string.uuid();
+    const clientMutationId = buildClientMutationId();
 
     const { result } = await execute(server, REQUEST_RESET, {
       email: buildEmail(),
@@ -96,7 +96,7 @@ describe('pending password-reset mutations on the stateless mock', () => {
   });
 
   it.each([1, 255])('answers a valid confirm with a %i-character token', async (length) => {
-    const clientMutationId = faker.string.uuid();
+    const clientMutationId = buildClientMutationId();
 
     const { result } = await execute(server, CONFIRM_RESET, {
       token: faker.string.alphanumeric(length),
@@ -112,7 +112,7 @@ describe('pending password-reset mutations on the stateless mock', () => {
     'counts code points, accepting the newPassword %s',
     async (newPassword) => {
       const { result } = await execute(server, CONFIRM_RESET, {
-        token: faker.string.alphanumeric(32),
+        token: buildResetToken(),
         newPassword,
       });
 
@@ -122,7 +122,7 @@ describe('pending password-reset mutations on the stateless mock', () => {
 
   it('accepts a newPassword without a lowercase letter, as the upstream pattern does', async () => {
     const { result } = await execute(server, CONFIRM_RESET, {
-      token: faker.string.alphanumeric(32),
+      token: buildResetToken(),
       newPassword: 'UPPERCASE1',
     });
 
@@ -140,32 +140,32 @@ describe('pending password-reset mutations on the stateless mock', () => {
     [
       'a newPassword failing the upstream rule',
       CONFIRM_RESET,
-      { token: 'reset-token', newPassword: 'lowercase1' },
+      { token: buildResetToken(), newPassword: 'lowercase1' },
       'newPassword: ',
     ],
     [
       'a newPassword of seven code points in eight code units',
       CONFIRM_RESET,
-      { token: 'reset-token', newPassword: 'Abcde1😀' },
+      { token: buildResetToken(), newPassword: 'Abcde1😀' },
       'newPassword: ',
     ],
     [
       'a newPassword of 65 code points',
       CONFIRM_RESET,
-      { token: 'reset-token', newPassword: `Abcdef1${'😀'.repeat(58)}` },
+      { token: buildResetToken(), newPassword: `Abcdef1${'😀'.repeat(58)}` },
       'newPassword: ',
     ],
-    ['an empty token', CONFIRM_RESET, { token: '', newPassword: 'Upper1234' }, 'token: '],
+    ['an empty token', CONFIRM_RESET, { token: '', newPassword: buildPassword() }, 'token: '],
     [
       'a whitespace-only token',
       CONFIRM_RESET,
-      { token: ' \t ', newPassword: 'Upper1234' },
+      { token: ' \t ', newPassword: buildPassword() },
       'token: ',
     ],
     [
       'a token over 255 characters',
       CONFIRM_RESET,
-      { token: 'a'.repeat(256), newPassword: 'Upper1234' },
+      { token: 'a'.repeat(256), newPassword: buildPassword() },
       'token: ',
     ],
   ])('answers %s with one 422 violation on HTTP 200', async (_case, query, input, prefix) => {
