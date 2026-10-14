@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
 import type { UserServiceFailure } from '@/modules/user/types/user-service/user-service-failure';
 import { HttpError } from '@/services/https-client/http-error';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const transformer = new UserServiceErrorTransformer();
 
@@ -25,7 +26,40 @@ const violation = (path: string, status: number | null): UserServiceFailure => (
   violations: { items: [{ path, reason: 'other' }] },
 });
 
+const loadTransformer = async (): Promise<UserServiceErrorTransformer> => {
+  const Transformer = await loadIsolated(
+    async () => (await import('@/modules/user/lib/user-service-error-transformer')).default
+  );
+  return new Transformer();
+};
+
 describe('UserServiceErrorTransformer', () => {
+  it.each([
+    [0, 'network'],
+    [422, 'violation'],
+    [429, 'rate_limited'],
+  ])('maps a freshly loaded status %i to %s', async (statusCode, reason) => {
+    const loaded = await loadTransformer();
+    const networkError = Object.assign(new Error('failed'), { statusCode });
+
+    expect(loaded.normalize(withNetworkError(networkError))).toEqual({
+      reason,
+      status: statusCode,
+      violations: none,
+    });
+  });
+
+  it.each(['email', 'token', 'newPassword'])(
+    'recognises a %s violation with a freshly loaded property list',
+    async (path) => {
+      const loaded = await loadTransformer();
+
+      expect(loaded.normalize(graphQLError(`${path}: ${faker.lorem.sentence()}`))).toEqual(
+        violation(path, null)
+      );
+    }
+  );
+
   it('classifies any error as aborted when the caller signal is aborted', () => {
     const controller = new AbortController();
     controller.abort();

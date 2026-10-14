@@ -1,14 +1,14 @@
 import { test, expect, type Locator, type Page, type Route } from '@playwright/test';
 
-import { buildResetToken } from '@tests/builders';
+import { buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 import { t } from '@tests/e2e/utils/initialize-localization';
 
 import { MIN_TOUCH_TARGET_PX, showPasswordLabel } from './constants';
 
 const RECOVERY_URL = '/password-recovery';
 const GRAPHQL_URL = '**/graphql';
-const EMAIL = 'eirene@gmail.com';
-const NEW_PASSWORD = 'Password1';
+const EMAIL = buildEmail();
+const NEW_PASSWORD = buildPassword();
 const MIN_SMALL_TARGET_PX = 24;
 const KEYBOARD_VIEWPORT_RATIO = 0.45;
 
