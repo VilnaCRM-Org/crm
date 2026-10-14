@@ -17,6 +17,7 @@ const RULES_ID = 'new-password-rules';
 
 function ConfirmationRecheck(): null {
   const { trigger, getFieldState, formState } = useFormContext<CreateNewPasswordFormValues>();
+  // Stryker disable next-line ObjectLiteral: equivalent, confirm edits already self-revalidate
   const newPassword = useWatch<CreateNewPasswordFormValues>({ name: 'newPassword' });
   const mismatched = getFieldState('confirmPassword', formState).error?.type === 'validate';
 

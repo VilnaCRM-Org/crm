@@ -1,4 +1,4 @@
-import { type JSX, useCallback, useState } from 'react';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ROUTE_PATHS from '@/routes/route-paths';
@@ -27,15 +27,9 @@ function SentStep({ maskedEmail, onBack }: ResetPasswordSentStepProps): JSX.Elem
 
 export default function ResetPasswordFormSection(): JSX.Element {
   const state = useResetPassword(useAuthProviderLoader());
-  const [reentered, setReentered] = useState(false);
-  const { backToForm: showForm } = state.callbacks;
-  const backToForm = useCallback((): void => {
-    setReentered(true);
-    showForm();
-  }, [showForm]);
 
   if (state.step === 'sent') {
-    return <SentStep maskedEmail={state.maskedEmail} onBack={backToForm} />;
+    return <SentStep maskedEmail={state.maskedEmail} onBack={state.callbacks.backToForm} />;
   }
   return (
     <AuthCard>
@@ -46,7 +40,7 @@ export default function ResetPasswordFormSection(): JSX.Element {
         onRetry={state.callbacks.retry}
         failure={state.failure}
         isSubmitting={state.isSubmitting}
-        focusTitle={reentered}
+        focusTitle={state.returned}
       />
     </AuthCard>
   );

@@ -118,6 +118,7 @@ describe('GraphQLPasswordRecoveryRepository', () => {
 
       await expect(repository[method](dto, controller.signal)).rejects.toMatchObject({
         name: 'AbortError',
+        message: 'Password recovery request was aborted',
       });
       expect(mutate).not.toHaveBeenCalled();
     }

@@ -24,6 +24,7 @@ export interface ResetPasswordView {
   readonly submittedEmail: string;
   readonly maskedEmail: string | null;
   readonly failure: RecoveryFailure | null;
+  readonly returned: boolean;
 }
 
 export interface ResetPasswordState extends ResetPasswordView {
@@ -58,19 +59,29 @@ export interface RecoveryFailureBanner {
   readonly errorAction?: FormErrorAction | undefined;
 }
 
-export type CreateNewPasswordView = 'form' | 'invalid';
+export interface ResetTokenHandle {
+  readonly token: string | null;
+  discard(): void;
+}
 
 export interface CreateNewPasswordCallbacks {
   submit(dto: CreateNewPasswordDto): Promise<void>;
   retry(): Promise<void>;
 }
 
-export interface CreateNewPasswordState {
-  readonly view: CreateNewPasswordView;
+export interface CreateNewPasswordInvalidState {
+  readonly view: 'invalid';
+}
+
+export interface CreateNewPasswordFormState {
+  readonly view: 'form';
+  readonly token: string;
   readonly failure: RecoveryFailure | null;
   readonly isSubmitting: boolean;
   readonly callbacks: CreateNewPasswordCallbacks;
 }
+
+export type CreateNewPasswordState = CreateNewPasswordInvalidState | CreateNewPasswordFormState;
 
 export type RecoveryProviderStep<TDto, TOutcome> = (
   provider: PasswordRecoveryProvider,
@@ -79,10 +90,14 @@ export type RecoveryProviderStep<TDto, TOutcome> = (
 ) => Promise<TOutcome>;
 
 export interface CreateNewPasswordViewState {
-  readonly view: CreateNewPasswordView;
   readonly failure: RecoveryFailure | null;
   settle(outcome: CreateNewPasswordOutcome | null): void;
   clearFailure(): void;
+}
+
+export interface CreateNewPasswordViewDeps {
+  readonly resetToken: ResetTokenHandle;
+  readonly submitter: AbortableSubmit<CreateNewPasswordDto, CreateNewPasswordOutcome>;
 }
 
 export interface CreateNewPasswordCallbackDeps {

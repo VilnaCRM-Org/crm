@@ -54,6 +54,7 @@ describe('UserServiceErrorTransformer', () => {
     ['HTTP 429', { statusCode: 429 }, 'rate_limited', 429],
     ['HTTP 500', { statusCode: 500 }, 'server', 500],
     ['HTTP 503', { statusCode: 503 }, 'server', 503],
+    ['HTTP 599', { statusCode: 599 }, 'server', 599],
     ['HTTP 400', { statusCode: 400 }, 'unknown', 400],
   ])('classifies %s as %s with the status kept', (_name, cause, reason, status) => {
     const networkError = Object.assign(new Error('failed'), cause);

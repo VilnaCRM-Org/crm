@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router';
 
 import RecoveryResultView from '@auth/components/reset-password/recovery-result-view';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const BODY = 'Ми надіслали лист на eir*****@gmail.com';
@@ -24,11 +24,20 @@ const view = (body: string = BODY): JSX.Element => (
 
 const renderView = (): ReturnType<typeof render> => render(view());
 
-/**
- * A live region is announced only when assistive tech observes it before its text changes, so the
- * region has to paint empty and be filled by the mount effect. RTL's `render` is act-wrapped and
- * flushes that effect, so static markup is the only view of the commit that precedes it.
- */
+type ResultPart = 'heading' | 'body' | 'action';
+
+const resultPart = async (part: ResultPart): Promise<HTMLElement> => {
+  renderView();
+  const body = await screen.findByText(BODY);
+  const parts: Readonly<Record<ResultPart, HTMLElement>> = {
+    heading: screen.getByRole('heading', { level: 1, name: 'Перевірте пошту' }),
+    body,
+    action: screen.getByRole('link', { name: 'До входу' }),
+  };
+
+  return parts[part];
+};
+
 const statusTextOnFirstPaint = (): string => {
   const host = document.body.appendChild(document.createElement('div'));
   host.innerHTML = renderToStaticMarkup(view());
@@ -72,6 +81,38 @@ describe('RecoveryResultView', () => {
     const visited = styleRuleFor(screen.getByRole('link', { name: 'До входу' }), ':visited');
 
     expect(visited?.getPropertyValue('color')).toBe('#FFFFFF');
+  });
+
+  it.each<[ResultPart, string, string]>([
+    ['heading', 'font-size', '1.375rem'],
+    ['heading', 'font-weight', '700'],
+    ['heading', 'line-height', '1.625rem'],
+    ['body', 'font-size', '0.9375rem'],
+    ['body', 'line-height', '1.5625rem'],
+    ['action', 'height', '3.125rem'],
+    ['action', 'font-size', '0.9375rem'],
+    ['action', 'font-weight', '500'],
+    ['action', 'line-height', '1.2'],
+  ])('sizes the %s for mobile with %s %s', async (part, property, value) => {
+    const element = await resultPart(part);
+
+    expect(styleRuleFor(element)?.getPropertyValue(property)).toBe(value);
+  });
+
+  it.each<[ResultPart, string, string, string]>([
+    ['heading', 'min-width:768px', 'font-size', '1.875rem'],
+    ['heading', 'min-width:768px', 'font-weight', '600'],
+    ['heading', 'min-width:768px', 'line-height', 'normal'],
+    ['body', 'min-width:480px', 'font-size', '1rem'],
+    ['body', 'min-width:480px', 'line-height', '1.625rem'],
+    ['action', 'min-width:768px', 'height', '3.875rem'],
+    ['action', 'min-width:768px', 'font-size', '1.125rem'],
+    ['action', 'min-width:768px', 'font-weight', '600'],
+    ['action', 'min-width:768px', 'line-height', 'normal'],
+  ])('restores the %s at %s with %s %s', async (part, mediaFragment, property, value) => {
+    const element = await resultPart(part);
+
+    expect(mediaStyleRuleFor(element, mediaFragment)?.getPropertyValue(property)).toBe(value);
   });
 
   it('announces the body through a polite status region', async () => {

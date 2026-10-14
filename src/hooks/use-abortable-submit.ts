@@ -19,7 +19,7 @@ async function runOnce<TInput, TOutcome>(
     return controller.signal.aborted ? null : outcome;
   } finally {
     inFlight.current = null;
-    if (!controller.signal.aborted) setSubmitting(false);
+    setSubmitting(false);
   }
 }
 
@@ -49,5 +49,12 @@ export default function useAbortableSubmit<TInput, TOutcome>(
     [submit]
   );
 
-  return { isSubmitting, submit, retry };
+  return {
+    isSubmitting,
+    submit,
+    retry,
+    forget: (): void => {
+      lastInput.current = null;
+    },
+  };
 }

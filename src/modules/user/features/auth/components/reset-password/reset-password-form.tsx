@@ -26,10 +26,7 @@ function EmailField({ failure }: ResetPasswordEmailFieldProps): JSX.Element {
         placeholder={t('sign_in.form.email_input.placeholder')}
         type="email"
         autoComplete="email"
-        rules={{
-          required: t('sign_in.form.email_input.required'),
-          validate: formValidators.create(t).email,
-        }}
+        rules={{ validate: formValidators.create(t).email }}
       />
       <ServerFieldError name="email" message={emailRejected} />
     </>

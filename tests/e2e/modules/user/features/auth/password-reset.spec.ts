@@ -23,6 +23,7 @@ const rateLimited: string = t('password_recovery.errors.rate_limited');
 const transient: string = t('password_recovery.errors.transient');
 const tryAgain: string = t('auth.error.tryAgain');
 const recoveryHeading: string = t('password_recovery.title');
+const signInHeading: string = t('sign_in.title');
 
 interface ConfirmBody {
   readonly operationName?: string;
@@ -68,12 +69,23 @@ async function submitPasswords(page: Page, confirmation: string = NEW_PASSWORD):
 
 test.describe('Create new password (issue #315)', () => {
   test('strips the token from the URL, the page and the title', async ({ page }) => {
+    await page.goto('/sign-in');
     const token = await openWithToken(page);
 
     await expect(page).toHaveURL(/\/password-reset$/);
     expect(await page.evaluate(() => window.location.search)).toBe('');
     expect(await page.content()).not.toContain(token);
     await expect(page).toHaveTitle(`${heading} - VilnaCRM`);
+
+    await page.goBack();
+
+    await expect(page).toHaveURL('/sign-in');
+    expect(page.url()).not.toContain('token=');
+
+    await page.goForward();
+
+    await expect(page).toHaveURL(/\/password-reset$/);
+    expect(page.url()).not.toContain('token=');
   });
 
   test('confirms once and lands on /sign-in with a one-time notice', async ({ page }) => {
@@ -90,6 +102,27 @@ test.describe('Create new password (issue #315)', () => {
     expect(bodies[0]?.variables?.input?.newPassword).toBe(NEW_PASSWORD);
 
     await page.reload();
+    await expect(page.getByText(notice)).toHaveCount(0);
+  });
+
+  test('never returns to the token or re-shows the notice on Back', async ({ page }) => {
+    await answerConfirms(page, confirmed);
+    await page.goto('/sign-in');
+    await page.evaluate((url: string) => {
+      window.history.pushState({}, '', url);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, `/password-reset?token=${buildResetToken()}`);
+    await expect(page.getByLabel(newPasswordLabel)).toBeVisible();
+    await expect(page).toHaveURL(/\/password-reset$/);
+
+    await submitPasswords(page);
+    await expect(page.getByRole('status').filter({ hasText: notice })).toBeVisible();
+
+    await page.goBack();
+
+    await expect(page).toHaveURL('/sign-in');
+    expect(page.url()).not.toContain('token=');
+    await expect(page.getByRole('heading', { level: 1, name: signInHeading })).toBeVisible();
     await expect(page.getByText(notice)).toHaveCount(0);
   });
 
@@ -180,8 +213,6 @@ test.describe('Create new password (issue #315)', () => {
   });
 
   test.describe('dropped connection', () => {
-    // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
-    // behaviour under test and the second POST proves the first one never reached the backend.
     test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
     test('retries once after an aborted request', async ({ page }) => {

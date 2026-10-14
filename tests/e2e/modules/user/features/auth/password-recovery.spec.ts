@@ -31,6 +31,11 @@ interface GraphQLBody {
 
 type Answer = (route: Route) => Promise<void>;
 
+interface SentStep {
+  readonly html: string;
+  readonly text: string;
+}
+
 const json =
   (body: unknown): Answer =>
   (route) =>
@@ -73,26 +78,36 @@ test.describe('Password recovery request step (issue #315)', () => {
     await expect(page).toHaveURL(RECOVERY_URL);
   });
 
-  for (const [name, answer] of [
-    ['a clientMutationId payload', sentPayload],
-    ['a null payload', json({ data: { requestPasswordResetUser: null } })],
-  ] as const) {
-    test(`shows the same sent step for ${name}`, async ({ page }) => {
-      const bodies = await answerResets(page, answer);
-      await page.goto(RECOVERY_URL);
+  async function sentStepAfter(page: Page, answer: Answer): Promise<SentStep> {
+    const bodies = await answerResets(page, answer);
+    await page.goto(RECOVERY_URL);
 
-      await submitEmail(page);
+    await submitEmail(page);
 
-      const sentHeading = page.getByRole('heading', { level: 1, name: sentTitle });
-      await expect(sentHeading).toBeFocused();
-      await expect(page.getByRole('status').filter({ hasText: MASKED })).toBeVisible();
-      await expect(page.getByRole('link', { name: toSignIn })).toHaveAttribute('href', '/sign-in');
-      expect(bodies).toHaveLength(1);
-      expect(bodies[0]?.variables?.input?.email).toBe(EMAIL);
-      expect(bodies[0]?.query).not.toMatch(/\buser\b/);
-      await expect(page).toHaveTitle(`${heading} - VilnaCRM`);
-    });
+    const sentHeading = page.getByRole('heading', { level: 1, name: sentTitle });
+    await expect(sentHeading).toBeFocused();
+    await expect(page.getByRole('status').filter({ hasText: MASKED })).toBeVisible();
+    await expect(page.getByRole('link', { name: toSignIn })).toHaveAttribute('href', '/sign-in');
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]?.variables?.input?.email).toBe(EMAIL);
+    expect(bodies[0]?.query).not.toMatch(/\buser\b/);
+    await expect(page).toHaveTitle(`${heading} - VilnaCRM`);
+    const card = page.getByRole('main');
+    const step = { html: await card.innerHTML(), text: await card.innerText() };
+    await page.unrouteAll({ behavior: 'wait' });
+    return step;
   }
+
+  test('shows the same sent step for a clientMutationId payload and a null payload', async ({
+    page,
+  }) => {
+    const acknowledged = await sentStepAfter(page, sentPayload);
+    const empty = await sentStepAfter(page, json({ data: { requestPasswordResetUser: null } }));
+
+    expect(empty.text).toContain(sentTitle);
+    expect(empty.html).toBe(acknowledged.html);
+    expect(empty.text).toBe(acknowledged.text);
+  });
 
   test('puts an email violation on the field', async ({ page }) => {
     await answerResets(
@@ -154,8 +169,6 @@ test.describe('Password recovery request step (issue #315)', () => {
   });
 
   test.describe('dropped connection', () => {
-    // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
-    // behaviour under test and the second POST proves the first one never reached the backend.
     test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
     test('retries once with the same e-mail after an aborted request', async ({ page }) => {

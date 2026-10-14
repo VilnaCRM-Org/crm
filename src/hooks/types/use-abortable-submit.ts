@@ -9,6 +9,7 @@ export interface AbortableSubmit<TInput, TOutcome> {
   readonly isSubmitting: boolean;
   submit(input: TInput): Promise<TOutcome | null>;
   retry(): Promise<TOutcome | null>;
+  forget(): void;
 }
 
 export interface AbortableInput<TInput> {

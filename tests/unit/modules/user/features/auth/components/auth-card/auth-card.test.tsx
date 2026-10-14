@@ -36,6 +36,30 @@ describe('AuthCard', () => {
     expect(cardOf()).toHaveTextContent(/^Card heading$/);
   });
 
+  it('styles the card as the shared form wrapper without a page', () => {
+    render(
+      <AuthCard>
+        <h1>Card heading</h1>
+      </AuthCard>
+    );
+
+    expect(cardOf()).toHaveStyle({ maxWidth: '22.6875rem', borderRadius: '16px' });
+    expect(cardOf()).toHaveStyle({ paddingBottom: '1.375rem' });
+  });
+
+  it.each([
+    ['signIn', '1.3125rem'],
+    ['signUp', '1.4375rem'],
+  ] as const)('adds the %s bottom padding to the shared form wrapper', (page, paddingBottom) => {
+    render(
+      <AuthCard page={page}>
+        <h1>Card heading</h1>
+      </AuthCard>
+    );
+
+    expect(cardOf()).toHaveStyle({ maxWidth: '22.6875rem', borderRadius: '16px', paddingBottom });
+  });
+
   it('has no axe violations with a heading and a form', async () => {
     const { container } = render(
       <main>

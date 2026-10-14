@@ -13,6 +13,7 @@ import ROUTE_PATHS from '@/routes/route-paths';
 import useAuthStore from '@auth/stores/use-auth-store';
 import { buildToken } from '@tests/builders';
 import renderWithProviders, { testI18n, testTheme } from '@tests/unit/utils/render-with-providers';
+import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 jest.mock('@auth/components/form-section/auth-forms/use-login-submitter', () => ({
@@ -128,7 +129,7 @@ describe('SignIn page', () => {
   });
 
   it('shows the password-reset notice after the lazy section mounts and focuses main', async () => {
-    render(
+    const { container } = render(
       <MemoryRouter
         initialEntries={[
           { pathname: ROUTE_PATHS.signIn, state: { focusMain: true, notice: 'password_reset' } },
@@ -149,6 +150,7 @@ describe('SignIn page', () => {
     );
     expect(notice).toHaveAttribute('role', 'status');
     expect(screen.getByRole('main')).toHaveFocus();
+    await expectNoA11yViolations(container);
   });
 
   it('renders no notice region on a resting visit', async () => {

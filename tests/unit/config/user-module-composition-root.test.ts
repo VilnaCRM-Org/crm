@@ -5,10 +5,14 @@ import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provid
 import runtimeConfigRegistrar from '@/config/runtime/di';
 import userModuleRegistrar from '@/modules/user/config/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import GraphQLUrl from '@/utils/get-graphql-url';
+import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
+import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import useAuthStore from '@auth/stores/use-auth-store';
+import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 
 const GRAPHQL_CLIENT_TOKENS = [AUTH_TOKENS.GraphQLUrl, AUTH_TOKENS.ApolloClient];
@@ -25,6 +29,12 @@ const RESPONSE_MAPPER_TOKENS = [
 ];
 const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
+const PASSWORD_RECOVERY_TOKENS = [
+  AUTH_TOKENS.PasswordRecoveryTransformer,
+  AUTH_TOKENS.UserServiceErrorTransformer,
+  AUTH_TOKENS.PasswordRecoveryRepository,
+  AUTH_TOKENS.PasswordRecoveryProvider,
+];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
   AUTH_TOKENS.SandboxDemoSessionProvider,
@@ -37,6 +47,7 @@ const EVERY_TOKEN = [
   ...RESPONSE_MAPPER_TOKENS,
   ...API_TOKENS,
   ...REPOSITORY_TOKENS,
+  ...PASSWORD_RECOVERY_TOKENS,
   ...AUTH_STATE_TOKENS,
 ];
 
@@ -98,6 +109,25 @@ describe('user module composition root', () => {
 
   it('binds the auth repository and its dependency bundle', () => {
     expectAllRegistered(registeredContainer(), REPOSITORY_TOKENS);
+  });
+
+  it('binds the password recovery transformers, repository and provider as singletons', () => {
+    const child = registeredContainer();
+
+    expectAllRegistered(child, PASSWORD_RECOVERY_TOKENS);
+    child.register(AUTH_TOKENS.ApolloClient, { useValue: {} });
+    const provider = child.resolve(AUTH_TOKENS.PasswordRecoveryProvider);
+    expect(provider).toBeInstanceOf(PasswordRecoveryProvider);
+    expect(child.resolve(AUTH_TOKENS.PasswordRecoveryProvider)).toBe(provider);
+    expect(child.resolve(AUTH_TOKENS.PasswordRecoveryRepository)).toBeInstanceOf(
+      GraphQLPasswordRecoveryRepository
+    );
+    expect(child.resolve(AUTH_TOKENS.PasswordRecoveryTransformer)).toBeInstanceOf(
+      PasswordRecoveryTransformer
+    );
+    expect(child.resolve(AUTH_TOKENS.UserServiceErrorTransformer)).toBeInstanceOf(
+      UserServiceErrorTransformer
+    );
   });
 
   it('binds the auth store and the store action dependency bundle', () => {
