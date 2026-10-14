@@ -1674,15 +1674,16 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 | `src/i18n/localization.json`                             | REGEN  | `make i18n-generate`        |
 | `src/modules/user/README.md`, `src/routes/README.md`     | MODIFY | loader seam; two routes     |
 | `CLAUDE.md`, `docs/accessibility/acceptance-standard.md` | MODIFY | contrast count, see below   |
-| `rsbuild.config.ts`, `scripts/auth-forms-chunk-group.ts` | MODIFY | `authForms` cache group     |
+| `rsbuild.config.ts`, `scripts/auth-forms-chunk-group.ts` | MODIFY | two auth-form cache groups  |
 
 The `color-contrast` entry count grows by exactly one from the count on `main` at merge time (open
 PR #311 raises it on its own branch). Beyond Story 0.1's policy edits, no change to `package.json`
 dependencies, `src/config/**`, `public/index.html`,
 `src/services/observability/apollo-link-factory.ts`, `src/routes/registry.ts`,
-`src/routes/route-composer.tsx` or `lighthouse/constants.js`. `rsbuild.config.ts` gains one
-`splitChunks.cacheGroups` entry, `authForms`, so `/sign-in` keeps the shared auth-form chunk the
-recovery form sections would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").
+`src/routes/route-composer.tsx` or `lighthouse/constants.js`. `rsbuild.config.ts` gains two
+`splitChunks.cacheGroups` entries, `authFormsVendors` and `authForms`, so `/sign-in` keeps the
+two shared auth-form chunks (shared dependencies, shared app code) the recovery form sections
+would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").
 
 ### 8.3 Tests, manifests and baselines
 
@@ -1877,7 +1878,7 @@ opens the form with a token first asserts the new-password form is visible.
 
 `config/docs-policy.json` makes `.dependency-cruiser.js` significant, and Story 0.1 edits it (the
 two folders in `components-no-direct-injectable-import`); the only other significant path it
-touches is `rsbuild.config.ts`, for the `authForms` cache group added during implementation
+touches is `rsbuild.config.ts`, for the two auth-form cache groups added during implementation
 (§8.2), and the `[no-adr]` line covers both (`src/api/**`, `codegen.ts`, `docker/**`,
 `Apollo.Dockerfile` and `docker-compose.test.yml` are not significant). Before that revision,
 ADR-019 was to land in Story 0.1, numbered as the next free on `main`, in open pull requests and
