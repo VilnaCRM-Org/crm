@@ -3,7 +3,7 @@ status: complete
 workflowType: architecture
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-13
+revised: 2026-10-14
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'architect (Winston), autonomous run'
@@ -91,7 +91,7 @@ inputDocuments:
 
 # Architecture: password recovery for the user module (create new password)
 
-**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-13 **Feature:**
+**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-14 **Feature:**
 `create-new-password`
 
 Predecessors: [run summary](./run-summary-create-new-password-2026-10-05.md),
@@ -1613,7 +1613,7 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 
 | File                                                   | Kind   | Role                     |
 | ------------------------------------------------------ | ------ | ------------------------ |
-| `docs/adr/{019-password-recovery-flow,README}.md`      | NEW    | §14, Story 0.1           |
+| `src/modules/user/README.md` (recovery decisions)      | MODIFY | §14, Story 0.1, no ADR   |
 | `config/module-shape.json`                             | MODIFY | two feature folders      |
 | `config/di-collaborator-policy.js`                     | MODIFY | logic globs gain both    |
 | `.dependency-cruiser.js`                               | MODIFY | component rule path list |
@@ -1884,7 +1884,10 @@ ADR-019 was to land in Story 0.1, numbered as the next free on `main`, in open p
 in the planned bundles (PR #311 claimed 018, the chore 022, #331 020, #330 021, and the chore
 `zustand-client-state` the next free after them for the ADR that superseded ADR-008).
 
-`docs/adr/019-password-recovery-flow.md` — "Password recovery runs over GraphQL on the board's
+The outline below was planned as `docs/adr/019-password-recovery-flow.md`; it is kept as the
+record of the decisions that now live in `## Password recovery decisions` of
+`src/modules/user/README.md`, and no file under `docs/adr/` is added. Its title was "Password
+recovery runs over GraphQL on the board's
 layer stack with a uniform request outcome and a memory-only reset token":
 
 - Status: Proposed. Deciders: [@kravalg](https://github.com/kravalg). Date: 2026-10-05,
@@ -1926,7 +1929,8 @@ layer stack with a uniform request outcome and a memory-only reset token":
   `src/api/contracts/README.md`, the Miro board, ADR-007, ADR-009, ADR-011, ADR-012, the chore's
   ADR-022, and the ADR of the chore `zustand-client-state` that supersedes ADR-008.
 
-Add the row to `docs/adr/README.md`; `make lint-adr` validates the rest.
+No row is added to `docs/adr/README.md`: the decisions are a section of the user module README,
+which `make lint-docs` checks for links and commands.
 
 ## 15. Upstream requests and the follow-up pin bump
 
@@ -2016,7 +2020,7 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 |        | reload-once on public routes                                                      |
 | NFR-14 | `make lint-i18n`, regenerated merged catalog                                      |
 | NFR-15 | Faker builders, semantic queries, `**/graphql` route mocks, the stateless mock    |
-| NFR-16 | ADR-019, README and docs updates, `src/api/contracts/README.md`, `make lint-docs` |
+| NFR-16 | user module README decisions (no ADR), docs updates, `make lint-docs`             |
 | NFR-17 | §5.17: the chore's TB-1 gate; §6.5 named types; TB-2 and its naming check (0.2)   |
 | NFR-18 | §1.1 and §3.5 board mapping; §5.18 folders; no `*Controller` / `*Service` /       |
 |        | `*Handler` class; §3 diagrams; §2.3 and §6.5.2 the board's User domain            |
