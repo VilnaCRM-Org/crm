@@ -283,9 +283,11 @@ describe('password validation', () => {
       );
     });
 
-    it('should handle password with tabs and newlines', () => {
+    it('should accept a tab and reject a line terminator, as the OpenAPI pattern does', () => {
       expect(validators.password('Pass\tword1', emptyUser)).toBe(true);
-      expect(validators.password('Pass\nword1', emptyUser)).toBe(true);
+      expect(validators.password('Pass\nword1', emptyUser)).toBe(
+        'sign_up.form.password_input.error_line_break'
+      );
     });
   });
 

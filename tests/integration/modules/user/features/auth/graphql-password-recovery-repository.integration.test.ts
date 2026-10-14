@@ -7,26 +7,11 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import { buildClientMutationId, buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 
+import { answerRecoveryOperation } from '../../../../mocks/password-recovery-operations';
 import server, { GRAPHQL_URL } from '../../../../mocks/server';
-
-interface CapturedRequest {
-  readonly operationName: string;
-  readonly variables: { readonly input: Record<string, string> };
-}
 
 const resolveRepository = (): GraphQLPasswordRecoveryRepository =>
   container.resolve<GraphQLPasswordRecoveryRepository>(AUTH_TOKENS.PasswordRecoveryRepository);
-
-const captureRequests = (respond: () => Response): CapturedRequest[] => {
-  const captured: CapturedRequest[] = [];
-  server.use(
-    http.post(GRAPHQL_URL, async ({ request }) => {
-      captured.push((await request.json()) as CapturedRequest);
-      return respond();
-    })
-  );
-  return captured;
-};
 
 describe('GraphQLPasswordRecoveryRepository integration', () => {
   afterEach(() => {
@@ -43,7 +28,7 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
 
   it('posts the request mutation once and resolves undefined', async () => {
     const email = buildEmail();
-    const captured = captureRequests(() =>
+    const captured = answerRecoveryOperation('request', () =>
       HttpResponse.json({
         data: { requestPasswordResetUser: { clientMutationId: buildClientMutationId() } },
       })
@@ -54,12 +39,17 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
     ).resolves.toBeUndefined();
 
     expect(captured).toHaveLength(1);
-    expect(captured[0]?.operationName).toBe('RequestPasswordReset');
-    expect(captured[0]?.variables.input).toEqual({ email, clientMutationId: expect.any(String) });
+    expect(captured[0]?.variables['input']).toEqual({
+      email,
+      clientMutationId: expect.any(String),
+    });
   });
 
   it('sends a 503 request exactly once', async () => {
-    const captured = captureRequests(() => new HttpResponse(null, { status: 503 }));
+    const captured = answerRecoveryOperation(
+      'request',
+      () => new HttpResponse(null, { status: 503 })
+    );
 
     await expect(
       resolveRepository().requestReset({ email: buildEmail() }, new AbortController().signal)
@@ -73,7 +63,7 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
     const newPassword = buildPassword();
     const client = container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);
     const write = jest.spyOn(client.cache, 'write');
-    const captured = captureRequests(() =>
+    const captured = answerRecoveryOperation('confirm', () =>
       HttpResponse.json({ data: { confirmPasswordResetUser: { clientMutationId: null } } })
     );
 
@@ -81,7 +71,8 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
       resolveRepository().confirmReset({ token, newPassword }, new AbortController().signal)
     ).resolves.toBeUndefined();
 
-    expect(captured[0]?.variables.input).toEqual({
+    expect(captured).toHaveLength(1);
+    expect(captured[0]?.variables['input']).toEqual({
       token,
       newPassword,
       clientMutationId: expect.any(String),
@@ -90,7 +81,13 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
   });
 
   it('sends nothing for an already aborted signal', async () => {
-    const captured = captureRequests(() => HttpResponse.json({ data: null }));
+    let posted = 0;
+    server.use(
+      http.post(GRAPHQL_URL, () => {
+        posted += 1;
+        return HttpResponse.json({ data: null });
+      })
+    );
     const controller = new AbortController();
     controller.abort();
 
@@ -100,6 +97,6 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
         controller.signal
       )
     ).rejects.toMatchObject({ name: 'AbortError' });
-    expect(captured).toHaveLength(0);
+    expect(posted).toBe(0);
   });
 });

@@ -1,13 +1,15 @@
-export type ValidationPswdMessageKey =
-  'invalidLength' | 'numberRequired' | 'uppercaseRequired' | 'lowercaseRequired' | 'fieldRequired';
+export type PasswordRuleKey =
+  'invalidLength' | 'numberRequired' | 'uppercaseRequired' | 'lowercaseRequired';
 
-export interface Rule {
+export type ValidationPswdMessageKey = PasswordRuleKey | 'lineBreakForbidden' | 'fieldRequired';
+
+export interface Rule<TKey extends ValidationPswdMessageKey = PasswordRuleKey> {
   check: (value: string) => boolean;
-  key: ValidationPswdMessageKey;
+  key: TKey;
 }
 
 export interface PasswordRuleResult {
-  readonly key: ValidationPswdMessageKey;
+  readonly key: PasswordRuleKey;
   readonly met: boolean;
 }
 

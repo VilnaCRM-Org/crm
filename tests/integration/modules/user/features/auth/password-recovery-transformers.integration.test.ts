@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
@@ -13,7 +13,8 @@ import type {
 } from '@auth/types/password-recovery/outcome';
 import { buildPassword, buildResetToken } from '@tests/builders';
 
-import server, { GRAPHQL_URL } from '../../../../mocks/server';
+import { answerRecoveryOperation } from '../../../../mocks/password-recovery-operations';
+import server from '../../../../mocks/server';
 
 const repository = (): GraphQLPasswordRecoveryRepository =>
   container.resolve<GraphQLPasswordRecoveryRepository>(AUTH_TOKENS.PasswordRecoveryRepository);
@@ -21,10 +22,6 @@ const errors = (): UserServiceErrorTransformer =>
   container.resolve<UserServiceErrorTransformer>(AUTH_TOKENS.UserServiceErrorTransformer);
 const outcomes = (): PasswordRecoveryTransformer =>
   container.resolve<PasswordRecoveryTransformer>(AUTH_TOKENS.PasswordRecoveryTransformer);
-
-const answerWith = (response: () => Response): void => {
-  server.use(http.post(GRAPHQL_URL, response));
-};
 
 const graphQLErrorBody = (message: string, extensions?: Record<string, unknown>): Response =>
   HttpResponse.json({ data: null, errors: [{ message, extensions }] });
@@ -61,12 +58,15 @@ describe('password recovery transformers over real GraphQL answers', () => {
   });
 
   it('turns a resolved request into the masked sent outcome', async () => {
-    answerWith(() => HttpResponse.json({ data: { requestPasswordResetUser: null } }));
+    const answered = answerRecoveryOperation('request', () =>
+      HttpResponse.json({ data: { requestPasswordResetUser: null } })
+    );
 
     await expect(run('request')).resolves.toEqual({
       kind: 'sent',
       maskedEmail: 'eir*****@gmail.com',
     });
+    expect(answered).toHaveLength(1);
     expect(outcomes().toConfirmedOutcome()).toEqual({ kind: 'confirmed' });
   });
 
@@ -132,9 +132,10 @@ describe('password recovery transformers over real GraphQL answers', () => {
       { reason: 'network', retryable: true },
     ],
   ])('turns %s into its outcome', async (_name, response, step, expected) => {
-    answerWith(response);
+    const answered = answerRecoveryOperation(step, response);
 
     await expect(run(step)).resolves.toEqual({ kind: 'failed', failure: expected });
+    expect(answered).toHaveLength(1);
   });
 
   it('turns a request aborted before it is sent into a retryable network outcome', async () => {

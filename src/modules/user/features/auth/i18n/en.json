@@ -49,7 +49,8 @@
         "error_length": "Please enter a password between 8 and 64 characters",
         "error_numbers": "Please include at least one digit",
         "error_uppercase": "Please add at least one uppercase Latin letter (A–Z)",
-        "error_lowercase": "Please include at least one lowercase letter"
+        "error_lowercase": "Please include at least one lowercase letter",
+        "error_line_break": "Please remove line breaks from the password"
       },
       "password_tip": {
         "alt": "Password tip icon",

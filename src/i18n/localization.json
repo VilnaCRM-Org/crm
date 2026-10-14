@@ -102,7 +102,8 @@
             "error_length": "Please enter a password between 8 and 64 characters",
             "error_numbers": "Please include at least one digit",
             "error_uppercase": "Please add at least one uppercase Latin letter (A–Z)",
-            "error_lowercase": "Please include at least one lowercase letter"
+            "error_lowercase": "Please include at least one lowercase letter",
+            "error_line_break": "Please remove line breaks from the password"
           },
           "password_tip": {
             "alt": "Password tip icon",
@@ -300,7 +301,8 @@
             "error_length": "Будь ласка, введіть від 8 до 64 символів",
             "error_numbers": "Будь ласка, додайте принаймні одну цифру",
             "error_uppercase": "Будь ласка, додайте принаймні одну велику латинську літеру (A–Z)",
-            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру"
+            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру",
+            "error_line_break": "Будь ласка, приберіть розриви рядків із пароля"
           },
           "password_tip": {
             "alt": "Іконка підказки пароля",

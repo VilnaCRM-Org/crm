@@ -9,10 +9,12 @@ import emptyUser from './constants';
 
 type PasswordValidator = typeof passwordValidatorInstance;
 
-const UPSTREAM_PASSWORD_RULE = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/;
+const UPSTREAM_PASSWORD_RULE = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
 const ALPHABET =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' +
-  'абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯÜÉüé!@#$%^&* ';
+  'абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯÜÉüé!@#$%^&* ' +
+  '😀🎉𝐀𝒂\n\r\u2028\u2029';
+const EMOJI = '😀';
 
 const loadValidator = async (): Promise<PasswordValidator> =>
   loadIsolated(
@@ -44,9 +46,12 @@ describe('the shared password policy', () => {
     expect(validate('Пароль123', locale)).toBe(message);
   });
 
-  it.each(['Password1', 'Abcdefg1'])('accepts %s', (password) => {
-    expect(validate(password)).toBe(true);
-  });
+  it.each(['Password1', 'Abcdefg1', `Abcdef1${EMOJI}`, `Abcdef1${EMOJI.repeat(57)}`])(
+    'accepts %s',
+    (password) => {
+      expect(validate(password)).toBe(true);
+    }
+  );
 
   it.each([
     ['password1', 'sign_up.form.password_input.error_uppercase'],
@@ -54,6 +59,15 @@ describe('the shared password policy', () => {
     ['Passwordd', 'sign_up.form.password_input.error_numbers'],
     ['Abcdef1', 'sign_up.form.password_input.error_length'],
     [`Abcdef1${'a'.repeat(58)}`, 'sign_up.form.password_input.error_length'],
+    [`Abcde1${EMOJI}`, 'sign_up.form.password_input.error_length'],
+    [`Abcdef1${EMOJI.repeat(58)}`, 'sign_up.form.password_input.error_length'],
+    ['Password1\n', 'sign_up.form.password_input.error_line_break'],
+    ['Pass\rword1', 'sign_up.form.password_input.error_line_break'],
+    ['Pass\u2028word1', 'sign_up.form.password_input.error_line_break'],
+    ['Pass\u2029word1', 'sign_up.form.password_input.error_line_break'],
+    ['Ab1\ncdef', 'sign_up.form.password_input.error_line_break'],
+    ['Ab1\ncd', 'sign_up.form.password_input.error_length'],
+    [`Abcdef1\n${'a'.repeat(57)}`, 'sign_up.form.password_input.error_length'],
   ])('maps %s to %s', (password, key) => {
     const i18n = createLocaleI18n('en');
 
@@ -82,6 +96,17 @@ describe('the shared password policy', () => {
         { key: 'lowercaseRequired', met: true },
       ],
     });
+  });
+
+  it.each([
+    ['uk', 'Будь ласка, приберіть розриви рядків із пароля'],
+    ['en', 'Please remove line breaks from the password'],
+  ] as const)('rejects a line break with the %s line-break message', (locale, message) => {
+    expect(validate('Pass\u2028word1', locale)).toBe(message);
+  });
+
+  it('keeps every checklist row met for a long enough password with a line break', () => {
+    expect(validator.evaluate('Pass\u2028word1').items.every((item) => item.met)).toBe(true);
   });
 
   it('evaluates against the same rules create(t) enforces', () => {
