@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router';
 
 import ResetPasswordFormSection from '@auth/routes/reset-password/reset-password-form-section';
 import type { ResetPasswordOutcome } from '@auth/types/password-recovery/outcome';
+import { buildEmail } from '@tests/builders';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -36,7 +37,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
 }));
 
 const i18n = createRecoveryLocaleI18n('uk');
-const EMAIL = 'eirene@gmail.com';
+const EMAIL = buildEmail();
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return (
