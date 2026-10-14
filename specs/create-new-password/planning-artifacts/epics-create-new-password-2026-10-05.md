@@ -2096,8 +2096,8 @@ acceptance criteria it touches; only the planned shape or file name changed.
    instead ships a `form-section-loader.ts` (`ResetPasswordFormSectionLoader`,
    `CreateNewPasswordFormSectionLoader`) exported as a module singleton, exactly like the
    existing `sign-in` and `sign-up` loaders, and the page wraps `loader.load()` in `lazy`. The
-   reason is that the chunk name is now load-bearing: the `authForms` cache group
-   (`scripts/auth-forms-chunk-group.ts`, issue #315) admits the two recovery form-section chunks
+   reason is that the chunk name is now load-bearing: the two auth-form cache groups
+   (`scripts/auth-forms-chunk-group.ts`, issue #315) admit the two recovery form-section chunks
    by name, and `tests/unit/tooling/performance-serving.test.ts` reads the `webpackChunkName` of
    all four `form-section-loader.ts` files to pin that the group names equal what the loaders
    emit. One file per route with one `import()` keeps that pin a plain read and lets
