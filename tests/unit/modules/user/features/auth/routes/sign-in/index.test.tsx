@@ -80,6 +80,7 @@ function renderSignInRoute(): RenderResult {
 describe('SignIn page', () => {
   beforeEach(() => {
     document.title = '';
+    resetClientStores();
   });
 
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
@@ -99,8 +100,6 @@ describe('SignIn page', () => {
   });
 
   describe('post-login redirect (issue #150)', () => {
-    beforeEach(() => resetClientStores());
-
     it('returns to the preserved protected destination once a token arrives', async () => {
       renderSignInRoute();
       expect(

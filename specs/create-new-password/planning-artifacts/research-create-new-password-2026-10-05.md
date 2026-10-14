@@ -158,6 +158,10 @@ Three gates already pin that state and will move the moment the route is registe
 - `scripts/ci/check-e2e-route-coverage.ts:203-205` — an allowlisted route that a contract
   registers fails the gate, so the row must become e2e/visual rows in the same change.
 
+> Superseded 2026-10-13: issue #309 removed the `forgotPassword` flag before this feature was
+> built. `FeatureFlag` is `never`, `public/index.html` ships `{ "flags": {} }`, and the sign-in
+> "Забули пароль?" link renders unconditionally; the citations above record the 2026-10-05 tree.
+
 `isRouteRegistered` scans only `src/routes/app-routes.ts` and
 `src/modules/user/features/auth/routes/index.ts` for `path: ROUTE_PATHS.<key>`
 (`tests/unit/tooling/runtime-config-contract.test.ts:86-95`), so the route **must** be declared
@@ -217,11 +221,15 @@ Existing tests assert the link's `href` is exactly `/password-recovery`
 - `PasswordValidator` rules: length 8–64, `/[0-9]/`, `/\p{Lu}/u`, `/\p{Ll}/u`
   (`…/validations/password.ts:7-12`), messages under `sign_up.form.password_input.*`
   (`:18-26`).
+
 - `EmailValidator`: non-empty, contains `@` and `.`, then a full regex
   (`…/validations/email.ts:5-7,10-17`); messages under `sign_up.form.email_input.*`.
 - `FormValidators.create(t)` returns `{ email, password, fullName }`
   (`…/validations/index.ts:10-22`); the shape is typed in
   `src/modules/user/features/auth/types/validations/index.ts:3-7`.
+
+> Superseded 2026-10-13: the uppercase rule is now `/[A-Z]/`, matching user-service's pattern
+> (PRD FR-24), so risk 6 below is closed.
 
 ### 1.5 Repositories, transports, error mapping
 
@@ -678,13 +686,15 @@ Suffix check for the names the architecture stage is likely to need (all approve
 5. **Token leakage** through Sentry (`url` strings are not scrubbed) or history if the strip
    happens after an error.
 6. **Validator mismatch** (`\p{Lu}` vs `[A-Z]`) produces a confusing `422` for Cyrillic passwords.
+   Superseded 2026-10-13: closed by the `/[A-Z]/` rule (PRD FR-24).
 7. **Design gaps** (no confirm-form frame, Russian copy, mobile resend) can stall the mandatory
    Figma gate; decisions must be recorded by the design owner.
 8. **Gate friction**: the deferred facade duplication (jscpd), file-level metric caps on the
    store/index composition root, 100% mutation on new mappers and status tables.
 9. **Flag lifecycle**: flipping `forgotPassword` to `true` and later deleting it touches
    `public/index.html`, `src/config/runtime/**`, `.env.example`, `docker-compose.test.yml`,
-   docs and the ADR-drift path set.
+   docs and the ADR-drift path set. Superseded 2026-10-13: issue #309 deleted the flag, so
+   there is no lifecycle left to run.
 10. **Visual baselines** for two new pages × 13 sizes × 3 engines must come from CI artifacts
     (local prod containers go stale).
 
@@ -706,6 +716,8 @@ Suffix check for the names the architecture stage is likely to need (all approve
    (extend `RedirectNavigationState`) or in the recovery var; the var needs no URL and no
    router-state typing changes.
 4. **REST for both operations, no transport retry, user-initiated Retry** (§3.3–3.4).
+   Superseded 2026-10-05: both operations use GraphQL; the no-retry and user-initiated Retry
+   parts still hold (architecture §5.1).
 5. **A dedicated `PasswordRecoveryRepository` + `PasswordResetAPI`** rather than growing
    `AuthRepositoryImpl`, to respect class metric caps and keep the `404 → ok` fold local.
    Superseded 2026-10-08: one `GraphQLPasswordRecoveryRepository` with no API-client class,
@@ -718,7 +730,9 @@ Suffix check for the names the architecture stage is likely to need (all approve
    confirm field; keep sign-in/sign-up baselines untouched.
 8. **Write an ADR** for the recovery flow (transport, uniform response, token-in-memory, no
    retry) — the `api-config.ts` change triggers the drift gate anyway, and the decisions are
-   durable.
+   durable. Superseded 2026-10-13: no ADR is written; the durable decisions live in the
+   `## Password recovery decisions` section of `src/modules/user/README.md`, and the drift gate
+   passes through a `[no-adr]` line in the pull-request body (PRD NFR-16).
 9. **Stories to schedule**: route + request screen; sent screen with masked e-mail; reset
    screen with confirm field; repository/API/mappers with 100% mutation; security signals +
    `PiiScrubber` pattern; e2e (`page.route`), a11y, mobile and visual lanes + manifest rows;
@@ -731,11 +745,14 @@ Suffix check for the names the architecture stage is likely to need (all approve
 
 ## 9. Assumptions (consolidated)
 
-- Both operations use REST through `HttpsClient` (§3.3).
+- Both operations use GraphQL through `GraphQLPasswordRecoveryRepository` (superseding the
+  REST assumption of §3.3; architecture §5.1).
 - No transport-level retry for either operation (§3.4).
 - Two route keys: `/password-recovery` (request + sent) and `/password-reset` (confirm) (§8.2).
-- The feature lives in the auth feature folder and keeps the carved-out module-singleton shape
-  because `no-paint-path-import-di-bridge` forbids `useService` there (§8.1, §8.6).
+- The feature lives in the auth feature folder, where `no-paint-path-import-di-bridge` forbids
+  `useService` (§8.1, §8.6); recovery state stays page-local in the flow hooks and
+  `AuthProviderLoader` is created per page mount, with no module singleton (architecture §5.3,
+  §5.4).
 - The mobile resend countdown is out of scope; the sent screen's "Назад" returns to the request
   form (§4.3).
 - The set-new-password screen is built from the existing card and `UIForm` primitives pending a

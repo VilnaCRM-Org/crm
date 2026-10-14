@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { JSX } from 'react';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
 
@@ -35,10 +35,10 @@ describe('one-time arrival markers', () => {
   it('clears focusMain and the notice in one replace and keeps the captured notice', async () => {
     const router = arriveWith({ focusMain: true, notice: 'password_reset' });
 
-    expect(await screen.findByText('notice=password_reset')).toBeInTheDocument();
-    expect(screen.getByRole('main')).toHaveFocus();
+    await waitFor(() => expect(router.state.location.state).toEqual({ focusMain: false }));
     expect(router.state.historyAction).toBe('REPLACE');
-    expect(router.state.location.state).toEqual({ focusMain: false });
+    expect(screen.getByText('notice=password_reset')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toHaveFocus();
   });
 
   it('keeps the redirect origin while clearing the markers', async () => {
@@ -48,8 +48,13 @@ describe('one-time arrival markers', () => {
       notice: 'password_reset',
     });
 
-    await screen.findByText('notice=password_reset');
-    expect(router.state.location.state).toEqual({ from: { pathname: '/deals' }, focusMain: false });
+    await waitFor(() =>
+      expect(router.state.location.state).toEqual({
+        from: { pathname: '/deals' },
+        focusMain: false,
+      })
+    );
+    expect(screen.getByText('notice=password_reset')).toBeInTheDocument();
   });
 
   it.each<[string, readonly To[]]>([

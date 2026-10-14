@@ -61,7 +61,8 @@ What changed:
   suffix policy and the CLAUDE.md section moved to the prerequisite chore `typed-boundaries-gate`
   (former Stories 0.3 to 0.6). `explicit-module-boundary-types` and the
   `generated-contracts-below-data-provider` rule were dropped. Epic 0 keeps ADR-019 with the two
-  folders (Story 0.1) and the User domain with the TB-2 naming check (Story 0.2).
+  folders (Story 0.1) and the User domain with the TB-2 naming check (Story 0.2). Superseded
+  2026-10-13: Story 0.1 adds no ADR (PRD NFR-16); see the ADR-drift check below.
 - **Mock (item 3).** Story 1.1 keeps the extension, the codegen entry and a stateless happy path
   with one violation per mutation; the expiry checker, its fixtures, `pending-schema.ts`, the
   magic-input table and the dev-server flag transform are gone.
@@ -102,7 +103,10 @@ the module barrel exports it in place of `SafeUserInfo` and #330 and #331 alread
   and three closures, because no `useFactory` is added. The provider takes three injected
   collaborators, the argument cap.
 - **ADR drift.** The only significant path is `.dependency-cruiser.js` (Story 0.1), which lands
-  with ADR-019; `rsbuild.config.ts` and `src/config/**` are no longer touched.
+  with ADR-019; `rsbuild.config.ts` and `src/config/**` are no longer touched. Superseded
+  2026-10-13: no ADR-019 is written. Every ADR from 003 up was deleted on PR #333, the decisions
+  live in the `## Password recovery decisions` section of `src/modules/user/README.md`, and the
+  gate passes through a `[no-adr]` line in the pull-request body (PRD NFR-16).
 - **Mock.** The violations throw with `extensions.code` `BAD_USER_INPUT` so the real
   `formatError` keeps their message (the iteration-6 finding M8 still holds); no test imports
   `server.ts`.

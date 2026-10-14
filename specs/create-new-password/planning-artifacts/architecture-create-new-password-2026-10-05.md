@@ -3,7 +3,7 @@ status: complete
 workflowType: architecture
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-08
+revised: 2026-10-13
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'architect (Winston), autonomous run'
@@ -91,7 +91,7 @@ inputDocuments:
 
 # Architecture: password recovery for the user module (create new password)
 
-**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-08 **Feature:**
+**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-13 **Feature:**
 `create-new-password`
 
 Predecessors: [run summary](./run-summary-create-new-password-2026-10-05.md),
@@ -2019,8 +2019,8 @@ stories stage:
 ## 18. Implementation drift (recorded 2026-10-13)
 
 Where the shipped code differs from this document, the code is authoritative and the gap is
-justified below. No class ends in `Controller`, `Service` or `Handler`; every new class, hook and
-component maps to a board layer of §1.1 and §3.5.
+justified below. No class introduced for this feature ends in `Controller`, `Service` or
+`Handler`; every new class, hook and component maps to a board layer of §1.1 and §3.5.
 
 1. **No feature flag (§5.14).** Issue #309 removed the `forgotPassword` flag before this branch,
    so the sign-in link already rendered and Story 4.1 reduced to documentation. Both routes ship
