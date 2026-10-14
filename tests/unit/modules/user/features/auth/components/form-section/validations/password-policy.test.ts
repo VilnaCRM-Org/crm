@@ -75,7 +75,16 @@ describe('the shared password policy', () => {
   });
 
   it('never accepts a value the upstream rule rejects', () => {
-    const fixed = ['Password1', 'Abcdefg1', 'Пароль123', 'password1', 'PASSWORD1', 'Abcdef1'];
+    const fixed = [
+      'Password1',
+      'Abcdefg1',
+      'Пароль123',
+      'ПАРОЛЬ123',
+      'ПарольA123',
+      'password1',
+      'PASSWORD1',
+      'Abcdef1',
+    ];
     const generated = Array.from({ length: 2000 }, randomPassword);
     const accepted = [...fixed, ...generated].filter((value) => validate(value) === true);
 
@@ -96,6 +105,20 @@ describe('the shared password policy', () => {
         { key: 'lowercaseRequired', met: true },
       ],
     });
+  });
+
+  it.each([
+    ['Пароль123', false],
+    ['ПАРОЛЬ123', false],
+    ['ПарольA123', true],
+    ['пaрольZ12', true],
+  ])('marks the uppercase rule of %s as met: %s', (password, met) => {
+    expect(validator.evaluate(password).items[2]).toEqual({ key: 'uppercaseRequired', met });
+  });
+
+  it('accepts a Cyrillic password once it holds one Latin capital', () => {
+    expect(validate('ПарольA123')).toBe(true);
+    expect(UPSTREAM_PASSWORD_RULE.test('ПарольA123')).toBe(true);
   });
 
   it.each([

@@ -1733,8 +1733,11 @@ against the same budgets; this feature imports no store and adds nothing to it.
 
 ## 11. Localisation, titles and copy
 
-All strings live in `@auth/i18n/{en,uk}.json` with identical key sets, then
-`make i18n-generate`:
+All strings live in the lazy recovery catalog
+`@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key sets, registered by
+`RecoveryPageLayout` when the route module evaluates and kept out of
+`src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
+"Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
 
 - `password_recovery.title`, `.body`, `.submitting`, `.errors.email_rejected` (Story 2.4);
   `.submit_button`, `.back` (Story 2.2, shared by both forms); `.errors.rate_limited`,
@@ -1983,7 +1986,8 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | FR-24 | `PasswordValidator` ASCII uppercase + kept lowercase, property test                   |
 | FR-25 | withdrawn 2026-10-08 (no security signal)                                             |
 | FR-26 | `PiiScrubber` pattern, key denial, no new origin                                      |
-| FR-27 | `@auth/i18n/{en,uk}.json`, `make i18n-generate`                                       |
+| FR-27 | `@auth/routes/recovery-catalog/i18n/{en,uk}.json` (lazy, `RecoveryPageLayout`),       |
+|       | `config/i18n-catalog-policy.json` owners, `[lazy-key-scope]`, `make lint-i18n`        |
 | FR-28 | `route-coverage.tsv` rows, `routes.a11y.spec.ts`, visual `PAGES`                      |
 
 ### 16.2 Non-functional requirements

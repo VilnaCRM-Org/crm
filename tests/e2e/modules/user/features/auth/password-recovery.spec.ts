@@ -22,6 +22,13 @@ const emailRejected: string = t('password_recovery.errors.email_rejected');
 const tryAgain: string = t('auth.error.tryAgain');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const signInTitle: string = t('sign_in.title');
+const switcherLabels: readonly string[] = [
+  t('sign_up.form.switcher_text_no_account'),
+  t('sign_up.form.switcher_text_have_account'),
+];
+const providerLabels: readonly string[] = ['Google', 'Facebook', 'GitHub', 'Twitter'].map(
+  (provider) => t('auth.oauth.continue_with', { provider })
+);
 
 interface GraphQLBody {
   readonly operationName?: string;
@@ -68,6 +75,20 @@ test.describe('Password recovery request step (issue #315)', () => {
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     await expect(page).toHaveTitle(`${heading} - VilnaCRM`);
     await expect(page.getByRole('link', { name: backLabel })).toHaveAttribute('href', '/sign-in');
+  });
+
+  test('renders one h1 and neither provider buttons nor the auth switcher', async ({ page }) => {
+    await page.goto(RECOVERY_URL);
+    await expect(page.getByRole('button', { name: submitLabel })).toBeVisible();
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    for (const label of providerLabels) {
+      await expect(page.getByRole('button', { name: label, exact: true })).toHaveCount(0);
+    }
+    for (const label of switcherLabels) {
+      await expect(page.getByText(label)).toHaveCount(0);
+    }
+    await expect(page.locator('a[href="/sign-up"]')).toHaveCount(0);
   });
 
   test('stays on the page for a seeded session', async ({ page }) => {

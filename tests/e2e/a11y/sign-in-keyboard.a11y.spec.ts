@@ -37,7 +37,7 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
       { locator: page.getByRole('link', { name: backToMainLabel }), visibleFocus: true },
       { locator: page.locator('#email'), visibleFocus: true },
       { locator: page.locator('#password'), visibleFocus: true },
-      { locator: page.getByRole('button', { name: showPasswordLabel }) },
+      { locator: page.getByRole('button', { name: showPasswordLabel }), visibleFocus: true },
       { locator: page.getByRole('checkbox', { name: rememberMeLabel }) },
       { locator: page.getByRole('link', { name: forgotPasswordLabel }), visibleFocus: true },
       { locator: page.getByRole('button', { name: submitLabel }), visibleFocus: true },
