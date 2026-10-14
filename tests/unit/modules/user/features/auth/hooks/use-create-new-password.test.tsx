@@ -74,6 +74,8 @@ const formValues = (token: string): CreateNewPasswordFormValues => {
 describe('useCreateNewPassword', () => {
   beforeEach(() => navigate.mockReset());
 
+  afterEach(() => jest.restoreAllMocks());
+
   it('starts invalid for a null token and never resolves the provider', () => {
     const { loader, resolve } = harness({ kind: 'confirmed' });
 
@@ -110,7 +112,6 @@ describe('useCreateNewPassword', () => {
     });
     expect(writes).not.toHaveBeenCalled();
     expect(resetToken.discard).not.toHaveBeenCalled();
-    writes.mockRestore();
   });
 
   it('discards the token and the last attempt for an invalid_link failure', async () => {
