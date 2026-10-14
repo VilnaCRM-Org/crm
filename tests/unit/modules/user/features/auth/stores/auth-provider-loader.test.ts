@@ -79,4 +79,20 @@ describe('AuthProviderLoader', () => {
     expect(capture).toHaveBeenCalledTimes(1);
     expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:provider-load' });
   });
+
+  it('captures a resolve failure once under provider-resolve and keeps the container', async () => {
+    const failure = new Error('Attempted to resolve unregistered dependency token');
+    resolveMock.mockImplementationOnce(() => {
+      throw failure;
+    });
+    const { loader, observability } = await load();
+    const capture = jest.spyOn(observability, 'captureError').mockImplementation(() => undefined);
+
+    await expect(loader.resolve(token)).rejects.toBe(failure);
+    await expect(loader.resolve(token)).resolves.toBe(provider);
+
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:provider-resolve' });
+    expect(importCount).toHaveBeenCalledTimes(1);
+  });
 });

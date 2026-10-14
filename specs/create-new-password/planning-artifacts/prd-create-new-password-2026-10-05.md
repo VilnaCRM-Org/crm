@@ -104,12 +104,11 @@ submit button. They talk to user-service over GraphQL only — the `requestPassw
 `confirmPasswordResetUser` mutations, through the Apollo client the DI container already builds
 for registration — never retry a request on their own, never reveal whether an address is
 registered, and keep the reset token out of the address bar, the history, the Apollo cache and
-telemetry. The sign-in link that opens the flow already exists behind the
-`forgotPassword` runtime flag. Its shipped default stays `false`, so production users never reach
-a flow the deployed user-service cannot serve; the test stack turns it on, no earlier than the
-route registration (the release story), so `make start-prod` and every browser lane exercise the
-flow. Production enablement is a later per-environment configuration change, made
-once a user-service release carrying both mutations is deployed.
+telemetry. The sign-in link that opens the flow already renders unconditionally: issue #309
+removed the `forgotPassword` runtime flag, so the link ships in every environment and registering
+the two routes is what makes it lead somewhere. No flag gates the flow, so `make start-prod` and
+every browser lane exercise it, and production depends on its user-service serving both
+mutations (epics "Implementation drift").
 
 The feature is built and working now, against mocked GraphQL, without waiting for that release.
 The two mutations exist only on user-service `main` (PR #215, commit `63041e4a`, 2026-01-11);
@@ -180,9 +179,9 @@ the client deadline).
    and mobile-touch contracts, the visual matrix and the Lighthouse and bundle budgets.
 4. The client never accepts a password the API rejects: one policy, never weaker than the API,
    governs the new-password field and sign-up.
-5. The `forgotPassword` flag ships off by default, is on in the test stack, is enabled
-   in production by a per-environment change once the deployed user-service serves the
-   mutations, and is scheduled for deletion per the documented lifecycle.
+5. The "Забули пароль?" link opens the flow in every environment with no runtime flag: issue
+   #309 removed the `forgotPassword` flag and the link renders unconditionally, so registering
+   both routes is the release, and production depends on its user-service serving the mutations.
 
 ### Non-goals
 
@@ -194,9 +193,9 @@ the client deadline).
 - The user-service contract pin bump itself, and the deletion of the pending schema extension it
   forces: a follow-up that waits for a user-service release tag (epics Follow-up 5.3, §8). The
   feature is built against the extension and does not wait for it.
-- Enabling the flag in production: a per-environment configuration change made once the
-  deployed user-service serves both mutations (epics Follow-up 5.6), not code.
-- Deleting the `forgotPassword` flag (lifecycle stage 3, a later change).
+- Any runtime flag for the flow: issue #309 removed `forgotPassword` before this feature, and
+  production readiness is the deployment of a user-service serving both mutations (epics
+  Follow-up 5.6), not code.
 - Any interplay with two-factor authentication.
 
 ## 3. Decisions carried into this PRD
@@ -209,7 +208,7 @@ them as settled:
 | Transport (2026-10-05)  | GraphQL only, for both operations; the user's decision               |
 | Mocked GraphQL (10-05)  | Built now on a pending schema extension and the local Apollo mock    |
 | Contract pin bump       | Follow-up once user-service tags a release; it deletes the extension |
-| Flag per environment    | Shipped default `false`; `true` in the test stack                    |
+| Flag per environment    | None: issue #309 removed `forgotPassword`; the link is unconditional |
 | Shared password policy  | In scope. One policy, never weaker than the API, for both forms      |
 | Completion-rate metric  | Backend-observed hypothesis, not a gate; gates are the NFRs below    |
 | Second reset request    | Backend issues a new token; earlier tokens may stay valid for 1 h    |
@@ -273,36 +272,21 @@ once, stored in memory and removed from the address bar before the form paints.
 Requirement ids are stable; the architecture and epics stages reference them. Each requirement
 carries its acceptance criteria as Given/When/Then scenarios.
 
-### FR-1 — Entry link and per-environment flag
+### FR-1 — Entry link
 
-The "Забули пароль?" link on the sign-in options row (gated by the `forgotPassword` runtime
-flag, `href="/password-recovery"`) is visible wherever the flag is on. The committed default
-stays `false` — in `FEATURE_FLAG_DEFAULTS` and in the shipped block of `public/index.html` — so a
-production deployment shows no link until its user-service serves both mutations. The test stack
-(`docker-compose.test.yml`, the `prod` service, which `make start-prod` also runs) sets
-`APP_CONFIG_FLAG_FORGOT_PASSWORD` to `true` unless overridden, no earlier than the registration of
-the recovery route: it lands after both routes are registered (the release story, epics Story
-4.1). The dev server keeps the committed block. The runtime-config contract test forbids a
-shipped `true`, and a test stack that enables the flag, while no route contract registers
-`ROUTE_PATHS.passwordRecovery`. The per-environment override keeps working in both directions:
-production turns the link on with `APP_CONFIG_FLAG_FORGOT_PASSWORD=true` once it is ready, and
-any stack can turn it off with `false`.
+The "Забули пароль?" link on the sign-in options row (`href="/password-recovery"`,
+`user-options/index.tsx`) renders unconditionally in every environment. Issue #309 removed the
+`forgotPassword` runtime flag before this feature, so no flag, default, compose override or
+runtime-config contract case gates the link, and this feature adds none: registering
+`ROUTE_PATHS.passwordRecovery` and `ROUTE_PATHS.passwordReset` in the auth route contract is what
+makes the link lead to the flow. Production readiness is therefore not a configuration step of
+this repository but the deployment of a user-service release serving both mutations (epics
+Follow-up 5.6). The user module README's password-recovery decisions record the absent flag.
 
-- Given the test stack with no override, when `/sign-in` renders, then the options row
-  contains a link named "Забули пароль?" with `href="/password-recovery"`.
-- Given the committed block and the in-code fallback, when read, then both still say `false`, and
-  a container started with no `APP_CONFIG_FLAG_FORGOT_PASSWORD` renders `/sign-in` without the
-  link.
-- Given a stack sets `APP_CONFIG_FLAG_FORGOT_PASSWORD=false`, when the runtime block is rendered
-  and `/sign-in` loads, then the link is absent and both recovery routes still resolve when
-  opened directly (the flag gates the link, not the routes).
-- Given the runtime-config contract test, when it runs, then it passes because the auth route
-  contract registers `ROUTE_PATHS.passwordRecovery`, and it would fail if the test stack enabled
-  the flag without that route.
-- Given `docs/feature-flags.md`, when the change lands, then its "Current flags" table keeps the
-  `false` default, states that the test stack enables it, names production enablement as
-  the next rollout step (after the deployed user-service serves the mutations) and names the
-  removal trigger (delete the flag once the flow has shipped to production).
+- Given any stack (dev server, `make start-prod`, production) with no `APP_CONFIG_FLAG_*` variable set, when `/sign-in` renders, then the options row contains a link named "Забули пароль?" with `href="/password-recovery"`.
+- Given the auth route contract, when the router and the route-coverage gate read it, then `ROUTE_PATHS.passwordRecovery` and `ROUTE_PATHS.passwordReset` are registered, so following the link and opening either route directly both render the recovery pages.
+- Given the runtime configuration, when it is read, then the `FeatureFlag` union has no `forgotPassword` member and the committed block in `public/index.html` carries no `forgotPassword` key, as issue #309 left them.
+- Given `docs/feature-flags.md` and `src/modules/user/README.md`, when the change lands, then no flag row is added for the flow, the README's "No feature flag" decision records why, and `make lint-docs` passes.
 
 ### FR-2 — Two public, lazily loaded routes in the auth contract
 
@@ -882,11 +866,9 @@ Zero visual diffs. New baselines: the resting request form and the resting new-p
 sent step, the invalid-link state and `/sign-in` with the success notice; the two resting forms
 in the mobile visual lane (Pixel 7 and iPhone 14, device-scaled). Existing baselines for
 `/sign-up`, the skeleton and the notifications are unchanged. The `/sign-in` desktop and mobile
-baselines (and any sign-in snapshot that renders the options row) change only through the
-story that enables the flag in the test stack, because the visual lane runs against that stack
-and FR-1 makes the "Забули пароль?" link visible there: they are re-recorded from the CI
-artifact as an intended change, with no diff outside that link. The shipped default stays
-`false`, so the change is a property of the test stack, not of what production renders.
+baselines (and any sign-in snapshot that renders the options row) do not change for FR-1: the
+"Забули пароль?" link has rendered unconditionally since issue #309 removed the `forgotPassword`
+flag, so the existing baselines already contain it.
 Baselines are taken from CI artifacts, never from a local production container.
 
 ### NFR-7 — Lighthouse floors
@@ -944,11 +926,10 @@ its toggle → "Підтвердити" → footer links. Sent step: back-to-mai
 Every stop is `:focus-visible` with the existing 2 px dark ring, Space toggles the password
 visibility, Enter submits, and a validation error moves focus to the first invalid field. In-card
 links navigate inside the SPA (FR-11, FR-23), so arriving on `/sign-in` through them puts focus on
-`main`. On `/sign-in`, enabling the flag in the test stack (FR-1) inserts the "Забули пароль?"
-link as a stop into the existing `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` order — after the
-"remember me" checkbox and before the submit, its DOM position in the options row
-(`user-options/index.tsx`) that `LoginFormFields` renders after the password field — and that
-spec is updated in the story that enables the flag.
+`main`. On `/sign-in`, the "Забули пароль?" link (FR-1), unconditional since issue #309, is a
+stop in the `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` order — after the "remember me"
+checkbox and before the submit, its DOM position in the options row (`user-options/index.tsx`)
+that `LoginFormFields` renders after the password field.
 
 ### NFR-11 — Mobile touch lane
 
@@ -1015,7 +996,7 @@ apollo-server suite; no browser lane depends on it.
 An ADR records the durable decisions (GraphQL transport, classification of GraphQL errors in the
 data-access layer, uniform outcome, token in memory with URL strip and no cache write, no transport
 retry, shared API-mirroring policy, signed-in access allowed, the pending schema extension and
-its removal, the flag on in the test stack only) and is listed in `docs/adr/README.md` with
+its removal, no runtime flag) and is listed in `docs/adr/README.md` with
 `@kravalg` as decider; the change touches `.dependency-cruiser.js` (the two feature folders), a
 path the drift gate treats as significant, while nothing under `src/config/**` changes.
 `docs/feature-flags.md`, `src/api/contracts/README.md` (the pending contract), the user module
@@ -1170,7 +1151,7 @@ sits inside the box it serves.
 | Chore `zustand-client-state` (#334)            | crm          | prerequisite; lands first    |
 | Release tag with both reset mutations          | user-service | production enablement waits  |
 | Pin bump to that tag, extension deleted (5.3)  | crm          | follow-up; does not block    |
-| Flag on in production (5.6)                    | operations   | waits for the deployed tag   |
+| Production user-service serves the flow (5.6)  | operations   | waits for the deployed tag   |
 | E-mail link built on the SPA origin (issue 1)  | user-service | end-to-end use blocked       |
 | GraphQL limiters #462, #469, #470              | user-service | accepted risk, filed already |
 | Machine-readable code on GraphQL domain errors | user-service | optional; classification     |
@@ -1190,7 +1171,7 @@ mutations, then moves both `.env.example` pins, the `Mockoon.Dockerfile` pin and
 `OPENAPI_SPEC_SHA256`, deletes the extension and the wiring that exists only for it, runs
 `make codegen`, `make codegen-check` and `make contract-diff` with a reviewed approval for every
 upstream breaking change between v2.8.0 and the tag, and fixes the existing call sites those
-changes reach. Production enablement of the flag (Follow-up 5.6) waits for that release to be
+changes reach. A working production reset (Follow-up 5.6) waits for that release to be
 deployed behind the production SPA. We ask user-service for the tag and file the link-host issue
 when the GitHub issue for this feature is created; the OpenAPI `enum` and pattern defects the
 research found no longer affect crm, which generates no REST types for these operations.
@@ -1236,8 +1217,8 @@ Consolidated from the research, the brief and this stage:
     copied verbatim from user-service `main` (declarations unchanged since commit `63041e4a`) and
     are answered by the local Apollo mock; the client code is identical before and after the pin
     bump (the user's decision of 2026-10-05).
-19. The `forgotPassword` flag ships `false`; the test stack enables it, and production enables it
-    by configuration once its user-service serves both mutations.
+19. No runtime flag gates the flow: issue #309 removed `forgotPassword` and the sign-in link
+    renders unconditionally; production works once its user-service serves both mutations.
 20. The chore `typed-boundaries-gate` (#332) lands first with the TB-1 gate and the suffix
     policy, and the chore `zustand-client-state` (#334) lands first with the Zustand stores
     `useAuthStore` and `useConnectivityStore`; this feature lands next, in the order #315 → #330
@@ -1258,8 +1239,8 @@ For user-service:
 3. Are active sessions invalidated server-side when a password is reset? The client does not
    sign the user out (FR-4).
 4. When is a release tag carrying both reset mutations (and, ideally, the link-host fix)
-   expected? No story waits for it; the pin bump that deletes the pending extension and the
-   production enablement of the flag do (§8).
+   expected? No story waits for it; the pin bump that deletes the pending extension and a
+   working production reset do (§8).
 5. Can `DomainExceptionNormalizer` add a machine-readable code (for example the status that
    `exceptionToStatus` already assigns, or the translation key) to GraphQL errors, so the client
    stops inferring a token rejection or the per-address limit from the operation?
@@ -1312,7 +1293,7 @@ For the product owner:
 - Adding the new routes to the Lighthouse URL list.
 - The contract pin bump as part of this feature's stories: it is epics Follow-up 5.3, which
   waits for a user-service release tag and deletes the pending schema extension.
-- Enabling the flag in production (epics Follow-up 5.6, a configuration change).
-- Deleting the `forgotPassword` flag (lifecycle stage 3).
+- Any runtime flag for the flow: issue #309 removed `forgotPassword`; epics Follow-up 5.6 is the
+  user-service deployment, not a configuration change of this repository.
 - A password-strength meter beyond the four policy rules.
 - The e-mail template, its wording and its sender.

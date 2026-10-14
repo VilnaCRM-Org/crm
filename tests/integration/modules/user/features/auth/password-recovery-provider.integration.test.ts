@@ -150,4 +150,18 @@ describe('AuthProviderLoader load failure', () => {
     await expect(loader.resolve(AUTH_TOKENS.PasswordRecoveryProvider)).resolves.toBeDefined();
     expect(attempts).toBe(2);
   });
+
+  it('captures an unregistered token under provider-resolve, not provider-load', async () => {
+    const observability = (await import('@/services/observability/observability-core')).default;
+    const capture = jest.spyOn(observability, 'captureError').mockImplementation(() => undefined);
+    const { AuthProviderLoader: Loader } = await import('@auth/stores');
+    const loader = new Loader();
+    const unregistered = Symbol('UnregisteredProvider');
+
+    const caught = await loader.resolve(unregistered).catch((error: unknown) => error);
+
+    expect(caught).toBeInstanceOf(Error);
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(caught, { source: 'auth:provider-resolve' });
+  });
 });

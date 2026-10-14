@@ -3,8 +3,13 @@ import path from 'node:path';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const DOMAIN_FOLDER = /^src\/modules\/[^/]+\/types\/user\//;
-const DOMAIN_TYPE_DECLARATION =
-  /^[ \t]*(?:export[ \t]+)?(?:declare[ \t]+)?(?:interface|type)[ \t]+(\w*(?:Dto|Entity))\b/gm;
+const DOMAIN_TYPE_DECLARATION = new RegExp(
+  [
+    String.raw`^[ \t]*(?:export[ \t]+(?:default[ \t]+)?)?(?:declare[ \t]+)?`,
+    String.raw`(?:interface|type)[ \t]+(\w*(?:Dto|Entity))\b`,
+  ].join(''),
+  'gm'
+);
 
 interface SourceFile {
   readonly file: string;
@@ -52,6 +57,11 @@ describe('TB-2 domain type names', () => {
     ['an exported *Dto interface', 'export interface OrderDto {\n  readonly id: string;\n}\n'],
     ['a local *Dto interface', 'interface OrderDto {\n  readonly id: string;\n}\n'],
     ['an *Entity alias', 'export type OrderEntity = OrderRecord;\n'],
+    [
+      'a default-exported *Dto interface',
+      'export default interface OrderDto {\n  readonly id: string;\n}\n',
+    ],
+    ['a default-exported *Entity interface', 'export default interface OrderEntity {}\n'],
   ])('fails on %s outside the domain folder', (_name, source) => {
     const file = 'src/modules/user/features/auth/types/order.ts';
 

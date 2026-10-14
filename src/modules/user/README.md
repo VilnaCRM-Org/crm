@@ -149,8 +149,10 @@ solves this with `DeferredAuthActions`, which loads the container on the first a
 **Decision.** `AuthProviderLoader` sits beside `DeferredAuthActions` in `@auth/stores/index.ts`
 and serves the board's `[Data provider]` layer: `resolve(token)` imports
 `@/config/dependency-injection-config` through a `ChunkRetryLoader` on the first call (memoized,
-a failed import forgotten), resolves the token from the container, and on a final failure
-captures it once with the source `auth:provider-load` and rethrows. `useAuthProviderLoader`
+a failed import forgotten), resolves the token from the container, and captures a final import
+failure once with the source `auth:provider-load` and a failed `container.resolve` (a DI wiring
+error, such as an unregistered token) once with the source `auth:provider-resolve`, rethrowing
+both. `useAuthProviderLoader`
 builds one loader per page mount in a `useState` initializer, so no module-level instance exists
 and a test hands the hook a stub loader. The pages therefore reach `PasswordRecoveryProvider`
 without tsyringe, zod, Apollo or the repository on the paint path.

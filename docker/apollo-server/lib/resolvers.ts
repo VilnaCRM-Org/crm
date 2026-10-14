@@ -37,6 +37,7 @@ const validateCreateUserInput = (input: CreateUserInput): void => {
 
 const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
 const MAX_TOKEN_LENGTH = 255;
+const MAX_EMAIL_LENGTH = 254;
 
 const rejectViolation = (property: string, reason: string): never => {
   throw new GraphQLError(`${property}: ${reason}`, {
@@ -104,7 +105,7 @@ export const resolvers = {
       _: unknown,
       { input }: { input: RequestPasswordResetInput }
     ): Promise<PasswordResetPayload> => {
-      if (!EMAIL_REGEX.test(input.email)) {
+      if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
       return passwordResetPayload(input.clientMutationId);
