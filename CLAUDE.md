@@ -1886,20 +1886,28 @@ registry ("Adding a page" below); never eagerly import a page. Three checks fail
 **Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
 subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
 two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
-instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds one
-top-level `splitChunks.cacheGroups` entry, `authForms`, built by
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds two
+top-level `splitChunks.cacheGroups` entries, `authFormsVendors` (chunk `auth-forms-vendors`)
+and `authForms` (chunk `auth-forms`), built by
 [`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
-per module: its `test` admits a module only when both the `sign-in-form-section` and the
-`sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`. Its
-`chunks` filter also admits the two recovery form-section chunks, so a recovery route that needs
-one of those shared modules depends on the same `auth-forms` chunk — already cached after the
-usual `/sign-in` → "Forgot password" → `/password-recovery` path — instead of carrying its own
-copy. The trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads the whole
-`auth-forms` chunk, including sign-in/sign-up-only shared modules it does not run; no recovery
+per module: each `test` admits a module only when both the `sign-in-form-section` and the
+`sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`, and
+then by resource: a module under `node_modules` goes to `auth-forms-vendors`, anything else to
+`auth-forms`, so every shared module lands in exactly one of the two. Two groups rather than one
+because `main` ships that shared code as two parallel chunks (the shared dependencies and the
+shared app code), and a single merged chunk changed the shape of the network graph Lighthouse's
+simulated throttling builds for `/sign-up`, costing about two points of mobile score on slow
+runners. Both `chunks` filters also admit the two recovery form-section chunks, so a recovery
+route that needs one of those shared modules depends on the same two chunks — already cached
+after the usual `/sign-in` → "Forgot password" → `/password-recovery` path — instead of carrying
+its own copy. The trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads
+both chunks whole, including sign-in/sign-up-only shared modules it does not run; no recovery
 URL is in the Lighthouse budget, `/sign-in` is. The chunk names live in that file and
-`tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule; the
-`performance serving` test pins the wiring and that the names equal the loaders'
-`webpackChunkName` values, so renaming a loader's chunk cannot silently disable the group. Chunk
+`tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule of both groups,
+including that a vendor module never reaches `auth-forms` and an app module never reaches
+`auth-forms-vendors`; the `performance serving` test pins the wiring of both groups and that
+each selects the chunk names the loaders' `webpackChunkName` values emit, so renaming a loader's
+chunk cannot silently disable either group. Chunk
 sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
 clears the mobile floor is decided by CI Lighthouse, not by a local build.
 
