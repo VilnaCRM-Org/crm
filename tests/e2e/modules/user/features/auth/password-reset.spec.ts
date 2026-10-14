@@ -243,13 +243,16 @@ test.describe('Create new password (issue #315)', () => {
   });
 
   test('shows the rate-limit banner without Retry for HTTP 429', async ({ page }) => {
-    await answerConfirms(page, (route) => route.fulfill({ status: 429, body: '' }));
+    const bodies = await answerConfirms(page, (route) => route.fulfill({ status: 429, body: '' }));
     await openWithToken(page);
 
     await submitPasswords(page);
 
     await expect(page.getByRole('alert')).toHaveText(rateLimited);
     await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(0);
+    await expect(page.getByLabel(newPasswordLabel)).toHaveValue(NEW_PASSWORD);
+    await expect(page.getByLabel(confirmLabel)).toHaveValue(NEW_PASSWORD);
+    expect(bodies).toHaveLength(1);
   });
 
   async function expectRetryAfter(page: Page, answer: Answer): Promise<void> {
@@ -261,6 +264,8 @@ test.describe('Create new password (issue #315)', () => {
     await page.getByRole('button', { name: tryAgain }).click();
 
     await expect.poll(() => bodies.length).toBe(2);
+    expect(bodies[1]?.variables?.input?.token).toBe(bodies[0]?.variables?.input?.token);
+    expect(bodies[1]?.variables?.input?.newPassword).toBe(NEW_PASSWORD);
   }
 
   test('retries once after an HTTP 503', async ({ page }) => {
