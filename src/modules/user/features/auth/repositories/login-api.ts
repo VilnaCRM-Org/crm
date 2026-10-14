@@ -2,10 +2,10 @@ import { inject, injectable } from 'tsyringe';
 
 import API_ENDPOINTS from '@/config/api-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import HTTP_TOKENS from '@/services/https-client/tokens';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
 import type { LoginResponse } from '@auth/types/api-responses';
+import type { LoginUserDto } from '@auth/types/credentials';
 import { LoginResponseSchema } from '@auth/utils/response-schemas';
 
 import type ApiErrorFactory from './api-error-factory';
@@ -24,11 +24,11 @@ export default class LoginAPI extends BaseAPI {
   // A login attempt issues a token and creates nothing, so a transport-level repeat is safe:
   // the POST opts in to the idempotent retry policy (issue #147).
   public async login(
-    credentials: SignInDto,
+    credentials: LoginUserDto,
     options?: RequestOptions
   ): Promise<LoginResponse | undefined> {
     try {
-      return await this.httpsClient.post<SignInDto, LoginResponse>(
+      return await this.httpsClient.post<LoginUserDto, LoginResponse>(
         API_ENDPOINTS.LOGIN,
         credentials,
         {

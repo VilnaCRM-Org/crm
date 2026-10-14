@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-import type { SignUpDto } from '@/modules/user';
+import type { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 
 const NAME_PART = /[A-Za-z]{3,10}/;
 
@@ -24,7 +24,7 @@ export function buildPassword(): string {
   return faker.helpers.shuffle(`${upper}${lower}${digit}${rest}`.split('')).join('');
 }
 
-export function buildUser(overrides: Partial<SignUpDto> = {}): SignUpDto {
+export function buildUser(overrides: Partial<RegisterUserDto> = {}): RegisterUserDto {
   return {
     fullName: buildFullName(),
     email: buildEmail(),

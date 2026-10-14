@@ -6,7 +6,6 @@ import sandboxDemoSessionProvider, {
   type SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
-import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
@@ -15,18 +14,15 @@ import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
-import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
   AuthErrorFactory,
-  GraphQLPasswordRecoveryRepository,
   LoginAPI,
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import useAuthStore from '@auth/stores/use-auth-store';
-import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 import type { AuthState } from '@auth/types/auth-store';
@@ -97,13 +93,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
     container.registerSingleton(AUTH_TOKENS.LoginResponseMapper, LoginResponseMapper);
     container.registerSingleton(AUTH_TOKENS.RegistrationResponseMapper, RegistrationResponseMapper);
     container.registerSingleton(AUTH_TOKENS.AuthUiErrorMapper, AuthUiErrorMapper);
-    container.registerSingleton(
-      AUTH_TOKENS.PasswordRecoveryTransformer,
-      PasswordRecoveryTransformer
-    );
-    container.register(AUTH_TOKENS.UserServiceErrorTransformer, {
-      useValue: new UserServiceErrorTransformer(),
-    });
   }
 
   private registerApis(container: DependencyContainer): void {
@@ -116,11 +105,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
       useFactory: (c) => this.buildAuthRepositoryDeps(c),
     });
     container.registerSingleton(AUTH_TOKENS.AuthRepository, AuthRepositoryImpl);
-    container.registerSingleton(
-      AUTH_TOKENS.PasswordRecoveryRepository,
-      GraphQLPasswordRecoveryRepository
-    );
-    container.registerSingleton(AUTH_TOKENS.PasswordRecoveryProvider, PasswordRecoveryProvider);
   }
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {

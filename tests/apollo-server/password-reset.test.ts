@@ -140,6 +140,27 @@ describe('pending password-reset mutations on the stateless mock', () => {
     expect(result.data).toEqual({ confirmPasswordResetUser: { user: null, clientMutationId } });
   });
 
+  it.each(['Abcdef1😀', `Abcdef1${'😀'.repeat(57)}`])(
+    'counts code points, accepting the newPassword %s',
+    async (newPassword) => {
+      const { result } = await execute(server, CONFIRM_RESET, {
+        token: faker.string.alphanumeric(32),
+        newPassword,
+      });
+
+      expect(result.errors).toBeUndefined();
+    }
+  );
+
+  it('accepts a newPassword without a lowercase letter, as the upstream pattern does', async () => {
+    const { result } = await execute(server, CONFIRM_RESET, {
+      token: faker.string.alphanumeric(32),
+      newPassword: 'UPPERCASE1',
+    });
+
+    expect(result.errors).toBeUndefined();
+  });
+
   it.each([
     ['an invalid e-mail', REQUEST_RESET, { email: 'not-an-email' }, 'email: '],
     [
@@ -148,7 +169,25 @@ describe('pending password-reset mutations on the stateless mock', () => {
       { token: 'reset-token', newPassword: 'lowercase1' },
       'newPassword: ',
     ],
+    [
+      'a newPassword of seven code points in eight code units',
+      CONFIRM_RESET,
+      { token: 'reset-token', newPassword: 'Abcde1😀' },
+      'newPassword: ',
+    ],
+    [
+      'a newPassword of 65 code points',
+      CONFIRM_RESET,
+      { token: 'reset-token', newPassword: `Abcdef1${'😀'.repeat(58)}` },
+      'newPassword: ',
+    ],
     ['an empty token', CONFIRM_RESET, { token: '', newPassword: 'Upper1234' }, 'token: '],
+    [
+      'a whitespace-only token',
+      CONFIRM_RESET,
+      { token: ' \t ', newPassword: 'Upper1234' },
+      'token: ',
+    ],
     [
       'a token over 255 characters',
       CONFIRM_RESET,

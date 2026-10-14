@@ -1,5 +1,5 @@
-import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type { RegistrationView } from '@auth/components/form-section/types';
+import type { RegisterUserDto } from '@auth/types/credentials';
 
 export interface UseRegistrationFormResult {
   view: RegistrationView;
@@ -7,7 +7,7 @@ export interface UseRegistrationFormResult {
   formKey: number;
   isSubmitting: boolean;
   showSubmitLoader: boolean;
-  handleRegister: (data: SignUpDto) => Promise<void>;
+  handleRegister: (data: RegisterUserDto) => Promise<void>;
   handleSuccessShown: () => void;
   handleBackToForm: () => void;
   handleRetry: () => void;

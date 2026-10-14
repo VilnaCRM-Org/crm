@@ -1,17 +1,17 @@
 import { act, renderHook } from '@testing-library/react';
 import type { MutableRefObject } from 'react';
 
-import type { SignUpDto } from '@/modules/user';
 import useRegistrationHandlers from '@auth/hooks/use-registration-handlers';
+import type { RegisterUserDto } from '@auth/types/credentials';
 import { buildUser } from '@tests/builders';
 
-const registerUser = jest.fn<Promise<void>, [SignUpDto]>(() => Promise.resolve());
+const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.resolve());
 const resetRegistration = jest.fn();
 
 jest.mock('@auth/stores', () => ({
   __esModule: true,
   authActions: {
-    registerUser: (data: SignUpDto): Promise<void> => registerUser(data),
+    registerUser: (data: RegisterUserDto): Promise<void> => registerUser(data),
     resetRegistration: (): void => {
       resetRegistration();
     },
@@ -21,13 +21,13 @@ jest.mock('@auth/stores', () => ({
 type Deps = {
   setView: jest.Mock;
   setFormKey: jest.Mock;
-  lastSubmittedDataRef: MutableRefObject<SignUpDto | null>;
+  lastSubmittedDataRef: MutableRefObject<RegisterUserDto | null>;
 };
 
 const makeDeps = (): Deps => ({
   setView: jest.fn(),
   setFormKey: jest.fn(),
-  lastSubmittedDataRef: { current: null } as MutableRefObject<SignUpDto | null>,
+  lastSubmittedDataRef: { current: null } as MutableRefObject<RegisterUserDto | null>,
 });
 
 const useHook = (deps: Deps): ReturnType<typeof useRegistrationHandlers> =>
@@ -71,7 +71,7 @@ describe('useRegistrationHandlers rebuilds when its dependencies change', () => 
     const latest = buildUser();
     const second: Deps = {
       ...first,
-      lastSubmittedDataRef: { current: latest } as MutableRefObject<SignUpDto | null>,
+      lastSubmittedDataRef: { current: latest } as MutableRefObject<RegisterUserDto | null>,
     };
     rerender(second);
 

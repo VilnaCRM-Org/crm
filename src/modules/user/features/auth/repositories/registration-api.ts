@@ -9,9 +9,9 @@ import type {
 } from '@/api/generated/graphql';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
-import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import { HttpError } from '@/services/https-client/http-error';
 import type { RegistrationResponse } from '@auth/types/api-responses';
+import type { RegisterUserDto } from '@auth/types/credentials';
 import { CreateUserResultSchema } from '@auth/utils/response-schemas';
 
 import type ApiErrorFactory from './api-error-factory';
@@ -30,7 +30,7 @@ export default class RegistrationAPI extends BaseAPI {
   }
 
   public async register(
-    credentials: SignUpDto,
+    credentials: RegisterUserDto,
     options?: RequestOptions
   ): Promise<RegistrationResponse | undefined> {
     try {
@@ -46,7 +46,7 @@ export default class RegistrationAPI extends BaseAPI {
   }
 
   private mutateCreateUser(
-    credentials: SignUpDto,
+    credentials: RegisterUserDto,
     options?: RequestOptions
   ): Promise<{ data?: CreateUserMutation | null | undefined }> {
     return this.apolloClient.mutate<CreateUserMutation, CreateUserMutationVariables>({
@@ -75,7 +75,7 @@ export default class RegistrationAPI extends BaseAPI {
     return abortError;
   }
 
-  private toCreateUserInput(credentials: SignUpDto): CreateUserInput {
+  private toCreateUserInput(credentials: RegisterUserDto): CreateUserInput {
     return {
       email: credentials.email,
       initials: credentials.fullName.trim(),
