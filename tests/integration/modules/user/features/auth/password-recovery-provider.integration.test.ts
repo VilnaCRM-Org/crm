@@ -118,9 +118,20 @@ describe('PasswordRecoveryProvider over the container and msw', () => {
     ['a network error', (): Response => HttpResponse.error(), 'request', failed('network', true)],
   ])('answers %s with its outcome and one request', async (_name, response, step, expected) => {
     const answered = answerRecoveryOperation(step, response);
+    const sent: string[] = [];
+    const onRequest = ({ request }: { request: Request }): void => {
+      sent.push(request.url);
+    };
+    server.events.on('request:start', onRequest);
 
-    await expect(run(provider, step)).resolves.toEqual(expected);
+    try {
+      await expect(run(provider, step)).resolves.toEqual(expected);
+    } finally {
+      server.events.removeListener('request:start', onRequest);
+    }
+
     expect(answered).toHaveLength(1);
+    expect(sent).toHaveLength(1);
   });
 });
 

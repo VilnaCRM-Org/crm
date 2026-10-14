@@ -66,8 +66,8 @@ describe('the shared password policy', () => {
     ['Pass\u2028word1', 'sign_up.form.password_input.error_line_break'],
     ['Pass\u2029word1', 'sign_up.form.password_input.error_line_break'],
     ['Ab1\ncdef', 'sign_up.form.password_input.error_line_break'],
-    ['Ab1\ncd', 'sign_up.form.password_input.error_length'],
-    [`Abcdef1\n${'a'.repeat(57)}`, 'sign_up.form.password_input.error_length'],
+    ['Ab1\ncd', 'sign_up.form.password_input.error_line_break'],
+    [`Abcdef1\n${'a'.repeat(57)}`, 'sign_up.form.password_input.error_line_break'],
   ])('maps %s to %s', (password, key) => {
     const i18n = createLocaleI18n('en');
 
@@ -128,8 +128,22 @@ describe('the shared password policy', () => {
     expect(validate('Pass\u2028word1', locale)).toBe(message);
   });
 
-  it('keeps every checklist row met for a long enough password with a line break', () => {
-    expect(validator.evaluate('Pass\u2028word1').items.every((item) => item.met)).toBe(true);
+  it.each(['Pass\nword1', 'Pass\rword1', 'Pass\u2028word1', 'Pass\u2029word1'])(
+    'marks the length rule of %j as unmet, as the upstream pattern does',
+    (password) => {
+      expect(validator.evaluate(password).items[0]).toEqual({ key: 'invalidLength', met: false });
+    }
+  );
+
+  it('lists an unmet rule exactly when the validator rejects a non-blank value', () => {
+    const values = Array.from({ length: 2000 }, randomPassword).filter((value) => value.trim());
+    const disagreeing = values.filter(
+      (value) =>
+        (validate(value) === true) !== validator.evaluate(value).items.every((item) => item.met)
+    );
+
+    expect(values.some((value) => validate(value) === true)).toBe(true);
+    expect(disagreeing).toEqual([]);
   });
 
   it('evaluates against the same rules create(t) enforces', () => {
