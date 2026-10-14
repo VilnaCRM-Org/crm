@@ -48,7 +48,9 @@ this codebase:
 
 Everything else is **private** to the module and must not cross the boundary:
 `repositories/*-impl.ts`, `store/*-mapper.ts`, the `lib/api-errors/*`
-subclasses, factories, and every file under `types/**` and `utils/**`.
+subclasses, factories, and every file under `types/**` and `utils/**`. The User domain types
+below are no exception to the file rule: they cross the boundary only as re-exports of the module
+barrel, never by a deep `types/user/*` import.
 
 ### The User domain types (TB-2)
 
@@ -153,9 +155,11 @@ a failed import forgotten), resolves the token from the container, and captures 
 failure once with the source `auth:provider-load` and a failed `container.resolve` (a DI wiring
 error, such as an unregistered token) once with the source `auth:provider-resolve`, rethrowing
 both. `useAuthProviderLoader`
-builds one loader per page mount in a `useState` initializer, so no module-level instance exists
-and a test hands the hook a stub loader. The pages therefore reach `PasswordRecoveryProvider`
-without tsyringe, zod, Apollo or the repository on the paint path.
+builds one loader per page mount in a `useState` initializer, so no module-level instance exists.
+The page hands that loader to `useResetPassword` or `useCreateNewPassword` as a parameter, so
+their tests pass a stub loader and the loader hook's test checks mount-local identity. The pages
+therefore reach `PasswordRecoveryProvider` without tsyringe, zod, Apollo or the repository on the
+paint path.
 
 **Rejected.** `useService` (forbidden on the auth paint path); a module-level loader singleton
 (untestable without module mocking); adding the provider's steps to `DeferredAuthActions` (it
