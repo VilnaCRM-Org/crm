@@ -113,6 +113,10 @@ describe('form section component styles', () => {
       '&:hover, &:focus-visible': {
         backgroundColor: 'transparent',
       },
+      '&:focus-visible, &.Mui-focusVisible': {
+        outline: '2px solid #404142',
+        outlineOffset: '2px',
+      },
     });
   });
 

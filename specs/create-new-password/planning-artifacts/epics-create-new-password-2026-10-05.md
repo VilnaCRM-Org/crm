@@ -2164,3 +2164,17 @@ acceptance criteria it touches; only the planned shape or file name changed.
    `tests/unit/modules/user/features/auth/routes/{reset-password,create-new-password}/*-form-section.test.tsx`
    run `expectNoA11yViolations` over the rendered form and its result or invalid-link state, so
    the jest-axe gate covers the same states the planned files would have.
+4. **Lazy recovery catalog (FR-27, architecture §11).** The stories planned every recovery string
+   in the eager `@auth/i18n/{en,uk}.json`, merged into `src/i18n/localization.json` by
+   `make i18n-generate`. The `password_recovery.*`, `password_reset.*` and `password_policy.*`
+   keys instead live in `src/modules/user/features/auth/routes/recovery-catalog/i18n/{en,uk}.json`,
+   which `RecoveryCatalogLoader` registers for both locales through `addResourceBundle` when
+   `RecoveryPageLayout` — imported by both recovery route modules — evaluates, before the page's
+   `usePageTitle` runs. `config/i18n-catalog-policy.json` lists the folder under `lazyCatalogs`,
+   so the generator leaves it out of the merged catalog and `make lint-i18n` still enforces
+   locale parity on it, reports a leaked key as stale, and fails any call site outside the listed
+   owners with `[lazy-key-scope]`. The reason is the mobile Lighthouse floor on `/sign-in`: the
+   merged catalog is imported into the eager `index.js` every page downloads, and the recovery
+   keys were 3,742 B of it. Keys a page outside the recovery routes renders, such as
+   `sign_in.notices.password_reset`, stay in the eager auth catalog. FR-27's acceptance criteria
+   are unchanged: every string ships in `uk` and `en` with identical key sets.
