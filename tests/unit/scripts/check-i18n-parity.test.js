@@ -365,6 +365,26 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(1);
   });
 
+  it('reports two eager catalogs that disagree on whether a key is an object', () => {
+    const fixture = cleanFixture();
+    const dir = seedCatalog(
+      fixture,
+      'other-feature',
+      { greeting: { bye: { soon: 'See you' } } },
+      { greeting: { bye: { soon: 'До зустрічі' } } }
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(
+      `[key-prefix] "greeting.bye" is a translation in ` +
+        `${path.join(fixture.scanRoot, 'greeting-feature', 'i18n')} but an object holding ` +
+        `"greeting.bye.soon" in ${dir}`
+    );
+    expect(result.stderr).not.toContain('TypeError');
+    expect(result.status).toBe(1);
+  });
+
   it('fails instead of passing vacuously when no catalog folder exists', () => {
     const fixture = createFixture();
     seedMerged(fixture, mergedFrom({}, {}));
@@ -1032,6 +1052,39 @@ describe('check-i18n-parity gate', () => {
       const result = runGate(fixture);
 
       expect(result.stderr).toContain('[key-ownership] "greeting.hello" is defined by 2 catalogs');
+      expect(result.status).toBe(1);
+    });
+
+    it('reports a lazy object nested under an eager translation instead of crashing', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { ...LAZY_EN, greeting: { hello: { more: 'More' } } });
+      writeJson(path.join(dir, 'uk.json'), { ...LAZY_UK, greeting: { hello: { more: 'Ще' } } });
+      const eagerDir = path.join(fixture.scanRoot, 'greeting-feature', 'i18n');
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[key-prefix] "greeting.hello" is a translation in ${eagerDir} but an object holding ` +
+          `"greeting.hello.more" in ${dir}`
+      );
+      expect(result.stderr).not.toContain('TypeError');
+      expect(result.status).toBe(1);
+    });
+
+    it('reports a lazy translation that replaces an eager object', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { ...LAZY_EN, greeting: 'Greeting' });
+      writeJson(path.join(dir, 'uk.json'), { ...LAZY_UK, greeting: 'Вітання' });
+      writeText(ownedFile(fixture, 'recovery.tsx'), "const hello = t('greeting.hello');\n");
+      const eagerDir = path.join(fixture.scanRoot, 'greeting-feature', 'i18n');
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[key-prefix] "greeting" is a translation in ${dir} but an object holding ` +
+          `"greeting.bye", "greeting.hello" in ${eagerDir}`
+      );
+      expect(result.stderr).not.toContain('[undefined-key]');
       expect(result.status).toBe(1);
     });
 

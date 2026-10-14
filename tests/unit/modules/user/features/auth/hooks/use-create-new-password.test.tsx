@@ -133,6 +133,18 @@ describe('useCreateNewPassword', () => {
     expect(confirmReset).toHaveBeenCalledTimes(1);
   });
 
+  it('never shows an invalid_link failure while the token is still held', async () => {
+    const { loader } = harness(failed('invalid_link'));
+    const token = buildResetToken();
+    const resetToken = tokenHandle(token);
+    const { result } = renderHook(() => useCreateNewPassword(loader, resetToken));
+
+    await act(() => formState(result.current).callbacks.submit(formValues(token)));
+
+    expect(resetToken.discard).toHaveBeenCalledTimes(1);
+    expect(formState(result.current).failure).toBeNull();
+  });
+
   it('clears a shown failure as soon as the next attempt starts', async () => {
     const { loader, confirmReset } = harness(failed('server', true));
     const token = buildResetToken();

@@ -1,14 +1,16 @@
 import { type Page, type Request, type Route } from '@playwright/test';
 
-import { buildResetToken } from '@tests/builders';
+import { buildPassword, buildResetToken, seedFaker } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import fillInput from '../../../../utils/fill-input';
 import { t } from '../../../../utils/initialize-localization';
 
+seedFaker();
+
 const GRAPHQL_URL = '**/graphql';
-const NEW_PASSWORD = 'Password1';
+const NEW_PASSWORD = buildPassword();
 
 const heading: string = t('password_reset.title');
 const newPasswordLabel: string = t('password_reset.new_password.label');

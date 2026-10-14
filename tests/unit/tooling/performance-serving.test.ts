@@ -158,6 +158,16 @@ describe('performance serving config', () => {
     expect(appRoutesSource).not.toContain('import ServerError');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
+    expect(staticImportsOf("import ResetPassword from './reset-password';\n")).toEqual([
+      './reset-password',
+    ]);
+    ['reset-password', 'create-new-password'].forEach((page) => {
+      expect(authRoutesSource).toMatch(
+        new RegExp(String.raw`import\(\s*/\* webpackChunkName: "${page}" \*/\s*'\./${page}'\)`)
+      );
+      expect(staticImportsOf(authRoutesSource)).not.toContain(`./${page}`);
+      expect(staticImportsOf(routesSource).filter((source) => source.includes(page))).toEqual([]);
+    });
 
     // The route-level Suspense boundary ships a non-null deferred fallback (RouteFallback),
     // never `fallback={null}` (issue #117). This pins the RootLayout boundary specifically; the

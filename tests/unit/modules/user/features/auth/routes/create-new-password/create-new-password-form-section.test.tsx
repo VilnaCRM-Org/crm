@@ -7,7 +7,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 
 import FormSection from '@auth/routes/create-new-password/create-new-password-form-section';
 import type { CreateNewPasswordOutcome } from '@auth/types/password-recovery/outcome';
-import { buildResetToken } from '@tests/builders';
+import { buildPassword, buildResetToken } from '@tests/builders';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -104,8 +104,9 @@ describe('CreateNewPasswordFormSection', () => {
     mountAt(`/password-reset?token=${buildResetToken()}`);
     await screen.findByRole('heading', { level: 1, name: 'Створіть новий пароль' });
 
-    await userEvent.type(screen.getByLabelText('Новий пароль'), 'Password1');
-    await userEvent.type(screen.getByLabelText('Підтвердьте пароль'), 'Password1');
+    const password = buildPassword();
+    await userEvent.type(screen.getByLabelText('Новий пароль'), password);
+    await userEvent.type(screen.getByLabelText('Підтвердьте пароль'), password);
     await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 
     expect(
@@ -117,8 +118,9 @@ describe('CreateNewPasswordFormSection', () => {
     const router = mountAt(`/password-reset?token=${buildResetToken()}`);
     await screen.findByRole('heading', { level: 1, name: 'Створіть новий пароль' });
 
-    await userEvent.type(screen.getByLabelText('Новий пароль'), 'Password1');
-    await userEvent.type(screen.getByLabelText('Підтвердьте пароль'), 'Password1');
+    const password = buildPassword();
+    await userEvent.type(screen.getByLabelText('Новий пароль'), password);
+    await userEvent.type(screen.getByLabelText('Підтвердьте пароль'), password);
     await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 
     expect(await screen.findByText('sign-in page')).toBeInTheDocument();

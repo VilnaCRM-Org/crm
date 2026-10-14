@@ -1,15 +1,17 @@
 import type { Page, Route } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { buildResetToken } from '@tests/builders';
+import { buildEmail, buildPassword, buildResetToken, seedFaker } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 
+seedFaker();
+
 const GRAPHQL_URL = '**/graphql';
-const EMAIL = 'eirene@gmail.com';
-const NEW_PASSWORD = 'Password1';
+const EMAIL = buildEmail();
+const NEW_PASSWORD = buildPassword();
 
 const submitLabel: string = t('password_recovery.submit_button');
 const sentTitle: string = t('password_recovery.sent.title');
