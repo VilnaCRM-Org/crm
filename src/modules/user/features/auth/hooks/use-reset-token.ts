@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
+import type { ResetTokenHandle } from '@auth/types/password-recovery/state';
+
 const TOKEN_PARAM = 'token';
 const MAX_TOKEN_LENGTH = 255;
 
@@ -9,10 +11,10 @@ function readToken(search: string): string | null {
   return token.length > 0 && token.length <= MAX_TOKEN_LENGTH ? token : null;
 }
 
-export default function useResetToken(): string | null {
+export default function useResetToken(): ResetTokenHandle {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
-  const [token] = useState(() => readToken(search));
+  const [token, setToken] = useState(() => readToken(search));
   const stripped = useRef(false);
 
   useLayoutEffect(() => {
@@ -21,5 +23,5 @@ export default function useResetToken(): string | null {
     navigate(pathname, { replace: true });
   }, [navigate, pathname, search]);
 
-  return token;
+  return { token, discard: (): void => setToken(null) };
 }

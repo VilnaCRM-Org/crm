@@ -15,7 +15,7 @@ const createLocaleI18n = (locale: Locale, alsoLoaded: readonly Locale[] = []): I
   const resources = Object.fromEntries(
     [locale, ...alsoLoaded].map((loaded) => [
       loaded,
-      { translation: localization[loaded].translation },
+      { translation: structuredClone(localization[loaded].translation) },
     ])
   );
   instance.use(initReactI18next).init({

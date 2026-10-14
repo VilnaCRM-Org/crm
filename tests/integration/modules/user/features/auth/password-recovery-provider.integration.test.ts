@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
@@ -12,7 +12,8 @@ import type {
 } from '@auth/types/password-recovery/outcome';
 import { buildPassword, buildResetToken } from '@tests/builders';
 
-import server, { GRAPHQL_URL } from '../../../../mocks/server';
+import { answerRecoveryOperation } from '../../../../mocks/password-recovery-operations';
+import server from '../../../../mocks/server';
 
 type Outcome = ResetPasswordOutcome | CreateNewPasswordOutcome;
 
@@ -20,17 +21,6 @@ const EMAIL = 'eirene@gmail.com';
 
 const errorBody = (message: string, extensions?: Record<string, unknown>): Response =>
   HttpResponse.json({ data: null, errors: [{ message, extensions }] });
-
-const answer = (response: () => Response): { count: () => number } => {
-  let requests = 0;
-  server.use(
-    http.post(GRAPHQL_URL, () => {
-      requests += 1;
-      return response();
-    })
-  );
-  return { count: (): number => requests };
-};
 
 const run = async (provider: PasswordRecoveryProvider, step: RecoveryStep): Promise<Outcome> => {
   const { signal } = new AbortController();
@@ -127,10 +117,10 @@ describe('PasswordRecoveryProvider over the container and msw', () => {
     ],
     ['a network error', (): Response => HttpResponse.error(), 'request', failed('network', true)],
   ])('answers %s with its outcome and one request', async (_name, response, step, expected) => {
-    const requests = answer(response);
+    const answered = answerRecoveryOperation(step, response);
 
     await expect(run(provider, step)).resolves.toEqual(expected);
-    expect(requests.count()).toBe(1);
+    expect(answered).toHaveLength(1);
   });
 });
 

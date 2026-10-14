@@ -49,7 +49,8 @@
         "error_length": "Please enter a password between 8 and 64 characters",
         "error_numbers": "Please include at least one digit",
         "error_uppercase": "Please add at least one uppercase Latin letter (A–Z)",
-        "error_lowercase": "Please include at least one lowercase letter"
+        "error_lowercase": "Please include at least one lowercase letter",
+        "error_line_break": "Please remove line breaks from the password"
       },
       "password_tip": {
         "alt": "Password tip icon",
@@ -141,56 +142,5 @@
     "logo_alt": "VilnaCRM logo",
     "privacy": "Privacy Policy",
     "usage_policy": "Terms of Use"
-  },
-  "password_recovery": {
-    "back": "Back",
-    "submit_button": "Confirm",
-    "errors": {
-      "rate_limited": "Too many requests. Please try again later.",
-      "transient": "The request could not be sent. Check your connection and try again.",
-      "email_rejected": "Check the e-mail address and try again"
-    },
-    "title": "Forgot your password?",
-    "body": "Enter the e-mail address of your account",
-    "submitting": "Sending…",
-    "sent": {
-      "title": "Check your e-mail",
-      "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
-      "to_sign_in": "Go to sign-in"
-    }
-  },
-  "password_policy": {
-    "rules": {
-      "length": "8 to 64 characters",
-      "digit": "At least one digit",
-      "uppercase": "At least one uppercase Latin letter (A–Z)",
-      "lowercase": "At least one lowercase letter"
-    },
-    "state": {
-      "met": "met",
-      "unmet": "not met"
-    }
-  },
-  "password_reset": {
-    "title": "Create a new password",
-    "body": "Choose a new password for your account",
-    "submitting": "Saving…",
-    "new_password": {
-      "label": "New password",
-      "placeholder": "Enter a new password"
-    },
-    "confirm_password": {
-      "label": "Confirm password",
-      "placeholder": "Repeat the new password"
-    },
-    "errors": {
-      "mismatch": "The passwords do not match",
-      "policy_rejected": "The password does not meet the requirements. Check the rules below"
-    },
-    "invalid": {
-      "title": "This link is no longer valid",
-      "body": "The password reset link is invalid or has expired. Request a new one.",
-      "request_new": "Request a new link"
-    }
   }
 }

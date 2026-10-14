@@ -16,6 +16,7 @@ function Field(): JSX.Element {
     formState: { errors },
   } = useFormContext<{ email: string }>();
   const message = errors.email?.message;
+  const type = errors.email?.type;
   const { ref, name, onChange, onBlur } = register('email', { validate: () => true });
   return (
     <>
@@ -24,6 +25,7 @@ function Field(): JSX.Element {
         id="email"
         aria-invalid={message ? 'true' : 'false'}
         aria-describedby={message ? 'email-error' : undefined}
+        data-error-type={type}
         ref={ref}
         name={name}
         onChange={onChange}
@@ -71,6 +73,7 @@ describe('ServerFieldError', () => {
     expect(await screen.findByText('Not a valid address')).toHaveAttribute('id', 'email-error');
     expect(input).toHaveAttribute('aria-invalid', 'true');
     expect(input).toHaveAttribute('aria-describedby', 'email-error');
+    expect(input).toHaveAttribute('data-error-type', 'server');
     expect(focus).toHaveBeenCalledTimes(1);
 
     rerender(<Harness message="Not a valid address" />);

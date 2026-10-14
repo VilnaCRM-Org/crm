@@ -50,6 +50,18 @@ describe('PasswordRecoveryTransformer', () => {
       { reason: 'invalid_link', retryable: false },
     ],
     [
+      'request',
+      'a token violation',
+      failure('violation', ['token']),
+      { reason: 'invalid_link', retryable: false },
+    ],
+    [
+      'confirm',
+      'server error carrying a token path',
+      failure('server', ['token']),
+      { reason: 'server', retryable: true },
+    ],
+    [
       'confirm',
       'a newPassword violation',
       failure('violation', ['newPassword']),
@@ -92,6 +104,7 @@ describe('PasswordRecoveryTransformer', () => {
     ['abcde@d.com', 'a*****@d.com'],
     ['Ab.Cd@ef@Example.COM', 'Ab.*****@Example.COM'],
     ['no-at-sign', '*****'],
+    ['@x.io', '*****@x.io'],
   ])('masks %s as %s', (email, maskedEmail) => {
     expect(transformer.toSentOutcome({ email })).toEqual({ kind: 'sent', maskedEmail });
   });

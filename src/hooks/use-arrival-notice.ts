@@ -1,10 +1,23 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router';
+import { NavigationType, useLocation, useNavigationType } from 'react-router';
 
-import type { ArrivalNotice, RedirectNavigationState } from '@/routes/types/navigation-state';
+import type {
+  ArrivalNotice,
+  ArrivalNoticeSnapshot,
+  RedirectNavigationState,
+} from '@/routes/types/navigation-state';
 
 export default function useArrivalNotice(): ArrivalNotice | null {
-  const { state } = useLocation();
-  const [notice] = useState(() => (state as RedirectNavigationState | null)?.notice ?? null);
-  return notice;
+  const { key, state } = useLocation();
+  const action = useNavigationType();
+  const [arrival, setArrival] = useState<ArrivalNoticeSnapshot>(() => ({
+    key,
+    notice: (state as RedirectNavigationState | null)?.notice ?? null,
+  }));
+
+  if (key !== arrival.key) {
+    setArrival({ key, notice: action === NavigationType.Replace ? arrival.notice : null });
+  }
+
+  return arrival.notice;
 }

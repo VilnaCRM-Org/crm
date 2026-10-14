@@ -14,10 +14,17 @@ export interface InCardLinkProps {
   children: ReactNode;
 }
 
-export interface CardBackControlProps {
-  to?: string | undefined;
-  onClick?: (() => void) | undefined;
+export interface CardBackLinkProps {
+  to: string;
+  onClick?: never;
 }
+
+export interface CardBackButtonProps {
+  to?: never;
+  onClick: () => void;
+}
+
+export type CardBackControlProps = CardBackLinkProps | CardBackButtonProps;
 
 export interface RecoveryResultAction {
   readonly label: string;

@@ -36,7 +36,6 @@ function useRuleLabels(): PasswordRuleLabels {
     numberRequired: t('password_policy.rules.digit'),
     uppercaseRequired: t('password_policy.rules.uppercase'),
     lowercaseRequired: t('password_policy.rules.lowercase'),
-    fieldRequired: '',
   };
 }
 
@@ -46,7 +45,7 @@ export default function PasswordPolicyRules({ id, name }: PasswordPolicyRulesPro
   const { items } = passwordValidator.evaluate(typeof value === 'string' ? value : '');
 
   return (
-    <Box component="ul" id={id} sx={styles.list}>
+    <Box component="ul" role="list" id={id} sx={styles.list}>
       {items.map(({ key, met }) => (
         <PasswordRuleItem key={key} label={labels[key]} met={met} />
       ))}

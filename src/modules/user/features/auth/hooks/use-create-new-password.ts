@@ -14,16 +14,20 @@ import type {
 import type {
   CreateNewPasswordCallbackDeps,
   CreateNewPasswordCallbacks,
+  CreateNewPasswordInvalidState,
   CreateNewPasswordState,
-  CreateNewPasswordView,
+  CreateNewPasswordViewDeps,
   CreateNewPasswordViewState,
   RecoveryProviderStep,
+  ResetTokenHandle,
 } from '@auth/types/password-recovery/state';
 
 const PASSWORD_RESET_ARRIVAL: RedirectNavigationState = {
   focusMain: true,
   notice: 'password_reset',
 };
+
+const INVALID_LINK: CreateNewPasswordInvalidState = { view: 'invalid' };
 
 const CONFIRM_STEP: RecoveryProviderStep<CreateNewPasswordDto, CreateNewPasswordOutcome> = (
   provider,
@@ -41,19 +45,23 @@ function goToSignIn(navigate: NavigateFunction): void {
   navigate(ROUTE_PATHS.signIn, { replace: true, state: PASSWORD_RESET_ARRIVAL });
 }
 
-function useCreateNewPasswordView(token: string | null): CreateNewPasswordViewState {
+function discardLink({ resetToken, submitter }: CreateNewPasswordViewDeps): void {
+  submitter.forget();
+  resetToken.discard();
+}
+
+function useCreateNewPasswordView(deps: CreateNewPasswordViewDeps): CreateNewPasswordViewState {
   const navigate = useNavigate();
-  const [view, setView] = useState<CreateNewPasswordView>(token === null ? 'invalid' : 'form');
   const [failure, setFailure] = useState<RecoveryFailure | null>(null);
 
   const settle = (outcome: CreateNewPasswordOutcome | null): void => {
     if (outcome === null) return;
     if (outcome.kind === 'confirmed') goToSignIn(navigate);
-    else if (outcome.failure.reason === 'invalid_link') setView('invalid');
+    else if (outcome.failure.reason === 'invalid_link') discardLink(deps);
     setFailure(nextFailure(outcome));
   };
 
-  return { view, failure, settle, clearFailure: (): void => setFailure(null) };
+  return { failure, settle, clearFailure: (): void => setFailure(null) };
 }
 
 function useCreateNewPasswordCallbacks({
@@ -74,14 +82,17 @@ function useCreateNewPasswordCallbacks({
 
 export default function useCreateNewPassword(
   loader: AuthProviderLoader,
-  token: string | null
+  resetToken: ResetTokenHandle
 ): CreateNewPasswordState {
-  const viewState = useCreateNewPasswordView(token);
   const submitter = useAbortableSubmit(useRecoveryRun(loader, CONFIRM_STEP));
+  const viewState = useCreateNewPasswordView({ resetToken, submitter });
   const callbacks = useCreateNewPasswordCallbacks({ submitter, viewState });
+  const { token } = resetToken;
+  if (token === null) return INVALID_LINK;
 
   return {
-    view: viewState.view,
+    view: 'form',
+    token,
     failure: viewState.failure,
     isSubmitting: submitter.isSubmitting,
     callbacks,
