@@ -113,7 +113,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - **Configuration**: a per-environment change with no code (Follow-up 5.6).
 - **Filed at planning**: completed by filing a user-service issue (Follow-up 5.1).
 - **Optional**: no crm work depends on it (Follow-up 5.2).
-- **Deferred**: out of scope for this feature (Follow-ups 5.4 and 5.5).
+- **Deferred**: out of scope for this feature (Follow-up 5.4).
+- **Done before this feature**: issue #309 already did it (Follow-up 5.5).
 
 > Assumption: bmalph turns every `### Story N.M:` header under a `## Epic N:` heading into an open
 > item of `.ralph/@fix_plan.md`, so every story is dispatched. The six follow-ups sit after Epic 4
@@ -123,9 +124,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 
 ### Functional Requirements
 
-- FR-1: "Забули пароль?" entry link: the shipped `forgotPassword` default stays `false`
-  (production); the test stack enables it no earlier than the route registration (Story 4.1); the
-  per-environment override works both ways.
+- FR-1: "Забули пароль?" entry link: renders unconditionally since issue #309 removed the
+  `forgotPassword` flag; registering both routes makes it open the flow (Story 4.1).
 - FR-2: two public, lazily loaded routes (`/password-recovery`, `/password-reset`) in the auth
   route contract; no registry, composer or shell edit.
 - FR-3: a distinct `document.title` per route from `titleKey`, never carrying token or e-mail.
@@ -170,8 +170,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - NFR-3: jscpd zero clones (70 tokens, 5 lines) over `src`.
 - NFR-4: ESLint, `tsc` and dependency-cruiser clean; every repository convention kept.
 - NFR-5: `make lint-metrics` hard-fail policy, including the per-file function caps.
-- NFR-6: zero visual diffs; new baselines from CI artifacts only; `/sign-in` re-recorded only by
-  the test-stack flag enablement (Story 4.1).
+- NFR-6: zero visual diffs; new baselines from CI artifacts only; `/sign-in` baselines unchanged
+  for FR-1, since the link already renders unconditionally.
 - NFR-7: Lighthouse desktop and mobile floors; audited URL list unchanged.
 - NFR-8: bundle and paint-path budgets; eager entrypoint grows by under 1 kB gzip.
 - NFR-9: WCAG 2.1 AA, axe in three engines, 24 px / 44 px targets, and at most one new scoped
@@ -303,8 +303,8 @@ opening with "every …" lets the qualifier stand for the stories it names gener
 Each story's own criteria add to these; a story is not done until all of them hold.
 
 - **Quality floors.** No threshold, budget, allowlist, scope, baseline or ratchet value is
-  edited to make a run pass (the PRD's two reviewed deviations — the `/sign-in` re-baseline of
-  Story 4.1 and the one scoped #276 entry of Story 2.2 — are intended changes, not passes); no
+  edited to make a run pass (the PRD's reviewed deviation — the one scoped #276 entry of
+  Story 2.2 — is an intended change, not a pass); no
   `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`,
   `.fixme`, `waitForTimeout` or `expect` inside a conditional; no `data-testid` in `src`; no
   added inline code comments beyond a `// Stryker disable next-line <Mutator>: <proof>` the
@@ -361,7 +361,7 @@ Each story's own criteria add to these; a story is not done until all of them ho
    errors and navigation, plus the shared card and form primitives both pages use.
 3. **Epic 3: Create new password page** — `/password-reset`: token intake, strip and scrub, the
    new-password form with live rules, the invalid-link state and the sign-in arrival notice.
-4. **Epic 4: Release wiring** — the flag in the test stack, the accessibility, mobile and visual
+4. **Epic 4: Release wiring** — the unconditional entry link, the accessibility, mobile and visual
    lanes, and the release gate sweep.
 
 The section "Upstream work and follow-ups (not dispatched)" after Epic 4 holds Follow-ups 5.1 to
@@ -427,7 +427,7 @@ CI `make verify-scaffold` and `make check-adr-drift` (via the `[no-adr]` PR-body
 - **Given** `docs/adr/`, **when** the story lands, **then** no ADR file is added or changed.
 - **Given** the architecture §14 outline, **when** the decisions are written into the README section, **then** each decision states its context, the decision and the rejected options.
 - **Given** the layer decisions, **when** the README lists them, **then** it records the board's stack (root page component, React hooks over `useAbortableSubmit`, the Data provider `PasswordRecoveryProvider` reached through `AuthProviderLoader`, the Transformers `PasswordRecoveryTransformer` and `UserServiceErrorTransformer`, the Repository `GraphQLPasswordRecoveryRepository`) and the two folders, with the rejected options (controller and service classes, a proxy and factory per flow, error translation in the repository).
-- **Given** the flow decisions, **when** the README lists them, **then** it records GraphQL only through the container's Apollo client with two generated documents selecting only `clientMutationId`, `fetchPolicy: 'no-cache'` and no retry link, the two-step classification of GraphQL errors, the uniform request outcome, the pending schema extension copied verbatim from user-service `main` with the follow-up pin bump that deletes it, the memory-only token stripped by `useResetToken`, the shared `PasswordValidator`, both routes public, and the flag's shipped default kept `false` with the test stack enabling it after the route registration, each with its rejected options.
+- **Given** the flow decisions, **when** the README lists them, **then** it records GraphQL only through the container's Apollo client with two generated documents selecting only `clientMutationId`, `fetchPolicy: 'no-cache'` and no retry link, the two-step classification of GraphQL errors, the uniform request outcome, the pending schema extension copied verbatim from user-service `main` with the follow-up pin bump that deletes it, the memory-only token stripped by `useResetToken`, the shared `PasswordValidator`, both routes public, and no runtime flag (issue #309 removed `forgotPassword`, so the link is unconditional), each with its rejected options.
 - **Given** the domain decisions, **when** the README lists them, **then** it has the Domain Outcome.
 - **Given** the README's links, **when** `make lint-doc-links` runs, **then** every relative link and anchor resolves; the GitHub issue and the user-service requests are linked (Story 4.5).
 - **Given** `config/module-shape.json`, **when** the module-shape test and the generator read it,
@@ -1588,75 +1588,37 @@ NFR-8, NFR-12, NFR-13, NFR-15, NFR-16, NFR-17, NFR-18.
 
 ## Epic 4: Release wiring
 
-**Goal.** Turn the flow on in the test stack — the shipped default stays off until production's
-user-service serves the mutations — and prove it against every browser-level gate the repository
-enforces: axe and the keyboard contract in three engines, the mobile touch lane, the visual
-matrix, and a final sweep of documentation, bundle, Lighthouse and mutation results.
+**Goal.** Confirm the unconditional "Забули пароль?" link opens the flow — no flag gates it since
+issue #309 — and prove the flow against every browser-level gate the repository enforces: axe
+and the keyboard contract in three engines, the mobile touch lane, the visual matrix, and a
+final sweep of documentation, bundle, Lighthouse and mutation results.
 
-### Story 4.1: Enable the forgotPassword flag in the test stack
+### Story 4.1: Confirm the unconditional entry link
 
-As a locked-out user on `/sign-in` in any environment that can serve the flow,
-I want the "Забули пароль?" link to be there,
-So that I can find the recovery flow without knowing its URL, while production keeps it hidden
-until its user-service serves the reset mutations.
+As a locked-out user on `/sign-in`,
+I want the "Забули пароль?" link to open the recovery flow,
+So that I can find the flow without knowing its URL.
 
 **Dispatch:** Depends on: 0.1, 2.5, 3.6. **Status:** Ready.
 
-**Requirements:** FR-1, NFR-6 (`/sign-in` re-baseline), NFR-7, NFR-9, NFR-10 (sign-in keyboard
-stop), NFR-16.
+**Requirements:** FR-1, NFR-7, NFR-9, NFR-10 (sign-in keyboard stop), NFR-16.
 
-**Files:** `docker-compose.test.yml` (MODIFY: `prod` passes
-`APP_CONFIG_FLAG_FORGOT_PASSWORD=${APP_CONFIG_FLAG_FORGOT_PASSWORD:-true}`),
-`tests/unit/tooling/runtime-config-contract.test.ts` (MODIFY: a test-stack case),
-`tests/e2e/modules/user/features/auth/runtime-config.spec.ts` (MODIFY: the test stack serves the
-link; the `false` override hides it; both routes still resolve),
-`tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (MODIFY: the link joins the tab order after
-"remember me" and before the submit), `docs/feature-flags.md` (MODIFY: the "Current flags" row
-and the worked example), `src/modules/user/README.md` (MODIFY: the rollout line),
-`/sign-in` visual baselines (REBASELINE from CI artifacts).
+**Files:** `src/modules/user/README.md` (MODIFY: the "No feature flag" decision),
+`tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (VERIFY: the link is a stop after "remember me"
+and before the submit). No runtime-config, compose or flag file changes: issue #309 removed the
+`forgotPassword` flag and the link already renders unconditionally (see "Implementation drift").
 
-> Assumption: the committed default stays `false`, so the flag service, `public/index.html` and
-> every default test keep asserting `false`. The dev server keeps the committed block: no
-> dev-server transform is added (over-engineering review, item 3); a developer runs
-> `make start-prod`, whose container renders the flag, or opens either route directly.
-
-This story re-baselines `/sign-in`, as NFR-6 provides: the visual and a11y lanes run against the
-test stack, which now renders the link, so every `/sign-in` desktop and mobile baseline changes.
-That is the intended UI change FR-1 asks for, re-recorded from the CI artifact; production
-renders exactly what it renders today.
-
-**Gates:** DoD local gates; the focused Jest file
-`tests/unit/tooling/runtime-config-contract.test.ts`; `make lint-compose`; CI `make test-e2e`,
-`make test-a11y-e2e`, `make test-visual`, Lighthouse.
+**Gates:** DoD local gates; `make lint-docs`; CI `make test-e2e`, `make test-a11y-e2e`,
+`make test-visual`, Lighthouse.
 
 **Acceptance criteria:**
 
-- **Given** the test stack with no override, **when** `/sign-in` renders, **then** the options
-  row contains a link named "Забули пароль?" with `href="/password-recovery"`.
-- **Given** `.env` carrying the empty `APP_CONFIG_FLAG_FORGOT_PASSWORD=` of `.env.example:66`,
-  **when** compose interpolates the test file, **then** `make lint-compose` passes, the `prod`
-  service receives `true` (the `:-` form, not `-`), and an explicit `false` yields `false`.
-- **Given** the committed block and `FEATURE_FLAG_DEFAULTS`, **when** read, **then** both still
-  say `false`, and the existing default tests pass unchanged.
-- **Given** the runtime-config contract test, **when** it runs, **then** the shipped-default
-  case passes as before and a new case fails if the test compose file defaults the flag to
-  `true` while no route contract registers `ROUTE_PATHS.passwordRecovery` (must-fail: the probe
-  on a fixture without the route reports it).
-- **Given** `APP_CONFIG_FLAG_FORGOT_PASSWORD=false` or `overrideRuntimeConfig` with
-  `forgotPassword: false`, **when** `/sign-in` loads, **then** the link is absent and both
-  routes still resolve when opened directly.
-- **Given** `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts`, **when** it runs, **then** the
-  `expectTabOrder` list has the link as a stop between the "remember me" checkbox and the submit
-  with a visible focus ring.
-- **Given** the `/sign-in` axe scan, **when** it runs in three engines, **then** it passes with
-  no new `A11Y_EXCEPTIONS` entry; if the link fails `color-contrast`, the story stops and
-  reports rather than adding one.
-- **Given** the `/sign-in` visual baselines, **when** regenerated, **then** they come from the CI
-  `visual tests` artifact of this branch, only `/sign-in` snapshots change, and every changed
-  pixel lies in the options row.
-- **Given** `docs/feature-flags.md` and the README's password-recovery decisions, **then** the "Current flags" table keeps the
-  `false` default, states that the test stack enables it, names production enablement
-  (Follow-up 5.6) and the removal trigger (Follow-up 5.5), and `make lint-docs` passes.
+- **Given** any stack with no `APP_CONFIG_FLAG_*` variable set, **when** `/sign-in` renders, **then** the options row contains a link named "Забули пароль?" with `href="/password-recovery"` that opens the request form.
+- **Given** the runtime configuration, **when** read, **then** the `FeatureFlag` union has no `forgotPassword` member, `public/index.html` ships `{ "flags": {} }`, and no compose file or runtime-config contract case names the flag.
+- **Given** `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts`, **when** it runs, **then** the `expectTabOrder` list has the link as a stop between the "remember me" checkbox and the submit with a visible focus ring.
+- **Given** the `/sign-in` axe scan, **when** it runs in three engines, **then** it passes with no new `A11Y_EXCEPTIONS` entry beyond the issue-#309 brand-link entry.
+- **Given** the `/sign-in` visual baselines, **when** the visual lane runs, **then** none changes for FR-1, because the link was already in them.
+- **Given** the README's password-recovery decisions, **then** the "No feature flag" decision states that the flow ships unflagged and that production depends on its user-service serving the mutations (Follow-up 5.6), and `make lint-docs` passes.
 - **Given** CI, **then** the mobile Lighthouse median on `/sign-in` stays at or above 0.84.
 
 ### Story 4.2: Prove both routes against axe and the keyboard contract
@@ -1781,8 +1743,7 @@ new `*-snapshots/` folders (from CI artifacts), `tests/e2e/route-coverage.tsv` (
 - **Given** the mobile visual lane (Pixel 7, iPhone 14, `scale: 'device'`), **then** both resting
   forms have baselines.
 - **Given** the baselines, **when** committed, **then** they are taken from the CI
-  `visual tests` artifact of this branch, and every existing baseline other than the `/sign-in`
-  set from Story 4.1 is unchanged.
+  `visual tests` artifact of this branch, and every existing baseline is unchanged.
 - **Given** stable rendering, **then** the specs wait on `waitForStableDom`, not on the clock.
 - **Given** the manifest, **then** each key gains a visual row naming its spec.
 
@@ -1859,7 +1820,7 @@ VilnaCRM-Org/user-service#512 (reset link host) and VilnaCRM-Org/user-service#51
   request invalidates earlier tokens and whether a reset invalidates active sessions.
 - **Given** the issue, **then** it is linked from the README's password-recovery decisions (Story 4.5) and the feature issue.
 - **Given** Follow-up 5.3, **when** this issue is filed, **then** the request for a release tag
-  carrying both reset mutations is filed with it, and production enablement of the flag
+  carrying both reset mutations is filed with it, and a working production reset
   (Follow-up 5.6) waits for that release to be deployed.
 
 ### Follow-up 5.2: Optionally report the OpenAPI defects of the reset operations
@@ -1953,29 +1914,26 @@ until then the sent step's "Назад" is the resend path (PRD §2, §11).
 ### Follow-up 5.5: Delete the forgotPassword flag after the flow has shipped
 
 As a maintainer,
-I want the `forgotPassword` flag removed once the flow is live,
-So that a dead toggle does not linger in the runtime configuration.
+I want no dead `forgotPassword` toggle in the runtime configuration,
+So that the entry link has no untested path.
 
-**Dispatch:** Not dispatched; would depend on 4.1. **Status:** Deferred.
+**Dispatch:** Not dispatched. **Status:** Done before this feature (issue #309).
 
-**Unblock condition:** the flow has shipped to production (Follow-up 5.6) and stage 3 of the
-lifecycle in `docs/feature-flags.md` applies.
+**Unblock condition:** none; issue #309 already removed the flag and made the link
+unconditional (see "Implementation drift").
 
 **Requirements:** PRD goal 5, `docs/feature-flags.md` lifecycle stage 3.
 
-**Gates:** to be set when planned.
+**Gates:** none.
 
 **Acceptance criteria:**
 
-- **Given** removal, **then** the flag leaves the `FeatureFlag` union, `FEATURE_FLAG_DEFAULTS`,
-  `app-config-schema.ts`, `public/index.html`, `.env.example`, `docker-compose.test.yml`, the
-  runtime-config contract case and e2e spec and the docs together, with an ADR-drift-satisfying
-  ADR update, and `UserOptions` renders the link unconditionally.
+- **Given** the runtime configuration, **then** the `FeatureFlag` union, `FEATURE_FLAG_DEFAULTS`, `app-config-schema.ts`, `public/index.html`, `.env.example` and `docker-compose.test.yml` carry no `forgotPassword` entry and `UserOptions` renders the link unconditionally, as issue #309 left them.
 
-### Follow-up 5.6: Enable the forgotPassword flag in production
+### Follow-up 5.6: Serve the reset mutations behind the production SPA
 
 As a locked-out user of the production SPA,
-I want the "Забули пароль?" link once the production user-service can reset my password,
+I want the "Забули пароль?" link to complete a real reset,
 So that I can recover access without contacting support.
 
 **Dispatch:** Not dispatched; would depend on 4.1. **Status:** Configuration (no code).
@@ -1984,17 +1942,14 @@ So that I can recover access without contacting support.
 tag) is deployed behind the production SPA, and its e-mail link points at the SPA origin
 (Follow-up 5.1).
 
-**Requirements:** FR-1 (production rollout), PRD goal 5, `docs/feature-flags.md` lifecycle stage 2.
+**Requirements:** FR-1 (production rollout), PRD goal 5.
 
-**Gates:** none in the repository; the environment's own smoke check of `/sign-in`.
+**Gates:** none in the repository; the environment's own smoke check of the reset flow.
 
 **Acceptance criteria:**
 
-- **Given** the deployed release, **when** the production environment sets
-  `APP_CONFIG_FLAG_FORGOT_PASSWORD=true` and restarts the container, **then** `/sign-in` shows
-  the link with no rebuild, and clearing the variable hides it again.
-- **Given** staging first, **when** a real reset completes end to end there, **then**
-  production follows, per the roll-forward order of `docs/feature-flags.md`.
+- **Given** the deployed release, **when** a user follows the "Забули пароль?" link on production `/sign-in` and submits an address, **then** the request succeeds with no crm rebuild or configuration change, because the link is unconditional and no flag exists.
+- **Given** staging first, **when** a real reset completes end to end there, **then** production follows with the same user-service release.
 
 ## Dependency graph
 
@@ -2040,7 +1995,7 @@ flowchart LR
   s33 --> s36
   s34 --> s36
   s35 --> s36
-  s01 --> s41["4.1 Test-stack flag"]
+  s01 --> s41["4.1 Unconditional entry link"]
   s25 --> s41
   s36 --> s41
   s25 --> s42["4.2 Axe + keyboard"]
@@ -2064,11 +2019,10 @@ flowchart LR
   s11 -.-> f53["Follow-up 5.3 Pin bump, delete extension BLOCKED"]
   f52["Follow-up 5.2 OpenAPI defects OPTIONAL"]
   s25 -.-> f54["Follow-up 5.4 Resend countdown DEFERRED"]
-  s41 -.-> f56["Follow-up 5.6 Flag on in production CONFIGURATION"]
+  s41 -.-> f56["Follow-up 5.6 Production user-service CONFIGURATION"]
   f53 -.-> f56
   f51 -.-> f56
-  f56 -.-> f55["Follow-up 5.5 Flag removal DEFERRED"]
-  s41 -.-> f55
+  f55["Follow-up 5.5 Flag removal DONE by #309"]
 ```
 
 ## Recommended implementation order
@@ -2089,8 +2043,8 @@ parallel. Wave 1 can start as soon as both prerequisite chores have merged.
 11. **Wave 11:** 4.4.
 12. **Wave 12:** 4.5.
 13. **Not dispatched (follow-ups):** 5.1 (filed at planning, with the tag request), 5.2
-    (optional), 5.3 (blocked upstream; deletes the pending extension), 5.4 and 5.5 (deferred)
-    and 5.6 (production configuration once that release is deployed).
+    (optional), 5.3 (blocked upstream; deletes the pending extension), 5.4 (deferred), 5.5
+    (done by issue #309) and 5.6 (production user-service once that release is deployed).
 
 Ralph's sequential loop ignores `Depends on` and takes the stories top to bottom in file order,
 so every story's `Depends on` names only stories that appear earlier in this file. Parallel
@@ -2101,13 +2055,13 @@ merge re-runs `make i18n-generate` rather than hand-merging the generated catalo
 
 ## Conflicts and points for the owners
 
-1. **NFR-6 vs FR-1 — resolved.** The `/sign-in` baselines change only through Story 4.1,
-   re-recorded from the CI artifact as an intended change with no other diff.
+1. **NFR-6 vs FR-1 — resolved.** The `/sign-in` baselines do not change: issue #309 made the
+   link unconditional before this feature, so they already contain it.
 2. **NFR-9 vs the Figma primary pill on links — resolved.** One scoped `color-contrast` entry for
    the result views' primary-pill links, with the existing #276 reason and tracking (Story 2.2,
    proven by Story 4.2). The plain link style remains an open question for the design owner.
 3. **Sign-in keyboard contract — resolved.** NFR-10 includes the "Забули пароль?" stop; Story
-   4.1 updates the spec.
+   4.1 verifies the spec.
 4. **Integration coverage — resolved by AR-8.** Stories 1.3, 1.4 and 1.5 carry integration tests.
 5. **File ownership.** `state.ts` holds both flows' types; Story 2.3 creates it and Story 3.4
    appends the confirm side, which makes 3.4 depend on 2.3 for file existence as well as for
@@ -2178,3 +2132,13 @@ acceptance criteria it touches; only the planned shape or file name changed.
    keys were 3,742 B of it. Keys a page outside the recovery routes renders, such as
    `sign_in.notices.password_reset`, stay in the eager auth catalog. FR-27's acceptance criteria
    are unchanged: every string ships in `uk` and `en` with identical key sets.
+5. **No feature flag (FR-1, Story 4.1, Follow-ups 5.5 and 5.6, architecture §5.14).** The plan
+   kept the `forgotPassword` runtime flag `false` in production, enabled it in the test stack
+   after the route registration, re-baselined `/sign-in` for the newly visible link, and left
+   production enablement and flag deletion to two follow-ups. Issue #309 removed the flag before
+   this branch and made the "Забули пароль?" link render unconditionally, so no flag, compose
+   override, runtime-config contract case or `/sign-in` re-baseline ships here. FR-1, Story 4.1
+   and both follow-ups were rewritten to match: Story 4.1 confirms the unconditional link,
+   Follow-up 5.5 is done by #309, and Follow-up 5.6 is the deployment of a user-service release
+   serving both mutations behind the production SPA, not a configuration change of this
+   repository.
