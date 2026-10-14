@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { FormProvider, useForm, useFormContext } from 'react-hook-form';
@@ -17,7 +17,9 @@ function Field(): JSX.Element {
   } = useFormContext<{ email: string }>();
   const message = errors.email?.message;
   const type = errors.email?.type;
-  const { ref, name, onChange, onBlur } = register('email', { validate: () => true });
+  const { ref, name, onChange, onBlur } = register('email', {
+    validate: (value) => value !== 'bad' || 'Bad value',
+  });
   return (
     <>
       <label htmlFor="email">Email</label>
@@ -90,6 +92,32 @@ describe('ServerFieldError', () => {
     await userEvent.type(screen.getByLabelText('Email'), 'a');
 
     expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('clears its server error when the message goes away', async () => {
+    const { rerender } = render(<Harness message="Not a valid address" />);
+    await screen.findByText('Not a valid address');
+
+    rerender(<Harness message={null} />);
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false')
+    );
+    expect(screen.queryByText('Not a valid address')).not.toBeInTheDocument();
+  });
+
+  it('keeps a validation error from another rule when the message goes away', async () => {
+    const { rerender } = render(<Harness message={null} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    rerender(<Harness message="Not a valid address" />);
+    await screen.findByText('Not a valid address');
+    await userEvent.type(screen.getByLabelText('Email'), 'bad');
+    expect(await screen.findByText('Bad value')).toBeInTheDocument();
+
+    rerender(<Harness message={null} />);
+
+    expect(await screen.findByText('Bad value')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toHaveAttribute('data-error-type', 'validate');
   });
 
   it('renders no DOM of its own', () => {
