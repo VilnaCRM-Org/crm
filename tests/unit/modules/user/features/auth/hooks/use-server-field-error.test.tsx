@@ -52,6 +52,10 @@ describe('useServerFieldError', () => {
     captured.form = null;
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('sets a server error with the message and focuses the field when one arrives', async () => {
     const { show: showMessage } = renderWith(null);
     const focus = jest.spyOn(screen.getByLabelText('Email'), 'focus');
@@ -71,7 +75,6 @@ describe('useServerFieldError', () => {
 
     expect(form().getFieldState('email').error).toBeUndefined();
     expect(focus).not.toHaveBeenCalled();
-    focus.mockRestore();
   });
 
   it('clears its own server error when the message goes away', () => {
