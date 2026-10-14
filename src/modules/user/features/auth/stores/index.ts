@@ -1,4 +1,4 @@
-import type { InjectionToken } from 'tsyringe';
+import type { DependencyContainer, InjectionToken } from 'tsyringe';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
@@ -92,9 +92,19 @@ export class AuthProviderLoader {
   );
 
   public async resolve<T>(token: InjectionToken<T>): Promise<T> {
+    const container = await this.loadContainer();
+    try {
+      return container.resolve<T>(token);
+    } catch (error) {
+      observabilityCore.captureError(error, { source: 'auth:provider-resolve' });
+      throw error;
+    }
+  }
+
+  private async loadContainer(): Promise<DependencyContainer> {
     try {
       const { default: container } = await this.container.load();
-      return container.resolve<T>(token);
+      return container;
     } catch (error) {
       observabilityCore.captureError(error, { source: 'auth:provider-load' });
       throw error;

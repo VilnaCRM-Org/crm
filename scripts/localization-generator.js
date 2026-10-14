@@ -1,25 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const POLICY_LAZY_CATALOGS = require('../config/i18n-catalog-policy.json').lazyCatalogs.map(
-  (entry) => entry.catalog
-);
-
 class LocalizationGenerator {
-  constructor({
+  constructor(
     i18nFolderName = 'i18n',
     modulesPath = 'src',
     localizationFile = 'localization.json',
     outputPath = 'src/i18n',
-    requiredLocales = ['en', 'uk'],
-    lazyCatalogs = POLICY_LAZY_CATALOGS,
-  } = {}) {
+    requiredLocales = ['en', 'uk']
+  ) {
     this.modulesPath = modulesPath;
     this.i18nFolderName = i18nFolderName;
     this.localizationFile = localizationFile;
     this.pathToWriteLocalization = outputPath;
     this.requiredLocales = requiredLocales;
-    this.lazyCatalogDirs = new Set(lazyCatalogs.map((dir) => path.resolve(modulesPath, dir)));
   }
 
   generateLocalizationFile() {
@@ -69,8 +63,7 @@ class LocalizationGenerator {
               path.dirname(__dirname),
               this.pathToWriteLocalization
             );
-            const resolved = path.resolve(fullPath);
-            if (resolved !== outputDirAbs && !this.lazyCatalogDirs.has(resolved)) {
+            if (path.resolve(fullPath) !== outputDirAbs) {
               featureDirs.push(fullPath);
             }
           } else {

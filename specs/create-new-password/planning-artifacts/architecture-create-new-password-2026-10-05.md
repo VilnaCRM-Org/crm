@@ -179,8 +179,8 @@ Eight decisions shape everything below:
    a named `PasswordRuleResultSet`.
 6. **Mocked GraphQL until user-service releases** (§5.16): a pending schema extension mirrors the
    upstream declarations exactly, codegen and a stateless local Apollo mock read it beside the
-   pinned SDL, and the pin bump deletes it (Follow-up 5.3). The `forgotPassword` flag ships
-   `false` and is on in the test stack only (§5.14).
+   pinned SDL, and the pin bump deletes it (Follow-up 5.3). No runtime flag gates the flow:
+   issue #309 removed `forgotPassword` and the entry link is unconditional (§5.14).
 7. **Typed boundaries (TB-1, TB-2)** (§5.17, NFR-17): every value that crosses a layer is a named
    interface, class or named alias in a type-only file, enforced by the chore's ESLint gate; a
    board type (`RestorePasswordDto`, `CreateNewPasswordDto`) crosses component and form
@@ -478,7 +478,7 @@ Justified gaps — design items with no card of their own, each placed inside th
 (planning contract §2, "Infrastructure the board does not model"):
 
 1. **The entry link.** Sign-In → Reset Password ("Забули пароль?", FR-1) is an existing,
-   flag-gated link; drawn dotted in §3.2 and proposed as a board edge.
+   unconditional link (issue #309); drawn dotted in §3.2 and proposed as a board edge.
 2. **Code-level cards.** The code-level frame has no `ResetPassword` or `CreateNewPassword` card
    and no `CreateNewPasswordDTO`; §3.4 draws them in the frame's style, and the board owner is
    asked (Q-2) to add them.
@@ -667,7 +667,7 @@ No `src/config/api-config.ts` entry is added: the endpoint is the existing `Grap
 `passwordRecovery` (`src/routes/route-paths.ts:7`); the URL paths are fixed by the sign-in link
 and by the link user-service e-mails. The auth contract gains two `guard: 'public'` entries with
 `webpackChunkName` `"reset-password"` and `"create-new-password"` and `meta.titleKey`, which is
-what the flag contract test probes and what the route-coverage gate reads. `RouteMapper` then
+what the route-coverage gate reads. `RouteMapper` then
 wraps each page loader in `ChunkRetryLoader` + `ThemedChunkLoader` and `ReloadingChunkLoader`
 (`src/routes/route-mapper.tsx:31-40`); the composer attaches the `errorElement`. No registry,
 composer or shell edit (FR-2).
@@ -946,24 +946,13 @@ the planner and is withdrawn (PRD FR-25).
 
 ### 5.14 Feature flag per environment
 
-The committed default stays `false`: `FEATURE_FLAG_DEFAULTS.forgotPassword`
-(`feature-flag-service.ts:4-6`) and the shipped block in `public/index.html:28` are not edited,
-and every test that pins the default keeps asserting `false`.
-
-The test stack turns the flag on, after both routes are registered (Story 4.1): the `prod`
-service of `docker-compose.test.yml:21` passes
-`APP_CONFIG_FLAG_FORGOT_PASSWORD=${APP_CONFIG_FLAG_FORGOT_PASSWORD:-true}`. The `:-` form is
-required: `.env` (from `.env.example:66`) declares the variable empty, so the `-` form would stay
-empty. The container entrypoint renders it, so the e2e, visual, a11y, mobile and Lighthouse lanes
-and `make start-prod` run with the link on; an explicit `false` still turns it off. The dev server
-keeps the committed block: a developer runs `make start-prod` or opens either route directly.
-
-The runtime-config contract test keeps forbidding a shipped `true` while no route contract
-registers `ROUTE_PATHS.passwordRecovery`, and gains a case with the same probe for the test
-compose file. Because the visual and a11y lanes run against the test stack, Story 4.1 re-records
-the `/sign-in` baselines from the CI artifact (NFR-6) and inserts the link into the sign-in
-keyboard spec between "remember me" and the submit (NFR-10). Production enablement is a
-configuration change once a user-service release with both mutations is deployed (Follow-up 5.6).
+No flag. Issue #309 removed the `forgotPassword` flag before this feature: the `FeatureFlag`
+union is empty, `public/index.html` ships `{ "flags": {} }`, and `UserOptions` renders the
+"Забули пароль?" link unconditionally. This feature therefore edits no runtime-config file, no
+compose file and no runtime-config contract case, and the `/sign-in` baselines and the sign-in
+keyboard spec already contain the link (NFR-6, NFR-10). Registering both routes (§5.2) is what
+makes the link open the flow in every environment; production works once a user-service release
+with both mutations is deployed (Follow-up 5.6). §18 item 1 records the drift from the plan.
 
 ### 5.15 Signed-in users
 
@@ -1664,11 +1653,9 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 | `Apollo.Dockerfile`                                      | MODIFY | copies the pending dir     |
 | `docker/apollo-server/lib/server.ts`                     | MODIFY | `typeDefs` gains the file  |
 | `docker/apollo-server/lib/{resolvers,types}.ts`          | MODIFY | two stateless resolvers    |
-| `docker-compose.test.yml`                                | MODIFY | flag `:-true`, §5.14       |
 | `src/modules/user/config/tokens.ts`, `config/di.ts`      | MODIFY | §6.6                       |
 | `src/services/observability/pii-scrubber.ts`             | MODIFY | `token=` pattern           |
 | `src/i18n/localization.json`                             | REGEN  | `make i18n-generate`       |
-| `docs/feature-flags.md`                                  | MODIFY | flag table                 |
 | `src/modules/user/README.md`, `src/routes/README.md`     | MODIFY | loader seam; two routes    |
 | `CLAUDE.md`, `docs/accessibility/acceptance-standard.md` | MODIFY | contrast count, see below  |
 
@@ -1680,32 +1667,31 @@ dependencies, `src/config/**`, `public/index.html`, `rsbuild.config.ts`,
 
 ### 8.3 Tests, manifests and baselines
 
-| File                                                                             | Kind      |
-| -------------------------------------------------------------------------------- | --------- |
-| `tests/unit/modules/user/features/auth/**` (one per new source file)             | NEW       |
-| `tests/unit/modules/user/lib/user-service-error-transformer.test.ts`             | NEW       |
-| `tests/unit/hooks/use-abortable-submit.test.tsx`, `use-arrival-notice.test.tsx`  | NEW       |
-| `tests/unit/hooks/use-arrival-focus.test.tsx`                                    | MODIFY    |
-| `tests/unit/components/ui-form/*` (error action)                                 | MODIFY    |
-| `tests/unit/services/observability/pii-scrubber*.test.ts`                        | MODIFY    |
-| `tests/unit/a11y/{reset-password,create-new-password}.a11y.test.tsx`             | NEW       |
-| `tests/unit/tooling/runtime-config-contract.test.ts` (test-stack case)           | MODIFY    |
-| `tests/builders/auth.ts` (`buildResetToken()`, Story 1.3)                        | MODIFY    |
-| `tests/integration/modules/user/features/auth/password-*.integration.test.ts`    | NEW       |
-| `tests/integration/mocks/server.ts` (msw `graphql` handlers for both operations) | MODIFY    |
-| `tests/apollo-server/resolvers.test.ts` (two resolvers, real `formatError`)      | MODIFY    |
-| `tests/e2e/utils/password-reset-responses.ts` (`operationName` dispatcher)       | NEW       |
-| `tests/e2e/modules/user/features/auth/password-{recovery,reset}.spec.ts`         | NEW       |
-| `tests/e2e/modules/user/features/auth/runtime-config.spec.ts`                    | MODIFY    |
-| `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                  | MODIFY    |
-| `tests/e2e/a11y/password-{recovery,reset}-keyboard.a11y.spec.ts`                 | NEW       |
-| `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (forgot-password stop)            | MODIFY    |
-| `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)       | MODIFY    |
-| `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`               | NEW       |
-| `tests/visual/visual-comparison.password-{recovery,reset}.spec.ts`               | NEW       |
-| `tests/visual/mobile/auth.spec.ts`, `tests/visual/constants.ts`                  | MODIFY    |
-| `/sign-in` desktop and mobile snapshots (test-stack flag, from the CI artifact)  | RE-RECORD |
-| `tests/e2e/route-coverage.tsv`                                                   | MODIFY    |
+| File                                                                             | Kind   |
+| -------------------------------------------------------------------------------- | ------ |
+| `tests/unit/modules/user/features/auth/**` (one per new source file)             | NEW    |
+| `tests/unit/modules/user/lib/user-service-error-transformer.test.ts`             | NEW    |
+| `tests/unit/hooks/use-abortable-submit.test.tsx`, `use-arrival-notice.test.tsx`  | NEW    |
+| `tests/unit/hooks/use-arrival-focus.test.tsx`                                    | MODIFY |
+| `tests/unit/components/ui-form/*` (error action)                                 | MODIFY |
+| `tests/unit/services/observability/pii-scrubber*.test.ts`                        | MODIFY |
+| `tests/unit/a11y/{reset-password,create-new-password}.a11y.test.tsx`             | NEW    |
+| `tests/unit/tooling/runtime-config-contract.test.ts` (test-stack case)           | MODIFY |
+| `tests/builders/auth.ts` (`buildResetToken()`, Story 1.3)                        | MODIFY |
+| `tests/integration/modules/user/features/auth/password-*.integration.test.ts`    | NEW    |
+| `tests/integration/mocks/server.ts` (msw `graphql` handlers for both operations) | MODIFY |
+| `tests/apollo-server/resolvers.test.ts` (two resolvers, real `formatError`)      | MODIFY |
+| `tests/e2e/utils/password-reset-responses.ts` (`operationName` dispatcher)       | NEW    |
+| `tests/e2e/modules/user/features/auth/password-{recovery,reset}.spec.ts`         | NEW    |
+| `tests/e2e/modules/user/features/auth/runtime-config.spec.ts`                    | MODIFY |
+| `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                  | MODIFY |
+| `tests/e2e/a11y/password-{recovery,reset}-keyboard.a11y.spec.ts`                 | NEW    |
+| `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (forgot-password stop)            | MODIFY |
+| `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)       | MODIFY |
+| `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`               | NEW    |
+| `tests/visual/visual-comparison.password-{recovery,reset}.spec.ts`               | NEW    |
+| `tests/visual/mobile/auth.spec.ts`, `tests/visual/constants.ts`                  | MODIFY |
+| `tests/e2e/route-coverage.tsv`                                                   | MODIFY |
 
 ## 9. Patterns used
 
@@ -1733,8 +1719,11 @@ against the same budgets; this feature imports no store and adds nothing to it.
 
 ## 11. Localisation, titles and copy
 
-All strings live in `@auth/i18n/{en,uk}.json` with identical key sets, then
-`make i18n-generate`:
+All strings live in the lazy recovery catalog
+`@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key sets, registered by
+`RecoveryPageLayout` when the route module evaluates and kept out of
+`src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
+"Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
 
 - `password_recovery.title`, `.body`, `.submitting`, `.errors.email_rejected` (Story 2.4);
   `.submit_button`, `.back` (Story 2.2, shared by both forms); `.errors.rate_limited`,
@@ -1788,8 +1777,8 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
 - **a11y (#118).** Both routes join `routeScans`; jest-axe runs over every new component and page;
   `A11Y_EXCEPTIONS` gains only the one scoped #276 entry (§7.2).
 - **Visual (NFR-6).** Full matrix for the two resting forms, desktop/mobile pairs for the sent
-  step, the invalid-link state and `/sign-in` with the notice; the `/sign-in` baselines change
-  once, in Story 4.1.
+  step, the invalid-link state and `/sign-in` with the notice; the existing `/sign-in`
+  baselines do not change, since the link already renders unconditionally.
 - **Console gate (#192).** The loader reports through `captureError` and logs nothing; tests that
   exercise a logging path spy and assert per test.
 
@@ -1810,8 +1799,7 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
   FR-10 masking examples. FR-9, FR-10, FR-12 to FR-15, FR-22.
 - **Unit: provider, loader, policy.** The provider's call order, one container import per loader,
   retry after a failed load, the capture source, the FR-24 property test. FR-9, FR-14, FR-24.
-- **Unit: scrubber and flag defaults.** `token=` redaction; the default tests keep `false`. FR-1,
-  FR-26.
+- **Unit: scrubber.** `token=` redaction. FR-26.
 - **Unit: jest-axe** over both pages and every new component. NFR-9.
 - **Unit: tooling.** Runtime-config contract (shipped default and the test-stack default),
   performance serving, paint-path graph, the module-shape test, the dependency-cruiser fixtures
@@ -1826,7 +1814,7 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
 - **Mutation (Stryker, 100%).** All of the above; tables loaded with `loadIsolated`. NFR-2.
 - **e2e, `page.route('**/graphql')`.** A dispatcher on `operationName` answers each shape of the
   PRD outcome table; both flows per shape, DOM equality across resolved payloads, token stripped,
-  notice once, the test stack serving the link. FR-1, FR-7 to FR-9, FR-12 to FR-16, FR-21, FR-22.
+  notice once, `/sign-in` serving the link. FR-1, FR-7 to FR-9, FR-12 to FR-16, FR-21, FR-22.
 - **e2e a11y, mobile lane, visual.** NFR-9, NFR-10, NFR-11, NFR-6.
 
 Arbitrary e-mails, passwords and session tokens come from the Faker builders; reset tokens come
@@ -1856,8 +1844,6 @@ opens the form with a token first asserts the new-password form is visible.
 - `PiiScrubber` leaves `token=abc` in a string, or a `variables.input.token` value in an event.
 - A mock violation thrown without an `extensions.code` reaches the response as the generic
   message (the reason the mock sets `BAD_USER_INPUT`).
-- The test compose file defaults `APP_CONFIG_FLAG_FORGOT_PASSWORD` to `true` while no route
-  contract registers `ROUTE_PATHS.passwordRecovery`, or the committed default turns `true`.
 - A component value-imports a class under `data-providers/` or `transformers/` (Story 0.1).
 
 ## 14. ADR-019 outline
@@ -1892,7 +1878,7 @@ layer stack with a uniform request outcome and a memory-only reset token":
   operation vs by message text; Apollo cache write vs `no-cache`; token in memory vs in the URL;
   transport retry vs user-initiated Retry; policy identical to the API vs never weaker; redirect
   signed-in users vs allow; wait for a release vs a pending schema extension; a self-expiring
-  checker vs a follow-up deletion; flag default `true` vs `false` with the test stack enabled;
+  checker vs a follow-up deletion; a runtime flag vs none (issue #309 removed it);
   per-feature DTOs vs one domain folder; a parallel `*FormValues` copy vs forms typed by the DTO.
 - Domain Outcome (Story 0.2): `UserEntity` plus its DTOs, data-only interfaces in
   `src/modules/user/types/user/`; `RestorePasswordDTO` is the forgotten-password request (Q-1);
@@ -1906,8 +1892,8 @@ layer stack with a uniform request outcome and a memory-only reset token":
   ADR-022; GraphQL through the container's Apollo client with two documents that select only
   `clientMutationId`, `no-cache` and no retry link; failures classified by shape and then by
   step; `useResetToken` with a layout-effect strip; one shared `PasswordValidator`; both routes
-  public; a pending schema extension and a stateless mock until the pin bump deletes them; the
-  flag `false` by default and on in the test stack.
+  public; a pending schema extension and a stateless mock until the pin bump deletes them; no
+  runtime flag, the entry link being unconditional since issue #309.
 - Positive / Negative Consequences: code reads like the board, every boundary has a reviewable
   name, #330 and #331 import the shared pieces; no enumeration surface, no token in history, the
   cache or telemetry; the mock can drift before release (mitigated by the verbatim copy), the
@@ -1927,7 +1913,7 @@ Add the row to `docs/adr/README.md`; `make lint-adr` validates the rest.
    `${API_BASE_URL}/password-reset?token=…`; the path matches `ROUTE_PATHS.passwordReset`, so the
    fix is a separate SPA-origin setting for the host only.
 2. **A release tag carrying both mutations.** v2.8.0, the newest tag, has neither. This unblocks
-   the pin bump (§15.2) and, once deployed, the production flag.
+   the pin bump (§15.2) and, once deployed, a working production reset.
 3. **A machine-readable code on GraphQL errors** (optional), so §5.5.1 stops inferring the reason
    from the operation.
 
@@ -1950,8 +1936,7 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 
 | FR    | Realised by                                                                           |
 | ----- | ------------------------------------------------------------------------------------- |
-| FR-1  | default `false` kept; compose `:-true` in the test stack; contract-test stack case;   |
-|       | `docs/feature-flags.md`; `UserOptions` unchanged                                      |
+| FR-1  | no flag (issue #309); `UserOptions` unchanged; both routes registered (§5.2)          |
 | FR-2  | `@auth/routes/index.ts` entries, `route-paths.ts`, `RouteMapper`/composer unchanged   |
 | FR-3  | `usePageTitle` in both pages, `titleKey` meta                                         |
 | FR-4  | `guard: 'public'`, no `usePostLoginRedirect`, no `useAuthStore` write                 |
@@ -1983,7 +1968,8 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | FR-24 | `PasswordValidator` ASCII uppercase + kept lowercase, property test                   |
 | FR-25 | withdrawn 2026-10-08 (no security signal)                                             |
 | FR-26 | `PiiScrubber` pattern, key denial, no new origin                                      |
-| FR-27 | `@auth/i18n/{en,uk}.json`, `make i18n-generate`                                       |
+| FR-27 | `@auth/routes/recovery-catalog/i18n/{en,uk}.json` (lazy, `RecoveryPageLayout`),       |
+|       | `config/i18n-catalog-policy.json` owners, `[lazy-key-scope]`, `make lint-i18n`        |
 | FR-28 | `route-coverage.tsv` rows, `routes.a11y.spec.ts`, visual `PAGES`                      |
 
 ### 16.2 Non-functional requirements

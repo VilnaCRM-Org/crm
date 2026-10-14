@@ -127,6 +127,15 @@ describe('pending password-reset mutations on the stateless mock', () => {
     });
   });
 
+  it('accepts a reset request e-mail of exactly 254 characters', async () => {
+    const email = `${'a'.repeat(242)}@example.com`;
+
+    const { result } = await execute(server, REQUEST_RESET, { email });
+
+    expect(email).toHaveLength(254);
+    expect(result.errors).toBeUndefined();
+  });
+
   it.each([1, 255])('answers a valid confirm with a %i-character token', async (length) => {
     const clientMutationId = faker.string.uuid();
 
@@ -163,6 +172,12 @@ describe('pending password-reset mutations on the stateless mock', () => {
 
   it.each([
     ['an invalid e-mail', REQUEST_RESET, { email: 'not-an-email' }, 'email: '],
+    [
+      'an e-mail over 254 characters',
+      REQUEST_RESET,
+      { email: `${'a'.repeat(243)}@example.com` },
+      'email: ',
+    ],
     [
       'a newPassword failing the upstream rule',
       CONFIRM_RESET,
