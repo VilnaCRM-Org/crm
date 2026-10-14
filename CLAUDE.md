@@ -378,14 +378,15 @@ that is not an array literal, so there is nothing left to change.
 
 The twelfth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
-re-validates the confirmation field when the new password changes under a mismatch error. The
-mutant empties it to `{}`, so `useWatch` subscribes to the whole form and the effect also re-runs
-on edits to the other fields. The only other field the user edits is `confirmPassword` itself, and
-the form validates in `onTouched` mode, so a field that already carries an error re-validates
-itself on every change; the extra `trigger('confirmPassword')` recomputes the same result and no
-rendered state differs. Narrowing the watch is what the source should say, so the annotation
-stays rather than the simpler-looking `{}`. Adding a thirteenth needs the same standard of proof,
-and a non-empty array needs the stability argument spelled out, not assumed.
+re-validates the confirmation field when the new password changes once the confirmation is touched
+or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
+form and the effect also re-runs on edits to the other fields. The only other field the user edits
+is `confirmPassword` itself, and the effect only triggers in that same armed window, where the form
+(`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
+re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
+the same result and no rendered state differs. Narrowing the watch is what the source should say,
+so the annotation stays rather than the simpler-looking `{}`. Adding a thirteenth needs the same
+standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
 mutate scope is 296 files; not all of them produce scored mutants — the rest are pure re-export
