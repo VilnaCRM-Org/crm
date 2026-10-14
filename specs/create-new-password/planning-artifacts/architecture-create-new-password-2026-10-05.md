@@ -2050,8 +2050,15 @@ component maps to a board layer of §1.1 and §3.5.
    24 × 24 `chevron-left.svg` reuses the repository's back-arrow path with `currentColor`.
 6. **Mock token check (§5.16).** The stateless mock also rejects a token outside 1 to 255
    characters with a `token:` violation, so the bound the client enforces is exercised.
-7. **Password with a line break (§5.8).** The client length rule counts a newline while the API
-   regex's `.` does not match one; this gap predates the feature and is left for a follow-up.
+7. **Password with a line break (§5.8).** The OpenAPI `pattern` `^(?=.*[0-9])(?=.*[A-Z]).{8,64}$`
+   rejects a line terminator, because its `.` matches none, while the Symfony `Length` and `Regex`
+   constraints accept one; the client follows the stricter `pattern`. The length rule
+   (`/^[\s\S]{8,64}$/u`) counts code points, so an astral character such as an emoji counts once,
+   and it counts a line terminator too. A separate `lineBreakForbidden` rule rejects `\n`, `\r`,
+   U+2028 and U+2029 with its own message (`sign_up.form.password_input.error_line_break`) once
+   the four checklist rules pass. It is not a checklist row: a browser
+   `<input type="password">` already strips `\n` and `\r`, so only U+2028 and U+2029 reach it from
+   the UI, and the length row stays met for a password that is long enough.
 8. **Sign-in link navigation.** The "Забули пароль?" link is the shared `UITextLink`, a plain
    `href`, so it performs a document load; the in-card links navigate client-side.
 9. **Visual baselines (Story 4.4).** The specs are committed; the baselines are taken from the

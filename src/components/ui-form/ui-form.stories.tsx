@@ -5,6 +5,7 @@ import { useFormContext } from 'react-hook-form';
 import UIForm from '@/components/ui-form';
 import UIFormInputField from '@/components/ui-form-input-field';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
+import { noop } from '@stories/story-callbacks';
 
 interface DemoValues {
   email: string;
@@ -70,6 +71,22 @@ export const Default: Story = {};
 
 export const WithError: Story = {
   args: { error: 'Невірна електронна пошта або пароль' },
+};
+
+export const WithErrorAction: Story = {
+  args: {
+    error: 'Не вдалося надіслати запит. Перевірте з’єднання та спробуйте ще раз.',
+    errorAction: { label: 'Спробувати ще раз', onClick: noop },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A retryable failure: the error banner carries an action button next to its message, ' +
+          'which the password-recovery forms use to resend the last request.',
+      },
+    },
+  },
 };
 
 export const Submitting: Story = {

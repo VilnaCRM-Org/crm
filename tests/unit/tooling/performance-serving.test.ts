@@ -299,8 +299,13 @@ describe('performance serving config', () => {
       expect(namespaces).not.toContain('password_reset');
       expect(namespaces).not.toContain('password_policy');
     });
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
+    ).toContain('recoveryCatalogLoader.register(i18n);');
     recoveryRoutes.forEach((routeSource) => {
-      expect(routeSource).toContain('recoveryCatalogLoader.register(i18n);');
+      expect(routeSource).toContain(
+        "import RecoveryPageLayout from '@auth/components/recovery-page-layout';"
+      );
     });
   });
 
