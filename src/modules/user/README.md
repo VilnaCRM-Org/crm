@@ -256,10 +256,13 @@ touches `useAuthStore`.
 (`customColors.text.primary`, about 10:1), keeping the Golos Medium 15/18 type of the frame. The
 design owner is asked to confirm the token. The primary result links ("До входу", "Запросити
 нове посилання") keep the Figma pill, white on `#1EAEFF` (2.45:1); one scoped `color-contrast`
-entry in `A11Y_EXCEPTIONS` covers exactly those two links under issue #276.
+entry in `A11Y_EXCEPTIONS` covers exactly those two links under issue #276. The owner confirmed
+that choice on 2026-10-14, following the DEV-67 decision for the sign-in "Забули пароль?" link:
+the brand fill stays until #276 resolves the palette for every exempted control at once.
 
 **Rejected.** Shipping the Figma grey (fails WCAG 1.4.3); a second contrast exception for the
-back row.
+back row; an accessible `#0074B5` fill or a dark label on the two links alone, which would leave
+them unlike the Figma frames and every other brand-colour control before #276 decides.
 
 ### No feature flag
 
