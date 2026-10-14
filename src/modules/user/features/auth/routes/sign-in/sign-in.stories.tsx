@@ -6,9 +6,9 @@ import SignIn from '.';
 
 export default {
   title: 'Auth/Pages/SignIn',
+  component: SignIn,
   tags: ['autodocs'],
   ...authPageStories.meta(
-    SignIn,
     '/sign-in',
     'The /sign-in route page: AuthPageLayout around the lazily loaded sign-in form ' +
       'section, the document title, and the redirect back to the intended destination ' +

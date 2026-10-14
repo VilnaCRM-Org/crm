@@ -6,9 +6,9 @@ import authPageStories from '@stories/auth-page-story';
 
 export default {
   title: 'Auth/Layouts/RecoveryPageLayout',
+  component: RecoveryPageLayout,
   tags: ['autodocs'],
   ...authPageStories.meta(
-    RecoveryPageLayout,
     '/password-recovery',
     'The frame of the two password-recovery pages (issue #315): registers the lazy recovery ' +
       'catalog when its module loads, sets the document title from `titleKey`, and renders ' +

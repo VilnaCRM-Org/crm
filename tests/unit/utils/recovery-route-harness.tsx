@@ -12,13 +12,6 @@ function RecoveryPageLayoutStub({ titleKey, children }: RecoveryPageLayoutProps)
   );
 }
 
-/**
- * Stand-ins for the password-recovery route suite. Its `jest.mock` calls stay in the suite
- * (babel-plugin-jest-hoist lifts them above the imports) and reach these through
- * `jest.requireActual`. The layout stand-in exposes the `titleKey` a route hands
- * RecoveryPageLayout as the accessible name of its `<main>`, so the route suite asserts the
- * wiring while the real layout keeps its own suite.
- */
 export const recoveryPageLayoutModule = {
   __esModule: true,
   default: RecoveryPageLayoutStub,
