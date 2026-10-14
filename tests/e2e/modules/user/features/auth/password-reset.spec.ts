@@ -27,6 +27,7 @@ const transient: string = t('password_recovery.errors.transient');
 const tryAgain: string = t('auth.error.tryAgain');
 const recoveryHeading: string = t('password_recovery.title');
 const signInHeading: string = t('sign_in.title');
+const homeHeading: string = t('home.heading');
 
 interface ConfirmBody {
   readonly operationName?: string;
@@ -73,6 +74,27 @@ async function submitPasswords(page: Page, confirmation: string = NEW_PASSWORD):
   await fillInput(page.getByLabel(newPasswordLabel), NEW_PASSWORD);
   await fillInput(page.getByLabel(confirmLabel), confirmation);
   await page.getByRole('button', { name: submitLabel }).click();
+}
+
+async function expectSignedInHome(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window.history.state as { usr?: { focusMain?: boolean } } | null)?.usr?.focusMain ??
+          false
+      )
+    )
+    .toBe(false);
+  await page.evaluate(() => {
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(page).toHaveURL('/');
+  await expect(
+    page.getByRole('main').getByRole('heading', { level: 1, name: homeHeading })
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: signInHeading })).toHaveCount(0);
 }
 
 async function invalidLinkAfter(page: Page, answer: Answer): Promise<InvalidLinkRender> {
@@ -278,11 +300,7 @@ test.describe('Create new password (issue #315)', () => {
     await submitPasswords(page);
 
     await expect(page).toHaveURL('/sign-in');
-    await page.evaluate(() => {
-      window.history.pushState({}, '', '/');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
-    await expect(page).toHaveURL('/');
+    await expectSignedInHome(page);
   });
 
   for (const [name, entry, linkName, ready, destination] of [
@@ -320,6 +338,7 @@ test.describe('Create new password (issue #315)', () => {
       expect(
         await page.evaluate(() => (window as unknown as { resetSentinel?: boolean }).resetSentinel)
       ).toBe(true);
+      await expectSignedInHome(page);
     });
   }
 
