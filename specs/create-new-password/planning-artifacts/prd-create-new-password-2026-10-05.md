@@ -82,7 +82,9 @@ stage.
 > (`crm-worktrees/_planning-shared/over-engineering-review-2026-10-08.md`): FR-25, the
 > planner-invented `password_reset` security signal, is withdrawn; the TB-1 gate moves to the
 > prerequisite chore `typed-boundaries-gate`; only the test stack enables the flag (no dev-server
-> transform); the mock is a stateless happy path.
+> transform); the mock is a stateless happy path. Superseded 2026-10-13: issue #309 removed the
+> `forgotPassword` flag before this feature was built, so no stack enables a flag and the link
+> renders unconditionally (§1, FR-1).
 >
 > Zustand 2026-10-08 (the user: "change the react state var to zustand"): client and UI state
 > moves to Zustand stores (`useAuthStore`, `useConnectivityStore`) in a second prerequisite
@@ -169,7 +171,7 @@ the client deadline).
 
 ### Goals
 
-1. A locked-out user can walk the whole flow from the sign-in page today in the test stack
+1. A locked-out user can walk the whole flow from the sign-in page today in every local stack
    against the mocked mutations, and recovers access end to end in production once
    user-service ships the reset mutations in a deployed release tag with the link-host fix.
 2. The flow leaks nothing: no account enumeration, no token in the URL, history, title, DOM or
@@ -629,9 +631,7 @@ so a reload or Back never shows it again. No session is created and no automatic
   not shown again.
 - Given a resolved mutation, when the client state is inspected, then no session token was
   set and the Apollo cache holds neither the token nor the new password.
-- Given the resting `/sign-in` page (no navigation state), when it renders, then the notice
-  region is absent and adds nothing to the resting `/sign-in` baseline (which changes only
-  through the test-stack flag enablement, NFR-6).
+- Given the resting `/sign-in` page (no navigation state), when it renders, then the notice region is absent and the resting `/sign-in` baselines stay unchanged (NFR-6).
 
 ### FR-22 — Invalid or expired link on confirm
 

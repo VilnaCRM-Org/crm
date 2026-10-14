@@ -10,7 +10,7 @@ import type {
 
 class PasswordValidator {
   private readonly rules: Rule[] = [
-    { pattern: /^[\s\S]{8,64}$/u, key: 'invalidLength' },
+    { pattern: /^[^\n\r\u2028\u2029]{8,64}$/u, key: 'invalidLength' },
     { pattern: /[0-9]/, key: 'numberRequired' },
     { pattern: /[A-Z]/, key: 'uppercaseRequired' },
     { pattern: /\p{Ll}/u, key: 'lowercaseRequired' },
@@ -44,7 +44,7 @@ class PasswordValidator {
 
   private run(value: string, messages: Record<ValidationPswdMessageKey, string>): string | true {
     if (!value?.trim()) return messages.fieldRequired;
-    const failed = [...this.rules, this.lineBreakRule].find((r) => !r.pattern.test(value));
+    const failed = [this.lineBreakRule, ...this.rules].find((r) => !r.pattern.test(value));
     return failed ? messages[failed.key] : true;
   }
 }
