@@ -40,6 +40,10 @@ the `requestPasswordResetUser` and `confirmPasswordResetUser` mutations of the u
 retries automatically, never reveals whether an e-mail is registered, and keeps the reset token
 out of the address bar, history and telemetry.
 
+> Superseded 2026-10-14: issue #309 deleted the `forgotPassword` flag before this feature was
+> built (see the 2026-10-13 revision in §6). The sign-in link renders unconditionally, both routes
+> ship unflagged, and production reaches the flow once its user-service serves the mutations.
+
 The mutations exist on user-service `main` only (PR #215, commit `63041e4a`); the newest tag,
 v2.8.0, which crm pins, has neither. The feature is therefore built and working now against
 mocked GraphQL: one pending schema extension, copied verbatim from user-service `main`, gives
@@ -48,6 +52,9 @@ them. Two upstream changes remain, and neither blocks implementation: a
 user-service release tag carrying both mutations, which the later pin bump and the production
 enablement of the flag wait for, and an e-mail link on the SPA host, which real e-mails need to
 reach the app.
+
+> Superseded 2026-10-14: there is no flag to enable; production waits only for that release to
+> be deployed with the link-host fix (epics Follow-up 5.6).
 
 > Assumption: mocked GraphQL until user-service releases is the user's decision of 2026-10-05
 > ("We will mock it to work in the front end as the user service is not released"). It replaces
@@ -68,12 +75,18 @@ lost users at the moment they most want to come back, support load for a task th
 already perform, and an inert flag plus an allowlisted route key that advertise unfinished work
 in the contract tests, the route-coverage manifest and the feature-flag docs.
 
+> Superseded 2026-10-14: issue #309 removed the inert flag; the allowlisted route key is what
+> remained until this feature registered the routes.
+
 ### Why Existing Pieces Fall Short
 
 The sign-in link, the route key, the flag and the backend mutations exist; nothing joins them. The
 pinned user-service contract (v2.8.0) predates the reset mutations, so without a pending schema
 extension codegen cannot type an operation document for them and the local Apollo mock cannot
 answer them, and the e-mail the backend sends links to the API host rather than the app.
+
+> Superseded 2026-10-14: the flag no longer exists (issue #309); the link, the route key and the
+> backend mutations are the pieces this feature joins.
 
 ### Proposed Solution
 
@@ -92,6 +105,9 @@ Both screens are lazy chunks, so the auth paint path pays nothing for them.
 | Deployment admin     | Enable the flow per environment with one runtime flag            |
 | Design owner         | Review two screens built from the existing design language       |
 | Contributor          | Land the feature without weakening a single repository gate      |
+
+> Superseded 2026-10-14: the deployment admin has no flag to set (issue #309 deleted it); the
+> flow reaches an environment once that environment's user-service serves the mutations.
 
 ### User Journey
 
@@ -163,7 +179,8 @@ used or mismatched).
 3. Both screens meet the accessibility, performance and quality floors the repository enforces.
 4. The `forgotPassword` flag ships off, is on in the test stack, is enabled in
    production by configuration once its user-service serves the mutations, and is scheduled for
-   deletion per the documented lifecycle.
+   deletion per the documented lifecycle. Superseded 2026-10-14: issue #309 deleted the flag
+   before this feature, so the flow ships unflagged and nothing is left to enable or delete.
 
 ### Success Metrics
 
@@ -222,6 +239,9 @@ was built, so both routes ship unflagged.
 > Assumption: the password policy for sign-up is not changed here. Registration hits the same
 > user-service rules, so the recommendation to the PRD and architecture stages is one shared
 > password policy for both forms; whether sign-up adopts it is their decision (research Q3).
+>
+> Settled 2026-10-14: sign-up adopted it — both forms share the `/[A-Z]/` uppercase rule in
+> `…/validations/password.ts` (PRD FR-24); only keeping the lowercase rule stays open.
 
 ### Out of scope (v1)
 
@@ -237,6 +257,9 @@ was built, so both routes ship unflagged.
   extension, and enabling the flag in production: both wait for that release.
 - Deleting the `forgotPassword` flag (lifecycle stage 3, a later change).
 
+> Superseded 2026-10-14: issue #309 already deleted the flag (epics Follow-up 5.5, done), so
+> neither out-of-scope item above involves a flag; production waits only for the release.
+
 > Assumption: the mobile resend countdown is excluded from v1 because no desktop or tablet frame
 > draws it, the request frame conflates two states, and the API's 3/h per-user quota makes an
 > unguarded resend a foot-gun (main-agent decision; research §4.3).
@@ -251,6 +274,7 @@ of the component DI bridge, module shape, rust-code-analysis metrics, zero jscpd
 coverage and mutation, i18n parity, route-coverage manifest, ADR drift, console gate, and the
 flag-contract test that permits `forgotPassword: true` only once a route contract registers the
 route. The committed flag default under `src/config/runtime/` does not change.
+Superseded 2026-10-14: issue #309 deleted the flag, so that flag-contract rule binds nothing here.
 
 > Revision 2026-10-08 (the user's request): the feature also adds gates, none relaxed. Every value
 > that crosses a layer is a named type (TB-1, PRD NFR-17), and the design follows the Miro
@@ -264,7 +288,7 @@ route. The committed flag default under `src/config/runtime/` does not change.
 Both screens are lazy page chunks that load the MUI theme in parallel, as `/sign-in` does.
 Nothing on the eager path may import the DI container, Apollo, zod or Sentry; the flag is read
 through the container-free bridge. The mobile Lighthouse floor on `/sign-in` (0.84) has no
-headroom and must not move.
+headroom and must not move. Superseded 2026-10-14: no flag is read (issue #309 deleted it).
 
 ### Security
 
@@ -302,7 +326,8 @@ the new-password form it records the composition decision below instead of a fra
 - **The mock drifts from the real contract.** Handling: the extension copies the upstream
   declarations exactly (names, nullability, `clientMutationId`) and the mock answers in the
   upstream error shapes, so the switch to the released schema is a no-op for the client; the
-  production flag stays off until that release is deployed.
+  production flag stays off until that release is deployed. Superseded 2026-10-14: no flag
+  exists; production reaches the flow once that release is deployed.
 - **E-mail link host is the API origin**, so real e-mails never reach the app. Handling: upstream
   user-service issue 1 — build the link on the SPA origin.
 - **GraphQL domain errors carry only a translated message** (user-service's
@@ -316,12 +341,14 @@ the new-password form it records the composition decision below instead of a fra
   by us; design owner confirms (open question).
 - **Validator mismatch** (`\p{Lu}` on the client vs `[A-Z]` in the API) lets a Cyrillic
   password pass locally and fail upstream. Handling: one shared policy for the new password
-  and sign-up, never weaker than the API.
+  and sign-up, never weaker than the API. Settled 2026-10-14: closed by the shared `/[A-Z]/`
+  rule (PRD FR-24).
 - **Token leakage through telemetry `url` strings.** Handling: scrubber pattern plus stripping
   the URL before anything else runs.
 - **Enabling the flag in the test stack changes the `/sign-in` baselines.** Handling: it lands
   no earlier than the route registration, after both routes exist; the runtime-config contract
   test forbids a shipped `true` or a test stack enabling the flag while no route is registered.
+  Superseded 2026-10-14: no flag exists (issue #309), so the test stack enables nothing.
 - **Visual baselines** for two pages × 13 sizes × 3 engines; local production containers go
   stale. Handling: baselines taken from CI artifacts only.
 - **Upstream GraphQL limiter bypasses** (#462, #469, #470: the per-IP and per-endpoint limiters
@@ -336,7 +363,7 @@ For the product owner:
 1. Is a 60% request-to-confirm completion rate in the first month the right starting target, and
    will user-service expose the counts?
 2. Should the shared password policy (ASCII uppercase + digit, 8–64) also govern sign-up in this
-   release, or in a follow-up?
+   release, or in a follow-up? Settled 2026-10-14: in this release (PRD FR-24).
 3. Does requesting a second reset invalidate the first token upstream? This decides the resend
    copy on the sent step.
 4. Who asks user-service for a release tag carrying both reset mutations and files the link-host
