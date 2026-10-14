@@ -111,17 +111,16 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
 
   test('the new-password form is operable in reading order', async ({ page }) => {
     await openNewPasswordForm(page);
-    const [newToggle, confirmToggle] = await page
-      .getByRole('button', { name: showPasswordLabel })
-      .all();
+    const toggles = page.getByRole('button', { name: showPasswordLabel });
+    await expect(toggles).toHaveCount(2);
 
     await expectTabOrder(page, [
       { locator: page.getByRole('link', { name: backToMainLabel }), visibleFocus: true },
       { locator: page.getByRole('link', { name: backLabel }), visibleFocus: true },
       { locator: page.locator('#newPassword'), visibleFocus: true },
-      ...(newToggle ? [{ locator: newToggle }] : []),
+      { locator: toggles.nth(0), visibleFocus: true },
       { locator: page.locator('#confirmPassword'), visibleFocus: true },
-      ...(confirmToggle ? [{ locator: confirmToggle }] : []),
+      { locator: toggles.nth(1), visibleFocus: true },
       { locator: page.getByRole('button', { name: submitLabel }), visibleFocus: true },
     ]);
   });

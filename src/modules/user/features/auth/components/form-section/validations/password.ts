@@ -10,14 +10,14 @@ import type {
 
 class PasswordValidator {
   private readonly rules: Rule[] = [
-    { check: (v) => /^[\s\S]{8,64}$/u.test(v), key: 'invalidLength' },
-    { check: (v) => /[0-9]/.test(v), key: 'numberRequired' },
-    { check: (v) => /[A-Z]/.test(v), key: 'uppercaseRequired' },
-    { check: (v) => /\p{Ll}/u.test(v), key: 'lowercaseRequired' },
+    { pattern: /^[\s\S]{8,64}$/u, key: 'invalidLength' },
+    { pattern: /[0-9]/, key: 'numberRequired' },
+    { pattern: /[A-Z]/, key: 'uppercaseRequired' },
+    { pattern: /\p{Ll}/u, key: 'lowercaseRequired' },
   ];
 
   private readonly lineBreakRule: Rule<'lineBreakForbidden'> = {
-    check: (v) => !/[\n\r\u2028\u2029]/.test(v),
+    pattern: /^[^\n\r\u2028\u2029]*$/u,
     key: 'lineBreakForbidden',
   };
 
@@ -27,7 +27,7 @@ class PasswordValidator {
 
   public evaluate(value: string): PasswordRuleResultSet {
     const items: PasswordRuleResult[] = [];
-    for (const rule of this.rules) items.push({ key: rule.key, met: rule.check(value) });
+    for (const rule of this.rules) items.push({ key: rule.key, met: rule.pattern.test(value) });
     return { items };
   }
 
@@ -44,7 +44,7 @@ class PasswordValidator {
 
   private run(value: string, messages: Record<ValidationPswdMessageKey, string>): string | true {
     if (!value?.trim()) return messages.fieldRequired;
-    const failed = [...this.rules, this.lineBreakRule].find((r) => !r.check(value));
+    const failed = [...this.rules, this.lineBreakRule].find((r) => !r.pattern.test(value));
     return failed ? messages[failed.key] : true;
   }
 }
