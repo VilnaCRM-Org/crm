@@ -40,12 +40,12 @@ const resultPart = async (part: ResultPart): Promise<HTMLElement> => {
 
 const statusTextOnFirstPaint = (): string => {
   const host = document.body.appendChild(document.createElement('div'));
-  host.innerHTML = renderToStaticMarkup(view());
-
-  const text = within(host).getByRole('status').textContent ?? '';
-  host.remove();
-
-  return text;
+  try {
+    host.innerHTML = renderToStaticMarkup(view());
+    return within(host).getByRole('status').textContent ?? '';
+  } finally {
+    host.remove();
+  }
 };
 
 describe('RecoveryResultView', () => {

@@ -1,22 +1,12 @@
-import i18next, { type i18n as I18nInstance } from 'i18next';
+import type { i18n as I18nInstance } from 'i18next';
 
 import en from '@auth/routes/recovery-catalog/i18n/en.json';
 import uk from '@auth/routes/recovery-catalog/i18n/uk.json';
 import recoveryCatalogLoader from '@auth/routes/recovery-catalog/recovery-catalog-loader';
+import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 
-const createInstance = (seeded: Record<string, unknown> = {}): I18nInstance => {
-  const instance = i18next.createInstance();
-  instance.init({
-    lng: 'uk',
-    fallbackLng: 'en',
-    resources: {
-      en: { translation: structuredClone(seeded) },
-      uk: { translation: structuredClone(seeded) },
-    },
-    initAsync: false,
-  });
-  return instance;
-};
+const createInstance = (seeded: Record<string, unknown> = {}): I18nInstance =>
+  createLocaleI18n('uk', ['en'], seeded);
 
 describe('RecoveryCatalogLoader', () => {
   it('registers the recovery copy for both locales in the translation namespace', () => {
