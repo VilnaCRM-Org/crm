@@ -18,6 +18,7 @@ const confirmLabel: string = t('password_reset.confirm_password.label');
 const submitLabel: string = t('password_recovery.submit_button');
 const backLabel: string = t('password_recovery.back');
 const invalidTitle: string = t('password_reset.invalid.title');
+const invalidBody: string = t('password_reset.invalid.body');
 const requestNew: string = t('password_reset.invalid.request_new');
 const notice: string = t('sign_in.notices.password_reset');
 const policyRejected: string = t('password_reset.errors.policy_rejected');
@@ -35,6 +36,11 @@ interface ConfirmBody {
 }
 
 type Answer = (route: Route) => Promise<void>;
+
+interface InvalidLinkRender {
+  readonly html: string;
+  readonly text: string;
+}
 
 const json =
   (body: unknown): Answer =>
@@ -67,6 +73,20 @@ async function submitPasswords(page: Page, confirmation: string = NEW_PASSWORD):
   await fillInput(page.getByLabel(newPasswordLabel), NEW_PASSWORD);
   await fillInput(page.getByLabel(confirmLabel), confirmation);
   await page.getByRole('button', { name: submitLabel }).click();
+}
+
+async function invalidLinkAfter(page: Page, answer: Answer): Promise<InvalidLinkRender> {
+  await answerConfirms(page, answer);
+  await openWithToken(page);
+
+  await submitPasswords(page);
+
+  await expect(page.getByRole('heading', { level: 1, name: invalidTitle })).toBeFocused();
+  await expect(page.getByRole('status').filter({ hasText: invalidBody })).toBeVisible();
+  const main = page.getByRole('main');
+  const render = { html: await main.innerHTML(), text: await main.innerText() };
+  await page.unrouteAll({ behavior: 'wait' });
+  return render;
 }
 
 test.describe('Create new password (issue #315)', () => {
@@ -149,6 +169,17 @@ test.describe('Create new password (issue #315)', () => {
       await expect(page.getByRole('main')).toBeFocused();
     });
   }
+
+  test('renders the same invalid-link state for two different message-only refusals', async ({
+    page,
+  }) => {
+    const expired = await invalidLinkAfter(page, refused('Token has expired.'));
+    const notFound = await invalidLinkAfter(page, refused('Token is not found.'));
+
+    expect(notFound.text).toContain(invalidTitle);
+    expect(notFound.html).toBe(expired.html);
+    expect(notFound.text).toBe(expired.text);
+  });
 
   for (const [name, url] of [
     ['no token', '/password-reset'],
