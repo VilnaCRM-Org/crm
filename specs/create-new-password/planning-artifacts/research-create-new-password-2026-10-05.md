@@ -168,6 +168,9 @@ Three gates already pin that state and will move the moment the route is registe
 in the auth feature's contract for the flag gate to recognise it. `docs/feature-flags.md:104-114`
 documents the lifecycle: enable once the flow ships, then delete the flag (stage 3).
 
+> Superseded 2026-10-14: with the flag gone there is no flag gate to satisfy and no lifecycle
+> stage left to run; the route only has to be registered in the auth contract.
+
 Existing tests assert the link's `href` is exactly `/password-recovery`
 (`tests/e2e/modules/user/features/auth/runtime-config.spec.ts:29-31`,
 `tests/unit/modules/user/features/auth/components/form-section/components/`
@@ -592,7 +595,8 @@ Same chrome; card 502 × 312: `‹ Назад`, heading "Проверьте по
   acceptable as a superset) and add a confirm-password field. Caveat: the client accepts any
   Unicode uppercase (`\p{Lu}`) while the API requires ASCII `[A-Z]`, so "Пароль123" passes the
   client and fails upstream with `422` — the field-level `422` mapping covers it; aligning the
-  validator to ASCII is a shared sign-up change for the product owner.
+  validator to ASCII is a shared sign-up change for the product owner. Settled 2026-10-14: the
+  shared rule is now `/[A-Z]/` for both forms (`…/validations/password.ts`, PRD FR-24).
 - **Autocomplete.** `email` on the request field; `new-password` on both password fields.
 - **After success, do not log in.** The API returns no session; navigate to `/sign-in` and show a
   one-time success notice there.
@@ -650,7 +654,8 @@ Same chrome; card 502 × 312: `‹ Назад`, heading "Проверьте по
 - **ADR drift gate** — `src/config/api-config.ts` (new endpoints) and any `src/config/runtime/**`
   flag change are significant paths (`config/docs-policy.json:58-65`): an ADR or `[no-adr]`.
 - **Flag contract test** — the shipped default may flip to `true` only in the same change as, or
-  after, the contract registers the route.
+  after, the contract registers the route. Superseded 2026-10-14: issue #309 deleted the
+  `forgotPassword` flag, so no flag change and no flag-contract step is part of this feature.
 - **Console gate / e2e console guard** — no stray `console.*`; fulfilled `4xx` responses are
   tolerated in e2e (`tests/e2e/utils/fixtures.ts`).
 - **Performance budgets** — new chunks are lazy; no `@mui/material` import on eager code
@@ -738,7 +743,9 @@ Suffix check for the names the architecture stage is likely to need (all approve
    `PiiScrubber` pattern; e2e (`page.route`), a11y, mobile and visual lanes + manifest rows;
    i18n (uk/en copy replacing the Russian frames); flag flip + docs; a **blocked** story for the
    contract pin bump (`.env.example`, `Mockoon.Dockerfile`, codegen, `contract-diff` approvals)
-   and two upstream issues (link host; schema `enum`/pattern defects).
+   and two upstream issues (link host; schema `enum`/pattern defects). Superseded 2026-10-14:
+   drop the "flag flip + docs" story — issue #309 removed the flag, and the epics schedule no
+   flag story (Follow-up 5.5 records it as done before this feature).
 10. **Do not add the new pages to Lighthouse** by default: they share the audited chrome and
     the budgets are measured on `/sign-in`; adding URLs lengthens the matrix without new signal.
     Revisit if the PRD demands a budget per page.
@@ -767,7 +774,8 @@ Suffix check for the names the architecture stage is likely to need (all approve
 2. Will the design owner provide a frame for the confirmation form and uk/en copy for the sent
    screen, and confirm the "Назад" targets?
 3. Should the shared `PasswordValidator` be aligned to the API's ASCII uppercase rule for
-   sign-up as well?
+   sign-up as well? Settled 2026-10-14: yes — both forms share the `/[A-Z]/` rule in
+   `…/validations/password.ts` (PRD FR-24); only keeping the lowercase rule stays open.
 4. Does the sign-in success notice travel in navigation state or in the recovery var?
 5. When will user-service tag a release that includes the reset endpoints and the link-host
    fix, and who files the two upstream issues?
