@@ -22,6 +22,7 @@ const emailRejected: string = t('password_recovery.errors.email_rejected');
 const tryAgain: string = t('auth.error.tryAgain');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const signInTitle: string = t('sign_in.title');
+const homeHeading: string = t('home.heading');
 const switcherLabels: readonly string[] = [
   t('sign_up.form.switcher_text_no_account'),
   t('sign_up.form.switcher_text_have_account'),
@@ -263,6 +264,9 @@ test.describe('Password recovery request step (issue #315)', () => {
         window.dispatchEvent(new PopStateEvent('popstate'));
       });
       await expect(page).toHaveURL('/');
+      await expect(
+        page.getByRole('main').getByRole('heading', { level: 1, name: homeHeading })
+      ).toBeVisible();
       await expect(page.getByRole('heading', { level: 1, name: signInTitle })).toHaveCount(0);
     });
   }
