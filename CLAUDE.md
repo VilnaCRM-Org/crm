@@ -1770,7 +1770,10 @@ unreadable or malformed policy fails the run before any check.
 It additionally rejects the ways those four could be gamed or silently defeated: a translation
 that is present but empty or whitespace-only; two catalogs claiming the same key (the generator
 merges last-writer-wins over an **unsorted** directory walk, so the winner would depend on
-filesystem order); a source translation file parked in the generated `src/i18n/` directory; a
+filesystem order); two catalogs that disagree on whether a key is a translation or an object
+(`a.b` a string in one, `a.b.c` nested under it in another — eager or lazy, in either direction —
+which would abort the merge or silently drop a subtree, so the gate reports it and stops before
+merging); a source translation file parked in the generated `src/i18n/` directory; a
 duplicate JSON key (`JSON.parse` keeps the last one and reports nothing, so a repeated key
 silently discards a translation); and a run that discovers no catalogs or no keys, which fails
 rather than reporting a vacuous pass.
@@ -1780,9 +1783,11 @@ uses `one`/`other` while `uk` uses `one`/`few`/`many`/`other`, and a base key re
 its categories exists. Requiring byte-identical key sets would make correct i18next
 pluralization unsatisfiable.
 
-The gate is six modules:
+The gate is seven modules:
 
 - `check-i18n-parity.mjs` — catalog validation, merged-catalog freshness, reporting.
+- [`i18n-key-claims.mjs`](scripts/ci/i18n-key-claims.mjs) — which catalog claims a key: one owner
+  per key, and no key that is a translation in one catalog and an object in another.
 - [`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) — source scanning and key resolution.
 - [`i18n-source-tokens.mjs`](scripts/ci/i18n-source-tokens.mjs) — the lexical pass that separates
   code from prose, so a key inside a comment or a string is never read as a call site and a real

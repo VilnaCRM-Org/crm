@@ -29,6 +29,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+import { checkKeyOwnership, checkKeyPrefixes } from './i18n-key-claims.mjs';
 import { collectKeyReferences, pluralFamily, resolvesKey } from './i18n-key-scan.mjs';
 import { findDuplicateKeys } from './json-duplicate-keys.mjs';
 
@@ -271,42 +272,6 @@ function checkValueQuality(catalogs, violations) {
       const file = relative(path.join(catalog.dir, `${locale}.json`));
       violations.push(describeKeys(`[locale-values] ${file}: keys hold no usable text`, blank));
     }
-  }
-}
-
-/**
- * Check 2c: LocalizationGenerator merges catalogs last-writer-wins over an unsorted
- * directory walk, so two folders claiming one key resolve by filesystem order.
- */
-function catalogKeys(catalog) {
-  const keys = new Set();
-  for (const locale of REQUIRED_LOCALES) {
-    const translation = catalog.locales[locale];
-    if (!translation) continue;
-    for (const key of leafKeys(translation)) keys.add(key);
-  }
-  return keys;
-}
-
-function keyOwners(catalogs) {
-  const owners = new Map();
-  for (const catalog of catalogs) {
-    for (const key of catalogKeys(catalog)) {
-      const dirs = owners.get(key) ?? [];
-      dirs.push(relative(catalog.dir));
-      owners.set(key, dirs);
-    }
-  }
-  return owners;
-}
-
-function checkKeyOwnership(catalogs, violations) {
-  for (const [key, dirs] of keyOwners(catalogs)) {
-    if (dirs.length < 2) continue;
-    violations.push(
-      `[key-ownership] "${key}" is defined by ${dirs.length} catalogs (${dirs.join(', ')}) — ` +
-        'the merge order is filesystem-dependent, so exactly one catalog must own a key'
-    );
   }
 }
 
@@ -579,7 +544,12 @@ function main() {
   checkGeneratedDirsHoldOnlyOutput(generatedDirs, violations);
   checkFolderParity(catalogs, violations);
   checkValueQuality(catalogs, violations);
-  checkKeyOwnership(catalogs, violations);
+  const claims = { locales: REQUIRED_LOCALES, leafKeys, relative };
+  checkKeyOwnership(catalogs, violations, claims);
+  if (checkKeyPrefixes(catalogs, violations, claims) > 0) {
+    report(violations);
+    return;
+  }
 
   const regenerated = regenerateInMemory(
     scanRoot,

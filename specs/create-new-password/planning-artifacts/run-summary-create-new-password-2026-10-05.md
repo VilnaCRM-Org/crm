@@ -206,7 +206,10 @@ Stages 5 and 6 and all correction passes ran on Opus.
   extension and the local Apollo mock.
 - Waiting on user-service, not blocking: the pin bump that deletes the extension (Follow-up 5.3)
   waits for a release tag carrying both mutations, and production enablement of the flag
-  (Follow-up 5.6) waits for that release to be deployed with the link-host fix.
+  (Follow-up 5.6) waits for that release to be deployed with the link-host fix. Superseded
+  2026-10-14: no flag exists (issue #309), so Follow-up 5.6 needs no crm configuration change —
+  only the user-service release deployed behind the production SPA with the link-host fix
+  (Follow-up 5.1).
 - Upstream: request the release tag (Follow-up 5.3's unblock action) and file Follow-up 5.1
   (reset link built from the API host) together; Follow-up 5.2 (OpenAPI enum and pattern defects) is
   optional since the GraphQL decision. Optional ask: a machine-readable code on GraphQL domain
