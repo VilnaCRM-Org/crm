@@ -173,7 +173,8 @@ Eight decisions shape everything below:
    the step, the masked address, the failure and the in-memory reset token live in
    `useResetPassword`, `useCreateNewPassword` and `useResetToken`; the two flow hooks share one
    submit skeleton, `useAbortableSubmit`. There is no controller class, no new Zustand store and
-   no new module-level singleton.
+   no new module-level singleton that holds state; the only shipped singletons are stateless
+   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12).
 5. **One password policy, never weaker than the API** (FR-24): `PasswordValidator` narrows its
    uppercase rule to ASCII `[A-Z]`, keeps the lowercase rule, and exposes per-rule evaluation as
    a named `PasswordRuleResultSet`.
@@ -391,7 +392,7 @@ flowchart BT
   PROV <-->|"RecoveryConfirmedOutcome<br/>UserServiceFailure ⇄ RecoveryFailedOutcome"| TR
   PROV <-->|"unknown ⇄ UserServiceFailure"| ETR
   HOOK -.->|"import() + resolve<br/>CreateNewPasswordDto ⇄ CreateNewPasswordOutcome"| PROV
-  PAGE -->|"string | null (the usable token)"| THOOK
+  PAGE -->|"ResetTokenHandle (the usable token or null, discard())"| THOOK
   PAGE -->|"CreateNewPasswordDto ⇄ CreateNewPasswordState"| HOOK
   PAGE -->|"CreateNewPasswordFormProps, RecoveryResultViewProps"| KIDS
   PAGE -.->|"reset password 3 redirect to sign-in<br/>RedirectNavigationState"| SIGNIN
@@ -561,7 +562,7 @@ sequenceDiagram
   participant SI as SignIn<br/>[component]#lt;route#gt;
   U->>C: opens /password-reset?token=abc (page and section chunks load)
   C->>K: first render of the form section
-  K->>K: useState(read and trim location.search) → string | null
+  K->>K: useState(read and trim location.search) → ResetTokenHandle (token or null)
   K->>C: layout effect: navigate(pathname, replace) strips the token before paint
   alt token null (absent, unusable, or a reload after the strip)
     C->>C: CreateNewPasswordState, view 'invalid' (no request)
@@ -594,6 +595,7 @@ sequenceDiagram
         T-->>P: RecoveryFailedOutcome
         P-->>H: RecoveryFailedOutcome
         alt RecoveryFailure reason invalid_link
+          H->>K: ResetTokenHandle.discard() drops the in-memory token
           H->>C: CreateNewPasswordState, view 'invalid' (the form and its token unmount)
         else policy_rejected, rate_limited, server or network
           H->>C: CreateNewPasswordState with RecoveryFailure (field error or banner + Retry)
@@ -674,10 +676,14 @@ composer or shell edit (FR-2).
 
 The page components take the board's names: `ResetPassword` in
 `routes/reset-password/index.tsx` and `CreateNewPassword` in
-`routes/create-new-password/index.tsx`. Each mirrors `routes/sign-in/index.tsx`: it calls
-`usePageTitle`, renders `AuthPageLayout` and `lazy`-loads a `webpackPreload`ed form-section chunk
-written inline (`lazy(() => import(/* webpackChunkName: "reset-password-form-section" */ …))`),
-not through a `*FormSectionLoader` module instance, which would add a module-level singleton.
+`routes/create-new-password/index.tsx`. Each mirrors `routes/sign-in/index.tsx`: it renders the
+shared `RecoveryPageLayout` (which registers the lazy recovery catalog, calls `usePageTitle` and
+renders `AuthPageLayout`) and `lazy`-loads its form-section chunk through a
+`form-section-loader.ts` (`ResetPasswordFormSectionLoader`, `CreateNewPasswordFormSectionLoader`)
+exported as a module singleton, exactly like the `sign-in` and `sign-up` loaders. The plan wrote
+the `import()` inline to avoid that singleton; the shipped loaders are stateless import seams
+whose chunk names the auth-form cache groups and the `performance serving` test read, an accepted
+exception to AR-2 recorded in the epics' "Implementation drift" item 1 (§12).
 
 ### 5.3 Page-local state in React hooks, one shared submit skeleton
 
@@ -689,10 +695,12 @@ must not survive the page (FR-17), so they live in `useState` inside the hooks �
   submitted (trimmed) e-mail — so "Назад" on the sent step re-renders the form with the value in
   the field and its heading focused (FR-11) — the masked address and the failure, and returns
   them with its `ResetPasswordCallbacks`, whose `submit` takes the form's `RestorePasswordDto`.
-- `useCreateNewPassword(loader: AuthProviderLoader, token: string | null)` returns
+- `useCreateNewPassword(loader: AuthProviderLoader, resetToken: ResetTokenHandle)` returns
   `CreateNewPasswordState`; its `submit` takes the form's `CreateNewPasswordDto` and sends only
-  `token` and `newPassword`. It keeps the view (`form | invalid`, `invalid` when the token is
-  `null`) and the failure, and navigates to `/sign-in` on `confirmed` (§5.7).
+  `token` and `newPassword`. It keeps the view (`form | invalid`, `invalid` when the handle's
+  `token` is `null`) and the failure, and navigates to `/sign-in` on `confirmed` (§5.7). On an
+  `invalid_link` failure it forgets the retry input and calls `resetToken.discard()`, so the
+  token leaves memory and the view switches to `invalid` (FR-22, §5.6).
 - Each flow hook's run resolves the provider through
   `loader.resolve(AUTH_TOKENS.PasswordRecoveryProvider)` and calls the step; a rejected load
   becomes a `RecoveryFailedOutcome` with reason `network`, retryable (a module-level constant
@@ -852,12 +860,14 @@ returns the named `RecoveryFailureBanner` (the `UIForm` `error` and `errorAction
 
 ### 5.6 Reset token: read once, memory only, URL stripped
 
-`useResetToken(): string | null` reads the `token` parameter of `location.search` once, in a
+`useResetToken(): ResetTokenHandle` reads the `token` parameter of `location.search` once, in a
 `useState` initializer, trims it and keeps it only when it is usable (non-empty, ≤ 255
-characters, FR-17); otherwise it returns `null`. In a `useLayoutEffect` it navigates to the bare
-pathname with `replace: true` when a `token` parameter is present, so the router's
-`location.search` and the address bar agree and the URL is stripped before the browser paints
-the form (FR-16, NFR-12). `navigate` is safe there: react-router marks the function active in its
+characters, FR-17); otherwise the handle's `token` is `null`. The handle's `discard()` sets that
+state to `null`; it is how `useCreateNewPassword` drops the token after an `invalid_link`
+failure (FR-22), since a plain string returned by the hook could not be cleared from outside.
+In a `useLayoutEffect` it navigates to the bare pathname with `replace: true` when a `token`
+parameter is present, so the router's `location.search` and the address bar agree and the URL is
+stripped before the browser paints the form (FR-16, NFR-12). `navigate` is safe there: react-router marks the function active in its
 own layout effect, which runs first because the hook calls `useNavigate()` before declaring its
 effect, so the console gate sees no warning. Under StrictMode the initializer runs twice on the
 same `search` and the guard on a present `token` parameter makes the second effect a no-op.
@@ -1266,9 +1276,9 @@ Hooks (exempt from the class rules, bound by TB-1 positions 2 and 5):
 
 - `useAuthProviderLoader(): AuthProviderLoader` (`@auth/hooks/`).
 - `useResetPassword(loader: AuthProviderLoader): ResetPasswordState` (`@auth/hooks/`).
-- `useCreateNewPassword(loader: AuthProviderLoader, token: string | null)` returns
+- `useCreateNewPassword(loader: AuthProviderLoader, resetToken: ResetTokenHandle)` returns
   `CreateNewPasswordState` (`@auth/hooks/`).
-- `useResetToken(): string | null` (`@auth/hooks/`).
+- `useResetToken(): ResetTokenHandle` (`@auth/hooks/`).
 - `useRecoveryFailureBanner(failure: RecoveryFailure | null, retry: () => Promise<void>)`
   returns `RecoveryFailureBanner` (`@auth/hooks/`).
 - `useAbortableSubmit<TInput, TOutcome>(run: AbortableRun<TInput, TOutcome>)` returns
@@ -1319,6 +1329,10 @@ export interface ResetPasswordState {
   readonly failure: RecoveryFailure | null;
   readonly isSubmitting: boolean;
   readonly callbacks: ResetPasswordCallbacks;
+}
+export interface ResetTokenHandle {
+  readonly token: string | null; // the usable token, or null (§5.6)
+  discard(): void; // drops the token after an invalid_link failure (FR-22)
 }
 export interface CreateNewPasswordCallbacks {
   submit(dto: CreateNewPasswordDto): Promise<void>; // sends only token and newPassword
@@ -1593,7 +1607,7 @@ Under `@auth/hooks/` (signatures in §6.4):
 | `useAuthProviderLoader`    | one container-free loader per mount (§5.4)          |
 | `useResetPassword`         | `ResetPasswordState`; composes `useAbortableSubmit` |
 | `useCreateNewPassword`     | `CreateNewPasswordState`; navigates on confirmed    |
-| `useResetToken`            | the usable token or `null`; strips the URL once     |
+| `useResetToken`            | `ResetTokenHandle`; strips the URL once             |
 | `useRecoveryFailureBanner` | `RecoveryFailureBanner` for the `UIForm` banner     |
 
 Under `src/hooks/`:
@@ -1741,8 +1755,9 @@ against the same budgets; this feature imports no store and adds nothing to it.
 
 Recovery-page strings under `password_recovery`, `password_reset` and `password_policy` live in
 the lazy recovery catalog `@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key
-sets, registered by
-`RecoveryPageLayout` when the route module evaluates and kept out of
+sets, registered for both locales by the stateless `RecoveryCatalogLoader` singleton, which
+`RecoveryPageLayout` calls when the route module evaluates (an accepted AR-2 exception, §12), and
+kept out of
 `src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
 "Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
 
@@ -1773,8 +1788,14 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
   checks this feature's code from the first commit.
 - **No statics, no free functions, no object-literal methods (#100, #180).** All new `.ts` logic
   is instance methods; the tables are module-private data without function-valued properties.
-- **No new module-level singletons.** The pages import their sections inline (§5.2), the loader
-  is built per mount (§5.4), and the container classes are container-managed.
+- **No new module-level singletons that hold state (AR-2).** The `AuthProviderLoader` is built
+  per mount (§5.4), and the container classes are container-managed. Three stateless import
+  seams ship as module singletons, the accepted exceptions recorded in the epics'
+  "Implementation drift": `ResetPasswordFormSectionLoader` and
+  `CreateNewPasswordFormSectionLoader` (item 1, §5.2), each holding one named `import()`, and
+  `RecoveryCatalogLoader` (item 4, §11), whose one method adds both locale bundles through
+  `addResourceBundle` when the route module evaluates. None of them has a field; the only state
+  any of them touches is what the module loader or i18next already holds.
 - **Type-only files (#88).** Every interface and alias is in `types/`; logic files declare none.
 - **DI collaborators (#130).** The repository value-imports only `tsyringe`, `uuid`, token
   modules and the two document seams; the provider `tsyringe` and token modules;
