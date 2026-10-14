@@ -224,9 +224,14 @@ equal `vX.Y.Z` tags); a self-expiring checker (a manual follow-up deletion is si
 
 **Decision.** `useResetToken` reads the `token` parameter once, keeps it only in memory, and
 strips it from the URL with a `replace` navigation in a layout effect before the form paints. No
-input renders it, and it never reaches the cache, the history or telemetry.
+input renders it, and it never reaches the cache, the history or telemetry. The hook returns a
+`ResetTokenHandle` (`{ token, discard() }`), not the bare string: `useCreateNewPassword` takes
+the handle and, when the API reports the link as invalid, calls `discard()`, so the token leaves
+memory and the page switches to the invalid-link state instead of offering a retry with it.
 
-**Rejected.** Keeping the token in the URL or in storage (history, referrers, logs).
+**Rejected.** Keeping the token in the URL or in storage (history, referrers, logs); returning
+the token as a plain `string | null`, which the flow hook could not clear after an invalid-link
+failure.
 
 ### One shared password policy
 

@@ -93,7 +93,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   factory and provider interface; the Data provider is the plain `PasswordRecoveryProvider`.
 - The invented `password_reset` security signal (FR-25) is withdrawn.
 - The mock is the extension, codegen and a stateless happy path with one violation per mutation.
-- `ResetTokenSource` became the `useResetToken(): string | null` hook; `SentView` and
+- `ResetTokenSource` became the `useResetToken` hook (it returns a `ResetTokenHandle`, see
+  "Implementation drift" item 7); `SentView` and
   `InvalidLinkView` became plain uses of `RecoveryResultView`; the aborted and interrupted outcome
   variants, the rule-table types and the deps types are gone.
 - Thin stories merged; every story renumbered from 0.1, 1.1, 2.1, 3.1 and 4.1 (the former ids
@@ -199,7 +200,9 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   `AuthProviderLoader` in `stores/index.ts`; nothing in the auth tree reaches `@/providers/di`,
   and `DeferredAuthActions` stays untouched.
 - AR-2 (§12): no new module-level singleton (`export default new X()`); the loader is built per
-  mount by `useAuthProviderLoader`, and there is no controller class.
+  mount by `useAuthProviderLoader`, and there is no controller class. The two stateless import
+  seams that shipped as module singletons are recorded as accepted exceptions in
+  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`).
 - AR-3 (§5.3): `useAbortableSubmit` has side-effect-free initializers and its unmount cleanup
   aborts only the request in flight, so a StrictMode double mount still sends the first submit.
 - AR-4 (§6.5): every interface and alias lives in a type-only file under `types/`.
@@ -1283,9 +1286,7 @@ So that the credential cannot leak through history, a screenshot, a referrer or 
   `detect-unsafe-regex` passes without suppression (star height 1).
 - **Given** AR-8, **when** the integration suite runs, **then** the observability chain stays at
   100%.
-- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint`
-  runs, **then** `useResetToken` returns the scalar `string | null`, and ESLint reports no TB-1
-  violation.
+- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint` runs, **then** `useResetToken` returns the named `ResetTokenHandle` (`token: string | null` plus `discard()`, which drops the in-memory token so FR-22's `invalid_link` failure renders the invalid-link state), and ESLint reports no TB-1 violation.
 
 ### Story 3.2: Generalise PasswordField and list the live policy rules
 
@@ -1437,10 +1438,7 @@ NFR-13, NFR-17, NFR-18.
 - **Given** jscpd, **when** `make lint-dup` compares this hook with `useResetPassword`, **then**
   it reports 0 clones, because the submit, abort and retry skeleton lives once in
   `useAbortableSubmit`.
-- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint`
-  runs, **then** the hook takes `AuthProviderLoader` and `string | null` and returns
-  `CreateNewPasswordState`, its callbacks take `CreateNewPasswordDto`, the navigation state is a
-  named `RedirectNavigationState`, and ESLint reports no TB-1 violation.
+- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint` runs, **then** the hook takes `AuthProviderLoader` and the `ResetTokenHandle` from `useResetToken` and returns `CreateNewPasswordState`, an `invalid_link` failure calls the handle's `discard()` (FR-22) so the token leaves memory, its callbacks take `CreateNewPasswordDto`, the navigation state is a named `RedirectNavigationState`, and ESLint reports no TB-1 violation.
 - **Given** form values with `confirmPassword`, **when** submitted, **then** the DTO sent omits it.
 - **Given** `CreateNewPasswordFormValues`, **when** read, **then** it only `extends` the DTO (TB-2).
 
@@ -2135,6 +2133,14 @@ acceptance criteria it touches; only the planned shape or file name changed.
    keys were 3,742 B of it. Keys a page outside the recovery routes renders, such as
    `sign_in.notices.password_reset`, stay in the eager auth catalog. FR-27's acceptance criteria
    are unchanged: every string ships in `uk` and `en` with identical key sets.
+   `RecoveryCatalogLoader` (`routes/recovery-catalog/recovery-catalog-loader.ts`) is exported as
+   a module singleton, and `RecoveryPageLayout` calls its `register(i18n)` once at module
+   evaluation. It is the second accepted exception to AR-2's "no new module-level singleton", on
+   the same ground as the form-section loaders of item 1: it is a stateless seam, not a state
+   holder. Its one method adds both locale bundles through `addResourceBundle`; the class holds
+   no field, and the only state it touches is the i18next instance it is handed, which already
+   owns every catalog. The registration has to run when the route module evaluates, before the
+   page's `usePageTitle` reads a key, where no component or per-mount instance exists yet.
 5. **No feature flag (FR-1, Story 4.1, Follow-ups 5.5 and 5.6, architecture §5.14).** The plan
    kept the `forgotPassword` runtime flag `false` in production, enabled it in the test stack
    after the route registration, re-baselined `/sign-in` for the newly visible link, and left
@@ -2153,3 +2159,14 @@ acceptance criteria it touches; only the planned shape or file name changed.
    in-card "Назад" colour `rgb(64, 65, 66)` on both forms. The `route-coverage.tsv` row for
    `passwordReset` names that spec, so the route-coverage gate still ties the route to its
    keyboard contract.
+7. **Reset-token handle instead of a scalar (Stories 3.1 and 3.4, architecture §5.3 and §5.6,
+   FR-22).** The stories planned `useResetToken(): string | null` and
+   `useCreateNewPassword(loader, token: string | null)`. `useResetToken` instead returns the named
+   `ResetTokenHandle` (`@auth/types/password-recovery/state.ts`: `token: string | null` and
+   `discard(): void`), and `CreateNewPasswordFormSection` passes that handle to
+   `useCreateNewPassword`. The reason is FR-22: the token lives in the hook's `useState`, so the
+   flow hook cannot drop it from a plain string. On an `invalid_link` failure it calls
+   `submitter.forget()` and `resetToken.discard()`; the handle's `token` becomes `null`, the hook
+   returns the `invalid` view, and the form and the dead token unmount, which also stops a retry
+   from re-sending a token the API has already refused. The read, trim, length check and
+   layout-effect strip are unchanged, and Stories 3.1 and 3.4 were rewritten to name the handle.
