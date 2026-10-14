@@ -2146,3 +2146,10 @@ acceptance criteria it touches; only the planned shape or file name changed.
    Follow-up 5.5 is done by #309, and Follow-up 5.6 is the deployment of a user-service release
    serving both mutations behind the production SPA, not a configuration change of this
    repository.
+6. **One keyboard spec for both routes (Story 4.2).** The story planned a separate
+   `tests/e2e/a11y/password-reset-keyboard.a11y.spec.ts`. Both routes share
+   `tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts` instead, which drives the request
+   form, the sent step, the new-password form and the invalid-link state, and asserts the
+   in-card "Назад" colour `rgb(64, 65, 66)` on both forms. The `route-coverage.tsv` row for
+   `passwordReset` names that spec, so the route-coverage gate still ties the route to its
+   keyboard contract.

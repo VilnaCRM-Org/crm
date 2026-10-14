@@ -1,13 +1,16 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-import { buildResetToken } from '@tests/builders';
+import { buildPassword, buildResetToken, seedFaker } from '@tests/builders';
 import { t } from '@tests/e2e/utils/initialize-localization';
 
 import { currentLanguage, notFoundScreens, PAGES, type ScreenSize, screenSizes } from './constants';
 import stabilizePage from './stabilize-page';
 import waitForStableDom from './wait-for-stable-dom';
 
+seedFaker();
+
 const GRAPHQL_URL = '**/graphql';
+const NEW_PASSWORD = buildPassword();
 const CARD = '#auth-form-card';
 const CARD_WIDTHS: ReadonlyArray<readonly [number, number]> = [
   [1440, 502],
@@ -94,8 +97,8 @@ test.describe.parallel('Password recovery visual tests (issue #315)', () => {
     test(`[sign-in] password-reset notice ${screen.name}`, async ({ page }) => {
       await answer(page, 'ConfirmPasswordReset', { confirmPasswordResetUser: null });
       await openNewPasswordForm(page, screen);
-      await page.getByLabel(newPasswordLabel).fill('Password1');
-      await page.getByLabel(confirmLabel).fill('Password1');
+      await page.getByLabel(newPasswordLabel).fill(NEW_PASSWORD);
+      await page.getByLabel(confirmLabel).fill(NEW_PASSWORD);
       await page.getByRole('button', { name: submitLabel }).click();
       await expect(page.getByRole('status').filter({ hasText: notice })).toBeVisible();
 
