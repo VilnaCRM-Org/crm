@@ -4,7 +4,7 @@ export type PasswordRuleKey =
 export type ValidationPswdMessageKey = PasswordRuleKey | 'lineBreakForbidden' | 'fieldRequired';
 
 export interface Rule<TKey extends ValidationPswdMessageKey = PasswordRuleKey> {
-  check: (value: string) => boolean;
+  pattern: RegExp;
   key: TKey;
 }
 
