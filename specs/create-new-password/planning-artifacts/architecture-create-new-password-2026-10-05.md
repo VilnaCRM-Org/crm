@@ -948,9 +948,11 @@ the planner and is withdrawn (PRD FR-25).
 
 No flag. Issue #309 removed the `forgotPassword` flag before this feature: the `FeatureFlag`
 union is empty, `public/index.html` ships `{ "flags": {} }`, and `UserOptions` renders the
-"Забули пароль?" link unconditionally. This feature therefore edits no runtime-config file, no
-compose file and no runtime-config contract case, and the `/sign-in` baselines and the sign-in
-keyboard spec already contain the link (NFR-6, NFR-10). Registering both routes (§5.2) is what
+"Забули пароль?" link unconditionally. This feature therefore edits no runtime-config source
+file, no compose file and no flag case of the runtime-config contract; the contract's
+route-registration case flips from #309's interim `allowlisted` row to the registered route
+(§8.3). The `/sign-in` baselines and the sign-in keyboard spec already contain the link (NFR-6,
+NFR-10). Registering both routes (§5.2) is what
 makes the link open the flow in every environment; production works once a user-service release
 with both mutations is deployed (Follow-up 5.6). §18 item 1 records the drift from the plan.
 
@@ -1676,17 +1678,16 @@ dependencies, `src/config/**`, `public/index.html`, `rsbuild.config.ts`,
 | `tests/unit/components/ui-form/*` (error action)                                 | MODIFY |
 | `tests/unit/services/observability/pii-scrubber*.test.ts`                        | MODIFY |
 | `tests/unit/a11y/{reset-password,create-new-password}.a11y.test.tsx`             | NEW    |
-| `tests/unit/tooling/runtime-config-contract.test.ts` (test-stack case)           | MODIFY |
+| `tests/unit/tooling/runtime-config-contract.test.ts` (route-registration case)   | MODIFY |
 | `tests/builders/auth.ts` (`buildResetToken()`, Story 1.3)                        | MODIFY |
 | `tests/integration/modules/user/features/auth/password-*.integration.test.ts`    | NEW    |
 | `tests/integration/mocks/server.ts` (msw `graphql` handlers for both operations) | MODIFY |
 | `tests/apollo-server/resolvers.test.ts` (two resolvers, real `formatError`)      | MODIFY |
 | `tests/e2e/utils/password-reset-responses.ts` (`operationName` dispatcher)       | NEW    |
 | `tests/e2e/modules/user/features/auth/password-{recovery,reset}.spec.ts`         | NEW    |
-| `tests/e2e/modules/user/features/auth/runtime-config.spec.ts`                    | MODIFY |
 | `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                  | MODIFY |
 | `tests/e2e/a11y/password-{recovery,reset}-keyboard.a11y.spec.ts`                 | NEW    |
-| `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (forgot-password stop)            | MODIFY |
+| `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (password-toggle focus ring)      | MODIFY |
 | `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)       | MODIFY |
 | `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`               | NEW    |
 | `tests/visual/visual-comparison.password-{recovery,reset}.spec.ts`               | NEW    |
@@ -1719,8 +1720,9 @@ against the same budgets; this feature imports no store and adds nothing to it.
 
 ## 11. Localisation, titles and copy
 
-All strings live in the lazy recovery catalog
-`@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key sets, registered by
+Recovery-page strings under `password_recovery`, `password_reset` and `password_policy` live in
+the lazy recovery catalog `@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key
+sets, registered by
 `RecoveryPageLayout` when the route module evaluates and kept out of
 `src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
 "Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
@@ -1734,8 +1736,10 @@ All strings live in the lazy recovery catalog
   `.invalid.request_new` (Story 3.6).
 - `password_policy.rules.length`, `.digit`, `.uppercase`, `.lowercase`,
   `password_policy.state.met`, `.unmet` (Story 3.2).
-- `sign_in.notices.password_reset` (Story 3.3).
-- `sign_up.form.password_input.error_uppercase`: text changed in both locales (Story 1.2).
+- In the shared auth catalog, which `/sign-in` and `/sign-up` render eagerly:
+  `sign_in.notices.password_reset` (Story 3.3), `sign_up.form.password_input.error_line_break`
+  (§18 item 7) and `sign_up.form.password_input.error_uppercase`, whose text changed in both
+  locales (Story 1.2).
 
 Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
 `auth.error.tryAgain`, `buttons.back_to_main`. Titles: "Забули пароль? - VilnaCRM" and
@@ -1801,9 +1805,9 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
   retry after a failed load, the capture source, the FR-24 property test. FR-9, FR-14, FR-24.
 - **Unit: scrubber.** `token=` redaction. FR-26.
 - **Unit: jest-axe** over both pages and every new component. NFR-9.
-- **Unit: tooling.** Runtime-config contract (shipped default and the test-stack default),
-  performance serving, paint-path graph, the module-shape test, the dependency-cruiser fixtures
-  and the TB-2 naming check. FR-1, NFR-4, NFR-8, NFR-17, NFR-18.
+- **Unit: tooling.** Runtime-config contract (the route-registration case), performance serving,
+  paint-path graph, the module-shape test, the dependency-cruiser fixtures and the TB-2 naming
+  check. FR-1, NFR-4, NFR-8, NFR-17, NFR-18.
 - **Server (apollo-server suite).** The two resolvers against a server built with the real
   extension and `formatError`, each violation test asserting its spied `'GraphQL Error:'` log.
   FR-7, FR-9, FR-21, NFR-15.
@@ -1982,11 +1986,11 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | NFR-3  | §12 jscpd note                                                                    |
 | NFR-4  | §12 naming, free-function, singleton, type-file, DI and layering notes            |
 | NFR-5  | §12 metrics note; per-file function, closure and total counts                     |
-| NFR-6  | §12 visual note; CI-artifact baselines; `/sign-in` re-recorded by Story 4.1       |
+| NFR-6  | §12 visual note; CI-artifact baselines; existing `/sign-in` baselines unchanged   |
 | NFR-7  | Lighthouse list unchanged; `/sign-in` gains only a conditional notice             |
 | NFR-8  | §10 bundle breakdown                                                              |
 | NFR-9  | §7.2 contracts and the one scoped #276 entry, jest-axe, route scans, 24 / 44 px   |
-| NFR-10 | keyboard specs per state with `expectTabOrder`; sign-in spec gains the link stop  |
+| NFR-10 | keyboard specs per state with `expectTabOrder`; sign-in link stop already present |
 | NFR-11 | mobile touch spec on both device projects                                         |
 | NFR-12 | §5.5, §5.6, §5.13; CSP/referrer unchanged; no new origin                          |
 | NFR-13 | deadline via `DeadlineFetchAdapter`, no retry link, composer `errorElement`,      |
@@ -2039,12 +2043,14 @@ justified below. No class introduced for this feature ends in `Controller`, `Ser
 7. **Password with a line break (§5.8).** The OpenAPI `pattern` `^(?=.*[0-9])(?=.*[A-Z]).{8,64}$`
    rejects a line terminator, because its `.` matches none, while the Symfony `Length` and `Regex`
    constraints accept one; the client follows the stricter `pattern`. The length rule
-   (`/^[\s\S]{8,64}$/u`) counts code points, so an astral character such as an emoji counts once,
-   and it counts a line terminator too. A separate `lineBreakForbidden` rule rejects `\n`, `\r`,
-   U+2028 and U+2029 with its own message (`sign_up.form.password_input.error_line_break`) once
-   the four checklist rules pass. It is not a checklist row: a browser
-   `<input type="password">` already strips `\n` and `\r`, so only U+2028 and U+2029 reach it from
-   the UI, and the length row stays met for a password that is long enough.
+   (`/^[^\n\r  ]{8,64}$/u`) mirrors the pattern's `.{8,64}`: it counts code points, so
+   an astral character such as an emoji counts once, and it is unmet while the value holds `\n`,
+   `\r`, U+2028 or U+2029. A browser `<input type="password">` strips `\n` and `\r`, but a pasted
+   U+2028 or U+2029 reaches the field, so the length row turns unmet and the checklist never
+   shows every rule met for a value the validator rejects. Validation checks a separate
+   `lineBreakForbidden` rule first, so the field reports the specific message
+   (`sign_up.form.password_input.error_line_break`) rather than the length one. It adds no
+   checklist row.
 8. **Sign-in link navigation.** The "Забули пароль?" link is the shared `UITextLink`, a plain
    `href`, so it performs a document load; the in-card links navigate client-side.
 9. **Visual baselines (Story 4.4).** The specs are committed; the baselines are taken from the

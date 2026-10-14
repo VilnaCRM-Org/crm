@@ -1605,8 +1605,11 @@ So that I can find the flow without knowing its URL.
 
 **Files:** `src/modules/user/README.md` (MODIFY: the "No feature flag" decision),
 `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (VERIFY: the link is a stop after "remember me"
-and before the submit). No runtime-config, compose or flag file changes: issue #309 removed the
-`forgotPassword` flag and the link already renders unconditionally (see "Implementation drift").
+and before the submit), `tests/unit/tooling/runtime-config-contract.test.ts` (MODIFY: the
+route-registration case expects `passwordRecovery` registered with e2e and visual rows instead of
+#309's interim `allowlisted` row). No runtime-config source, compose or flag file changes: issue
+#309 removed the `forgotPassword` flag and the link already renders unconditionally (see
+"Implementation drift").
 
 **Gates:** DoD local gates; `make lint-docs`; CI `make test-e2e`, `make test-a11y-e2e`,
 `make test-visual`, Lighthouse.
@@ -2137,7 +2140,8 @@ acceptance criteria it touches; only the planned shape or file name changed.
    after the route registration, re-baselined `/sign-in` for the newly visible link, and left
    production enablement and flag deletion to two follow-ups. Issue #309 removed the flag before
    this branch and made the "Забули пароль?" link render unconditionally, so no flag, compose
-   override, runtime-config contract case or `/sign-in` re-baseline ships here. FR-1, Story 4.1
+   override, flag case in the runtime-config contract or `/sign-in` re-baseline ships here; the
+   contract's route-registration case only flips to expect the registered route. FR-1, Story 4.1
    and both follow-ups were rewritten to match: Story 4.1 confirms the unconditional link,
    Follow-up 5.5 is done by #309, and Follow-up 5.6 is the deployment of a user-service release
    serving both mutations behind the production SPA, not a configuration change of this
