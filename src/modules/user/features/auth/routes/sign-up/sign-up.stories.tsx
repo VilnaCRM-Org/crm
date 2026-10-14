@@ -6,9 +6,9 @@ import SignUp from '.';
 
 export default {
   title: 'Auth/Pages/SignUp',
+  component: SignUp,
   tags: ['autodocs'],
   ...authPageStories.meta(
-    SignUp,
     '/sign-up',
     'The /sign-up route page: AuthPageLayout around the lazily loaded sign-up form ' +
       'section, and the document title.'

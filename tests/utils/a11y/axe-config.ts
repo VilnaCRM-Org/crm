@@ -76,7 +76,8 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
     selector:
       '#auth-form-card > a.MuiButton-contained[href="/sign-in"], ' +
       '#auth-form-card > a.MuiButton-contained[href="/password-recovery"]',
-    reason: 'Submit button is white on the Figma primary #1EAEFF (2.45:1); token owned by design.',
+    reason:
+      'Recovery in-card link buttons: white on the Figma primary #1EAEFF is 2.45:1; design-owned.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
 ];

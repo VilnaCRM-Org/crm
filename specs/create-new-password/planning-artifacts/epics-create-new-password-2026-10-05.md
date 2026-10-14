@@ -2126,3 +2126,41 @@ merge re-runs `make i18n-generate` rather than hand-merging the generated catalo
    Miro layers (2026-10-08), the board's User domain (2026-10-08), the simplification
    (2026-10-08) and the Zustand prerequisite (2026-10-08) are recorded in the run summary and the
    readiness report.
+
+## Implementation drift
+
+Deliberate differences between the stories above and what shipped on PR #340. Each one keeps the
+acceptance criteria it touches; only the planned shape or file name changed.
+
+1. **Form-section loaders instead of an inline `lazy` (Stories 2.5 and 3.6, architecture §5.2,
+   AR-2).** The stories planned an inline
+   `lazy(() => import(/* webpackChunkName: "reset-password-form-section" */ …))` in
+   `routes/reset-password/index.tsx` and its `create-new-password` twin. Each recovery route
+   instead ships a `form-section-loader.ts` (`ResetPasswordFormSectionLoader`,
+   `CreateNewPasswordFormSectionLoader`) exported as a module singleton, exactly like the
+   existing `sign-in` and `sign-up` loaders, and the page wraps `loader.load()` in `lazy`. The
+   reason is that the chunk name is now load-bearing: the `authForms` cache group
+   (`scripts/auth-forms-chunk-group.ts`, issue #315) admits the two recovery form-section chunks
+   by name, and `tests/unit/tooling/performance-serving.test.ts` reads the `webpackChunkName` of
+   all four `form-section-loader.ts` files to pin that the group names equal what the loaders
+   emit. One file per route with one `import()` keeps that pin a plain read and lets
+   `recovery-form-section-loader.test.ts` and `recovery-pages.test.tsx` load or mock the section
+   per route. A section chunk that fails to load rejects into the route's `errorElement`
+   (`RouteError`, strategy `reload`), the same recovery as the sign-in and sign-up sections. This
+   is an accepted exception to AR-2's "no new module-level singleton": the singleton is a
+   stateless import seam, not a state holder, and the recovery loader of AR-2 itself is still
+   built per mount by `useAuthProviderLoader`. Both pages also share one `RecoveryPageLayout`
+   (`@auth/components/recovery-page-layout`), which registers the lazy recovery catalog, sets the
+   page title through `usePageTitle` and renders `AuthPageLayout`, instead of repeating those
+   three steps in each page.
+2. **Test file names (Stories 1.1 and 1.5).** The provider-chain integration test planned as
+   `tests/integration/modules/user/features/auth/password-recovery-chain.integration.test.ts`
+   shipped as `password-recovery-provider.integration.test.ts` in the same folder, and the
+   resolver test planned as a change to `tests/apollo-server/resolvers.test.ts` shipped as a new
+   `tests/apollo-server/password-reset.test.ts`, which also runs with `TEST_ENV=server`.
+3. **Component axe runs (Stories 2.5 and 3.6).** No separate
+   `tests/unit/a11y/reset-password.a11y.test.tsx` or `tests/unit/a11y/create-new-password.a11y.test.tsx`
+   exists. The section tests
+   `tests/unit/modules/user/features/auth/routes/{reset-password,create-new-password}/*-form-section.test.tsx`
+   run `expectNoA11yViolations` over the rendered form and its result or invalid-link state, so
+   the jest-axe gate covers the same states the planned files would have.

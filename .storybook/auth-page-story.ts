@@ -1,10 +1,8 @@
 import type { Decorator, Parameters, StoryObj } from '@storybook/react-webpack5';
-import type { ComponentType } from 'react';
 
 import { withMemoryRouter } from './router-decorators';
 
-interface AuthPageMeta<TComponent extends ComponentType<never>> {
-  component: TComponent;
+interface AuthPageMeta {
   decorators: Decorator[];
   parameters: Parameters;
 }
@@ -12,13 +10,8 @@ interface AuthPageMeta<TComponent extends ComponentType<never>> {
 class AuthPageStories {
   public readonly default: StoryObj = {};
 
-  public meta<TComponent extends ComponentType<never>>(
-    component: TComponent,
-    initialPath: string,
-    description: string
-  ): AuthPageMeta<TComponent> {
+  public meta(initialPath: string, description: string): AuthPageMeta {
     return {
-      component,
       decorators: this.decorators(initialPath),
       parameters: this.parameters(description),
     };

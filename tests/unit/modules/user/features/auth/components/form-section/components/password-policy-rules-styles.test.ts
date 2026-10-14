@@ -20,11 +20,6 @@ const ITEM = {
   lineHeight: '1.125rem',
 };
 
-/**
- * Style modules are design contracts: the literal IS the test case, so these are pinned values
- * rather than Faker data. The module is loaded inside the test so every literal is evaluated
- * while an assertion can observe it.
- */
 describe('password policy rules styles', () => {
   it('pins every evaluated token', async () => {
     const styles = await loadStyles();
