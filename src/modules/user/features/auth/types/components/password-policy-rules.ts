@@ -13,5 +13,4 @@ export interface PasswordRuleLabels {
   numberRequired: string;
   uppercaseRequired: string;
   lowercaseRequired: string;
-  fieldRequired: string;
 }

@@ -2,14 +2,26 @@ import type { Decorator, Parameters, StoryObj } from '@storybook/react-webpack5'
 
 import { withMemoryRouter } from './router-decorators';
 
+interface AuthPageMeta {
+  decorators: Decorator[];
+  parameters: Parameters;
+}
+
 class AuthPageStories {
   public readonly default: StoryObj = {};
 
-  public decorators(initialPath: string): Decorator[] {
+  public meta(initialPath: string, description: string): AuthPageMeta {
+    return {
+      decorators: this.decorators(initialPath),
+      parameters: this.parameters(description),
+    };
+  }
+
+  private decorators(initialPath: string): Decorator[] {
     return [withMemoryRouter(initialPath)];
   }
 
-  public parameters(description: string): Parameters {
+  private parameters(description: string): Parameters {
     return {
       docs: {
         description: { component: description },

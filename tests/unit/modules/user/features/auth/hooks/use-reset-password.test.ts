@@ -51,6 +51,7 @@ describe('useResetPassword', () => {
       submittedEmail: email,
       failure: null,
       isSubmitting: false,
+      returned: false,
     });
   });
 
@@ -91,7 +92,12 @@ describe('useResetPassword', () => {
 
     act(() => result.current.callbacks.backToForm());
 
-    expect(result.current).toMatchObject({ step: 'form', failure: null, submittedEmail: email });
+    expect(result.current).toMatchObject({
+      step: 'form',
+      failure: null,
+      submittedEmail: email,
+      returned: true,
+    });
     expect(requestReset).toHaveBeenCalledTimes(1);
   });
 

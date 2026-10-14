@@ -1,24 +1,62 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { type JSX, StrictMode } from 'react';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
 
+import useCreateNewPassword from '@auth/hooks/use-create-new-password';
 import useResetToken from '@auth/hooks/use-reset-token';
-import { buildResetToken, buildToken } from '@tests/builders';
+import type { AuthProviderLoader } from '@auth/stores';
+import type { CreateNewPasswordOutcome } from '@auth/types/password-recovery/outcome';
+import { buildPassword, buildResetToken, buildToken } from '@tests/builders';
 
 const seen: Array<string | null> = [];
 
 function Probe(): JSX.Element {
-  const token = useResetToken();
+  const { token, discard } = useResetToken();
   const { search } = useLocation();
   seen.push(token);
-  return <p>{`search=${search}`}</p>;
+  return (
+    <>
+      <p>{`search=${search}`}</p>
+      <button type="button" onClick={discard}>
+        Discard
+      </button>
+    </>
+  );
+}
+
+const INVALID_LINK: CreateNewPasswordOutcome = {
+  kind: 'failed',
+  failure: { reason: 'invalid_link', retryable: false },
+};
+
+const confirmReset = jest.fn<Promise<CreateNewPasswordOutcome>, []>();
+
+const loader = {
+  resolve: async () => ({ confirmReset }),
+} as unknown as AuthProviderLoader;
+
+function Confirmer(): JSX.Element {
+  const resetToken = useResetToken();
+  const state = useCreateNewPassword(loader, resetToken);
+  seen.push(resetToken.token);
+  if (state.view === 'invalid') return <p>invalid link</p>;
+  const { token, callbacks } = state;
+  return (
+    <button
+      type="button"
+      onClick={() => void callbacks.submit({ token, newPassword: buildPassword() })}
+    >
+      Confirm
+    </button>
+  );
 }
 
 type MemoryRouter = ReturnType<typeof createMemoryRouter>;
 
-const routerAt = (entry: string): MemoryRouter =>
-  createMemoryRouter([{ path: '/password-reset', element: <Probe /> }], {
+const routerAt = (entry: string, element: JSX.Element = <Probe />): MemoryRouter =>
+  createMemoryRouter([{ path: '/password-reset', element }], {
     initialEntries: [entry],
   });
 
@@ -105,6 +143,38 @@ describe('useResetToken', () => {
     await screen.findByText('search=');
 
     expect(lastToken()).toBe(token);
+  });
+
+  it('forgets the token once discarded', async () => {
+    mountAt(`/password-reset?token=${buildResetToken()}`);
+    await screen.findByText('search=');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    expect(lastToken()).toBeNull();
+  });
+
+  it('discards the token when the confirm step reports the link invalid', async () => {
+    confirmReset.mockReset().mockResolvedValue(INVALID_LINK);
+    const token = buildResetToken();
+    mount(routerAt(`/password-reset?token=${token}`, <Confirmer />));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirm' }));
+
+    expect(await screen.findByText('invalid link')).toBeInTheDocument();
+    expect(seen).toContain(token);
+    expect(lastToken()).toBeNull();
+  });
+
+  it('strips a token that arrives by in-app navigation after mount', async () => {
+    const router = mountAt('/password-reset');
+    await screen.findByText('search=');
+
+    await act(() => router.navigate(`/password-reset?token=${buildResetToken()}`));
+
+    expect(router.state.location.search).toBe('');
+    expect(router.state.historyAction).toBe('REPLACE');
+    expect(lastToken()).toBeNull();
   });
 
   it('leaves the token out of the document, the title and web storage', async () => {

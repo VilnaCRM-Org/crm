@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import type { JSX } from 'react';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
 
@@ -20,7 +20,10 @@ function Arrival(): JSX.Element {
   );
 }
 
-const arriveWith = (state: RedirectNavigationState): ReturnType<typeof createMemoryRouter> => {
+type TestRouter = ReturnType<typeof createMemoryRouter>;
+type To = number | string;
+
+const arriveWith = (state: RedirectNavigationState): TestRouter => {
   const router = createMemoryRouter([{ path: '/sign-in', element: <Arrival /> }], {
     initialEntries: [{ pathname: '/sign-in', state }],
   });
@@ -47,6 +50,36 @@ describe('one-time arrival markers', () => {
 
     await screen.findByText('notice=password_reset');
     expect(router.state.location.state).toEqual({ from: { pathname: '/deals' }, focusMain: false });
+  });
+
+  it.each<[string, readonly To[]]>([
+    ['Back', [-1]],
+    ['Back then Forward', [-1, 1]],
+    ['a push to the same page', ['/sign-in']],
+  ])('drops the notice for good after %s', async (_name, steps) => {
+    const router = createMemoryRouter(
+      [
+        { path: '/sign-in', element: <Arrival /> },
+        { path: '/password-reset', element: <p>reset</p> },
+      ],
+      { initialEntries: ['/sign-in', '/password-reset'], initialIndex: 1 }
+    );
+    render(<RouterProvider router={router} />);
+    await act(() =>
+      router.navigate('/sign-in', {
+        replace: true,
+        state: { focusMain: true, notice: 'password_reset' },
+      })
+    );
+    expect(await screen.findByText('notice=password_reset')).toBeInTheDocument();
+
+    for (const step of steps) {
+      await act(() => (typeof step === 'number' ? router.navigate(step) : router.navigate(step)));
+    }
+    expect(await screen.findByText('notice=null')).toBeInTheDocument();
+
+    await act(() => router.navigate('/sign-in', { replace: true }));
+    expect(screen.getByText('notice=null')).toBeInTheDocument();
   });
 
   it('reports no notice for a plain arrival', async () => {

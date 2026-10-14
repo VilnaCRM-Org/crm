@@ -35,7 +35,7 @@ const validateCreateUserInput = (input: CreateUserInput): void => {
   }
 };
 
-const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/;
+const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
 const MAX_TOKEN_LENGTH = 255;
 
 const rejectViolation = (property: string, reason: string): never => {
