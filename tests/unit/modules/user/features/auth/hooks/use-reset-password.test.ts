@@ -1,10 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import useResetPassword from '@auth/hooks/use-reset-password';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { ResetPasswordOutcome } from '@auth/types/password-recovery/outcome';
 import { buildEmail } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 jest.mock('@auth/stores', () => ({}));
 
@@ -135,5 +137,27 @@ describe('useResetPassword', () => {
       { email: accepted },
     ]);
     expect(result.current).toMatchObject({ step: 'form', submittedEmail: accepted });
+  });
+});
+
+describe('useResetPassword loaded inside the test', () => {
+  it('evaluates the initial view it starts from', async () => {
+    const freshUseResetPassword = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@auth/hooks/use-reset-password')).default;
+    });
+    const { loader } = harness(SENT);
+
+    const { result } = renderHook(() => freshUseResetPassword(loader));
+
+    expect(result.current).toEqual({
+      step: 'form',
+      submittedEmail: '',
+      maskedEmail: null,
+      failure: null,
+      returned: false,
+      isSubmitting: false,
+      callbacks: expect.any(Object),
+    });
   });
 });

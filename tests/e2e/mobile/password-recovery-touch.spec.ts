@@ -20,6 +20,8 @@ const toSignIn: string = t('password_recovery.sent.to_sign_in');
 const transient: string = t('password_recovery.errors.transient');
 const tryAgain: string = t('auth.error.tryAgain');
 const resetTitle: string = t('password_reset.title');
+const invalidTitle: string = t('password_reset.invalid.title');
+const requestNew: string = t('password_reset.invalid.request_new');
 const newPasswordLabel: string = t('password_reset.new_password.label');
 const confirmLabel: string = t('password_reset.confirm_password.label');
 const notice: string = t('sign_in.notices.password_reset');
@@ -129,12 +131,14 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await expectTargetAtLeast(page.getByRole('button', { name: tryAgain }), MIN_SMALL_TARGET_PX);
   });
 
-  test('keeps the sent-step link tappable', async ({ page }) => {
+  test('keeps the sent-step controls tappable', async ({ page }) => {
     await answer(page, 'RequestPasswordReset', ok({ requestPasswordResetUser: null }));
     const submit = await openRequest(page);
     await typeByTap(page.getByPlaceholder(emailPlaceholder), EMAIL);
     await submit.tap();
 
+    await expect(page.getByRole('heading', { level: 1, name: sentTitle })).toBeVisible();
+    await expectTargetAtLeast(page.getByRole('button', { name: backLabel }), MIN_SMALL_TARGET_PX);
     await expectTargetAtLeast(page.getByRole('link', { name: toSignIn }), MIN_SMALL_TARGET_PX);
   });
 
@@ -144,6 +148,15 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await expectTargetAtLeast(page.getByLabel(newPasswordLabel), MIN_TOUCH_TARGET_PX);
     await expectTargetAtLeast(page.getByLabel(confirmLabel), MIN_TOUCH_TARGET_PX);
     await expectTargetAtLeast(submit, MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(page.getByRole('link', { name: backLabel }), MIN_SMALL_TARGET_PX);
+  });
+
+  test('keeps the invalid-link controls tappable', async ({ page }) => {
+    await page.goto('/password-reset');
+    await expect(page.getByRole('heading', { level: 1, name: invalidTitle })).toBeVisible();
+
+    await expectTargetAtLeast(page.getByRole('link', { name: backLabel }), MIN_SMALL_TARGET_PX);
+    await expectTargetAtLeast(page.getByRole('link', { name: requestNew }), MIN_SMALL_TARGET_PX);
   });
 
   test('renders both pages without horizontal overflow', async ({ page }) => {

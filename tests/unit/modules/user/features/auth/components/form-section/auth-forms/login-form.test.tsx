@@ -1,10 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as React from 'react';
 import type { ReactElement } from 'react';
 
 import LoginForm, {
   LoginErrorMessageNormalizer,
 } from '@auth/components/form-section/auth-forms/login-form';
 import { buildCredentials } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const normalizeLoginErrorMessage = (error: unknown): string =>
   new LoginErrorMessageNormalizer().normalize(error);
@@ -138,6 +140,19 @@ describe('LoginForm', () => {
         submitLabel: 'sign_in.form.submit_button',
         submittingLabel: 'sign_in.form.submitting',
       })
+    );
+  });
+
+  it('seeds the form with empty credentials when the module loads inside the test', async () => {
+    const FreshLoginForm = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@auth/components/form-section/auth-forms/login-form')).default;
+    });
+
+    render(<FreshLoginForm />);
+
+    expect(mockUIForm).toHaveBeenLastCalledWith(
+      expect.objectContaining({ defaultValues: { email: '', password: '' } })
     );
   });
 

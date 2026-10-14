@@ -3,9 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { ApolloServer } from '@apollo/server';
-import { faker } from '@faker-js/faker';
 
-import { buildEmail } from '@tests/builders';
+import { buildClientMutationId, buildEmail } from '@tests/builders';
 
 import { formatError } from '../../docker/apollo-server/lib/format-error';
 import { resolvers } from '../../docker/apollo-server/lib/resolvers';
@@ -82,7 +81,7 @@ describe('pending schema loading on the mock', () => {
   it('serves a reset mutation and a second pending field from the loaded schema', async () => {
     const server = new ApolloServer({ typeDefs: loadTypeDefs(source), resolvers, formatError });
     await server.start();
-    const clientMutationId = faker.string.uuid();
+    const clientMutationId = buildClientMutationId();
 
     try {
       const reset = await server.executeOperation({
