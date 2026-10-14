@@ -137,6 +137,7 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
       { locator: page.getByRole('button', { name: submitLabel }), visibleFocus: true },
       { locator: firstFooterLinkOf(page), visibleFocus: true },
     ]);
+    await expect(page.getByRole('link', { name: backLabel })).toHaveCSS('color', 'rgb(64, 65, 66)');
   });
 
   test('Space toggles the new password visibility', async ({ page }) => {
