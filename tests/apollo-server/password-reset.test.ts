@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ApolloServer, type GraphQLResponse } from '@apollo/server';
+import { ApolloServer } from '@apollo/server';
 import { faker } from '@faker-js/faker';
 import { GraphQLError } from 'graphql';
 
@@ -10,50 +10,17 @@ import { buildEmail, buildPassword } from '@tests/builders';
 import { formatError } from '../../docker/apollo-server/lib/format-error';
 import { resolvers } from '../../docker/apollo-server/lib/resolvers';
 
-const PINNED_SDL_FIXTURE = `#graphql
-  type Query {
-    ping: Boolean
-  }
-
-  type User {
-    id: ID!
-    confirmed: Boolean!
-    email: String!
-    initials: String!
-  }
-
-  input createUserInput {
-    clientMutationId: String
-    email: String!
-    initials: String!
-    password: String!
-  }
-
-  type createUserPayload {
-    user: User
-    clientMutationId: String
-  }
-
-  type Mutation {
-    createUser(input: createUserInput!): createUserPayload
-  }
-`;
+import {
+  assertSingleResponse,
+  PINNED_SDL_FIXTURE,
+  REQUEST_RESET,
+  type SingleBody,
+} from './mock-schema-fixtures';
 
 const PENDING_EXTENSION = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'api', 'contracts', 'pending', 'password-reset.graphql'),
   'utf-8'
 );
-
-const REQUEST_RESET = `
-  mutation RequestPasswordReset($input: requestPasswordResetUserInput!) {
-    requestPasswordResetUser(input: $input) {
-      user {
-        id
-      }
-      clientMutationId
-    }
-  }
-`;
 
 const CONFIRM_RESET = `
   mutation ConfirmPasswordReset($input: confirmPasswordResetUserInput!) {
@@ -65,14 +32,6 @@ const CONFIRM_RESET = `
     }
   }
 `;
-
-type SingleBody = Extract<GraphQLResponse['body'], { kind: 'single' }>;
-
-function assertSingleResponse(body: GraphQLResponse['body']): asserts body is SingleBody {
-  if (body.kind !== 'single') {
-    throw new Error(`Expected a single GraphQL response body, received: ${body.kind}`);
-  }
-}
 
 const startServer = async (
   serverResolvers: typeof resolvers = resolvers

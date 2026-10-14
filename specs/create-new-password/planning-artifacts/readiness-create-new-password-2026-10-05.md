@@ -106,7 +106,12 @@ the module barrel exports it in place of `SafeUserInfo` and #330 and #331 alread
   with ADR-019; `rsbuild.config.ts` and `src/config/**` are no longer touched. Superseded
   2026-10-13: no ADR-019 is written. Every ADR from 003 up was deleted on PR #333, the decisions
   live in the `## Password recovery decisions` section of `src/modules/user/README.md`, and the
-  gate passes through a `[no-adr]` line in the pull-request body (PRD NFR-16).
+  gate passes through a `[no-adr]` line in the pull-request body (PRD NFR-16). Superseded
+  2026-10-14: `rsbuild.config.ts` is touched after all. It gains the `authForms`
+  `splitChunks.cacheGroups` entry (`scripts/auth-forms-chunk-group.ts`), which keeps the auth-form
+  chunk `/sign-in` shares with `/sign-up` whole (architecture §8.2, CLAUDE.md "Shared auth-form
+  chunk (issue #315)"). `rsbuild.config.ts` is an ADR-drift significant path, so the same
+  `[no-adr]` line covers it.
 - **Mock.** The violations throw with `extensions.code` `BAD_USER_INPUT` so the real
   `formatError` keeps their message (the iteration-6 finding M8 still holds); no test imports
   `server.ts`.

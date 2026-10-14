@@ -81,9 +81,12 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 
 A pending contract is an upstream declaration the pinned version does not carry yet. It is
 copied verbatim from user-service, read by codegen (`codegen.ts` lists `src/api/contracts/pending`
-beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies the folder,
-`docker/apollo-server/lib/server.ts` passes it as a second `typeDefs` entry), and deleted by the
-pin bump that brings the declarations in. graphql-codegen and Apollo Server merge an identical
+beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies the folder, and
+`loadTypeDefs` in `docker/apollo-server/lib/schema-loader.ts` passes every `*.graphql` file in it,
+in name order, as `typeDefs` after the pinned SDL), and deleted by the pin bump that brings the
+declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset mutation through a
+server built from two pending files and pins that the folder `server.mts` resolves from `out/` is
+the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge an identical
 duplicate silently, so nothing fails if the file outlives its pin; the deletion is a listed step
 of that bump.
 
@@ -100,9 +103,10 @@ of that bump.
 
 The mock is stateless: `requestPasswordResetUser` and `confirmPasswordResetUser` answer every
 valid input with the same payload, so domain refusals, `429`, `503` and aborts are exercised in
-the browser lanes (`page.route`) and the integration suite (msw) instead. Deleting the extension
-means removing the file, its `codegen.ts` entry, the `Apollo.Dockerfile` copy and the
-`server.ts` read; the two resolvers stay.
+the browser lanes (`page.route`) and the integration suite (msw) instead. Deleting one extension
+means removing its file; the two resolvers stay. Deleting the last one removes the folder, so it
+also removes the `codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending folder read in
+`schema-loader.ts`: the mock refuses to start without the folder it was told to read.
 
 ## Semantic breaking-change gate (issue #177)
 

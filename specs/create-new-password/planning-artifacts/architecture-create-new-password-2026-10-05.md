@@ -1013,9 +1013,13 @@ pending against (`v2.8.0`), the upstream source and the removal trigger (Follow-
 graphql-codegen merges the sources, so `src/api/generated/graphql.ts` is unchanged until Story 1.3
 adds documents.
 
-**The stateless mock.** `Apollo.Dockerfile`'s production stage copies `src/api/contracts/pending`,
-and `docker/apollo-server/lib/server.ts` passes the pinned SDL and the pending file as `typeDefs`,
-with no branch. `docker/apollo-server/lib/resolvers.ts` gains two stateless resolvers:
+**The stateless mock.** `Apollo.Dockerfile`'s production stage copies `src/api/contracts/pending`.
+`docker/apollo-server/server.mts` resolves that folder from its compiled `out/` directory through
+`resolveSchemaSource`, and `startServer` in `docker/apollo-server/lib/server.ts` takes its
+`typeDefs` from `loadTypeDefs` (`docker/apollo-server/lib/schema-loader.ts`): the pinned SDL, then
+every `*.graphql` file of the pending folder in name order, the same set codegen reads. A missing
+folder stops the mock at start. `docker/apollo-server/lib/resolvers.ts` gains two stateless
+resolvers:
 
 | Op      | Input                                     | Answer                                     |
 | ------- | ----------------------------------------- | ------------------------------------------ |
@@ -1029,10 +1033,17 @@ the repository's `formatError` (`docker/apollo-server/lib/format-error.ts`, not 
 the message of a code-less error, which would erase the property prefix. The client never reads
 the code. Every other shape — refusals, `429`, `503`, aborts — is exercised where it is
 deterministic: `page.route('**/graphql')` in the browser lanes and msw `graphql` handlers in the
-integration suite. No test imports `server.ts`.
+integration suite. No test imports `server.ts`, whose shutdown paths would join the server
+suite's 100% coverage scope; `tests/apollo-server/pending-schema.test.ts` covers the loading it
+delegates instead. It builds a server from `loadTypeDefs` over a pinned file and two pending
+files and runs a reset mutation through it, and it pins the wiring: the folder
+`resolveSchemaSource` derives from `docker/apollo-server/out` is `src/api/contracts/pending`, and
+the `Apollo.Dockerfile` runtime stage copies that folder to where its `out/` copy resolves it.
 
-**Cleanup.** The pin bump (Follow-up 5.3, §15.2) deletes the extension, its `codegen.ts` entry,
-the `Apollo.Dockerfile` copy and the `server.ts` read, and keeps the two resolvers. Nothing in
+**Cleanup.** The pin bump (Follow-up 5.3, §15.2) deletes the extension. While another pending
+file remains, that is the whole deletion. Deleting the last one also removes the folder, its
+`codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending read in `schema-loader.ts`, and
+keeps the two resolvers. Nothing in
 `src/modules/**` changes. No checker enforces the deletion: graphql-codegen and Apollo Server
 merge an identical duplicate silently, so Follow-up 5.3 lists it explicitly.
 
@@ -1166,8 +1177,10 @@ this feature introduces no `*Controller`, `*Service` or `*Handler` class.
   `components-no-direct-injectable-import` path list, `scripts/ci/mutation-scope.mjs` and the plop
   templates follow. `src/providers/` stays the React-context folder.
 
-The folder edit touches `.dependency-cruiser.js`, an ADR-drift significant path, so ADR-019 lands
-in the same story (§14).
+The folder edit touches `.dependency-cruiser.js`, an ADR-drift significant path. No ADR-019 is
+written (§14, revision 2026-10-13): the decisions go into the `## Password recovery decisions`
+section of `src/modules/user/README.md`, and the drift gate passes through a `[no-adr]` line in
+the pull-request body.
 
 ## 6. Classes, types, tokens and registrations
 
@@ -1638,34 +1651,38 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 
 ### 8.2 Shared source, config and generated artifacts
 
-| File                                                     | Kind   | Role                       |
-| -------------------------------------------------------- | ------ | -------------------------- |
-| `src/modules/user/lib/user-service-error-transformer.ts` | NEW    | §5.5.1, shared Transformer |
-| `src/modules/user/types/user-service/*.ts`               | NEW    | `UserServiceFailure`, set  |
-| `src/hooks/use-abortable-submit.ts`, `types/`            | NEW    | §5.3, shared skeleton      |
-| `src/routes/route-paths.ts`                              | MODIFY | `passwordReset` key        |
-| `src/routes/types/navigation-state.ts`                   | MODIFY | `notice` marker            |
-| `src/hooks/use-arrival-focus.ts`                         | MODIFY | clears every marker        |
-| `src/hooks/use-arrival-notice.ts`                        | NEW    | §5.7                       |
-| `src/components/ui-form/index.tsx`, `types/ui-form/`     | MODIFY | `errorAction`, `titleRef`  |
-| `src/api/generated/graphql.ts`                           | REGEN  | `make codegen`, two ops    |
-| `src/api/contracts/pending/password-reset.graphql`       | NEW    | pending extension, §5.16   |
-| `src/api/contracts/README.md`                            | MODIFY | "Pending contracts" row    |
-| `codegen.ts`                                             | MODIFY | schema array, §5.16        |
-| `Apollo.Dockerfile`                                      | MODIFY | copies the pending dir     |
-| `docker/apollo-server/lib/server.ts`                     | MODIFY | `typeDefs` gains the file  |
-| `docker/apollo-server/lib/{resolvers,types}.ts`          | MODIFY | two stateless resolvers    |
-| `src/modules/user/config/tokens.ts`, `config/di.ts`      | MODIFY | §6.6                       |
-| `src/services/observability/pii-scrubber.ts`             | MODIFY | `token=` pattern           |
-| `src/i18n/localization.json`                             | REGEN  | `make i18n-generate`       |
-| `src/modules/user/README.md`, `src/routes/README.md`     | MODIFY | loader seam; two routes    |
-| `CLAUDE.md`, `docs/accessibility/acceptance-standard.md` | MODIFY | contrast count, see below  |
+| File                                                     | Kind   | Role                        |
+| -------------------------------------------------------- | ------ | --------------------------- |
+| `src/modules/user/lib/user-service-error-transformer.ts` | NEW    | §5.5.1, shared Transformer  |
+| `src/modules/user/types/user-service/*.ts`               | NEW    | `UserServiceFailure`, set   |
+| `src/hooks/use-abortable-submit.ts`, `types/`            | NEW    | §5.3, shared skeleton       |
+| `src/routes/route-paths.ts`                              | MODIFY | `passwordReset` key         |
+| `src/routes/types/navigation-state.ts`                   | MODIFY | `notice` marker             |
+| `src/hooks/use-arrival-focus.ts`                         | MODIFY | clears every marker         |
+| `src/hooks/use-arrival-notice.ts`                        | NEW    | §5.7                        |
+| `src/components/ui-form/index.tsx`, `types/ui-form/`     | MODIFY | `errorAction`, `titleRef`   |
+| `src/api/generated/graphql.ts`                           | REGEN  | `make codegen`, two ops     |
+| `src/api/contracts/pending/password-reset.graphql`       | NEW    | pending extension, §5.16    |
+| `src/api/contracts/README.md`                            | MODIFY | "Pending contracts" row     |
+| `codegen.ts`                                             | MODIFY | schema array, §5.16         |
+| `Apollo.Dockerfile`                                      | MODIFY | copies the pending dir      |
+| `docker/apollo-server/lib/schema-loader.ts`              | NEW    | pinned + pending `typeDefs` |
+| `docker/apollo-server/lib/server.ts`, `server.mts`       | MODIFY | `typeDefs` from the loader  |
+| `docker/apollo-server/lib/{resolvers,types}.ts`          | MODIFY | two stateless resolvers     |
+| `src/modules/user/config/tokens.ts`, `config/di.ts`      | MODIFY | §6.6                        |
+| `src/services/observability/pii-scrubber.ts`             | MODIFY | `token=` pattern            |
+| `src/i18n/localization.json`                             | REGEN  | `make i18n-generate`        |
+| `src/modules/user/README.md`, `src/routes/README.md`     | MODIFY | loader seam; two routes     |
+| `CLAUDE.md`, `docs/accessibility/acceptance-standard.md` | MODIFY | contrast count, see below   |
+| `rsbuild.config.ts`, `scripts/auth-forms-chunk-group.ts` | MODIFY | `authForms` cache group     |
 
 The `color-contrast` entry count grows by exactly one from the count on `main` at merge time (open
 PR #311 raises it on its own branch). Beyond Story 0.1's policy edits, no change to `package.json`
-dependencies, `src/config/**`, `public/index.html`, `rsbuild.config.ts`,
+dependencies, `src/config/**`, `public/index.html`,
 `src/services/observability/apollo-link-factory.ts`, `src/routes/registry.ts`,
-`src/routes/route-composer.tsx` or `lighthouse/constants.js`.
+`src/routes/route-composer.tsx` or `lighthouse/constants.js`. `rsbuild.config.ts` gains one
+`splitChunks.cacheGroups` entry, `authForms`, so `/sign-in` keeps the shared auth-form chunk the
+recovery form sections would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").
 
 ### 8.3 Tests, manifests and baselines
 
@@ -1682,7 +1699,8 @@ dependencies, `src/config/**`, `public/index.html`, `rsbuild.config.ts`,
 | `tests/builders/auth.ts` (`buildResetToken()`, Story 1.3)                        | MODIFY |
 | `tests/integration/modules/user/features/auth/password-*.integration.test.ts`    | NEW    |
 | `tests/integration/mocks/server.ts` (msw `graphql` handlers for both operations) | MODIFY |
-| `tests/apollo-server/resolvers.test.ts` (two resolvers, real `formatError`)      | MODIFY |
+| `tests/apollo-server/password-reset.test.ts` (two resolvers, real `formatError`) | NEW    |
+| `tests/apollo-server/pending-schema.test.ts` (loader, image wiring)              | NEW    |
 | `tests/e2e/utils/password-reset-responses.ts` (`operationName` dispatcher)       | NEW    |
 | `tests/e2e/modules/user/features/auth/password-{recovery,reset}.spec.ts`         | NEW    |
 | `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                  | MODIFY |
@@ -1858,12 +1876,13 @@ opens the form with a token first asserts the new-password form is visible.
 > line in the pull-request body. ADR numbers cited below no longer exist as files.
 
 `config/docs-policy.json` makes `.dependency-cruiser.js` significant, and Story 0.1 edits it (the
-two folders in `components-no-direct-injectable-import`); nothing else this feature touches is
-significant (`src/api/**`, `codegen.ts`, `docker/**`, `Apollo.Dockerfile` and
-`docker-compose.test.yml` are not). ADR-019 therefore lands in Story 0.1. Its number is the next
-free on `main`, in open pull requests and in the planned bundles (PR #311 claims 018, the chore
-022, #331 020, #330 021, and the chore `zustand-client-state` the next free after them for the
-ADR that supersedes ADR-008); if 019 is taken, Story 0.1 takes the next free number.
+two folders in `components-no-direct-injectable-import`); the only other significant path it
+touches is `rsbuild.config.ts`, for the `authForms` cache group added during implementation
+(§8.2), and the `[no-adr]` line covers both (`src/api/**`, `codegen.ts`, `docker/**`,
+`Apollo.Dockerfile` and `docker-compose.test.yml` are not significant). Before that revision,
+ADR-019 was to land in Story 0.1, numbered as the next free on `main`, in open pull requests and
+in the planned bundles (PR #311 claimed 018, the chore 022, #331 020, #330 021, and the chore
+`zustand-client-state` the next free after them for the ADR that superseded ADR-008).
 
 `docs/adr/019-password-recovery-flow.md` — "Password recovery runs over GraphQL on the board's
 layer stack with a uniform request outcome and a memory-only reset token":
