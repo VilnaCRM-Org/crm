@@ -101,6 +101,11 @@ export default {
     '&:hover, &:focus-visible': {
       backgroundColor: 'transparent',
     },
+
+    '&:focus-visible, &.Mui-focusVisible': {
+      outline: `2px solid ${customColors.text.primary}`,
+      outlineOffset: '2px',
+    },
   },
 };
 

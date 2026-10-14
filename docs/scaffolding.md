@@ -45,7 +45,7 @@ src/modules/<module>/
 │   ├── routes/index.ts           # module-owned route contract
 │   ├── stores/index.ts           # the one sanctioned DI seam for the feature
 │   ├── types/…                   # type-only files (issue #88)
-│   └── assets/, utils/           # kept by an empty .gitignore
+│   └── assets/, data-providers/, transformers/, utils/   # kept by an empty .gitignore
 └── hooks/, lib/, store/, types/, utils/   # kept by an empty .gitignore
 tests/unit/modules/<module>/features/<feature>/…   # hook + repository suites
 tests/e2e/modules/<module>/features/<feature>/…    # Playwright skeleton
@@ -83,7 +83,8 @@ and the gate that judges it cannot disagree.
 - **Feature root** — `assets`, `components`, `data-providers`, `hooks`, `i18n`,
   `repositories`, `routes`, `stores`, `transformers`, `types`, `utils`. `data-providers` and
   `transformers` hold the Miro board's `[Data provider]` and `[Transformer]` classes; the
-  generator does not create them.
+  generator keeps them, like `assets` and `utils`, as empty folders holding only a `.gitignore`,
+  because it scaffolds every allowed feature folder it does not fill with code.
 - **`tests/` root** — `apollo-server`, `builders`, `e2e`, `integration`, `load`,
   `memory-leak`, `mutation`, `unit`, `utils`, `visual`.
 - **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`.
