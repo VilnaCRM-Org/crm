@@ -63,3 +63,8 @@ export interface MutationResolvers {
 export interface CustomFormattedError extends GraphQLFormattedError {
   details?: string;
 }
+
+export interface SchemaSource {
+  schemaFilePath: string;
+  pendingSchemaDir: string;
+}
