@@ -1,7 +1,9 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import { type JSX, StrictMode } from 'react';
+import * as ReactRouter from 'react-router';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
 
 import useCreateNewPassword from '@auth/hooks/use-create-new-password';
@@ -9,6 +11,7 @@ import useResetToken from '@auth/hooks/use-reset-token';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { CreateNewPasswordOutcome } from '@auth/types/password-recovery/outcome';
 import { buildPassword, buildResetToken, buildToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const seen: Array<string | null> = [];
 
@@ -186,5 +189,28 @@ describe('useResetToken', () => {
     expect(document.body.innerHTML).not.toContain(token);
     expect(JSON.stringify({ ...localStorage })).not.toContain(token);
     expect(JSON.stringify({ ...sessionStorage })).not.toContain(token);
+  });
+});
+
+describe('useResetToken loaded inside the test', () => {
+  it('evaluates the parameter name and length bound it reads the token with', async () => {
+    const freshUseResetToken = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-router', () => ReactRouter);
+      return (await import('@auth/hooks/use-reset-token')).default;
+    });
+    const tokens: Array<string | null> = [];
+    function FreshProbe(): JSX.Element {
+      const { token } = freshUseResetToken();
+      const { search } = useLocation();
+      tokens.push(token);
+      return <p>{`search=${search}`}</p>;
+    }
+    const token = 'a'.repeat(255);
+    const router = mount(routerAt(`/password-reset?token=${token}`, <FreshProbe />));
+
+    expect(await screen.findByText('search=')).toBeInTheDocument();
+    expect(tokens.at(-1)).toBe(token);
+    expect(router.state.historyAction).toBe('REPLACE');
   });
 });
