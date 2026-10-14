@@ -78,6 +78,8 @@ describe('CreateNewPasswordForm', () => {
       expect(toggle).toHaveAttribute('aria-pressed', 'false');
     });
     expect(newPassword()).toHaveAttribute('aria-describedby', 'new-password-rules');
+    expect(newPassword()).toHaveAttribute('placeholder', 'Введіть новий пароль');
+    expect(confirmation()).toHaveAttribute('placeholder', 'Повторіть новий пароль');
     expect(screen.getByRole('list')).toHaveAttribute('id', 'new-password-rules');
     expect(submit()).toHaveAttribute('type', 'submit');
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();

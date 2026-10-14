@@ -8,8 +8,8 @@ export default {
   title: 'Auth/Pages/CreateNewPassword',
   component: CreateNewPassword,
   tags: ['autodocs'],
-  decorators: authPageStories.decorators('/password-reset?token=storyResetToken'),
-  parameters: authPageStories.parameters(
+  ...authPageStories.meta(
+    '/password-reset?token=storyResetToken',
     'The /password-reset route page (issue #315): AuthPageLayout around the lazily ' +
       'loaded confirm-step section and the document title.'
   ),

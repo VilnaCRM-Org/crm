@@ -364,21 +364,31 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at ten sites, and it comes in
-two shapes. Nine are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
-compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The tenth,
-`use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
-`ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
-`actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
-box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
-Hoisting either literal to a named constant would remove the mutant, but
-`react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding an eleventh needs the same standard of
-proof, and a non-empty array needs the stability argument spelled out, not assumed.
+Twelve directives are annotated today, at two mutators. Eleven are `ArrayDeclaration` on a React
+hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+`[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
+constant one-element array is equal on every render and the effect or memo fires exactly as it
+does with `[]`. The eleventh, `use-login-submitter.ts`, annotates the **non-empty**
+`[actions, loginControllersRef]`, which `ArrayDeclaration` empties instead — equivalent for a
+different reason worth stating separately: `actions` is always the `authActions` module singleton
+and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an emptied list
+memoizes exactly the same callback. Hoisting either literal to a named constant would remove the
+mutant, but `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument
+that is not an array literal, so there is nothing left to change.
+
+The twelfth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+`{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
+re-validates the confirmation field when the new password changes under a mismatch error. The
+mutant empties it to `{}`, so `useWatch` subscribes to the whole form and the effect also re-runs
+on edits to the other fields. The only other field the user edits is `confirmPassword` itself, and
+the form validates in `onTouched` mode, so a field that already carries an error re-validates
+itself on every change; the extra `trigger('confirmPassword')` recomputes the same result and no
+rendered state differs. Narrowing the watch is what the source should say, so the annotation
+stays rather than the simpler-looking `{}`. Adding a thirteenth needs the same standard of proof,
+and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 242 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 296 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -504,13 +514,14 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries seven `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries eight `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
-error-page primary actions and decorative status digits, and the sign-in "Забули пароль?" brand
-text link at 2.45:1 by the product owner's DEV-67 decision, issue #309), tracked in issue #276
-and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
-button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
-entry carries all four fields.
+error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the password-recovery
+in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
+issue #315), tracked in issue #276 and deleted when it closes.
+`tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
+fail, that a wildcard is never honoured, and that every entry carries all four fields.
 
 **No suppression:** fix the defect at the source, or add a scoped entry with its tracking issue —
 never `eslint-disable`, an `axe.configure` rule removal, `test.skip`/`test.fixme`, or a

@@ -11,3 +11,8 @@ export interface RedirectNavigationState {
   focusMain?: boolean;
   notice?: ArrivalNotice | undefined;
 }
+
+export interface ArrivalNoticeSnapshot {
+  readonly key: string;
+  readonly notice: ArrivalNotice | null;
+}

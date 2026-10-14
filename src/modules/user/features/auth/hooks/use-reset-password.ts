@@ -20,6 +20,7 @@ const INITIAL_VIEW: ResetPasswordView = {
   submittedEmail: '',
   maskedEmail: null,
   failure: null,
+  returned: false,
 };
 
 const REQUEST_STEP: RecoveryProviderStep<RestorePasswordDto, ResetPasswordOutcome> = (
@@ -44,7 +45,7 @@ function reduceResetPassword(
   action: ResetPasswordAction
 ): ResetPasswordView {
   if (action.type === 'submitted') return { ...view, failure: null };
-  if (action.type === 'back') return { ...view, step: 'form', failure: null };
+  if (action.type === 'back') return { ...view, step: 'form', failure: null, returned: true };
   return settle(view, action);
 }
 

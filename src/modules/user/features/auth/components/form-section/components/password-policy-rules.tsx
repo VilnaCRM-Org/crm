@@ -36,7 +36,6 @@ function useRuleLabels(): PasswordRuleLabels {
     numberRequired: t('password_policy.rules.digit'),
     uppercaseRequired: t('password_policy.rules.uppercase'),
     lowercaseRequired: t('password_policy.rules.lowercase'),
-    fieldRequired: '',
   };
 }
 
