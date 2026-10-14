@@ -108,7 +108,8 @@ alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1). The eighth c
 password-recovery in-card link buttons (issue #315), "До входу" on the "check your e-mail" view
 of `/password-recovery` and "Запросити нове посилання" on the invalid-link view of
 `/password-reset`
-(`#auth-form-card > a.MuiButton-contained[href="/sign-in"]` and `[href="/password-recovery"]`):
+(`#auth-form-card > a.MuiButton-contained[href="/sign-in"]` and
+`#auth-form-card > a.MuiButton-contained[href="/password-recovery"]`):
 contained links that reuse the submit-button styling, white on `#1EAEFF` at 2.45:1, so they carry
 the same design-owned debt as the submit button.
 
