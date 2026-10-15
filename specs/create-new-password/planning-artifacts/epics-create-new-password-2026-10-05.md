@@ -2168,7 +2168,7 @@ acceptance criteria it touches; only the planned shape or file name changed.
    `discard(): void`), and `CreateNewPasswordFormSection` passes that handle to
    `useCreateNewPassword`. The reason is FR-22: the token lives in the hook's `useState`, so the
    flow hook cannot drop it from a plain string. On an `invalid_link` failure it calls
-   `submitter.forget()` and `resetToken.discard()`; the handle's `token` becomes `null`, the hook
+   `resetToken.discard()`; the handle's `token` becomes `null`, the hook
    returns the `invalid` view, and the form and the dead token unmount, which also stops a retry
    from re-sending a token the API has already refused. The read, trim, length check and
    layout-effect strip are unchanged, and Stories 3.1 and 3.4 were rewritten to name the handle.

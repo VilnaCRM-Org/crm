@@ -79,15 +79,16 @@ run the E2E suite.
 folder names live. Both the generator and `.dependency-cruiser.js` read it, so the skeleton
 and the gate that judges it cannot disagree.
 
-- **Module root** — `config`, `features`, `hooks`, `lib`, `store`, `types`, `utils`.
+- **Module root** — `config`, `features`, `hooks`, `lib`, `store`, `transformers`, `types`,
+  `utils`.
 - **Feature root** — `assets`, `components`, `data-providers`, `hooks`, `i18n`,
   `repositories`, `routes`, `stores`, `transformers`, `types`, `utils`. `data-providers` and
   `transformers` hold the Miro board's `[Data provider]` and `[Transformer]` classes; the
   generator keeps them, like `assets` and `utils`, as empty folders holding only a `.gitignore`,
   because it scaffolds every allowed feature folder it does not fill with code.
-- **`tests/` root** — `apollo-server`, `builders`, `e2e`, `integration`, `load`,
-  `memory-leak`, `mutation`, `unit`, `utils`, `visual`.
-- **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`.
+- **`tests/` root** — `apollo-server`, `builders`, `console-gate`, `e2e`, `fixtures`, `i18n`,
+  `integration`, `load`, `memory-leak`, `mutation`, `unit`, `utils`, `visual`.
+- **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`, `transformers`.
 - **Test feature root** — same list as the feature root.
 
 There is no `api/`, and no `helpers/` under `src/`: data access is `repositories/` and shared

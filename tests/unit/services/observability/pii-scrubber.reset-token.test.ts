@@ -39,6 +39,22 @@ describe('PiiScrubber reset token redaction (#315)', () => {
       'next=%2Fpassword-reset%3Ftoken%3D[redacted]%26x%3D1',
     ],
     ['a lower-case percent-encoded token', 'token%3dabc', 'token%3d[redacted]'],
+    [
+      'a percent-encoded token holding encoded characters',
+      'next=%2Freset%3Ftoken%3Dab%2Bc%2Fd%3D%26x%3D1',
+      'next=%2Freset%3Ftoken%3D[redacted]%26x%3D1',
+    ],
+    [
+      'a percent-encoded token before an encoded fragment',
+      'token%3Dab%2Bc%23top',
+      'token%3D[redacted]%23top',
+    ],
+    [
+      'a JSON password holding escaped quotes',
+      '{"newPassword":"Se\\"cr\\"et1","x":1}',
+      '{"newPassword":"[redacted]","x":1}',
+    ],
+    ['a JSON token holding an escaped backslash', '{"token":"a\\\\b"}', '{"token":"[redacted]"}'],
   ])('redacts %s inside serialized text', (_name, input, expected) => {
     expect(scrubMessage(input)).toEqual({ message: expected });
   });

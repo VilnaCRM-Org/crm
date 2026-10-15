@@ -473,7 +473,8 @@ on arrival; a modifier or middle click still follows the `href` natively (new ta
 A rate limit on either step — an HTTP `429` from user-service's rate-limit listener, a GraphQL
 error with `extensions.status` `429`, or on the request step the per-address domain refusal —
 shows a non-field error banner "Забагато запитів. Спробуйте пізніше."
-(focused, `role="alert"`) for five seconds, keeps the form and its values, and never re-sends
+(focused, `role="alert"`) for five seconds; when it hides while focused, focus moves to the
+submit. It keeps the form and its values, and never re-sends
 automatically. The submit stays enabled so the user can try again later by choice.
 
 - Given an HTTP `429` or a message-only GraphQL error on the request step, when the response

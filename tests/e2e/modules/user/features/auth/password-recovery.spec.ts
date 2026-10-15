@@ -159,7 +159,7 @@ test.describe('Password recovery request step (issue #315)', () => {
       json({ data: null, errors: [{ message: 'Too many requests.' }] }),
     ],
   ] as const) {
-    test(`shows the rate-limit banner for ${name}`, async ({ page }) => {
+    test(`shows the rate-limit banner without a retry control for ${name}`, async ({ page }) => {
       await installClock(page);
       await answerResets(page, answer);
       await page.goto(RECOVERY_URL);
@@ -169,6 +169,9 @@ test.describe('Password recovery request step (issue #315)', () => {
       await expect(page.getByRole('alert')).toHaveText(rateLimited);
       await freezeClock(page);
       await expect(page.getByPlaceholder(emailPlaceholder)).toHaveValue(EMAIL);
+      const formButtons = page.locator('form').getByRole('button');
+      await expect(formButtons).toHaveCount(1);
+      await expect(formButtons).toHaveAccessibleName(submitLabel);
     });
   }
 

@@ -1,10 +1,33 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import { type JSX, useCallback, useState } from 'react';
 
 import AuthCard from '@auth/components/auth-card';
 import ResetPasswordForm from '@auth/components/reset-password/reset-password-form';
+import type { ResetPasswordFormProps } from '@auth/types/password-recovery/components';
 
 const resolved = (): Promise<void> => Promise.resolve();
+
+function DismissingResetPasswordForm({
+  defaultValues,
+  onSubmit,
+  failure: initialFailure,
+  isSubmitting,
+  focusTitle,
+}: ResetPasswordFormProps): JSX.Element {
+  const [failure, setFailure] = useState(initialFailure);
+  const dismiss = useCallback((): void => setFailure(null), []);
+
+  return (
+    <ResetPasswordForm
+      defaultValues={defaultValues}
+      onSubmit={onSubmit}
+      onDismissFailure={dismiss}
+      failure={failure}
+      isSubmitting={isSubmitting}
+      focusTitle={focusTitle}
+    />
+  );
+}
 
 const meta: Meta<typeof ResetPasswordForm> = {
   title: 'Auth/PasswordRecovery/ResetPasswordForm',
@@ -17,6 +40,17 @@ const meta: Meta<typeof ResetPasswordForm> = {
       </AuthCard>
     ),
   ],
+  render: (args): JSX.Element => (
+    <DismissingResetPasswordForm
+      key={args.failure?.reason ?? 'none'}
+      defaultValues={args.defaultValues}
+      onSubmit={args.onSubmit}
+      onDismissFailure={args.onDismissFailure}
+      failure={args.failure}
+      isSubmitting={args.isSubmitting}
+      focusTitle={args.focusTitle}
+    />
+  ),
   args: {
     defaultValues: { email: '' },
     onSubmit: resolved,
@@ -35,7 +69,8 @@ const meta: Meta<typeof ResetPasswordForm> = {
       description: {
         component:
           'The request step of password recovery: one e-mail field in a UIForm. A rejected ' +
-          'address is shown on the field; rate-limit and transient failures use the banner.',
+          'address is shown on the field; rate-limit and transient failures use the banner, ' +
+          'which clears itself after five seconds as it does on the route.',
       },
       story: { inline: false },
     },

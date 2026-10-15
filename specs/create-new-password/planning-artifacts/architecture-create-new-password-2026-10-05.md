@@ -708,7 +708,8 @@ must not survive the page (FR-17), so they live in `useState` inside the hooks â
 - `useAbortableSubmit` (`src/hooks/use-abortable-submit.ts`, shared with #330 and #331) takes an
   `AbortableRun<TInput, TOutcome>` and returns `AbortableSubmit<TInput, TOutcome>`: single flight
   (a submit while one is in flight returns `null`), a fresh `AbortController` per submit, abort
-  on unmount, `isSubmitting`, and `retry()`, which re-runs the last input once. An aborted run
+  on unmount, and `isSubmitting`. It has no `retry()`: a retry is the user submitting the form
+  again, which runs `submit` with the values then in the fields (FR-14). An aborted run
   resolves `null`, so an aborted attempt patches no state and needs no outcome of its own.
 
 The outcome â†’ view decision is a typed lookup inside each flow hook on the outcome's `kind`. If a
@@ -1322,7 +1323,7 @@ export type ResetPasswordStep = 'form' | 'sent';
 export type CreateNewPasswordView = 'form' | 'invalid';
 export interface ResetPasswordCallbacks {
   submit(dto: RestorePasswordDto): Promise<void>; // the form's values are the DTO (TB-2)
-  retry(): Promise<void>;
+  dismissFailure(): void; // clears the banner after its five seconds (FR-12, FR-14)
   backToForm(): void;
 }
 export interface ResetPasswordState {
@@ -1339,7 +1340,7 @@ export interface ResetTokenHandle {
 }
 export interface CreateNewPasswordCallbacks {
   submit(dto: CreateNewPasswordDto): Promise<void>; // sends only token and newPassword
-  retry(): Promise<void>;
+  dismissFailure(): void; // clears the banner after its five seconds (FR-12, FR-14)
 }
 export interface CreateNewPasswordState {
   readonly view: CreateNewPasswordView;
@@ -1413,7 +1414,6 @@ export type AbortableRun<TInput, TOutcome> = (
 export interface AbortableSubmit<TInput, TOutcome> {
   readonly isSubmitting: boolean;
   submit(input: TInput): Promise<TOutcome | null>; // null: refused as a duplicate, or aborted
-  retry(): Promise<TOutcome | null>; // re-runs the last input once; null before any submit
 }
 
 // src/routes/types/navigation-state.ts (MODIFY)

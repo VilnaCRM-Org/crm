@@ -1,10 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import { type JSX, useCallback, useState } from 'react';
 
 import AuthCard from '@auth/components/auth-card';
 import CreateNewPasswordForm from '@auth/components/create-new-password/create-new-password-form';
+import type { CreateNewPasswordFormProps } from '@auth/types/password-recovery/components';
 
 const resolved = (): Promise<void> => Promise.resolve();
+
+function DismissingCreateNewPasswordForm({
+  token,
+  onSubmit,
+  failure: initialFailure,
+  isSubmitting,
+}: CreateNewPasswordFormProps): JSX.Element {
+  const [failure, setFailure] = useState(initialFailure);
+  const dismiss = useCallback((): void => setFailure(null), []);
+
+  return (
+    <CreateNewPasswordForm
+      token={token}
+      onSubmit={onSubmit}
+      onDismissFailure={dismiss}
+      failure={failure}
+      isSubmitting={isSubmitting}
+    />
+  );
+}
 
 const meta: Meta<typeof CreateNewPasswordForm> = {
   title: 'Auth/PasswordRecovery/CreateNewPasswordForm',
@@ -17,6 +38,16 @@ const meta: Meta<typeof CreateNewPasswordForm> = {
       </AuthCard>
     ),
   ],
+  render: (args): JSX.Element => (
+    <DismissingCreateNewPasswordForm
+      key={args.failure?.reason ?? 'none'}
+      token={args.token}
+      onSubmit={args.onSubmit}
+      onDismissFailure={args.onDismissFailure}
+      failure={args.failure}
+      isSubmitting={args.isSubmitting}
+    />
+  ),
   args: {
     token: 'story-reset-token',
     onSubmit: resolved,

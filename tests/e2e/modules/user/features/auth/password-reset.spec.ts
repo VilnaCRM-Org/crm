@@ -17,6 +17,7 @@ const heading: string = t('password_reset.title');
 const newPasswordLabel: string = t('password_reset.new_password.label');
 const confirmLabel: string = t('password_reset.confirm_password.label');
 const submitLabel: string = t('password_recovery.submit_button');
+const showPasswordLabel: string = t('auth.password.show');
 const backLabel: string = t('password_recovery.back');
 const invalidTitle: string = t('password_reset.invalid.title');
 const invalidBody: string = t('password_reset.invalid.body');
@@ -249,7 +250,7 @@ test.describe('Create new password (issue #315)', () => {
     await expect(page.getByLabel(confirmLabel)).toHaveValue(NEW_PASSWORD);
   });
 
-  test('shows the rate-limit banner for HTTP 429', async ({ page }) => {
+  test('shows the rate-limit banner without a retry control for HTTP 429', async ({ page }) => {
     await installClock(page);
     const bodies = await answerConfirms(page, (route) => route.fulfill({ status: 429, body: '' }));
     await openWithToken(page);
@@ -260,6 +261,10 @@ test.describe('Create new password (issue #315)', () => {
     await freezeClock(page);
     await expect(page.getByLabel(newPasswordLabel)).toHaveValue(NEW_PASSWORD);
     await expect(page.getByLabel(confirmLabel)).toHaveValue(NEW_PASSWORD);
+    const form = page.locator('form');
+    await expect(form.getByRole('button')).toHaveCount(3);
+    await expect(form.getByRole('button', { name: showPasswordLabel })).toHaveCount(2);
+    await expect(form.getByRole('button', { name: submitLabel })).toHaveCount(1);
     expect(bodies).toHaveLength(1);
   });
 
