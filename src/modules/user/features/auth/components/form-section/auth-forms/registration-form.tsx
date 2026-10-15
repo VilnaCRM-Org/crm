@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import RouteFallback from '@/components/route-fallback';
 import UIForm from '@/components/ui-form';
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import InertBox from '@auth/components/form-section/inert-box';
 import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
@@ -11,19 +12,18 @@ import type {
   RegistrationFormProps,
   RegistrationNotificationPanelProps,
 } from '@auth/types/auth-forms/registration-form';
-import type { RegisterUserDto } from '@auth/types/credentials';
 import registrationNotificationLoader from '@auth/utils/load-registration-notification';
 
 import RegistrationFormFields from './registration-form-fields';
 
 const RegistrationNotification = lazy(() => registrationNotificationLoader.load());
 
-const DEFAULT_VALUES: RegisterUserDto = { fullName: '', email: '', password: '' };
+const DEFAULT_VALUES: SignUpDto = { fullName: '', email: '', password: '' };
 
 function RegistrationFormPanel({ form, t, validators }: RegistrationFormPanelProps): JSX.Element {
   return (
     <InertBox key={form.formKey} id={`reg-form-${form.formKey}`} inert={form.view !== 'form'}>
-      <UIForm<RegisterUserDto>
+      <UIForm<SignUpDto>
         onSubmit={form.handleRegister}
         defaultValues={DEFAULT_VALUES}
         error={null}

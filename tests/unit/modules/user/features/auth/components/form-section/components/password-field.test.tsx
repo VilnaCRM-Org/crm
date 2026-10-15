@@ -1,4 +1,5 @@
 import { act, createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -65,6 +66,18 @@ describe('PasswordField', () => {
     expect(toggle).toBeInTheDocument();
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByRole('button', { name: HIDE_LABEL })).not.toBeInTheDocument();
+  });
+
+  it('draws a 2px dark focus ring on the visibility control from the keyboard', async () => {
+    mountPasswordForm();
+
+    await userEvent.tab();
+    await userEvent.tab();
+
+    const toggle = screen.getByRole('button', { name: SHOW_LABEL });
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveClass('Mui-focusVisible');
+    expect(toggle).toHaveStyle({ outline: '2px solid #404142', outlineOffset: '2px' });
   });
 
   it('reveals and re-masks the password as the visibility control is toggled', () => {

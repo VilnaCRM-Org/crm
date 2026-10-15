@@ -27,6 +27,18 @@ each: `serve -s` answers every SPA route with the shell and the router renders t
 request carries a `page` tag, so the dashboard splits latency per page. Results land in
 `tests/load/results/error-pages.html`; the same `run_*` switches below apply.
 
+### Run the Password-Recovery Tests
+
+```bash
+make test-load-password-recovery
+```
+
+`password-recovery.js` requests `/password-recovery` and `/password-reset?token=…` (issue #315)
+in every iteration against the `prod` container, checking a `200` for each, with a `page` tag per
+route. The token is a fixed dummy: the shell is served the same way whatever it carries, and the
+reset mutation is never sent. Results land in `tests/load/results/password-recovery.html`. The
+target runs every scenario: the `k6` service forwards no `run_*` variable to the container.
+
 ## Scenario Selection
 
 Use the single `test-load-signup` Make target and select scenarios with environment variables.
@@ -155,26 +167,32 @@ iterations per run. `p(99)` is the per-scenario value k6 printed for the thresho
 
 ### Budgets and their rationale
 
-| Endpoint   | Scenario | p(99) budget | Failures | Checks | Why                              |
-| ---------- | -------- | ------------ | -------- | ------ | -------------------------------- |
-| homepage   | smoke    | 1 000 ms     | 0 %      | 99 %   | gate: static-page SLO, 400× base |
-| homepage   | average  | 1 500 ms     | 1 %      | 99 %   | gate: 15 rps sustained, 550×     |
-| homepage   | stress   | 3 000 ms     | 5 %      | 95 %   | capacity: 75 rps, 1 200×         |
-| homepage   | spike    | 5 000 ms     | 10 %     | 90 %   | capacity: 0→150 rps ramp, 2 000× |
-| errorPages | smoke    | 1 000 ms     | 0 %      | 99 %   | homepage budgets, same shell     |
-| errorPages | average  | 1 500 ms     | 1 %      | 99 %   | homepage budgets, same shell     |
-| errorPages | stress   | 3 000 ms     | 5 %      | 95 %   | homepage budgets, same shell     |
-| errorPages | spike    | 5 000 ms     | 10 %     | 90 %   | homepage budgets, same shell     |
-| signup     | smoke    | 1 500 ms     | 0 %      | 99 %   | gate: 3 rps, 160×                |
-| signup     | average  | 2 000 ms     | 0 %      | 99 %   | gate: 10 rps, 160×               |
-| signup     | stress   | 4 000 ms     | 2 %      | 95 %   | capacity: 50 rps, 270×           |
-| signup     | spike    | 6 000 ms     | 5 %      | 90 %   | capacity: 0→100 rps ramp, 300×   |
+| Endpoint         | Scenario | p(99)    | Failures | Checks | Why                              |
+| ---------------- | -------- | -------- | -------- | ------ | -------------------------------- |
+| homepage         | smoke    | 1 000 ms | 0 %      | 99 %   | gate: static-page SLO, 400× base |
+| homepage         | average  | 1 500 ms | 1 %      | 99 %   | gate: 15 rps sustained, 550×     |
+| homepage         | stress   | 3 000 ms | 5 %      | 95 %   | capacity: 75 rps, 1 200×         |
+| homepage         | spike    | 5 000 ms | 10 %     | 90 %   | capacity: 0→150 rps ramp, 2 000× |
+| errorPages       | smoke    | 1 000 ms | 0 %      | 99 %   | homepage budgets, same shell     |
+| errorPages       | average  | 1 500 ms | 1 %      | 99 %   | homepage budgets, same shell     |
+| errorPages       | stress   | 3 000 ms | 5 %      | 95 %   | homepage budgets, same shell     |
+| errorPages       | spike    | 5 000 ms | 10 %     | 90 %   | homepage budgets, same shell     |
+| passwordRecovery | smoke    | 1 000 ms | 0 %      | 99 %   | homepage budgets, same shell     |
+| passwordRecovery | average  | 1 500 ms | 1 %      | 99 %   | homepage budgets, same shell     |
+| passwordRecovery | stress   | 3 000 ms | 5 %      | 95 %   | homepage budgets, same shell     |
+| passwordRecovery | spike    | 5 000 ms | 10 %     | 90 %   | homepage budgets, same shell     |
+| signup           | smoke    | 1 500 ms | 0 %      | 99 %   | gate: 3 rps, 160×                |
+| signup           | average  | 2 000 ms | 0 %      | 99 %   | gate: 10 rps, 160×               |
+| signup           | stress   | 4 000 ms | 2 %      | 95 %   | capacity: 50 rps, 270×           |
+| signup           | spike    | 6 000 ms | 5 %      | 90 %   | capacity: 0→100 rps ramp, 300×   |
 
 `errorPages` takes the homepage budgets unchanged because `serve -s` answers all three error
 routes with the same static shell; it has no CI baseline of its own yet. A local run against the
 `prod` image (2026-10-07, all four scenarios, 18 600 requests) measured p(99) 2.34 / 2.09 / 1.68 /
 1.48 ms for smoke / average / stress / spike with 0.00 % failures and 100 % checks; record the
 first five CI runs in the baseline table above before tightening anything.
+`passwordRecovery` takes the same budgets for the same reason: both recovery routes are the static
+shell, and their lazy chunks load in the browser, not under k6.
 
 The two tiers are deliberate:
 
@@ -209,7 +227,7 @@ that does not override them), and update this table in the same change.
 The suite reads two environment variables, passed through the k6 compose service:
 
 - `LOAD_TARGET_URL` — the SPA origin, used by every endpoint that inherits the top-level
-  `host` of the config (today: `homepage` and `errorPages`).
+  `host` of the config (today: `homepage`, `errorPages` and `passwordRecovery`).
 - `LOAD_TARGET_URL_SIGNUP` — the API origin for the `signup` endpoint. An endpoint that
   declares its own `host` in the config is a different service, so it is never repointed by
   the generic variable; it needs its own `LOAD_TARGET_URL_<ENDPOINT>`.

@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react-webpack5';
 import type { ViewportMap } from 'storybook/viewport';
 import resources from '../src/i18n/localization.json';
+import recoveryCatalogLoader from '@auth/routes/recovery-catalog/recovery-catalog-loader';
 import { initReactI18next } from 'react-i18next';
 import i18next from 'i18next';
 import { ThemeProvider } from '@mui/material/styles';
@@ -25,6 +26,8 @@ export const i18nInitPromise = i18next.isInitialized
         console.error('Failed to initialize Storybook i18n', error);
         throw error;
       });
+
+recoveryCatalogLoader.register(i18next);
 
 const customViewports: ViewportMap = {
   xs: {

@@ -17,6 +17,12 @@ export default createTheme({
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             border: `1px solid ${customColors.text.secondary}`,
           },
+          '&.Mui-error .MuiOutlinedInput-notchedOutline': {
+            borderColor: paletteColors.error.main,
+          },
+          '&.Mui-error.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderWidth: '2px',
+          },
           '&.Mui-disabled': {
             backgroundColor: paletteColors.background.subtle,
             color: customColors.text.secondary,

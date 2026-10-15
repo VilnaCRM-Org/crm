@@ -101,6 +101,23 @@ describe('DI collaborator gate — one policy, two layers (issue #130)', () => {
     expect(rule.to.dependencyTypesNot).toContain('type-only');
   });
 
+  it.each(['data-providers', 'transformers'])(
+    'gates the feature %s folder on both layers',
+    (folder) => {
+      const file = `src/modules/user/features/auth/${folder}/hypothetical-thing.ts`;
+
+      expect(policy.LOGIC_SOURCE_GLOBS).toContain(`src/modules/*/features/*/${folder}/**/*.ts`);
+      expect(inScope(file)).toBe(true);
+    }
+  );
+
+  it('gates the module-shared transformers folder on both layers', () => {
+    const file = 'src/modules/user/transformers/hypothetical-thing.ts';
+
+    expect(policy.LOGIC_SOURCE_GLOBS).toContain('src/modules/*/transformers/**/*.ts');
+    expect(inScope(file)).toBe(true);
+  });
+
   it('wires the ESLint gate straight from the same shared policy', () => {
     const config = readFile('eslint.config.mjs');
 

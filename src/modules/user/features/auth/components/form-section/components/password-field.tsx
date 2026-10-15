@@ -38,11 +38,14 @@ function PasswordVisibilityButton({
   );
 }
 
-export default function PasswordField<T extends FieldValues & { password: string }>({
+export default function PasswordField<T extends FieldValues>({
   placeholder,
   label,
   autoComplete,
-}: PasswordFieldProps): JSX.Element {
+  name = 'password' as Path<T>,
+  rules,
+  describedBy,
+}: PasswordFieldProps<T>): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
   // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
@@ -51,12 +54,15 @@ export default function PasswordField<T extends FieldValues & { password: string
 
   return (
     <FormField<T>
-      rules={{
-        required: t('sign_up.form.password_input.required'),
-        validate: validators.password,
-      }}
+      rules={
+        rules ?? {
+          required: t('sign_up.form.password_input.required'),
+          validate: validators.password,
+        }
+      }
       defaultValue={'' as PathValue<T, Path<T>>}
-      name={'password' as Path<T>}
+      name={name}
+      describedBy={describedBy}
       type={showPassword ? 'text' : 'password'}
       placeholder={placeholder}
       label={label}

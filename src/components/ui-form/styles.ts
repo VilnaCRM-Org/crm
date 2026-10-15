@@ -10,6 +10,16 @@ export default {
     },
   },
 
+  errorText: {
+    marginBottom: '1rem',
+    fontFamily: 'Golos',
+    fontWeight: 400,
+    fontSize: '1rem',
+    lineHeight: '1.625rem',
+    letterSpacing: 0,
+    color: paletteColors.error.main,
+  },
+
   formTitle: {
     fontSize: '1.375rem',
     fontFamily: 'Golos',
@@ -39,6 +49,7 @@ export default {
     lineHeight: '1.5625rem',
     letterSpacing: 0,
     color: customColors.text.dark,
+    textWrap: 'balance',
 
     marginBottom: '1rem',
 
@@ -101,6 +112,13 @@ export default {
       fontWeight: 600,
       fontSize: '1.125rem',
       lineHeight: 1,
+    },
+  },
+
+  submitButtonTight: {
+    marginTop: '1.0625rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginTop: '1.25rem',
     },
   },
 };

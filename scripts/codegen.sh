@@ -34,6 +34,8 @@ if [ -z "$GRAPHQL_SCHEMA_VERSION" ] || [ -z "$OPENAPI_SPEC_VERSION" ]; then
   exit 1
 fi
 
+CONTRACT_ENV_FILE="$CONTRACT_ENV_FILE" sh scripts/ci/check-pending-contracts.sh
+
 RAW_BASE="https://raw.githubusercontent.com/VilnaCRM-Org/user-service"
 GRAPHQL_URL="${RAW_BASE}/${GRAPHQL_SCHEMA_VERSION}/.github/graphql-spec/spec"
 OPENAPI_URL="${RAW_BASE}/${OPENAPI_SPEC_VERSION}/.github/openapi-spec/spec.yaml"

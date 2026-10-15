@@ -1,0 +1,198 @@
+import { faker } from '@faker-js/faker';
+
+import type passwordValidatorInstance from '@auth/components/form-section/validations/password';
+import { buildPassword } from '@tests/builders';
+import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+
+import emptyUser from './constants';
+
+type PasswordValidator = typeof passwordValidatorInstance;
+
+const UPSTREAM_PASSWORD_RULE = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
+const ALPHABET =
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' +
+  'абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯÜÉüé!@#$%^&* ' +
+  '😀🎉𝐀𝒂\n\r\u2028\u2029';
+const EMOJI = '😀';
+
+const loadValidator = async (): Promise<PasswordValidator> =>
+  loadIsolated(
+    async () => (await import('@auth/components/form-section/validations/password')).default
+  );
+
+const randomPassword = (): string =>
+  Array.from({ length: faker.number.int({ min: 1, max: 70 }) }, () =>
+    faker.helpers.arrayElement([...ALPHABET])
+  ).join('');
+
+describe('the shared password policy', () => {
+  let validator: PasswordValidator;
+
+  beforeEach(async () => {
+    validator = await loadValidator();
+  });
+
+  const validate = (value: string, locale: 'en' | 'uk' = 'en'): string | true => {
+    const result = validator.create(createLocaleI18n(locale).t)(value, emptyUser);
+    if (result instanceof Promise) throw new Error('the password validator is synchronous');
+    return result as string | true;
+  };
+
+  it.each([
+    ['uk', 'Будь ласка, додайте принаймні одну велику латинську літеру (A–Z)'],
+    ['en', 'Please add at least one uppercase Latin letter (A–Z)'],
+  ] as const)('rejects Пароль123 with the %s Latin-uppercase message', (locale, message) => {
+    expect(validate('Пароль123', locale)).toBe(message);
+  });
+
+  it.each(['Password1', 'Abcdefg1', `Abcdef1${EMOJI}`, `Abcdef1${EMOJI.repeat(57)}`])(
+    'accepts %s',
+    (password) => {
+      expect(validate(password)).toBe(true);
+    }
+  );
+
+  it.each([
+    ['password1', 'sign_up.form.password_input.error_uppercase'],
+    ['PASSWORD1', 'sign_up.form.password_input.error_lowercase'],
+    ['Passwordd', 'sign_up.form.password_input.error_numbers'],
+    ['Abcdef1', 'sign_up.form.password_input.error_length'],
+    [`Abcdef1${'a'.repeat(58)}`, 'sign_up.form.password_input.error_length'],
+    [`Abcde1${EMOJI}`, 'sign_up.form.password_input.error_length'],
+    [`Abcdef1${EMOJI.repeat(58)}`, 'sign_up.form.password_input.error_length'],
+    ['Password1\n', 'sign_up.form.password_input.error_line_break'],
+    ['Pass\rword1', 'sign_up.form.password_input.error_line_break'],
+    ['Pass\u2028word1', 'sign_up.form.password_input.error_line_break'],
+    ['Pass\u2029word1', 'sign_up.form.password_input.error_line_break'],
+    ['Ab1\ncdef', 'sign_up.form.password_input.error_line_break'],
+    ['Ab1\ncd', 'sign_up.form.password_input.error_line_break'],
+    [`Abcdef1\n${'a'.repeat(57)}`, 'sign_up.form.password_input.error_line_break'],
+  ])('maps %s to %s', (password, key) => {
+    const i18n = createLocaleI18n('en');
+
+    expect(validate(password)).toBe(i18n.t(key));
+  });
+
+  it('never accepts a value the upstream rule rejects', () => {
+    const fixed = [
+      'Password1',
+      'Abcdefg1',
+      'Пароль123',
+      'ПАРОЛЬ123',
+      'ПарольA123',
+      'password1',
+      'PASSWORD1',
+      'Abcdef1',
+    ];
+    const generated = Array.from({ length: 2000 }, randomPassword);
+    const accepted = [...fixed, ...generated].filter((value) => validate(value) === true);
+
+    expect(accepted.length).toBeGreaterThan(fixed.length);
+    expect(accepted.filter((value) => !UPSTREAM_PASSWORD_RULE.test(value))).toEqual([]);
+  });
+
+  it('accepts the seeded builder password', () => {
+    expect(validate(buildPassword())).toBe(true);
+  });
+
+  it('evaluates every rule in policy order', () => {
+    expect(validator.evaluate('Pa1')).toEqual({
+      items: [
+        { key: 'invalidLength', met: false },
+        { key: 'numberRequired', met: true },
+        { key: 'uppercaseRequired', met: true },
+        { key: 'lowercaseRequired', met: true },
+      ],
+    });
+  });
+
+  it.each([
+    ['Пароль123', false],
+    ['ПАРОЛЬ123', false],
+    ['ПарольA123', true],
+    ['пaрольZ12', true],
+  ])('marks the uppercase rule of %s as met: %s', (password, met) => {
+    expect(validator.evaluate(password).items[2]).toEqual({ key: 'uppercaseRequired', met });
+  });
+
+  it('accepts a Cyrillic password once it holds one Latin capital', () => {
+    expect(validate('ПарольA123')).toBe(true);
+    expect(UPSTREAM_PASSWORD_RULE.test('ПарольA123')).toBe(true);
+  });
+
+  it.each([
+    ['uk', 'Будь ласка, приберіть розриви рядків із пароля'],
+    ['en', 'Please remove line breaks from the password'],
+  ] as const)('rejects a line break with the %s line-break message', (locale, message) => {
+    expect(validate('Pass\u2028word1', locale)).toBe(message);
+  });
+
+  it.each(['Pass\nword1', 'Pass\rword1', 'Pass\u2028word1', 'Pass\u2029word1'])(
+    'marks the length rule of %j as unmet, as the upstream pattern does',
+    (password) => {
+      expect(validator.evaluate(password).items[0]).toEqual({ key: 'invalidLength', met: false });
+    }
+  );
+
+  it('lists an unmet rule exactly when the validator rejects a non-blank value', () => {
+    const values = Array.from({ length: 2000 }, randomPassword).filter((value) => value.trim());
+    const disagreeing = values.filter(
+      (value) =>
+        (validate(value) === true) !== validator.evaluate(value).items.every((item) => item.met)
+    );
+
+    expect(values.some((value) => validate(value) === true)).toBe(true);
+    expect(disagreeing).toEqual([]);
+  });
+
+  it('evaluates against the same rules create(t) enforces', () => {
+    expect(validator.evaluate('password1').items).toEqual([
+      { key: 'invalidLength', met: true },
+      { key: 'numberRequired', met: true },
+      { key: 'uppercaseRequired', met: false },
+      { key: 'lowercaseRequired', met: true },
+    ]);
+    expect(validator.evaluate('Пароль123').items[2]).toEqual({
+      key: 'uppercaseRequired',
+      met: false,
+    });
+    expect(validator.evaluate('').items.every((item) => item.met)).toBe(false);
+  });
+
+  describe('the checklist gate', () => {
+    const gate = (value: string): string | boolean => {
+      const result = validator.createChecklistGate(createLocaleI18n('en').t)(value, emptyUser);
+      if (result instanceof Promise) throw new Error('the checklist gate is synchronous');
+      return result as string | boolean;
+    };
+
+    it('accepts a value that meets every listed rule', () => {
+      expect(gate(buildPassword())).toBe(true);
+    });
+
+    it.each(['password1', 'PASSWORD1', 'Password', 'Pass1', ''])(
+      'rejects %p without a message, leaving the reason to the checklist',
+      (value) => {
+        expect(gate(value)).toBe(false);
+      }
+    );
+
+    it.each(['Password1\u2028', 'Pass\nword1', 'Pass\rword1', 'Pass\u2029word1'])(
+      'names a line break, which the checklist cannot show, in %p',
+      (value) => {
+        expect(gate(value)).toBe(validate('Pass\nword1'));
+        expect(gate(value)).toEqual(expect.stringMatching(/line break/iu));
+      }
+    );
+
+    it('agrees with create(t) on every non-blank value', () => {
+      const values = Array.from({ length: 2000 }, randomPassword).filter((value) => value.trim());
+      const disagreeing = values.filter(
+        (value) => (gate(value) === true) !== (validate(value) === true)
+      );
+
+      expect(disagreeing).toEqual([]);
+    });
+  });
+});

@@ -9,6 +9,7 @@ COPY scripts/docker/install-bun.sh /usr/local/bin/install-bun
 RUN for suite in jammy jammy-updates jammy-security; do \
       echo "deb https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT} ${suite} main restricted universe multiverse"; \
     done > /etc/apt/sources.list \
+    && echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
     && apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     bash=5.1-6ubuntu1.1 \
     curl=7.81.0-1ubuntu1.29 \

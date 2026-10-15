@@ -8,6 +8,10 @@ on:
       - 'src/**'
       - 'public/**'
       - 'rsbuild.config.ts'
+      # Build inputs rsbuild.config.ts imports: the chunk groups and the SPA fallback document
+      # decide what is emitted, so editing them alone must re-run the gate.
+      - 'scripts/auth-forms-chunk-group.ts'
+      - 'scripts/spa-fallback-document-plugin.ts'
       - 'package.json'
       - 'bun.lock'
       # REACT_APP_* values are inlined into the bundle via loadEnv from the .env that `make`
