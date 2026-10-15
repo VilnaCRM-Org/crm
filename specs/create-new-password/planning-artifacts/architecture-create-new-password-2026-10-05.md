@@ -542,7 +542,7 @@ sequenceDiagram
     T-->>P: RecoveryFailedOutcome
     P-->>S: RecoveryFailedOutcome
     S-->>H: RecoveryFailedOutcome
-    H->>C: ResetPasswordState with RecoveryFailure (field error, or banner + Retry)
+    H->>C: ResetPasswordState with RecoveryFailure (field error, or 5 s banner)
   end
 ```
 
@@ -598,7 +598,7 @@ sequenceDiagram
           H->>K: ResetTokenHandle.discard() drops the in-memory token
           H->>C: CreateNewPasswordState, view 'invalid' (the form and its token unmount)
         else policy_rejected, rate_limited, server or network
-          H->>C: CreateNewPasswordState with RecoveryFailure (field error or banner + Retry)
+          H->>C: CreateNewPasswordState with RecoveryFailure (field error or 5 s banner)
         end
       end
     end
@@ -795,9 +795,11 @@ applies these steps in order; the first that matches wins:
    colon is one of the operation's inputs: `email`, `token`, `newPassword` here) → `violation`,
    with one `FieldViolation` per property (`path` the property, `reason` `other`).
 4. The first GraphQL error has a numeric `extensions.status` → the status table.
-5. The first GraphQL error has any other message → `refused`, a domain refusal; an
-   `extensions.code` is ignored.
-6. Anything else → `unknown`.
+5. The first GraphQL error carries an `extensions.code` but no status (a server crash, a schema
+   that lacks the operation) → `unknown`, which the recovery transformer shows as the retryable
+   `server` banner and which never discards the reset token.
+6. The first GraphQL error has any other message and no code → `refused`, a domain refusal.
+7. Anything else → `unknown`.
 
 The status table is module-private data: `0` (the deadline adapter's `HttpError`) → `network`;
 `422` → `violation` with an empty set; `429` → `rate_limited`; `500` to `599` → `server`, status
@@ -855,8 +857,9 @@ The same class owns the success side: `toSentOutcome` turns a `RestorePasswordDt
 The UI needs no third table. A field reason is rendered by the form that owns the field
 (`invalid_email` by `ResetPasswordForm`, `policy_rejected` by `CreateNewPasswordForm`, both
 through `ServerFieldError`, §5.11); `invalid_link` switches `useCreateNewPassword` to the
-`invalid` view. Every other reason is a banner: `useRecoveryFailureBanner(failure, retry)`
-returns the named `RecoveryFailureBanner` (the `UIForm` `error` and `errorAction`).
+`invalid` view. Every other reason is a banner: `useRecoveryFailureBanner(failure, dismiss)`
+returns the named `RecoveryFailureBanner` (the `UIForm` `error`) and dismisses it after
+`RECOVERY_BANNER_LIFETIME_MS` (5 s); the user retries with the form's own submit (FR-14).
 
 ### 5.6 Reset token: read once, memory only, URL stripped
 
@@ -931,8 +934,9 @@ encapsulation:
 - `ServerFieldError` (props `ServerFieldErrorProps`), rendered inside the form, calls
   `setError(name, { type: 'server', message })` and `setFocus(name)` through `useFormContext`
   whenever its `message` prop changes to a string; the next edit clears it (FR-6, FR-13, FR-20).
-- `UIFormProps` gains `errorAction?: FormErrorAction | undefined` (`label: string`,
-  `onClick: () => void`), rendered inside `ErrorBanner` after the `role="alert"` text; the header
+- `UIFormProps` gains `notice?: ReactNode` (rendered under the subtitle) and
+  `submitSpacing?: SubmitSpacing`; `ErrorBanner` renders the `role="alert"` text in a `section`
+  and, when it hides while focused, hands focus to the submit. The header
   props gain `titleRef?: RefCallback<HTMLElement> | undefined`, which gives the heading the ref
   and `tabIndex={-1}`. `ResetPasswordForm` passes `useFocusOnMount()` only when it is re-entered
   from the sent step (FR-11). Sign-in and sign-up pass nothing and render as today.
@@ -1164,7 +1168,6 @@ confines generated types.
 | outcome unions of inline `{ kind: … }` objects     | `Recovery{Sent,Confirmed,Failed}Outcome` |
 | `ResetOperation` holding document, schema, context | gone: a private generic `mutate` (§5.1)  |
 | DTOs derived from the generated inputs inline      | the board DTOs of §6.5.2 (Story 0.2)     |
-| `UIForm` `errorAction` as `{ label, onClick }`     | `FormErrorAction` interface              |
 | `InCardLink` props as an inline object             | `InCardLinkProps` interface              |
 
 `ResetPasswordForm` is a `UIForm<RestorePasswordDto>`, and `CreateNewPasswordFormValues extends
@@ -1346,7 +1349,6 @@ export interface CreateNewPasswordState {
 }
 export interface RecoveryFailureBanner {
   readonly error: string | null;
-  readonly errorAction?: FormErrorAction | undefined;
 }
 
 // @auth/types/password-recovery/forms.ts (TB-2: the one form type, a DTO plus a UI-only field)
@@ -1364,12 +1366,8 @@ export interface PasswordRuleResultSet {
 }
 
 // src/components/types/ui-form/index.ts (MODIFY)
-export interface FormErrorAction {
-  readonly label: string;
-  readonly onClick: () => void;
-}
-// UIFormProps gains `errorAction?: FormErrorAction | undefined`; the header props gain
-// `titleRef?: RefCallback<HTMLElement> | undefined` (a named third-party type)
+// UIFormProps gains `notice?: ReactNode` and `submitSpacing?: SubmitSpacing`; the header props
+// gain `titleRef?: RefCallback<HTMLElement> | undefined` (a named third-party type)
 ```
 
 Component props are named interfaces, one per component:
@@ -1674,7 +1672,7 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 | `src/routes/types/navigation-state.ts`                            | MODIFY | `notice` marker             |
 | `src/hooks/use-arrival-focus.ts`                                  | MODIFY | clears every marker         |
 | `src/hooks/use-arrival-notice.ts`                                 | NEW    | §5.7                        |
-| `src/components/ui-form/index.tsx`, `types/ui-form/`              | MODIFY | `errorAction`, `titleRef`   |
+| `src/components/ui-form/index.tsx`, `types/ui-form/`              | MODIFY | `notice`, `titleRef`        |
 | `src/api/generated/graphql.ts`                                    | REGEN  | `make codegen`, two ops     |
 | `src/api/contracts/pending/password-reset.graphql`                | NEW    | pending extension, §5.16    |
 | `src/api/contracts/README.md`                                     | MODIFY | "Pending contracts" row     |
@@ -2001,7 +1999,7 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | FR-11 | `CardBackControl`, `InCardLink`, "До входу", `submittedEmail`, `titleRef`             |
 | FR-12 | `rate_limited` rows, `useRecoveryFailureBanner` without action                        |
 | FR-13 | `violation` → `invalid_email` / `policy_rejected` rows, `ServerFieldError`            |
-| FR-14 | `server` / `network` rows, banner `errorAction` Retry, `useAbortableSubmit.retry`,    |
+| FR-14 | `server` / `network` rows, 5 s banner, retry through the form's submit,               |
 |       | a rejected load mapped to `network`                                                   |
 | FR-15 | no retry link, `DeadlineFetchAdapter`, abort on unmount, `null` for an aborted run    |
 | FR-16 | `useResetToken`, layout-effect replace navigation                                     |
@@ -2038,7 +2036,7 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | NFR-9  | §7.2 contracts and the one scoped #276 entry, jest-axe, route scans, 24 / 44 px   |
 | NFR-10 | keyboard specs per state with `expectTabOrder`; sign-in link stop already present |
 | NFR-11 | mobile touch spec on both device projects                                         |
-| NFR-12 | §5.5, §5.6, §5.13; CSP/referrer unchanged; no new origin                          |
+| NFR-12 | §5.5, §5.6, §5.13; CSP unchanged, referrer `strict-origin`; no new origin         |
 | NFR-13 | deadline via `DeadlineFetchAdapter`, no retry link, composer `errorElement`,      |
 |        | reload-once on public routes                                                      |
 | NFR-14 | `make lint-i18n`, regenerated merged catalog                                      |

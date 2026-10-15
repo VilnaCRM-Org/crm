@@ -11,6 +11,9 @@ import type {
 } from '@auth/types/password-recovery/outcome';
 
 const MASK = '*****';
+const LONG_LOCAL_PART_MIN = 6;
+const LONG_VISIBLE_PREFIX = 3;
+const SHORT_VISIBLE_PREFIX = 1;
 const CONFIRMED_OUTCOME: RecoveryConfirmedOutcome = { kind: 'confirmed' };
 
 const STEP_REASONS = {
@@ -63,6 +66,8 @@ export default class PasswordRecoveryTransformer {
     const at = email.lastIndexOf('@');
     if (at < 0) return MASK;
     const local = email.slice(0, at);
-    return `${local.slice(0, local.length >= 6 ? 3 : 1)}${MASK}${email.slice(at)}`;
+    const visible =
+      local.length >= LONG_LOCAL_PART_MIN ? LONG_VISIBLE_PREFIX : SHORT_VISIBLE_PREFIX;
+    return `${local.slice(0, visible)}${MASK}${email.slice(at)}`;
   }
 }

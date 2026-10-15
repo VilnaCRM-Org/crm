@@ -136,12 +136,14 @@ describe('useResetToken', () => {
 
   it('reads and strips the token again when the same URL is opened twice', async () => {
     const token = buildResetToken();
-    mountAt(`/password-reset?token=${token}`);
+    const { unmount } = render(
+      <RouterProvider router={routerAt(`/password-reset?token=${token}`)} />
+    );
     await screen.findByText('search=');
     expect(lastToken()).toBe(token);
 
     seen.length = 0;
-    document.body.innerHTML = '';
+    unmount();
     mountAt(`/password-reset?token=${token}`);
     await screen.findByText('search=');
 

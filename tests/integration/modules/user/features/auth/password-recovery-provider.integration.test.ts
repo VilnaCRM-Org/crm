@@ -104,6 +104,29 @@ describe('PasswordRecoveryProvider over the container and msw', () => {
       failed('invalid_link', false),
     ],
     [
+      'a coded server error on request',
+      (): Response =>
+        errorBody('Something went wrong on the server.', { code: 'INTERNAL_SERVER_ERROR' }),
+      'request',
+      failed('server', true),
+    ],
+    [
+      'a coded server error on confirm, which keeps the link usable',
+      (): Response =>
+        errorBody('Something went wrong on the server.', { code: 'INTERNAL_SERVER_ERROR' }),
+      'confirm',
+      failed('server', true),
+    ],
+    [
+      'a schema without the confirm operation',
+      (): Response =>
+        errorBody('Cannot query field "confirmPasswordResetUser" on type "Mutation".', {
+          code: 'GRAPHQL_VALIDATION_FAILED',
+        }),
+      'confirm',
+      failed('server', true),
+    ],
+    [
       'HTTP 429',
       (): Response => new HttpResponse(null, { status: 429 }),
       'request',

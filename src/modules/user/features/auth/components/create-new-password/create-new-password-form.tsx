@@ -6,6 +6,7 @@ import UIForm from '@/components/ui-form';
 import PasswordField from '@auth/components/form-section/components/password-field';
 import PasswordPolicyRules from '@auth/components/form-section/components/password-policy-rules';
 import ServerFieldError from '@auth/components/form-section/components/server-field-error';
+import passwordValidator from '@auth/components/form-section/validations/password';
 import useRecoveryFailureBanner from '@auth/hooks/use-recovery-failure-banner';
 import type {
   CreateNewPasswordFieldsProps,
@@ -41,6 +42,10 @@ function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX
         placeholder={t('password_reset.new_password.placeholder')}
         autoComplete="new-password"
         describedBy={RULES_ID}
+        rules={{
+          required: t('sign_up.form.password_input.required'),
+          validate: passwordValidator.createChecklistGate<CreateNewPasswordFormValues>(t),
+        }}
       />
       <PasswordPolicyRules id={RULES_ID} name="newPassword" />
       <PasswordField<CreateNewPasswordFormValues>

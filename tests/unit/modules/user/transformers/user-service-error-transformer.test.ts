@@ -152,11 +152,24 @@ describe('UserServiceErrorTransformer', () => {
   });
 
   it.each([
-    ['without a code', undefined],
-    ['with a code', { code: 'BAD_USER_INPUT' }],
+    ['without extensions', undefined],
+    ['with empty extensions', {}],
   ])('classifies a message-only error %s as refused', (_name, extensions) => {
     expect(transformer.normalize(graphQLError(faker.lorem.sentence(), extensions))).toEqual({
       reason: 'refused',
+      status: null,
+      violations: none,
+    });
+  });
+
+  it.each([
+    ['a server crash', 'INTERNAL_SERVER_ERROR'],
+    ['a schema that lacks the operation', 'GRAPHQL_VALIDATION_FAILED'],
+    ['a malformed request', 'BAD_REQUEST'],
+    ['an input error without a status', 'BAD_USER_INPUT'],
+  ])('classifies a coded error without a status (%s) as unknown, never refused', (_name, code) => {
+    expect(transformer.normalize(graphQLError(faker.lorem.sentence(), { code }))).toEqual({
+      reason: 'unknown',
       status: null,
       violations: none,
     });

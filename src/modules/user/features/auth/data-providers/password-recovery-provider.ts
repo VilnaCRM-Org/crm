@@ -1,7 +1,6 @@
 import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import type UserServiceErrorTransformer from '@/modules/user/transformers';
 import type { CreateNewPasswordDto } from '@/modules/user/types/user/create-new-password-dto';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
 import type { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
@@ -10,6 +9,7 @@ import type {
   CreateNewPasswordOutcome,
   ResetPasswordOutcome,
 } from '@auth/types/password-recovery/outcome';
+import type RecoveryFailureHandler from '@auth/utils/recovery-failure-handler';
 
 @injectable()
 export default class PasswordRecoveryProvider {
@@ -18,8 +18,8 @@ export default class PasswordRecoveryProvider {
     private readonly repository: GraphQLPasswordRecoveryRepository,
     @inject(AUTH_TOKENS.PasswordRecoveryTransformer)
     private readonly transformer: PasswordRecoveryTransformer,
-    @inject(AUTH_TOKENS.UserServiceErrorTransformer)
-    private readonly errors: UserServiceErrorTransformer
+    @inject(AUTH_TOKENS.RecoveryFailureHandler)
+    private readonly failures: RecoveryFailureHandler
   ) {}
 
   public async requestReset(
@@ -30,7 +30,7 @@ export default class PasswordRecoveryProvider {
       await this.repository.requestReset(dto, signal);
       return this.transformer.toSentOutcome(dto);
     } catch (caught) {
-      return this.transformer.fromFailure('request', this.errors.normalize(caught, signal));
+      return this.failures.handle('request', caught, signal);
     }
   }
 
@@ -42,7 +42,7 @@ export default class PasswordRecoveryProvider {
       await this.repository.confirmReset(dto, signal);
       return this.transformer.toConfirmedOutcome();
     } catch (caught) {
-      return this.transformer.fromFailure('confirm', this.errors.normalize(caught, signal));
+      return this.failures.handle('confirm', caught, signal);
     }
   }
 }

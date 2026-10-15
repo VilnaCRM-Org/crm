@@ -117,17 +117,43 @@ describe('CreateNewPasswordForm', () => {
     expect(screen.getByRole('list')).toHaveAttribute('id', 'new-password-rules');
   });
 
-  it('names the first unmet rule on the new-password field and does not submit', async () => {
+  it('leaves an unmet rule to the checklist, marks the field and does not submit', async () => {
     const { onSubmit } = mountForm();
     await userEvent.type(newPassword(), 'password1');
     await userEvent.type(confirmation(), 'password1');
 
     await userEvent.click(submit());
 
-    expect(
-      await screen.findByText('Будь ласка, додайте принаймні одну велику латинську літеру (A–Z)')
-    ).toBeInTheDocument();
+    await waitFor(() => expect(newPassword()).toHaveAttribute('aria-invalid', 'true'));
     expect(newPassword()).toHaveFocus();
+    expect(newPassword()).toHaveAttribute('aria-describedby', 'new-password-rules');
+    expect(
+      screen.queryByText('Будь ласка, додайте принаймні одну велику латинську літеру (A–Z)')
+    ).not.toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('requires the new password with the field message', async () => {
+    const { onSubmit } = mountForm();
+
+    await userEvent.click(submit());
+
+    await waitFor(() => expect(newPassword()).toHaveAttribute('aria-invalid', 'true'));
+    expect(newPassword()).toHaveAccessibleDescription(
+      expect.stringContaining("Це поле обов'язкове")
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('names a line break on the new-password field, which the checklist cannot show', async () => {
+    const { onSubmit } = mountForm();
+    fireEvent.change(newPassword(), { target: { value: 'Password1\u2028' } });
+
+    await userEvent.click(submit());
+
+    expect(
+      await screen.findByText('Будь ласка, приберіть розриви рядків із пароля')
+    ).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

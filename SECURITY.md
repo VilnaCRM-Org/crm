@@ -214,7 +214,7 @@ server emits the same headers from the same file, so local and production cannot
 | `Cross-Origin-Resource-Policy` | response | `same-origin`                             |
 | `Content-Security-Policy`      | document | the directive set below                   |
 | `X-Frame-Options`              | document | `DENY`                                    |
-| `Referrer-Policy`              | document | `strict-origin-when-cross-origin`         |
+| `Referrer-Policy`              | document | `strict-origin`                           |
 | `Permissions-Policy`           | document | camera, microphone, geolocation, payment, |
 |                                |          | usb — all `()`                            |
 
@@ -223,6 +223,12 @@ document and ride the HTML shell only — every SPA route resolves to `/index.ht
 so every page gets them — because a CSP, a frame policy, a referrer policy or a permissions
 policy on a `.woff2` or a hashed chunk changes nothing in the browser and only adds bytes to
 each request on the mobile critical path, where the Lighthouse budget has no headroom.
+
+`Referrer-Policy` is `strict-origin`, not the browser default `strict-origin-when-cross-origin`:
+the password-reset link carries its token in the query string, and every same-origin request the
+page makes before it strips the token (the entry chunks, the fonts) would otherwise send the whole
+URL in `Referer`, straight into the static server's access log (issue #315). With `strict-origin`
+a request only ever names the origin.
 
 The Content-Security-Policy:
 

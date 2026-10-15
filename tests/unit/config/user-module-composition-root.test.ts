@@ -8,6 +8,7 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
@@ -34,6 +35,7 @@ const PASSWORD_RECOVERY_TOKENS = [
   AUTH_TOKENS.UserServiceErrorTransformer,
   AUTH_TOKENS.PasswordRecoveryRepository,
   AUTH_TOKENS.PasswordRecoveryProvider,
+  AUTH_TOKENS.RecoveryFailureHandler,
 ];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
@@ -116,6 +118,7 @@ describe('user module composition root', () => {
 
     expectAllRegistered(child, PASSWORD_RECOVERY_TOKENS);
     child.register(AUTH_TOKENS.ApolloClient, { useValue: {} });
+    child.register(OBSERVABILITY_TOKENS.ObservabilityService, { useValue: {} });
     const provider = child.resolve(AUTH_TOKENS.PasswordRecoveryProvider);
     expect(provider).toBeInstanceOf(PasswordRecoveryProvider);
     expect(child.resolve(AUTH_TOKENS.PasswordRecoveryProvider)).toBe(provider);

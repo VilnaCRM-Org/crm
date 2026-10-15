@@ -1,9 +1,11 @@
 import 'reflect-metadata';
 
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import type { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
+import RecoveryFailureHandler from '@auth/utils/recovery-failure-handler';
 import { buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 
 const setUp = (): {
@@ -11,6 +13,7 @@ const setUp = (): {
   repository: jest.Mocked<GraphQLPasswordRecoveryRepository>;
   transformer: PasswordRecoveryTransformer;
   errors: UserServiceErrorTransformer;
+  failures: RecoveryFailureHandler;
 } => {
   const repository = {
     requestReset: jest.fn().mockResolvedValue(undefined),
@@ -18,11 +21,14 @@ const setUp = (): {
   } as unknown as jest.Mocked<GraphQLPasswordRecoveryRepository>;
   const transformer = new PasswordRecoveryTransformer();
   const errors = new UserServiceErrorTransformer();
+  const observability = { captureError: jest.fn() } as unknown as ObservabilityService;
+  const failures = new RecoveryFailureHandler(errors, transformer, observability);
   return {
-    provider: new PasswordRecoveryProvider(repository, transformer, errors),
+    provider: new PasswordRecoveryProvider(repository, transformer, failures),
     repository,
     transformer,
     errors,
+    failures,
   };
 };
 
@@ -52,21 +58,18 @@ describe('PasswordRecoveryProvider', () => {
   it.each([
     ['requestReset', 'request'],
     ['confirmReset', 'confirm'],
-  ] as const)('%s hands a rejection through both transformers once', async (method, step) => {
-    const { provider, repository, transformer, errors } = setUp();
+  ] as const)('%s hands a rejection to the failure handler once', async (method, step) => {
+    const { provider, repository, failures } = setUp();
     const caught = new Error('boom');
     repository[method].mockRejectedValue(caught);
-    const normalize = jest.spyOn(errors, 'normalize');
-    const fromFailure = jest.spyOn(transformer, 'fromFailure');
+    const handle = jest.spyOn(failures, 'handle');
     const { signal } = new AbortController();
     const dto = { email: buildEmail(), token: buildResetToken(), newPassword: buildPassword() };
 
     const outcome = await provider[method](dto, signal);
 
-    expect(normalize).toHaveBeenCalledTimes(1);
-    expect(normalize).toHaveBeenCalledWith(caught, signal);
-    expect(fromFailure).toHaveBeenCalledTimes(1);
-    expect(fromFailure).toHaveBeenCalledWith(step, normalize.mock.results[0]?.value);
-    expect(outcome).toBe(fromFailure.mock.results[0]?.value);
+    expect(handle).toHaveBeenCalledTimes(1);
+    expect(handle).toHaveBeenCalledWith(step, caught, signal);
+    expect(outcome).toBe(handle.mock.results[0]?.value);
   });
 });

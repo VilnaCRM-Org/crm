@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page, type Route } from '@playwright/test';
 
 import { buildEmail, buildPassword, buildResetToken } from '@tests/builders';
+import { freezeClock, installClock } from '@tests/e2e/utils/freeze-clock';
 import { t } from '@tests/e2e/utils/initialize-localization';
 
 import { MIN_TOUCH_TARGET_PX, showPasswordLabel } from './constants';
@@ -117,6 +118,7 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
   });
 
   test('keeps the request controls tappable', async ({ page }) => {
+    await installClock(page);
     await answer(page, 'RequestPasswordReset', (route) => route.fulfill({ status: 503, body: '' }));
     const submit = await openRequest(page);
 
@@ -127,6 +129,7 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await typeByTap(page.getByPlaceholder(emailPlaceholder), EMAIL);
     await submit.tap();
     await expect(page.getByRole('alert')).toHaveText(transient);
+    await freezeClock(page);
     await expectTargetAtLeast(submit, MIN_TOUCH_TARGET_PX);
   });
 

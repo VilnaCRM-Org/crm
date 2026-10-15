@@ -3,6 +3,7 @@ import type { Locator, Page, Route } from '@playwright/test';
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildEmail, buildResetToken, seedFaker } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { freezeClock, installClock } from '@tests/e2e/utils/freeze-clock';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
@@ -10,6 +11,8 @@ seedFaker();
 
 const GRAPHQL_URL = '**/graphql';
 const EMAIL = buildEmail();
+const STILL_SHOWN_MS = 3000;
+const PAST_LIFETIME_MS = 2000;
 
 const backToMainLabel: string = t('buttons.back_to_main');
 const backLabel: string = t('password_recovery.back');
@@ -85,14 +88,20 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
   test('a transient banner hides after five seconds and hands focus to the submit', async ({
     page,
   }) => {
+    await installClock(page);
     await answerReset(page, (route) => route.fulfill({ status: 503, body: '' }));
     await openRequestForm(page);
     await page.locator('#email').fill(EMAIL);
     await page.getByRole('button', { name: submitLabel }).press('Enter');
     await expect(page.getByRole('alert')).toBeVisible();
+    await freezeClock(page);
 
-    await expect(page.getByRole('alert')).toHaveCount(0, { timeout: 8000 });
+    await page.clock.runFor(STILL_SHOWN_MS);
+    await expect(page.getByRole('alert')).toBeVisible();
+    await page.clock.runFor(PAST_LIFETIME_MS);
+    await expect(page.getByRole('alert')).toHaveCount(0);
 
+    await page.clock.resume();
     await expectDarkRing(page, submitLabel);
   });
 

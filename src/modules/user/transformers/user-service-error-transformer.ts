@@ -31,7 +31,12 @@ export default class UserServiceErrorTransformer {
     const status = this.extensionStatus(graphQLError);
     const property = this.violatedProperty(graphQLError.message);
     if (property) return this.failure('violation', status, property);
-    return status === null ? this.failure('refused', null) : this.fromStatus(status);
+    return status === null ? this.fromCode(graphQLError) : this.fromStatus(status);
+  }
+
+  private fromCode(graphQLError: GraphQLFormattedError): UserServiceFailure {
+    const coded = graphQLError.extensions?.code !== undefined;
+    return this.failure(coded ? 'unknown' : 'refused', null);
   }
 
   private fromStatus(status: number | null): UserServiceFailure {

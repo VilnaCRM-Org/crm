@@ -16,8 +16,8 @@ function useFieldSlotProps<T extends FieldValues>(
 ): FormFieldSlotProps {
   const { getFieldState, formState } = useFormContext<T>();
   if (describedBy === undefined) return { input: inputProps };
-  const { invalid } = getFieldState(name, formState);
-  const ids = invalid ? `${describedBy} ${name}-helper-text` : describedBy;
+  const { error } = getFieldState(name, formState);
+  const ids = error?.message ? `${describedBy} ${name}-helper-text` : describedBy;
   return { input: inputProps, htmlInput: { 'aria-describedby': ids } };
 }
 

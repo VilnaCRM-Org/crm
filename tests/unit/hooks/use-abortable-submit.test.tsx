@@ -60,6 +60,25 @@ describe('useAbortableSubmit', () => {
     expect(result.current.isSubmitting).toBe(false);
   });
 
+  it('releases the in-flight slot when the run rejects', async () => {
+    const failure = new Error('run failed');
+    const run = jest
+      .fn<Promise<string>, [string, AbortSignal]>()
+      .mockRejectedValueOnce(failure)
+      .mockResolvedValueOnce('recovered');
+    const { result } = renderHook(() => useAbortableSubmit(run));
+
+    await act(async () => {
+      await expect(result.current.submit('first')).rejects.toBe(failure);
+    });
+    expect(result.current.isSubmitting).toBe(false);
+
+    await act(async () => {
+      await expect(result.current.submit('second')).resolves.toBe('recovered');
+    });
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
   it('refuses a second submit while one is pending', async () => {
     const pending = deferred();
     const run = jest.fn(() => pending.promise);
