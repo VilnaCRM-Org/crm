@@ -40,7 +40,7 @@ const meta: Meta<typeof CreateNewPasswordForm> = {
   ],
   render: (args): JSX.Element => (
     <DismissingCreateNewPasswordForm
-      key={args.failure?.reason ?? 'none'}
+      key={JSON.stringify(args.failure)}
       token={args.token}
       onSubmit={args.onSubmit}
       onDismissFailure={args.onDismissFailure}

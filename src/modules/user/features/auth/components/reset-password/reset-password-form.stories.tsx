@@ -42,7 +42,7 @@ const meta: Meta<typeof ResetPasswordForm> = {
   ],
   render: (args): JSX.Element => (
     <DismissingResetPasswordForm
-      key={args.failure?.reason ?? 'none'}
+      key={JSON.stringify(args.failure)}
       defaultValues={args.defaultValues}
       onSubmit={args.onSubmit}
       onDismissFailure={args.onDismissFailure}

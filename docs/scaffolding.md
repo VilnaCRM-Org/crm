@@ -46,7 +46,7 @@ src/modules/<module>/
 │   ├── stores/index.ts           # the one sanctioned DI seam for the feature
 │   ├── types/…                   # type-only files (issue #88)
 │   └── assets/, data-providers/, transformers/, utils/   # kept by an empty .gitignore
-└── hooks/, lib/, store/, types/, utils/   # kept by an empty .gitignore
+└── hooks/, lib/, store/, transformers/, types/, utils/   # kept by an empty .gitignore
 tests/unit/modules/<module>/features/<feature>/…   # hook + repository suites
 tests/e2e/modules/<module>/features/<feature>/…    # Playwright skeleton
 .github/CODEOWNERS                                 # one appended ownership line
