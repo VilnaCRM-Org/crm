@@ -181,12 +181,14 @@ describe('useCreateNewPassword', () => {
       const { loader, confirmReset } = harness(outcome);
       const token = buildResetToken();
       const values = formValues(token);
-      const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
+      const resetToken = tokenHandle(token);
+      const { result } = renderHook(() => useCreateNewPassword(loader, resetToken));
 
       await act(() => formState(result.current).callbacks.submit(values));
       expect(formState(result.current).failure).toEqual(
         outcome.kind === 'failed' ? outcome.failure : null
       );
+      expect(resetToken.discard).not.toHaveBeenCalled();
 
       const edited = formValues(token);
       await act(() => formState(result.current).callbacks.submit(edited));

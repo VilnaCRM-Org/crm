@@ -70,4 +70,52 @@ describe('useFocusReturn', () => {
 
     expect(other).toHaveFocus();
   });
+
+  it('restores focus when the element itself drops focus to the page', async () => {
+    const target = createRef<HTMLButtonElement>();
+    const { rerender } = render(<Probe shown target={target} />);
+    const transient = screen.getByRole('button', { name: 'Transient' });
+    await userEvent.click(transient);
+    transient.blur();
+
+    rerender(<Probe shown={false} target={target} />);
+
+    expect(screen.getByRole('button', { name: 'Target' })).toHaveFocus();
+  });
+
+  it('forgets the hold once focus moved on, even after it later drops to the page', async () => {
+    const target = createRef<HTMLButtonElement>();
+    const { rerender } = render(<Probe shown target={target} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Transient' }));
+    const other = screen.getByRole('button', { name: 'Other' });
+    await userEvent.click(other);
+    other.blur();
+
+    rerender(<Probe shown={false} target={target} />);
+
+    expect(document.body).toHaveFocus();
+  });
+
+  it('is not armed by a blur the element never had focus for', () => {
+    const target = createRef<HTMLButtonElement>();
+    const { rerender } = render(<Probe shown target={target} />);
+    fireEvent.blur(screen.getByRole('button', { name: 'Transient' }));
+
+    rerender(<Probe shown={false} target={target} />);
+
+    expect(document.body).toHaveFocus();
+  });
+
+  it('releases the hold after restoring, so the next hide moves nothing', async () => {
+    const target = createRef<HTMLButtonElement>();
+    const { rerender } = render(<Probe shown target={target} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Transient' }));
+    rerender(<Probe shown={false} target={target} />);
+    screen.getByRole('button', { name: 'Target' }).blur();
+
+    rerender(<Probe shown target={target} />);
+    rerender(<Probe shown={false} target={target} />);
+
+    expect(document.body).toHaveFocus();
+  });
 });
