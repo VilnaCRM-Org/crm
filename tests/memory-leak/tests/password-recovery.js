@@ -11,6 +11,7 @@ const NEW_PASSWORD_INPUT = 'input#newPassword';
 const CONFIRM_INPUT = 'input#confirmPassword';
 const RULES_LIST = 'ul#new-password-rules';
 const SUBMIT = 'form button[type="submit"]';
+const SIGN_IN_EMAIL_INPUT = 'form input#email';
 const PAGE_TIMEOUT = 15000;
 const BACK_TIMEOUT = 5000;
 
@@ -71,6 +72,7 @@ async function back(page) {
     );
     await unmounted.dispose();
     await verifyPage(page, BASELINE_PATH);
+    await page.click(SIGN_IN_EMAIL_INPUT);
   } catch (error) {
     logger.error(`❌ Password recovery back navigation failed: ${error.message}`);
     throw error;
