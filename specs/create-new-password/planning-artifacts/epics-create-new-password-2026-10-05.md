@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-14
+revised: 2026-10-15
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -904,9 +904,9 @@ placement), FR-20 (server field error path), NFR-3, NFR-6, NFR-9, NFR-17.
 **Files:** `@auth/components/auth-card/index.tsx` (NEW: props `children` and optional `after`),
 `@auth/types/auth-card/index.ts` (NEW: `AuthCardProps`),
 `@auth/components/auth-form-section/index.tsx` (MODIFY: composes `AuthCard`),
-`src/components/types/ui-form/index.ts` (MODIFY: `FormErrorAction`, `errorAction?`, header
-`titleRef?`), `src/components/ui-form/index.tsx` (MODIFY: `ErrorBanner` action, `FormHeader`
-ref), `@auth/components/form-section/components/server-field-error.tsx` (NEW),
+`src/components/types/ui-form/index.ts` (MODIFY: `notice?`, `submitSpacing?`, header
+`titleRef?`), `src/components/ui-form/index.tsx` (MODIFY: `ErrorBanner` focus hand-off,
+`FormHeader` ref), `@auth/components/form-section/components/server-field-error.tsx` (NEW),
 `@auth/types/components/server-field-error.ts` (NEW: `ServerFieldErrorProps`), unit and
 jest-axe tests.
 
@@ -921,11 +921,11 @@ jest-axe tests.
   identical to before, and the CI visual suite reports zero diffs.
 - **Given** jscpd, **when** it runs, **then** no clone exists between `AuthCard` and
   `AuthFormSection`.
-- **Given** `error` and an `errorAction` (`label`, `onClick`), **when** the banner renders,
-  **then** a button named `label` follows the `role="alert"` text inside the banner, is
-  keyboard-operable with Enter and Space, and calls `onClick` once per activation.
-- **Given** `error` without `errorAction`, **when** rendered, **then** the banner is exactly as
-  today; sign-in and sign-up pass nothing and render unchanged.
+- **Given** `error`, **when** the banner renders, **then** it holds only the `role="alert"`
+  text, with no button of its own, and takes focus when it appears.
+- **Given** a banner that holds focus, **when** `error` clears, **then** focus moves to the
+  submit; when focus had already moved elsewhere, it stays there. Sign-in and sign-up render
+  unchanged.
 - **Given** `titleRef`, **when** provided, **then** the title element receives the ref and
   `tabIndex={-1}`; without it, the title has no `tabindex` attribute.
 - **Given** `exactOptionalPropertyTypes`, **when** `tsc` runs, **then** the new optional props
@@ -1019,7 +1019,7 @@ So that I never trigger duplicate mails, spam the server or see stale errors.
 **Dispatch:** Depends on: 1.5, 2.1. **Status:** Ready.
 
 **Requirements:** FR-7, FR-9 (step switch), FR-11 (`backToForm` refill), FR-12, FR-14
-(`retry`, banner), FR-15 (abort), FR-27, AR-2, AR-3, NFR-3, NFR-13, NFR-14, NFR-17, NFR-18.
+(manual resubmit, 5 s banner), FR-15 (abort), FR-27, AR-2, AR-3, NFR-3, NFR-13, NFR-14, NFR-17, NFR-18.
 
 > Assumption: this story merges the former Stories 2.5 and 2.6. `useAbortableSubmit` lands here,
 > with its first user, and is shared from `src/hooks/` with Story 3.4 and the #330 and #331
@@ -1042,8 +1042,8 @@ unit tests including a `StrictMode` render.
   `false` after, and `submit` resolves the run's outcome.
 - **Given** a pending call, **when** `submit` is called again, **then** no second run starts and
   the second call resolves `null` (single flight).
-- **Given** a settled call, **when** `retry` is called, **then** the last input runs once more
-  with a fresh signal; before any submit, `retry` resolves `null` and runs nothing.
+- **Given** a settled call, **when** `submit` is called again, **then** the new input runs with a
+  fresh signal; the hook keeps no last input and exposes no `retry`.
 - **Given** an unmount mid-request, **when** the hook cleans up, **then** the signal is aborted
   and the pending call resolves `null`, so no state is patched afterwards.
 - **Given** `<StrictMode>`, **when** a component using the hook mounts and then submits, **then**
@@ -1056,15 +1056,16 @@ unit tests including a `StrictMode` render.
 - **Given** a `RecoverySentOutcome`, **when** it settles, **then** the `ResetPasswordState` has
   `step` `sent`, the `maskedEmail`, the `submittedEmail` and a `null` failure.
 - **Given** a `RecoveryFailedOutcome`, or a loader that rejects (mapped to `network`,
-  retryable), **when** it settles, **then** `failure` is set and `step` stays `form`;
-  `callbacks.retry` re-submits the same trimmed value once.
+  retryable), **when** it settles, **then** `failure` is set and `step` stays `form`; the next
+  form submit sends the value then in the field, and `callbacks.dismissFailure` clears
+  `failure` without a request.
 - **Given** the sent step, **when** `callbacks.backToForm` runs, **then** `step` is `form`,
   `failure` is `null`, `submittedEmail` is kept, and the provider is not called.
 - **Given** a `rate_limited` failure, **when** `useRecoveryFailureBanner` runs, **then** it
-  returns the text "Забагато запитів. Спробуйте пізніше." and no `errorAction`.
-- **Given** a retryable `network` or `server` failure and a `retry` callback, **when** the banner
-  hook runs, **then** it returns the transient text and an `errorAction` labelled with the
-  existing `auth.error.tryAgain` string whose `onClick` calls `retry` once.
+  returns the text "Забагато запитів. Спробуйте пізніше.".
+- **Given** a retryable `network` or `server` failure, **when** the banner hook runs, **then** it
+  returns the transient text, and after `RECOVERY_BANNER_LIFETIME_MS` (5 s) it calls the
+  dismiss callback once.
 - **Given** `invalid_email`, `policy_rejected`, `invalid_link` or no failure, **when** the banner
   hook runs, **then** its `error` is `null` (field reasons are rendered by their forms).
 - **Given** every `t()` call, **when** the i18n gate scans the files, **then** each key is a
@@ -1405,7 +1406,7 @@ So that a single-use token is never wasted and I always end in the right place.
 
 **Dispatch:** Depends on: 2.3, 3.1, 3.3. **Status:** Ready.
 
-**Requirements:** FR-4 (no session change), FR-14 (`retry`), FR-15 (abort), FR-17, FR-21
+**Requirements:** FR-4 (no session change), FR-14 (manual resubmit), FR-15 (abort), FR-17, FR-21
 (navigate, board edge 3), FR-22 (view switch), FR-23 (abort on leave), AR-2, AR-3, NFR-3,
 NFR-13, NFR-17, NFR-18.
 
@@ -1433,7 +1434,7 @@ NFR-13, NFR-17, NFR-18.
   the form and the token in its values unmount.
 - **Given** `policy_rejected`, `rate_limited`, `server`, `network` or a loader rejection (mapped
   to `network`, retryable), **when** it settles, **then** `failure` is set, `view` stays `form`,
-  and `callbacks.retry` re-submits the same values once.
+  and the next form submit sends the values then in the fields.
 - **Given** an unmount mid-request, **then** the signal is aborted and nothing is patched; under
   `<StrictMode>` the first submit still sends one request.
 - **Given** jscpd, **when** `make lint-dup` compares this hook with `useResetPassword`, **then**

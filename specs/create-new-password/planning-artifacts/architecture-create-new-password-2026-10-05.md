@@ -3,7 +3,7 @@ status: complete
 workflowType: architecture
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-14
+revised: 2026-10-15
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'architect (Winston), autonomous run'
