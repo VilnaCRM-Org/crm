@@ -161,7 +161,9 @@ unscoped mobile projects would re-record the entire 13-screen desktop visual sui
 more project names.
 
 - **Touch E2E** — [`tests/e2e/mobile/`](tests/e2e/mobile/): sign-in and sign-up completed with
-  `tap()` only, switcher navigation, empty-form validation (no request fired), the
+  `tap()` only, the password recovery request and reset steps (`/password-recovery`,
+  `/password-reset`) completed the same way with their own touch-target, overflow and
+  keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
   overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
@@ -251,6 +253,7 @@ make test-memory-leak      # Memlab memory leak tests
 make test-load             # K6 load testing (homepage)
 make test-load-signup      # K6 load testing (signup API)
 make test-load-error-pages # K6 load testing (403, 5xx and 404 error pages)
+make test-load-password-recovery # K6 load testing (password recovery pages)
 make lighthouse-desktop    # Lighthouse audit (desktop)
 make lighthouse-mobile     # Lighthouse audit (mobile)
 make test-mutation         # Stryker mutation testing
@@ -261,6 +264,13 @@ The error pages (`/forbidden`, `/server-error` and the catch-all 404, probed at
 three on desktop and mobile under the unchanged budgets, `make test-load-error-pages` (the
 `error pages load testing` job) requests all three under the homepage's k6 budgets, and the
 `tests/memory-leak/tests/error-pages.js` memlab scenario walks them from `/sign-in` and back.
+
+The password recovery pages (`/password-recovery` and `/password-reset`, issue #315) ride the same
+lanes: Lighthouse audits both, the reset page with a fixed dummy `?token=` so it renders the form
+rather than the invalid-link view; `make test-load-password-recovery` (the
+`password recovery load testing` job) requests both under the homepage's k6 budgets; and the
+`tests/memory-leak/tests/password-recovery.js` memlab scenario types into the request form,
+fills the reset form until its client validation fires, and returns to `/sign-in`.
 
 Load test scenarios (configurable in `./test/load/config.json.dist`):
 
@@ -389,7 +399,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a thirteent
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 297 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 301 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -2074,7 +2084,8 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 - **ESLint** (`no-restricted-syntax` on `src/**/*.tsx`) fails a `new <PascalCaseClass>()`.
   Built-in constructors (`new Error/URL/Date/Map/…`) are allowlisted out of the selector.
 - **dependency-cruiser** `components-no-direct-injectable-import` fails a **value**-import of
-  `src/services/**`, `…/repositories/**`, `src/modules/*/store/**`, `*-factory`, `*-mapper`, or
+  `src/services/**`, `…/data-providers/**`, `…/repositories/**`, `…/transformers/**`,
+  `src/modules/*/store/**`, `src/modules/*/transformers/**`, `*-factory`, `*-mapper`, or
   `*error-handler*` into a component. `import type` stays allowed — annotations bind nothing.
 
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
@@ -2364,8 +2375,9 @@ scopes its `to` clause to `^src/`.
 fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
 starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
 
-**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
-`src/modules/*/features/*/{repositories,stores,utils}/**`.
+**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`,
+`src/modules/*/transformers/**`, and
+`src/modules/*/features/*/{data-providers,repositories,stores,transformers,utils}/**`.
 
 Three different things are outside the gate, and the distinction matters when you add a file:
 
