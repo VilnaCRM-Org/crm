@@ -27,6 +27,28 @@ describe('PiiScrubber reset token redaction (#315)', () => {
     expect(scrubMessage(input)).toEqual({ message: expected });
   });
 
+  it.each([
+    ['a JSON token value', '{"token":"abc","x":1}', '{"token":"[redacted]","x":1}'],
+    ['a spaced JSON token value', '{"token" : "abc"}', '{"token" : "[redacted]"}'],
+    ['a JSON new password value', '{"newPassword":"Secret1"}', '{"newPassword":"[redacted]"}'],
+    ['a JSON access token value', '{"access_token":"abc"}', '{"access_token":"[redacted]"}'],
+    ['a hyphenated JSON token key', '{"x-reset-token":"abc"}', '{"x-reset-token":"[redacted]"}'],
+    [
+      'a percent-encoded token',
+      'next=%2Fpassword-reset%3Ftoken%3Dabc%26x%3D1',
+      'next=%2Fpassword-reset%3Ftoken%3D[redacted]%26x%3D1',
+    ],
+    ['a lower-case percent-encoded token', 'token%3dabc', 'token%3d[redacted]'],
+  ])('redacts %s inside serialized text', (_name, input, expected) => {
+    expect(scrubMessage(input)).toEqual({ message: expected });
+  });
+
+  it('keeps an empty JSON token value and unrelated JSON keys', () => {
+    expect(scrubMessage('{"token":"","tokenless":1,"name":"abc"}')).toEqual({
+      message: '{"token":"","tokenless":1,"name":"abc"}',
+    });
+  });
+
   it('leaves a string without a token fragment unchanged', () => {
     expect(scrubMessage('nothing to see here')).toEqual({
       message: 'nothing to see here',

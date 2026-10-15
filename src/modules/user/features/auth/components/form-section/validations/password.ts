@@ -25,6 +25,13 @@ class PasswordValidator {
     return (value: string) => this.run(value, this.buildMessages(t));
   }
 
+  public createChecklistGate<TFieldValues extends FieldValues>(
+    t: TFunction
+  ): Validate<string, TFieldValues> {
+    const lineBreak = t('sign_up.form.password_input.error_line_break');
+    return (value: string) => this.gate(value, lineBreak);
+  }
+
   public evaluate(value: string): PasswordRuleResultSet {
     const items: PasswordRuleResult[] = [];
     for (const rule of this.rules) items.push({ key: rule.key, met: rule.pattern.test(value) });
@@ -40,6 +47,11 @@ class PasswordValidator {
       lineBreakForbidden: t('sign_up.form.password_input.error_line_break'),
       fieldRequired: t('sign_up.form.password_input.required'),
     };
+  }
+
+  private gate(value: string, lineBreak: string): string | boolean {
+    if (!this.lineBreakRule.pattern.test(value)) return lineBreak;
+    return this.rules.every((rule) => rule.pattern.test(value));
   }
 
   private run(value: string, messages: Record<ValidationPswdMessageKey, string>): string | true {

@@ -332,7 +332,7 @@ keys: `sign_up.form.email_input.placeholder` (`vilnaCRM@gmail.com`, the Figma pl
 
 ### 1.10 Security headers and observability relevant to a token in the URL
 
-- `Referrer-Policy: strict-origin-when-cross-origin` and `X-Frame-Options: DENY` are set on the
+- `Referrer-Policy: strict-origin` and `X-Frame-Options: DENY` are set on the
   document; CSP `connect-src 'self'` plus the configured API origins, `form-action 'self'`
   (`config/security-headers.json`). The page makes no third-party requests.
 - `PiiScrubber` drops object **keys** containing `token`, `password`, `email`, … and redacts
@@ -583,9 +583,10 @@ Same chrome; card 502 × 312: `‹ Назад`, heading "Проверьте по
   history entry and any later referrer no longer carry it. Never put it in `document.title`,
   logs, Sentry context or the DOM. Add a `token=[^&#\s]+` string pattern to `PiiScrubber`
   (§1.10) so an error captured before the strip cannot leak it.
-- **Referrer.** `strict-origin-when-cross-origin` is already enforced on the document
-  (`config/security-headers.json`), the page issues no third-party requests, and the footer's
-  external links are the only cross-origin navigations — covered.
+- **Referrer.** The document policy moves from `strict-origin-when-cross-origin` to
+  `strict-origin` (`config/security-headers.json`): the former still sends the full URL, token
+  included, on the same-origin chunk and font requests made before the strip. The page issues no
+  third-party requests, and the footer's external links are the only cross-origin navigations.
 - **Rate limit.** Show a non-field banner for `429`, keep the form, and do not auto-retry.
   Record a `rate_limited` security signal (the reason already exists,
   `security-event.ts:10-11`).

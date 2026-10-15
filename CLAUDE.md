@@ -2933,7 +2933,8 @@ The baseline: `default-src 'self'`; `script-src 'self'` (no `'unsafe-inline'`, n
 `font-src 'self'`; `connect-src 'self'` + API origins; `manifest-src 'self'`;
 `frame-ancestors 'none'`; `form-action 'self'`; `base-uri 'self'`; `object-src 'none'`; plus
 HSTS (`max-age=31536000; includeSubDomains`), `X-Frame-Options: DENY`,
-`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin` (never the full URL, which
+would carry a password-reset token into an access log),
 `Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
 `Cross-Origin-Resource-Policy: same-origin`. `Cross-Origin-Opener-Policy` is deliberately absent:
 browsers ignore it on a plain-http, non-localhost origin and log a console error per document,

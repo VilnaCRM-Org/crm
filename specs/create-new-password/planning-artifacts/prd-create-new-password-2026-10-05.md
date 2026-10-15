@@ -591,14 +591,15 @@ by the field's `aria-describedby`: "Від 8 до 64 символів", "При�
 велика латинська літера (A–Z)", "Принаймні одна мала літера". Each rule is marked met or unmet as
 the user types, conveyed by an icon plus text (visible or visually hidden "виконано" / "не
 виконано"), never by colour alone, and the list is not a live region. On submit with an unmet rule
-the field error names the first unmet rule with the shared policy message and `aria-invalid` is set.
+`aria-invalid` is set and the list alone names the rule: the field shows no second copy of it. Only
+what the list cannot show gets a field message: an empty field, and a line break.
 
 - Given the field holds `Pa1`, when the list updates, then the length rule is unmet and the
   digit, uppercase and lowercase rules are met.
 - Given the field holds `PASSWORD1`, when the list updates, then the lowercase rule is unmet.
 - Given the field holds `Пароль123`, when the list updates, then the uppercase rule is unmet.
-- Given an unmet rule, when the user submits, then the field error shows the matching policy
-  message, focus moves to the field, and no request is sent.
+- Given an unmet rule, when the user submits, then the field is marked invalid without a message,
+  the list still marks the rule unmet, focus moves to the field, and no request is sent.
 - Given all rules met, when the user submits with a matching confirmation, then the request is
   sent.
 
@@ -956,9 +957,9 @@ and the client performs no extra branch or request for any answer. The token liv
 is stripped by a history replace before the form paints, is never placed in the title, DOM, storage,
 the Apollo cache (both mutations skip the cache write), logs or Sentry context, and the scrubber
 redacts `token=` strings and drops `token` and `password` keys. The static server in the deployable
-image runs with `--no-request-logging`, so the link's query string never reaches the container log. The document keeps
-`Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and the CSP from
-`config/security-headers.json` unchanged; the pages add no third-party request. Fields carry
+image runs with `--no-request-logging`, so the link's query string never reaches the container log. The document tightens
+`Referrer-Policy` to `strict-origin`, so no request made before the strip names the token, and
+keeps `X-Frame-Options: DENY` and the CSP from `config/security-headers.json` unchanged; the pages add no third-party request. Fields carry
 `autocomplete="email"` and `autocomplete="new-password"`. Neither mutation is retried by the
 transport. The per-IP and per-endpoint GraphQL
 limiters user-service does not yet apply (#462, #469, #470) are an accepted upstream dependency,

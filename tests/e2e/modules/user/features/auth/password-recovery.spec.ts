@@ -1,6 +1,7 @@
 import { type Page, type Request, type Route } from '@playwright/test';
 
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { freezeClock, installClock } from '@tests/e2e/utils/freeze-clock';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import fillInput from '../../../../utils/fill-input';
@@ -159,23 +160,27 @@ test.describe('Password recovery request step (issue #315)', () => {
     ],
   ] as const) {
     test(`shows the rate-limit banner for ${name}`, async ({ page }) => {
+      await installClock(page);
       await answerResets(page, answer);
       await page.goto(RECOVERY_URL);
 
       await submitEmail(page);
 
       await expect(page.getByRole('alert')).toHaveText(rateLimited);
+      await freezeClock(page);
       await expect(page.getByPlaceholder(emailPlaceholder)).toHaveValue(EMAIL);
     });
   }
 
   async function expectSameEmailResubmitAfter(page: Page, answer: Answer): Promise<void> {
     test.info().annotations.push({ type: 'issue', description: '#315' });
+    await installClock(page);
     const bodies = await answerResets(page, answer);
     await page.goto(RECOVERY_URL);
 
     await submitEmail(page);
     await expect(page.getByRole('alert')).toHaveText(transient);
+    await freezeClock(page);
     expect(bodies).toHaveLength(1);
 
     await page.getByRole('button', { name: submitLabel }).click();

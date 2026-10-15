@@ -2,6 +2,7 @@ import { type Page, type Request, type Route } from '@playwright/test';
 
 import { buildPassword, buildResetToken, seedFaker } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { freezeClock, installClock } from '@tests/e2e/utils/freeze-clock';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import fillInput from '../../../../utils/fill-input';
@@ -249,23 +250,27 @@ test.describe('Create new password (issue #315)', () => {
   });
 
   test('shows the rate-limit banner for HTTP 429', async ({ page }) => {
+    await installClock(page);
     const bodies = await answerConfirms(page, (route) => route.fulfill({ status: 429, body: '' }));
     await openWithToken(page);
 
     await submitPasswords(page);
 
     await expect(page.getByRole('alert')).toHaveText(rateLimited);
+    await freezeClock(page);
     await expect(page.getByLabel(newPasswordLabel)).toHaveValue(NEW_PASSWORD);
     await expect(page.getByLabel(confirmLabel)).toHaveValue(NEW_PASSWORD);
     expect(bodies).toHaveLength(1);
   });
 
   async function expectResubmitAfter(page: Page, answer: Answer): Promise<void> {
+    await installClock(page);
     const bodies = await answerConfirms(page, answer);
     await openWithToken(page);
 
     await submitPasswords(page);
     await expect(page.getByRole('alert')).toHaveText(transient);
+    await freezeClock(page);
     await page.getByRole('button', { name: submitLabel }).click();
 
     await expect.poll(() => bodies.length).toBe(2);

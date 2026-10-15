@@ -752,8 +752,9 @@ tests, and
   a status-less `networkError` → `network`; a `token`, `email` or `newPassword` violation, with
   and without `extensions.status` `422` → `violation` with one `FieldViolation` (`path` the
   property, `reason` `other`); `extensions.status` `422` without a prefix → `violation` with an
-  empty set; `extensions.status` `429` → `rate_limited`; a message-only error, with and without
-  an `extensions.code` → `refused`; a thrown non-Apollo value → `unknown`. One assertion per row.
+  empty set; `extensions.status` `429` → `rate_limited`; a message-only error without an
+  `extensions.code` → `refused`; a coded error without a status → `unknown`; a thrown non-Apollo
+  value → `unknown`. One assertion per row.
 - **Given** a status-less `networkError` of `new TypeError('Failed to fetch')` and, in a second
   case, `new TypeError('Load failed')` (WebKit), **when** normalised, **then** both are
   `network` (must-fail: matching the message for network keywords leaves `Load failed` as
@@ -1473,8 +1474,9 @@ structure, semantics and styles in jsdom.
   `autocomplete="new-password"`, toggles named "Показати пароль" with `aria-pressed="false"`),
   the rule list referenced by the first field's `aria-describedby`, and "Підтвердити"; no
   e-mail field.
-- **Given** an unmet rule, **when** submitted, **then** the shared policy message for the first
-  unmet rule shows on the new-password field, it is focused, and `onSubmit` is not called.
+- **Given** an unmet rule, **when** submitted, **then** the new-password field is
+  `aria-invalid` with no message of its own (the rule list names the rule), it is focused, and
+  `onSubmit` is not called; an empty value and a line break keep their field messages.
 - **Given** an empty confirmation, **then** "Це поле обов'язкове" shows on it; **given** a
   mismatch, **then** "Паролі не збігаються" shows on it and it is focused; **when** the user
   edits the new-password field so the values match, **then** the mismatch clears.
@@ -1784,7 +1786,7 @@ DoD gates on the files the sweep changes.
 - **Given** `make codegen-check` in CI, **then** it passes against the v2.8.0 pin with the
   pending extension.
 - **Given** the security-header and preloaded-auth seed gates, **then** both stay green and the
-  CSP, `Referrer-Policy` and `X-Frame-Options` are unchanged.
+  CSP and `X-Frame-Options` are unchanged and `Referrer-Policy` is `strict-origin`.
 - **Given** CI, **then** `make lint-eslint` reports zero TB-1 findings and no TB-1 selector,
   stock rule or glob was relaxed since the chore.
 - **Given** the merged diff, **then** it adds no class ending in `Controller`, `Service` or

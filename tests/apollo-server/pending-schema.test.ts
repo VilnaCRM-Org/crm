@@ -109,6 +109,14 @@ describe('pending schema loading on the mock', () => {
     expect(() => loadTypeDefs(source)).toThrow('Failed to load schema from file.');
   });
 
+  it('serves the pinned schema alone once the last pending contract is retired', () => {
+    fs.rmSync(source.pendingSchemaDir, { recursive: true });
+    fs.mkdirSync(source.pendingSchemaDir);
+    fs.writeFileSync(path.join(source.pendingSchemaDir, '.gitkeep'), '');
+
+    expect(loadTypeDefs(source)).toEqual([PINNED_SDL_FIXTURE]);
+  });
+
   it('refuses a missing pending folder instead of serving without it', () => {
     fs.rmSync(source.pendingSchemaDir, { recursive: true });
 
@@ -133,6 +141,10 @@ describe('pending schema wiring of the mock image', () => {
     expect(readRepoFile('docker/apollo-server/server.mts')).toContain(
       'initializeServer(resolveSchemaSource(__dirname))'
     );
+  });
+
+  it('keeps the pending folder tracked once its last contract is retired', () => {
+    expect(fs.existsSync(path.join(repoPendingDir, '.gitkeep'))).toBe(true);
   });
 
   it('reads the same pending files codegen reads', () => {

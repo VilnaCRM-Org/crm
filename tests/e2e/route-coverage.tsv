@@ -39,12 +39,12 @@ serverError	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Tabs once to th
 notFound	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders the catch-all page by client-side navigation with no failed request.
 forbidden	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /forbidden by client-side navigation with no failed request.
 serverError	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /server-error by client-side navigation with no failed request.
-passwordRecovery	e2e	tests/e2e/modules/user/features/auth/password-recovery.spec.ts	Drives the request step on /password-recovery: one request per submit, the masked sent step, field and banner errors, Retry, Назад and До входу without a document load.
+passwordRecovery	e2e	tests/e2e/modules/user/features/auth/password-recovery.spec.ts	Drives the request step on /password-recovery: one request per submit, the masked sent step, field errors, the 5 s banner, Назад and До входу without a document load.
 passwordRecovery	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-recovery and asserts the in-form offline notice and disabled submit.
 passwordReset	e2e	tests/e2e/modules/user/features/auth/password-reset.spec.ts	Drives /password-reset: the token strip, one confirm request, the sign-in notice, the invalid-link state, field and banner errors, and Назад without a document load.
 passwordReset	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-reset with a token and asserts the in-form offline notice and disabled submit.
 passwordRecovery	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-recovery with axe against the WCAG 2.1 AA tag set.
-passwordRecovery	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the request form, the Retry banner and the sent step with the keyboard only.
+passwordRecovery	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the request form, the auto-hiding banner and the sent step with the keyboard only.
 passwordReset	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-reset with a token, once the new-password form is visible, with axe.
 passwordReset	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the new-password form and the invalid-link state with the keyboard only.
 passwordRecovery	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the request step with taps only on Pixel 7 and iPhone 14 and measures its touch targets and overflow.

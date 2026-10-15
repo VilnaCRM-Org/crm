@@ -159,4 +159,40 @@ describe('the shared password policy', () => {
     });
     expect(validator.evaluate('').items.every((item) => item.met)).toBe(false);
   });
+
+  describe('the checklist gate', () => {
+    const gate = (value: string): string | boolean => {
+      const result = validator.createChecklistGate(createLocaleI18n('en').t)(value, emptyUser);
+      if (result instanceof Promise) throw new Error('the checklist gate is synchronous');
+      return result as string | boolean;
+    };
+
+    it('accepts a value that meets every listed rule', () => {
+      expect(gate(buildPassword())).toBe(true);
+    });
+
+    it.each(['password1', 'PASSWORD1', 'Password', 'Pass1', ''])(
+      'rejects %p without a message, leaving the reason to the checklist',
+      (value) => {
+        expect(gate(value)).toBe(false);
+      }
+    );
+
+    it.each(['Password1\u2028', 'Pass\nword1', 'Pass\rword1', 'Pass\u2029word1'])(
+      'names a line break, which the checklist cannot show, in %p',
+      (value) => {
+        expect(gate(value)).toBe(validate('Pass\nword1'));
+        expect(gate(value)).toEqual(expect.stringMatching(/line break/iu));
+      }
+    );
+
+    it('agrees with create(t) on every non-blank value', () => {
+      const values = Array.from({ length: 2000 }, randomPassword).filter((value) => value.trim());
+      const disagreeing = values.filter(
+        (value) => (gate(value) === true) !== (validate(value) === true)
+      );
+
+      expect(disagreeing).toEqual([]);
+    });
+  });
 });

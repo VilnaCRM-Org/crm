@@ -28,6 +28,27 @@ interface Values {
 const i18n = createRecoveryLocaleI18n('uk');
 const MISMATCH = 'Паролі не збігаються';
 
+function SilentHarness(): JSX.Element {
+  const methods = useForm<Values>({ defaultValues: { password: '', confirmPassword: '' } });
+  return (
+    <I18nextProvider i18n={i18n}>
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(() => undefined)}>
+          <PasswordField<Values>
+            placeholder="new"
+            label="Новий пароль"
+            autoComplete="new-password"
+            describedBy="rules-id"
+            rules={{ validate: () => false }}
+          />
+          <PasswordPolicyRules id="rules-id" name="password" />
+          <button type="submit">Надіслати</button>
+        </form>
+      </FormProvider>
+    </I18nextProvider>
+  );
+}
+
 function Harness(): JSX.Element {
   const methods = useForm<Values>({ defaultValues: { password: '', confirmPassword: '' } });
   return (
@@ -88,6 +109,15 @@ describe('PasswordField generalised', () => {
     await waitFor(() =>
       expect(newPassword()).toHaveAttribute('aria-describedby', 'rules-id password-helper-text')
     );
+  });
+
+  it('keeps the rules id alone when an error carries no message', async () => {
+    render(<SilentHarness />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Надіслати' }));
+
+    await waitFor(() => expect(newPassword()).toHaveAttribute('aria-invalid', 'true'));
+    expect(newPassword()).toHaveAttribute('aria-describedby', 'rules-id');
   });
 
   it('toggles visibility with Space', async () => {
