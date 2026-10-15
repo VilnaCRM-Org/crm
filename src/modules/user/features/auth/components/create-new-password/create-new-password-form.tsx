@@ -63,24 +63,24 @@ function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX
 export default function CreateNewPasswordForm({
   token,
   onSubmit,
-  onRetry,
+  onDismissFailure,
   failure,
   isSubmitting,
 }: CreateNewPasswordFormProps): JSX.Element {
   const { t } = useTranslation();
-  const banner = useRecoveryFailureBanner(failure, onRetry);
+  const banner = useRecoveryFailureBanner(failure, onDismissFailure);
 
   return (
     <UIForm<CreateNewPasswordFormValues>
       onSubmit={onSubmit}
       defaultValues={{ token, newPassword: '', confirmPassword: '' }}
       error={banner.error}
-      errorAction={banner.errorAction}
       isSubmitting={isSubmitting}
       submitLabel={t('password_recovery.submit_button')}
       submittingLabel={t('password_reset.submitting')}
       title={t('password_reset.title')}
       titleComponent="h1"
+      submitSpacing="tight"
       subtitle={t('password_reset.body')}
     >
       <CreateNewPasswordFields failure={failure} />

@@ -19,7 +19,6 @@ const toSignIn: string = t('password_recovery.sent.to_sign_in');
 const rateLimited: string = t('password_recovery.errors.rate_limited');
 const transient: string = t('password_recovery.errors.transient');
 const emailRejected: string = t('password_recovery.errors.email_rejected');
-const tryAgain: string = t('auth.error.tryAgain');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const signInTitle: string = t('sign_in.title');
 const homeHeading: string = t('home.heading');
@@ -159,19 +158,18 @@ test.describe('Password recovery request step (issue #315)', () => {
       json({ data: null, errors: [{ message: 'Too many requests.' }] }),
     ],
   ] as const) {
-    test(`shows the rate-limit banner without Retry for ${name}`, async ({ page }) => {
+    test(`shows the rate-limit banner for ${name}`, async ({ page }) => {
       await answerResets(page, answer);
       await page.goto(RECOVERY_URL);
 
       await submitEmail(page);
 
       await expect(page.getByRole('alert')).toHaveText(rateLimited);
-      await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(0);
       await expect(page.getByPlaceholder(emailPlaceholder)).toHaveValue(EMAIL);
     });
   }
 
-  async function expectSameEmailRetryAfter(page: Page, answer: Answer): Promise<void> {
+  async function expectSameEmailResubmitAfter(page: Page, answer: Answer): Promise<void> {
     test.info().annotations.push({ type: 'issue', description: '#315' });
     const bodies = await answerResets(page, answer);
     await page.goto(RECOVERY_URL);
@@ -180,21 +178,21 @@ test.describe('Password recovery request step (issue #315)', () => {
     await expect(page.getByRole('alert')).toHaveText(transient);
     expect(bodies).toHaveLength(1);
 
-    await page.getByRole('button', { name: tryAgain }).click();
+    await page.getByRole('button', { name: submitLabel }).click();
 
     await expect.poll(() => bodies.length).toBe(2);
     expect(bodies[1]?.variables?.input?.email).toBe(EMAIL);
   }
 
-  test('retries once with the same e-mail after an HTTP 503', async ({ page }) => {
-    await expectSameEmailRetryAfter(page, (route) => route.fulfill({ status: 503, body: '' }));
+  test('resubmits once with the same e-mail after an HTTP 503', async ({ page }) => {
+    await expectSameEmailResubmitAfter(page, (route) => route.fulfill({ status: 503, body: '' }));
   });
 
   test.describe('dropped connection', () => {
     test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
-    test('retries once with the same e-mail after an aborted request', async ({ page }) => {
-      await expectSameEmailRetryAfter(page, (route) => route.abort('failed'));
+    test('resubmits once with the same e-mail after an aborted request', async ({ page }) => {
+      await expectSameEmailResubmitAfter(page, (route) => route.abort('failed'));
     });
   });
 

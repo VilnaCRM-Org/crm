@@ -36,26 +36,26 @@ function EmailField({ failure }: ResetPasswordEmailFieldProps): JSX.Element {
 export default function ResetPasswordForm({
   defaultValues,
   onSubmit,
-  onRetry,
+  onDismissFailure,
   failure,
   isSubmitting,
   focusTitle,
 }: ResetPasswordFormProps): JSX.Element {
   const { t } = useTranslation();
   const focusOnMount = useFocusOnMount<HTMLElement>();
-  const banner = useRecoveryFailureBanner(failure, onRetry);
+  const banner = useRecoveryFailureBanner(failure, onDismissFailure);
 
   return (
     <UIForm<RestorePasswordDto>
       onSubmit={onSubmit}
       defaultValues={defaultValues}
       error={banner.error}
-      errorAction={banner.errorAction}
       isSubmitting={isSubmitting}
       submitLabel={t('password_recovery.submit_button')}
       submittingLabel={t('password_recovery.submitting')}
       title={t('password_recovery.title')}
       titleComponent="h1"
+      submitSpacing="tight"
       titleRef={focusTitle ? focusOnMount : undefined}
       subtitle={t('password_recovery.body')}
     >

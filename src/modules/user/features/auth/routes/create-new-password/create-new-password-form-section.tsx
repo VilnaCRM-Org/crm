@@ -37,7 +37,7 @@ export default function CreateNewPasswordFormSection(): JSX.Element {
         <CreateNewPasswordForm
           token={state.token}
           onSubmit={state.callbacks.submit}
-          onRetry={state.callbacks.retry}
+          onDismissFailure={state.callbacks.dismissFailure}
           failure={state.failure}
           isSubmitting={state.isSubmitting}
         />

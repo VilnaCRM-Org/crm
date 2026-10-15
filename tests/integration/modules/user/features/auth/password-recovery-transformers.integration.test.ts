@@ -3,7 +3,7 @@ import { HttpResponse } from 'msw';
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
 import type { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type {

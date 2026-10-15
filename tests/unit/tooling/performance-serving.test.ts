@@ -80,7 +80,8 @@ describe('performance serving config', () => {
     // The serve command itself must stay byte-identical: the entrypoint wraps it, never
     // replaces it, so the production image keeps serving `dist` with the explicit serve config.
     expect(dockerfile).toContain(
-      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]'
+      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json", ' +
+        '"--no-request-logging"]'
     );
   });
 

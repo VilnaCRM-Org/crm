@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { type JSX, useEffect, useState } from 'react';
 
+import formStyles from '@/components/ui-form/styles';
 import UITypography from '@/components/ui-typography';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 import type { RecoveryResultViewProps } from '@auth/types/password-recovery/components';
@@ -22,7 +23,12 @@ export default function RecoveryResultView({
 
   return (
     <>
-      <UITypography component="h1" ref={focusOnMount} tabIndex={-1} sx={styles.resultTitle}>
+      <UITypography
+        component="h1"
+        ref={focusOnMount}
+        tabIndex={-1}
+        sx={[formStyles.formTitle, styles.resultTitle]}
+      >
         {title}
       </UITypography>
       <Box role="status" aria-live="polite">

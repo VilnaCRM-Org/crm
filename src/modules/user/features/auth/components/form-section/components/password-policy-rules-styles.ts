@@ -1,8 +1,8 @@
-import { customColors } from '@/styles/colors';
+import { customColors, paletteColors } from '@/styles/colors';
 
 const item = {
   display: 'flex',
-  alignItems: 'center',
+  alignItems: 'flex-start',
   gap: '0.375rem',
   fontFamily: 'Inter',
   fontSize: '0.875rem',
@@ -17,9 +17,9 @@ export default {
     display: 'grid',
     gap: '0.25rem',
   },
-  met: { ...item, color: customColors.text.dark },
+  met: { ...item, color: paletteColors.success.text },
   unmet: { ...item, color: customColors.text.primary },
-  icon: { fontSize: '1rem', flexShrink: 0 },
+  icon: { fontSize: '1rem', flexShrink: 0, marginTop: '0.0625rem' },
   visuallyHidden: {
     position: 'absolute',
     width: '1px',

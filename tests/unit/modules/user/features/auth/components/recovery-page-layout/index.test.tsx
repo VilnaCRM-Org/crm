@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router';
 
 import appI18n from '@/i18n';
 import RecoveryPageLayout from '@auth/components/recovery-page-layout';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 
 jest.mock('@/components/ui-back-to-main', () => ({
   __esModule: true,
@@ -18,7 +18,7 @@ jest.mock('@/components/ui-footer', () => ({
   default: (): JSX.Element => <div>auth shell footer</div>,
 }));
 
-const i18n = createLocaleI18n('uk', ['en']);
+const i18n = createRecoveryLocaleI18n('uk', ['en']);
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return (

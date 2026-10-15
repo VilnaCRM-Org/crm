@@ -20,11 +20,11 @@ const loadStyles = (): Promise<ComponentStyles> =>
   );
 
 describe('form section component styles', () => {
-  it('applies the shared field gap to the first two fields only', async () => {
+  it('applies the shared field gap to the first two fields, never to the last one', async () => {
     const styles = await loadStyles();
 
     expect(styles.formFieldWrapper).toEqual({
-      '&:nth-of-type(-n+2)': { ...fieldGapMargins },
+      '&:nth-of-type(-n+2):not(:last-of-type)': { ...fieldGapMargins },
     });
   });
 

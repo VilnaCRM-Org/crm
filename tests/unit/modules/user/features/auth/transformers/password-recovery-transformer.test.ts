@@ -109,11 +109,12 @@ describe('PasswordRecoveryTransformer', () => {
     expect(transformer.toSentOutcome({ email })).toEqual({ kind: 'sent', maskedEmail });
   });
 
-  it('differs only in the masked address between two sent outcomes', () => {
+  it('gives the same sent outcome to two addresses sharing the visible prefix and domain', () => {
     const first = transformer.toSentOutcome({ email: 'eirene@gmail.com' });
     const second = transformer.toSentOutcome({ email: 'eirxyz@gmail.com' });
 
-    expect(first).toEqual(second);
+    expect(first).toEqual({ kind: 'sent', maskedEmail: 'eir*****@gmail.com' });
+    expect(second).toEqual(first);
   });
 
   it('returns the same confirmed outcome every time', () => {

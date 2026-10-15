@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import type { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';

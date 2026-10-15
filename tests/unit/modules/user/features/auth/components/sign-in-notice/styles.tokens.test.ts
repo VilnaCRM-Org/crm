@@ -11,11 +11,20 @@ describe('sign-in notice styles', () => {
 
     expect(styles).toEqual({
       notice: {
-        marginBottom: '1rem',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '0.5rem',
+        margin: '0 0 1rem',
         fontFamily: 'Golos',
-        fontSize: '1rem',
-        lineHeight: '1.625rem',
-        color: '#1A1C1E',
+        fontWeight: 500,
+        fontSize: '0.9375rem',
+        lineHeight: '1.375rem',
+        letterSpacing: 0,
+        color: '#2E7D32',
+      },
+      icon: {
+        flexShrink: 0,
+        fontSize: '1.375rem',
       },
     });
   });

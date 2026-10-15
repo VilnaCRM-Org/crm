@@ -782,7 +782,7 @@ What user-service returns was read at its source (`main`):
 - **Endpoint limiters** answer the whole HTTP request with `429` before GraphQL runs; today they
   do not reach the reset mutations (#462, #469, #470).
 
-`UserServiceErrorTransformer` (`src/modules/user/lib/user-service-error-transformer.ts`, shared
+`UserServiceErrorTransformer` (`src/modules/user/transformers/user-service-error-transformer.ts`, shared
 by #315, #330 and #331) has one public method,
 `normalize(error: unknown, signal?: AbortSignal): UserServiceFailure` (`unknown` is allowed as a
 narrowing parameter, TB-1 (d)). It narrows Apollo's error structurally (`import type` only) and
@@ -1227,7 +1227,7 @@ export default class PasswordRecoveryTransformer {
   // private mask(email: string): string — FR-10 (§5.12)
 }
 
-// src/modules/user/lib/user-service-error-transformer.ts (module-shared with #330 and #331)
+// src/modules/user/transformers/user-service-error-transformer.ts (module-shared with #330 and #331)
 export default class UserServiceErrorTransformer {
   public normalize(error: unknown, signal?: AbortSignal): UserServiceFailure;
   // private helpers for the network half, the GraphQL half and the violated property (§5.5.1)
@@ -1665,30 +1665,30 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 
 ### 8.2 Shared source, config and generated artifacts
 
-| File                                                     | Kind   | Role                        |
-| -------------------------------------------------------- | ------ | --------------------------- |
-| `src/modules/user/lib/user-service-error-transformer.ts` | NEW    | §5.5.1, shared Transformer  |
-| `src/modules/user/types/user-service/*.ts`               | NEW    | `UserServiceFailure`, set   |
-| `src/hooks/use-abortable-submit.ts`, `types/`            | NEW    | §5.3, shared skeleton       |
-| `src/routes/route-paths.ts`                              | MODIFY | `passwordReset` key         |
-| `src/routes/types/navigation-state.ts`                   | MODIFY | `notice` marker             |
-| `src/hooks/use-arrival-focus.ts`                         | MODIFY | clears every marker         |
-| `src/hooks/use-arrival-notice.ts`                        | NEW    | §5.7                        |
-| `src/components/ui-form/index.tsx`, `types/ui-form/`     | MODIFY | `errorAction`, `titleRef`   |
-| `src/api/generated/graphql.ts`                           | REGEN  | `make codegen`, two ops     |
-| `src/api/contracts/pending/password-reset.graphql`       | NEW    | pending extension, §5.16    |
-| `src/api/contracts/README.md`                            | MODIFY | "Pending contracts" row     |
-| `codegen.ts`                                             | MODIFY | schema array, §5.16         |
-| `Apollo.Dockerfile`                                      | MODIFY | copies the pending dir      |
-| `docker/apollo-server/lib/schema-loader.ts`              | NEW    | pinned + pending `typeDefs` |
-| `docker/apollo-server/lib/server.ts`, `server.mts`       | MODIFY | `typeDefs` from the loader  |
-| `docker/apollo-server/lib/{resolvers,types}.ts`          | MODIFY | two stateless resolvers     |
-| `src/modules/user/config/tokens.ts`, `config/di.ts`      | MODIFY | §6.6                        |
-| `src/services/observability/pii-scrubber.ts`             | MODIFY | `token=` pattern            |
-| `src/i18n/localization.json`                             | REGEN  | `make i18n-generate`        |
-| `src/modules/user/README.md`, `src/routes/README.md`     | MODIFY | loader seam; two routes     |
-| `CLAUDE.md`, `docs/accessibility/acceptance-standard.md` | MODIFY | contrast count, see below   |
-| `rsbuild.config.ts`, `scripts/auth-forms-chunk-group.ts` | MODIFY | two auth-form cache groups  |
+| File                                                              | Kind   | Role                        |
+| ----------------------------------------------------------------- | ------ | --------------------------- |
+| `src/modules/user/transformers/user-service-error-transformer.ts` | NEW    | §5.5.1, shared Transformer  |
+| `src/modules/user/types/user-service/*.ts`                        | NEW    | `UserServiceFailure`, set   |
+| `src/hooks/use-abortable-submit.ts`, `types/`                     | NEW    | §5.3, shared skeleton       |
+| `src/routes/route-paths.ts`                                       | MODIFY | `passwordReset` key         |
+| `src/routes/types/navigation-state.ts`                            | MODIFY | `notice` marker             |
+| `src/hooks/use-arrival-focus.ts`                                  | MODIFY | clears every marker         |
+| `src/hooks/use-arrival-notice.ts`                                 | NEW    | §5.7                        |
+| `src/components/ui-form/index.tsx`, `types/ui-form/`              | MODIFY | `errorAction`, `titleRef`   |
+| `src/api/generated/graphql.ts`                                    | REGEN  | `make codegen`, two ops     |
+| `src/api/contracts/pending/password-reset.graphql`                | NEW    | pending extension, §5.16    |
+| `src/api/contracts/README.md`                                     | MODIFY | "Pending contracts" row     |
+| `codegen.ts`                                                      | MODIFY | schema array, §5.16         |
+| `Apollo.Dockerfile`                                               | MODIFY | copies the pending dir      |
+| `docker/apollo-server/lib/schema-loader.ts`                       | NEW    | pinned + pending `typeDefs` |
+| `docker/apollo-server/lib/server.ts`, `server.mts`                | MODIFY | `typeDefs` from the loader  |
+| `docker/apollo-server/lib/{resolvers,types}.ts`                   | MODIFY | two stateless resolvers     |
+| `src/modules/user/config/tokens.ts`, `config/di.ts`               | MODIFY | §6.6                        |
+| `src/services/observability/pii-scrubber.ts`                      | MODIFY | `token=` pattern            |
+| `src/i18n/localization.json`                                      | REGEN  | `make i18n-generate`        |
+| `src/modules/user/README.md`, `src/routes/README.md`              | MODIFY | loader seam; two routes     |
+| `CLAUDE.md`, `docs/accessibility/acceptance-standard.md`          | MODIFY | contrast count, see below   |
+| `rsbuild.config.ts`, `scripts/auth-forms-chunk-group.ts`          | MODIFY | two auth-form cache groups  |
 
 The `color-contrast` entry count grows by exactly one from the count on `main` at merge time (open
 PR #311 raises it on its own branch). Beyond Story 0.1's policy edits, no change to `package.json`
@@ -1701,31 +1701,32 @@ would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").
 
 ### 8.3 Tests, manifests and baselines
 
-| File                                                                             | Kind   |
-| -------------------------------------------------------------------------------- | ------ |
-| `tests/unit/modules/user/features/auth/**` (one per new source file)             | NEW    |
-| `tests/unit/modules/user/lib/user-service-error-transformer.test.ts`             | NEW    |
-| `tests/unit/hooks/use-abortable-submit.test.tsx`, `use-arrival-notice.test.tsx`  | NEW    |
-| `tests/unit/hooks/use-arrival-focus.test.tsx`                                    | MODIFY |
-| `tests/unit/components/ui-form/*` (error action)                                 | MODIFY |
-| `tests/unit/services/observability/pii-scrubber*.test.ts`                        | MODIFY |
-| `tests/unit/a11y/{reset-password,create-new-password}.a11y.test.tsx`             | NEW    |
-| `tests/unit/tooling/runtime-config-contract.test.ts` (route-registration case)   | MODIFY |
-| `tests/builders/auth.ts` (`buildResetToken()`, Story 1.3)                        | MODIFY |
-| `tests/integration/modules/user/features/auth/password-*.integration.test.ts`    | NEW    |
-| `tests/integration/mocks/server.ts` (msw `graphql` handlers for both operations) | MODIFY |
-| `tests/apollo-server/password-reset.test.ts` (two resolvers, real `formatError`) | NEW    |
-| `tests/apollo-server/pending-schema.test.ts` (loader, image wiring)              | NEW    |
-| `tests/e2e/utils/password-reset-responses.ts` (`operationName` dispatcher)       | NEW    |
-| `tests/e2e/modules/user/features/auth/password-{recovery,reset}.spec.ts`         | NEW    |
-| `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                  | MODIFY |
-| `tests/e2e/a11y/password-{recovery,reset}-keyboard.a11y.spec.ts`                 | NEW    |
-| `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (password-toggle focus ring)      | MODIFY |
-| `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)       | MODIFY |
-| `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`               | NEW    |
-| `tests/visual/visual-comparison.password-{recovery,reset}.spec.ts`               | NEW    |
-| `tests/visual/mobile/auth.spec.ts`, `tests/visual/constants.ts`                  | MODIFY |
-| `tests/e2e/route-coverage.tsv`                                                   | MODIFY |
+| File                                                                                                         | Kind   |
+| ------------------------------------------------------------------------------------------------------------ | ------ |
+| `tests/unit/modules/user/features/auth/**` (one per new source file)                                         | NEW    |
+| `tests/unit/modules/user/transformers/user-service-error-transformer.test.ts`                                | NEW    |
+| `tests/unit/hooks/use-abortable-submit.test.tsx`, `use-arrival-markers.test.tsx`                             | NEW    |
+| `tests/unit/hooks/use-arrival-focus.test.tsx`                                                                | MODIFY |
+| `tests/unit/components/ui-form/*` (error action, notice slot, submit spacing)                                | MODIFY |
+| `tests/unit/services/observability/pii-scrubber*.test.ts`                                                    | MODIFY |
+| jest-axe page checks inside the recovery component and form-section tests                                    | NEW    |
+| `tests/unit/tooling/runtime-config-contract.test.ts` (route-registration case)                               | MODIFY |
+| `tests/builders/auth.ts` (`buildResetToken()`, Story 1.3)                                                    | MODIFY |
+| `tests/integration/modules/user/features/auth/graphql-password-recovery-repository.integration.test.ts`      | NEW    |
+| `tests/integration/modules/user/features/auth/password-recovery-{provider,transformers}.integration.test.ts` | NEW    |
+| `tests/integration/mocks/server.ts` (msw `graphql` handlers for both operations)                             | MODIFY |
+| `tests/apollo-server/password-reset.test.ts` (two resolvers, real `formatError`)                             | NEW    |
+| `tests/apollo-server/pending-schema.test.ts` (loader, image wiring)                                          | NEW    |
+| `tests/bats/pending_contracts.bats` (pending-contract pin check)                                             | NEW    |
+| `tests/e2e/modules/user/features/auth/password-{recovery,reset}.spec.ts` (each routes its own responses)     | NEW    |
+| `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                                              | MODIFY |
+| `tests/e2e/a11y/password-recovery-{keyboard,states}.a11y.spec.ts`                                            | NEW    |
+| `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (password-toggle focus ring)                                  | MODIFY |
+| `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)                                   | MODIFY |
+| `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`                                           | NEW    |
+| `tests/visual/visual-comparison.password-recovery.spec.ts` (both recovery routes)                            | NEW    |
+| `tests/visual/mobile/auth.spec.ts`, `tests/visual/constants.ts`                                              | MODIFY |
+| `tests/e2e/route-coverage.tsv`                                                                               | MODIFY |
 
 ## 9. Patterns used
 

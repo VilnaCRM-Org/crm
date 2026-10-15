@@ -1,7 +1,7 @@
 import { ApolloError } from '@apollo/client';
 import { faker } from '@faker-js/faker';
 
-import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
 import type { UserServiceFailure } from '@/modules/user/types/user-service/user-service-failure';
 import { HttpError } from '@/services/https-client/http-error';
 import loadIsolated from '@tests/unit/utils/isolated-module';
@@ -28,7 +28,7 @@ const violation = (path: string, status: number | null): UserServiceFailure => (
 
 const loadTransformer = async (): Promise<UserServiceErrorTransformer> => {
   const Transformer = await loadIsolated(
-    async () => (await import('@/modules/user/lib/user-service-error-transformer')).default
+    async () => (await import('@/modules/user/transformers/user-service-error-transformer')).default
   );
   return new Transformer();
 };

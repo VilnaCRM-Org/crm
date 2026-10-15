@@ -9,7 +9,8 @@ export default {
     minWidth: 0,
     minHeight: '1.5rem',
     padding: 0,
-    marginBottom: '0.25rem',
+    position: 'relative',
+    marginBottom: '0.625rem',
 
     fontFamily: 'Golos',
     fontWeight: 500,
@@ -25,28 +26,39 @@ export default {
     },
 
     '&:visited': { color: customColors.text.primary },
+    '&:hover': { backgroundColor: 'transparent' },
+
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      inset: '-0.625rem 0',
+    },
 
     '&:focus-visible, &.Mui-focusVisible': {
       outline: `2px solid ${customColors.text.primary}`,
       outlineOffset: '2px',
       borderRadius: '0.25rem',
     },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '0.4375rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginTop: '-0.1875rem',
+    },
   },
 
   resultTitle: {
-    fontFamily: 'Golos',
-    fontWeight: 700,
-    fontSize: '1.375rem',
-    lineHeight: '1.625rem',
-    letterSpacing: 0,
-    color: customColors.text.dark,
-    margin: '1rem 0 0.5rem',
+    marginTop: 0,
+    marginBottom: '0.5rem',
     '&:focus': { outline: 'none' },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      fontWeight: 600,
-      fontSize: '1.875rem',
-      lineHeight: 'normal',
+      marginBottom: '0.9375rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginTop: '0.75rem',
+      marginBottom: '0.6875rem',
     },
   },
 
@@ -57,12 +69,15 @@ export default {
     lineHeight: '1.5625rem',
     letterSpacing: 0,
     color: customColors.text.dark,
-    marginBottom: '1.5rem',
+    marginBottom: '1rem',
     overflowWrap: 'anywhere',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',
       lineHeight: '1.625rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '1.5rem',
     },
   },
 
@@ -79,14 +94,18 @@ export default {
     fontWeight: 500,
     fontSize: '0.9375rem',
     lineHeight: 1.2,
+    letterSpacing: 0,
     textTransform: 'none',
     boxShadow: 'none',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      height: '3.875rem',
+      height: '4.375rem',
       fontWeight: 600,
       fontSize: '1.125rem',
       lineHeight: 'normal',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      height: '3.875rem',
     },
   },
 };

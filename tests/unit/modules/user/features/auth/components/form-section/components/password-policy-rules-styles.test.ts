@@ -13,7 +13,7 @@ const loadStyles = (): Promise<PasswordPolicyRulesStyles> =>
 
 const ITEM = {
   display: 'flex',
-  alignItems: 'center',
+  alignItems: 'flex-start',
   gap: '0.375rem',
   fontFamily: 'Inter',
   fontSize: '0.875rem',
@@ -32,9 +32,9 @@ describe('password policy rules styles', () => {
         display: 'grid',
         gap: '0.25rem',
       },
-      met: { ...ITEM, color: '#1A1C1E' },
+      met: { ...ITEM, color: '#2E7D32' },
       unmet: { ...ITEM, color: '#404142' },
-      icon: { fontSize: '1rem', flexShrink: 0 },
+      icon: { fontSize: '1rem', flexShrink: 0, marginTop: '0.0625rem' },
       visuallyHidden: {
         position: 'absolute',
         width: '1px',

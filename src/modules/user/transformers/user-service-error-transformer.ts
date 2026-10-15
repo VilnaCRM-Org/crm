@@ -1,5 +1,6 @@
 import type { ApolloError } from '@apollo/client';
 import type { GraphQLFormattedError } from 'graphql';
+import { injectable } from 'tsyringe';
 
 import type {
   UserServiceFailure,
@@ -14,6 +15,7 @@ const STATUS_REASONS = new Map<number, UserServiceFailureReason>([
 
 const VIOLATION_PROPERTIES: readonly string[] = ['email', 'token', 'newPassword'];
 
+@injectable()
 export default class UserServiceErrorTransformer {
   public normalize(error: unknown, signal?: AbortSignal): UserServiceFailure {
     const { networkError, graphQLErrors } = (error ?? {}) as Partial<ApolloError>;

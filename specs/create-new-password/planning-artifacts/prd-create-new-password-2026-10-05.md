@@ -138,13 +138,13 @@ asserts, with `extensions.status` `422`); a domain refusal (a GraphQL error with
 answer with no GraphQL body (`429` from the rate-limit listener, `5xx`, no response at all, or
 the client deadline).
 
-| Answer                        | Request step                 | Confirm step                 |
-| ----------------------------- | ---------------------------- | ---------------------------- |
-| Mutation resolved             | sent step, any address       | `/sign-in` + success notice  |
-| Violation on the input field  | field error on e-mail        | field error on new password  |
-| Domain refusal (message only) | banner: per-address limit    | invalid-link state           |
-| HTTP `429` or status `429`    | banner, form stays, no Retry | banner, form stays, no Retry |
-| No response, deadline, `5xx`  | banner with user Retry       | banner with user Retry       |
+| Answer                        | Request step               | Confirm step                |
+| ----------------------------- | -------------------------- | --------------------------- |
+| Mutation resolved             | sent step, any address     | `/sign-in` + success notice |
+| Violation on the input field  | field error on e-mail      | field error on new password |
+| Domain refusal (message only) | banner: per-address limit  | invalid-link state          |
+| HTTP `429` or status `429`    | banner for 5 s, form stays | banner for 5 s, form stays  |
+| No response, deadline, `5xx`  | banner for 5 s, form stays | banner for 5 s, form stays  |
 
 > Assumption: GraphQL is the only transport (the user's decision of 2026-10-05, overriding the
 > research's REST recommendation). It matches the repository's own rule — when both transports
@@ -473,8 +473,8 @@ on arrival; a modifier or middle click still follows the `href` natively (new ta
 A rate limit on either step — an HTTP `429` from user-service's rate-limit listener, a GraphQL
 error with `extensions.status` `429`, or on the request step the per-address domain refusal —
 shows a non-field error banner "Забагато запитів. Спробуйте пізніше."
-(focused, `role="alert"`), keeps the form and its values, offers no Retry action, and never
-re-sends automatically. The submit stays enabled so the user can try again later by choice.
+(focused, `role="alert"`) for five seconds, keeps the form and its values, and never re-sends
+automatically. The submit stays enabled so the user can try again later by choice.
 
 - Given an HTTP `429` or a message-only GraphQL error on the request step, when the response
   settles, then the banner shows, the form and e-mail remain, `aria-busy` is `"false"`, and
@@ -508,16 +508,20 @@ pointing at the message; focus moves to the field.
 
 A failure with no response (the fetch rejects), a deadline timeout, an HTTP `5xx`, a GraphQL error
 with an `extensions.status` of `500` or more, or any unclassified failure on either step shows the
-error banner "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
-with one action, "Спробувати ще раз", that re-submits the same values once when activated. The form
-keeps its values; nothing is re-sent without the user's action.
+error message "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз." under
+the subtitle for five seconds, with no action of its own: Figma draws no error state, and the
+owner chose on 2026-10-15 to drop the separate "Спробувати ще раз" button. The form keeps its
+values and the submit stays enabled, so the user retries with the form's own submit, which sends
+the values the fields show. Nothing is re-sent without the user's action. When the message hides
+while it holds focus, focus moves to the submit.
 
-- Given the request is aborted by the network, when the error settles, then the banner shows
-  with the Retry action and one request was sent.
-- Given an HTTP `503`, when the error settles, then the banner shows and exactly one request was
+- Given the request is aborted by the network, when the error settles, then the message shows
+  and one request was sent.
+- Given an HTTP `503`, when the error settles, then the message shows and exactly one request was
   sent (no transport retry).
-- Given the banner, when "Спробувати ще раз" is activated, then exactly one more request with
-  the same body is sent and the busy state applies as on a first submit.
+- Given the message, when five seconds pass, then it is removed and focus is on the submit.
+- Given the message, when the submit is activated, then exactly one more request with the
+  current field values is sent and the busy state applies as on a first submit.
 - Given the deadline (`REACT_APP_REQUEST_TIMEOUT_MS`, default 10 000 ms) elapses, when the
   error settles, then it is presented as this transient failure.
 
@@ -951,7 +955,8 @@ document selects no `user` field, the Data provider maps every resolved request 
 and the client performs no extra branch or request for any answer. The token lives in memory only,
 is stripped by a history replace before the form paints, is never placed in the title, DOM, storage,
 the Apollo cache (both mutations skip the cache write), logs or Sentry context, and the scrubber
-redacts `token=` strings and drops `token` and `password` keys. The document keeps
+redacts `token=` strings and drops `token` and `password` keys. The static server in the deployable
+image runs with `--no-request-logging`, so the link's query string never reaches the container log. The document keeps
 `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and the CSP from
 `config/security-headers.json` unchanged; the pages add no third-party request. Fields carry
 `autocomplete="email"` and `autocomplete="new-password"`. Neither mutation is retried by the
@@ -964,7 +969,7 @@ already filed upstream. The preloaded-auth seed gate and the security-header gat
 Both operations run under the request deadline (`REACT_APP_REQUEST_TIMEOUT_MS`, default 10 000
 ms, applied to Apollo through the `DeadlineFetchAdapter` its `HttpLink` fetches with) and forward
 the caller's abort signal; the Apollo link chain has no retry link; a timeout is
-presented as a transient failure with a user-initiated Retry. Each route carries the composer's
+presented as a transient failure the user retries with the form's submit. Each route carries the composer's
 error element, the page chunk is wrapped in the chunk-retry loader and, as a public route, the
 reload-once policy; the offline notice and disabled submit come from the shared form. Telemetry
 failures never block a user flow.
@@ -1191,8 +1196,8 @@ Consolidated from the research, the brief and this stage:
 
 1. Both operations use GraphQL through the container's Apollo client, the user's decision of
    2026-10-05, superseding the research's REST recommendation (research §3.3).
-2. Neither mutation is retried by the transport; a user-initiated Retry covers transient failures
-   (research §3.4, FR-14, FR-15).
+2. Neither mutation is retried by the transport; the user retries a transient failure with the
+   form's submit (research §3.4, FR-14, FR-15).
 3. Two route keys, `/password-recovery` (request + sent) and `/password-reset` (form +
    invalid link), the second matching the path user-service already builds (brief §4).
 4. The feature lives in the auth feature folder as two routes of its contract; its hooks reach

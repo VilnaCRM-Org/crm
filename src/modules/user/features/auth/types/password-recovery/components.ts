@@ -40,7 +40,7 @@ export interface RecoveryResultViewProps {
 export interface ResetPasswordFormProps {
   defaultValues: RestorePasswordDto;
   onSubmit: (dto: RestorePasswordDto) => Promise<void>;
-  onRetry: () => Promise<void>;
+  onDismissFailure: () => void;
   failure: RecoveryFailure | null;
   isSubmitting: boolean;
   focusTitle: boolean;
@@ -58,7 +58,7 @@ export interface ResetPasswordSentStepProps {
 export interface CreateNewPasswordFormProps {
   token: string;
   onSubmit: (dto: CreateNewPasswordDto) => Promise<void>;
-  onRetry: () => Promise<void>;
+  onDismissFailure: () => void;
   failure: RecoveryFailure | null;
   isSubmitting: boolean;
 }

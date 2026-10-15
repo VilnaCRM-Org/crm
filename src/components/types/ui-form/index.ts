@@ -1,4 +1,4 @@
-import type { ReactNode, RefCallback, RefObject } from 'react';
+import type { FocusEvent, ReactNode, RefCallback, RefObject } from 'react';
 import type {
   SubmitHandler,
   FieldValues,
@@ -9,12 +9,9 @@ import type {
 
 export type UIFormOptions<T extends FieldValues> = Omit<UseFormProps<T>, 'defaultValues'>;
 
-export interface FormErrorAction {
-  readonly label: string;
-  readonly onClick: () => void;
-}
-
 export type TitleHeadingComponent = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+
+export type SubmitSpacing = 'default' | 'tight';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
@@ -23,7 +20,6 @@ export interface UIFormProps<T extends FieldValues> {
   formOptions?: UIFormOptions<T>;
   isSubmitting?: boolean;
   error?: string | null | undefined;
-  errorAction?: FormErrorAction | undefined;
   submitLabel: string;
   title: ReactNode;
   subtitle?: ReactNode;
@@ -35,6 +31,8 @@ export interface UIFormProps<T extends FieldValues> {
   submittingAnnouncement?: boolean;
   titleComponent?: TitleHeadingComponent;
   titleRef?: RefCallback<HTMLElement> | undefined;
+  notice?: ReactNode;
+  submitSpacing?: SubmitSpacing | undefined;
 }
 
 export interface SubmitHandlerOptions<T extends FieldValues> {
@@ -50,11 +48,19 @@ export interface SubmitControlsProps {
   submitLabel: string;
   describedBy: string;
   buttonRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+  spacing?: SubmitSpacing | undefined;
+}
+
+export type FocusReturnTarget = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+
+export interface FocusReturnHandlers {
+  onFocus: () => void;
+  onBlur: (event: FocusEvent<HTMLElement>) => void;
 }
 
 export interface ErrorBannerProps {
   error?: string | null;
-  action?: FormErrorAction | undefined;
+  returnFocusRef: FocusReturnTarget;
 }
 
 export interface FormHeaderSectionProps {
@@ -89,15 +95,30 @@ export interface UseUIFormResult<T extends FieldValues> {
   submitting: boolean;
 }
 
+export interface FormLeadProps {
+  error: string | null;
+  notice?: ReactNode;
+}
+
+export interface FormLeadSectionProps {
+  header: FormHeaderProps;
+  lead: FormLeadProps;
+  offline: OfflineSubmit;
+}
+
+export interface FormSubmitProps {
+  submitLabel: string;
+  submittingLabel: string;
+  isSubmitDisabled: boolean;
+  submitSpacing?: SubmitSpacing | undefined;
+}
+
 export interface FormBodyProps<T extends FieldValues> {
   header: FormHeaderProps;
-  submittingLabel: string;
+  lead: FormLeadProps;
+  submit: FormSubmitProps;
   announceSubmitting: boolean;
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;
-  error: string | null;
-  errorAction?: FormErrorAction | undefined;
   submitting: boolean;
-  isSubmitDisabled: boolean;
-  submitLabel: string;
 }

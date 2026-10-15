@@ -86,9 +86,11 @@ beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies 
 in name order, as `typeDefs` after the pinned SDL), and deleted by the pin bump that brings the
 declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset mutation through a
 server built from two pending files and pins that the folder `server.mts` resolves from `out/` is
-the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge an identical
-duplicate silently, so nothing fails if the file outlives its pin; the deletion is a listed step
-of that bump.
+the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge a duplicate
+declaration silently, so each pending file opens with `# pending-against: <version>` and
+`scripts/ci/check-pending-contracts.sh`, the first step of `scripts/codegen.sh` (so of both
+`make codegen` and `make codegen-check`), fails when that header is missing or no longer names
+`GRAPHQL_SCHEMA_VERSION`. The pin bump that brings the declarations in deletes the file.
 
 `src/api/contracts/pending/password-reset.graphql`:
 

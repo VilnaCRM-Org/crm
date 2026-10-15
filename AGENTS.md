@@ -315,11 +315,12 @@ Import factories from the `@tests/builders` alias (resolves in Jest and Playwrig
 builder returns domain-VALID data by construction (passing the app's email, password, and
 name validators) and accepts an `overrides` object to pin specific fields:
 
-- `buildUser(overrides?)` → `{ fullName, email, password }` (`RegisterUserDto`).
-- `buildCredentials(overrides?)` → `{ email, password }` (`LoginUserDto`).
+- `buildUser(overrides?)` → `{ fullName, email, password }` (`SignUpDto` from `@/modules/user`).
+- `buildCredentials(overrides?)` → `{ email, password }` (`SignInDto` from `@/modules/user`).
 - `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
 - `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
 - `buildLoginResponse(overrides?)` → `{ token }`.
+- `buildResetToken()` → a 32-character alphanumeric password-reset token.
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
 - `buildGraphqlUser(overrides?)` → `{ id, confirmed, email, initials }`.
@@ -988,7 +989,8 @@ routing through the formatter — never with `eslint-disable`.
 ### Collaborators arrive through DI, never through a value import (issue #130)
 
 Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
-`src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`), the only
+`src/modules/*/store/**`, `src/modules/*/transformers/**`,
+`src/modules/*/features/*/{data-providers,repositories,stores,transformers,utils}/**`), the only
 behavioral collaborators a method may invoke are those received through DI. Never
 `import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`,
 register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is

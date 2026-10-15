@@ -17,6 +17,7 @@ export const paletteColors = {
   },
   success: {
     main: '#4CAF50',
+    text: '#2E7D32',
   },
   warning: {
     main: '#FF9800',

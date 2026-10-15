@@ -729,7 +729,7 @@ FR-13, FR-14, FR-15, FR-22 (classification), AR-9, NFR-12, NFR-2, NFR-5, NFR-17,
 > without the other, they are pure, and together they hold the two tables of architecture §5.5.
 
 **Files:** `src/modules/user/types/user-service/user-service-failure.ts` (NEW: the five shared
-types of architecture §6.5.1), `src/modules/user/lib/user-service-error-transformer.ts` (NEW,
+types of architecture §6.5.1), `src/modules/user/transformers/user-service-error-transformer.ts` (NEW,
 module-shared with #330 and #331), `@auth/types/password-recovery/outcome.ts` (NEW:
 `RecoveryStep`, `RecoveryFailureReason`, `RecoveryFailure`, `RecoverySentOutcome`,
 `RecoveryConfirmedOutcome`, `RecoveryFailedOutcome`, `ResetPasswordOutcome`,
@@ -2170,3 +2170,24 @@ acceptance criteria it touches; only the planned shape or file name changed.
    returns the `invalid` view, and the form and the dead token unmount, which also stops a retry
    from re-sending a token the API has already refused. The read, trim, length check and
    layout-effect strip are unchanged, and Stories 3.1 and 3.4 were rewritten to name the handle.
+8. **Remaining test file names (Stories 1.1, 2.5, 3.6 and 4.4).** The repository integration test
+   planned as `password-recovery-repository.integration.test.ts` shipped as
+   `graphql-password-recovery-repository.integration.test.ts` in the same folder, beside
+   `password-recovery-provider.integration.test.ts` and
+   `password-recovery-transformers.integration.test.ts`. No shared
+   `tests/e2e/utils/password-reset-responses.ts` dispatcher exists: each recovery spec routes the
+   GraphQL operation it needs inline, keyed on `operationName`. One visual spec,
+   `tests/visual/visual-comparison.password-recovery.spec.ts`, captures both recovery routes, so
+   the planned `visual-comparison.password-reset.spec.ts` does not exist.
+9. **Module-shared Transformer folder (Story 1.5).** `UserServiceErrorTransformer` was planned in
+   `src/modules/user/lib/`, which neither DI gate covers. It lives in
+   `src/modules/user/transformers/`, an allowed module folder in `config/module-shape.json` that
+   the DI-collaborator gate and `components-no-direct-injectable-import` both cover, and it is an
+   `@injectable()` class registered with `registerSingleton` like `PasswordRecoveryTransformer`.
+10. **No Retry button (FR-14, Stories 2.4 and 3.5).** The stories planned a "Спробувати ще раз"
+    action in the transient-failure banner that re-sent the last request. Figma draws no error
+    state, and the owner chose on 2026-10-15 to show the message alone for five seconds and let
+    the user retry with the form's submit. `useRecoveryFailureBanner` returns the text only and
+    dismisses it after `RECOVERY_BANNER_LIFETIME_MS`; `UIForm` lost its `errorAction` slot and
+    `useAbortableSubmit` its `retry` and `forget`. `ErrorBanner` hands focus to the submit when it
+    hides while focused.

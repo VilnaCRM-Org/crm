@@ -24,9 +24,9 @@ const notice: string = t('sign_in.notices.password_reset');
 const policyRejected: string = t('password_reset.errors.policy_rejected');
 const rateLimited: string = t('password_recovery.errors.rate_limited');
 const transient: string = t('password_recovery.errors.transient');
-const tryAgain: string = t('auth.error.tryAgain');
 const recoveryHeading: string = t('password_recovery.title');
 const signInHeading: string = t('sign_in.title');
+const emailLabel: string = t('sign_in.form.email_input.label');
 const homeHeading: string = t('home.heading');
 
 interface ConfirmBody {
@@ -150,6 +150,8 @@ test.describe('Create new password (issue #315)', () => {
     expect(bodies[0]?.variables?.input?.newPassword).toBe(NEW_PASSWORD);
 
     await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: signInHeading })).toBeVisible();
+    await expect(page.getByLabel(emailLabel)).toBeVisible();
     await expect(page.getByText(notice)).toHaveCount(0);
   });
 
@@ -246,26 +248,25 @@ test.describe('Create new password (issue #315)', () => {
     await expect(page.getByLabel(confirmLabel)).toHaveValue(NEW_PASSWORD);
   });
 
-  test('shows the rate-limit banner without Retry for HTTP 429', async ({ page }) => {
+  test('shows the rate-limit banner for HTTP 429', async ({ page }) => {
     const bodies = await answerConfirms(page, (route) => route.fulfill({ status: 429, body: '' }));
     await openWithToken(page);
 
     await submitPasswords(page);
 
     await expect(page.getByRole('alert')).toHaveText(rateLimited);
-    await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(0);
     await expect(page.getByLabel(newPasswordLabel)).toHaveValue(NEW_PASSWORD);
     await expect(page.getByLabel(confirmLabel)).toHaveValue(NEW_PASSWORD);
     expect(bodies).toHaveLength(1);
   });
 
-  async function expectRetryAfter(page: Page, answer: Answer): Promise<void> {
+  async function expectResubmitAfter(page: Page, answer: Answer): Promise<void> {
     const bodies = await answerConfirms(page, answer);
     await openWithToken(page);
 
     await submitPasswords(page);
     await expect(page.getByRole('alert')).toHaveText(transient);
-    await page.getByRole('button', { name: tryAgain }).click();
+    await page.getByRole('button', { name: submitLabel }).click();
 
     await expect.poll(() => bodies.length).toBe(2);
     expect(bodies[1]?.variables?.input?.token).toBe(bodies[0]?.variables?.input?.token);
@@ -276,15 +277,15 @@ test.describe('Create new password (issue #315)', () => {
     );
   }
 
-  test('retries once after an HTTP 503', async ({ page }) => {
-    await expectRetryAfter(page, (route) => route.fulfill({ status: 503, body: '' }));
+  test('resubmits once after an HTTP 503', async ({ page }) => {
+    await expectResubmitAfter(page, (route) => route.fulfill({ status: 503, body: '' }));
   });
 
   test.describe('dropped connection', () => {
     test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
-    test('retries once after an aborted request', async ({ page }) => {
-      await expectRetryAfter(page, (route) => route.abort('failed'));
+    test('resubmits once after an aborted request', async ({ page }) => {
+      await expectResubmitAfter(page, (route) => route.abort('failed'));
     });
   });
 

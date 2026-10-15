@@ -20,14 +20,14 @@ const meta: Meta<typeof CreateNewPasswordForm> = {
   args: {
     token: 'story-reset-token',
     onSubmit: resolved,
-    onRetry: resolved,
+    onDismissFailure: (): undefined => undefined,
     failure: null,
     isSubmitting: false,
   },
   argTypes: {
     token: { control: false },
     onSubmit: { control: false },
-    onRetry: { control: false },
+    onDismissFailure: { control: false },
   },
   parameters: {
     docs: {
