@@ -5,6 +5,7 @@ const item = {
   alignItems: 'flex-start',
   gap: '0.375rem',
   fontFamily: 'Inter',
+  fontWeight: 500,
   fontSize: '0.875rem',
   lineHeight: '1.125rem',
 };
