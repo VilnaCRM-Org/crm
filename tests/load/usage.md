@@ -36,8 +36,8 @@ make test-load-password-recovery
 `password-recovery.js` requests `/password-recovery` and `/password-reset?token=…` (issue #315)
 in every iteration against the `prod` container, checking a `200` for each, with a `page` tag per
 route. The token is a fixed dummy: the shell is served the same way whatever it carries, and the
-reset mutation is never sent. Results land in `tests/load/results/password-recovery.html`; the
-same `run_*` switches below apply.
+reset mutation is never sent. Results land in `tests/load/results/password-recovery.html`. The
+target runs every scenario: the `k6` service forwards no `run_*` variable to the container.
 
 ## Scenario Selection
 
