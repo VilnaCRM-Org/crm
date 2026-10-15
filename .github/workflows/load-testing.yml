@@ -27,6 +27,8 @@ jobs:
             label: signup
           - make_cmd: test-load-error-pages
             label: error pages
+          - make_cmd: test-load-password-recovery
+            label: password recovery
 
     name: ${{ matrix.label }} load testing
 

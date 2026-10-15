@@ -22,7 +22,7 @@ describe('lighthouse constants', () => {
     process.env = originalEnv;
   });
 
-  it('expands the base URL into the protected, auth and error-page Lighthouse pages', () => {
+  it('expands the base URL into the protected, auth, error-page and recovery pages', () => {
     const { pages } = jest.requireActual<{ pages: string[] }>(constantsModulePath);
 
     expect(pages).toEqual([
@@ -32,6 +32,8 @@ describe('lighthouse constants', () => {
       'http://prod:3001/forbidden',
       'http://prod:3001/server-error',
       'http://prod:3001/definitely-not-a-route',
+      'http://prod:3001/password-recovery',
+      'http://prod:3001/password-reset?token=LighthouseAuditResetToken0000001',
     ]);
   });
 });
