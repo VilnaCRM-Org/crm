@@ -44,7 +44,7 @@ const formFor = (props: CreateNewPasswordFormProps): JSX.Element => (
   <CreateNewPasswordForm
     token={props.token}
     onSubmit={props.onSubmit}
-    onRetry={props.onRetry}
+    onDismissFailure={props.onDismissFailure}
     failure={props.failure}
     isSubmitting={props.isSubmitting}
   />
@@ -54,7 +54,7 @@ const mountForm = (overrides: Partial<CreateNewPasswordFormProps> = {}): Mounted
   const props: CreateNewPasswordFormProps = {
     token: buildResetToken(),
     onSubmit: jest.fn().mockResolvedValue(undefined),
-    onRetry: jest.fn().mockResolvedValue(undefined),
+    onDismissFailure: jest.fn(),
     failure: null,
     isSubmitting: false,
     ...overrides,
@@ -77,7 +77,7 @@ describe('CreateNewPasswordForm', () => {
 
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByRole('heading', { name: 'Створіть новий пароль' })).toBeInTheDocument();
-    expect(screen.getByText('Придумайте новий пароль для вашого акаунту')).toBeInTheDocument();
+    expect(screen.getByText('Придумайте новий пароль для вашого аккаунту')).toBeInTheDocument();
     [newPassword(), confirmation()].forEach((field) => {
       expect(field).toHaveAttribute('type', 'password');
       expect(field).toHaveAttribute('autocomplete', 'new-password');
@@ -106,7 +106,7 @@ describe('CreateNewPasswordForm', () => {
       <FreshForm
         token={buildResetToken()}
         onSubmit={jest.fn()}
-        onRetry={jest.fn()}
+        onDismissFailure={jest.fn()}
         failure={null}
         isSubmitting={false}
       />,

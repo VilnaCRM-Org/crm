@@ -144,10 +144,16 @@ describe('SignIn page', () => {
       </MemoryRouter>
     );
 
-    const notice = await screen.findByText(
-      'Your password has been changed. Sign in with your new password.'
-    );
-    expect(notice).toHaveAttribute('role', 'status');
+    const message = 'Your password has been changed. Sign in with your new password.';
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    const notices = screen
+      .getAllByRole('status')
+      .filter((region) => region.textContent === message);
+    expect(notices).toHaveLength(1);
+    expect(
+      screen.getByRole('heading', { level: 1 }).compareDocumentPosition(notices[0] as HTMLElement) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.getByRole('main')).toHaveFocus();
     await expectNoA11yViolations(container);
   });

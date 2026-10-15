@@ -1,6 +1,5 @@
 import type { Dispatch } from 'react';
 
-import type { FormErrorAction } from '@/components/types/ui-form';
 import type { AbortableSubmit } from '@/hooks/types/use-abortable-submit';
 import type { CreateNewPasswordDto } from '@/modules/user/types/user/create-new-password-dto';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
@@ -15,7 +14,7 @@ export type ResetPasswordStep = 'form' | 'sent';
 
 export interface ResetPasswordCallbacks {
   submit(dto: RestorePasswordDto): Promise<void>;
-  retry(): Promise<void>;
+  dismissFailure(): void;
   backToForm(): void;
 }
 
@@ -46,17 +45,20 @@ export interface ResetPasswordBack {
   readonly type: 'back';
 }
 
-export type ResetPasswordAction = ResetPasswordSubmitted | ResetPasswordSettled | ResetPasswordBack;
+export interface ResetPasswordDismissed {
+  readonly type: 'dismissed';
+}
+
+export type ResetPasswordAction =
+  ResetPasswordSubmitted | ResetPasswordSettled | ResetPasswordBack | ResetPasswordDismissed;
 
 export interface ResetPasswordCallbackDeps {
   readonly dispatch: Dispatch<ResetPasswordAction>;
   readonly submitter: AbortableSubmit<RestorePasswordDto, ResetPasswordOutcome>;
-  readonly submittedEmail: string;
 }
 
 export interface RecoveryFailureBanner {
   readonly error: string | null;
-  readonly errorAction?: FormErrorAction | undefined;
 }
 
 export interface ResetTokenHandle {
@@ -66,7 +68,7 @@ export interface ResetTokenHandle {
 
 export interface CreateNewPasswordCallbacks {
   submit(dto: CreateNewPasswordDto): Promise<void>;
-  retry(): Promise<void>;
+  dismissFailure(): void;
 }
 
 export interface CreateNewPasswordInvalidState {
@@ -97,7 +99,6 @@ export interface CreateNewPasswordViewState {
 
 export interface CreateNewPasswordViewDeps {
   readonly resetToken: ResetTokenHandle;
-  readonly submitter: AbortableSubmit<CreateNewPasswordDto, CreateNewPasswordOutcome>;
 }
 
 export interface CreateNewPasswordCallbackDeps {

@@ -134,8 +134,9 @@ container-free `AuthProviderLoader` in `@auth/stores/index.ts`. The provider cal
 `GraphQLPasswordRecoveryRepository` and hands every result to two Transformers:
 `UserServiceErrorTransformer` (module-shared, GraphQL failure → `UserServiceFailure`) and
 `PasswordRecoveryTransformer` (failure or success → recovery outcome). Data providers live in
-`features/<f>/data-providers/` and Transformers in `features/<f>/transformers/`; both folders
-are in `config/module-shape.json`, the DI-collaborator gate and the component gate
+`features/<f>/data-providers/`, feature Transformers in `features/<f>/transformers/` and
+module-shared ones in `src/modules/<m>/transformers/`; all three folders are in
+`config/module-shape.json`, the DI-collaborator gate and the component gate
 `components-no-direct-injectable-import`.
 
 **Rejected.** Controller and service classes (not on the board); a proxy, a factory and an

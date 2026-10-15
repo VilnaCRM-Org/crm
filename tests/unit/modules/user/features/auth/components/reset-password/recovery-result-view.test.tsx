@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router';
 
 import RecoveryResultView from '@auth/components/reset-password/recovery-result-view';
-import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { styleRuleFor, winningMediaValueFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const BODY = 'Ми надіслали лист на eir*****@gmail.com';
@@ -89,6 +89,7 @@ describe('RecoveryResultView', () => {
     ['heading', 'line-height', '1.625rem'],
     ['body', 'font-size', '0.9375rem'],
     ['body', 'line-height', '1.5625rem'],
+    ['body', 'margin-bottom', '1rem'],
     ['action', 'height', '3.125rem'],
     ['action', 'font-size', '0.9375rem'],
     ['action', 'font-weight', '500'],
@@ -102,17 +103,21 @@ describe('RecoveryResultView', () => {
   it.each<[ResultPart, string, string, string]>([
     ['heading', 'min-width:768px', 'font-size', '1.875rem'],
     ['heading', 'min-width:768px', 'font-weight', '600'],
-    ['heading', 'min-width:768px', 'line-height', 'normal'],
+    ['heading', 'min-width:768px', 'line-height', '1'],
+    ['heading', 'min-width:1440px', 'margin-top', '0.75rem'],
+    ['heading', 'min-width:1440px', 'margin-bottom', '0.6875rem'],
     ['body', 'min-width:480px', 'font-size', '1rem'],
     ['body', 'min-width:480px', 'line-height', '1.625rem'],
-    ['action', 'min-width:768px', 'height', '3.875rem'],
+    ['body', 'min-width:768px', 'margin-bottom', '1.5rem'],
+    ['action', 'min-width:768px', 'height', '4.375rem'],
+    ['action', 'min-width:1440px', 'height', '3.875rem'],
     ['action', 'min-width:768px', 'font-size', '1.125rem'],
     ['action', 'min-width:768px', 'font-weight', '600'],
     ['action', 'min-width:768px', 'line-height', 'normal'],
   ])('restores the %s at %s with %s %s', async (part, mediaFragment, property, value) => {
     const element = await resultPart(part);
 
-    expect(mediaStyleRuleFor(element, mediaFragment)?.getPropertyValue(property)).toBe(value);
+    expect(winningMediaValueFor(element, mediaFragment, property)).toBe(value);
   });
 
   it('announces the body through a polite status region', async () => {

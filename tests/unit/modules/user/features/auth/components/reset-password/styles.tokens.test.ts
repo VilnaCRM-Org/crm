@@ -19,7 +19,8 @@ describe('reset password styles', () => {
       minWidth: 0,
       minHeight: '1.5rem',
       padding: 0,
-      marginBottom: '0.25rem',
+      position: 'relative',
+      marginBottom: '0.625rem',
       fontFamily: 'Golos',
       fontWeight: 500,
       fontSize: '0.9375rem',
@@ -29,10 +30,22 @@ describe('reset password styles', () => {
       textTransform: 'none',
       '& svg': { flexShrink: 0, color: TEXT_PRIMARY },
       '&:visited': { color: TEXT_PRIMARY },
+      '&:hover': { backgroundColor: 'transparent' },
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        inset: '-0.625rem 0',
+      },
       '&:focus-visible, &.Mui-focusVisible': {
         outline: `2px solid ${TEXT_PRIMARY}`,
         outlineOffset: '2px',
         borderRadius: '0.25rem',
+      },
+      '@media (min-width:768px)': {
+        marginBottom: '0.4375rem',
+      },
+      '@media (min-width:1440px)': {
+        marginTop: '-0.1875rem',
       },
     });
   });
@@ -41,18 +54,15 @@ describe('reset password styles', () => {
     const styles = await loadStyles();
 
     expect(styles.resultTitle).toEqual({
-      fontFamily: 'Golos',
-      fontWeight: 700,
-      fontSize: '1.375rem',
-      lineHeight: '1.625rem',
-      letterSpacing: 0,
-      color: TEXT_DARK,
-      margin: '1rem 0 0.5rem',
+      marginTop: 0,
+      marginBottom: '0.5rem',
       '&:focus': { outline: 'none' },
       '@media (min-width:768px)': {
-        fontWeight: 600,
-        fontSize: '1.875rem',
-        lineHeight: 'normal',
+        marginBottom: '0.9375rem',
+      },
+      '@media (min-width:1440px)': {
+        marginTop: '0.75rem',
+        marginBottom: '0.6875rem',
       },
     });
   });
@@ -67,11 +77,14 @@ describe('reset password styles', () => {
       lineHeight: '1.5625rem',
       letterSpacing: 0,
       color: TEXT_DARK,
-      marginBottom: '1.5rem',
+      marginBottom: '1rem',
       overflowWrap: 'anywhere',
       '@media (min-width:480px)': {
         fontSize: '1rem',
         lineHeight: '1.625rem',
+      },
+      '@media (min-width:768px)': {
+        marginBottom: '1.5rem',
       },
     });
   });
@@ -91,13 +104,17 @@ describe('reset password styles', () => {
       fontWeight: 500,
       fontSize: '0.9375rem',
       lineHeight: 1.2,
+      letterSpacing: 0,
       textTransform: 'none',
       boxShadow: 'none',
       '@media (min-width:768px)': {
-        height: '3.875rem',
+        height: '4.375rem',
         fontWeight: 600,
         fontSize: '1.125rem',
         lineHeight: 'normal',
+      },
+      '@media (min-width:1440px)': {
+        height: '3.875rem',
       },
     });
   });

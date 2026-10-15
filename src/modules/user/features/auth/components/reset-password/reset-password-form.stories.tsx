@@ -20,7 +20,7 @@ const meta: Meta<typeof ResetPasswordForm> = {
   args: {
     defaultValues: { email: '' },
     onSubmit: resolved,
-    onRetry: resolved,
+    onDismissFailure: (): undefined => undefined,
     failure: null,
     isSubmitting: false,
     focusTitle: false,
@@ -28,7 +28,7 @@ const meta: Meta<typeof ResetPasswordForm> = {
   argTypes: {
     defaultValues: { control: false },
     onSubmit: { control: false },
-    onRetry: { control: false },
+    onDismissFailure: { control: false },
   },
   parameters: {
     docs: {

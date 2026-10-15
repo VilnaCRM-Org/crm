@@ -45,11 +45,6 @@ function goToSignIn(navigate: NavigateFunction): void {
   navigate(ROUTE_PATHS.signIn, { replace: true, state: PASSWORD_RESET_ARRIVAL });
 }
 
-function discardLink({ resetToken, submitter }: CreateNewPasswordViewDeps): void {
-  submitter.forget();
-  resetToken.discard();
-}
-
 function useCreateNewPasswordView(deps: CreateNewPasswordViewDeps): CreateNewPasswordViewState {
   const navigate = useNavigate();
   const [failure, setFailure] = useState<RecoveryFailure | null>(null);
@@ -57,7 +52,7 @@ function useCreateNewPasswordView(deps: CreateNewPasswordViewDeps): CreateNewPas
   const settle = (outcome: CreateNewPasswordOutcome | null): void => {
     if (outcome === null) return;
     if (outcome.kind === 'confirmed') goToSignIn(navigate);
-    else if (outcome.failure.reason === 'invalid_link') discardLink(deps);
+    else if (outcome.failure.reason === 'invalid_link') deps.resetToken.discard();
     setFailure(nextFailure(outcome));
   };
 
@@ -73,10 +68,7 @@ function useCreateNewPasswordCallbacks({
       viewState.clearFailure();
       viewState.settle(await submitter.submit({ token, newPassword }));
     },
-    retry: async (): Promise<void> => {
-      viewState.clearFailure();
-      viewState.settle(await submitter.retry());
-    },
+    dismissFailure: viewState.clearFailure,
   };
 }
 
@@ -85,7 +77,7 @@ export default function useCreateNewPassword(
   resetToken: ResetTokenHandle
 ): CreateNewPasswordState {
   const submitter = useAbortableSubmit(useRecoveryRun(loader, CONFIRM_STEP));
-  const viewState = useCreateNewPasswordView({ resetToken, submitter });
+  const viewState = useCreateNewPasswordView({ resetToken });
   const callbacks = useCreateNewPasswordCallbacks({ submitter, viewState });
   const { token } = resetToken;
   if (token === null) return INVALID_LINK;

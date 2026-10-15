@@ -16,7 +16,6 @@ const backLabel: string = t('password_recovery.back');
 const submitLabel: string = t('password_recovery.submit_button');
 const toSignIn: string = t('password_recovery.sent.to_sign_in');
 const sentTitle: string = t('password_recovery.sent.title');
-const tryAgain: string = t('auth.error.tryAgain');
 const resetTitle: string = t('password_reset.title');
 const newPasswordLabel: string = t('password_reset.new_password.label');
 const showPasswordLabel: string = t('auth.password.show');
@@ -83,16 +82,18 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
     await expect(email).toHaveAttribute('aria-describedby', /email-helper-text/);
   });
 
-  test('Retry is the next Tab stop after a transient banner', async ({ page }) => {
+  test('a transient banner hides after five seconds and hands focus to the submit', async ({
+    page,
+  }) => {
     await answerReset(page, (route) => route.fulfill({ status: 503, body: '' }));
     await openRequestForm(page);
     await page.locator('#email').fill(EMAIL);
     await page.getByRole('button', { name: submitLabel }).press('Enter');
     await expect(page.getByRole('alert')).toBeVisible();
 
-    await page.keyboard.press('Tab');
+    await expect(page.getByRole('alert')).toHaveCount(0, { timeout: 8000 });
 
-    await expectDarkRing(page, tryAgain);
+    await expectDarkRing(page, submitLabel);
   });
 
   test('the sent step focuses its heading and leads to sign-in', async ({ page }) => {

@@ -5,9 +5,9 @@ import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provid
 import runtimeConfigRegistrar from '@/config/runtime/di';
 import userModuleRegistrar from '@/modules/user/config/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import UserServiceErrorTransformer from '@/modules/user/lib/user-service-error-transformer';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
 import GraphQLUrl from '@/utils/get-graphql-url';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';

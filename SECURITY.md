@@ -312,6 +312,11 @@ the app reads) rather than a hard-coded host. The floors are deliberate: relaxin
 decision that changes the loader and its tests in the same reviewed change, never a lone edit to
 `serve.json`, which the drift gate rejects.
 
+**Access logs.** The password-reset link carries a single-use credential in its query string
+(`/password-reset?token=…`, issue #315). The deployable image therefore starts `serve` with
+`--no-request-logging`, so no request URL reaches the container log. A reverse proxy or CDN placed
+in front of the container must not log query strings either.
+
 ## Client security events (issue #159)
 
 The frontend emits structured security signals so authentication abuse and client-side

@@ -1,3 +1,4 @@
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { Box } from '@mui/material';
 import { type JSX, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,8 +26,9 @@ export default function SignInNotice({ notice }: SignInNoticeProps): JSX.Element
 
   if (notice === null) return null;
   return (
-    <Box role="status" sx={styles.notice}>
-      {text}
+    <Box component="p" role="status" sx={styles.notice}>
+      <CheckCircleOutlinedIcon aria-hidden="true" sx={styles.icon} />
+      <span>{text}</span>
     </Box>
   );
 }

@@ -57,7 +57,7 @@ describe('useResetPassword', () => {
     });
   });
 
-  it('keeps the form step with the failure and retries the same trimmed value once', async () => {
+  it('keeps the form step with the failure and clears it on the next submit', async () => {
     const { loader, requestReset } = harness(NETWORK);
     const email = buildEmail();
     const { result } = renderHook(() => useResetPassword(loader));
@@ -67,11 +67,23 @@ describe('useResetPassword', () => {
     expect(result.current.failure).toEqual({ reason: 'network', retryable: true });
 
     requestReset.mockResolvedValue(SENT);
-    await act(() => result.current.callbacks.retry());
+    await act(() => result.current.callbacks.submit({ email: `${email} ` }));
 
     expect(requestReset).toHaveBeenCalledTimes(2);
     expect(requestReset.mock.calls[1]?.[0]).toEqual({ email });
     expect(result.current).toMatchObject({ step: 'sent', failure: null, submittedEmail: email });
+  });
+
+  it('dismisses the failure without a request and keeps the submitted e-mail', async () => {
+    const { loader, requestReset } = harness(NETWORK);
+    const email = buildEmail();
+    const { result } = renderHook(() => useResetPassword(loader));
+    await act(() => result.current.callbacks.submit({ email }));
+
+    act(() => result.current.callbacks.dismissFailure());
+
+    expect(requestReset).toHaveBeenCalledTimes(1);
+    expect(result.current).toMatchObject({ step: 'form', failure: null, submittedEmail: email });
   });
 
   it('maps a rejected loader to a retryable network failure', async () => {
@@ -128,14 +140,9 @@ describe('useResetPassword', () => {
     });
     expect(result.current.submittedEmail).toBe(accepted);
 
-    requestReset.mockResolvedValue(SENT);
-    await act(() => result.current.callbacks.retry());
     act(() => result.current.callbacks.backToForm());
 
-    expect(requestReset.mock.calls.map(([dto]) => dto)).toEqual([
-      { email: accepted },
-      { email: accepted },
-    ]);
+    expect(requestReset.mock.calls.map(([dto]) => dto)).toEqual([{ email: accepted }]);
     expect(result.current).toMatchObject({ step: 'form', submittedEmail: accepted });
   });
 });

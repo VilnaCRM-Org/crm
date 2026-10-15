@@ -37,7 +37,7 @@ const mountForm = (overrides: Partial<ResetPasswordFormProps> = {}): ResetPasswo
   const props: ResetPasswordFormProps = {
     defaultValues: { email: '' },
     onSubmit: jest.fn().mockResolvedValue(undefined),
-    onRetry: jest.fn().mockResolvedValue(undefined),
+    onDismissFailure: jest.fn(),
     failure: null,
     isSubmitting: false,
     focusTitle: false,
@@ -47,7 +47,7 @@ const mountForm = (overrides: Partial<ResetPasswordFormProps> = {}): ResetPasswo
     <ResetPasswordForm
       defaultValues={props.defaultValues}
       onSubmit={props.onSubmit}
-      onRetry={props.onRetry}
+      onDismissFailure={props.onDismissFailure}
       failure={props.failure}
       isSubmitting={props.isSubmitting}
       focusTitle={props.focusTitle}
@@ -68,7 +68,9 @@ describe('ResetPasswordForm', () => {
 
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByRole('heading', { level: 1, name: 'Забули пароль?' })).toBeInTheDocument();
-    expect(screen.getByText('Введіть адресу поштової скриньки вашого акаунту')).toBeInTheDocument();
+    expect(
+      screen.getByText('Введіть адресу поштової скриньки вашого аккаунту')
+    ).toBeInTheDocument();
     expect(emailField()).toHaveAttribute('autocomplete', 'email');
     expect(emailField()).toHaveAttribute('placeholder', 'vilnaCRM@gmail.com');
     expect(submit()).toHaveAttribute('type', 'submit');

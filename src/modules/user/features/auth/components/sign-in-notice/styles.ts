@@ -1,11 +1,20 @@
-import { customColors } from '@/styles/colors';
+import { paletteColors } from '@/styles/colors';
 
 export default {
   notice: {
-    marginBottom: '1rem',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.5rem',
+    margin: '0 0 1rem',
     fontFamily: 'Golos',
-    fontSize: '1rem',
-    lineHeight: '1.625rem',
-    color: customColors.text.dark,
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    lineHeight: '1.375rem',
+    letterSpacing: 0,
+    color: paletteColors.success.text,
+  },
+  icon: {
+    flexShrink: 0,
+    fontSize: '1.375rem',
   },
 };

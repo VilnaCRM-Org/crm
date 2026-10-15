@@ -170,7 +170,7 @@ EXPOSE 3001
 # compose restarts a container whose server stopped answering (issue #139).
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 CMD ["curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3001/"]
 
-CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json", "--no-request-logging"]
 
 
 # -------- Production Image --------

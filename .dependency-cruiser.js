@@ -474,7 +474,7 @@ module.exports = {
         path: [
           '^src/services/',
           '^src/modules/[^/]+/features/[^/]+/(?:data-providers|repositories|transformers)/',
-          '^src/modules/[^/]+/store/',
+          '^src/modules/[^/]+/(?:store|transformers)/',
           '(?:-factory|-mapper)[.]tsx?$',
           'error-handler',
         ],

@@ -116,7 +116,7 @@ describe('useCreateNewPassword', () => {
     expect(resetToken.discard).not.toHaveBeenCalled();
   });
 
-  it('discards the token and the last attempt for an invalid_link failure', async () => {
+  it('discards the token for an invalid_link failure', async () => {
     const { loader, confirmReset } = harness(failed('invalid_link'));
     const token = buildResetToken();
     let resetToken = tokenHandle(token);
@@ -124,14 +124,14 @@ describe('useCreateNewPassword', () => {
       resetToken = tokenHandle(null);
     });
     const { result, rerender } = renderHook(() => useCreateNewPassword(loader, resetToken));
-    const { submit, retry } = formState(result.current).callbacks;
+    const { submit } = formState(result.current).callbacks;
 
     await act(() => submit(formValues(token)));
     rerender();
 
     expect(result.current).toEqual({ view: 'invalid' });
+    expect(resetToken.token).toBeNull();
     expect(navigate).not.toHaveBeenCalled();
-    await act(() => retry());
     expect(confirmReset).toHaveBeenCalledTimes(1);
   });
 
@@ -154,24 +154,20 @@ describe('useCreateNewPassword', () => {
     const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
     await act(() => formState(result.current).callbacks.submit(values));
 
-    for (const start of [
-      (): Promise<void> => formState(result.current).callbacks.submit(values),
-      (): Promise<void> => formState(result.current).callbacks.retry(),
-    ]) {
-      const pending = deferred();
-      confirmReset.mockReturnValueOnce(pending.promise);
-      expect(formState(result.current).failure).toEqual({ reason: 'server', retryable: true });
-      let settled: Promise<void> = Promise.resolve();
-      act(() => {
-        settled = start();
-      });
+    const pending = deferred();
+    confirmReset.mockReturnValueOnce(pending.promise);
+    expect(formState(result.current).failure).toEqual({ reason: 'server', retryable: true });
+    let settled: Promise<void> = Promise.resolve();
+    act(() => {
+      settled = formState(result.current).callbacks.submit(values);
+    });
 
-      expect(formState(result.current).failure).toBeNull();
-      await act(async () => {
-        pending.resolve(failed('server', true));
-        await settled;
-      });
-    }
+    expect(formState(result.current).failure).toBeNull();
+    await act(async () => {
+      pending.resolve(failed('server', true));
+      await settled;
+    });
+    expect(formState(result.current).failure).toEqual({ reason: 'server', retryable: true });
   });
 
   it.each([
@@ -180,7 +176,7 @@ describe('useCreateNewPassword', () => {
     ['server', failed('server', true)],
     ['network', failed('network', true)],
   ])(
-    'keeps the form with a %s failure and retries the same values once',
+    'keeps the form with a %s failure and resubmits the values sent next',
     async (_name, outcome) => {
       const { loader, confirmReset } = harness(outcome);
       const token = buildResetToken();
@@ -192,12 +188,26 @@ describe('useCreateNewPassword', () => {
         outcome.kind === 'failed' ? outcome.failure : null
       );
 
-      await act(() => formState(result.current).callbacks.retry());
+      const edited = formValues(token);
+      await act(() => formState(result.current).callbacks.submit(edited));
 
       expect(confirmReset).toHaveBeenCalledTimes(2);
-      expect(confirmReset.mock.calls[1]?.[0]).toEqual({ token, newPassword: values.newPassword });
+      expect(confirmReset.mock.calls[1]?.[0]).toEqual({ token, newPassword: edited.newPassword });
     }
   );
+
+  it('dismisses a shown failure without sending a request', async () => {
+    const { loader, confirmReset } = harness(failed('server', true));
+    const token = buildResetToken();
+    const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
+    await act(() => formState(result.current).callbacks.submit(formValues(token)));
+    expect(formState(result.current).failure).toEqual({ reason: 'server', retryable: true });
+
+    act(() => formState(result.current).callbacks.dismissFailure());
+
+    expect(formState(result.current).failure).toBeNull();
+    expect(confirmReset).toHaveBeenCalledTimes(1);
+  });
 
   it('maps a rejected loader to a retryable network failure', async () => {
     const loader = {

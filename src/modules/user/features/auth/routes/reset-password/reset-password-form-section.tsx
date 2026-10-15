@@ -22,7 +22,7 @@ export default function ResetPasswordFormSection(): JSX.Element {
       <ResetPasswordForm
         defaultValues={{ email: state.submittedEmail }}
         onSubmit={state.callbacks.submit}
-        onRetry={state.callbacks.retry}
+        onDismissFailure={state.callbacks.dismissFailure}
         failure={state.failure}
         isSubmitting={state.isSubmitting}
         focusTitle={state.returned}

@@ -44,7 +44,7 @@ function reduceResetPassword(
   view: ResetPasswordView,
   action: ResetPasswordAction
 ): ResetPasswordView {
-  if (action.type === 'submitted') return { ...view, failure: null };
+  if (action.type === 'submitted' || action.type === 'dismissed') return { ...view, failure: null };
   if (action.type === 'back') return { ...view, step: 'form', failure: null, returned: true };
   return settle(view, action);
 }
@@ -64,7 +64,7 @@ function useResetCallbacks(deps: ResetPasswordCallbackDeps): ResetPasswordCallba
       const email = dto.email.trim();
       return settleWith(email, submitter.submit({ email }));
     },
-    retry: (): Promise<void> => settleWith(deps.submittedEmail, submitter.retry()),
+    dismissFailure: (): void => dispatch({ type: 'dismissed' }),
     backToForm: (): void => dispatch({ type: 'back' }),
   };
 }
@@ -72,7 +72,7 @@ function useResetCallbacks(deps: ResetPasswordCallbackDeps): ResetPasswordCallba
 export default function useResetPassword(loader: AuthProviderLoader): ResetPasswordState {
   const [view, dispatch] = useReducer(reduceResetPassword, INITIAL_VIEW);
   const submitter = useAbortableSubmit(useRecoveryRun(loader, REQUEST_STEP));
-  const callbacks = useResetCallbacks({ dispatch, submitter, submittedEmail: view.submittedEmail });
+  const callbacks = useResetCallbacks({ dispatch, submitter });
 
   return { ...view, isSubmitting: submitter.isSubmitting, callbacks };
 }

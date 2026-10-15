@@ -13,8 +13,7 @@ export default function SignInFormSection({ notice }: SignInFormSectionProps): J
       page="signIn"
       switcher={<AuthSwitcher to="/sign-up" labelKey="sign_up.form.switcher_text_no_account" />}
     >
-      <SignInNotice notice={notice} />
-      <LoginForm />
+      <LoginForm notice={<SignInNotice notice={notice} />} />
     </AuthFormSection>
   );
 }

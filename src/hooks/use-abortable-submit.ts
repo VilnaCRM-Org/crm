@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
   AbortableAttempt,
-  AbortableInput,
   AbortableRun,
   AbortableSubmit,
 } from '@/hooks/types/use-abortable-submit';
@@ -28,7 +27,6 @@ export default function useAbortableSubmit<TInput, TOutcome>(
 ): AbortableSubmit<TInput, TOutcome> {
   const [isSubmitting, setSubmitting] = useState(false);
   const inFlight = useRef<AbortController | null>(null);
-  const lastInput = useRef<AbortableInput<TInput> | null>(null);
   useEffect(
     () => (): void => inFlight.current?.abort(),
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
@@ -38,23 +36,9 @@ export default function useAbortableSubmit<TInput, TOutcome>(
   const submit = useCallback(
     (input: TInput): Promise<TOutcome | null> => {
       if (inFlight.current) return Promise.resolve(null);
-      lastInput.current = { value: input };
       return runOnce({ run, input, inFlight, setSubmitting });
     },
     [run]
   );
-  const retry = useCallback(
-    (): Promise<TOutcome | null> =>
-      lastInput.current ? submit(lastInput.current.value) : Promise.resolve(null),
-    [submit]
-  );
-
-  return {
-    isSubmitting,
-    submit,
-    retry,
-    forget: (): void => {
-      lastInput.current = null;
-    },
-  };
+  return { isSubmitting, submit };
 }

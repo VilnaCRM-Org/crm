@@ -16,13 +16,14 @@ describe('ui-form styles', () => {
     const { default: styles } = await import('@/components/ui-form/styles');
 
     expect(styles).toEqual({
-      errorAction: {
+      errorText: {
         marginBottom: '1rem',
-        textTransform: 'none',
-        '&:focus-visible, &.Mui-focusVisible': {
-          outline: '2px solid #404142',
-          outlineOffset: '2px',
-        },
+        fontFamily: 'Golos',
+        fontWeight: 400,
+        fontSize: '1rem',
+        lineHeight: '1.625rem',
+        letterSpacing: 0,
+        color: '#DC3939',
       },
       errorBannerFocus: {
         outline: 'none',
@@ -56,6 +57,7 @@ describe('ui-form styles', () => {
         lineHeight: '1.5625rem',
         letterSpacing: 0,
         color: '#1A1C1E',
+        textWrap: 'balance',
         marginBottom: '1rem',
         '@media (min-width:480px)': {
           fontSize: '1rem',
@@ -109,6 +111,12 @@ describe('ui-form styles', () => {
           fontWeight: 600,
           fontSize: '1.125rem',
           lineHeight: 1,
+        },
+      },
+      submitButtonTight: {
+        marginTop: '1.0625rem',
+        '@media (min-width:768px)': {
+          marginTop: '1.25rem',
         },
       },
     });
