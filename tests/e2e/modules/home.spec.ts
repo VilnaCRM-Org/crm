@@ -11,6 +11,7 @@ const homeTitle: string = t('home.title');
 const homeHeading: string = t('home.heading');
 const homeDescription: string = t('home.description');
 const signOutLabel: string = t('home.sign_out');
+const settingsLinkLabel: string = t('home.settings_link');
 const signInTitle: string = t('sign_in.title');
 const privacyLabel: string = t('footer.privacy');
 const termsLabel: string = t('footer.usage_policy');
@@ -43,6 +44,17 @@ test.describe('Home page E2E Tests (issue #106)', () => {
     await expect(signOut).toHaveAttribute('type', 'button');
     await expect(signOut).toBeEnabled();
     await expect(signOut).toHaveAccessibleName(signOutLabel);
+  });
+
+  test('renders the settings link as a native anchor to /settings before sign out', async ({
+    page,
+  }) => {
+    const main = page.getByRole('main');
+    const link = main.getByRole('link', { name: settingsLinkLabel, exact: true });
+
+    await expect(link).toHaveCount(1);
+    await expect(link).toHaveAttribute('href', ROUTE_PATHS.settings);
+    await expect(link.locator('xpath=following::button')).toHaveText(signOutLabel);
   });
 
   test('renders the shell footer as a contentinfo landmark outside main', async ({ page }) => {
