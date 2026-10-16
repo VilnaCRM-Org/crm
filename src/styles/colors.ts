@@ -74,6 +74,7 @@ export const customColors = {
     primary: '#404142',
     secondary: '#969B9D',
     dark: '#1A1C1E',
+    muted: '#57595B',
     heading: '#000000',
   },
   surface: {

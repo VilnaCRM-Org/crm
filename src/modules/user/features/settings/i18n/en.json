@@ -2,6 +2,9 @@
   "settings": {
     "title": "Settings",
     "heading": "Settings",
-    "subtitle": "Manage your personal details and account security."
+    "subtitle": "Manage your personal details and account security.",
+    "profile": {
+      "greeting": "Welcome!"
+    }
   }
 }
