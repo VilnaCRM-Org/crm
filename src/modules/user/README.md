@@ -306,6 +306,173 @@ errors. The GraphQL limiter gaps are tracked upstream in
 [#469](https://github.com/VilnaCRM-Org/user-service/issues/469) and
 [#470](https://github.com/VilnaCRM-Org/user-service/issues/470).
 
+## User Settings decisions
+
+The durable decisions of the user settings page
+([issue #330](https://github.com/VilnaCRM-Org/crm/issues/330)). They live here rather than in an
+ADR by the maintainer's decision, and each one states its context, the decision and the options
+it rejected. The full design is
+[the settings architecture](../../../specs/user-settings/planning-artifacts/architecture-user-settings-2026-10-06.md).
+What [Password recovery decisions](#password-recovery-decisions) already record — the board's
+layers and folders, `UserServiceErrorTransformer`, the lazy-catalog mechanism and the shared
+password policy — is referenced below, not repeated.
+
+### One flag, read when the route renders
+
+**Context.** user-service v2.8.0 authenticates nobody, so the page ships off in production and on
+in the test stack. The router is built at module evaluation, before the guarded runtime-config
+load, and the mobile Lighthouse floor has no headroom for another eager read.
+
+**Decision.** A route contract declares one `flag`. `RouteMapper` copies it into the route's
+`handle`, and an eager `RouteFlagGate` above `ProtectedRoute` reads the flag when the route
+renders and shows the not-found page while it is off, so neither the redirect nor the page chunk
+is reached.
+
+**Rejected.** Filtering the contracts by flag while the router is built (it would read the block
+before the guarded load); gating inside the page chunk (`ProtectedRoute` redirects first and the
+chunk is requested).
+
+### The current user is the first edge of `users(first: 1)`
+
+**Context.** The pinned schema has no `me` query, and upstream scopes the `users` collection to
+its owner.
+
+**Decision.** The page reads `users(first: 1)` and sends the IRI of that edge back verbatim in
+`updateUser`; nothing decodes the JWT.
+
+**Rejected.** Decoding the token for an id (a second source of identity, and a format the SPA
+does not own); a pending schema extension for a `me` query (a contract the backend has not
+agreed to).
+
+### The settings layers follow the Miro board
+
+**Context.** The folders, the Data provider ⇄ Transformer edge and the container-free loader
+belong to the recovery flow above. The settings page is the board's
+`UserProfile [component]<route>`.
+
+**Decision.** A `UserProfile` route renders the `UserProfileSettings` and `ChangePassword`
+components, which run React hooks over `useAbortableSubmit`. The `ProfileProvider` Data provider
+is the translation boundary: it takes three injected collaborators, hands every result to
+`GraphQLProfileTransformer` (beside #315's `UserServiceErrorTransformer`) and calls
+`GraphQLProfileRepository`. Every value that crosses a layer carries a named type (TB-1), and the
+recovery flow's `UserEntity` is passed down as itself rather than copied (TB-2).
+
+**Rejected.** Controller, service and handler classes (not on the board); a deps bag in place of
+three injected collaborators; a second Transformer for failures (the shape step is shared).
+
+### Only changed fields travel, through the container's Apollo client
+
+**Context.** The update carries the current password and a new one, and the process-wide
+`InMemoryCache` would keep them; a retried update could be applied twice.
+
+**Decision.** `updateUser` receives a change-only input that always carries the `id` and the
+current password. It runs with `fetchPolicy: 'no-cache'`, a minimal selection, the abort signal
+and no retry link. `resendEmailToUser` selects only `id` and `confirmed`.
+
+**Rejected.** Sending the whole form (it would overwrite unchanged fields and re-trigger the
+uniqueness check on an unchanged e-mail); the default cache policy (it would keep passwords); a
+transport retry (duplicate side effects).
+
+### Settings appends rows to the two-step classification and amends it for five texts
+
+**Context.** #315's "Failures are classified in two steps" rejects classification by message
+text. user-service answers the owner refusal and the wrong current password with a bare message
+and no code (user-service G8), and the e-mail uniqueness violation differs from other e-mail
+violations only by its text.
+
+**Decision.** `UserServiceErrorTransformer` gains a 401 status row and the `initials` and
+password properties. This entry amends #315's decision by name: whole-message matching is allowed
+for exactly the listed upstream texts until G8 ships codes. Three rows in a new exact-message
+step between the violation step and the generic refusal step cover "Access Denied.", "Old
+password is invalid" and "Старий пароль невірний"; the e-mail uniqueness text, in en and uk, is
+a set read inside the violation step that yields the taken reason. Every other message still
+classifies by shape, so #315's "never reads the message for meaning" case stays green.
+`GraphQLProfileTransformer` then maps the failure to field errors or to one of four reasons.
+
+**Rejected.** Matching `extensions.code` (upstream drops it); a substring or case-insensitive
+match of a message (it would turn a translation change into a silent misclassification); half
+field errors and half toast for one failure.
+
+### One rule ends a session, in the link
+
+**Context.** A token the backend no longer accepts leaves the user on a page whose every call
+fails.
+
+**Decision.** `SessionLinkFactory` adds the Bearer token to every non-anonymous operation and,
+on a transport 401, ends the session exactly as `logout()` does: observability, the sandbox demo
+session and the cleared store. `ProtectedRoute`, which now remembers that it saw a token, then
+shows the `session_ended` notice on `/sign-in`, in its own neutral info tone. #315's
+`RequestPasswordReset` and `ConfirmPasswordReset` are anonymous, so a reset link opened while
+signed in never ends the session.
+
+**Rejected.** Ending a session on a GraphQL error or on another status (a validation failure is
+not a dead session); a per-feature 401 rule (every feature would repeat it); the green success
+check for the notice (it is not a success).
+
+### Two-factor authentication has its own page
+
+**Context.** Figma `72:4846` draws the 2FA code entry as a standalone page.
+
+**Decision.** That challenge is #331's own public route, not part of `/settings`. The settings
+grid keeps only a slot for the 2FA settings card of Figma `313:10242`, and a one-child grid keeps
+the profile card's width.
+
+**Rejected.** Rendering the challenge inside `/settings` (the user is not signed in yet).
+
+### Outcomes are toasts with no timer
+
+**Context.** One Save can succeed for the name, fail for the e-mail and be rejected for the
+password, and a confirmation that disappears can be missed.
+
+**Decision.** `UIToastStack` shows at most three toasts with no timer. Success toasts are
+announced through one always-mounted polite region and error toasts as alerts, and focus returns
+to Save. A field error is shown on its field, never as a toast.
+
+**Rejected.** A timer (a confirmation could be lost before it is read); a toast per field error
+(the user would fix the wrong place).
+
+### The settings copy is a lazy catalog
+
+**Context.** `src/i18n.js` imports the merged catalog into the eager `index.js` that `/sign-in`
+downloads, and its mobile Lighthouse budget has no headroom.
+
+**Decision.** `settings/i18n` is listed in `config/i18n-catalog-policy.json` and registered by
+`SettingsCatalogLoader` when the route module evaluates, by the mechanism #315 introduced. The
+rule list's `password_policy.*` keys leave the recovery catalog for a catalog the shared
+`UIPasswordPolicyRules` component owns, so a key resolves wherever the component renders.
+
+**Rejected.** The eager merged catalog (it grows `index.js` on `/sign-in`); reusing #315's lazy
+recovery keys outside their owners (they would render raw).
+
+### Field-error contrast is fixed at the source
+
+**Context.** `MuiFormHelperText` error text uses `paletteColors.error.main` (`#DC3939`), about
+4.48:1 on white at 14 px, below WCAG 1.4.3.
+
+**Decision.** A new token, `paletteColors.error.text` (`#C62828`, about 5.62:1), colours the
+field-error text app-wide; borders keep `error.main`. The greeting and the resend control use
+tokens that already pass, and `A11Y_EXCEPTIONS` gains no entry.
+
+**Rejected.** A new contrast exception (the defect is fixable at the token); darkening
+`error.main` itself (it would change every border and icon that meets 3:1 today).
+
+### The local mock is a stateless happy path
+
+**Context.** The local Apollo mock is for development, and the browser lanes cannot reach it.
+
+**Decision.** `users`, `updateUser` (the owner check and one e-mail violation) and
+`resendEmailToUser` answer from one seeded user. Every other error shape — the transport 401, the
+wrong password, the taken e-mail, 429, 5xx, the time-out — lives in msw and `page.route`.
+
+**Rejected.** A stateful mock that models 401, 429, 5xx and the time-out (it would be a second,
+untested implementation of the backend).
+
+### Upstream requests of the settings page
+
+The page depends on user-service requests G1 to G8 (a released authentication surface, a `me`
+query, machine-readable error codes and the others the architecture lists). The links to the
+user-service issues are added with the closing documentation of the feature.
+
 ## Enforcement
 
 `make lint` runs all three gates; fix a violation by routing through the
