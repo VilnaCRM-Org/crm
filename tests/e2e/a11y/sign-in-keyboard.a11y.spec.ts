@@ -114,4 +114,11 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
     await expect(page.locator('#email')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.locator('#email')).toHaveAccessibleDescription(/./);
   });
+
+  test('field errors render in the accessible error text colour', async ({ page }) => {
+    await page.getByRole('button', { name: submitLabel }).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page.locator('#email-helper-text')).toHaveCSS('color', 'rgb(198, 40, 40)');
+  });
 });
