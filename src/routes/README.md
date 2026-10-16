@@ -128,7 +128,8 @@ a matched route renders:
   to a visitor without a token too, with no redirect to `/sign-in`.
 - `RouteValidator` rejects a flagged registry with no route at `ROUTE_PATHS.notFound` ("A flagged
   route needs a registered not-found route") and a nested route that declares `flag`, like a
-  nested `guard`.
+  nested `guard`: `flag` is top-level only because the `RouteFlagGate` decides once per matched
+  route, at render time.
 
 The gate's prop is named `notFound`, not `fallback`, so the Suspense-fallback ESLint gate never has
 to judge it. It imports neither tsyringe, `@/providers/di`, Apollo, zod nor `@mui/*`.

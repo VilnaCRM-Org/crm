@@ -999,18 +999,21 @@ only an annotation, make it `import type` (issue #88).
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
 `reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
-`error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
-public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+`error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
+module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
 
 Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
 `reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
-behind an adapter — Apollo through `ApolloLinkFactory` / `AUTH_TOKENS.ApolloClient`, Sentry and
+behind an adapter — Apollo through `ApolloLinkFactory` (the link chain) and `SessionLinkFactory`
+(the Bearer token and the 401 sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two
+`RESTRICTED_LIBRARY_ADAPTERS` entries — Sentry and
 `web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
 contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
 container-resolved class. Those inside a gated directory (`auth-store-selectors`,
+`auth-session-end-handler`,
 `response-schemas`, `map-registration-error`, `load-registration-notification`,
 `registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
@@ -1020,8 +1023,9 @@ core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) 
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
-load-bearing, so do not delete it. The form-section `validations/*` singletons live under
-`components/`, which no scope glob matches, so they alone need no policy entry.
+load-bearing, so do not delete it. The validator singletons live in
+`src/modules/user/lib/validations/`, which no `LOGIC_SOURCE_GLOBS` entry matches, so they need no
+policy entry.
 
 Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
 the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus

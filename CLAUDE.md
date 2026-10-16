@@ -368,25 +368,34 @@ Two remedies, in order:
    two programs cannot be told apart, not that a test was hard to write. **Placement is
    load-bearing:** Stryker reads the directive from a node's `leadingComments` and keys
    `next-line` off _that node's_ line, so the comment has to lead a node starting on the mutant's
-   own line. Any node will do: `password-field.tsx` leads the whole `const toggle = …` statement
+   own line. Any node will do: `ui-password-field/index.tsx` leads the whole `const toggle = …` statement
    and its inline deps array is annotated fine. What fails is a comment with no node to lead —
    dangling at the end of a block, the natural-looking spot above `}, []);`, it attaches to nothing
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Twelve directives are annotated today, at two mutators. Eleven are `ArrayDeclaration` on a React
-hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+Seventeen directives are annotated today, at two mutators. Sixteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Thirteen are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. The eleventh, `use-login-submitter.ts`, annotates the **non-empty**
-`[actions, loginControllersRef]`, which `ArrayDeclaration` empties instead — equivalent for a
-different reason worth stating separately: `actions` is always the `authActions` module singleton
-and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an emptied list
-memoizes exactly the same callback. Hoisting either literal to a named constant would remove the
-mutant, but `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument
-that is not an array literal, so there is nothing left to change.
+does with `[]`. Three annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+and each is equivalent for a reason worth stating separately:
 
-The twelfth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+- `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
+  `authActions` module singleton and `loginControllersRef` is a `useRef` box, so neither identity
+  ever changes and an emptied list memoizes exactly the same callback.
+- `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
+  the `run` callback handed to `useAbortableSubmit`. `provider` comes from
+  `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
+  the token is a module constant; `src/modules/user/config/di.ts` binds it with
+  `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
+  therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
+
+Hoisting any of these literals to a named constant would remove the mutant, but
+`react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
+array literal, so there is nothing left to change.
+
+The seventeenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -395,7 +404,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a thirteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
@@ -1756,7 +1765,11 @@ it, so the same `t('password_policy.rules.length')` in a sign-up component would
 key on `/sign-up`. The owners are the two recovery route folders, the recovery component folders,
 `use-recovery-failure-banner.ts`, and the auth route contract
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
-through `usePageTitle` after its module has registered the catalog). Adding an owner is a reviewed
+through `usePageTitle` after its module has registered the catalog). The settings catalog
+(issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
+the settings `components/` and `hooks/` folders that page renders, and the settings route contract
+`routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
+`transformers/` load in the container chunk and own no settings key. Adding an owner is a reviewed
 policy edit and must name a file only the registering routes import. A policy entry that names no
 discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
 unreadable or malformed policy fails the run before any check.
@@ -2337,13 +2350,15 @@ allowed carve-outs.
 | Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
 | Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
 | Constant maps        | `response-messages`, `error-codes`                                   |
-| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` (GraphQL)            |
+| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` / `*-query.ts`       |
 | Public barrels       | `@/modules/<m>`, `@auth` — the only cross-boundary path (issue #107) |
 | Pure leaf libraries  | `uuid`                                                               |
 
 **Third-party policy — position (A), adapter + token.** A behavioral library is wrapped behind an
 `@injectable()` adapter and a token rather than called from a feature class: Apollo through
-`ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
+`ApolloLinkFactory` (the link chain) and `SessionLinkFactory` (the Bearer token and the 401
+sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two files `RESTRICTED_LIBRARY_ADAPTERS`
+lists; Sentry and `web-vitals` through the
 observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
 and passed to collaborators **as data**. This is enforced as an **allowlist**, not a denylist of
 known-behavioral packages: only `tsyringe`, `reflect-metadata`, and `uuid` may be value-imported
@@ -2383,14 +2398,17 @@ Three different things are outside the gate, and the distinction matters when yo
 
 - **Never in scope** (no policy entry needed): anything outside those globs — a feature's
   `components/` folder, plus `src/components/**`, `src/styles/**`, `src/routes/**`,
-  `src/providers/**` and `src/config/**` — which is why the form-section `validations/*`
-  singletons need no carve-out despite being container-free.
+  `src/providers/**`, `src/config/**` and `src/modules/*/lib/**` — which is why the validator
+  singletons in `src/modules/user/lib/validations/` need no policy entry despite being
+  container-free: no `LOGIC_SOURCE_GLOBS` entry matches them.
 - **In scope but exempted by file kind** in `EXEMPT_PATTERNS`: React components (`.tsx`),
   tests/stories/`.d.ts`, type-only files, hooks (`use-*.ts` — `use-auth-token` sits inside the
   gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
   class to register it), token modules, and index barrels.
 - **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
   **container-free render-path singletons** — `auth-store-selectors`,
+  `auth-session-end-handler` (the one sign-out sequence, which `DeferredAuthActions.logout()`
+  calls and `SessionLinkFactory` injects through `AUTH_TOKENS.AuthSessionEndHandler`),
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
