@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -98,6 +99,36 @@ describe('useEmailResend', () => {
       });
     }
   );
+
+  it('moves focus to the e-mail field when the payload says the address is confirmed', async () => {
+    mockResend.mockResolvedValue({ kind: 'confirmed', confirmed: true });
+    const email = document.createElement('input');
+    email.id = 'email';
+    document.body.appendChild(email);
+    const { result } = setup();
+
+    await act(async () => {
+      result.current.resend();
+    });
+
+    expect(email).toHaveFocus();
+    email.remove();
+  });
+
+  it('leaves focus alone when the address is still unconfirmed', async () => {
+    mockResend.mockResolvedValue({ kind: 'confirmed', confirmed: false });
+    const email = document.createElement('input');
+    email.id = 'email';
+    document.body.appendChild(email);
+    const { result } = setup();
+
+    await act(async () => {
+      result.current.resend();
+    });
+
+    expect(email).not.toHaveFocus();
+    email.remove();
+  });
 
   it.each([
     ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],

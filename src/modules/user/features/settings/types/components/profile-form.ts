@@ -32,9 +32,28 @@ export interface ProfileFormFieldsProps {
   readonly rules: ProfileFormRules;
   readonly refocus: boolean;
   readonly state: ProfileFormState;
+  readonly emailRow: EmailRowState;
 }
 
 export interface PersonalDetailsProps {
   readonly rules: ProfileFormRules;
   readonly refocus: boolean;
+  readonly emailRow: EmailRowState;
+}
+
+export interface EmailStatusRowProps {
+  readonly statusId: string;
+  readonly busy: boolean;
+  readonly onResend: () => void;
+}
+
+export interface EmailRowState {
+  readonly confirmed: boolean;
+  readonly busy: boolean;
+  readonly resend: () => void;
+}
+
+export interface EmailFieldProps {
+  readonly rules: ProfileFormRules;
+  readonly emailRow: EmailRowState;
 }
