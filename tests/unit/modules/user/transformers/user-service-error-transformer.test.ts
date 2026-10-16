@@ -242,6 +242,48 @@ describe('UserServiceErrorTransformer', () => {
     expect(transformer.normalize(error)).toEqual(failed('refused', null));
   });
 
+  it.each(['\n', '\r\n', '\n\n'])(
+    'reads one violation per line of a multi-line message separated by %j',
+    (separator) => {
+      const message = ['initials: too short', 'newPassword: too weak'].join(separator);
+
+      expect(transformer.normalize(graphQLError(message, { status: 422 }))).toEqual({
+        reason: 'violation',
+        status: 422,
+        violations: {
+          items: [
+            { path: 'initials', reason: 'other' },
+            { path: 'newPassword', reason: 'other' },
+          ],
+        },
+      });
+    }
+  );
+
+  it('keeps the taken reason on the line that carries the uniqueness message', () => {
+    const message = 'initials: too short\nemail: This email address is already registered';
+
+    expect(transformer.normalize(graphQLError(message)).violations.items).toEqual([
+      { path: 'initials', reason: 'other' },
+      { path: 'email', reason: 'taken' },
+    ]);
+  });
+
+  it.each([
+    ['unknown first', 'clientMutationId: bad\ninitials: too short'],
+    ['unknown last', 'initials: too short\nclientMutationId: bad'],
+  ])('gives an empty violation set when a line has an unknown path (%s)', (_name, message) => {
+    expect(transformer.normalize(graphQLError(message, { status: 422 }))).toEqual(
+      failed('violation', 422)
+    );
+  });
+
+  it('does not treat a multi-line message without a known prefix as a violation', () => {
+    expect(transformer.normalize(graphQLError('Something odd\nMore text'))).toEqual(
+      failed('refused', null)
+    );
+  });
+
   it('classifies extensions.status 429 as rate_limited', () => {
     expect(transformer.normalize(graphQLError('Too many requests', { status: 429 })).reason).toBe(
       'rate_limited'
