@@ -62,7 +62,7 @@ const routeErrorInfo = (overrides: Partial<ErrorInfoArg> = {}): ErrorInfoArg => 
 });
 
 describe('route composer', () => {
-  it('wraps every route in a single RootLayout with a route error boundary (invariant A)', () => {
+  it('wraps every route in a single RootLayout under one flag gate (invariant A)', () => {
     const tree = routeComposer.compose(registry).items;
     const root = rootOf(tree);
 
@@ -71,6 +71,8 @@ describe('route composer', () => {
     expect(typeOf(root)).toBe(RootLayout);
     expect(errorBoundaryOf(root).type).toBe(RouteError);
     expect(landmarkOf(root)).toBe('main');
+    expect(root.children).toHaveLength(1);
+    expect(isGate(root.children?.[0])).toBe(true);
   });
 
   it('nests protected routes under ProtectedRoute then AppLayout (invariants B, D)', () => {
@@ -82,7 +84,7 @@ describe('route composer', () => {
     expect(layout.children?.some((route) => route.index)).toBe(true);
   });
 
-  it('keeps public routes directly under RootLayout, never under AppLayout (invariant B)', () => {
+  it('keeps public routes directly under the gate route, itself directly under RootLayout', () => {
     const tree = routeComposer.compose(registry).items;
     // Everything that is not the protected branch is a flat public route.
     const flat = publicLevelOf(tree);
@@ -314,8 +316,22 @@ describe('route composer flag gate (Story 1.5)', () => {
     );
   });
 
-  it('emits no gate level for the real registry, whose routes declare no flag', () => {
+  it('emits exactly one gate for the real registry and flags only the settings page', () => {
     const tree = routeComposer.compose(registry).items;
+
+    expect(walk(tree).filter((route) => isGate(route))).toHaveLength(1);
+    expect(walk(tree).filter((route) => route.handle !== undefined)).toEqual([
+      expect.objectContaining({ path: ROUTE_PATHS.settings, handle: { flag: 'userSettings' } }),
+    ]);
+    expect(protectedBranchOf(tree).layout.children?.map((route) => route.path)).toEqual([
+      undefined,
+      ROUTE_PATHS.settings,
+    ]);
+  });
+
+  it('emits no gate level for the real registry without its flagged settings route', () => {
+    const modules = registry.items.filter((module) => module.id !== 'user.settings');
+    const tree = routeComposer.compose({ items: modules }).items;
 
     expect(isGate(rootOf(tree).children?.[0])).toBe(false);
     expect(walk(tree).some((route) => isGate(route))).toBe(false);

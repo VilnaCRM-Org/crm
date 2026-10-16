@@ -5,7 +5,7 @@ describe('route registry', () => {
   it('collects the module route contracts in composition order with unique ids', () => {
     const ids = registry.items.map((module) => module.id);
 
-    expect(ids).toEqual(['app.shell', 'user.auth']);
+    expect(ids).toEqual(['app.shell', 'user.auth', 'user.settings']);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -44,6 +44,19 @@ describe('route registry', () => {
       ROUTE_PATHS.serverError,
       ROUTE_PATHS.notFound,
     ]);
+  });
+
+  it('declares the settings page as a protected route behind the userSettings flag', () => {
+    const settings = registry.items
+      .flatMap((module) => module.routes)
+      .find((route) => route.path === ROUTE_PATHS.settings);
+
+    expect(registry.items.find((module) => module.id === 'user.settings')?.routes).toEqual([
+      settings,
+    ]);
+    expect(settings?.guard).toBe('protected');
+    expect(settings?.flag).toBe('userSettings');
+    expect(settings?.meta?.titleKey).toBe('settings.title');
   });
 
   it('declares the auth pages as public routes carrying their title metadata', () => {

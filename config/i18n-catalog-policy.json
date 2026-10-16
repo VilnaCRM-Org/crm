@@ -14,6 +14,10 @@
     {
       "catalog": "components/ui-password-policy-rules/i18n",
       "owners": ["components/ui-password-policy-rules"]
+    },
+    {
+      "catalog": "modules/user/features/settings/i18n",
+      "owners": ["modules/user/features/settings"]
     }
   ]
 }

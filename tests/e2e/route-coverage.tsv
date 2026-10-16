@@ -51,3 +51,4 @@ passwordRecovery	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes 
 passwordReset	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the reset step with taps only on Pixel 7 and iPhone 14, toggles visibility and checks the keyboard-height viewport.
 passwordRecovery	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the request form, the sent step at three sizes, and the card width against /sign-in.
 passwordReset	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the new-password form, the invalid-link state and the /sign-in notice at three sizes.
+settings	e2e	tests/e2e/modules/user/features/settings/settings.spec.ts	Opens /settings with the userSettings flag forced on and off, with and without a token: the sign-in redirect, the not-found page with no chunk request, and the page shell.

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { Component, type ReactNode, Suspense } from 'react';
 
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
+import settingsRoutes from '@/modules/user/features/settings/routes';
 import routeMapper from '@/routes/route-mapper';
 import type { AppRouteObject, PageModule } from '@/routes/types/app-route';
 import { buildToken } from '@tests/builders';
@@ -98,6 +99,17 @@ describe('route mapper chunk recovery (issue #147)', () => {
     mount({ index: true, guard: 'protected', load: () => Promise.reject(chunkFailure()) });
 
     expect(await screen.findByText('caught: Loading chunk 5 failed.')).toBeInTheDocument();
+    expect(reload).not.toHaveBeenCalled();
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it('never reloads the protected settings page when its chunk keeps failing', async () => {
+    const [settings] = settingsRoutes.routes;
+    if (settings === undefined) throw new Error('settings contract has no route');
+    mount({ ...settings, load: () => Promise.reject(chunkFailure()) });
+
+    expect(await screen.findByText('caught: Loading chunk 5 failed.')).toBeInTheDocument();
+    expect(settings.guard).toBe('protected');
     expect(reload).not.toHaveBeenCalled();
     expect(window.sessionStorage.length).toBe(0);
   });

@@ -127,6 +127,7 @@ describe('performance serving config', () => {
     const mapperSource = readFile('src/routes/route-mapper.tsx');
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const authRoutesSource = readFile('src/modules/user/features/auth/routes/index.ts');
+    const settingsRoutesSource = readFile('src/modules/user/features/settings/routes/index.ts');
     const routesSource = readFile('src/routes/routes.tsx');
     const rootLayoutSource = readFile('src/components/layouts/root-layout.tsx');
 
@@ -154,6 +155,14 @@ describe('performance serving config', () => {
     );
     expect(authRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-in'\)/
+    );
+
+    expect(settingsRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "settings" \*\/\s*'\.\/user-profile'\)/
+    );
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('./user-profile');
+    expect(staticImportsOf(readFile('src/routes/registry.ts'))).toContain(
+      '@/modules/user/features/settings/routes'
     );
 
     // Pages are never statically imported (which would defeat code splitting).
@@ -314,6 +323,7 @@ describe('performance serving config', () => {
       expect(namespaces).not.toContain('password_recovery');
       expect(namespaces).not.toContain('password_reset');
       expect(namespaces).not.toContain('password_policy');
+      expect(namespaces).not.toContain('settings');
     });
     expect(
       readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
