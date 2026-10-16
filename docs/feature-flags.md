@@ -135,6 +135,15 @@ route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any enviro
 sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
 `Known flags: userSettings.` and must unset it.
 
+## Gating a route
+
+A route contract declares `flag: 'userSettings'` instead of reading the flag itself; the eager
+`RouteFlagGate` renders the not-found page while the flag is off, above `ProtectedRoute`, so a
+visitor without a token gets the same page and the chunk is never requested. `/settings` is the
+example (`src/modules/user/features/settings/routes/index.ts`); the mechanics are in
+[`src/routes/README.md`](../src/routes/README.md#flagged-routes-issue-330). Gate the entry points
+too: the home page renders its "Налаштування" link only while the flag is on.
+
 ## Rules
 
 - **Default off.** A new flag ships disabled. The only reason to declare a default of `true` is a
