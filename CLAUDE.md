@@ -2520,7 +2520,8 @@ change.
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
 container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
 flag is declared today, `userSettings` (issue #330), shipped off in the committed block
-`{ "flags": { "userSettings": false } }`. The earlier `forgotPassword` flag was removed in #309
+`{ "flags": { "userSettings": false } }` (the test stack's `docker-compose.test.yml` switches it on
+through `APP_CONFIG_FLAG_USER_SETTINGS`, default `true`). The earlier `forgotPassword` flag was removed in #309
 when the sign-in "Забули пароль?" link started rendering unconditionally; an environment that
 still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
 `Known flags: userSettings.` and must unset it.

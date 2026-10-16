@@ -112,7 +112,11 @@ an environment that still names a removed flag fails fast.
   would read and update an arbitrary user, so the committed default and
   `FEATURE_FLAG_DEFAULTS` must stay `false` (a contract test fails otherwise).
 - **Roll out:** on in the test stack once the page is complete, then in production after the
-  user-service authentication surface ships (request G1).
+  user-service authentication surface ships (request G1). The test stack is on:
+  `docker-compose.test.yml` passes `APP_CONFIG_FLAG_USER_SETTINGS=${APP_CONFIG_FLAG_USER_SETTINGS:-true}`
+  to the `prod` service, so the Playwright, a11y and visual suites see the home link and the
+  `/settings` page, while `docker-compose.yml` and the committed block stay `false`. Set the
+  variable to `false` to run the stack without the page.
 - **Owner:** the user settings feature (issue #330).
 - **Removal trigger:** delete the flag once production has it on and the page is stable; step 3
   of the lifecycle above applies.
