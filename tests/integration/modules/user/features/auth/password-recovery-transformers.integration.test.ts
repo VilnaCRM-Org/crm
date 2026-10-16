@@ -4,6 +4,7 @@ import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import type { UserServiceFailure } from '@/modules/user/types/user-service/user-service-failure';
 import type { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type {
@@ -165,5 +166,117 @@ describe('password recovery transformers over real GraphQL answers', () => {
     ],
   ])('normalises %s to %s', (_name, error, reason) => {
     expect(errors().normalize(error).reason).toBe(reason);
+  });
+});
+
+const normalized = async (response: () => Response): Promise<UserServiceFailure> => {
+  answerRecoveryOperation('confirm', response);
+  const caught = await repository()
+    .confirmReset(
+      { token: buildResetToken(), newPassword: buildPassword() },
+      new AbortController().signal
+    )
+    .then(
+      () => null,
+      (error: unknown) => error
+    );
+  return errors().normalize(caught);
+};
+
+const failureOf = (
+  reason: UserServiceFailure['reason'],
+  status: number | null,
+  items: UserServiceFailure['violations']['items'] = []
+): UserServiceFailure => ({ reason, status, violations: { items, complete: true } });
+
+describe('the settings rows of the container-resolved UserServiceErrorTransformer', () => {
+  afterEach(() => server.resetHandlers());
+
+  it.each<[string, () => Response, UserServiceFailure]>([
+    [
+      'a transport 401',
+      (): Response => new HttpResponse(null, { status: 401 }),
+      failureOf('unauthenticated', 401),
+    ],
+    [
+      'a GraphQL extensions.status 401',
+      (): Response => graphQLErrorBody('Unauthorized', { status: 401 }),
+      failureOf('unauthenticated', 401),
+    ],
+    [
+      'Access Denied. without extensions',
+      (): Response => graphQLErrorBody('Access Denied.'),
+      failureOf('access_denied', null),
+    ],
+    [
+      'Access Denied. with status 403',
+      (): Response => graphQLErrorBody('Access Denied.', { status: 403 }),
+      failureOf('access_denied', 403),
+    ],
+    [
+      'Access Denied. with FORBIDDEN and 403',
+      (): Response => graphQLErrorBody('Access Denied.', { code: 'FORBIDDEN', status: 403 }),
+      failureOf('access_denied', 403),
+    ],
+    [
+      'the English wrong-password text',
+      (): Response => graphQLErrorBody('Old password is invalid'),
+      failureOf('invalid_password', null),
+    ],
+    [
+      'the Ukrainian wrong-password text',
+      (): Response => graphQLErrorBody('Старий пароль невірний'),
+      failureOf('invalid_password', null),
+    ],
+    [
+      'the English uniqueness text',
+      (): Response =>
+        graphQLErrorBody('email: This email address is already registered', { status: 422 }),
+      failureOf('violation', 422, [{ path: 'email', reason: 'taken' }]),
+    ],
+    [
+      'the Ukrainian uniqueness text',
+      (): Response => graphQLErrorBody('email: Ця email-адреса вже зареєстрована', { status: 422 }),
+      failureOf('violation', 422, [{ path: 'email', reason: 'taken' }]),
+    ],
+    [
+      'an initials violation',
+      (): Response => graphQLErrorBody('initials: This value is too short.', { status: 422 }),
+      failureOf('violation', 422, [{ path: 'initials', reason: 'other' }]),
+    ],
+    [
+      'a password violation',
+      (): Response => graphQLErrorBody('password: This value is too short.', { status: 422 }),
+      failureOf('violation', 422, [{ path: 'password', reason: 'other' }]),
+    ],
+  ])('normalises %s', async (_name, response, expected) => {
+    await expect(normalized(response)).resolves.toEqual(expected);
+  });
+
+  it.each<[string, string, RecoveryFailedOutcome['failure']]>([
+    [
+      'a newPassword line before a token line',
+      'newPassword: Too weak.\ntoken: This value is not valid.',
+      { reason: 'invalid_link', retryable: false },
+    ],
+    [
+      'a token line before a newPassword line',
+      'token: This value is not valid.\nnewPassword: Too weak.',
+      { reason: 'invalid_link', retryable: false },
+    ],
+    [
+      'a token line beside an unknown line',
+      'token: This value is not valid.\nclientMutationId: This value is not valid.',
+      { reason: 'invalid_link', retryable: false },
+    ],
+    [
+      'a newPassword line beside an unknown line',
+      'newPassword: Too weak.\nclientMutationId: This value is not valid.',
+      { reason: 'policy_rejected', retryable: false },
+    ],
+  ])('keeps the confirm outcome of %s', async (_name, message, expected) => {
+    answerRecoveryOperation('confirm', () => graphQLErrorBody(message, { status: 422 }));
+
+    await expect(run('confirm')).resolves.toEqual({ kind: 'failed', failure: expected });
   });
 });

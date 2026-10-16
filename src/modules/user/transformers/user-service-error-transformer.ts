@@ -4,6 +4,7 @@ import { injectable } from 'tsyringe';
 
 import type {
   FieldViolation,
+  FieldViolationSet,
   UserServiceFailure,
   UserServiceFailureReason,
 } from '@/modules/user/types/user-service/user-service-failure';
@@ -26,7 +27,7 @@ const TAKEN_MESSAGES: ReadonlySet<string> = new Set([
   'Ця email-адреса вже зареєстрована',
 ]);
 
-const NO_VIOLATIONS: readonly FieldViolation[] = [];
+const NO_VIOLATIONS: FieldViolationSet = { items: [], complete: true };
 
 const VIOLATION_PROPERTIES: readonly string[] = [
   'email',
@@ -73,7 +74,7 @@ export default class UserServiceErrorTransformer {
     );
   }
 
-  private violationsOf(message: string): readonly FieldViolation[] | null {
+  private violationsOf(message: string): FieldViolationSet | null {
     const lines = message.split(/\r?\n/).filter((line) => line.trim() !== '');
     const items: FieldViolation[] = [];
     for (const line of lines) {
@@ -81,7 +82,7 @@ export default class UserServiceErrorTransformer {
       if (violation) items.push(violation);
     }
     if (items.length === 0) return null;
-    return items.length === lines.length ? items : NO_VIOLATIONS;
+    return { items, complete: items.length === lines.length };
   }
 
   private violationOf(message: string): FieldViolation | null {
@@ -109,8 +110,8 @@ export default class UserServiceErrorTransformer {
   private failure(
     reason: UserServiceFailureReason,
     status: number | null,
-    items: readonly FieldViolation[]
+    violations: FieldViolationSet
   ): UserServiceFailure {
-    return { reason, status, violations: { items } };
+    return { reason, status, violations };
   }
 }

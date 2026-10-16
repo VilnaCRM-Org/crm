@@ -99,7 +99,8 @@ export default class GraphQLProfileTransformer {
     return { kind: 'ok', user: { id, fullName: initials, email, confirmed } };
   }
 
-  private fieldErrors({ items }: FieldViolationSet): ProfileFieldErrorSet | null {
+  private fieldErrors({ items, complete }: FieldViolationSet): ProfileFieldErrorSet | null {
+    if (!complete) return null;
     const found: ProfileFieldError[] = [];
     for (const violation of items) {
       const error = this.fieldErrorOf(violation);
