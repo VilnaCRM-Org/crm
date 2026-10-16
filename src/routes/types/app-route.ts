@@ -43,6 +43,5 @@ interface PathRoute extends RouteCommon {
 // Exactly one of `index` or `path` (react-router index routes are leaves and
 // carry no path/children). `guard` applies to a module's top-level routes only —
 // nested children inherit their parent's protection context (enforced by the
-// RouteValidator), so declaring a guard on a child is a contract error. `flag` is top-level
-// only for the same reason: the RouteFlagGate decides once per matched route, at render time.
+// RouteValidator), so declaring a guard on a child is a contract error.
 export type AppRouteObject = IndexRoute | PathRoute;

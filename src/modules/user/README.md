@@ -389,6 +389,15 @@ a set read inside the violation step that yields the taken reason. Every other m
 classifies by shape, so #315's "never reads the message for meaning" case stays green.
 `GraphQLProfileTransformer` then maps the failure to field errors or to one of four reasons.
 
+It also amends #315's violation step by name. API Platform reports several constraint violations
+of one `updateUser` as a multi-line message, so the step reads one `FieldViolation` per line
+instead of one for the whole message. A line with an unknown property is flagged, not dropped:
+the set carries `complete: false` and keeps every recognised line. The rule that an unknown line
+means no field errors and one toast lives in `GraphQLProfileTransformer`, the settings consumer,
+so the shared step stays shape-only. On the confirm step of password recovery a `token` line
+anywhere in the message still gives `invalid_link`, before or after a `newPassword` line and
+beside an unknown line.
+
 **Rejected.** Matching `extensions.code` (upstream drops it); a substring or case-insensitive
 match of a message (it would turn a translation change into a silent misclassification); half
 field errors and half toast for one failure.
@@ -469,9 +478,32 @@ untested implementation of the backend).
 
 ### Upstream requests of the settings page
 
-The page depends on user-service requests G1 to G8 (a released authentication surface, a `me`
-query, machine-readable error codes and the others the architecture lists). The links to the
-user-service issues are added with the closing documentation of the feature.
+The page depends on user-service for the items below, filed as issues. None of them blocks the
+test stack, and G1 blocks production only. The page is tracked in
+[crm #330](https://github.com/VilnaCRM-Org/crm/issues/330).
+
+- **G1** — release `main`'s authentication surface:
+  [user-service #513](https://github.com/VilnaCRM-Org/user-service/issues/513).
+- **G2** — a `me` query for the signed-in user:
+  [#515](https://github.com/VilnaCRM-Org/user-service/issues/515).
+- **G3** — the caller's own unchanged e-mail is rejected as already taken:
+  [#516](https://github.com/VilnaCRM-Org/user-service/issues/516).
+- **G4** — profile changes without the current password, and OAuth users:
+  [#518](https://github.com/VilnaCRM-Org/user-service/issues/518), with the password-policy
+  mismatch in [#517](https://github.com/VilnaCRM-Org/user-service/issues/517).
+- **G5** — avatar field, upload and storage:
+  [#519](https://github.com/VilnaCRM-Org/user-service/issues/519).
+- **G6** — signed-in social link, list and unlink:
+  [#520](https://github.com/VilnaCRM-Org/user-service/issues/520).
+- **G7** — GraphQL `updateUser` and `deleteUser` bypass the rate limiters:
+  [#521](https://github.com/VilnaCRM-Org/user-service/issues/521).
+- **G8** — a machine-readable `extensions.code` on domain errors:
+  [#522](https://github.com/VilnaCRM-Org/user-service/issues/522).
+
+[#514](https://github.com/VilnaCRM-Org/user-service/issues/514) (CORS headers for `X-Request-Id`
+and `X-Correlation-Id`) is the production blocker for every GraphQL call from the SPA. The page,
+its shared pieces and its layer stack are described in the
+[settings feature README](features/settings/README.md).
 
 ## Enforcement
 
@@ -512,32 +544,3 @@ module grows:
    add a bare alias like `@auth` in `tsconfig.paths.json`, `jest.config.ts`,
    and `rsbuild.config.ts`.
 4. Run `make lint-deps` and iterate until green. Never weaken a rule.
-
-### Settings upstream requests
-
-The page depends on user-service for the items below, filed as issues. None of them blocks the
-test stack, and G1 blocks production only. The page is tracked in
-[crm #330](https://github.com/VilnaCRM-Org/crm/issues/330).
-
-- **G1** — release `main`'s authentication surface:
-  [user-service #513](https://github.com/VilnaCRM-Org/user-service/issues/513).
-- **G2** — a `me` query for the signed-in user:
-  [#515](https://github.com/VilnaCRM-Org/user-service/issues/515).
-- **G3** — the caller's own unchanged e-mail is rejected as already taken:
-  [#516](https://github.com/VilnaCRM-Org/user-service/issues/516).
-- **G4** — profile changes without the current password, and OAuth users:
-  [#518](https://github.com/VilnaCRM-Org/user-service/issues/518), with the password-policy
-  mismatch in [#517](https://github.com/VilnaCRM-Org/user-service/issues/517).
-- **G5** — avatar field, upload and storage:
-  [#519](https://github.com/VilnaCRM-Org/user-service/issues/519).
-- **G6** — signed-in social link, list and unlink:
-  [#520](https://github.com/VilnaCRM-Org/user-service/issues/520).
-- **G7** — GraphQL `updateUser` and `deleteUser` bypass the rate limiters:
-  [#521](https://github.com/VilnaCRM-Org/user-service/issues/521).
-- **G8** — a machine-readable `extensions.code` on domain errors:
-  [#522](https://github.com/VilnaCRM-Org/user-service/issues/522).
-
-[#514](https://github.com/VilnaCRM-Org/user-service/issues/514) (CORS headers for `X-Request-Id`
-and `X-Correlation-Id`) is the production blocker for every GraphQL call from the SPA. The page,
-its shared pieces and its layer stack are described in the
-[settings feature README](features/settings/README.md).

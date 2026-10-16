@@ -17,7 +17,12 @@
     },
     {
       "catalog": "modules/user/features/settings/i18n",
-      "owners": ["modules/user/features/settings"]
+      "owners": [
+        "modules/user/features/settings/routes/index.ts",
+        "modules/user/features/settings/routes/user-profile",
+        "modules/user/features/settings/components",
+        "modules/user/features/settings/hooks"
+      ]
     }
   ]
 }
