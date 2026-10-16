@@ -138,12 +138,14 @@ describe('profile operations on the stateless mock', () => {
   });
 
   it('rejects an e-mail longer than 254 characters', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const tooLong = `${'a'.repeat(250)}@example.com`;
 
     const result = await update(server, { id: SEEDED_ID, email: tooLong });
 
-    expect(result.errors?.[0]?.message).toContain('email:');
+    expect(result.errors?.[0]?.message).toBe('email: This value is not a valid email address.');
+    expect(result.errors?.[0]?.extensions).toMatchObject({ code: 'BAD_USER_INPUT', status: 422 });
+    expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
   });
 
   it('applies the sent initials and keeps the seeded e-mail confirmed', async () => {

@@ -5,7 +5,7 @@ import fillInput from '@tests/e2e/utils/fill-input';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 
-import { PROFILE_NODE, originsOf } from './profile-stub';
+import { PROFILE_NODE, type RecordedCall, configuredOrigin, originsOf } from './profile-stub';
 
 export const text = {
   title: `${t('settings.title')} - VilnaCRM`,
@@ -76,11 +76,17 @@ export async function expectToastsInOrder(page: Page, messages: string[]): Promi
 export function expectOnlyAllowedOrigins(
   urls: readonly string[],
   documentUrl: string,
-  allowed: readonly string[]
+  calls: readonly RecordedCall[],
+  extra: readonly string[] = []
 ): void {
-  const permitted = [new URL(documentUrl).origin, ...allowed];
+  const graphqlOrigin = configuredOrigin(process.env.REACT_APP_GRAPHQL_URL, documentUrl);
+  const permitted = [new URL(documentUrl).origin, graphqlOrigin, ...extra];
+  expect(originsOf(calls.map((call) => call.url)).filter((o) => o !== graphqlOrigin)).toEqual([]);
   expect(originsOf(urls).filter((origin) => !permitted.includes(origin))).toEqual([]);
 }
+
+export const configuredRestOrigin = (documentUrl: string): string =>
+  configuredOrigin(process.env.REACT_APP_MOCKOON_URL, documentUrl);
 
 export function expectNoPersonalDataInUrls(urls: readonly string[], secrets: string[]): void {
   const decoded = urls.map((url) => decodeURIComponent(url));

@@ -43,8 +43,7 @@ test.describe('Settings save journeys (issue #330)', () => {
   });
 
   test.afterEach(({ page }) => {
-    const origins = stub.calls.map((call) => new URL(call.url).origin);
-    expectOnlyAllowedOrigins(contacted(), page.url(), origins);
+    expectOnlyAllowedOrigins(contacted(), page.url(), stub.calls);
     expectNoPersonalDataInUrls(contacted(), [password, newPassword, newEmail, NEW_NAME]);
   });
 

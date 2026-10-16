@@ -1,33 +1,53 @@
-import settingsRoutes from '@/modules/user/features/settings/routes';
-import ROUTE_PATHS from '@/routes/route-paths';
+import type { RouteModule } from '@/routes/types/route-module';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
-jest.mock('@/assets/icons/eye.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@/assets/icons/eye-off.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/modules/user/features/settings/routes/user-profile', () => ({
+  __esModule: true,
+  default: function MockUserProfile(): null {
+    return null;
+  },
+}));
+
+interface LoadedContract {
+  readonly settingsRoutes: RouteModule;
+  readonly settingsPath: string;
+}
+
+const loadContract = (): Promise<LoadedContract> =>
+  loadIsolated(async () => ({
+    settingsRoutes: (await import('@/modules/user/features/settings/routes')).default,
+    settingsPath: (await import('@/routes/route-paths')).default.settings,
+  }));
 
 describe('settings route contract', () => {
-  const [route, ...rest] = settingsRoutes.routes;
+  it('registers one module named user.settings with a single route', async () => {
+    const { settingsRoutes } = await loadContract();
 
-  it('registers one module named user.settings with a single route', () => {
     expect(settingsRoutes.id).toBe('user.settings');
-    expect(rest).toEqual([]);
+    expect(settingsRoutes.routes).toHaveLength(1);
   });
 
-  it('declares /settings as a protected route behind the userSettings flag', () => {
-    expect(route).toMatchObject({
-      path: ROUTE_PATHS.settings,
+  it('declares /settings as a protected route behind the userSettings flag', async () => {
+    const { settingsRoutes, settingsPath } = await loadContract();
+    const [route] = settingsRoutes.routes;
+
+    expect(settingsPath).toBe('/settings');
+    expect(route).toEqual({
+      path: '/settings',
       guard: 'protected',
       flag: 'userSettings',
+      load: expect.any(Function),
       meta: { titleKey: 'settings.title' },
     });
-    expect(ROUTE_PATHS.settings).toBe('/settings');
   });
 
-  it('lazy-loads the UserProfile page', async () => {
-    const { default: UserProfile } = await (
-      route as { load: () => Promise<{ default: unknown }> }
-    ).load();
+  it('lazy-loads the user-profile page module', async () => {
+    const { settingsRoutes } = await loadContract();
+    const [route] = settingsRoutes.routes;
 
-    expect(UserProfile).toEqual(expect.any(Function));
-    expect((UserProfile as { name: string }).name).toBe('UserProfile');
+    const loaded = await route?.load();
+
+    expect(loaded?.default).toEqual(expect.any(Function));
+    expect(loaded?.default.name).toBe('MockUserProfile');
   });
 });
