@@ -2605,22 +2605,25 @@ verified in CI.
   relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file into
   the eager `index.js` every page downloads. Its route chunk imports it instead and registers both
   locales synchronously when the route module evaluates — before the page's `usePageTitle` runs —
-  through a container-free `*Loader` singleton calling `addResourceBundle`. Two lazy catalogs exist
-  today: the password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
+  through a container-free `*Loader` singleton calling `addResourceBundle`. Three lazy catalogs
+  exist today: the password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by the `reset-password`
   and `create-new-password` route modules, and the password-policy copy (`password_policy.*`), owned
   by `src/components/ui-password-policy-rules/` and registered by `PasswordPolicyCatalogLoader` when
-  that component module evaluates. The recovery keys were 3,742 B of the minified merged catalog;
-  moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and still about
-  0.95 KB above the #333 base (46,946 B), so the move alone does not restore the `/sign-in` headroom
-  (that base already scored a median of about 0.8375 against the 0.84 mobile floor). Keep a key
-  eager when a page outside those routes renders it (`sign_in.notices.password_reset` stays in the
-  auth catalog); the gate's owner list enforces it. Unit tests opt in per file: `createLocaleI18n`
-  and `tests/i18n/test-i18n.ts` carry the merged catalog only, exactly like an eager page, and tests
-  of the recovery routes and their components use `createRecoveryLocaleI18n`, so a lazy key leaking
-  into an eager page renders raw in that page's tests too. Storybook's preview and the e2e
-  `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
-  JSON files) keep the copy available for every story and spec.
+  that component module evaluates, and the settings copy (`settings.*`), owned by
+  `src/modules/user/features/settings/` and registered by `SettingsCatalogLoader` when the
+  `UserProfile` route module evaluates. The recovery keys were 3,742 B of the minified merged
+  catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and
+  still about 0.95 KB above the #333 base (46,946 B), so the move alone does not restore the
+  `/sign-in` headroom (that base already scored a median of about 0.8375 against the 0.84 mobile
+  floor). Keep a key eager when a page outside those routes renders it
+  (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
+  Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
+  catalog only, exactly like an eager page, and tests of the recovery routes and their components
+  use `createRecoveryLocaleI18n`, so a lazy key leaking into an eager page renders raw in that
+  page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which reads the
+  policy and registers every lazy catalog from its JSON files) keep the copy available for every
+  story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.

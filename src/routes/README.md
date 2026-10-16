@@ -51,9 +51,14 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 | `signIn`           | `/sign-in`           | `@auth/routes` (user.auth) | public    |
 | `passwordRecovery` | `/password-recovery` | `@auth/routes` (user.auth) | public    |
 | `passwordReset`    | `/password-reset`    | `@auth/routes` (user.auth) | public    |
+| `settings`         | `/settings`          | settings routes            | protected |
 | `forbidden`        | `/forbidden`         | `app-routes.ts`            | public    |
 | `serverError`      | `/server-error`      | `app-routes.ts`            | public    |
 | `notFound`         | `*`                  | `app-routes.ts`            | public    |
+
+`/settings` (issue #330) is the only flagged route: `flag: 'userSettings'`, so it renders the
+not-found page while the flag is off (see "Flagged routes"). Its contract is
+`src/modules/user/features/settings/routes/index.ts` and its page the lazy `settings` chunk.
 
 `/password-recovery` and `/password-reset` (issue #315) render the `ResetPassword` and
 `CreateNewPassword` pages; signed-in users are not redirected away from either.

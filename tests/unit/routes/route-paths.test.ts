@@ -17,6 +17,10 @@ describe('ROUTE_PATHS', () => {
     expect(ROUTE_PATHS.forbidden).toBe('/forbidden');
   });
 
+  it('settings is "/settings"', () => {
+    expect(ROUTE_PATHS.settings).toBe('/settings');
+  });
+
   it('serverError is "/server-error"', () => {
     expect(ROUTE_PATHS.serverError).toBe('/server-error');
   });

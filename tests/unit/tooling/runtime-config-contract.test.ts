@@ -94,6 +94,7 @@ const urlSettings = (): Array<{ envVar: string; key: string }> => {
 const ROUTE_CONTRACTS = [
   'src/routes/app-routes.ts',
   'src/modules/user/features/auth/routes/index.ts',
+  'src/modules/user/features/settings/routes/index.ts',
 ];
 
 const isRegisteredIn = (sources: string[], routePathKey: string): boolean =>
@@ -250,6 +251,18 @@ describe('runtime configuration contract', () => {
       schemaAccepts: accepted,
       rendererAccepts: accepted,
     });
+  });
+
+  it('registers the settings route behind its flag and covers it in the e2e suite (#330)', () => {
+    expect(ROUTE_CONTRACTS).toContain('src/modules/user/features/settings/routes/index.ts');
+    expect(isRouteRegistered('settings')).toBe(true);
+
+    const rows = routeCoverageRows('settings');
+
+    expect(rows.map(([, suite]) => suite)).toEqual(['e2e']);
+    expect(rows.map(([, , spec]) => spec)).toEqual([
+      'tests/e2e/modules/user/features/settings/settings.spec.ts',
+    ]);
   });
 
   it('links the registered password-recovery route from sign-in (#315)', () => {
