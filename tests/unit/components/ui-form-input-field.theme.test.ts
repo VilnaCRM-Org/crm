@@ -22,6 +22,14 @@ describe('ui-form-input-field theme', () => {
     });
   });
 
+  it('colours a field error message with the accessible error text token', async () => {
+    const theme = await loadTheme();
+
+    expect(theme.components?.MuiFormHelperText?.styleOverrides?.root).toMatchObject({
+      '&.Mui-error': { color: '#C62828' },
+    });
+  });
+
   it('declares the error rules after the focus rule so an invalid field stays red', async () => {
     const theme = await loadTheme();
     const root = theme.components?.MuiOutlinedInput?.styleOverrides?.root ?? {};

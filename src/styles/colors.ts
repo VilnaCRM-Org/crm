@@ -14,6 +14,9 @@ export const paletteColors = {
   },
   error: {
     main: '#DC3939',
+    // Field-error text on #FFFFFF (5.62:1) and #FDECEC (4.92:1); `main` is 4.48:1, enough for a
+    // 3:1 border or icon but not for 14 px text under WCAG 1.4.3.
+    text: '#C62828',
   },
   success: {
     main: '#4CAF50',

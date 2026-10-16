@@ -113,7 +113,7 @@ export default createTheme({
             fontSize: '0.875rem',
             lineHeight: '1.125rem',
             letterSpacing: 0,
-            color: paletteColors.error.main,
+            color: paletteColors.error.text,
           },
         },
       },
