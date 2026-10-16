@@ -13,11 +13,11 @@ values remain as defaults; runtime values win.
 The configuration is an inline JSON block in the HTML shell, `public/index.html`:
 
 ```json
-{ "flags": {} }
+{ "flags": { "userSettings": false } }
 ```
 
-No feature flag is declared today, so the committed `flags` object is empty (see
-`docs/feature-flags.md`, "Current flags").
+One feature flag is declared today, `userSettings`, shipped off (see `docs/feature-flags.md`,
+"Current flags").
 
 It is carried by a `script` element with `id="app-runtime-config"` and
 `type="application/json"` — a data block, not executable code, so it stays valid under a strict

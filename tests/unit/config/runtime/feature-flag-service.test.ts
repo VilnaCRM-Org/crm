@@ -24,12 +24,30 @@ describe('featureFlagService', () => {
     clearConfigBlock();
   });
 
-  it('declares no flags, so its names and snapshot are empty', async () => {
+  it('declares userSettings, shipped off, so it is named and snapshotted as false', async () => {
     const { default: featureFlagService, FeatureFlagService } = await loadFeatureFlagService();
 
     expect(featureFlagService).toBeInstanceOf(FeatureFlagService);
-    expect(featureFlagService.names()).toEqual({ items: [] });
-    expect(featureFlagService.snapshot()).toEqual({});
+    expect(featureFlagService.names()).toEqual({ items: [{ name: 'userSettings' }] });
+    expect(featureFlagService.isEnabled('userSettings')).toBe(false);
+    expect(featureFlagService.snapshot()).toEqual({ userSettings: false });
+  });
+
+  it('snapshots userSettings as false for a block that sets no flag', async () => {
+    writeConfigBlock(buildFeatureFlagConfig({}));
+
+    const { default: featureFlagService } = await loadFeatureFlagService();
+
+    expect(featureFlagService.snapshot()).toEqual({ userSettings: false });
+  });
+
+  it('enables userSettings when the runtime configuration turns it on', async () => {
+    writeConfigBlock(buildFeatureFlagConfig({ userSettings: true }));
+
+    const { default: featureFlagService } = await loadFeatureFlagService();
+
+    expect(featureFlagService.isEnabled('userSettings')).toBe(true);
+    expect(featureFlagService.snapshot()).toEqual({ userSettings: true });
   });
 
   it('names each declared flag as a FeatureFlagName', async () => {
