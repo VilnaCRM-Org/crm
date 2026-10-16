@@ -15,10 +15,11 @@ const meta: Meta<typeof UIToast> = {
     docs: {
       description: {
         component:
-          'One toast. Success sits on #E8F4EF with a #38B386 check icon and carries no role: the ' +
-          'stack announces it. Error sits on #FDECEC with a #DC3939 icon and is a ' +
-          '`role="alert"`. The text, the optional underlined action and the close icon are ' +
-          '#1A1C1E. Nothing closes a toast but the person reading it.',
+          'One toast. Success sits on #E8F4EF with a #2E7D32 check icon, error on #FDECEC with a ' +
+          '#DC3939 icon. A toast carries no role: the stack announces it through its ' +
+          'always-mounted status and alert regions. The close button is described by the ' +
+          'message. The text, the optional underlined action and the close icon are #1A1C1E. ' +
+          'Nothing closes a toast but the person reading it.',
       },
       story: { inline: false },
     },

@@ -30,6 +30,7 @@ const base: Props = {
   toasts: {
     toasts: { items: [] },
     announcement: '',
+    alert: '',
     show: () => undefined,
     dismiss: () => undefined,
   },

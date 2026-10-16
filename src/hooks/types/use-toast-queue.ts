@@ -3,6 +3,7 @@ import type { ToastDraftSet, ToastItemSet } from '@/components/types/ui-toast';
 export interface ToastQueueState {
   readonly toasts: ToastItemSet;
   readonly announcement: string;
+  readonly alert: string;
   readonly nextId: number;
   readonly marked: boolean;
 }

@@ -12,22 +12,36 @@ import i18n from '@/i18n';
 import SettingsGrid from '../../components/settings-grid';
 import UserProfileSettings from '../../components/user-profile-settings';
 import useProfileLoad from '../../hooks/use-profile-load';
+import type { SettingsHeadingProps, SettingsToastsProps } from '../../types/routes/user-profile';
 
 import settingsCatalogLoader from './settings-catalog-loader';
 import styles from './styles';
 
 settingsCatalogLoader.register(i18n);
 
-function SettingsHeading(): JSX.Element {
+function SettingsHeading({ headingRef }: SettingsHeadingProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
     <Box sx={styles.header}>
-      <UITypography component="h1" sx={styles.heading}>
+      <UITypography component="h1" ref={headingRef} tabIndex={-1} sx={styles.heading}>
         {t('settings.heading')}
       </UITypography>
       <UITypography sx={styles.subtitle}>{t('settings.subtitle')}</UITypography>
     </Box>
+  );
+}
+
+function SettingsToasts({ queue, saveRef, headingRef }: SettingsToastsProps): JSX.Element {
+  return (
+    <UIToastStack
+      toasts={queue.toasts}
+      announcement={queue.announcement}
+      alert={queue.alert}
+      onDismiss={queue.dismiss}
+      returnFocusRef={saveRef}
+      fallbackFocusRef={headingRef}
+    />
   );
 }
 
@@ -36,11 +50,12 @@ export default function UserProfile(): JSX.Element {
   const load = useProfileLoad();
   const toasts = useToastQueue();
   const saveRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLElement>(null);
 
   return (
     <UIContainer>
       <Box sx={styles.content}>
-        <SettingsHeading />
+        <SettingsHeading headingRef={headingRef} />
         <SettingsGrid>
           <UserProfileSettings
             status={load.status}
@@ -54,12 +69,7 @@ export default function UserProfile(): JSX.Element {
           />
         </SettingsGrid>
       </Box>
-      <UIToastStack
-        toasts={toasts.toasts}
-        announcement={toasts.announcement}
-        onDismiss={toasts.dismiss}
-        returnFocusRef={saveRef}
-      />
+      <SettingsToasts queue={toasts} saveRef={saveRef} headingRef={headingRef} />
     </UIContainer>
   );
 }

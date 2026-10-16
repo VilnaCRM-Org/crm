@@ -26,6 +26,7 @@ export const text = {
   resent: t('settings.toasts.resent'),
   transient: t('settings.toasts.save_failed_transient'),
   rateLimited: t('settings.toasts.rate_limited'),
+  toastClose: t('ui_toast.close'),
   passwordWrong: t('settings.errors.password_wrong'),
   emailTaken: t('sign_up.errors.email_used'),
   tryAgain: t('auth.error.tryAgain'),
@@ -41,6 +42,14 @@ export const newPasswordField = (page: Page): Locator =>
   page.getByLabel(text.newPassword, { exact: true });
 export const saveButton = (page: Page): Locator =>
   page.getByRole('button', { name: text.save, exact: true });
+
+export const toastClose = (page: Page): Locator =>
+  page.getByRole('button', { name: text.toastClose, exact: true });
+
+export async function expectErrorToast(page: Page, message: string): Promise<void> {
+  await expect(page.getByRole('alert').filter({ hasText: message })).toBeAttached();
+  await expect(toastClose(page)).toHaveAccessibleDescription(message);
+}
 
 export async function openSettingsFromHome(page: Page): Promise<void> {
   await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });

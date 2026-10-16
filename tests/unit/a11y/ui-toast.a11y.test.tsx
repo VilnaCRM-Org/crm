@@ -42,6 +42,7 @@ describe('UIToastStack accessibility', () => {
       <UIToastStack
         toasts={toasts}
         announcement="Зміни збережено"
+        alert=""
         onDismiss={jest.fn()}
         returnFocusRef={{ current: null }}
       />,
@@ -56,6 +57,7 @@ describe('UIToastStack accessibility', () => {
       <UIToastStack
         toasts={{ items: [] }}
         announcement=""
+        alert=""
         onDismiss={jest.fn()}
         returnFocusRef={{ current: null }}
       />,

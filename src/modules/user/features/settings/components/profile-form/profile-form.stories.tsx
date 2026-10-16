@@ -18,7 +18,7 @@ const meta: Meta<typeof ProfileForm> = {
     adoption: { adopt: noop, confirm: noop },
     version: 0,
     refocus: false,
-    toasts: { toasts: { items: [] }, announcement: '', show: noop, dismiss: noop },
+    toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
   },
   parameters: {

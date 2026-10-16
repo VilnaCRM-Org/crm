@@ -2,9 +2,14 @@ import type { RefCallback, RefObject } from 'react';
 
 import type { ToastDismiss, ToastItemSet } from './index';
 
+export type CloseButtons = RefObject<Map<number, HTMLButtonElement>>;
+
+export type LostFocus = RefObject<Set<number>>;
+
 export interface ToastFocusOptions {
   readonly toasts: ToastItemSet;
   readonly returnFocusRef: RefObject<HTMLElement | null>;
+  readonly fallbackFocusRef?: RefObject<HTMLElement | null> | undefined;
   readonly onDismiss: ToastDismiss;
 }
 

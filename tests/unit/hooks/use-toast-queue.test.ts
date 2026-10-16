@@ -99,7 +99,7 @@ describe('useToastQueue', () => {
 
     act(() => result.current.show(set(success('one'), success('two'), success('three'))));
 
-    expect(result.current.announcement.replace('​', '')).toBe('one two three');
+    expect(result.current.announcement.replace('\u200B', '')).toBe('one two three');
   });
 
   it('never puts an error text into the announcement', () => {
@@ -130,9 +130,62 @@ describe('useToastQueue', () => {
     act(() => result.current.show(set(success('saved'))));
     const third = result.current.announcement;
 
-    expect(first).toBe('saved​');
+    expect(first).toBe('saved\u200B');
     expect(second).toBe('saved');
     expect(third).toBe(first);
+  });
+
+  it('starts with an empty alert', () => {
+    const { result } = renderHook(() => useToastQueue());
+
+    expect(result.current.alert).toBe('');
+  });
+
+  it('announces the error texts of the latest show as one alert and keeps successes out', () => {
+    const { result } = renderHook(() => useToastQueue());
+
+    act(() => result.current.show(set(failure('one'), success('saved'), failure('two'))));
+
+    expect(result.current.alert).toBe('one two\u200B');
+    expect(result.current.announcement).toBe('saved\u200B');
+  });
+
+  it('changes the alert of an identical repeat through the alternating mark', () => {
+    const { result } = renderHook(() => useToastQueue());
+
+    act(() => result.current.show(set(failure('broken'))));
+    const first = result.current.alert;
+    act(() => result.current.show(set(failure('broken'))));
+    const second = result.current.alert;
+    act(() => result.current.show(set(failure('broken'))));
+
+    expect(first).toBe('broken\u200B');
+    expect(second).toBe('broken');
+    expect(result.current.alert).toBe(first);
+  });
+
+  it('leaves a region with nothing to say empty even on a marked show', () => {
+    const { result } = renderHook(() => useToastQueue());
+
+    act(() => result.current.show(set(failure('broken'))));
+
+    expect(result.current.announcement).toBe('');
+
+    act(() => result.current.show(set(success('saved'))));
+    act(() => result.current.show(set(success('saved'))));
+
+    expect(result.current.alert).toBe('');
+    expect(result.current.announcement).toBe('saved\u200B');
+  });
+
+  it('keeps the alert when a toast is dismissed', () => {
+    const { result } = renderHook(() => useToastQueue());
+    act(() => result.current.show(set(failure('broken'))));
+
+    act(() => result.current.dismiss(1));
+
+    expect(result.current.alert).toBe('broken\u200B');
+    expect(result.current.toasts.items).toEqual([]);
   });
 
   it('never dismisses a toast on its own', () => {

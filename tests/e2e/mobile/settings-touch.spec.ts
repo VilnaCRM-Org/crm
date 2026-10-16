@@ -14,10 +14,12 @@ import {
 import {
   currentPasswordField,
   emailField,
+  expectErrorToast,
   nameField,
   newPasswordField,
   saveButton,
   text,
+  toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -190,7 +192,8 @@ test.describe('Settings on touch devices (issue #330)', () => {
     stub = await stubProfile(page, { UpdateUser: [replyWithStatus(429)] });
     await openByTap(page);
     await tapSaveWith(page, NEW_NAME);
-    const toast = page.getByRole('alert').filter({ hasText: text.rateLimited });
+    await expectErrorToast(page, text.rateLimited);
+    const toast = toastClose(page).locator('..');
     await expect(toast).toBeVisible();
 
     const width = page.viewportSize()?.width ?? 0;

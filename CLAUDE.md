@@ -2600,10 +2600,16 @@ not-found page while it is off, so neither the sign-in redirect nor the page chu
 `src/modules/user/features/settings/routes/index.ts`. See `src/routes/README.md`.
 
 **Toasts (issue #330)** — `UIToastStack` (`src/components/ui-toast/`, state in `useToastQueue`)
-is the one transient-message surface: no timer, so a toast stays until the user closes it; one
-polite `UILiveStatus` announces the queue; an error toast carries `role="alert"`; at most three
-are shown. Closing the last toast returns focus to the control the page names (`returnFocusRef`),
-and the stack reserves `scroll-padding-bottom` so a focused control is never hidden under it.
+is the one transient-message surface: no timer, so a toast stays until the user closes it; two
+always-mounted `UILiveStatus` regions announce the queue, a polite one for success texts and an
+assertive one (`politeness="assertive"`, `role="alert"`) for error texts, both with the
+alternating mark so an identical repeat is spoken again; no toast carries a role of its own, and
+each close button is described by its message; at most three are shown. Closing a toast moves
+focus to the next close button, then the previous one, then the control the page names
+(`returnFocusRef`) while it is connected and enabled, then `fallbackFocusRef` (the settings
+`<h1 tabindex="-1">`); a toast pushed out by the cap while it holds focus hands it to the newest
+close button. The stack reserves `scroll-padding-bottom` so a focused control is never hidden
+under it.
 
 ### GraphQL Setup
 

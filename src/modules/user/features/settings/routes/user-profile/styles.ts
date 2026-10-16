@@ -23,6 +23,7 @@ export default {
     fontSize: '1.375rem',
     lineHeight: 'normal',
     color: customColors.text.dark,
+    '&:focus:not(:focus-visible)': { outline: 'none' },
 
     [`@media (min-width:${lg}px)`]: {
       fontSize: '1.75rem',
