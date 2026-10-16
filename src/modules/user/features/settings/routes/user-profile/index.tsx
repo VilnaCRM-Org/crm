@@ -8,6 +8,8 @@ import usePageTitle from '@/hooks/use-page-title';
 import i18n from '@/i18n';
 
 import SettingsGrid from '../../components/settings-grid';
+import UserProfileSettings from '../../components/user-profile-settings';
+import useProfileLoad from '../../hooks/use-profile-load';
 
 import settingsCatalogLoader from './settings-catalog-loader';
 import styles from './styles';
@@ -17,6 +19,7 @@ settingsCatalogLoader.register(i18n);
 export default function UserProfile(): JSX.Element {
   usePageTitle('settings.title');
   const { t } = useTranslation();
+  const load = useProfileLoad();
 
   return (
     <UIContainer>
@@ -27,7 +30,16 @@ export default function UserProfile(): JSX.Element {
           </UITypography>
           <UITypography sx={styles.subtitle}>{t('settings.subtitle')}</UITypography>
         </Box>
-        <SettingsGrid />
+        <SettingsGrid>
+          <UserProfileSettings
+            status={load.status}
+            user={load.user}
+            version={load.version}
+            refocus={load.refocus}
+            retry={load.retry}
+            adoption={load.adoption}
+          />
+        </SettingsGrid>
       </Box>
     </UIContainer>
   );

@@ -4,7 +4,9 @@
     "heading": "Settings",
     "subtitle": "Manage your personal details and account security.",
     "profile": {
-      "greeting": "Welcome!"
+      "greeting": "Welcome!",
+      "loading": "Loading your profile…",
+      "load_failed": "Your profile could not be loaded"
     }
   }
 }
