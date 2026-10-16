@@ -22,7 +22,7 @@ describe('paletteColors.error', () => {
   it('keeps error.main for borders and adds error.text for field-error text', async () => {
     const palette = await loadPalette();
 
-    expect(palette.error).toEqual({ main: '#DC3939', text: '#C62828' });
+    expect(palette.error).toEqual({ main: '#DC3939', text: '#C62828', surface: '#FDECEC' });
   });
 
   it('gives error.text at least 5.6:1 on white and 4.9:1 on the error tint', async () => {
@@ -37,5 +37,32 @@ describe('paletteColors.error', () => {
 
     expect(contrast(error.main, '#FFFFFF')).toBeGreaterThanOrEqual(3);
     expect(contrast(error.main, '#FFFFFF')).toBeLessThan(4.5);
+  });
+});
+
+describe('toast tokens', () => {
+  it('pins the success surface and icon beside the existing success tokens', async () => {
+    const { success } = await loadPalette();
+
+    expect(success).toEqual({
+      main: '#4CAF50',
+      text: '#2E7D32',
+      surface: '#E8F4EF',
+      icon: '#38B386',
+    });
+  });
+
+  it('gives the dark toast text 15.1:1 and 14.9:1 on the two surfaces', async () => {
+    const { success, error } = await loadPalette();
+
+    expect(contrast('#1A1C1E', success.surface)).toBeGreaterThanOrEqual(15.1);
+    expect(contrast('#1A1C1E', error.surface)).toBeGreaterThanOrEqual(14.9);
+  });
+
+  it('keeps the error icon above 3:1 and the decorative success icon as drawn', async () => {
+    const { success, error } = await loadPalette();
+
+    expect(contrast(success.icon, success.surface)).toBeGreaterThanOrEqual(2.3);
+    expect(contrast(error.main, error.surface)).toBeGreaterThanOrEqual(3);
   });
 });

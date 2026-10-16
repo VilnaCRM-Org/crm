@@ -42,6 +42,9 @@
         "offline": "You are offline. Submitting is unavailable until your connection is restored.",
         "restored": "Connection restored."
       },
+      "ui_toast": {
+        "close": "Close notification"
+      },
       "formatting": {
         "updated_at": "Last updated {{value, datetime}}",
         "price": "Price: {{value, currency}}"
@@ -241,6 +244,9 @@
       "offline_notice": {
         "offline": "Ви офлайн. Надсилання недоступне, доки з'єднання не відновиться.",
         "restored": "З'єднання відновлено."
+      },
+      "ui_toast": {
+        "close": "Закрити сповіщення"
       },
       "formatting": {
         "updated_at": "Оновлено {{value, datetime}}",
