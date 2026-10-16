@@ -259,9 +259,11 @@ describe('runtime configuration contract', () => {
 
     const rows = routeCoverageRows('settings');
 
-    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e']));
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e', 'visual']));
     expect(rows.map(([, , spec]) => spec)).toEqual(
       expect.arrayContaining([
+        'tests/visual/visual-comparison.settings.spec.ts',
+        'tests/visual/mobile/settings.spec.ts',
         'tests/e2e/modules/user/features/settings/settings.spec.ts',
         'tests/e2e/modules/user/features/settings/settings-save.spec.ts',
         'tests/e2e/modules/user/features/settings/settings-failures.spec.ts',
