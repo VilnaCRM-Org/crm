@@ -9,12 +9,12 @@ export default function useToastFocus({
 }: ToastFocusOptions): ToastFocus {
   const closeButtons = useRef(new Map<number, HTMLButtonElement>());
 
-  const closeRef = (id: number): RefCallback<HTMLButtonElement> => {
-    return (node) => {
+  const closeRef =
+    (id: number): RefCallback<HTMLButtonElement> =>
+    (node) => {
       if (node) closeButtons.current.set(id, node);
       else closeButtons.current.delete(id);
     };
-  };
 
   const dismiss = (id: number): void => {
     const next = toasts.items[toasts.items.findIndex((toast) => toast.id === id) + 1];

@@ -8,12 +8,31 @@ import type { UIToastProps } from '@/components/types/ui-toast';
 import styles from './styles';
 import ToastIcon from './toast-icon';
 
+function ToastActionButton({ toast, onDismiss }: UIToastProps): JSX.Element | null {
+  const { action, id } = toast;
+  if (!action) return null;
+
+  return (
+    <Box
+      component="button"
+      type="button"
+      sx={styles.action}
+      onClick={() => {
+        onDismiss(id);
+        action.onActivate();
+      }}
+    >
+      {action.label}
+    </Box>
+  );
+}
+
 const UIToast = forwardRef<HTMLButtonElement, UIToastProps>(function UIToast(
   { toast, onDismiss },
   closeRef
 ): JSX.Element {
   const { t } = useTranslation();
-  const { action, id, message, tone } = toast;
+  const { id, message, tone } = toast;
 
   return (
     <Box role={tone === 'error' ? 'alert' : undefined} sx={[styles.toast, styles.tones[tone]]}>
@@ -23,19 +42,7 @@ const UIToast = forwardRef<HTMLButtonElement, UIToastProps>(function UIToast(
       <Box component="span" sx={styles.message}>
         {message}
       </Box>
-      {action && (
-        <Box
-          component="button"
-          type="button"
-          sx={styles.action}
-          onClick={() => {
-            onDismiss(id);
-            action.onActivate();
-          }}
-        >
-          {action.label}
-        </Box>
-      )}
+      <ToastActionButton toast={toast} onDismiss={onDismiss} />
       <IconButton
         ref={closeRef}
         aria-label={t('ui_toast.close')}

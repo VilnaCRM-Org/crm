@@ -6,7 +6,9 @@ class RouteValidator {
   public validate({ items: modules }: RouteModuleRegistry): void {
     this.assertUniqueIds(modules);
     this.assertNotFoundRegistered(modules);
-    modules.forEach((module) => module.routes.forEach((route) => this.assertRoute(route, false)));
+    for (const { routes } of modules) {
+      for (const route of routes) this.assertRoute(route, false);
+    }
   }
 
   private assertUniqueIds(modules: readonly RouteModule[]): void {

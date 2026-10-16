@@ -34,6 +34,25 @@ function ConfirmationRecheck(): null {
   return null;
 }
 
+function ConfirmPasswordField(): JSX.Element {
+  const { t } = useTranslation();
+
+  return (
+    <UIPasswordField<CreateNewPasswordFormValues>
+      name="confirmPassword"
+      label={t('password_reset.confirm_password.label')}
+      placeholder={t('password_reset.confirm_password.placeholder')}
+      autoComplete="new-password"
+      sx={fieldStyles.formFieldWrapper}
+      rules={{
+        required: t('sign_up.form.password_input.required'),
+        validate: (value, values) =>
+          value === values.newPassword || t('password_reset.errors.mismatch'),
+      }}
+    />
+  );
+}
+
 function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX.Element {
   const { t } = useTranslation();
   const policyRejected =
@@ -54,18 +73,7 @@ function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX
         }}
       />
       <UIPasswordPolicyRules id={RULES_ID} name="newPassword" evaluate={evaluateNewPassword} />
-      <UIPasswordField<CreateNewPasswordFormValues>
-        name="confirmPassword"
-        label={t('password_reset.confirm_password.label')}
-        placeholder={t('password_reset.confirm_password.placeholder')}
-        autoComplete="new-password"
-        sx={fieldStyles.formFieldWrapper}
-        rules={{
-          required: t('sign_up.form.password_input.required'),
-          validate: (value, values) =>
-            value === values.newPassword || t('password_reset.errors.mismatch'),
-        }}
-      />
+      <ConfirmPasswordField />
       <UIServerFieldError name="newPassword" message={policyRejected} />
       <ConfirmationRecheck />
     </>
