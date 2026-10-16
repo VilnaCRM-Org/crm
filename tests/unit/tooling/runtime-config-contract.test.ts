@@ -96,10 +96,28 @@ const ROUTE_CONTRACTS = [
   'src/modules/user/features/auth/routes/index.ts',
 ];
 
+const isRegisteredIn = (sources: string[], routePathKey: string): boolean =>
+  sources.some((source) => new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source));
+
 const isRouteRegistered = (routePathKey: string): boolean =>
-  ROUTE_CONTRACTS.map(readFile).some((source) =>
-    new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source)
-  );
+  isRegisteredIn(ROUTE_CONTRACTS.map(readFile), routePathKey);
+
+const COMPOSE_FILES = ['docker-compose.yml', 'docker-compose.test.yml'];
+const USER_SETTINGS_ENV_VAR = `${FLAG_ENV_PREFIX}USER_SETTINGS`;
+
+// Against user-service v2.8.0 a shipped `true` would read and update an arbitrary user, so a
+// default of `true` is a violation whether it sits in the service or in the committed block.
+const shippedTrueFlags = (defaults: Record<string, boolean>): string[] =>
+  Object.entries(defaults)
+    .filter(([, value]) => value)
+    .map(([name]) => name)
+    .sort();
+
+// A compose file may only switch the flag on by default once a route contract registers the
+// page the flag gates, otherwise the stack serves a flag with nothing behind it.
+const composeEnablesUnguardedSettings = (composeText: string, contractSources: string[]): boolean =>
+  new RegExp(`${USER_SETTINGS_ENV_VAR}[^\\n]*:-true`).test(composeText) &&
+  !isRegisteredIn(contractSources, 'settings');
 
 const routeCoverageRows = (routePathKey: string): string[][] =>
   readFile(ROUTE_COVERAGE)
@@ -158,6 +176,41 @@ describe('runtime configuration contract', () => {
     expect(settings.filter((setting) => !declared.includes(setting.envVar))).toEqual([]);
     // A renderer key the schema does not know would be rejected by the strictObject at boot.
     expect(settings.map((setting) => setting.key).sort()).toEqual(schemaKeys);
+  });
+
+  it('ships every feature flag off in FEATURE_FLAG_DEFAULTS and in the committed block', () => {
+    const committed = parseConfigBlock(readFile(SHELL)).flags as Record<string, boolean>;
+
+    expect(shippedTrueFlags(featureFlagService.snapshot())).toEqual([]);
+    expect(shippedTrueFlags(committed)).toEqual([]);
+    expect(committed).toEqual({ userSettings: false });
+  });
+
+  it('fails the shipped-default check on a flag that ships true (must-fail)', () => {
+    expect(shippedTrueFlags({ userSettings: true, other: false })).toEqual(['userSettings']);
+    expect(shippedTrueFlags({ userSettings: false })).toEqual([]);
+  });
+
+  it('keeps every compose file from enabling userSettings before its route exists', () => {
+    const contracts = ROUTE_CONTRACTS.map(readFile);
+
+    for (const file of COMPOSE_FILES) {
+      expect({ file, enabled: composeEnablesUnguardedSettings(readFile(file), contracts) }).toEqual(
+        { file, enabled: false }
+      );
+    }
+  });
+
+  it('fails a compose default of true with no settings route registered (must-fail)', () => {
+    const compose = `      - ${USER_SETTINGS_ENV_VAR}=\${${USER_SETTINGS_ENV_VAR}:-true}`;
+    const registered = ['{ path: ROUTE_PATHS.settings, load }'];
+
+    expect(composeEnablesUnguardedSettings(compose, ['{ path: ROUTE_PATHS.signIn }'])).toBe(true);
+    expect(composeEnablesUnguardedSettings(compose, registered)).toBe(false);
+    expect(
+      composeEnablesUnguardedSettings(`      - ${USER_SETTINGS_ENV_VAR}=\${X:-false}`, [])
+    ).toBe(false);
+    expect(composeEnablesUnguardedSettings('image: node', [])).toBe(false);
   });
 
   it('documents every registered feature flag in the feature-flag guide', () => {

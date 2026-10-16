@@ -2518,11 +2518,12 @@ tooling without a TypeScript loader, so that is an i18n boot-path restructuring,
 change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
-flag is declared today: the last one, `forgotPassword`, was removed in #309 when the sign-in
-"Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
-block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
-to a non-empty value fails container start and must unset it.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
+flag is declared today, `userSettings` (issue #330), shipped off in the committed block
+`{ "flags": { "userSettings": false } }`. The earlier `forgotPassword` flag was removed in #309
+when the sign-in "Забули пароль?" link started rendering unconditionally; an environment that
+still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
+`Known flags: userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is

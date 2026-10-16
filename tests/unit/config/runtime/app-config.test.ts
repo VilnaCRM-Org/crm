@@ -111,6 +111,23 @@ describe('appConfig', () => {
     );
   });
 
+  it('accepts userSettings as an optional boolean and keeps it in the frozen values', async () => {
+    writeConfigBlock(JSON.stringify({ flags: { userSettings: true } }));
+
+    const { default: appConfig } = await loadAppConfig();
+
+    expect(appConfig.get().flags).toEqual({ userSettings: true });
+    expect(Object.isFrozen(appConfig.get().flags)).toBe(true);
+  });
+
+  it('fails fast when userSettings is not a boolean', async () => {
+    writeConfigBlock(JSON.stringify({ flags: { userSettings: 'true' } }));
+
+    await expect(loadAppConfig()).rejects.toThrow(
+      /Invalid runtime configuration[\s\S]*userSettings/
+    );
+  });
+
   it('aggregates every offending field into a single error', async () => {
     writeConfigBlock(
       JSON.stringify({ apiBaseUrl: 'not-a-url', graphqlUrl: 'also-not-a-url', unknownKey: 1 })
