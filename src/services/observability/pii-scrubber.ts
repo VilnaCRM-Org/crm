@@ -9,6 +9,7 @@ export class PiiScrubber {
     'secret',
     'apikey',
     'email',
+    'initials',
   ];
 
   private readonly patterns: readonly RegExp[] = [

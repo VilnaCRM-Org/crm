@@ -6,6 +6,7 @@ import sandboxDemoSessionProvider, {
   type SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
+import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
 import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
@@ -134,6 +135,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
     );
     container.registerSingleton(AUTH_TOKENS.PasswordRecoveryProvider, PasswordRecoveryProvider);
     container.registerSingleton(AUTH_TOKENS.GraphQLProfileRepository, GraphQLProfileRepository);
+    container.registerSingleton(AUTH_TOKENS.ProfileProvider, ProfileProvider);
   }
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {
