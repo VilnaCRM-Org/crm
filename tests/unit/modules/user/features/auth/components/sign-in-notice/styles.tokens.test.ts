@@ -20,7 +20,10 @@ describe('sign-in notice styles', () => {
         fontSize: '0.9375rem',
         lineHeight: '1.375rem',
         letterSpacing: 0,
-        color: '#2E7D32',
+      },
+      tones: {
+        success: { color: '#2E7D32' },
+        neutral: { color: '#404142' },
       },
       icon: {
         flexShrink: 0,

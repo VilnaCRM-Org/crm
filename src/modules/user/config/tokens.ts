@@ -2,6 +2,7 @@ const AUTH_TOKENS = Object.freeze({
   LoginAPI: Symbol('LoginAPI'),
   RegistrationAPI: Symbol('RegistrationAPI'),
   ApolloClient: Symbol('ApolloClient'),
+  SessionLinkFactory: Symbol('SessionLinkFactory'),
   GraphQLUrl: Symbol('GraphQLUrl'),
   ApiErrorFactory: Symbol('ApiErrorFactory'),
   ApiStatusErrorFactory: Symbol('ApiStatusErrorFactory'),

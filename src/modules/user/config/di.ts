@@ -25,6 +25,7 @@ import {
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
+import SessionLinkFactory from '@auth/repositories/session-link-factory';
 import useAuthStore from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthRepository } from '@auth/types/auth-repository';
@@ -72,13 +73,18 @@ class UserModuleRegistrar implements ModuleRegistrar {
 
   private registerGraphqlClient(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.GraphQLUrl, GraphQLUrl);
+    container.registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory);
     container.register<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient, {
       useFactory: instanceCachingFactory((c) => {
         const uri = c.resolve<GraphQLUrl>(AUTH_TOKENS.GraphQLUrl).resolve();
         const link = c
           .resolve<ApolloLinkFactory>(OBSERVABILITY_TOKENS.ApolloLinkFactory)
           .build(uri);
-        return new ApolloClient<NormalizedCacheObject>({ link, cache: new InMemoryCache() });
+        const session = c.resolve<SessionLinkFactory>(AUTH_TOKENS.SessionLinkFactory).build();
+        return new ApolloClient<NormalizedCacheObject>({
+          link: session.concat(link),
+          cache: new InMemoryCache(),
+        });
       }),
     });
   }

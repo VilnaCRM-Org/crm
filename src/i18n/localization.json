@@ -151,7 +151,8 @@
           "forgot_password": "Forgot password?"
         },
         "notices": {
-          "password_reset": "Your password has been changed. Sign in with your new password."
+          "password_reset": "Your password has been changed. Sign in with your new password.",
+          "session_ended": "Your session has ended. Please sign in again."
         }
       },
       "notifications": {
@@ -350,7 +351,8 @@
           "forgot_password": "Забули пароль?"
         },
         "notices": {
-          "password_reset": "Пароль змінено. Увійдіть з новим паролем."
+          "password_reset": "Пароль змінено. Увійдіть з новим паролем.",
+          "session_ended": "Сеанс завершився. Увійдіть знову."
         }
       },
       "notifications": {

@@ -22,6 +22,7 @@ function Wrapper({ children }: { children: ReactNode }): JSX.Element {
 }
 
 const NOTICE_TEXT = 'Пароль змінено. Увійдіть з новим паролем.';
+const SESSION_ENDED_TEXT = 'Сеанс завершився. Увійдіть знову.';
 
 type SignInNoticeComponent = (props: SignInNoticeProps) => JSX.Element | null;
 
@@ -40,7 +41,10 @@ function CommitProbe({ notice, commits }: SignInNoticeProps & { commits: string[
 }
 
 describe('SignInNotice', () => {
-  it.each([['password_reset', NOTICE_TEXT]] as const)(
+  it.each([
+    ['password_reset', NOTICE_TEXT],
+    ['session_ended', SESSION_ENDED_TEXT],
+  ] as const)(
     'maps the %s notice to its message when the module loads inside the test',
     async (notice, message) => {
       const FreshSignInNotice = await loadFreshSignInNotice();
@@ -74,6 +78,28 @@ describe('SignInNotice', () => {
       'Пароль змінено. Увійдіть з новим паролем.'
     );
     await expectNoA11yViolations(view.container);
+  });
+
+  it('renders the session-ended notice with the info icon and neutral text', async () => {
+    const view = render(<SignInNotice notice="session_ended" />, { wrapper: Wrapper });
+
+    const status = await screen.findByRole('status');
+
+    expect(status).toHaveTextContent(SESSION_ENDED_TEXT);
+    expect(status).toHaveStyle({ color: '#404142' });
+    expect(status.innerHTML).toContain('data-testid="InfoOutlinedIcon"');
+    expect(status.innerHTML).toContain('aria-hidden="true"');
+    expect(status.innerHTML).not.toContain('CheckCircleOutlinedIcon');
+    await expectNoA11yViolations(view.container);
+  });
+
+  it('keeps the success icon and colour on the password-reset notice', async () => {
+    render(<SignInNotice notice="password_reset" />, { wrapper: Wrapper });
+
+    const status = await screen.findByRole('status');
+
+    expect(status).toHaveStyle({ color: '#2E7D32' });
+    expect(status.innerHTML).toContain('data-testid="CheckCircleOutlinedIcon"');
   });
 
   it('renders nothing without a notice', () => {
