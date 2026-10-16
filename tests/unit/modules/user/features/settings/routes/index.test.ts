@@ -1,6 +1,9 @@
 import settingsRoutes from '@/modules/user/features/settings/routes';
 import ROUTE_PATHS from '@/routes/route-paths';
 
+jest.mock('@/assets/icons/eye.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye-off.svg', () => ({ ReactComponent: 'svg' }));
+
 describe('settings route contract', () => {
   const [route, ...rest] = settingsRoutes.routes;
 

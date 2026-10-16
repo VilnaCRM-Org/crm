@@ -98,6 +98,7 @@ const config: Config = {
     '^@auth$': '<rootDir>/src/modules/user/features/auth',
     '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
+    '\\.svg$': '<rootDir>/tests/mocks/svg-stub.ts',
     '^@scripts/(.*)$': '<rootDir>/scripts/$1',
     '^@vilnacrm/ui-toolkit/([a-z-]+)$': '<rootDir>/node_modules/@vilnacrm/ui-toolkit/build/$1.mjs',
     '^@/(.*)$': '<rootDir>/src/$1',

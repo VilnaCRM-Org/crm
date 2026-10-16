@@ -6,7 +6,18 @@
     "profile": {
       "greeting": "Welcome!",
       "loading": "Loading your profile…",
-      "load_failed": "Your profile could not be loaded"
+      "load_failed": "Your profile could not be loaded",
+      "sections": {
+        "personal": "Personal details",
+        "password": "Password"
+      },
+      "current_password": "Current password",
+      "new_password": "New password",
+      "new_password_hint": "Optional. Leave empty to keep your current password.",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "clear": "Clear",
+      "no_changes": "There are no changes to save"
     },
     "toasts": {
       "saved": "Changes saved",
@@ -17,6 +28,11 @@
       "save_failed": "The changes could not be saved. Please try again later.",
       "rate_limited": "Too many attempts. Please try again later.",
       "resend_failed": "The link could not be sent. Try again."
+    },
+    "errors": {
+      "password_wrong": "The current password is incorrect",
+      "password_not_accepted": "The current password was not accepted. Check it and try again.",
+      "new_password_rejected": "The password does not meet the requirements. Check the rules below"
     }
   }
 }

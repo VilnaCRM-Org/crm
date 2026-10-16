@@ -1,6 +1,6 @@
 import { useId, useLayoutEffect, useRef } from 'react';
 
-import type { OfflineSubmit } from '@/components/types/ui-form';
+import type { FocusReturnTarget, OfflineSubmit } from '@/components/types/ui-form';
 import useConnectivity from '@/hooks/use-connectivity';
 
 // Disabling a focused button drops keyboard focus to <body> silently. When the connection
@@ -19,11 +19,12 @@ function useOfflineFocus(
 }
 
 // Everything a form needs to disable its submit while offline and describe the reason.
-export default function useOfflineSubmit(): OfflineSubmit {
+export default function useOfflineSubmit(external?: FocusReturnTarget): OfflineSubmit {
   const online = useConnectivity();
   const noticeId = useId();
   const noticeRef = useRef<HTMLSpanElement>(null);
-  const submitRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
+  const ownRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
+  const submitRef = external ?? ownRef;
   useOfflineFocus(online, submitRef, noticeRef);
 
   return { online, noticeId, noticeRef, submitRef };
