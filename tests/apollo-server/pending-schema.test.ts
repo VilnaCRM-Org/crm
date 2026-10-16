@@ -11,7 +11,12 @@ import { resolvers } from '../../docker/apollo-server/lib/resolvers';
 import { loadTypeDefs, resolveSchemaSource } from '../../docker/apollo-server/lib/schema-loader';
 import type { SchemaSource } from '../../docker/apollo-server/lib/types';
 
-import { assertSingleResponse, PINNED_SDL_FIXTURE, REQUEST_RESET } from './mock-schema-fixtures';
+import {
+  assertSingleResponse,
+  PINNED_SDL_FIXTURE,
+  PROFILE_SDL_FIXTURE,
+  REQUEST_RESET,
+} from './mock-schema-fixtures';
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const repoPendingDir = path.join(repoRoot, 'src', 'api', 'contracts', 'pending');
@@ -79,7 +84,11 @@ describe('pending schema loading on the mock', () => {
   });
 
   it('serves a reset mutation and a second pending field from the loaded schema', async () => {
-    const server = new ApolloServer({ typeDefs: loadTypeDefs(source), resolvers, formatError });
+    const server = new ApolloServer({
+      typeDefs: [...loadTypeDefs(source), PROFILE_SDL_FIXTURE],
+      resolvers,
+      formatError,
+    });
     await server.start();
     const clientMutationId = buildClientMutationId();
 

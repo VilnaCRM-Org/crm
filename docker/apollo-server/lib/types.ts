@@ -24,6 +24,43 @@ export interface ConfirmPasswordResetInput {
   clientMutationId?: string | null;
 }
 
+export interface UpdateUserInput {
+  id: string;
+  initials?: string | null;
+  email?: string | null;
+  newPassword?: string | null;
+  oldPassword?: string | null;
+  clientMutationId?: string | null;
+}
+
+export interface ResendEmailToUserInput {
+  id: string;
+  clientMutationId?: string | null;
+}
+
+export interface UserPayload {
+  user: User;
+  clientMutationId: string | null;
+}
+
+export interface UserEdge {
+  node: User;
+  cursor: string;
+}
+
+export interface UserPageInfo {
+  startCursor: string;
+  endCursor: string;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface UserConnection {
+  edges: UserEdge[];
+  pageInfo: UserPageInfo;
+  totalCount: number;
+}
+
 export interface PasswordResetPayload {
   user: null;
   clientMutationId: string | null;
