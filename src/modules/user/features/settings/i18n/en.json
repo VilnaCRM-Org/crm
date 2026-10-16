@@ -7,6 +7,16 @@
       "greeting": "Welcome!",
       "loading": "Loading your profile…",
       "load_failed": "Your profile could not be loaded"
+    },
+    "toasts": {
+      "saved": "Changes saved",
+      "email_sent": "We sent a confirmation link to the new address",
+      "password_changed": "You have changed your password",
+      "resent": "The confirmation link has been sent again",
+      "save_failed_transient": "The changes could not be saved. Check your connection and try again.",
+      "save_failed": "The changes could not be saved. Please try again later.",
+      "rate_limited": "Too many attempts. Please try again later.",
+      "resend_failed": "The link could not be sent. Try again."
     }
   }
 }
