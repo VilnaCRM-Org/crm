@@ -15,16 +15,10 @@ const INITIAL_STATE: ToastQueueState = {
   marked: false,
 };
 
-function reduceToasts(state: ToastQueueState, action: ToastQueueAction): ToastQueueState {
-  if (action.type === 'dismiss') {
-    return {
-      ...state,
-      toasts: { items: state.toasts.items.filter((toast) => toast.id !== action.id) },
-    };
-  }
+function showToasts(state: ToastQueueState, drafts: ToastDraftSet): ToastQueueState {
   const added: ToastItem[] = [];
   const spoken: string[] = [];
-  for (const draft of action.drafts.items) {
+  for (const draft of drafts.items) {
     added.push({ ...draft, id: state.nextId + added.length });
     if (draft.tone === 'success') spoken.push(draft.message);
   }
@@ -35,6 +29,14 @@ function reduceToasts(state: ToastQueueState, action: ToastQueueAction): ToastQu
     announcement: text === '' ? '' : `${text}${marked ? ALTERNATING_MARK : ''}`,
     nextId: state.nextId + added.length,
     marked,
+  };
+}
+
+function reduceToasts(state: ToastQueueState, action: ToastQueueAction): ToastQueueState {
+  if (action.type === 'show') return showToasts(state, action.drafts);
+  return {
+    ...state,
+    toasts: { items: state.toasts.items.filter((toast) => toast.id !== action.id) },
   };
 }
 
