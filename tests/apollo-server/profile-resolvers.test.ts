@@ -65,6 +65,14 @@ const execute = async (
   return response.body.singleResult;
 };
 
+const CURRENT_PASSWORD = buildPassword();
+
+const update = (
+  server: ApolloServer,
+  input: Record<string, string>
+): Promise<SingleBody['singleResult']> =>
+  execute(server, UPDATE_USER, { password: CURRENT_PASSWORD, ...input });
+
 describe('profile operations on the stateless mock', () => {
   let server: ApolloServer;
 
@@ -108,7 +116,7 @@ describe('profile operations on the stateless mock', () => {
   it('refuses an update whose id is not the seeded IRI with a coded 403', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const result = await execute(server, UPDATE_USER, {
+    const result = await update(server, {
       id: '/api/users/someone-else',
       initials: buildFullName(),
     });
@@ -122,7 +130,7 @@ describe('profile operations on the stateless mock', () => {
   it('rejects an invalid e-mail with a coded email violation at 422', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const result = await execute(server, UPDATE_USER, { id: SEEDED_ID, email: 'not-an-email' });
+    const result = await update(server, { id: SEEDED_ID, email: 'not-an-email' });
 
     expect(result.errors?.[0]?.message).toBe('email: This value is not a valid email address.');
     expect(result.errors?.[0]?.extensions).toMatchObject({ code: 'BAD_USER_INPUT', status: 422 });
@@ -133,7 +141,7 @@ describe('profile operations on the stateless mock', () => {
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const tooLong = `${'a'.repeat(250)}@example.com`;
 
-    const result = await execute(server, UPDATE_USER, { id: SEEDED_ID, email: tooLong });
+    const result = await update(server, { id: SEEDED_ID, email: tooLong });
 
     expect(result.errors?.[0]?.message).toContain('email:');
   });
@@ -142,7 +150,7 @@ describe('profile operations on the stateless mock', () => {
     const initials = buildFullName();
     const clientMutationId = buildClientMutationId();
 
-    const result = await execute(server, UPDATE_USER, {
+    const result = await update(server, {
       id: SEEDED_ID,
       initials,
       clientMutationId,
@@ -160,7 +168,7 @@ describe('profile operations on the stateless mock', () => {
   it('applies a new e-mail and marks it unconfirmed', async () => {
     const email = buildEmail();
 
-    const result = await execute(server, UPDATE_USER, { id: SEEDED_ID, email });
+    const result = await update(server, { id: SEEDED_ID, email });
 
     expect(result.data).toEqual({
       updateUser: {
@@ -170,11 +178,10 @@ describe('profile operations on the stateless mock', () => {
     });
   });
 
-  it('accepts a new password and the old password without storing anything', async () => {
-    const result = await execute(server, UPDATE_USER, {
+  it('accepts a new password and the current password without storing anything', async () => {
+    const result = await update(server, {
       id: SEEDED_ID,
       newPassword: buildPassword(),
-      oldPassword: buildPassword(),
     });
 
     expect(result.errors).toBeUndefined();
@@ -187,9 +194,9 @@ describe('profile operations on the stateless mock', () => {
   });
 
   it('starts every update again from the seed', async () => {
-    await execute(server, UPDATE_USER, { id: SEEDED_ID, email: buildEmail() });
+    await update(server, { id: SEEDED_ID, email: buildEmail() });
 
-    const second = await execute(server, UPDATE_USER, { id: SEEDED_ID, initials: buildFullName() });
+    const second = await update(server, { id: SEEDED_ID, initials: buildFullName() });
 
     expect(second.data).toMatchObject({
       updateUser: { user: { email: SEEDED_EMAIL, confirmed: true } },

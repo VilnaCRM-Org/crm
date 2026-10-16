@@ -53,12 +53,12 @@ export const PROFILE_SDL_FIXTURE = `#graphql
   }
 
   input updateUserInput {
-    id: ID!
-    initials: String
-    email: String
-    newPassword: String
-    oldPassword: String
     clientMutationId: String
+    id: ID!
+    newPassword: String
+    password: String!
+    email: String
+    initials: String
   }
 
   type updateUserPayload {
