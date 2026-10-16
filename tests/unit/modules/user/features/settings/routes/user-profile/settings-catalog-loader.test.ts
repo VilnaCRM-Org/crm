@@ -33,9 +33,21 @@ describe('SettingsCatalogLoader', () => {
     expect(instance.getResource(locale, 'translation', 'settings.title')).toBe(title);
   });
 
-  it('ships the page shell keys and the profile greeting in both locales', () => {
-    expect(Object.keys(en.settings).sort()).toEqual(['heading', 'profile', 'subtitle', 'title']);
-    expect(Object.keys(uk.settings).sort()).toEqual(['heading', 'profile', 'subtitle', 'title']);
+  it('ships the shell, profile and toast groups in both locales', () => {
+    expect(Object.keys(en.settings).sort()).toEqual([
+      'heading',
+      'profile',
+      'subtitle',
+      'title',
+      'toasts',
+    ]);
+    expect(Object.keys(uk.settings).sort()).toEqual([
+      'heading',
+      'profile',
+      'subtitle',
+      'title',
+      'toasts',
+    ]);
     expect(en.settings.profile.greeting).toBe('Welcome!');
     expect(uk.settings.profile.greeting).toBe('Вітаємо!');
   });
