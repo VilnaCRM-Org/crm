@@ -45,6 +45,7 @@ export default {
     lineHeight: 'normal',
     color: customColors.text.dark,
     [fromSm]: { gap: '0.5rem', padding: '1.1875rem 1.125rem 1.1875rem 1.25rem', fontSize: '1rem' },
+    '@media (forced-colors: active)': { border: '1px solid CanvasText' },
   },
   tones: {
     success: { backgroundColor: paletteColors.success.surface },
@@ -57,7 +58,7 @@ export default {
     [fromSm]: { fontSize: '1.5rem' },
   },
   iconTones: {
-    success: { color: paletteColors.success.icon },
+    success: { color: paletteColors.success.text },
     error: { color: paletteColors.error.main },
   },
   message: { flex: 1, minWidth: 0, overflowWrap: 'anywhere' },

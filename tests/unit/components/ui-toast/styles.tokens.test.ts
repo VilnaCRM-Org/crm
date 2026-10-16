@@ -1,3 +1,4 @@
+import contrast from '@tests/unit/utils/contrast-ratio';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type ToastStyles = (typeof import('@/components/ui-toast/styles'))['default'];
@@ -14,12 +15,31 @@ describe('toast styles', () => {
       error: { backgroundColor: '#FDECEC' },
     });
     expect(styles.iconTones).toEqual({
-      success: { color: '#38B386' },
+      success: { color: '#2E7D32' },
       error: { color: '#DC3939' },
     });
     expect(styles.toast.color).toBe('#1A1C1E');
     expect(styles.close.color).toBe('#1A1C1E');
     expect(styles.action.color).toBe('#1A1C1E');
+  });
+
+  it('keeps every toast text at 4.5:1 and every icon at 3:1 on its own surface', async () => {
+    const { tones, iconTones, toast, close, action } = await loadStyles();
+
+    for (const tone of ['success', 'error'] as const) {
+      const surface = tones[tone].backgroundColor;
+      expect(contrast(toast.color, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(close.color, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(action.color, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(iconTones[tone].color, surface)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('draws a system-colour border in forced-colors mode and none otherwise', async () => {
+    const { toast } = await loadStyles();
+
+    expect(toast['@media (forced-colors: active)']).toEqual({ border: '1px solid CanvasText' });
+    expect(toast).not.toHaveProperty('border');
   });
 
   it('fixes the stack bottom-right from sm and spans the bottom below it', async () => {
