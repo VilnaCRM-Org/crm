@@ -259,10 +259,15 @@ describe('runtime configuration contract', () => {
 
     const rows = routeCoverageRows('settings');
 
-    expect(rows.map(([, suite]) => suite)).toEqual(['e2e']);
-    expect(rows.map(([, , spec]) => spec)).toEqual([
-      'tests/e2e/modules/user/features/settings/settings.spec.ts',
-    ]);
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e']));
+    expect(rows.map(([, , spec]) => spec)).toEqual(
+      expect.arrayContaining([
+        'tests/e2e/modules/user/features/settings/settings.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-save.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-failures.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-session.spec.ts',
+      ])
+    );
   });
 
   it('links the registered password-recovery route from sign-in (#315)', () => {
