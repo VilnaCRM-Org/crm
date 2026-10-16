@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react-webpack5';
 import type { ViewportMap } from 'storybook/viewport';
 import resources from '../src/i18n/localization.json';
+import policyLoader from '@/components/ui-password-policy-rules/password-policy-catalog-loader';
 import recoveryCatalogLoader from '@auth/routes/recovery-catalog/recovery-catalog-loader';
 import { initReactI18next } from 'react-i18next';
 import i18next from 'i18next';
@@ -28,6 +29,7 @@ export const i18nInitPromise = i18next.isInitialized
       });
 
 recoveryCatalogLoader.register(i18next);
+policyLoader.register(i18next);
 
 const customViewports: ViewportMap = {
   xs: {

@@ -21,12 +21,12 @@ jest.mock('@auth/hooks/use-auth-provider-loader', () => ({
   }),
 }));
 
-jest.mock('@auth/assets/eye.svg', () => ({
+jest.mock('@/assets/icons/eye.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-jest.mock('@auth/assets/eye-off.svg', () => ({
+jest.mock('@/assets/icons/eye-off.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
 }));

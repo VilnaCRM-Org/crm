@@ -2,8 +2,8 @@ import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
+import formValidators from '@/modules/user/lib/validations';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
-import formValidators from '@auth/components/form-section/validations';
 import type { LoginFormProps } from '@auth/types/auth-forms/login-form';
 
 import LoginErrorMessageNormalizer from './login-error-message';

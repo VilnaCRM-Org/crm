@@ -1754,7 +1754,7 @@ Check 4 resolves a call site against the merged catalog plus **only** the lazy c
 `[lazy-key-scope]`: the catalog exists at runtime only once an owning route module has registered
 it, so the same `t('password_policy.rules.length')` in a sign-up component would render the raw
 key on `/sign-up`. The owners are the two recovery route folders, the recovery component folders,
-`password-policy-rules.tsx`, `use-recovery-failure-banner.ts`, and the auth route contract
+`use-recovery-failure-banner.ts`, and the auth route contract
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
 through `usePageTitle` after its module has registered the catalog). Adding an owner is a reviewed
 policy edit and must name a file only the registering routes import. A policy entry that names no
@@ -2265,7 +2265,7 @@ class Service {}
 
 // GOOD — domain noun + recognized pattern suffix; the role is self-evident
 class ApiErrorFactory {} // repositories/api-error-factory.ts
-class EmailValidator {} // form-section/validations/email.ts
+class EmailValidator {} // user/lib/validations/email.ts
 class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
 class LoginResponseMapper {} // store/login-response-mapper.ts
 class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
@@ -2605,10 +2605,12 @@ verified in CI.
   into the eager `index.js` every page downloads. Its route chunk imports it instead and
   registers both locales synchronously when the route module evaluates — before the page's
   `usePageTitle` runs — through a container-free `*Loader` singleton calling
-  `addResourceBundle`. The one lazy catalog today is the password-recovery copy
-  (`password_recovery.*`, `password_reset.*`, `password_policy.*`), owned by
+  `addResourceBundle`. Two lazy catalogs exist today: the password-recovery copy
+  (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by the
-  `reset-password` and `create-new-password` route modules. The recovery keys were 3,742 B of the
+  `reset-password` and `create-new-password` route modules, and the password-policy copy
+  (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered by
+  `PasswordPolicyCatalogLoader` when that component module evaluates. The recovery keys were 3,742 B of the
   minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about
   3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone does not
   restore the `/sign-in` headroom (that base already scored a median of about 0.8375 against the
@@ -2996,7 +2998,7 @@ replaces.
    `src/modules/user/types/api-errors/` (type-only — see pattern 6).
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
+2. **Form Validation**: Centralized in the user module (`src/modules/user/lib/validations/`), shared by every feature
 
 3. **Routing**: Module-owned route contracts collected by a registry and
    assembled by a composer into `createBrowserRouter` (see "Route Registry"

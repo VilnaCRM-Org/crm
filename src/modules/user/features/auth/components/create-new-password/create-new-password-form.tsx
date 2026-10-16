@@ -2,11 +2,13 @@ import { type JSX, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import type { PasswordRuleViewSet } from '@/components/types/ui-password-policy-rules';
 import UIForm from '@/components/ui-form';
-import PasswordField from '@auth/components/form-section/components/password-field';
-import PasswordPolicyRules from '@auth/components/form-section/components/password-policy-rules';
-import ServerFieldError from '@auth/components/form-section/components/server-field-error';
-import passwordValidator from '@auth/components/form-section/validations/password';
+import UIPasswordField from '@/components/ui-password-field';
+import UIPasswordPolicyRules from '@/components/ui-password-policy-rules';
+import UIServerFieldError from '@/components/ui-server-field-error';
+import passwordValidator from '@/modules/user/lib/validations/password';
+import fieldStyles from '@auth/components/form-section/components/styles';
 import useRecoveryFailureBanner from '@auth/hooks/use-recovery-failure-banner';
 import type {
   CreateNewPasswordFieldsProps,
@@ -15,6 +17,9 @@ import type {
 import type { CreateNewPasswordFormValues } from '@auth/types/password-recovery/forms';
 
 const RULES_ID = 'new-password-rules';
+
+const evaluateNewPassword = (value: string): PasswordRuleViewSet =>
+  passwordValidator.evaluate(value);
 
 function ConfirmationRecheck(): null {
   const { trigger, getFieldState, formState } = useFormContext<CreateNewPasswordFormValues>();
@@ -36,30 +41,32 @@ function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX
 
   return (
     <>
-      <PasswordField<CreateNewPasswordFormValues>
+      <UIPasswordField<CreateNewPasswordFormValues>
         name="newPassword"
         label={t('password_reset.new_password.label')}
         placeholder={t('password_reset.new_password.placeholder')}
         autoComplete="new-password"
         describedBy={RULES_ID}
+        sx={fieldStyles.formFieldWrapper}
         rules={{
           required: t('sign_up.form.password_input.required'),
           validate: passwordValidator.createChecklistGate<CreateNewPasswordFormValues>(t),
         }}
       />
-      <PasswordPolicyRules id={RULES_ID} name="newPassword" />
-      <PasswordField<CreateNewPasswordFormValues>
+      <UIPasswordPolicyRules id={RULES_ID} name="newPassword" evaluate={evaluateNewPassword} />
+      <UIPasswordField<CreateNewPasswordFormValues>
         name="confirmPassword"
         label={t('password_reset.confirm_password.label')}
         placeholder={t('password_reset.confirm_password.placeholder')}
         autoComplete="new-password"
+        sx={fieldStyles.formFieldWrapper}
         rules={{
           required: t('sign_up.form.password_input.required'),
           validate: (value, values) =>
             value === values.newPassword || t('password_reset.errors.mismatch'),
         }}
       />
-      <ServerFieldError name="newPassword" message={policyRejected} />
+      <UIServerFieldError name="newPassword" message={policyRejected} />
       <ConfirmationRecheck />
     </>
   );

@@ -23,7 +23,7 @@ const EXEMPT: Readonly<Record<string, string>> = {
     'react-hook-form context pass-through, shown through the UIForm stories',
   [`${authRoot}/components/protected-route/index.tsx`]:
     'redirect-only guard; renders its outlet or a Navigate, nothing of its own',
-  [`${authRoot}/components/form-section/components/server-field-error.tsx`]:
+  'src/components/ui-server-field-error/index.tsx':
     'renders no DOM: it only sets a server error and focus on a field of the enclosing form',
   [`${authRoot}/components/auth-skeleton/index.tsx`]:
     're-export of src/components/skeletons/auth-skeleton, which has its own story',
