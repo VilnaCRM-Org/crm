@@ -2521,10 +2521,10 @@ change.
 container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
 flag is declared today, `userSettings` (issue #330), shipped off in the committed block
 `{ "flags": { "userSettings": false } }` (the test stack's `docker-compose.test.yml` switches it on
-through `APP_CONFIG_FLAG_USER_SETTINGS`, default `true`). The earlier `forgotPassword` flag was removed in #309
-when the sign-in "Забули пароль?" link started rendering unconditionally; an environment that
-still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
-`Known flags: userSettings.` and must unset it.
+through `APP_CONFIG_FLAG_USER_SETTINGS`, default `true`). The earlier `forgotPassword` flag was
+removed in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an
+environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container
+start with `Known flags: userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2573,6 +2573,19 @@ Deep-importing a feature page from the shell fails
 `no-routes-import-feature-internals`; building a router anywhere but
 `routes.tsx`, or a route object with an `element` and no `errorElement` inside
 `src/routes/**`, fails the issue-#116 ESLint selectors (see pattern 14).
+
+**Flagged routes (issue #330)** — a top-level route contract may declare `flag: <FeatureFlag>`.
+The route is always registered; `RouteMapper` copies the flag into the route's `handle` and one
+eager `RouteFlagGate`, above `ProtectedRoute`, reads it when the route renders and shows the
+not-found page while it is off, so neither the sign-in redirect nor the page chunk is reached.
+`/settings` is the example: `flag: 'userSettings'` in
+`src/modules/user/features/settings/routes/index.ts`. See `src/routes/README.md`.
+
+**Toasts (issue #330)** — `UIToastStack` (`src/components/ui-toast/`, state in `useToastQueue`)
+is the one transient-message surface: no timer, so a toast stays until the user closes it; one
+polite `UILiveStatus` announces the queue; an error toast carries `role="alert"`; at most three
+are shown. Closing the last toast returns focus to the control the page names (`returnFocusRef`),
+and the stack reserves `scroll-padding-bottom` so a focused control is never hidden under it.
 
 ### GraphQL Setup
 

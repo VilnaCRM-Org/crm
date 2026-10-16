@@ -512,3 +512,32 @@ module grows:
    add a bare alias like `@auth` in `tsconfig.paths.json`, `jest.config.ts`,
    and `rsbuild.config.ts`.
 4. Run `make lint-deps` and iterate until green. Never weaken a rule.
+
+### Settings upstream requests
+
+The page depends on user-service for the items below, filed as issues. None of them blocks the
+test stack, and G1 blocks production only. The page is tracked in
+[crm #330](https://github.com/VilnaCRM-Org/crm/issues/330).
+
+- **G1** — release `main`'s authentication surface:
+  [user-service #513](https://github.com/VilnaCRM-Org/user-service/issues/513).
+- **G2** — a `me` query for the signed-in user:
+  [#515](https://github.com/VilnaCRM-Org/user-service/issues/515).
+- **G3** — the caller's own unchanged e-mail is rejected as already taken:
+  [#516](https://github.com/VilnaCRM-Org/user-service/issues/516).
+- **G4** — profile changes without the current password, and OAuth users:
+  [#518](https://github.com/VilnaCRM-Org/user-service/issues/518), with the password-policy
+  mismatch in [#517](https://github.com/VilnaCRM-Org/user-service/issues/517).
+- **G5** — avatar field, upload and storage:
+  [#519](https://github.com/VilnaCRM-Org/user-service/issues/519).
+- **G6** — signed-in social link, list and unlink:
+  [#520](https://github.com/VilnaCRM-Org/user-service/issues/520).
+- **G7** — GraphQL `updateUser` and `deleteUser` bypass the rate limiters:
+  [#521](https://github.com/VilnaCRM-Org/user-service/issues/521).
+- **G8** — a machine-readable `extensions.code` on domain errors:
+  [#522](https://github.com/VilnaCRM-Org/user-service/issues/522).
+
+[#514](https://github.com/VilnaCRM-Org/user-service/issues/514) (CORS headers for `X-Request-Id`
+and `X-Correlation-Id`) is the production blocker for every GraphQL call from the SPA. The page,
+its shared pieces and its layer stack are described in the
+[settings feature README](features/settings/README.md).
