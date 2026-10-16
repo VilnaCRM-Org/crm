@@ -23,8 +23,7 @@
 import { execFileSync } from 'node:child_process';
 
 const LOGIC_TS = 'src/services/https-client/fetch-https-client.ts'; // non-hook logic .ts
-const COMPONENT_TSX =
-  'src/modules/user/features/auth/components/form-section/components/form-field.tsx';
+const COMPONENT_TSX = 'src/modules/user/features/auth/components/auth-switcher/index.tsx';
 const TYPE_ONLY_TS = 'src/modules/user/types/api-errors/validation-error.ts';
 const HOOK_TS = 'src/modules/user/features/auth/stores/use-auth-token.ts';
 const PLAYWRIGHT_SPEC = 'tests/e2e/modules/back-to-main.spec.ts';

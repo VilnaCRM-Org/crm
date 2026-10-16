@@ -11,16 +11,18 @@ import CreateNewPasswordForm from '@auth/components/create-new-password/create-n
 import type { CreateNewPasswordFormProps } from '@auth/types/password-recovery/components';
 import { buildResetToken } from '@tests/builders';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import fieldGrid from '@tests/unit/utils/field-grid';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
-jest.mock('@auth/assets/eye.svg', () => ({
+jest.mock('@/assets/icons/eye.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-jest.mock('@auth/assets/eye-off.svg', () => ({
+jest.mock('@/assets/icons/eye-off.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
 }));
@@ -69,8 +71,19 @@ const newPassword = (): HTMLElement => screen.getByLabelText('Новий пар�
 const confirmation = (): HTMLElement => screen.getByLabelText('Підтвердьте пароль');
 const submit = (): HTMLElement => screen.getByRole('button', { name: 'Підтвердити' });
 
+const FIELD_GAP_SELECTOR = ':nth-of-type(-n+2):not(:last-of-type)';
+const fieldGap = (field: HTMLElement, label: string): string | undefined =>
+  styleRuleFor(fieldGrid(field, label), FIELD_GAP_SELECTOR)?.getPropertyValue('margin-bottom');
+
 describe('CreateNewPasswordForm', () => {
   beforeEach(() => resetClientStores());
+
+  it('gives both password field grids the auth field spacing', () => {
+    mountForm();
+
+    expect(fieldGap(newPassword(), 'Новий пароль')).toBe('0.5rem');
+    expect(fieldGap(confirmation(), 'Підтвердьте пароль')).toBe('0.5rem');
+  });
 
   it('renders the heading, both password fields, the rule list and the submit', () => {
     const { token } = mountForm();

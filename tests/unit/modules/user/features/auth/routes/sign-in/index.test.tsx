@@ -25,7 +25,7 @@ jest.mock('@auth/components/form-section/auth-forms/use-login-submitter', () => 
   }),
 }));
 
-jest.mock('@auth/components/form-section/validations', () => ({
+jest.mock('@/modules/user/lib/validations', () => ({
   __esModule: true,
   default: { create: (): Record<string, never> => ({}) },
 }));

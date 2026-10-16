@@ -13,8 +13,8 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({ t: (key: string): string => key }),
 }));
 
-jest.mock('@auth/assets/eye.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/eye-off.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye-off.svg', () => ({ ReactComponent: 'svg' }));
 
 jest.mock('@auth/stores', () => ({
   __esModule: true,

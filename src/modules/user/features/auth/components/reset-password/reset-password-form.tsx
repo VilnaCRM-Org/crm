@@ -2,11 +2,12 @@ import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
+import UIFormField from '@/components/ui-form-field';
+import UIServerFieldError from '@/components/ui-server-field-error';
+import formValidators from '@/modules/user/lib/validations';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
-import FormField from '@auth/components/form-section/components/form-field';
-import ServerFieldError from '@auth/components/form-section/components/server-field-error';
-import formValidators from '@auth/components/form-section/validations';
+import fieldStyles from '@auth/components/form-section/components/styles';
 import useRecoveryFailureBanner from '@auth/hooks/use-recovery-failure-banner';
 import type {
   ResetPasswordEmailFieldProps,
@@ -20,15 +21,16 @@ function EmailField({ failure }: ResetPasswordEmailFieldProps): JSX.Element {
 
   return (
     <>
-      <FormField<RestorePasswordDto>
+      <UIFormField<RestorePasswordDto>
         name="email"
         label={t('sign_in.form.email_input.label')}
         placeholder={t('sign_in.form.email_input.placeholder')}
         type="email"
         autoComplete="email"
         rules={{ validate: formValidators.create(t).email }}
+        sx={fieldStyles.formFieldWrapper}
       />
-      <ServerFieldError name="email" message={emailRejected} />
+      <UIServerFieldError name="email" message={emailRejected} />
     </>
   );
 }

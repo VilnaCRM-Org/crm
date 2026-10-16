@@ -1,8 +1,9 @@
 import type { JSX } from 'react';
 
+import UIFormField from '@/components/ui-form-field';
+import UIPasswordField from '@/components/ui-password-field';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
-import FormField from '@auth/components/form-section/components/form-field';
-import PasswordField from '@auth/components/form-section/components/password-field';
+import fieldStyles from '@auth/components/form-section/components/styles';
 import type { RegistrationFormFieldsProps } from '@auth/types/auth-forms/registration-form-fields';
 
 export default function RegistrationFormFields({
@@ -11,7 +12,7 @@ export default function RegistrationFormFields({
 }: RegistrationFormFieldsProps): JSX.Element {
   return (
     <>
-      <FormField<SignUpDto>
+      <UIFormField<SignUpDto>
         name="fullName"
         label={t('sign_up.form.name_input.label')}
         placeholder={t('sign_up.form.name_input.placeholder')}
@@ -21,8 +22,9 @@ export default function RegistrationFormFields({
           required: t('sign_up.form.name_input.required'),
           validate: validators.fullName,
         }}
+        sx={fieldStyles.formFieldWrapper}
       />
-      <FormField<SignUpDto>
+      <UIFormField<SignUpDto>
         name="email"
         label={t('sign_up.form.email_input.label')}
         placeholder={t('sign_up.form.email_input.placeholder')}
@@ -32,11 +34,17 @@ export default function RegistrationFormFields({
           required: t('sign_up.form.email_input.required'),
           validate: validators.email,
         }}
+        sx={fieldStyles.formFieldWrapper}
       />
-      <PasswordField<SignUpDto>
+      <UIPasswordField<SignUpDto>
         placeholder={t('sign_up.form.password_input.placeholder')}
         label={t('sign_up.form.password_input.label')}
         autoComplete="new-password"
+        rules={{
+          required: t('sign_up.form.password_input.required'),
+          validate: validators.password,
+        }}
+        sx={fieldStyles.formFieldWrapper}
       />
     </>
   );
