@@ -98,7 +98,8 @@
       "forgot_password": "Forgot password?"
     },
     "notices": {
-      "password_reset": "Your password has been changed. Sign in with your new password."
+      "password_reset": "Your password has been changed. Sign in with your new password.",
+      "session_ended": "Your session has ended. Please sign in again."
     }
   },
   "notifications": {

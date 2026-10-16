@@ -351,6 +351,12 @@ const RESTRICTED_LIBRARY_ADAPTERS = [
     path: 'src/services/observability/apollo-link-factory.ts',
     reason: 'The injectable adapter that builds the Apollo link chain — it must touch Apollo.',
   },
+  {
+    path: 'src/modules/user/features/auth/repositories/session-link-factory.ts',
+    reason:
+      'The injectable adapter that builds the session link — it attaches the token and ends ' +
+      'a dead session, so it must touch Apollo.',
+  },
 ];
 
 const PROJECT_SPECIFIER = '^(?:@/|@auth(?:$|/)|[.][.]?/)';
