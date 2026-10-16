@@ -15,6 +15,8 @@ const SETTINGS_CHUNK = /\/settings(?:\.[\w-]+)?\.js$/;
 
 const settingsTitle: string = `${t('settings.title')} - VilnaCRM`;
 const settingsHeading: string = t('settings.heading');
+const homeLinkLabel: string = t('home.settings_link');
+const homeHeading: string = t('home.heading');
 const settingsSubtitle: string = t('settings.subtitle');
 const notFoundTitle: string = t('error_page.not_found.title');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
@@ -163,5 +165,15 @@ test.describe('Settings route', () => {
     page,
   }) => {
     await expectNotFoundWithoutChunk(page, false);
+  });
+
+  test('shows the home page with no settings link while the flag is off', async ({ page }) => {
+    await seedPreloadedAuthToken(page);
+    await setFlag(page, false);
+
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
+    await expect(page.getByRole('link', { name: homeLinkLabel })).toHaveCount(0);
   });
 });
