@@ -2,7 +2,11 @@ import { ApolloError } from '@apollo/client';
 import { faker } from '@faker-js/faker';
 
 import UserServiceErrorTransformer from '@/modules/user/transformers';
-import type { UserServiceFailure } from '@/modules/user/types/user-service/user-service-failure';
+import type {
+  FieldViolationReason,
+  UserServiceFailure,
+  UserServiceFailureReason,
+} from '@/modules/user/types/user-service/user-service-failure';
 import { HttpError } from '@/services/https-client/http-error';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
@@ -20,10 +24,20 @@ const graphQLError = (message: string, extensions?: Record<string, unknown>): Ap
 
 const abortError = (): Error => Object.assign(new Error('aborted'), { name: 'AbortError' });
 
-const violation = (path: string, status: number | null): UserServiceFailure => ({
+const violation = (
+  path: string,
+  status: number | null,
+  reason: FieldViolationReason = 'other'
+): UserServiceFailure => ({
   reason: 'violation',
   status,
-  violations: { items: [{ path, reason: 'other' }] },
+  violations: { items: [{ path, reason }] },
+});
+
+const failed = (reason: UserServiceFailureReason, status: number | null): UserServiceFailure => ({
+  reason,
+  status,
+  violations: none,
 });
 
 const loadTransformer = async (): Promise<UserServiceErrorTransformer> => {
@@ -36,6 +50,7 @@ const loadTransformer = async (): Promise<UserServiceErrorTransformer> => {
 describe('UserServiceErrorTransformer', () => {
   it.each([
     [0, 'network'],
+    [401, 'unauthenticated'],
     [422, 'violation'],
     [429, 'rate_limited'],
   ])('maps a freshly loaded status %i to %s', async (statusCode, reason) => {
@@ -49,7 +64,7 @@ describe('UserServiceErrorTransformer', () => {
     });
   });
 
-  it.each(['email', 'token', 'newPassword'])(
+  it.each(['email', 'token', 'newPassword', 'initials', 'password'])(
     'recognises a %s violation with a freshly loaded property list',
     async (path) => {
       const loaded = await loadTransformer();
@@ -138,11 +153,93 @@ describe('UserServiceErrorTransformer', () => {
   });
 
   it('classifies an unknown property prefix with a 422 as an empty violation', () => {
-    expect(transformer.normalize(graphQLError('initials: too short', { status: 422 }))).toEqual({
-      reason: 'violation',
-      status: 422,
-      violations: none,
-    });
+    const error = graphQLError('clientMutationId: too short', { status: 422 });
+
+    expect(transformer.normalize(error)).toEqual(failed('violation', 422));
+  });
+
+  it.each(['initials', 'password'])(
+    'classifies a %s violation with a 422 status as one field violation of reason other',
+    (path) => {
+      const error = graphQLError(`${path}: too short`, { status: 422 });
+
+      expect(transformer.normalize(error)).toEqual(violation(path, 422));
+    }
+  );
+
+  it.each([
+    ['a transport 401', serverError(401)],
+    ['a GraphQL extensions.status 401', graphQLError('Unauthorized', { status: 401 })],
+  ])('classifies %s as unauthenticated with status 401', (_name, error) => {
+    expect(transformer.normalize(error)).toEqual(failed('unauthenticated', 401));
+  });
+
+  it.each([400, 402, 403, 404, 409])('keeps status %i out of the unauthenticated row', (status) => {
+    expect(transformer.normalize(serverError(status)).reason).not.toBe('unauthenticated');
+  });
+
+  it.each([
+    ['no extensions', undefined, null],
+    ['extensions.status 403', { status: 403 }, 403],
+    ['the local mock shape', { code: 'FORBIDDEN', status: 403 }, 403],
+  ])('classifies "Access Denied." with %s as access_denied', (_name, extensions, status) => {
+    expect(transformer.normalize(graphQLError('Access Denied.', extensions))).toEqual(
+      failed('access_denied', status)
+    );
+  });
+
+  it.each(['Old password is invalid', 'Старий пароль невірний'])(
+    'classifies "%s" as invalid_password with and without a status',
+    (message) => {
+      expect(transformer.normalize(graphQLError(message))).toEqual(
+        failed('invalid_password', null)
+      );
+      expect(transformer.normalize(graphQLError(message, { status: 200 }))).toEqual(
+        failed('invalid_password', 200)
+      );
+    }
+  );
+
+  it('matches a table message as a whole text only', () => {
+    expect(transformer.normalize(graphQLError('Old password is invalid. Retry'))).toEqual(
+      failed('refused', null)
+    );
+  });
+
+  it.each([
+    ['en', 'This email address is already registered'],
+    ['uk', 'Ця email-адреса вже зареєстрована'],
+  ])('classifies the %s uniqueness message as a taken e-mail violation', (_locale, text) => {
+    expect(transformer.normalize(graphQLError(`email: ${text}`))).toEqual(
+      violation('email', null, 'taken')
+    );
+    expect(transformer.normalize(graphQLError(`email: ${text}`, { status: 422 }))).toEqual(
+      violation('email', 422, 'taken')
+    );
+  });
+
+  it.each(['email', 'initials', 'password', 'newPassword', 'token'])(
+    'keeps reason other for a %s violation whose text is not the uniqueness message',
+    (path) => {
+      expect(transformer.normalize(graphQLError(`${path}: This email address is taken`))).toEqual(
+        violation(path, null)
+      );
+    }
+  );
+
+  it('gives a table message the same result with and without extensions.code', () => {
+    const plain = transformer.normalize(graphQLError('Access Denied.', { status: 403 }));
+    const coded = transformer.normalize(
+      graphQLError('Access Denied.', { status: 403, code: 'FORBIDDEN' })
+    );
+
+    expect(coded).toEqual(plain);
+  });
+
+  it('leaves the resend time-out to the refusal step', () => {
+    const error = graphQLError('Cannot send new email till 2026-10-08T10:00:00+00:00');
+
+    expect(transformer.normalize(error)).toEqual(failed('refused', null));
   });
 
   it('classifies extensions.status 429 as rate_limited', () => {
