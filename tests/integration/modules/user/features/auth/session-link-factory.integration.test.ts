@@ -5,18 +5,15 @@ import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { ObservabilityService } from '@/services/types/observability/observability';
+import observabilityCore from '@/services/observability/observability-core';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
+import authSessionEndHandler from '@auth/stores/auth-session-end-handler';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildEmail, buildToken } from '@tests/builders';
 
 import server, { userServiceGraphql } from '../../../../mocks/server';
 
 const client = container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);
-const observability = container.resolve<ObservabilityService>(
-  OBSERVABILITY_TOKENS.ObservabilityService
-);
 
 const PROFILE = gql`
   query Profile {
@@ -50,19 +47,22 @@ const sendProfile = (): Promise<unknown> =>
   client.query({ query: PROFILE, fetchPolicy: 'no-cache' }).catch((error: unknown) => error);
 
 describe('SessionLinkFactory over the container Apollo client', () => {
-  const clearUser = jest.spyOn(observability, 'clearUser');
+  const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+  const endSession = jest.spyOn(authSessionEndHandler, 'endSession');
   const signOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
   const setState = jest.spyOn(useAuthStore, 'setState');
 
   beforeEach(() => {
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
     clearUser.mockClear();
+    endSession.mockClear();
     signOut.mockClear();
     setState.mockClear();
   });
 
   afterAll(() => {
     clearUser.mockRestore();
+    endSession.mockRestore();
     signOut.mockRestore();
     setState.mockRestore();
     useAuthStore.setState(CLEARED_AUTH_STATE);
@@ -73,6 +73,10 @@ describe('SessionLinkFactory over the container Apollo client', () => {
 
     expect(factory).toBeInstanceOf(SessionLinkFactory);
     expect(container.resolve(AUTH_TOKENS.SessionLinkFactory)).toBe(factory);
+  });
+
+  it('registers the render-path sign-out handler by value', () => {
+    expect(container.resolve(AUTH_TOKENS.AuthSessionEndHandler)).toBe(authSessionEndHandler);
   });
 
   it('sends the live token as a Bearer header and follows a token change', async () => {
@@ -145,6 +149,7 @@ describe('SessionLinkFactory over the container Apollo client', () => {
     const error = await sendProfile();
 
     expect(error).toBeInstanceOf(Error);
+    expect(endSession).toHaveBeenCalledTimes(1);
     expect(clearUser).toHaveBeenCalledTimes(1);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(setState).toHaveBeenLastCalledWith(CLEARED_AUTH_STATE);

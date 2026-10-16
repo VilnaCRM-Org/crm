@@ -29,6 +29,9 @@ import {
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
+import authSessionEndHandler, {
+  type AuthSessionEndHandler,
+} from '@auth/stores/auth-session-end-handler';
 import useAuthStore from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthRepository } from '@auth/types/auth-repository';
@@ -58,6 +61,9 @@ class UserModuleRegistrar implements ModuleRegistrar {
   // actions inject it instead of value-importing it (issue #130).
   private registerAuthState(container: DependencyContainer): void {
     container.register<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore, { useValue: useAuthStore });
+    container.register<AuthSessionEndHandler>(AUTH_TOKENS.AuthSessionEndHandler, {
+      useValue: authSessionEndHandler,
+    });
     container.register(AUTH_TOKENS.SandboxDemoSessionProvider, {
       useValue: sandboxDemoSessionProvider,
     });

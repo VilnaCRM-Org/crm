@@ -1,6 +1,5 @@
 import type { DependencyContainer, InjectionToken } from 'tsyringe';
 
-import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
@@ -8,6 +7,7 @@ import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthActions, AuthStateWriter } from '@auth/types/auth-store';
 
+import authSessionEndHandler, { type AuthSessionEndHandler } from './auth-session-end-handler';
 import type AuthStoreActions from './auth-store-actions';
 import useAuthState from './use-auth-state';
 import useAuthStore, { CLEARED_AUTH_STATE } from './use-auth-store';
@@ -21,6 +21,8 @@ class DeferredAuthActions implements AuthActions {
   // user sees the retryable load error, and a failed load is forgotten so the next action can
   // try again (issue #147).
   private readonly state: AuthStateWriter = useAuthStore;
+
+  private readonly sessionEnd: AuthSessionEndHandler = authSessionEndHandler;
 
   private readonly loader = new ChunkRetryLoader(() => this.load());
 
@@ -47,9 +49,7 @@ class DeferredAuthActions implements AuthActions {
   }
 
   public logout(): void {
-    observabilityCore.clearUser();
-    sandboxDemoSessionProvider.signOut();
-    this.state.setState(CLEARED_AUTH_STATE);
+    this.sessionEnd.endSession();
   }
 
   public reset(): void {
