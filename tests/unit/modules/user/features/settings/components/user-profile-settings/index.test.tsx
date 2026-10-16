@@ -8,6 +8,11 @@ import UserProfileSettings from '@/modules/user/features/settings/components/use
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 
+jest.mock('@/providers/di', () => ({
+  __esModule: true,
+  useService: (): object => ({ update: jest.fn(), resend: jest.fn(), read: jest.fn() }),
+}));
+
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>
     <main>{children}</main>
@@ -23,6 +28,8 @@ const props = (overrides: Partial<Props> = {}): Props => ({
   refocus: false,
   retry: jest.fn(),
   adoption: { adopt: jest.fn(), confirm: jest.fn() },
+  toasts: { toasts: { items: [] }, announcement: '', show: jest.fn(), dismiss: jest.fn() },
+  saveRef: { current: null },
   ...overrides,
 });
 
@@ -36,6 +43,8 @@ const card = (overrides: Partial<Props> = {}): JSX.Element => {
       refocus={state.refocus}
       retry={state.retry}
       adoption={state.adoption}
+      toasts={state.toasts}
+      saveRef={state.saveRef}
     />
   );
 };
@@ -114,7 +123,8 @@ describe('UserProfileSettings', () => {
 
     expect(screen.getByText('Олена Петренко')).toBeVisible();
     expect(screen.getByText('Вітаємо!')).toBeVisible();
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.getAllByRole('status')[0]).toBeEmptyDOMElement();
+    expect(screen.getByRole('heading', { level: 2, name: 'Особисті дані' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

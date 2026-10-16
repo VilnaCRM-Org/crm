@@ -3,8 +3,10 @@ import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
 
 import type {
   FormBodyProps,
+  FormHeaderProps,
   FormHeaderSectionProps,
   FormLeadSectionProps,
+  FormSubmitProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
   UIFormProps,
@@ -20,6 +22,8 @@ import ErrorBanner from './error-banner';
 import SubmitSpinner from './submit-spinner';
 import useOfflineSubmit from './use-offline-submit';
 import useUIForm from './use-ui-form';
+
+const NO_STYLES = {};
 
 function FormHeader({ header, bannerShown }: FormHeaderSectionProps): JSX.Element {
   const { title, subtitle, showTitle, showSubtitle, titleComponent, titleRef } = header;
@@ -58,6 +62,7 @@ function SubmitControls({
   describedBy,
   buttonRef,
   spacing,
+  submitSx = NO_STYLES,
 }: SubmitControlsProps): JSX.Element {
   return (
     <UIButton
@@ -69,7 +74,7 @@ function SubmitControls({
       disabled={isSubmitDisabled}
       aria-describedby={describedBy}
       variant="contained"
-      sx={[styles.submitButton, spacing === 'tight' && styles.submitButtonTight]}
+      sx={[styles.submitButton, spacing === 'tight' && styles.submitButtonTight, submitSx]}
     >
       {submitLabel}
     </UIButton>
@@ -95,12 +100,13 @@ function FormBody<T extends FieldValues>({
   submit,
   submitting,
   announceSubmitting,
+  footer,
 }: FormBodyProps<T>): JSX.Element {
   const methods = useFormContext<T>();
   // Offline, the submit is disabled rather than allowed to fail: the notice sits inside the
   // form after its heading so the registration overlay never covers it, the button describes
   // itself by the notice, and focus moves there if the button held it (issue #147).
-  const offline = useOfflineSubmit();
+  const offline = useOfflineSubmit(submit.submitRef);
   return (
     <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
       <FormLead header={header} lead={lead} offline={offline} />
@@ -112,46 +118,54 @@ function FormBody<T extends FieldValues>({
         describedBy={offline.noticeId}
         buttonRef={offline.submitRef}
         spacing={submit.submitSpacing}
+        submitSx={submit.submitSx}
       />
+      {footer}
       <UILiveStatus message={announceSubmitting ? submit.submittingLabel : ''} />
     </form>
   );
 }
 
-export default function UIForm<T extends FieldValues>({
-  onSubmit,
-  defaultValues,
-  children,
-  formOptions = {},
-  isSubmitting,
-  error = null,
-  subtitle = null,
-  showTitle = true,
-  showSubtitle = true,
-  resetOnSuccess = false,
-  isSubmitDisabled = false,
-  submitLabel,
-  title,
-  submittingLabel,
-  titleComponent,
-  titleRef,
-  submittingAnnouncement,
-  notice,
-  submitSpacing,
-}: UIFormProps<T>): JSX.Element {
+function headerOf<T extends FieldValues>(props: UIFormProps<T>): FormHeaderProps {
+  const { title, subtitle = null, showTitle = true, showSubtitle = true } = props;
+  return {
+    title,
+    subtitle,
+    showTitle,
+    showSubtitle,
+    titleComponent: props.titleComponent,
+    titleRef: props.titleRef,
+  };
+}
+
+function submitOf<T extends FieldValues>(props: UIFormProps<T>): FormSubmitProps {
+  const { submitLabel, submittingLabel, isSubmitDisabled = false, submitSpacing } = props;
+  return {
+    submitLabel,
+    submittingLabel,
+    isSubmitDisabled,
+    submitSpacing,
+    submitRef: props.submitRef,
+    submitSx: props.submitSx,
+  };
+}
+
+export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JSX.Element {
+  const { onSubmit, defaultValues, formOptions = {}, isSubmitting, resetOnSuccess = false } = props;
   const { methods, submitting } = useUIForm<T>({ defaultValues, formOptions, isSubmitting });
 
   return (
     <FormProviderBridge methods={methods}>
       <FormBody
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
-        header={{ title, subtitle, showTitle, showSubtitle, titleComponent, titleRef }}
-        lead={{ error, notice }}
-        submit={{ submitLabel, submittingLabel, isSubmitDisabled, submitSpacing }}
+        header={headerOf(props)}
+        lead={{ error: props.error ?? null, notice: props.notice }}
+        submit={submitOf(props)}
         submitting={submitting}
-        announceSubmitting={submittingAnnouncement ?? submitting}
+        announceSubmitting={props.submittingAnnouncement ?? submitting}
+        footer={props.footer}
       >
-        {children}
+        {props.children}
       </FormBody>
     </FormProviderBridge>
   );

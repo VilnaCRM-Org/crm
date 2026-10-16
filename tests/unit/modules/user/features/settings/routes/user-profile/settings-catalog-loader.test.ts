@@ -35,6 +35,7 @@ describe('SettingsCatalogLoader', () => {
 
   it('ships the shell, profile and toast groups in both locales', () => {
     expect(Object.keys(en.settings).sort()).toEqual([
+      'errors',
       'heading',
       'profile',
       'subtitle',
@@ -42,6 +43,7 @@ describe('SettingsCatalogLoader', () => {
       'toasts',
     ]);
     expect(Object.keys(uk.settings).sort()).toEqual([
+      'errors',
       'heading',
       'profile',
       'subtitle',

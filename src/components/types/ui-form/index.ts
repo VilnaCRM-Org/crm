@@ -1,3 +1,5 @@
+import type { Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
 import type { FocusEvent, ReactNode, RefCallback, RefObject } from 'react';
 import type {
   SubmitHandler,
@@ -33,6 +35,9 @@ export interface UIFormProps<T extends FieldValues> {
   titleRef?: RefCallback<HTMLElement> | undefined;
   notice?: ReactNode;
   submitSpacing?: SubmitSpacing | undefined;
+  submitRef?: FocusReturnTarget | undefined;
+  submitSx?: SystemStyleObject<Theme> | undefined;
+  footer?: ReactNode;
 }
 
 export interface SubmitHandlerOptions<T extends FieldValues> {
@@ -49,6 +54,7 @@ export interface SubmitControlsProps {
   describedBy: string;
   buttonRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
   spacing?: SubmitSpacing | undefined;
+  submitSx?: SystemStyleObject<Theme> | undefined;
 }
 
 export type FocusReturnTarget = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
@@ -111,6 +117,8 @@ export interface FormSubmitProps {
   submittingLabel: string;
   isSubmitDisabled: boolean;
   submitSpacing?: SubmitSpacing | undefined;
+  submitRef?: FocusReturnTarget | undefined;
+  submitSx?: SystemStyleObject<Theme> | undefined;
 }
 
 export interface FormBodyProps<T extends FieldValues> {
@@ -121,4 +129,5 @@ export interface FormBodyProps<T extends FieldValues> {
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;
   submitting: boolean;
+  footer?: ReactNode;
 }

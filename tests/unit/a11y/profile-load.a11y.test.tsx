@@ -7,6 +7,11 @@ import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
+jest.mock('@/providers/di', () => ({
+  __esModule: true,
+  useService: (): object => ({ update: jest.fn(), resend: jest.fn(), read: jest.fn() }),
+}));
+
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
     <main>{children}</main>
@@ -22,6 +27,13 @@ const base: Props = {
   refocus: false,
   retry: () => undefined,
   adoption: { adopt: () => undefined, confirm: () => undefined },
+  toasts: {
+    toasts: { items: [] },
+    announcement: '',
+    show: () => undefined,
+    dismiss: () => undefined,
+  },
+  saveRef: { current: null },
 };
 
 describe('profile load states accessibility', () => {
@@ -38,6 +50,8 @@ describe('profile load states accessibility', () => {
         refocus={state.refocus}
         retry={state.retry}
         adoption={state.adoption}
+        toasts={state.toasts}
+        saveRef={state.saveRef}
       />,
       { wrapper }
     );

@@ -44,20 +44,23 @@ interface Harness {
   readonly adopt: jest.Mock;
   readonly show: jest.Mock;
   readonly click: jest.Mock;
+  readonly focus: jest.Mock;
 }
 
 const harness = (): Harness => {
   const adopt = jest.fn();
   const show = jest.fn();
   const click = jest.fn();
+  const focus = jest.fn();
   const props: ProfileFormProps = {
     user,
     adoption: { adopt, confirm: jest.fn() },
+    version: 0,
     refocus: false,
     toasts: { toasts: { items: [] }, announcement: '', show, dismiss: jest.fn() },
-    saveRef: { current: { click } as unknown as HTMLButtonElement },
+    saveRef: { current: { click, focus } as unknown as HTMLButtonElement },
   };
-  return { props, adopt, show, click };
+  return { props, adopt, show, click, focus };
 };
 
 const nameChange = (): ReturnType<typeof buildProfileFormValues> =>

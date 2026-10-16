@@ -3,6 +3,7 @@ import { useCallback, useReducer, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { ToastDraft, ToastDraftSet } from '@/components/types/ui-toast';
+import type { AbortableSubmit } from '@/hooks/types/use-abortable-submit';
 import useAbortableSubmit from '@/hooks/use-abortable-submit';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { useService } from '@/providers/di';
@@ -25,6 +26,8 @@ import type {
 import type { ProfileChange } from '../types/user-profile/profile-change';
 import type { ProfileFormValues } from '../types/user-profile/profile-form-values';
 import ProfileChangeDetector from '../utils/profile-change-detector';
+
+import useSettledFocus from './use-settled-focus';
 
 const NO_ERRORS: ProfileFieldErrorSet = { items: [] };
 
@@ -101,17 +104,22 @@ function settleSave(
   dispatch({ type: 'settled' });
 }
 
-export default function useProfileSave(props: ProfileFormProps): ProfileSave {
-  const { t } = useTranslation();
+function useProfileUpdate(): AbortableSubmit<ProfileChange, ProfileUpdateOutcome> {
   const provider = useService<ProfileProvider>(AUTH_TOKENS.ProfileProvider);
-  const [changes] = useState(() => new ProfileChangeDetector());
-  const [state, dispatch] = useReducer(reduceFormState, INITIAL_STATE);
   const run = useCallback(
     (change: ProfileChange, signal: AbortSignal) => provider.update(change, signal),
     // Stryker disable next-line ArrayDeclaration: equivalent, the provider identity never changes
     [provider]
   );
-  const { isSubmitting, submit } = useAbortableSubmit(run);
+  return useAbortableSubmit(run);
+}
+
+export default function useProfileSave(props: ProfileFormProps): ProfileSave {
+  const { t } = useTranslation();
+  const [changes] = useState(() => new ProfileChangeDetector());
+  const [state, dispatch] = useReducer(reduceFormState, INITIAL_STATE);
+  const { isSubmitting, submit } = useProfileUpdate();
+  useSettledFocus(state.settled, props.saveRef);
 
   const save = async (values: ProfileFormValues): Promise<void> => {
     const change = changes.detect(props.user, values);
