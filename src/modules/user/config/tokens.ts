@@ -15,6 +15,7 @@ const AUTH_TOKENS = Object.freeze({
   AuthRequestErrors: Symbol('AuthRequestErrors'),
   AuthSecuritySignals: Symbol('AuthSecuritySignals'),
   AuthStore: Symbol('AuthStore'),
+  AuthSessionEndHandler: Symbol('AuthSessionEndHandler'),
   AuthStoreActionsDeps: Symbol('AuthStoreActionsDeps'),
   SandboxDemoSessionProvider: Symbol('SandboxDemoSessionProvider'),
   PasswordRecoveryRepository: Symbol('PasswordRecoveryRepository'),

@@ -4,10 +4,8 @@ import { onError } from '@apollo/client/link/error';
 import { inject, injectable } from 'tsyringe';
 import type { StoreApi } from 'zustand';
 
-import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { ObservabilityService } from '@/services/types/observability/observability';
+import type { AuthSessionEndHandler } from '@auth/stores/auth-session-end-handler';
 import type { AuthState } from '@auth/types/auth-store';
 
 const ANONYMOUS_OPERATIONS: ReadonlySet<string | undefined> = new Set([
@@ -18,24 +16,12 @@ const ANONYMOUS_OPERATIONS: ReadonlySet<string | undefined> = new Set([
   'CompleteTwoFactorUser',
 ]);
 
-const SIGNED_OUT: AuthState = {
-  email: '',
-  token: null,
-  user: null,
-  loginLoading: false,
-  loginError: null,
-  registerLoading: false,
-  registerError: null,
-};
-
 @injectable()
 export default class SessionLinkFactory {
   constructor(
     @inject(AUTH_TOKENS.AuthStore) private readonly authStore: StoreApi<AuthState>,
-    @inject(AUTH_TOKENS.SandboxDemoSessionProvider)
-    private readonly sandboxDemoSession: SandboxDemoSessionProvider,
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
-    private readonly observability: ObservabilityService
+    @inject(AUTH_TOKENS.AuthSessionEndHandler)
+    private readonly sessionEnd: AuthSessionEndHandler
   ) {}
 
   public build(): ApolloLink {
@@ -53,9 +39,7 @@ export default class SessionLinkFactory {
   private endSessionLink(): ApolloLink {
     return onError(({ operation, networkError }) => {
       if (this.isAnonymous(operation.operationName) || !this.isUnauthorized(networkError)) return;
-      this.observability.clearUser();
-      this.sandboxDemoSession.signOut();
-      this.authStore.setState(SIGNED_OUT);
+      this.sessionEnd.endSession();
     });
   }
 

@@ -169,6 +169,12 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free URL builder consumed by api-config at module load.',
   },
   {
+    path: 'src/modules/user/features/auth/stores/auth-session-end-handler.ts',
+    reason:
+      'Container-free sign-out singleton: DeferredAuthActions.logout() calls it on the render ' +
+      'path, and the container registers the same instance so SessionLinkFactory injects it.',
+  },
+  {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',
     reason: 'Container-free selector singleton consumed directly by auth components.',
   },
