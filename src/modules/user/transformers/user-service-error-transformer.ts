@@ -26,6 +26,8 @@ const TAKEN_MESSAGES: ReadonlySet<string> = new Set([
   'Ця email-адреса вже зареєстрована',
 ]);
 
+const NO_VIOLATIONS: readonly FieldViolation[] = [];
+
 const VIOLATION_PROPERTIES: readonly string[] = [
   'email',
   'token',
@@ -39,36 +41,47 @@ export default class UserServiceErrorTransformer {
   public normalize(error: unknown, signal?: AbortSignal): UserServiceFailure {
     const { networkError, graphQLErrors } = (error ?? {}) as Partial<ApolloError>;
     if (signal?.aborted || this.isAbortError(error) || this.isAbortError(networkError)) {
-      return this.failure('aborted', null, null);
+      return this.failure('aborted', null, NO_VIOLATIONS);
     }
     if (networkError) return this.fromStatus(this.statusOf(networkError));
     return this.fromGraphQLError(graphQLErrors?.[0]);
   }
 
   private fromGraphQLError(graphQLError: GraphQLFormattedError | undefined): UserServiceFailure {
-    if (!graphQLError) return this.failure('unknown', null, null);
+    if (!graphQLError) return this.failure('unknown', null, NO_VIOLATIONS);
     const status = this.extensionStatus(graphQLError);
-    const violation = this.violationOf(graphQLError.message);
-    if (violation) return this.failure('violation', status, violation);
+    const violations = this.violationsOf(graphQLError.message);
+    if (violations) return this.failure('violation', status, violations);
     return this.fromCode(graphQLError, status);
   }
 
   private fromCode(graphQLError: GraphQLFormattedError, status: number | null): UserServiceFailure {
     const reason = MESSAGE_REASONS.get(graphQLError.message);
-    if (reason !== undefined) return this.failure(reason, status, null);
+    if (reason !== undefined) return this.failure(reason, status, NO_VIOLATIONS);
     if (status !== null) return this.fromStatus(status);
     const coded = graphQLError.extensions?.code !== undefined;
-    return this.failure(coded ? 'unknown' : 'refused', null, null);
+    return this.failure(coded ? 'unknown' : 'refused', null, NO_VIOLATIONS);
   }
 
   private fromStatus(status: number | null): UserServiceFailure {
-    if (status === null) return this.failure('network', null, null);
+    if (status === null) return this.failure('network', null, NO_VIOLATIONS);
     const isServer = status >= 500 && status <= 599;
     return this.failure(
       isServer ? 'server' : (STATUS_REASONS.get(status) ?? 'unknown'),
       status,
-      null
+      NO_VIOLATIONS
     );
+  }
+
+  private violationsOf(message: string): readonly FieldViolation[] | null {
+    const lines = message.split(/\r?\n/).filter((line) => line.trim() !== '');
+    const items: FieldViolation[] = [];
+    for (const line of lines) {
+      const violation = this.violationOf(line);
+      if (violation) items.push(violation);
+    }
+    if (items.length === 0) return null;
+    return items.length === lines.length ? items : NO_VIOLATIONS;
   }
 
   private violationOf(message: string): FieldViolation | null {
@@ -96,8 +109,8 @@ export default class UserServiceErrorTransformer {
   private failure(
     reason: UserServiceFailureReason,
     status: number | null,
-    violation: FieldViolation | null
+    items: readonly FieldViolation[]
   ): UserServiceFailure {
-    return { reason, status, violations: { items: violation === null ? [] : [violation] } };
+    return { reason, status, violations: { items } };
   }
 }
