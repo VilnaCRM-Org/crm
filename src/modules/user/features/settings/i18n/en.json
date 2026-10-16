@@ -17,7 +17,9 @@
       "save": "Save changes",
       "saving": "Saving…",
       "clear": "Clear",
-      "no_changes": "There are no changes to save"
+      "no_changes": "There are no changes to save",
+      "email_unconfirmed": "E-mail not confirmed",
+      "resend": "Send again"
     },
     "toasts": {
       "saved": "Changes saved",

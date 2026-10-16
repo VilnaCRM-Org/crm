@@ -24,6 +24,7 @@ function settleResend(
 ): void {
   if (outcome.kind === 'confirmed') {
     adoption.confirm(outcome.confirmed);
+    if (outcome.confirmed) document.getElementById('email')?.focus();
     toasts.show({ items: [{ tone: 'success', message: t('settings.toasts.resent') }] });
     return;
   }

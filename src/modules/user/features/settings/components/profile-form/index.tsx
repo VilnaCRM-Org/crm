@@ -6,12 +6,11 @@ import UIForm from '@/components/ui-form';
 import UIFormField from '@/components/ui-form-field';
 import UIServerFieldError from '@/components/ui-server-field-error';
 import UITypography from '@/components/ui-typography';
-import type { UserEntity } from '@/modules/user/types/user/user-entity';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
-import useProfileFormRules from '../../hooks/use-profile-form-rules';
-import useProfileSave from '../../hooks/use-profile-save';
+import useProfileFormModel from '../../hooks/use-profile-form-model';
 import type {
+  EmailFieldProps,
   PersonalDetailsProps,
   ProfileFormFieldsProps,
   ProfileFormProps,
@@ -22,7 +21,10 @@ import type { ProfileFormValues } from '../../types/user-profile/profile-form-va
 import ChangePassword from '../change-password';
 
 import ClearButton from './clear-button';
+import EmailStatusRow from './email-status-row';
 import styles from './styles';
+
+const EMAIL_STATUS_ID = 'email-status';
 
 const PROFILE_FIELDS: readonly ProfileField[] = [
   'fullName',
@@ -39,10 +41,6 @@ const ERROR_MESSAGES = new Map<FieldErrorReason, string>([
   ['password_not_accepted', 'settings.errors.password_not_accepted'],
   ['new_password_rejected', 'settings.errors.new_password_rejected'],
 ]);
-
-function defaultsOf(user: UserEntity): ProfileFormValues {
-  return { fullName: user.fullName, email: user.email, currentPassword: '', newPassword: '' };
-}
 
 function ServerFieldErrors({ errors }: ServerFieldErrorsProps): JSX.Element {
   const { t } = useTranslation();
@@ -66,7 +64,33 @@ function ServerFieldErrors({ errors }: ServerFieldErrorsProps): JSX.Element {
   );
 }
 
-function PersonalDetails({ rules, refocus }: PersonalDetailsProps): JSX.Element {
+function EmailField({ rules, emailRow }: EmailFieldProps): JSX.Element {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <UIFormField<ProfileFormValues>
+        name="email"
+        label={t('sign_up.form.email_input.label')}
+        placeholder={t('sign_up.form.email_input.placeholder')}
+        type="email"
+        autoComplete="email"
+        describedBy={emailRow.confirmed ? undefined : EMAIL_STATUS_ID}
+        rules={rules.email}
+        sx={styles.field}
+      />
+      {!emailRow.confirmed && (
+        <EmailStatusRow
+          statusId={EMAIL_STATUS_ID}
+          busy={emailRow.busy}
+          onResend={emailRow.resend}
+        />
+      )}
+    </>
+  );
+}
+
+function PersonalDetails({ rules, refocus, emailRow }: PersonalDetailsProps): JSX.Element {
   const { t } = useTranslation();
   const focusHeading = useFocusOnMount<HTMLHeadingElement>();
 
@@ -89,25 +113,22 @@ function PersonalDetails({ rules, refocus }: PersonalDetailsProps): JSX.Element 
         rules={rules.fullName}
         sx={styles.field}
       />
-      <UIFormField<ProfileFormValues>
-        name="email"
-        label={t('sign_up.form.email_input.label')}
-        placeholder={t('sign_up.form.email_input.placeholder')}
-        type="email"
-        autoComplete="email"
-        rules={rules.email}
-        sx={styles.field}
-      />
+      <EmailField rules={rules} emailRow={emailRow} />
     </>
   );
 }
 
-function ProfileFormFields({ rules, refocus, state }: ProfileFormFieldsProps): JSX.Element {
+function ProfileFormFields({
+  rules,
+  refocus,
+  state,
+  emailRow,
+}: ProfileFormFieldsProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
     <>
-      <PersonalDetails rules={rules} refocus={refocus} />
+      <PersonalDetails rules={rules} refocus={refocus} emailRow={emailRow} />
       <ChangePassword rules={rules} evaluate={rules.evaluate} />
       <ServerFieldErrors errors={state.fieldErrors} />
       <Box component="p" role="status" sx={styles.status}>
@@ -118,11 +139,9 @@ function ProfileFormFields({ rules, refocus, state }: ProfileFormFieldsProps): J
 }
 
 export default function ProfileForm(props: ProfileFormProps): JSX.Element {
-  const { user, version, refocus, saveRef } = props;
+  const { version, refocus, saveRef } = props;
   const { t } = useTranslation();
-  const save = useProfileSave(props);
-  const rules = useProfileFormRules(user, save.changes);
-  const defaults = defaultsOf(user);
+  const { save, rules, emailRow, defaults } = useProfileFormModel(props);
 
   return (
     <UIForm<ProfileFormValues>
@@ -138,7 +157,7 @@ export default function ProfileForm(props: ProfileFormProps): JSX.Element {
       submitSx={styles.saveButton}
       footer={<ClearButton defaults={defaults} busy={save.isSubmitting} onClear={save.clear} />}
     >
-      <ProfileFormFields rules={rules} refocus={refocus} state={save.state} />
+      <ProfileFormFields rules={rules} refocus={refocus} state={save.state} emailRow={emailRow} />
     </UIForm>
   );
 }
