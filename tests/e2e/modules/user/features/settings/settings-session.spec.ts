@@ -16,6 +16,7 @@ import {
   editName,
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
+  configuredRestOrigin,
   expectOnlyAllowedOrigins,
   openLoadedSettings,
   saveButton,
@@ -33,16 +34,13 @@ const submitLabel: string = t('sign_in.form.submit_button');
 test.describe('Settings session end (issue #330)', () => {
   let contacted: () => string[] = () => [];
   let stub: StubbedProfile;
-  const restOrigins: string[] = [];
 
   test.beforeEach(async ({ page }) => {
-    restOrigins.length = 0;
     contacted = watchContactedOrigins(page);
     await signInWithFlag(page, true);
     await page.route(LOGIN_API_URL, async (route) => {
       const request: Request = route.request();
       if (request.method() !== 'POST') return route.fallback();
-      restOrigins.push(new URL(request.url()).origin);
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -52,8 +50,9 @@ test.describe('Settings session end (issue #330)', () => {
   });
 
   test.afterEach(({ page }) => {
-    const origins = stub.calls.map((call) => new URL(call.url).origin);
-    expectOnlyAllowedOrigins(contacted(), page.url(), [...origins, ...restOrigins]);
+    expectOnlyAllowedOrigins(contacted(), page.url(), stub.calls, [
+      configuredRestOrigin(page.url()),
+    ]);
     expectNoPersonalDataInUrls(contacted(), [password, NEW_NAME, credentials.password]);
   });
 

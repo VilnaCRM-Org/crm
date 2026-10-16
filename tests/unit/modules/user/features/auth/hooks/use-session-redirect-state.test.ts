@@ -1,25 +1,36 @@
 import { renderHook } from '@testing-library/react';
+import * as React from 'react';
 
-import useSessionRedirectState from '@auth/hooks/use-session-redirect-state';
+import type useSessionRedirectStateType from '@auth/hooks/use-session-redirect-state';
 import { buildToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+
+let useSessionRedirectState: typeof useSessionRedirectStateType;
 
 describe('useSessionRedirectState', () => {
+  beforeEach(async () => {
+    useSessionRedirectState = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@auth/hooks/use-session-redirect-state')).default;
+    });
+  });
+
   it('asks for no focus and no notice on a cold visit', () => {
     const { result } = renderHook(() => useSessionRedirectState(null, false));
 
-    expect(result.current).toEqual({ focusMain: false });
+    expect(result.current).toStrictEqual({ focusMain: false });
   });
 
   it('hands focus to main without a notice after a sign-out click', () => {
     const { result } = renderHook(() => useSessionRedirectState(null, true));
 
-    expect(result.current).toEqual({ focusMain: true });
+    expect(result.current).toStrictEqual({ focusMain: true });
   });
 
   it('keeps the sign-out arrival even while the token is still set', () => {
     const { result } = renderHook(() => useSessionRedirectState(buildToken(), true));
 
-    expect(result.current).toEqual({ focusMain: true });
+    expect(result.current).toStrictEqual({ focusMain: true });
   });
 
   it('explains an ended session when a mounted token turns null without a click', () => {
@@ -31,7 +42,7 @@ describe('useSessionRedirectState', () => {
 
     rerender({ current: null });
 
-    expect(result.current).toEqual({ focusMain: true, notice: 'session_ended' });
+    expect(result.current).toStrictEqual({ focusMain: true, notice: 'session_ended' });
   });
 
   it('never marks a cold visit as an ended session after re-rendering', () => {
@@ -39,6 +50,6 @@ describe('useSessionRedirectState', () => {
 
     rerender();
 
-    expect(result.current).toEqual({ focusMain: false });
+    expect(result.current).toStrictEqual({ focusMain: false });
   });
 });

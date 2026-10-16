@@ -36,8 +36,7 @@ test.describe('Settings save failures (issue #330)', () => {
 
   test.afterEach(async ({ page, context }) => {
     await context.setOffline(false);
-    const origins = stub.calls.map((call) => new URL(call.url).origin);
-    expectOnlyAllowedOrigins(contacted(), page.url(), origins);
+    expectOnlyAllowedOrigins(contacted(), page.url(), stub.calls);
     expectNoPersonalDataInUrls(contacted(), [password, NEW_NAME]);
   });
 

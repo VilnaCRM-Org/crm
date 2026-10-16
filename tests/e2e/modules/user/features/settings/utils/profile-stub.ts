@@ -118,6 +118,9 @@ export function watchContactedOrigins(page: Page): () => string[] {
   return () => urls;
 }
 
+export const configuredOrigin = (configuredUrl: string | undefined, documentUrl: string): string =>
+  new URL(configuredUrl ?? documentUrl).origin;
+
 export function originsOf(urls: readonly string[]): string[] {
   return [...new Set(urls.filter((url) => /^https?:/.test(url)).map((url) => new URL(url).origin))];
 }
