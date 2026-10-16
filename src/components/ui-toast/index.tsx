@@ -12,16 +12,24 @@ import useToastFocus from './use-toast-focus';
 export default function UIToastStack({
   toasts,
   announcement,
+  alert,
   onDismiss,
   returnFocusRef,
+  fallbackFocusRef,
 }: UIToastStackProps): JSX.Element {
   const stackRef = useRef<HTMLDivElement>(null);
   useStackClearance(stackRef, toasts.items.length);
-  const { closeRef, dismiss } = useToastFocus({ toasts, returnFocusRef, onDismiss });
+  const { closeRef, dismiss } = useToastFocus({
+    toasts,
+    returnFocusRef,
+    fallbackFocusRef,
+    onDismiss,
+  });
 
   return (
     <>
       <UILiveStatus message={announcement} />
+      <UILiveStatus message={alert} politeness="assertive" />
       {toasts.items.length > 0 && (
         <Box ref={stackRef} sx={styles.stack}>
           {toasts.items.map((toast) => (

@@ -29,6 +29,7 @@ describe('user profile page styles', () => {
         fontSize: '1.375rem',
         lineHeight: 'normal',
         color: '#1A1C1E',
+        '&:focus:not(:focus-visible)': { outline: 'none' },
         '@media (min-width:1024px)': { fontSize: '1.75rem' },
         '@media (min-width:1440px)': { fontSize: '1.375rem' },
       },

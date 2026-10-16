@@ -39,7 +39,13 @@ const props = (overrides: Partial<Props> = {}): Props => ({
   adoption: { adopt: jest.fn(), confirm: jest.fn() },
   version: 0,
   refocus: false,
-  toasts: { toasts: { items: [] }, announcement: '', show: jest.fn(), dismiss: jest.fn() },
+  toasts: {
+    toasts: { items: [] },
+    announcement: '',
+    alert: '',
+    show: jest.fn(),
+    dismiss: jest.fn(),
+  },
   saveRef: createRef<HTMLButtonElement>(),
   ...overrides,
 });

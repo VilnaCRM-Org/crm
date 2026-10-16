@@ -1,6 +1,6 @@
 import { useReducer } from 'react';
 
-import type { ToastDraftSet, ToastItem, ToastQueue } from '@/components/types/ui-toast';
+import type { ToastDraftSet, ToastItem, ToastQueue, ToastTone } from '@/components/types/ui-toast';
 
 import type { ToastQueueAction, ToastQueueState } from './types/use-toast-queue';
 
@@ -11,22 +11,29 @@ const ALTERNATING_MARK = '​';
 const INITIAL_STATE: ToastQueueState = {
   toasts: { items: [] },
   announcement: '',
+  alert: '',
   nextId: 1,
   marked: false,
 };
 
+function spokenText(drafts: ToastDraftSet, tone: ToastTone, marked: boolean): string {
+  const text = drafts.items
+    .filter((draft) => draft.tone === tone)
+    .map((draft) => draft.message)
+    .join(' ');
+  return text === '' ? '' : `${text}${marked ? ALTERNATING_MARK : ''}`;
+}
+
 function showToasts(state: ToastQueueState, drafts: ToastDraftSet): ToastQueueState {
-  const added: ToastItem[] = [];
-  const spoken: string[] = [];
-  for (const draft of drafts.items) {
-    added.push({ ...draft, id: state.nextId + added.length });
-    if (draft.tone === 'success') spoken.push(draft.message);
-  }
+  const added: ToastItem[] = drafts.items.map((draft, index) => ({
+    ...draft,
+    id: state.nextId + index,
+  }));
   const marked = !state.marked;
-  const text = spoken.join(' ');
   return {
     toasts: { items: [...state.toasts.items, ...added].slice(-MAX_TOASTS) },
-    announcement: text === '' ? '' : `${text}${marked ? ALTERNATING_MARK : ''}`,
+    announcement: spokenText(drafts, 'success', marked),
+    alert: spokenText(drafts, 'error', marked),
     nextId: state.nextId + added.length,
     marked,
   };
@@ -46,6 +53,7 @@ export default function useToastQueue(): ToastQueue {
   return {
     toasts: state.toasts,
     announcement: state.announcement,
+    alert: state.alert,
     show: (drafts: ToastDraftSet): void => dispatch({ type: 'show', drafts }),
     dismiss: (id: number): void => dispatch({ type: 'dismiss', id }),
   };

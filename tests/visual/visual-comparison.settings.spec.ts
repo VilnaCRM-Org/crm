@@ -14,6 +14,7 @@ import {
 import {
   currentPasswordField,
   emailField,
+  expectErrorToast,
   nameField,
   newPasswordField,
   saveButton,
@@ -118,7 +119,7 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await nameField(page).fill(NEW_NAME);
       await currentPasswordField(page).fill(PASSWORD);
       await saveButton(page).click();
-      await expect(page.getByRole('alert').filter({ hasText: text.transient })).toBeVisible();
+      await expectErrorToast(page, text.transient);
 
       await takeSettingsSnapshot(page, screen, 'transient-toast');
     });

@@ -57,7 +57,7 @@ const harness = (): Harness => {
     adoption: { adopt, confirm: jest.fn() },
     version: 0,
     refocus: false,
-    toasts: { toasts: { items: [] }, announcement: '', show, dismiss: jest.fn() },
+    toasts: { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() },
     saveRef: { current: { click, focus } as unknown as HTMLButtonElement },
   };
   return { props, adopt, show, click, focus };

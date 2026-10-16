@@ -10,6 +10,7 @@ import {
 import {
   editName,
   emailField,
+  expectErrorToast,
   currentPasswordField,
   saveButton,
   text,
@@ -65,7 +66,7 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     await editName(page, NEW_NAME, password);
     await saveButton(page).click();
-    await expect(page.getByRole('alert').filter({ hasText: text.transient })).toBeVisible();
+    await expectErrorToast(page, text.transient);
 
     await expectNoAxeViolations(page);
   });

@@ -1,7 +1,14 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type JSX, type ReactNode, useRef } from 'react';
+import {
+  createRef,
+  type JSX,
+  type ReactNode,
+  type RefObject,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import type { ToastDraft, ToastDraftSet } from '@/components/types/ui-toast';
@@ -19,84 +26,159 @@ const failure = (message: string): ToastDraft => ({ tone: 'error', message });
 
 const set = (...items: ToastDraft[]): ToastDraftSet => ({ items });
 
-interface PageProps {
-  readonly onReady: (show: (drafts: ToastDraftSet) => void) => void;
+type ReturnTarget = 'enabled' | 'disabled' | 'detached' | 'none';
+
+type ShowDrafts = (drafts: ToastDraftSet) => void;
+
+interface PageOptions {
+  readonly returnTarget?: ReturnTarget | undefined;
+  readonly withFallback?: boolean | undefined;
 }
 
-function Page({ onReady }: PageProps): JSX.Element {
+interface PageProps extends PageOptions {
+  readonly showRef: RefObject<ShowDrafts | null>;
+}
+
+const detached = document.createElement('button');
+
+function Page({ showRef, returnTarget = 'enabled', withFallback = false }: PageProps): JSX.Element {
   const queue = useToastQueue();
-  const returnFocusRef = useRef<HTMLButtonElement>(null);
-  onReady(queue.show);
+  const saveRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const returnFocusRef: RefObject<HTMLElement | null> =
+    returnTarget === 'detached' ? { current: detached } : saveRef;
+  useImperativeHandle(showRef, () => queue.show);
 
   return (
     <main>
-      <button ref={returnFocusRef} type="button">
-        Зберегти зміни
-      </button>
+      <h1 ref={headingRef} tabIndex={-1}>
+        Налаштування
+      </h1>
+      {returnTarget === 'none' ? null : (
+        <button ref={saveRef} type="button" disabled={returnTarget === 'disabled'}>
+          Зберегти зміни
+        </button>
+      )}
       <UIToastStack
         toasts={queue.toasts}
         announcement={queue.announcement}
+        alert={queue.alert}
         onDismiss={queue.dismiss}
         returnFocusRef={returnFocusRef}
+        fallbackFocusRef={withFallback ? headingRef : undefined}
       />
     </main>
   );
 }
 
-const mountPage = (): ((drafts: ToastDraftSet) => void) => {
-  let show: (drafts: ToastDraftSet) => void = () => undefined;
-  render(<Page onReady={(next) => (show = next)} />, { wrapper });
-  return (drafts) => act(() => show(drafts));
+type Show = ShowDrafts & {
+  readonly settled: (drafts: ToastDraftSet) => Promise<void>;
+  readonly unmount: () => void;
+};
+
+const mountPage = (options: PageOptions = {}): Show => {
+  const showRef = createRef<ShowDrafts>();
+  const { unmount } = render(
+    <Page
+      showRef={showRef}
+      returnTarget={options.returnTarget}
+      withFallback={options.withFallback}
+    />,
+    { wrapper }
+  );
+  return Object.assign((drafts: ToastDraftSet) => act(() => showRef.current?.(drafts)), {
+    settled: async (drafts: ToastDraftSet): Promise<void> => {
+      await act(async () => showRef.current?.(drafts));
+    },
+    unmount,
+  });
 };
 
 const closeButtons = (): HTMLElement[] =>
   screen.queryAllByRole('button', { name: 'Закрити сповіщення' });
+
+const saveButton = (): HTMLElement => screen.getByRole('button', { name: 'Зберегти зміни' });
+
+const focusOn = async (element: HTMLElement | undefined): Promise<void> => {
+  await act(async () => element?.focus());
+};
+
+const heading = (): HTMLElement => screen.getByRole('heading', { level: 1 });
 
 describe('UIToastStack', () => {
   afterEach(() => {
     document.documentElement.style.removeProperty('scroll-padding-bottom');
   });
 
-  it('mounts one polite status region before any toast exists', () => {
-    mountPage();
+  describe('live regions', () => {
+    it('mounts one empty status region and one empty alert region before any toast', () => {
+      mountPage();
 
-    expect(screen.getAllByRole('status')).toHaveLength(1);
-    expect(screen.getByRole('status')).toHaveTextContent('');
-    expect(closeButtons()).toHaveLength(0);
-  });
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
+      expect(screen.getByRole('alert')).toBeEmptyDOMElement();
+      expect(closeButtons()).toHaveLength(0);
+    });
 
-  it('shows the toasts in order and announces three successes as one text update', () => {
-    const show = mountPage();
+    it('shows the toasts in order and announces three successes as one text update', () => {
+      const show = mountPage();
 
-    show(set(success('Перше'), success('Друге'), success('Третє')));
+      show(set(success('Перше'), success('Друге'), success('Третє')));
 
-    expect(screen.getAllByRole('status')).toHaveLength(1);
-    expect(screen.getByRole('status')).toHaveTextContent('Перше Друге Третє');
-    expect(closeButtons()).toHaveLength(3);
-    expect(screen.getAllByText(/^(Перше|Друге|Третє)$/).map((node) => node.textContent)).toEqual([
-      'Перше',
-      'Друге',
-      'Третє',
-    ]);
-  });
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+      expect(screen.getByRole('status')).toHaveTextContent('Перше Друге Третє');
+      expect(closeButtons()).toHaveLength(3);
+      expect(screen.getAllByText(/^(Перше|Друге|Третє)$/).map((node) => node.textContent)).toEqual([
+        'Перше',
+        'Друге',
+        'Третє',
+      ]);
+    });
 
-  it('changes the status text for an identical repeat', () => {
-    const show = mountPage();
+    it('changes the status text for an identical repeat', () => {
+      const show = mountPage();
 
-    show(set(success('Зміни збережено')));
-    expect(screen.getByRole('status')).toHaveTextContent(/^Зміни збережено\u200B$/);
+      show(set(success('Зміни збережено')));
+      expect(screen.getByRole('status')).toHaveTextContent(/^Зміни збережено\u200B$/);
 
-    show(set(success('Зміни збережено')));
-    expect(screen.getByRole('status')).toHaveTextContent(/^Зміни збережено$/);
-  });
+      show(set(success('Зміни збережено')));
+      expect(screen.getByRole('status')).toHaveTextContent(/^Зміни збережено$/);
+    });
 
-  it('keeps an error text out of the status region and announces it as an alert', () => {
-    const show = mountPage();
+    it('announces an error through the one always-mounted alert region, never the status', () => {
+      const show = mountPage();
+      const region = screen.getByRole('alert');
 
-    show(set(failure('Не вдалося зберегти')));
+      show(set(failure('Не вдалося зберегти')));
 
-    expect(screen.getByRole('status')).toHaveTextContent('');
-    expect(screen.getByRole('alert')).toHaveTextContent('Не вдалося зберегти');
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
+      expect(screen.getByRole('alert')).toBe(region);
+      expect(region).toHaveTextContent(/^Не вдалося зберегти\u200B$/);
+      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    });
+
+    it('changes the alert text for an identical repeated error', () => {
+      const show = mountPage();
+
+      show(set(failure('Не вдалося зберегти')));
+      expect(screen.getByRole('alert')).toHaveTextContent(/^Не вдалося зберегти\u200B$/);
+
+      show(set(failure('Не вдалося зберегти')));
+
+      expect(screen.getByRole('alert')).toHaveTextContent(/^Не вдалося зберегти$/);
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
+    });
+
+    it('gives no toast a role of its own', () => {
+      const show = mountPage();
+
+      show(set(failure('Не вдалося'), success('Збережено')));
+
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+      expect(screen.getAllByText(/^(Не вдалося|Збережено)$/)).toHaveLength(2);
+    });
   });
 
   it('keeps every toast after a minute, since no timer exists', () => {
@@ -112,44 +194,154 @@ describe('UIToastStack', () => {
     jest.useRealTimers();
   });
 
-  it('moves no focus when a toast mounts', () => {
-    const show = mountPage();
-    screen.getByRole('button', { name: 'Зберегти зміни' }).focus();
+  describe('focus on close', () => {
+    it('moves no focus when a toast mounts', () => {
+      const show = mountPage();
+      saveButton().focus();
 
-    show(set(success('Перше')));
+      show(set(success('Перше')));
 
-    expect(screen.getByRole('button', { name: 'Зберегти зміни' })).toHaveFocus();
+      expect(saveButton()).toHaveFocus();
+    });
+
+    it('moves focus to the next toast close button when a toast closes', async () => {
+      const show = mountPage();
+      show(set(success('Перше'), success('Друге'), success('Третє')));
+      const [first, second] = closeButtons();
+
+      await userEvent.click(first as HTMLElement);
+
+      expect(closeButtons()).toHaveLength(2);
+      expect(second).toHaveFocus();
+    });
+
+    it('prefers the next toast over the previous one when a middle toast closes', async () => {
+      const show = mountPage();
+      show(set(success('Перше'), success('Друге'), success('Третє')));
+      const [, second, third] = closeButtons();
+
+      await userEvent.click(second as HTMLElement);
+
+      expect(third).toHaveFocus();
+    });
+
+    it('moves focus to the previous close button when the last of several closes', async () => {
+      const show = mountPage();
+      show(set(success('Перше'), success('Друге')));
+      const [first, second] = closeButtons();
+
+      await userEvent.click(second as HTMLElement);
+
+      expect(closeButtons()).toEqual([first]);
+      expect(first).toHaveFocus();
+    });
+
+    it('moves focus to the return target when the only toast closes', async () => {
+      const show = mountPage({ withFallback: true });
+      show(set(failure('Не вдалося')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(saveButton()).toHaveFocus();
+      expect(closeButtons()).toHaveLength(0);
+    });
+
+    it('moves focus to the fallback when the return target is disabled', async () => {
+      const show = mountPage({ returnTarget: 'disabled', withFallback: true });
+      show(set(success('Перше')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(heading()).toHaveFocus();
+      expect(document.body).not.toHaveFocus();
+    });
+
+    it('moves focus to the fallback when the return target is not in the document', async () => {
+      const show = mountPage({ returnTarget: 'detached', withFallback: true });
+      show(set(success('Перше')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(heading()).toHaveFocus();
+    });
+
+    it('moves focus to the fallback when the return target is not rendered', async () => {
+      const show = mountPage({ returnTarget: 'none', withFallback: true });
+      show(set(success('Перше')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(heading()).toHaveFocus();
+    });
+
+    it('still closes the toast when neither target can take focus', async () => {
+      const show = mountPage({ returnTarget: 'disabled' });
+      show(set(success('Перше')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(closeButtons()).toHaveLength(0);
+      expect(heading()).not.toHaveFocus();
+    });
   });
 
-  it('moves focus to the next toast close button when a toast closes', async () => {
-    const show = mountPage();
-    show(set(success('Перше'), success('Друге'), success('Третє')));
-    const [first, second] = closeButtons();
+  describe('focus on eviction', () => {
+    it('moves focus to the newest close button when the focused toast is pushed out', async () => {
+      const show = mountPage();
+      show(set(success('Перше')));
+      await focusOn(closeButtons()[0]);
 
-    await userEvent.click(first as HTMLElement);
+      await show.settled(set(success('Друге'), success('Третє'), success('Четверте')));
 
-    expect(closeButtons()).toHaveLength(2);
-    expect(second).toHaveFocus();
-  });
+      expect(closeButtons()).toHaveLength(3);
+      expect(document.body).not.toHaveFocus();
+      expect(closeButtons()[2]).toHaveFocus();
+    });
 
-  it('moves focus to the return target when the last toast closes', async () => {
-    const show = mountPage();
-    show(set(success('Перше'), success('Друге')));
+    it('moves focus to the newest close button when the pushed-out action had focus', async () => {
+      const show = mountPage();
+      show(
+        set({ ...failure('Не вдалося'), action: { label: 'Повторити', onActivate: jest.fn() } })
+      );
+      await focusOn(screen.getByRole('button', { name: 'Повторити' }));
 
-    await userEvent.click(closeButtons()[1] as HTMLElement);
+      await show.settled(set(success('Друге'), success('Третє'), success('Четверте')));
 
-    expect(screen.getByRole('button', { name: 'Зберегти зміни' })).toHaveFocus();
-    expect(closeButtons()).toHaveLength(1);
-  });
+      expect(screen.queryByRole('button', { name: 'Повторити' })).not.toBeInTheDocument();
+      expect(closeButtons()[2]).toHaveFocus();
+    });
 
-  it('moves focus to the return target when the only toast closes', async () => {
-    const show = mountPage();
-    show(set(failure('Не вдалося')));
+    it('keeps focus on a toast that stays when another toast arrives', async () => {
+      const show = mountPage();
+      show(set(success('Перше')));
+      const first = closeButtons()[0] as HTMLElement;
+      await focusOn(first);
 
-    await userEvent.click(closeButtons()[0] as HTMLElement);
+      await show.settled(set(success('Друге')));
 
-    expect(screen.getByRole('button', { name: 'Зберегти зміни' })).toHaveFocus();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(first).toHaveFocus();
+    });
+
+    it('moves no focus when a toast that did not hold focus is pushed out', () => {
+      const show = mountPage();
+      show(set(success('Перше'), success('Друге'), success('Третє')));
+
+      show(set(success('Четверте')));
+
+      expect(document.body).toHaveFocus();
+    });
+
+    it('forgets a recovered loss, so a later push-out moves no focus', async () => {
+      const show = mountPage();
+      show(set(success('Перше')));
+      await focusOn(closeButtons()[0]);
+      await show.settled(set(success('Друге'), success('Третє'), success('Четверте')));
+      act(() => closeButtons()[2]?.blur());
+
+      await show.settled(set(success('П’яте')));
+
+      expect(document.body).toHaveFocus();
+    });
   });
 
   describe('scroll padding', () => {
@@ -196,11 +388,10 @@ describe('UIToastStack', () => {
 
     it('is cleared when the stack unmounts', () => {
       stubHeight(61);
-      let show: (drafts: ToastDraftSet) => void = () => undefined;
-      const { unmount } = render(<Page onReady={(next) => (show = next)} />, { wrapper });
-      act(() => show(set(success('Перше'))));
+      const show = mountPage();
+      show(set(success('Перше')));
 
-      unmount();
+      show.unmount();
 
       expect(document.documentElement.style.getPropertyValue('scroll-padding-bottom')).toBe('');
     });

@@ -10,6 +10,7 @@ const meta: Meta<typeof UIToastStack> = {
   args: {
     toasts: { items: [{ id: 1, tone: 'success', message: 'Зміни збережено' }] },
     announcement: 'Зміни збережено',
+    alert: '',
     onDismiss: noop,
     returnFocusRef: { current: null },
   },
@@ -18,10 +19,11 @@ const meta: Meta<typeof UIToastStack> = {
       description: {
         component:
           'Up to three toasts, fixed bottom-right from 480 px and across the bottom below it, ' +
-          'with one always-mounted visually hidden status region before them that announces the ' +
-          'success texts once. Closing a toast moves focus to the next close button, or back to ' +
-          'the control the page passes in. No toast takes focus when it appears and none times ' +
-          'out.',
+          'with two always-mounted visually hidden regions before them: a status region that ' +
+          'announces the success texts once and an alert region that announces the error texts. ' +
+          'Closing a toast moves focus to the next close button, then to the previous one, then ' +
+          'back to the control the page passes in while it is enabled, and otherwise to the ' +
+          'fallback target. No toast takes focus when it appears and none times out.',
       },
       story: { inline: false },
     },
@@ -61,9 +63,10 @@ export const Mixed: Story = {
       ],
     },
     announcement: 'Особисті дані збережено',
+    alert: 'Не вдалося змінити пароль',
   },
 };
 
 export const Empty: Story = {
-  args: { toasts: { items: [] }, announcement: '' },
+  args: { toasts: { items: [] }, announcement: '', alert: '' },
 };

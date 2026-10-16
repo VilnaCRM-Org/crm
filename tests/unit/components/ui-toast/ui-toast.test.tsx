@@ -39,7 +39,7 @@ describe('UIToast', () => {
     expect(toast).toHaveStyle({ backgroundColor: '#E8F4EF', color: '#1A1C1E' });
   });
 
-  it('shows an error toast as an alert on the error surface in the dark text', () => {
+  it('shows an error toast without a role, on the error surface in the dark text', () => {
     render(
       <UIToast
         toast={buildToast({ tone: 'error', message: 'Не вдалося' })}
@@ -50,10 +50,27 @@ describe('UIToast', () => {
       }
     );
 
-    const alert = screen.getByRole('alert');
+    const toast = toastRoot('Не вдалося');
 
-    expect(alert).toHaveTextContent('Не вдалося');
-    expect(alert).toHaveStyle({ backgroundColor: '#FDECEC', color: '#1A1C1E' });
+    expect(toast).not.toHaveAttribute('role');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(toast).toHaveStyle({ backgroundColor: '#FDECEC', color: '#1A1C1E' });
+  });
+
+  it('describes each close button by the message of its own toast', () => {
+    render(
+      <>
+        <UIToast toast={buildToast({ id: 1, message: 'Перше' })} onDismiss={jest.fn()} />
+        <UIToast toast={buildToast({ id: 2, message: 'Друге' })} onDismiss={jest.fn()} />
+      </>,
+      { wrapper: ukWrapper }
+    );
+
+    const [first, second] = screen.getAllByRole('button', { name: 'Закрити сповіщення' });
+
+    expect(first).toHaveAccessibleDescription('Перше');
+    expect(second).toHaveAccessibleDescription('Друге');
+    expect(first?.getAttribute('aria-describedby')).toBe(screen.getByText('Перше').id);
   });
 
   it.each([
@@ -104,6 +121,20 @@ describe('UIToast', () => {
     expect(onDismiss).toHaveBeenCalledWith(42);
   });
 
+  it('dismisses by the current id through the current callback after a re-render', async () => {
+    const first = jest.fn();
+    const second = jest.fn();
+    const { rerender } = render(<UIToast toast={buildToast({ id: 1 })} onDismiss={first} />, {
+      wrapper: ukWrapper,
+    });
+
+    rerender(<UIToast toast={buildToast({ id: 2 })} onDismiss={second} />);
+    await userEvent.click(closeButton());
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith(2);
+  });
+
   it('renders no action button when the draft has no action', () => {
     render(<UIToast toast={buildToast()} onDismiss={jest.fn()} />, { wrapper: ukWrapper });
 
@@ -140,6 +171,27 @@ describe('UIToast', () => {
 
       expect(onDismiss).toHaveBeenCalledTimes(1);
       expect(onDismiss).toHaveBeenCalledWith(3);
+      expect(onActivate).toHaveBeenCalledTimes(1);
+    });
+
+    it('runs the current action and dismissal after a re-render', async () => {
+      const staleDismiss = jest.fn();
+      const staleActivate = jest.fn();
+      const onDismiss = jest.fn();
+      const onActivate = jest.fn();
+      const toastWith = (id: number, activate: jest.Mock): ToastItem =>
+        buildToast({ id, action: { label: 'Повторити', onActivate: activate } });
+      const { rerender } = render(
+        <UIToast toast={toastWith(3, staleActivate)} onDismiss={staleDismiss} />,
+        { wrapper: ukWrapper }
+      );
+
+      rerender(<UIToast toast={toastWith(4, onActivate)} onDismiss={onDismiss} />);
+      await userEvent.click(screen.getByRole('button', { name: 'Повторити' }));
+
+      expect(staleDismiss).not.toHaveBeenCalled();
+      expect(staleActivate).not.toHaveBeenCalled();
+      expect(onDismiss).toHaveBeenCalledWith(4);
       expect(onActivate).toHaveBeenCalledTimes(1);
     });
 

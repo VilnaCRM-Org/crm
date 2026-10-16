@@ -189,7 +189,7 @@ describe('settings page e-mail resend (integration)', () => {
 
     await waitFor(() => expect(useAuthStore.getState().token).toBeNull());
     expect(screen.queryByText(FAILED)).not.toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('alert').filter((node) => node.textContent !== '')).toEqual([]);
   });
 
   it('sends nothing and is aria-disabled while offline', async () => {

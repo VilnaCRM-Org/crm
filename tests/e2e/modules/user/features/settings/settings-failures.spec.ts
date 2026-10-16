@@ -15,6 +15,7 @@ import {
   currentPasswordField,
   editName,
   emailField,
+  expectErrorToast,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
   openLoadedSettings,
@@ -77,7 +78,7 @@ test.describe('Settings save failures (issue #330)', () => {
     await editName(page, NEW_NAME, password);
     await saveButton(page).click();
 
-    await expect(page.getByRole('alert').filter({ hasText: text.rateLimited })).toBeVisible();
+    await expectErrorToast(page, text.rateLimited);
     await expect(page.getByRole('button', { name: text.tryAgain })).toHaveCount(0);
   });
 
@@ -89,7 +90,7 @@ test.describe('Settings save failures (issue #330)', () => {
 
     await editName(page, NEW_NAME, password);
     await saveButton(page).click();
-    await expect(page.getByRole('alert').filter({ hasText: text.transient })).toBeVisible();
+    await expectErrorToast(page, text.transient);
     expect(stub.count('UpdateUser')).toBe(1);
 
     await page.getByRole('button', { name: text.tryAgain, exact: true }).click();

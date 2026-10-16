@@ -300,7 +300,7 @@ describe('settings page save outcomes (integration)', () => {
     await waitFor(() => expect(useAuthStore.getState().token).toBeNull());
     expect(screen.queryByRole('button', { name: 'Закрити сповіщення' })).not.toBeInTheDocument();
     expect(screen.queryByText(GENERIC)).not.toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('alert').filter((node) => node.textContent !== '')).toEqual([]);
   });
 
   it('clears a server field error when its field is edited next', async () => {

@@ -45,7 +45,7 @@ const setup = (): {
   const adopt = jest.fn();
   const confirm = jest.fn();
   const show = jest.fn();
-  const toasts = { toasts: { items: [] }, announcement: '', show, dismiss: jest.fn() };
+  const toasts = { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() };
   const view = renderHook(() => useEmailResend(user, { adopt, confirm }, toasts), { wrapper });
   return { adopt, confirm, show, ...view };
 };
