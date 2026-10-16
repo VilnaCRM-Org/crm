@@ -1,0 +1,12 @@
+query CurrentUser {
+  users(first: 1) {
+    edges {
+      node {
+        id
+        email
+        initials
+        confirmed
+      }
+    }
+  }
+}

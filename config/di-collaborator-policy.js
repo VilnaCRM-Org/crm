@@ -177,6 +177,10 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'The zod response-contract module itself; declares schemas consumed as data.',
   },
   {
+    path: 'src/modules/user/features/settings/utils/response-schemas.ts',
+    reason: 'The settings zod response-contract module; declares schemas consumed as data.',
+  },
+  {
     path: 'src/modules/user/features/auth/utils/map-registration-error.ts',
     reason: 'Container-free registration-error mapper singleton on the render path.',
   },
@@ -288,8 +292,8 @@ const ALLOWED_TARGETS = [
   {
     id: 'graphql-documents',
     reason: 'A generated GraphQL document seam is a static query artifact, not behavior.',
-    path: '^src/modules/[^/]+/features/[^/]+/repositories/[a-z0-9-]+-mutation[.]ts$',
-    specifier: `(?:${RELATIVE}|${REPOSITORIES})[a-z0-9-]+-mutation$`,
+    path: '^src/modules/[^/]+/features/[^/]+/repositories/[a-z0-9-]+-(?:mutation|query)[.]ts$',
+    specifier: `(?:${RELATIVE}|${REPOSITORIES})[a-z0-9-]+-(?:mutation|query)$`,
     sample: 'src/modules/user/features/auth/repositories/create-user-mutation.ts',
     sampleSpecifier: './create-user-mutation',
   },
