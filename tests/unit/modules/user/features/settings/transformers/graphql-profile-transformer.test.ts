@@ -11,7 +11,11 @@ const transformer = new GraphQLProfileTransformer();
 const failure = (
   reason: UserServiceFailureReason,
   violations: Array<{ path: string; reason: FieldViolationReason }> = []
-): UserServiceFailure => ({ reason, status: null, violations: { items: violations } });
+): UserServiceFailure => ({
+  reason,
+  status: null,
+  violations: { items: violations, complete: true },
+});
 
 const REJECTED = { kind: 'failed', reason: 'rejected' };
 
@@ -182,6 +186,14 @@ describe('GraphQLProfileTransformer.invalid', () => {
     [
       'a taken reason on a non-email path',
       failure('violation', [{ path: 'initials', reason: 'taken' }]),
+    ],
+    [
+      'known paths whose message also carried an unrecognised line',
+      {
+        reason: 'violation',
+        status: 422,
+        violations: { items: [{ path: 'initials', reason: 'other' }], complete: false },
+      } as const,
     ],
     ['an empty violation set', failure('violation')],
     ['a rate limit', failure('rate_limited')],

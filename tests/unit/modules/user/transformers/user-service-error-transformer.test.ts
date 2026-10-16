@@ -12,7 +12,7 @@ import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const transformer = new UserServiceErrorTransformer();
 
-const none = { items: [] };
+const none = { items: [], complete: true };
 
 const withNetworkError = (networkError: Error): ApolloError => new ApolloError({ networkError });
 
@@ -31,7 +31,7 @@ const violation = (
 ): UserServiceFailure => ({
   reason: 'violation',
   status,
-  violations: { items: [{ path, reason }] },
+  violations: { items: [{ path, reason }], complete: true },
 });
 
 const failed = (reason: UserServiceFailureReason, status: number | null): UserServiceFailure => ({
@@ -255,6 +255,7 @@ describe('UserServiceErrorTransformer', () => {
             { path: 'initials', reason: 'other' },
             { path: 'newPassword', reason: 'other' },
           ],
+          complete: true,
         },
       });
     }
@@ -272,10 +273,21 @@ describe('UserServiceErrorTransformer', () => {
   it.each([
     ['unknown first', 'clientMutationId: bad\ninitials: too short'],
     ['unknown last', 'initials: too short\nclientMutationId: bad'],
-  ])('gives an empty violation set when a line has an unknown path (%s)', (_name, message) => {
-    expect(transformer.normalize(graphQLError(message, { status: 422 }))).toEqual(
-      failed('violation', 422)
-    );
+  ])('keeps the known lines and flags the set incomplete (%s)', (_name, message) => {
+    expect(transformer.normalize(graphQLError(message, { status: 422 }))).toEqual({
+      reason: 'violation',
+      status: 422,
+      violations: { items: [{ path: 'initials', reason: 'other' }], complete: false },
+    });
+  });
+
+  it('keeps a token line beside an unknown line so a dead link stays recognisable', () => {
+    const message = 'token: This value is not valid.\nclientMutationId: bad';
+
+    expect(transformer.normalize(graphQLError(message, { status: 422 })).violations).toEqual({
+      items: [{ path: 'token', reason: 'other' }],
+      complete: false,
+    });
   });
 
   it('does not treat a multi-line message without a known prefix as a violation', () => {

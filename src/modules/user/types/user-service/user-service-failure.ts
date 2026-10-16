@@ -19,6 +19,7 @@ export interface FieldViolation {
 
 export interface FieldViolationSet {
   readonly items: readonly FieldViolation[];
+  readonly complete: boolean;
 }
 
 export interface UserServiceFailure {
