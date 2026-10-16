@@ -122,3 +122,36 @@ describe('route mapper chunk recovery (issue #147)', () => {
     expect(window.sessionStorage.getItem(`crm:chunk-reload:${path}`)).toBeNull();
   });
 });
+
+describe('route mapper flag handle', () => {
+  const load = (): Promise<PageModule> => Promise.resolve(pageModule(buildToken()));
+
+  it('copies a flag into the handle of a path route', () => {
+    const route = routeMapper.map({ path: '/flagged', flag: 'userSettings', load }, 'main');
+
+    expect(route.handle).toEqual({ flag: 'userSettings' });
+  });
+
+  it('copies a flag into the handle of an index route', () => {
+    const route = routeMapper.map({ index: true, flag: 'userSettings', load }, 'main');
+
+    expect(route.handle).toEqual({ flag: 'userSettings' });
+  });
+
+  it.each([
+    ['a path route', { path: '/plain', load } as AppRouteObject],
+    ['an index route', { index: true, load } as AppRouteObject],
+  ])('adds no handle to %s without a flag', (_label, route) => {
+    expect(routeMapper.map(route, 'main')).not.toHaveProperty('handle');
+  });
+
+  it('keeps a nested child without a handle under a flagged parent', () => {
+    const { children: nested = [] } = routeMapper.map(
+      { path: '/flagged', flag: 'userSettings', load, children: [{ path: 'child', load }] },
+      'main'
+    );
+
+    expect(nested).toHaveLength(1);
+    expect(nested[0]).not.toHaveProperty('handle');
+  });
+});
