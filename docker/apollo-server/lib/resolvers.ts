@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
 
+import { profileResolvers } from './profile-resolvers';
 import {
   ConfirmPasswordResetInput,
   CreateUserInput,
@@ -8,15 +9,10 @@ import {
   RequestPasswordResetInput,
   User,
 } from './types';
-
-const EMAIL_LOCAL = String.raw`[a-zA-Z0-9.!#$%&'*+/=?^_\`{|}~-]+`;
-const EMAIL_LABEL = String.raw`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?`;
-const EMAIL_REGEX = new RegExp(`^${EMAIL_LOCAL}@${EMAIL_LABEL}(?:\\.${EMAIL_LABEL})*$`);
+import { EMAIL_REGEX, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
-  const emailRegex = EMAIL_REGEX;
-
-  if (!input.email || !emailRegex.test(input.email)) {
+  if (!input.email || !EMAIL_REGEX.test(input.email)) {
     throw new GraphQLError('Invalid email format', {
       extensions: {
         code: 'BAD_REQUEST',
@@ -37,13 +33,6 @@ const validateCreateUserInput = (input: CreateUserInput): void => {
 
 const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
 const MAX_TOKEN_LENGTH = 255;
-const MAX_EMAIL_LENGTH = 254;
-
-const rejectViolation = (property: string, reason: string): never => {
-  throw new GraphQLError(`${property}: ${reason}`, {
-    extensions: { code: 'BAD_USER_INPUT', status: 422 },
-  });
-};
 
 const passwordResetPayload = (clientMutationId?: string | null): PasswordResetPayload => ({
   user: null,
@@ -74,6 +63,7 @@ export function clearUsers(): void {
 }
 
 export const resolvers = {
+  Query: { ...profileResolvers.Query },
   Mutation: {
     createUser: async (
       _: unknown,
@@ -125,6 +115,7 @@ export const resolvers = {
       }
       return passwordResetPayload(input.clientMutationId);
     },
+    ...profileResolvers.Mutation,
   },
 };
 
