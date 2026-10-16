@@ -9,7 +9,7 @@ import ReloadingChunkLoader from '@/lib/reliability/reloading-chunk-loader';
 import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 
-import type { AppRouteObject, PageLoader, PageModule } from './types/app-route';
+import type { AppRouteObject, PageLoader, PageModule, RouteHandle } from './types/app-route';
 
 class RouteMapper {
   private readonly reloadGuard = new ReloadOnceGuard();
@@ -19,10 +19,15 @@ class RouteMapper {
     const Page = lazy(() => loader.load());
     const element = <Page />;
     const errorElement = <RouteError landmark={landmark} />;
+    const handle = this.handle(route);
     if (route.index) {
-      return { index: true, element, errorElement };
+      return { index: true, element, errorElement, ...handle };
     }
-    return { path: route.path, element, errorElement, ...this.nested(route, landmark) };
+    return { path: route.path, element, errorElement, ...handle, ...this.nested(route, landmark) };
+  }
+
+  private handle(route: AppRouteObject): { handle?: RouteHandle } {
+    return route.flag === undefined ? {} : { handle: { flag: route.flag } };
   }
 
   // Every page chunk is retried once. A public page may then reload the document to pick up a
