@@ -21,7 +21,6 @@ export const paletteColors = {
     main: '#4CAF50',
     text: '#2E7D32',
     surface: '#E8F4EF',
-    icon: '#38B386',
   },
   warning: {
     main: '#FF9800',

@@ -57,7 +57,7 @@ describe('UIToast', () => {
   });
 
   it.each([
-    ['success', '#38B386', 'M7.5 12L10.5 15L16.5 9'],
+    ['success', '#2E7D32', 'M7.5 12L10.5 15L16.5 9'],
     ['error', '#DC3939', 'M12 8V12M12 16H12.01'],
   ] as const)('draws the %s icon in %s, hidden from assistive technology', (tone, color, path) => {
     render(<UIToast toast={buildToast({ tone })} onDismiss={jest.fn()} />, { wrapper: ukWrapper });
