@@ -10,6 +10,18 @@ import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 // the catalog this file builds its instances from.
 jest.mock('@/i18n', () => ({ __esModule: true, default: { addResourceBundle: jest.fn() } }));
 
+jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () => ({
+  __esModule: true,
+  default: (): object => ({
+    status: 'loading',
+    user: null,
+    version: 0,
+    refocus: false,
+    retry: (): undefined => undefined,
+    adoption: { adopt: (): undefined => undefined, confirm: (): undefined => undefined },
+  }),
+}));
+
 describe('UserProfile lazy catalog', () => {
   it('renders the raw settings keys for an instance built from the merged catalog alone', () => {
     render(
