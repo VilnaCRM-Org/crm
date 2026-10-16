@@ -29,7 +29,7 @@ export interface UpdateUserInput {
   initials?: string | null;
   email?: string | null;
   newPassword?: string | null;
-  oldPassword?: string | null;
+  password: string;
   clientMutationId?: string | null;
 }
 
