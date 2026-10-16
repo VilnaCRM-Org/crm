@@ -56,3 +56,6 @@ settings	e2e	tests/e2e/modules/user/features/settings/settings-save.spec.ts	Open
 settings	e2e	tests/e2e/modules/user/features/settings/settings-failures.spec.ts	Drives the wrong-password, taken-e-mail, 429 and 503 retry outcomes and the offline-disabled Save on /settings.
 settings	e2e	tests/e2e/modules/user/features/settings/settings-session.spec.ts	Ends the session with a transport 401 on UpdateUser, lands on /sign-in with the notice and focus, and returns to /settings after login.
 settings	e2e	tests/e2e/mobile/settings-touch.spec.ts	Completes name, e-mail, password and resend changes with taps only on the mobile projects, with touch-target, overflow (390, 412, 320 px), keyboard-height and toast-clearance checks.
+settings	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the loaded /settings page with axe against the WCAG 2.1 AA tag set.
+settings	e2e	tests/e2e/a11y/settings-states.a11y.spec.ts	Scans the unconfirmed row, field errors, success and error toasts and the load failure on /settings with axe.
+settings	e2e	tests/e2e/a11y/settings-keyboard.a11y.spec.ts	Drives /settings with the keyboard only: tab order, eye toggle Space, Enter submit and the focus rules after save, errors, Clear, toast close and session end.

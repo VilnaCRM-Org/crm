@@ -2,6 +2,10 @@ import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildResetToken } from '@tests/builders';
+import {
+  signInWithFlag,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
@@ -15,10 +19,22 @@ interface RouteScan {
   query?: () => string;
   ready: string;
   seedAuth?: boolean;
+  prepare?: (page: Page) => Promise<void>;
+}
+
+async function prepareSettings(page: Page): Promise<void> {
+  await signInWithFlag(page, true);
+  await stubProfile(page);
 }
 
 const routeScans: readonly RouteScan[] = [
   { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', seedAuth: true },
+  {
+    key: 'settings',
+    path: ROUTE_PATHS.settings,
+    ready: 'main form button[type="submit"]',
+    prepare: prepareSettings,
+  },
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
   {
@@ -41,6 +57,7 @@ async function openRoute(page: Page, scan: RouteScan): Promise<void> {
   if (scan.seedAuth) {
     await seedPreloadedAuthToken(page);
   }
+  await scan.prepare?.(page);
   await page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(scan.ready).first()).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
