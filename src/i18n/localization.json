@@ -53,7 +53,8 @@
         "title": "Home",
         "heading": "Welcome to VilnaCRM",
         "description": "CRM sections will appear here once they are connected.",
-        "sign_out": "Sign out"
+        "sign_out": "Sign out",
+        "settings_link": "Settings"
       },
       "root_element_missing": "Root element not found",
       "buttons": {
@@ -256,7 +257,8 @@
         "title": "Головна",
         "heading": "Ласкаво просимо до VilnaCRM",
         "description": "Розділи CRM з’являться тут, щойно їх буде підключено.",
-        "sign_out": "Вийти"
+        "sign_out": "Вийти",
+        "settings_link": "Налаштування"
       },
       "root_element_missing": "Кореневий елемент не знайдено",
       "buttons": {

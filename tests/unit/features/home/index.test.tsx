@@ -34,6 +34,7 @@ describe('Home page', () => {
       heading: 'Welcome to VilnaCRM',
       description: 'CRM sections will appear here once they are connected.',
       sign_out: 'Sign out',
+      settings_link: 'Settings',
     });
   });
 
@@ -43,6 +44,7 @@ describe('Home page', () => {
       heading: 'Ласкаво просимо до VilnaCRM',
       description: 'Розділи CRM з’являться тут, щойно їх буде підключено.',
       sign_out: 'Вийти',
+      settings_link: 'Налаштування',
     });
   });
 
