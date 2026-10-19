@@ -409,14 +409,24 @@ fails.
 
 **Decision.** `SessionLinkFactory` adds the Bearer token to every non-anonymous operation and,
 on a transport 401, ends the session exactly as `logout()` does: observability, the sandbox demo
-session and the cleared store. `ProtectedRoute`, which now remembers that it saw a token, then
-shows the `session_ended` notice on `/sign-in`, in its own neutral info tone. #315's
+session and the cleared store. Whether a network error is a 401 is asked of #315's
+`UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
+hooks, which do nothing on `session_ended` and rely on the link, read the status in one place.
+The link receives its five collaborators as one `SessionLinkDeps` value
+(`AUTH_TOKENS.SessionLinkDeps`): the store, `CLEARED_AUTH_STATE` itself rather than a copy, the
+sandbox demo session, `ObservabilityService` and the error transformer, because a constructor may
+take three arguments under `make lint-metrics`. `ProtectedRoute`, which now remembers that it saw a
+token, then shows the `session_ended` notice on `/sign-in`, in its own neutral info tone. #315's
 `RequestPasswordReset` and `ConfirmPasswordReset` are anonymous, so a reset link opened while
 signed in never ends the session.
 
 **Rejected.** Ending a session on a GraphQL error or on another status (a validation failure is
 not a dead session); a per-feature 401 rule (every feature would repeat it); the green success
-check for the notice (it is not a success).
+check for the notice (it is not a success); a sign-out class shared by `logout()` and the link
+(a new `*Handler` module singleton, which the board rules out); injecting the render-path
+`authActions` (the container would import the auth composition root that lazily imports the
+container, a cycle dependency-cruiser's `no-circular` rejects), so `logout()` and the link each
+run the three steps against the same `CLEARED_AUTH_STATE`.
 
 ### Two-factor authentication has its own page
 

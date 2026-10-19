@@ -1,6 +1,5 @@
 import observabilityCore from '@/services/observability/observability-core';
 import { useAuthStore, authActions } from '@auth/stores';
-import authSessionEndHandler from '@auth/stores/auth-session-end-handler';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 describe('auth stores composition root', () => {
@@ -19,14 +18,6 @@ describe('auth stores composition root', () => {
     authActions.logout();
 
     expect(clearSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('signs out through the same handler a transport 401 ends the session with', () => {
-    const endSession = jest.spyOn(authSessionEndHandler, 'endSession');
-
-    authActions.logout();
-
-    expect(endSession).toHaveBeenCalledTimes(1);
   });
 
   it('forgets a remembered sandbox demo session on logout', () => {

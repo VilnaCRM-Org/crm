@@ -1,4 +1,5 @@
 import type { ApolloError } from '@apollo/client';
+import type { NetworkError } from '@apollo/client/errors';
 import type { GraphQLFormattedError } from 'graphql';
 import { injectable } from 'tsyringe';
 
@@ -97,10 +98,14 @@ export default class UserServiceErrorTransformer {
     return typeof status === 'number' ? status : null;
   }
 
-  private statusOf(networkError: object): number | null {
-    const { statusCode, status } = networkError as { statusCode?: unknown; status?: unknown };
-    const value = statusCode ?? status;
-    return typeof value === 'number' ? value : null;
+  private statusOf(networkError: NonNullable<NetworkError>): number | null {
+    if ('statusCode' in networkError && typeof networkError.statusCode === 'number') {
+      return networkError.statusCode;
+    }
+    if ('status' in networkError && typeof networkError.status === 'number') {
+      return networkError.status;
+    }
+    return null;
   }
 
   private isAbortError(value: unknown): boolean {

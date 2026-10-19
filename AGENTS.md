@@ -1013,7 +1013,6 @@ contract module and passed to collaborators as data.
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
 container-resolved class. Those inside a gated directory (`auth-store-selectors`,
-`auth-session-end-handler`,
 `response-schemas`, `map-registration-error`, `load-registration-notification`,
 `registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,

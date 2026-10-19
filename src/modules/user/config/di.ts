@@ -15,6 +15,7 @@ import RegistrationResponseMapper from '@/modules/user/store/registration-respon
 import UserServiceErrorTransformer from '@/modules/user/transformers';
 import type ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
@@ -29,15 +30,13 @@ import {
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
-import authSessionEndHandler, {
-  type AuthSessionEndHandler,
-} from '@auth/stores/auth-session-end-handler';
-import useAuthStore from '@auth/stores/use-auth-store';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 import type { AuthState } from '@auth/types/auth-store';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
+import type { SessionLinkDeps } from '@auth/types/session-link-deps';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
@@ -54,6 +53,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
     this.registerApis(container);
     this.registerRepository(container);
     this.registerAuthState(container);
+    this.registerSessionLink(container);
   }
 
   // The auth store stays a container-free module singleton so the auth page paints without
@@ -61,9 +61,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
   // actions inject it instead of value-importing it (issue #130).
   private registerAuthState(container: DependencyContainer): void {
     container.register<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore, { useValue: useAuthStore });
-    container.register<AuthSessionEndHandler>(AUTH_TOKENS.AuthSessionEndHandler, {
-      useValue: authSessionEndHandler,
-    });
     container.register(AUTH_TOKENS.SandboxDemoSessionProvider, {
       useValue: sandboxDemoSessionProvider,
     });
@@ -80,9 +77,23 @@ class UserModuleRegistrar implements ModuleRegistrar {
     });
   }
 
+  private registerSessionLink(container: DependencyContainer): void {
+    container.register<SessionLinkDeps>(AUTH_TOKENS.SessionLinkDeps, {
+      useFactory: (c) => ({
+        authStore: c.resolve<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore),
+        signedOut: CLEARED_AUTH_STATE,
+        sandboxDemoSession: c.resolve<SandboxDemoSessionProvider>(
+          AUTH_TOKENS.SandboxDemoSessionProvider
+        ),
+        observability: c.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService),
+        errors: c.resolve<UserServiceErrorTransformer>(AUTH_TOKENS.UserServiceErrorTransformer),
+      }),
+    });
+    container.registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory);
+  }
+
   private registerGraphqlClient(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.GraphQLUrl, GraphQLUrl);
-    container.registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory);
     container.register<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient, {
       useFactory: instanceCachingFactory((c) => {
         const uri = c.resolve<GraphQLUrl>(AUTH_TOKENS.GraphQLUrl).resolve();

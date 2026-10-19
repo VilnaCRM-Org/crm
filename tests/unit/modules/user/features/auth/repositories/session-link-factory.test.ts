@@ -1,10 +1,12 @@
 import { ApolloLink, Observable, execute, gql } from '@apollo/client';
 import type { StoreApi } from 'zustand';
 
+import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
-import type { AuthSessionEndHandler } from '@auth/stores/auth-session-end-handler';
 import type { AuthState } from '@auth/types/auth-store';
-import { buildToken } from '@tests/builders';
+import { buildEmail, buildToken } from '@tests/builders';
 
 const operationOf = (name: string): ReturnType<typeof gql> => gql`
   query ${name} {
@@ -14,27 +16,36 @@ const operationOf = (name: string): ReturnType<typeof gql> => gql`
 
 interface Harness {
   readonly link: ApolloLink;
-  readonly endSession: jest.Mock;
+  readonly clearUser: jest.Mock;
+  readonly signOut: jest.Mock;
+  readonly setState: jest.Mock;
+  readonly signedOut: AuthState;
   readonly headers: Array<Record<string, string> | undefined>;
 }
 
 const harness = (token: string | null, terminal: ApolloLink | null = null): Harness => {
-  const endSession = jest.fn();
+  const clearUser = jest.fn();
+  const signOut = jest.fn();
+  const setState = jest.fn();
+  const signedOut = { email: buildEmail(), token: null } as AuthState;
   const headers: Harness['headers'] = [];
-  const store = {
-    getState: () => ({ token }),
-    setState: jest.fn(),
-  } as unknown as StoreApi<AuthState>;
-  const factory = new SessionLinkFactory(store, {
-    endSession,
-  } as unknown as AuthSessionEndHandler);
+  const factory = new SessionLinkFactory({
+    authStore: { getState: () => ({ token }), setState } as unknown as StoreApi<AuthState>,
+    signedOut,
+    sandboxDemoSession: { signOut } as unknown as SandboxDemoSessionProvider,
+    observability: { clearUser } as unknown as ObservabilityService,
+    errors: new UserServiceErrorTransformer(),
+  });
   const recorder = new ApolloLink((operation) => {
     headers.push(operation.getContext().headers as Record<string, string> | undefined);
     return Observable.of({ data: { field: 'value' } });
   });
   return {
     link: factory.build().concat(terminal ?? recorder),
-    endSession,
+    clearUser,
+    signOut,
+    setState,
+    signedOut,
     headers,
   };
 };
@@ -86,22 +97,46 @@ describe('SessionLinkFactory', () => {
     expect(headers[0]).toBeUndefined();
   });
 
-  it('ends the session through the sign-out handler on a transport 401', async () => {
-    const { link, endSession } = harness(buildToken(), unauthorized);
+  it('ends the session like logout() on a transport 401 and passes the error on', async () => {
+    const { link, clearUser, signOut, setState, signedOut } = harness(buildToken(), unauthorized);
 
     const outcome = await send(link, 'Profile');
 
     expect(outcome).toBeInstanceOf(Error);
-    expect(endSession).toHaveBeenCalledTimes(1);
-    expect(endSession).toHaveBeenCalledWith();
+    expect(clearUser).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith(signedOut);
+    expect(clearUser.mock.invocationCallOrder[0]).toBeLessThan(
+      signOut.mock.invocationCallOrder[0] as number
+    );
+    expect(signOut.mock.invocationCallOrder[0]).toBeLessThan(
+      setState.mock.invocationCallOrder[0] as number
+    );
+  });
+
+  it('ends the session on a status-only 401, the read the error transformer makes', async () => {
+    const statusOnly = new ApolloLink(
+      () =>
+        new Observable((observer) =>
+          observer.error(Object.assign(new Error('Unauthorized'), { status: 401 }))
+        )
+    );
+    const { link, setState } = harness(buildToken(), statusOnly);
+
+    await send(link, 'Profile');
+
+    expect(setState).toHaveBeenCalledTimes(1);
   });
 
   it('leaves the session alone when an anonymous operation is answered with 401', async () => {
-    const { link, endSession } = harness(buildToken(), unauthorized);
+    const { link, clearUser, signOut, setState } = harness(buildToken(), unauthorized);
 
     await send(link, 'ConfirmPasswordReset');
 
-    expect(endSession).not.toHaveBeenCalled();
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
   });
 
   it.each([403, 429, 503])('leaves the session alone on a transport %i', async (statusCode) => {
@@ -111,21 +146,35 @@ describe('SessionLinkFactory', () => {
           observer.error(Object.assign(new Error('failed'), { statusCode }))
         )
     );
-    const { link, endSession } = harness(buildToken(), failing);
+    const { link, setState } = harness(buildToken(), failing);
 
     await send(link, 'Profile');
 
-    expect(endSession).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
+  });
+
+  it('leaves the session alone on a GraphQL error at HTTP 200', async () => {
+    const graphQLFailure = new ApolloLink(() =>
+      Observable.of({
+        data: null,
+        errors: [{ message: 'Unauthorized', extensions: { status: 401 } }],
+      })
+    );
+    const { link, setState } = harness(buildToken(), graphQLFailure);
+
+    await send(link, 'Profile');
+
+    expect(setState).not.toHaveBeenCalled();
   });
 
   it('leaves the session alone on a network error without a status', async () => {
     const failing = new ApolloLink(
       () => new Observable((observer) => observer.error(new TypeError('Failed to fetch')))
     );
-    const { link, endSession } = harness(buildToken(), failing);
+    const { link, setState } = harness(buildToken(), failing);
 
     await send(link, 'Profile');
 
-    expect(endSession).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
   });
 });
