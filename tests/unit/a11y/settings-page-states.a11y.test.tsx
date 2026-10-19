@@ -57,7 +57,7 @@ describe('settings page states accessibility', () => {
     await openAndEdit();
 
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
-    await screen.findByRole('alert');
+    await screen.findByRole('button', { name: 'Спробувати ще раз' });
 
     await expectNoA11yViolations(document.body);
   });

@@ -36,4 +36,7 @@ export default {
     lineHeight: 'normal',
     color: customColors.text.dark,
   },
+  retryButton: {
+    '&:focus-visible': { outline: `2px solid ${customColors.text.dark}`, outlineOffset: '2px' },
+  },
 } as const;

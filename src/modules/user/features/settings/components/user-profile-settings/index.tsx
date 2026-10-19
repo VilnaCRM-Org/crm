@@ -1,16 +1,38 @@
 import Box from '@mui/material/Box';
-import type { JSX } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UILiveStatus from '@/components/ui-live-status';
 
-import type { UserProfileSettingsProps } from '../../types/components/user-profile-settings';
+import type {
+  ProfileLoadAnnouncementsProps,
+  UserProfileSettingsProps,
+} from '../../types/components/user-profile-settings';
 import ProfileForm from '../profile-form';
 import ProfileHeader from '../profile-header';
 
 import ProfileLoadError from './profile-load-error';
 import ProfileSkeleton from './profile-skeleton';
 import styles from './styles';
+
+function ProfileLoadAnnouncements({ status }: ProfileLoadAnnouncementsProps): JSX.Element {
+  const { t } = useTranslation();
+  const [loadingText, setLoadingText] = useState('');
+
+  useEffect(() => {
+    setLoadingText(status === 'loading' ? t('settings.profile.loading') : '');
+  }, [status, t]);
+
+  return (
+    <>
+      <UILiveStatus message={loadingText} />
+      <UILiveStatus
+        politeness="assertive"
+        message={status === 'failed' ? t('settings.profile.load_failed') : ''}
+      />
+    </>
+  );
+}
 
 export default function UserProfileSettings({
   status,
@@ -22,11 +44,9 @@ export default function UserProfileSettings({
   toasts,
   saveRef,
 }: UserProfileSettingsProps): JSX.Element {
-  const { t } = useTranslation();
-
   return (
     <>
-      <UILiveStatus message={status === 'loading' ? t('settings.profile.loading') : ''} />
+      <ProfileLoadAnnouncements status={status} />
       {status === 'loading' && <ProfileSkeleton />}
       {status === 'failed' && <ProfileLoadError onRetry={retry} focus={refocus} />}
       {status === 'ready' && user && (

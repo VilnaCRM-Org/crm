@@ -45,8 +45,8 @@ Imported from #315 (password recovery), not copied:
 
 Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
 
-- `UIToastStack`, `UIToast` and `useToastQueue`: no timer, one polite status region, error
-  toasts with `role="alert"`, at most three on screen.
+- `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
+  an assertive one for error texts, both always mounted, at most three on screen.
 - The `RouteFlagGate` and the route `flag` field, and the `SettingsGrid` whose second slot is
   reserved for the two-factor card.
 
@@ -58,13 +58,15 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid
   │ └ UserProfileSettings               loading | failed | ready
-  │   ├ UILiveStatus                    "Завантаження профілю…" while loading
-  │   ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (role=alert, retry)
+  │   ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
+  │   ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
+  │   ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
   │   └ card: ProfileHeader, ProfileForm
   │       └ UIForm key=version, submitRef=saveRef, footer=ClearButton
   │         ├ h2 "Особисті дані": full name, e-mail + EmailStatusRow
-  │         ├ ChangePassword: h2 "Пароль", current password, new password, policy rules
-  │         ├ UIServerFieldError per field, p role=status (no changes)
+  │         ├ ChangePassword key=cleared: h2 "Пароль", current and new password, policy rules
+  │         ├ UIServerFieldError per field, keyed per Save attempt
+  │         ├ p role=status (no changes, alternating mark on a repeat)
   └ UIToastStack                        returns focus to Save
 ```
 

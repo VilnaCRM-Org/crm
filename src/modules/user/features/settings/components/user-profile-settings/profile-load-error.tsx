@@ -9,16 +9,23 @@ import type { ProfileLoadErrorProps } from '../../types/components/user-profile-
 
 import styles from './styles';
 
+const MESSAGE_ID = 'profile-load-error-message';
+
 export default function ProfileLoadError({ onRetry, focus }: ProfileLoadErrorProps): JSX.Element {
   const { t } = useTranslation();
   const focusOnMount = useFocusOnMount<HTMLButtonElement>();
 
   return (
-    <Box role="alert" sx={styles.error}>
-      <Box component="p" sx={styles.errorMessage}>
+    <Box sx={styles.error}>
+      <Box component="p" id={MESSAGE_ID} sx={styles.errorMessage}>
         {t('settings.profile.load_failed')}
       </Box>
-      <UIButton ref={focus ? focusOnMount : undefined} onClick={onRetry}>
+      <UIButton
+        ref={focus ? focusOnMount : undefined}
+        aria-describedby={MESSAGE_ID}
+        sx={styles.retryButton}
+        onClick={onRetry}
+      >
         {t('auth.error.tryAgain')}
       </UIButton>
     </Box>
