@@ -32,8 +32,9 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: 1.2,
     color: paletteColors.primary.linkText,
+    '&:hover': { color: paletteColors.primary.linkTextHover, textDecoration: 'underline' },
     '&:focus-visible': {
-      outline: `2px solid ${customColors.text.dark}`,
+      outline: `2px solid ${paletteColors.primary.linkText}`,
       outlineOffset: '2px',
     },
   },
