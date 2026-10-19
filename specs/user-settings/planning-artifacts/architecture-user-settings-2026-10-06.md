@@ -2356,7 +2356,7 @@ in the pull request's bundle-size report and no budget is raised (NFR-5, R14).
 | ------------- | ---------------------------------------------------------------------------- | --------------- |
 | Eager entry   | route key, contract and flag, `RouteFlagGate`, notice rule, three eager keys | < 1 kB gzip     |
 | `settings`    | page, components, five hooks, detector, toast                                | 8-12 kB gzip    |
-| Shared fields | moved field components, already in auth's chunks                             | ±0              |
+| Shared fields | moved field components, served from `auth-forms` and `auth-forms-vendors`    | ±0              |
 | Deferred DI   | provider, transformer, repository, documents, schemas, link                  | +6 to +9 kB raw |
 
 - **Eager.** The registry imports contracts statically (`src/routes/registry.ts:1-6`), so the
@@ -2372,7 +2372,13 @@ in the pull request's bundle-size report and no budget is raised (NFR-5, R14).
   `useService`, so the DI chunk loads in parallel on navigation, as for any routed DI consumer.
   The hooks import the Data provider by type only, so no Data provider, Transformer, Repository
   or zod code joins the `settings` chunk. #315's `useAbortableSubmit` is shared with the #315
-  pages and adds well under 1 kB.
+  pages and adds well under 1 kB. The `chunks` filter of the two auth-form cache groups
+  (`scripts/auth-forms-chunk-group.ts`, `SETTINGS_CHUNKS`) selects the `settings` chunk beside
+  the four form-section chunks, so the form modules sign-in and sign-up share (`UIForm`,
+  `UIFormField`, `UIPasswordField`, react-hook-form, the MUI text-input family) are taken from
+  the `auth-forms` and `auth-forms-vendors` chunks already cached after `/sign-in`, not copied
+  into `settings`. Membership is still decided by the sign-in AND sign-up test, so nothing
+  settings-only reaches `/sign-in`.
 - **Deferred DI chunk.** 317 727 of 400 000 raw bytes at the stale 2026-07-20 baseline
   (`config/performance-budget.json:26,30`); 2FA estimates +12 to +18 kB for its own classes. The
   settings classes and documents are registered in `user/config/di.ts`, so they live there.
