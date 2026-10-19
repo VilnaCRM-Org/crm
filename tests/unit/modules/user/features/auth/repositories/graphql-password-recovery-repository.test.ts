@@ -9,6 +9,7 @@ import {
   RequestPasswordResetDocument,
 } from '@/api/generated/graphql';
 import { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import { buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 
@@ -25,6 +26,7 @@ const selectionOf = (
 const setUp = (): {
   repository: GraphQLPasswordRecoveryRepository;
   mutate: jest.Mock;
+  captureError: jest.Mock;
 } => {
   const mutate = jest.fn().mockResolvedValue({ data: null });
   const client = { mutate } as unknown as ApolloClient<NormalizedCacheObject>;
@@ -36,8 +38,25 @@ const setUp = (): {
       removeItem: (): void => undefined,
     },
   });
-  return { repository: new GraphQLPasswordRecoveryRepository(client, sandboxDemo), mutate };
+  const captureError = jest.fn();
+  const observability = { captureError } as unknown as ObservabilityService;
+  return {
+    repository: new GraphQLPasswordRecoveryRepository(client, sandboxDemo, observability),
+    mutate,
+    captureError,
+  };
 };
+
+const STEPS = [
+  ['requestReset', 'request'],
+  ['confirmReset', 'confirm'],
+] as const;
+
+const anyDto = (): { email: string; token: string; newPassword: string } => ({
+  email: buildEmail(),
+  token: buildResetToken(),
+  newPassword: buildPassword(),
+});
 
 const DEMO_EMAIL = 'demo@vilnacrm.com';
 const DEMO_RESET_TOKEN = 'sandbox-demo-reset-token';
@@ -182,6 +201,80 @@ describe('GraphQLPasswordRecoveryRepository', () => {
       )
     ).rejects.toMatchObject({ name: 'AbortError' });
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it.each(STEPS)('%s reports a rejection the Apollo link never saw', async (method, step) => {
+    const { repository, mutate, captureError } = setUp();
+    const caught = new TypeError('client bug');
+    mutate.mockRejectedValue(caught);
+
+    await expect(repository[method](anyDto(), new AbortController().signal)).rejects.toBe(caught);
+
+    expect(captureError).toHaveBeenCalledTimes(1);
+    expect(captureError).toHaveBeenCalledWith(caught, {
+      source: 'auth:password-recovery',
+      stage: step,
+    });
+  });
+
+  it.each([
+    ['null', null],
+    ['an Apollo error without GraphQL errors', { graphQLErrors: [] }],
+  ])('reports %s as an unseen failure', async (_label, caught) => {
+    const { repository, mutate, captureError } = setUp();
+    mutate.mockRejectedValue(caught);
+
+    await expect(
+      repository.requestReset({ email: buildEmail() }, new AbortController().signal)
+    ).rejects.toBe(caught);
+
+    expect(captureError).toHaveBeenCalledWith(caught, {
+      source: 'auth:password-recovery',
+      stage: 'request',
+    });
+  });
+
+  it.each([
+    ['a coded GraphQL error', { graphQLErrors: [{ message: 'x', extensions: { code: 'X' } }] }],
+    ['an unmapped network status', { networkError: { statusCode: 404 } }],
+    ['a server status', { networkError: { statusCode: 503 } }],
+    ['a violation', { graphQLErrors: [{ message: 'email: taken' }] }],
+    ['an abort', Object.assign(new Error('aborted'), { name: 'AbortError' })],
+  ])('leaves %s to the Apollo link, which already reported it', async (_label, caught) => {
+    const { repository, mutate, captureError } = setUp();
+    mutate.mockRejectedValue(caught);
+
+    await expect(
+      repository.requestReset({ email: buildEmail() }, new AbortController().signal)
+    ).rejects.toBe(caught);
+
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it.each(STEPS)('%s does not report a rejection after the caller aborted', async (method) => {
+    const { repository, mutate, captureError } = setUp();
+    const controller = new AbortController();
+    const caught = new TypeError('torn down');
+    mutate.mockImplementation(() => {
+      controller.abort();
+      return Promise.reject(caught);
+    });
+
+    await expect(repository[method](anyDto(), controller.signal)).rejects.toBe(caught);
+
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it.each(STEPS)('%s does not report the pre-abort guard', async (method) => {
+    const { repository, captureError } = setUp();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(repository[method](anyDto(), controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+
+    expect(captureError).not.toHaveBeenCalled();
   });
 });
 
