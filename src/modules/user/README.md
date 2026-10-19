@@ -229,7 +229,8 @@ input renders it, and it never reaches the cache, the history or telemetry. The 
 the usable token as a plain `string | null` (issue #315's layer stack), which the form section
 hands to the confirm form as its `token` default. `useCreateNewPassword` never sees the token
 outside the submitted `CreateNewPasswordDto`; when the API reports the link as invalid it
-returns the `invalid` view, so the form and its token unmount and no retry is offered with it.
+returns the `invalid` view, so the form unmounts and no retry is offered with the token; the page
+then passes `active = false` to `useResetToken`, which drops the token from memory (FR-22).
 
 **Rejected.** Keeping the token in the URL or in storage (history, referrers, logs); a token
 handle that the flow hook writes back into, an edge the board does not draw.
@@ -267,7 +268,8 @@ reset token for exactly `demo@vilnacrm.com` and accepts only that token, and onl
 is active (a non-production build or a sandbox host). `GraphQLPasswordRecoveryRepository`
 resolves both steps for those inputs without calling the API, standing in for it the way the
 pending contract and the local mock do. On the sent step, `SandboxDemoResetLink` replaces the
-e-mail with a link to `/password-reset` carrying the token. Production builds render nothing new.
+e-mail with a link to `/password-reset` carrying the token. Outside an approved sandbox host,
+production deployments render nothing new.
 
 **Rejected.** Reading the link from mock-server logs (unusable on a sandbox); a demo path for
 every address (it would bypass the browser specs that stub GraphQL).
