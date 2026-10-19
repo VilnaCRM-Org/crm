@@ -374,8 +374,8 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Seventeen directives are annotated today, at two mutators. Sixteen are `ArrayDeclaration` on a
-React hook dependency array, and they come in two shapes. Thirteen are empty: `ArrayDeclaration` rewrites
+Fourteen directives are annotated today, at two mutators. Thirteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
 does with `[]`. Three annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
@@ -395,7 +395,7 @@ Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The seventeenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The fourteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -404,7 +404,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a fifteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The

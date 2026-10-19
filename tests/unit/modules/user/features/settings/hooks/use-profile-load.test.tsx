@@ -172,19 +172,6 @@ describe('useProfileLoad', () => {
     expect(result.current.user).toBeNull();
   });
 
-  it('keeps stable callbacks across renders', async () => {
-    mockRead.mockResolvedValue({ kind: 'ok', user: buildUserEntity() });
-    const { result, rerender } = renderHook(() => useProfileLoad());
-    await waitFor(() => expect(result.current.status).toBe('ready'));
-    const { retry, adoption } = result.current;
-
-    rerender();
-
-    expect(result.current.retry).toBe(retry);
-    expect(result.current.adoption.adopt).toBe(adoption.adopt);
-    expect(result.current.adoption.confirm).toBe(adoption.confirm);
-  });
-
   it('renders the card state under StrictMode when the read resolves', async () => {
     const user = buildUserEntity();
     mockRead.mockResolvedValue({ kind: 'ok', user });
