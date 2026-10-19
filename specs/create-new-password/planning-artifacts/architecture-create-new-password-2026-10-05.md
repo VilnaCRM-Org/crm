@@ -1208,7 +1208,9 @@ published state below is a named type from §6.5 (TB-1); private helpers are omi
 @injectable()
 export default class GraphQLPasswordRecoveryRepository {
   constructor(
-    @inject(AUTH_TOKENS.ApolloClient) apolloClient: ApolloClient<NormalizedCacheObject>
+    @inject(AUTH_TOKENS.ApolloClient) apolloClient: ApolloClient<NormalizedCacheObject>,
+    @inject(AUTH_TOKENS.SandboxDemoSessionProvider) sandboxDemo: SandboxDemoSessionProvider,
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService) observability: ObservabilityService
   );
   public requestReset(dto: RestorePasswordDto, signal?: AbortSignal): Promise<void>;
   public confirmReset(dto: CreateNewPasswordDto, signal?: AbortSignal): Promise<void>;
@@ -1218,6 +1220,10 @@ export default class GraphQLPasswordRecoveryRepository {
 
 The two `*-mutation.ts` seams are imported by the repository only and not re-exported from the
 barrel. The repository value-imports only `tsyringe`, `uuid`, token modules and the two seams.
+No failure is silenced: `ApolloLinkFactory`'s error link reports every network and GraphQL error
+it sees, and the repository reports a rejection that never reached the link (a client-side bug,
+not an abort) through `ObservabilityService` with the source `auth:password-recovery` and the step
+as `stage`, then rethrows it unchanged, so the provider's classification is untouched.
 
 ### 6.2 Transformers (board `[Transformer]`)
 

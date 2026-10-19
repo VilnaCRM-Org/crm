@@ -175,7 +175,10 @@ reset token and a new password, and the process-wide `InMemoryCache` would keep 
 generated documents, `RequestPasswordReset` and `ConfirmPasswordReset`, each selecting only
 `clientMutationId`, with `fetchPolicy: 'no-cache'`. The link chain gains no retry link: a reset
 request sends an e-mail and a confirm consumes a token, so a retry is user-initiated only. Both
-methods resolve `void` whatever the payload.
+methods resolve `void` whatever the payload. No failure is silenced: the link's error link reports
+every network and GraphQL error it sees, and the repository reports a rejection that never reached
+the link (a client-side bug, not an abort) through the injected `ObservabilityService` with the
+source `auth:password-recovery`, then rethrows it for the Data provider to classify.
 
 **Rejected.** REST transport (the user-service contract for these steps is GraphQL); the
 default cache policy (it writes the token and password under `ROOT_MUTATION`); a transport retry
