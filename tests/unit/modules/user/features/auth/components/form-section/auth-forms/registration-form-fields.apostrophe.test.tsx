@@ -12,7 +12,7 @@ import render from '@tests/unit/utils/render-with-i18n';
 
 const t = ((key: string) => key) as unknown as TFunction;
 
-const validators = formValidators.create<SignUpDto>(t);
+const validators = formValidators.create(t);
 
 function SignUpFields({ onSubmit }: { onSubmit: (values: SignUpDto) => void }): JSX.Element {
   return (
