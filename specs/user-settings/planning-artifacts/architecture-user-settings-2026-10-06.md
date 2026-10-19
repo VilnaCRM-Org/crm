@@ -921,8 +921,9 @@ once per mount in a `useState` initializer of `useProfileSave`, which hands it t
 - Optional input keys are added by conditional spread, never as `undefined`
   (`exactOptionalPropertyTypes`); the integration test pins the exact key sets of FR-11.
 - The same detector backs the form rules, so validation and sending can never disagree: the
-  name and e-mail validators run only while `nameChanged` / `emailChanged` is true (D6), and the
-  current password's `required` rule runs only while `detect` would return a change, so a Save
+  name and e-mail validators run only while `nameChanged` / `emailChanged` is true (D6), the new
+  password's policy runs only while `passwordChanged` is true (a whitespace-only value counts as
+  left empty, so the optional field never reports "required"), and the current password's `required` rule runs only while `detect` would return a change, so a Save
   with nothing changed shows the no-change status instead of a required error (FR-11).
 
 > Assumption: the current password is required only when a change exists. FR-9 requires it for
@@ -1765,6 +1766,7 @@ export default class GraphQLProfileRepository {
 export default class ProfileChangeDetector {
   public detect(user: UserEntity, values: ProfileFormValues): ProfileChange | null;
   public nameChanged(user: UserEntity, fullName: string): boolean;
+  public passwordChanged(newPassword: string): boolean;
   public emailChanged(user: UserEntity, email: string): boolean;
 }
 
@@ -2126,7 +2128,7 @@ other than through a hook.
   `confirm` never bumps it, so the form keeps unsaved edits and typed passwords and the resend
   button keeps focus. Rules: `fullName` and `email` validate only while changed;
   `currentPassword` `required` only while a change exists; `newPassword` runs the shared policy
-  only when non-empty. Enter submits. After `settled` changes the form focuses `saveRef` in a
+  only when it holds a non-space character. Enter submits. After `settled` changes the form focuses `saveRef` in a
   layout effect; field errors focus through `UIServerFieldError` instead.
 - **`ChangePassword`** (drawn where the board's `RestorePassword [component]` sits, renamed
   because `RestorePasswordDTO` is #315's, §17.3 G-5; working with `PasswordChange`) renders the

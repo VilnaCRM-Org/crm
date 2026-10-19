@@ -44,9 +44,11 @@ function currentPasswordRule(
   };
 }
 
-function newPasswordRule(t: TFunction): ProfileFieldRules {
+function newPasswordRule(changes: ProfileChangeDetector, t: TFunction): ProfileFieldRules {
   const validate = passwordValidator.create<ProfileFormValues>(t);
-  return { validate: (value, values) => value === '' || validate(value, values) };
+  return {
+    validate: (value, values) => !changes.passwordChanged(value) || validate(value, values),
+  };
 }
 
 export default function useProfileFormRules(
@@ -59,7 +61,7 @@ export default function useProfileFormRules(
     fullName: nameRule(user, changes, t),
     email: emailRule(user, changes, t),
     currentPassword: currentPasswordRule(user, changes, t),
-    newPassword: newPasswordRule(t),
+    newPassword: newPasswordRule(changes, t),
     evaluate: (value: string): PasswordRuleViewSet => passwordValidator.evaluate(value),
   };
 }

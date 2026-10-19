@@ -197,6 +197,31 @@ describe('ProfileForm', () => {
     expect(Object.keys(mockUpdate.mock.calls[0]?.[0] as object)).not.toContain('newPassword');
   });
 
+  it('sends a name change without newPassword when the new one is only spaces', async () => {
+    render(form(), { wrapper });
+    await userEvent.type(field(NAME), ' Іванівна');
+    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(NEW), '  ');
+
+    await userEvent.click(save());
+
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
+    expect(Object.keys(mockUpdate.mock.calls[0]?.[0] as object)).not.toContain('newPassword');
+    expect(screen.queryByText("Це поле обов'язкове")).not.toBeInTheDocument();
+  });
+
+  it('shows the no-change status for a whitespace-only new password alone', async () => {
+    render(form(), { wrapper });
+    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(NEW), ' ');
+
+    await userEvent.click(save());
+
+    expect(await screen.findByText('Немає змін для збереження')).toBeInTheDocument();
+    expect(field(NEW)).not.toHaveAttribute('aria-invalid', 'true');
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it('marks only the length rule unmet for Pa1 and rejects it on Save', async () => {
     render(form(), { wrapper });
     await userEvent.type(field(CURRENT), 'abc');

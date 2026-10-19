@@ -7,7 +7,7 @@ export default class ProfileChangeDetector {
   public detect(user: UserEntity, values: ProfileFormValues): ProfileChange | null {
     const name = this.nameChanged(user, values.fullName);
     const email = this.emailChanged(user, values.email);
-    const password = values.newPassword !== '';
+    const password = this.passwordChanged(values.newPassword);
     if (!name && !email && !password) return null;
     return {
       id: user.id,
@@ -20,6 +20,10 @@ export default class ProfileChangeDetector {
 
   public nameChanged(user: UserEntity, fullName: string): boolean {
     return fullName.trim() !== user.fullName.trim();
+  }
+
+  public passwordChanged(newPassword: string): boolean {
+    return newPassword.trim() !== '';
   }
 
   public emailChanged(user: UserEntity, email: string): boolean {
