@@ -26,6 +26,7 @@ export interface ProfileSave {
   readonly changes: ProfileChangeDetector;
   readonly save: (values: ProfileFormValues) => void;
   readonly clear: () => void;
+  readonly block: () => void;
 }
 
 export interface NoChangesAction {
@@ -49,8 +50,17 @@ export interface ClearSaveAction {
   readonly type: 'clear';
 }
 
+export interface BlockedSaveAction {
+  readonly type: 'blocked';
+}
+
 export type ProfileFormAction =
-  NoChangesAction | InvalidSaveAction | PendingSaveAction | SettledSaveAction | ClearSaveAction;
+  | NoChangesAction
+  | InvalidSaveAction
+  | PendingSaveAction
+  | SettledSaveAction
+  | ClearSaveAction
+  | BlockedSaveAction;
 
 export interface SaveSettleContext {
   readonly props: ProfileEditContext;

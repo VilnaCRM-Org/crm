@@ -119,6 +119,29 @@ describe('useProfileSave', () => {
     });
   });
 
+  it('clears the no-change state when a later Save is blocked by client validation', async () => {
+    const { props, show } = harness();
+    const { result } = renderHook(() => useProfileSave(props), { wrapper });
+    await act(async () => {
+      result.current.save(
+        buildProfileFormValues({ fullName: user.fullName, email: user.email, newPassword: '' })
+      );
+    });
+
+    act(() => result.current.block());
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(show).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({
+      fieldErrors: { items: [] },
+      noChanges: false,
+      noChangesMarked: true,
+      settled: 0,
+      cleared: 0,
+      attempts: 0,
+    });
+  });
+
   it('flips the no-change mark on every repeated no-change save', async () => {
     const { props } = harness();
     const { result } = renderHook(() => useProfileSave(props), { wrapper });
