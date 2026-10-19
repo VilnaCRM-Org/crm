@@ -117,7 +117,7 @@ describe('stryker mutant-classification config', () => {
 });
 
 describe('mutation shard slicing', () => {
-  const TOTAL = 8;
+  const TOTAL = 30;
   const everyFile: string[] = collectMutateFiles();
   const shards: string[][] = Array.from({ length: TOTAL }, (_unused, index) =>
     shardMutateFiles(TOTAL, index)
@@ -155,7 +155,7 @@ describe('mutation shard slicing', () => {
     expect(() => shardMutateFiles(total, 0)).toThrow(RangeError);
   });
 
-  it.each([-1, 8, 9, 1.5])('refuses %p as a shard index of 8', (index) => {
+  it.each([-1, TOTAL, TOTAL + 1, 1.5])(`refuses %p as a shard index of ${TOTAL}`, (index) => {
     expect(() => shardMutateFiles(TOTAL, index)).toThrow(RangeError);
   });
 
