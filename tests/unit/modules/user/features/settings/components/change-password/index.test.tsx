@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { I18nextProvider } from 'react-i18next';
@@ -38,8 +39,12 @@ function Provider({ i18n, children }: ProviderProps): JSX.Element {
 
 const evaluate: PasswordRuleEvaluator = (value) => passwordValidator.evaluate(value);
 
-const subject = (): JSX.Element => (
-  <ChangePassword rules={{ currentPassword: {}, newPassword: {} }} evaluate={evaluate} />
+const subject = (busy = false): JSX.Element => (
+  <ChangePassword
+    rules={{ currentPassword: {}, newPassword: {} }}
+    evaluate={evaluate}
+    busy={busy}
+  />
 );
 
 jest.mock('@/i18n', () => ({ __esModule: true, default: { addResourceBundle: jest.fn() } }));
@@ -57,6 +62,21 @@ describe('ChangePassword', () => {
     expect(
       screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
     ).toBeInTheDocument();
+  });
+
+  it('makes both password fields read-only, and only them, while busy', async () => {
+    const view = render(<Provider i18n={createSettingsLocaleI18n('uk')}>{subject(true)}</Provider>);
+
+    expect(screen.getByLabelText('Поточний пароль')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('Новий пароль')).toHaveAttribute('readonly');
+    await userEvent.type(screen.getByLabelText('Новий пароль'), 'Next12345');
+    expect(screen.getByLabelText('Новий пароль')).toHaveValue('');
+    expect(screen.getByLabelText('Новий пароль')).toHaveFocus();
+
+    view.rerender(<Provider i18n={createSettingsLocaleI18n('uk')}>{subject(false)}</Provider>);
+
+    expect(screen.getByLabelText('Поточний пароль')).not.toHaveAttribute('readonly');
+    expect(screen.getByLabelText('Новий пароль')).not.toHaveAttribute('readonly');
   });
 
   it('renders the four policy rules and their met or unmet words translated in uk', () => {

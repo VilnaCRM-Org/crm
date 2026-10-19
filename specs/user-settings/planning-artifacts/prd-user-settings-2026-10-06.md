@@ -460,7 +460,9 @@ fields: `initials` trimmed, `email` trimmed as typed, `newPassword` as typed.
 Save uses `UIForm`'s native busy state (D18): the button is disabled with the spinner and keeps
 "Зберегти зміни" as its name, the form has `aria-busy` and "Збереження…" is announced. One request
 is in flight at a time. Offline, Save is disabled and described by the offline notice. "Очистити"
-and "Надіслати повторно" are inert during a Save. A settled Save never leaves focus on `body`.
+and "Надіслати повторно" are inert during a Save, and the four fields are read-only (still
+focusable, values unchanged), so nothing typed after Save is dropped when the adopted profile
+remounts the form. A settled Save never leaves focus on `body`.
 
 - Given Save activated twice quickly, when the network is observed, then one `updateUser` was
   sent.

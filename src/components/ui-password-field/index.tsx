@@ -44,6 +44,7 @@ export default function UIPasswordField<T extends FieldValues>({
   name = 'password' as Path<T>,
   rules,
   describedBy,
+  readOnly,
   sx,
 }: PasswordFieldProps<T>): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
@@ -64,6 +65,7 @@ export default function UIPasswordField<T extends FieldValues>({
       autoComplete={autoComplete}
       inputProps={{
         endAdornment: <PasswordVisibilityButton show={showPassword} onToggle={toggle} t={t} />,
+        readOnly,
       }}
     />
   );

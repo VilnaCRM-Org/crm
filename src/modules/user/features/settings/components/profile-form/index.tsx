@@ -65,7 +65,7 @@ function ServerFieldErrors({ errors }: ServerFieldErrorsProps): JSX.Element {
   );
 }
 
-function EmailField({ rules, emailRow }: EmailFieldProps): JSX.Element {
+function EmailField({ rules, emailRow, busy }: EmailFieldProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
@@ -78,6 +78,7 @@ function EmailField({ rules, emailRow }: EmailFieldProps): JSX.Element {
         autoComplete="email"
         describedBy={emailRow.confirmed ? undefined : EMAIL_STATUS_ID}
         rules={rules.email}
+        inputProps={{ readOnly: busy }}
         sx={styles.field}
       />
       {!emailRow.confirmed && (
@@ -91,7 +92,7 @@ function EmailField({ rules, emailRow }: EmailFieldProps): JSX.Element {
   );
 }
 
-function PersonalDetails({ rules, refocus, emailRow }: PersonalDetailsProps): JSX.Element {
+function PersonalDetails({ rules, refocus, emailRow, busy }: PersonalDetailsProps): JSX.Element {
   const { t } = useTranslation();
   const focusHeading = useFocusOnMount<HTMLHeadingElement>();
 
@@ -112,9 +113,10 @@ function PersonalDetails({ rules, refocus, emailRow }: PersonalDetailsProps): JS
         type="text"
         autoComplete="name"
         rules={rules.fullName}
+        inputProps={{ readOnly: busy }}
         sx={styles.field}
       />
-      <EmailField rules={rules} emailRow={emailRow} />
+      <EmailField rules={rules} emailRow={emailRow} busy={busy} />
     </>
   );
 }
@@ -124,13 +126,19 @@ function ProfileFormFields({
   refocus,
   state,
   emailRow,
+  busy,
 }: ProfileFormFieldsProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
     <>
-      <PersonalDetails rules={rules} refocus={refocus} emailRow={emailRow} />
-      <ChangePassword key={`password-${state.cleared}`} rules={rules} evaluate={rules.evaluate} />
+      <PersonalDetails rules={rules} refocus={refocus} emailRow={emailRow} busy={busy} />
+      <ChangePassword
+        key={`password-${state.cleared}`}
+        rules={rules}
+        evaluate={rules.evaluate}
+        busy={busy}
+      />
       <ServerFieldErrors key={`errors-${state.attempts}`} errors={state.fieldErrors} />
       <Box aria-hidden="true" sx={styles.actionsDivider} />
       <Box component="p" role="status" sx={styles.status}>
@@ -162,7 +170,13 @@ export default function ProfileForm(props: ProfileFormProps): JSX.Element {
       submitSx={styles.saveButton}
       footer={<ClearButton defaults={defaults} busy={save.isSubmitting} onClear={save.clear} />}
     >
-      <ProfileFormFields rules={rules} refocus={refocus} state={save.state} emailRow={emailRow} />
+      <ProfileFormFields
+        rules={rules}
+        refocus={refocus}
+        state={save.state}
+        emailRow={emailRow}
+        busy={save.isSubmitting}
+      />
     </UIForm>
   );
 }
