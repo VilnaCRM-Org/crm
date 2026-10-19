@@ -4,15 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse } from 'msw';
 import { I18nextProvider } from 'react-i18next';
 
-import '../../../../setup';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken, buildUserNode } from '@tests/builders';
+import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
+import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-
-import { answerProfileOperation } from '../../../../mocks/profile-operations';
-import server from '../../../../mocks/server';
 
 const RESENT = 'Посилання для підтвердження надіслано повторно';
 const FAILED = 'Не вдалося надіслати посилання. Спробуйте ще раз.';
@@ -54,7 +52,11 @@ const email = (): HTMLInputElement => screen.getByLabelText('E-mail') as HTMLInp
 const answerResend = (respond: () => Response): ReturnType<typeof answerProfileOperation> =>
   answerProfileOperation('ResendEmailToUser', { respond });
 
-describe('settings page e-mail resend (integration)', () => {
+describe('settings page e-mail resend (page)', () => {
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' });
+  });
+
   beforeEach(() => {
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
     useConnectivityStore.setState({ online: true });
@@ -65,6 +67,7 @@ describe('settings page e-mail resend (integration)', () => {
   });
 
   afterAll(() => {
+    server.close();
     useAuthStore.setState(CLEARED_AUTH_STATE);
     useConnectivityStore.setState({ online: true });
   });

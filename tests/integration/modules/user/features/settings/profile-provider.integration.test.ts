@@ -7,7 +7,14 @@ import ProfileProvider from '@/modules/user/features/settings/data-providers/pro
 import DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter';
 import { HttpError } from '@/services/https-client/http-error';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
-import { buildProfileChange, buildToken, buildUserIri, buildUserNode } from '@tests/builders';
+import {
+  buildEmail,
+  buildPassword,
+  buildProfileChange,
+  buildToken,
+  buildUserIri,
+  buildUserNode,
+} from '@tests/builders';
 
 import {
   answerProfileOperation,
@@ -178,6 +185,74 @@ describe('ProfileProvider over the container client (integration)', () => {
       respond: () => HttpResponse.json({ data: { users: { edges: [{ node: null }] } } }),
     });
     await expect(provider.read(signal)).resolves.toEqual(failed('rejected'));
+  });
+
+  it('sends the changed e-mail and new password without a name the user left alone', async () => {
+    const answered = answerProfileOperation('UpdateUser', {
+      respond: () => HttpResponse.json({ data: { updateUser: { user: buildUserNode() } } }),
+    });
+    const change = {
+      id: buildUserIri(),
+      currentPassword: buildPassword(),
+      email: buildEmail(),
+      newPassword: buildPassword(),
+    };
+
+    await provider.update(change, signal);
+
+    expect(answered).toHaveLength(1);
+    expect(answered[0]?.variables['input']).toEqual({
+      id: change.id,
+      password: change.currentPassword,
+      email: change.email,
+      newPassword: change.newPassword,
+      clientMutationId: expect.any(String),
+    });
+  });
+
+  it.each([
+    [
+      'CurrentUser',
+      (): Response =>
+        HttpResponse.json({
+          data: { users: { edges: [{ node: { ...buildUserNode(), confirmed: 'yes' } }] } },
+        }),
+    ],
+    [
+      'UpdateUser',
+      (): Response =>
+        HttpResponse.json({
+          data: { updateUser: { user: { ...buildUserNode(), confirmed: 'yes' } } },
+        }),
+    ],
+    [
+      'ResendEmailToUser',
+      (): Response =>
+        HttpResponse.json({
+          data: { resendEmailToUser: { user: { id: buildUserIri(), confirmed: 'yes' } } },
+        }),
+    ],
+    [
+      'ResendEmailToUser',
+      (): Response => HttpResponse.json({ data: { resendEmailToUser: { user: null } } }),
+    ],
+  ] as const)('rejects a %s answer outside the response contract', async (operation, respond) => {
+    answerProfileOperation(operation, { respond });
+
+    await expect(run(operation)).resolves.toEqual(failed('rejected'));
+  });
+
+  it.each([
+    ['carries a line no field claims', 'initials: This value is too long.\nSomething else broke.'],
+    ['names a field the form does not own', 'token: This value is not valid.'],
+  ])('rejects an update whose violation message %s', async (_name, message) => {
+    answerProfileOperation('UpdateUser', {
+      respond: () => graphQLError({ message, extensions: { code: 'BAD_USER_INPUT', status: 422 } }),
+    });
+
+    await expect(provider.update(buildProfileChange(), signal)).resolves.toEqual(
+      failed('rejected')
+    );
   });
 
   it('maps an update violation to a field error, a resend one to a rejection', async () => {
