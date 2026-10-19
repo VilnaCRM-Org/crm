@@ -2,6 +2,7 @@ import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import type { FocusEvent, ReactNode, RefCallback, RefObject } from 'react';
 import type {
+  SubmitErrorHandler,
   SubmitHandler,
   FieldValues,
   DefaultValues,
@@ -17,6 +18,7 @@ export type SubmitSpacing = 'default' | 'tight';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
+  onInvalid?: SubmitErrorHandler<T> | undefined;
   defaultValues: DefaultValues<T>;
   children: ReactNode;
   formOptions?: UIFormOptions<T>;
@@ -127,6 +129,7 @@ export interface FormBodyProps<T extends FieldValues> {
   submit: FormSubmitProps;
   announceSubmitting: boolean;
   handleSubmit: SubmitHandler<T>;
+  onInvalid?: SubmitErrorHandler<T> | undefined;
   children: ReactNode;
   submitting: boolean;
   footer?: ReactNode;

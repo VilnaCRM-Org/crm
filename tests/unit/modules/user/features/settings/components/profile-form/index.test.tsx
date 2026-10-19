@@ -357,6 +357,43 @@ describe('ProfileForm', () => {
     }
   );
 
+  it.each([
+    ['a single-word name', NAME, 'Олена', 'Будь ласка, введіть повне ім’я у правильному форматі'],
+    ['a too-short new password', NEW, 'Pa1', 'Будь ласка, введіть від 8 до 64 символів'],
+  ])(
+    'clears the no-change status when a later Save is blocked by %s',
+    async (_case, label, value, message) => {
+      render(form(), { wrapper });
+      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.click(save());
+      await screen.findByText('Немає змін для збереження');
+      await userEvent.clear(field(label));
+      await userEvent.type(field(label), value);
+
+      await userEvent.click(save());
+
+      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(field(label)).toHaveFocus();
+      expect(screen.queryByText(/Немає змін для збереження/)).not.toBeInTheDocument();
+      expect(mockUpdate).not.toHaveBeenCalled();
+    }
+  );
+
+  it('shows the no-change status again after a blocked Save is corrected back', async () => {
+    render(form(), { wrapper });
+    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.click(save());
+    await userEvent.type(field(NEW), 'Pa1');
+    await userEvent.click(save());
+    await screen.findByText('Будь ласка, введіть від 8 до 64 символів');
+    await userEvent.clear(field(NEW));
+
+    await userEvent.click(save());
+
+    expect(await screen.findByText('Немає змін для збереження')).toBeInTheDocument();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it('re-announces a repeated no-change Save with an alternating mark', async () => {
     render(form(), { wrapper });
     await userEvent.type(field(CURRENT), 'abc');

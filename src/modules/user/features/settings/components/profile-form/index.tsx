@@ -151,6 +151,7 @@ export default function ProfileForm(props: ProfileFormProps): JSX.Element {
     <UIForm<ProfileFormValues>
       key={version}
       onSubmit={save.save}
+      onInvalid={save.block}
       defaultValues={defaults}
       isSubmitting={save.isSubmitting}
       showTitle={false}

@@ -94,6 +94,7 @@ function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element 
 
 function FormBody<T extends FieldValues>({
   handleSubmit,
+  onInvalid,
   children,
   header,
   lead,
@@ -108,7 +109,11 @@ function FormBody<T extends FieldValues>({
   // itself by the notice, and focus moves there if the button held it (issue #147).
   const offline = useOfflineSubmit(submit.submitRef);
   return (
-    <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
+    <form
+      noValidate
+      aria-busy={submitting}
+      onSubmit={methods.handleSubmit(handleSubmit, onInvalid)}
+    >
       <FormLead header={header} lead={lead} offline={offline} />
       {children}
       <SubmitControls
@@ -158,6 +163,7 @@ export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JS
     <FormProviderBridge methods={methods}>
       <FormBody
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
+        onInvalid={props.onInvalid}
         header={headerOf(props)}
         lead={{ error: props.error ?? null, notice: props.notice }}
         submit={submitOf(props)}

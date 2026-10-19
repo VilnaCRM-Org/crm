@@ -2213,8 +2213,10 @@ component type.
   order); `failed` → one error draft (with a "Спробувати ще раз" action whose
   `onActivate` calls `props.saveRef.current?.click()` only for `transient`) and `settled` + 1;
   `session_ended` and a `null` from `submit` → nothing. `clear()` resets `fieldErrors` and
-  `noChanges`. At most two functions and five closures (the initializer, the run, `save`,
-  `clear`, the retry action).
+  `noChanges`, and so does `block()`, which `ProfileForm` hands `UIForm` as `onInvalid`, so a Save
+  that client validation stops never leaves an earlier no-change status under the field error.
+  At most two functions and six closures (the initializer, the run, `save`, `clear`, `block`, the
+  retry action).
 - `useEmailResend(user, adoption, toasts)` runs `provider.resend(user.id, signal)` through
   `useAbortableSubmit`; `sent` (carrying `confirmed`) → `adoption.confirm(user.email,
 confirmed)` and the

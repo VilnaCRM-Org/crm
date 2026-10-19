@@ -127,5 +127,12 @@ export default function useProfileSave(props: ProfileEditContext): ProfileSave {
     if (outcome !== null) settleSave(outcome, change, { props, t, dispatch });
   };
 
-  return { state, isSubmitting, changes, save, clear: () => dispatch({ type: 'clear' }) };
+  return {
+    state,
+    isSubmitting,
+    changes,
+    save,
+    clear: () => dispatch({ type: 'clear' }),
+    block: () => dispatch({ type: 'blocked' }),
+  };
 }

@@ -4,18 +4,30 @@ import userEvent from '@testing-library/user-event';
 import { type ComponentProps, createRef, type JSX } from 'react';
 
 import UIForm from '@/components/ui-form';
+import UIFormField from '@/components/ui-form-field';
 import render from '@tests/unit/utils/render-with-i18n';
 
 const noop = (): undefined => undefined;
 
 type Extras = Partial<
-  Pick<ComponentProps<typeof UIForm>, 'onSubmit' | 'submitRef' | 'submitSx' | 'footer'>
+  Pick<
+    ComponentProps<typeof UIForm>,
+    'onSubmit' | 'onInvalid' | 'submitRef' | 'submitSx' | 'footer' | 'children'
+  >
 >;
 
-function Subject({ onSubmit = noop, submitRef, submitSx, footer }: Extras): JSX.Element {
+function Subject({
+  onSubmit = noop,
+  onInvalid,
+  submitRef,
+  submitSx,
+  footer,
+  children = <p>body</p>,
+}: Extras): JSX.Element {
   return (
     <UIForm
       onSubmit={onSubmit}
+      onInvalid={onInvalid}
       defaultValues={{}}
       title="Title"
       submitLabel="Save it"
@@ -24,7 +36,7 @@ function Subject({ onSubmit = noop, submitRef, submitSx, footer }: Extras): JSX.
       submitSx={submitSx}
       footer={footer}
     >
-      <p>body</p>
+      {children}
     </UIForm>
   );
 }
@@ -67,5 +79,41 @@ describe('UIForm submit extras', () => {
     render(<Subject />);
 
     expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('calls onInvalid, and not onSubmit, when a Save is blocked by a field rule', async () => {
+    const onSubmit = jest.fn();
+    const onInvalid = jest.fn();
+    render(
+      <Subject onSubmit={onSubmit} onInvalid={onInvalid}>
+        <UIFormField
+          name="name"
+          label="Name"
+          placeholder=""
+          type="text"
+          autoComplete="off"
+          rules={{ required: 'Required' }}
+        />
+      </Subject>
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save it' }));
+
+    await waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1));
+    expect(onInvalid.mock.calls[0]?.[0]).toEqual({
+      name: expect.objectContaining({ type: 'required', message: 'Required' }),
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('calls onSubmit, and not onInvalid, when every field passes', async () => {
+    const onSubmit = jest.fn();
+    const onInvalid = jest.fn();
+    render(<Subject onSubmit={onSubmit} onInvalid={onInvalid} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save it' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onInvalid).not.toHaveBeenCalled();
   });
 });
