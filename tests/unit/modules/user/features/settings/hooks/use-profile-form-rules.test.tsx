@@ -44,6 +44,12 @@ describe('useProfileFormRules', () => {
     expect(run(rules().fullName, 'Олена Іванівна')).toBe(true);
   });
 
+  it('accepts an edited name written with either typographic apostrophe', () => {
+    expect(run(rules().fullName, 'Мар’яна Коваль')).toBe(true);
+    expect(run(rules().fullName, 'Марʼяна Коваль')).toBe(true);
+    expect(run(rules().fullName, 'Мар‘яна Коваль')).toBe('Будь ласка, використовуйте лише літери');
+  });
+
   it('skips the e-mail rule while the e-mail is unchanged and runs it after a change', () => {
     expect(run(rules().email, 'ADMIN@example.com')).toBe(true);
     expect(run(rules().email, 'not-an-email')).not.toBe(true);

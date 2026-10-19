@@ -4,7 +4,7 @@ import type { NameRule } from '@/modules/user/types/validations/name';
 
 const MAX_FULL_NAME_LENGTH = 255;
 const ALLOWED_NAME_CHARACTERS = '[A-Za-zА-Яа-яІіЇїЄєҐґ]';
-const NAME_SEPARATORS = `[\\s'-]`;
+const NAME_SEPARATORS = `[\\s'\u2019\u02BC-]`;
 const SINGLE_NAME_PATTERN = `${ALLOWED_NAME_CHARACTERS}+`;
 const NAME_SEP_GROUP = `(?:${NAME_SEPARATORS}${SINGLE_NAME_PATTERN})`;
 const NAME_WITH_SEPARATORS_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}*`;
