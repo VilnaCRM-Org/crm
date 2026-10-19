@@ -31,6 +31,7 @@ export default {
     fontWeight: 500,
     fontSize: '0.9375rem',
     lineHeight: 1.2,
+    color: paletteColors.primary.linkText,
     '&:focus-visible': {
       outline: `2px solid ${customColors.text.dark}`,
       outlineOffset: '2px',

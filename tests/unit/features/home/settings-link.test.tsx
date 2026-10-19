@@ -113,6 +113,13 @@ describe('Home settings link', () => {
     expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
   });
 
+  it('draws the link text in the 5.04:1 link colour, not the MUI default blue', () => {
+    flag(true);
+    renderHome();
+
+    expect(screen.getByRole('link', { name: 'Налаштування' })).toHaveStyle({ color: '#0074B5' });
+  });
+
   it('is reached by Tab right before sign out', async () => {
     flag(true);
     renderHome();
