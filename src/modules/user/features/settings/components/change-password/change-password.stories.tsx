@@ -12,6 +12,7 @@ const meta: Meta<typeof ChangePassword> = {
   args: {
     rules: { currentPassword: {}, newPassword: {} },
     evaluate: (value: string) => passwordValidator.evaluate(value),
+    busy: false,
   },
   decorators: [withFormProvider({ currentPassword: '', newPassword: '' })],
   parameters: {
@@ -35,4 +36,9 @@ export const Empty: Story = {};
 
 export const PartlyMet: Story = {
   decorators: [withFormProvider({ currentPassword: '', newPassword: 'Pa1' })],
+};
+
+export const Saving: Story = {
+  args: { busy: true },
+  decorators: [withFormProvider({ currentPassword: 'Current1', newPassword: 'Next12345' })],
 };

@@ -270,6 +270,41 @@ describe('ProfileForm', () => {
     await act(async () => settle(okOutcome));
   });
 
+  it('keeps every field read-only while a Save is in flight, so no input is lost', async () => {
+    let settle: (value: unknown) => void = () => undefined;
+    mockUpdate.mockReturnValue(new Promise((resolve) => (settle = resolve)));
+    const adopt = jest.fn();
+    render(form({ adoption: { adopt, confirm: jest.fn() } }), { wrapper });
+    await userEvent.type(field(NAME), ' Іванівна');
+    await userEvent.type(field(CURRENT), 'abc{Enter}');
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
+
+    expect(field(CURRENT)).toHaveFocus();
+    await userEvent.type(field(CURRENT), 'def{Enter}');
+    await userEvent.type(field(NEW), 'Next12345');
+    expect(field(NEW)).toHaveFocus();
+    await userEvent.type(field(NAME), 'x');
+    await userEvent.type(field('E-mail'), 'x');
+
+    [NAME, 'E-mail', CURRENT, NEW].forEach((label) => {
+      expect(field(label)).toHaveAttribute('readonly');
+    });
+    expect(field(CURRENT)).toHaveValue('abc');
+    expect(field(NEW)).toHaveValue('');
+    expect(field(NAME)).toHaveValue('Олена Петренко Іванівна');
+    expect(field('E-mail')).toHaveValue('olena@example.com');
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+
+    await act(async () => settle({ kind: 'failed', reason: 'transient' }));
+
+    [NAME, 'E-mail', CURRENT, NEW].forEach((label) => {
+      expect(field(label)).not.toHaveAttribute('readonly');
+    });
+    await userEvent.type(field(NEW), 'Next12345');
+    expect(field(NEW)).toHaveValue('Next12345');
+    expect(adopt).not.toHaveBeenCalled();
+  });
+
   it('submits with Enter in any field', async () => {
     render(form(), { wrapper });
     await userEvent.type(field(NAME), ' Іванівна');

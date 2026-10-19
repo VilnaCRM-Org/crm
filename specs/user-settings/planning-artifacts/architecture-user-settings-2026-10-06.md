@@ -2148,6 +2148,11 @@ other than through a hook.
 - **`ClearButton`** calls `useFormContext().reset(defaults)` (both password fields empty and
   masked, errors gone) and `onClear()` (the save hook's `clear`: server errors and the no-change
   status); it is `aria-disabled` during a Save and never dismisses a toast.
+- **Read-only during a Save.** `ProfileForm` hands `save.isSubmitting` down as `busy`; the name
+  and e-mail fields take `inputProps={{ readOnly: busy }}` and both `UIPasswordField`s take
+  `readOnly={busy}`. A read-only input keeps its focus, its tab stop and its eye toggle, unlike
+  `disabled` or a disabled `fieldset`, which would drop the focus of a field that submitted with
+  Enter; and nothing typed after Save can be lost to the `key={version}` remount.
 - **Eye toggles** are the moved `UIPasswordField` button: `aria-pressed`, localized name, 32 px
   (the known shared gap of issue #154).
 - **Skeleton** respects reduced motion: if the toolkit block animates, `ProfileSkeleton` sets

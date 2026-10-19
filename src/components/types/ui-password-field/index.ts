@@ -9,6 +9,7 @@ interface PasswordFieldBaseProps<T extends FieldValues> {
   autoComplete: string;
   rules: RegisterOptions<T, Path<T>>;
   describedBy?: string | undefined;
+  readOnly?: boolean | undefined;
   sx?: SystemStyleObject<Theme> | undefined;
 }
 

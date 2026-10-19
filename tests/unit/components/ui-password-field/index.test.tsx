@@ -36,7 +36,12 @@ const rules = {
   validate: formValidators.create<PasswordFormValues>(identityTranslator).password,
 };
 
-function PasswordFormHarness({ sx }: { sx?: SystemStyleObject<Theme> | undefined }): JSX.Element {
+interface HarnessProps {
+  sx?: SystemStyleObject<Theme> | undefined;
+  readOnly?: boolean | undefined;
+}
+
+function PasswordFormHarness({ sx, readOnly }: HarnessProps): JSX.Element {
   const methods = useForm<PasswordFormValues>({ defaultValues: { password: '' } });
   const errorType = methods.formState.errors.password?.type;
 
@@ -48,6 +53,7 @@ function PasswordFormHarness({ sx }: { sx?: SystemStyleObject<Theme> | undefined
           label={LABEL}
           autoComplete="new-password"
           rules={rules}
+          readOnly={readOnly}
           sx={sx}
         />
         <p>{`rule-violated:${errorType === undefined ? 'none' : String(errorType)}`}</p>
@@ -66,6 +72,29 @@ function mountPasswordForm(sx?: SystemStyleObject<Theme>): HTMLElement {
 describe('UIPasswordField', () => {
   beforeEach(() => {
     onValid.mockClear();
+  });
+
+  it('is editable unless the caller makes it read-only', async () => {
+    const input = mountPasswordForm();
+
+    await userEvent.type(input, 'abc');
+
+    expect(input).not.toHaveAttribute('readonly');
+    expect(input).toHaveValue('abc');
+  });
+
+  it('keeps a read-only value, its focus and a working reveal control', async () => {
+    render(<PasswordFormHarness readOnly />);
+    const input = screen.getByPlaceholderText(PLACEHOLDER);
+
+    await userEvent.type(input, 'abc');
+
+    expect(input).toHaveAttribute('readonly');
+    expect(input).toHaveValue('');
+    expect(input).toHaveFocus();
+    await userEvent.click(screen.getByRole('button', { name: SHOW_LABEL }));
+    expect(input).toHaveAttribute('type', 'text');
+    expect(input).toHaveAttribute('readonly');
   });
 
   it('starts masked, unpressed and offers the reveal control', () => {

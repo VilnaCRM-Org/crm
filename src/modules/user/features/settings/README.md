@@ -62,9 +62,10 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │   ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
   │   ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
   │   └ card: ProfileHeader, ProfileForm
-  │       └ UIForm key=version, submitRef=saveRef, footer=ClearButton
-  │         ├ h2 "Особисті дані": full name, e-mail + EmailStatusRow
-  │         ├ ChangePassword key=cleared: h2 "Пароль", current and new password, policy rules
+  │       └ UIForm key=version, submitRef=saveRef, onInvalid, footer=ClearButton
+  │         ├ h2 "Особисті дані": full name, e-mail + EmailStatusRow (read-only while saving)
+  │         ├ ChangePassword key=cleared: h2 "Пароль", both passwords (read-only while saving),
+  │         │ policy rules
   │         ├ UIServerFieldError per field, keyed per Save attempt
   │         ├ p role=status (no changes, alternating mark on a repeat)
   └ UIToastStack                        returns focus to Save

@@ -25,12 +25,14 @@ export interface ProfileFormFieldsProps {
   readonly refocus: boolean;
   readonly state: ProfileFormState;
   readonly emailRow: EmailRowState;
+  readonly busy: boolean;
 }
 
 export interface PersonalDetailsProps {
   readonly rules: ProfileFormRules;
   readonly refocus: boolean;
   readonly emailRow: EmailRowState;
+  readonly busy: boolean;
 }
 
 export interface EmailStatusRowProps {
@@ -42,4 +44,5 @@ export interface EmailStatusRowProps {
 export interface EmailFieldProps {
   readonly rules: ProfileFormRules;
   readonly emailRow: EmailRowState;
+  readonly busy: boolean;
 }
