@@ -15,6 +15,7 @@ import {
   currentPasswordField,
   emailField,
   expectErrorToast,
+  expectToastsInOrder,
   nameField,
   newPasswordField,
   saveButton,
@@ -106,9 +107,7 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await expectResting(page);
       await fillEveryAspect(page);
       await saveButton(page).click();
-      await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
-      await expect(page.getByText(text.emailSent, { exact: true })).toBeVisible();
-      await expect(page.getByText(text.passwordChanged, { exact: true })).toBeVisible();
+      await expectToastsInOrder(page, [text.saved, text.emailSent, text.passwordChanged]);
 
       await takeSettingsSnapshot(page, screen, 'success-toasts');
     });
@@ -134,7 +133,8 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
 
     test(`[settings] load failure ${screen.name}`, async ({ page }) => {
       await openSettings(page, screen, { CurrentUser: [replyWithStatus(503)] });
-      await expect(page.getByRole('alert').filter({ hasText: loadFailed })).toBeVisible();
+      await expect(page.getByRole('alert').filter({ hasText: loadFailed })).toBeAttached();
+      await expect(page.getByRole('button', { name: text.tryAgain, exact: true })).toBeVisible();
 
       await takeSettingsSnapshot(page, screen, 'load-failure');
     });

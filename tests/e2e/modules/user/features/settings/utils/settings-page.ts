@@ -46,7 +46,18 @@ export const saveButton = (page: Page): Locator =>
 export const toastClose = (page: Page): Locator =>
   page.getByRole('button', { name: text.toastClose, exact: true });
 
+const shownToasts = (page: Page): Locator => toastClose(page).locator('xpath=..');
+
+export const toastMessage = (page: Page, message: string): Locator =>
+  shownToasts(page).getByText(message, { exact: true });
+
+export async function expectSuccessToast(page: Page, message: string): Promise<void> {
+  await expect(toastMessage(page, message)).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: message })).toBeAttached();
+}
+
 export async function expectErrorToast(page: Page, message: string): Promise<void> {
+  await expect(toastMessage(page, message)).toBeVisible();
   await expect(page.getByRole('alert').filter({ hasText: message })).toBeAttached();
   await expect(toastClose(page)).toHaveAccessibleDescription(message);
 }
@@ -78,8 +89,9 @@ export async function editName(page: Page, fullName: string, password: string): 
 
 export async function expectToastsInOrder(page: Page, messages: string[]): Promise<void> {
   const escaped = messages.map((message) => message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const toasts = page.getByText(new RegExp(`^(${escaped.join('|')})$`));
+  const toasts = shownToasts(page).getByText(new RegExp(`^(${escaped.join('|')})$`));
   await expect(toasts).toHaveText(messages);
+  await expect(page.getByRole('status').filter({ hasText: messages.join(' ') })).toBeAttached();
 }
 
 export function expectOnlyAllowedOrigins(
