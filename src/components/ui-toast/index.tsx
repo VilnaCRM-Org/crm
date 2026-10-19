@@ -18,7 +18,7 @@ export default function UIToastStack({
   fallbackFocusRef,
 }: UIToastStackProps): JSX.Element {
   const stackRef = useRef<HTMLDivElement>(null);
-  useStackClearance(stackRef, toasts.items.length);
+  useStackClearance(stackRef, toasts);
   const { closeRef, dismiss } = useToastFocus({
     toasts,
     returnFocusRef,
