@@ -47,6 +47,9 @@ describe('name validation', () => {
           'Іван Петров',
           'Марія-Олена',
           "Д'Артаньян",
+          'Мар’яна',
+          'Марʼяна',
+          'Д’Артаньян',
           'Jean Claude Van Damme',
           'John-Paul Mary-Jane',
         ])('should return true for valid name: %s', (name) => {
@@ -96,6 +99,22 @@ describe('name validation', () => {
           expect(fullNameValidator.isLettersOnly("John''Doe")).toBe(false);
         });
 
+        it('should reject consecutive typographic apostrophes', () => {
+          expect(fullNameValidator.isLettersOnly('Мар’’яна')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('Марʼʼяна')).toBe(false);
+        });
+
+        it('should reject quotation marks that are not apostrophes', () => {
+          expect(fullNameValidator.isLettersOnly('Мар‘яна')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('Мар`яна')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('Мар´яна')).toBe(false);
+        });
+
+        it('should reject a typographic apostrophe at either end', () => {
+          expect(fullNameValidator.isLettersOnly('’Марія')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('Маріяʼ')).toBe(false);
+        });
+
         it('should handle mixed separators', () => {
           expect(fullNameValidator.isLettersOnly("John-Paul O'Brien Smith")).toBe(true);
         });
@@ -121,6 +140,8 @@ describe('name validation', () => {
           'Іван Петров',
           'Mary Jane Smith',
           "Patrick O'Brien",
+          'Мар’яна Коваль',
+          'Марʼяна Коваль',
           'Jean-Claude Van Damme',
           'Марія Коваленко',
           'Олена Шевченко-Петренко',

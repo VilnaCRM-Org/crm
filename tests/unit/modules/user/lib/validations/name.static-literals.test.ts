@@ -38,6 +38,13 @@ describe('full name separator pattern', () => {
 
     expect(fullNameValidator.isLettersOnly("Jean-Claude O'Brien")).toBe(true);
   });
+
+  it('accepts both typographic apostrophes as separators', async () => {
+    const fullNameValidator = await loadFullNameValidator();
+
+    expect(fullNameValidator.isLettersOnly('Мар’яна')).toBe(true);
+    expect(fullNameValidator.isLettersOnly('Марʼяна')).toBe(true);
+  });
 });
 
 describe('full name rule message keys', () => {

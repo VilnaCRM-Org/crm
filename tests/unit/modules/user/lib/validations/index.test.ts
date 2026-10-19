@@ -40,6 +40,11 @@ describe('validations module exports', () => {
       );
       expect(validators.fullName('', emptyUser)).toBe('sign_up.form.name_input.required');
     });
+
+    it('accepts a Ukrainian name written with either typographic apostrophe', () => {
+      expect(validators.fullName('Мар’яна Коваль', emptyUser)).toBe(true);
+      expect(validators.fullName('Марʼяна Коваль', emptyUser)).toBe(true);
+    });
   });
 
   describe('validatePassword export', () => {
