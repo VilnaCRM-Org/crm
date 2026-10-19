@@ -36,4 +36,12 @@ describe('user profile settings styles', () => {
     expect(error.gap).toBe('1rem');
     expect(skeleton.gap).toBe('1.5rem');
   });
+
+  it('draws the repository focus ring on the retry button', async () => {
+    const { retryButton } = await loadStyles();
+
+    expect(retryButton).toEqual({
+      '&:focus-visible': { outline: '2px solid #1A1C1E', outlineOffset: '2px' },
+    });
+  });
 });

@@ -118,7 +118,7 @@ test.describe('Settings route', () => {
 
     await page.goto(SETTINGS_URL);
 
-    await expect(page.getByRole('alert')).toContainText(loadFailed);
+    await expect(page.getByRole('alert').filter({ hasText: loadFailed })).toHaveText(loadFailed);
     expect(seen).toHaveLength(1);
 
     await page.getByRole('button', { name: tryAgain }).click();

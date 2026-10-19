@@ -2,11 +2,13 @@ import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps, JSX, ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 
 import UserProfileSettings from '@/modules/user/features/settings/components/user-profile-settings';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 jest.mock('@/providers/di', () => ({
   __esModule: true,
@@ -65,7 +67,7 @@ describe('UserProfileSettings', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent(LOADING);
     expect(container.innerHTML).toContain('aria-hidden="true"');
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeEmptyDOMElement();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
@@ -80,12 +82,55 @@ describe('UserProfileSettings', () => {
     expect(within(screen.getByRole('main')).queryByRole('img')).not.toBeInTheDocument();
   });
 
-  it('shows the failure in an alert with a retry button and an empty status', () => {
+  it('mounts the loading status empty and fills it after the first commit', () => {
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(wrapper({ children: card() }));
+
+    expect(within(host).getByRole('status')).toBeEmptyDOMElement();
+    expect(within(host).getByRole('alert')).toBeEmptyDOMElement();
+
+    render(card(), { wrapper });
+
+    expect(screen.getByRole('status')).toHaveTextContent(LOADING);
+  });
+
+  it('announces the failure through the mounted alert region with a described retry', () => {
     render(card({ status: 'failed' }), { wrapper });
 
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert')).toHaveTextContent(FAILED);
-    expect(screen.getByRole('button', { name: RETRY })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).not.toContainElement(
+      screen.getByRole('button', { name: RETRY })
+    );
+    expect(screen.getByRole('button', { name: RETRY })).toHaveAccessibleDescription(FAILED);
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('keeps one alert element that empties on a retry and fills on a new failure', async () => {
+    const view = render(card(), { wrapper });
+    const alert = screen.getByRole('alert');
+    expect(alert).toBeEmptyDOMElement();
+
+    view.rerender(card({ status: 'failed' }));
+    expect(alert).toHaveTextContent(FAILED);
+
+    view.rerender(card({ status: 'loading', refocus: true }));
+    expect(alert).toBeEmptyDOMElement();
+
+    view.rerender(card({ status: 'failed', refocus: true }));
+    expect(await screen.findByRole('button', { name: RETRY })).toHaveFocus();
+    expect(screen.getByRole('alert')).toBe(alert);
+    expect(alert).toHaveTextContent(FAILED);
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+
+  it('draws the repository focus ring on the retry button', () => {
+    render(card({ status: 'failed' }), { wrapper });
+
+    const ring = styleRuleFor(screen.getByRole('button', { name: RETRY }), ':focus-visible');
+
+    expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
+    expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
   });
 
   it('does not move focus on the first failure', () => {
@@ -131,7 +176,7 @@ describe('UserProfileSettings', () => {
     expect(screen.getByText('Вітаємо!')).toBeVisible();
     expect(screen.getAllByRole('status')[0]).toBeEmptyDOMElement();
     expect(screen.getByRole('heading', { level: 2, name: 'Особисті дані' })).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeEmptyDOMElement();
   });
 
   it('renders nothing but the status region for a ready state without an entity', () => {
