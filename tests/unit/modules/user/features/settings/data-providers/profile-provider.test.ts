@@ -6,6 +6,7 @@ import ProfileProvider from '@/modules/user/features/settings/data-providers/pro
 import type GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import { buildProfileChange, buildUserIri, buildUserNode } from '@tests/builders';
 
 interface FakeRepository {
@@ -19,20 +20,22 @@ const build = (): {
   repository: FakeRepository;
   transformer: GraphQLProfileTransformer;
   errors: UserServiceErrorTransformer;
+  captureError: jest.Mock;
 } => {
   const repository: FakeRepository = {
     read: jest.fn(),
     update: jest.fn(),
     resend: jest.fn(),
   };
-  const transformer = new GraphQLProfileTransformer();
   const errors = new UserServiceErrorTransformer();
+  const transformer = new GraphQLProfileTransformer(errors);
+  const captureError = jest.fn();
   const provider = new ProfileProvider(
     repository as unknown as GraphQLProfileRepository,
     transformer,
-    errors
+    { captureError } as unknown as ObservabilityService
   );
-  return { provider, repository, transformer, errors };
+  return { provider, repository, transformer, errors, captureError };
 };
 
 const { signal } = new AbortController();
@@ -70,7 +73,7 @@ describe('ProfileProvider', () => {
     });
 
     await expect(provider.resend(userId, signal)).resolves.toEqual({
-      kind: 'confirmed',
+      kind: 'sent',
       confirmed: true,
     });
     expect(repository.resend).toHaveBeenCalledWith(userId, signal);
@@ -142,5 +145,99 @@ describe('ProfileProvider', () => {
       kind: 'failed',
       reason: 'transient',
     });
+  });
+  it.each([
+    ['read', (provider: ProfileProvider): Promise<unknown> => provider.read(signal)],
+    [
+      'update',
+      (provider: ProfileProvider): Promise<unknown> =>
+        provider.update(buildProfileChange(), signal),
+    ],
+    [
+      'resend',
+      (provider: ProfileProvider): Promise<unknown> => provider.resend(buildUserIri(), signal),
+    ],
+  ])('captures a %s failure that never reached the link and fails it', async (stage, call) => {
+    const { provider, repository, captureError } = build();
+    const bug = new TypeError('Cannot read properties of undefined');
+    repository.read.mockRejectedValue(bug);
+    repository.update.mockRejectedValue(bug);
+    repository.resend.mockRejectedValue(bug);
+
+    await expect(call(provider)).resolves.toEqual({ kind: 'failed', reason: 'rejected' });
+    expect(captureError).toHaveBeenCalledTimes(1);
+    expect(captureError).toHaveBeenCalledWith(bug, { source: 'settings:profile', stage });
+  });
+
+  it('captures a non-Error rejection as a failure that never reached the link', async () => {
+    const { provider, repository, captureError } = build();
+    repository.read.mockRejectedValue('boom');
+
+    await provider.read(signal);
+
+    expect(captureError).toHaveBeenCalledWith('boom', {
+      source: 'settings:profile',
+      stage: 'read',
+    });
+  });
+
+  it('captures an Apollo error that carries neither a network nor a GraphQL error', async () => {
+    const { provider, repository, captureError } = build();
+    const empty = new ApolloError({ graphQLErrors: [] });
+    repository.read.mockRejectedValue(empty);
+
+    await provider.read(signal);
+
+    expect(empty.networkError).toBeNull();
+    expect(captureError).toHaveBeenCalledWith(empty, { source: 'settings:profile', stage: 'read' });
+  });
+
+  it.each([
+    [
+      'an unmapped coded GraphQL error',
+      new ApolloError({
+        graphQLErrors: [{ message: 'Boom', extensions: { code: 'INTERNAL' } }],
+      }),
+    ],
+    [
+      'an unmapped transport status',
+      new ApolloError({
+        networkError: Object.assign(new Error('Not found'), { statusCode: 404 }),
+      }),
+    ],
+  ])('leaves %s to the link, which already captured it', async (_name, rejection) => {
+    const { provider, repository, captureError } = build();
+    repository.read.mockRejectedValue(rejection);
+
+    await expect(provider.read(signal)).resolves.toEqual({ kind: 'failed', reason: 'rejected' });
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a transient failure', new ApolloError({ networkError: new TypeError('Failed to fetch') })],
+    [
+      'a recognised refusal',
+      new ApolloError({
+        graphQLErrors: [{ message: 'Access Denied.' }],
+      }),
+    ],
+  ])('captures nothing for %s', async (_name, rejection) => {
+    const { provider, repository, captureError } = build();
+    repository.update.mockRejectedValue(rejection);
+
+    await provider.update(buildProfileChange(), signal);
+
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it('captures nothing for a rejection raised by an aborted signal', async () => {
+    const { provider, repository, captureError } = build();
+    const controller = new AbortController();
+    controller.abort();
+    repository.resend.mockRejectedValue(new DOMException('aborted', 'AbortError'));
+
+    await provider.resend(buildUserIri(), controller.signal);
+
+    expect(captureError).not.toHaveBeenCalled();
   });
 });

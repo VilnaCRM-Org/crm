@@ -4,7 +4,6 @@ export type { ProfileFormValues } from './profile-form-values';
 export type { UserNode } from './user-node';
 export type {
   FieldErrorReason,
-  ProfileConfirmationOutcome,
   ProfileFailedOutcome,
   ProfileFailureReason,
   ProfileField,
@@ -13,6 +12,7 @@ export type {
   ProfileInvalidOutcome,
   ProfileReadOutcome,
   ProfileResendOutcome,
+  ProfileSentOutcome,
   ProfileUpdateOutcome,
   ProfileUserOutcome,
 } from './outcome';

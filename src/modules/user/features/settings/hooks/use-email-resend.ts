@@ -22,7 +22,7 @@ function settleResend(
   outcome: ProfileResendOutcome,
   { adoption, toasts, t }: ResendSettleContext
 ): void {
-  if (outcome.kind === 'confirmed') {
+  if (outcome.kind === 'sent') {
     adoption.confirm(outcome.confirmed);
     if (outcome.confirmed) document.getElementById('email')?.focus();
     toasts.show({ items: [{ tone: 'success', message: t('settings.toasts.resent') }] });

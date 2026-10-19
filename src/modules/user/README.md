@@ -352,9 +352,11 @@ belong to the recovery flow above. The settings page is the board's
 
 **Decision.** A `UserProfile` route renders the `UserProfileSettings` and `ChangePassword`
 components, which run React hooks over `useAbortableSubmit`. The `ProfileProvider` Data provider
-is the translation boundary: it takes three injected collaborators, hands every result to
-`GraphQLProfileTransformer` (beside #315's `UserServiceErrorTransformer`) and calls
-`GraphQLProfileRepository`. Every value that crosses a layer carries a named type (TB-1), and the
+is the translation boundary: it takes three injected collaborators (the Repository, the
+Transformer and `ObservabilityService`), hands every result and every rejection to
+`GraphQLProfileTransformer`, which composes #315's `UserServiceErrorTransformer`, calls
+`GraphQLProfileRepository`, and captures a failure that never reached the link, as #315's
+recovery flow does. Every value that crosses a layer carries a named type (TB-1), and the
 recovery flow's `UserEntity` is passed down as itself rather than copied (TB-2).
 
 **Rejected.** Controller, service and handler classes (not on the board); a deps bag in place of

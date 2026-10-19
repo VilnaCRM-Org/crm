@@ -1,12 +1,19 @@
-import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
+import type {
+  ApolloClient,
+  NormalizedCacheObject,
+  OperationVariables,
+  TypedDocumentNode,
+} from '@apollo/client';
 import { inject, injectable } from 'tsyringe';
 import { v4 as uuidv4 } from 'uuid';
 
 import type {
   CurrentUserQuery,
   ResendEmailToUserMutation,
+  ResendEmailToUserMutationVariables,
   UpdateUserInput,
   UpdateUserMutation,
+  UpdateUserMutationVariables,
 } from '@/api/generated/graphql';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 
@@ -31,28 +38,37 @@ export default class GraphQLProfileRepository {
     return data;
   }
 
-  public async update(
+  public update(
     input: UpdateUserInput,
     signal: AbortSignal
   ): Promise<UpdateUserMutation | null | undefined> {
-    this.assertActive(signal);
-    const { data } = await this.apolloClient.mutate({
-      mutation: UPDATE_USER,
-      variables: { input: { ...input, clientMutationId: uuidv4() } },
-      fetchPolicy: 'no-cache',
-      context: { fetchOptions: { signal } },
-    });
-    return data;
+    return this.mutate<UpdateUserMutation, UpdateUserMutationVariables>(
+      UPDATE_USER,
+      { input: { ...input, clientMutationId: uuidv4() } },
+      signal
+    );
   }
 
-  public async resend(
+  public resend(
     userId: string,
     signal: AbortSignal
   ): Promise<ResendEmailToUserMutation | null | undefined> {
+    return this.mutate<ResendEmailToUserMutation, ResendEmailToUserMutationVariables>(
+      RESEND_EMAIL_TO_USER,
+      { input: { id: userId, clientMutationId: uuidv4() } },
+      signal
+    );
+  }
+
+  private async mutate<TData, TVariables extends OperationVariables>(
+    mutation: TypedDocumentNode<TData, TVariables>,
+    variables: TVariables,
+    signal: AbortSignal
+  ): Promise<TData | null | undefined> {
     this.assertActive(signal);
-    const { data } = await this.apolloClient.mutate({
-      mutation: RESEND_EMAIL_TO_USER,
-      variables: { input: { id: userId, clientMutationId: uuidv4() } },
+    const { data } = await this.apolloClient.mutate<TData, TVariables>({
+      mutation,
+      variables,
       fetchPolicy: 'no-cache',
       context: { fetchOptions: { signal } },
     });
