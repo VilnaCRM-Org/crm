@@ -6,9 +6,14 @@ const { md } = breakpointsTheme.breakpoints.values;
 export default {
   header: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: '1.25rem',
-    [`@media (min-width:${md}px)`]: { gap: '3.625rem' },
+    marginBottom: '1.25rem',
+    [`@media (min-width:${md}px)`]: {
+      alignItems: 'center',
+      gap: '3.625rem',
+      marginBottom: '1.5rem',
+    },
   },
   monogram: {
     flexShrink: 0,
@@ -34,7 +39,14 @@ export default {
     fontSize: '2rem',
     [`@media (min-width:${md}px)`]: { fontSize: '3rem' },
   },
-  text: { display: 'flex', flexDirection: 'column', gap: '0.3125rem', minWidth: 0 },
+  text: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.3125rem',
+    minWidth: 0,
+    paddingTop: '0.6875rem',
+    [`@media (min-width:${md}px)`]: { paddingTop: 0 },
+  },
   greeting: {
     margin: 0,
     fontFamily: 'Inter',
@@ -45,12 +57,17 @@ export default {
   },
   name: {
     margin: 0,
-    fontFamily: 'Golos',
-    fontWeight: 700,
+    fontFamily: 'Inter',
+    fontWeight: 500,
     fontSize: '1.125rem',
-    lineHeight: 'normal',
+    lineHeight: '1.375rem',
     color: customColors.text.dark,
     overflowWrap: 'anywhere',
-    [`@media (min-width:${md}px)`]: { fontSize: '1.375rem' },
+    [`@media (min-width:${md}px)`]: {
+      fontFamily: 'Golos',
+      fontWeight: 700,
+      fontSize: '1.375rem',
+      lineHeight: '1.625rem',
+    },
   },
 } as const;

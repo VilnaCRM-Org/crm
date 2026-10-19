@@ -9,7 +9,7 @@ import ClearButton from '@/modules/user/features/settings/components/profile-for
 import type { ProfileFormValues } from '@/modules/user/features/settings/types/user-profile';
 import { buildProfileFormValues } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { doubledClass, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 const NAME = 'Ім’я';
 
@@ -83,9 +83,9 @@ describe('ClearButton', () => {
   it('draws the focus ring and the busy look', () => {
     render(<Harness busy onClear={jest.fn()} />, { wrapper });
 
-    const ring = styleRuleFor(clear(), ':focus-visible');
-    const busy = styleRuleFor(clear(), '[aria-disabled="true"]');
-    const busyHover = styleRuleFor(clear(), '[aria-disabled="true"]:hover');
+    const ring = styleRuleFor(clear(), doubledClass(clear(), ':focus-visible'));
+    const busy = styleRuleFor(clear(), doubledClass(clear(), '[aria-disabled="true"]'));
+    const busyHover = styleRuleFor(clear(), doubledClass(clear(), '[aria-disabled="true"]:hover'));
 
     expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
     expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
