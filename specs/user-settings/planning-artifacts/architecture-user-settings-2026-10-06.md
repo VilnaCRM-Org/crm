@@ -48,7 +48,8 @@ type (TB-1, §1.2), and the board's `UserEntity` is #315's and crosses component
 >   shared piece it builds and this plan imports them.
 > - One Transformer for the feature, `GraphQLProfileTransformer`, beside #315's shared
 >   `UserServiceErrorTransformer`; `ProfileFailureTransformer` is merged into it (§5.4).
-> - `ProfileProvider` takes three `@inject` collaborators: no deps bag, no `useFactory` closure.
+> - `ProfileProvider` takes three `@inject` collaborators (Repository, Transformer,
+>   `ObservabilityService`): no deps bag, no `useFactory` closure.
 > - The invented `profile_update` security signal (FR-23) and its plumbing are gone.
 > - `SessionLinkFactory` keeps one rule, a transport 401 ends the session, and is built once,
 >   here (§5.5). The route gate takes one scalar `flag` (§5.6).
@@ -583,7 +584,7 @@ own `TwoFactorSettings → TwoFactorSettingsEntity` edge.
 ## 4. Sequence views
 
 Participants carry their board stereotype; every message names its argument and result types
-(contract §5). `ok`, `invalid`, `confirmed` and `failed` below are the `kind` of the named
+(contract §5). `ok`, `invalid`, `sent` and `failed` below are the `kind` of the named
 outcome interfaces of §6.1, never inline objects.
 
 ### 4.1 Page load
@@ -751,7 +752,7 @@ sequenceDiagram
   alt resolved
     API-->>R: ResendEmailToUserMutation
     R-->>P: ResendEmailToUserMutation
-    P-->>HR: ProfileConfirmationOutcome, via GraphQLProfileTransformer
+    P-->>HR: ProfileSentOutcome, via GraphQLProfileTransformer
     HR->>S: show(ToastDraftSet settings.toasts.resent)
     HR->>F: confirm(confirmed): no remount, edits and focus kept
   else HTTP 429 / no response / 5xx / time-out
@@ -813,10 +814,15 @@ GraphQL consumer and mutates without a `fetchPolicy`
   add a dependency, and the board has no API-client box between Repository and API.
 - **The Data provider supplies outcomes.** `ProfileProvider` asks `GraphQLProfileTransformer`
   for the input, awaits the repository call itself and returns the Transformer's named outcome;
-  on a rejection it hands the error to #315's `UserServiceErrorTransformer` and the resulting
-  `UserServiceFailure` to `GraphQLProfileTransformer` (`invalid` first on an update, then
-  `failed`; §6). Three `@inject`
-  collaborators, the metrics cap; no deps bag and no security call.
+  on a rejection one private helper asks `GraphQLProfileTransformer.failure`, which hands the
+  error to #315's `UserServiceErrorTransformer`, and passes the resulting `UserServiceFailure`
+  back (`invalid` first on an update, then `failed`; §6). Like #315's `RecoveryFailureHandler`,
+  the helper captures an `unknown` failure that never reached the link (no network error and no
+  GraphQL error, so a programming error such as a throw in `toUpdateInput`) through the injected
+  `ObservabilityService` (`source: 'settings:profile'`, `stage` the operation); the link already
+  captures everything that did reach it. Three `@inject` collaborators (Repository, Transformer,
+  `ObservabilityService`), the metrics cap; no deps bag, no `*Handler` and no security call
+  (amendment 2026-10-19).
 - **`fetchPolicy: 'no-cache'` on all three** (U6). The default policy writes the result, and for
   a mutation the arguments-keyed root field, into the shared cache; `no-cache` skips the write.
   The integration test spies on `cache.write` and asserts zero calls (the #315 lesson: under
@@ -908,7 +914,8 @@ once per mount in a `useState` initializer of `useProfileSave`, which hands it t
 | password | `values.newPassword` is not empty                   | `newPassword`: as typed    |
 
 - With at least one aspect the change also carries `id` and `currentPassword` (`password`
-  upstream, P1); `GraphQLProfileTransformer.toUpdateInput` renames the keys and the repository
+  upstream, P1); `GraphQLProfileTransformer.toUpdateInput` only renames the keys (the detector
+  has already trimmed, so the Transformer trims nothing) and the repository
   adds `clientMutationId` (`uuid`, the `registration-api.ts:83` precedent), because a fresh
   random id is not a pure translation.
 - Optional input keys are added by conditional spread, never as `undefined`
@@ -1712,7 +1719,7 @@ export default class ProfileProvider {
   constructor(
     @inject(AUTH_TOKENS.GraphQLProfileRepository) repository: GraphQLProfileRepository,
     @inject(AUTH_TOKENS.GraphQLProfileTransformer) transformer: GraphQLProfileTransformer,
-    @inject(AUTH_TOKENS.UserServiceErrorTransformer) errors: UserServiceErrorTransformer
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService) observability: ObservabilityService
   );
   public read(signal: AbortSignal): Promise<ProfileReadOutcome>;
   public update(change: ProfileChange, signal: AbortSignal): Promise<ProfileUpdateOutcome>;
@@ -1720,11 +1727,15 @@ export default class ProfileProvider {
 }
 
 // [Transformer], pure: GraphQL payload ⇄ entity and outcome, and failure → outcome (§5.4).
-// Parses with the zod schemas of settings/utils/response-schemas.ts.
-// AUTH_TOKENS.GraphQLProfileTransformer.
+// Parses with the zod schemas of settings/utils/response-schemas.ts; composes #315's error
+// transformer so the Data provider talks to one Transformer. AUTH_TOKENS.GraphQLProfileTransformer.
 @injectable()
 export default class GraphQLProfileTransformer {
+  constructor(
+    @inject(AUTH_TOKENS.UserServiceErrorTransformer) errors: UserServiceErrorTransformer
+  );
   public toUpdateInput(change: ProfileChange): UpdateUserInput; // §5.3, conditional spreads
+  public failure(caught: unknown, signal: AbortSignal): UserServiceFailure; // errors.normalize
   public toReadOutcome(data: CurrentUserQuery): ProfileReadOutcome; // first edge
   public toUpdateOutcome(data: UpdateUserMutation): ProfileUpdateOutcome;
   public toResendOutcome(data: ResendEmailToUserMutation): ProfileResendOutcome;
@@ -1879,8 +1890,8 @@ export interface ProfileInvalidOutcome {
   readonly kind: 'invalid';
   readonly errors: ProfileFieldErrorSet;
 }
-export interface ProfileConfirmationOutcome {
-  readonly kind: 'confirmed';
+export interface ProfileSentOutcome {
+  readonly kind: 'sent';
   readonly confirmed: boolean;
 }
 export interface ProfileFailedOutcome {
@@ -1890,7 +1901,7 @@ export interface ProfileFailedOutcome {
 export type ProfileReadOutcome = ProfileUserOutcome | ProfileFailedOutcome;
 export type ProfileUpdateOutcome =
   ProfileUserOutcome | ProfileInvalidOutcome | ProfileFailedOutcome;
-export type ProfileResendOutcome = ProfileConfirmationOutcome | ProfileFailedOutcome;
+export type ProfileResendOutcome = ProfileSentOutcome | ProfileFailedOutcome;
 
 // settings/types/user-profile/form-state.ts (published state of useProfileSave)
 export interface ProfileFormState {
@@ -2185,7 +2196,7 @@ compose hook: `ProfileForm` calls the three it needs.
   `noChanges`. At most two functions and five closures (the initializer, the run, `save`,
   `clear`, the retry action).
 - `useEmailResend(user, adoption, toasts)` runs `provider.resend(user.id, signal)` through
-  `useAbortableSubmit`; `ok` (`confirmed`) → `adoption.confirm(confirmed)` and the
+  `useAbortableSubmit`; `sent` (carrying `confirmed`) → `adoption.confirm(confirmed)` and the
   `settings.toasts.resent` draft, never `adopt`, so the form is not remounted; `rate_limited` →
   the rate-limit draft; `transient` and `rejected` → the resend-failed draft; `session_ended`
   and a `null` → nothing. One function and at most three closures.

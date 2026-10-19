@@ -1,4 +1,4 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 import type {
   CurrentUserQuery,
@@ -6,8 +6,9 @@ import type {
   UpdateUserInput,
   UpdateUserMutation,
 } from '@/api/generated/graphql';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type UserServiceErrorTransformer from '@/modules/user/transformers';
 import type {
-  FieldViolation,
   FieldViolationSet,
   UserServiceFailure,
   UserServiceFailureReason,
@@ -52,11 +53,16 @@ const REJECTED: ProfileFailedOutcome = { kind: 'failed', reason: 'rejected' };
 
 @injectable()
 export default class GraphQLProfileTransformer {
+  constructor(
+    @inject(AUTH_TOKENS.UserServiceErrorTransformer)
+    private readonly errors: UserServiceErrorTransformer
+  ) {}
+
   public toUpdateInput(change: ProfileChange): UpdateUserInput {
     return {
       id: change.id,
       password: change.currentPassword,
-      ...(change.fullName === undefined ? {} : { initials: change.fullName.trim() }),
+      ...(change.fullName === undefined ? {} : { initials: change.fullName }),
       ...(change.email === undefined ? {} : { email: change.email }),
       ...(change.newPassword === undefined ? {} : { newPassword: change.newPassword }),
     };
@@ -75,7 +81,11 @@ export default class GraphQLProfileTransformer {
   public toResendOutcome(data: ResendEmailToUserMutation | null | undefined): ProfileResendOutcome {
     const parsed = ResendEmailResultSchema.safeParse(data);
     const user = parsed.success ? parsed.data?.resendEmailToUser?.user : null;
-    return user ? { kind: 'confirmed', confirmed: user.confirmed } : REJECTED;
+    return user ? { kind: 'sent', confirmed: user.confirmed } : REJECTED;
+  }
+
+  public failure(caught: unknown, signal: AbortSignal): UserServiceFailure {
+    return this.errors.normalize(caught, signal);
   }
 
   public invalid(failure: UserServiceFailure): ProfileInvalidOutcome | null {
@@ -103,14 +113,10 @@ export default class GraphQLProfileTransformer {
     if (!complete || items.length === 0) return null;
     const found: ProfileFieldError[] = [];
     for (const violation of items) {
-      const error = this.fieldErrorOf(violation);
+      const error = VIOLATION_FIELDS.get(`${violation.path}:${violation.reason}`);
       if (error === undefined) return null;
       found.push(error);
     }
     return { items: found };
-  }
-
-  private fieldErrorOf(violation: FieldViolation): ProfileFieldError | undefined {
-    return VIOLATION_FIELDS.get(`${violation.path}:${violation.reason}`);
   }
 }

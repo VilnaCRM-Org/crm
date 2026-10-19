@@ -31,8 +31,8 @@ export interface ProfileInvalidOutcome {
   readonly errors: ProfileFieldErrorSet;
 }
 
-export interface ProfileConfirmationOutcome {
-  readonly kind: 'confirmed';
+export interface ProfileSentOutcome {
+  readonly kind: 'sent';
   readonly confirmed: boolean;
 }
 
@@ -46,4 +46,4 @@ export type ProfileReadOutcome = ProfileUserOutcome | ProfileFailedOutcome;
 export type ProfileUpdateOutcome =
   ProfileUserOutcome | ProfileInvalidOutcome | ProfileFailedOutcome;
 
-export type ProfileResendOutcome = ProfileConfirmationOutcome | ProfileFailedOutcome;
+export type ProfileResendOutcome = ProfileSentOutcome | ProfileFailedOutcome;

@@ -4,8 +4,12 @@ import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
+import type GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
+import type GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter';
 import { HttpError } from '@/services/https-client/http-error';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import {
   buildEmail,
@@ -105,7 +109,7 @@ describe('ProfileProvider over the container client (integration)', () => {
     });
 
     await expect(provider.resend(buildUserIri(), signal)).resolves.toEqual({
-      kind: 'confirmed',
+      kind: 'sent',
       confirmed: false,
     });
   });
@@ -294,6 +298,44 @@ describe('ProfileProvider over the container client (integration)', () => {
     await expect(provider.update(buildProfileChange(), signal)).resolves.toEqual({
       kind: 'invalid',
       errors: { items: [{ field: 'currentPassword', reason: 'password_wrong' }] },
+    });
+  });
+  it('captures a programming error through the container observability service', async () => {
+    const bug = new TypeError('Cannot read properties of undefined');
+    const transformer = container.resolve<GraphQLProfileTransformer>(
+      AUTH_TOKENS.GraphQLProfileTransformer
+    );
+    const observability = container.resolve<ObservabilityService>(
+      OBSERVABILITY_TOKENS.ObservabilityService
+    );
+    jest.spyOn(transformer, 'toUpdateInput').mockImplementation(() => {
+      throw bug;
+    });
+    const captureError = jest.spyOn(observability, 'captureError');
+
+    await expect(provider.update(buildProfileChange(), signal)).resolves.toEqual(
+      failed('rejected')
+    );
+    expect(captureError).toHaveBeenCalledTimes(1);
+    expect(captureError).toHaveBeenCalledWith(bug, {
+      source: 'settings:profile',
+      stage: 'update',
+    });
+  });
+  it('captures a non-Error rejection of a read, which never reached the link', async () => {
+    const repository = container.resolve<GraphQLProfileRepository>(
+      AUTH_TOKENS.GraphQLProfileRepository
+    );
+    const observability = container.resolve<ObservabilityService>(
+      OBSERVABILITY_TOKENS.ObservabilityService
+    );
+    jest.spyOn(repository, 'read').mockRejectedValue('not an error');
+    const captureError = jest.spyOn(observability, 'captureError');
+
+    await expect(provider.read(signal)).resolves.toEqual(failed('rejected'));
+    expect(captureError).toHaveBeenCalledWith('not an error', {
+      source: 'settings:profile',
+      stage: 'read',
     });
   });
 });

@@ -1,4 +1,5 @@
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
 import type {
   FieldViolationReason,
   UserServiceFailure,
@@ -6,7 +7,8 @@ import type {
 } from '@/modules/user/types/user-service/user-service-failure';
 import { buildProfileChange, buildUserNode } from '@tests/builders';
 
-const transformer = new GraphQLProfileTransformer();
+const errors = new UserServiceErrorTransformer();
+const transformer = new GraphQLProfileTransformer(errors);
 
 const failure = (
   reason: UserServiceFailureReason,
@@ -20,13 +22,13 @@ const failure = (
 const REJECTED = { kind: 'failed', reason: 'rejected' };
 
 describe('GraphQLProfileTransformer.toUpdateInput', () => {
-  it('maps a name-only change to id, password and trimmed initials', () => {
+  it('maps a name-only change to id, password and the initials exactly as given', () => {
     const change = buildProfileChange({ fullName: '  Олена Петренко  ' });
 
     expect(transformer.toUpdateInput(change)).toEqual({
       id: change.id,
       password: change.currentPassword,
-      initials: 'Олена Петренко',
+      initials: '  Олена Петренко  ',
     });
     expect(Object.keys(transformer.toUpdateInput(change)).sort()).toEqual([
       'id',
@@ -103,7 +105,7 @@ describe('GraphQLProfileTransformer outcomes', () => {
     (confirmed) => {
       expect(
         transformer.toResendOutcome({ resendEmailToUser: { user: { id: 'x', confirmed } } })
-      ).toEqual({ kind: 'confirmed', confirmed });
+      ).toEqual({ kind: 'sent', confirmed });
     }
   );
 
@@ -201,5 +203,19 @@ describe('GraphQLProfileTransformer.invalid', () => {
     ['an unauthenticated failure', failure('unauthenticated')],
   ])('gives null for %s', (_name, input) => {
     expect(transformer.invalid(input)).toBeNull();
+  });
+});
+
+describe('GraphQLProfileTransformer.failure', () => {
+  it('hands the rejection and the signal to the shared error transformer', () => {
+    const rejection = new Error('boom');
+    const { signal } = new AbortController();
+    const normalize = jest.spyOn(errors, 'normalize');
+
+    const result = transformer.failure(rejection, signal);
+
+    expect(normalize).toHaveBeenCalledWith(rejection, signal);
+    expect(result).toBe(normalize.mock.results[0]?.value);
+    expect(result.reason).toBe('unknown');
   });
 });

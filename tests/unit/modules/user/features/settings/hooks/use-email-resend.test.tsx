@@ -69,7 +69,7 @@ describe('useEmailResend', () => {
     expect(mockResend).toHaveBeenCalledTimes(1);
     expect(mockResend.mock.calls[0]?.[0]).toBe(user.id);
     expect(result.current.isSubmitting).toBe(true);
-    await act(async () => settle({ kind: 'confirmed', confirmed: false }));
+    await act(async () => settle({ kind: 'sent', confirmed: false }));
     expect(result.current.isSubmitting).toBe(false);
   });
 
@@ -85,7 +85,7 @@ describe('useEmailResend', () => {
   it.each([true, false])(
     'confirms with %s and shows the resent toast, never adopting',
     async (confirmed) => {
-      mockResend.mockResolvedValue({ kind: 'confirmed', confirmed });
+      mockResend.mockResolvedValue({ kind: 'sent', confirmed });
       const { result, adopt, confirm, show } = setup();
 
       await act(async () => {
@@ -101,7 +101,7 @@ describe('useEmailResend', () => {
   );
 
   it('moves focus to the e-mail field when the payload says the address is confirmed', async () => {
-    mockResend.mockResolvedValue({ kind: 'confirmed', confirmed: true });
+    mockResend.mockResolvedValue({ kind: 'sent', confirmed: true });
     const email = document.createElement('input');
     email.id = 'email';
     document.body.appendChild(email);
@@ -116,7 +116,7 @@ describe('useEmailResend', () => {
   });
 
   it('leaves focus alone when the address is still unconfirmed', async () => {
-    mockResend.mockResolvedValue({ kind: 'confirmed', confirmed: false });
+    mockResend.mockResolvedValue({ kind: 'sent', confirmed: false });
     const email = document.createElement('input');
     email.id = 'email';
     document.body.appendChild(email);
@@ -168,7 +168,7 @@ describe('useEmailResend', () => {
     const signal = mockResend.mock.calls[0]?.[1] as AbortSignal;
 
     unmount();
-    await act(async () => settle({ kind: 'confirmed', confirmed: true }));
+    await act(async () => settle({ kind: 'sent', confirmed: true }));
 
     expect(signal.aborted).toBe(true);
     expect(show).not.toHaveBeenCalled();

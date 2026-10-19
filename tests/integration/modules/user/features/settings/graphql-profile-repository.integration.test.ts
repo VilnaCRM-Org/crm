@@ -107,7 +107,7 @@ describe('GraphQLProfileRepository and GraphQLProfileTransformer integration', (
 
     const outcome = transformer.toResendOutcome(await repository.resend(userId, freshSignal()));
 
-    expect(outcome).toEqual({ kind: 'confirmed', confirmed: false });
+    expect(outcome).toEqual({ kind: 'sent', confirmed: false });
     expect(answered).toHaveLength(1);
     expect(answered[0]?.authorization).toBe(`Bearer ${token}`);
     expect(Object.keys(answered[0]?.variables['input'] as object).sort()).toEqual([

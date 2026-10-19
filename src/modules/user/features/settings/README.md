@@ -76,17 +76,17 @@ The board's `React hook ⇄ Data provider ⇄ Transformer → Repository → API
 reaches a Repository, a Transformer or a Data provider; a hook reaches the Data provider through
 `useService`, by type only.
 
-| Board box             | Implemented by                                                    |
-| --------------------- | ----------------------------------------------------------------- |
-| `UserProfile` route   | `routes/user-profile/index.tsx`                                   |
-| `UserProfileSettings` | `components/user-profile-settings` and its child components       |
-| `ChangePassword`      | `components/change-password`                                      |
-| React hook            | `useProfileLoad`, `useProfileSave`, `useEmailResend`              |
-| Data provider         | `ProfileProvider` (three `@inject` collaborators)                 |
-| Transformer           | `GraphQLProfileTransformer`, #315's `UserServiceErrorTransformer` |
-| Repository            | `GraphQLProfileRepository` and the three document seams           |
-| Repository → API edge | the container's Apollo client with the `SessionLinkFactory` link  |
-| State                 | `useAuthStore`, read by the link and by `ProtectedRoute`          |
+| Board box             | Implemented by                                                   |
+| --------------------- | ---------------------------------------------------------------- |
+| `UserProfile` route   | `routes/user-profile/index.tsx`                                  |
+| `UserProfileSettings` | `components/user-profile-settings` and its child components      |
+| `ChangePassword`      | `components/change-password`                                     |
+| React hook            | `useProfileLoad`, `useProfileSave`, `useEmailResend`             |
+| Data provider         | `ProfileProvider` (three `@inject` collaborators)                |
+| Transformer           | `GraphQLProfileTransformer`, over #315's error transformer       |
+| Repository            | `GraphQLProfileRepository` and the three document seams          |
+| Repository → API edge | the container's Apollo client with the `SessionLinkFactory` link |
+| State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
 No file names a controller, a service or a handler: the board has none. Gaps that remain gaps:
 the board's social-network component is not built (user-service has no link, list or unlink), the
@@ -97,12 +97,15 @@ Repository → State edge on the board.
 ## Data provider outcomes
 
 `ProfileProvider` never throws and never leaks a status, a server message or a generated type.
+Its collaborators are the Repository, the Transformer and `ObservabilityService`: a failure that
+never reached the link (a programming error) is captured once, as #315's recovery flow does,
+before it becomes `failed: rejected`.
 
 | Method           | Outcome                     | Meaning                                        |
 | ---------------- | --------------------------- | ---------------------------------------------- |
 | `read`, `update` | `ok` with a `UserEntity`    | the profile as stored                          |
 | `update`         | `invalid` with field errors | name, e-mail, current or new password rejected |
-| `resend`         | `confirmed`                 | the link was sent; carries the stored flag     |
+| `resend`         | `sent`                      | the link was sent; carries the stored flag     |
 | any              | `failed: session_ended`     | HTTP 401 or "Access Denied."                   |
 | any              | `failed: rate_limited`      | HTTP 429                                       |
 | any              | `failed: transient`         | network, 5xx, time-out or abort                |
