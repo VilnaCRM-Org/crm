@@ -1,15 +1,22 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors } from '@/styles/colors';
 
-const { lg, xl } = breakpointsTheme.breakpoints.values;
+const { md, lg, xl } = breakpointsTheme.breakpoints.values;
 
 export default {
   content: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.75rem',
+    gap: '1.0625rem',
     paddingTop: '1.75rem',
     paddingBottom: '2rem',
+
+    [`@media (min-width:${md}px)`]: {
+      gap: '1rem',
+    },
+    [`@media (min-width:${lg + 1}px)`]: {
+      gap: '0.75rem',
+    },
   },
   header: {
     display: 'flex',
@@ -24,6 +31,7 @@ export default {
     lineHeight: 'normal',
     color: customColors.text.dark,
     '&:focus:not(:focus-visible)': { outline: 'none' },
+    '&:focus-visible': { outline: `2px solid ${customColors.text.dark}`, outlineOffset: '2px' },
 
     [`@media (min-width:${lg}px)`]: {
       fontSize: '1.75rem',

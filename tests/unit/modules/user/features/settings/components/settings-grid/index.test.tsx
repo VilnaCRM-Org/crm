@@ -14,8 +14,10 @@ const loadStyles = (): Promise<GridStyles> =>
       (await import('@/modules/user/features/settings/components/settings-grid/styles')).default
   );
 
-const LG = 'min-width:1024px';
+const TABLET = 'min-width:768px';
+const DESKTOP = 'min-width:1025px';
 const DESKTOP_CARD = '42.1875rem';
+const TWO_FACTOR_SLOT = 'minmax(0, 29.9375rem)';
 
 const mountGrid = (count: number): HTMLElement => {
   render(
@@ -51,27 +53,36 @@ describe('SettingsGrid', () => {
     expect(screen.queryByText(/^section/)).not.toBeInTheDocument();
   });
 
-  it('stacks the sections in one column below the lg breakpoint', () => {
+  it('stacks the sections in one column on a phone', () => {
     const grid = mountGrid(2);
 
     expect(styleRuleFor(grid)?.getPropertyValue('display')).toBe('grid');
     expect(styleRuleFor(grid)?.getPropertyValue('grid-template-columns')).toBe('minmax(0, 1fr)');
   });
 
-  it('places two sections side by side from lg, the profile card first', () => {
+  it('keeps one 749 px column on a tablet, up to and including the 1024 px frame', () => {
     const grid = mountGrid(2);
-    const columns = mediaStyleRuleFor(grid, LG)?.getPropertyValue('grid-template-columns');
 
-    expect(columns?.split(') ')).toHaveLength(2);
-    expect(columns).toContain(`minmax(0, ${DESKTOP_CARD})`);
-    expect(columns?.startsWith(`minmax(0, ${DESKTOP_CARD})`)).toBe(true);
+    expect(mediaStyleRuleFor(grid, TABLET)?.getPropertyValue('grid-template-columns')).toBe(
+      'minmax(0, 46.8125rem)'
+    );
+    expect(mediaStyleRuleFor(grid, 'min-width:1024px')).toBeUndefined();
+  });
+
+  it('places a second section beside the card only above 1024 px, the profile card first', () => {
+    const grid = mountGrid(2);
+    const desktop = mediaStyleRuleFor(grid, DESKTOP);
+
+    expect(desktop?.getPropertyValue('grid-template-columns')).toBe(`minmax(0, ${DESKTOP_CARD})`);
+    expect(desktop?.getPropertyValue('grid-auto-flow')).toBe('column');
+    expect(desktop?.getPropertyValue('grid-auto-columns')).toBe(TWO_FACTOR_SLOT);
     expect(within(grid).getAllByText(/^section/)[0]).toHaveTextContent('section 1');
   });
 
-  it('keeps the profile card desktop width with one section', () => {
+  it('keeps the profile card desktop width with one section and no empty column', () => {
     const grid = mountGrid(1);
 
-    expect(mediaStyleRuleFor(grid, LG)?.getPropertyValue('grid-template-columns')).toContain(
+    expect(mediaStyleRuleFor(grid, DESKTOP)?.getPropertyValue('grid-template-columns')).toBe(
       `minmax(0, ${DESKTOP_CARD})`
     );
   });
@@ -85,8 +96,11 @@ describe('SettingsGrid', () => {
         gridTemplateColumns: 'minmax(0, 1fr)',
         gap: '0.75rem',
         alignItems: 'start',
-        '@media (min-width:1024px)': {
-          gridTemplateColumns: 'minmax(0, 42.1875rem) minmax(0, 29.9375rem)',
+        '@media (min-width:768px)': { gridTemplateColumns: 'minmax(0, 46.8125rem)' },
+        '@media (min-width:1025px)': {
+          gridTemplateColumns: 'minmax(0, 42.1875rem)',
+          gridAutoFlow: 'column',
+          gridAutoColumns: 'minmax(0, 29.9375rem)',
         },
       },
     });

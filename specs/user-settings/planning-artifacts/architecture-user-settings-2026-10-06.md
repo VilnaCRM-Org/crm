@@ -1216,10 +1216,12 @@ after it (`src/components/layouts/app-layout.tsx:30-44`); home renders its `h1` 
   child: inside `main`, after both sections, before the footer (FR-20).
 - The page renders only while `userSettings` is on (the gate, §5.6), so the grid always holds
   `UserProfileSettings`; #331 adds `TwoFactorSettings` to it under `twoFactorAuth`. Desktop
-  places the columns side by side with the profile card first in DOM and reading order; below
-  the `lg` breakpoint the 2FA card follows below; mobile is one column. Track widths come from
-  Figma `313:10242`, `313:10480`, `313:10606` through the design gate; an absent section leaves
-  no visible column and the card keeps its desktop width (FR-3).
+  (above 1024 px, so the 1024 px tablet frame keeps its own layout) places the columns side by
+  side with the profile card first in DOM and reading order; from 768 px up to and including
+  1024 px one 749 px column holds the card with the 2FA card below it; mobile is one column.
+  Track widths come from Figma `313:10242`, `313:10480`, `313:10606` through the design gate;
+  the 2FA track is an implicit column, so an absent section leaves no column at all and the card
+  keeps its desktop width (FR-3).
 - The page owns the toast queue (`useToastQueue`, page-local) and the save button ref, and
   passes them to `UserProfileSettings` as `UserProfileSettingsProps` (`toasts: ToastQueue`,
   `saveRef`); the 2FA card reports in its own card and does not use the toast (R16).
