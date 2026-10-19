@@ -15,11 +15,13 @@ import {
   currentPasswordField,
   editName,
   emailField,
+  expectSuccessToast,
   fillCurrentPassword,
   nameField,
   newPasswordField,
   saveButton,
   text,
+  toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
@@ -53,7 +55,7 @@ async function openSettings(page: Page, stub: Promise<StubbedProfile>): Promise<
 async function saveName(page: Page): Promise<void> {
   await editName(page, NEW_NAME, password);
   await saveButton(page).click();
-  await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
+  await expectSuccessToast(page, text.saved);
 }
 
 test.describe('Settings keyboard contract (issue #330)', () => {
@@ -120,7 +122,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await fillCurrentPassword(page, password);
     await currentPasswordField(page).press('Enter');
 
-    await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
@@ -188,10 +190,10 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
     await saveName(page);
 
-    await page.getByRole('button', { name: closeLabel }).focus();
+    await toastClose(page).focus();
     await page.keyboard.press('Enter');
 
-    await expect(page.getByText(text.saved, { exact: true })).toHaveCount(0);
+    await expect(toastClose(page)).toHaveCount(0);
     await expect(saveButton(page)).toBeFocused();
   });
 

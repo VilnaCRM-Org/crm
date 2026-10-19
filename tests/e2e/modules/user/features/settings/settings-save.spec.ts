@@ -19,6 +19,7 @@ import {
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
+  expectSuccessToast,
   expectToastsInOrder,
   newPasswordField,
   openLoadedSettings,
@@ -82,7 +83,7 @@ test.describe('Settings save journeys (issue #330)', () => {
     await editName(page, NEW_NAME, password);
     await saveButton(page).click();
 
-    await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.saved);
     await expect(page.getByText(NEW_NAME, { exact: true })).toBeVisible();
     await expectEveryPasswordFieldEmpty(page);
     const updates = stub.calls.filter((call) => call.operation === 'UpdateUser');
@@ -106,12 +107,12 @@ test.describe('Settings save journeys (issue #330)', () => {
     await fillInput(currentPasswordField(page), password);
     await saveButton(page).click();
 
-    await expect(page.getByText(text.emailSent, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.emailSent);
     await expect(page.getByText(text.unconfirmed, { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: text.resend, exact: true }).click();
 
-    await expect(page.getByText(text.resent, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.resent);
     expect(stub.count('ResendEmailToUser')).toBe(1);
   });
 

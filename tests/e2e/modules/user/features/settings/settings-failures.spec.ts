@@ -18,6 +18,7 @@ import {
   expectErrorToast,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
+  expectSuccessToast,
   openLoadedSettings,
   saveButton,
   text,
@@ -95,7 +96,7 @@ test.describe('Settings save failures (issue #330)', () => {
 
     await page.getByRole('button', { name: text.tryAgain, exact: true }).click();
 
-    await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(2);
   });
 

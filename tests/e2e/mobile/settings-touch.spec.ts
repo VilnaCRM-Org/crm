@@ -15,6 +15,7 @@ import {
   currentPasswordField,
   emailField,
   expectErrorToast,
+  expectSuccessToast,
   nameField,
   newPasswordField,
   saveButton,
@@ -78,7 +79,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
 
     await tapSaveWith(page, NEW_NAME);
 
-    await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
@@ -92,10 +93,10 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await typeByTap(emailField(page), newEmail);
     await typeByTap(currentPasswordField(page), password);
     await saveButton(page).tap();
-    await expect(page.getByText(text.emailSent, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.emailSent);
     await page.getByRole('button', { name: text.resend, exact: true }).tap();
 
-    await expect(page.getByText(text.resent, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.resent);
     expect(stub.count('ResendEmailToUser')).toBe(1);
   });
 
@@ -107,7 +108,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await typeByTap(newPasswordField(page), newPassword);
     await saveButton(page).tap();
 
-    await expect(page.getByText(text.passwordChanged, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.passwordChanged);
   });
 
   test('flips password visibility on a tap', async ({ page }) => {
@@ -183,7 +184,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await expect(saveButton(page)).toBeInViewport();
     await saveButton(page).tap();
 
-    await expect(page.getByText(text.saved, { exact: true })).toBeVisible();
+    await expectSuccessToast(page, text.saved);
   });
 
   test('spans the toasts across the bottom and scrolls focused controls clear of them', async ({
