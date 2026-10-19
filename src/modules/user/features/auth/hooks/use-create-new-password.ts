@@ -16,10 +16,8 @@ import type {
   CreateNewPasswordCallbacks,
   CreateNewPasswordInvalidState,
   CreateNewPasswordState,
-  CreateNewPasswordViewDeps,
   CreateNewPasswordViewState,
   RecoveryProviderStep,
-  ResetTokenHandle,
 } from '@auth/types/password-recovery/state';
 
 const PASSWORD_RESET_ARRIVAL: RedirectNavigationState = {
@@ -36,27 +34,26 @@ const CONFIRM_STEP: RecoveryProviderStep<CreateNewPasswordDto, CreateNewPassword
 ) => provider.confirmReset(dto, signal);
 
 function nextFailure(outcome: CreateNewPasswordOutcome): RecoveryFailure | null {
-  return outcome.kind === 'failed' && outcome.failure.reason !== 'invalid_link'
-    ? outcome.failure
-    : null;
+  return outcome.kind === 'failed' ? outcome.failure : null;
 }
 
 function goToSignIn(navigate: NavigateFunction): void {
   navigate(ROUTE_PATHS.signIn, { replace: true, state: PASSWORD_RESET_ARRIVAL });
 }
 
-function useCreateNewPasswordView(deps: CreateNewPasswordViewDeps): CreateNewPasswordViewState {
+function useCreateNewPasswordView(): CreateNewPasswordViewState {
   const navigate = useNavigate();
   const [failure, setFailure] = useState<RecoveryFailure | null>(null);
+  const [linkInvalid, setLinkInvalid] = useState(false);
 
   const settle = (outcome: CreateNewPasswordOutcome | null): void => {
     if (outcome === null) return;
     if (outcome.kind === 'confirmed') goToSignIn(navigate);
-    else if (outcome.failure.reason === 'invalid_link') deps.resetToken.discard();
+    else if (outcome.failure.reason === 'invalid_link') setLinkInvalid(true);
     setFailure(nextFailure(outcome));
   };
 
-  return { failure, settle, clearFailure: (): void => setFailure(null) };
+  return { failure, linkInvalid, settle, clearFailure: (): void => setFailure(null) };
 }
 
 function useCreateNewPasswordCallbacks({
@@ -72,19 +69,14 @@ function useCreateNewPasswordCallbacks({
   };
 }
 
-export default function useCreateNewPassword(
-  loader: AuthProviderLoader,
-  resetToken: ResetTokenHandle
-): CreateNewPasswordState {
+export default function useCreateNewPassword(loader: AuthProviderLoader): CreateNewPasswordState {
   const submitter = useAbortableSubmit(useRecoveryRun(loader, CONFIRM_STEP));
-  const viewState = useCreateNewPasswordView({ resetToken });
+  const viewState = useCreateNewPasswordView();
   const callbacks = useCreateNewPasswordCallbacks({ submitter, viewState });
-  const { token } = resetToken;
-  if (token === null) return INVALID_LINK;
+  if (viewState.linkInvalid) return INVALID_LINK;
 
   return {
     view: 'form',
-    token,
     failure: viewState.failure,
     isSubmitting: submitter.isSubmitting,
     callbacks,

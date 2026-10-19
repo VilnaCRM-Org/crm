@@ -26,6 +26,10 @@ export interface CardBackButtonProps {
 
 export type CardBackControlProps = CardBackLinkProps | CardBackButtonProps;
 
+export interface SandboxDemoResetLinkProps {
+  email: string;
+}
+
 export interface RecoveryResultAction {
   readonly label: string;
   readonly to: string;
@@ -48,11 +52,6 @@ export interface ResetPasswordFormProps {
 
 export interface ResetPasswordEmailFieldProps {
   failure: RecoveryFailure | null;
-}
-
-export interface ResetPasswordSentStepProps {
-  maskedEmail: string | null;
-  onBack: () => void;
 }
 
 export interface CreateNewPasswordFormProps {

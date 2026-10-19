@@ -51,7 +51,7 @@ export default function ResetPasswordForm({
       defaultValues={defaultValues}
       error={banner.error}
       isSubmitting={isSubmitting}
-      submitLabel={t('password_recovery.submit_button')}
+      submitLabel={banner.retry ? t('auth.error.tryAgain') : t('password_recovery.submit_button')}
       submittingLabel={t('password_recovery.submitting')}
       title={t('password_recovery.title')}
       titleComponent="h1"

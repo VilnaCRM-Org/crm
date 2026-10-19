@@ -347,6 +347,13 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
   protected page. The session is client-only and never calls the API, and it survives a reload
   until you sign out. The demo code ships in every production bundle but only activates on a
   `sandbox-crm-*` S3 website host; anywhere else those credentials go to the API like any others.
+- **A demo password reset.** On a sandbox (and in any non-production build), request a reset on
+  `/password-recovery` for `demo@vilnacrm.com`. The "check your e-mail" card then shows
+  "Відкрити посилання з листа (демо)", which stands in for the e-mail and opens
+  `/password-reset` with the demo reset token. Set any new password that meets the rules; the
+  confirmation lands on `/sign-in` with the password-changed notice. Neither step calls the API,
+  and the demo login password stays `Demo1234`. Any other address or token goes to the API as
+  usual.
 - **Deep links.** Every build emits `404.html` as a copy of `index.html`, so S3 answers
   `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
   still reports HTTP status 404 for those responses; the page itself renders normally.

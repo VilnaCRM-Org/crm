@@ -34,7 +34,6 @@ import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
-import RecoveryFailureHandler from '@auth/utils/recovery-failure-handler';
 
 import AUTH_TOKENS from './tokens';
 
@@ -92,7 +91,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
     container.registerSingleton(AUTH_TOKENS.AuthErrorHandler, AuthErrorHandler);
     container.registerSingleton(AUTH_TOKENS.AuthRequestErrors, AuthRequestErrors);
     container.registerSingleton(AUTH_TOKENS.AuthSecuritySignals, AuthSecuritySignals);
-    container.registerSingleton(AUTH_TOKENS.RecoveryFailureHandler, RecoveryFailureHandler);
   }
 
   private registerResponseMappers(container: DependencyContainer): void {

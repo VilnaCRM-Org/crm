@@ -16,17 +16,10 @@ import loadIsolated from '@tests/unit/utils/isolated-module';
 const seen: Array<string | null> = [];
 
 function Probe(): JSX.Element {
-  const { token, discard } = useResetToken();
+  const token = useResetToken();
   const { search } = useLocation();
   seen.push(token);
-  return (
-    <>
-      <p>{`search=${search}`}</p>
-      <button type="button" onClick={discard}>
-        Discard
-      </button>
-    </>
-  );
+  return <p>{`search=${search}`}</p>;
 }
 
 const INVALID_LINK: CreateNewPasswordOutcome = {
@@ -41,11 +34,11 @@ const loader = {
 } as unknown as AuthProviderLoader;
 
 function Confirmer(): JSX.Element {
-  const resetToken = useResetToken();
-  const state = useCreateNewPassword(loader, resetToken);
-  seen.push(resetToken.token);
-  if (state.view === 'invalid') return <p>invalid link</p>;
-  const { token, callbacks } = state;
+  const token = useResetToken();
+  const state = useCreateNewPassword(loader);
+  seen.push(token);
+  if (token === null || state.view === 'invalid') return <p>invalid link</p>;
+  const { callbacks } = state;
   return (
     <button
       type="button"
@@ -150,16 +143,7 @@ describe('useResetToken', () => {
     expect(lastToken()).toBe(token);
   });
 
-  it('forgets the token once discarded', async () => {
-    mountAt(`/password-reset?token=${buildResetToken()}`);
-    await screen.findByText('search=');
-
-    await userEvent.click(screen.getByRole('button', { name: 'Discard' }));
-
-    expect(lastToken()).toBeNull();
-  });
-
-  it('discards the token when the confirm step reports the link invalid', async () => {
+  it('shows the invalid link when the confirm step reports it', async () => {
     confirmReset.mockReset().mockResolvedValue(INVALID_LINK);
     const token = buildResetToken();
     mount(routerAt(`/password-reset?token=${token}`, <Confirmer />));
@@ -167,8 +151,8 @@ describe('useResetToken', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Confirm' }));
 
     expect(await screen.findByText('invalid link')).toBeInTheDocument();
-    expect(seen).toContain(token);
-    expect(lastToken()).toBeNull();
+    expect(lastToken()).toBe(token);
+    expect(confirmReset).toHaveBeenCalledTimes(1);
   });
 
   it('strips a token that arrives by in-app navigation after mount', async () => {
@@ -203,7 +187,7 @@ describe('useResetToken loaded inside the test', () => {
     });
     const tokens: Array<string | null> = [];
     function FreshProbe(): JSX.Element {
-      const { token } = freshUseResetToken();
+      const token = freshUseResetToken();
       const { search } = useLocation();
       tokens.push(token);
       return <p>{`search=${search}`}</p>;
