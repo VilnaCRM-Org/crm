@@ -48,6 +48,33 @@ export default {
     },
   },
 
+  demoResetLink: {
+    display: 'flex',
+    alignItems: 'center',
+    width: 'fit-content',
+    minHeight: '2.75rem',
+    marginTop: '1rem',
+    marginInline: 'auto',
+    padding: '0 0.5rem',
+
+    fontFamily: 'Golos',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    lineHeight: '1.125rem',
+    color: customColors.text.primary,
+    textDecoration: 'underline',
+    textTransform: 'none',
+
+    '&:visited': { color: customColors.text.primary },
+    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+
+    '&:focus-visible, &.Mui-focusVisible': {
+      outline: `2px solid ${customColors.text.primary}`,
+      outlineOffset: '2px',
+      borderRadius: '0.25rem',
+    },
+  },
+
   resultTitle: {
     marginTop: 0,
     marginBottom: '0.5rem',

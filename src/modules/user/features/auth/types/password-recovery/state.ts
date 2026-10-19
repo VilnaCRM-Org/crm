@@ -59,11 +59,7 @@ export interface ResetPasswordCallbackDeps {
 
 export interface RecoveryFailureBanner {
   readonly error: string | null;
-}
-
-export interface ResetTokenHandle {
-  readonly token: string | null;
-  discard(): void;
+  readonly retry: boolean;
 }
 
 export interface CreateNewPasswordCallbacks {
@@ -77,7 +73,6 @@ export interface CreateNewPasswordInvalidState {
 
 export interface CreateNewPasswordFormState {
   readonly view: 'form';
-  readonly token: string;
   readonly failure: RecoveryFailure | null;
   readonly isSubmitting: boolean;
   readonly callbacks: CreateNewPasswordCallbacks;
@@ -93,12 +88,9 @@ export type RecoveryProviderStep<TDto, TOutcome> = (
 
 export interface CreateNewPasswordViewState {
   readonly failure: RecoveryFailure | null;
+  readonly linkInvalid: boolean;
   settle(outcome: CreateNewPasswordOutcome | null): void;
   clearFailure(): void;
-}
-
-export interface CreateNewPasswordViewDeps {
-  readonly resetToken: ResetTokenHandle;
 }
 
 export interface CreateNewPasswordCallbackDeps {

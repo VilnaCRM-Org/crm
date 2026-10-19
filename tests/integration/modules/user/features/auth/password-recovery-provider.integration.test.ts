@@ -158,6 +158,38 @@ describe('PasswordRecoveryProvider over the container and msw', () => {
   });
 });
 
+describe('PasswordRecoveryProvider over the sandbox demo', () => {
+  afterEach(() => server.resetHandlers());
+
+  it('walks the demo reset from the request to the confirmation without the API', async () => {
+    const requested = answerRecoveryOperation(
+      'request',
+      () => new HttpResponse(null, { status: 503 })
+    );
+    const confirmed = answerRecoveryOperation(
+      'confirm',
+      () => new HttpResponse(null, { status: 503 })
+    );
+    const provider = await new AuthProviderLoader().resolve<PasswordRecoveryProvider>(
+      AUTH_TOKENS.PasswordRecoveryProvider
+    );
+    const { signal } = new AbortController();
+
+    await expect(provider.requestReset({ email: 'demo@vilnacrm.com' }, signal)).resolves.toEqual({
+      kind: 'sent',
+      maskedEmail: 'd*****@vilnacrm.com',
+    });
+    await expect(
+      provider.confirmReset(
+        { token: 'sandbox-demo-reset-token', newPassword: buildPassword() },
+        signal
+      )
+    ).resolves.toEqual({ kind: 'confirmed' });
+    expect(requested).toHaveLength(0);
+    expect(confirmed).toHaveLength(0);
+  });
+});
+
 describe('AuthProviderLoader load failure', () => {
   afterEach(() => {
     jest.resetModules();

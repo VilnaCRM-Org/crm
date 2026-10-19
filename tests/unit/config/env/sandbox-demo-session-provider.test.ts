@@ -8,6 +8,7 @@ const DEMO_EMAIL = 'demo@vilnacrm.com';
 const DEMO_PASSWORD = 'Demo1234';
 const DEMO_SESSION = { email: DEMO_EMAIL, token: 'sandbox-demo-session-token' };
 const STORAGE_KEY = 'vilnacrm.sandbox-demo-session';
+const DEMO_RESET_TOKEN = 'sandbox-demo-reset-token';
 const SANDBOX_HOST =
   'sandbox-crm-prod-feat-309-error-pages-f5c76b8f.s3-website.eu-central-1.amazonaws.com';
 const demoCredentials = { email: DEMO_EMAIL, password: DEMO_PASSWORD };
@@ -107,6 +108,22 @@ describe('SandboxDemoSessionProvider', () => {
       expect(providerOn('localhost', throwingStorage()).signOut()).toBe(false);
     });
 
+    it('issues the demo reset token for the demo e-mail only', () => {
+      const provider = providerOn('localhost');
+
+      expect(provider.resetTokenFor(DEMO_EMAIL)).toBe(DEMO_RESET_TOKEN);
+      expect(provider.resetTokenFor(buildEmail())).toBeNull();
+      expect(provider.resetTokenFor(DEMO_EMAIL.toUpperCase())).toBeNull();
+    });
+
+    it('accepts only the demo reset token', () => {
+      const provider = providerOn('localhost');
+
+      expect(provider.acceptsResetToken(DEMO_RESET_TOKEN)).toBe(true);
+      expect(provider.acceptsResetToken(DEMO_SESSION.token)).toBe(false);
+      expect(provider.acceptsResetToken(`${DEMO_RESET_TOKEN} `)).toBe(false);
+    });
+
     it('reads the browser location and storage by default', () => {
       expect(sandboxDemoSessionProvider.signIn(demoCredentials)).toEqual(DEMO_SESSION);
       expect(localStorage.getItem(STORAGE_KEY)).toBe(DEMO_EMAIL);
@@ -135,6 +152,8 @@ describe('SandboxDemoSessionProvider', () => {
 
       expect(provider.signIn(demoCredentials)).toEqual(DEMO_SESSION);
       expect(provider.restore()).toEqual(DEMO_SESSION);
+      expect(provider.resetTokenFor(DEMO_EMAIL)).toBe(DEMO_RESET_TOKEN);
+      expect(provider.acceptsResetToken(DEMO_RESET_TOKEN)).toBe(true);
     });
 
     it.each([
@@ -154,6 +173,8 @@ describe('SandboxDemoSessionProvider', () => {
 
       expect(provider.signIn(demoCredentials)).toBeNull();
       expect(provider.restore()).toBeNull();
+      expect(provider.resetTokenFor(DEMO_EMAIL)).toBeNull();
+      expect(provider.acceptsResetToken(DEMO_RESET_TOKEN)).toBe(false);
     });
 
     it('is inert where there is no location at all', () => {
@@ -161,6 +182,8 @@ describe('SandboxDemoSessionProvider', () => {
 
       expect(provider.signIn(demoCredentials)).toBeNull();
       expect(provider.restore()).toBeNull();
+      expect(provider.resetTokenFor(DEMO_EMAIL)).toBeNull();
+      expect(provider.acceptsResetToken(DEMO_RESET_TOKEN)).toBe(false);
     });
 
     it('remembers nothing for a refused sign-in', () => {

@@ -45,6 +45,31 @@ describe('GraphQLPasswordRecoveryRepository integration', () => {
     });
   });
 
+  it('answers the sandbox demo e-mail and reset token without a request', async () => {
+    const requested = answerRecoveryOperation(
+      'request',
+      () => new HttpResponse(null, { status: 503 })
+    );
+    const confirmed = answerRecoveryOperation(
+      'confirm',
+      () => new HttpResponse(null, { status: 503 })
+    );
+    const { signal } = new AbortController();
+
+    await expect(
+      resolveRepository().requestReset({ email: 'demo@vilnacrm.com' }, signal)
+    ).resolves.toBeUndefined();
+    await expect(
+      resolveRepository().confirmReset(
+        { token: 'sandbox-demo-reset-token', newPassword: buildPassword() },
+        signal
+      )
+    ).resolves.toBeUndefined();
+
+    expect(requested).toHaveLength(0);
+    expect(confirmed).toHaveLength(0);
+  });
+
   it('sends a 503 request exactly once', async () => {
     const captured = answerRecoveryOperation(
       'request',

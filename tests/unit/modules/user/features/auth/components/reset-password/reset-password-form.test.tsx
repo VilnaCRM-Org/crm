@@ -115,6 +115,30 @@ describe('ResetPasswordForm', () => {
     expect(jest.mocked(onSubmit).mock.calls[0]?.[0]).toEqual({ email });
   });
 
+  it.each([
+    ['a network failure', { reason: 'network', retryable: true }, 'Спробувати ще раз'],
+    ['a server failure', { reason: 'server', retryable: true }, 'Спробувати ще раз'],
+    ['the rate limit', { reason: 'rate_limited', retryable: false }, 'Підтвердити'],
+  ] as const)('names the only button for %s', (_name, failure, name) => {
+    mountForm({ failure });
+
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('button', { name })).toHaveAttribute('type', 'submit');
+  });
+
+  it('resubmits the current values from the Retry button', async () => {
+    const email = buildEmail();
+    const { onSubmit } = mountForm({
+      defaultValues: { email },
+      failure: { reason: 'network', retryable: true },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(jest.mocked(onSubmit).mock.calls[0]?.[0]).toEqual({ email });
+  });
+
   it('shows the busy state while submitting', () => {
     mountForm({ isSubmitting: true });
 

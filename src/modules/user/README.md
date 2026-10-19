@@ -225,14 +225,14 @@ equal `vX.Y.Z` tags); a self-expiring checker (a manual follow-up deletion is si
 
 **Decision.** `useResetToken` reads the `token` parameter once, keeps it only in memory, and
 strips it from the URL with a `replace` navigation in a layout effect before the form paints. No
-input renders it, and it never reaches the cache, the history or telemetry. The hook returns a
-`ResetTokenHandle` (`{ token, discard() }`), not the bare string: `useCreateNewPassword` takes
-the handle and, when the API reports the link as invalid, calls `discard()`, so the token leaves
-memory and the page switches to the invalid-link state instead of offering a retry with it.
+input renders it, and it never reaches the cache, the history or telemetry. The hook returns
+the usable token as a plain `string | null` (issue #315's layer stack), which the form section
+hands to the confirm form as its `token` default. `useCreateNewPassword` never sees the token
+outside the submitted `CreateNewPasswordDto`; when the API reports the link as invalid it
+returns the `invalid` view, so the form and its token unmount and no retry is offered with it.
 
-**Rejected.** Keeping the token in the URL or in storage (history, referrers, logs); returning
-the token as a plain `string | null`, which the flow hook could not clear after an invalid-link
-failure.
+**Rejected.** Keeping the token in the URL or in storage (history, referrers, logs); a token
+handle that the flow hook writes back into, an edge the board does not draw.
 
 ### One shared password policy
 
@@ -243,6 +243,34 @@ must not drift from the validator.
 the live list renders; it is never weaker than the API.
 
 **Rejected.** A second recovery-only policy; a policy copied rule for rule from the API.
+
+### Retry is the form's own submit
+
+**Context.** Issue #315's sequence diagrams show a transient failure as "banner + Retry", and
+both recovery cards end in a single primary button.
+
+**Decision.** While the transient banner shows (`network` or `server`, which are retryable),
+`useRecoveryFailureBanner` reports `retry`, and the form's submit reads
+`auth.error.tryAgain` ("Спробувати ще раз") instead of "Підтвердити". It resubmits the current
+values; the rate-limit banner keeps "Підтвердити". When the banner hides after five seconds the
+label returns to "Підтвердити".
+
+**Rejected.** A second Retry button beside the banner (two primary actions for one request).
+
+### The sandbox demo walks the whole flow
+
+**Context.** A pull-request sandbox is a static site with no backend, and no environment
+delivers the reset e-mail before user-service releases the mutations.
+
+**Decision.** Like the demo login (issue #309), `SandboxDemoSessionProvider` issues a fixed demo
+reset token for exactly `demo@vilnacrm.com` and accepts only that token, and only while the demo
+is active (a non-production build or a sandbox host). `GraphQLPasswordRecoveryRepository`
+resolves both steps for those inputs without calling the API, standing in for it the way the
+pending contract and the local mock do. On the sent step, `SandboxDemoResetLink` replaces the
+e-mail with a link to `/password-reset` carrying the token. Production builds render nothing new.
+
+**Rejected.** Reading the link from mock-server logs (unusable on a sandbox); a demo path for
+every address (it would bypass the browser specs that stub GraphQL).
 
 ### Both routes are public
 

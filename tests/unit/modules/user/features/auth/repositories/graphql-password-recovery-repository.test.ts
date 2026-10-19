@@ -8,6 +8,7 @@ import {
   ConfirmPasswordResetDocument,
   RequestPasswordResetDocument,
 } from '@/api/generated/graphql';
+import { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import { buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 
@@ -27,8 +28,19 @@ const setUp = (): {
 } => {
   const mutate = jest.fn().mockResolvedValue({ data: null });
   const client = { mutate } as unknown as ApolloClient<NormalizedCacheObject>;
-  return { repository: new GraphQLPasswordRecoveryRepository(client), mutate };
+  const sandboxDemo = new SandboxDemoSessionProvider({
+    location: { hostname: 'localhost' },
+    localStorage: {
+      getItem: (): null => null,
+      setItem: (): void => undefined,
+      removeItem: (): void => undefined,
+    },
+  });
+  return { repository: new GraphQLPasswordRecoveryRepository(client, sandboxDemo), mutate };
 };
+
+const DEMO_EMAIL = 'demo@vilnacrm.com';
+const DEMO_RESET_TOKEN = 'sandbox-demo-reset-token';
 
 describe('GraphQLPasswordRecoveryRepository', () => {
   it.each([
@@ -123,6 +135,54 @@ describe('GraphQLPasswordRecoveryRepository', () => {
       expect(mutate).not.toHaveBeenCalled();
     }
   );
+
+  it('answers the sandbox demo e-mail without a request', async () => {
+    const { repository, mutate } = setUp();
+
+    await expect(
+      repository.requestReset({ email: DEMO_EMAIL }, new AbortController().signal)
+    ).resolves.toBeUndefined();
+
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('confirms the sandbox demo reset token without a request', async () => {
+    const { repository, mutate } = setUp();
+
+    await expect(
+      repository.confirmReset(
+        { token: DEMO_RESET_TOKEN, newPassword: buildPassword() },
+        new AbortController().signal
+      )
+    ).resolves.toBeUndefined();
+
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('still rejects an aborted request for the demo e-mail', async () => {
+    const { repository, mutate } = setUp();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      repository.requestReset({ email: DEMO_EMAIL }, controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('still rejects an aborted confirm for the demo reset token', async () => {
+    const { repository, mutate } = setUp();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      repository.confirmReset(
+        { token: DEMO_RESET_TOKEN, newPassword: buildPassword() },
+        controller.signal
+      )
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(mutate).not.toHaveBeenCalled();
+  });
 });
 
 describe('buildResetToken', () => {

@@ -140,7 +140,12 @@ where a sandbox host starts with `sandbox-crm-`, ends with `.amazonaws.com`, and
   under `vilnacrm.sandbox-demo-session`;
 - `restore()` turns that marker back into the demo session, so `useAuthStore` starts signed in
   after a reload or a deep link;
-- `signOut()` removes the marker; the auth composition root's `logout` calls it.
+- `signOut()` removes the marker; the auth composition root's `logout` calls it;
+- `resetTokenFor(email)` returns the fixed demo reset token for exactly `demo@vilnacrm.com`, and
+  `acceptsResetToken(token)` accepts only that token. `GraphQLPasswordRecoveryRepository` asks
+  both before calling the API (unless the signal is already aborted), and the sent step's
+  `SandboxDemoResetLink` uses the token to stand in for the reset e-mail, so a reviewer can walk
+  the whole password-recovery flow on a sandbox with no backend.
 
 Inactive, `signIn` and `restore` return `null` and nothing is written. Every storage call is
 wrapped, so a browser that refuses storage simply gets no persistence. The location and the

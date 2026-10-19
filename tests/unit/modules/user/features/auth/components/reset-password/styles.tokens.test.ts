@@ -50,6 +50,34 @@ describe('reset password styles', () => {
     });
   });
 
+  it('pins every demoResetLink token', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.demoResetLink).toEqual({
+      display: 'flex',
+      alignItems: 'center',
+      width: 'fit-content',
+      minHeight: '2.75rem',
+      marginTop: '1rem',
+      marginInline: 'auto',
+      padding: '0 0.5rem',
+      fontFamily: 'Golos',
+      fontWeight: 500,
+      fontSize: '0.9375rem',
+      lineHeight: '1.125rem',
+      color: TEXT_PRIMARY,
+      textDecoration: 'underline',
+      textTransform: 'none',
+      '&:visited': { color: TEXT_PRIMARY },
+      '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+      '&:focus-visible, &.Mui-focusVisible': {
+        outline: `2px solid ${TEXT_PRIMARY}`,
+        outlineOffset: '2px',
+        borderRadius: '0.25rem',
+      },
+    });
+  });
+
   it('pins every resultTitle token', async () => {
     const styles = await loadStyles();
 
@@ -124,6 +152,7 @@ describe('reset password styles', () => {
 
     expect(Object.keys(styles)).toEqual([
       'backControl',
+      'demoResetLink',
       'resultTitle',
       'resultBody',
       'resultAction',
