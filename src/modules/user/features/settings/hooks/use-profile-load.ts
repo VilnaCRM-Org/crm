@@ -1,4 +1,4 @@
-import { type Dispatch, useCallback, useEffect, useReducer } from 'react';
+import { type Dispatch, useEffect, useReducer } from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
@@ -59,28 +59,15 @@ export default function useProfileLoad(): ProfileLoadState {
     return (): void => controller.abort();
   }, [provider, state.attempt]);
 
-  const retry = useCallback(
-    (): void => dispatch({ type: 'retry' }),
-    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-    []
-  );
-  const adopt = useCallback(
-    (user: UserEntity): void => dispatch({ type: 'adopt', user }),
-    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-    []
-  );
-  const confirm = useCallback(
-    (confirmed: boolean): void => dispatch({ type: 'confirm', confirmed }),
-    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-    []
-  );
-
   return {
     status: state.status,
     user: state.user,
     version: state.version,
     refocus: state.refocus,
-    retry,
-    adoption: { adopt, confirm },
+    retry: (): void => dispatch({ type: 'retry' }),
+    adoption: {
+      adopt: (user: UserEntity): void => dispatch({ type: 'adopt', user }),
+      confirm: (confirmed: boolean): void => dispatch({ type: 'confirm', confirmed }),
+    },
   };
 }

@@ -10,11 +10,8 @@ import styles from './styles';
 const MONOGRAM_LETTERS = 2;
 
 function monogramOf(fullName: string): string {
-  return fullName
-    .split(/\s+/)
-    .filter((word) => word !== '')
+  return Array.from(fullName.matchAll(/(?<!\S)\S/gu), ([initial]) => initial)
     .slice(0, MONOGRAM_LETTERS)
-    .map((word) => Array.from(word)[0] ?? '')
     .join('')
     .toUpperCase();
 }

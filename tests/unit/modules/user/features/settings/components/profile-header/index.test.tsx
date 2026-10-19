@@ -23,6 +23,7 @@ describe('ProfileHeader', () => {
     ['Олена Іванівна Петренко', 'ОІ'],
     ['  олена   петренко  ', 'ОП'],
     ['😀 smile', '😀S'],
+    ['Анна-Марія\tКоваль', 'АК'],
   ])('shows the monogram of "%s" as %s', (name, letters) => {
     render(<ProfileHeader fullName={name} />, { wrapper });
 

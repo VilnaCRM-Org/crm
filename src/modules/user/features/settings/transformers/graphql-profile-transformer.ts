@@ -100,14 +100,14 @@ export default class GraphQLProfileTransformer {
   }
 
   private fieldErrors({ items, complete }: FieldViolationSet): ProfileFieldErrorSet | null {
-    if (!complete) return null;
+    if (!complete || items.length === 0) return null;
     const found: ProfileFieldError[] = [];
     for (const violation of items) {
       const error = this.fieldErrorOf(violation);
       if (error === undefined) return null;
       found.push(error);
     }
-    return found.length === 0 ? null : { items: found };
+    return { items: found };
   }
 
   private fieldErrorOf(violation: FieldViolation): ProfileFieldError | undefined {
