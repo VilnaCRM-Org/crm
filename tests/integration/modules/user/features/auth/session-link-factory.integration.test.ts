@@ -1,19 +1,27 @@
 import { gql, type ApolloClient, type NormalizedCacheObject } from '@apollo/client';
 import { HttpResponse } from 'msw';
+import { createStore } from 'zustand/vanilla';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
-import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import observabilityCore from '@/services/observability/observability-core';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
-import authSessionEndHandler from '@auth/stores/auth-session-end-handler';
-import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
+import { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
+import type { AuthState } from '@auth/types/auth-store';
 import { buildEmail, buildToken } from '@tests/builders';
 
 import server, { userServiceGraphql } from '../../../../mocks/server';
 
-const client = container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);
+const authStore = createStore<AuthState>()(() => ({ ...CLEARED_AUTH_STATE }));
+const observability = { clearUser: jest.fn(), captureError: jest.fn() };
+const sandboxDemoSession = { signOut: jest.fn() };
+const scope = container.createChildContainer();
+scope.register(AUTH_TOKENS.AuthStore, { useValue: authStore });
+scope.register(OBSERVABILITY_TOKENS.ObservabilityService, { useValue: observability });
+scope.register(AUTH_TOKENS.SandboxDemoSessionProvider, { useValue: sandboxDemoSession });
+
+const client = scope.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);
 
 const PROFILE = gql`
   query Profile {
@@ -47,25 +55,13 @@ const sendProfile = (): Promise<unknown> =>
   client.query({ query: PROFILE, fetchPolicy: 'no-cache' }).catch((error: unknown) => error);
 
 describe('SessionLinkFactory over the container Apollo client', () => {
-  const clearUser = jest.spyOn(observabilityCore, 'clearUser');
-  const endSession = jest.spyOn(authSessionEndHandler, 'endSession');
-  const signOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
-  const setState = jest.spyOn(useAuthStore, 'setState');
+  const { clearUser } = observability;
+  const { signOut } = sandboxDemoSession;
+  const setState = jest.spyOn(authStore, 'setState');
 
   beforeEach(() => {
-    useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
-    clearUser.mockClear();
-    endSession.mockClear();
-    signOut.mockClear();
-    setState.mockClear();
-  });
-
-  afterAll(() => {
-    clearUser.mockRestore();
-    endSession.mockRestore();
-    signOut.mockRestore();
-    setState.mockRestore();
-    useAuthStore.setState(CLEARED_AUTH_STATE);
+    authStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
+    jest.clearAllMocks();
   });
 
   it('resolves one singleton factory', () => {
@@ -75,18 +71,14 @@ describe('SessionLinkFactory over the container Apollo client', () => {
     expect(container.resolve(AUTH_TOKENS.SessionLinkFactory)).toBe(factory);
   });
 
-  it('registers the render-path sign-out handler by value', () => {
-    expect(container.resolve(AUTH_TOKENS.AuthSessionEndHandler)).toBe(authSessionEndHandler);
-  });
-
   it('sends the live token as a Bearer header and follows a token change', async () => {
     const first = buildToken();
     const second = buildToken();
     const authorization = answerQuery(ok);
 
-    useAuthStore.setState({ token: first });
+    authStore.setState({ token: first });
     await sendProfile();
-    useAuthStore.setState({ token: second });
+    authStore.setState({ token: second });
     await sendProfile();
 
     expect(authorization).toEqual([`Bearer ${first}`, `Bearer ${second}`]);
@@ -96,7 +88,7 @@ describe('SessionLinkFactory over the container Apollo client', () => {
     const authorization = answerQuery(ok);
 
     await sendProfile();
-    useAuthStore.setState({ token: null });
+    authStore.setState({ token: null });
     await sendProfile();
 
     expect(authorization[1]).toBeNull();
@@ -133,32 +125,33 @@ describe('SessionLinkFactory over the container Apollo client', () => {
         return problem(401);
       })
     );
-    useAuthStore.setState({ token });
+    authStore.setState({ token });
 
     await client.mutate({ mutation: mutationOf(name) }).catch((error: unknown) => error);
 
     expect(authorization).toEqual([null]);
-    expect(useAuthStore.getState().token).toBe(token);
+    expect(authStore.getState().token).toBe(token);
     expect(clearUser).not.toHaveBeenCalled();
   });
 
   it('ends the session on a transport 401 and still rejects the caller', async () => {
     answerQuery(() => problem(401));
-    useAuthStore.setState({ email: buildEmail() });
+    authStore.setState({ email: buildEmail() });
+    setState.mockClear();
 
     const error = await sendProfile();
 
     expect(error).toBeInstanceOf(Error);
-    expect(endSession).toHaveBeenCalledTimes(1);
     expect(clearUser).toHaveBeenCalledTimes(1);
     expect(signOut).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledTimes(1);
     expect(setState).toHaveBeenLastCalledWith(CLEARED_AUTH_STATE);
-    expect(useAuthStore.getState()).toEqual(CLEARED_AUTH_STATE);
+    expect(authStore.getState()).toEqual(CLEARED_AUTH_STATE);
     expect(clearUser.mock.invocationCallOrder[0]).toBeLessThan(
       signOut.mock.invocationCallOrder[0] as number
     );
     expect(signOut.mock.invocationCallOrder[0]).toBeLessThan(
-      setState.mock.invocationCallOrder.at(-1) as number
+      setState.mock.invocationCallOrder[0] as number
     );
   });
 
@@ -170,23 +163,23 @@ describe('SessionLinkFactory over the container Apollo client', () => {
       { message: 'Access Denied.', extensions: { status: 403, code: 'FORBIDDEN' } },
     ],
   ])('keeps the token on %s', async (_name, graphQLError) => {
-    const token = useAuthStore.getState().token;
+    const token = authStore.getState().token;
     answerQuery(() => HttpResponse.json({ data: null, errors: [graphQLError] }));
 
     await sendProfile();
 
-    expect(useAuthStore.getState().token).toBe(token);
+    expect(authStore.getState().token).toBe(token);
     expect(clearUser).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
   });
 
   it.each([429, 503])('keeps the token on a transport %i', async (status) => {
-    const token = useAuthStore.getState().token;
+    const token = authStore.getState().token;
     answerQuery(() => problem(status));
 
     await sendProfile();
 
-    expect(useAuthStore.getState().token).toBe(token);
+    expect(authStore.getState().token).toBe(token);
     expect(clearUser).not.toHaveBeenCalled();
   });
 });

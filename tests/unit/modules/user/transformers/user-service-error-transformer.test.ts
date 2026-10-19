@@ -105,6 +105,10 @@ describe('UserServiceErrorTransformer', () => {
     ['HTTP 503', { statusCode: 503 }, 'server', 503],
     ['HTTP 599', { statusCode: 599 }, 'server', 599],
     ['HTTP 400', { statusCode: 400 }, 'unknown', 400],
+    ['a statusCode beside a status', { statusCode: 401, status: 503 }, 'unauthenticated', 401],
+    ['a status-only 503', { status: 503 }, 'server', 503],
+    ['a status beside a non-numeric statusCode', { statusCode: '401', status: 503 }, 'server', 503],
+    ['a non-numeric status', { status: '503' }, 'network', null],
   ])('classifies %s as %s with the status kept', (_name, cause, reason, status) => {
     const networkError = Object.assign(new Error('failed'), cause);
 

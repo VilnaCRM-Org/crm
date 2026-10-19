@@ -12,9 +12,10 @@ import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
-import useAuthStore from '@auth/stores/use-auth-store';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
+import type { SessionLinkDeps } from '@auth/types/session-link-deps';
 
 const GRAPHQL_CLIENT_TOKENS = [AUTH_TOKENS.GraphQLUrl, AUTH_TOKENS.ApolloClient];
 const ERROR_FACTORY_TOKENS = [AUTH_TOKENS.ApiStatusErrorFactory, AUTH_TOKENS.ApiErrorFactory];
@@ -41,6 +42,7 @@ const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
   AUTH_TOKENS.SandboxDemoSessionProvider,
   AUTH_TOKENS.AuthStoreActionsDeps,
+  AUTH_TOKENS.SessionLinkDeps,
 ];
 const EVERY_TOKEN = [
   ...GRAPHQL_CLIENT_TOKENS,
@@ -153,6 +155,20 @@ describe('user module composition root', () => {
     expect(
       child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps).sandboxDemoSession
     ).toBe(sandboxDemoSessionProvider);
+  });
+
+  it('hands the session link the logout() collaborators and the cleared auth state', () => {
+    const child = registeredContainer();
+    const observability = { clearUser: jest.fn() };
+    child.register(OBSERVABILITY_TOKENS.ObservabilityService, { useValue: observability });
+
+    const deps = child.resolve<SessionLinkDeps>(AUTH_TOKENS.SessionLinkDeps);
+
+    expect(deps.authStore).toBe(useAuthStore);
+    expect(deps.signedOut).toBe(CLEARED_AUTH_STATE);
+    expect(deps.sandboxDemoSession).toBe(sandboxDemoSessionProvider);
+    expect(deps.observability).toBe(observability);
+    expect(deps.errors).toBe(child.resolve(AUTH_TOKENS.UserServiceErrorTransformer));
   });
 
   it('registers the mappers as singletons rather than per-resolve instances', () => {

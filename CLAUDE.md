@@ -2408,8 +2408,6 @@ Three different things are outside the gate, and the distinction matters when yo
   class to register it), token modules, and index barrels.
 - **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
   **container-free render-path singletons** — `auth-store-selectors`,
-  `auth-session-end-handler` (the one sign-out sequence, which `DeferredAuthActions.logout()`
-  calls and `SessionLinkFactory` injects through `AUTH_TOKENS.AuthSessionEndHandler`),
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error

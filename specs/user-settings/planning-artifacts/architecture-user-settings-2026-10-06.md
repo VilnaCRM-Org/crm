@@ -1064,15 +1064,20 @@ HTTP 200 (research §4.5).
 infrastructure drawn inside the board's Repository → API edge (contract §2), not a layer:
 
 - File `src/modules/user/features/auth/repositories/session-link-factory.ts`, token
-  `AUTH_TOKENS.SessionLinkFactory`, collaborators `AUTH_TOKENS.AuthStore` (the `useAuthStore`
-  store, registered by value as `StoreApi<AuthState>`), `AUTH_TOKENS.SandboxDemoSessionProvider`
-  and `OBSERVABILITY_TOKENS.ObservabilityService`; one public method `build(): ApolloLink`.
-- Registration and composition inside the existing `registerGraphqlClient` step of
-  `UserModuleRegistrar`: `registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory)`,
-  and in its `instanceCachingFactory` closure
-  `link: from([sessionLinkFactory.build(), apolloLinkFactory.build(uri)])`. No new function or
-  closure in `di.ts`; the correlation link keeps the header because it spreads the previous
-  context's headers.
+  `AUTH_TOKENS.SessionLinkFactory`, one injected `SessionLinkDeps`
+  (`@auth/types/session-link-deps`, `AUTH_TOKENS.SessionLinkDeps`, built by a `useFactory` in
+  `registerSessionLink`) carrying `authStore` (the `useAuthStore` store, registered by value as
+  `StoreApi<AuthState>`), `signedOut` (`CLEARED_AUTH_STATE` itself), `sandboxDemoSession`,
+  `observability` (`OBSERVABILITY_TOKENS.ObservabilityService`) and `errors` (#315's
+  `UserServiceErrorTransformer`); one public method `build(): ApolloLink`. Five collaborators
+  exceed the three-argument `nargs_function_max` cap, so they arrive as one bundle, the
+  `AuthStoreActionsDeps` precedent (amendment 2026-10-19).
+- Registration in a `registerSessionLink` step of `UserModuleRegistrar` (the deps bundle and
+  `registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory)`), composition in the
+  existing `registerGraphqlClient` step's `instanceCachingFactory` closure
+  `link: from([sessionLinkFactory.build(), apolloLinkFactory.build(uri)])`. The one new closure
+  in `di.ts` is the `SessionLinkDeps` factory in `registerSessionLink`; the correlation link keeps
+  the header because it spreads the previous context's headers.
 - A `setContext` half adds `Authorization: Bearer <token>`, read from
   `authStore.getState().token` at request time, for every operation whose `operationName` is
   not anonymous. The anonymous names are a module-private constant this feature owns:
@@ -1080,13 +1085,18 @@ infrastructure drawn inside the board's Repository → API edge (contract §2), 
   and `ConfirmPasswordReset`, so a signed-in user following a reset link never sends a token there
   and never loses the session to its answer; #331 appends nothing to it. Without a token it adds
   nothing.
-- An `onError` half has one rule: a non-anonymous operation answered by a transport 401
-  (`networkError.statusCode` 401) ends the session exactly as `logout()` does,
-  `observability.clearUser()`, `sandboxDemoSession.signOut()`, then
-  `authStore.setState(SIGNED_OUT)`, and lets the error pass through. `SIGNED_OUT` is a
-  module-private `AuthState` equal to `CLEARED_AUTH_STATE`, which a unit test pins: the
-  DI-collaborator gate (issue #130) forbids a logic class in a repositories folder to value-import
-  the hook file `use-auth-store.ts`. No GraphQL error and no other status ends a session.
+- An `onError` half has one rule: a non-anonymous operation whose network error
+  `UserServiceErrorTransformer.normalize({ networkError })` classifies as `unauthenticated` (a
+  transport 401, read as `statusCode`, else `status`, through Apollo's `NetworkError` narrowed
+  with `in`) ends the session exactly as `logout()` does, `observability.clearUser()`,
+  `sandboxDemoSession.signOut()`, then `authStore.setState(signedOut)`, and lets the error pass
+  through. The link and the settings hooks therefore share one definition of a dead session, and
+  the cleared state is the container-handed `CLEARED_AUTH_STATE`, not a copy: the DI-collaborator
+  gate (issue #130) forbids a logic class in a repositories folder to value-import the hook file
+  `use-auth-store.ts`, while `di.ts` may. No GraphQL error and no other status ends a session. A
+  sign-out class shared with `logout()` is not built (a new `*Handler` module singleton), and the
+  render-path `authActions` cannot be injected: the container would import the auth composition
+  root that lazily imports the container, a `no-circular` cycle (amendment 2026-10-19).
 - **Adapter policy entry** (R17): the file value-imports `ApolloLink`, `from`, `setContext` and
   `onError` inside a DI-gated folder, which the third-party allowlist rejects
   (`config/di-collaborator-policy.js`, `ALLOWED_LIBRARIES`). `RESTRICTED_LIBRARY_ADAPTERS` gains a
@@ -1096,8 +1106,8 @@ infrastructure drawn inside the board's Repository → API edge (contract §2), 
   "still exists" case of `tests/unit/tooling/di-collaborator-gate.test.ts` covers it.
 
 > Assumption (reconciliation 2026-10-16): signing the sandbox demo session out on a 401 matches
-> `logout()` and keeps a rejected demo token from being restored on the next reload. It costs the
-> third constructor collaborator, the `nargs_function_max` cap.
+> `logout()` and keeps a rejected demo token from being restored on the next reload. It is one of
+> the five `SessionLinkDeps` members.
 
 **The page's part** (R14, R16, R17). `GraphQLProfileTransformer` maps `unauthenticated` and
 `access_denied` to `session_ended`, and the hooks do nothing on it: no toast, no field error, no
@@ -1744,14 +1754,11 @@ export default class ProfileChangeDetector {
   public emailChanged(user: UserEntity, email: string): boolean;
 }
 
-// Built here, imported by #331 (contract §3.4); §5.5.
+// Built here, imported by #331 (contract §3.4); §5.5. SessionLinkDeps: authStore (useAuthStore,
+// by value), signedOut (CLEARED_AUTH_STATE), sandboxDemoSession, observability, errors.
 @injectable()
 export default class SessionLinkFactory {
-  constructor(
-    @inject(AUTH_TOKENS.AuthStore) authStore: StoreApi<AuthState>, // useAuthStore, by value
-    @inject(AUTH_TOKENS.SandboxDemoSessionProvider) sandboxDemoSession: SandboxDemoSessionProvider,
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService) observability: ObservabilityService
-  );
+  constructor(@inject(AUTH_TOKENS.SessionLinkDeps) deps: SessionLinkDeps);
   public build(): ApolloLink;
 }
 
@@ -1783,13 +1790,15 @@ export default class UserServiceErrorTransformer {
   type reaches its public signature, even as a type argument (TB-1 exception (i)). `unknown`
   appears only as the parameter of `UserServiceErrorTransformer.normalize`.
 - **Tokens:** `AUTH_TOKENS` (`user/config/tokens.ts`) gains `ProfileProvider`,
-  `GraphQLProfileRepository`, `GraphQLProfileTransformer` and `SessionLinkFactory`;
-  `UserServiceErrorTransformer`, `AuthStore` and `SandboxDemoSessionProvider` are existing tokens.
-- **Registrations** fold into existing `UserModuleRegistrar` steps (`di.ts`): the
-  Repository and the Provider (`registerSingleton`) in `registerRepository`, the Transformer in
-  `registerResponseMappers`, the link in `registerGraphqlClient`. Every DI value is a class
-  under its own token: settings registers no anonymous object, bare array or function value
-  (TB-1 position 4).
+  `GraphQLProfileRepository`, `GraphQLProfileTransformer`, `SessionLinkFactory` and
+  `SessionLinkDeps`; `UserServiceErrorTransformer`, `AuthStore` and `SandboxDemoSessionProvider`
+  are existing tokens.
+- **Registrations** fold into `UserModuleRegistrar` steps (`di.ts`): the Repository and the
+  Provider (`registerSingleton`) in `registerRepository`, the Transformer in
+  `registerResponseMappers`, the link and its named `SessionLinkDeps` bundle in a
+  `registerSessionLink` step, composed in `registerGraphqlClient`. Settings registers no
+  anonymous object, bare array or function value (TB-1 position 4); the one object value is the
+  named `SessionLinkDeps`.
 - **Changed classes:** `RouteComposer` (gate route, not-found lookup), `RouteMapper` (`handle`),
   `PiiScrubber` (one fragment), `UserModuleRegistrar` (registrations), the moved validators
   (paths only), and #315's `UserServiceErrorTransformer` (a status row, input properties, the
@@ -2754,12 +2763,15 @@ half field errors and half toast.
 
 ### One rule ends a session, in the link
 Decision: SessionLinkFactory adds the Bearer token to every non-anonymous operation and, on a
-transport 401, ends the session exactly as logout() does (observability, the sandbox demo
-session, the cleared store); ProtectedRoute, which now remembers that it saw a token, then shows
-the session_ended notice on /sign-in in a neutral info tone. #315's recovery operations are
-anonymous, so a reset link opened while signed in never ends the session.
+transport 401 (asked of UserServiceErrorTransformer, so the link and the hooks read the status
+in one place), ends the session exactly as logout() does (observability, the sandbox demo
+session, the cleared store), its five collaborators arriving as one SessionLinkDeps;
+ProtectedRoute, which now remembers that it saw a token, then shows the session_ended notice on
+/sign-in in a neutral info tone. #315's recovery operations are anonymous, so a reset link
+opened while signed in never ends the session.
 Rejected: ending a session on a GraphQL error or another status; a per-feature 401 rule; the
-green success check for the notice.
+green success check for the notice; a shared sign-out class (a new *Handler singleton); injecting
+the render-path authActions (a no-circular cycle through the container).
 
 ### Two-factor authentication has its own page
 Context: Figma 72:4846 draws the 2FA code entry as a standalone page (the user, 2026-10-16).
