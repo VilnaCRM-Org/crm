@@ -8,7 +8,7 @@ import { MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router';
 import Home from '@/features/home';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { styleRuleFor, styleRulesFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
@@ -103,14 +103,24 @@ describe('Home settings link', () => {
     expect(screen.queryByText(/settings page/)).not.toBeInTheDocument();
   });
 
-  it('shows the repository focus ring on keyboard focus', () => {
+  it('shows the link-coloured focus ring on keyboard focus, like the settings resend link', () => {
     flag(true);
     renderHome();
 
     const ring = styleRuleFor(screen.getByRole('link', { name: 'Налаштування' }), ':focus-visible');
 
-    expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
+    expect(ring?.getPropertyValue('outline')).toBe('2px solid #0074B5');
     expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
+  });
+
+  it('darkens and underlines the link on hover', () => {
+    flag(true);
+    renderHome();
+
+    const hover = styleRulesFor(screen.getByRole('link', { name: 'Налаштування' }), ':hover');
+
+    expect(hover.map((rule) => rule.getPropertyValue('color'))).toContain('#00588A');
+    expect(hover.map((rule) => rule.getPropertyValue('text-decoration'))).toContain('underline');
   });
 
   it('draws the link text in the 5.04:1 link colour, not the MUI default blue', () => {

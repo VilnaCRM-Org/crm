@@ -50,6 +50,10 @@ const mediaRulesMatching = (mediaFragment: string): CSSRule[] =>
 export const styleRuleFor = (element: Element, suffix = ''): CSSStyleDeclaration | undefined =>
   declarationIn(topLevelRules(), element, suffix);
 
+/** Every emotion declaration block generated for `element` with the given selector suffix. */
+export const styleRulesFor = (element: Element, suffix = ''): CSSStyleDeclaration[] =>
+  declarationsIn(topLevelRules(), element, suffix);
+
 /**
  * The emotion declaration block generated for `element` inside the media block whose
  * condition contains `mediaFragment` (whitespace-insensitive, e.g. `'min-width:768px'`).
@@ -70,3 +74,10 @@ export const winningMediaValueFor = (
     .map((style) => style.getPropertyValue(property))
     .filter((value) => value !== '')
     .at(-1);
+
+/**
+ * The selector suffix that repeats the element's own emotion class, for rules written under
+ * `'&&'` (e.g. `doubledClass(button, ':focus-visible')` reads `.css-x.css-x:focus-visible`).
+ */
+export const doubledClass = (element: Element, suffix = ''): string =>
+  `${selectorsFor(element, '')[0] ?? ''}${suffix}`;

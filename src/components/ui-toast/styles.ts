@@ -1,7 +1,11 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const fromSm = `@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`;
+const { sm, lg } = breakpointsTheme.breakpoints.values;
+
+const fromSm = `@media (min-width:${sm}px)`;
+
+const fromDesktop = `@media (min-width:${lg + 1}px)`;
 
 const focusRing = {
   outline: `2px solid ${customColors.text.dark}`,
@@ -32,11 +36,14 @@ export default {
     flexDirection: 'column',
     gap: '0.5rem',
     [fromSm]: { left: 'auto', right: '1.5rem', bottom: '1.5rem', width: '24.8125rem' },
+    [fromDesktop]: { right: '0.75rem' },
   },
   toast: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.375rem',
+    display: 'grid',
+    gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+    alignItems: 'start',
+    columnGap: '0.375rem',
+    rowGap: '0.25rem',
     padding: '1rem',
     borderRadius: '0.75rem',
     fontFamily: 'Golos',
@@ -44,7 +51,11 @@ export default {
     fontSize: '0.875rem',
     lineHeight: 'normal',
     color: customColors.text.dark,
-    [fromSm]: { gap: '0.5rem', padding: '1.1875rem 1.125rem 1.1875rem 1.25rem', fontSize: '1rem' },
+    [fromSm]: {
+      columnGap: '0.5rem',
+      padding: '1.1875rem 1.125rem 1.1875rem 1.25rem',
+      fontSize: '1rem',
+    },
     '@media (forced-colors: active)': { border: '1px solid CanvasText' },
   },
   tones: {
@@ -52,7 +63,8 @@ export default {
     error: { backgroundColor: paletteColors.error.surface },
   },
   icon: {
-    flexShrink: 0,
+    gridColumn: 1,
+    gridRow: 1,
     display: 'inline-flex',
     fontSize: '1.25rem',
     [fromSm]: { fontSize: '1.5rem' },
@@ -61,7 +73,14 @@ export default {
     success: { color: paletteColors.success.text },
     error: { color: paletteColors.error.main },
   },
-  message: { flex: 1, minWidth: 0, overflowWrap: 'anywhere' },
+  message: {
+    gridColumn: 2,
+    gridRow: 1,
+    minWidth: 0,
+    lineHeight: '1.25rem',
+    overflowWrap: 'anywhere',
+    [fromSm]: { lineHeight: '1.5rem' },
+  },
   action: {
     ...control,
     margin: '-0.75rem 0',
@@ -71,11 +90,15 @@ export default {
     cursor: 'pointer',
     font: 'inherit',
     textDecoration: 'underline',
+    gridColumn: 2,
+    gridRow: 2,
+    justifySelf: 'start',
     [fromSm]: { margin: 0, minHeight: '1.5rem' },
   },
   close: {
     ...control,
-    flexShrink: 0,
+    gridColumn: 3,
+    gridRow: 1,
     fontSize: '1.25rem',
     [fromSm]: { ...controlFromSm, fontSize: '1.5rem' },
   },
