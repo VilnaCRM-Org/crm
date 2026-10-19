@@ -22,6 +22,7 @@ export default function ProfileLoadError({ onRetry, focus }: ProfileLoadErrorPro
       </Box>
       <UIButton
         ref={focus ? focusOnMount : undefined}
+        variant="outlined"
         aria-describedby={MESSAGE_ID}
         sx={styles.retryButton}
         onClick={onRetry}

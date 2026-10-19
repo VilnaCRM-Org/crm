@@ -133,6 +133,7 @@ function ProfileFormFields({
       <PersonalDetails rules={rules} refocus={refocus} emailRow={emailRow} />
       <ChangePassword key={`password-${state.cleared}`} rules={rules} evaluate={rules.evaluate} />
       <ServerFieldErrors key={`errors-${state.attempts}`} errors={state.fieldErrors} />
+      <Box aria-hidden="true" sx={styles.actionsDivider} />
       <Box component="p" role="status" sx={styles.status}>
         {state.noChanges
           ? `${t('settings.profile.no_changes')}${state.noChangesMarked ? ALTERNATING_MARK : ''}`

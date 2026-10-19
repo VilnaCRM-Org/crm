@@ -7,7 +7,7 @@ import { I18nextProvider } from 'react-i18next';
 import ProfileForm from '@/modules/user/features/settings/components/profile-form';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { doubledClass, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 const mockUpdate = jest.fn();
 const mockProvider = { update: mockUpdate, resend: jest.fn() };
@@ -452,9 +452,9 @@ describe('ProfileForm', () => {
       render(form(), { wrapper });
       const clear = screen.getByRole('button', { name: 'Очистити' });
 
-      const ring = styleRuleFor(clear, ':focus-visible');
-      const busy = styleRuleFor(clear, '[aria-disabled="true"]');
-      const busyHover = styleRuleFor(clear, '[aria-disabled="true"]:hover');
+      const ring = styleRuleFor(clear, doubledClass(clear, ':focus-visible'));
+      const busy = styleRuleFor(clear, doubledClass(clear, '[aria-disabled="true"]'));
+      const busyHover = styleRuleFor(clear, doubledClass(clear, '[aria-disabled="true"]:hover'));
 
       expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
       expect(ring?.getPropertyValue('outline-offset')).toBe('2px');

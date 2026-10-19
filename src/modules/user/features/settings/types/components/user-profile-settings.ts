@@ -17,3 +17,9 @@ export interface ProfileLoadErrorProps {
 export interface ProfileLoadAnnouncementsProps {
   readonly status: ProfileLoadStatus;
 }
+
+export type ProfileSkeletonSectionId = 'personal' | 'password';
+
+export interface ProfileSkeletonSectionProps {
+  readonly section: ProfileSkeletonSectionId;
+}

@@ -8,7 +8,7 @@ import { I18nextProvider } from 'react-i18next';
 import UserProfileSettings from '@/modules/user/features/settings/components/user-profile-settings';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { doubledClass, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 jest.mock('@/providers/di', () => ({
   __esModule: true,
@@ -57,6 +57,14 @@ const card = (overrides: Partial<Props> = {}): JSX.Element => {
   );
 };
 
+const skeletonRoot = (): HTMLElement => {
+  const root = screen
+    .getAllByRole('generic', { hidden: true })
+    .find((node) => node.getAttribute('aria-hidden') === 'true' && node.id === '');
+  if (root === undefined) throw new Error('skeleton root not found');
+  return root;
+};
+
 const LOADING = 'Завантаження профілю…';
 const FAILED = 'Не вдалося завантажити профіль';
 const RETRY = 'Спробувати ще раз';
@@ -76,6 +84,23 @@ describe('UserProfileSettings', () => {
     expect(screen.queryByText('Вітаємо!')).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['the skeleton', 'loading', (): HTMLElement => skeletonRoot()],
+    ['the failure', 'failed', (): HTMLElement => screen.getByText(FAILED, { selector: 'p' })],
+  ] as const)('frames %s in the profile card so the card does not jump', (_, status, inner) => {
+    render(card({ status }), { wrapper });
+
+    const frames = screen
+      .getAllByRole('generic', { hidden: true })
+      .filter((node) => styleRuleFor(node)?.getPropertyValue('border') === '1px solid #E1E7EA');
+
+    expect(frames).toHaveLength(1);
+    expect(frames[0]).toContainElement(inner());
+    expect(styleRuleFor(frames[0] as HTMLElement)?.getPropertyValue('border-radius')).toBe(
+      '0.75rem'
+    );
+  });
+
   it('hides every skeleton block from the accessibility tree', () => {
     render(card(), { wrapper });
     const isBlock = (node: HTMLElement): boolean => node.id.startsWith('profile-skeleton-');
@@ -85,7 +110,7 @@ describe('UserProfileSettings', () => {
       (node) => node.getAttribute('aria-hidden') === 'true' && !isBlock(node)
     );
 
-    expect(blocks).toHaveLength(12);
+    expect(blocks).toHaveLength(16);
     blocks.forEach((block) => expect(root).toContainElement(block));
     expect(screen.queryAllByRole('generic').filter(isBlock)).toHaveLength(0);
     expect(within(screen.getByRole('main')).queryByRole('img')).not.toBeInTheDocument();
@@ -136,7 +161,8 @@ describe('UserProfileSettings', () => {
   it('draws the repository focus ring on the retry button', () => {
     render(card({ status: 'failed' }), { wrapper });
 
-    const ring = styleRuleFor(screen.getByRole('button', { name: RETRY }), ':focus-visible');
+    const retry = screen.getByRole('button', { name: RETRY });
+    const ring = styleRuleFor(retry, doubledClass(retry, ':focus-visible'));
 
     expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
     expect(ring?.getPropertyValue('outline-offset')).toBe('2px');

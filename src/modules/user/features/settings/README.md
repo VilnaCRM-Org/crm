@@ -110,3 +110,48 @@ Repository → State edge on the board.
 
 Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `password_wrong`,
 `password_not_accepted` and `new_password_rejected`; the hooks turn each into an i18n key.
+
+## Figma parity
+
+Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:10242`), 1024
+(`313:10480`) and 375 px (`313:10606`).
+
+| Layout  | Viewport          | Card                    | Field row                        |
+| ------- | ----------------- | ----------------------- | -------------------------------- |
+| Phone   | below 768 px      | 8 px from the edges     | label over a 48 px input         |
+| Tablet  | 768 px to 1024 px | one 749 px column       | 173 px label column, 70 px input |
+| Desktop | above 1024 px     | 675 px, 2FA slot beside | 152 px label column, 64 px input |
+
+- **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
+  2FA slot is an implicit grid column: with one section there is no empty column.
+- **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
+  insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
+  titles and the divider above Save and "Очистити" bleed through them to the card edges.
+- **Every override is scoped to the settings styles.** The shared auth field, label, input and
+  submit styles are untouched, so `/sign-in`, `/sign-up` and the recovery pages do not move.
+- **Rhythm.** Phone: 16 px around every divider and between fields. Tablet: 24 px above and
+  below a divider, 13 px from a title to its first field and between fields, 16 px from the last
+  divider to the pills. Desktop: 24 px around a divider, 16 px from a title to its first field,
+  12 px between fields, 24 px from the last divider to the pills. The unconfirmed row sits 8 /
+  10 / 9 px under the input and 15 / 17 / 24 px above the next divider, as each frame draws it.
+
+Where the frames contradict each other or the copy, the page follows one reading:
+
+- **Header to first divider.** Figma puts the name input there; the page puts it under
+  "Особисті дані", so the gap is Figma's header-to-content gap: 20 px on a phone, 24 px above.
+- **Card top (F-02).** Desktop follows `313:10242`: 12 px between the subtitle and the card.
+- **Tablet pills.** The frame draws 339 + 8 + 339 px in a 685 px content box; the pills are
+  339 and 338 px so both edges sit on whole pixels.
+- **Labels.** The Ukrainian labels can wrap in the label column, so a label is as tall as its
+  input and centres its text on it, also when a field error grows the row.
+- **Toasts (T13, T15).** One layout from the desktop and phone frames, bottom-right 12 px from
+  the edge on desktop. An action sits on its own row under the message.
+- **Phone values (M-20).** Field values are `#1A1C1E` as on desktop and tablet, not the
+  placeholder grey the phone frame draws.
+
+States Figma does not draw follow the card: the skeleton and the load failure render inside the
+card, the skeleton reserves the loaded card's height at each layout, and "Спробувати ще раз" is
+the outlined "Очистити" pill. Buttons and the `h1` share the 2 px `#1A1C1E` ring; text links (the
+resend control and the home "Налаштування" link) use a 2 px `#0074B5` ring and darken to
+`#00588A` on hover. Deliberate colour deviations (greeting, resend link, field errors, toast
+icon and text) are recorded in the user module README.

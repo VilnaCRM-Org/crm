@@ -47,8 +47,16 @@ export default function UserProfileSettings({
   return (
     <>
       <ProfileLoadAnnouncements status={status} />
-      {status === 'loading' && <ProfileSkeleton />}
-      {status === 'failed' && <ProfileLoadError onRetry={retry} focus={refocus} />}
+      {status === 'loading' && (
+        <Box sx={styles.card}>
+          <ProfileSkeleton />
+        </Box>
+      )}
+      {status === 'failed' && (
+        <Box sx={styles.card}>
+          <ProfileLoadError onRetry={retry} focus={refocus} />
+        </Box>
+      )}
       {status === 'ready' && user && (
         <Box sx={styles.card}>
           <ProfileHeader fullName={user.fullName} />

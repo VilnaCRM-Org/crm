@@ -5,7 +5,7 @@ import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { doubledClass, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
@@ -66,7 +66,7 @@ describe('ProfileLoadError', () => {
   it('draws the 2 px #1A1C1E focus ring with a 2 px offset', () => {
     render(<ProfileLoadError onRetry={jest.fn()} focus={false} />, { wrapper });
 
-    const ring = styleRuleFor(retryButton(), ':focus-visible');
+    const ring = styleRuleFor(retryButton(), doubledClass(retryButton(), ':focus-visible'));
 
     expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
     expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
