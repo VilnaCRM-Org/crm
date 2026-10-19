@@ -1182,14 +1182,15 @@ always-registered public route that reads no flag (2FA FR-12):
    wraps the root's children, today
    `[...this.protectedBranch(secured), ...this.pages(open, 'main')]`, in one pathless route
    `{ element: <RouteFlagGate notFound={…} />, errorElement, children }`. The `notFound` element
-   is the composer's own `routeMapper.map` of the registered route whose `path` is
-   `ROUTE_PATHS.notFound` (the `app.shell` 404), so the `error-page` chunk renders behind
+   is the element the composer already mapped for the public route whose `path` is
+   `ROUTE_PATHS.notFound` (the `app.shell` 404), reused rather than mapped a second time
+   (amendment 2026-10-19), so the `error-page` chunk renders behind
    `ThemedChunkLoader` and the public `ReloadingChunkLoader` exactly as for an unknown path.
    With no flagged route the composer emits no gate and the tree is PR #340's, which keeps the
    composer's `only-public` and empty-module unit cases as they are. `RouteValidator`
    (`src/routes/route-validator.ts:4-30`), which checks no not-found route today, gains two
-   rejections: a flagged registry with no route at `ROUTE_PATHS.notFound` ("A flagged route
-   needs a registered not-found route"), and a nested `flag`, because flags are top-level only,
+   rejections: a flagged registry with no public route at `ROUTE_PATHS.notFound` ("A flagged
+   route needs a registered public not-found route"), and a nested `flag`, because flags are top-level only,
    like guards. `tests/unit/routes/route-composer.test.tsx` finds the guard by its
    `ProtectedRoute` element rather than as any pathless route with children (`isLayout`,
    `protectedBranchOf`), so the gate level is never taken for it, and its real-registry cases

@@ -61,19 +61,24 @@ class RouteComposer {
     for (const route of routes) {
       (route.guard === 'protected' ? secured : open).push(route);
     }
-    return this.gated(routes, [...this.protectedBranch(secured), ...this.pages(open, 'main')]);
+    const pages = this.pages(open, 'main');
+    return this.gated(routes, pages, [...this.protectedBranch(secured), ...pages]);
   }
 
-  private gated(routes: readonly AppRouteObject[], branches: RouteObject[]): RouteObject[] {
+  private gated(
+    routes: readonly AppRouteObject[],
+    pages: readonly RouteObject[],
+    branches: RouteObject[]
+  ): RouteObject[] {
     const notFound = routes.some((route) => route.flag !== undefined)
-      ? routes.find((route) => route.path === ROUTE_PATHS.notFound)
+      ? pages.find((page) => page.path === ROUTE_PATHS.notFound)
       : undefined;
     if (notFound === undefined) {
       return branches;
     }
     return [
       {
-        element: <RouteFlagGate notFound={routeMapper.map(notFound, 'main').element} />,
+        element: <RouteFlagGate notFound={notFound.element} />,
         errorElement: <RouteError landmark="main" />,
         children: branches,
       },

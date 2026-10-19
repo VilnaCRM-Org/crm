@@ -22,8 +22,11 @@ class RouteValidator {
   private assertNotFoundRegistered(modules: readonly RouteModule[]): void {
     const routes = modules.flatMap((module) => module.routes);
     const flagged = routes.some((route) => route.flag !== undefined);
-    if (flagged && !routes.some((route) => route.path === ROUTE_PATHS.notFound)) {
-      throw new Error('A flagged route needs a registered not-found route');
+    const notFound = routes.some(
+      (route) => route.path === ROUTE_PATHS.notFound && route.guard !== 'protected'
+    );
+    if (flagged && !notFound) {
+      throw new Error('A flagged route needs a registered public not-found route');
     }
   }
 
