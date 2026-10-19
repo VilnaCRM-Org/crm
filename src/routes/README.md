@@ -123,11 +123,14 @@ a matched route renders:
 - `RouteFlagGate` reads `useMatches()` and `featureFlagService.isEnabled` during render. While a
   matched route's flag is off it renders the composer's own not-found element (the `error-page`
   chunk, loaded exactly as for an unknown path), so the flagged page element never renders and its
-  chunk is never requested. Otherwise it renders its `Outlet`.
+  chunk is never requested. Otherwise it renders its `Outlet`. The element is the one the composer
+  already mapped for the public `*` route, not a second mapping, so a flag-off page and a real
+  404 share one loader graph and one lazy component.
 - Because the gate sits above `ProtectedRoute`, a flag-off protected page shows the not-found page
   to a visitor without a token too, with no redirect to `/sign-in`.
-- `RouteValidator` rejects a flagged registry with no route at `ROUTE_PATHS.notFound` ("A flagged
-  route needs a registered not-found route") and a nested route that declares `flag`, like a
+- `RouteValidator` rejects a flagged registry with no public route at `ROUTE_PATHS.notFound`
+  ("A flagged route needs a registered public not-found route") and a nested route that declares
+  `flag`, like a
   nested `guard`: `flag` is top-level only because the `RouteFlagGate` decides once per matched
   route, at render time.
 

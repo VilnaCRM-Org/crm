@@ -305,15 +305,19 @@ describe('route composer flag gate (Story 1.5)', () => {
     expect(isValidElement(notFound)).toBe(true);
   });
 
-  it('maps the not-found page through the composer own mapper with a main landmark', () => {
+  it('maps the not-found page once, with a main landmark, and reuses it for the gate', () => {
     const map = jest.spyOn(routeMapper, 'map');
 
-    composeFlagged();
+    const tree = composeFlagged();
 
-    expect(map).toHaveBeenCalledWith(
-      expect.objectContaining({ path: ROUTE_PATHS.notFound }),
-      'main'
-    );
+    const notFoundCalls = map.mock.calls.filter(([route]) => route.path === ROUTE_PATHS.notFound);
+    expect(notFoundCalls).toEqual([
+      [expect.objectContaining({ path: ROUTE_PATHS.notFound }), 'main'],
+    ]);
+    const gate = rootOf(tree).children?.[0];
+    const page = publicLevelOf(tree).find((route) => route.path === ROUTE_PATHS.notFound);
+    const { notFound } = (gate?.element as ReactElement<{ notFound: unknown }>).props;
+    expect(notFound).toBe(page?.element);
   });
 
   it('emits exactly one gate for the real registry and flags only the settings page', () => {
@@ -363,7 +367,7 @@ describe('route composer flag gate (Story 1.5)', () => {
     ];
 
     expect(() => routeComposer.compose({ items: modules })).toThrow(
-      'A flagged route needs a registered not-found route'
+      'A flagged route needs a registered public not-found route'
     );
     expect(map).not.toHaveBeenCalled();
   });
