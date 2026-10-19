@@ -16,27 +16,6 @@ const loadStyles = (): Promise<PasswordFieldStyles> =>
   loadIsolated(async () => (await import('@/components/ui-password-field/styles')).default);
 
 describe('ui password field styles', () => {
-  it('pins every passwordFieldInput token', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.passwordFieldInput).toEqual({
-      paddingRight: '0.5625rem',
-      '@media (min-width:375px)': {
-        minWidth: '19.6875rem',
-      },
-      '@media (min-width:768px)': {
-        minWidth: '33.75rem',
-        paddingRight: '0.875rem',
-      },
-      '@media (min-width:1024px)': {
-        minWidth: '26.375rem',
-      },
-      '@media (min-width:1440px)': {
-        paddingRight: '0.9375rem',
-      },
-    });
-  });
-
   it('pins the end adornment and password button tokens', async () => {
     const styles = await loadStyles();
 
@@ -59,13 +38,9 @@ describe('ui password field styles', () => {
     });
   });
 
-  it('exposes exactly the three documented style slots', async () => {
+  it('exposes exactly the two documented style slots', async () => {
     const styles = await loadStyles();
 
-    expect(Object.keys(styles).sort()).toEqual([
-      'endAdornment',
-      'passwordButton',
-      'passwordFieldInput',
-    ]);
+    expect(Object.keys(styles).sort()).toEqual(['endAdornment', 'passwordButton']);
   });
 });

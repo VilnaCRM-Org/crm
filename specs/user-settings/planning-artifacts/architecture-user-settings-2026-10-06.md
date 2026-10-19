@@ -1370,9 +1370,10 @@ Story 1.1 (P.1: stacked on PR #340) moves, never copies:
   importer and stay where they are.
 - The styles move with the components that use them, because `src/components` may not import a
   feature (`no-components-import-feature-internals`). `formFieldLabel` and `formFieldInput` move
-  to `ui-form-field/styles.ts`; `passwordFieldInput`, `endAdornment`, `passwordButton`,
-  `StyledEyeIcon` and `StyledEyeIconOff` move to `ui-password-field/styles.ts`, which imports the
-  icons from `src/assets/icons`. The auth file keeps only `formFieldWrapper` with
+  to `ui-form-field/styles.ts`; `endAdornment`, `passwordButton`, `StyledEyeIcon` and
+  `StyledEyeIconOff` move to `ui-password-field/styles.ts`, which imports the icons from
+  `src/assets/icons`. `passwordFieldInput` is deleted, not moved: no component applied it, since
+  the password input is styled by `UIFormField`'s own `formFieldInput`. The auth file keeps only `formFieldWrapper` with
   `fieldGapMargins`, which every auth caller passes through the `sx` of each `UIFormField` and
   `UIPasswordField` it renders. The tests that pin these styles move or split with them
   (`styles.test.tsx`, `styles.tokens.test.ts`, `styles.styled-eye-icons.test.tsx`,
