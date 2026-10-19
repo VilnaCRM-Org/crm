@@ -1769,7 +1769,9 @@ through `usePageTitle` after its module has registered the catalog). The setting
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
 the settings `components/` and `hooks/` folders that page renders, and the settings route contract
 `routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
-`transformers/` load in the container chunk and own no settings key. Adding an owner is a reviewed
+`transformers/` load in the container chunk and own no settings key. The toast catalog
+(`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
+label stays off `/sign-in`. Adding an owner is a reviewed
 policy edit and must name a file only the registering routes import. A policy entry that names no
 discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
 unreadable or malformed policy fails the run before any check.
@@ -2642,14 +2644,19 @@ verified in CI.
   relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file into
   the eager `index.js` every page downloads. Its route chunk imports it instead and registers both
   locales synchronously when the route module evaluates — before the page's `usePageTitle` runs —
-  through a container-free `*Loader` singleton calling `addResourceBundle`. Three lazy catalogs
-  exist today: the password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
-  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by the `reset-password`
-  and `create-new-password` route modules, and the password-policy copy (`password_policy.*`), owned
-  by `src/components/ui-password-policy-rules/` and registered by `PasswordPolicyCatalogLoader` when
-  that component module evaluates, and the settings copy (`settings.*`), owned by
-  `src/modules/user/features/settings/` and registered by `SettingsCatalogLoader` when the
-  `UserProfile` route module evaluates. The recovery keys were 3,742 B of the minified merged
+  through the one container-free `lazyCatalogLoader` singleton
+  (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
+  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls
+  `addResourceBundle` for both locales; the owner keeps the JSON import, so the chunk split does
+  not move, and a new lazy catalog adds no loader class. Four lazy catalogs exist today: the
+  password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
+  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
+  which the `reset-password` and `create-new-password` route modules render; the password-policy
+  copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
+  when that component module evaluates; the settings copy (`settings.*`), owned by
+  `src/modules/user/features/settings/` and registered when the `UserProfile` route module
+  evaluates; and the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered
+  when `UIToast` evaluates. The recovery keys were 3,742 B of the minified merged
   catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and
   still about 0.95 KB above the #333 base (46,946 B), so the move alone does not restore the
   `/sign-in` headroom (that base already scored a median of about 0.8375 against the 0.84 mobile
@@ -2657,7 +2664,8 @@ verified in CI.
   (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
   Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
-  use `createRecoveryLocaleI18n`, so a lazy key leaking into an eager page renders raw in that
+  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
+  `createToastLocaleI18n`), so a lazy key leaking into an eager page renders raw in that
   page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which reads the
   policy and registers every lazy catalog from its JSON files) keep the copy available for every
   story and spec.

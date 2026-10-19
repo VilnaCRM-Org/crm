@@ -14,10 +14,10 @@ import { I18nextProvider } from 'react-i18next';
 import type { ToastDraft, ToastDraftSet } from '@/components/types/ui-toast';
 import UIToastStack from '@/components/ui-toast';
 import useToastQueue from '@/hooks/use-toast-queue';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
-  <I18nextProvider i18n={createLocaleI18n('uk')}>{children}</I18nextProvider>
+  <I18nextProvider i18n={createToastLocaleI18n('uk')}>{children}</I18nextProvider>
 );
 
 const success = (message: string): ToastDraft => ({ tone: 'success', message });

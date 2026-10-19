@@ -362,10 +362,12 @@ used by settings alone (R16).
 - AR-2 (§5.8, §6, §7.3, U7): no new module-level singleton; `useProfileSave` builds the
   `ProfileChangeDetector` in a `useState` initializer, and the toast queue is a reducer inside
   `useToastQueue`; the moved validators keep the singletons they already have. The one accepted
-  exception is #315's (its drift items 1 and 4): a stateless catalog seam, `*CatalogLoader`,
-  exported as a module singleton because it registers a lazy catalog when its module evaluates,
-  before any component exists (`SettingsCatalogLoader`, Story 1.6;
-  `PasswordPolicyCatalogLoader`, Story 1.1).
+  exception is #315's (its drift items 1 and 4): a stateless catalog seam exported as a module
+  singleton because it registers a lazy catalog when its module evaluates, before any component
+  exists. Amendment 2026-10-19: one shared `lazyCatalogLoader` (`src/lib/locale-catalog`,
+  `register(i18n, catalog: LocaleCatalogPair)`) replaces `RecoveryCatalogLoader`,
+  `SettingsCatalogLoader` (Story 1.6) and `PasswordPolicyCatalogLoader` (Story 1.1); each
+  owner keeps its own JSON import.
 - AR-3 (§6): approved class suffixes (`Provider`, `Transformer`, `Repository`, `Detector`,
   `Loader`, and `Factory` for `SessionLinkFactory`, with `Transformer` added by the chore #332)
   and no policy edit of this plan's own; no new `*Controller`, `*Service`, `*Handler`,

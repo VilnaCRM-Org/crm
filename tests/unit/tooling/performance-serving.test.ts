@@ -325,10 +325,11 @@ describe('performance serving config', () => {
       expect(namespaces).not.toContain('password_reset');
       expect(namespaces).not.toContain('password_policy');
       expect(namespaces).not.toContain('settings');
+      expect(namespaces).not.toContain('ui_toast');
     });
     expect(
       readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
-    ).toContain('recoveryCatalogLoader.register(i18n);');
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
     recoveryRoutes.forEach((routeSource) => {
       expect(routeSource).toContain(
         "import RecoveryPageLayout from '@auth/components/recovery-page-layout';"

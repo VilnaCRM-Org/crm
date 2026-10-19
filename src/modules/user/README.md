@@ -460,13 +460,18 @@ under the 3:1 graphics floor. A field error is shown on its field, never as a to
 **Context.** `src/i18n.js` imports the merged catalog into the eager `index.js` that `/sign-in`
 downloads, and its mobile Lighthouse budget has no headroom.
 
-**Decision.** `settings/i18n` is listed in `config/i18n-catalog-policy.json` and registered by
-`SettingsCatalogLoader` when the route module evaluates, by the mechanism #315 introduced. The
-rule list's `password_policy.*` keys leave the recovery catalog for a catalog the shared
-`UIPasswordPolicyRules` component owns, so a key resolves wherever the component renders.
+**Decision.** `settings/i18n` is listed in `config/i18n-catalog-policy.json` and registered
+when the route module evaluates, by the mechanism #315 introduced. The rule list's
+`password_policy.*` keys leave the recovery catalog for a catalog the shared
+`UIPasswordPolicyRules` component owns, so a key resolves wherever the component renders, and the
+toast's `ui_toast.close` is a lazy catalog `components/ui-toast` owns, since only the settings
+chunk renders a toast. Every lazy catalog registers through one container-free
+`lazyCatalogLoader` (`src/lib/locale-catalog`) that takes the owner's JSON as a named
+`LocaleCatalogPair`, so the owner keeps its static import and a new catalog adds no class.
 
 **Rejected.** The eager merged catalog (it grows `index.js` on `/sign-in`); reusing #315's lazy
-recovery keys outside their owners (they would render raw).
+recovery keys outside their owners (they would render raw); one loader class and module singleton
+per catalog (three byte-identical copies, and #331 would add a fourth).
 
 ### Field-error contrast is fixed at the source
 

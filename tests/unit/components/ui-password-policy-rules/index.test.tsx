@@ -12,6 +12,7 @@ import type {
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import UIFormField from '@/components/ui-form-field';
 import UIPasswordPolicyRules from '@/components/ui-password-policy-rules';
+import appI18n from '@/i18n';
 import passwordValidator from '@/modules/user/lib/validations/password';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
@@ -146,5 +147,14 @@ describe('UIPasswordPolicyRules', () => {
     await userEvent.type(field(), 'Pa1');
 
     await expectNoA11yViolations(view.container);
+  });
+
+  it('registers the policy catalog on the app i18n instance when its module loads', () => {
+    expect(appI18n.getResource('uk', 'translation', 'password_policy.rules.digit')).toBe(
+      'Принаймні одна цифра'
+    );
+    expect(appI18n.getResource('en', 'translation', 'password_policy.rules.digit')).toBe(
+      'At least one digit'
+    );
   });
 });

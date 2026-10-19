@@ -11,7 +11,6 @@ error. The decisions are recorded in `## User Settings decisions` of the
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
-- `routes/user-profile/settings-catalog-loader.ts` — registers the lazy `settings.*` catalog.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
   (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
@@ -27,7 +26,8 @@ error. The decisions are recorded in `## User Settings decisions` of the
 
 - The route is always registered; the `RouteFlagGate` shows the not-found page while
   `userSettings` is off, so the page chunk is never requested (see `src/routes/README.md`).
-- The page registers its catalog through `SettingsCatalogLoader` when the route module evaluates,
+- The page registers its catalog through the shared `lazyCatalogLoader`
+  (`src/lib/locale-catalog`) when the route module evaluates,
   before `usePageTitle('settings.title')` runs. The catalog is listed in
   `config/i18n-catalog-policy.json`, so the merged `localization.json` holds no `settings.*` key.
 - The page imports nothing from the auth feature: shared form pieces live in `src/components` and
