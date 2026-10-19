@@ -8,16 +8,18 @@ import UITypography from '@/components/ui-typography';
 import usePageTitle from '@/hooks/use-page-title';
 import useToastQueue from '@/hooks/use-toast-queue';
 import i18n from '@/i18n';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
 import SettingsGrid from '../../components/settings-grid';
 import UserProfileSettings from '../../components/user-profile-settings';
 import useProfileLoad from '../../hooks/use-profile-load';
+import en from '../../i18n/en.json';
+import uk from '../../i18n/uk.json';
 import type { SettingsHeadingProps, SettingsToastsProps } from '../../types/routes/user-profile';
 
-import settingsCatalogLoader from './settings-catalog-loader';
 import styles from './styles';
 
-settingsCatalogLoader.register(i18n);
+lazyCatalogLoader.register(i18n, { en, uk });
 
 function SettingsHeading({ headingRef }: SettingsHeadingProps): JSX.Element {
   const { t } = useTranslation();

@@ -8,9 +8,15 @@ import type {
   ToastCloseButtonProps,
   UIToastProps,
 } from '@/components/types/ui-toast';
+import i18n from '@/i18n';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
+import en from './i18n/en.json';
+import uk from './i18n/uk.json';
 import styles from './styles';
 import ToastIcon from './toast-icon';
+
+lazyCatalogLoader.register(i18n, { en, uk });
 
 function ToastActionButton({ id, action, onDismiss }: ToastActionButtonProps): JSX.Element {
   const activate = useCallback((): void => {

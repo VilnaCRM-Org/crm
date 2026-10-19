@@ -23,6 +23,10 @@
         "modules/user/features/settings/components",
         "modules/user/features/settings/hooks"
       ]
+    },
+    {
+      "catalog": "components/ui-toast/i18n",
+      "owners": ["components/ui-toast"]
     }
   ]
 }

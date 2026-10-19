@@ -11,11 +11,13 @@ import type {
   UIPasswordPolicyRulesProps,
 } from '@/components/types/ui-password-policy-rules';
 import i18n from '@/i18n';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
-import passwordPolicyCatalogLoader from './password-policy-catalog-loader';
+import en from './i18n/en.json';
+import uk from './i18n/uk.json';
 import styles from './styles';
 
-passwordPolicyCatalogLoader.register(i18n);
+lazyCatalogLoader.register(i18n, { en, uk });
 
 function PasswordRuleItem({ label, met }: PasswordRuleItemProps): JSX.Element {
   const { t } = useTranslation();

@@ -1418,9 +1418,8 @@ Story 1.1 (P.1: stacked on PR #340) moves, never copies:
 - The `password_policy.*` keys leave the lazy recovery catalog for
   `src/components/ui-password-policy-rules/i18n/`, which `config/i18n-catalog-policy.json` lists
   as a second lazy catalog owned by `components/ui-password-policy-rules`.
-  `PasswordPolicyCatalogLoader` (`password-policy-catalog-loader.ts`, the `RecoveryCatalogLoader`
-  precedent and its accepted module-singleton exception) registers both locales when the
-  component module evaluates, which happens only in the chunks that import the component: the
+  The shared `lazyCatalogLoader` (§6, AR-2's one accepted module singleton) registers both
+  locales when the component module evaluates, which happens only in the chunks that import the component: the
   recovery routes and settings. The recovery entry loses its `password-policy-rules.tsx` owner,
   `src/i18n/localization.json` is unchanged, and `createRecoveryLocaleI18n` and
   `.storybook/preview.tsx` also register the policy catalog.
@@ -1656,7 +1655,8 @@ has no mobile Lighthouse headroom, so #315 introduced lazy catalogs (its drift i
 "Localization" and "Localization Parity"): `config/i18n-catalog-policy.json` lists each lazy
 catalog with its `owners`, the generator leaves it out of the merged file, `make lint-i18n`
 still checks parity and fails a lazy key used outside its owners (`[lazy-key-scope]`), and the
-route module that renders it registers both locales through a `*CatalogLoader` singleton calling
+route module that renders it registers both locales through the one `lazyCatalogLoader`
+(`src/lib/locale-catalog/`, a named `LocaleCatalogPair` of the owner's own JSON) calling
 `addResourceBundle` when it evaluates. Tests opt in per file (`createRecoveryLocaleI18n`), and
 `.storybook/preview.tsx` and `tests/e2e/utils/initialize-localization.js` register every lazy
 catalog.
@@ -1664,17 +1664,19 @@ catalog.
 - **Lazy, owned by settings:** `src/modules/user/features/settings/i18n/{en,uk}.json`
   (`settings.*`, shared with 2FA's `settings.two_factor.*`), listed in
   `config/i18n-catalog-policy.json` with the owner `modules/user/features/settings` and
-  registered by `SettingsCatalogLoader` (`settings/routes/user-profile/settings-catalog-loader.ts`)
-  when the `UserProfile` route module evaluates, before `usePageTitle('settings.title')` runs.
+  registered through `lazyCatalogLoader` when the `UserProfile` route module evaluates, before `usePageTitle('settings.title')` runs.
   The contract's `meta.titleKey` is data no eager code translates, the auth contract precedent.
   Settings tests render through `tests/unit/utils/create-settings-locale-i18n.ts`, which
   registers this catalog and the policy catalog below, because `ChangePassword` renders the
   moved rule list.
 - **Lazy, owned by the rule list:** `src/components/ui-password-policy-rules/i18n/{en,uk}.json`
   (`password_policy.*`, moved out of the recovery catalog, §5.9).
-- **Eager, because another page renders them:** `src/components/ui-toast/i18n/{en,uk}.json`
-  (`ui_toast.close`, one key), `src/features/home/i18n/*` (`home.settings_link`) and `@auth/i18n/*`
-  (`sign_in.notices.session_ended`, rendered on `/sign-in`), followed by `make i18n-generate`.
+- **Lazy, owned by the toast:** `src/components/ui-toast/i18n/{en,uk}.json` (`ui_toast.close`,
+  one key), owned by `components/ui-toast` and registered when `UIToast` evaluates: only the lazy
+  settings chunk renders a toast, so the key stays off `/sign-in` (amendment 2026-10-19).
+- **Eager, because another page renders them:** `src/features/home/i18n/*`
+  (`home.settings_link`) and `@auth/i18n/*` (`sign_in.notices.session_ended`, rendered on
+  `/sign-in`), followed by `make i18n-generate`.
 - **Reused eager keys:** `sign_up.form.name_input.label`, `sign_up.form.email_input.label`
   ("E-mail" since #311), the name and e-mail format messages, `sign_up.errors.email_used`,
   `sign_up.form.password_input.*`, `auth.password.show` / `.hide` and `auth.error.tryAgain`.
@@ -1698,16 +1700,16 @@ this plan makes no policy edit of its own.
 | `GraphQLProfileTransformer`   | `[Transformer]`   | here   | `transformers/graphql-profile-…`      |
 | `GraphQLProfileRepository`    | `[Repository]`    | here   | `repositories/graphql-profile-…`      |
 | `ProfileChangeDetector`       | in React hook     | here   | `utils/profile-change-detector`       |
-| `SettingsCatalogLoader`       | route module seam | here   | `routes/user-profile/settings-catal…` |
-| `PasswordPolicyCatalogLoader` | UI library seam   | here   | `src/components/ui-password-policy-…` |
+| `LazyCatalogLoader`           | catalog seam      | shared | `src/lib/locale-catalog/lazy-catalo…` |
 | `SessionLinkFactory`          | on the API edge   | shared | `@auth/repositories/session-…`        |
 | `UserServiceErrorTransformer` | `[Transformer]`   | #315   | `user/transformers/user-service-err…` |
 
 The `…` file names end `-transformer.ts`, `-repository.ts` and `-catalog-loader.ts` after the
 class name in kebab case. The Provider, the Transformer, the Repository and the link carry
 `@injectable()` and are registered against their own tokens; the detector is container-free and
-built by the save hook in a `useState` initializer; the two catalog loaders are stateless module
-singletons, the accepted exception #315 made for `RecoveryCatalogLoader` (AR-2); #315's
+built by the save hook in a `useState` initializer; `LazyCatalogLoader` is the one stateless
+module singleton every lazy catalog shares, the accepted exception #315 made for its
+`RecoveryCatalogLoader` (AR-2), which it replaces together with this plan's two copies; #315's
 transformer is `@injectable()` and registered with `registerSingleton` in
 `registerResponseMappers`, inside the DI gate's scope (`src/modules/*/transformers/`).
 
@@ -1773,13 +1775,13 @@ export default class SessionLinkFactory {
   public build(): ApolloLink;
 }
 
-// Lazy catalog seams (AR-2's accepted exception, #315's RecoveryCatalogLoader precedent): one
-// method, no field; exported as a module singleton and called when their module evaluates.
-export class SettingsCatalogLoader {
-  public register(i18n: I18nInstance): void; // settings/i18n, both locales
-}
-export class PasswordPolicyCatalogLoader {
-  public register(i18n: I18nInstance): void; // ui-password-policy-rules/i18n, both locales
+// The lazy catalog seam (AR-2's accepted exception): one method, no field, one module singleton
+// for every lazy catalog (recovery, password policy, settings, toast). Each owner imports its own
+// JSON and calls lazyCatalogLoader.register(i18n, { en, uk }) when its module evaluates
+// (amendment 2026-10-19: replaces RecoveryCatalogLoader, PasswordPolicyCatalogLoader and
+// SettingsCatalogLoader, three byte-identical classes).
+export class LazyCatalogLoader {
+  public register(i18n: I18nInstance, catalog: LocaleCatalogPair): void; // both locales
 }
 
 // #315's (contract §3.4), extended per §5.4. @injectable() and registered with
@@ -2387,8 +2389,9 @@ in the pull request's bundle-size report and no budget is raised (NFR-5, R14).
   paint-path graph test (`tests/unit/tooling/paint-path-graph.test.ts`) and the eager-MUI walk
   of `tests/unit/tooling/performance-serving.test.ts` (CLAUDE.md, "The MUI theme engine is not
   on the eager path") stay green because none of these files imports Apollo, zod, tsyringe or
-  `@mui/*`. The merged catalog grows only by `ui_toast.close`, `home.settings_link` and
-  `sign_in.notices.session_ended`; every `settings.*` and `password_policy.*` key is lazy
+  `@mui/*`. The merged catalog grows only by `home.settings_link` and
+  `sign_in.notices.session_ended`; every `settings.*`, `password_policy.*` and `ui_toast.*` key
+  is lazy
   (§5.16), the lever #315 used to bring `index.js` back to about 47.9 kB raw.
 - **Settings chunk.** Loaded only when `/settings` renders past the gate; it statically imports
   `useService`, so the DI chunk loads in parallel on navigation, as for any routed DI consumer.
@@ -2413,9 +2416,9 @@ in the pull request's bundle-size report and no budget is raised (NFR-5, R14).
 
 Every string exists in `uk` and `en` with identical key sets; `make i18n-generate` then
 `make lint-i18n` (FR-28). The Figma copy is Russian and is translated, not copied (D14). The
-`settings.*` keys live in the lazy settings catalog and the three keys other pages render
-(`ui_toast.close`, `home.settings_link`, `sign_in.notices.session_ended`) in eager catalogs
-(§5.16).
+`settings.*` keys live in the lazy settings catalog, `ui_toast.close` in the toast's lazy
+catalog, and the two keys other pages render (`home.settings_link`,
+`sign_in.notices.session_ended`) in eager catalogs (§5.16).
 
 | Key (`settings.*` unless noted) | `uk`                                               |
 | ------------------------------- | -------------------------------------------------- |
@@ -2796,9 +2799,9 @@ toasts as alerts, at most three, no timer, focus returned to Save.
 Rejected: a timer (a confirmation could be lost); a toast per field error.
 
 ### The settings copy is a lazy catalog
-Decision: settings/i18n is listed in config/i18n-catalog-policy.json and registered by
-SettingsCatalogLoader when the route module evaluates; the rule list's password_policy keys move
-into a catalog the component owns.
+Decision: settings/i18n is listed in config/i18n-catalog-policy.json and registered through the
+shared lazyCatalogLoader when the route module evaluates; the rule list's password_policy keys
+and the toast's ui_toast keys move into catalogs their components own.
 Rejected: the eager merged catalog (grows index.js on /sign-in); reusing #315's lazy recovery keys
 outside their owners.
 

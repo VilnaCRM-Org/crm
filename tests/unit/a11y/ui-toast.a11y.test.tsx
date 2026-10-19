@@ -4,11 +4,11 @@ import { I18nextProvider } from 'react-i18next';
 
 import type { ToastItem, ToastItemSet } from '@/components/types/ui-toast';
 import UIToastStack from '@/components/ui-toast';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
-  <I18nextProvider i18n={createLocaleI18n('uk')}>
+  <I18nextProvider i18n={createToastLocaleI18n('uk')}>
     <main>{children}</main>
   </I18nextProvider>
 );

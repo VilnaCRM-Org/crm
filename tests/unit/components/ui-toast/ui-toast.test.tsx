@@ -6,10 +6,11 @@ import { I18nextProvider } from 'react-i18next';
 
 import type { ToastItem } from '@/components/types/ui-toast';
 import UIToast from '@/components/ui-toast/ui-toast';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import appI18n from '@/i18n';
+import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
 
 const ukWrapper = ({ children }: { children: ReactNode }): JSX.Element => (
-  <I18nextProvider i18n={createLocaleI18n('uk', ['en'])}>{children}</I18nextProvider>
+  <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>{children}</I18nextProvider>
 );
 
 const buildToast = (overrides: Partial<ToastItem> = {}): ToastItem => ({
@@ -94,7 +95,7 @@ describe('UIToast', () => {
     unmount();
 
     render(
-      <I18nextProvider i18n={createLocaleI18n('en')}>
+      <I18nextProvider i18n={createToastLocaleI18n('en')}>
         <UIToast toast={buildToast()} onDismiss={jest.fn()} />
       </I18nextProvider>
     );
@@ -204,5 +205,10 @@ describe('UIToast', () => {
       expect(onDismiss).toHaveBeenCalledTimes(1);
       expect(onActivate).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('registers the toast catalog on the app i18n instance when its module loads', () => {
+    expect(appI18n.getResource('uk', 'translation', 'ui_toast.close')).toBe('Закрити сповіщення');
+    expect(appI18n.getResource('en', 'translation', 'ui_toast.close')).toBe('Close notification');
   });
 });
