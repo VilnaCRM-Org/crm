@@ -57,6 +57,16 @@ describe('ProfileChangeDetector.detect', () => {
     expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'email', 'id']);
   });
 
+  it.each([' ', '   ', '\t'])('treats a whitespace-only new password %j as no change', (pw) => {
+    expect(detector.detect(user, unchanged({ newPassword: pw }))).toBeNull();
+    expect(detector.passwordChanged(pw)).toBe(false);
+  });
+
+  it('counts any non-space character in the new password as a change', () => {
+    expect(detector.passwordChanged(' a ')).toBe(true);
+    expect(detector.passwordChanged('')).toBe(false);
+  });
+
   it('sends a non-empty new password exactly as typed, spaces included', () => {
     const change = detector.detect(user, unchanged({ newPassword: ' Next12345 ' }));
 

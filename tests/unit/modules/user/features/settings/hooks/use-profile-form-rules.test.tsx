@@ -73,6 +73,12 @@ describe('useProfileFormRules', () => {
     expect(run(rules().newPassword, 'Password123')).toBe(true);
   });
 
+  it('treats a whitespace-only new password as left empty, never as required', () => {
+    expect(run(rules().newPassword, ' ')).toBe(true);
+    expect(run(rules().newPassword, '   ')).toBe(true);
+    expect(run(rules().newPassword, ' a ')).toBe('Будь ласка, введіть від 8 до 64 символів');
+  });
+
   it('evaluates the policy rules unchanged', () => {
     const { evaluate } = rules();
 
