@@ -21,6 +21,25 @@ describe('profile form styles', () => {
     });
   });
 
+  it('gives Clear the repository focus ring and a muted, hover-free busy look', async () => {
+    const { clearButton } = await loadStyles();
+
+    expect(clearButton).toMatchObject({
+      '&:focus-visible': { outline: '2px solid #1A1C1E', outlineOffset: '2px' },
+      '&[aria-disabled="true"]': { cursor: 'default', opacity: 0.6 },
+      '&[aria-disabled="true"]:hover': { backgroundColor: '#FFFFFF' },
+    });
+  });
+
+  it('underlines the resend link so colour is not its only difference', async () => {
+    const { resendLink } = await loadStyles();
+
+    expect(resendLink).toMatchObject({
+      textDecoration: 'underline',
+      textUnderlineOffset: '0.15em',
+    });
+  });
+
   it('pins the pill sizes and the section divider', async () => {
     const { saveButton, clearButton, sectionTitle } = await loadStyles();
 

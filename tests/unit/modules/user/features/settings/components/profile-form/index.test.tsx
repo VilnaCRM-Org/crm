@@ -7,6 +7,7 @@ import { I18nextProvider } from 'react-i18next';
 import ProfileForm from '@/modules/user/features/settings/components/profile-form';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 const mockUpdate = jest.fn();
 const mockProvider = { update: mockUpdate, resend: jest.fn() };
@@ -303,6 +304,55 @@ describe('ProfileForm', () => {
     ).toBeInTheDocument();
   });
 
+  it.each([
+    ['email_taken', 'email', 'E-mail', 'Електронна адреса вже використовується'],
+    ['password_wrong', 'currentPassword', CURRENT, 'Неправильний поточний пароль'],
+  ] as const)(
+    'shows, describes and focuses a repeated %s error again on the second Save',
+    async (reason, name, label, message) => {
+      mockUpdate.mockResolvedValue({
+        kind: 'invalid',
+        errors: { items: [{ field: name, reason }] },
+      });
+      render(form(), { wrapper });
+      await userEvent.type(field('E-mail'), '.ua');
+      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.click(save());
+      await waitFor(() => expect(field(label)).toHaveFocus());
+
+      await userEvent.click(save());
+
+      await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(field(label)).toHaveFocus());
+      expect(field(label)).toHaveAttribute('aria-invalid', 'true');
+      const helperId = `${name}-helper-text`;
+      expect(field(label).getAttribute('aria-describedby') ?? '').toContain(helperId);
+      expect(screen.getByText(message)).toHaveAttribute('id', helperId);
+      expect(field(label)).toHaveAccessibleDescription(message);
+    }
+  );
+
+  it('re-announces a repeated no-change Save with an alternating mark', async () => {
+    render(form(), { wrapper });
+    await userEvent.type(field(CURRENT), 'abc');
+    const status = (): HTMLElement =>
+      screen.getAllByRole('status').find((node) => node.textContent?.includes('Немає змін')) ??
+      document.body;
+
+    await userEvent.click(save());
+    const first = status().textContent;
+    await userEvent.click(save());
+    const second = status().textContent;
+    await userEvent.click(save());
+    const third = status().textContent;
+
+    expect(first).toBe('Немає змін для збереження');
+    expect(second).toBe('Немає змін для збереження\u200B');
+    expect(second?.replace('\u200B', '')).toBe(first);
+    expect(third).toBe(first);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it('focuses the personal details heading when a retried read settled', async () => {
     render(form({ refocus: true }), { wrapper });
 
@@ -378,6 +428,41 @@ describe('ProfileForm', () => {
       expect(screen.queryByText('Немає змін для збереження')).not.toBeInTheDocument();
     });
 
+    it('masks both passwords again and resets their toggles', async () => {
+      render(form(), { wrapper });
+      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.type(field(NEW), 'Next12345');
+      const [currentToggle, newToggle] = screen.getAllByRole('button', { name: 'Показати пароль' });
+      await userEvent.click(currentToggle as HTMLElement);
+      await userEvent.click(newToggle as HTMLElement);
+      expect(field(CURRENT)).toHaveAttribute('type', 'text');
+      expect(field(NEW)).toHaveAttribute('type', 'text');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
+
+      expect(field(CURRENT)).toHaveAttribute('type', 'password');
+      expect(field(NEW)).toHaveAttribute('type', 'password');
+      const toggles = screen.getAllByRole('button', { name: 'Показати пароль' });
+      expect(toggles).toHaveLength(2);
+      toggles.forEach((toggle) => expect(toggle).toHaveAttribute('aria-pressed', 'false'));
+      expect(screen.queryByRole('button', { name: 'Приховати пароль' })).not.toBeInTheDocument();
+    });
+
+    it('draws the repository focus ring and a muted look while busy', () => {
+      render(form(), { wrapper });
+      const clear = screen.getByRole('button', { name: 'Очистити' });
+
+      const ring = styleRuleFor(clear, ':focus-visible');
+      const busy = styleRuleFor(clear, '[aria-disabled="true"]');
+      const busyHover = styleRuleFor(clear, '[aria-disabled="true"]:hover');
+
+      expect(ring?.getPropertyValue('outline')).toBe('2px solid #1A1C1E');
+      expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
+      expect(busy?.getPropertyValue('opacity')).toBe('0.6');
+      expect(busy?.getPropertyValue('cursor')).toBe('default');
+      expect(busyHover?.getPropertyValue('background-color')).toBe('#FFFFFF');
+    });
+
     it('is a type=button that never submits', () => {
       render(form(), { wrapper });
 
@@ -396,7 +481,10 @@ describe('ProfileForm', () => {
       await userEvent.click(clear);
 
       expect(clear).toHaveAttribute('aria-disabled', 'true');
+      expect(clear).toBeEnabled();
+      expect(clear).toHaveFocus();
       expect(field(CURRENT)).toHaveValue('abc');
+      expect(field(NAME)).toHaveValue('Олена Петренко Іванівна');
       await act(async () => settle(okOutcome));
     });
   });

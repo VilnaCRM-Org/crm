@@ -135,7 +135,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
   test('focus moves to the first field in error when a save ends in field errors', async ({
     page,
   }) => {
-    await openSettings(
+    const stub = await openSettings(
       page,
       stubProfile(page, {
         UpdateUser: [replyWithGraphQLError('email: This email address is already registered', 422)],
@@ -148,6 +148,29 @@ test.describe('Settings keyboard contract (issue #330)', () => {
 
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
     await expect(emailField(page)).toBeFocused();
+
+    await saveButton(page).click();
+
+    await expect.poll(() => stub.count('UpdateUser')).toBe(2);
+    await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
+    await expect(emailField(page)).toHaveAttribute('aria-invalid', 'true');
+    await expect(emailField(page)).toHaveAccessibleDescription(new RegExp(text.emailTaken));
+    await expect(emailField(page)).toBeFocused();
+  });
+
+  test('Clear masks both passwords again after they were shown', async ({ page }) => {
+    await openSettings(page, stubProfile(page));
+    await fillCurrentPassword(page, password);
+    await toggles(page).first().click();
+    await toggles(page).first().click();
+    await expect(currentPasswordField(page)).toHaveAttribute('type', 'text');
+    await expect(newPasswordField(page)).toHaveAttribute('type', 'text');
+
+    await clearButton(page).click();
+
+    await expect(currentPasswordField(page)).toHaveAttribute('type', 'password');
+    await expect(newPasswordField(page)).toHaveAttribute('type', 'password');
+    await expect(toggles(page)).toHaveCount(2);
   });
 
   test('Clear keeps focus on itself and restores the loaded values', async ({ page }) => {

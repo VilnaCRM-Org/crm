@@ -26,6 +26,8 @@ import styles from './styles';
 
 const EMAIL_STATUS_ID = 'email-status';
 
+const ALTERNATING_MARK = '\u200B';
+
 const PROFILE_FIELDS: readonly ProfileField[] = [
   'fullName',
   'email',
@@ -129,10 +131,12 @@ function ProfileFormFields({
   return (
     <>
       <PersonalDetails rules={rules} refocus={refocus} emailRow={emailRow} />
-      <ChangePassword rules={rules} evaluate={rules.evaluate} />
-      <ServerFieldErrors errors={state.fieldErrors} />
+      <ChangePassword key={`password-${state.cleared}`} rules={rules} evaluate={rules.evaluate} />
+      <ServerFieldErrors key={`errors-${state.attempts}`} errors={state.fieldErrors} />
       <Box component="p" role="status" sx={styles.status}>
-        {state.noChanges ? t('settings.profile.no_changes') : ''}
+        {state.noChanges
+          ? `${t('settings.profile.no_changes')}${state.noChangesMarked ? ALTERNATING_MARK : ''}`
+          : ''}
       </Box>
     </>
   );

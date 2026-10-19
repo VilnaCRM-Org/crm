@@ -24,6 +24,10 @@ export interface InvalidSaveAction {
   readonly errors: ProfileFieldErrorSet;
 }
 
+export interface PendingSaveAction {
+  readonly type: 'pending';
+}
+
 export interface SettledSaveAction {
   readonly type: 'settled';
 }
@@ -33,7 +37,7 @@ export interface ClearSaveAction {
 }
 
 export type ProfileFormAction =
-  NoChangesAction | InvalidSaveAction | SettledSaveAction | ClearSaveAction;
+  NoChangesAction | InvalidSaveAction | PendingSaveAction | SettledSaveAction | ClearSaveAction;
 
 export interface SaveSettleContext {
   readonly props: ProfileFormProps;
