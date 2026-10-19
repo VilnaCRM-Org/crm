@@ -1,16 +1,23 @@
 import { type RefObject, useLayoutEffect } from 'react';
 
+import type { ToastItemSet } from '@/components/types/ui-toast';
+
 export default function useStackClearance(
   stackRef: RefObject<HTMLElement | null>,
-  count: number
+  toasts: ToastItemSet
 ): void {
   useLayoutEffect(() => {
-    const height = stackRef.current?.getBoundingClientRect().height;
-    if (height === undefined) return undefined;
+    const stack = stackRef.current;
+    if (stack === null) return undefined;
     const root = document.documentElement;
-    root.style.setProperty('scroll-padding-bottom', `${height}px`);
+    const reserve = (): void => {
+      root.style.setProperty('scroll-padding-bottom', `${stack.getBoundingClientRect().height}px`);
+    };
+    reserve();
+    window.addEventListener('resize', reserve);
     return (): void => {
+      window.removeEventListener('resize', reserve);
       root.style.removeProperty('scroll-padding-bottom');
     };
-  }, [count, stackRef]);
+  }, [toasts, stackRef]);
 }
