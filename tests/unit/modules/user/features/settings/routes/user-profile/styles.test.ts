@@ -10,16 +10,18 @@ const loadStyles = (): Promise<PageStyles> =>
   );
 
 describe('user profile page styles', () => {
-  it('pins the content, header, heading and subtitle tokens', async () => {
+  it('pins the content gaps, the heading ring and the type tokens', async () => {
     const styles = await loadStyles();
 
     expect(styles).toEqual({
       content: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.75rem',
+        gap: '1.0625rem',
         paddingTop: '1.75rem',
         paddingBottom: '2rem',
+        '@media (min-width:768px)': { gap: '1rem' },
+        '@media (min-width:1025px)': { gap: '0.75rem' },
       },
       header: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
       heading: {
@@ -30,6 +32,7 @@ describe('user profile page styles', () => {
         lineHeight: 'normal',
         color: '#1A1C1E',
         '&:focus:not(:focus-visible)': { outline: 'none' },
+        '&:focus-visible': { outline: '2px solid #1A1C1E', outlineOffset: '2px' },
         '@media (min-width:1024px)': { fontSize: '1.75rem' },
         '@media (min-width:1440px)': { fontSize: '1.375rem' },
       },
