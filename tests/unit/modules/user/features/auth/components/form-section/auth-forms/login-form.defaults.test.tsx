@@ -36,7 +36,7 @@ describe('LoginForm default values', () => {
     const { default: LoginForm } =
       await import('@auth/components/form-section/auth-forms/login-form');
 
-    render(<LoginForm />);
+    render(<LoginForm postLogin={{ signedIn: false, proceed: jest.fn() }} />);
 
     expect(screen.getByPlaceholderText('sign_in.form.email_input.placeholder')).toHaveValue('');
     expect(screen.getByPlaceholderText('sign_in.form.password_input.placeholder')).toHaveValue('');

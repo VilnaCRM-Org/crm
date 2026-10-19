@@ -1,66 +1,64 @@
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import RegSuccessView from '@auth/components/form-section/auth-forms/registration-success-view';
 
 jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }));
 
-jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string) => string } => ({
-    t: (key: string): string => key,
-  }),
-}));
+const TITLE = 'Вітаємо!';
+const DESCRIPTION = 'Ви успішно увійшли';
+const BUTTON = 'Продовжити';
 
-function renderSuccessView(isClosing = false): jest.Mock {
+function renderSuccessView(isClosing = false): { onBack: jest.Mock; container: HTMLElement } {
   const onBack = jest.fn();
-  render(<RegSuccessView isClosing={isClosing} onBack={onBack} />);
+  const { container } = render(
+    <RegSuccessView
+      isClosing={isClosing}
+      onBack={onBack}
+      title={TITLE}
+      description={DESCRIPTION}
+      buttonLabel={BUTTON}
+    />
+  );
 
-  return onBack;
-}
-
-function focusTargets(): HTMLElement[] {
-  return screen.getAllByRole('generic').filter((element) => element.hasAttribute('tabindex'));
+  return { onBack, container };
 }
 
 describe('RegistrationSuccessView', () => {
-  it('labels the celebratory confetti with its own translation key', () => {
+  it('hides the decorative confetti and gears from assistive technology', () => {
     renderSuccessView();
 
-    expect(
-      screen.getByRole('img', { name: 'notifications.success.images.confetti' })
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
-  it('labels the decorative gears with their own translation key', () => {
+  it('focuses the heading itself, out of the tab order', () => {
     renderSuccessView();
 
-    expect(
-      screen.getByRole('img', { name: 'notifications.success.images.gears' })
-    ).toBeInTheDocument();
+    const heading = screen.getByRole('heading', { level: 2, name: TITLE });
+    expect(heading).toHaveFocus();
+    expect(heading).toHaveAttribute('tabindex', '-1');
   });
 
-  it('renders a description that is distinct from the title', () => {
+  it('announces the description in a status region filled after mount', async () => {
     renderSuccessView();
 
-    expect(screen.getByText('notifications.success.description')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
-      'notifications.success.title'
-    );
+    expect(await screen.findByRole('status')).toHaveTextContent(DESCRIPTION);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
   });
 
-  it('exposes exactly one programmatic focus target that is out of the tab order', () => {
-    renderSuccessView();
+  it('runs the action from its labelled button', async () => {
+    const { onBack } = renderSuccessView();
 
-    const targets = focusTargets();
+    await userEvent.click(screen.getByRole('button', { name: BUTTON }));
 
-    expect(targets).toHaveLength(1);
-    expect(targets[0]).toHaveAttribute('tabindex', '-1');
-    expect(targets[0]).toHaveFocus();
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('disables the back button only while the notification is closing', () => {
+  it('disables the button only while the notification is closing', () => {
     renderSuccessView(true);
 
-    expect(screen.getByRole('button', { name: 'notifications.success.button' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: BUTTON })).toBeDisabled();
   });
 });

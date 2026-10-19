@@ -1,21 +1,24 @@
+import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import * as ReactHookForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
-import LoginForm, {
-  LoginErrorMessageNormalizer,
-} from '@auth/components/form-section/auth-forms/login-form';
+import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
+import LoginForm from '@auth/components/form-section/auth-forms/login-form';
+import type { PostLoginRedirect } from '@auth/types/sign-in/post-login-redirect';
 import { buildCredentials } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
-
-const normalizeLoginErrorMessage = (error: unknown): string =>
-  new LoginErrorMessageNormalizer().normalize(error);
 
 const submitCredentials = buildCredentials();
 
 const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
+const mockNotification = jest.fn();
+const mockLoad = jest.fn();
+const mockSetFocus = jest.fn();
 
 function makeSubmitHandler(
   onSubmit: (data: { email: string; password: string }) => Promise<void>
@@ -26,11 +29,8 @@ function makeSubmitHandler(
 }
 
 jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
-    t: (key: string, options?: Record<string, unknown>): string => {
-      if (options?.reason !== undefined) return `${key}: ${String(options.reason)}`;
-      return key;
-    },
+  useTranslation: (): { t: (key: string) => string } => ({
+    t: (key: string): string => key,
   }),
 }));
 
@@ -43,11 +43,9 @@ interface AuthError {
 const authStoreState: {
   loginError: AuthError | null;
   loginLoading: boolean;
-  loginUser: (...args: unknown[]) => unknown;
 } = {
   loginError: null,
   loginLoading: false,
-  loginUser: mockLoginUser,
 };
 
 jest.mock('@auth/stores', () => ({
@@ -65,6 +63,34 @@ jest.mock('@auth/stores', () => ({
   },
 }));
 
+interface StubNotificationProps {
+  view: string;
+  flow: string;
+  errorText: string;
+  onBack: () => void;
+  onRetry: () => void;
+}
+
+function StubNotification(props: StubNotificationProps): ReactElement {
+  mockNotification(props);
+  return (
+    <section aria-label={`notification ${props.view}`}>
+      <p>{props.errorText}</p>
+      <button type="button" onClick={props.onBack}>
+        notification back
+      </button>
+      <button type="button" onClick={props.onRetry}>
+        notification retry
+      </button>
+    </section>
+  );
+}
+
+jest.mock('@auth/utils/load-registration-notification', () => ({
+  __esModule: true,
+  default: { load: (): unknown => mockLoad() },
+}));
+
 jest.mock('@auth/components/form-section/components/form-field', () => ({
   __esModule: true,
   default: (props: {
@@ -73,53 +99,64 @@ jest.mock('@auth/components/form-section/components/form-field', () => ({
     rules: { required: string };
   }): ReactElement => {
     mockFormField(props);
-    return <div data-testid="form-field" />;
+    return <div>form field</div>;
   },
 }));
 
 jest.mock('@auth/components/form-section/components/password-field', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="password-field" />,
+  default: (): ReactElement => <div>password field</div>,
 }));
 
 jest.mock('@auth/components/form-section/components/user-options', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="user-options" />,
+  default: (): ReactElement => <div>user options</div>,
 }));
+
+function FormContext({ children }: { children: ReactNode }): ReactElement {
+  const methods = useForm();
+  return (
+    <FormProviderBridge methods={{ ...methods, setFocus: mockSetFocus }}>
+      {children}
+    </FormProviderBridge>
+  );
+}
 
 jest.mock('@/components/ui-form', () => ({
   __esModule: true,
   default: (props: {
-    error: string;
-    isSubmitting: boolean;
+    error: string | null;
     onSubmit: (data: { email: string; password: string }) => Promise<void>;
-    children: ReactElement[];
-    titleComponent?: string;
+    children: ReactNode;
   }): ReactElement => {
     mockUIForm(props);
-
     return (
-      <div>
+      <FormContext>
         <button type="button" onClick={makeSubmitHandler(props.onSubmit)}>
           submit
         </button>
-        <div data-testid="form-error">{props.error}</div>
         {props.children}
-      </div>
+      </FormContext>
     );
   },
 }));
+
+const signedOut = (): PostLoginRedirect => ({ signedIn: false, proceed: jest.fn() });
+
+const lastUIFormProps = (): Record<string, unknown> =>
+  mockUIForm.mock.calls[mockUIForm.mock.calls.length - 1]?.[0] as Record<string, unknown>;
 
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     authStoreState.loginError = null;
     authStoreState.loginLoading = false;
-    mockLoginUser.mockReset();
+    mockLoginUser.mockReset().mockResolvedValue(undefined);
+    mockLoad.mockReset().mockResolvedValue({ default: StubNotification });
   });
 
   it('uses sign-in translations for the email field', () => {
-    render(<LoginForm />);
+    render(<LoginForm postLogin={signedOut()} />);
 
     expect(mockFormField).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -132,24 +169,28 @@ describe('LoginForm', () => {
     );
   });
 
-  it('passes the stable submit and submitting labels to the form', () => {
-    render(<LoginForm />);
+  it('passes the labels, never a banner error, and an open form', () => {
+    render(<LoginForm postLogin={signedOut()} />);
 
-    expect(mockUIForm).toHaveBeenCalledWith(
+    expect(lastUIFormProps()).toEqual(
       expect.objectContaining({
         submitLabel: 'sign_in.form.submit_button',
         submittingLabel: 'sign_in.form.submitting',
+        error: null,
+        isSubmitDisabled: false,
       })
     );
+    expect(screen.queryByRole('region', { name: /notification/ })).not.toBeInTheDocument();
   });
 
   it('seeds the form with empty credentials when the module loads inside the test', async () => {
     const FreshLoginForm = await loadIsolated(async () => {
       jest.doMock('react', () => React);
+      jest.doMock('react-hook-form', () => ReactHookForm);
       return (await import('@auth/components/form-section/auth-forms/login-form')).default;
     });
 
-    render(<FreshLoginForm />);
+    render(<FreshLoginForm postLogin={signedOut()} />);
 
     expect(mockUIForm).toHaveBeenLastCalledWith(
       expect.objectContaining({ defaultValues: { email: '', password: '' } })
@@ -157,40 +198,76 @@ describe('LoginForm', () => {
   });
 
   it('renders the login title as a real <h1> via titleComponent (AC2)', () => {
-    render(<LoginForm />);
+    render(<LoginForm postLogin={signedOut()} />);
 
     expect(mockUIForm).toHaveBeenCalledWith(expect.objectContaining({ titleComponent: 'h1' }));
   });
 
-  it('invokes the loginUser action when the form is submitted', async () => {
-    mockLoginUser.mockResolvedValue(undefined);
-
-    render(<LoginForm />);
+  it('logs in on submit and starts loading the notification early', async () => {
+    render(<LoginForm postLogin={signedOut()} />);
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     await waitFor(() => {
       expect(mockLoginUser).toHaveBeenCalledWith(submitCredentials, expect.any(AbortSignal));
     });
+    expect(mockLoad).toHaveBeenCalled();
   });
 
-  it('shows a fully translated login error instead of the raw backend text', () => {
+  it('shows the sign-in error notification and returns to the form on back', async () => {
     authStoreState.loginError = {
       kind: 'authentication',
       displayMessage: 'Invalid credentials',
       retryable: false,
     };
+    const onViewChange = jest.fn();
 
-    render(<LoginForm />);
+    render(<LoginForm postLogin={signedOut()} onViewChange={onViewChange} />);
 
-    const banner = screen.getByTestId('form-error');
-    expect(banner).toHaveTextContent('sign_in.errors.login: auth.error.unknown');
-    expect(banner).not.toHaveTextContent('Invalid credentials');
+    const card = await screen.findByRole('region', { name: 'notification error' });
+    expect(card).toHaveTextContent('sign_in.errors.invalid_credentials');
+    expect(card).not.toHaveTextContent('Invalid credentials');
+    expect(mockNotification).toHaveBeenLastCalledWith(
+      expect.objectContaining({ flow: 'signIn', view: 'error' })
+    );
+    expect(lastUIFormProps()).toEqual(expect.objectContaining({ isSubmitDisabled: true }));
+    expect(onViewChange).toHaveBeenLastCalledWith('error');
+    expect(mockSetFocus).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'notification back' }));
+
+    expect(mockSetFocus).toHaveBeenCalledTimes(1);
+    expect(mockSetFocus).toHaveBeenCalledWith('email');
+
+    expect(authStoreState.loginError).toBeNull();
+    expect(screen.queryByRole('region', { name: /notification/ })).not.toBeInTheDocument();
+    expect(onViewChange).toHaveBeenLastCalledWith('form');
+    expect(lastUIFormProps()).toEqual(expect.objectContaining({ isSubmitDisabled: false }));
   });
 
-  it('shows nothing when the store has no login error', () => {
-    render(<LoginForm />);
+  it('retries with the credentials submitted last', async () => {
+    const view = render(<LoginForm postLogin={signedOut()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    await waitFor(() => expect(mockLoginUser).toHaveBeenCalledTimes(1));
 
-    expect(screen.getByTestId('form-error')).toHaveTextContent('');
+    authStoreState.loginError = { kind: 'network', displayMessage: 'offline', retryable: true };
+    view.rerender(<LoginForm postLogin={signedOut()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'notification retry' }));
+
+    await waitFor(() => expect(mockLoginUser).toHaveBeenCalledTimes(2));
+    expect(mockLoginUser).toHaveBeenLastCalledWith(submitCredentials, expect.any(AbortSignal));
+  });
+
+  it('shows the success notification after sign-in and proceeds on its button', async () => {
+    const postLogin: PostLoginRedirect = { signedIn: true, proceed: jest.fn() };
+
+    render(<LoginForm postLogin={postLogin} />);
+
+    await screen.findByRole('region', { name: 'notification success' });
+    expect(mockNotification).toHaveBeenLastCalledWith(
+      expect.objectContaining({ flow: 'signIn', view: 'success' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'notification back' }));
+    expect(postLogin.proceed).toHaveBeenCalledTimes(1);
   });
 
   it('exposes auth form barrel exports', () => {
@@ -217,94 +294,5 @@ describe('LoginForm', () => {
       jest.dontMock('@auth/components/form-section/auth-forms/registration-form');
       jest.dontMock('@auth/components/form-section/auth-forms/registration-form-fields');
     });
-  });
-});
-
-describe('normalizeLoginErrorMessage', () => {
-  it('returns a direct string error when it is non-empty', () => {
-    expect(normalizeLoginErrorMessage('Invalid credentials')).toBe('Invalid credentials');
-  });
-
-  it('returns a trimmed direct string error when it contains surrounding whitespace', () => {
-    expect(normalizeLoginErrorMessage('  Invalid credentials  ')).toBe('Invalid credentials');
-  });
-
-  it('returns an Error message when the error is an Error instance', () => {
-    expect(normalizeLoginErrorMessage(new Error('Invalid credentials'))).toBe(
-      'Invalid credentials'
-    );
-  });
-
-  it('returns the unknown translation key when an Error message is blank', () => {
-    expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.error.unknown');
-  });
-
-  it('uses displayMessage when a blank Error message is present', () => {
-    const error = Object.assign(new Error('   '), {
-      displayMessage: 'Display message object',
-    });
-
-    expect(normalizeLoginErrorMessage(error)).toBe('Display message object');
-  });
-
-  it('uses data.message when a blank Error message is present', () => {
-    const error = Object.assign(new Error('   '), {
-      data: { message: 'Invalid credentials' },
-    });
-
-    expect(normalizeLoginErrorMessage(error)).toBe('Invalid credentials');
-  });
-
-  it('falls back to the unknown translation key for non-record values', () => {
-    expect(normalizeLoginErrorMessage(404)).toBe('auth.error.unknown');
-  });
-
-  it('returns the serialized error message when available', () => {
-    expect(normalizeLoginErrorMessage({ message: 'Serialized credentials error' })).toBe(
-      'Serialized credentials error'
-    );
-  });
-
-  it('returns the nested message field when error.message is an object', () => {
-    expect(
-      normalizeLoginErrorMessage({
-        message: { message: 'Nested message object' },
-      })
-    ).toBe('Nested message object');
-  });
-
-  it('returns the nested displayMessage field when available', () => {
-    expect(
-      normalizeLoginErrorMessage({
-        displayMessage: { message: 'Display message object' },
-      })
-    ).toBe('Display message object');
-  });
-
-  it('returns a direct nested displayMessage string when available', () => {
-    expect(
-      normalizeLoginErrorMessage({
-        displayMessage: 'Display message string',
-      })
-    ).toBe('Display message string');
-  });
-
-  it('skips blank string nested messages and continues to later fallbacks', () => {
-    expect(
-      normalizeLoginErrorMessage({
-        message: '   ',
-        data: { message: 'Data fallback after blank message' },
-      })
-    ).toBe('Data fallback after blank message');
-  });
-
-  it('returns the nested data.message value when available', () => {
-    expect(normalizeLoginErrorMessage({ data: { message: 'Invalid credentials' } })).toBe(
-      'Invalid credentials'
-    );
-  });
-
-  it('falls back to the unknown translation key when no message can be found', () => {
-    expect(normalizeLoginErrorMessage({ data: {} })).toBe('auth.error.unknown');
   });
 });

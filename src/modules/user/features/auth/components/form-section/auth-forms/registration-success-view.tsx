@@ -1,6 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import type { JSX } from 'react';
-import { useTranslation } from 'react-i18next';
+import { type JSX, useEffect, useState } from 'react';
 
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
@@ -12,7 +11,7 @@ import type {
   MessageContainerProps,
   Props,
   SuccessActionButtonProps,
-  SuccessLabelProps,
+  SuccessDescriptionProps,
   SuccessTitleProps,
 } from '@auth/types/auth-forms/registration-success-view';
 
@@ -27,28 +26,45 @@ const headingFocusStyles = {
 };
 
 function FocusableSuccessHeading({ title }: SuccessTitleProps): JSX.Element {
-  const focusOnMount = useFocusOnMount<HTMLDivElement>();
+  const focusOnMount = useFocusOnMount<HTMLHeadingElement>();
   return (
-    <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
-      <UITypography component="h2" sx={styles.successMessageTitle}>
-        {title}
-      </UITypography>
-    </Box>
+    <UITypography
+      component="h2"
+      ref={focusOnMount}
+      tabIndex={-1}
+      sx={[styles.successMessageTitle, headingFocusStyles]}
+    >
+      {title}
+    </UITypography>
   );
 }
 
-function ConfettiTop({ label }: SuccessLabelProps): JSX.Element {
+function SuccessDescription({ description }: SuccessDescriptionProps): JSX.Element {
+  const [announced, setAnnounced] = useState('');
+
+  useEffect(() => {
+    setAnnounced(description);
+  }, [description]);
+
+  return (
+    <UITypography component="span" role="status" sx={styles.successMessageDescription}>
+      {announced}
+    </UITypography>
+  );
+}
+
+function ConfettiTop(): JSX.Element {
   return (
     <Box sx={styles.successTopImgBox}>
-      <Box component={ConfettiImage} role="img" aria-label={label} sx={styles.successTopConfetti} />
+      <Box component={ConfettiImage} aria-hidden="true" sx={styles.successTopConfetti} />
     </Box>
   );
 }
 
-function GearsImage({ label }: SuccessLabelProps): JSX.Element {
+function GearsImage(): JSX.Element {
   return (
     <Box sx={styles.gears}>
-      <Box component={SettingsImage} role="img" aria-label={label} sx={styles.successGears} />
+      <Box component={SettingsImage} aria-hidden="true" sx={styles.successGears} />
     </Box>
   );
 }
@@ -93,25 +109,28 @@ function MessageContainer({
   return (
     <Box sx={styles.messageContainer}>
       <FocusableSuccessHeading title={title} />
-      <UITypography component="span" sx={styles.successMessageDescription}>
-        {description}
-      </UITypography>
+      <SuccessDescription description={description} />
       <SuccessActionButton buttonLabel={buttonLabel} disabled={disabled} onBack={onBack} />
     </Box>
   );
 }
 
-export default function RegistrationSuccessView({ isClosing, onBack }: Props): JSX.Element {
-  const { t } = useTranslation();
+export default function RegistrationSuccessView({
+  isClosing,
+  onBack,
+  title,
+  description,
+  buttonLabel,
+}: Props): JSX.Element {
   return (
-    <Box role="status" sx={styles.notificationSection}>
+    <Box sx={styles.notificationSection}>
       <Box sx={styles.contentBox}>
-        <ConfettiTop label={t('notifications.success.images.confetti')} />
-        <GearsImage label={t('notifications.success.images.gears')} />
+        <ConfettiTop />
+        <GearsImage />
         <MessageContainer
-          title={t('notifications.success.title')}
-          description={t('notifications.success.description')}
-          buttonLabel={t('notifications.success.button')}
+          title={title}
+          description={description}
+          buttonLabel={buttonLabel}
           disabled={isClosing}
           onBack={onBack}
         />

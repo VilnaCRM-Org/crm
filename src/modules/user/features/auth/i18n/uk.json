@@ -80,7 +80,8 @@
     "subtitle": "Увійдіть до свого аккаунту за два кліки",
     "errors": {
       "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
-      "login": "Помилка входу: {{reason}}"
+      "invalid_credentials": "Невірна електронна адреса або пароль",
+      "rate_limited": "Забагато спроб входу. Спробуйте пізніше"
     },
     "form": {
       "email_input": {
@@ -95,10 +96,16 @@
       "submit_button": "Увійти до аккаунту",
       "submitting": "Вхід…",
       "remember_me": "Запамʼятати мене",
-      "forgot_password": "Забули пароль?"
+      "forgot_password": "Забули пароль?",
+      "loading_result": "Завантаження результату…"
     },
     "notices": {
       "password_reset": "Пароль змінено. Увійдіть з новим паролем."
+    },
+    "success": {
+      "title": "Вітаємо!",
+      "description": "Ви успішно увійшли",
+      "button": "Продовжити"
     }
   },
   "notifications": {
