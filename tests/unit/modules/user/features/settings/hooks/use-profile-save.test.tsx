@@ -330,6 +330,24 @@ describe('useProfileSave', () => {
     expect(result.current.state.settled).toBe(1);
   });
 
+  it('lets the transient retry do nothing once the save button is gone', async () => {
+    const { props, show } = harness();
+    const detached: ProfileFormProps = { ...props, saveRef: { current: null } };
+    mockUpdate.mockResolvedValue(failedOutcome('transient'));
+    const { result } = renderHook(() => useProfileSave(detached), { wrapper });
+
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+
+    const [drafts] = show.mock.calls[0] as [
+      { items: Array<{ action?: { onActivate: () => void } }> },
+    ];
+    expect(() => drafts.items[0]?.action?.onActivate()).not.toThrow();
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(result.current.state.settled).toBe(1);
+  });
+
   it.each([
     ['rejected', 'Не вдалося зберегти зміни. Спробуйте пізніше.'],
     ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],

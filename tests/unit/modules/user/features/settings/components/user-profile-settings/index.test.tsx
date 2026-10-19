@@ -63,10 +63,12 @@ const RETRY = 'Спробувати ще раз';
 
 describe('UserProfileSettings', () => {
   it('shows a hidden skeleton and the loading status while the read is pending', () => {
-    const { container } = render(card(), { wrapper });
+    render(card(), { wrapper });
 
     expect(screen.getByRole('status')).toHaveTextContent(LOADING);
-    expect(container.innerHTML).toContain('aria-hidden="true"');
+    expect(screen.getAllByRole('generic', { hidden: true }).map((node) => node.id)).toContain(
+      'profile-skeleton-save'
+    );
     expect(screen.getByRole('alert')).toBeEmptyDOMElement();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
@@ -76,9 +78,16 @@ describe('UserProfileSettings', () => {
 
   it('hides every skeleton block from the accessibility tree', () => {
     render(card(), { wrapper });
+    const isBlock = (node: HTMLElement): boolean => node.id.startsWith('profile-skeleton-');
+    const hidden = screen.getAllByRole('generic', { hidden: true });
+    const blocks = hidden.filter(isBlock);
+    const root = hidden.find(
+      (node) => node.getAttribute('aria-hidden') === 'true' && !isBlock(node)
+    );
 
-    expect(screen.queryAllByRole('generic', { hidden: false }).length).toBeGreaterThanOrEqual(0);
-    expect(screen.getAllByRole('generic', { hidden: true }).length).toBeGreaterThan(0);
+    expect(blocks).toHaveLength(12);
+    blocks.forEach((block) => expect(root).toContainElement(block));
+    expect(screen.queryAllByRole('generic').filter(isBlock)).toHaveLength(0);
     expect(within(screen.getByRole('main')).queryByRole('img')).not.toBeInTheDocument();
   });
 
