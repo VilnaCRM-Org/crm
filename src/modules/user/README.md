@@ -261,6 +261,26 @@ label returns to "Підтвердити".
 
 **Rejected.** A second Retry button beside the banner (two primary actions for one request).
 
+### Sign-in and sign-up results use one notification
+
+**Context.** Sign-up already replaced its form with the website's full-card notification for
+every server result; sign-in showed failures as red text under the form, always reading "unknown
+error", and redirected silently on success.
+
+**Decision.** Sign-in uses the same lazily loaded `RegistrationNotification` with
+`flow="signIn"`. A settled failure shows the error card: a focused h2 "Трапилась помилка", the
+message in an alert filled after mount (mapped from the `AuthError` kind and HTTP 429, never the
+backend text), and both "Спробувати ще раз" (resubmits the last values) and "Назад" (aborts any
+running request, returns to the form with the values kept and focuses the e-mail field). A sign-in
+shows the success card (focused h2 "Вітаємо!", "Ви успішно увійшли" in a status region,
+"Продовжити"); its button performs the existing redirect to the preserved destination with focus on
+`<main>`, and nothing redirects on a timer. While a card shows, the form, its submit and the OAuth
+row are inert; its buttons use `aria-disabled` while busy so focus is never dropped. A page that
+mounts with a token already present never shows the card.
+
+**Rejected.** The red banner (no heading, no recovery action, easy to miss); a notice on the
+destination page (still a silent swap to `/`); a timed auto-redirect (WCAG 2.2.1).
+
 ### The sandbox demo walks the whole flow
 
 **Context.** A pull-request sandbox is a static site with no backend, and no environment

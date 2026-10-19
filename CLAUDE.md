@@ -376,19 +376,20 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Twelve directives are annotated today, at two mutators. Eleven are `ArrayDeclaration` on a React
+Thirteen directives are annotated today, at two mutators. Twelve are `ArrayDeclaration` on a React
 hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. The eleventh, `use-login-submitter.ts`, annotates the **non-empty**
-`[actions, loginControllersRef]`, which `ArrayDeclaration` empties instead — equivalent for a
-different reason worth stating separately: `actions` is always the `authActions` module singleton
-and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an emptied list
-memoizes exactly the same callback. Hoisting either literal to a named constant would remove the
-mutant, but `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument
-that is not an array literal, so there is nothing left to change.
+does with `[]`. The other two, both in `use-login-submitter.ts`, annotate **non-empty** arrays,
+which `ArrayDeclaration` empties instead — equivalent for a different reason worth stating
+separately. `[actions, loginControllersRef]`: `actions` is always the `authActions` module
+singleton and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an
+emptied list memoizes exactly the same callback. `[login]` on `handleLogin`: `login` is that same
+memoized callback, so its identity never changes either. Hoisting either literal to a named
+constant would remove the mutant, but `react-hooks/exhaustive-deps` (an `error` here, issue #164)
+rejects a deps argument that is not an array literal, so there is nothing left to change.
 
-The twelfth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The thirteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -397,7 +398,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a thirteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a fourteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
@@ -2115,10 +2116,8 @@ enforced by two rules:
   for. The code-split boundary is where the cost stops.
 
 **Honest limitation:** the gate is syntactic and `.tsx`-only. Hooks (`use-*.ts`) are **not**
-covered — `new LoginErrorMessageNormalizer()` in
-`@auth/components/form-section/auth-forms/use-login-submitter.ts` and
-`new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts` stay
-review-gate concerns. ESLint cannot
+covered — `new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts`
+stays a review-gate concern. ESLint cannot
 know which PascalCase identifier is behavioral (the built-in allowlist must be maintained), and
 dependency-cruiser keys on path conventions, so a behavioral class placed outside those paths or
 re-exported through a barrel is not caught. Satisfy both gates by adding the token, registering

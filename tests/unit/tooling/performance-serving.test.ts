@@ -274,6 +274,23 @@ describe('performance serving config', () => {
     );
   });
 
+  it('keeps the sign-in notification out of the initial auth form chunk', () => {
+    const loginFormSource = readFile(
+      'src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx'
+    );
+
+    expect(loginFormSource).toContain(
+      'import registrationNotificationLoader from ' +
+        "'@auth/utils/load-registration-notification';"
+    );
+    expect(loginFormSource).toContain(
+      'const RegistrationNotification = lazy(() => registrationNotificationLoader.load());'
+    );
+    expect(loginFormSource).not.toContain(
+      "from '@auth/components/form-section/auth-forms/registration-notification';"
+    );
+  });
+
   it('keeps the password-recovery copy out of the eager merged catalog', () => {
     const merged = readJson<Record<string, { translation: Record<string, unknown> }>>(
       'src/i18n/localization.json'

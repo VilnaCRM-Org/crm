@@ -91,7 +91,7 @@ const errorButtonContained = {
     color: paletteColors.background.default,
     boxShadow: '0px 4px 7px 0px rgba(71, 85, 99, 0.21)',
   },
-  '&.Mui-disabled': {
+  '&&[aria-disabled="true"]': {
     backgroundColor: paletteColors.background.subtle,
     color: paletteColors.background.default,
   },
@@ -110,7 +110,7 @@ const errorButtonOutlined = {
   '&:active': {
     border: `1px solid ${paletteColors.border.default}`,
   },
-  '&.Mui-disabled': {
+  '&&[aria-disabled="true"]': {
     backgroundColor: paletteColors.background.subtle,
     color: paletteColors.background.default,
     border: 'none',

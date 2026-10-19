@@ -36,45 +36,69 @@ describe('useLoginSubmitter', () => {
     expect(result.current.isSubmitting).toBe(false);
   });
 
-  it('never interpolates raw backend text into the localized login error', () => {
-    useAuthStore.setState({
-      loginError: { kind: 'authentication', displayMessage: 'Bad credentials', retryable: false },
-    });
-
-    const { result } = renderHook(() => useLoginSubmitter(t));
-
-    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
-    expect(result.current.error).not.toContain('Bad credentials');
-  });
-
-  it('falls back to the unknown-error string when a key-shaped message has no translation', () => {
-    const strictT: TFunction = ((key: string, options?: Record<string, unknown>): string => {
-      if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
-      if (options && 'defaultValue' in options) return String(options.defaultValue);
-      return key;
-    }) as unknown as TFunction;
-
-    useAuthStore.setState({
-      loginError: { kind: 'authentication', displayMessage: 'some.missing.key', retryable: false },
-    });
-
-    const { result } = renderHook(() => useLoginSubmitter(strictT));
-
-    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
-  });
-
-  it('translates an i18n-key shaped login error', () => {
+  it.each([
+    ['authentication', undefined, 'sign_in.errors.invalid_credentials'],
+    ['network', undefined, 'failure_responses.network_errors.network_error'],
+    ['server', undefined, 'failure_responses.server_errors.server_error'],
+    ['validation', undefined, 'failure_responses.client_errors.something_went_wrong'],
+    ['conflict', undefined, 'failure_responses.client_errors.unexpected_error'],
+    ['unknown', undefined, 'failure_responses.client_errors.unexpected_error'],
+    ['server', 429, 'sign_in.errors.rate_limited'],
+    ['server', 503, 'failure_responses.server_errors.server_error'],
+  ] as const)('maps a %s failure (status %p) to %s', (kind, status, key) => {
     useAuthStore.setState({
       loginError: {
-        kind: 'authentication',
-        displayMessage: 'auth.error.unknown',
+        kind,
+        displayMessage: 'Raw backend text',
         retryable: false,
+        ...(status === undefined ? {} : { status }),
       },
     });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
-    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
+    expect(result.current.error).toBe(key);
+    expect(result.current.error).not.toContain('Raw backend text');
+  });
+
+  it('retries with the values submitted last', async () => {
+    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    const first = buildCredentials();
+    const second = buildCredentials();
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    await act(async () => {
+      await result.current.handleLogin(first);
+      await result.current.handleLogin(second);
+    });
+    await act(async () => {
+      result.current.handleRetry();
+    });
+
+    expect(loginUser).toHaveBeenCalledTimes(3);
+    expect(loginUser).toHaveBeenLastCalledWith(second, expect.any(AbortSignal));
+    expect(loginUser.mock.contexts[2]).toBe(authActions);
+  });
+
+  it('does nothing on retry before any submit', () => {
+    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    act(() => result.current.handleRetry());
+
+    expect(loginUser).not.toHaveBeenCalled();
+  });
+
+  it('clears the shown error on back', () => {
+    useAuthStore.setState({
+      loginError: { kind: 'network', displayMessage: 'offline', retryable: true },
+    });
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    act(() => result.current.handleBack());
+
+    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(result.current.error).toBe('');
   });
 
   it('clears the login error on unmount', () => {

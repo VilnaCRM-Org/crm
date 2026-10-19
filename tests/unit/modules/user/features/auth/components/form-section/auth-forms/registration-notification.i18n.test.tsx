@@ -168,7 +168,7 @@ describe('RegistrationNotification', () => {
     expect(onBack).not.toHaveBeenCalled();
   });
 
-  it('renders the retry button and disables it while submitting', () => {
+  it('renders the retry button and marks it busy while submitting', () => {
     const onRetry = jest.fn();
 
     renderWithProviders(
@@ -178,7 +178,8 @@ describe('RegistrationNotification', () => {
 
     const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
 
-    expect(retryButton).toBeDisabled();
+    expect(retryButton).toHaveAttribute('aria-disabled', 'true');
+    expect(retryButton).toBeEnabled();
     fireEvent.click(retryButton);
     expect(onRetry).not.toHaveBeenCalled();
   });

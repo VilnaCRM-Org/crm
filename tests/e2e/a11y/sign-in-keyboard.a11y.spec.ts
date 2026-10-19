@@ -4,6 +4,13 @@ import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import {
+  backButtonOf,
+  errorCardHeading,
+  expectSignInErrorCard,
+  retryButtonOf,
+  signInErrorMessages,
+} from '@tests/e2e/utils/sign-in-result-card';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
 const LOGIN_API_URL = '**/api/users';
@@ -23,6 +30,19 @@ async function openSignIn(page: Page): Promise<void> {
 
 function isPostLogin(route: Route): boolean {
   return route.request().method() === 'POST';
+}
+
+async function rejectLogin(route: Route): Promise<void> {
+  if (!isPostLogin(route)) {
+    await route.fallback();
+    return;
+  }
+
+  await route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ message: 'Invalid credentials' }),
+  });
 }
 
 test.describe('Sign-in form keyboard contract (issue #118)', () => {
@@ -113,5 +133,24 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
 
     await expect(page.locator('#email')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.locator('#email')).toHaveAccessibleDescription(/./);
+  });
+
+  test('a failed sign-in focuses the error card and Enter on Назад restores the form', async ({
+    page,
+  }) => {
+    await page.route(LOGIN_API_URL, rejectLogin);
+
+    await page.locator('#email').fill(credentials.email);
+    await page.locator('#password').fill(credentials.password);
+    await page.locator('#password').press('Enter');
+
+    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
+    await expectTabOrder(page, [{ locator: retryButtonOf(page) }, { locator: backButtonOf(page) }]);
+    await page.keyboard.press('Enter');
+
+    await expect(errorCardHeading(page)).toHaveCount(0);
+    await expect(page.locator('#email')).toBeFocused();
+    await expect(page.locator('#email')).toHaveValue(credentials.email);
+    await expect(page.locator('#password')).toHaveValue(credentials.password);
   });
 });

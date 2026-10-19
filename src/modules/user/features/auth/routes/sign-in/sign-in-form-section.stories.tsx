@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
 import { withMemoryRouter } from '@stories/router-decorators';
+import { noop } from '@stories/story-callbacks';
 
 import SignInFormSection from './sign-in-form-section';
 
@@ -22,8 +23,10 @@ const meta: Meta<typeof SignInFormSection> = {
 
 export default meta;
 
-export const Default: StoryObj<typeof SignInFormSection> = { args: { notice: null } };
+const postLogin = { signedIn: false, proceed: noop };
+
+export const Default: StoryObj<typeof SignInFormSection> = { args: { notice: null, postLogin } };
 
 export const PasswordResetNotice: StoryObj<typeof SignInFormSection> = {
-  args: { notice: 'password_reset' },
+  args: { notice: 'password_reset', postLogin },
 };
