@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 
 import Row from '@/modules/user/features/settings/components/profile-form/email-status-row';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
@@ -29,10 +30,12 @@ describe('EmailStatusRow', () => {
     expect(resend()).not.toHaveAttribute('aria-disabled');
   });
 
-  it('styles the control as a #0074B5 link of 24 px or more and the status in #57595B', () => {
+  it('styles the control as an underlined #0074B5 link of 24 px+ and the status in #57595B', () => {
     render(row(), { wrapper });
 
     expect(resend()).toHaveStyle({ color: '#0074B5', minHeight: '1.5rem' });
+    expect(styleRuleFor(resend())?.getPropertyValue('text-decoration')).toBe('underline');
+    expect(styleRuleFor(resend())?.getPropertyValue('text-underline-offset')).toBe('0.15em');
     expect(screen.getByText('E-mail не підтверджено')).toHaveStyle({ color: '#57595B' });
   });
 

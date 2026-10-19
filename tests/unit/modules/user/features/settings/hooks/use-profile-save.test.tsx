@@ -91,7 +91,10 @@ describe('useProfileSave', () => {
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
       noChanges: false,
+      noChangesMarked: false,
       settled: 0,
+      cleared: 0,
+      attempts: 0,
     });
     expect(result.current.isSubmitting).toBe(false);
   });
@@ -111,8 +114,88 @@ describe('useProfileSave', () => {
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
       noChanges: true,
+      noChangesMarked: false,
       settled: 0,
+      cleared: 0,
+      attempts: 0,
     });
+  });
+
+  it('flips the no-change mark on every repeated no-change save', async () => {
+    const { props } = harness();
+    const { result } = renderHook(() => useProfileSave(props), { wrapper });
+    const unchanged = buildProfileFormValues({
+      fullName: user.fullName,
+      email: user.email,
+      newPassword: '',
+    });
+    const press = (): boolean => {
+      act(() => {
+        result.current.save(unchanged);
+      });
+      return result.current.state.noChangesMarked;
+    };
+
+    const marks = [press(), press(), press()];
+
+    expect(marks).toEqual([false, true, false]);
+    expect(result.current.state.noChanges).toBe(true);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('drops the no-change mark once a changed save follows', async () => {
+    const { props } = harness();
+    mockUpdate.mockResolvedValue(okOutcome());
+    const { result } = renderHook(() => useProfileSave(props), { wrapper });
+    const unchanged = buildProfileFormValues({
+      fullName: user.fullName,
+      email: user.email,
+      newPassword: '',
+    });
+    act(() => {
+      result.current.save(unchanged);
+    });
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+
+    act(() => {
+      result.current.save(unchanged);
+    });
+
+    expect(result.current.state.noChanges).toBe(true);
+    expect(result.current.state.noChangesMarked).toBe(false);
+  });
+
+  it('resets the field errors and the no-change status as soon as a request starts', async () => {
+    const { props } = harness();
+    mockUpdate.mockResolvedValueOnce({
+      kind: 'invalid',
+      errors: { items: [{ field: 'email', reason: 'email_taken' }] },
+    });
+    const { result } = renderHook(() => useProfileSave(props), { wrapper });
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+    expect(result.current.state.fieldErrors.items).toHaveLength(1);
+    expect(result.current.state.attempts).toBe(1);
+    let settle: (outcome: ProfileUpdateOutcome) => void = () => undefined;
+    mockUpdate.mockReturnValueOnce(new Promise((resolve) => (settle = resolve)));
+
+    act(() => {
+      result.current.save(nameChange());
+    });
+
+    expect(result.current.state.fieldErrors).toEqual({ items: [] });
+    expect(result.current.state.noChanges).toBe(false);
+    expect(result.current.state.attempts).toBe(2);
+    await act(async () =>
+      settle({ kind: 'invalid', errors: { items: [{ field: 'email', reason: 'email_taken' }] } })
+    );
+    expect(result.current.state.fieldErrors).toEqual({
+      items: [{ field: 'email', reason: 'email_taken' }],
+    });
+    expect(result.current.state.attempts).toBe(2);
   });
 
   it('sends one update for two saves before the first settles and flags isSubmitting', async () => {
@@ -279,7 +362,10 @@ describe('useProfileSave', () => {
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
       noChanges: false,
+      noChangesMarked: false,
       settled: 0,
+      cleared: 0,
+      attempts: 1,
     });
   });
 
@@ -332,8 +418,13 @@ describe('useProfileSave', () => {
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
       noChanges: false,
+      noChangesMarked: false,
       settled: 0,
+      cleared: 1,
+      attempts: 1,
     });
+    act(() => result.current.clear());
+    expect(result.current.state.cleared).toBe(2);
   });
 
   it('drops field errors on the next settled save and no-change on an invalid one', async () => {

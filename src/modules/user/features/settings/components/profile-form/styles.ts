@@ -63,6 +63,8 @@ export default {
     font: 'inherit',
     fontWeight: 500,
     color: paletteColors.primary.linkText,
+    textDecoration: 'underline',
+    textUnderlineOffset: '0.15em',
     cursor: 'pointer',
     '&[aria-disabled="true"]': { cursor: 'default', opacity: 0.6 },
     '&:focus-visible': {
@@ -101,6 +103,9 @@ export default {
     backgroundColor: paletteColors.background.default,
     color: customColors.text.dark,
     '&:hover': { backgroundColor: paletteColors.background.paper },
+    '&[aria-disabled="true"]': { cursor: 'default', opacity: 0.6 },
+    '&[aria-disabled="true"]:hover': { backgroundColor: paletteColors.background.default },
+    '&:focus-visible': { outline: `2px solid ${customColors.text.dark}`, outlineOffset: '2px' },
     [`@media (min-width:${md}px)`]: CLEAR_PILL,
   },
 } as const;

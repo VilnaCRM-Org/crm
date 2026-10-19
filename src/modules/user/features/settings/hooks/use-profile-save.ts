@@ -31,7 +31,14 @@ import useSettledFocus from './use-settled-focus';
 
 const NO_ERRORS: ProfileFieldErrorSet = { items: [] };
 
-const INITIAL_STATE: ProfileFormState = { fieldErrors: NO_ERRORS, noChanges: false, settled: 0 };
+const INITIAL_STATE: ProfileFormState = {
+  fieldErrors: NO_ERRORS,
+  noChanges: false,
+  noChangesMarked: false,
+  settled: 0,
+  cleared: 0,
+  attempts: 0,
+};
 
 const FIELD_ORDER: readonly ProfileField[] = [
   'fullName',
@@ -53,11 +60,15 @@ const FAILURE_TOASTS = new Map<ProfileFailureReason, string>([
 ]);
 
 function reduceFormState(state: ProfileFormState, action: ProfileFormAction): ProfileFormState {
-  if (action.type === 'invalid') {
-    return { ...state, noChanges: false, fieldErrors: action.errors };
-  }
-  const settled = action.type === 'settled' ? state.settled + 1 : state.settled;
-  return { fieldErrors: NO_ERRORS, noChanges: action.type === 'no_changes', settled };
+  if (action.type === 'invalid') return { ...state, fieldErrors: action.errors };
+  return {
+    fieldErrors: NO_ERRORS,
+    noChanges: action.type === 'no_changes',
+    noChangesMarked: state.noChanges && !state.noChangesMarked,
+    settled: action.type === 'settled' ? state.settled + 1 : state.settled,
+    cleared: action.type === 'clear' ? state.cleared + 1 : state.cleared,
+    attempts: action.type === 'pending' ? state.attempts + 1 : state.attempts,
+  };
 }
 
 function savedDrafts(change: ProfileChange, t: TFunction): ToastDraftSet {
@@ -124,6 +135,7 @@ export default function useProfileSave(props: ProfileFormProps): ProfileSave {
   const save = async (values: ProfileFormValues): Promise<void> => {
     const change = changes.detect(props.user, values);
     if (change === null) return dispatch({ type: 'no_changes' });
+    dispatch({ type: 'pending' });
     const outcome = await submit(change);
     if (outcome !== null) settleSave(outcome, change, { props, t, dispatch });
   };

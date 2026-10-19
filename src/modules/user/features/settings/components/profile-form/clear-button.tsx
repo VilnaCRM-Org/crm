@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { type JSX, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -13,11 +13,11 @@ export default function ClearButton({ defaults, busy, onClear }: ClearButtonProp
   const { t } = useTranslation();
   const { reset } = useFormContext<ProfileFormValues>();
 
-  const clear = (): void => {
+  const clear = useCallback((): void => {
     if (busy) return;
     reset(defaults);
     onClear();
-  };
+  }, [busy, reset, defaults, onClear]);
 
   return (
     <UIButton
