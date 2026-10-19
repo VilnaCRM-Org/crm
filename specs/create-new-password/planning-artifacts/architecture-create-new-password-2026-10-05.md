@@ -697,8 +697,9 @@ must not survive the page (FR-17), so they live in `useState` inside the hooks �
 - `useCreateNewPassword(loader: AuthProviderLoader)` returns `CreateNewPasswordState`; its
   `submit` takes the form's `CreateNewPasswordDto` and sends only `token` and `newPassword`. It
   keeps the failure and navigates to `/sign-in` on `confirmed` (§5.7). An `invalid_link` failure
-  switches its view to `invalid`, so the form and its token unmount (FR-22, §5.6). The page shows
-  the same `invalid` state without a request when `useResetToken` returns `null`.
+  switches its view to `invalid`, so the form and its token unmount, and the page passes
+  `active = false` to `useResetToken`, which drops the token from memory (FR-22, §5.6). The page
+  shows the same `invalid` state without a request when `useResetToken` returns `null`.
 - Each flow hook's run resolves the provider through
   `loader.resolve(AUTH_TOKENS.PasswordRecoveryProvider)` and calls the step; a rejected load
   becomes a `RecoveryFailedOutcome` with reason `network`, retryable (a module-level constant
@@ -862,10 +863,12 @@ returns the named `RecoveryFailureBanner` (the `UIForm` `error`) and dismisses i
 
 ### 5.6 Reset token: read once, memory only, URL stripped
 
-`useResetToken(): string | null` reads the `token` parameter of `location.search` once, in a
+`useResetToken(active: boolean): string | null` reads the `token` parameter of `location.search` once, in a
 `useState` initializer, trims it and returns it only when it is usable (non-empty, ≤ 255
 characters, FR-17); otherwise it returns `null`. The page hands the string to the confirm form
-as its `token` default; after an `invalid_link` failure the form unmounts with it (FR-22).
+as its `token` default. After an `invalid_link` failure the form unmounts and the page passes
+`active = false`, so the hook sets its state to `null` and the token leaves memory for good (FR-22);
+the flow hook never writes into the token hook.
 In a `useLayoutEffect` it navigates to the bare pathname with `replace: true` when a `token`
 parameter is present, so the router's `location.search` and the address bar agree and the URL is
 stripped before the browser paints the form (FR-16, NFR-12). `navigate` is safe there: react-router marks the function active in its
@@ -1278,7 +1281,7 @@ Hooks (exempt from the class rules, bound by TB-1 positions 2 and 5):
 - `useAuthProviderLoader(): AuthProviderLoader` (`@auth/hooks/`).
 - `useResetPassword(loader: AuthProviderLoader): ResetPasswordState` (`@auth/hooks/`).
 - `useCreateNewPassword(loader: AuthProviderLoader): CreateNewPasswordState` (`@auth/hooks/`).
-- `useResetToken(): string | null` (`@auth/hooks/`).
+- `useResetToken(active: boolean): string | null` (`@auth/hooks/`).
 - `useRecoveryFailureBanner(failure: RecoveryFailure | null, retry: () => Promise<void>)`
   returns `RecoveryFailureBanner` (`@auth/hooks/`).
 - `useAbortableSubmit<TInput, TOutcome>(run: AbortableRun<TInput, TOutcome>)` returns

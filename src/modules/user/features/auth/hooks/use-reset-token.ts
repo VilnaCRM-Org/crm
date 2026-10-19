@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 const TOKEN_PARAM = 'token';
@@ -9,10 +9,9 @@ function readToken(search: string): string | null {
   return token.length > 0 && token.length <= MAX_TOKEN_LENGTH ? token : null;
 }
 
-export default function useResetToken(): string | null {
+function useTokenParamStrip(): void {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
-  const [token] = useState(() => readToken(search));
   const stripped = useRef(false);
 
   useLayoutEffect(() => {
@@ -20,6 +19,16 @@ export default function useResetToken(): string | null {
     stripped.current = true;
     navigate(pathname, { replace: true });
   }, [navigate, pathname, search]);
+}
+
+export default function useResetToken(active: boolean): string | null {
+  const { search } = useLocation();
+  const [token, setToken] = useState(() => readToken(search));
+
+  useEffect(() => {
+    if (!active) setToken(null);
+  }, [active]);
+  useTokenParamStrip();
 
   return token;
 }

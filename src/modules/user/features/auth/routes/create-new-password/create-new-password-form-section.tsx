@@ -12,8 +12,8 @@ import useResetToken from '@auth/hooks/use-reset-token';
 
 export default function CreateNewPasswordFormSection(): JSX.Element {
   const { t } = useTranslation();
-  const token = useResetToken();
   const state = useCreateNewPassword(useAuthProviderLoader());
+  const token = useResetToken(state.view !== 'invalid');
 
   return (
     <AuthCard>
