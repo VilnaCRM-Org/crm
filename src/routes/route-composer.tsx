@@ -64,9 +64,6 @@ class RouteComposer {
     return this.gated(routes, [...this.protectedBranch(secured), ...this.pages(open, 'main')]);
   }
 
-  // A flag is read when a matched route renders, never while the router is built, so the gate is
-  // only emitted when some route declares one. It sits above the protected branch so a flag-off
-  // page shows the not-found page to a visitor without a token as well, with no sign-in redirect.
   private gated(routes: readonly AppRouteObject[], branches: RouteObject[]): RouteObject[] {
     const notFound = routes.some((route) => route.flag !== undefined)
       ? routes.find((route) => route.path === ROUTE_PATHS.notFound)
