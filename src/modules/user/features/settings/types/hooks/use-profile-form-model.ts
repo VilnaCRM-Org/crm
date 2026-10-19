@@ -1,6 +1,6 @@
-import type { EmailRowState } from '../components/profile-form';
 import type { ProfileFormValues } from '../user-profile/profile-form-values';
 
+import type { EmailRowState } from './use-email-row';
 import type { ProfileFormRules } from './use-profile-form-rules';
 import type { ProfileSave } from './use-profile-save';
 

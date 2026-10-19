@@ -20,10 +20,10 @@ const FAILURE_TOASTS = new Map<ProfileFailureReason, string>([
 
 function settleResend(
   outcome: ProfileResendOutcome,
-  { adoption, toasts, t }: ResendSettleContext
+  { email, adoption, toasts, t }: ResendSettleContext
 ): void {
   if (outcome.kind === 'sent') {
-    adoption.confirm(outcome.confirmed);
+    adoption.confirm(email, outcome.confirmed);
     if (outcome.confirmed) document.getElementById('email')?.focus();
     toasts.show({ items: [{ tone: 'success', message: t('settings.toasts.resent') }] });
     return;
@@ -48,7 +48,7 @@ export default function useEmailResend(
 
   const resend = async (): Promise<void> => {
     const outcome = await submit(user.id);
-    if (outcome !== null) settleResend(outcome, { adoption, toasts, t });
+    if (outcome !== null) settleResend(outcome, { email: user.email, adoption, toasts, t });
   };
 
   return { isSubmitting, resend };

@@ -156,18 +156,34 @@ describe('useProfileLoad', () => {
     const { result } = renderHook(() => useProfileLoad());
     await waitFor(() => expect(result.current.status).toBe('ready'));
 
-    act(() => result.current.adoption.confirm(true));
+    act(() => result.current.adoption.confirm(user.email, true));
 
     expect(result.current.user).toEqual({ ...user, confirmed: true });
     expect(result.current.version).toBe(0);
     expect(mockRead).toHaveBeenCalledTimes(1);
   });
 
+  it('ignores a resend that settles after a Save adopted another e-mail', async () => {
+    const user = buildUserEntity({ confirmed: false });
+    const saved = buildUserEntity({ id: user.id, confirmed: false });
+    mockRead.mockResolvedValue({ kind: 'ok', user });
+    const { result } = renderHook(() => useProfileLoad());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    act(() => result.current.adoption.adopt(saved));
+    act(() => result.current.adoption.confirm(user.email, true));
+
+    expect(saved.email).not.toBe(user.email);
+    expect(result.current.user).toBe(saved);
+    expect(result.current.user?.confirmed).toBe(false);
+    expect(result.current.version).toBe(1);
+  });
+
   it('keeps no entity when a confirmation arrives before one is loaded', () => {
     mockRead.mockReturnValue(new Promise(() => undefined));
     const { result } = renderHook(() => useProfileLoad());
 
-    act(() => result.current.adoption.confirm(true));
+    act(() => result.current.adoption.confirm(buildUserEntity().email, true));
 
     expect(result.current.user).toBeNull();
   });

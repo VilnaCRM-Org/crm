@@ -6,6 +6,7 @@ import UIForm from '@/components/ui-form';
 import UIFormField from '@/components/ui-form-field';
 import UIServerFieldError from '@/components/ui-server-field-error';
 import UITypography from '@/components/ui-typography';
+import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import useProfileFormModel from '../../hooks/use-profile-form-model';
@@ -26,8 +27,6 @@ import styles from './styles';
 
 const EMAIL_STATUS_ID = 'email-status';
 
-const ALTERNATING_MARK = '\u200B';
-
 const PROFILE_FIELDS: readonly ProfileField[] = [
   'fullName',
   'email',
@@ -46,7 +45,7 @@ const ERROR_MESSAGES = new Map<FieldErrorReason, string>([
 
 function ServerFieldErrors({ errors }: ServerFieldErrorsProps): JSX.Element {
   const { t } = useTranslation();
-  const first = errors.items[0]?.field;
+  const first = PROFILE_FIELDS.find((field) => errors.items.some((error) => error.field === field));
 
   return (
     <>

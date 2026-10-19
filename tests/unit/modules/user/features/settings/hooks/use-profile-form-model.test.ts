@@ -29,8 +29,6 @@ describe('useProfileFormModel', () => {
   const props: Props = {
     user,
     adoption: { adopt: jest.fn(), confirm: jest.fn() },
-    version: 0,
-    refocus: false,
     toasts: {
       toasts: { items: [] },
       announcement: '',

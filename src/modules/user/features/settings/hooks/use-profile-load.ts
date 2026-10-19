@@ -6,6 +6,7 @@ import { useService } from '@/providers/di';
 
 import type ProfileProvider from '../data-providers/profile-provider';
 import type {
+  ConfirmUserAction,
   ProfileLoadAction,
   ProfileLoadReducerState,
   ProfileLoadState,
@@ -18,6 +19,12 @@ const INITIAL_STATE: ProfileLoadReducerState = {
   refocus: false,
   attempt: 0,
 };
+
+function confirmUser(user: UserEntity | null, action: ConfirmUserAction): UserEntity | null {
+  return user !== null && user.email === action.email
+    ? { ...user, confirmed: action.confirmed }
+    : user;
+}
 
 function reduceProfileLoad(
   state: ProfileLoadReducerState,
@@ -34,7 +41,7 @@ function reduceProfileLoad(
       ? { status: 'ready', user: action.user }
       : action.type === 'failed'
         ? { status: 'failed', user: null }
-        : { user: state.user && { ...state.user, confirmed: action.confirmed } };
+        : { user: confirmUser(state.user, action) };
   return { ...state, ...settled };
 }
 
@@ -67,7 +74,8 @@ export default function useProfileLoad(): ProfileLoadState {
     retry: (): void => dispatch({ type: 'retry' }),
     adoption: {
       adopt: (user: UserEntity): void => dispatch({ type: 'adopt', user }),
-      confirm: (confirmed: boolean): void => dispatch({ type: 'confirm', confirmed }),
+      confirm: (email: string, confirmed: boolean): void =>
+        dispatch({ type: 'confirm', email, confirmed }),
     },
   };
 }

@@ -2155,8 +2155,10 @@ other than through a hook.
 | Hook                         | File                                | Returns            |
 | ---------------------------- | ----------------------------------- | ------------------ |
 | `useProfileLoad()`           | `settings/hooks/use-profile-load`   | `ProfileLoadState` |
-| `useProfileSave(props)`      | `settings/hooks/use-profile-save`   | `ProfileSave`      |
+| `useProfileSave(context)`    | `settings/hooks/use-profile-save`   | `ProfileSave`      |
 | `useEmailResend(u, a, t)`    | `settings/hooks/use-email-resend`   | `EmailResend`      |
+| `useEmailRow(context, busy)` | `settings/hooks/use-email-row`      | `EmailRowState`    |
+| `useProfileFormModel(c)`     | `settings/hooks/use-profile-form-…` | `ProfileFormModel` |
 | `useProfileFormRules(u, ch)` | `settings/hooks/use-profile-form-…` | `ProfileFormRules` |
 | `useToastQueue()`            | `src/hooks/use-toast-queue`         | `ToastQueue`       |
 | `useAbortableSubmit` (#315)  | `src/hooks/use-abortable-submit`    | `AbortableSubmit`  |
@@ -2164,8 +2166,19 @@ other than through a hook.
 
 Every hook takes named parameters and returns a named interface from §6.1 (TB-1 position 2).
 The hooks replace the 2026-10-06 `ProfileFormController` class: the board has no frontend
-controller (contract §1.11), and hooks are exempt from the class rules (#100, #129). There is no
-compose hook: `ProfileForm` calls the three it needs.
+controller (contract §1.11), and hooks are exempt from the class rules (#100, #129).
+
+Amendment 2026-10-19 (compose hooks): `ProfileForm` calls one compose hook,
+`useProfileFormModel(context)`, which calls `useProfileSave`, `useProfileFormRules` and
+`useEmailRow`; `useEmailRow(context, saving)` wraps `useEmailResend` and folds connectivity and
+the Save-busy flag into the row's `busy`. They hold no state of their own and add no layer: both
+sit in the board's React hook box. The reason is the component file's `rust-code-analysis`
+budget (`nom_closures_file_max` 6, function LLOC 10, `config/metrics-policy.json`): wiring three
+hooks, the defaults and the Save-to-resend busy flag inside `ProfileForm` pushed the
+presentation file over it. Both hooks take a hook-owned `ProfileEditContext` (`user`,
+`adoption`, `toasts`, `saveRef`; `types/hooks/use-profile-save.ts`), which `ProfileFormProps`
+extends, and `EmailRowState` lives in `types/hooks/use-email-row.ts`, so no hook type imports a
+component type.
 
 - `useProfileLoad()`, called by the `UserProfile` page, resolves `AUTH_TOKENS.ProfileProvider`
   through `useService`, runs one `provider.read(signal)` per `attempt` in an effect with its own
@@ -2174,7 +2187,8 @@ compose hook: `ProfileForm` calls the three it needs.
   `failed` → failed. `retry` bumps `attempt` and sets `refocus` (the first heading when ready,
   the retry button when the read fails again, §7.2); `adopt` clears it. `adoption` is a
   `UserEntityAdoption`: `adopt(user)` for a Save replaces the entity and bumps `version`, and
-  `confirm(confirmed)` for a resend updates only `confirmed` with no version bump; neither sends
+  `confirm(email, confirmed)` for a resend updates only `confirmed`, and only while the entity
+  still carries the e-mail the resend was issued for, with no version bump; neither sends
   a read, and both are stable callbacks over the reducer's `dispatch`. The read's
   `queryDeduplication: false` (§5.2) keeps the StrictMode remount's second read independent of
   the first, aborted one. The state lives in a file-level reducer (`useReducer`) and the read
@@ -2183,7 +2197,7 @@ compose hook: `ProfileForm` calls the three it needs.
   `adopt` and `confirm` (§12). The reducer has at most three exits (`nexits_max` 3,
   `config/metrics-policy.json:8`): `retry` and `adopt` return early, and `loaded`, `failed` and
   `confirm` share one merging return.
-- `useProfileSave(props: ProfileFormProps)` resolves `AUTH_TOKENS.ProfileProvider` through
+- `useProfileSave(props: ProfileEditContext)` resolves `AUTH_TOKENS.ProfileProvider` through
   `useService`, builds one `ProfileChangeDetector` in a `useState` initializer (the
   `RegistrationHandlersFactory` precedent), keeps `ProfileFormState` in `useState` and runs
   `provider.update(change, signal)` through #315's `useAbortableSubmit` (single flight, abort on
@@ -2191,14 +2205,16 @@ compose hook: `ProfileForm` calls the three it needs.
   `noChanges: true` and sends nothing; otherwise it submits and maps the outcome by `kind`:
   `ok` → `props.adoption.adopt(user)`, one success draft per changed aspect in the order name,
   e-mail, password, built with `t` from a module-private key table, passed to
-  `props.toasts.show` as one `ToastDraftSet`, and `settled` + 1; `invalid` → `fieldErrors` in DOM
-  order, no toast; `failed` → one error draft (with a "Спробувати ще раз" action whose
+  `props.toasts.show` as one `ToastDraftSet`, and `settled` + 1; `invalid` → `fieldErrors` in the
+  order the outcome gives them, no toast (`ProfileForm` focuses the first one in field
+  order); `failed` → one error draft (with a "Спробувати ще раз" action whose
   `onActivate` calls `props.saveRef.current?.click()` only for `transient`) and `settled` + 1;
   `session_ended` and a `null` from `submit` → nothing. `clear()` resets `fieldErrors` and
   `noChanges`. At most two functions and five closures (the initializer, the run, `save`,
   `clear`, the retry action).
 - `useEmailResend(user, adoption, toasts)` runs `provider.resend(user.id, signal)` through
-  `useAbortableSubmit`; `sent` (carrying `confirmed`) → `adoption.confirm(confirmed)` and the
+  `useAbortableSubmit`; `sent` (carrying `confirmed`) → `adoption.confirm(user.email,
+confirmed)` and the
   `settings.toasts.resent` draft, never `adopt`, so the form is not remounted; `rate_limited` →
   the rate-limit draft; `transient` and `rejected` → the resend-failed draft; `session_ended`
   and a `null` → nothing. One function and at most three closures.
@@ -2225,7 +2241,10 @@ removed `retry`, its drift item 10). The save hook instantiates it as
 each over a stable `run`, because `submit` changes identity with `run`; the toast's retry
 clicks Save rather than re-submitting the last input. The
 form disables the resend row while `save.isSubmitting` is true, and `UIForm` disables Save while
-it submits (`ui-form/index.tsx:70,100`), so no extra busy state exists.
+it submits (`ui-form/index.tsx:70,100`), so no extra busy state exists. Save is not disabled while
+a resend runs; a resend that settles after a Save adopted another e-mail is ignored by the
+reducer, because the `confirm` action carries the e-mail it was issued for (amendment
+2026-10-19).
 
 ## 8. File-by-file placement
 

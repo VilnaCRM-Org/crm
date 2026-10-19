@@ -4,7 +4,7 @@ export type ProfileLoadStatus = 'loading' | 'failed' | 'ready';
 
 export interface UserEntityAdoption {
   readonly adopt: (user: UserEntity) => void;
-  readonly confirm: (confirmed: boolean) => void;
+  readonly confirm: (email: string, confirmed: boolean) => void;
 }
 
 export interface ProfileLoadState {
@@ -35,6 +35,7 @@ export interface AdoptUserAction {
 
 export interface ConfirmUserAction {
   readonly type: 'confirm';
+  readonly email: string;
   readonly confirmed: boolean;
 }
 

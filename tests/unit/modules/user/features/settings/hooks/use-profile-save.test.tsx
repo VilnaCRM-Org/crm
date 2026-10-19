@@ -55,8 +55,6 @@ const harness = (): Harness => {
   const props: ProfileFormProps = {
     user,
     adoption: { adopt, confirm: jest.fn() },
-    version: 0,
-    refocus: false,
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() },
     saveRef: { current: { click, focus } as unknown as HTMLButtonElement },
   };
@@ -277,7 +275,7 @@ describe('useProfileSave', () => {
     expect(drafts.items.map((item) => item.message)).toEqual(messages);
   });
 
-  it('publishes the field errors in DOM order without a toast or a settled bump', async () => {
+  it('publishes the field errors as the outcome orders them, without a toast', async () => {
     const { props, show } = harness();
     mockUpdate.mockResolvedValue({
       kind: 'invalid',
@@ -297,10 +295,10 @@ describe('useProfileSave', () => {
     });
 
     expect(result.current.state.fieldErrors.items.map((error) => error.field)).toEqual([
-      'fullName',
+      'newPassword',
       'email',
       'currentPassword',
-      'newPassword',
+      'fullName',
     ]);
     expect(result.current.state.settled).toBe(0);
     expect(result.current.state.noChanges).toBe(false);
