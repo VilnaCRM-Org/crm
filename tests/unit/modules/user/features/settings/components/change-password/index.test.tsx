@@ -4,6 +4,7 @@ import type { JSX, ReactNode } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { I18nextProvider } from 'react-i18next';
 
+import type { PasswordRuleEvaluator } from '@/components/types/ui-password-policy-rules';
 import ChangePassword from '@/modules/user/features/settings/components/change-password';
 import type { ProfileFormValues } from '@/modules/user/features/settings/types/user-profile';
 import passwordValidator from '@/modules/user/lib/validations/password';
@@ -35,11 +36,10 @@ function Provider({ i18n, children }: ProviderProps): JSX.Element {
   );
 }
 
+const evaluate: PasswordRuleEvaluator = (value) => passwordValidator.evaluate(value);
+
 const subject = (): JSX.Element => (
-  <ChangePassword
-    rules={{ currentPassword: {}, newPassword: {} }}
-    evaluate={(value) => passwordValidator.evaluate(value)}
-  />
+  <ChangePassword rules={{ currentPassword: {}, newPassword: {} }} evaluate={evaluate} />
 );
 
 jest.mock('@/i18n', () => ({ __esModule: true, default: { addResourceBundle: jest.fn() } }));
