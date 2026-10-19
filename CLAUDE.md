@@ -279,7 +279,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-24-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+30-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -302,14 +302,16 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 24-way shard count rather than
+These keep the run affordable — parallelism comes from the 30-way shard count rather than
 Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
 weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
 invalidates, and those cluster by area. A diff touching one area can therefore land most of its
-re-run cost in a single shard; 24 shards keep that hot shard inside the `timeout-minutes` kill
+re-run cost in a single shard; 30 shards keep that hot shard inside the `timeout-minutes` kill
 switch. Raise the count if a shard starts approaching it — never the kill switch. The count went
 from 16 to 24 when Stryker 10's `CallExpression` mutator added 164 mutants and a cold run pushed
-shards 5 and 14 into the 15-minute kill switch.
+shards 5 and 14 into the 15-minute kill switch, and from 24 to 30 when the password-recovery
+files repacked the split so a cold shard 6 drew 443 mutants (the next heaviest drew 291) and hit
+the kill switch at 250 tested; the same packing at 30 caps the heaviest shard at 240.
 
 ### Honest mutant classification (issue #171)
 
@@ -1041,7 +1043,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 24-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 30-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
