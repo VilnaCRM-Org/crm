@@ -8,6 +8,7 @@ import {
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
+  SETTINGS_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
@@ -335,12 +336,15 @@ describe('performance serving config', () => {
     });
   });
 
-  it('wires both auth-form groups to the form-section chunk names the loaders emit', () => {
+  it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {
     const rsbuildConfigSource = readFile('rsbuild.config.ts');
     const loaderChunkName = (route: string): string | undefined =>
       /webpackChunkName: "([^"]+)"/.exec(
         readFile(`src/modules/user/features/auth/routes/${route}/form-section-loader.ts`)
       )?.[1];
+    const settingsChunkName = /webpackChunkName: "([^"]+)"/.exec(
+      readFile('src/modules/user/features/settings/routes/index.ts')
+    )?.[1];
 
     expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
       'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
@@ -357,10 +361,12 @@ describe('performance serving config', () => {
           selects({ name: loaderChunkName(route) })
         )
       ).toEqual([true, true, true, true]);
+      expect(selects({ name: settingsChunkName })).toBe(true);
     });
     expect(AUTH_FORM_CHUNKS).toEqual(['sign-in', 'sign-up'].map(loaderChunkName));
     expect(RECOVERY_FORM_CHUNKS).toEqual(
       ['reset-password', 'create-new-password'].map(loaderChunkName)
     );
+    expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
   });
 });
