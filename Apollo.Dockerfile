@@ -5,7 +5,7 @@ ARG BUN_VERSION=1.3.5
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 COPY scripts/docker/install-bun.sh /usr/local/bin/install-bun
-RUN apk add --no-cache bash~=5.2 curl=8.14.1-r2 && \
+RUN apk add --no-cache bash~=5.2 curl=8.14.1-r3 && \
     install-bun "${BUN_VERSION}"
 
 ENV BUN_INSTALL=/root/.bun
