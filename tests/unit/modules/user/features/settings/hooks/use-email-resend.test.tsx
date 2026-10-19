@@ -92,7 +92,7 @@ describe('useEmailResend', () => {
         result.current.resend();
       });
 
-      expect(confirm).toHaveBeenCalledWith(confirmed);
+      expect(confirm).toHaveBeenCalledWith(user.email, confirmed);
       expect(adopt).not.toHaveBeenCalled();
       expect(show).toHaveBeenCalledWith({
         items: [{ tone: 'success', message: 'Посилання для підтвердження надіслано повторно' }],

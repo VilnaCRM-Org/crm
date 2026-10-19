@@ -81,7 +81,7 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | `UserProfile` route   | `routes/user-profile/index.tsx`                                  |
 | `UserProfileSettings` | `components/user-profile-settings` and its child components      |
 | `ChangePassword`      | `components/change-password`                                     |
-| React hook            | `useProfileLoad`, `useProfileSave`, `useEmailResend`             |
+| React hook            | `useProfileLoad`, `useProfileFormModel` over `useProfileSave`, … |
 | Data provider         | `ProfileProvider` (three `@inject` collaborators)                |
 | Transformer           | `GraphQLProfileTransformer`, over #315's error transformer       |
 | Repository            | `GraphQLProfileRepository` and the three document seams          |
@@ -112,7 +112,15 @@ before it becomes `failed: rejected`.
 | any              | `failed: rejected`          | any other answer, including an unreadable one  |
 
 Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `password_wrong`,
-`password_not_accepted` and `new_password_rejected`; the hooks turn each into an i18n key.
+`password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an
+i18n key; a field error reason is copy that `ProfileForm` looks up in its module-private
+`ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
+field, in field order, that has one.
+
+`ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
+`useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned
+`ProfileEditContext`. A resend carries the e-mail it was issued for, so one that settles after a
+Save changed the address never marks the new address confirmed.
 
 ## Figma parity
 

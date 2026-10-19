@@ -9,16 +9,16 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { useService } from '@/providers/di';
 
 import type ProfileProvider from '../data-providers/profile-provider';
-import type { ProfileFormProps } from '../types/components/profile-form';
 import type {
+  ProfileEditContext,
   ProfileFormAction,
   ProfileSave,
+  SavedAspect,
   SaveSettleContext,
 } from '../types/hooks/use-profile-save';
 import type { ProfileFormState } from '../types/user-profile/form-state';
 import type {
   ProfileFailedOutcome,
-  ProfileField,
   ProfileFailureReason,
   ProfileFieldErrorSet,
   ProfileUpdateOutcome,
@@ -40,14 +40,7 @@ const INITIAL_STATE: ProfileFormState = {
   attempts: 0,
 };
 
-const FIELD_ORDER: readonly ProfileField[] = [
-  'fullName',
-  'email',
-  'currentPassword',
-  'newPassword',
-];
-
-const SAVED_TOASTS = new Map<'fullName' | 'email' | 'newPassword', string>([
+const SAVED_TOASTS = new Map<SavedAspect, string>([
   ['fullName', 'settings.toasts.saved'],
   ['email', 'settings.toasts.email_sent'],
   ['newPassword', 'settings.toasts.password_changed'],
@@ -93,19 +86,13 @@ function failureDrafts(
   return { items: [{ tone: 'error', message: t(key), action }] };
 }
 
-function sortedErrors({ items }: ProfileFieldErrorSet): ProfileFieldErrorSet {
-  return {
-    items: [...items].sort((a, b) => FIELD_ORDER.indexOf(a.field) - FIELD_ORDER.indexOf(b.field)),
-  };
-}
-
 function settleSave(
   outcome: ProfileUpdateOutcome,
   change: ProfileChange,
   { props, t, dispatch }: SaveSettleContext
 ): void {
   if (outcome.kind === 'invalid') {
-    return dispatch({ type: 'invalid', errors: sortedErrors(outcome.errors) });
+    return dispatch({ type: 'invalid', errors: outcome.errors });
   }
   if (outcome.kind === 'ok') props.adoption.adopt(outcome.user);
   const retry = (): void => props.saveRef.current?.click();
@@ -125,7 +112,7 @@ function useProfileUpdate(): AbortableSubmit<ProfileChange, ProfileUpdateOutcome
   return useAbortableSubmit(run);
 }
 
-export default function useProfileSave(props: ProfileFormProps): ProfileSave {
+export default function useProfileSave(props: ProfileEditContext): ProfileSave {
   const { t } = useTranslation();
   const [changes] = useState(() => new ProfileChangeDetector());
   const [state, dispatch] = useReducer(reduceFormState, INITIAL_STATE);

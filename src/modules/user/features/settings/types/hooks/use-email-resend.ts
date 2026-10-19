@@ -10,6 +10,7 @@ export interface EmailResend {
 }
 
 export interface ResendSettleContext {
+  readonly email: string;
   readonly adoption: UserEntityAdoption;
   readonly toasts: ToastQueue;
   readonly t: TFunction;

@@ -1,12 +1,11 @@
 import { useReducer } from 'react';
 
 import type { ToastDraftSet, ToastItem, ToastQueue, ToastTone } from '@/components/types/ui-toast';
+import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
 
 import type { ToastQueueAction, ToastQueueState } from './types/use-toast-queue';
 
 const MAX_TOASTS = 3;
-
-const ALTERNATING_MARK = '​';
 
 const INITIAL_STATE: ToastQueueState = {
   toasts: { items: [] },
