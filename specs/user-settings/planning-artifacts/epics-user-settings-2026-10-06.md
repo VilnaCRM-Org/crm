@@ -576,9 +576,9 @@ So that settings reuses one implementation of each without crossing the sibling-
 `sx`), `src/components/ui-form-field/styles.ts` (MOVE: `formFieldLabel`, `formFieldInput`),
 `src/components/ui-password-field/index.tsx` (MOVE of `password-field.tsx`; `rules` required,
 gains an optional `sx` forwarded to its `UIFormField`),
-`src/components/ui-password-field/styles.ts` (MOVE: `passwordFieldInput`, `endAdornment`,
-`passwordButton`, `StyledEyeIcon`, `StyledEyeIconOff`, importing the icons from
-`src/assets/icons`), `src/components/ui-password-policy-rules/index.tsx` (MOVE of
+`src/components/ui-password-field/styles.ts` (MOVE: `endAdornment`, `passwordButton`,
+`StyledEyeIcon`, `StyledEyeIconOff`, importing the icons from `src/assets/icons`; the unapplied
+`passwordFieldInput` is deleted), `src/components/ui-password-policy-rules/index.tsx` (MOVE of
 `password-policy-rules.tsx`; props `UIPasswordPolicyRulesProps` with `id`, `name` and
 `evaluate`), `src/components/ui-password-policy-rules/styles.ts` (MOVE of
 `password-policy-rules-styles.ts`), `src/components/ui-password-policy-rules/i18n/{uk,en}.json`
