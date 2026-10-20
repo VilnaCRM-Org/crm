@@ -10,5 +10,10 @@ export default function useEmailRow(context: ProfileEditContext, saving: boolean
   const online = useConnectivity();
   const { isSubmitting, resend } = useEmailResend(user, adoption, toasts);
 
-  return { confirmed: user.confirmed, busy: saving || isSubmitting || !online, resend };
+  return {
+    confirmed: user.confirmed,
+    busy: saving || isSubmitting || !online,
+    resending: isSubmitting,
+    resend,
+  };
 }
