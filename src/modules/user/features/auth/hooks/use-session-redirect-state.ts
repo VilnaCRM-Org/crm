@@ -15,7 +15,7 @@ export default function useSessionRedirectState(
   token: string | null,
   signedOut: boolean
 ): RedirectNavigationState {
-  const [hadSession] = useState(token !== null);
+  const [hadSession] = useState(Boolean(token));
   if (signedOut) return SIGNED_OUT_ARRIVAL;
   return hadSession ? SESSION_ENDED_ARRIVAL : COLD_VISIT;
 }

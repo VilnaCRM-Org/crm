@@ -183,4 +183,13 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('focus main:false')).toBeInTheDocument();
     expect(screen.getByText('notice:undefined')).toBeInTheDocument();
   });
+
+  it('redirects an empty-string token as a cold visit, with no ended-session notice', () => {
+    renderWithRouter('');
+
+    expect(screen.getByText(/sign in page/)).toBeInTheDocument();
+    expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
+    expect(screen.getByText('focus main:false')).toBeInTheDocument();
+    expect(screen.getByText('notice:undefined')).toBeInTheDocument();
+  });
 });

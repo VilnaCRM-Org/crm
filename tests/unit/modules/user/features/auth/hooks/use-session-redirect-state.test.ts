@@ -45,6 +45,17 @@ describe('useSessionRedirectState', () => {
     expect(result.current).toStrictEqual({ focusMain: true, notice: 'session_ended' });
   });
 
+  it('treats an empty-string token as no session, like the route guard does', () => {
+    const { result, rerender } = renderHook(
+      ({ current }: { current: string | null }) => useSessionRedirectState(current, false),
+      { initialProps: { current: '' as string | null } }
+    );
+
+    rerender({ current: null });
+
+    expect(result.current).toStrictEqual({ focusMain: false });
+  });
+
   it('never marks a cold visit as an ended session after re-rendering', () => {
     const { result, rerender } = renderHook(() => useSessionRedirectState(null, false));
 
