@@ -19,7 +19,7 @@ const mockUIForm = jest.fn();
 const mockNotification = jest.fn();
 const mockLoad = jest.fn();
 const mockSetFocus = jest.fn();
-const mockCaptureError = jest.fn();
+const mockPrefetch = jest.fn();
 
 function makeSubmitHandler(
   onSubmit: (data: { email: string; password: string }) => Promise<void>
@@ -87,16 +87,10 @@ function StubNotification(props: StubNotificationProps): ReactElement {
   );
 }
 
-jest.mock('@/services/observability/observability-core', () => ({
-  __esModule: true,
-  default: {
-    captureError: (...args: unknown[]): unknown => mockCaptureError(...args),
-  },
-}));
-
 jest.mock('@auth/utils/load-registration-notification', () => ({
   __esModule: true,
   default: { load: (): unknown => mockLoad() },
+  registrationNotificationPrefetcher: { prefetch: (): unknown => mockPrefetch() },
 }));
 
 jest.mock('@auth/components/form-section/components/form-field', () => ({
@@ -223,23 +217,7 @@ describe('LoginForm', () => {
     await waitFor(() => {
       expect(mockLoginUser).toHaveBeenCalledWith(submitCredentials, expect.any(AbortSignal));
     });
-    expect(mockLoad).toHaveBeenCalled();
-    expect(mockCaptureError).not.toHaveBeenCalled();
-  });
-
-  it('reports a failed notification prefetch instead of leaving it unhandled', async () => {
-    const chunkError = new Error('Loading chunk registration-notification failed');
-    mockLoad.mockReset().mockRejectedValueOnce(chunkError);
-    render(<LoginForm postLogin={signedOut()} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-
-    await waitFor(() => {
-      expect(mockCaptureError).toHaveBeenCalledWith(chunkError, {
-        source: 'auth:notification-prefetch',
-      });
-    });
-    expect(mockLoginUser).toHaveBeenCalledWith(submitCredentials, expect.any(AbortSignal));
+    expect(mockPrefetch).toHaveBeenCalledTimes(1);
   });
 
   it('shows the sign-in error notification and returns to the form on back', async () => {

@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement } from 'react';
 
 import SignInFormSection from '@auth/routes/sign-in/sign-in-form-section';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
