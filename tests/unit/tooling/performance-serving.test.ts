@@ -8,6 +8,7 @@ import {
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
+  SETTINGS_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
@@ -127,6 +128,7 @@ describe('performance serving config', () => {
     const mapperSource = readFile('src/routes/route-mapper.tsx');
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const authRoutesSource = readFile('src/modules/user/features/auth/routes/index.ts');
+    const settingsRoutesSource = readFile('src/modules/user/features/settings/routes/index.ts');
     const routesSource = readFile('src/routes/routes.tsx');
     const rootLayoutSource = readFile('src/components/layouts/root-layout.tsx');
 
@@ -154,6 +156,14 @@ describe('performance serving config', () => {
     );
     expect(authRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-in'\)/
+    );
+
+    expect(settingsRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "settings" \*\/\s*'\.\/user-profile'\)/
+    );
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('./user-profile');
+    expect(staticImportsOf(readFile('src/routes/registry.ts'))).toContain(
+      '@/modules/user/features/settings/routes'
     );
 
     // Pages are never statically imported (which would defeat code splitting).
@@ -333,10 +343,12 @@ describe('performance serving config', () => {
       expect(namespaces).not.toContain('password_recovery');
       expect(namespaces).not.toContain('password_reset');
       expect(namespaces).not.toContain('password_policy');
+      expect(namespaces).not.toContain('settings');
+      expect(namespaces).not.toContain('ui_toast');
     });
     expect(
       readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
-    ).toContain('recoveryCatalogLoader.register(i18n);');
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
     recoveryRoutes.forEach((routeSource) => {
       expect(routeSource).toContain(
         "import RecoveryPageLayout from '@auth/components/recovery-page-layout';"
@@ -344,12 +356,15 @@ describe('performance serving config', () => {
     });
   });
 
-  it('wires both auth-form groups to the form-section chunk names the loaders emit', () => {
+  it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {
     const rsbuildConfigSource = readFile('rsbuild.config.ts');
     const loaderChunkName = (route: string): string | undefined =>
       /webpackChunkName: "([^"]+)"/.exec(
         readFile(`src/modules/user/features/auth/routes/${route}/form-section-loader.ts`)
       )?.[1];
+    const settingsChunkName = /webpackChunkName: "([^"]+)"/.exec(
+      readFile('src/modules/user/features/settings/routes/index.ts')
+    )?.[1];
 
     expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
       'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
@@ -366,10 +381,12 @@ describe('performance serving config', () => {
           selects({ name: loaderChunkName(route) })
         )
       ).toEqual([true, true, true, true]);
+      expect(selects({ name: settingsChunkName })).toBe(true);
     });
     expect(AUTH_FORM_CHUNKS).toEqual(['sign-in', 'sign-up'].map(loaderChunkName));
     expect(RECOVERY_FORM_CHUNKS).toEqual(
       ['reset-password', 'create-new-password'].map(loaderChunkName)
     );
+    expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
   });
 });
