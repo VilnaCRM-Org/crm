@@ -48,6 +48,7 @@ function closeRefFor(registry: ToastFocusRegistry, id: number): RefCallback<HTML
   if (known !== undefined) return known;
   const callback = (node: HTMLButtonElement): (() => void) => {
     registry.buttons.current.set(id, node);
+    registry.callbacks.current.set(id, callback);
     return detachOf(registry, id, node);
   };
   registry.callbacks.current.set(id, callback);

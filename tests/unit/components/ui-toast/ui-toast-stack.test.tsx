@@ -34,6 +34,7 @@ type ShowDrafts = (drafts: ToastDraftSet) => void;
 interface PageOptions {
   readonly returnTarget?: ReturnTarget | undefined;
   readonly withFallback?: boolean | undefined;
+  readonly strict?: boolean | undefined;
 }
 
 interface PageProps extends PageOptions {
@@ -96,7 +97,7 @@ const mountPage = (options: PageOptions = {}): Show => {
       returnTarget={options.returnTarget}
       withFallback={options.withFallback}
     />,
-    { wrapper }
+    { wrapper, reactStrictMode: options.strict === true }
   );
   return Object.assign((drafts: ToastDraftSet) => act(() => showRef.current?.(drafts)), {
     settled: async (drafts: ToastDraftSet): Promise<void> => {
@@ -341,6 +342,20 @@ describe('UIToastStack', () => {
 
     it('does not count a parent re-render as a lost focus', async () => {
       const show = mountPage();
+      show(set(success('Перше')));
+      const first = closeButtons()[0] as HTMLElement;
+      await focusOn(first);
+
+      show.rerender();
+      act(() => first.blur());
+      await show.settled(set(success('Друге')));
+
+      expect(document.body).toHaveFocus();
+      expect(closeButtons()).toHaveLength(2);
+    });
+
+    it('does not count a parent re-render as a lost focus under StrictMode', async () => {
+      const show = mountPage({ strict: true });
       show(set(success('Перше')));
       const first = closeButtons()[0] as HTMLElement;
       await focusOn(first);
