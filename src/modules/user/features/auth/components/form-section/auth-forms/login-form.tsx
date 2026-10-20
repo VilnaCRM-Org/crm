@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import RouteFallback from '@/components/route-fallback';
 import UIForm from '@/components/ui-form';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
-import observabilityCore from '@/services/observability/observability-core';
 import InertBox from '@auth/components/form-section/inert-box';
 import formValidators from '@auth/components/form-section/validations';
 import type {
@@ -14,7 +13,9 @@ import type {
   LoginFormProps,
   LoginNotificationPanelProps,
 } from '@auth/types/auth-forms/login-form';
-import registrationNotificationLoader from '@auth/utils/load-registration-notification';
+import registrationNotificationLoader, {
+  registrationNotificationPrefetcher,
+} from '@auth/utils/load-registration-notification';
 
 import LoginFormFields from './login-form-fields';
 import useLoginSubmitter from './use-login-submitter';
@@ -34,15 +35,9 @@ function FocusEmailOnReturn({ returnCount }: FocusEmailOnReturnProps): null {
   return null;
 }
 
-function prefetchNotification(): void {
-  registrationNotificationLoader.load().catch((error: unknown) => {
-    observabilityCore.captureError(error, { source: 'auth:notification-prefetch' });
-  });
-}
-
 function LoginFormPanel({ notice, submitter, viewState, t }: LoginFormPanelProps): JSX.Element {
   const onSubmit = (data: SignInDto): Promise<void> => {
-    prefetchNotification();
+    registrationNotificationPrefetcher.prefetch();
     return submitter.handleLogin(data);
   };
 
