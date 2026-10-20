@@ -15,6 +15,8 @@ const meta: Meta<typeof UserProfileSettings> = {
     refocus: false,
     retry: noop,
     adoption: { adopt: noop, confirm: noop, isCurrent: (): boolean => true },
+    toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
+    saveRef: { current: null },
   },
   parameters: {
     docs: {
@@ -22,7 +24,9 @@ const meta: Meta<typeof UserProfileSettings> = {
         component:
           'The profile card area for one load state. It renders from the state the page passes ' +
           'in and loads nothing itself, so the stories need no container. One polite status ' +
-          'region stays mounted in every state and says "Завантаження профілю…" while loading.',
+          'region stays mounted in every state and says "Завантаження профілю…" while loading. ' +
+          'The Ready story carries a no-op toast queue and the Save ref the form writes to, so a ' +
+          'Save against the missing backend settles quietly instead of throwing.',
       },
       story: { inline: false },
     },
