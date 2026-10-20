@@ -10,6 +10,7 @@ import {
   signInErrorMessages,
   successCardHeading,
 } from '@tests/e2e/utils/sign-in-result-card';
+import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import fillInput from '../../../../utils/fill-input';
@@ -21,9 +22,7 @@ const PRESERVED_DESTINATION = '/?tab=deals#pipeline';
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const passwordPlaceholder: string = t('sign_in.form.password_input.placeholder');
 const submitLabel: string = t('sign_in.form.submit_button');
-const signInTitle: string = t('sign_in.title');
 const homeHeading: string = t('home.heading');
-const signOutLabel: string = t('home.sign_out');
 
 const validCredentials = buildCredentials();
 
@@ -42,26 +41,6 @@ async function mockLoginSuccess(page: Page): Promise<void> {
       body: JSON.stringify({ token: 'e2e-login-token' }),
     });
   });
-}
-
-async function expectSignInPage(page: Page): Promise<void> {
-  await expect(page).toHaveURL(/\/sign-in$/);
-  await expect(page.getByRole('heading', { level: 1, name: signInTitle })).toBeVisible();
-}
-
-async function signOutToSignIn(page: Page): Promise<void> {
-  await seedPreloadedAuthToken(page);
-  await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: signOutLabel, exact: true }).click();
-  await expectSignInPage(page);
-}
-
-async function bounceFromProtectedDestination(page: Page): Promise<void> {
-  await page.evaluate((destination) => {
-    window.history.pushState({}, '', destination);
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  }, PRESERVED_DESTINATION);
-  await expectSignInPage(page);
 }
 
 async function expectHomeWithMainFocused(page: Page): Promise<void> {
@@ -116,7 +95,7 @@ test.describe('Post-login success card and redirect (issues #150, #315)', () => 
   test('Продовжити lands on the preserved protected destination', async ({ page }) => {
     await mockLoginSuccess(page);
     await signOutToSignIn(page);
-    await bounceFromProtectedDestination(page);
+    await bounceFromProtectedDestination(page, PRESERVED_DESTINATION);
 
     await submitValidLogin(page);
     await expectSignInSuccessCard(page);
