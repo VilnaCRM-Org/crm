@@ -2,10 +2,10 @@ import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
 export type ProfileLoadStatus = 'loading' | 'failed' | 'ready';
 
-export type AdoptUserEntity = (user: UserEntity) => void;
+export type AdoptLoadedUser = (user: UserEntity) => void;
 
 export interface UserEntityAdoption {
-  readonly adopt: AdoptUserEntity;
+  readonly adopt: AdoptLoadedUser;
   readonly confirm: (email: string, confirmed: boolean) => void;
   readonly isCurrent: (email: string) => boolean;
 }

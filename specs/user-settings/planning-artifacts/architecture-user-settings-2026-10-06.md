@@ -1927,9 +1927,9 @@ export interface ProfileFormState {
 
 // settings/types/hooks/use-profile-load.ts
 export type ProfileLoadStatus = 'loading' | 'failed' | 'ready';
-export type AdoptUserEntity = (user: UserEntity) => void;
+export type AdoptLoadedUser = (user: UserEntity) => void;
 export interface UserEntityAdoption {
-  readonly adopt: AdoptUserEntity; // a Save: new entity, form remounts
+  readonly adopt: AdoptLoadedUser; // a Save: new entity, form remounts
   readonly confirm: (email: string, confirmed: boolean) => void; // a resend: no remount
   readonly isCurrent: (email: string) => boolean; // false once a Save adopted another e-mail
 }
