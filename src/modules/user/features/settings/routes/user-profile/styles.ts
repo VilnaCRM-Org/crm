@@ -8,7 +8,7 @@ export default {
     display: 'flex',
     flexDirection: 'column',
     gap: '1.0625rem',
-    paddingTop: '1.75rem',
+    paddingTop: '1.5rem',
     paddingBottom: '2rem',
 
     [`@media (min-width:${md}px)`]: {
@@ -16,6 +16,7 @@ export default {
     },
     [`@media (min-width:${lg + 1}px)`]: {
       gap: '0.75rem',
+      paddingTop: '1.75rem',
     },
   },
   header: {
