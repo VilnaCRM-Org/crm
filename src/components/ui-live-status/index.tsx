@@ -17,9 +17,9 @@ const visuallyHidden = {
 
 const VisuallyHiddenStatus = styled('span')(visuallyHidden);
 
-export default function UILiveStatus({ message }: UILiveStatusProps): JSX.Element {
+export default function UILiveStatus({ message, politeness }: UILiveStatusProps): JSX.Element {
   return (
-    <VisuallyHiddenStatus role="status" aria-atomic="true">
+    <VisuallyHiddenStatus role={politeness === 'assertive' ? 'alert' : 'status'} aria-atomic="true">
       {message}
     </VisuallyHiddenStatus>
   );
