@@ -287,8 +287,8 @@ When writing or editing a class in a logic directory (`src/services/**`,
   `reflect-metadata`, token modules, config data (`@/config/api-config`,
   `@/config/env`, `@/routes/route-paths`), domain and transport error classes,
   constant maps (`response-messages`, `error-codes`), runtime data contracts
-  (`response-schemas`, `*-mutation`), the module/feature public barrels
-  (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+  (`response-schemas`, `*-mutation` / `*-query`), the module/feature public
+  barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
 - Behavioral third-party libraries (Apollo, Sentry, `web-vitals`, zod) go behind
   an `@injectable()` adapter plus a token — do not add a new ad-hoc direct call.
 - Component (`.tsx`) consumption is a **different** rule (#128). Do not add
@@ -308,9 +308,9 @@ When writing or editing a class in a logic directory (`src/services/**`,
   (`use-auth-token`, `use-auth-state`, `use-focus-on-mount`) are in scope and are
   carved out by the structural `react-hooks` entry in `EXEMPT_PATTERNS`
   (`src/**/use-*.ts`) — that entry is load-bearing, so do not delete it. The
-  form-section `validations/*` singletons live under `components/`, which no
-  scope glob matches, so they have no policy entry at all — that absence is
-  expected, not an omission.
+  validator singletons live in `src/modules/user/lib/validations/`, which no
+  `LOGIC_SOURCE_GLOBS` entry matches, so they have no policy entry at all — that
+  absence is expected, not an omission.
 - **Never** satisfy this gate with `eslint-disable`, `depcruise-ignore`,
   `@ts-ignore`, or by widening the allowlist in
   `config/di-collaborator-policy.js` — that file is for contract/data modules
