@@ -47,6 +47,43 @@ describe('useToastFocus', () => {
     expect(onDismiss).toHaveBeenCalledWith(1);
   });
 
+  it('moves focus to the previous close button when the dismissed toast is the last one', () => {
+    const close1 = button('close 1');
+    const close2 = button('close 2');
+    const toastFocus = mountFocus();
+    toastFocus.closeRef(1)(close1);
+    toastFocus.closeRef(2)(close2);
+
+    toastFocus.dismiss(2);
+
+    expect(close1).toHaveFocus();
+    expect(close2).not.toHaveFocus();
+  });
+
+  it('prefers the next close button over the previous one for a middle toast', () => {
+    const close1 = button('close 1');
+    const close2 = button('close 2');
+    const close3 = button('close 3');
+    const toastFocus = mountFocus({
+      toasts: {
+        items: [
+          { id: 1, tone: 'success', message: 'Перше' },
+          { id: 2, tone: 'error', message: 'Друге' },
+          { id: 3, tone: 'success', message: 'Третє' },
+        ],
+      },
+    });
+    toastFocus.closeRef(1)(close1);
+    toastFocus.closeRef(2)(close2);
+    toastFocus.closeRef(3)(close3);
+
+    toastFocus.dismiss(2);
+
+    expect(close3).toHaveFocus();
+    expect(close1).not.toHaveFocus();
+    expect(close2).not.toHaveFocus();
+  });
+
   it('falls back to the return target when the neighbour close button is not registered', () => {
     const save = button('save');
     const toastFocus = mountFocus({ returnFocusRef: { current: save } });
