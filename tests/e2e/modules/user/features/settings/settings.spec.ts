@@ -3,6 +3,11 @@ import type { Page, Request, Route } from '@playwright/test';
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
+import {
+  bounceFromProtectedDestination,
+  navigateClientSide,
+  signOutToSignIn,
+} from '@tests/e2e/utils/sign-out';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
@@ -71,9 +76,13 @@ async function expectNotFoundWithoutChunk(page: Page, signedIn: boolean): Promis
     if (SETTINGS_CHUNK.test(new URL(request.url()).pathname)) chunkRequests.push(request.url());
   });
   await setFlag(page, false);
-  if (signedIn) await seedPreloadedAuthToken(page);
-
-  await page.goto(SETTINGS_URL);
+  if (signedIn) {
+    await seedPreloadedAuthToken(page);
+    await page.goto(SETTINGS_URL);
+  } else {
+    await signOutToSignIn(page);
+    await navigateClientSide(page, SETTINGS_URL);
+  }
 
   await expect(page).toHaveURL(SETTINGS_URL);
   await expect(page.getByRole('heading', { level: 1, name: notFoundTitle })).toBeVisible();
@@ -128,7 +137,9 @@ test.describe('Settings route', () => {
     expect(seen).toHaveLength(2);
   });
 
-  test('sends a visitor without a token to sign-in and back after login', async ({ page }) => {
+  test('sends a signed-out visitor to sign-in and back to settings after login', async ({
+    page,
+  }) => {
     await setFlag(page, true);
     await answerCurrentUser(page);
     await page.route(LOGIN_API_URL, async (route) => {
@@ -140,9 +151,9 @@ test.describe('Settings route', () => {
       });
     });
 
-    await page.goto(SETTINGS_URL);
+    await signOutToSignIn(page);
+    await bounceFromProtectedDestination(page, SETTINGS_URL);
 
-    await expect(page).toHaveURL('/sign-in');
     const from = await page.evaluate(
       () => (window.history.state as { usr?: { from?: { pathname?: string } } }).usr?.from?.pathname
     );
@@ -164,7 +175,7 @@ test.describe('Settings route', () => {
     await expectNotFoundWithoutChunk(page, true);
   });
 
-  test('shows the not-found page and requests no settings chunk without a token', async ({
+  test('shows the not-found page and requests no settings chunk after signing out', async ({
     page,
   }) => {
     await expectNotFoundWithoutChunk(page, false);
