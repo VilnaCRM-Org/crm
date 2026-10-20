@@ -6,7 +6,7 @@ import { useService } from '@/providers/di';
 
 import type ProfileProvider from '../data-providers/profile-provider';
 import type {
-  AdoptUserEntity,
+  AdoptLoadedUser,
   ConfirmUserAction,
   ProfileLoadAction,
   ProfileLoadReducerState,
@@ -59,7 +59,7 @@ async function loadProfile(
 }
 
 function createAdoption(
-  adopt: AdoptUserEntity,
+  adopt: AdoptLoadedUser,
   dispatch: Dispatch<ProfileLoadAction>,
   adopted: RefObject<string | null>
 ): UserEntityAdoption {
@@ -75,7 +75,7 @@ export default function useProfileLoad(): ProfileLoadState {
   const provider = useService<ProfileProvider>(AUTH_TOKENS.ProfileProvider);
   const [state, dispatch] = useReducer(reduceProfileLoad, INITIAL_STATE);
   const adopted = useRef<string | null>(null);
-  const adopt: AdoptUserEntity = (user) => {
+  const adopt: AdoptLoadedUser = (user) => {
     adopted.current = user.email;
     dispatch({ type: 'adopt', user });
   };
