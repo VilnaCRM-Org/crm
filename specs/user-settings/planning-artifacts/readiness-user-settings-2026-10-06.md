@@ -299,7 +299,8 @@ User domain in #315 Epic 0.
   declares `FieldViolation` with `property` until its owners apply D2; a merge that differs
   needs a correct-course pass on 1.7, 2.5 and 3.4.
 - **Composition-root growth.** Superseded by the Simplification pass (2026-10-08): settings
-  adds no closure and the registrar stays at 3 of 6 (A §6). Before it: settings added one closure,
+  adds no closure and the registrar stays at 3 of 6 (A §6); amended 2026-10-20, the session
+  link's `registerSessionLink` step adds one function and one closure, 10 of 10 and 4 of 6. Before it: settings added one closure,
   the `ProfileProviderDeps` factory, and the registrar reached its cap of six once #315, #331 and
   settings had landed. The registrations fold into `registerRepository` and
   `registerResponseMappers`; each stays under 10 LLOC today, and a later lander that pushes one

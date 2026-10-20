@@ -601,7 +601,10 @@ e-mails and answers in English only.
   method plus a Bearer-link builder would cross the 10-function file limit, so the settings
   registrations and the link fold into the existing `UserModuleRegistrar` steps (R11), and
   `di.ts` keeps nine functions. Settings adds no closure either (simplification 2026-10-08):
-  every class takes at most three `@inject` parameters, so no deps bag is needed.
+  every class takes at most three `@inject` parameters, so no deps bag is needed. Amendment
+  2026-10-20: the Bearer link's five collaborators need a `SessionLinkDeps` bag after all, and its
+  closure fits no existing step under the function Halstead volume cap, so a `registerSessionLink`
+  step takes `di.ts` to ten functions, the cap, and four closures (architecture §6).
 - **Class names** (`config/class-naming-policy.js:42-168`): suffixes such as `Repository`,
   `Service`, `Factory`, `Mapper`, `Adapter`, `Guard`, `Validator`, `Signals`, `Var`, `Loader`,
   `API`, `Controller`; `Manager` and `Helper` are banned (`:19-20`). (Revision 2026-10-08: the
@@ -738,7 +741,8 @@ cited by id only because that bundle is still being edited:
 3. **Scaffolder mismatch:** `USER_TOKENS` against `AUTH_TOKENS` (§5.7); budget the manual fix.
 4. **Composition-root cap:** settings wiring and the Bearer link fold into the existing
    `UserModuleRegistrar` steps (R11), so `src/modules/user/config/di.ts` keeps nine functions and
-   three closures; a new method there would fail `make lint-metrics` (§5.7).
+   three closures; a new method there would fail `make lint-metrics` (§5.7). Amended
+   2026-10-20: one method fits (ten is the cap), and the link takes it (architecture §6).
 5. **Flag read at module evaluation:** a route filter at router build parses the config before
    the guarded `load()` (§5.4); read flags lazily or inside the guarded path.
 6. **Password for every save (G4):** a name-only edit needs the current password; OAuth-created

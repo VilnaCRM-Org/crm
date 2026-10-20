@@ -1083,8 +1083,10 @@ infrastructure drawn inside the board's Repository → API edge (contract §2), 
 - Registration in a `registerSessionLink` step of `UserModuleRegistrar` (the deps bundle and
   `registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory)`), composition in the
   existing `registerGraphqlClient` step's `instanceCachingFactory` closure
-  `link: from([sessionLinkFactory.build(), apolloLinkFactory.build(uri)])`. The one new closure
-  in `di.ts` is the `SessionLinkDeps` factory in `registerSessionLink`; the correlation link keeps
+  `link: session.concat(link)`, the session link ahead of the correlation link. The one new closure
+  in `di.ts` is the `SessionLinkDeps` factory in `registerSessionLink`, a step of its own because
+  either existing step that could hold it then exceeds the function Halstead volume cap (§6
+  "Registrar closure budget"); the correlation link keeps
   the header because it spreads the previous context's headers.
 - A `setContext` half adds `Authorization: Bearer <token>`, read from
   `authStore.getState().token` at request time, for every operation whose `operationName` is
@@ -1823,9 +1825,15 @@ export default class UserServiceErrorTransformer {
 **Registrar closure budget (contract §2.2).** `UserModuleRegistrar`
 (`src/modules/user/config/di.ts`) holds 9 functions and 3 closures today against the file caps
 of 10 functions, 6 closures and 15 in total, as it stands on PR #340 (#315 added registrations
-only), and settings adds no function and
-no closure: every class here takes at most three `@inject` parameters, so the registrar stays at
-3 of 6 closures.
+only). Every settings class takes at most three `@inject` parameters, so the settings
+registrations add no function and no closure. The session link adds one of each (amendment
+2026-10-20): `SessionLinkFactory` needs five collaborators, more than the three-argument cap, so
+they arrive as the named `SessionLinkDeps` bundle built by one `useFactory` closure, and that
+closure lives in its own `registerSessionLink` step because folding it into
+`registerGraphqlClient` or `registerAuthState` was measured at a function Halstead volume of
+1304 and 1324 against the cap of 1000. The registrar therefore holds 10 of 10 functions,
+4 of 6 closures and 14 of 15 in total; a later bundle that needs another method adds a second
+registrar file through an ADR (contract §2.2), never a cap change.
 
 ### 6.1 Type-only files (TB-1)
 

@@ -373,8 +373,10 @@ used by settings alone (R16).
   and no policy edit of this plan's own; no new `*Controller`, `*Service`, `*Handler`,
   `*Normalizer`, `*Store` or `*Impl`; at most six public methods and three constructor
   dependencies per new class.
-- AR-4 (§6, §12): registrations fold into existing `UserModuleRegistrar` steps; settings adds no
-  function and no closure, so the registrar stays at 3 of 6 closures (contract §2.2).
+- AR-4 (§6, §12): registrations fold into existing `UserModuleRegistrar` steps; the settings
+  registrations add no function and no closure. The session link adds one `registerSessionLink`
+  step and its one `SessionLinkDeps` closure, so the registrar holds 10 of 10 functions and 4 of
+  6 closures (architecture §6, registrar budget; contract §2.2).
 - AR-5 (§12): no edge from settings into `@auth`; settings hooks and components import neither
   `src/services` nor a repository; `@apollo/client` value imports only in repositories folders,
   `user/config/di.ts` and the observability link factory.
@@ -995,6 +997,12 @@ NFR-14, NFR-15 (architecture §5.5).
 > signs in over REST today). A restored sandbox demo token is still sent as Bearer: the dev mock
 > ignores it, and the test stack's production build never restores one.
 >
+> Amendment 2026-10-19: the link also needs `UserServiceErrorTransformer` to classify the 401,
+> so its five collaborators exceed the three-argument cap and arrive as one named
+> `SessionLinkDeps` bundle (architecture §5.5). The bundle carries `CLEARED_AUTH_STATE` itself as
+> `signedOut`, built in `di.ts`, which may value-import it, so there is no module-private
+> `SIGNED_OUT` copy.
+>
 > Assumption (reconciliation 2026-10-16): #315's `SignInNotice` always draws
 > `CheckCircleOutlinedIcon` in `paletteColors.success.text` `#2E7D32`, which would tell a user
 > whose session ended that something succeeded. Each row of the message table therefore becomes a
@@ -1004,10 +1012,11 @@ NFR-14, NFR-15 (architecture §5.5).
 > shows the notice; Follow-up 5.13 asks the design owner.
 
 **Files:** `@auth/repositories/session-link-factory.ts` (NEW: `SessionLinkFactory`),
-`user/config/tokens.ts` (MODIFY: `SessionLinkFactory`), `user/config/di.ts` (MODIFY: inside the
-existing `registerGraphqlClient` step, `registerSingleton(AUTH_TOKENS.SessionLinkFactory,
-SessionLinkFactory)`, and inside its `instanceCachingFactory` closure
-`link: from([sessionLinkFactory.build(), apolloLinkFactory.build(uri)])`),
+`@auth/types/session-link-deps.ts` (NEW: `SessionLinkDeps`), `user/config/tokens.ts` (MODIFY:
+`SessionLinkFactory`, `SessionLinkDeps`), `user/config/di.ts` (MODIFY: a new `registerSessionLink`
+step with the `SessionLinkDeps` factory and `registerSingleton(AUTH_TOKENS.SessionLinkFactory,
+SessionLinkFactory)`, and inside the existing `registerGraphqlClient` step's
+`instanceCachingFactory` closure `link: session.concat(link)`),
 `config/di-collaborator-policy.js` (MODIFY: one `RESTRICTED_LIBRARY_ADAPTERS` entry),
 `@auth/components/protected-route/index.tsx` (MODIFY: the notice rule; today it renders
 `<Navigate to="/sign-in" replace state={{ from: location, focusMain: signedOut }} />` from
@@ -1030,13 +1039,13 @@ Jest files `tests/unit/tooling/di-collaborator-gate.test.ts` and
 
 - Given a token in `useAuthStore`, when a non-anonymous operation is sent through the container's Apollo client, then the request carries `Authorization: Bearer <token>` read from `authStore.getState().token` at request time; after a signed-out write the next request carries no `Authorization` header; and when the token changes between two requests, the second carries the new token.
 - Given a token, when `CreateUser`, `RequestPasswordReset` or `ConfirmPasswordReset` is sent (and `SignInUser` or `CompleteTwoFactorUser`, the names reserved for #331), then the request has no `Authorization` header, and a 401 on any of them never clears the token, so a reset link opened while signed in never ends the session.
-- Given a non-anonymous operation answered by a transport 401 with user-service's problem body, when it settles, then the link calls `observability.clearUser()`, then `sandboxDemoSession.signOut()`, then `authStore.setState(SIGNED_OUT)`, and the error still reaches the caller.
-- Given the module-private `SIGNED_OUT`, when a unit test compares it with `CLEARED_AUTH_STATE` from `@auth/stores/use-auth-store.ts`, then they are equal, so a session end and a sign-out leave the same `AuthState`.
+- Given a non-anonymous operation answered by a transport 401 with user-service's problem body, when it settles, then the link calls `observability.clearUser()`, then `sandboxDemoSession.signOut()`, then `authStore.setState(signedOut)`, and the error still reaches the caller.
+- Given the container's `SessionLinkDeps`, when a unit test reads its `signedOut`, then it is `CLEARED_AUTH_STATE` from `@auth/stores/use-auth-store.ts` itself, so a session end and a sign-out leave the same `AuthState`.
 - Given a non-anonymous operation answered by a GraphQL error with `extensions.status` 401 at HTTP 200, by "Access Denied." with or without `extensions.status` 403, or by a transport 429 or 503, when it settles, then the token is kept (must-fail: ending the session on a GraphQL error fails this test).
 - Given any operation, when it is sent, then `X-Request-Id` and `X-Correlation-Id` still come from `ApolloLinkFactory`, and REST requests are unchanged.
-- Given the class, when it is inspected, then it has three constructor collaborators (`AUTH_TOKENS.AuthStore`, the `useAuthStore` store typed `StoreApi<AuthState>`; `AUTH_TOKENS.SandboxDemoSessionProvider`; `OBSERVABILITY_TOKENS.ObservabilityService`), one public `build()` returning `ApolloLink`, and the anonymous operation names as a module-private constant; it lives in `@auth/repositories/` on the Repository → API edge with the approved `Factory` suffix.
+- Given the class, when it is inspected, then it has one constructor collaborator, the named `SessionLinkDeps` bundle under `AUTH_TOKENS.SessionLinkDeps` (`authStore`, the `useAuthStore` store typed `StoreApi<AuthState>`; `signedOut`, `CLEARED_AUTH_STATE` itself; `sandboxDemoSession`; `observability`; `errors`, #315's `UserServiceErrorTransformer`), because five collaborators exceed the three-argument cap, one public `build()` returning `ApolloLink`, and the anonymous operation names as a module-private constant; it lives in `@auth/repositories/` on the Repository → API edge with the approved `Factory` suffix.
 - Given `config/di-collaborator-policy.js`, when the file lands in the DI-gated repositories folder, then `RESTRICTED_LIBRARY_ADAPTERS` holds a second entry beside `apollo-link-factory.ts` whose `path` is `src/modules/user/features/auth/repositories/session-link-factory.ts` and whose `reason` names it the injectable adapter that builds the session link, and the gate test's still-exists case covers it.
-- Given `UserModuleRegistrar`, when the composition lands, then the story adds no function and no closure to it, it keeps 3 closures, and `registerGraphqlClient` stays within 10 LLOC; the paint-path graph test finds `session-link-factory.ts` unreachable from `src/index.tsx`.
+- Given `UserModuleRegistrar`, when the composition lands, then the story adds one function (`registerSessionLink`) and one closure (the `SessionLinkDeps` factory) to it, so it holds 10 functions and 4 closures, because folding that closure into `registerGraphqlClient` or `registerAuthState` exceeds the function Halstead volume cap of 1000 (measured 1304 and 1324), and `registerGraphqlClient` stays within 10 LLOC; the paint-path graph test finds `session-link-factory.ts` unreachable from `src/index.tsx`.
 - Given `ProtectedRoute` mounted with a token, when the token from `useAuthToken()` turns `null` without a sign-out click (`useSignOut`'s `signedOut` false), then it redirects to `/sign-in` with a `RedirectNavigationState` carrying `from`, `focusMain: true` and `notice: 'session_ended'`; after a click on sign-out the state carries `from` and `focusMain: true` with no notice; an unauthenticated first visit still carries `from` and `focusMain: false` with no notice (must-fail: a component that keys the notice on `signedOut` alone shows it on a cold visit).
 - Given the redirect states, when they are read, then their static parts are module-level constants typed `RedirectNavigationState` (`{ focusMain: true, notice: 'session_ended' }` and `{ focusMain: true }`, after #315's `PASSWORD_RESET_ARRIVAL` in `@auth/hooks/use-create-new-password.ts`), and `from` is the live `location` spread in per render.
 - Given navigation state with `notice: 'session_ended'`, when `/sign-in` renders, then "Сеанс завершився. Увійдіть знову." (en "Your session has ended. Please sign in again.") shows once in #315's polite `role="status"` `SignInNotice` region through `useArrivalNotice`, `main` has focus, and a reload, Back or Forward does not show it again.
