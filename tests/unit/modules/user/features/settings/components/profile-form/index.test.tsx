@@ -84,9 +84,11 @@ describe('ProfileForm', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Пароль' })).toBeInTheDocument();
     expect(field(NAME)).toHaveValue('Олена Петренко');
     expect(field(NAME)).toHaveAttribute('autocomplete', 'name');
+    expect(field(NAME)).toHaveAttribute('placeholder', 'Михайло Светський');
     expect(field('E-mail')).toHaveValue('olena@example.com');
     expect(field('E-mail')).toHaveAttribute('type', 'email');
     expect(field('E-mail')).toHaveAttribute('autocomplete', 'email');
+    expect(field('E-mail')).toHaveAttribute('placeholder', 'vilnaCRM@gmail.com');
     expect(field(CURRENT)).toHaveValue('');
     expect(field(CURRENT)).toHaveAttribute('autocomplete', 'current-password');
     expect(field(CURRENT)).toHaveAttribute('type', 'password');
@@ -106,6 +108,22 @@ describe('ProfileForm', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/password_policy\./)).not.toBeInTheDocument();
     expect(screen.getAllByRole('listitem')).toHaveLength(4);
+  });
+
+  it('shows the unconfirmed status row with a resend control for an unconfirmed e-mail', () => {
+    render(form({ user: buildUserEntity({ confirmed: false }) }), { wrapper });
+
+    expect(screen.getByText('E-mail не підтверджено')).toHaveAttribute('id', 'email-status');
+    expect(screen.getByRole('button', { name: 'Надіслати повторно' })).toBeInTheDocument();
+    expect(field('E-mail').getAttribute('aria-describedby')?.split(' ')).toContain('email-status');
+  });
+
+  it('renders no status row and no resend control for a confirmed e-mail', () => {
+    render(form(), { wrapper });
+
+    expect(screen.queryByText('E-mail не підтверджено')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Надіслати повторно' })).not.toBeInTheDocument();
+    expect(field('E-mail')).not.toHaveAttribute('aria-describedby');
   });
 
   it('shows the password as text when its eye toggle is activated with Space', async () => {
@@ -472,6 +490,15 @@ describe('ProfileForm', () => {
     expect(document.body).toHaveFocus();
   });
 
+  it('keeps every status region empty until something is announced', () => {
+    render(form(), { wrapper });
+
+    const regions = screen.getAllByRole('status');
+
+    expect(regions.length).toBeGreaterThan(0);
+    regions.forEach((region) => expect(region).toBeEmptyDOMElement());
+  });
+
   it('reads the new defaults and clears the passwords when the version changes', async () => {
     const view = render(form({ version: 0 }), { wrapper });
     await userEvent.type(field(CURRENT), 'abc');
@@ -527,6 +554,7 @@ describe('ProfileForm', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
 
       expect(screen.queryByText('Немає змін для збереження')).not.toBeInTheDocument();
+      screen.getAllByRole('status').forEach((region) => expect(region).toBeEmptyDOMElement());
     });
 
     it('masks both passwords again and resets their toggles', async () => {
