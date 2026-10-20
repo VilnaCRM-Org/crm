@@ -5,7 +5,7 @@ import { t } from '@tests/e2e/utils/initialize-localization';
 
 import { currentLanguage, notFoundScreens, PAGES, type ScreenSize, screenSizes } from './constants';
 import stabilizePage from './stabilize-page';
-import waitForStableDom from './wait-for-stable-dom';
+import takeStableSnapshot from './take-stable-snapshot';
 
 seedFaker();
 
@@ -29,14 +29,8 @@ const notice: string = t('sign_in.notices.password_reset');
 
 const resetUrl = (): string => `${PAGES.PASSWORD_RESET}?token=${buildResetToken()}`;
 
-async function takeRecoverySnapshot(page: Page, screen: ScreenSize, name: string): Promise<void> {
-  await waitForStableDom(page);
-  await expect(page).toHaveScreenshot(`${currentLanguage}_${name}_${screen.name}.png`, {
-    fullPage: true,
-    animations: 'disabled',
-    scale: 'css',
-  });
-}
+const takeRecoverySnapshot = (page: Page, screen: ScreenSize, name: string): Promise<void> =>
+  takeStableSnapshot(page, `${currentLanguage}_${name}_${screen.name}.png`);
 
 async function openNewPasswordForm(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });

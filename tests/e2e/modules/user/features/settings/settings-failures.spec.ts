@@ -100,15 +100,22 @@ test.describe('Settings save failures (issue #330)', () => {
     expect(stub.count('UpdateUser')).toBe(2);
   });
 
-  test('disables Save while offline and sends nothing', async ({ page, context }) => {
+  test('disables Save while offline and sends nothing, Enter included', async ({
+    page,
+    context,
+  }) => {
     stub = await stubProfile(page);
     await openLoadedSettings(page);
     await page.evaluate(() => document.fonts.ready);
     await editName(page, NEW_NAME, password);
 
     await context.setOffline(true);
-
     await expect(saveButton(page)).toBeDisabled();
+    await currentPasswordField(page).press('Enter');
+
+    await expect(currentPasswordField(page)).toBeFocused();
+    await expect(saveButton(page)).toBeDisabled();
+    await expect(page.getByRole('status').filter({ hasText: text.saved })).toHaveCount(0);
     expect(stub.count('UpdateUser')).toBe(0);
   });
 });

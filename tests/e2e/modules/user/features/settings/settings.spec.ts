@@ -1,4 +1,4 @@
-import type { Page, Request, Route } from '@playwright/test';
+import type { Page, Request } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
@@ -9,14 +9,21 @@ import {
   signOutToSignIn,
 } from '@tests/e2e/utils/sign-out';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import fillInput from '../../../../utils/fill-input';
 import { t } from '../../../../utils/initialize-localization';
 
+import {
+  PROFILE_NODE,
+  replyWithGraphQLError,
+  replyWithProfile,
+  signInWithFlag,
+  stubProfile,
+  type StubbedProfile,
+} from './utils/profile-stub';
+
 const SETTINGS_URL = '/settings';
 const LOGIN_API_URL = '**/api/users';
-const GRAPHQL_URL = '**/graphql';
 const SETTINGS_CHUNK = /\/settings(?:\.[\w-]+)?\.js$/;
 
 const settingsTitle: string = `${t('settings.title')} - VilnaCRM`;
@@ -35,51 +42,21 @@ const tryAgain: string = t('auth.error.tryAgain');
 
 const credentials = buildCredentials();
 
-const profileNode = {
-  id: '/api/users/0193a9e2-7c1d-7d8e-9f3a-5b6c7d8e9f01',
-  email: 'olena.petrenko@example.com',
-  initials: 'Олена Петренко',
-  confirmed: true,
-};
+const setFlag = (page: Page, userSettings: boolean): Promise<void> =>
+  overrideRuntimeConfig(page, { flags: { userSettings } });
 
-type Reply = (route: Route) => Promise<void>;
-
-const replyWithProfile: Reply = (route) =>
-  route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ data: { users: { edges: [{ node: profileNode }] } } }),
-  });
-
-const replyWithFailure: Reply = (route) =>
-  route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ data: null, errors: [{ message: 'Something odd' }] }),
-  });
-
-async function answerCurrentUser(page: Page, ...replies: Reply[]): Promise<string[]> {
-  const seen: string[] = [];
-  await page.route(GRAPHQL_URL, async (route: Route) => {
-    const body = route.request().postDataJSON() as { operationName?: string };
-    if (body.operationName !== 'CurrentUser') return route.fallback();
-    seen.push('CurrentUser');
-    const reply = replies[Math.min(seen.length, replies.length) - 1] ?? replyWithProfile;
-    return reply(route);
-  });
-  return seen;
-}
+const reads = (stub: StubbedProfile): number => stub.count('CurrentUser');
 
 async function expectNotFoundWithoutChunk(page: Page, signedIn: boolean): Promise<void> {
   const chunkRequests: string[] = [];
   page.on('request', (request: Request) => {
     if (SETTINGS_CHUNK.test(new URL(request.url()).pathname)) chunkRequests.push(request.url());
   });
-  await setFlag(page, false);
   if (signedIn) {
-    await seedPreloadedAuthToken(page);
+    await signInWithFlag(page, false);
     await page.goto(SETTINGS_URL);
   } else {
+    await setFlag(page, false);
     await signOutToSignIn(page);
     await navigateClientSide(page, SETTINGS_URL);
   }
@@ -90,14 +67,10 @@ async function expectNotFoundWithoutChunk(page: Page, signedIn: boolean): Promis
   expect(chunkRequests).toEqual([]);
 }
 
-const setFlag = (page: Page, userSettings: boolean): Promise<void> =>
-  overrideRuntimeConfig(page, { flags: { userSettings } });
-
 test.describe('Settings route', () => {
   test('renders the page shell for a signed-in user while the flag is on', async ({ page }) => {
-    await seedPreloadedAuthToken(page);
-    await setFlag(page, true);
-    await answerCurrentUser(page);
+    await signInWithFlag(page, true);
+    await stubProfile(page);
 
     await page.goto(SETTINGS_URL);
 
@@ -110,38 +83,38 @@ test.describe('Settings route', () => {
   });
 
   test('greets the signed-in user by name once the profile loads', async ({ page }) => {
-    await seedPreloadedAuthToken(page);
-    await setFlag(page, true);
-    const seen = await answerCurrentUser(page);
+    await signInWithFlag(page, true);
+    const stub = await stubProfile(page);
 
     await page.goto(SETTINGS_URL);
 
     await expect(page.getByText(greeting)).toBeVisible();
-    await expect(page.getByText(profileNode.initials)).toBeVisible();
-    expect(seen).toEqual(['CurrentUser']);
+    await expect(page.getByText(PROFILE_NODE.initials)).toBeVisible();
+    expect(reads(stub)).toBe(1);
   });
 
   test('shows the load failure and one new read per retry', async ({ page }) => {
-    await seedPreloadedAuthToken(page);
-    await setFlag(page, true);
-    const seen = await answerCurrentUser(page, replyWithFailure, replyWithProfile);
+    await signInWithFlag(page, true);
+    const stub = await stubProfile(page, {
+      CurrentUser: [replyWithGraphQLError('Something odd'), replyWithProfile()],
+    });
 
     await page.goto(SETTINGS_URL);
 
     await expect(page.getByRole('alert').filter({ hasText: loadFailed })).toHaveText(loadFailed);
-    expect(seen).toHaveLength(1);
+    expect(reads(stub)).toBe(1);
 
     await page.getByRole('button', { name: tryAgain }).click();
 
-    await expect(page.getByText(profileNode.initials)).toBeVisible();
-    expect(seen).toHaveLength(2);
+    await expect(page.getByText(PROFILE_NODE.initials)).toBeVisible();
+    expect(reads(stub)).toBe(2);
   });
 
   test('sends a signed-out visitor to sign-in and back to settings after login', async ({
     page,
   }) => {
     await setFlag(page, true);
-    await answerCurrentUser(page);
+    await stubProfile(page);
     await page.route(LOGIN_API_URL, async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
       return route.fulfill({
@@ -182,8 +155,7 @@ test.describe('Settings route', () => {
   });
 
   test('shows the home page with no settings link while the flag is off', async ({ page }) => {
-    await seedPreloadedAuthToken(page);
-    await setFlag(page, false);
+    await signInWithFlag(page, false);
 
     await page.goto('/');
 
