@@ -28,14 +28,19 @@ describe('registration notification style tokens', () => {
         import('@auth/components/form-section/auth-forms/registration-notification.error-styles')
     );
 
-    expect(styles.default.contentBoxError).toEqual(
-      expect.objectContaining({
-        paddingTop: '1rem',
-        [`@media (min-width:${md}px)`]: { paddingTop: '4.25rem' },
-        [MEDIUM_HEIGHT_DESKTOP]: { paddingTop: '1rem' },
-        [COMPACT]: { paddingTop: '0.25rem' },
-      })
-    );
+    expect(styles.default.contentBoxError).toEqual({
+      flex: 1,
+      alignSelf: 'stretch',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      boxSizing: 'border-box',
+      paddingTop: '1rem',
+      [`@media (min-width:${md}px)`]: { paddingTop: '4.25rem' },
+      [MEDIUM_HEIGHT_DESKTOP]: { paddingTop: '1rem' },
+      [COMPACT]: { paddingTop: '0.25rem' },
+    });
   });
 
   it('rings the focused error heading in the error colour for keyboard focus', async () => {

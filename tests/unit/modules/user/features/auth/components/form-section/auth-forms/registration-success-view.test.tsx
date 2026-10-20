@@ -73,11 +73,10 @@ describe('RegistrationSuccessView', () => {
   });
 
   it('paints the status region empty before the mount effect fills it', () => {
-    const host = document.body.appendChild(document.createElement('div'));
+    const host = document.createElement('div');
     host.innerHTML = renderToStaticMarkup(view(DESCRIPTION));
 
     const firstPaint = within(host).getByRole('status').textContent;
-    host.remove();
 
     expect(firstPaint).toBe('');
   });
