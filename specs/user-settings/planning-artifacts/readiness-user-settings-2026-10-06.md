@@ -413,7 +413,8 @@ the TB-1 gate lives in chore #332 (draft PR #333), which lands first.
 
 **Removed:** `ProfileFailureTransformer` (merged into `GraphQLProfileTransformer` as `invalid`
 and `failed`), `ToastQueueStore` (a reducer in `useToastQueue`), `useUserProfileSettings`
-(`ProfileForm` calls its hooks), `ProfileProviderDeps` and its `useFactory` closure, the
+(`ProfileForm` calls its hooks through the stateless compose hook `useProfileFormModel`,
+amendment 2026-10-19), `ProfileProviderDeps` and its `useFactory` closure, the
 `profile_update` signal (FR-23 withdrawn, Story 1.12), the aborted and per-operation failure
 types, `ProfileBusy`, `ToastRequest`, `ToastRequestSet`, `ToastNotify`, `ToastQueueSnapshot`,
 the toast-table, deps and model types, `FeatureFlagRef` and `FeatureFlagSet` (a scalar `flag`),

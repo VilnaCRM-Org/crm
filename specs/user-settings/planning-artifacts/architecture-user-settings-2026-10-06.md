@@ -54,7 +54,8 @@ type (TB-1, §1.2), and the board's `UserEntity` is #315's and crosses component
 > - `SessionLinkFactory` keeps one rule, a transport 401 ends the session, and is built once,
 >   here (§5.5). The route gate takes one scalar `flag` (§5.6).
 > - No glue: `useUserProfileSettings`, `ToastQueueStore` and the `ToastRequest` mapping are gone;
->   the form calls its hooks directly and the hooks emit `ToastDraftSet` (§5.8, §7.3).
+>   the form calls one compose hook, `useProfileFormModel`, over its hooks, which hold no state
+>   of their own (amendment 2026-10-19), and the hooks emit `ToastDraftSet` (§5.8, §7.3).
 > - The aborted outcome and the per-operation failure types collapsed into one
 >   `ProfileFailedOutcome` (§6.1). The mock is a stateless happy path (§5.12).
 > - All data access goes through GraphQL repositories; this plan adds no REST call.
@@ -534,7 +535,8 @@ flowchart BT
 - The route page holds the user, as the board's `UserProfile → UserEntity` edge says: it reads
   through `useProfileLoad` and passes the `UserEntity` down in `UserProfileSettingsProps`,
   unchanged (TB-2). The card's form saves through `useProfileSave` and resends through
-  `useEmailResend`, both over #315's `useAbortableSubmit`; the form calls them directly.
+  `useEmailResend`, both over #315's `useAbortableSubmit`; the form reaches them through one
+  stateless compose hook, `useProfileFormModel` (§7.3, amendment 2026-10-19).
 - The Data provider box is one class, `ProfileProvider`, with three `@inject` collaborators:
   the Repository, `GraphQLProfileTransformer` and #315's `UserServiceErrorTransformer`. No
   Provider calls another Provider, and no Data-provider method is generic (§6).
@@ -2277,25 +2279,26 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
   `load: () => import(/* webpackChunkName: "settings" */ './user-profile')`,
   `meta: { titleKey: 'settings.title' }`.
 - `settings/routes/user-profile/index.tsx`, `settings/routes/user-profile/styles.ts` — the
-  `UserProfile` page, grid; `settings/routes/user-profile/settings-catalog-loader.ts` — the
-  lazy catalog seam (§5.16).
+  `UserProfile` page, grid, which registers the lazy settings catalog through the shared
+  `lazyCatalogLoader` when the module evaluates (§5.16).
 - `settings/components/user-profile-settings/{index,profile-skeleton,profile-load-error}.tsx`,
   `styles.ts`.
 - `settings/components/profile-header/index.tsx`, `styles.ts`.
 - `settings/components/profile-form/{index,email-status-row,clear-button}.tsx`, `styles.ts`.
 - `settings/components/change-password/index.tsx`, `styles.ts`.
 - One `*.stories.tsx` beside each of the nine rendering components above.
-- `settings/hooks/{index,use-profile-load,use-profile-save}.ts`,
-  `settings/hooks/{use-email-resend,use-profile-form-rules}.ts`.
+- `settings/hooks/{use-profile-load,use-profile-save,use-email-resend,use-email-row}.ts`,
+  `settings/hooks/{use-profile-form-model,use-profile-form-rules,use-settled-focus}.ts`; the
+  folder has no barrel, each consumer imports its hook by path (§7.3).
 - `settings/data-providers/profile-provider.ts`.
-- `settings/transformers/graphql-profile-transformer.ts`.
+- `settings/transformers/graphql-profile-transformer.ts` and `settings/transformers/index.ts`,
+  the barrel `di.ts` imports the Transformer from.
 - `settings/repositories/graphql-profile-repository.ts` and `settings/repositories/index.ts`,
   the barrel `ProfileProvider` imports the Repository's type from, because
   `no-repository-internal-imports` admits only the `index` file from outside a repositories
   folder and the composition roots (#315's `PasswordRecoveryProvider` imports
-  `@auth/repositories`). `di.ts` imports the Provider and the Transformer by path, as it imports
-  `PasswordRecoveryProvider` and `PasswordRecoveryTransformer`, so those two folders have no
-  barrel.
+  `@auth/repositories`). `di.ts` imports the Provider by path, as it imports
+  `PasswordRecoveryProvider`, so `data-providers/` has no barrel.
 - `settings/repositories/current-user.graphql` with `current-user-query.ts`;
   `update-user.graphql` with `update-user-mutation.ts`; `resend-email-to-user.graphql` with
   `resend-email-to-user-mutation.ts`.
@@ -2323,7 +2326,9 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
 - `@auth/components/form-section/validations/*` MOVE; `@auth/types/validations/*` MOVE.
 - `@auth/assets/{eye,eye-off}.svg` MOVE; `@auth/components/form-section/components/styles.ts`
   MOD (keeps only `formFieldWrapper`, or is deleted, §5.9).
-- `@auth/routes/recovery-catalog/i18n/{en,uk}.json` MOD (the `password_policy.*` keys leave).
+- `@auth/routes/recovery-catalog/i18n/{en,uk}.json` MOD (the `password_policy.*` keys leave);
+  #315's `@auth/routes/recovery-catalog/recovery-catalog-loader.ts` and its test DELETE (the
+  recovery layout registers the catalog through `lazyCatalogLoader`).
 - `@auth/i18n/{en,uk}.json` MOD (`sign_in.notices.session_ended`).
 
 **Module level:**
@@ -2344,10 +2349,13 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
 - `src/routes/route-flag-gate.tsx`; `src/routes/route-composer.tsx`, `src/routes/route-mapper.tsx`
   and `src/routes/types/app-route.ts` MOD; `src/routes/README.md` MOD.
 - `src/components/ui-toast/{index,ui-toast}.tsx`, `styles.ts`, two stories, `i18n/{en,uk}.json`.
+- `src/lib/locale-catalog/lazy-catalog-loader.ts` and `src/lib/locale-catalog/types/locale-catalog-pair.ts`
+  — the one shared `lazyCatalogLoader` and its `LocaleCatalogPair` (§5.16, amendment
+  2026-10-19).
 - `src/components/{ui-form-field,ui-password-field,ui-password-policy-rules,ui-server-field-error}/`
   (MOVE targets) with their stories; `ui-form-field/styles.ts`, `ui-password-field/styles.ts`
   and `ui-password-policy-rules/styles.ts` (MOVE of the field, eye-icon and rule-list styles,
-  §5.9); `ui-password-policy-rules/{i18n/en.json,i18n/uk.json,password-policy-catalog-loader.ts}`;
+  §5.9); `ui-password-policy-rules/i18n/{en,uk}.json`;
   `ui-server-field-error/use-server-field-error.ts` (MOVE).
 - `src/components/types/<component>/index.ts` for the five shared components above;
   `src/components/types/ui-form/index.ts` MOD.
@@ -2897,6 +2905,9 @@ import it and only append where a row says so. There is no "build if absent" bra
 | The settings lazy catalog; the home link                                   | #330 (here)    |
 | Toast primitive (used by settings alone, R16)                              | #330 (here)    |
 | `UIForm` `submitBlockedReason`, `TwoFactorSettings`, 2FA message rows      | #331           |
+
+#315's `RecoveryCatalogLoader` is replaced here by the shared `lazyCatalogLoader` in
+`src/lib/locale-catalog/` (§5.16, amendment 2026-10-19); the policy file stays #315's.
 
 Settings appends to #315's pieces exactly what §5.4 and §5.5 list: the `401` status row, its
 input properties and `taken`, the exact-message step with its three rows and the two uniqueness

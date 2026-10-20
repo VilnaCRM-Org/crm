@@ -376,8 +376,9 @@ landing order #315 → #330 → #331 with ownership unchanged; no further readin
   keys leave #315's lazy recovery catalog for a lazy catalog the moved component owns.
 - **Story 1.4.** No flag exists (`FeatureFlag = never`, issue #309); `userSettings` is the first,
   and the compose `:-true` must-fail is new rather than copied.
-- **Story 1.6.** The settings copy is a lazy catalog (`SettingsCatalogLoader`, #315's
-  `RecoveryCatalogLoader` precedent, AR-2's accepted exception), because the merged catalog
+- **Story 1.6.** The settings copy is a lazy catalog (registered through the shared
+  `lazyCatalogLoader` that replaced #315's `RecoveryCatalogLoader` and this plan's two copies on
+  2026-10-19, AR-2's accepted exception), because the merged catalog
   lands in the eager `index.js` and `/sign-in` has no mobile Lighthouse headroom. Only
   `ui_toast.close`, `home.settings_link` and `sign_in.notices.session_ended` stay eager.
 - **Story 1.7.** The transformer lives in `src/modules/user/transformers/` and stays
@@ -436,8 +437,8 @@ in the code and fixed. No story, epic, section or class was renamed; one section
   its `ProtectedRoute` element and `route-validator.test.ts` gains the two rejections.
 - **Story 1.6** lists `tests/unit/routes/registry.test.ts` (ids `app.shell`, `user.auth`,
   `user.settings`, plus a settings-contract case) and a `route-paths.test.ts` case.
-- **Story 3.4** makes `create-settings-locale-i18n.ts` also register `PasswordPolicyCatalogLoader`
-  and adds a criterion that the rule labels render translated; the DoD and A §5.16 say so.
+- **Story 3.4** makes `create-settings-locale-i18n.ts` also register the `password_policy.*`
+  catalog through `lazyCatalogLoader` and adds a criterion that the rule labels render translated; the DoD and A §5.16 say so.
 - **2FA challenge is unflagged.** A §5.6 and §5.7 no longer put #331's challenge behind
   `RouteFlagGate`: it is an always-registered public route that reads no flag (2FA FR-12), and
   `/settings` is the gate's only flagged route.
