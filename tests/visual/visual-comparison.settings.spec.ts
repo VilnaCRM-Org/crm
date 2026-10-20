@@ -25,7 +25,7 @@ import { t } from '@tests/e2e/utils/initialize-localization';
 
 import { currentLanguage, notFoundScreens, PAGES, type ScreenSize, screenSizes } from './constants';
 import stabilizePage from './stabilize-page';
-import waitForStableDom from './wait-for-stable-dom';
+import takeStableSnapshot from './take-stable-snapshot';
 
 const PASSWORD = 'Current1pass';
 const NEW_PASSWORD = 'Another2pass';
@@ -51,14 +51,8 @@ async function expectResting(page: Page): Promise<void> {
   await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
 }
 
-async function takeSettingsSnapshot(page: Page, screen: ScreenSize, name: string): Promise<void> {
-  await waitForStableDom(page);
-  await expect(page).toHaveScreenshot(`${currentLanguage}_settings-${name}_${screen.name}.png`, {
-    fullPage: true,
-    animations: 'disabled',
-    scale: 'css',
-  });
-}
+const takeSettingsSnapshot = (page: Page, screen: ScreenSize, name: string): Promise<void> =>
+  takeStableSnapshot(page, `${currentLanguage}_settings-${name}_${screen.name}.png`);
 
 async function fillEveryAspect(page: Page): Promise<void> {
   await nameField(page).fill(NEW_NAME);

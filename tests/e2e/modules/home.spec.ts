@@ -54,7 +54,7 @@ test.describe('Home page E2E Tests (issue #106)', () => {
 
     await expect(link).toHaveCount(1);
     await expect(link).toHaveAttribute('href', ROUTE_PATHS.settings);
-    await expect(link.locator('xpath=following::button')).toHaveText(signOutLabel);
+    await expect(link.locator('xpath=following::button[1]')).toHaveText(signOutLabel);
   });
 
   test('renders the shell footer as a contentinfo landmark outside main', async ({ page }) => {
