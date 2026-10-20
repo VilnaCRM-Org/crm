@@ -88,7 +88,7 @@ describe('RegistrationSuccessView', () => {
 
     rerender(view('Ви успішно зареєструвалися'));
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Ви успішно зареєструвалися');
+    expect(await screen.findByRole('status')).toHaveTextContent(/^Ви успішно зареєструвалися$/);
   });
 
   it('runs the action from its labelled button', async () => {
