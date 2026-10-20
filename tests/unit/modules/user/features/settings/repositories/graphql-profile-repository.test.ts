@@ -24,6 +24,8 @@ const build = (): { repository: GraphQLProfileRepository; client: FakeClient } =
   return { repository, client };
 };
 
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 const abortedSignal = (): AbortSignal => {
   const controller = new AbortController();
   controller.abort();
@@ -63,13 +65,10 @@ describe('GraphQLProfileRepository', () => {
         context: { fetchOptions: { signal } },
       })
     );
-    expect(Object.keys(first?.variables.input ?? {}).sort()).toEqual([
-      'clientMutationId',
-      'id',
-      'initials',
-      'password',
-    ]);
-    expect(first?.variables.input['clientMutationId']).toMatch(/^[0-9a-f-]{36}$/);
+    expect(first?.variables.input).toEqual({
+      ...input,
+      clientMutationId: expect.stringMatching(UUID_V4),
+    });
     expect(first?.variables.input['clientMutationId']).not.toBe(
       second?.variables.input['clientMutationId']
     );
@@ -92,8 +91,10 @@ describe('GraphQLProfileRepository', () => {
     expect(options.mutation).toBe(RESEND);
     expect(options.fetchPolicy).toBe('no-cache');
     expect(options.context).toEqual({ fetchOptions: { signal } });
-    expect(Object.keys(options.variables.input).sort()).toEqual(['clientMutationId', 'id']);
-    expect(options.variables.input['id']).toBe(userId);
+    expect(options.variables.input).toEqual({
+      id: userId,
+      clientMutationId: expect.stringMatching(UUID_V4),
+    });
   });
 
   it.each([
@@ -121,6 +122,7 @@ describe('GraphQLProfileRepository', () => {
 
       expect(caught).toBeInstanceOf(DOMException);
       expect((caught as DOMException).name).toBe('AbortError');
+      expect((caught as DOMException).message).toBe('Profile request was aborted');
       expect(client.query).not.toHaveBeenCalled();
       expect(client.mutate).not.toHaveBeenCalled();
     }
