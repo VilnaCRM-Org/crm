@@ -4,6 +4,7 @@ import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { act, render, type RenderResult, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -18,12 +19,24 @@ import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 jest.mock('@auth/components/form-section/auth-forms/use-login-submitter', () => ({
   __esModule: true,
-  default: (): { error: null; isSubmitting: boolean; handleLogin: jest.Mock } => ({
-    error: null,
+  default: (): {
+    error: string;
+    isSubmitting: boolean;
+    handleLogin: jest.Mock;
+    handleRetry: jest.Mock;
+    handleBack: jest.Mock;
+  } => ({
+    error: '',
     isSubmitting: false,
     handleLogin: jest.fn(),
+    handleRetry: jest.fn(),
+    handleBack: jest.fn(),
   }),
 }));
+
+jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }));
 
 jest.mock('@/modules/user/lib/validations', () => ({
   __esModule: true,
@@ -100,7 +113,7 @@ describe('SignIn page', () => {
   });
 
   describe('post-login redirect (issue #150)', () => {
-    it('returns to the preserved protected destination once a token arrives', async () => {
+    it('confirms the sign-in, then returns to the preserved protected destination', async () => {
       renderSignInRoute();
       expect(
         await screen.findByRole('heading', { level: 1, name: 'Authentication' })
@@ -108,6 +121,11 @@ describe('SignIn page', () => {
       expect(screen.queryByText(DESTINATION_TEXT)).not.toBeInTheDocument();
 
       act(() => useAuthStore.setState({ token: buildToken() }));
+
+      expect(await screen.findByRole('heading', { level: 2, name: 'Welcome back!' })).toHaveFocus();
+      expect(screen.queryByText(DESTINATION_TEXT)).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
       expect(await screen.findByText(DESTINATION_TEXT)).toBeInTheDocument();
       expect(
@@ -124,6 +142,7 @@ describe('SignIn page', () => {
         await screen.findByRole('heading', { level: 1, name: 'Authentication' })
       ).toBeInTheDocument();
       expect(screen.queryByText(DESTINATION_TEXT)).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
     });
   });
 

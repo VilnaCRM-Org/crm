@@ -33,7 +33,7 @@ class DeferredAuthActions implements AuthActions {
   public async loginUser(credentials: SignInDto, signal?: AbortSignal): Promise<void> {
     this.state.setState({ loginLoading: true, loginError: null });
     const actions = await this.resolveSafely((error) =>
-      this.state.setState({ loginLoading: false, loginError: error })
+      this.state.setState({ loginLoading: false, loginError: signal?.aborted ? null : error })
     );
     if (actions) await actions.login(credentials, signal);
   }

@@ -1,14 +1,17 @@
 export interface Props {
   isClosing: boolean;
   onBack: () => void;
+  title: string;
+  description: string;
+  buttonLabel: string;
+}
+
+export interface SuccessDescriptionProps {
+  description: string;
 }
 
 export interface SuccessTitleProps {
   title: string;
-}
-
-export interface SuccessLabelProps {
-  label: string;
 }
 
 export interface SuccessActionButtonProps {

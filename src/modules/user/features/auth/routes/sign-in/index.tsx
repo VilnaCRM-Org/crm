@@ -11,12 +11,12 @@ const SignInFormSection = lazy(() => signInFormSectionLoader.load());
 
 export default function SignIn(): JSX.Element {
   usePageTitle('sign_in.title');
-  usePostLoginRedirect();
+  const postLogin = usePostLoginRedirect();
   const notice = useArrivalNotice();
 
   return (
     <AuthPageLayout>
-      <SignInFormSection notice={notice} />
+      <SignInFormSection notice={notice} postLogin={postLogin} />
     </AuthPageLayout>
   );
 }

@@ -4,6 +4,8 @@ export interface LoginSubmitter {
   error: string;
   isSubmitting: boolean;
   handleLogin: (data: SignInDto) => Promise<void>;
+  handleRetry: () => void;
+  handleBack: () => void;
 }
 
 export type LoginUser = (data: SignInDto, signal?: AbortSignal) => Promise<void>;

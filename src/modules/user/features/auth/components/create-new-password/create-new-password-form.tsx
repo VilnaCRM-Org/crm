@@ -96,7 +96,7 @@ export default function CreateNewPasswordForm({
       defaultValues={{ token, newPassword: '', confirmPassword: '' }}
       error={banner.error}
       isSubmitting={isSubmitting}
-      submitLabel={t('password_recovery.submit_button')}
+      submitLabel={banner.retry ? t('auth.error.tryAgain') : t('password_recovery.submit_button')}
       submittingLabel={t('password_reset.submitting')}
       title={t('password_reset.title')}
       titleComponent="h1"

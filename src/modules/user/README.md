@@ -175,7 +175,10 @@ reset token and a new password, and the process-wide `InMemoryCache` would keep 
 generated documents, `RequestPasswordReset` and `ConfirmPasswordReset`, each selecting only
 `clientMutationId`, with `fetchPolicy: 'no-cache'`. The link chain gains no retry link: a reset
 request sends an e-mail and a confirm consumes a token, so a retry is user-initiated only. Both
-methods resolve `void` whatever the payload.
+methods resolve `void` whatever the payload. No failure is silenced: the link's error link reports
+every network and GraphQL error it sees, and the repository reports a rejection that never reached
+the link (a client-side bug, not an abort) through the injected `ObservabilityService` with the
+source `auth:password-recovery`, then rethrows it for the Data provider to classify.
 
 **Rejected.** REST transport (the user-service contract for these steps is GraphQL); the
 default cache policy (it writes the token and password under `ROOT_MUTATION`); a transport retry
@@ -225,14 +228,15 @@ equal `vX.Y.Z` tags); a self-expiring checker (a manual follow-up deletion is si
 
 **Decision.** `useResetToken` reads the `token` parameter once, keeps it only in memory, and
 strips it from the URL with a `replace` navigation in a layout effect before the form paints. No
-input renders it, and it never reaches the cache, the history or telemetry. The hook returns a
-`ResetTokenHandle` (`{ token, discard() }`), not the bare string: `useCreateNewPassword` takes
-the handle and, when the API reports the link as invalid, calls `discard()`, so the token leaves
-memory and the page switches to the invalid-link state instead of offering a retry with it.
+input renders it, and it never reaches the cache, the history or telemetry. The hook returns
+the usable token as a plain `string | null` (issue #315's layer stack), which the form section
+hands to the confirm form as its `token` default. `useCreateNewPassword` never sees the token
+outside the submitted `CreateNewPasswordDto`; when the API reports the link as invalid it
+returns the `invalid` view, so the form unmounts and no retry is offered with the token; the page
+then passes `active = false` to `useResetToken`, which drops the token from memory (FR-22).
 
-**Rejected.** Keeping the token in the URL or in storage (history, referrers, logs); returning
-the token as a plain `string | null`, which the flow hook could not clear after an invalid-link
-failure.
+**Rejected.** Keeping the token in the URL or in storage (history, referrers, logs); a token
+handle that the flow hook writes back into, an edge the board does not draw.
 
 ### One shared password policy
 
@@ -243,6 +247,55 @@ must not drift from the validator.
 the live list renders; it is never weaker than the API.
 
 **Rejected.** A second recovery-only policy; a policy copied rule for rule from the API.
+
+### Retry is the form's own submit
+
+**Context.** Issue #315's sequence diagrams show a transient failure as "banner + Retry", and
+both recovery cards end in a single primary button.
+
+**Decision.** While the transient banner shows (`network` or `server`, which are retryable),
+`useRecoveryFailureBanner` reports `retry`, and the form's submit reads
+`auth.error.tryAgain` ("Спробувати ще раз") instead of "Підтвердити". It resubmits the current
+values; the rate-limit banner keeps "Підтвердити". When the banner hides after five seconds the
+label returns to "Підтвердити".
+
+**Rejected.** A second Retry button beside the banner (two primary actions for one request).
+
+### Sign-in and sign-up results use one notification
+
+**Context.** Sign-up already replaced its form with the website's full-card notification for
+every server result; sign-in showed failures as red text under the form, always reading "unknown
+error", and redirected silently on success.
+
+**Decision.** Sign-in uses the same lazily loaded `RegistrationNotification` with
+`flow="signIn"`. A settled failure shows the error card: a focused h2 "Трапилась помилка", the
+message in an alert filled after mount (mapped from the `AuthError` kind and HTTP 429, never the
+backend text), and both "Спробувати ще раз" (resubmits the last values) and "Назад" (aborts any
+running request, returns to the form with the values kept and focuses the e-mail field). A sign-in
+shows the success card (focused h2 "Вітаємо!", "Ви успішно увійшли" in a status region,
+"Продовжити"); its button performs the existing redirect to the preserved destination with focus on
+`<main>`, and nothing redirects on a timer. While a card shows, the form, its submit and the OAuth
+row are inert; its buttons use `aria-disabled` while busy so focus is never dropped. A page that
+mounts with a token already present never shows the card.
+
+**Rejected.** The red banner (no heading, no recovery action, easy to miss); a notice on the
+destination page (still a silent swap to `/`); a timed auto-redirect (WCAG 2.2.1).
+
+### The sandbox demo walks the whole flow
+
+**Context.** A pull-request sandbox is a static site with no backend, and no environment
+delivers the reset e-mail before user-service releases the mutations.
+
+**Decision.** Like the demo login (issue #309), `SandboxDemoSessionProvider` issues a fixed demo
+reset token for exactly `demo@vilnacrm.com` and accepts only that token, and only while the demo
+is active (a non-production build or a sandbox host). `GraphQLPasswordRecoveryRepository`
+resolves both steps for those inputs without calling the API, standing in for it the way the
+pending contract and the local mock do. On the sent step, `SandboxDemoResetLink` replaces the
+e-mail with a link to `/password-reset` carrying the token. Outside an approved sandbox host,
+production deployments render nothing new.
+
+**Rejected.** Reading the link from mock-server logs (unusable on a sandbox); a demo path for
+every address (it would bypass the browser specs that stub GraphQL).
 
 ### Both routes are public
 

@@ -10,32 +10,26 @@ import useAuthProviderLoader from '@auth/hooks/use-auth-provider-loader';
 import useCreateNewPassword from '@auth/hooks/use-create-new-password';
 import useResetToken from '@auth/hooks/use-reset-token';
 
-function InvalidLink(): JSX.Element {
-  const { t } = useTranslation();
-
-  return (
-    <RecoveryResultView
-      title={t('password_reset.invalid.title')}
-      body={t('password_reset.invalid.body')}
-      action={{
-        label: t('password_reset.invalid.request_new'),
-        to: ROUTE_PATHS.passwordRecovery,
-      }}
-    />
-  );
-}
-
 export default function CreateNewPasswordFormSection(): JSX.Element {
-  const state = useCreateNewPassword(useAuthProviderLoader(), useResetToken());
+  const { t } = useTranslation();
+  const state = useCreateNewPassword(useAuthProviderLoader());
+  const token = useResetToken(state.view !== 'invalid');
 
   return (
     <AuthCard>
       <CardBackControl to={ROUTE_PATHS.signIn} />
-      {state.view === 'invalid' ? (
-        <InvalidLink />
+      {token === null || state.view === 'invalid' ? (
+        <RecoveryResultView
+          title={t('password_reset.invalid.title')}
+          body={t('password_reset.invalid.body')}
+          action={{
+            label: t('password_reset.invalid.request_new'),
+            to: ROUTE_PATHS.passwordRecovery,
+          }}
+        />
       ) : (
         <CreateNewPasswordForm
-          token={state.token}
+          token={token}
           onSubmit={state.callbacks.submit}
           onDismissFailure={state.callbacks.dismissFailure}
           failure={state.failure}

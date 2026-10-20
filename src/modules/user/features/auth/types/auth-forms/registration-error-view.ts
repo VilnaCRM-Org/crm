@@ -2,6 +2,7 @@ import type { SxProps, Theme } from '@mui/material/styles';
 
 export interface Props {
   resolvedErrorText: string;
+  submittingMessage: string;
   isSubmitting: boolean;
   isClosing: boolean;
   onRetry?: (() => void) | undefined;
@@ -15,7 +16,7 @@ export interface ErrorLabelProps {
 export interface ErrorActionButtonProps {
   sx: SxProps<Theme>;
   variant: 'contained' | 'outlined';
-  disabled: boolean;
+  busy: boolean;
   onClick: () => void;
   label: string;
 }
@@ -31,5 +32,9 @@ export interface ErrorButtonsProps {
 
 export interface ErrorMessageProps {
   title: string;
+  text: string;
+}
+
+export interface ErrorAlertProps {
   text: string;
 }

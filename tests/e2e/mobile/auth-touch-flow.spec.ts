@@ -1,6 +1,12 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 
 import fulfillCreateUserSuccess from '@tests/e2e/utils/create-user-response';
+import {
+  backButtonOf,
+  errorCardHeading,
+  expectSignInErrorCard,
+  signInErrorMessages,
+} from '@tests/e2e/utils/sign-in-result-card';
 
 import {
   credentials,
@@ -25,6 +31,19 @@ async function tapAndFill(page: Page, placeholder: string, value: string): Promi
 
 function isPost(route: Route): boolean {
   return route.request().method() === 'POST';
+}
+
+async function rejectLogin(route: Route): Promise<void> {
+  if (!isPost(route)) {
+    await route.fallback();
+    return;
+  }
+
+  await route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ message: 'Invalid credentials' }),
+  });
 }
 
 test.describe('Auth flow driven by touch', () => {
@@ -56,6 +75,28 @@ test.describe('Auth flow driven by touch', () => {
     release();
   });
 
+  test('a failed sign-in shows the error card and tapping Назад restores the form', async ({
+    page,
+  }) => {
+    await page.route(LOGIN_API_URL, rejectLogin);
+
+    await page.goto(SIGN_IN_URL);
+    await tapAndFill(page, signIn.emailPlaceholder, credentials.email);
+    await tapAndFill(page, signIn.passwordPlaceholder, credentials.password);
+    await page.locator('button', { hasText: signIn.submitLabel }).tap();
+
+    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
+
+    await backButtonOf(page).tap();
+
+    await expect(errorCardHeading(page)).toHaveCount(0);
+    await expect(page.getByPlaceholder(signIn.emailPlaceholder)).toBeFocused();
+    await expect(page.getByPlaceholder(signIn.emailPlaceholder)).toHaveValue(credentials.email);
+    await expect(page.getByPlaceholder(signIn.passwordPlaceholder)).toHaveValue(
+      credentials.password
+    );
+  });
+
   test('registers with taps only and shows the success notification', async ({ page }) => {
     await page.route(REGISTRATION_API_URL, fulfillCreateUserSuccess(newUser));
 
@@ -66,7 +107,9 @@ test.describe('Auth flow driven by touch', () => {
 
     await page.locator('button', { hasText: signUp.submitLabel }).tap();
 
-    await expect(page.locator(`text=${signUp.successNotificationTitle}`)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: signUp.successNotificationTitle })
+    ).toBeFocused();
   });
 
   test('tapping submit on an empty form surfaces validation and sends no request', async ({

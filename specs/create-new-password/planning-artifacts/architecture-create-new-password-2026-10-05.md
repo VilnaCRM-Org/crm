@@ -393,7 +393,7 @@ flowchart BT
   PROV <-->|"RecoveryConfirmedOutcome<br/>UserServiceFailure ⇄ RecoveryFailedOutcome"| TR
   PROV <-->|"unknown ⇄ UserServiceFailure"| ETR
   HOOK -.->|"import() + resolve<br/>CreateNewPasswordDto ⇄ CreateNewPasswordOutcome"| PROV
-  PAGE -->|"ResetTokenHandle (the usable token or null, discard())"| THOOK
+  PAGE -->|"string | null (the usable token)"| THOOK
   PAGE -->|"CreateNewPasswordDto ⇄ CreateNewPasswordState"| HOOK
   PAGE -->|"CreateNewPasswordFormProps, RecoveryResultViewProps"| KIDS
   PAGE -.->|"reset password 3 redirect to sign-in<br/>RedirectNavigationState"| SIGNIN
@@ -563,7 +563,7 @@ sequenceDiagram
   participant SI as SignIn<br/>[component]#lt;route#gt;
   U->>C: opens /password-reset?token=abc (page and section chunks load)
   C->>K: first render of the form section
-  K->>K: useState(read and trim location.search) → ResetTokenHandle (token or null)
+  K->>K: useState(read and trim location.search) → string | null
   K->>C: layout effect: navigate(pathname, replace) strips the token before paint
   alt token null (absent, unusable, or a reload after the strip)
     C->>C: CreateNewPasswordState, view 'invalid' (no request)
@@ -596,7 +596,6 @@ sequenceDiagram
         T-->>P: RecoveryFailedOutcome
         P-->>H: RecoveryFailedOutcome
         alt RecoveryFailure reason invalid_link
-          H->>K: ResetTokenHandle.discard() drops the in-memory token
           H->>C: CreateNewPasswordState, view 'invalid' (the form and its token unmount)
         else policy_rejected, rate_limited, server or network
           H->>C: CreateNewPasswordState with RecoveryFailure (field error or 5 s banner)
@@ -696,12 +695,12 @@ must not survive the page (FR-17), so they live in `useState` inside the hooks �
   submitted (trimmed) e-mail — so "Назад" on the sent step re-renders the form with the value in
   the field and its heading focused (FR-11) — the masked address and the failure, and returns
   them with its `ResetPasswordCallbacks`, whose `submit` takes the form's `RestorePasswordDto`.
-- `useCreateNewPassword(loader: AuthProviderLoader, resetToken: ResetTokenHandle)` returns
-  `CreateNewPasswordState`; its `submit` takes the form's `CreateNewPasswordDto` and sends only
-  `token` and `newPassword`. It keeps the view (`form | invalid`, `invalid` when the handle's
-  `token` is `null`) and the failure, and navigates to `/sign-in` on `confirmed` (§5.7). On an
-  `invalid_link` failure it forgets the retry input and calls `resetToken.discard()`, so the
-  token leaves memory and the view switches to `invalid` (FR-22, §5.6).
+- `useCreateNewPassword(loader: AuthProviderLoader)` returns `CreateNewPasswordState`; its
+  `submit` takes the form's `CreateNewPasswordDto` and sends only `token` and `newPassword`. It
+  keeps the failure and navigates to `/sign-in` on `confirmed` (§5.7). An `invalid_link` failure
+  switches its view to `invalid`, so the form and its token unmount, and the page passes
+  `active = false` to `useResetToken`, which drops the token from memory (FR-22, §5.6). The page
+  shows the same `invalid` state without a request when `useResetToken` returns `null`.
 - Each flow hook's run resolves the provider through
   `loader.resolve(AUTH_TOKENS.PasswordRecoveryProvider)` and calls the step; a rejected load
   becomes a `RecoveryFailedOutcome` with reason `network`, retryable (a module-level constant
@@ -865,11 +864,12 @@ returns the named `RecoveryFailureBanner` (the `UIForm` `error`) and dismisses i
 
 ### 5.6 Reset token: read once, memory only, URL stripped
 
-`useResetToken(): ResetTokenHandle` reads the `token` parameter of `location.search` once, in a
-`useState` initializer, trims it and keeps it only when it is usable (non-empty, ≤ 255
-characters, FR-17); otherwise the handle's `token` is `null`. The handle's `discard()` sets that
-state to `null`; it is how `useCreateNewPassword` drops the token after an `invalid_link`
-failure (FR-22), since a plain string returned by the hook could not be cleared from outside.
+`useResetToken(active: boolean): string | null` reads the `token` parameter of `location.search` once, in a
+`useState` initializer, trims it and returns it only when it is usable (non-empty, ≤ 255
+characters, FR-17); otherwise it returns `null`. The page hands the string to the confirm form
+as its `token` default. After an `invalid_link` failure the form unmounts and the page passes
+`active = false`, so the hook sets its state to `null` and the token leaves memory for good (FR-22);
+the flow hook never writes into the token hook.
 In a `useLayoutEffect` it navigates to the bare pathname with `replace: true` when a `token`
 parameter is present, so the router's `location.search` and the address bar agree and the URL is
 stripped before the browser paints the form (FR-16, NFR-12). `navigate` is safe there: react-router marks the function active in its
@@ -1209,7 +1209,9 @@ published state below is a named type from §6.5 (TB-1); private helpers are omi
 @injectable()
 export default class GraphQLPasswordRecoveryRepository {
   constructor(
-    @inject(AUTH_TOKENS.ApolloClient) apolloClient: ApolloClient<NormalizedCacheObject>
+    @inject(AUTH_TOKENS.ApolloClient) apolloClient: ApolloClient<NormalizedCacheObject>,
+    @inject(AUTH_TOKENS.SandboxDemoSessionProvider) sandboxDemo: SandboxDemoSessionProvider,
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService) observability: ObservabilityService
   );
   public requestReset(dto: RestorePasswordDto, signal?: AbortSignal): Promise<void>;
   public confirmReset(dto: CreateNewPasswordDto, signal?: AbortSignal): Promise<void>;
@@ -1219,6 +1221,10 @@ export default class GraphQLPasswordRecoveryRepository {
 
 The two `*-mutation.ts` seams are imported by the repository only and not re-exported from the
 barrel. The repository value-imports only `tsyringe`, `uuid`, token modules and the two seams.
+No failure is silenced: `ApolloLinkFactory`'s error link reports every network and GraphQL error
+it sees, and the repository reports a rejection that never reached the link (a client-side bug,
+not an abort) through `ObservabilityService` with the source `auth:password-recovery` and the step
+as `stage`, then rethrows it unchanged, so the provider's classification is untouched.
 
 ### 6.2 Transformers (board `[Transformer]`)
 
@@ -1281,9 +1287,8 @@ Hooks (exempt from the class rules, bound by TB-1 positions 2 and 5):
 
 - `useAuthProviderLoader(): AuthProviderLoader` (`@auth/hooks/`).
 - `useResetPassword(loader: AuthProviderLoader): ResetPasswordState` (`@auth/hooks/`).
-- `useCreateNewPassword(loader: AuthProviderLoader, resetToken: ResetTokenHandle)` returns
-  `CreateNewPasswordState` (`@auth/hooks/`).
-- `useResetToken(): ResetTokenHandle` (`@auth/hooks/`).
+- `useCreateNewPassword(loader: AuthProviderLoader): CreateNewPasswordState` (`@auth/hooks/`).
+- `useResetToken(active: boolean): string | null` (`@auth/hooks/`).
 - `useRecoveryFailureBanner(failure: RecoveryFailure | null, retry: () => Promise<void>)`
   returns `RecoveryFailureBanner` (`@auth/hooks/`).
 - `useAbortableSubmit<TInput, TOutcome>(run: AbortableRun<TInput, TOutcome>)` returns
@@ -1334,10 +1339,6 @@ export interface ResetPasswordState {
   readonly failure: RecoveryFailure | null;
   readonly isSubmitting: boolean;
   readonly callbacks: ResetPasswordCallbacks;
-}
-export interface ResetTokenHandle {
-  readonly token: string | null; // the usable token, or null (§5.6)
-  discard(): void; // drops the token after an invalid_link failure (FR-22)
 }
 export interface CreateNewPasswordCallbacks {
   submit(dto: CreateNewPasswordDto): Promise<void>; // sends only token and newPassword
@@ -1606,7 +1607,7 @@ Under `@auth/hooks/` (signatures in §6.4):
 | `useAuthProviderLoader`    | one container-free loader per mount (§5.4)          |
 | `useResetPassword`         | `ResetPasswordState`; composes `useAbortableSubmit` |
 | `useCreateNewPassword`     | `CreateNewPasswordState`; navigates on confirmed    |
-| `useResetToken`            | `ResetTokenHandle`; strips the URL once             |
+| `useResetToken`            | `string \| null`; strips the URL once               |
 | `useRecoveryFailureBanner` | `RecoveryFailureBanner` for the `UIForm` banner     |
 
 Under `src/hooks/`:

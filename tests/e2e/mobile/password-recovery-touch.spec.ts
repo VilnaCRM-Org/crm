@@ -19,6 +19,7 @@ const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const sentTitle: string = t('password_recovery.sent.title');
 const toSignIn: string = t('password_recovery.sent.to_sign_in');
 const transient: string = t('password_recovery.errors.transient');
+const retryLabel: string = t('auth.error.tryAgain');
 const resetTitle: string = t('password_reset.title');
 const invalidTitle: string = t('password_reset.invalid.title');
 const requestNew: string = t('password_reset.invalid.request_new');
@@ -130,7 +131,7 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await submit.tap();
     await expect(page.getByRole('alert')).toHaveText(transient);
     await freezeClock(page);
-    await expectTargetAtLeast(submit, MIN_TOUCH_TARGET_PX);
+    await expectTargetAtLeast(page.getByRole('button', { name: retryLabel }), MIN_TOUCH_TARGET_PX);
   });
 
   test('keeps the sent-step controls tappable', async ({ page }) => {

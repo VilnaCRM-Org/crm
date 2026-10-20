@@ -1,8 +1,10 @@
+import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import { HttpResponse } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import observabilityCore from '@/services/observability/observability-core';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import { AuthProviderLoader } from '@auth/stores';
 import type {
@@ -155,6 +157,81 @@ describe('PasswordRecoveryProvider over the container and msw', () => {
 
     expect(answered).toHaveLength(1);
     expect(sent).toHaveLength(1);
+  });
+});
+
+describe('PasswordRecoveryProvider over the sandbox demo', () => {
+  afterEach(() => server.resetHandlers());
+
+  it('walks the demo reset from the request to the confirmation without the API', async () => {
+    const requested = answerRecoveryOperation(
+      'request',
+      () => new HttpResponse(null, { status: 503 })
+    );
+    const confirmed = answerRecoveryOperation(
+      'confirm',
+      () => new HttpResponse(null, { status: 503 })
+    );
+    const provider = await new AuthProviderLoader().resolve<PasswordRecoveryProvider>(
+      AUTH_TOKENS.PasswordRecoveryProvider
+    );
+    const { signal } = new AbortController();
+
+    await expect(provider.requestReset({ email: 'demo@vilnacrm.com' }, signal)).resolves.toEqual({
+      kind: 'sent',
+      maskedEmail: 'd*****@vilnacrm.com',
+    });
+    await expect(
+      provider.confirmReset(
+        { token: 'sandbox-demo-reset-token', newPassword: buildPassword() },
+        signal
+      )
+    ).resolves.toEqual({ kind: 'confirmed' });
+    expect(requested).toHaveLength(0);
+    expect(confirmed).toHaveLength(0);
+  });
+});
+
+describe('PasswordRecoveryProvider over failures the Apollo link never saw', () => {
+  const clientOf = (): ApolloClient<NormalizedCacheObject> =>
+    container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it.each([
+    ['a client error', new TypeError('client bug'), 'confirm'],
+    ['a null rejection', null, 'request'],
+    ['an Apollo error without GraphQL errors', { graphQLErrors: [] }, 'request'],
+  ] as const)('reports %s through the observability boundary', async (_label, caught, step) => {
+    const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
+    jest.spyOn(clientOf(), 'mutate').mockRejectedValue(caught);
+    const provider = container.resolve<PasswordRecoveryProvider>(
+      AUTH_TOKENS.PasswordRecoveryProvider
+    );
+
+    await expect(run(provider, step)).resolves.toEqual(failed('server', true));
+    expect(captureError).toHaveBeenCalledWith(caught, {
+      source: 'auth:password-recovery',
+      stage: step,
+    });
+  });
+
+  it.each([
+    ['a coded GraphQL error', { graphQLErrors: [{ message: 'x', extensions: { code: 'X' } }] }],
+    ['an unmapped network status', { networkError: { statusCode: 404 } }],
+    ['an abort', Object.assign(new Error('aborted'), { name: 'AbortError' })],
+  ])('leaves %s to the Apollo link', async (_label, caught) => {
+    const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
+    jest.spyOn(clientOf(), 'mutate').mockRejectedValue(caught);
+    const provider = container.resolve<PasswordRecoveryProvider>(
+      AUTH_TOKENS.PasswordRecoveryProvider
+    );
+
+    await run(provider, 'request');
+
+    expect(captureError).not.toHaveBeenCalled();
   });
 });
 

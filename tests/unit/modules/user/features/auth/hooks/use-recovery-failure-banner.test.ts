@@ -43,11 +43,15 @@ describe('useRecoveryFailureBanner', () => {
   it('shows the rate-limit text', () => {
     expect(mountBanner({ reason: 'rate_limited', retryable: false }).current()).toEqual({
       error: RATE_LIMITED,
+      retry: false,
     });
   });
 
-  it.each(['network', 'server'] as const)('shows the transient text for %s', (reason) => {
-    expect(mountBanner({ reason, retryable: true }).current()).toEqual({ error: TRANSIENT });
+  it.each(['network', 'server'] as const)('shows the transient text and retry for %s', (reason) => {
+    expect(mountBanner({ reason, retryable: true }).current()).toEqual({
+      error: TRANSIENT,
+      retry: true,
+    });
   });
 
   it.each([
@@ -57,7 +61,7 @@ describe('useRecoveryFailureBanner', () => {
     ['no failure', null],
   ] as const)('shows no banner and schedules nothing for %s', (_name, failure) => {
     const dismiss = jest.fn();
-    expect(mountBanner(failure, dismiss).current()).toEqual({ error: null });
+    expect(mountBanner(failure, dismiss).current()).toEqual({ error: null, retry: false });
 
     act(() => jest.advanceTimersByTime(RECOVERY_BANNER_LIFETIME_MS * 2));
 
@@ -142,7 +146,7 @@ describe('useRecoveryFailureBanner loaded inside the test', () => {
 
     const { result } = renderHook(() => freshUseBanner(null, jest.fn()), { wrapper });
 
-    expect(result.current).toStrictEqual({ error: null });
+    expect(result.current).toStrictEqual({ error: null, retry: false });
   });
 
   it('evaluates the lifetime constant', async () => {

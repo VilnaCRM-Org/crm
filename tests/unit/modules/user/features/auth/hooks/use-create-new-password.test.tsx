@@ -12,7 +12,6 @@ import type { CreateNewPasswordOutcome } from '@auth/types/password-recovery/out
 import type {
   CreateNewPasswordFormState,
   CreateNewPasswordState,
-  ResetTokenHandle,
 } from '@auth/types/password-recovery/state';
 import { buildPassword, buildResetToken } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
@@ -44,12 +43,6 @@ const failed = (
   failure: { reason, retryable },
 });
 
-interface TrackedToken extends ResetTokenHandle {
-  readonly discard: jest.Mock;
-}
-
-const tokenHandle = (token: string | null): TrackedToken => ({ token, discard: jest.fn() });
-
 const formState = (state: CreateNewPasswordState): CreateNewPasswordFormState => {
   if (state.view !== 'form') throw new Error(`expected the form view, got ${state.view}`);
   return state;
@@ -78,12 +71,13 @@ describe('useCreateNewPassword', () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it('starts invalid for a null token and never resolves the provider', () => {
+  it('starts in the form view and resolves nothing before a submit', () => {
     const { loader, resolve } = harness({ kind: 'confirmed' });
 
-    const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(null)));
+    const { result } = renderHook(() => useCreateNewPassword(loader));
 
-    expect(result.current).toEqual({ view: 'invalid' });
+    expect(formState(result.current).failure).toBeNull();
+    expect(formState(result.current).isSubmitting).toBe(false);
     expect(resolve).not.toHaveBeenCalled();
   });
 
@@ -92,9 +86,7 @@ describe('useCreateNewPassword', () => {
     const token = buildResetToken();
     const values = formValues(token);
     const writes = jest.spyOn(useAuthStore, 'setState');
-    const resetToken = tokenHandle(token);
-    const { result } = renderHook(() => useCreateNewPassword(loader, resetToken));
-    expect(formState(result.current).token).toBe(token);
+    const { result } = renderHook(() => useCreateNewPassword(loader));
 
     await act(async () => {
       const { submit } = formState(result.current).callbacks;
@@ -113,45 +105,27 @@ describe('useCreateNewPassword', () => {
       state: { focusMain: true, notice: 'password_reset' },
     });
     expect(writes).not.toHaveBeenCalled();
-    expect(resetToken.discard).not.toHaveBeenCalled();
+    expect(formState(result.current).failure).toBeNull();
   });
 
-  it('discards the token for an invalid_link failure', async () => {
+  it('switches to the invalid-link view for an invalid_link failure', async () => {
     const { loader, confirmReset } = harness(failed('invalid_link'));
     const token = buildResetToken();
-    let resetToken = tokenHandle(token);
-    resetToken.discard.mockImplementation(() => {
-      resetToken = tokenHandle(null);
-    });
-    const { result, rerender } = renderHook(() => useCreateNewPassword(loader, resetToken));
+    const { result } = renderHook(() => useCreateNewPassword(loader));
     const { submit } = formState(result.current).callbacks;
 
     await act(() => submit(formValues(token)));
-    rerender();
 
     expect(result.current).toEqual({ view: 'invalid' });
-    expect(resetToken.token).toBeNull();
     expect(navigate).not.toHaveBeenCalled();
     expect(confirmReset).toHaveBeenCalledTimes(1);
-  });
-
-  it('never shows an invalid_link failure while the token is still held', async () => {
-    const { loader } = harness(failed('invalid_link'));
-    const token = buildResetToken();
-    const resetToken = tokenHandle(token);
-    const { result } = renderHook(() => useCreateNewPassword(loader, resetToken));
-
-    await act(() => formState(result.current).callbacks.submit(formValues(token)));
-
-    expect(resetToken.discard).toHaveBeenCalledTimes(1);
-    expect(formState(result.current).failure).toBeNull();
   });
 
   it('clears a shown failure as soon as the next attempt starts', async () => {
     const { loader, confirmReset } = harness(failed('server', true));
     const token = buildResetToken();
     const values = formValues(token);
-    const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
+    const { result } = renderHook(() => useCreateNewPassword(loader));
     await act(() => formState(result.current).callbacks.submit(values));
 
     const pending = deferred();
@@ -181,14 +155,12 @@ describe('useCreateNewPassword', () => {
       const { loader, confirmReset } = harness(outcome);
       const token = buildResetToken();
       const values = formValues(token);
-      const resetToken = tokenHandle(token);
-      const { result } = renderHook(() => useCreateNewPassword(loader, resetToken));
+      const { result } = renderHook(() => useCreateNewPassword(loader));
 
       await act(() => formState(result.current).callbacks.submit(values));
       expect(formState(result.current).failure).toEqual(
         outcome.kind === 'failed' ? outcome.failure : null
       );
-      expect(resetToken.discard).not.toHaveBeenCalled();
 
       const edited = formValues(token);
       await act(() => formState(result.current).callbacks.submit(edited));
@@ -201,7 +173,7 @@ describe('useCreateNewPassword', () => {
   it('dismisses a shown failure without sending a request', async () => {
     const { loader, confirmReset } = harness(failed('server', true));
     const token = buildResetToken();
-    const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
+    const { result } = renderHook(() => useCreateNewPassword(loader));
     await act(() => formState(result.current).callbacks.submit(formValues(token)));
     expect(formState(result.current).failure).toEqual({ reason: 'server', retryable: true });
 
@@ -216,7 +188,7 @@ describe('useCreateNewPassword', () => {
       resolve: jest.fn().mockRejectedValue(new Error('chunk')),
     } as unknown as AuthProviderLoader;
     const token = buildResetToken();
-    const { result } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
+    const { result } = renderHook(() => useCreateNewPassword(loader));
 
     await act(() => formState(result.current).callbacks.submit(formValues(token)));
 
@@ -235,7 +207,7 @@ describe('useCreateNewPassword', () => {
       resolve: jest.fn().mockResolvedValue({ confirmReset }),
     } as unknown as AuthProviderLoader;
     const token = buildResetToken();
-    const { result, unmount } = renderHook(() => useCreateNewPassword(loader, tokenHandle(token)));
+    const { result, unmount } = renderHook(() => useCreateNewPassword(loader));
 
     act(() => {
       void formState(result.current).callbacks.submit(formValues(token));
@@ -253,7 +225,7 @@ describe('useCreateNewPassword', () => {
     const values = formValues(token);
 
     function Confirmer(): JSX.Element {
-      const { callbacks } = formState(useCreateNewPassword(loader, tokenHandle(token)));
+      const { callbacks } = formState(useCreateNewPassword(loader));
       return (
         <button type="button" onClick={() => void callbacks.submit(values)}>
           Confirm
@@ -281,11 +253,12 @@ describe('useCreateNewPassword loaded inside the test', () => {
 
   beforeEach(() => navigate.mockReset());
 
-  it('evaluates the invalid-link state it returns for a null token', async () => {
+  it('evaluates the invalid-link state it returns for an invalid_link failure', async () => {
     const freshUseCreateNewPassword = await loadFresh();
-    const { loader } = harness({ kind: 'confirmed' });
+    const { loader } = harness(failed('invalid_link'));
+    const { result } = renderHook(() => freshUseCreateNewPassword(loader));
 
-    const { result } = renderHook(() => freshUseCreateNewPassword(loader, tokenHandle(null)));
+    await act(() => formState(result.current).callbacks.submit(formValues(buildResetToken())));
 
     expect(result.current).toStrictEqual({ view: 'invalid' });
   });
@@ -294,7 +267,7 @@ describe('useCreateNewPassword loaded inside the test', () => {
     const freshUseCreateNewPassword = await loadFresh();
     const { loader } = harness({ kind: 'confirmed' });
     const token = buildResetToken();
-    const { result } = renderHook(() => freshUseCreateNewPassword(loader, tokenHandle(token)));
+    const { result } = renderHook(() => freshUseCreateNewPassword(loader));
 
     await act(() => formState(result.current).callbacks.submit(formValues(token)));
 
