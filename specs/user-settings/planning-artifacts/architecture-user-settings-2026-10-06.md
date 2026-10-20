@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-20
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -18,8 +18,8 @@ inputDocuments:
 
 # Architecture: user settings for the user module
 
-**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08 **Feature:**
-`user-settings`
+**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19 and
+2026-10-20 **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md) (cited "research §N"),
 [brief](./brief-user-settings-2026-10-06.md) ("brief §N") and the authoritative

@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-20
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -18,7 +18,7 @@ inputDocuments:
 # Epics and stories: user settings for the user module
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
-2026-10-16 **Feature:** `user-settings`
+2026-10-16, amended 2026-10-19 and 2026-10-20 **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md),
 [brief](./brief-user-settings-2026-10-06.md), [PRD](./prd-user-settings-2026-10-06.md) and
