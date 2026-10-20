@@ -8,9 +8,25 @@
         "modules/user/features/auth/routes/create-new-password",
         "modules/user/features/auth/components/reset-password",
         "modules/user/features/auth/components/create-new-password",
-        "modules/user/features/auth/components/form-section/components/password-policy-rules.tsx",
         "modules/user/features/auth/hooks/use-recovery-failure-banner.ts"
       ]
+    },
+    {
+      "catalog": "components/ui-password-policy-rules/i18n",
+      "owners": ["components/ui-password-policy-rules"]
+    },
+    {
+      "catalog": "modules/user/features/settings/i18n",
+      "owners": [
+        "modules/user/features/settings/routes/index.ts",
+        "modules/user/features/settings/routes/user-profile",
+        "modules/user/features/settings/components",
+        "modules/user/features/settings/hooks"
+      ]
+    },
+    {
+      "catalog": "components/ui-toast/i18n",
+      "owners": ["components/ui-toast"]
     }
   ]
 }

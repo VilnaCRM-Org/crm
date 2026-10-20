@@ -101,9 +101,27 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 ## Current flags
 
-None. The mechanism stays in place for the next rollout: the `FeatureFlag` union is `never`,
-`FEATURE_FLAG_DEFAULTS` is empty, the committed block ships `{ "flags": {} }`, and the schema's
-`flags` object is strict, so a block or an environment that still names a removed flag fails fast.
+### `userSettings`
+
+Gates the `/settings` page (issue #330). The `FeatureFlag` union has this one member,
+`FEATURE_FLAG_DEFAULTS.userSettings` is `false`, the committed block ships
+`{ "flags": { "userSettings": false } }`, and the schema's `flags` object is strict, so a block or
+an environment that still names a removed flag fails fast.
+
+- **Default:** `false`. Against user-service v2.8.0, which authenticates nobody, a shipped `true`
+  would read and update an arbitrary user, so the committed default and
+  `FEATURE_FLAG_DEFAULTS` must stay `false` (a contract test fails otherwise).
+- **Roll out:** on in the test stack once the page is complete, then in production after the
+  user-service authentication surface ships (request G1). The test stack is on:
+  `docker-compose.test.yml` passes `APP_CONFIG_FLAG_USER_SETTINGS=${APP_CONFIG_FLAG_USER_SETTINGS:-true}`
+  to the `prod` service, so the Playwright, a11y and visual suites see the home link and the
+  `/settings` page, while `docker-compose.yml` and the committed block stay `false`. Set the
+  variable to `false` to run the stack without the page.
+- **Owner:** the user settings feature (issue #330).
+- **Removal trigger:** delete the flag once production has it on and the page is stable; step 3
+  of the lifecycle above applies.
+
+### `forgotPassword` (removed)
 
 `forgotPassword`, the first flag, gated the sign-in "Forgot password?" link. Issue #309 removed
 it by a product decision to show the link in the form before the recovery flow existed, so it
@@ -115,7 +133,16 @@ retryable transient error rather than a missing page.
 `tests/unit/tooling/runtime-config-contract.test.ts` pins that the link is rendered and the
 route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any environment that still
 sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
-`Known flags: (none).` and must unset it.
+`Known flags: userSettings.` and must unset it.
+
+## Gating a route
+
+A route contract declares `flag: 'userSettings'` instead of reading the flag itself; the eager
+`RouteFlagGate` renders the not-found page while the flag is off, above `ProtectedRoute`, so a
+visitor without a token gets the same page and the chunk is never requested. `/settings` is the
+example (`src/modules/user/features/settings/routes/index.ts`); the mechanics are in
+[`src/routes/README.md`](../src/routes/README.md#flagged-routes-issue-330). Gate the entry points
+too: the home page renders its "Налаштування" link only while the flag is on.
 
 ## Rules
 

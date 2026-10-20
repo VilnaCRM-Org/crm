@@ -370,26 +370,36 @@ Two remedies, in order:
    two programs cannot be told apart, not that a test was hard to write. **Placement is
    load-bearing:** Stryker reads the directive from a node's `leadingComments` and keys
    `next-line` off _that node's_ line, so the comment has to lead a node starting on the mutant's
-   own line. Any node will do: `password-field.tsx` leads the whole `const toggle = …` statement
+   own line. Any node will do: `ui-password-field/index.tsx` leads the whole `const toggle = …` statement
    and its inline deps array is annotated fine. What fails is a comment with no node to lead —
    dangling at the end of a block, the natural-looking spot above `}, []);`, it attaches to nothing
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Thirteen directives are annotated today, at two mutators. Twelve are `ArrayDeclaration` on a React
-hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+Fifteen directives are annotated today, at two mutators. Fourteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. The other two, both in `use-login-submitter.ts`, annotate **non-empty** arrays,
-which `ArrayDeclaration` empties instead — equivalent for a different reason worth stating
-separately. `[actions, loginControllersRef]`: `actions` is always the `authActions` module
-singleton and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an
-emptied list memoizes exactly the same callback. `[login]` on `handleLogin`: `login` is that same
-memoized callback, so its identity never changes either. Hoisting either literal to a named
-constant would remove the mutant, but `react-hooks/exhaustive-deps` (an `error` here, issue #164)
-rejects a deps argument that is not an array literal, so there is nothing left to change.
+does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+and each is equivalent for a reason worth stating separately:
 
-The thirteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+- `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
+  `authActions` module singleton and `loginControllersRef` is a `useRef` box, so neither identity
+  ever changes and an emptied list memoizes exactly the same callback.
+- `use-login-submitter.ts` also annotates `[login]` on `handleLogin`: `login` is that same
+  memoized callback, so its identity never changes either.
+- `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
+  the `run` callback handed to `useAbortableSubmit`. `provider` comes from
+  `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
+  the token is a module constant; `src/modules/user/config/di.ts` binds it with
+  `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
+  therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
+
+Hoisting any of these literals to a named constant would remove the mutant, but
+`react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
+array literal, so there is nothing left to change.
+
+The fifteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -398,11 +408,11 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a fourteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 301 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 347 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -1757,9 +1767,15 @@ Check 4 resolves a call site against the merged catalog plus **only** the lazy c
 `[lazy-key-scope]`: the catalog exists at runtime only once an owning route module has registered
 it, so the same `t('password_policy.rules.length')` in a sign-up component would render the raw
 key on `/sign-up`. The owners are the two recovery route folders, the recovery component folders,
-`password-policy-rules.tsx`, `use-recovery-failure-banner.ts`, and the auth route contract
+`use-recovery-failure-banner.ts`, and the auth route contract
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
-through `usePageTitle` after its module has registered the catalog). Adding an owner is a reviewed
+through `usePageTitle` after its module has registered the catalog). The settings catalog
+(issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
+the settings `components/` and `hooks/` folders that page renders, and the settings route contract
+`routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
+`transformers/` load in the container chunk and own no settings key. The toast catalog
+(`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
+label stays off `/sign-in`. Adding an owner is a reviewed
 policy edit and must name a file only the registering routes import. A policy entry that names no
 discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
 unreadable or malformed policy fails the run before any check.
@@ -1913,9 +1929,11 @@ simulated throttling builds for `/sign-up`, costing about two points of mobile s
 runners. Both `chunks` filters also admit the two recovery form-section chunks, so a recovery
 route that needs one of those shared modules depends on the same two chunks — already cached
 after the usual `/sign-in` → "Forgot password" → `/password-recovery` path — instead of carrying
-its own copy. The trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads
-both chunks whole, including sign-in/sign-up-only shared modules it does not run; no recovery
-URL is in the Lighthouse budget, `/sign-in` is. The chunk names live in that file and
+its own copy. They admit the `settings` page chunk too (`SETTINGS_CHUNKS`, issue #330), so
+`/settings` takes the shared form fields and react-hook-form from the same two chunks. The
+trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads both chunks whole,
+including sign-in/sign-up-only shared modules it does not run; no recovery URL is in the
+Lighthouse budget, `/sign-in` is. The chunk names live in that file and
 `tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule of both groups,
 including that a vendor module never reaches `auth-forms` and an app module never reaches
 `auth-forms-vendors`; the `performance serving` test pins the wiring of both groups and that
@@ -2266,7 +2284,7 @@ class Service {}
 
 // GOOD — domain noun + recognized pattern suffix; the role is self-evident
 class ApiErrorFactory {} // repositories/api-error-factory.ts
-class EmailValidator {} // form-section/validations/email.ts
+class EmailValidator {} // user/lib/validations/email.ts
 class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
 class LoginResponseMapper {} // store/login-response-mapper.ts
 class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
@@ -2338,13 +2356,15 @@ allowed carve-outs.
 | Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
 | Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
 | Constant maps        | `response-messages`, `error-codes`                                   |
-| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` (GraphQL)            |
+| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` / `*-query.ts`       |
 | Public barrels       | `@/modules/<m>`, `@auth` — the only cross-boundary path (issue #107) |
 | Pure leaf libraries  | `uuid`                                                               |
 
 **Third-party policy — position (A), adapter + token.** A behavioral library is wrapped behind an
 `@injectable()` adapter and a token rather than called from a feature class: Apollo through
-`ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
+`ApolloLinkFactory` (the link chain) and `SessionLinkFactory` (the Bearer token and the 401
+sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two files `RESTRICTED_LIBRARY_ADAPTERS`
+lists; Sentry and `web-vitals` through the
 observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
 and passed to collaborators **as data**. This is enforced as an **allowlist**, not a denylist of
 known-behavioral packages: only `tsyringe`, `reflect-metadata`, and `uuid` may be value-imported
@@ -2384,8 +2404,9 @@ Three different things are outside the gate, and the distinction matters when yo
 
 - **Never in scope** (no policy entry needed): anything outside those globs — a feature's
   `components/` folder, plus `src/components/**`, `src/styles/**`, `src/routes/**`,
-  `src/providers/**` and `src/config/**` — which is why the form-section `validations/*`
-  singletons need no carve-out despite being container-free.
+  `src/providers/**`, `src/config/**` and `src/modules/*/lib/**` — which is why the validator
+  singletons in `src/modules/user/lib/validations/` need no policy entry despite being
+  container-free: no `LOGIC_SOURCE_GLOBS` entry matches them.
 - **In scope but exempted by file kind** in `EXEMPT_PATTERNS`: React components (`.tsx`),
   tests/stories/`.d.ts`, type-only files, hooks (`use-*.ts` — `use-auth-token` sits inside the
   gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
@@ -2519,11 +2540,13 @@ tooling without a TypeScript loader, so that is an i18n boot-path restructuring,
 change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
-flag is declared today: the last one, `forgotPassword`, was removed in #309 when the sign-in
-"Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
-block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
-to a non-empty value fails container start and must unset it.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
+flag is declared today, `userSettings` (issue #330), shipped off in the committed block
+`{ "flags": { "userSettings": false } }` (the test stack's `docker-compose.test.yml` switches it on
+through `APP_CONFIG_FLAG_USER_SETTINGS`, default `true`). The earlier `forgotPassword` flag was
+removed in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an
+environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container
+start with `Known flags: userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2573,6 +2596,25 @@ Deep-importing a feature page from the shell fails
 `routes.tsx`, or a route object with an `element` and no `errorElement` inside
 `src/routes/**`, fails the issue-#116 ESLint selectors (see pattern 14).
 
+**Flagged routes (issue #330)** — a top-level route contract may declare `flag: <FeatureFlag>`.
+The route is always registered; `RouteMapper` copies the flag into the route's `handle` and one
+eager `RouteFlagGate`, above `ProtectedRoute`, reads it when the route renders and shows the
+not-found page while it is off, so neither the sign-in redirect nor the page chunk is reached.
+`/settings` is the example: `flag: 'userSettings'` in
+`src/modules/user/features/settings/routes/index.ts`. See `src/routes/README.md`.
+
+**Toasts (issue #330)** — `UIToastStack` (`src/components/ui-toast/`, state in `useToastQueue`)
+is the one transient-message surface: no timer, so a toast stays until the user closes it; two
+always-mounted `UILiveStatus` regions announce the queue, a polite one for success texts and an
+assertive one (`politeness="assertive"`, `role="alert"`) for error texts, both with the
+alternating mark so an identical repeat is spoken again; no toast carries a role of its own, and
+each close button is described by its message; at most three are shown. Closing a toast moves
+focus to the next close button, then the previous one, then the control the page names
+(`returnFocusRef`) while it is connected and enabled, then `fallbackFocusRef` (the settings
+`<h1 tabindex="-1">`); a toast pushed out by the cap while it holds focus hands it to the newest
+close button. The stack reserves `scroll-padding-bottom` so a focused control is never hidden
+under it.
+
 ### GraphQL Setup
 
 Apollo Server runs in development for local GraphQL API:
@@ -2602,25 +2644,34 @@ verified in CI.
   so a catalog edit is only half a change until the merged file is regenerated.
 - **Lazy catalogs**: a catalog listed in
   [`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) (`lazyCatalogs`, paths
-  relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file
-  into the eager `index.js` every page downloads. Its route chunk imports it instead and
-  registers both locales synchronously when the route module evaluates — before the page's
-  `usePageTitle` runs — through a container-free `*Loader` singleton calling
-  `addResourceBundle`. The one lazy catalog today is the password-recovery copy
-  (`password_recovery.*`, `password_reset.*`, `password_policy.*`), owned by
-  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by the
-  `reset-password` and `create-new-password` route modules. The recovery keys were 3,742 B of the
-  minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about
-  3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone does not
-  restore the `/sign-in` headroom (that base already scored a median of about 0.8375 against the
-  0.84 mobile floor). Keep a key eager when a page outside those routes renders it
-  (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces
-  it. Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the
-  merged catalog only, exactly like an eager page, and tests of the recovery routes and their
-  components use `createRecoveryLocaleI18n`, so a lazy key leaking into an eager page renders raw
-  in that page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which
-  reads the policy and registers every lazy catalog from its JSON files) keep the copy available
-  for every story and spec.
+  relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file into
+  the eager `index.js` every page downloads. Its route chunk imports it instead and registers both
+  locales synchronously when the route module evaluates — before the page's `usePageTitle` runs —
+  through the one container-free `lazyCatalogLoader` singleton
+  (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
+  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls
+  `addResourceBundle` for both locales; the owner keeps the JSON import, so the chunk split does
+  not move, and a new lazy catalog adds no loader class. Four lazy catalogs exist today: the
+  password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
+  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
+  which the `reset-password` and `create-new-password` route modules render; the password-policy
+  copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
+  when that component module evaluates; the settings copy (`settings.*`), owned by
+  `src/modules/user/features/settings/` and registered when the `UserProfile` route module
+  evaluates; and the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered
+  when `UIToast` evaluates. The recovery keys were 3,742 B of the minified merged
+  catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and
+  still about 0.95 KB above the #333 base (46,946 B), so the move alone does not restore the
+  `/sign-in` headroom (that base already scored a median of about 0.8375 against the 0.84 mobile
+  floor). Keep a key eager when a page outside those routes renders it
+  (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
+  Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
+  catalog only, exactly like an eager page, and tests of the recovery routes and their components
+  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
+  `createToastLocaleI18n`), so a lazy key leaking into an eager page renders raw in that
+  page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which reads the
+  policy and registers every lazy catalog from its JSON files) keep the copy available for every
+  story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.
@@ -2997,7 +3048,8 @@ replaces.
    `src/modules/user/types/api-errors/` (type-only — see pattern 6).
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
+2. **Form Validation**: Centralized in the user module (`src/modules/user/lib/validations/`),
+   shared by every feature
 
 3. **Routing**: Module-owned route contracts collected by a registry and
    assembled by a composer into `createBrowserRouter` (see "Route Registry"
