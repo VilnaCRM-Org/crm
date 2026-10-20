@@ -159,7 +159,7 @@ the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 | R24 | Superseded by R25: the two-class Data provider box is withdrawn (verification F5)                                   |
 | R25 | Superseded by R28: one `ProfileProvider`, three `@inject`, no deps bag or closure                                   |
 | R26 | #315's one `UserServiceFailure`, `FieldViolation` path and reason; members only appended                            |
-| R27 | Superseded by R28: settings adds no registrar closure (3 of 6 stays)                                                |
+| R27 | Superseded by R28: settings adds no registrar closure; the link's `SessionLinkDeps` adds one (4 of 6)               |
 | R28 | Simplification 2026-10-08: one owner per shared piece; no signal; one Transformer; scalar                           |
 |     | `flag`; transport 401 alone ends a session; stateless mock; no glue hook or queue class                             |
 | M1  | Miro board layers only: route, component, hook, Data provider ⇄ Transformer, Repository                             |

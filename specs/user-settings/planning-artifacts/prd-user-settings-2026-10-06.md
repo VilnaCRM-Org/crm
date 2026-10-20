@@ -674,8 +674,10 @@ toast's close button, else to "Зберегти зміни". Reduced motion remo
 Every non-anonymous GraphQL operation carries `Authorization: Bearer <token>` while an access
 token is in memory, read at request time, and none without a token (D10). The link is
 `SessionLinkFactory` in `src/modules/user/features/auth/repositories/`, composed into the Apollo
-client inside the existing factory of `src/modules/user/config/di.ts:73-84` with no new function
-there, reading the token per request from `useAuthStore.getState()` (R11). It lives in the
+client inside the existing factory of `src/modules/user/config/di.ts:73-84`; its five
+collaborators arrive as one named `SessionLinkDeps` bundle built in a `registerSessionLink` step,
+the one function and one closure the link adds there (architecture §6, registrar budget),
+reading the token per request from `useAuthStore.getState()` (R11). It lives in the
 deferred DI chunk; REST is unchanged. This feature builds it, with FR-19; the 2FA bundle imports
 it.
 
