@@ -3,7 +3,7 @@ status: complete
 workflowType: autonomous-planning
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-20
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 ---
