@@ -9,7 +9,7 @@ import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken, buildUserNode } from '@tests/builders';
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
-import server from '@tests/integration/mocks/server';
+import server, { userServiceGraphql } from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 
 const RESENT = 'Посилання для підтвердження надіслано повторно';
@@ -204,6 +204,39 @@ describe('settings page e-mail resend (page)', () => {
 
     expect(resendLink()).toHaveAttribute('aria-disabled', 'true');
     expect(answered).toHaveLength(0);
+  });
+
+  it('ignores a resend that settles after a Save changed the e-mail', async () => {
+    await mount();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    server.use(
+      userServiceGraphql.mutation('ResendEmailToUser', async () => {
+        await gate;
+        return resendPayload(true);
+      })
+    );
+    answerProfileOperation('UpdateUser', {
+      respond: () =>
+        HttpResponse.json({
+          data: { updateUser: { user: { ...unconfirmed, email: 'new@example.com' } } },
+        }),
+    });
+    await userEvent.click(resendLink());
+    await userEvent.clear(email());
+    await userEvent.type(email(), 'new@example.com');
+    await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
+    const save = screen.getByRole('button', { name: 'Зберегти зміни' });
+
+    await userEvent.click(save);
+    await screen.findByText('Ми надіслали посилання для підтвердження на нову адресу');
+    await act(async () => release());
+    await waitFor(() => expect(resendLink()).not.toHaveAttribute('aria-disabled'));
+
+    expect(screen.queryAllByText(RESENT)).toEqual([]);
+    expect(screen.getByText(STATUS)).toBeVisible();
+    expect(email()).toHaveValue('new@example.com');
+    expect(email()).not.toHaveFocus();
   });
 
   it('is aria-disabled and sends nothing while a save is in flight', async () => {

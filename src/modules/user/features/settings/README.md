@@ -120,8 +120,11 @@ field, in field order, that has one.
 
 `ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
 `useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned
-`ProfileEditContext`. A resend carries the e-mail it was issued for, so one that settles after a
-Save changed the address never marks the new address confirmed.
+`ProfileEditContext`. A resend that settles after a Save changed the address has no visible
+effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the
+e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
+so even a resend that settles before React commits the adopted entity is dropped. The reducer's
+`confirm` still carries the e-mail as a second guard.
 
 ## Figma parity
 

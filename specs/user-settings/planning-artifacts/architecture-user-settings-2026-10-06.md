@@ -1927,9 +1927,11 @@ export interface ProfileFormState {
 
 // settings/types/hooks/use-profile-load.ts
 export type ProfileLoadStatus = 'loading' | 'failed' | 'ready';
+export type AdoptUserEntity = (user: UserEntity) => void;
 export interface UserEntityAdoption {
-  readonly adopt: (user: UserEntity) => void; // a Save: new entity, form remounts
-  readonly confirm: (confirmed: boolean) => void; // a resend: no remount
+  readonly adopt: AdoptUserEntity; // a Save: new entity, form remounts
+  readonly confirm: (email: string, confirmed: boolean) => void; // a resend: no remount
+  readonly isCurrent: (email: string) => boolean; // false once a Save adopted another e-mail
 }
 export interface ProfileLoadState {
   readonly status: ProfileLoadStatus;
@@ -2207,7 +2209,9 @@ component type.
   `UserEntityAdoption`: `adopt(user)` for a Save replaces the entity and bumps `version`, and
   `confirm(email, confirmed)` for a resend updates only `confirmed`, and only while the entity
   still carries the e-mail the resend was issued for, with no version bump; neither sends
-  a read, and both are stable callbacks over the reducer's `dispatch`. The read's
+  a read. `isCurrent(email)` is true until a Save adopts another e-mail: `adopt` writes the
+  adopted e-mail to a ref before it dispatches, so the answer is right in the same tick, before
+  React commits the new entity (amendment 2026-10-20). The read's
   `queryDeduplication: false` (§5.2) keeps the StrictMode remount's second read independent of
   the first, aborted one. The state lives in a file-level reducer (`useReducer`) and the read
   runs through a file-level async loader that dispatches only while its signal is not aborted,
@@ -2233,8 +2237,9 @@ component type.
   At most two functions and six closures (the initializer, the run, `save`, `clear`, `block`, the
   retry action).
 - `useEmailResend(user, adoption, toasts)` runs `provider.resend(user.id, signal)` through
-  `useAbortableSubmit`; `sent` (carrying `confirmed`) → `adoption.confirm(user.email,
-confirmed)` and the
+  `useAbortableSubmit`; a result whose e-mail `adoption.isCurrent` no longer accepts → nothing
+  (no confirm, toast or focus move); `sent` (carrying `confirmed`) →
+  `adoption.confirm(user.email, confirmed)` and the
   `settings.toasts.resent` draft, never `adopt`, so the form is not remounted; `rate_limited` →
   the rate-limit draft; `transient` and `rejected` → the resend-failed draft; `session_ended`
   and a `null` → nothing. One function and at most three closures.
@@ -2262,9 +2267,10 @@ each over a stable `run`, because `submit` changes identity with `run`; the toas
 clicks Save rather than re-submitting the last input. The
 form disables the resend row while `save.isSubmitting` is true, and `UIForm` disables Save while
 it submits (`ui-form/index.tsx:70,100`), so no extra busy state exists. Save is not disabled while
-a resend runs; a resend that settles after a Save adopted another e-mail is ignored by the
-reducer, because the `confirm` action carries the e-mail it was issued for (amendment
-2026-10-19).
+a resend runs; a resend that settles after a Save adopted another e-mail has no visible effect:
+`useEmailResend` asks `adoption.isCurrent` with the e-mail it was issued for and drops the result,
+so it neither confirms, toasts nor moves focus (amendment 2026-10-20), and the reducer still
+ignores a `confirm` for another e-mail (amendment 2026-10-19).
 
 ## 8. File-by-file placement
 

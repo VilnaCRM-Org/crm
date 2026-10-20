@@ -37,6 +37,7 @@ const user = buildUserEntity({ confirmed: false });
 const setup = (): {
   adopt: jest.Mock;
   confirm: jest.Mock;
+  isCurrent: jest.Mock;
   show: jest.Mock;
   result: { current: ReturnType<typeof useEmailResend> };
   rerender: () => void;
@@ -44,10 +45,13 @@ const setup = (): {
 } => {
   const adopt = jest.fn();
   const confirm = jest.fn();
+  const isCurrent = jest.fn(() => true);
   const show = jest.fn();
   const toasts = { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() };
-  const view = renderHook(() => useEmailResend(user, { adopt, confirm }, toasts), { wrapper });
-  return { adopt, confirm, show, ...view };
+  const view = renderHook(() => useEmailResend(user, { adopt, confirm, isCurrent }, toasts), {
+    wrapper,
+  });
+  return { adopt, confirm, isCurrent, show, ...view };
 };
 
 describe('useEmailResend', () => {
@@ -157,6 +161,34 @@ describe('useEmailResend', () => {
     expect(show).not.toHaveBeenCalled();
     expect(confirm).not.toHaveBeenCalled();
   });
+
+  it.each<ProfileResendOutcome>([
+    { kind: 'sent', confirmed: true },
+    { kind: 'failed', reason: 'transient' },
+  ])(
+    'publishes nothing for a $kind resend once its e-mail is no longer current',
+    async (outcome) => {
+      let settle: (value: ProfileResendOutcome) => void = () => undefined;
+      mockResend.mockReturnValue(new Promise((resolve) => (settle = resolve)));
+      const field = document.createElement('input');
+      field.id = 'email';
+      document.body.appendChild(field);
+      const { result, confirm, isCurrent, show } = setup();
+      act(() => {
+        result.current.resend();
+      });
+
+      isCurrent.mockReturnValue(false);
+      await act(async () => settle(outcome));
+
+      expect(isCurrent).toHaveBeenCalledWith(user.email);
+      expect(confirm).not.toHaveBeenCalled();
+      expect(show).not.toHaveBeenCalled();
+      expect(field).not.toHaveFocus();
+      expect(result.current.isSubmitting).toBe(false);
+      field.remove();
+    }
+  );
 
   it('publishes nothing when the component unmounts while the request is in flight', async () => {
     let settle: (outcome: ProfileResendOutcome) => void = () => undefined;

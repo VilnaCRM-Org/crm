@@ -1,4 +1,4 @@
-import { type Dispatch, useEffect, useReducer } from 'react';
+import { type Dispatch, type RefObject, useEffect, useReducer, useRef } from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
@@ -6,10 +6,12 @@ import { useService } from '@/providers/di';
 
 import type ProfileProvider from '../data-providers/profile-provider';
 import type {
+  AdoptUserEntity,
   ConfirmUserAction,
   ProfileLoadAction,
   ProfileLoadReducerState,
   ProfileLoadState,
+  UserEntityAdoption,
 } from '../types/hooks/use-profile-load';
 
 const INITIAL_STATE: ProfileLoadReducerState = {
@@ -56,9 +58,27 @@ async function loadProfile(
   else if (outcome.reason !== 'session_ended') dispatch({ type: 'failed' });
 }
 
+function createAdoption(
+  adopt: AdoptUserEntity,
+  dispatch: Dispatch<ProfileLoadAction>,
+  adopted: RefObject<string | null>
+): UserEntityAdoption {
+  return {
+    adopt,
+    confirm: (email: string, confirmed: boolean): void =>
+      dispatch({ type: 'confirm', email, confirmed }),
+    isCurrent: (email: string): boolean => adopted.current === null || adopted.current === email,
+  };
+}
+
 export default function useProfileLoad(): ProfileLoadState {
   const provider = useService<ProfileProvider>(AUTH_TOKENS.ProfileProvider);
   const [state, dispatch] = useReducer(reduceProfileLoad, INITIAL_STATE);
+  const adopted = useRef<string | null>(null);
+  const adopt: AdoptUserEntity = (user) => {
+    adopted.current = user.email;
+    dispatch({ type: 'adopt', user });
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,10 +92,6 @@ export default function useProfileLoad(): ProfileLoadState {
     version: state.version,
     refocus: state.refocus,
     retry: (): void => dispatch({ type: 'retry' }),
-    adoption: {
-      adopt: (user: UserEntity): void => dispatch({ type: 'adopt', user }),
-      confirm: (email: string, confirmed: boolean): void =>
-        dispatch({ type: 'confirm', email, confirmed }),
-    },
+    adoption: createAdoption(adopt, dispatch, adopted),
   };
 }

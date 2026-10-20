@@ -28,7 +28,7 @@ describe('useProfileFormModel', () => {
   const user = buildUserEntity({ fullName: 'Олена Петренко', email: 'olena@example.com' });
   const props: Props = {
     user,
-    adoption: { adopt: jest.fn(), confirm: jest.fn() },
+    adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
     toasts: {
       toasts: { items: [] },
       announcement: '',

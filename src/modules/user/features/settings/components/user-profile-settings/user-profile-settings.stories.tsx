@@ -14,7 +14,7 @@ const meta: Meta<typeof UserProfileSettings> = {
     version: 0,
     refocus: false,
     retry: noop,
-    adoption: { adopt: noop, confirm: noop },
+    adoption: { adopt: noop, confirm: noop, isCurrent: (): boolean => true },
   },
   parameters: {
     docs: {

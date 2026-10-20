@@ -179,6 +179,34 @@ describe('useProfileLoad', () => {
     expect(result.current.version).toBe(1);
   });
 
+  it('treats the loaded e-mail as current until a Save adopts another one', async () => {
+    const user = buildUserEntity({ confirmed: false });
+    mockRead.mockResolvedValue({ kind: 'ok', user });
+    const { result } = renderHook(() => useProfileLoad());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    expect(result.current.adoption.isCurrent(user.email)).toBe(true);
+  });
+
+  it('reports a replaced e-mail as stale in the same tick the adoption is dispatched', async () => {
+    const user = buildUserEntity({ confirmed: false });
+    const saved = buildUserEntity({ id: user.id, confirmed: false });
+    mockRead.mockResolvedValue({ kind: 'ok', user });
+    const { result } = renderHook(() => useProfileLoad());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    const { adoption } = result.current;
+    let beforeCommit: boolean[] = [];
+
+    act(() => {
+      adoption.adopt(saved);
+      beforeCommit = [adoption.isCurrent(user.email), adoption.isCurrent(saved.email)];
+    });
+
+    expect(beforeCommit).toEqual([false, true]);
+    expect(result.current.adoption.isCurrent(user.email)).toBe(false);
+    expect(result.current.adoption.isCurrent(saved.email)).toBe(true);
+  });
+
   it('keeps no entity when a confirmation arrives before one is loaded', () => {
     mockRead.mockReturnValue(new Promise(() => undefined));
     const { result } = renderHook(() => useProfileLoad());
