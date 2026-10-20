@@ -134,7 +134,8 @@
         "subtitle": "Sign in to your account in two clicks",
         "errors": {
           "load_failed": "Failed to load sign-in form. Please try again.",
-          "login": "Sign in error: {{reason}}"
+          "invalid_credentials": "Invalid e-mail or password",
+          "rate_limited": "Too many sign-in attempts. Try again later"
         },
         "form": {
           "email_input": {
@@ -149,11 +150,17 @@
           "submit_button": "Sign in",
           "submitting": "Signing in…",
           "remember_me": "Remember me",
-          "forgot_password": "Forgot password?"
+          "forgot_password": "Forgot password?",
+          "loading_result": "Loading the result…"
         },
         "notices": {
           "password_reset": "Your password has been changed. Sign in with your new password.",
           "session_ended": "Your session has ended. Please sign in again."
+        },
+        "success": {
+          "title": "Welcome back!",
+          "description": "You have signed in successfully",
+          "button": "Continue"
         }
       },
       "notifications": {
@@ -335,7 +342,8 @@
         "subtitle": "Увійдіть до свого аккаунту за два кліки",
         "errors": {
           "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
-          "login": "Помилка входу: {{reason}}"
+          "invalid_credentials": "Невірна електронна адреса або пароль",
+          "rate_limited": "Забагато спроб входу. Спробуйте пізніше"
         },
         "form": {
           "email_input": {
@@ -350,11 +358,17 @@
           "submit_button": "Увійти до аккаунту",
           "submitting": "Вхід…",
           "remember_me": "Запамʼятати мене",
-          "forgot_password": "Забули пароль?"
+          "forgot_password": "Забули пароль?",
+          "loading_result": "Завантаження результату…"
         },
         "notices": {
           "password_reset": "Пароль змінено. Увійдіть з новим паролем.",
           "session_ended": "Сеанс завершився. Увійдіть знову."
+        },
+        "success": {
+          "title": "Вітаємо!",
+          "description": "Ви успішно увійшли",
+          "button": "Продовжити"
         }
       },
       "notifications": {

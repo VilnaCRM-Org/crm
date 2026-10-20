@@ -818,7 +818,7 @@ GraphQL consumer and mutates without a `fetchPolicy`
   for the input, awaits the repository call itself and returns the Transformer's named outcome;
   on a rejection one private helper asks `GraphQLProfileTransformer.failure`, which hands the
   error to #315's `UserServiceErrorTransformer`, and passes the resulting `UserServiceFailure`
-  back (`invalid` first on an update, then `failed`; §6). Like #315's `RecoveryFailureHandler`,
+  back (`invalid` first on an update, then `failed`; §6). Like #315's recovery repository,
   the helper captures an `unknown` failure that never reached the link (no network error and no
   GraphQL error, so a programming error such as a throw in `toUpdateInput`) through the injected
   `ObservabilityService` (`source: 'settings:profile'`, `stage` the operation); the link already

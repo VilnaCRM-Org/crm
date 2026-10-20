@@ -2,6 +2,7 @@ import type { Page, Request, Route } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
@@ -150,6 +151,8 @@ test.describe('Settings route', () => {
     await fillInput(page.getByPlaceholder(emailPlaceholder), credentials.email);
     await fillInput(page.getByPlaceholder(passwordPlaceholder), credentials.password);
     await page.getByRole('button', { name: submitLabel }).click();
+    await expectSignInSuccessCard(page);
+    await continueButtonOf(page).click();
 
     await expect(page).toHaveURL(SETTINGS_URL);
     await expect(page.getByRole('heading', { level: 1, name: settingsHeading })).toBeVisible();

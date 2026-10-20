@@ -36,7 +36,6 @@ const PASSWORD_RECOVERY_TOKENS = [
   AUTH_TOKENS.UserServiceErrorTransformer,
   AUTH_TOKENS.PasswordRecoveryRepository,
   AUTH_TOKENS.PasswordRecoveryProvider,
-  AUTH_TOKENS.RecoveryFailureHandler,
 ];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,

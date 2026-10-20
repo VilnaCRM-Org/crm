@@ -26,6 +26,7 @@ const notice: string = t('sign_in.notices.password_reset');
 const policyRejected: string = t('password_reset.errors.policy_rejected');
 const rateLimited: string = t('password_recovery.errors.rate_limited');
 const transient: string = t('password_recovery.errors.transient');
+const retryLabel: string = t('auth.error.tryAgain');
 const recoveryHeading: string = t('password_recovery.title');
 const signInHeading: string = t('sign_in.title');
 const emailLabel: string = t('sign_in.form.email_input.label');
@@ -276,7 +277,8 @@ test.describe('Create new password (issue #315)', () => {
     await submitPasswords(page);
     await expect(page.getByRole('alert')).toHaveText(transient);
     await freezeClock(page);
-    await page.getByRole('button', { name: submitLabel }).click();
+    await expect(page.getByRole('button', { name: submitLabel })).toHaveCount(0);
+    await page.getByRole('button', { name: retryLabel }).click();
 
     await expect.poll(() => bodies.length).toBe(2);
     expect(bodies[1]?.variables?.input?.token).toBe(bodies[0]?.variables?.input?.token);

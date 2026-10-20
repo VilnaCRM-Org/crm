@@ -31,5 +31,5 @@ export default function useRecoveryFailureBanner(
     return (): void => window.clearTimeout(timer);
   }, [shown, failure]);
 
-  return { error };
+  return { error, retry: failure?.retryable === true };
 }

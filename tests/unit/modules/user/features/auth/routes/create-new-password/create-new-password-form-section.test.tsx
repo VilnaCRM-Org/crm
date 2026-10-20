@@ -21,6 +21,21 @@ jest.mock('@auth/hooks/use-auth-provider-loader', () => ({
   }),
 }));
 
+const mockResetTokenActive: boolean[] = [];
+
+jest.mock('@auth/hooks/use-reset-token', () => {
+  const actual = jest.requireActual<{ default: (active: boolean) => string | null }>(
+    '@auth/hooks/use-reset-token'
+  );
+  return {
+    __esModule: true,
+    default: (active: boolean): string | null => {
+      mockResetTokenActive.push(active);
+      return actual.default(active);
+    },
+  };
+});
+
 jest.mock('@/assets/icons/eye.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
@@ -65,6 +80,7 @@ describe('CreateNewPasswordFormSection', () => {
   beforeEach(() => {
     resetClientStores();
     confirmReset.mockReset().mockResolvedValue({ kind: 'confirmed' });
+    mockResetTokenActive.length = 0;
   });
 
   it('renders the form for a usable token and strips it from the URL', async () => {
@@ -112,6 +128,8 @@ describe('CreateNewPasswordFormSection', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Посилання недійсне' })
     ).toBeInTheDocument();
+    expect(mockResetTokenActive[0]).toBe(true);
+    expect(mockResetTokenActive.at(-1)).toBe(false);
   });
 
   it('navigates to sign-in after a confirmed reset', async () => {

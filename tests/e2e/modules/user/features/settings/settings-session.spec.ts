@@ -4,6 +4,7 @@ import { buildCredentials, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 
 import {
   replyWithEndedSession,
@@ -76,6 +77,8 @@ test.describe('Settings session end (issue #330)', () => {
     await fillInput(page.getByPlaceholder(emailPlaceholder), credentials.email);
     await fillInput(page.getByPlaceholder(passwordPlaceholder), credentials.password);
     await page.getByRole('button', { name: submitLabel }).click();
+    await expectSignInSuccessCard(page);
+    await continueButtonOf(page).click();
 
     await expect(page).toHaveURL('/settings');
     await expect(page.getByRole('heading', { level: 1, name: text.heading })).toBeVisible();

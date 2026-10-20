@@ -2,6 +2,11 @@ import { type Page, type Route } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import {
+  errorCardHeading,
+  expectSignInErrorCard,
+  signInErrorMessages,
+} from '@tests/e2e/utils/sign-in-result-card';
 
 import fillInput from '../../../../../../../utils/fill-input';
 import { t } from '../../../../../../../utils/initialize-localization';
@@ -39,7 +44,7 @@ const unavailable = (): { status: number; contentType: string; body: string } =>
 });
 
 // The login POST opts in to the retry policy (issue #147): a transport failure or a 5xx is
-// retried with backoff before the error banner appears, and a permanent failure is not.
+// retried with backoff before the error card replaces the form, and a permanent failure is not.
 test.describe('Login request retry (issue #147)', () => {
   test.describe('dropped connection', () => {
     // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
@@ -58,7 +63,22 @@ test.describe('Login request retry (issue #147)', () => {
 
       await expect.poll(() => posts).toBe(2);
       await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
-      await expect(page.locator('[role="alert"]')).toHaveCount(0);
+      await expect(page.getByRole('alert')).toHaveCount(0);
+      await expect(errorCardHeading(page)).toHaveCount(0);
+    });
+
+    test('shows the network error card after the third dropped connection', async ({ page }) => {
+      let posts = 0;
+      await page.route(LOGIN_API_URL, async (route: Route) => {
+        if (!isPostLogin(route)) return route.fallback();
+        posts += 1;
+        return route.abort('failed');
+      });
+
+      await submitValidLogin(page);
+
+      await expectSignInErrorCard(page, signInErrorMessages.network);
+      expect(posts).toBe(3);
     });
   });
 
@@ -74,10 +94,11 @@ test.describe('Login request retry (issue #147)', () => {
 
     await expect.poll(() => posts).toBe(3);
     await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
-    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(errorCardHeading(page)).toHaveCount(0);
   });
 
-  test('shows the error banner after the third transient failure', async ({ page }) => {
+  test('shows the server error card after the third transient failure', async ({ page }) => {
     let posts = 0;
     await page.route(LOGIN_API_URL, async (route: Route) => {
       if (!isPostLogin(route)) return route.fallback();
@@ -87,7 +108,7 @@ test.describe('Login request retry (issue #147)', () => {
 
     await submitValidLogin(page);
 
-    await expect(page.locator('[role="alert"]')).toBeVisible();
+    await expectSignInErrorCard(page, signInErrorMessages.server);
     expect(posts).toBe(3);
   });
 
@@ -105,7 +126,7 @@ test.describe('Login request retry (issue #147)', () => {
 
     await submitValidLogin(page);
 
-    await expect(page.locator('[role="alert"]')).toBeVisible();
+    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
     expect(posts).toBe(1);
   });
 });

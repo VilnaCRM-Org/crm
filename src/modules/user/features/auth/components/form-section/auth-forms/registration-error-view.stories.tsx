@@ -10,6 +10,7 @@ const meta: Meta<typeof RegistrationErrorView> = {
   tags: ['autodocs'],
   args: {
     resolvedErrorText: 'Користувач з такою електронною поштою вже існує',
+    submittingMessage: 'Реєстрація…',
     isSubmitting: false,
     isClosing: false,
     onRetry: noop,
@@ -23,9 +24,10 @@ const meta: Meta<typeof RegistrationErrorView> = {
     docs: {
       description: {
         component:
-          'The failed-registration result: an illustration, the heading, the error message in ' +
-          'an alert, a retry button (when a retry is possible) and the back-to-form button. ' +
-          'Focus moves to the message on mount.',
+          'The failed sign-up or sign-in result: an illustration, the heading (focused on ' +
+          'mount), the error message in an alert, a retry button (when a retry is possible) ' +
+          'and the back-to-form button. While a retry runs the buttons stay focusable with ' +
+          'aria-disabled and a polite status announces the request.',
       },
       story: { inline: false },
     },

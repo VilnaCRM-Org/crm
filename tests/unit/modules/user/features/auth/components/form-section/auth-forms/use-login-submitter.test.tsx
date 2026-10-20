@@ -1,9 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
+import * as React from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
 import { useAuthStore, authActions } from '@auth/stores';
+import type { AuthErrorKind } from '@auth/types/auth-error';
 import { buildCredentials } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
@@ -36,45 +39,101 @@ describe('useLoginSubmitter', () => {
     expect(result.current.isSubmitting).toBe(false);
   });
 
-  it('never interpolates raw backend text into the localized login error', () => {
-    useAuthStore.setState({
-      loginError: { kind: 'authentication', displayMessage: 'Bad credentials', retryable: false },
-    });
-
-    const { result } = renderHook(() => useLoginSubmitter(t));
-
-    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
-    expect(result.current.error).not.toContain('Bad credentials');
-  });
-
-  it('falls back to the unknown-error string when a key-shaped message has no translation', () => {
-    const strictT: TFunction = ((key: string, options?: Record<string, unknown>): string => {
-      if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
-      if (options && 'defaultValue' in options) return String(options.defaultValue);
-      return key;
-    }) as unknown as TFunction;
-
-    useAuthStore.setState({
-      loginError: { kind: 'authentication', displayMessage: 'some.missing.key', retryable: false },
-    });
-
-    const { result } = renderHook(() => useLoginSubmitter(strictT));
-
-    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
-  });
-
-  it('translates an i18n-key shaped login error', () => {
+  it.each([
+    ['authentication', undefined, 'sign_in.errors.invalid_credentials'],
+    ['network', undefined, 'failure_responses.network_errors.network_error'],
+    ['server', undefined, 'failure_responses.server_errors.server_error'],
+    ['validation', undefined, 'failure_responses.client_errors.something_went_wrong'],
+    ['conflict', undefined, 'failure_responses.client_errors.unexpected_error'],
+    ['unknown', undefined, 'failure_responses.client_errors.unexpected_error'],
+    ['server', 429, 'sign_in.errors.rate_limited'],
+    ['server', 503, 'failure_responses.server_errors.server_error'],
+  ] as const)('maps a %s failure (status %p) to %s', (kind, status, key) => {
     useAuthStore.setState({
       loginError: {
-        kind: 'authentication',
-        displayMessage: 'auth.error.unknown',
+        kind,
+        displayMessage: 'Raw backend text',
         retryable: false,
+        ...(status === undefined ? {} : { status }),
       },
     });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
-    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
+    expect(result.current.error).toBe(key);
+    expect(result.current.error).not.toContain('Raw backend text');
+  });
+
+  it('maps every failure to its key when the module loads inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return {
+        hook: (await import('@auth/components/form-section/auth-forms/use-login-submitter'))
+          .default,
+        store: (await import('@auth/stores')).useAuthStore,
+      };
+    });
+    const errorFor = (kind: AuthErrorKind, status?: number): string => {
+      fresh.store.setState({
+        loginError: {
+          kind,
+          displayMessage: 'Raw backend text',
+          retryable: false,
+          ...(status === undefined ? {} : { status }),
+        },
+      });
+      const { result, unmount } = renderHook(() => fresh.hook(t));
+      const shown = result.current.error;
+      unmount();
+      return shown;
+    };
+
+    expect(errorFor('authentication')).toBe('sign_in.errors.invalid_credentials');
+    expect(errorFor('network')).toBe('failure_responses.network_errors.network_error');
+    expect(errorFor('server')).toBe('failure_responses.server_errors.server_error');
+    expect(errorFor('validation')).toBe('failure_responses.client_errors.something_went_wrong');
+    expect(errorFor('unknown')).toBe('failure_responses.client_errors.unexpected_error');
+    expect(errorFor('server', 429)).toBe('sign_in.errors.rate_limited');
+  });
+
+  it('retries with the values submitted last', async () => {
+    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    const first = buildCredentials();
+    const second = buildCredentials();
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    await act(async () => {
+      await result.current.handleLogin(first);
+      await result.current.handleLogin(second);
+    });
+    await act(async () => {
+      result.current.handleRetry();
+    });
+
+    expect(loginUser).toHaveBeenCalledTimes(3);
+    expect(loginUser).toHaveBeenLastCalledWith(second, expect.any(AbortSignal));
+    expect(loginUser.mock.contexts[2]).toBe(authActions);
+  });
+
+  it('does nothing on retry before any submit', () => {
+    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    act(() => result.current.handleRetry());
+
+    expect(loginUser).not.toHaveBeenCalled();
+  });
+
+  it('clears the shown error on back', () => {
+    useAuthStore.setState({
+      loginError: { kind: 'network', displayMessage: 'offline', retryable: true },
+    });
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    act(() => result.current.handleBack());
+
+    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(result.current.error).toBe('');
   });
 
   it('clears the login error on unmount', () => {

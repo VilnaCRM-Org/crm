@@ -209,7 +209,7 @@ describe('RegistrationNotification', () => {
     expect(screen.getByRole('alert')).not.toHaveAttribute('aria-live');
   });
 
-  it('focuses a wrapper outside the assertive alert on mount (Gap 1)', () => {
+  it('focuses the heading, outside the assertive alert, on mount (Gap 1)', () => {
     renderWithProviders(
       <RegistrationNotification
         isSubmitting={false}
@@ -226,8 +226,7 @@ describe('RegistrationNotification', () => {
 
     expect(heading).toHaveAccessibleName();
 
-    expect(document.body).not.toHaveFocus();
-    expect(heading).not.toHaveFocus();
+    expect(heading).toHaveFocus();
     expect(alert).not.toHaveFocus();
     screen.getAllByRole('button').forEach((button) => {
       expect(button).not.toHaveFocus();
@@ -237,7 +236,7 @@ describe('RegistrationNotification', () => {
     expect(alert).not.toContainElement(retryButton);
   });
 
-  it('renders the retry button and disables it while submitting', () => {
+  it('renders the retry button and marks it busy while submitting', () => {
     const onRetry = jest.fn();
 
     renderWithProviders(
@@ -247,7 +246,8 @@ describe('RegistrationNotification', () => {
 
     const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
 
-    expect(retryButton).toBeDisabled();
+    expect(retryButton).toHaveAttribute('aria-disabled', 'true');
+    expect(retryButton).toBeEnabled();
     fireEvent.click(retryButton);
     expect(onRetry).not.toHaveBeenCalled();
   });

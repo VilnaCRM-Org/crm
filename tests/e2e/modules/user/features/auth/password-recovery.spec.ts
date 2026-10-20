@@ -14,6 +14,7 @@ const MASKED = 'eir*****@gmail.com';
 
 const heading: string = t('password_recovery.title');
 const submitLabel: string = t('password_recovery.submit_button');
+const retryLabel: string = t('auth.error.tryAgain');
 const backLabel: string = t('password_recovery.back');
 const sentTitle: string = t('password_recovery.sent.title');
 const toSignIn: string = t('password_recovery.sent.to_sign_in');
@@ -185,8 +186,9 @@ test.describe('Password recovery request step (issue #315)', () => {
     await expect(page.getByRole('alert')).toHaveText(transient);
     await freezeClock(page);
     expect(bodies).toHaveLength(1);
+    await expect(page.getByRole('button', { name: submitLabel })).toHaveCount(0);
 
-    await page.getByRole('button', { name: submitLabel }).click();
+    await page.getByRole('button', { name: retryLabel }).click();
 
     await expect.poll(() => bodies.length).toBe(2);
     expect(bodies[1]?.variables?.input?.email).toBe(EMAIL);

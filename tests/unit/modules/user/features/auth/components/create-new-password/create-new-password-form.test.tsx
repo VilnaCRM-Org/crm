@@ -107,6 +107,16 @@ describe('CreateNewPasswordForm', () => {
     expect(document.body.innerHTML).not.toContain(token);
   });
 
+  it.each([
+    ['a network failure', { reason: 'network', retryable: true }, 'Спробувати ще раз'],
+    ['a server failure', { reason: 'server', retryable: true }, 'Спробувати ще раз'],
+    ['the rate limit', { reason: 'rate_limited', retryable: false }, 'Підтвердити'],
+  ] as const)('names the submit for %s', (_name, failure, name) => {
+    mountForm({ failure });
+
+    expect(screen.getByRole('button', { name })).toHaveAttribute('type', 'submit');
+  });
+
   it('ties the rule list to the new password when the module loads in the test', async () => {
     const FreshForm = await loadIsolated(async () => {
       jest.doMock('react', () => React);

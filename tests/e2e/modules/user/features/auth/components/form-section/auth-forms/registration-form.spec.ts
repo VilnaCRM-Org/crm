@@ -3,6 +3,7 @@ import { type Locator, type Page } from '@playwright/test';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import fillInput from '../../../../../../../utils/fill-input';
+import { t } from '../../../../../../../utils/initialize-localization';
 
 import {
   REGISTRATION_URL,
@@ -13,6 +14,14 @@ import {
 import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fill-form';
 import getFormFields from './utils/get-form-fields';
 import { serverErrorResponse, successResponse } from './utils/responses';
+
+const successDescription: string = t('notifications.success.description');
+const errorTitle: string = t('notifications.error.title');
+const confettiImageName: string = t('notifications.success.images.confetti');
+const gearsImageName: string = t('notifications.success.images.gears');
+
+const errorHeadingOf = (page: Page): Locator =>
+  page.getByRole('heading', { level: 2, name: errorTitle, exact: true });
 
 test.describe('Registration Form', () => {
   test.beforeEach(async ({ page }) => {
@@ -39,7 +48,14 @@ test.describe('Registration Form', () => {
     await expect(signupButton).toBeDisabled();
     release();
 
-    await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: successNotificationTitle })
+    ).toBeFocused();
+    await expect(page.getByRole('status').filter({ hasText: successDescription })).toHaveText(
+      successDescription
+    );
+    await expect(page.getByRole('img', { name: confettiImageName })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: gearsImageName })).toHaveCount(0);
   });
 
   test('should display error messages for invalid inputs', async ({ page }) => {
@@ -70,6 +86,7 @@ test.describe('Registration Form', () => {
     await expect(signupButton).toBeDisabled();
     release();
 
+    await expect(errorHeadingOf(page)).toBeVisible();
     await expect(page.locator('[role="alert"]')).toBeVisible();
   });
 });
@@ -132,9 +149,7 @@ test.describe('Registration Form loader behaviour', () => {
     release();
   });
 
-  test('moves focus to a meaningful element (not body) after a registration failure', async ({
-    page,
-  }) => {
+  test('moves focus to the error heading itself after a registration failure', async ({ page }) => {
     await page.route(
       REGISTRATION_API_URL,
       serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' })
@@ -144,16 +159,7 @@ test.describe('Registration Form loader behaviour', () => {
     await signupButton.click();
 
     await expect(page.locator('[role="alert"]')).toBeVisible();
-
-    const focusOnMeaningfulElement = await page.evaluate(() => {
-      const active = document.activeElement;
-      return (
-        active !== document.body &&
-        active !== null &&
-        (active.matches('h1, h2, h3, h4, h5, h6') ||
-          !!active.querySelector('h1, h2, h3, h4, h5, h6'))
-      );
-    });
-    expect(focusOnMeaningfulElement).toBe(true);
+    await expect(errorHeadingOf(page)).toBeFocused();
+    await expect(errorHeadingOf(page)).toHaveAttribute('tabindex', '-1');
   });
 });

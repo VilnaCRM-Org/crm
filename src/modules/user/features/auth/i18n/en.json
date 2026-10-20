@@ -80,7 +80,8 @@
     "subtitle": "Sign in to your account in two clicks",
     "errors": {
       "load_failed": "Failed to load sign-in form. Please try again.",
-      "login": "Sign in error: {{reason}}"
+      "invalid_credentials": "Invalid e-mail or password",
+      "rate_limited": "Too many sign-in attempts. Try again later"
     },
     "form": {
       "email_input": {
@@ -95,11 +96,17 @@
       "submit_button": "Sign in",
       "submitting": "Signing in…",
       "remember_me": "Remember me",
-      "forgot_password": "Forgot password?"
+      "forgot_password": "Forgot password?",
+      "loading_result": "Loading the result…"
     },
     "notices": {
       "password_reset": "Your password has been changed. Sign in with your new password.",
       "session_ended": "Your session has ended. Please sign in again."
+    },
+    "success": {
+      "title": "Welcome back!",
+      "description": "You have signed in successfully",
+      "button": "Continue"
     }
   },
   "notifications": {

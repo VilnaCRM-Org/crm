@@ -11,6 +11,9 @@ const meta: Meta<typeof RegistrationSuccessView> = {
   args: {
     isClosing: false,
     onBack: noop,
+    title: 'Вітаємо!',
+    description: 'Ви успішно зареєструвалися',
+    buttonLabel: 'Назад',
   },
   argTypes: {
     onBack: { control: false },
@@ -19,9 +22,9 @@ const meta: Meta<typeof RegistrationSuccessView> = {
     docs: {
       description: {
         component:
-          'The successful-registration result inside a `role="status"` region: confetti and ' +
-          'gears illustrations, the heading (focused on mount), the description and the ' +
-          'button back to the form.',
+          'The successful sign-up or sign-in result: decorative confetti and gears, the ' +
+          'heading (focused on mount), the description in a polite status region and one ' +
+          'button (back to the form after sign-up, "Продовжити" after sign-in).',
       },
       story: { inline: false },
     },
@@ -36,4 +39,8 @@ export const Default: Story = {};
 
 export const Closing: Story = {
   args: { isClosing: true },
+};
+
+export const SignIn: Story = {
+  args: { description: 'Ви успішно увійшли', buttonLabel: 'Продовжити' },
 };

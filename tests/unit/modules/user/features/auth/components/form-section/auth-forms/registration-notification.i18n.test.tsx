@@ -167,37 +167,4 @@ describe('RegistrationNotification', () => {
     });
     expect(onBack).not.toHaveBeenCalled();
   });
-
-  it('renders the retry button and disables it while submitting', () => {
-    const onRetry = jest.fn();
-
-    renderWithProviders(
-      <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
-      { i18nMock: createLocaleI18n('uk') }
-    );
-
-    const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
-
-    expect(retryButton).toBeDisabled();
-    fireEvent.click(retryButton);
-    expect(onRetry).not.toHaveBeenCalled();
-  });
-
-  it('calls onRetry when the retry button is enabled', () => {
-    const onRetry = jest.fn();
-
-    renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={jest.fn()}
-        onRetry={onRetry}
-        view="error"
-      />,
-      { i18nMock: createLocaleI18n('uk') }
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
-
-    expect(onRetry).toHaveBeenCalledTimes(1);
-  });
 });

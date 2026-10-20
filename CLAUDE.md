@@ -279,7 +279,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-24-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+30-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -302,14 +302,16 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 24-way shard count rather than
+These keep the run affordable — parallelism comes from the 30-way shard count rather than
 Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
 weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
 invalidates, and those cluster by area. A diff touching one area can therefore land most of its
-re-run cost in a single shard; 24 shards keep that hot shard inside the `timeout-minutes` kill
+re-run cost in a single shard; 30 shards keep that hot shard inside the `timeout-minutes` kill
 switch. Raise the count if a shard starts approaching it — never the kill switch. The count went
 from 16 to 24 when Stryker 10's `CallExpression` mutator added 164 mutants and a cold run pushed
-shards 5 and 14 into the 15-minute kill switch.
+shards 5 and 14 into the 15-minute kill switch, and from 24 to 30 when the password-recovery
+files repacked the split so a cold shard 6 drew 443 mutants (the next heaviest drew 291) and hit
+the kill switch at 250 tested; the same packing at 30 caps the heaviest shard at 240.
 
 ### Honest mutant classification (issue #171)
 
@@ -374,16 +376,18 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Fourteen directives are annotated today, at two mutators. Thirteen are `ArrayDeclaration` on a
+Fifteen directives are annotated today, at two mutators. Fourteen are `ArrayDeclaration` on a
 React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. Three annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
 - `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
   `authActions` module singleton and `loginControllersRef` is a `useRef` box, so neither identity
   ever changes and an emptied list memoizes exactly the same callback.
+- `use-login-submitter.ts` also annotates `[login]` on `handleLogin`: `login` is that same
+  memoized callback, so its identity never changes either.
 - `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
   the `run` callback handed to `useAbortableSubmit`. `provider` comes from
   `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
@@ -395,7 +399,7 @@ Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The fourteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The fifteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -404,7 +408,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a fifteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
@@ -1050,7 +1054,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 24-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 30-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -2130,10 +2134,8 @@ enforced by two rules:
   for. The code-split boundary is where the cost stops.
 
 **Honest limitation:** the gate is syntactic and `.tsx`-only. Hooks (`use-*.ts`) are **not**
-covered — `new LoginErrorMessageNormalizer()` in
-`@auth/components/form-section/auth-forms/use-login-submitter.ts` and
-`new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts` stay
-review-gate concerns. ESLint cannot
+covered — `new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts`
+stays a review-gate concern. ESLint cannot
 know which PascalCase identifier is behavioral (the built-in allowlist must be maintained), and
 dependency-cruiser keys on path conventions, so a behavioral class placed outside those paths or
 re-exported through a barrel is not caught. Satisfy both gates by adding the token, registering
