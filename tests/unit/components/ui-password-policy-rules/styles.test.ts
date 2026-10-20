@@ -11,7 +11,7 @@ const ITEM = {
   display: 'flex',
   alignItems: 'flex-start',
   gap: '0.375rem',
-  fontFamily: 'Inter',
+  fontFamily: 'Inter, sans-serif',
   fontWeight: 500,
   fontSize: '0.875rem',
   lineHeight: '1.125rem',
