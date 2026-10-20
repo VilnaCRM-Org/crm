@@ -21,7 +21,13 @@ describe('user profile page styles', () => {
         paddingTop: '1.5rem',
         paddingBottom: '2rem',
         '@media (min-width:768px)': { gap: '1rem' },
-        '@media (min-width:1025px)': { gap: '0.75rem', paddingTop: '1.75rem' },
+        '@media (min-width:1025px)': {
+          gap: '0.75rem',
+          paddingTop: '1.75rem',
+          width: 'fit-content',
+          maxWidth: '100%',
+          marginInline: 'auto',
+        },
       },
       header: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
       heading: {
