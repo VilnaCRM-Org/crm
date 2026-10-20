@@ -103,7 +103,7 @@ describe('RegistrationErrorView', () => {
 
     rerender(view('Network unavailable'));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Network unavailable');
+    expect(await screen.findByRole('alert')).toHaveTextContent(/^Network unavailable$/);
   });
 
   it('keeps both buttons focusable while a retry runs and ignores busy clicks', async () => {
