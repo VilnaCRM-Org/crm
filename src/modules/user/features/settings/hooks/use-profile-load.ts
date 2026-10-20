@@ -19,7 +19,7 @@ const INITIAL_STATE: ProfileLoadReducerState = {
   user: null,
   version: 0,
   refocus: false,
-  attempt: 0,
+  reload: false,
 };
 
 function confirmUser(user: UserEntity | null, action: ConfirmUserAction): UserEntity | null {
@@ -33,7 +33,7 @@ function reduceProfileLoad(
   action: ProfileLoadAction
 ): ProfileLoadReducerState {
   if (action.type === 'retry') {
-    return { ...state, status: 'loading', refocus: true, attempt: state.attempt + 1 };
+    return { ...state, status: 'loading', refocus: true, reload: !state.reload };
   }
   if (action.type === 'adopt') {
     return { ...state, user: action.user, version: state.version + 1, refocus: false };
@@ -84,7 +84,7 @@ export default function useProfileLoad(): ProfileLoadState {
     const controller = new AbortController();
     void loadProfile(provider, controller.signal, dispatch);
     return (): void => controller.abort();
-  }, [provider, state.attempt]);
+  }, [provider, state.reload]);
 
   return {
     status: state.status,
