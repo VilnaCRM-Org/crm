@@ -4,6 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-06
+revised: 2026-10-16
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'analyst (Mary), autonomous run'

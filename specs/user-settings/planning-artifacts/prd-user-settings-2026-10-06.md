@@ -3,7 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-20
+iteration: 4
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -14,8 +15,8 @@ inputDocuments:
 
 # PRD: user settings for the `user` module
 
-**Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08 **Feature:**
-`user-settings`
+**Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16 and
+2026-10-20 **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and
@@ -872,9 +873,11 @@ singletons, `useService` as the only component bridge, a container-free auth pai
 and no new class with a `Controller`, `Service`, `Handler` or `Normalizer` suffix (NFR-15).
 `metrics_enforced: true` against `config/metrics-policy.json` (cyclomatic 10, cognitive 15, ABC
 17, three arguments, function LLOC 10; per file 10 functions, 6 closures; per class 8 public
-methods); `src/modules/user/config/di.ts` already holds nine functions and three closures, and
-settings adds no closure and no function: every class takes at most three `@inject` parameters,
-so no deps bag is needed and the registrar stays at 3 of 6 closures (contract §2.2).
+methods); `src/modules/user/config/di.ts` held nine functions and three closures, and settings
+adds one of each, the `registerSessionLink` step and its `useFactory` (FR-21), so the registrar
+stands at ten of ten functions and four of six closures. Every other settings class takes at
+most three `@inject` parameters; the link's `SessionLinkDeps` bundle is the one deps value,
+because a constructor may take three arguments (contract §2.2).
 
 ### NFR-3 — Visual regression
 

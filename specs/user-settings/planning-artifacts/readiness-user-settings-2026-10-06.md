@@ -3,7 +3,7 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-20
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 iteration: 3
@@ -193,11 +193,11 @@ named and typed classes or interfaces), that the architecture follow the Miro "F
 Architecture VilnaCRM" board, and that the diagrams be redrawn. Input: the shared contract
 `crm-worktrees/_planning-shared/miro-layer-contract.md` (§1 extraction, §2 layer map, §3.2 and
 §3.4 dispositions, §4 TB-1, §5 diagram conventions). Implementation additionally waits for
-P.2, since the simplification pass "chore #332 (typed-boundaries gate) → #315 Epic 0 (Stories
-0.1–0.2)", and since the client-state pass also the chore `zustand-client-state` (#334,
-lands before #315): the TB-1 gate, the `*Transformer` suffix, `Controller` removed from the naming
-policy and the burn-down in the chore; the `data-providers` and `transformers` folders and the
-User domain in #315 Epic 0.
+P.2, which the simplification pass set to "chore #332 (typed-boundaries gate) → #315 Epic 0
+(Stories 0.1–0.2)" and the client-state pass extended with the chore `zustand-client-state`
+(#334, lands before #315). The chores own the TB-1 gate, the `*Transformer` suffix, `Controller`
+removed from the naming policy and the burn-down; #315 Epic 0 owns the `data-providers` and
+`transformers` folders and the User domain.
 
 ### What changed, per artifact
 
