@@ -202,7 +202,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - AR-2 (§12): no new module-level singleton (`export default new X()`); the loader is built per
   mount by `useAuthProviderLoader`, and there is no controller class. The two stateless import
   seams that shipped as module singletons are recorded as accepted exceptions in
-  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`).
+  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`, which
+  #330 replaced with the shared `lazyCatalogLoader` in `src/lib/locale-catalog/`).
 - AR-3 (§5.3): `useAbortableSubmit` has side-effect-free initializers and its unmount cleanup
   aborts only the request in flight, so a StrictMode double mount still sends the first submit.
 - AR-4 (§6.5): every interface and alias lives in a type-only file under `types/`.
@@ -2136,6 +2137,10 @@ acceptance criteria it touches; only the planned shape or file name changed.
    keys were 3,742 B of it. Keys a page outside the recovery routes renders, such as
    `sign_in.notices.password_reset`, stay in the eager auth catalog. FR-27's acceptance criteria
    are unchanged: every string ships in `uk` and `en` with identical key sets.
+   Amendment 2026-10-19: #330 replaced the loader below with the shared `lazyCatalogLoader`
+   (`src/lib/locale-catalog/lazy-catalog-loader.ts`); `RecoveryPageLayout` now calls
+   `lazyCatalogLoader.register(i18n, { en, uk })` with the recovery JSON it imports, and the
+   reasoning below holds for it unchanged.
    `RecoveryCatalogLoader` (`routes/recovery-catalog/recovery-catalog-loader.ts`) is exported as
    a module singleton, and `RecoveryPageLayout` calls its `register(i18n)` once at module
    evaluation. It is the second accepted exception to AR-2's "no new module-level singleton", on

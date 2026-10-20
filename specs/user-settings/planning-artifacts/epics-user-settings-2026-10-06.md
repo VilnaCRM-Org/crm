@@ -74,7 +74,9 @@ back-end side"):
 - The invented `profile_update` security signal (FR-23) is withdrawn with its story; the
   `initials` scrubber moved into Story 2.3.
 - `useUserProfileSettings`, `ToastQueueStore` and the `ToastRequest` mapping are gone; the hooks
-  emit `ToastDraftSet`, and the form calls them directly.
+  emit `ToastDraftSet`, and the form reaches them through one stateless compose hook,
+  `useProfileFormModel`, with `useEmailRow` over `useEmailResend` (amendment 2026-10-19,
+  architecture §7.3).
 - `SessionLinkFactory` ends a session on a transport 401 only; the route gate takes one scalar
   `flag`; the mock is a stateless happy path with one violation and the owner check.
 - Thin stories merged and every story renumbered (the former ids are in the run summary): 1.8
@@ -215,7 +217,8 @@ there and not yet merged. Its decisions live in `src/modules/user/README.md`,
   `ServerFieldError` (`server-field-error.tsx`, props `name` and `message`, rendering nothing and
   delegating to `@auth/hooks/use-server-field-error.ts`).
 - **Lazy catalogs.** `config/i18n-catalog-policy.json` (`lazyCatalogs`), the recovery catalog
-  `@auth/routes/recovery-catalog/i18n/` registered by `RecoveryCatalogLoader`, the test helper
+  `@auth/routes/recovery-catalog/i18n/` registered by `RecoveryCatalogLoader` (replaced here by
+  the shared `lazyCatalogLoader`, AR-2), the test helper
   `tests/unit/utils/create-recovery-locale-i18n.ts`, `.storybook/preview.tsx` and
   `tests/e2e/utils/initialize-localization.js`. The `password_policy.*` and `password_reset.*`
   keys live in that lazy catalog and resolve only in its owner files.
@@ -587,8 +590,8 @@ gains an optional `sx` forwarded to its `UIFormField`),
 `evaluate`), `src/components/ui-password-policy-rules/styles.ts` (MOVE of
 `password-policy-rules-styles.ts`), `src/components/ui-password-policy-rules/i18n/{uk,en}.json`
 (MOVE of the `password_policy.*` keys out of `@auth/routes/recovery-catalog/i18n/`),
-`src/components/ui-password-policy-rules/password-policy-catalog-loader.ts` (NEW:
-`PasswordPolicyCatalogLoader`, the `RecoveryCatalogLoader` precedent),
+`src/components/ui-password-policy-rules/index.tsx` (registers its catalog through the shared
+`lazyCatalogLoader`, `src/lib/locale-catalog/lazy-catalog-loader.ts`, NEW, AR-2),
 `src/components/ui-server-field-error/index.tsx` (MOVE of `server-field-error.tsx`; gains
 `focus`, default `true`), `src/components/ui-server-field-error/use-server-field-error.ts` (MOVE
 of `@auth/hooks/use-server-field-error.ts`, placed beside its component as
@@ -644,7 +647,7 @@ calls are re-pointed to `@/assets/icons/eye*.svg`, because the moved SVGs no lon
 - Given `UIPasswordPolicyRules` with the watched value `Pa1`, when it renders, then it lists the four rules in policy order with only the length rule unmet, marks each by icon plus text with the visually hidden met or unmet word, and is not a live region.
 - Given the moved prop types in `src/components/types/`, when `make lint-eslint` runs the TB-1 selectors, then `evaluate` is a `PasswordRuleEvaluator` returning a `PasswordRuleViewSet` of `PasswordRuleView` items keyed by the named `PasswordRuleViewKey` union, #315's `PasswordRuleResultSet` is assignable to it without a mapping, every moved props type is a named interface, and no file carries a suppression.
 - Given each caller of `UIPasswordPolicyRules`, when it renders, then it passes a stable `PasswordRuleEvaluator` that calls `passwordValidator.evaluate` on the validator itself, never an inline arrow or a detached method reference.
-- Given `config/i18n-catalog-policy.json` and `make lint-i18n`, when they run, then the `password_policy.*` keys exist only in `src/components/ui-password-policy-rules/i18n/`, `PasswordPolicyCatalogLoader` registers both locales when the component module evaluates, the recovery catalog no longer holds them, `src/i18n/localization.json` is unchanged, no `[lazy-key-scope]` finding is reported, and the localization-generator unit test pins the policy's catalog list as the recovery catalog then `components/ui-password-policy-rules/i18n`.
+- Given `config/i18n-catalog-policy.json` and `make lint-i18n`, when they run, then the `password_policy.*` keys exist only in `src/components/ui-password-policy-rules/i18n/`, `lazyCatalogLoader.register(i18n, { en, uk })` registers both locales when the component module evaluates, the recovery catalog no longer holds them, `src/i18n/localization.json` is unchanged, no `[lazy-key-scope]` finding is reported, and the localization-generator unit test pins the policy's catalog list as the recovery catalog then `components/ui-password-policy-rules/i18n`.
 - Given `UIServerFieldError` without `focus`, when a message arrives, then it sets the server error and focuses its field as #315's component did, and with `focus={false}` it sets the error and leaves focus in place; a cleared message still clears only a `server` error.
 - Given `UIFormField` with `describedBy` and `sx`, when it renders, then the input's `aria-describedby` keeps #315's order (the `describedBy` ids, then `<name>-helper-text` while an error shows), and the auth spacing reaches it through `sx`, so sign-in, sign-up and the #315 pages render the same DOM and computed styles.
 - Given `UIPasswordField` with an `sx`, when it renders, then it forwards that `sx` to its `UIFormField` grid unchanged, the optional `sx` is declared in `src/components/types/ui-password-field/index.ts`, and without one the grid carries no auth spacing.
@@ -862,8 +865,8 @@ NFR-15 (architecture §5.6, §5.7, §5.13, §5.16, §17).
 trimmed per architecture §5.13), `settings/routes/index.ts` (NEW: `RouteModule` `user.settings`),
 `settings/routes/user-profile/index.tsx`, `styles.ts` and a story (NEW: the `UserProfile` page
 shell, the board's `UserProfile [component]<route>`),
-`settings/routes/user-profile/settings-catalog-loader.ts` (NEW: `SettingsCatalogLoader`, the
-`RecoveryCatalogLoader` precedent), `settings/i18n/{uk,en}.json` (NEW from the generator, trimmed
+the page module registering its catalog through the shared `lazyCatalogLoader`
+(`src/lib/locale-catalog/`, AR-2), `settings/i18n/{uk,en}.json` (NEW from the generator, trimmed
 to `settings.title`, `settings.heading`, `settings.subtitle`), `config/i18n-catalog-policy.json`
 (MODIFY: a `lazyCatalogs` entry for `modules/user/features/settings/i18n` owned by
 `modules/user/features/settings`), `tests/unit/scripts/localization-generator.test.js` (MODIFY:
@@ -896,7 +899,7 @@ catalog must not contain),
 - Given `tests/unit/routes/route-composer.test.tsx` on the real registry, when it runs, then `RootLayout` has exactly one child, the pathless `RouteFlagGate` route, the `ProtectedRoute` branch and the seven public routes sit directly under it, and invariant B's case is titled "keeps public routes directly under the gate route, itself directly under RootLayout" and still pins the seven public paths in order.
 - Given `tests/unit/routes/registry.test.ts`, when it runs, then the module ids are `['app.shell', 'user.auth', 'user.settings']`, still unique, and a case finds the `user.settings` route by `ROUTE_PATHS.settings` and asserts its `guard` `protected`, `flag` `userSettings` and `meta.titleKey` `settings.title`.
 - Given `config/i18n-catalog-policy.json`, when `make lint-i18n` runs, then `modules/user/features/settings/i18n` is a lazy catalog owned by `modules/user/features/settings`, `src/i18n/localization.json` holds no `settings.*` key (pinned by the performance-serving namespace case as well), both locales hold the three keys, no `[lazy-key-scope]` finding is reported, and the localization-generator unit test pins the policy's lazy catalogs in order, the settings catalog last (three once Story 1.1 has landed).
-- Given the `UserProfile` route module, when it evaluates, then `SettingsCatalogLoader.register(i18n)` adds both locale bundles through `addResourceBundle` before the page's `usePageTitle('settings.title')` runs; the loader is a stateless module singleton with one public method and no field, the accepted exception of AR-2.
+- Given the `UserProfile` route module, when it evaluates, then `lazyCatalogLoader.register(i18n, { en, uk })` adds both locale bundles of the settings JSON through `addResourceBundle` before the page's `usePageTitle('settings.title')` runs; the loader is a stateless module singleton with one public method and no field, the accepted exception of AR-2.
 - Given `tests/unit/utils/create-settings-locale-i18n.ts` and `.storybook/preview.tsx`, when a settings test or story renders, then the settings keys resolve, and a test built with `createLocaleI18n` alone renders the raw `settings.title` key (must-fail proof that the catalog is lazy).
 - Given the page component, when it is read, then it is named `UserProfile` after the board's `UserProfile [component]<route>`, its grid takes its sections as `children` (`ReactNode`), and the settings folder holds no class or file named for a controller, service or handler.
 - Given the route mapper, when it maps the settings route, then the loader is `ThemedChunkLoader` over `ChunkRetryLoader` and never `ReloadingChunkLoader`, because the route is protected, and the route carries the composer's error element.
@@ -1437,7 +1440,7 @@ and working with the plain `PasswordChange`),
 `settings/routes/user-profile/index.tsx` (MODIFY: owns `saveRef`), `settings/i18n/{uk,en}.json`
 (MODIFY: section, field, hint, save, saving, clear and no-change keys; lazy, so
 `src/i18n/localization.json` is unchanged), `tests/unit/utils/create-settings-locale-i18n.ts`
-(MODIFY: also registers Story 1.1's `PasswordPolicyCatalogLoader`, as
+(MODIFY: also registers Story 1.1's `password_policy.*` catalog through `lazyCatalogLoader`, as
 `create-recovery-locale-i18n.ts` does), unit tests with jest-axe.
 
 **Gates:** DoD local gates; `make lint-i18n`, `make lint-metrics`; the Figma design gate.
@@ -1447,7 +1450,7 @@ and working with the plain `PasswordChange`),
 - Given `UIForm` without the new props, when sign-in, sign-up and the #315 forms render, then their DOM equals PR #340's and no baseline changes; with `submitRef` the ref receives the submit `button` and `useOfflineSubmit` and #315's `ErrorBanner` focus return use it; `submitSx` is merged after `styles.submitButton` and the `submitSpacing` variant; and a `footer` sits inside the `<form>` after the submit control and before the `UILiveStatus`, where a `type="button"` never submits.
 - Given the Figma design gate on `313:10242`, `313:10480` and `313:10606`, when it runs before code, then the card, sections, fields and the Save and "Очистити" pills follow the frames with the PRD §12 copy; an unreachable MCP reports `BLOCKED`.
 - Given the loaded page, when the form renders, then `h2` "Особисті дані" heads "Ваше ім’я та прізвище" (`autocomplete="name"`, prefilled) and "E-mail" (the reused `sign_up.form.email_input.label`, `type="email"`, `autocomplete="email"`, prefilled), and `h2` "Пароль" heads "Поточний пароль" (`autocomplete="current-password"`) and "Новий пароль" (`autocomplete="new-password"`), both empty with eye toggles; each field is found by its visible label.
-- Given a settings test built with `createSettingsLocaleI18n`, when `ChangePassword` renders, then the four `UIPasswordPolicyRules` labels and their met or unmet words render translated in `uk` and `en` and no raw `password_policy.*` key appears (must-fail: the helper without `PasswordPolicyCatalogLoader` renders the raw keys).
+- Given a settings test built with `createSettingsLocaleI18n`, when `ChangePassword` renders, then the four `UIPasswordPolicyRules` labels and their met or unmet words render translated in `uk` and `en` and no raw `password_policy.*` key appears (must-fail: the helper without the policy catalog renders the raw keys).
 - Given an eye toggle activated with Space, when it updates, then the field shows text, the button name changes from "Показати пароль" to "Приховати пароль" and `aria-pressed` is `"true"`.
 - Given a loaded name "admin" that fails the client rule and only the e-mail changed, when Save runs with the current password, then no name error shows and the request is sent; a name edited to the single word "Олена" shows "Будь ласка, введіть повне ім’я у правильному форматі", takes focus and sends nothing.
 - Given a change and an empty current password, when Save runs, then that field shows "Це поле обов'язкове", takes focus, and nothing is sent; with only the current password typed, nothing is sent, no field error shows and a polite status in the form says "Немає змін для збереження"; the current password `abc` with a change raises no client error.
@@ -1520,8 +1523,9 @@ So that I can finish confirming it without leaving the page.
 
 **Files:** `settings/components/profile-form/email-status-row.tsx` and a story (NEW),
 `settings/types/components/email-status-row.ts` (NEW: `EmailStatusRowProps`),
-`settings/components/profile-form/index.tsx` (MODIFY: calls `useEmailResend`; the e-mail field's
-`describedBy`), `profile-form/styles.ts` (MODIFY), `settings/i18n/{uk,en}.json` (MODIFY:
+`settings/components/profile-form/index.tsx` (MODIFY: the e-mail field's `describedBy`; the
+row's state comes from `useEmailRow` over `useEmailResend`, through `useProfileFormModel`),
+`profile-form/styles.ts` (MODIFY), `settings/i18n/{uk,en}.json` (MODIFY:
 `settings.profile.email_unconfirmed`, `settings.profile.resend`, `settings.toasts.resent`,
 `settings.toasts.resend_failed`; lazy, so `src/i18n/localization.json` is unchanged), unit
 tests with jest-axe.
