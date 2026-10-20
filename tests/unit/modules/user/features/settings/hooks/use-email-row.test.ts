@@ -20,7 +20,7 @@ type Props = Parameters<typeof useEmailRow>[0];
 
 const props = (confirmed: boolean): Props => ({
   user: buildUserEntity({ confirmed }),
-  adoption: { adopt: jest.fn(), confirm: jest.fn() },
+  adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
   toasts: {
     toasts: { items: [] },
     announcement: '',

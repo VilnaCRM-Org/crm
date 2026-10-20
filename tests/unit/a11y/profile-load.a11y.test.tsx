@@ -26,7 +26,7 @@ const base: Props = {
   version: 0,
   refocus: false,
   retry: () => undefined,
-  adoption: { adopt: () => undefined, confirm: () => undefined },
+  adoption: { adopt: () => undefined, confirm: () => undefined, isCurrent: (): boolean => true },
   toasts: {
     toasts: { items: [] },
     announcement: '',

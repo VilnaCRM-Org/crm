@@ -37,7 +37,7 @@ const SAVE = 'Зберегти зміни';
 
 const props = (overrides: Partial<Props> = {}): Props => ({
   user,
-  adoption: { adopt: jest.fn(), confirm: jest.fn() },
+  adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
   version: 0,
   refocus: false,
   toasts: {
@@ -274,7 +274,9 @@ describe('ProfileForm', () => {
     let settle: (value: unknown) => void = () => undefined;
     mockUpdate.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     const adopt = jest.fn();
-    render(form({ adoption: { adopt, confirm: jest.fn() } }), { wrapper });
+    render(form({ adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true } }), {
+      wrapper,
+    });
     await userEvent.type(field(NAME), ' Іванівна');
     await userEvent.type(field(CURRENT), 'abc{Enter}');
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
@@ -315,7 +317,9 @@ describe('ProfileForm', () => {
 
   it('adopts the saved entity and focuses the save button once the save settled', async () => {
     const adopt = jest.fn();
-    render(form({ adoption: { adopt, confirm: jest.fn() } }), { wrapper });
+    render(form({ adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true } }), {
+      wrapper,
+    });
     await userEvent.type(field(NAME), ' Іванівна');
     await userEvent.type(field(CURRENT), 'abc');
     await userEvent.click(screen.getByRole('heading', { level: 2, name: 'Пароль' }));

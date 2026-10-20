@@ -15,7 +15,7 @@ const meta: Meta<typeof ProfileForm> = {
       email: 'olena.petrenko@example.com',
       confirmed: true,
     },
-    adoption: { adopt: noop, confirm: noop },
+    adoption: { adopt: noop, confirm: noop, isCurrent: (): boolean => true },
     version: 0,
     refocus: false,
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },

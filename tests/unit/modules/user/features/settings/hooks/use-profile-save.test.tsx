@@ -54,7 +54,7 @@ const harness = (): Harness => {
   const focus = jest.fn();
   const props: ProfileFormProps = {
     user,
-    adoption: { adopt, confirm: jest.fn() },
+    adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true },
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() },
     saveRef: { current: { click, focus } as unknown as HTMLButtonElement },
   };

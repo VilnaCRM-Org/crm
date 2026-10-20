@@ -27,7 +27,11 @@ jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () => ({
     version: 0,
     refocus: false,
     retry: (): undefined => undefined,
-    adoption: { adopt: (): undefined => undefined, confirm: (): undefined => undefined },
+    adoption: {
+      adopt: (): undefined => undefined,
+      confirm: (): undefined => undefined,
+      isCurrent: (): boolean => true,
+    },
   }),
 }));
 

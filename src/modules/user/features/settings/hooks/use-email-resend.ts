@@ -48,7 +48,8 @@ export default function useEmailResend(
 
   const resend = async (): Promise<void> => {
     const outcome = await submit(user.id);
-    if (outcome !== null) settleResend(outcome, { email: user.email, adoption, toasts, t });
+    if (outcome === null || !adoption.isCurrent(user.email)) return;
+    settleResend(outcome, { email: user.email, adoption, toasts, t });
   };
 
   return { isSubmitting, resend };
