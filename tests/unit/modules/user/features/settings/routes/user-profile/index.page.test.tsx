@@ -156,7 +156,7 @@ describe('settings page save outcomes (page)', () => {
       .getAllByRole('status')
       .map((node) => node.textContent ?? '')
       .find((text) => text.includes(PASSWORD_CHANGED));
-    expect(utterance?.replace('​', '')).toBe(`${SAVED} ${EMAIL_SENT} ${PASSWORD_CHANGED}`);
+    expect(utterance?.replace('\u200b', '')).toBe(`${SAVED} ${EMAIL_SENT} ${PASSWORD_CHANGED}`);
     expect(answered).toHaveLength(1);
   });
 
