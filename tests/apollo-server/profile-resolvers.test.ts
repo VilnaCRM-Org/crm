@@ -205,12 +205,12 @@ describe('profile operations on the stateless mock', () => {
     });
   });
 
-  it('answers a resend with the seeded user id and confirmed flag', async () => {
+  it('answers a resend with the seeded user id and an unconfirmed address', async () => {
     const result = await execute(server, RESEND_EMAIL, { id: SEEDED_ID });
 
     expect(result.errors).toBeUndefined();
     expect(result.data).toEqual({
-      resendEmailToUser: { user: { id: SEEDED_ID, confirmed: true } },
+      resendEmailToUser: { user: { id: SEEDED_ID, confirmed: false } },
     });
   });
 
