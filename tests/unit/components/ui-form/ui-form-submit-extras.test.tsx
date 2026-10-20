@@ -77,8 +77,15 @@ describe('UIForm submit extras', () => {
 
   it('renders no footer element and keeps the default submit styles when none is given', () => {
     render(<Subject />);
+    const submit = screen.getByRole('button', { name: 'Save it' });
+    const announcer = screen.getAllByRole('status').at(-1) as HTMLElement;
 
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getAllByRole('button')).toEqual([submit]);
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(document.forms[0]).toContainElement(submit);
+    expect(submit.compareDocumentPosition(announcer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(submit).toHaveStyle({ width: '100%', height: '3.125rem', marginTop: '1rem' });
   });
 
   it('calls onInvalid, and not onSubmit, when a Save is blocked by a field rule', async () => {
@@ -106,14 +113,27 @@ describe('UIForm submit extras', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('calls onSubmit, and not onInvalid, when every field passes', async () => {
+  it('calls onSubmit with the field values, not onInvalid, when every field passes', async () => {
     const onSubmit = jest.fn();
     const onInvalid = jest.fn();
-    render(<Subject onSubmit={onSubmit} onInvalid={onInvalid} />);
+    render(
+      <Subject onSubmit={onSubmit} onInvalid={onInvalid}>
+        <UIFormField
+          name="name"
+          label="Name"
+          placeholder=""
+          type="text"
+          autoComplete="off"
+          rules={{ required: 'Required' }}
+        />
+      </Subject>
+    );
 
+    await userEvent.type(screen.getByLabelText('Name'), 'value');
     await userEvent.click(screen.getByRole('button', { name: 'Save it' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0]?.[0]).toEqual({ name: 'value' });
     expect(onInvalid).not.toHaveBeenCalled();
   });
 });

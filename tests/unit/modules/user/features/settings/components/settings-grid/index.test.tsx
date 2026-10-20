@@ -47,9 +47,11 @@ describe('SettingsGrid', () => {
   });
 
   it('renders an empty grid without children', () => {
-    const { container } = render(<SettingsGrid />);
+    render(<SettingsGrid />);
+    const grid = screen.getAllByRole('generic').at(-1);
 
-    expect(container).not.toBeEmptyDOMElement();
+    expect(grid).toBeEmptyDOMElement();
+    expect(styleRuleFor(grid as HTMLElement)?.getPropertyValue('display')).toBe('grid');
     expect(screen.queryByText(/^section/)).not.toBeInTheDocument();
   });
 

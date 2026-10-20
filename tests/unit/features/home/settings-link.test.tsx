@@ -43,12 +43,19 @@ describe('Home settings link', () => {
     clearConfigBlock();
   });
 
-  it('renders no link while the flag is off or absent', () => {
+  it('renders no link while the config block carries no flag', () => {
     renderHome();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
 
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Вийти' })).toBeInTheDocument();
+  });
+
+  it('renders no link while the flag is explicitly off', () => {
     flag(false);
-    expect(screen.queryByRole('link', { name: 'Налаштування' })).not.toBeInTheDocument();
+    renderHome();
+
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Вийти' })).toBeInTheDocument();
   });
 
   it('renders one /settings link between the description and sign out while the flag is on', () => {

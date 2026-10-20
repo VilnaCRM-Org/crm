@@ -17,7 +17,7 @@ interface ImportEdge {
   readonly target: string;
 }
 
-const IMPORT_PATTERN = /^import\s+(type\s+)?[^;]*?from\s+'([^']+)';/gms;
+const IMPORT_PATTERN = /^(?:import|export)\s+(type\s+)?[^;]*?from\s+'([^']+)';/gms;
 
 const toPosix = (filePath: string): string =>
   path.relative(repoRoot, filePath).split(path.sep).join('/');
@@ -55,7 +55,7 @@ const violationsOf = (files: SourceFile[]): string[] =>
       if (names(target, 'transformers') || target.startsWith('src/modules/user/transformers')) {
         found.push('imports a Transformer');
       }
-      if (names(target, 'data-providers') && (folder === 'components' || !typeOnly)) {
+      if (names(target, 'data-providers') && (folder !== 'hooks' || !typeOnly)) {
         found.push('imports a Data provider beyond a hook type');
       }
       return found.map((reason) => `${sourceFile.file}: ${reason} (${target})`);
@@ -128,6 +128,31 @@ describe('settings layer edges (AR-8)', () => {
       fixture(
         'routes/user-profile/index.tsx',
         "import Repository from '@/modules/user/features/settings/repositories';\n"
+      ),
+    ],
+    [
+      'a route type-importing the Data provider',
+      fixture(
+        'routes/user-profile/index.tsx',
+        "import type ProfileProvider from '../../data-providers/profile-provider';\n"
+      ),
+    ],
+    [
+      'a hook re-exporting the Repository',
+      fixture('hooks/index.ts', "export { default as Repository } from '../repositories';\n"),
+    ],
+    [
+      'a component re-exporting the Transformer by type',
+      fixture(
+        'components/thing/index.tsx',
+        "export type { default as Transformer } from '../../transformers';\n"
+      ),
+    ],
+    [
+      'a route re-exporting the Data provider',
+      fixture(
+        'routes/index.ts',
+        "export { default as ProfileProvider } from '../data-providers/profile-provider';\n"
       ),
     ],
   ])('fails for %s', (_name, sourceFile) => {
