@@ -139,6 +139,10 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
+- **Desktop content is centred.** Figma left-aligns the columns beside a 238 px sidebar the
+  app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
+  columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
+  lands, and the heading stays aligned with the card's left edge.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.
