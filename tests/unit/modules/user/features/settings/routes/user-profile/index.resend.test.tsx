@@ -206,17 +206,17 @@ describe('settings page e-mail resend (page)', () => {
     expect(answered).toHaveLength(0);
   });
 
-  it('ignores a resend that settles after a Save changed the e-mail', async () => {
+  it('holds Save while a resend is in flight and saves once it settles', async () => {
     await mount();
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => (release = resolve));
     server.use(
       userServiceGraphql.mutation('ResendEmailToUser', async () => {
         await gate;
-        return resendPayload(true);
+        return resendPayload(false);
       })
     );
-    answerProfileOperation('UpdateUser', {
+    const updates = answerProfileOperation('UpdateUser', {
       respond: () =>
         HttpResponse.json({
           data: { updateUser: { user: { ...unconfirmed, email: 'new@example.com' } } },
@@ -226,17 +226,23 @@ describe('settings page e-mail resend (page)', () => {
     await userEvent.clear(email());
     await userEvent.type(email(), 'new@example.com');
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
-    const save = screen.getByRole('button', { name: 'Зберегти зміни' });
+    const save = (): HTMLElement => screen.getByRole('button', { name: 'Зберегти зміни' });
 
-    await userEvent.click(save);
-    await screen.findByText('Ми надіслали посилання для підтвердження на нову адресу');
+    expect(save()).toBeDisabled();
+    fireEvent.click(save());
+    expect(updates).toHaveLength(0);
+
     await act(async () => release());
-    await waitFor(() => expect(resendLink()).not.toHaveAttribute('aria-disabled'));
+    await screen.findByText(RESENT);
+    await waitFor(() => expect(save()).toBeEnabled());
+    await userEvent.click(save());
 
-    expect(screen.queryAllByText(RESENT)).toEqual([]);
+    expect(
+      await screen.findAllByText('Ми надіслали посилання для підтвердження на нову адресу')
+    ).not.toEqual([]);
+    expect(updates).toHaveLength(1);
     expect(screen.getByText(STATUS)).toBeVisible();
     expect(email()).toHaveValue('new@example.com');
-    expect(email()).not.toHaveFocus();
   });
 
   it('is aria-disabled and sends nothing while a save is in flight', async () => {
