@@ -56,7 +56,7 @@ export const profileResolvers = {
       _: unknown,
       { input }: { input: ResendEmailToUserInput }
     ): Promise<UserPayload> => ({
-      user: SEEDED_USER,
+      user: { ...SEEDED_USER, confirmed: false },
       clientMutationId: input.clientMutationId ?? null,
     }),
   },
