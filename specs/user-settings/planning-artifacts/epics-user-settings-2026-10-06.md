@@ -226,10 +226,10 @@ there and not yet merged. Its decisions live in `src/modules/user/README.md`,
   `requestPasswordResetUser` and `confirmPasswordResetUser`; no `Query` map) and the pending
   schema loader `docker/apollo-server/lib/schema-loader.ts`.
 - **Not used here.** `AuthProviderLoader` and `useAuthProviderLoader` (the public auth pages
-  reach their Data provider without `useService`; settings uses `useService`),
-  `RecoveryFailureHandler`, and the pending GraphQL contract mechanism
-  (`src/api/contracts/pending/`, `scripts/ci/check-pending-contracts.sh`): the three settings
-  operations are in the pinned v2.8.0 schema (D5), so no pending extension is added.
+  reach their Data provider without `useService`; settings uses `useService`) and the pending
+  GraphQL contract mechanism (`src/api/contracts/pending/`,
+  `scripts/ci/check-pending-contracts.sh`): the three settings operations are in the pinned
+  v2.8.0 schema (D5), so no pending extension is added.
 
 If #340 changes one of these pieces before it merges, a correct-course pass aligns the stories
 that use it before Ralph runs; no story carries conditional text for it.
@@ -1252,11 +1252,14 @@ singleton in `registerRepository`), `src/services/observability/pii-scrubber.ts`
 the `password-recovery-provider.integration.test.ts` precedent, answering through
 `answerProfileOperation`), unit tests.
 
-> Assumption (reconciliation 2026-10-16): #315's `PasswordRecoveryProvider` hands a caught error
-> to its `RecoveryFailureHandler`, which also reports an `unknown` failure that never reached the
-> link. Settings keeps the plan's three collaborators and NFR-10: the Provider calls
-> `UserServiceErrorTransformer.normalize` itself, and errors reach observability only through the
-> Apollo error link, so no settings `*Handler` exists.
+> Assumption (reconciliation 2026-10-16, amended 2026-10-20): #315's `PasswordRecoveryProvider`
+> classifies a caught error through `PasswordRecoveryTransformer.fromFailure` with
+> `UserServiceErrorTransformer.normalize`, and `GraphQLPasswordRecoveryRepository` captures a
+> failure that never reached the Apollo link once through the injected `ObservabilityService`
+> (`source: 'auth:password-recovery'`). Settings follows the same split under NFR-10: the Provider
+> calls `UserServiceErrorTransformer.normalize` itself and captures a failure the link never saw
+> through the injected `ObservabilityService` (`source: 'settings:profile'`); the link captures
+> everything that reached it, so no settings `*Handler` exists.
 
 **Gates:** DoD local gates; `make lint-deps`, `make lint-metrics`; the focused integration Jest
 files with `TEST_ENV=integration`.
