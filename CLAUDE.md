@@ -334,7 +334,20 @@ claims. Three settings in `stryker.config.mjs` keep that true, and
   `Timeout` — counted as detected, but earned by hanging rather than by an assertion. Turning it on
   restricts each run to the test files that actually reach the mutated file; mutants now come back
   `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
-  under the CI budget.
+  under the CI budget. That selection is **not transitive**: `jest.mutation.config.ts` roots only
+  the two test trees and the runner adds just the mutated file's own folder, so Jest records no
+  dependency edge through any other `src/` module, and a test is selected only when it imports
+  the file directly, through a module in that folder, or through a helper under `tests/unit` or
+  `tests/integration`. A test that reaches the file through a parent component is listed in
+  `coveredBy` by the dry run but never runs against the mutant, so its assertion kills nothing and
+  the mutant comes back `Survived` with `testsCompleted` below its `coveredBy` count — the shape
+  of the 48 survivors issue #330 killed by moving each assertion into the unit's own test file.
+  A unit's behavioural assertions therefore live in its own direct test. Adding `./src` to
+  `roots` would make selection transitive, and was measured against this tree with Jest's own
+  haste map and resolver: the mutant-weighted number of test files a mutant run loads rises from
+  25,584 to 194,773 (7.6×, 9× for the median file), which would push shards past the 15-minute
+  kill switch and bring back the `Timeout` inflation above. Take it only with the shard
+  wall-clock re-measured and the shard count raised first.
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
 independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
