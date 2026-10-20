@@ -89,7 +89,7 @@ describe('RegistrationErrorView', () => {
   });
 
   it('paints the alert empty before the mount effect fills it', () => {
-    const host = document.body.appendChild(document.createElement('div'));
+    const host = document.createElement('div');
     host.innerHTML = renderToStaticMarkup(
       <RegErrorView
         resolvedErrorText={ERROR_TEXT}
@@ -102,7 +102,6 @@ describe('RegistrationErrorView', () => {
     );
 
     const firstPaint = within(host).getByRole('alert').textContent;
-    host.remove();
 
     expect(firstPaint).toBe('');
   });
