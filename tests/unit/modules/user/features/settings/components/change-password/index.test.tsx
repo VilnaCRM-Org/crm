@@ -107,7 +107,7 @@ describe('ChangePassword', () => {
 
     expect(items).toHaveLength(4);
     items.forEach((item) => expect(item).not.toHaveTextContent(/password_policy\./));
-    expect(items[0]).toHaveTextContent(/8|символ/i);
+    expect(items[0]).toHaveTextContent('Від 8 до 64 символів');
   });
 
   it('renders the same rules and the section copy in English', async () => {

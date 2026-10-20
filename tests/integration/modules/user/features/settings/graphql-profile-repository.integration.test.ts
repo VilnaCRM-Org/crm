@@ -189,16 +189,19 @@ describe('GraphQLProfileRepository and GraphQLProfileTransformer integration', (
   });
 
   it.each([
-    ['read', (signal: AbortSignal): Promise<unknown> => repository.read(signal)],
-    ['update', (signal: AbortSignal): Promise<unknown> => repository.update(updateInput(), signal)],
+    ['CurrentUser', (signal: AbortSignal): Promise<unknown> => repository.read(signal)],
     [
-      'resend',
+      'UpdateUser',
+      (signal: AbortSignal): Promise<unknown> => repository.update(updateInput(), signal),
+    ],
+    [
+      'ResendEmailToUser',
       (signal: AbortSignal): Promise<unknown> => repository.resend(buildUserIri(), signal),
     ],
   ] as const)(
     'rejects an already aborted %s before anything reaches the server',
-    async (_n, run) => {
-      const answered = answerProfileOperation('CurrentUser', {
+    async (operation, run) => {
+      const answered = answerProfileOperation(operation, {
         respond: () => HttpResponse.json({ data: null }),
       });
       const controller = new AbortController();
