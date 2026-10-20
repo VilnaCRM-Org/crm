@@ -75,6 +75,7 @@ describe('ProfileForm', () => {
   beforeEach(() => {
     mockUpdate.mockReset();
     mockUpdate.mockResolvedValue(okOutcome);
+    mockProvider.resend.mockReset();
   });
 
   it('renders the personal and password sections with their fields', () => {
@@ -286,6 +287,24 @@ describe('ProfileForm', () => {
       true
     );
     await act(async () => settle(okOutcome));
+  });
+
+  it('holds Save, and only Save, while a resend is in flight', async () => {
+    let settle: (value: unknown) => void = () => undefined;
+    mockProvider.resend.mockReturnValue(new Promise((resolve) => (settle = resolve)));
+    render(form({ user: buildUserEntity({ confirmed: false }) }), { wrapper });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Надіслати повторно' }));
+
+    expect(save()).toBeDisabled();
+    expect(document.forms[0]).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('button', { name: 'Очистити' })).not.toHaveAttribute('aria-disabled');
+    expect(field(NAME)).not.toHaveAttribute('readonly');
+
+    await act(async () => settle({ kind: 'sent', confirmed: false }));
+
+    expect(save()).toBeEnabled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('keeps every field read-only while a Save is in flight, so no input is lost', async () => {
