@@ -103,6 +103,23 @@ jest.mock('@auth/components/form-section/components/form-field', () => ({
   },
 }));
 
+jest.mock('@auth/components/form-section/inert-box', () => ({
+  __esModule: true,
+  default: ({
+    id,
+    inert,
+    children,
+  }: {
+    id: string;
+    inert: boolean;
+    children: ReactNode;
+  }): ReactElement => (
+    <div role="group" aria-label={`${id} inert=${String(inert)}`}>
+      {children}
+    </div>
+  ),
+}));
+
 jest.mock('@auth/components/form-section/components/password-field', () => ({
   __esModule: true,
   default: (): ReactElement => <div>password field</div>,
@@ -181,6 +198,7 @@ describe('LoginForm', () => {
       })
     );
     expect(screen.queryByRole('region', { name: /notification/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'login-form inert=false' })).toBeInTheDocument();
   });
 
   it('seeds the form with empty credentials when the module loads inside the test', async () => {
@@ -230,6 +248,7 @@ describe('LoginForm', () => {
       expect.objectContaining({ flow: 'signIn', view: 'error' })
     );
     expect(lastUIFormProps()).toEqual(expect.objectContaining({ isSubmitDisabled: true }));
+    expect(screen.getByRole('group', { name: 'login-form inert=true' })).toBeInTheDocument();
     expect(onViewChange).toHaveBeenLastCalledWith('error');
     expect(mockSetFocus).not.toHaveBeenCalled();
 
@@ -242,6 +261,7 @@ describe('LoginForm', () => {
     expect(screen.queryByRole('region', { name: /notification/ })).not.toBeInTheDocument();
     expect(onViewChange).toHaveBeenLastCalledWith('form');
     expect(lastUIFormProps()).toEqual(expect.objectContaining({ isSubmitDisabled: false }));
+    expect(screen.getByRole('group', { name: 'login-form inert=false' })).toBeInTheDocument();
   });
 
   it('retries with the credentials submitted last', async () => {
@@ -263,6 +283,7 @@ describe('LoginForm', () => {
     render(<LoginForm postLogin={postLogin} />);
 
     await screen.findByRole('region', { name: 'notification success' });
+    expect(screen.getByRole('group', { name: 'login-form inert=true' })).toBeInTheDocument();
     expect(mockNotification).toHaveBeenLastCalledWith(
       expect.objectContaining({ flow: 'signIn', view: 'success' })
     );

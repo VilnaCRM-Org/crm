@@ -196,6 +196,14 @@ const messageDescription = {
   },
 } as const;
 
+const headingFocus = {
+  outline: 'none',
+  '&:focus-visible': {
+    outline: `2px solid ${paletteColors.error.main}`,
+    outlineOffset: '2px',
+  },
+} as const;
+
 export default {
   notificationSection,
   messageButtonText: notificationStyles.messageButtonText,
@@ -208,5 +216,6 @@ export default {
   errorButtonMessage,
   errorButtonSecondary,
   messageTitle,
+  headingFocus,
   messageDescription,
 } as const;

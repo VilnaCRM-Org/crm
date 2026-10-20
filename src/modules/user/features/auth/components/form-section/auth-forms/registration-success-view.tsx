@@ -5,7 +5,6 @@ import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
-import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 import type {
   MessageContainerProps,
@@ -17,14 +16,6 @@ import type {
 
 import styles from './registration-notification.success-styles';
 
-const headingFocusStyles = {
-  outline: 'none',
-  '&:focus-visible': {
-    outline: `2px solid ${paletteColors.primary.main}`,
-    outlineOffset: '2px',
-  },
-};
-
 function FocusableSuccessHeading({ title }: SuccessTitleProps): JSX.Element {
   const focusOnMount = useFocusOnMount<HTMLHeadingElement>();
   return (
@@ -32,7 +23,7 @@ function FocusableSuccessHeading({ title }: SuccessTitleProps): JSX.Element {
       component="h2"
       ref={focusOnMount}
       tabIndex={-1}
-      sx={[styles.successMessageTitle, headingFocusStyles]}
+      sx={[styles.successMessageTitle, styles.headingFocus]}
     >
       {title}
     </UITypography>

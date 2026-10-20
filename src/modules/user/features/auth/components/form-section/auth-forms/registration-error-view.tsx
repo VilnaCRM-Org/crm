@@ -6,7 +6,6 @@ import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/ui-button';
 import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
-import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 import type {
   ErrorActionButtonProps,
@@ -18,14 +17,6 @@ import type {
 } from '@auth/types/auth-forms/registration-error-view';
 
 import styles from './registration-notification.error-styles';
-
-const headingFocusStyles = {
-  outline: 'none',
-  '&:focus-visible': {
-    outline: `2px solid ${paletteColors.error.main}`,
-    outlineOffset: '2px',
-  },
-};
 
 const buttonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 
@@ -113,7 +104,7 @@ function ErrorMessage({ title, text }: ErrorMessageProps): JSX.Element {
         component="h2"
         ref={focusOnMount}
         tabIndex={-1}
-        sx={[styles.messageTitle, headingFocusStyles]}
+        sx={[styles.messageTitle, styles.headingFocus]}
       >
         {title}
       </UITypography>

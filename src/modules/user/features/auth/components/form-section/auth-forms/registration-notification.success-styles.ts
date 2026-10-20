@@ -166,6 +166,14 @@ const messageButton = {
 
 const successConfettiBlock = { display: 'block' } as const;
 
+const headingFocus = {
+  outline: 'none',
+  '&:focus-visible': {
+    outline: `2px solid ${paletteColors.primary.main}`,
+    outlineOffset: '2px',
+  },
+} as const;
+
 export default {
   notificationSection,
   contentBox,
@@ -182,6 +190,7 @@ export default {
   messageContainer,
   messageButtonText: notificationStyles.messageButtonText,
   successMessageTitle,
+  headingFocus,
   successMessageDescription,
   messageButton,
 } as const;
