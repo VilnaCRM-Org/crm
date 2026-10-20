@@ -105,6 +105,11 @@ jest.mock('@auth/components/form-section/components/form-field', () => ({
   },
 }));
 
+jest.mock('@/components/route-fallback', () => ({
+  __esModule: true,
+  default: ({ message }: { message: string }): ReactElement => <p role="status">{message}</p>,
+}));
+
 jest.mock('@auth/components/form-section/inert-box', () =>
   jest.requireActual('@tests/unit/utils/inert-box-stub')
 );
@@ -202,6 +207,21 @@ describe('LoginForm', () => {
     expect(mockUIForm).toHaveBeenLastCalledWith(
       expect.objectContaining({ defaultValues: { email: '', password: '' } })
     );
+  });
+
+  it('announces the sign-in result loading while the card chunk is still on its way', async () => {
+    authStoreState.loginError = { kind: 'network', displayMessage: 'offline', retryable: true };
+    mockLoad.mockReset().mockReturnValue(new Promise(() => undefined));
+    const FreshLoginForm = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-hook-form', () => ReactHookForm);
+      return (await import('@auth/components/form-section/auth-forms/login-form')).default;
+    });
+
+    render(<FreshLoginForm postLogin={signedOut()} />);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('sign_in.form.loading_result');
+    expect(screen.queryByRole('region', { name: /notification/ })).not.toBeInTheDocument();
   });
 
   it('renders the login title as a real <h1> via titleComponent (AC2)', () => {

@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import { paletteColors } from '@/styles/colors';
 import RegErrorView from '@auth/components/form-section/auth-forms/registration-error-view';
@@ -85,6 +86,25 @@ describe('RegistrationErrorView', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(ERROR_TEXT);
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('paints the alert empty before the mount effect fills it', () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    host.innerHTML = renderToStaticMarkup(
+      <RegErrorView
+        resolvedErrorText={ERROR_TEXT}
+        submittingMessage={SUBMITTING}
+        isSubmitting={false}
+        isClosing={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+      />
+    );
+
+    const firstPaint = within(host).getByRole('alert').textContent;
+    host.remove();
+
+    expect(firstPaint).toBe('');
   });
 
   it('replaces the alert text when the resolved error changes', async () => {
