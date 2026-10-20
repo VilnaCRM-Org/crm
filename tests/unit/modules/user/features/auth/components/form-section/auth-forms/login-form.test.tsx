@@ -93,7 +93,7 @@ jest.mock('@auth/utils/load-registration-notification', () => ({
   registrationNotificationPrefetcher: { prefetch: (): unknown => mockPrefetch() },
 }));
 
-jest.mock('@auth/components/form-section/components/form-field', () => ({
+jest.mock('@/components/ui-form-field', () => ({
   __esModule: true,
   default: (props: {
     label: string;
@@ -114,7 +114,7 @@ jest.mock('@auth/components/form-section/inert-box', () =>
   jest.requireActual('@tests/unit/utils/inert-box-stub')
 );
 
-jest.mock('@auth/components/form-section/components/password-field', () => ({
+jest.mock('@/components/ui-password-field', () => ({
   __esModule: true,
   default: (): ReactElement => <div>password field</div>,
 }));

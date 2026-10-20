@@ -11,12 +11,12 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@auth/components/form-section/components/form-field', () => ({
+jest.mock('@/components/ui-form-field', () => ({
   __esModule: true,
   default: (): ReactElement => <input aria-label="email" />,
 }));
 
-jest.mock('@auth/components/form-section/components/password-field', () => ({
+jest.mock('@/components/ui-password-field', () => ({
   __esModule: true,
   default: (): ReactElement => <input aria-label="password" type="password" />,
 }));

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import formValidators from '@auth/components/form-section/validations';
+import formValidators from '@/modules/user/lib/validations';
 import { withFormProvider } from '@stories/form-decorators';
 
 import LoginFormFields from './login-form-fields';

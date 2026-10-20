@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 
-import type formValidators from '@auth/components/form-section/validations';
+import type formValidators from '@/modules/user/lib/validations';
 
 export type Validators = ReturnType<typeof formValidators.create>;
 
