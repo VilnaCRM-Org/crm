@@ -149,6 +149,8 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   divider to the pills. Desktop: 24 px around a divider, 16 px from a title to its first field,
   12 px between fields, 24 px from the last divider to the pills. The unconfirmed row sits 8 /
   10 / 9 px under the input and 15 / 17 / 24 px above the next divider, as each frame draws it.
+- **Page top.** The heading starts 24 px below the top of the content on a phone and tablet and
+  28 px on desktop, the offsets each frame draws under its top bar.
 
 Where the frames contradict each other or the copy, the page follows one reading:
 
