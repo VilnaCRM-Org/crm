@@ -19,6 +19,7 @@ const mockUIForm = jest.fn();
 const mockNotification = jest.fn();
 const mockLoad = jest.fn();
 const mockSetFocus = jest.fn();
+const mockCaptureError = jest.fn();
 
 function makeSubmitHandler(
   onSubmit: (data: { email: string; password: string }) => Promise<void>
@@ -86,6 +87,13 @@ function StubNotification(props: StubNotificationProps): ReactElement {
   );
 }
 
+jest.mock('@/services/observability/observability-core', () => ({
+  __esModule: true,
+  default: {
+    captureError: (...args: unknown[]): unknown => mockCaptureError(...args),
+  },
+}));
+
 jest.mock('@auth/utils/load-registration-notification', () => ({
   __esModule: true,
   default: { load: (): unknown => mockLoad() },
@@ -103,22 +111,9 @@ jest.mock('@auth/components/form-section/components/form-field', () => ({
   },
 }));
 
-jest.mock('@auth/components/form-section/inert-box', () => ({
-  __esModule: true,
-  default: ({
-    id,
-    inert,
-    children,
-  }: {
-    id: string;
-    inert: boolean;
-    children: ReactNode;
-  }): ReactElement => (
-    <div role="group" aria-label={`${id} inert=${String(inert)}`}>
-      {children}
-    </div>
-  ),
-}));
+jest.mock('@auth/components/form-section/inert-box', () =>
+  jest.requireActual('@tests/unit/utils/inert-box-stub')
+);
 
 jest.mock('@auth/components/form-section/components/password-field', () => ({
   __esModule: true,
@@ -229,6 +224,22 @@ describe('LoginForm', () => {
       expect(mockLoginUser).toHaveBeenCalledWith(submitCredentials, expect.any(AbortSignal));
     });
     expect(mockLoad).toHaveBeenCalled();
+    expect(mockCaptureError).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed notification prefetch instead of leaving it unhandled', async () => {
+    const chunkError = new Error('Loading chunk registration-notification failed');
+    mockLoad.mockReset().mockRejectedValueOnce(chunkError);
+    render(<LoginForm postLogin={signedOut()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(mockCaptureError).toHaveBeenCalledWith(chunkError, {
+        source: 'auth:notification-prefetch',
+      });
+    });
+    expect(mockLoginUser).toHaveBeenCalledWith(submitCredentials, expect.any(AbortSignal));
   });
 
   it('shows the sign-in error notification and returns to the form on back', async () => {

@@ -63,4 +63,5 @@ export async function expectSignInSuccessCard(page: Page): Promise<void> {
   ).toHaveText(signInSuccessCard.description);
   await expect(continueButtonOf(page)).toBeVisible();
   await expect(page.locator('#login-form')).toHaveAttribute('inert', '');
+  await expect(page.locator('#auth-provider-buttons-container')).toHaveAttribute('inert', '');
 }

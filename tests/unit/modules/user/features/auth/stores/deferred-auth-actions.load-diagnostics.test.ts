@@ -60,6 +60,31 @@ describe('deferred auth actions load-failure diagnostics', () => {
     expect(useAuthStore.getState().loginLoading).toBe(false);
   });
 
+  it('surfaces the load failure for a login whose signal is still live', async () => {
+    const { authActions, useAuthStore } = await loadBarrel();
+
+    await authActions.loginUser(credentials, new AbortController().signal);
+
+    expect(useAuthStore.getState().loginError).toEqual(LOAD_FAILURE);
+  });
+
+  it('keeps a login the user backed out of clear but still reports its load failure', async () => {
+    const { authActions, useAuthStore, observability } = await loadBarrel();
+    const captureSpy = jest
+      .spyOn(observability, 'captureError')
+      .mockImplementation(() => undefined);
+    const controller = new AbortController();
+    const pending = authActions.loginUser(credentials, controller.signal);
+
+    controller.abort();
+    await pending;
+
+    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(useAuthStore.getState().loginLoading).toBe(false);
+    expect(captureSpy).toHaveBeenCalledWith(failure, CAPTURE_CONTEXT);
+    expect(consoleSpy).toHaveBeenCalledWith(CONSOLE_MESSAGE, failure);
+  });
+
   it('surfaces the retryable load-failure error verbatim on registration', async () => {
     const { authActions, useAuthStore } = await loadBarrel();
 
