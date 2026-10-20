@@ -85,10 +85,10 @@ describe('useProfileLoad', () => {
     expect(result.current.status).toBe('loading');
   });
 
-  it('aborts the read on unmount and ignores its settled result', async () => {
+  it('aborts the read on unmount', async () => {
     const pending = deferred();
     mockRead.mockReturnValue(pending.promise);
-    const { result, unmount } = renderHook(() => useProfileLoad());
+    const { unmount } = renderHook(() => useProfileLoad());
     const signal = mockRead.mock.calls[0]?.[0] as AbortSignal;
 
     unmount();
@@ -98,7 +98,28 @@ describe('useProfileLoad', () => {
     });
 
     expect(signal.aborted).toBe(true);
-    expect(result.current.status).toBe('loading');
+  });
+
+  it.each([
+    ['succeeds', { kind: 'ok', user: buildUserEntity() } as ProfileReadOutcome],
+    ['fails', failed('transient')],
+  ])('ignores a superseded read that %s after a retry replaced it', async (_name, outcome) => {
+    const superseded = deferred();
+    mockRead
+      .mockReturnValueOnce(superseded.promise)
+      .mockReturnValueOnce(new Promise(() => undefined));
+    const { result } = renderHook(() => useProfileLoad());
+    act(() => result.current.retry());
+    const firstSignal = mockRead.mock.calls[0]?.[0] as AbortSignal;
+
+    await act(async () => {
+      superseded.resolve(outcome);
+      await superseded.promise;
+    });
+
+    expect(firstSignal.aborted).toBe(true);
+    expect(mockRead).toHaveBeenCalledTimes(2);
+    expect(result.current).toMatchObject({ status: 'loading', user: null, refocus: true });
   });
 
   it('sends exactly one new read per retry, shows loading again and asks for refocus', async () => {

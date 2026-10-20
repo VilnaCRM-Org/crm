@@ -201,6 +201,18 @@ describe('GraphQLProfileTransformer.invalid', () => {
     ['a rate limit', failure('rate_limited')],
     ['a server failure', failure('server')],
     ['an unauthenticated failure', failure('unauthenticated')],
+    [
+      'a rate limit whose items would map to a field error',
+      failure('rate_limited', [{ path: 'email', reason: 'taken' }]),
+    ],
+    [
+      'an unknown failure whose items would map to a field error',
+      failure('unknown', [{ path: 'initials', reason: 'other' }]),
+    ],
+    [
+      'a refusal whose items would map to a field error',
+      failure('refused', [{ path: 'email', reason: 'other' }]),
+    ],
   ])('gives null for %s', (_name, input) => {
     expect(transformer.invalid(input)).toBeNull();
   });
