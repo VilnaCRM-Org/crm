@@ -1,9 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
+import * as React from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
 import { useAuthStore, authActions } from '@auth/stores';
+import type { AuthErrorKind } from '@auth/types/auth-error';
 import { buildCredentials } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
@@ -59,6 +62,38 @@ describe('useLoginSubmitter', () => {
 
     expect(result.current.error).toBe(key);
     expect(result.current.error).not.toContain('Raw backend text');
+  });
+
+  it('maps every failure to its key when the module loads inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return {
+        hook: (await import('@auth/components/form-section/auth-forms/use-login-submitter'))
+          .default,
+        store: (await import('@auth/stores')).useAuthStore,
+      };
+    });
+    const errorFor = (kind: AuthErrorKind, status?: number): string => {
+      fresh.store.setState({
+        loginError: {
+          kind,
+          displayMessage: 'Raw backend text',
+          retryable: false,
+          ...(status === undefined ? {} : { status }),
+        },
+      });
+      const { result, unmount } = renderHook(() => fresh.hook(t));
+      const shown = result.current.error;
+      unmount();
+      return shown;
+    };
+
+    expect(errorFor('authentication')).toBe('sign_in.errors.invalid_credentials');
+    expect(errorFor('network')).toBe('failure_responses.network_errors.network_error');
+    expect(errorFor('server')).toBe('failure_responses.server_errors.server_error');
+    expect(errorFor('validation')).toBe('failure_responses.client_errors.something_went_wrong');
+    expect(errorFor('unknown')).toBe('failure_responses.client_errors.unexpected_error');
+    expect(errorFor('server', 429)).toBe('sign_in.errors.rate_limited');
   });
 
   it('retries with the values submitted last', async () => {

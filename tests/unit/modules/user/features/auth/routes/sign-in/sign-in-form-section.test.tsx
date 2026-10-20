@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 
 import SignInFormSection from '@auth/routes/sign-in/sign-in-form-section';
@@ -6,7 +6,16 @@ import renderWithProviders from '@tests/unit/utils/render-with-providers';
 
 jest.mock('@auth/components/form-section/auth-forms/login-form', () => ({
   __esModule: true,
-  default: (): ReactElement => <form aria-label="Login" />,
+  default: ({ onViewChange }: { onViewChange: (view: string) => void }): ReactElement => (
+    <form aria-label="Login">
+      <button type="button" onClick={(): void => onViewChange('error')}>
+        show error card
+      </button>
+      <button type="button" onClick={(): void => onViewChange('form')}>
+        back to form
+      </button>
+    </form>
+  ),
 }));
 
 jest.mock('@auth/components/form-section/components/auth-provider-buttons', () => ({
@@ -46,6 +55,22 @@ describe('SignInFormSection', () => {
     expect(
       screen.queryByRole('group', { name: 'auth-provider-buttons-container inert=true' })
     ).not.toBeInTheDocument();
+  });
+
+  it('marks the OAuth row inert while a result card replaces the form', () => {
+    renderWithProviders(
+      <SignInFormSection notice={null} postLogin={{ signedIn: false, proceed: jest.fn() }} />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'show error card' }));
+    expect(
+      screen.getByRole('group', { name: 'auth-provider-buttons-container inert=true' })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'back to form' }));
+    expect(
+      screen.getByRole('group', { name: 'auth-provider-buttons-container inert=false' })
+    ).toBeInTheDocument();
   });
 
   it('draws the card with the sign-in bottom padding', () => {

@@ -1,7 +1,9 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { JSX } from 'react';
 
+import { paletteColors } from '@/styles/colors';
 import RegErrorView from '@auth/components/form-section/auth-forms/registration-error-view';
 
 jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));
@@ -67,11 +69,41 @@ describe('RegistrationErrorView', () => {
     });
   });
 
+  it('rings the focused heading with the error focus outline', () => {
+    renderErrorView();
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'notifications.error.title' })
+    ).toHaveStyle({
+      outline: `2px solid ${paletteColors.error.main}`,
+      outlineOffset: '2px',
+    });
+  });
+
   it('fills the alert with the resolved error text after mount', async () => {
     renderErrorView();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(ERROR_TEXT);
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('replaces the alert text when the resolved error changes', async () => {
+    const view = (text: string): JSX.Element => (
+      <RegErrorView
+        resolvedErrorText={text}
+        submittingMessage={SUBMITTING}
+        isSubmitting={false}
+        isClosing={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+      />
+    );
+    const { rerender } = render(view(ERROR_TEXT));
+    expect(await screen.findByRole('alert')).toHaveTextContent(ERROR_TEXT);
+
+    rerender(view('Network unavailable'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Network unavailable');
   });
 
   it('keeps both buttons focusable while a retry runs and ignores busy clicks', async () => {
