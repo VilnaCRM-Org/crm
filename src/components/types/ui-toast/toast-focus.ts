@@ -6,6 +6,14 @@ export type CloseButtons = RefObject<Map<number, HTMLButtonElement>>;
 
 export type LostFocus = RefObject<Set<number>>;
 
+export type CloseRefCallbacks = RefObject<Map<number, RefCallback<HTMLButtonElement>>>;
+
+export interface ToastFocusRegistry {
+  readonly buttons: CloseButtons;
+  readonly lostFocus: LostFocus;
+  readonly callbacks: CloseRefCallbacks;
+}
+
 export interface ToastFocusOptions {
   readonly toasts: ToastItemSet;
   readonly returnFocusRef: RefObject<HTMLElement | null>;

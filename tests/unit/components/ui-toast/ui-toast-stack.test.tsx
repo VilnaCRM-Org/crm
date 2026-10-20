@@ -8,6 +8,7 @@ import {
   type RefObject,
   useImperativeHandle,
   useRef,
+  useState,
 } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
@@ -37,17 +38,25 @@ interface PageOptions {
 
 interface PageProps extends PageOptions {
   readonly showRef: RefObject<ShowDrafts | null>;
+  readonly rerenderRef: RefObject<(() => void) | null>;
 }
 
 const detached = document.createElement('button');
 
-function Page({ showRef, returnTarget = 'enabled', withFallback = false }: PageProps): JSX.Element {
+function Page({
+  showRef,
+  rerenderRef,
+  returnTarget = 'enabled',
+  withFallback = false,
+}: PageProps): JSX.Element {
   const queue = useToastQueue();
+  const [, setRenders] = useState(0);
   const saveRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const returnFocusRef: RefObject<HTMLElement | null> =
     returnTarget === 'detached' ? { current: detached } : saveRef;
   useImperativeHandle(showRef, () => queue.show);
+  useImperativeHandle(rerenderRef, () => (): void => setRenders((count) => count + 1));
 
   return (
     <main>
@@ -73,14 +82,17 @@ function Page({ showRef, returnTarget = 'enabled', withFallback = false }: PageP
 
 type Show = ShowDrafts & {
   readonly settled: (drafts: ToastDraftSet) => Promise<void>;
+  readonly rerender: () => void;
   readonly unmount: () => void;
 };
 
 const mountPage = (options: PageOptions = {}): Show => {
   const showRef = createRef<ShowDrafts>();
+  const rerenderRef = createRef<() => void>();
   const { unmount } = render(
     <Page
       showRef={showRef}
+      rerenderRef={rerenderRef}
       returnTarget={options.returnTarget}
       withFallback={options.withFallback}
     />,
@@ -90,6 +102,7 @@ const mountPage = (options: PageOptions = {}): Show => {
     settled: async (drafts: ToastDraftSet): Promise<void> => {
       await act(async () => showRef.current?.(drafts));
     },
+    rerender: (): void => act(() => rerenderRef.current?.()),
     unmount,
   });
 };
@@ -181,17 +194,21 @@ describe('UIToastStack', () => {
     });
   });
 
-  it('keeps every toast after a minute, since no timer exists', () => {
-    jest.useFakeTimers();
-    const show = mountPage();
-    show(set(success('Перше'), failure('Друге')));
+  describe('with fake timers', () => {
+    beforeEach(() => jest.useFakeTimers());
 
-    act(() => {
-      jest.advanceTimersByTime(60_000);
+    afterEach(() => jest.useRealTimers());
+
+    it('keeps every toast after a minute, since no timer exists', () => {
+      const show = mountPage();
+      show(set(success('Перше'), failure('Друге')));
+
+      act(() => {
+        jest.advanceTimersByTime(60_000);
+      });
+
+      expect(closeButtons()).toHaveLength(2);
     });
-
-    expect(closeButtons()).toHaveLength(2);
-    jest.useRealTimers();
   });
 
   describe('focus on close', () => {
@@ -322,6 +339,20 @@ describe('UIToastStack', () => {
       expect(first).toHaveFocus();
     });
 
+    it('does not count a parent re-render as a lost focus', async () => {
+      const show = mountPage();
+      show(set(success('Перше')));
+      const first = closeButtons()[0] as HTMLElement;
+      await focusOn(first);
+
+      show.rerender();
+      act(() => first.blur());
+      await show.settled(set(success('Друге')));
+
+      expect(document.body).toHaveFocus();
+      expect(closeButtons()).toHaveLength(2);
+    });
+
     it('moves no focus when a toast that did not hold focus is pushed out', () => {
       const show = mountPage();
       show(set(success('Перше'), success('Друге'), success('Третє')));
@@ -345,12 +376,23 @@ describe('UIToastStack', () => {
   });
 
   describe('scroll padding', () => {
-    const stubHeight = (height: number): jest.SpyInstance =>
+    const VIEWPORT_HEIGHT = 800;
+    let innerHeight: number;
+
+    const stubTop = (top: number): jest.SpyInstance =>
       jest
         .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-        .mockReturnValue({ height } as DOMRect);
+        .mockReturnValue({ top } as DOMRect);
 
-    afterEach(() => jest.restoreAllMocks());
+    beforeEach(() => {
+      innerHeight = window.innerHeight;
+      window.innerHeight = VIEWPORT_HEIGHT;
+    });
+
+    afterEach(() => {
+      window.innerHeight = innerHeight;
+      jest.restoreAllMocks();
+    });
 
     it('is not set while no toast shows', () => {
       mountPage();
@@ -358,8 +400,8 @@ describe('UIToastStack', () => {
       expect(document.documentElement.style.getPropertyValue('scroll-padding-bottom')).toBe('');
     });
 
-    it('equals the measured stack height and is cleared when the stack empties', async () => {
-      stubHeight(132);
+    it('covers the stack and its bottom inset, and is cleared when the stack empties', async () => {
+      stubTop(668);
       const show = mountPage();
 
       show(set(success('Перше')));
@@ -374,11 +416,11 @@ describe('UIToastStack', () => {
     });
 
     it('is measured again when the toast count changes', () => {
-      const measure = stubHeight(61);
+      const measure = stubTop(739);
       const show = mountPage();
       show(set(success('Перше')));
 
-      measure.mockReturnValue({ height: 130 } as DOMRect);
+      measure.mockReturnValue({ top: 670 } as DOMRect);
       show(set(success('Друге')));
 
       expect(document.documentElement.style.getPropertyValue('scroll-padding-bottom')).toBe(
@@ -387,7 +429,7 @@ describe('UIToastStack', () => {
     });
 
     it('is cleared when the stack unmounts', () => {
-      stubHeight(61);
+      stubTop(739);
       const show = mountPage();
       show(set(success('Перше')));
 

@@ -19,15 +19,20 @@ const button = (label: string): HTMLButtonElement => {
   return node;
 };
 
-const mountFocus = (overrides: Partial<ToastFocusOptions> = {}): ToastFocus => {
+type Mounted = ReturnType<typeof renderHook<ToastFocus, undefined>>;
+
+const mount = (overrides: Partial<ToastFocusOptions> = {}): Mounted => {
   const options: ToastFocusOptions = {
     toasts: twoToasts,
     returnFocusRef: { current: null },
     onDismiss: jest.fn(),
     ...overrides,
   };
-  return renderHook(() => useToastFocus(options)).result.current;
+  return renderHook(() => useToastFocus(options));
 };
+
+const mountFocus = (overrides: Partial<ToastFocusOptions> = {}): ToastFocus =>
+  mount(overrides).result.current;
 
 describe('useToastFocus', () => {
   afterEach(() => {
@@ -37,6 +42,7 @@ describe('useToastFocus', () => {
   it('moves focus to a registered neighbour close button before dismissing', () => {
     const onDismiss = jest.fn();
     const close = button('close 2');
+    const focus = jest.spyOn(close, 'focus');
     const toastFocus = mountFocus({ onDismiss });
     toastFocus.closeRef(2)(close);
 
@@ -45,6 +51,9 @@ describe('useToastFocus', () => {
     expect(close).toHaveFocus();
     expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(onDismiss).toHaveBeenCalledWith(1);
+    expect(focus.mock.invocationCallOrder[0]).toBeLessThan(
+      onDismiss.mock.invocationCallOrder[0] ?? 0
+    );
   });
 
   it('moves focus to the previous close button when the dismissed toast is the last one', () => {
@@ -84,6 +93,23 @@ describe('useToastFocus', () => {
     expect(close2).not.toHaveFocus();
   });
 
+  it('moves no focus for an id that is not in the set, and still dismisses it', () => {
+    const onDismiss = jest.fn();
+    const save = button('save');
+    const close1 = button('close 1');
+    const close2 = button('close 2');
+    const toastFocus = mountFocus({ onDismiss, returnFocusRef: { current: save } });
+    toastFocus.closeRef(1)(close1);
+    toastFocus.closeRef(2)(close2);
+
+    toastFocus.dismiss(9);
+
+    expect(document.body).toHaveFocus();
+    expect(close1).not.toHaveFocus();
+    expect(save).not.toHaveFocus();
+    expect(onDismiss).toHaveBeenCalledWith(9);
+  });
+
   it('falls back to the return target when the neighbour close button is not registered', () => {
     const save = button('save');
     const toastFocus = mountFocus({ returnFocusRef: { current: save } });
@@ -93,11 +119,24 @@ describe('useToastFocus', () => {
     expect(save).toHaveFocus();
   });
 
-  it('forgets a close button once its cleanup runs', () => {
+  it('hands out one ref callback per toast id for the whole mount', () => {
+    const { result, rerender } = mount();
+    const first = result.current.closeRef(1);
+    const second = result.current.closeRef(2);
+
+    rerender();
+
+    expect(result.current.closeRef(1)).toBe(first);
+    expect(result.current.closeRef(2)).toBe(second);
+    expect(first).not.toBe(second);
+  });
+
+  it('forgets a close button once its cleanup runs and hands out a fresh callback', () => {
     const save = button('save');
     const close = button('close 2');
     const toastFocus = mountFocus({ returnFocusRef: { current: save } });
-    const cleanup = toastFocus.closeRef(2)(close);
+    const closeRef = toastFocus.closeRef(2);
+    const cleanup = closeRef(close);
 
     expect(typeof cleanup).toBe('function');
     (cleanup as () => void)();
@@ -105,6 +144,7 @@ describe('useToastFocus', () => {
 
     expect(save).toHaveFocus();
     expect(close).not.toHaveFocus();
+    expect(toastFocus.closeRef(2)).not.toBe(closeRef);
   });
 
   it('skips a disabled return target for the fallback', () => {
@@ -136,7 +176,7 @@ describe('useToastFocus', () => {
   it('dismisses without throwing when the fallback ref is empty', () => {
     const onDismiss = jest.fn();
     const toastFocus = mountFocus({
-      toasts: { items: [] },
+      toasts: { items: [{ id: 3, tone: 'success', message: 'Одне' }] },
       onDismiss,
       fallbackFocusRef: { current: null },
     });

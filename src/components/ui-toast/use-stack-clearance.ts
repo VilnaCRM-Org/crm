@@ -5,7 +5,8 @@ import type { ToastItemSet } from '@/components/types/ui-toast';
 function reserveClearance(stack: HTMLElement): () => void {
   const root = document.documentElement;
   const reserve = (): void => {
-    root.style.setProperty('scroll-padding-bottom', `${stack.getBoundingClientRect().height}px`);
+    const covered = window.innerHeight - stack.getBoundingClientRect().top;
+    root.style.setProperty('scroll-padding-bottom', `${covered}px`);
   };
   reserve();
   window.addEventListener('resize', reserve);
