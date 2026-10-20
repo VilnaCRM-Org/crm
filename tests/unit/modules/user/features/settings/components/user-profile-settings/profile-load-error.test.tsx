@@ -23,9 +23,9 @@ interface LoadErrorModule {
   readonly default: (props: LoadErrorProps) => JSX.Element;
 }
 
-const { default: ProfileLoadError } = jest.requireActual<LoadErrorModule>(
+const { default: ProfileLoadError } = jest.requireActual(
   '@/modules/user/features/settings/components/user-profile-settings/profile-load-error'
-);
+) as LoadErrorModule;
 
 const FAILED = 'Не вдалося завантажити профіль';
 const RETRY = 'Спробувати ще раз';

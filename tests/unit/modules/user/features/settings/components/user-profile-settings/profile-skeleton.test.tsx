@@ -2,15 +2,15 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { JSX } from 'react';
 
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 interface ProfileSkeletonModule {
   readonly default: () => JSX.Element;
 }
 
-const { default: ProfileSkeleton } = jest.requireActual<ProfileSkeletonModule>(
+const { default: ProfileSkeleton } = jest.requireActual(
   '@/modules/user/features/settings/components/user-profile-settings/profile-skeleton'
-);
+) as ProfileSkeletonModule;
 
 const FIELDS = ['name', 'email', 'current-password', 'new-password'];
 
@@ -30,6 +30,12 @@ const blockIds = (): string[] =>
 
 const skeletonRoots = (): HTMLElement[] =>
   hiddenGenerics().filter((node) => node.getAttribute('aria-hidden') === 'true' && !isBlock(node));
+
+const byId = (id: string): HTMLElement => {
+  const node = hiddenGenerics().find((candidate) => candidate.id === id);
+  if (node === undefined) throw new Error(`skeleton block ${id} not found`);
+  return node;
+};
 
 describe('ProfileSkeleton', () => {
   it('mirrors the loaded card: header, two titled sections, the policy, Save and Clear', () => {
@@ -89,6 +95,44 @@ describe('ProfileSkeleton', () => {
     expect(roots).toHaveLength(1);
     expect(blocks).toHaveLength(16);
     blocks.forEach((block) => expect(roots[0]).toContainElement(block));
+  });
+
+  it('sizes the Save and Clear placeholders like the pills: 50 px tall, 270 and 180 wide', () => {
+    render(<ProfileSkeleton />);
+    const save = byId('profile-skeleton-save');
+    const clear = byId('profile-skeleton-clear');
+
+    [save, clear].forEach((pill) => {
+      expect(styleRuleFor(pill)?.getPropertyValue('height')).toBe('3.125rem');
+      expect(styleRuleFor(pill)?.getPropertyValue('border-radius')).toBe('3.5625rem');
+      expect(mediaStyleRuleFor(pill, 'min-width:768px')?.getPropertyValue('flex')).toBe('1');
+      expect(mediaStyleRuleFor(pill, 'min-width:768px')?.getPropertyValue('height')).toBe(
+        '4.375rem'
+      );
+    });
+    expect(mediaStyleRuleFor(save, 'min-width:1025px')?.getPropertyValue('flex')).toBe(
+      '0 0 16.875rem'
+    );
+    expect(mediaStyleRuleFor(clear, 'min-width:1025px')?.getPropertyValue('flex')).toBe(
+      '0 0 11.25rem'
+    );
+    expect(mediaStyleRuleFor(save, 'min-width:1025px')?.getPropertyValue('height')).toBe(
+      '3.875rem'
+    );
+  });
+
+  it('lets the greeting and name lines fill the header beside the monogram', () => {
+    render(<ProfileSkeleton />);
+    const greeting = byId('profile-skeleton-greeting');
+    const monogram = byId('profile-skeleton-monogram');
+
+    const lines = hiddenGenerics().filter(
+      (node) => !isBlock(node) && node.contains(greeting) && !node.contains(monogram)
+    );
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContainElement(byId('profile-skeleton-name'));
+    expect(styleRuleFor(lines[0] as HTMLElement)?.getPropertyValue('flex')).toBe('1');
   });
 
   it('exposes no node of the skeleton to the accessibility tree', () => {
