@@ -12,7 +12,7 @@ error. The decisions are recorded in `## User Settings decisions` of the
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
-  (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`.
+  (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
@@ -56,18 +56,20 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 UserProfile [component]<route>          title, toast queue, useProfileLoad
 └ UIContainer
   ├ h1 "Налаштування", subtitle
-  ├ SettingsGrid
-  │ └ UserProfileSettings               loading | failed | ready
-  │   ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
-  │   ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
-  │   ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
-  │   └ card: ProfileHeader, ProfileForm
-  │       └ UIForm key=version, submitRef=saveRef, onInvalid, footer=ClearButton
-  │         ├ h2 "Особисті дані": full name, e-mail + EmailStatusRow (read-only while saving)
-  │         ├ ChangePassword key=cleared: h2 "Пароль", both passwords (read-only while saving),
-  │         │ policy rules
-  │         ├ UIServerFieldError per field, keyed per Save attempt
-  │         ├ p role=status (no changes, alternating mark on a repeat)
+  ├ SettingsGrid                        profile column; the second column is the 2FA slot
+  │ ├ UserProfileSettings               loading | failed | ready
+  │ │ ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
+  │ │ ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
+  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
+  │ │ └ card: ProfileHeader, ProfileForm
+  │ │     └ UIForm key=version, submitRef=saveRef, onInvalid, footer=ClearButton
+  │ │       ├ full name "Ваше ПІБ" (read-only while saving)
+  │ │       ├ h2 "Особисті дані": e-mail + EmailStatusRow (read-only while saving)
+  │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords (read-only while saving),
+  │ │       │ policy rules
+  │ │       ├ UIServerFieldError per field, keyed per Save attempt
+  │ │       ├ p role=status (no changes, alternating mark on a repeat)
+  │ └ SocialNetworks                    h2 "Соціальні мережі", four presentational tiles
   └ UIToastStack                        returns focus to Save
 ```
 
@@ -188,8 +190,6 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 Where the frames contradict each other or the copy, the page follows one reading:
 
-- **Header to first divider.** Figma puts the name input there; the page puts it under
-  "Особисті дані", so the gap is Figma's header-to-content gap: 20 px on a phone, 24 px above.
 - **Card top (F-02).** Desktop follows `313:10242`: 12 px between the subtitle and the card.
 - **Tablet pills.** The frame draws 339 + 8 + 339 px in a 685 px content box; the pills are
   339 and 338 px so both edges sit on whole pixels.
