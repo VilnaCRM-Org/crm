@@ -440,10 +440,10 @@ G9 and G10 belong to other work. Filing happens after readiness.
 ### 4.9 Existing issues (do not duplicate)
 
 Open: #469 (inert GraphQL limiters), #470 (create, reset request, **resend**, confirm lack GraphQL
-limiters), #462, #463, #468 (OAuth auto-link pre-hijack), #477, #473, #472, #421, the locale pair
-#395 and #349, #458 (release pipeline), #512, and #513 (release with password reset). Fixed on main
-and closed: #320 (owner-scoped reads), user-service #315, #318, #312, #313. No issue exists for
-G2-G10 or G12.
+limiters), #462, #463, #468 (OAuth auto-link pre-hijack), #477, #473, #472, #421, the locale
+pair #395 and #349, #458 (release pipeline), #512, and #513 (release with password reset). Fixed
+on main and closed: #320 (owner-scoped reads), user-service #315, #318, #312, #313. No issue exists
+for G2-G10 or G12.
 
 ### 4.10 Known mock drift
 
