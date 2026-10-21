@@ -142,6 +142,23 @@ describe('UIPasswordField', () => {
     );
   });
 
+  it('keeps focus on the input while the visibility control is pressed by pointer', async () => {
+    const user = userEvent.setup();
+    const input = mountPasswordForm();
+    const toggle = screen.getByRole('button', { name: SHOW_LABEL });
+    await user.click(input);
+    expect(input).toHaveFocus();
+
+    await user.pointer({ keys: '[MouseLeft>]', target: toggle });
+
+    expect(input).toHaveFocus();
+
+    await user.pointer({ keys: '[/MouseLeft]', target: toggle });
+
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute('type', 'text');
+  });
+
   it('keeps focus on the input by cancelling the toggle mousedown default', async () => {
     mountPasswordForm();
 
