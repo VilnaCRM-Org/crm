@@ -1,10 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
-import type { FocusEvent } from 'react';
 
 import useBlurHold from '@/modules/user/features/settings/hooks/use-blur-hold';
-
-const blurAt = (timeStamp: number): FocusEvent<HTMLElement> =>
-  ({ timeStamp }) as unknown as FocusEvent<HTMLElement>;
 
 describe('useBlurHold', () => {
   beforeEach(() => {
@@ -25,7 +21,7 @@ describe('useBlurHold', () => {
   it('holds from the blur until the delay has passed', () => {
     const { result } = renderHook(() => useBlurHold(200));
 
-    act(() => result.current.onBlur(blurAt(10)));
+    act(() => result.current.onBlur());
 
     expect(result.current.held).toBe(true);
 
@@ -43,14 +39,17 @@ describe('useBlurHold', () => {
     expect(jest.getTimerCount()).toBe(0);
   });
 
-  it('restarts the delay on every new blur', () => {
+  it('restarts the delay on every new blur, even within the same millisecond', () => {
     const { result } = renderHook(() => useBlurHold(200));
 
-    act(() => result.current.onBlur(blurAt(10)));
+    act(() => result.current.onBlur());
     act(() => {
       jest.advanceTimersByTime(150);
     });
-    act(() => result.current.onBlur(blurAt(160)));
+    act(() => {
+      result.current.onBlur();
+      result.current.onBlur();
+    });
     act(() => {
       jest.advanceTimersByTime(150);
     });
@@ -68,7 +67,7 @@ describe('useBlurHold', () => {
   it('uses the delay it was given', () => {
     const { result } = renderHook(() => useBlurHold(500));
 
-    act(() => result.current.onBlur(blurAt(10)));
+    act(() => result.current.onBlur());
     act(() => {
       jest.advanceTimersByTime(499);
     });
@@ -79,7 +78,7 @@ describe('useBlurHold', () => {
   it('cancels a pending release when it unmounts', () => {
     const { result, unmount } = renderHook(() => useBlurHold(200));
 
-    act(() => result.current.onBlur(blurAt(10)));
+    act(() => result.current.onBlur());
     unmount();
 
     expect(jest.getTimerCount()).toBe(0);
