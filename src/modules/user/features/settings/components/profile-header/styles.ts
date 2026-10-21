@@ -16,6 +16,7 @@ export default {
     },
   },
   monogram: {
+    position: 'relative',
     flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
@@ -35,6 +36,20 @@ export default {
       fontSize: '2.25rem',
     },
   },
+  badge: {
+    position: 'absolute',
+    right: 0,
+    bottom: '-0.3125rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '1.625rem',
+    height: '1.625rem',
+    borderRadius: '50%',
+    backgroundColor: customColors.brand.blue,
+    [`@media (min-width:${md}px)`]: { bottom: 0 },
+  },
+  badgeIcon: { width: '1rem', height: '1rem' },
   glyph: {
     fontSize: '2rem',
     [`@media (min-width:${md}px)`]: { fontSize: '3rem' },
