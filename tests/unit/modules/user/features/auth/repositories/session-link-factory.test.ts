@@ -14,6 +14,10 @@ const operationOf = (name: string): ReturnType<typeof gql> => gql`
   }
 `;
 
+interface SessionBox {
+  token: string | null;
+}
+
 interface Harness {
   readonly link: ApolloLink;
   readonly clearUser: jest.Mock;
@@ -23,14 +27,17 @@ interface Harness {
   readonly headers: Array<Record<string, string> | undefined>;
 }
 
-const harness = (token: string | null, terminal: ApolloLink | null = null): Harness => {
+const harness = (session: SessionBox, terminal: ApolloLink | null = null): Harness => {
   const clearUser = jest.fn();
   const signOut = jest.fn();
   const setState = jest.fn();
   const signedOut = { email: buildEmail(), token: null } as AuthState;
   const headers: Harness['headers'] = [];
   const factory = new SessionLinkFactory({
-    authStore: { getState: () => ({ token }), setState } as unknown as StoreApi<AuthState>,
+    authStore: {
+      getState: () => ({ token: session.token }),
+      setState,
+    } as unknown as StoreApi<AuthState>,
     signedOut,
     sandboxDemoSession: { signOut } as unknown as SandboxDemoSessionProvider,
     observability: { clearUser } as unknown as ObservabilityService,
@@ -58,17 +65,24 @@ const send = (link: ApolloLink, name: string): Promise<unknown> =>
     });
   });
 
-const unauthorized = new ApolloLink(
-  () =>
-    new Observable((observer) =>
-      observer.error(Object.assign(new Error('Response not successful'), { statusCode: 401 }))
-    )
-);
+const unauthorizedError = (): Error =>
+  Object.assign(new Error('Response not successful'), { statusCode: 401 });
+
+const failing = (error: Error, beforeError: () => void = (): void => undefined): ApolloLink =>
+  new ApolloLink(
+    () =>
+      new Observable((observer) => {
+        beforeError();
+        observer.error(error);
+      })
+  );
+
+const unauthorized = failing(unauthorizedError());
 
 describe('SessionLinkFactory', () => {
   it('sends the token read from the store as a Bearer header', async () => {
     const token = buildToken();
-    const { link, headers } = harness(token);
+    const { link, headers } = harness({ token });
 
     await send(link, 'Profile');
 
@@ -76,7 +90,7 @@ describe('SessionLinkFactory', () => {
   });
 
   it('sends no Authorization header without a token', async () => {
-    const { link, headers } = harness(null);
+    const { link, headers } = harness({ token: null });
 
     await send(link, 'Profile');
 
@@ -90,7 +104,7 @@ describe('SessionLinkFactory', () => {
     'SignInUser',
     'CompleteTwoFactorUser',
   ])('sends %s without an Authorization header', async (name) => {
-    const { link, headers } = harness(buildToken());
+    const { link, headers } = harness({ token: buildToken() });
 
     await send(link, name);
 
@@ -98,7 +112,10 @@ describe('SessionLinkFactory', () => {
   });
 
   it('ends the session like logout() on a transport 401 and passes the error on', async () => {
-    const { link, clearUser, signOut, setState, signedOut } = harness(buildToken(), unauthorized);
+    const { link, clearUser, signOut, setState, signedOut } = harness(
+      { token: buildToken() },
+      unauthorized
+    );
 
     const outcome = await send(link, 'Profile');
 
@@ -122,7 +139,7 @@ describe('SessionLinkFactory', () => {
           observer.error(Object.assign(new Error('Unauthorized'), { status: 401 }))
         )
     );
-    const { link, setState } = harness(buildToken(), statusOnly);
+    const { link, setState } = harness({ token: buildToken() }, statusOnly);
 
     await send(link, 'Profile');
 
@@ -130,7 +147,7 @@ describe('SessionLinkFactory', () => {
   });
 
   it('leaves the session alone when an anonymous operation is answered with 401', async () => {
-    const { link, clearUser, signOut, setState } = harness(buildToken(), unauthorized);
+    const { link, clearUser, signOut, setState } = harness({ token: buildToken() }, unauthorized);
 
     await send(link, 'ConfirmPasswordReset');
 
@@ -139,14 +156,48 @@ describe('SessionLinkFactory', () => {
     expect(setState).not.toHaveBeenCalled();
   });
 
+  it("leaves a newer session alone when a 401 answers an earlier token's request", async () => {
+    const session: SessionBox = { token: buildToken() };
+    const later = buildToken();
+    const rotating = failing(unauthorizedError(), () => {
+      session.token = later;
+    });
+    const { link, clearUser, signOut, setState } = harness(session, rotating);
+
+    await send(link, 'Profile');
+
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
+  });
+
+  it('leaves a signed-out store alone when a 401 answers a pre-sign-out request', async () => {
+    const session: SessionBox = { token: buildToken() };
+    const signingOut = failing(unauthorizedError(), () => {
+      session.token = null;
+    });
+    const { link, clearUser, signOut, setState } = harness(session, signingOut);
+
+    await send(link, 'Profile');
+
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
+  });
+
+  it('leaves the store alone when a 401 answers a request that carried no token', async () => {
+    const { link, clearUser, signOut, setState } = harness({ token: null }, unauthorized);
+
+    await send(link, 'Profile');
+
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(setState).not.toHaveBeenCalled();
+  });
+
   it.each([403, 429, 503])('leaves the session alone on a transport %i', async (statusCode) => {
-    const failing = new ApolloLink(
-      () =>
-        new Observable((observer) =>
-          observer.error(Object.assign(new Error('failed'), { statusCode }))
-        )
-    );
-    const { link, setState } = harness(buildToken(), failing);
+    const rejecting = failing(Object.assign(new Error('failed'), { statusCode }));
+    const { link, setState } = harness({ token: buildToken() }, rejecting);
 
     await send(link, 'Profile');
 
@@ -160,7 +211,7 @@ describe('SessionLinkFactory', () => {
         errors: [{ message: 'Unauthorized', extensions: { status: 401 } }],
       })
     );
-    const { link, setState } = harness(buildToken(), graphQLFailure);
+    const { link, setState } = harness({ token: buildToken() }, graphQLFailure);
 
     await send(link, 'Profile');
 
@@ -168,10 +219,8 @@ describe('SessionLinkFactory', () => {
   });
 
   it('leaves the session alone on a network error without a status', async () => {
-    const failing = new ApolloLink(
-      () => new Observable((observer) => observer.error(new TypeError('Failed to fetch')))
-    );
-    const { link, setState } = harness(buildToken(), failing);
+    const rejecting = failing(new TypeError('Failed to fetch'));
+    const { link, setState } = harness({ token: buildToken() }, rejecting);
 
     await send(link, 'Profile');
 

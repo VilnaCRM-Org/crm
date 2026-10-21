@@ -464,7 +464,10 @@ fails.
 
 **Decision.** `SessionLinkFactory` adds the Bearer token to every non-anonymous operation and,
 on a transport 401, ends the session exactly as `logout()` does: observability, the sandbox demo
-session and the cleared store. Whether a network error is a 401 is asked of #315's
+session and the cleared store. It records the token each request carried on the operation
+context and ends the session only while the store still holds that token, so a late 401 for a
+request sent with an earlier token, or with none, leaves a session begun since, or a sign-out
+already done, alone. Whether a network error is a 401 is asked of #315's
 `UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
 hooks, which do nothing on `session_ended` and rely on the link, read the status in one place.
 The link receives its five collaborators as one `SessionLinkDeps` value
