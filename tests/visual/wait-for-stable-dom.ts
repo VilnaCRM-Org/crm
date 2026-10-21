@@ -22,6 +22,8 @@ async function waitForStableDom(page: Page): Promise<void> {
       const fingerprint = [
         document.readyState,
         document.fonts.status,
+        window.scrollX,
+        window.scrollY,
         document.documentElement.outerHTML,
       ].join('|');
       const state = probe.pwStableDom ?? { last: '', count: 0 };
