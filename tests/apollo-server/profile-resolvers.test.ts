@@ -214,6 +214,18 @@ describe('profile operations on the stateless mock', () => {
     });
   });
 
+  it('refuses a resend whose id is not the seeded IRI with the same coded 403', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const result = await execute(server, RESEND_EMAIL, { id: '/api/users/someone-else' });
+
+    expect(result.data).toEqual({ resendEmailToUser: null });
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors?.[0]?.message).toBe('Access Denied.');
+    expect(result.errors?.[0]?.extensions).toMatchObject({ code: 'FORBIDDEN', status: 403 });
+    expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+  });
+
   it('echoes the clientMutationId of a resend', async () => {
     const clientMutationId = buildClientMutationId();
     const query = `
