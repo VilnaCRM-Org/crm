@@ -583,9 +583,11 @@ are informational.
 
 The visual helpers wait on conditions rather than the clock:
 [`tests/visual/wait-for-stable-dom.ts`](tests/visual/wait-for-stable-dom.ts) resolves once
-`document.readyState` is `complete`, `document.fonts.status` is `loaded`, and a DOM fingerprint has
-held for five consecutive frames, replacing the two 3-second sleeps in `stabilize-page.ts` and the
-300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244 visual tests).
+`document.readyState` is `complete`, `document.fonts.status` is `loaded`, and a fingerprint of the
+DOM and the scroll position has held for five consecutive frames, replacing the two 3-second sleeps
+in `stabilize-page.ts` and the 300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244
+visual tests). The scroll position is in the fingerprint because a full-page WebKit capture draws a
+`position: fixed` element (the toast stack) where it sits at the current scroll offset.
 
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
@@ -2631,7 +2633,9 @@ focus to the next close button, then the previous one, then the control the page
 (`returnFocusRef`) while it is connected and enabled, then `fallbackFocusRef` (the settings
 `<h1 tabindex="-1">`); a toast pushed out by the cap while it holds focus hands it to the newest
 close button. The stack reserves `scroll-padding-bottom` so a focused control is never hidden
-under it.
+under it, and when it measures itself over a control that already has focus (the settled Save, focused
+in the same commit that pushes the toast) it scrolls that control into view, so the result does not
+depend on which layout effect runs first.
 
 ### GraphQL Setup
 
