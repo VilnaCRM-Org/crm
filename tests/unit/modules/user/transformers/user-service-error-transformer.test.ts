@@ -178,27 +178,32 @@ describe('UserServiceErrorTransformer', () => {
     expect(transformer.normalize(error)).toEqual(failed('unauthenticated', 401));
   });
 
-  it.each([400, 402, 403, 404, 409])('keeps status %i out of the unauthenticated row', (status) => {
-    expect(transformer.normalize(serverError(status)).reason).not.toBe('unauthenticated');
-  });
+  it.each([400, 402, 403, 404, 409])(
+    'classifies a transport %i as unknown with its status',
+    (status) => {
+      expect(transformer.normalize(serverError(status))).toEqual(failed('unknown', status));
+    }
+  );
 
   it.each([
     ['no extensions', undefined, null],
     ['extensions.status 403', { status: 403 }, 403],
     ['the local mock shape', { code: 'FORBIDDEN', status: 403 }, 403],
-  ])('classifies "Access Denied." with %s as access_denied', (_name, extensions, status) => {
-    expect(transformer.normalize(graphQLError('Access Denied.', extensions))).toEqual(
+  ])('classifies "Access Denied." with %s as access_denied', async (_name, extensions, status) => {
+    const loaded = await loadTransformer();
+
+    expect(loaded.normalize(graphQLError('Access Denied.', extensions))).toEqual(
       failed('access_denied', status)
     );
   });
 
   it.each(['Old password is invalid', 'Старий пароль невірний'])(
     'classifies "%s" as invalid_password with and without a status',
-    (message) => {
-      expect(transformer.normalize(graphQLError(message))).toEqual(
-        failed('invalid_password', null)
-      );
-      expect(transformer.normalize(graphQLError(message, { status: 200 }))).toEqual(
+    async (message) => {
+      const loaded = await loadTransformer();
+
+      expect(loaded.normalize(graphQLError(message))).toEqual(failed('invalid_password', null));
+      expect(loaded.normalize(graphQLError(message, { status: 200 }))).toEqual(
         failed('invalid_password', 200)
       );
     }
@@ -213,11 +218,13 @@ describe('UserServiceErrorTransformer', () => {
   it.each([
     ['en', 'This email address is already registered'],
     ['uk', 'Ця email-адреса вже зареєстрована'],
-  ])('classifies the %s uniqueness message as a taken e-mail violation', (_locale, text) => {
-    expect(transformer.normalize(graphQLError(`email: ${text}`))).toEqual(
+  ])('classifies the %s uniqueness message as a taken e-mail violation', async (_locale, text) => {
+    const loaded = await loadTransformer();
+
+    expect(loaded.normalize(graphQLError(`email: ${text}`))).toEqual(
       violation('email', null, 'taken')
     );
-    expect(transformer.normalize(graphQLError(`email: ${text}`, { status: 422 }))).toEqual(
+    expect(loaded.normalize(graphQLError(`email: ${text}`, { status: 422 }))).toEqual(
       violation('email', 422, 'taken')
     );
   });
@@ -246,7 +253,7 @@ describe('UserServiceErrorTransformer', () => {
     expect(transformer.normalize(error)).toEqual(failed('refused', null));
   });
 
-  it.each(['\n', '\r\n', '\n\n'])(
+  it.each(['\n', '\r\n', '\n\n', '\n   \n', '\n\t\n', '\r\n \r\n'])(
     'reads one violation per line of a multi-line message separated by %j',
     (separator) => {
       const message = ['initials: too short', 'newPassword: too weak'].join(separator);
