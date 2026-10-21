@@ -3,10 +3,10 @@ import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-prov
 import type BrowserNavigator from '@auth/utils/browser-navigator';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
-jest.mock('@auth/assets/social-links/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/social-links/github-color.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/social-links/google-color.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/social-links/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/google-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
 
 const OAUTH_BASE_URL = 'https://oauth.vilnacrm.test';
 
