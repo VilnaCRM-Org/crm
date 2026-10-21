@@ -301,7 +301,9 @@ integration tests via `jest.mutation.config.ts` — a flat union of both suites,
 jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
-instrumentation) and the settings `ready-story-provider` test, which imports a `*.stories.tsx` file
+instrumentation), the `tests/unit/config/eslint-policy` test (it resolves `eslint.config.mjs`
+through a child `node` process and reaches no `src` module, so it kills nothing and only adds
+process churn) and the settings `ready-story-provider` test, which imports a `*.stories.tsx` file
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
