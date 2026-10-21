@@ -363,8 +363,9 @@ because the button that held it was replaced by the skeleton.
 #### FR-7 — Profile header
 
 The card opens with a decorative monogram derived from the name, the greeting "Вітаємо!" in
-`#57595B` instead of the failing `#969B9D` (D15) and the name in bold. There is no photo, pencil
-badge, upload control or file input (D2). A successful name change updates it from the payload.
+`#57595B` instead of the failing `#969B9D` (D15) and the name in bold. There is no photo, upload
+control or file input (D2); the original "no pencil badge" is superseded by the 2026-10-21
+amendment below. A successful name change updates it from the payload.
 
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП", hidden
   from the accessibility tree, and a one-word "Admin" shows "A".
@@ -375,9 +376,11 @@ badge, upload control or file input (D2). A successful name change updates it fr
 
 > Amendment 2026-10-21: the product owner kept the Figma grey `#969B9D` for "Вітаємо!" (2.81:1),
 > so the computed-style criterion above reads `#969B9D` and `#settings-greeting` carries a scoped
-> `color-contrast` exception (FR-26 amendment). The monogram also carries the Figma pencil badge
-> as decoration (`315:11418`, inside the `aria-hidden` monogram) until user-service#519 and
-> crm#361 add the upload.
+> `color-contrast` exception (FR-26 amendment). Decision 2026-10-21 (amends D2): the monogram
+> carries the Figma pencil badge (`315:11418`) as pure decoration, inside the `aria-hidden`
+> monogram, with no role, no handler and no focus stop, so it offers no edit affordance to
+> assistive technology; the brief and the epics (UX-DR-5, the header story criterion) carry the
+> same amendment. It is removed or wired to an upload when user-service#519 and crm#361 land.
 
 > Assumption: the monogram is the upper-cased first letter of each of the first two words of the
 > name, or a decorative person glyph for an empty name; it carries nothing the name does not.
