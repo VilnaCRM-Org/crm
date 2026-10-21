@@ -311,8 +311,9 @@ used by settings alone (R16).
   `initials`.
 - FR-25: the shared pieces live outside `@auth`; `UIForm` gains `submitRef`, `submitSx` and the
   `footer` slot.
-- FR-26: contrast fixed at the source: greeting, resend control and field-error text `#C62828`;
-  no new exception.
+- FR-26: contrast fixed at the source: resend control and field-error text `#C62828`; the greeting
+  was superseded 2026-10-21: it keeps `#969B9D` under the scoped `#settings-greeting` exception
+  (tracked in #276), the one new exception.
 - FR-27: a stateless local Apollo mock answers the three operations: the seeded user, one
   violation and the owner check.
 - FR-28: every string in `uk` and `en`; the `settings.*` copy in a lazy catalog the settings
@@ -418,7 +419,9 @@ used by settings alone (R16).
 - UX-DR-4: contrast overrides: greeting `#57595B`, resend control `#0074B5`, field-error text
   `#C62828`; "Очистити" is never the primary blue (D15, R8). Superseded for the greeting
   2026-10-21: it keeps the Figma grey `#969B9D` under a scoped `#settings-greeting` exception.
-- UX-DR-5: no photo, pencil badge or social networks card (D2); the monogram is decorative.
+- UX-DR-5: no photo or social networks card (D2); the monogram is decorative. Amended 2026-10-21:
+  it carries the Figma pencil badge (`315:11418`) as decoration only, with no role, handler or
+  focus stop.
 - UX-DR-6: every user-facing story runs the `figma-design-check` gate through the Figma MCP before
   UI code is written; an unreachable MCP reports `BLOCKED`, never a skip.
 
@@ -1317,7 +1320,7 @@ catalog, so `src/i18n/localization.json` is unchanged), unit tests with jest-axe
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП"; "Admin" shows "A"; "Олена Іванівна Петренко" shows "ОІ"; an empty name shows a decorative person glyph; letters are upper-cased with `toUpperCase`, never a `toLocale*` call.
 - Given the monogram, when the accessibility tree is read, then it is `aria-hidden="true"`, and "Вітаємо!" and the name are plain text with no heading or image role and no control.
 - Given the computed styles, when they are read, then the greeting is `#969B9D` (the Figma grey the product owner kept on 2026-10-21 under a scoped exception; the planned `#57595B` is superseded) and the monogram letters are `#1A1C1E` on a `#E1E7EA` disc (13.69:1).
-- Given the header, when it renders, then no photo, pencil badge, upload control or file input exists.
+- Given the header, when it renders, then no photo, upload control or file input exists, and the pencil badge (amended 2026-10-21) is decoration inside the `aria-hidden` monogram with no role, handler or focus stop.
 - Given jest-axe, when the header renders with a name and with an empty name, then there is no violation, and the story shows both.
 - Given `ProfileHeaderProps`, when `make lint-eslint` runs the TB-1 selectors, then it is a named interface in a type-only file holding only the scalar `fullName`, no entity copy, and no file carries a suppression.
 - Given the change, when the DoD gates run, then ESLint (the raw-Intl gate included), `tsc`, jscpd and `make lint-metrics` report nothing, `settings.profile.greeting` exists in `uk` and `en`, unit coverage stays at 100% and Stryker reports zero survivors.

@@ -589,7 +589,8 @@ e-mails and answers in English only.
   (`tests/utils/a11y/axe-config.ts:27-54`), one being the contained submit
   `form button[type="submit"].MuiButton-contained` (`:34-39`). A Save rendered by `UIForm`
   matches it; grey text, a primary-blue link or a secondary "Clear" button does not, and no new
-  entry is allowed (D15).
+  entry is allowed (D15; amended 2026-10-21: the product owner kept the greeting grey `#969B9D`,
+  so one scoped `#settings-greeting` entry is added).
 
 ### 5.7 Constraints that shape the design
 
