@@ -154,7 +154,7 @@ crm's is `#DC3939` (`src/styles/colors.ts:15-17`).
 
 | Pair                                 | Ratio | Verdict                                   |
 | ------------------------------------ | ----- | ----------------------------------------- |
-| `#969B9D` greeting on white          | 2.81  | fail; use `#57595B` (7.03) (D15)          |
+| `#969B9D` greeting on white          | 2.81  | fail; kept 2026-10-21 under an exception  |
 | `#1EAEFF` resend link on white       | 2.46  | fail; use `linkText` `#0074B5` (5.04)     |
 | white on `#1EAEFF` Save button       | 2.46  | existing debt, #276 exception (§5.6)      |
 | `#1A1C1E` on `#E8F4EF` success toast | 15.15 | pass                                      |
@@ -440,10 +440,10 @@ G9 and G10 belong to other work. Filing happens after readiness.
 ### 4.9 Existing issues (do not duplicate)
 
 Open: #469 (inert GraphQL limiters), #470 (create, reset request, **resend**, confirm lack GraphQL
-limiters), #462, #463, #468 (OAuth auto-link pre-hijack), #477, #473, #472, #421, the locale pair
-#395 and #349, #458 (release pipeline), #512, and #513 (release with password reset). Fixed on main
-and closed: #320 (owner-scoped reads), user-service #315, #318, #312, #313. No issue exists for
-G2-G10 or G12.
+limiters), #462, #463, #468 (OAuth auto-link pre-hijack), #477, #473, #472, #421, the locale
+pair #395 and #349, #458 (release pipeline), #512, and #513 (release with password reset). Fixed
+on main and closed: #320 (owner-scoped reads), user-service #315, #318, #312, #313. No issue exists
+for G2-G10 or G12.
 
 ### 4.10 Known mock drift
 
@@ -770,7 +770,8 @@ cited by id only because that bundle is still being edited:
 3. After an e-mail change: is "not confirmed · resend" enough, or a "check your inbox" message?
 4. Real subtitle copy, the mobile header defect, Ukrainian copy for every label.
 5. "Очистити" colours: an outlined pill in primary blue would fail contrast.
-6. Sign-off on the greeting (`#57595B`) and resend link (`#0074B5`) overrides.
+6. Sign-off on the greeting (`#57595B`) and resend link (`#0074B5`) overrides (the greeting
+   override was declined on 2026-10-21; the Figma grey stays under a scoped exception).
 7. A monogram without the pencil badge until avatars exist (D2).
 
 ### 8.2 For product

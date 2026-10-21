@@ -280,7 +280,8 @@ used by settings alone (R16).
   the abort signal; the IRI passed through; the mutation payload adopted instead of a re-read.
 - FR-6: skeleton with a polite loading status; a read failure shows an alert and a user-initiated
   retry; focus on the card's first heading after a successful retry.
-- FR-7: decorative monogram, greeting in `#57595B` and the name; no avatar controls.
+- FR-7: decorative monogram, greeting and the name; no avatar controls (the `#57595B` greeting was
+  superseded 2026-10-21: the Figma grey `#969B9D` stays, under a scoped exception).
 - FR-8: one form, two `h2` sections, labelled fields with `autocomplete`, eye toggles, Save and
   Clear; Enter submits.
 - FR-9: name and e-mail validated only while changed; the current password required for every
@@ -415,7 +416,8 @@ used by settings alone (R16).
 - UX-DR-3: the Russian Figma copy is replaced by the PRD §12 `uk` and `en` strings; the mobile
   header "Management board" is a Figma defect and the desktop title stays.
 - UX-DR-4: contrast overrides: greeting `#57595B`, resend control `#0074B5`, field-error text
-  `#C62828`; "Очистити" is never the primary blue (D15, R8).
+  `#C62828`; "Очистити" is never the primary blue (D15, R8). Superseded for the greeting
+  2026-10-21: it keeps the Figma grey `#969B9D` under a scoped `#settings-greeting` exception.
 - UX-DR-5: no photo, pencil badge or social networks card (D2); the monogram is decorative.
 - UX-DR-6: every user-facing story runs the `figma-design-check` gate through the Figma MCP before
   UI code is written; an unreachable MCP reports `BLOCKED`, never a skip.
@@ -1314,7 +1316,7 @@ catalog, so `src/i18n/localization.json` is unchanged), unit tests with jest-axe
 - Given the Figma design gate on the header of `313:10242`, when it runs before code, then the monogram, greeting and name follow the frame without the photo and pencil badge; an unreachable MCP reports `BLOCKED`.
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП"; "Admin" shows "A"; "Олена Іванівна Петренко" shows "ОІ"; an empty name shows a decorative person glyph; letters are upper-cased with `toUpperCase`, never a `toLocale*` call.
 - Given the monogram, when the accessibility tree is read, then it is `aria-hidden="true"`, and "Вітаємо!" and the name are plain text with no heading or image role and no control.
-- Given the computed styles, when they are read, then the greeting is `#57595B` (7.03:1) and the monogram letters are `#1A1C1E` on a `#E1E7EA` disc (13.69:1).
+- Given the computed styles, when they are read, then the greeting is `#969B9D` (the Figma grey the product owner kept on 2026-10-21 under a scoped exception; the planned `#57595B` is superseded) and the monogram letters are `#1A1C1E` on a `#E1E7EA` disc (13.69:1).
 - Given the header, when it renders, then no photo, pencil badge, upload control or file input exists.
 - Given jest-axe, when the header renders with a name and with an empty name, then there is no violation, and the story shows both.
 - Given `ProfileHeaderProps`, when `make lint-eslint` runs the TB-1 selectors, then it is a named interface in a type-only file holding only the scalar `fullName`, no entity copy, and no file carries a suppression.
