@@ -2,6 +2,8 @@ import Box from '@mui/material/Box';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UILinkButton from '@/components/ui-link-button';
+
 import type { EmailStatusRowProps } from '../../types/components/profile-form';
 
 import styles from './styles';
@@ -18,15 +20,9 @@ export default function EmailStatusRow({
       <Box component="p" id={statusId} sx={styles.emailStatus}>
         {t('settings.profile.email_unconfirmed')}
       </Box>
-      <Box
-        component="button"
-        type="button"
-        aria-disabled={busy ? 'true' : undefined}
-        sx={styles.resendLink}
-        onClick={busy ? undefined : onResend}
-      >
+      <UILinkButton unavailable={busy} onClick={onResend} sx={styles.resendLink}>
         {t('settings.profile.resend')}
-      </Box>
+      </UILinkButton>
     </Box>
   );
 }
