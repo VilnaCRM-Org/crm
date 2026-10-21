@@ -1,3 +1,5 @@
+import { touchRippleClasses } from '@mui/material/ButtonBase';
+
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
@@ -22,6 +24,9 @@ const control = {
   color: customColors.text.dark,
   '&:hover, &:focus-visible': { backgroundColor: 'transparent' },
   '&:focus-visible': focusRing,
+  '@media (prefers-reduced-motion: reduce)': {
+    [`& .${touchRippleClasses.root}`]: { display: 'none' },
+  },
   [fromSm]: controlFromSm,
 };
 

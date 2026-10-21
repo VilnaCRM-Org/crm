@@ -15,6 +15,7 @@ const CONTROL = {
   color: '#1A1C1E',
   '&:hover, &:focus-visible': { backgroundColor: 'transparent' },
   '&:focus-visible': RING,
+  '@media (prefers-reduced-motion: reduce)': { '& .MuiTouchRipple-root': { display: 'none' } },
   [SM]: CONTROL_FROM_SM,
 };
 
@@ -159,6 +160,14 @@ describe('toast styles', () => {
     expect(action['&:focus-visible']).toEqual(RING);
     expect(close['&:hover, &:focus-visible']).toEqual({ backgroundColor: 'transparent' });
     expect(action['&:hover, &:focus-visible']).toEqual({ backgroundColor: 'transparent' });
+  });
+
+  it('hides the MUI ripple on both controls when the user asks for reduced motion', async () => {
+    const { action, close } = await loadStyles();
+    const reduced = { '& .MuiTouchRipple-root': { display: 'none' } };
+
+    expect(close['@media (prefers-reduced-motion: reduce)']).toEqual(reduced);
+    expect(action['@media (prefers-reduced-motion: reduce)']).toEqual(reduced);
   });
 
   it('gives the buttons a 44 CSS px minimum height below sm and less from sm', async () => {
