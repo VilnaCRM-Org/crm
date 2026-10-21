@@ -69,6 +69,14 @@ describe('profile form accessibility', () => {
     await expectNoA11yViolations(view.container);
   });
 
+  it('has no axe violations with the rules shown for the focused new password', async () => {
+    const view = render(form(), { wrapper });
+    await userEvent.click(screen.getByLabelText('Новий пароль'));
+
+    expect(screen.getByLabelText('Новий пароль')).toHaveFocus();
+    await expectNoA11yViolations(view.container);
+  });
+
   it('has no axe violations for the Clear button idle', async () => {
     const view = render(form(), { wrapper });
 

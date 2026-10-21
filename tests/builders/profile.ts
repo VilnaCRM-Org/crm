@@ -8,6 +8,7 @@ import type {
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
 import { buildUserId } from './auth';
+import { buildGraphqlUser } from './graphql';
 import { buildEmail, buildFullName, buildPassword } from './user';
 
 export function buildUserIri(): string {
@@ -25,13 +26,11 @@ export function buildUserEntity(overrides: Partial<UserEntity> = {}): UserEntity
 }
 
 export function buildUserNode(overrides: Partial<UserNode> = {}): UserNode {
-  return {
+  return buildGraphqlUser({
     id: buildUserIri(),
-    email: buildEmail(),
-    initials: buildFullName(),
     confirmed: faker.datatype.boolean(),
     ...overrides,
-  };
+  });
 }
 
 export function buildProfileFormValues(
