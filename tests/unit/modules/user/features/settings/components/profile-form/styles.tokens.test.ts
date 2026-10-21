@@ -180,7 +180,7 @@ describe('profile form styles', () => {
       ...DIVIDER,
       marginTop: '1rem',
       marginBottom: '1rem',
-      padding: '1rem var(--settings-card-inset-end) 0 var(--settings-card-inset-start)',
+      padding: '0.9375rem var(--settings-card-inset-end) 0 var(--settings-card-inset-start)',
       fontFamily: 'Golos',
       fontWeight: 600,
       fontSize: '1.125rem',
@@ -190,7 +190,7 @@ describe('profile form styles', () => {
       [TABLET]: {
         marginTop: '1.5rem',
         marginBottom: '0.8125rem',
-        paddingTop: '1.5rem',
+        paddingTop: '1.4375rem',
         fontWeight: 700,
         fontSize: '1.375rem',
         lineHeight: '1.625rem',
@@ -200,9 +200,9 @@ describe('profile form styles', () => {
     expect(actionsDivider).toEqual({
       ...DIVIDER,
       marginTop: '1rem',
-      marginBottom: '1rem',
+      marginBottom: '0.9375rem',
       [TABLET]: { marginTop: '1.5rem' },
-      [DESKTOP]: { marginBottom: '1.5rem' },
+      [DESKTOP]: { marginBottom: '1.4375rem' },
     });
   });
 
