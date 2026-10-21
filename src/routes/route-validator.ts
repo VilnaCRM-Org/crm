@@ -1,10 +1,14 @@
+import ROUTE_PATHS from './route-paths';
 import type { AppRouteObject } from './types/app-route';
 import type { RouteModule, RouteModuleRegistry } from './types/route-module';
 
 class RouteValidator {
   public validate({ items: modules }: RouteModuleRegistry): void {
     this.assertUniqueIds(modules);
-    modules.forEach((module) => module.routes.forEach((route) => this.assertRoute(route, false)));
+    this.assertNotFoundRegistered(modules);
+    for (const { routes } of modules) {
+      for (const route of routes) this.assertRoute(route, false);
+    }
   }
 
   private assertUniqueIds(modules: readonly RouteModule[]): void {
@@ -15,10 +19,24 @@ class RouteValidator {
     }
   }
 
+  private assertNotFoundRegistered(modules: readonly RouteModule[]): void {
+    const routes = modules.flatMap((module) => module.routes);
+    const flagged = routes.some((route) => route.flag !== undefined);
+    const notFound = routes.some(
+      (route) => route.path === ROUTE_PATHS.notFound && route.guard !== 'protected'
+    );
+    if (flagged && !notFound) {
+      throw new Error('A flagged route needs a registered public not-found route');
+    }
+  }
+
   private assertRoute(route: AppRouteObject, nested: boolean): void {
     this.assertLocatable(route);
     if (nested && route.guard !== undefined) {
       throw new Error('Nested routes must not declare a guard (guards are top-level only)');
+    }
+    if (nested && route.flag !== undefined) {
+      throw new Error('Nested routes must not declare a flag (flags are top-level only)');
     }
     route.children?.forEach((child) => this.assertRoute(child, true));
   }
