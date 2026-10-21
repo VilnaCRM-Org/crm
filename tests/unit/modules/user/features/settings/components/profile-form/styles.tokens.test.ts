@@ -113,27 +113,12 @@ describe('profile form styles', () => {
     });
   });
 
-  it('underlines the resend link, darkens it on hover, keeps it one phrase', async () => {
+  it('places the resend link in the e-mail row and keeps the status one phrase', async () => {
     const { resendLink, emailStatus } = await loadStyles();
 
     expect(resendLink).toEqual({
       minHeight: '1.5rem',
       margin: '-0.1875rem 0',
-      padding: 0,
-      border: 0,
-      background: 'none',
-      font: 'inherit',
-      fontWeight: 500,
-      whiteSpace: 'nowrap',
-      textAlign: 'left',
-      color: '#0074B5',
-      textDecoration: 'underline',
-      textUnderlineOffset: '0.15em',
-      cursor: 'pointer',
-      '&:hover': { color: '#00588A' },
-      '&[aria-disabled="true"]': { cursor: 'default', opacity: 0.6 },
-      '&[aria-disabled="true"]:hover': { color: '#0074B5' },
-      '&:focus-visible': { outline: '2px solid #0074B5', outlineOffset: '2px' },
       [TABLET]: { marginBlock: '-0.0625rem' },
       [DESKTOP]: { marginBlock: '-0.1875rem' },
     });
