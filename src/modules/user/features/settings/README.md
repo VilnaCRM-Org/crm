@@ -152,6 +152,10 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
   header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
+  The field holds the full ПІБ (surname, first name, patronymic), while the header greets by
+  first name and surname: three or more words show as the second then the first ("Маслова
+  Евгения Олеговна" → "Евгения Маслова"), one or two words show as typed, and the monogram
+  follows the greeted name.
 - **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
   optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
   appear while the field has focus or a value. A new password equal to the current one is

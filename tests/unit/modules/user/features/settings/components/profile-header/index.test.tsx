@@ -20,7 +20,7 @@ describe('ProfileHeader', () => {
   it.each([
     ['Олена Петренко', 'ОП'],
     ['Admin', 'A'],
-    ['Олена Іванівна Петренко', 'ОІ'],
+    ['Петренко Олена Іванівна', 'ОП'],
     ['  олена   петренко  ', 'ОП'],
     ['😀 smile', '😀S'],
     ['Анна-Марія\tКоваль', 'АК'],
@@ -28,6 +28,18 @@ describe('ProfileHeader', () => {
     render(<ProfileHeader fullName={name} />, { wrapper });
 
     expect(monogramOf(letters)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['Маслова Евгения Олеговна', 'Евгения Маслова'],
+    ['Петренко Олена Іванівна Друга', 'Олена Петренко'],
+    ['  Петренко\tОлена   Іванівна ', 'Олена Петренко'],
+    ['Олена Петренко', 'Олена Петренко'],
+    ['Admin', 'Admin'],
+  ])('greets the full name "%s" by first name and surname as "%s"', (name, shown) => {
+    render(<ProfileHeader fullName={name} />, { wrapper });
+
+    expect(screen.getByText(shown, { selector: 'p', normalizer: (text) => text })).toBeVisible();
   });
 
   it('upper-cases a lower-case name', () => {

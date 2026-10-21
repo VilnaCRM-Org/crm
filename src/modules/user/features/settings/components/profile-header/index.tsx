@@ -12,6 +12,13 @@ import styles from './styles';
 
 const MONOGRAM_LETTERS = 2;
 
+const FULL_PIB_WORDS = 3;
+
+function displayNameOf(fullName: string): string {
+  const words = fullName.trim().split(/\s+/u);
+  return words.length < FULL_PIB_WORDS ? fullName : words.slice(0, 2).reverse().join(' ');
+}
+
 function monogramOf(fullName: string): string {
   return Array.from(fullName.matchAll(/(?<!\S)\S/gu), ([initial]) => initial)
     .slice(0, MONOGRAM_LETTERS)
@@ -21,7 +28,8 @@ function monogramOf(fullName: string): string {
 
 export default function ProfileHeader({ fullName }: ProfileHeaderProps): JSX.Element {
   const { t } = useTranslation();
-  const monogram = monogramOf(fullName);
+  const displayName = displayNameOf(fullName);
+  const monogram = monogramOf(displayName);
 
   return (
     <Box sx={styles.header}>
@@ -36,7 +44,7 @@ export default function ProfileHeader({ fullName }: ProfileHeaderProps): JSX.Ele
           {t('settings.profile.greeting')}
         </Box>
         <Box component="p" sx={styles.name}>
-          {fullName}
+          {displayName}
         </Box>
       </Box>
     </Box>
