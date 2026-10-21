@@ -932,9 +932,11 @@ render-path pattern (issue #115).
 Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
 container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
 flag is declared today, `userSettings` (issue #330), shipped off in the committed block and switched
-on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`. Only an unknown `APP_CONFIG_FLAG_*`
-name fails container start: `forgotPassword` was removed in #309, so an environment that still sets
-`APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value must unset it.
+on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`. Container start fails on two flag
+shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*` name that matches no declared flag,
+and a declared flag whose value is not exactly `true` or `false`. `forgotPassword` was removed
+in #309, so an environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value
+must unset it.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
