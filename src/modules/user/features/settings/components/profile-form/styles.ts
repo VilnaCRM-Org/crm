@@ -56,7 +56,7 @@ export default {
     ...SETTINGS_DIVIDER,
     marginTop: '1rem',
     marginBottom: '1rem',
-    padding: '1rem var(--settings-card-inset-end) 0 var(--settings-card-inset-start)',
+    padding: '0.9375rem var(--settings-card-inset-end) 0 var(--settings-card-inset-start)',
     fontFamily: 'Golos',
     fontWeight: 600,
     fontSize: '1.125rem',
@@ -66,7 +66,7 @@ export default {
     [SETTINGS_TABLET]: {
       marginTop: '1.5rem',
       marginBottom: '0.8125rem',
-      paddingTop: '1.5rem',
+      paddingTop: '1.4375rem',
       fontWeight: 700,
       fontSize: '1.375rem',
       lineHeight: '1.625rem',
@@ -174,9 +174,9 @@ export default {
   actionsDivider: {
     ...SETTINGS_DIVIDER,
     marginTop: '1rem',
-    marginBottom: '1rem',
+    marginBottom: '0.9375rem',
     [SETTINGS_TABLET]: { marginTop: '1.5rem' },
-    [SETTINGS_DESKTOP]: { marginBottom: '1.5rem' },
+    [SETTINGS_DESKTOP]: { marginBottom: '1.4375rem' },
   },
   status: {
     margin: 0,
