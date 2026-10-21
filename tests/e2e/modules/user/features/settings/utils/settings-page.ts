@@ -12,7 +12,7 @@ export const text = {
   heading: t('settings.heading'),
   homeLink: t('home.settings_link'),
   loading: t('settings.profile.loading'),
-  name: t('sign_up.form.name_input.label'),
+  name: t('settings.profile.full_name'),
   email: t('sign_up.form.email_input.label'),
   currentPassword: t('settings.profile.current_password'),
   newPassword: t('settings.profile.new_password'),

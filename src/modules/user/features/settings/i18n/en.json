@@ -11,6 +11,7 @@
         "personal": "Personal details",
         "password": "Password"
       },
+      "full_name": "Your full name",
       "current_password": "Current password",
       "new_password": "New password",
       "new_password_hint": "Optional. Leave empty to keep your current password.",

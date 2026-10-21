@@ -149,6 +149,16 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
   columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
   lands, and the heading stays aligned with the card's left edge.
+- **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
+  header leaves 20 / 25 / 28 px to it, its label is "Ваш ПІБ" (Figma "Ваше ФИО"), and the
+  "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
+- **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
+  optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
+  appear while the field has focus or a value. A new password equal to the current one is
+  refused once the policy passes.
+- **The pencil badge is decoration** (`315:11418`): a 26 px `#1EAEFF` disc with the white
+  `edit-02` outline at the monogram's corner, 5 px lower on a phone, inside the hidden
+  monogram. Uploading a photo waits for user-service#519 and is tracked in #361.
 - **The social networks card sits under the profile card in one column** (`476:46530`,
   `386:27239`, `386:27457`), 12 / 15 / 19 px below it, so the 2FA card still takes the second
   grid column. Its tiles follow each frame as drawn, including the ones that disagree: a 1 px

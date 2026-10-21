@@ -30,7 +30,7 @@ const user = buildUserEntity({
   confirmed: true,
 });
 
-const NAME = 'Ваше ім’я та прізвище';
+const NAME = 'Ваш ПІБ';
 const CURRENT = 'Поточний пароль';
 const NEW = 'Новий пароль';
 const SAVE = 'Зберегти зміни';

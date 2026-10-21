@@ -110,7 +110,7 @@ describe('UserProfileSettings', () => {
       (node) => node.getAttribute('aria-hidden') === 'true' && !isBlock(node)
     );
 
-    expect(blocks).toHaveLength(16);
+    expect(blocks).toHaveLength(15);
     blocks.forEach((block) => expect(root).toContainElement(block));
     expect(screen.queryAllByRole('generic').filter(isBlock)).toHaveLength(0);
     expect(within(screen.getByRole('main')).queryByRole('img')).not.toBeInTheDocument();

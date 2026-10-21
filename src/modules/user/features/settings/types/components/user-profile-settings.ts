@@ -23,3 +23,7 @@ export type ProfileSkeletonSectionId = 'personal' | 'password';
 export interface ProfileSkeletonSectionProps {
   readonly section: ProfileSkeletonSectionId;
 }
+
+export interface ProfileSkeletonFieldProps {
+  readonly field: string;
+}
