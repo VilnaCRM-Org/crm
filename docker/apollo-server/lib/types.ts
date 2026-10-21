@@ -29,6 +29,17 @@ export interface PasswordResetPayload {
   clientMutationId: string | null;
 }
 
+export interface ResetMailConfig {
+  mailpitUrl: string;
+  linkBaseUrl: string;
+}
+
+export interface IssuedResetToken {
+  email: string;
+  expiresAt: number;
+  used: boolean;
+}
+
 interface CreateUserPayload {
   user: User;
   clientMutationId: string;

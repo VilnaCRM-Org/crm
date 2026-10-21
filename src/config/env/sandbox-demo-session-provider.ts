@@ -12,8 +12,6 @@ export class SandboxDemoSessionProvider {
 
   private readonly storageKey = 'vilnacrm.sandbox-demo-session';
 
-  private readonly resetToken = 'sandbox-demo-reset-token';
-
   constructor(private readonly host: SandboxDemoHost = globalThis) {}
 
   public signIn(credentials: SandboxDemoCredentials): SandboxDemoSession | null {
@@ -41,14 +39,6 @@ export class SandboxDemoSessionProvider {
 
   public signOut(): boolean {
     return this.persist(null);
-  }
-
-  public resetTokenFor(email: string): string | null {
-    return this.isActive() && email === this.session.email ? this.resetToken : null;
-  }
-
-  public acceptsResetToken(token: string): boolean {
-    return this.isActive() && token === this.resetToken;
   }
 
   private persist(email: string | null): boolean {

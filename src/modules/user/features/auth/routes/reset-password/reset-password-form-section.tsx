@@ -6,10 +6,12 @@ import AuthCard from '@auth/components/auth-card';
 import CardBackControl from '@auth/components/reset-password/card-back-control';
 import RecoveryResultView from '@auth/components/reset-password/recovery-result-view';
 import ResetPasswordForm from '@auth/components/reset-password/reset-password-form';
-import SandboxDemoResetLink from '@auth/components/reset-password/sandbox-demo-reset-link';
 import useAuthProviderLoader from '@auth/hooks/use-auth-provider-loader';
 import useResetPassword from '@auth/hooks/use-reset-password';
-import type { RecoveryResultViewProps } from '@auth/types/password-recovery/components';
+import type {
+  RecoveryResultViewProps,
+  RecoverySentStepProps,
+} from '@auth/types/password-recovery/components';
 
 function useSentResult(maskedEmail: string | null): RecoveryResultViewProps {
   const { t } = useTranslation();
@@ -20,18 +22,23 @@ function useSentResult(maskedEmail: string | null): RecoveryResultViewProps {
   };
 }
 
+function SentStep({ maskedEmail, onBack }: RecoverySentStepProps): JSX.Element {
+  const sent = useSentResult(maskedEmail);
+  return (
+    <>
+      <CardBackControl onClick={onBack} />
+      <RecoveryResultView title={sent.title} body={sent.body} action={sent.action} />
+    </>
+  );
+}
+
 export default function ResetPasswordFormSection(): JSX.Element {
   const { callbacks, ...state } = useResetPassword(useAuthProviderLoader());
-  const sent = useSentResult(state.maskedEmail);
 
   return (
-    <AuthCard>
+    <AuthCard variant="recovery">
       {state.step === 'sent' ? (
-        <>
-          <CardBackControl onClick={callbacks.backToForm} />
-          <RecoveryResultView title={sent.title} body={sent.body} action={sent.action} />
-          <SandboxDemoResetLink email={state.submittedEmail} />
-        </>
+        <SentStep maskedEmail={state.maskedEmail} onBack={callbacks.backToForm} />
       ) : (
         <>
           <CardBackControl to={ROUTE_PATHS.signIn} />

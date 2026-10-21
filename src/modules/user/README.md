@@ -281,21 +281,27 @@ mounts with a token already present never shows the card.
 **Rejected.** The red banner (no heading, no recovery action, easy to miss); a notice on the
 destination page (still a silent swap to `/`); a timed auto-redirect (WCAG 2.2.1).
 
-### The sandbox demo walks the whole flow
+### The local stack mails the reset link to Mailpit
 
-**Context.** A pull-request sandbox is a static site with no backend, and no environment
-delivers the reset e-mail before user-service releases the mutations.
+**Context.** user-service delivers the reset link only by e-mail, with SMTP pointed at a mail
+catcher in development, and its released contract does not carry the reset mutations yet. A
+reviewer has to be able to walk the whole flow, from the request to the e-mail to the new
+password, on a local stack.
 
-**Decision.** Like the demo login (issue #309), `SandboxDemoSessionProvider` issues a fixed demo
-reset token for exactly `demo@vilnacrm.com` and accepts only that token, and only while the demo
-is active (a non-production build or a sandbox host). `GraphQLPasswordRecoveryRepository`
-resolves both steps for those inputs without calling the API, standing in for it the way the
-pending contract and the local mock do. On the sent step, `SandboxDemoResetLink` replaces the
-e-mail with a link to `/password-reset` carrying the token. Outside an approved sandbox host,
-production deployments render nothing new.
+**Decision.** `make start` also runs Mailpit (`Mailpit.Dockerfile`, inbox at
+`http://localhost:8025`), and the dev compose gives the Apollo mock `MAILPIT_API_URL`. In that
+mode a request for an address signed up in the session, or for `demo@vilnacrm.com`, issues a
+random single-use token valid for one hour and posts the user-service reset e-mail (subject,
+template copy and token) through Mailpit's send API, with the link built from
+`PASSWORD_RESET_LINK_BASE_URL` (default `http://localhost:3000`), the frontend base URL
+user-service#512 asks for. A confirm with a token the mock never mailed, a used one or an
+expired one is rejected as a `token` violation, which the page shows as the invalid link. Without
+`MAILPIT_API_URL` (the test compose, the unit suites) the mock stays stateless. The frontend has
+no demo path for the reset: it always calls the API.
 
-**Rejected.** Reading the link from mock-server logs (unusable on a sandbox); a demo path for
-every address (it would bypass the browser specs that stub GraphQL).
+**Rejected.** A demo reset token and a "open the link from the e-mail" button on the sent step
+(it skipped the API, so the mail was never exercised); SMTP from the mock (it would add a mail
+client dependency for what Mailpit's HTTP send API already does).
 
 ### Both routes are public
 

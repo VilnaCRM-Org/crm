@@ -26,8 +26,9 @@ export interface CardBackButtonProps {
 
 export type CardBackControlProps = CardBackLinkProps | CardBackButtonProps;
 
-export interface SandboxDemoResetLinkProps {
-  email: string;
+export interface RecoverySentStepProps {
+  maskedEmail: string | null;
+  onBack: () => void;
 }
 
 export interface RecoveryResultAction {

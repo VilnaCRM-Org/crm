@@ -76,11 +76,29 @@ const mountAt = (entry: string): ReturnType<typeof createMemoryRouter> => {
   return router;
 };
 
+jest.mock('@auth/components/reset-password/styles', () => {
+  const actual = jest.requireActual('@auth/components/reset-password/styles');
+  return {
+    __esModule: true,
+    default: { ...actual.default, recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' } },
+  };
+});
+
+const recoveryCard = (): HTMLElement | undefined =>
+  screen.getAllByRole('generic').find((element) => element.id === 'auth-form-card');
+
 describe('CreateNewPasswordFormSection', () => {
   beforeEach(() => {
     resetClientStores();
     confirmReset.mockReset().mockResolvedValue({ kind: 'confirmed' });
     mockResetTokenActive.length = 0;
+  });
+
+  it('draws the invalid-link state in the recovery card variant', async () => {
+    mountAt('/password-reset');
+
+    await screen.findByRole('heading', { level: 1, name: 'Посилання недійсне' });
+    expect(recoveryCard()).toHaveStyle({ borderTopColor: 'rgb(1, 2, 3)' });
   });
 
   it('renders the form for a usable token and strips it from the URL', async () => {
@@ -90,7 +108,7 @@ describe('CreateNewPasswordFormSection', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Створіть новий пароль' })
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Назад' })).toHaveAttribute('href', '/sign-in');
+    expect(screen.queryByRole('link', { name: 'Назад' })).not.toBeInTheDocument();
     expect(router.state.location.search).toBe('');
     expect(document.body.innerHTML).not.toContain(token);
     await expectNoA11yViolations(document.body);

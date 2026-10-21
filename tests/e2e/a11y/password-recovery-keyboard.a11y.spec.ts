@@ -71,7 +71,10 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
       { locator: page.getByRole('button', { name: submitLabel }), visibleFocus: true },
       { locator: firstFooterLinkOf(page), visibleFocus: true },
     ]);
-    await expect(page.getByRole('link', { name: backLabel })).toHaveCSS('color', 'rgb(64, 65, 66)');
+    await expect(page.getByRole('link', { name: backLabel })).toHaveCSS(
+      'color',
+      'rgb(150, 155, 157)'
+    );
   });
 
   test('an empty submit moves focus to the invalid e-mail field', async ({ page }) => {
@@ -139,7 +142,6 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
 
     await expectTabOrder(page, [
       { locator: page.getByRole('link', { name: backToMainLabel }), visibleFocus: true },
-      { locator: page.getByRole('link', { name: backLabel }), visibleFocus: true },
       { locator: page.locator('#newPassword'), visibleFocus: true },
       { locator: toggles.nth(0), visibleFocus: true },
       { locator: page.locator('#confirmPassword'), visibleFocus: true },
@@ -147,7 +149,7 @@ test.describe('Password recovery keyboard contract (issue #315)', () => {
       { locator: page.getByRole('button', { name: submitLabel }), visibleFocus: true },
       { locator: firstFooterLinkOf(page), visibleFocus: true },
     ]);
-    await expect(page.getByRole('link', { name: backLabel })).toHaveCSS('color', 'rgb(64, 65, 66)');
+    await expect(page.getByRole('link', { name: backLabel })).toHaveCount(0);
   });
 
   test('Space toggles the new password visibility', async ({ page }) => {

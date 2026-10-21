@@ -70,23 +70,6 @@ describe('sandbox demo session provider Integration', () => {
     expect(new SandboxDemoSessionProvider({ localStorage }).signIn(demoCredentials)).toBeNull();
   });
 
-  it('issues and accepts the demo reset token only while active and only for the demo', () => {
-    const demoToken = sandboxDemoSessionProvider.resetTokenFor(demoCredentials.email);
-
-    expect(demoToken).toBe('sandbox-demo-reset-token');
-    expect(sandboxDemoSessionProvider.acceptsResetToken(demoToken ?? '')).toBe(true);
-    expect(sandboxDemoSessionProvider.resetTokenFor('someone@vilnacrm.com')).toBeNull();
-    expect(sandboxDemoSessionProvider.acceptsResetToken('another-token')).toBe(false);
-
-    process.env.NODE_ENV = 'production';
-    const production = new SandboxDemoSessionProvider({
-      location: { hostname: 'crm.vilnacrm.com' },
-      localStorage,
-    });
-    expect(production.resetTokenFor(demoCredentials.email)).toBeNull();
-    expect(production.acceptsResetToken('sandbox-demo-reset-token')).toBe(false);
-  });
-
   it('degrades to no persistence when storage refuses every call', () => {
     const provider = new SandboxDemoSessionProvider({ localStorage: refusingStorage });
 

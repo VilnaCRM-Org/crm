@@ -1,7 +1,25 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
+const tabletOnly =
+  `@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and ` +
+  `(max-width:${breakpointsTheme.breakpoints.values.xl - 0.05}px)`;
+
 export default {
+  recoveryCard: {
+    [tabletOnly]: {
+      maxWidth: '39.75rem',
+      padding: '1.9375rem 2.4375rem',
+      '& form > h1 + p': { marginBottom: '1.25rem' },
+      '& label': {
+        fontSize: '1rem',
+        lineHeight: 1.125,
+        marginBottom: '0.5625rem',
+      },
+      '& form > button[type="submit"]': { marginBottom: '0.0625rem' },
+    },
+  },
+
   backControl: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -17,15 +35,15 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: '1.125rem',
     letterSpacing: 0,
-    color: customColors.text.primary,
+    color: customColors.text.secondary,
     textTransform: 'none',
 
     '& svg': {
       flexShrink: 0,
-      color: customColors.text.primary,
+      color: customColors.text.secondary,
     },
 
-    '&:visited': { color: customColors.text.primary },
+    '&:visited': { color: customColors.text.secondary },
     '&:hover': { backgroundColor: 'transparent' },
 
     '&::before': {
@@ -45,33 +63,6 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       marginTop: '-0.1875rem',
-    },
-  },
-
-  demoResetLink: {
-    display: 'flex',
-    alignItems: 'center',
-    width: 'fit-content',
-    minHeight: '2.75rem',
-    marginTop: '1rem',
-    marginInline: 'auto',
-    padding: '0 0.5rem',
-
-    fontFamily: 'Golos',
-    fontWeight: 500,
-    fontSize: '0.9375rem',
-    lineHeight: '1.125rem',
-    color: customColors.text.primary,
-    textDecoration: 'underline',
-    textTransform: 'none',
-
-    '&:visited': { color: customColors.text.primary },
-    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
-
-    '&:focus-visible, &.Mui-focusVisible': {
-      outline: `2px solid ${customColors.text.primary}`,
-      outlineOffset: '2px',
-      borderRadius: '0.25rem',
     },
   },
 

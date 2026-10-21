@@ -13,8 +13,7 @@
     "sent": {
       "title": "Check your e-mail",
       "body": "We sent an e-mail to {{email}}. Check your inbox and follow the instructions in the message.",
-      "to_sign_in": "Go to sign-in",
-      "demo_link": "Open the link from the e-mail (demo)"
+      "to_sign_in": "Go to sign-in"
     }
   },
   "password_reset": {

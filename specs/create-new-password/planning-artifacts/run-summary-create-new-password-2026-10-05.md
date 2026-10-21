@@ -190,7 +190,7 @@ Stages 5 and 6 and all correction passes ran on Opus.
 - Enabling the flag in the test stack intentionally re-baselines `/sign-in`; it lands after both
   routes are registered, and the shipped default stays `false`.
 - The pill-styled recovery links take one scoped `color-contrast` entry under issue #276; "Назад"
-  renders in `#404142` instead of the failing Figma grey.
+  later took a second one when it moved to the Figma `#969B9D` (user decision, 2026-10-21).
 - The six follow-ups are kept outside the bmalph story grammar so Ralph never dispatches them.
 - The ADR is ADR-019 because open PR #311 claims ADR-018.
 

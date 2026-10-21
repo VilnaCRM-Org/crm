@@ -42,6 +42,12 @@ services:
       dockerfile: Apollo.Dockerfile
     env_file:
       - .env
+    environment:
+      MAILPIT_API_URL: http://mailpit:8025
+      PASSWORD_RESET_LINK_BASE_URL: ${PASSWORD_RESET_LINK_BASE_URL:-http://localhost:3000}
+    depends_on:
+      mailpit:
+        condition: service_healthy
     ports:
       - '${GRAPHQL_PORT:-4000}:${GRAPHQL_PORT:-4000}'
     restart: unless-stopped
@@ -59,6 +65,19 @@ services:
           '--post-data={"query":"{__typename}"}',
           'http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}',
         ]
+    networks:
+      - crm-network
+
+  mailpit:
+    build:
+      context: .
+      dockerfile: Mailpit.Dockerfile
+    ports:
+      - '${MAILPIT_HTTP_PORT:-8025}:8025'
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
     networks:
       - crm-network
 

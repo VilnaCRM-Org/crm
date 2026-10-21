@@ -12,10 +12,11 @@ seedFaker();
 const GRAPHQL_URL = '**/graphql';
 const NEW_PASSWORD = buildPassword();
 const CARD = '#auth-form-card';
-const CARD_WIDTHS: ReadonlyArray<readonly [number, number]> = [
-  [1440, 502],
-  [1024, 632],
-  [375, 363],
+const CARD_WIDTHS: ReadonlyArray<readonly [number, number, number]> = [
+  [1440, 502, 502],
+  [1024, 636, 632],
+  [768, 636, 632],
+  [375, 363, 363],
 ];
 
 const resetTitle: string = t('password_reset.title');
@@ -106,16 +107,16 @@ test.describe.parallel('Password recovery visual tests (issue #315)', () => {
     });
   }
 
-  for (const [width, cardWidth] of CARD_WIDTHS) {
-    test(`[password-recovery] card matches sign-in at ${width}px`, async ({ page }) => {
+  for (const [width, recoveryWidth, signInWidth] of CARD_WIDTHS) {
+    test(`[password-recovery] card width follows Figma at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1000 });
       await stabilizePage(page, PAGES.SIGN_IN);
       const signInCard = await page.locator(CARD).boundingBox();
       await stabilizePage(page, PAGES.PASSWORD_RECOVERY);
       const recoveryCard = await page.locator(CARD).boundingBox();
 
-      expect(Math.round(recoveryCard?.width ?? 0)).toBe(cardWidth);
-      expect(Math.round(recoveryCard?.width ?? 0)).toBe(Math.round(signInCard?.width ?? 0));
+      expect(Math.round(recoveryCard?.width ?? 0)).toBe(recoveryWidth);
+      expect(Math.round(signInCard?.width ?? 0)).toBe(signInWidth);
     });
   }
 });

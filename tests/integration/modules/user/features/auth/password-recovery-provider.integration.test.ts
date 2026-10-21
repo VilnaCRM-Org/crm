@@ -159,39 +159,6 @@ describe('PasswordRecoveryProvider over the container and msw', () => {
     expect(sent).toHaveLength(1);
   });
 });
-
-describe('PasswordRecoveryProvider over the sandbox demo', () => {
-  afterEach(() => server.resetHandlers());
-
-  it('walks the demo reset from the request to the confirmation without the API', async () => {
-    const requested = answerRecoveryOperation(
-      'request',
-      () => new HttpResponse(null, { status: 503 })
-    );
-    const confirmed = answerRecoveryOperation(
-      'confirm',
-      () => new HttpResponse(null, { status: 503 })
-    );
-    const provider = await new AuthProviderLoader().resolve<PasswordRecoveryProvider>(
-      AUTH_TOKENS.PasswordRecoveryProvider
-    );
-    const { signal } = new AbortController();
-
-    await expect(provider.requestReset({ email: 'demo@vilnacrm.com' }, signal)).resolves.toEqual({
-      kind: 'sent',
-      maskedEmail: 'd*****@vilnacrm.com',
-    });
-    await expect(
-      provider.confirmReset(
-        { token: 'sandbox-demo-reset-token', newPassword: buildPassword() },
-        signal
-      )
-    ).resolves.toEqual({ kind: 'confirmed' });
-    expect(requested).toHaveLength(0);
-    expect(confirmed).toHaveLength(0);
-  });
-});
-
 describe('PasswordRecoveryProvider over failures the Apollo link never saw', () => {
   const clientOf = (): ApolloClient<NormalizedCacheObject> =>
     container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);

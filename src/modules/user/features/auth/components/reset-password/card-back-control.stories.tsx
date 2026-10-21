@@ -14,7 +14,7 @@ const meta: Meta<typeof CardBackControl> = {
       description: {
         component:
           'The "Назад" row of the recovery cards: a link when given `to`, a button when given ' +
-          '`onClick`. Text and chevron use #404142 instead of the Figma #969B9D for contrast.',
+          '`onClick`. Text and chevron use the Figma #969B9D; the focus ring stays #404142.',
       },
       story: { inline: false },
     },

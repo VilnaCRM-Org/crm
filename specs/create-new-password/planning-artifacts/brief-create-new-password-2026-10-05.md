@@ -377,7 +377,8 @@ For the design owner:
 3. Confirm the "Назад" targets: sign-in from the request form, the request form from the sent
    step.
 4. Accept the in-card "Назад" in `Font/200 #404142` instead of the Figma placeholder grey
-   `#969B9D` (about 2.8:1 on white, below WCAG 1.4.3), an accessibility override of the token.
+   `#969B9D` (about 2.8:1 on white, below WCAG 1.4.3)? Answered 2026-10-21: it follows Figma
+   under a scoped #276 exception.
 5. Is the mobile resend countdown wanted at all, and if so with what quota feedback?
 
 ## 10. Next Step
