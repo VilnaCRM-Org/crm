@@ -10,8 +10,6 @@ import type { ProfileHeaderProps } from '../../types/components/profile-header';
 
 import styles from './styles';
 
-const MONOGRAM_LETTERS = 2;
-
 const FULL_PIB_WORDS = 3;
 
 function displayNameOf(fullName: string): string {
@@ -21,7 +19,6 @@ function displayNameOf(fullName: string): string {
 
 function monogramOf(fullName: string): string {
   return Array.from(fullName.matchAll(/(?<!\S)\S/gu), ([initial]) => initial)
-    .slice(0, MONOGRAM_LETTERS)
     .join('')
     .toUpperCase();
 }
