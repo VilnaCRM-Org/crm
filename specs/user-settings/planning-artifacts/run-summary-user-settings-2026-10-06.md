@@ -129,7 +129,7 @@ the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 | D12 | Superseded by R28: #330 owns route, shell and link; the mock keeps no auth rule                                     |
 | D13 | Flag `userSettings` declared everywhere a flag must be                                                              |
 | D14 | Copy translated to `uk` and `en`; real subtitle; sections named for content                                         |
-| D15 | Contrast overrides: greeting `#57595B`, resend link `#0074B5`; no new exception                                     |
+| D15 | Contrast overrides: resend link `#0074B5`; the greeting keeps `#969B9D` under a scoped exception (2026-10-21)       |
 | D16 | Withdrawn 2026-10-08 (R28): no security signal for a rejected current password                                      |
 | D17 | Password change revokes other sessions upstream (main); no client logic depends on it                               |
 | D18 | Page-level skeleton while loading; read failure shows a retry                                                       |

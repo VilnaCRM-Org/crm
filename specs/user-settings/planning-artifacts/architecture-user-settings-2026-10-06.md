@@ -92,7 +92,7 @@ list disagree, this list and the reconciled sections win. The corrections:
 | msw: one default handler per operation in `server.ts`           | per-test `server.use` helpers (`password-recovery-operations.ts`)                       |
 | the link clears the store with a module-private patch           | also `sandboxDemoSessionProvider.signOut()`, as `logout()` does; `CLEARED_AUTH_STATE`   |
 | anonymous operations `SignInUser`, `CompleteTwoFactorUser`, ... | plus #315's public `RequestPasswordReset` and `ConfirmPasswordReset`                    |
-| `A11Y_EXCEPTIONS` holds four entries                            | eight entries today; this plan adds none                                                |
+| `A11Y_EXCEPTIONS` holds four entries                            | eight entries today; the 2026-10-21 amendment adds `#settings-greeting` (§5.10)         |
 | Lighthouse URL list `/`, `/sign-up`, `/sign-in`                 | eight URLs in `lighthouse/constants.js`, unchanged by this plan                         |
 | sign-up's e-mail label "Електронна пошта"                       | "E-mail" since #311; settings reuses the key                                            |
 | message rows classify freely                                    | #315's README rejects message-text classification; settings records an amendment (§14)  |
@@ -173,7 +173,9 @@ Twelve decisions shape everything below:
    downloads does not grow (§5.16).
 10. **Accessibility is fixed at the source** (U11, D15, R8, R19): field-error text moves to a new
     `paletteColors.error.text` token, `#C62828` (5.62:1), app-wide; the greeting and the resend
-    control use existing passing tokens, and `A11Y_EXCEPTIONS` gains nothing (§5.10).
+    control use existing passing tokens, and `A11Y_EXCEPTIONS` gains nothing (§5.10). Amendment
+    2026-10-21: the greeting keeps the Figma grey `#969B9D` by the product owner's decision, under
+    the scoped `#settings-greeting` exception (§5.10).
 11. **The board's layers, and only those** (contract §1.11, §2): `[component]<route>` →
     `[component]` → React hook → `[Data provider]` ⇄ `[Transformer]`, `[Data provider]` →
     `[Repository]` → API, State beside them. There is no frontend Controller, Service or Handler
@@ -1505,6 +1507,11 @@ text (`paletteColors.error` in `src/styles/colors.ts` holds only `main`).
   (`form button[type="submit"].MuiButton-contained` in `tests/utils/a11y/axe-config.ts`);
   `A11Y_EXCEPTIONS` keeps the eight entries it has on the base branch and gains none.
 
+> Amendment 2026-10-21: the product owner kept the Figma grey `#969B9D` for the greeting (2.81:1),
+> so `profile-header/styles.ts` colours it with `customColors.text.secondary` and
+> `#settings-greeting` is the ninth `A11Y_EXCEPTIONS` entry, scoped to one rule and one selector
+> and tracked in #276; the resend control and the error token stand as written.
+
 ### 5.11 Telemetry: the name scrubber
 
 The 2026-10-06 plan recorded a `profile_update` security signal for a rejected current password
@@ -2704,7 +2711,8 @@ FR-23 is withdrawn (§5.11) and has no test.
   with the notice and the return to `/settings`, flag off.
 - **Mobile, keyboard, axe.** NFR-6 to NFR-8 on Pixel 7 and iPhone 14 with `tap()` only; the
   keyboard order of NFR-7 through `tests/utils/a11y/keyboard.ts`; the route scan in three
-  engines; `A11Y_EXCEPTIONS` asserted to gain no entry (eight on the base branch).
+  engines; `A11Y_EXCEPTIONS` gains the scoped `#settings-greeting` entry (amendment 2026-10-21)
+  and no other (eight on the base branch).
 - **Visual.** `/settings` resting over the 13 sizes in three engines; desktop and mobile pairs
   for the not-confirmed row, field errors, three toasts, the transient error toast, skeleton and
   load failure; the mobile lane; the re-recorded home (link) baselines; no auth baseline changes
