@@ -1,12 +1,25 @@
 import { Grid } from '@mui/material';
+import type { InputProps } from '@mui/material/Input';
 import type { JSX } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
-import type { FormFieldProps } from '@auth/types/components/form-field';
+import type { FormFieldProps, FormFieldSlotProps } from '@auth/types/components/form-field';
 
 import styles from './styles';
+
+function useFieldSlotProps<T extends FieldValues>(
+  name: Path<T>,
+  inputProps: InputProps,
+  describedBy: string | undefined
+): FormFieldSlotProps {
+  const { getFieldState, formState } = useFormContext<T>();
+  if (describedBy === undefined) return { input: inputProps };
+  const { error } = getFieldState(name, formState);
+  const ids = error?.message ? `${describedBy} ${name}-helper-text` : describedBy;
+  return { input: inputProps, htmlInput: { 'aria-describedby': ids } };
+}
 
 export default function FormField<T extends FieldValues>({
   rules = {} as RegisterOptions<T, Path<T>>,
@@ -17,8 +30,10 @@ export default function FormField<T extends FieldValues>({
   label,
   autoComplete,
   inputProps = {},
+  describedBy,
 }: FormFieldProps<T>): JSX.Element {
   const { control } = useFormContext<T>();
+  const slotProps = useFieldSlotProps<T>(name, inputProps, describedBy);
 
   return (
     <Grid container sx={[{ flexDirection: 'column' }, styles.formFieldWrapper]}>
@@ -35,7 +50,7 @@ export default function FormField<T extends FieldValues>({
         type={type}
         autoComplete={autoComplete}
         sx={styles.formFieldInput}
-        slotProps={{ input: inputProps }}
+        slotProps={slotProps}
       />
     </Grid>
   );

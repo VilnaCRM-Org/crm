@@ -7,9 +7,9 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 COPY scripts/docker/install-bun.sh /usr/local/bin/install-bun
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
-    ca-certificates=20260909-r0 \
+    ca-certificates=20261020-r0 \
     chromium=136.0.7103.113-r0 \
-    curl=8.14.1-r2 \
+    curl=8.14.1-r3 \
     dbus=1.14.10-r4 \
     freetype=2.13.3-r0 \
     harfbuzz=9.0.0-r1 \

@@ -11,6 +11,10 @@ export function buildToken(): string {
   return faker.internet.jwt();
 }
 
+export function buildResetToken(): string {
+  return faker.string.alphanumeric(32);
+}
+
 export function buildUserId(): string {
   return faker.string.uuid();
 }

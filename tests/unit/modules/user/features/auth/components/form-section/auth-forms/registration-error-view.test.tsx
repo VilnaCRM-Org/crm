@@ -1,5 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { JSX } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
+import { paletteColors } from '@/styles/colors';
 import RegErrorView from '@auth/components/form-section/auth-forms/registration-error-view';
 
 jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));
@@ -11,23 +16,29 @@ jest.mock('react-i18next', () => ({
 }));
 
 const ERROR_TEXT = 'Registration failed';
+const SUBMITTING = 'Submitting…';
 const BACK_LABEL = 'notifications.error.button';
 const RETRY_LABEL = 'notifications.error.retry_button';
 
-function renderErrorView(overrides: { isClosing?: boolean; isSubmitting?: boolean } = {}): void {
+interface Overrides {
+  isClosing?: boolean;
+  isSubmitting?: boolean;
+}
+
+function renderErrorView(overrides: Overrides = {}): { onRetry: jest.Mock; onBack: jest.Mock } {
+  const onRetry = jest.fn();
+  const onBack = jest.fn();
   render(
     <RegErrorView
       resolvedErrorText={ERROR_TEXT}
+      submittingMessage={SUBMITTING}
       isSubmitting={overrides.isSubmitting ?? false}
       isClosing={overrides.isClosing ?? false}
-      onRetry={jest.fn()}
-      onBack={jest.fn()}
+      onRetry={onRetry}
+      onBack={onBack}
     />
   );
-}
-
-function focusTargets(): HTMLElement[] {
-  return screen.getAllByRole('generic').filter((element) => element.hasAttribute('tabindex'));
+  return { onRetry, onBack };
 }
 
 describe('RegistrationErrorView', () => {
@@ -39,24 +50,13 @@ describe('RegistrationErrorView', () => {
     ).toBeInTheDocument();
   });
 
-  it('exposes exactly one programmatic focus target that is out of the tab order', () => {
+  it('focuses the heading itself, out of the tab order', () => {
     renderErrorView();
 
-    const targets = focusTargets();
-
-    expect(targets).toHaveLength(1);
-    expect(targets[0]).toHaveAttribute('tabindex', '-1');
-    expect(targets[0]).toHaveFocus();
-  });
-
-  it('centres the focused message container as a column', () => {
-    renderErrorView();
-
-    expect(focusTargets()[0]).toHaveStyle({
-      display: 'flex',
-      flexDirection: 'column',
-      textAlign: 'center',
-    });
+    const heading = screen.getByRole('heading', { level: 2, name: 'notifications.error.title' });
+    expect(heading).toHaveFocus();
+    expect(heading).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('alert')).not.toContainElement(heading);
   });
 
   it('separates the secondary back button from the retry button with a top margin', () => {
@@ -70,16 +70,103 @@ describe('RegistrationErrorView', () => {
     });
   });
 
-  it('keeps the back button reachable while a retry is in flight', () => {
-    renderErrorView({ isSubmitting: true });
-
-    expect(screen.getByRole('button', { name: RETRY_LABEL })).toBeDisabled();
-    expect(screen.getByRole('button', { name: BACK_LABEL })).toBeEnabled();
-  });
-
-  it('shows the resolved error text as the alert body', () => {
+  it('rings the focused heading with the error focus outline', () => {
     renderErrorView();
 
-    expect(screen.getByRole('alert')).toHaveTextContent(ERROR_TEXT);
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'notifications.error.title' })
+    ).toHaveStyle({
+      outline: `2px solid ${paletteColors.error.main}`,
+      outlineOffset: '2px',
+    });
+  });
+
+  it('fills the alert with the resolved error text after mount', async () => {
+    renderErrorView();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(ERROR_TEXT);
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('paints the alert empty before the mount effect fills it', () => {
+    const host = document.createElement('div');
+    host.innerHTML = renderToStaticMarkup(
+      <RegErrorView
+        resolvedErrorText={ERROR_TEXT}
+        submittingMessage={SUBMITTING}
+        isSubmitting={false}
+        isClosing={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+      />
+    );
+
+    const firstPaint = within(host).getByRole('alert').textContent;
+
+    expect(firstPaint).toBe('');
+  });
+
+  it('replaces the alert text when the resolved error changes', async () => {
+    const view = (text: string): JSX.Element => (
+      <RegErrorView
+        resolvedErrorText={text}
+        submittingMessage={SUBMITTING}
+        isSubmitting={false}
+        isClosing={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+      />
+    );
+    const { rerender } = render(view(ERROR_TEXT));
+    expect(await screen.findByRole('alert')).toHaveTextContent(ERROR_TEXT);
+
+    rerender(view('Network unavailable'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/^Network unavailable$/);
+  });
+
+  it('keeps both buttons focusable while a retry runs and ignores busy clicks', async () => {
+    const { onRetry, onBack } = renderErrorView({ isSubmitting: true });
+    const retry = screen.getByRole('button', { name: RETRY_LABEL });
+    const back = screen.getByRole('button', { name: BACK_LABEL });
+
+    expect(retry).toHaveAttribute('aria-disabled', 'true');
+    expect(retry).toBeEnabled();
+    expect(back).not.toHaveAttribute('aria-disabled');
+
+    await userEvent.click(retry);
+    await userEvent.click(back);
+
+    expect(onRetry).not.toHaveBeenCalled();
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('announces the running retry and blanks the alert until it settles', () => {
+    renderErrorView({ isSubmitting: true });
+
+    expect(screen.getByRole('status')).toHaveTextContent(SUBMITTING);
+    expect(screen.getByRole('alert')).toBeEmptyDOMElement();
+  });
+
+  it('marks both buttons busy while the card closes', async () => {
+    const { onRetry, onBack } = renderErrorView({ isClosing: true });
+
+    for (const name of [RETRY_LABEL, BACK_LABEL]) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-disabled', 'true');
+    }
+    await userEvent.click(screen.getByRole('button', { name: BACK_LABEL }));
+
+    expect(onBack).not.toHaveBeenCalled();
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
+  it('calls retry and back when idle', async () => {
+    const { onRetry, onBack } = renderErrorView();
+
+    await userEvent.click(screen.getByRole('button', { name: RETRY_LABEL }));
+    await userEvent.click(screen.getByRole('button', { name: BACK_LABEL }));
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

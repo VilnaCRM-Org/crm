@@ -10,10 +10,14 @@ import {
   serverErrorResponse,
 } from '../e2e/modules/user/features/auth/components/form-section/auth-forms';
 import fillInput from '../e2e/utils/fill-input';
+import { t } from '../e2e/utils/initialize-localization';
 
 import { currentLanguage, screenSizes } from './constants';
 import getRegistrationNotificationSnapshotName from './get-registration-notification-snapshot-name';
 import stabilizePage from './stabilize-page';
+
+const successDescription: string = t('notifications.success.description');
+const errorTitle: string = t('notifications.error.title');
 
 async function submitRegistration(page: Page): Promise<void> {
   await stabilizePage(page, REGISTRATION_URL);
@@ -35,7 +39,12 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
       await page.route(REGISTRATION_API_URL, successResponse);
       await submitRegistration(page);
 
-      await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 2, name: successNotificationTitle })
+      ).toBeFocused();
+      await expect(page.getByRole('status').filter({ hasText: successDescription })).toHaveText(
+        successDescription
+      );
       await page.waitForLoadState('networkidle');
       await page.mouse.move(0, 0);
 
@@ -59,7 +68,8 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
       );
       await submitRegistration(page);
 
-      await expect(page.locator('[role="alert"]')).toBeVisible();
+      await expect(page.getByRole('heading', { level: 2, name: errorTitle })).toBeFocused();
+      await expect(page.getByRole('alert')).not.toBeEmpty();
       await page.waitForLoadState('networkidle');
       await page.mouse.move(0, 0);
 

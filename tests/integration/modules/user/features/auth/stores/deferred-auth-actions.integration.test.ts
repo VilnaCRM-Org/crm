@@ -3,6 +3,7 @@ import '../../../../../setup';
 import container from '@/config/dependency-injection-config';
 import { useAuthStore, authActions } from '@auth/stores';
 import { buildCredentials, buildUser } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 import server, { defaultLoginResponse } from '../../../../../mocks/server';
@@ -45,5 +46,32 @@ describe('deferred auth actions integration', () => {
     await authActions.loginUser(credentials);
     expect(useAuthStore.getState().token).toBe(defaultLoginResponse.token);
     expect(consoleError).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a backed-out login clear when the DI graph fails, and shows a live one', async () => {
+    const fresh = await loadIsolated(async () => ({ stores: await import('@auth/stores') }));
+    const credentials = buildCredentials();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const resolveSpy = jest.spyOn(container, 'resolve').mockImplementation(() => {
+      throw new Error('chunk load failed');
+    });
+    const backedOut = new AbortController();
+    const pending = fresh.stores.authActions.loginUser(credentials, backedOut.signal);
+
+    backedOut.abort();
+    await pending;
+    expect(fresh.stores.useAuthStore.getState()).toMatchObject({
+      loginLoading: false,
+      loginError: null,
+    });
+
+    await fresh.stores.authActions.loginUser(credentials, new AbortController().signal);
+    expect(fresh.stores.useAuthStore.getState()).toMatchObject({
+      loginLoading: false,
+      loginError: { kind: 'network', retryable: true },
+    });
+    expect(consoleError).toHaveBeenCalledTimes(2);
+
+    resolveSpy.mockRestore();
   });
 });

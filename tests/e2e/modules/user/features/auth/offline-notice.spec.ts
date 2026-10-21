@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test';
 
+import { buildResetToken } from '@tests/builders';
 import gotoAndSettleWarmUp from '@tests/e2e/utils/error-page-warm-up';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
@@ -7,11 +8,14 @@ import { t } from '../../../../utils/initialize-localization';
 
 const SIGN_IN_URL = '/sign-in';
 const SIGN_UP_URL = '/sign-up';
+const PASSWORD_RECOVERY_URL = '/password-recovery';
+const PASSWORD_RESET_PATH = '/password-reset';
 
 const offlineNotice: string = t('offline_notice.offline');
 const restoredNotice: string = t('offline_notice.restored');
 const signInSubmit: string = t('sign_in.form.submit_button');
 const signUpSubmit: string = t('sign_up.form.submit_button');
+const recoverySubmit: string = t('password_recovery.submit_button');
 
 function submitButton(page: Page, label: string): ReturnType<Page['locator']> {
   return page.locator('form button[type="submit"]', { hasText: label });
@@ -36,15 +40,21 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
     await context.setOffline(false);
   });
 
-  for (const [url, label] of [
-    [SIGN_IN_URL, signInSubmit],
-    [SIGN_UP_URL, signUpSubmit],
+  for (const [name, url, label] of [
+    [SIGN_IN_URL, (): string => SIGN_IN_URL, signInSubmit],
+    [SIGN_UP_URL, (): string => SIGN_UP_URL, signUpSubmit],
+    [PASSWORD_RECOVERY_URL, (): string => PASSWORD_RECOVERY_URL, recoverySubmit],
+    [
+      PASSWORD_RESET_PATH,
+      (): string => `${PASSWORD_RESET_PATH}?token=${buildResetToken()}`,
+      recoverySubmit,
+    ],
   ] as const) {
-    test(`disables the submit on ${url} while offline and restores it online`, async ({
+    test(`disables the submit on ${name} while offline and restores it online`, async ({
       page,
       context,
     }) => {
-      await gotoAndSettleWarmUp(page, url);
+      await gotoAndSettleWarmUp(page, url());
       const submit = await settleOnline(page, label);
       await expect(page.getByText(offlineNotice)).toHaveCount(0);
 

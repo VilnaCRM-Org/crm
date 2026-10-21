@@ -101,8 +101,9 @@
             "required": "This field is required",
             "error_length": "Please enter a password between 8 and 64 characters",
             "error_numbers": "Please include at least one digit",
-            "error_uppercase": "Please include at least one uppercase letter",
-            "error_lowercase": "Please include at least one lowercase letter"
+            "error_uppercase": "Please add at least one uppercase Latin letter (A–Z)",
+            "error_lowercase": "Please include at least one lowercase letter",
+            "error_line_break": "Please remove line breaks from the password"
           },
           "password_tip": {
             "alt": "Password tip icon",
@@ -132,7 +133,8 @@
         "subtitle": "Sign in to your account in two clicks",
         "errors": {
           "load_failed": "Failed to load sign-in form. Please try again.",
-          "login": "Sign in error: {{reason}}"
+          "invalid_credentials": "Invalid e-mail or password",
+          "rate_limited": "Too many sign-in attempts. Try again later"
         },
         "form": {
           "email_input": {
@@ -147,7 +149,16 @@
           "submit_button": "Sign in",
           "submitting": "Signing in…",
           "remember_me": "Remember me",
-          "forgot_password": "Forgot password?"
+          "forgot_password": "Forgot password?",
+          "loading_result": "Loading the result…"
+        },
+        "notices": {
+          "password_reset": "Your password has been changed. Sign in with your new password."
+        },
+        "success": {
+          "title": "Welcome back!",
+          "description": "You have signed in successfully",
+          "button": "Continue"
         }
       },
       "notifications": {
@@ -296,8 +307,9 @@
             "required": "Це поле обов'язкове",
             "error_length": "Будь ласка, введіть від 8 до 64 символів",
             "error_numbers": "Будь ласка, додайте принаймні одну цифру",
-            "error_uppercase": "Будь ласка, додайте принаймні одну велику літеру",
-            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру"
+            "error_uppercase": "Будь ласка, додайте принаймні одну велику латинську літеру (A–Z)",
+            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру",
+            "error_line_break": "Будь ласка, приберіть розриви рядків із пароля"
           },
           "password_tip": {
             "alt": "Іконка підказки пароля",
@@ -327,7 +339,8 @@
         "subtitle": "Увійдіть до свого аккаунту за два кліки",
         "errors": {
           "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
-          "login": "Помилка входу: {{reason}}"
+          "invalid_credentials": "Невірна електронна адреса або пароль",
+          "rate_limited": "Забагато спроб входу. Спробуйте пізніше"
         },
         "form": {
           "email_input": {
@@ -342,7 +355,16 @@
           "submit_button": "Увійти до аккаунту",
           "submitting": "Вхід…",
           "remember_me": "Запамʼятати мене",
-          "forgot_password": "Забули пароль?"
+          "forgot_password": "Забули пароль?",
+          "loading_result": "Завантаження результату…"
+        },
+        "notices": {
+          "password_reset": "Пароль змінено. Увійдіть з новим паролем."
+        },
+        "success": {
+          "title": "Вітаємо!",
+          "description": "Ви успішно увійшли",
+          "button": "Продовжити"
         }
       },
       "notifications": {

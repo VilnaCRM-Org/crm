@@ -32,7 +32,7 @@ The project uses Docker for all development and testing. Commands are managed vi
 ### Starting Development
 
 ```bash
-make start          # Start dev server (port 3000)
+make start          # Start dev server (port 3000), Mockoon, Apollo and Mailpit (inbox :8025)
 make start-prod     # Start the prod-parity stack (port 3001; test-harness image, see #158)
 make sh             # Open shell in dev container
 ```
@@ -161,15 +161,18 @@ unscoped mobile projects would re-record the entire 13-screen desktop visual sui
 more project names.
 
 - **Touch E2E** — [`tests/e2e/mobile/`](tests/e2e/mobile/): sign-in and sign-up completed with
-  `tap()` only, switcher navigation, empty-form validation (no request fired), the
+  `tap()` only, the password recovery request and reset steps (`/password-recovery`,
+  `/password-reset`) completed the same way with their own touch-target, overflow and
+  keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
   overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
-- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up` and
-  the three error pages (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so
-  the baselines are true 2.625× / 3× rasters and catch the asset and raster regressions that
-  CSS-scaled desktop snapshots average away. Baselines live in
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
+  two password recovery pages (`/password-recovery`, `/password-reset`) and the three error pages
+  (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so the baselines are true
+  2.625× / 3× rasters and catch the asset and raster regressions that CSS-scaled desktop snapshots
+  average away. Baselines live in
   `tests/visual/mobile/auth.spec.ts-snapshots/` and
   `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
 
@@ -250,6 +253,7 @@ make test-memory-leak      # Memlab memory leak tests
 make test-load             # K6 load testing (homepage)
 make test-load-signup      # K6 load testing (signup API)
 make test-load-error-pages # K6 load testing (403, 5xx and 404 error pages)
+make test-load-password-recovery # K6 load testing (password recovery pages)
 make lighthouse-desktop    # Lighthouse audit (desktop)
 make lighthouse-mobile     # Lighthouse audit (mobile)
 make test-mutation         # Stryker mutation testing
@@ -261,6 +265,13 @@ three on desktop and mobile under the unchanged budgets, `make test-load-error-p
 `error pages load testing` job) requests all three under the homepage's k6 budgets, and the
 `tests/memory-leak/tests/error-pages.js` memlab scenario walks them from `/sign-in` and back.
 
+The password recovery pages (`/password-recovery` and `/password-reset`, issue #315) ride the same
+lanes: Lighthouse audits both, the reset page with a fixed dummy `?token=` so it renders the form
+rather than the invalid-link view; `make test-load-password-recovery` (the
+`password recovery load testing` job) requests both under the homepage's k6 budgets; and the
+`tests/memory-leak/tests/password-recovery.js` memlab scenario types into the request form,
+fills the reset form until its client validation fires, and returns to `/sign-in`.
+
 Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 - smoke, average, stress, spike
@@ -268,7 +279,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-24-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+30-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -291,14 +302,16 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 24-way shard count rather than
+These keep the run affordable — parallelism comes from the 30-way shard count rather than
 Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
 weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
 invalidates, and those cluster by area. A diff touching one area can therefore land most of its
-re-run cost in a single shard; 24 shards keep that hot shard inside the `timeout-minutes` kill
+re-run cost in a single shard; 30 shards keep that hot shard inside the `timeout-minutes` kill
 switch. Raise the count if a shard starts approaching it — never the kill switch. The count went
 from 16 to 24 when Stryker 10's `CallExpression` mutator added 164 mutants and a cold run pushed
-shards 5 and 14 into the 15-minute kill switch.
+shards 5 and 14 into the 15-minute kill switch, and from 24 to 30 when the password-recovery
+files repacked the split so a cold shard 6 drew 443 mutants (the next heaviest drew 291) and hit
+the kill switch at 250 tested; the same packing at 30 caps the heaviest shard at 240.
 
 ### Honest mutant classification (issue #171)
 
@@ -363,21 +376,33 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at ten sites, and it comes in
-two shapes. Nine are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
-compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The tenth,
-`use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
-`ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
-`actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
-box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
-Hoisting either literal to a named constant would remove the mutant, but
-`react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding an eleventh needs the same standard of
-proof, and a non-empty array needs the stability argument spelled out, not assumed.
+Thirteen directives are annotated today, at two mutators. Twelve are `ArrayDeclaration` on a React
+hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+`[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
+constant one-element array is equal on every render and the effect or memo fires exactly as it
+does with `[]`. The other two, both in `use-login-submitter.ts`, annotate **non-empty** arrays,
+which `ArrayDeclaration` empties instead — equivalent for a different reason worth stating
+separately. `[actions, loginControllersRef]`: `actions` is always the `authActions` module
+singleton and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an
+emptied list memoizes exactly the same callback. `[login]` on `handleLogin`: `login` is that same
+memoized callback, so its identity never changes either. Hoisting either literal to a named
+constant would remove the mutant, but `react-hooks/exhaustive-deps` (an `error` here, issue #164)
+rejects a deps argument that is not an array literal, so there is nothing left to change.
+
+The thirteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+`{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
+re-validates the confirmation field when the new password changes once the confirmation is touched
+or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
+form and the effect also re-runs on edits to the other fields. The only other field the user edits
+is `confirmPassword` itself, and the effect only triggers in that same armed window, where the form
+(`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
+re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
+the same result and no rendered state differs. Narrowing the watch is what the source should say,
+so the annotation stays rather than the simpler-looking `{}`. Adding a fourteenth needs the same
+standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 242 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 301 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -503,13 +528,15 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries seven `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries nine `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
-error-page primary actions and decorative status digits, and the sign-in "Забули пароль?" brand
-text link at 2.45:1 by the product owner's DEV-67 decision, issue #309), tracked in issue #276
-and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
-button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
-entry carries all four fields.
+error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
+in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
+and the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
+decision, both issue #315), tracked in issue #276 and deleted when it closes.
+`tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
+fail, that a wildcard is never honoured, and that every entry carries all four fields.
 
 **No suppression:** fix the defect at the source, or add a scoped entry with its tracking issue —
 never `eslint-disable`, an `axe.configure` rule removal, `test.skip`/`test.fixme`, or a
@@ -1018,7 +1045,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 24-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 30-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1719,6 +1746,25 @@ Both are plain Node over the working tree — no Docker and no dev container, li
 `make lint-lockfile` and `make check-env-sync`. Catalogs are discovered by walking `src/`
 for folders named `i18n`, so a new feature is covered the moment it ships one.
 
+**Lazy catalogs are gated like eager ones, and scoped to their owners.** The single policy list
+[`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) names each catalog a route
+chunk registers at runtime instead of the merged file (see "Localization" under Architecture),
+as a `{ "catalog", "owners" }` entry; both the generator and the gate read it
+(`I18N_CATALOG_POLICY` overrides the path for fixtures). A lazy catalog still goes through checks
+1, 2 and the extra rejections below; check 3 expects it **absent** from
+`src/i18n/localization.json`, so a lazy key that leaks into the merged file is reported stale.
+Check 4 resolves a call site against the merged catalog plus **only** the lazy catalogs whose
+`owners` (files or folders under `src/`) cover that file. A lazy key used anywhere else fails as
+`[lazy-key-scope]`: the catalog exists at runtime only once an owning route module has registered
+it, so the same `t('password_policy.rules.length')` in a sign-up component would render the raw
+key on `/sign-up`. The owners are the two recovery route folders, the recovery component folders,
+`password-policy-rules.tsx`, `use-recovery-failure-banner.ts`, and the auth route contract
+`routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
+through `usePageTitle` after its module has registered the catalog). Adding an owner is a reviewed
+policy edit and must name a file only the registering routes import. A policy entry that names no
+discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
+unreadable or malformed policy fails the run before any check.
+
 **What the gate enforces:**
 
 1. **Locale completeness** — every `src/**/i18n/` catalog holds exactly the required locales
@@ -1738,7 +1784,10 @@ for folders named `i18n`, so a new feature is covered the moment it ships one.
 It additionally rejects the ways those four could be gamed or silently defeated: a translation
 that is present but empty or whitespace-only; two catalogs claiming the same key (the generator
 merges last-writer-wins over an **unsorted** directory walk, so the winner would depend on
-filesystem order); a source translation file parked in the generated `src/i18n/` directory; a
+filesystem order); two catalogs that disagree on whether a key is a translation or an object
+(`a.b` a string in one, `a.b.c` nested under it in another — eager or lazy, in either direction —
+which would abort the merge or silently drop a subtree, so the gate reports it and stops before
+merging); a source translation file parked in the generated `src/i18n/` directory; a
 duplicate JSON key (`JSON.parse` keeps the last one and reports nothing, so a repeated key
 silently discards a translation); and a run that discovers no catalogs or no keys, which fails
 rather than reporting a vacuous pass.
@@ -1748,9 +1797,11 @@ uses `one`/`other` while `uk` uses `one`/`few`/`many`/`other`, and a base key re
 its categories exists. Requiring byte-identical key sets would make correct i18next
 pluralization unsatisfiable.
 
-The gate is six modules:
+The gate is seven modules:
 
 - `check-i18n-parity.mjs` — catalog validation, merged-catalog freshness, reporting.
+- [`i18n-key-claims.mjs`](scripts/ci/i18n-key-claims.mjs) — which catalog claims a key: one owner
+  per key, and no key that is a translation in one catalog and an object in another.
 - [`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) — source scanning and key resolution.
 - [`i18n-source-tokens.mjs`](scripts/ci/i18n-source-tokens.mjs) — the lexical pass that separates
   code from prose, so a key inside a comment or a string is never read as a call site and a real
@@ -1845,6 +1896,34 @@ registry ("Adding a page" below); never eagerly import a page. Three checks fail
 - `RouteFallback`
   ([`tests/unit/components/route-fallback/route-fallback.test.tsx`](tests/unit/components/route-fallback/route-fallback.test.tsx))
   pins the deferred-paint and live-region behavior.
+
+**Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
+subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
+two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds two
+top-level `splitChunks.cacheGroups` entries, `authFormsVendors` (chunk `auth-forms-vendors`)
+and `authForms` (chunk `auth-forms`), built by
+[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
+per module: each `test` admits a module only when both the `sign-in-form-section` and the
+`sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`, and
+then by resource: a module under `node_modules` goes to `auth-forms-vendors`, anything else to
+`auth-forms`, so every shared module lands in exactly one of the two. Two groups rather than one
+because `main` ships that shared code as two parallel chunks (the shared dependencies and the
+shared app code), and a single merged chunk changed the shape of the network graph Lighthouse's
+simulated throttling builds for `/sign-up`, costing about two points of mobile score on slow
+runners. Both `chunks` filters also admit the two recovery form-section chunks, so a recovery
+route that needs one of those shared modules depends on the same two chunks — already cached
+after the usual `/sign-in` → "Forgot password" → `/password-recovery` path — instead of carrying
+its own copy. The trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads
+both chunks whole, including sign-in/sign-up-only shared modules it does not run; no recovery
+URL is in the Lighthouse budget, `/sign-in` is. The chunk names live in that file and
+`tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule of both groups,
+including that a vendor module never reaches `auth-forms` and an app module never reaches
+`auth-forms-vendors`; the `performance serving` test pins the wiring of both groups and that
+each selects the chunk names the loaders' `webpackChunkName` values emit, so renaming a loader's
+chunk cannot silently disable either group. Chunk
+sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
+clears the mobile floor is decided by CI Lighthouse, not by a local build.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same
@@ -2009,7 +2088,8 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 - **ESLint** (`no-restricted-syntax` on `src/**/*.tsx`) fails a `new <PascalCaseClass>()`.
   Built-in constructors (`new Error/URL/Date/Map/…`) are allowlisted out of the selector.
 - **dependency-cruiser** `components-no-direct-injectable-import` fails a **value**-import of
-  `src/services/**`, `…/repositories/**`, `src/modules/*/store/**`, `*-factory`, `*-mapper`, or
+  `src/services/**`, `…/data-providers/**`, `…/repositories/**`, `…/transformers/**`,
+  `src/modules/*/store/**`, `src/modules/*/transformers/**`, `*-factory`, `*-mapper`, or
   `*error-handler*` into a component. `import type` stays allowed — annotations bind nothing.
 
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
@@ -2037,10 +2117,8 @@ enforced by two rules:
   for. The code-split boundary is where the cost stops.
 
 **Honest limitation:** the gate is syntactic and `.tsx`-only. Hooks (`use-*.ts`) are **not**
-covered — `new LoginErrorMessageNormalizer()` in
-`@auth/components/form-section/auth-forms/use-login-submitter.ts` and
-`new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts` stay
-review-gate concerns. ESLint cannot
+covered — `new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts`
+stays a review-gate concern. ESLint cannot
 know which PascalCase identifier is behavioral (the built-in allowlist must be maintained), and
 dependency-cruiser keys on path conventions, so a behavioral class placed outside those paths or
 re-exported through a barrel is not caught. Satisfy both gates by adding the token, registering
@@ -2299,8 +2377,9 @@ scopes its `to` clause to `^src/`.
 fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
 starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
 
-**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
-`src/modules/*/features/*/{repositories,stores,utils}/**`.
+**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`,
+`src/modules/*/transformers/**`, and
+`src/modules/*/features/*/{data-providers,repositories,stores,transformers,utils}/**`.
 
 Three different things are outside the gate, and the distinction matters when you add a file:
 
@@ -2519,9 +2598,30 @@ verified in CI.
 - **Source of truth**: `src/**/i18n/{en,uk}.json`, one catalog folder per feature or component
   (for example `src/modules/user/features/auth/i18n/` and `src/components/error-page/i18n/`).
   Both locales are mandatory and their key sets must stay identical.
-- **Derived artifact**: `src/i18n/localization.json`, the merge of every catalog into
+- **Derived artifact**: `src/i18n/localization.json`, the merge of every **eager** catalog into
   `{ [locale]: { translation: … } }` by `scripts/localization-generator.js`. It is committed,
   so a catalog edit is only half a change until the merged file is regenerated.
+- **Lazy catalogs**: a catalog listed in
+  [`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) (`lazyCatalogs`, paths
+  relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file
+  into the eager `index.js` every page downloads. Its route chunk imports it instead and
+  registers both locales synchronously when the route module evaluates — before the page's
+  `usePageTitle` runs — through a container-free `*Loader` singleton calling
+  `addResourceBundle`. The one lazy catalog today is the password-recovery copy
+  (`password_recovery.*`, `password_reset.*`, `password_policy.*`), owned by
+  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by the
+  `reset-password` and `create-new-password` route modules. The recovery keys were 3,742 B of the
+  minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about
+  3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone does not
+  restore the `/sign-in` headroom (that base already scored a median of about 0.8375 against the
+  0.84 mobile floor). Keep a key eager when a page outside those routes renders it
+  (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces
+  it. Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the
+  merged catalog only, exactly like an eager page, and tests of the recovery routes and their
+  components use `createRecoveryLocaleI18n`, so a lazy key leaking into an eager page renders raw
+  in that page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which
+  reads the policy and registers every lazy catalog from its JSON files) keep the copy available
+  for every story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.
@@ -2835,7 +2935,8 @@ The baseline: `default-src 'self'`; `script-src 'self'` (no `'unsafe-inline'`, n
 `font-src 'self'`; `connect-src 'self'` + API origins; `manifest-src 'self'`;
 `frame-ancestors 'none'`; `form-action 'self'`; `base-uri 'self'`; `object-src 'none'`; plus
 HSTS (`max-age=31536000; includeSubDomains`), `X-Frame-Options: DENY`,
-`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin` (never the full URL, which
+would carry a password-reset token into an access log),
 `Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
 `Cross-Origin-Resource-Policy: same-origin`. `Cross-Origin-Opener-Policy` is deliberately absent:
 browsers ignore it on a plain-http, non-localhost origin and log a console error per document,

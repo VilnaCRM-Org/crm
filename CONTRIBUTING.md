@@ -351,6 +351,28 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
   `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
   still reports HTTP status 404 for those responses; the page itself renders normally.
 
+### Password reset e-mails in development
+
+`make start` also runs [Mailpit](https://mailpit.axllent.org/), a local mail catcher, next to
+the Apollo mock; its inbox is at <http://localhost:8025>. The dev compose hands the mock
+`MAILPIT_API_URL`, which switches the reset mutations from stateless answers to the user-service
+behaviour, so the whole flow runs locally:
+
+1. Sign up on `/sign-up` (the mock remembers accounts until it restarts), or use
+   `demo@vilnacrm.com`, which the mock always knows.
+2. Request a reset on `/password-recovery` for that address. The reset e-mail — the
+   user-service template, with a token valid for one hour — arrives in the Mailpit inbox. Any
+   other address gets the same answer and no e-mail, as in user-service.
+3. Open "Скинути пароль" in the e-mail. It points at
+   `http://localhost:3000/password-reset?token=…`; set `PASSWORD_RESET_LINK_BASE_URL` before
+   `make start` when the frontend runs elsewhere.
+4. Set a new password. The page lands on `/sign-in` with the password-changed notice. The same
+   link a second time, or any token the mock never mailed, shows the invalid-link view.
+
+The dev container starts Mailpit too and forwards port 8025. The test stack
+(`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
+stateless mock and stub GraphQL where they need a specific answer.
+
 ### The browser security-header gate
 
 Every production response carries the header baseline — `Content-Security-Policy`,
@@ -414,7 +436,7 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 24-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 30-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
 file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
 whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
@@ -434,7 +456,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 24-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 30-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -458,10 +480,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=24  # repeat for 1..23
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=30  # repeat for 1..29
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=24 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=24
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=30 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=30
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and

@@ -199,16 +199,21 @@ describe('runtime configuration contract', () => {
     });
   });
 
-  it('links the unregistered password-recovery route from sign-in while #315 is open', () => {
+  it('links the registered password-recovery route from sign-in (#315)', () => {
     expect(isRouteRegistered('signIn')).toBe(true);
     expect(isRouteRegistered('notARealRouteKey')).toBe(false);
 
     expect(readFile(USER_OPTIONS)).toContain('href={ROUTE_PATHS.passwordRecovery}');
-    expect(isRouteRegistered('passwordRecovery')).toBe(false);
+    expect(isRouteRegistered('passwordRecovery')).toBe(true);
 
     const rows = routeCoverageRows('passwordRecovery');
 
-    expect(rows.map(([, suite]) => suite)).toEqual(['allowlisted']);
-    expect(rows[0]?.[3]).toContain('#315');
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e', 'visual']));
+    expect(rows.map(([, , spec]) => spec)).toEqual(
+      expect.arrayContaining([
+        'tests/e2e/modules/user/features/auth/password-recovery.spec.ts',
+        'tests/visual/visual-comparison.password-recovery.spec.ts',
+      ])
+    );
   });
 });

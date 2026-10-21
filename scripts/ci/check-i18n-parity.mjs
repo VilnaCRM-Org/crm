@@ -27,17 +27,24 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
+import { checkKeyOwnership, checkKeyPrefixes } from './i18n-key-claims.mjs';
 import { collectKeyReferences, pluralFamily, resolvesKey } from './i18n-key-scan.mjs';
 import { findDuplicateKeys } from './json-duplicate-keys.mjs';
 
 const requireCjs = createRequire(import.meta.url);
+const LocalizationGenerator = requireCjs('../localization-generator.js');
+const catalogMerger = new LocalizationGenerator();
 
 const REQUIRED_LOCALES = ['en', 'uk'];
 const CATALOG_DIR = 'i18n';
 const MERGED_FILE = 'localization.json';
 const REPORT_LIMIT = 20;
 const REMEDY = 'node scripts/ci/check-i18n-parity.mjs --write';
+const DEFAULT_POLICY = fileURLToPath(
+  new URL('../../config/i18n-catalog-policy.json', import.meta.url)
+);
 
 function usage() {
   return [
@@ -46,7 +53,8 @@ function usage() {
     '  (no flags)  verify locale parity read-only; exit 1 on any violation',
     `  --write     regenerate ${MERGED_FILE} from the per-folder catalogs, then verify`,
     '',
-    'Env: I18N_SCAN_ROOT (default src), I18N_OUTPUT_DIR (default <scanRoot>/i18n)',
+    'Env: I18N_SCAN_ROOT (default src), I18N_OUTPUT_DIR (default <scanRoot>/i18n),',
+    '     I18N_CATALOG_POLICY (default config/i18n-catalog-policy.json)',
   ].join('\n');
 }
 
@@ -177,6 +185,39 @@ function readCatalogs(scanRoot, generatedDirs, violations) {
   });
 }
 
+function checkPolicyPaths(policy, catalogs, scanRoot, violations) {
+  const found = new Set(catalogs.map((catalog) => path.resolve(catalog.dir)));
+  const policyFile = relative(policy.file);
+  for (const { catalog, owners } of policy.lazyCatalogs) {
+    if (!found.has(path.resolve(scanRoot, catalog))) {
+      violations.push(
+        `[lazy-catalog] ${policyFile} declares "${catalog}", but no ` +
+          `${CATALOG_DIR}/ catalog folder exists there under ${relative(scanRoot)}`
+      );
+    }
+    for (const owner of owners.filter((entry) => !fs.existsSync(path.resolve(scanRoot, entry)))) {
+      violations.push(
+        `[lazy-catalog] ${policyFile} lists "${owner}" as an owner of "${catalog}", but no ` +
+          `file or folder exists there under ${relative(scanRoot)}`
+      );
+    }
+  }
+}
+
+function markLazyCatalogs(catalogs, policy, scanRoot, violations) {
+  checkPolicyPaths(policy, catalogs, scanRoot, violations);
+  const owners = new Map(
+    policy.lazyCatalogs.map((entry) => [
+      path.resolve(scanRoot, entry.catalog),
+      entry.owners.map((owner) => path.resolve(scanRoot, owner)),
+    ])
+  );
+  return catalogs.map((catalog) => {
+    const owned = owners.get(path.resolve(catalog.dir));
+    return { ...catalog, lazy: owned !== undefined, owners: owned ?? [] };
+  });
+}
+
 /**
  * Check 1b: a generated catalog directory is output only, never a source catalog. Every generated
  * directory is checked, not just the configured one: LocalizationGenerator still merges any
@@ -234,42 +275,6 @@ function checkValueQuality(catalogs, violations) {
   }
 }
 
-/**
- * Check 2c: LocalizationGenerator merges catalogs last-writer-wins over an unsorted
- * directory walk, so two folders claiming one key resolve by filesystem order.
- */
-function catalogKeys(catalog) {
-  const keys = new Set();
-  for (const locale of REQUIRED_LOCALES) {
-    const translation = catalog.locales[locale];
-    if (!translation) continue;
-    for (const key of leafKeys(translation)) keys.add(key);
-  }
-  return keys;
-}
-
-function keyOwners(catalogs) {
-  const owners = new Map();
-  for (const catalog of catalogs) {
-    for (const key of catalogKeys(catalog)) {
-      const dirs = owners.get(key) ?? [];
-      dirs.push(relative(catalog.dir));
-      owners.set(key, dirs);
-    }
-  }
-  return owners;
-}
-
-function checkKeyOwnership(catalogs, violations) {
-  for (const [key, dirs] of keyOwners(catalogs)) {
-    if (dirs.length < 2) continue;
-    violations.push(
-      `[key-ownership] "${key}" is defined by ${dirs.length} catalogs (${dirs.join(', ')}) — ` +
-        'the merge order is filesystem-dependent, so exactly one catalog must own a key'
-    );
-  }
-}
-
 /** LocalizationGenerator warns about gaps Check 1 already reports authoritatively. */
 function silenceWarnings(run) {
   const original = console.warn;
@@ -286,17 +291,17 @@ function silenceWarnings(run) {
  * directory: verification never touches the working tree, and --write goes through
  * writeMerged() so the committed file matches the repository's Prettier gate.
  */
-function regenerateInMemory(scanRoot) {
+function regenerateInMemory(scanRoot, lazyCatalogs) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-parity-'));
   try {
-    const LocalizationGenerator = requireCjs('../localization-generator.js');
-    const generator = new LocalizationGenerator(
-      CATALOG_DIR,
-      scanRoot,
-      MERGED_FILE,
-      path.relative(process.cwd(), temp),
-      REQUIRED_LOCALES
-    );
+    const generator = new LocalizationGenerator({
+      i18nFolderName: CATALOG_DIR,
+      modulesPath: scanRoot,
+      localizationFile: MERGED_FILE,
+      outputPath: path.relative(process.cwd(), temp),
+      requiredLocales: REQUIRED_LOCALES,
+      lazyCatalogs,
+    });
     const result = silenceWarnings(() => generator.generateLocalizationFile());
     return result ? result.localizationObj : {};
   } finally {
@@ -368,25 +373,63 @@ function checkMergedLocaleParity(catalog, violations) {
   violations.push(parts.join('\n'));
 }
 
-/** Check 4: every statically known translation key resolves in every locale. */
-function checkCallSites(scanRoot, catalog, violations) {
-  const translations = new Map(
-    REQUIRED_LOCALES.map((locale) => [locale, localeTranslation(catalog, locale) ?? {}])
+function translationsWith(merged, lazyCatalogs) {
+  return new Map(
+    REQUIRED_LOCALES.map((locale) => [
+      locale,
+      lazyCatalogs.reduce(
+        (translation, catalog) => catalogMerger.deepMerge(translation, catalog.locales[locale]),
+        structuredClone(localeTranslation(merged, locale) ?? {})
+      ),
+    ])
   );
+}
+
+function ownsFile(catalog, file) {
+  const resolved = path.resolve(file);
+  return catalog.owners.some(
+    (owner) => resolved === owner || resolved.startsWith(owner + path.sep)
+  );
+}
+
+function describeUnresolved(reference, absent, foreignCatalogs, policyFile) {
+  const site = `${relative(reference.file)}:${reference.line}: "${reference.key}"`;
+  const holder = foreignCatalogs.find((catalog) =>
+    REQUIRED_LOCALES.some((locale) => resolvesKey(catalog.locales[locale] ?? {}, reference.key))
+  );
+  if (!holder) return `[undefined-key] ${site} is not defined in ${absent.join(', ')}`;
+  return (
+    `[lazy-key-scope] ${site} is defined only in the lazy catalog ${relative(holder.dir)}, ` +
+    `and ${relative(policyFile)} does not list this file among its owners — only the owning ` +
+    'routes register that catalog, so this page would render the raw key'
+  );
+}
+
+/**
+ * Check 4: every statically known translation key resolves in every locale, against the merged
+ * catalog plus only the lazy catalogs whose policy owners cover the referencing file. A lazy key
+ * exists at runtime only once its route module has registered it, so a call site on an eager
+ * surface must resolve from the merged catalog alone.
+ */
+function checkCallSites(scanRoot, merged, catalogs, policyFile, violations) {
+  const lazy = catalogs.filter((catalog) => catalog.lazy);
   const namespaces = new Set();
-  for (const translation of translations.values()) {
+  for (const translation of translationsWith(merged, lazy).values()) {
     for (const key of Object.keys(translation)) namespaces.add(key);
   }
+  const scopes = new Map();
   const references = collectKeyReferences(scanRoot, namespaces);
   for (const reference of references) {
+    const owned = lazy.filter((catalog) => ownsFile(catalog, reference.file));
+    const scope = owned.map((catalog) => catalog.dir).join('\n');
+    if (!scopes.has(scope)) scopes.set(scope, translationsWith(merged, owned));
+    const translations = scopes.get(scope);
     const absent = REQUIRED_LOCALES.filter(
       (locale) => !resolvesKey(translations.get(locale), reference.key)
     );
     if (absent.length === 0) continue;
-    violations.push(
-      `[undefined-key] ${relative(reference.file)}:${reference.line}: "${reference.key}" ` +
-        `is not defined in ${absent.join(', ')}`
-    );
+    const foreign = lazy.filter((catalog) => !owned.includes(catalog));
+    violations.push(describeUnresolved(reference, absent, foreign, policyFile));
   }
   return references.length;
 }
@@ -410,7 +453,7 @@ function checkCoverageFloor(summary, scanRoot, violations) {
 function report(violations, summary) {
   if (violations.length === 0) {
     process.stdout.write(
-      `check-i18n-parity: OK — ${summary.catalogs} catalog folder(s), ` +
+      `check-i18n-parity: OK — ${summary.catalogs} catalog folder(s) (${summary.lazy} lazy), ` +
         `${summary.keys} merged key(s) per locale, ${summary.references} translation ` +
         `reference(s) verified across ${REQUIRED_LOCALES.join('/')}.\n`
     );
@@ -441,6 +484,39 @@ function resolveScanRoot() {
   return { scanRoot, outputDir, generatedDirs, mergedPath: path.join(outputDir, MERGED_FILE) };
 }
 
+function isPathEntry(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+function isOwnerList(owners) {
+  return Array.isArray(owners) && owners.length > 0 && owners.every(isPathEntry);
+}
+
+function isLazyCatalogEntry(entry) {
+  return isPlainObject(entry) && isPathEntry(entry.catalog) && isOwnerList(entry.owners);
+}
+
+function loadPolicy() {
+  const file = process.env.I18N_CATALOG_POLICY
+    ? path.resolve(process.cwd(), process.env.I18N_CATALOG_POLICY)
+    : DEFAULT_POLICY;
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    return { error: `cannot read catalog policy ${relative(file)} — ${error.message}` };
+  }
+  const lazyCatalogs = isPlainObject(parsed) ? parsed.lazyCatalogs : undefined;
+  if (!Array.isArray(lazyCatalogs) || !lazyCatalogs.every(isLazyCatalogEntry)) {
+    return {
+      error:
+        `catalog policy ${relative(file)} must declare "lazyCatalogs" as an array of ` +
+        '{ "catalog": <folder>, "owners": [<file or folder>, ...] } entries',
+    };
+  }
+  return { file, lazyCatalogs };
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args) {
@@ -450,21 +526,35 @@ function main() {
   }
 
   const roots = resolveScanRoot();
-  if (roots.error) {
-    process.stderr.write(`check-i18n-parity: ${roots.error}\n`);
+  const policy = roots.error ? roots : loadPolicy();
+  if (policy.error) {
+    process.stderr.write(`check-i18n-parity: ${policy.error}\n`);
     process.exitCode = 1;
     return;
   }
-  const { scanRoot, outputDir, generatedDirs, mergedPath } = roots;
+  const { scanRoot, generatedDirs, mergedPath } = roots;
 
   const violations = [];
-  const catalogs = readCatalogs(scanRoot, generatedDirs, violations);
+  const catalogs = markLazyCatalogs(
+    readCatalogs(scanRoot, generatedDirs, violations),
+    policy,
+    scanRoot,
+    violations
+  );
   checkGeneratedDirsHoldOnlyOutput(generatedDirs, violations);
   checkFolderParity(catalogs, violations);
   checkValueQuality(catalogs, violations);
-  checkKeyOwnership(catalogs, violations);
+  const claims = { locales: REQUIRED_LOCALES, leafKeys, relative };
+  checkKeyOwnership(catalogs, violations, claims);
+  if (checkKeyPrefixes(catalogs, violations, claims) > 0) {
+    report(violations);
+    return;
+  }
 
-  const regenerated = regenerateInMemory(scanRoot);
+  const regenerated = regenerateInMemory(
+    scanRoot,
+    policy.lazyCatalogs.map((entry) => entry.catalog)
+  );
   if (args.write) {
     // Writing a catalog built from unhealthy sources would commit the damage — an unparseable
     // locale file merges as an absent locale, silently stripping it from the committed file.
@@ -491,9 +581,10 @@ function main() {
   // Call sites resolve against the catalogs, not the committed merge: a developer who edited
   // both locales but has not regenerated yet gets the staleness report, not a phantom
   // undefined-key report naming locales that do define the key.
-  const references = checkCallSites(scanRoot, regenerated, violations);
+  const references = checkCallSites(scanRoot, regenerated, catalogs, policy.file, violations);
   const summary = {
     catalogs: catalogs.length,
+    lazy: catalogs.filter((catalog) => catalog.lazy).length,
     keys: pluralFamilies(localeTranslation(regenerated, REQUIRED_LOCALES[0]) ?? {}).size,
     references,
   };

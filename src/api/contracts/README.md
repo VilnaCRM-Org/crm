@@ -77,6 +77,44 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 4. `make contract-diff` must pass — the semantic gates below classify what the bump actually
    changed, for the OpenAPI spec and the GraphQL schema alike.
 
+## Pending contracts
+
+A pending contract is an upstream declaration the pinned version does not carry yet. It is
+copied verbatim from user-service, read by codegen (`codegen.ts` lists `src/api/contracts/pending`
+beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies the folder, and
+`loadTypeDefs` in `docker/apollo-server/lib/schema-loader.ts` passes every `*.graphql` file in it,
+in name order, as `typeDefs` after the pinned SDL), and deleted by the pin bump that brings the
+declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset mutation through a
+server built from two pending files and pins that the folder `server.mts` resolves from `out/` is
+the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge a duplicate
+declaration silently, so each pending file opens with `# pending-against: <version>` and
+`scripts/ci/check-pending-contracts.sh`, the first step of `scripts/codegen.sh` (so of both
+`make codegen` and `make codegen-check`), fails when that header is missing or no longer names
+`GRAPHQL_SCHEMA_VERSION`. The pin bump that brings the declarations in deletes the file.
+
+`src/api/contracts/pending/password-reset.graphql`:
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** `VilnaCRM-Org/user-service@63041e4a` (`.github/graphql-spec/spec` on
+  `main`), unchanged through `f82bbef5`.
+- **Mock answers:** `{ user: null, clientMutationId }` for a valid input; an input violation as
+  one GraphQL error `<property>: <reason>` on HTTP 200, with
+  `extensions: { code: 'BAD_USER_INPUT', status: 422 }`.
+- **Removed by:** the contract pin bump to the first user-service release that declares both
+  mutations (Follow-up 5.3).
+
+The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswordResetUser`
+answer every valid input with the same payload, so domain refusals, `429`, `503` and aborts are
+exercised in the browser lanes (`page.route`) and the integration suite (msw) instead. The dev
+compose alone sets `MAILPIT_API_URL`, which turns on the mail flow: a request for a known address
+mails a single-use, one-hour token through Mailpit, and a confirm rejects a token it never mailed,
+or one already used or expired, as a `token` violation (`password-reset-mail.ts`; see
+`CONTRIBUTING.md`, "Password reset e-mails in development"). The test compose and the unit
+suites never set it, so they keep the stateless answers. Deleting one extension
+means removing its file; the two resolvers stay. Deleting the last one removes the folder, so it
+also removes the `codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending folder read in
+`schema-loader.ts`: the mock refuses to start without the folder it was told to read.
+
 ## Semantic breaking-change gate (issue #177)
 
 `make codegen-check` is **syntactic**: it proves the pins agree and that `src/api/generated/**`
