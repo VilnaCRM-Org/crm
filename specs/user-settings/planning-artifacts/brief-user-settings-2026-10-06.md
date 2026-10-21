@@ -4,7 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-21
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'analyst (Mary), autonomous run'
@@ -109,7 +109,8 @@ Every control works by touch, and focus moves to the first field in error, scrol
 1. **Resting load.** From the home link "Налаштування" or by URL: a skeleton while the user
    loads, then a monogram, "Вітаємо!", the name, filled name and e-mail fields and empty password
    fields. A failed read shows "Не вдалося завантажити профіль" and "Спробувати ще раз" (D18).
-2. **Edit name.** Change "Ваше ім’я та прізвище", type "Поточний пароль", press "Зберегти зміни":
+2. **Edit name.** Change "Ваше ПІБ" (the 2026-10-21 label; it was "Ваше ім’я та прізвище"),
+   type "Поточний пароль", press "Зберегти зміни":
    busy button, then "Зміни збережено", the header name updates, both password fields clear and
    the form is pristine (D7).
 3. **Change e-mail.** Same steps on "E-mail": a toast says the link went to the new
@@ -145,13 +146,22 @@ Every control works by touch, and focus moves to the first field in error, scrol
 - `h1` "Налаштування" with a real subtitle (D14); a header with a decorative monogram from the
   name (no photo; the pencil badge is decoration only, amended 2026-10-21, D2), "Вітаємо!" in `#57595B` instead of the failing `#969B9D`
   (D15; superseded 2026-10-21: the product owner kept `#969B9D` under a scoped exception) and the
-  name in bold.
+  name in bold. Amended 2026-10-21 (product owner): the name line shows the first name and
+  surname only, taken from the ПІБ ("Петренко Олена Іванівна" greets "Олена Петренко", monogram
+  "ОП"), and the monogram follows the greeted name.
 - "Особисті дані" holds name and e-mail; resend is a button (it sends mail) styled as a link in
   `#0074B5` instead of the failing `#1EAEFF` (D15). "Пароль" holds "Поточний пароль", required
-  for every Save (P1), and the optional "Новий пароль" under the shared policy (U3).
+  for every Save (P1), and the optional "Новий пароль" under the shared policy (U3). Amended
+  2026-10-21 (product owner, Figma `315:11316`): the name is a row "Ваше ПІБ" above "Особисті
+  дані", which holds only the e-mail; the optional hint under "Новий пароль" is visually hidden
+  but still announced, and its policy rules show only while the field has focus or a value.
 - One "Зберегти зміни" / "Очистити" pair, "Очистити" passing contrast without an exception; the
   2FA column under its own flag (D12); toasts with polite success, alert errors that stay until
-  closed, a localized close button and at most three visible (D9).
+  closed, a localized close button and at most three visible (D9). Amended 2026-10-21: no toast
+  carries a role; two always-mounted regions announce success (polite) and errors (assertive).
+- A UI-only "Соціальні мережі" card (added 2026-10-21, product owner): Figma-exact, Google,
+  Facebook, GitHub and Twitter tiles, each saying that linking is not available yet; no actions,
+  because user-service cannot link, list or unlink (G6).
 
 ### Outcomes the User Can See
 
@@ -174,13 +184,16 @@ Every control works by touch, and focus moves to the first field in error, scrol
 The Russian Figma copy is translated, not copied (D14); English is the fallback. Drafts: subtitle
 "Керуйте своїм ім’ям, електронною поштою та паролем." (Manage your name, e-mail address and
 password.); sections "Особисті дані" (Personal details) over name and e-mail and "Пароль" over
-the password pair; fields "Ваше ім’я та прізвище" and "E-mail" (sign-up's labels; "E-mail" since #311),
+the password pair; fields "Ваше ім’я та прізвище" and "E-mail" (sign-up's labels; "E-mail"
+since #311; the name label is "Ваше ПІБ" since 2026-10-21),
 "Поточний пароль" and "Новий пароль"; toasts "Зміни збережено", "Ми надіслали посилання для
 підтвердження на нову адресу", "Ви успішно змінили пароль", "Посилання для підтвердження
 надіслано повторно"; close button "Закрити сповіщення"; errors as in §3.
 
 > Assumption: the fields reuse sign-up's labels, not a literal "Ваше ПІБ" / "Ваш e-mail", so one
-> value has one name across the app. The home link reads "Налаштування" (Settings); the 2FA
+> value has one name across the app. Superseded for the name on 2026-10-21: the product owner
+> chose "Ваше ПІБ" (`settings.profile.full_name`, the neuter agreeing with "прізвище"); the
+> e-mail keeps the sign-up label. The home link reads "Налаштування" (Settings); the 2FA
 > bundle reuses this link and adds none of its own (D3).
 
 ### Shared With #315 (U3)
@@ -223,7 +236,7 @@ places first with sign-up's name and e-mail validators (D11); an unedited name i
 | Measure                                    | Target            | Measured by                |
 | ------------------------------------------ | ----------------- | -------------------------- |
 | axe violations (WCAG 2.1 AA), `/settings`  | 0 in 3 engines    | `make test-a11y`           |
-| New `A11Y_EXCEPTIONS` entries              | 0                 | gate test + review         |
+| New `A11Y_EXCEPTIONS` entries              | 1 (amended 10-21) | gate test + review         |
 | Keyboard-only save, resend and toast close | pass              | keyboard contract spec     |
 | Touch-only save in both mobile projects    | pass              | mobile e2e lane            |
 | Coverage, all four measures                | 100               | Jest thresholds            |
@@ -239,6 +252,10 @@ places first with sign-up's name and e-mail validators (D11); an unedited name i
 | Visual diffs beyond intended baselines     | 0                 | `make test-visual`         |
 | i18n parity, `en` and `uk`                 | clean             | `make lint-i18n`           |
 | Route-coverage rows for `settings`         | e2e, visual, a11y | route-coverage gate        |
+
+Amendment 2026-10-21 (product owner): the new `A11Y_EXCEPTIONS` target was 0 and is now exactly
+1, the scoped `color-contrast` entry `#settings-greeting` in `tests/utils/a11y/axe-config.ts`,
+tracked in #276, because "Вітаємо!" keeps the Figma grey `#969B9D` (2.81:1). No other entry.
 
 The floors in `.claude/react-sdlc.yml:50-65` are raise-only: coverage 100 on all four measures,
 mutation MSI 100, zero jscpd clones, ESLint errors and warnings, tsc, markdownlint and
@@ -267,14 +284,17 @@ existing baseline renders a field error.
   leaves `/settings` to the not-found page while `userSettings` is off, read lazily (D13, R6).
 - A stateless mock for the three operations: a seeded test user, one violation and the owner
   check; every error shape is stubbed in the tests (U4; P6 superseded by R28).
-- Contrast fixed at its source: greeting, resend link, app-wide field-error text (D15, R8).
+- Contrast fixed at its source: greeting, resend link, app-wide field-error text (D15, R8); the
+  greeting part was superseded 2026-10-21 (`#969B9D` kept under one scoped exception).
+- The social networks card, UI-only with no actions (added 2026-10-21, product owner).
 - `uk` and `en` copy; unit, integration, e2e, touch, a11y, keyboard and visual coverage;
   route-coverage rows; the decisions recorded in the user module README, no ADR (U10).
 
 ### Out of Scope for v1
 
-- Avatar upload, crop and removal (D2, G5) and the social networks card, not rendered at all
-  (D2, G6): no backend anywhere.
+- Avatar upload, crop and removal (D2, G5), and social networks link, list and unlink (G6): no
+  backend anywhere. The social networks card was "not rendered at all" (D2); amended 2026-10-21
+  by the product owner, it renders UI-only (§6 In Scope).
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3).
 - Delete account and a sessions list: neither designed nor planned.
 - The 2FA card itself (2FA bundle); special handling for OAuth-created users (P2).
@@ -285,7 +305,8 @@ existing baseline renders a field error.
    surface (G1, widening #513 or a sibling) and the release is deployed.
 2. Contract pin bump to that release; no schema change is expected (D5).
 3. Avatar upload once user-service stores avatars (G5).
-4. Social networks link, list and unlink once user-service serves them (G6).
+4. Social networks link, list and unlink once user-service serves them (G6), wired into the
+   UI-only card that ships in v1 (2026-10-21).
 5. App-shell navigation: a user-menu entry replacing the home link (D3).
 6. OAuth-created users and password-free profile changes, once user-service allows (P1, P2, G4).
 7. Client throttling of "Надіслати повторно", tied to the upstream limiter (P4, #470).
@@ -352,6 +373,7 @@ readiness; nothing already tracked (research §4.9) is filed again.
 | U11      | Accessibility overrides design: text under 4.5:1 is overridden, not copied        |
 | D1       | v1: `/settings` card with name, e-mail and resend, password, toasts, 2FA slot     |
 | D2       | No avatar or social networks: no backend; a decorative monogram instead           |
+| D2a      | 2026-10-21: the social networks card renders UI-only, no actions; amends D2       |
 | D3       | No app-shell menu; one flag-gated home link, shared with 2FA                      |
 | D4       | Current user from `users(first: 1)`; its `id` addresses both mutations            |
 | D5       | No schema extension: all three operations are in pinned v2.8.0                    |
