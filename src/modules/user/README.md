@@ -535,19 +535,34 @@ per catalog (three byte-identical copies, and #331 would add a fourth).
 4.48:1 on white at 14 px, below WCAG 1.4.3.
 
 **Decision.** A new token, `paletteColors.error.text` (`#C62828`, about 5.62:1), colours the
-field-error text app-wide; borders keep `error.main`. The greeting and the resend control use
-tokens that already pass, and `A11Y_EXCEPTIONS` gains no entry.
+field-error text app-wide; borders keep `error.main`. The resend control uses a token that already
+passes (`linkText` `#0074B5`, 5.04:1); the greeting keeps the Figma grey under its own entry, below.
 
-**Rejected.** A new contrast exception (the defect is fixable at the token); darkening
-`error.main` itself (it would change every border and icon that meets 3:1 today).
+**Rejected.** A new contrast exception for the field errors (the defect is fixable at the token);
+darkening `error.main` itself (it would change every border and icon that meets 3:1 today).
+
+### The settings greeting keeps the Figma grey
+
+**Context.** The Figma frames of section `6242:41691` draw "Вітаємо!" in the grey `#969B9D`, about
+2.81:1 on white, below WCAG 1.4.3; the plan (PRD FR-26, architecture §5.10) proposed `#57595B`
+(7.03:1) at the source, as the field errors are fixed above.
+
+**Decision.** The product owner kept the Figma token (2026-10-21). `#settings-greeting` carries a
+scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, the ninth entry, tracked
+with the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276) and
+deleted when it closes; the name beside the greeting stays `#1A1C1E`.
+
+**Rejected.** `#57595B` at the source (the page would stop matching the frames); an unscoped
+exception (the gate accepts one rule, one selector, a reason and a tracking issue per entry).
 
 ### The local mock is a stateless happy path
 
 **Context.** The local Apollo mock is for development, and the browser lanes cannot reach it.
 
 **Decision.** `users`, `updateUser` (the owner check and one e-mail violation) and
-`resendEmailToUser` answer from one seeded user. Every other error shape — the transport 401, the
-wrong password, the taken e-mail, 429, 5xx, the time-out — lives in msw and `page.route`.
+`resendEmailToUser` (the same owner check) answer from one seeded user. Every other error shape —
+the transport 401, the wrong password, the taken e-mail, 429, 5xx, the time-out — lives in msw and
+`page.route`.
 
 **Rejected.** A stateful mock that models 401, 429, 5xx and the time-out (it would be a second,
 untested implementation of the backend).
