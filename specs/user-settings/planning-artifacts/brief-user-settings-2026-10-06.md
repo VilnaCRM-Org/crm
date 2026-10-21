@@ -144,7 +144,8 @@ Every control works by touch, and focus moves to the first field in error, scrol
 
 - `h1` "Налаштування" with a real subtitle (D14); a header with a decorative monogram from the
   name (no photo, no pencil badge, D2), "Вітаємо!" in `#57595B` instead of the failing `#969B9D`
-  (D15) and the name in bold.
+  (D15; superseded 2026-10-21: the product owner kept `#969B9D` under a scoped exception) and the
+  name in bold.
 - "Особисті дані" holds name and e-mail; resend is a button (it sends mail) styled as a link in
   `#0074B5` instead of the failing `#1EAEFF` (D15). "Пароль" holds "Поточний пароль", required
   for every Save (P1), and the optional "Новий пароль" under the shared policy (U3).
@@ -386,7 +387,7 @@ None of the design questions in research §8.1 blocks v1; these defaults hold un
 | After an e-mail change    | toast plus "not confirmed · resend"; no "check inbox" panel |
 | Copy and mobile header    | §4 drafts; mobile keeps the desktop title and subtitle      |
 | "Очистити" colours        | outlined, label at 4.5:1 or more, never primary blue        |
-| Contrast overrides        | greeting `#57595B` (7.03:1), resend link `#0074B5` (5.04:1) |
+| Contrast overrides        | resend `#0074B5` (5.04:1); greeting `#969B9D` kept, amended |
 | Monogram, no pencil badge | decorative, hidden from assistive technology, until avatars |
 
 The four product questions (research §8.2) are settled by P1-P4, each with a follow-up in §6.

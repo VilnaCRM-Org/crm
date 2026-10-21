@@ -373,6 +373,12 @@ badge, upload control or file input (D2). A successful name change updates it fr
 - Given assistive technology, when the header is read, then "Вітаємо!" and the name are plain text
   with no image or heading role and no control.
 
+> Amendment 2026-10-21: the product owner kept the Figma grey `#969B9D` for "Вітаємо!" (2.81:1),
+> so the computed-style criterion above reads `#969B9D` and `#settings-greeting` carries a scoped
+> `color-contrast` exception (FR-26 amendment). The monogram also carries the Figma pencil badge
+> as decoration (`315:11418`, inside the `aria-hidden` monogram) until user-service#519 and
+> crm#361 add the upload.
+
 > Assumption: the monogram is the upper-cased first letter of each of the first two words of the
 > name, or a decorative person glyph for an empty name; it carries nothing the name does not.
 
@@ -778,6 +784,12 @@ none, and `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts:27-54`) gains no en
 - Given field-error helper text anywhere, when its colour is read, then it reaches 4.5:1 on white.
 - Given the CI visual suite on this change, when it runs, then no existing baseline changes,
   because none renders a field error, and `A11Y_EXCEPTIONS` gained no entry.
+
+> Amendment 2026-10-21: the greeting override is withdrawn by the product owner's decision.
+> "Вітаємо!" keeps the Figma grey `#969B9D` (2.81:1) and `#settings-greeting` is the ninth
+> `A11Y_EXCEPTIONS` entry (`tests/utils/a11y/axe-config.ts`, scoped to that one selector and
+> tracked in #276). The resend control and the field-error token stand as written, and the route
+> scan still reports no `color-contrast` violation outside the listed entries.
 
 ### 5.8 Mock server
 
@@ -1233,7 +1245,7 @@ None blocks v1; each default holds until the design owner answers (research §8.
 | After an e-mail change           | toast plus "not confirmed · resend"; no inbox panel  |
 | Subtitle, copy, mobile header    | FR-3 and §12 drafts; mobile keeps the desktop title  |
 | "Очистити" colours               | outlined, label at 4.5:1 or more, never primary blue |
-| Greeting and resend overrides    | `#57595B` (7.03:1) and `#0074B5` (5.04:1)            |
+| Greeting and resend overrides    | greeting `#969B9D` kept (amended); resend `#0074B5`  |
 | Monogram without a pencil badge  | decorative, hidden from assistive technology         |
 | Optional hint under the password | the FR-10 text                                       |
 | Toast timing                     | no timer; close, action or overflow only (FR-20)     |

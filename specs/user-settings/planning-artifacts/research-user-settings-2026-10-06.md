@@ -154,7 +154,7 @@ crm's is `#DC3939` (`src/styles/colors.ts:15-17`).
 
 | Pair                                 | Ratio | Verdict                                   |
 | ------------------------------------ | ----- | ----------------------------------------- |
-| `#969B9D` greeting on white          | 2.81  | fail; use `#57595B` (7.03) (D15)          |
+| `#969B9D` greeting on white          | 2.81  | fail; kept 2026-10-21 under an exception  |
 | `#1EAEFF` resend link on white       | 2.46  | fail; use `linkText` `#0074B5` (5.04)     |
 | white on `#1EAEFF` Save button       | 2.46  | existing debt, #276 exception (§5.6)      |
 | `#1A1C1E` on `#E8F4EF` success toast | 15.15 | pass                                      |
@@ -770,7 +770,8 @@ cited by id only because that bundle is still being edited:
 3. After an e-mail change: is "not confirmed · resend" enough, or a "check your inbox" message?
 4. Real subtitle copy, the mobile header defect, Ukrainian copy for every label.
 5. "Очистити" colours: an outlined pill in primary blue would fail contrast.
-6. Sign-off on the greeting (`#57595B`) and resend link (`#0074B5`) overrides.
+6. Sign-off on the greeting (`#57595B`) and resend link (`#0074B5`) overrides (the greeting
+   override was declined on 2026-10-21; the Figma grey stays under a scoped exception).
 7. A monogram without the pencil badge until avatars exist (D2).
 
 ### 8.2 For product

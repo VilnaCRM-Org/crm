@@ -93,7 +93,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Eight `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Nine `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -111,7 +111,11 @@ of `/password-recovery` and "Запросити нове посилання" on 
 (`#auth-form-card > a.MuiButton-contained[href="/sign-in"]` and
 `#auth-form-card > a.MuiButton-contained[href="/password-recovery"]`):
 contained links that reuse the submit-button styling, white on `#1EAEFF` at 2.45:1, so they carry
-the same design-owned debt as the submit button.
+the same design-owned debt as the submit button. The ninth covers the settings greeting
+"Вітаємо!" on `/settings` (`#settings-greeting`, issue #330), plain text in the Figma grey
+`#969B9D` on white at 2.81:1: the product owner kept the Figma token over the `#57595B` (7.03:1)
+the plan proposed, so it carries the same token debt as the back-to-main label and the auth
+switcher, while the name beside it stays `#1A1C1E`.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
