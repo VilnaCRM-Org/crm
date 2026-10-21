@@ -119,16 +119,28 @@ describe('useToastFocus', () => {
     expect(save).toHaveFocus();
   });
 
-  it('hands out one ref callback per toast id for the whole mount', () => {
+  it('hands out one ref callback per toast id for the whole mount once it attached', () => {
     const { result, rerender } = mount();
     const first = result.current.closeRef(1);
     const second = result.current.closeRef(2);
+    first(button('close 1'));
+    second(button('close 2'));
 
     rerender();
 
     expect(result.current.closeRef(1)).toBe(first);
     expect(result.current.closeRef(2)).toBe(second);
     expect(first).not.toBe(second);
+  });
+
+  it('remembers nothing from a render whose callback never attached', () => {
+    const toastFocus = mountFocus();
+    const discarded = toastFocus.closeRef(1);
+    const committed = toastFocus.closeRef(1);
+    committed(button('close 1'));
+
+    expect(discarded).not.toBe(committed);
+    expect(toastFocus.closeRef(1)).toBe(committed);
   });
 
   it('forgets a close button once its cleanup runs and hands out a fresh callback', () => {

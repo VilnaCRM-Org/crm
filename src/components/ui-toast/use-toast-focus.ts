@@ -51,7 +51,6 @@ function closeRefFor(registry: ToastFocusRegistry, id: number): RefCallback<HTML
     registry.callbacks.current.set(id, callback);
     return detachOf(registry, id, node);
   };
-  registry.callbacks.current.set(id, callback);
   return callback;
 }
 
