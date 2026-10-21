@@ -38,7 +38,8 @@
     "errors": {
       "password_wrong": "The current password is incorrect",
       "password_not_accepted": "The current password was not accepted. Check it and try again.",
-      "new_password_rejected": "The password does not meet the requirements. Check the rules below"
+      "new_password_rejected": "The password does not meet the requirements. Check the rules below",
+      "new_password_same": "The new password must differ from the current one"
     }
   }
 }
