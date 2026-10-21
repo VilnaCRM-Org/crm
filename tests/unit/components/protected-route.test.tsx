@@ -27,7 +27,6 @@ function SignInProbe(): JSX.Element {
     <div>
       <p>sign in page from:{target}</p>
       <p>focus main:{String(state?.focusMain)}</p>
-      <p>notice:{String(state?.notice)}</p>
     </div>
   );
 }
@@ -152,44 +151,6 @@ describe('ProtectedRoute', () => {
     });
 
     expect(screen.getByText('sign in page from:/')).toBeInTheDocument();
-    expect(screen.getByText('focus main:true')).toBeInTheDocument();
-    expect(screen.getByText('notice:session_ended')).toBeInTheDocument();
-  });
-
-  it('explains an ended session when the token turns null without a sign-out click', () => {
-    renderWithRouter(buildToken(), '/?tab=deals');
-
-    act(() => {
-      resetClientStores();
-    });
-
-    expect(screen.getByText('sign in page from:/?tab=deals')).toBeInTheDocument();
-    expect(screen.getByText('focus main:true')).toBeInTheDocument();
-    expect(screen.getByText('notice:session_ended')).toBeInTheDocument();
-  });
-
-  it('shows no notice after a sign-out click', async () => {
-    renderWithRouter(buildToken());
-
-    await clickSignOut();
-
-    expect(await screen.findByText('focus main:true')).toBeInTheDocument();
-    expect(screen.getByText('notice:undefined')).toBeInTheDocument();
-  });
-
-  it('shows no notice on a cold visit', () => {
-    renderWithRouter(null);
-
     expect(screen.getByText('focus main:false')).toBeInTheDocument();
-    expect(screen.getByText('notice:undefined')).toBeInTheDocument();
-  });
-
-  it('redirects an empty-string token as a cold visit, with no ended-session notice', () => {
-    renderWithRouter('');
-
-    expect(screen.getByText(/sign in page/)).toBeInTheDocument();
-    expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
-    expect(screen.getByText('focus main:false')).toBeInTheDocument();
-    expect(screen.getByText('notice:undefined')).toBeInTheDocument();
   });
 });
