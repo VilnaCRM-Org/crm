@@ -369,7 +369,8 @@ behaviour, so the whole flow runs locally:
 4. Set a new password. The page lands on `/sign-in` with the password-changed notice. The same
    link a second time, or any token the mock never mailed, shows the invalid-link view.
 
-The test stack (`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
+The dev container starts Mailpit too and forwards port 8025. The test stack
+(`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
 stateless mock and stub GraphQL where they need a specific answer.
 
 ### The browser security-header gate

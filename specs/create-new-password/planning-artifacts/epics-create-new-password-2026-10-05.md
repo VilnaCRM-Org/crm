@@ -306,8 +306,8 @@ opening with "every …" lets the qualifier stand for the stories it names gener
 Each story's own criteria add to these; a story is not done until all of them hold.
 
 - **Quality floors.** No threshold, budget, allowlist, scope, baseline or ratchet value is
-  edited to make a run pass (the PRD's reviewed deviation — the one scoped #276 entry of
-  Story 2.2 — is an intended change, not a pass); no
+  edited to make a run pass (the PRD's reviewed deviation — the two scoped #276 entries, Story
+  2.2's pill links and the 2026-10-21 "Назад" row — is an intended change, not a pass); no
   `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`,
   `.fixme`, `waitForTimeout` or `expect` inside a conditional; no `data-testid` in `src`; no
   added inline code comments beyond a `// Stryker disable next-line <Mutator>: <proof>` the
@@ -964,9 +964,9 @@ rendered through `InCardLink`), `@auth/types/password-recovery/components.ts` (N
 `InCardLinkProps`, `InCardLinkVariant`, `CardBackControlProps`, `RecoveryResultViewProps`,
 `RecoveryResultAction`), `@auth/i18n/{uk,en}.json` (MODIFY: `password_recovery.back` "Назад" /
 "Back" and the shared `password_recovery.submit_button` "Підтвердити" / "Confirm"),
-`src/i18n/localization.json` (REGEN), `tests/utils/a11y/axe-config.ts` (MODIFY: one scoped
-`color-contrast` entry), `CLAUDE.md` and `docs/accessibility/acceptance-standard.md` (MODIFY:
-the `color-contrast` entry count grows by exactly one from the count on `main` at merge time),
+`src/i18n/localization.json` (REGEN), `tests/utils/a11y/axe-config.ts` (MODIFY: two scoped
+`color-contrast` entries), `CLAUDE.md` and `docs/accessibility/acceptance-standard.md` (MODIFY:
+the `color-contrast` entry count grows by exactly two from the count on `main` at merge time),
 unit and jest-axe tests.
 
 **Gates:** DoD local gates; `make lint-i18n`, `make lint-docs`.
@@ -1672,8 +1672,9 @@ keyboard rows).
 - **Given** the invalid-link state, **then** the order is back-to-main → "Назад" → "Запросити
   нове посилання" → footer.
 - **Given** the primary links "До входу" and "Запросити нове посилання", **when** axe checks
-  `color-contrast`, **then** the only finding it drops is through the one scoped #276 entry
-  Story 2.2 adds; if a finding is not covered by that entry, the story stops and reports.
+  `color-contrast`, **then** the only findings it drops are through the two scoped #276 entries
+  (the pill links and the "Назад" row); if a finding is not covered by them, the story stops and
+  reports.
 - **Given** the manifest, **then** each key gains e2e rows for the route scan and its keyboard
   spec.
 
@@ -2063,7 +2064,8 @@ merge re-runs `make i18n-generate` rather than hand-merging the generated catalo
    link unconditional before this feature, so they already contain it.
 2. **NFR-9 vs the Figma primary pill on links — resolved.** One scoped `color-contrast` entry for
    the result views' primary-pill links, with the existing #276 reason and tracking (Story 2.2,
-   proven by Story 4.2). The plain link style remains an open question for the design owner.
+   proven by Story 4.2). The plain link style remains an open question for the design owner. The
+   in-card "Назад" row takes a second scoped entry since the user's 2026-10-21 decision.
 3. **Sign-in keyboard contract — resolved.** NFR-10 includes the "Забули пароль?" stop; Story
    4.1 verifies the spec.
 4. **Integration coverage — resolved by AR-8.** Stories 1.3, 1.4 and 1.5 carry integration tests.

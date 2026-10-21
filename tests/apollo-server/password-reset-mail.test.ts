@@ -64,6 +64,15 @@ describe('resetMailConfig', () => {
     ).toEqual({ mailpitUrl: MAILPIT, linkBaseUrl: 'https://crm.example' });
   });
 
+  it('drops trailing slashes so the link never reads //password-reset', () => {
+    expect(
+      resetMailConfig({
+        MAILPIT_API_URL: `${MAILPIT}/`,
+        PASSWORD_RESET_LINK_BASE_URL: 'https://crm.example//',
+      })
+    ).toEqual({ mailpitUrl: MAILPIT, linkBaseUrl: 'https://crm.example' });
+  });
+
   it('reads process.env by default', () => {
     const previous = process.env.MAILPIT_API_URL;
     delete process.env.MAILPIT_API_URL;
@@ -103,6 +112,20 @@ describe('reset tokens', () => {
       () => redeemResetToken(stale, issuedAt + HOUR),
       'Password reset token has expired'
     );
+  });
+
+  it('forgets expired tokens when it issues a new one, keeping the live ones', () => {
+    const issuedAt = 1_000_000;
+    const expired = issueResetToken(buildEmail(), issuedAt);
+    const live = issueResetToken(buildEmail(), issuedAt + HOUR - 1);
+
+    issueResetToken(buildEmail(), issuedAt + HOUR);
+
+    expectTokenRejection(
+      () => redeemResetToken(expired, issuedAt + HOUR),
+      'Password reset token not found'
+    );
+    expect(() => redeemResetToken(live, issuedAt + HOUR)).not.toThrow();
   });
 
   it('forgets every token on clear', () => {
@@ -205,7 +228,10 @@ describe('password reset resolvers in mail mode', () => {
     });
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(info).toHaveBeenCalledWith(`No user for ${email}; no password reset e-mail sent.`);
+    expect(info).toHaveBeenCalledWith(
+      'No user for the requested address; no password reset e-mail sent.'
+    );
+    expect(info.mock.calls.flat().join(' ')).not.toContain(email);
   });
 
   it('still answers the request when Mailpit is down, and logs the failure', async () => {

@@ -19,11 +19,21 @@ const rejectToken = (reason: string): never => {
 export function resetMailConfig(env: NodeJS.ProcessEnv = process.env): ResetMailConfig | null {
   const mailpitUrl = env.MAILPIT_API_URL?.trim();
   if (!mailpitUrl) return null;
-  const linkBaseUrl = env.PASSWORD_RESET_LINK_BASE_URL?.trim() || DEFAULT_LINK_BASE_URL;
-  return { mailpitUrl, linkBaseUrl };
+  const linkBase = env.PASSWORD_RESET_LINK_BASE_URL?.trim() || DEFAULT_LINK_BASE_URL;
+  return {
+    mailpitUrl: mailpitUrl.replace(/\/+$/, ''),
+    linkBaseUrl: linkBase.replace(/\/+$/, ''),
+  };
 }
 
+const forgetExpiredTokens = (now: number): void => {
+  for (const [token, issued] of tokens) {
+    if (issued.expiresAt <= now) tokens.delete(token);
+  }
+};
+
 export function issueResetToken(email: string, now: number = Date.now()): string {
+  forgetExpiredTokens(now);
   const token = randomBytes(32).toString('hex');
   tokens.set(token, { email, expiresAt: now + TOKEN_TTL_MS, used: false });
   return token;

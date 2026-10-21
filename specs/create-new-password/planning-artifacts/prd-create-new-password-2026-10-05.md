@@ -828,8 +828,8 @@ Every value below is read from the profile (`.claude/react-sdlc.yml`, `quality.*
 file the gate enforces, and is a raise-only floor or a zero ceiling: this feature changes none of
 them (NFR-17 and NFR-18 add gates; none is relaxed), and no story may satisfy a gate by editing a
 threshold, adding a suppression, narrowing a scope or re-baselining to force a pass. The only
-deliberate, reviewed deviations are the intended `/sign-in` re-baseline of NFR-6 and the one scoped
-a11y exception of NFR-9.
+deliberate, reviewed deviations are the intended `/sign-in` re-baseline of NFR-6 and the two scoped
+a11y exceptions of NFR-9.
 
 ### NFR-1 — Coverage
 
@@ -908,13 +908,14 @@ measures it; this feature adds no store.
 
 WCAG 2.1 Level AA is binding (`docs/accessibility/acceptance-standard.md`): jest-axe over the new
 components and pages in jsdom, `@axe-core/playwright` on both routes in chromium, firefox and
-webkit, no positive `tabindex`, and at most one new entry in the scoped exception list
+webkit, no positive `tabindex`, and at most two new entries in the scoped exception list
 (`A11Y_EXCEPTIONS` in `tests/utils/a11y/axe-config.ts`): a `color-contrast` entry for the
 primary-pill links of the recovery result views ("До входу", "Запросити нове посилання"), which are
 white on the Figma primary `#1EAEFF` (2.45:1) — the same palette-token debt the existing
 submit-button entry carries. It uses the same reason and `PALETTE_CONTRAST_ISSUE` tracking
 (issue #276), a selector that matches only those links (never `*`, never rule-wide), and is deleted
-when issue #276 closes; no other new entry is allowed. The WCAG 2.2 target-size ratchet applies
+when issue #276 closes. The second entry covers the in-card "Назад" row below; no other new
+entry is allowed. The WCAG 2.2 target-size ratchet applies
 ahead of the standard: the in-card "Назад", "До входу" and "Запросити нове посилання" controls are ≥
 24 CSS px tall, and the primary controls (text inputs, submit) meet the mobile lane's 44 px floor.
 The in-card "Назад" text and its chevron render in the Figma `72:5605` style

@@ -81,7 +81,7 @@ const mailResetLink = async (email: string): Promise<void> => {
   const config = resetMailConfig();
   if (config === null) return;
   if (email !== DEMO_EMAIL && !users.has(email)) {
-    console.info(`No user for ${email}; no password reset e-mail sent.`);
+    console.info('No user for the requested address; no password reset e-mail sent.');
     return;
   }
   try {

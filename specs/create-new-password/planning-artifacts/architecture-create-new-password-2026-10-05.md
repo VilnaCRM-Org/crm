@@ -1594,9 +1594,10 @@ weight, and `minHeight: '1.5rem'`, by the user's decision of 2026-10-21 that rep
 the focus ring stays `#404142` (10.2:1) (PRD §10).
 
 The two primary links of `RecoveryResultView` take the Figma primary pill, white on `#1EAEFF`
-(2.45:1), the palette debt issue #276 tracks. This feature adds exactly one scoped
-`color-contrast` entry to `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts`), a selector
-matching only those two links, the existing reason and `trackingUrl: PALETTE_CONTRAST_ISSUE`.
+(2.45:1), the palette debt issue #276 tracks. This feature adds two scoped `color-contrast`
+entries to `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts`): one with a selector matching only
+those two links, the existing reason and `trackingUrl: PALETTE_CONTRAST_ISSUE`, and one matching
+only the in-card "Назад" row (below).
 
 ### 7.3 Hooks
 
@@ -1722,7 +1723,7 @@ would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").
 | `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                                              | MODIFY |
 | `tests/e2e/a11y/password-recovery-{keyboard,states}.a11y.spec.ts`                                            | NEW    |
 | `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (password-toggle focus ring)                                  | MODIFY |
-| `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)                                   | MODIFY |
+| `tests/utils/a11y/axe-config.ts` (two scoped `color-contrast` entries, #276)                                 | MODIFY |
 | `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`                                           | NEW    |
 | `tests/visual/visual-comparison.password-recovery.spec.ts` (both recovery routes)                            | NEW    |
 | `tests/visual/mobile/auth.spec.ts`, `tests/visual/constants.ts`                                              | MODIFY |
@@ -1820,7 +1821,7 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
 - **Route coverage (#169).** The `passwordRecovery` allowlist row is replaced by e2e, visual, axe,
   keyboard and mobile rows; `passwordReset` gets the same five.
 - **a11y (#118).** Both routes join `routeScans`; jest-axe runs over every new component and page;
-  `A11Y_EXCEPTIONS` gains only the one scoped #276 entry (§7.2).
+  `A11Y_EXCEPTIONS` gains only the two scoped #276 entries (§7.2).
 - **Visual (NFR-6).** Full matrix for the two resting forms, desktop/mobile pairs for the sent
   step, the invalid-link state and `/sign-in` with the notice; the existing `/sign-in`
   baselines do not change, since the link already renders unconditionally.
@@ -2035,7 +2036,7 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | NFR-6  | §12 visual note; CI-artifact baselines; existing `/sign-in` baselines unchanged   |
 | NFR-7  | Lighthouse list unchanged; `/sign-in` gains only a conditional notice             |
 | NFR-8  | §10 bundle breakdown                                                              |
-| NFR-9  | §7.2 contracts and the one scoped #276 entry, jest-axe, route scans, 24 / 44 px   |
+| NFR-9  | §7.2 contracts and the two scoped #276 entries, jest-axe, route scans, 24 / 44 px |
 | NFR-10 | keyboard specs per state with `expectTabOrder`; sign-in link stop already present |
 | NFR-11 | mobile touch spec on both device projects                                         |
 | NFR-12 | §5.5, §5.6, §5.13; CSP unchanged, referrer `strict-origin`; no new origin         |
