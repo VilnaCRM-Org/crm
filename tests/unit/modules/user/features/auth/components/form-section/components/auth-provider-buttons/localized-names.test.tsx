@@ -12,10 +12,10 @@ function mockSvgModule(): SvgModule {
   return { ReactComponent: (): ReactElement => <svg /> };
 }
 
-jest.mock('@auth/assets/social-links/google-color.svg', mockSvgModule);
-jest.mock('@auth/assets/social-links/github-color.svg', mockSvgModule);
-jest.mock('@auth/assets/social-links/facebook-color.svg', mockSvgModule);
-jest.mock('@auth/assets/social-links/twitter-color.svg', mockSvgModule);
+jest.mock('@/assets/icons/social/google-color.svg', mockSvgModule);
+jest.mock('@/assets/icons/social/github-color.svg', mockSvgModule);
+jest.mock('@/assets/icons/social/facebook-color.svg', mockSvgModule);
+jest.mock('@/assets/icons/social/twitter-color.svg', mockSvgModule);
 
 const PROVIDER_LABELS = ['Google', 'Facebook', 'GitHub', 'Twitter'];
 const OAUTH_BASE_URL = 'https://oauth.vilnacrm.test';
