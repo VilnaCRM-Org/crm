@@ -45,13 +45,14 @@ describe('profile header styles', () => {
     });
   });
 
-  it('leaves 20 px under the header on a phone and 24 px from the tablet frame', async () => {
+  it('leaves 20 / 25 / 28 px between the header and the name row, as Figma does', async () => {
     const { header } = await loadStyles();
 
     expect(header).toMatchObject({
       alignItems: 'flex-start',
       marginBottom: '1.25rem',
-      [TABLET]: { alignItems: 'center', gap: '3.625rem', marginBottom: '1.5rem' },
+      [TABLET]: { alignItems: 'center', gap: '3.625rem', marginBottom: '1.5625rem' },
+      '@media (min-width:1025px)': { marginBottom: '1.75rem' },
     });
   });
 
@@ -72,7 +73,7 @@ describe('profile header styles', () => {
       backgroundColor: '#1EAEFF',
       [TABLET]: { bottom: 0 },
     });
-    expect(badgeIcon).toEqual({ width: '1rem', height: '1rem' });
+    expect(badgeIcon).toEqual({ width: '1rem', height: '1rem', fill: 'none' });
   });
 
   it('drops the phone text block 11 px below the monogram top, as Figma draws it', async () => {

@@ -38,20 +38,19 @@ const byId = (id: string): HTMLElement => {
 };
 
 describe('ProfileSkeleton', () => {
-  it('mirrors the loaded card: header, two titled sections, the policy, Save and Clear', () => {
+  it('mirrors the loaded card: header, name row, two titled sections, Save and Clear', () => {
     render(<ProfileSkeleton />);
 
     expect(blockIds()).toEqual([
       'profile-skeleton-monogram',
       'profile-skeleton-greeting',
       'profile-skeleton-name',
-      'profile-skeleton-title-personal',
       ...fieldIds('name'),
+      'profile-skeleton-title-personal',
       ...fieldIds('email'),
       'profile-skeleton-title-password',
       ...fieldIds('current-password'),
       ...fieldIds('new-password'),
-      'profile-skeleton-policy',
       'profile-skeleton-save',
       'profile-skeleton-clear',
     ]);
@@ -93,7 +92,7 @@ describe('ProfileSkeleton', () => {
     const blocks = hiddenGenerics().filter(isBlock);
 
     expect(roots).toHaveLength(1);
-    expect(blocks).toHaveLength(16);
+    expect(blocks).toHaveLength(15);
     blocks.forEach((block) => expect(roots[0]).toContainElement(block));
   });
 

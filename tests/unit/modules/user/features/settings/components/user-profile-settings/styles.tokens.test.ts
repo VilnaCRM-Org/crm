@@ -119,7 +119,6 @@ describe('user profile settings styles', () => {
       [TABLET]: { flex: '1 1 0', minWidth: 0, height: '4.375rem' },
       [DESKTOP]: { height: '4rem' },
     });
-    expect(styles.skeletonPolicy).toEqual({ height: '9.375rem', [TABLET]: { height: '7rem' } });
   });
 
   it('sizes the skeleton pills like Save and Clear at each layout', async () => {

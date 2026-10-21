@@ -139,14 +139,14 @@ describe('settings page e-mail resend (page)', () => {
 
   it('keeps unsaved edits and typed passwords because the form is not remounted', async () => {
     await mount();
-    await userEvent.type(screen.getByLabelText('Ваше ім’я та прізвище'), ' Іванівна');
+    await userEvent.type(screen.getByLabelText('Ваш ПІБ'), ' Іванівна');
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
     answerResend(() => resendPayload(false));
 
     await userEvent.click(resendLink());
 
     await screen.findByText(RESENT);
-    expect(screen.getByLabelText('Ваше ім’я та прізвище')).toHaveValue('Олена Петренко Іванівна');
+    expect(screen.getByLabelText('Ваш ПІБ')).toHaveValue('Олена Петренко Іванівна');
     expect(screen.getByLabelText('Поточний пароль')).toHaveValue('abc');
     expect(resendLink()).toHaveFocus();
   });
@@ -247,7 +247,7 @@ describe('settings page e-mail resend (page)', () => {
 
   it('is aria-disabled and sends nothing while a save is in flight', async () => {
     await mount();
-    await userEvent.type(screen.getByLabelText('Ваше ім’я та прізвище'), ' Іванівна');
+    await userEvent.type(screen.getByLabelText('Ваш ПІБ'), ' Іванівна');
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
     answerProfileOperation('UpdateUser', {
       delayMs: 60,

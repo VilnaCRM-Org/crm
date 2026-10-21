@@ -14,6 +14,6 @@ test.describe.parallel('Mobile device visual tests', () => {
     await signInWithFlag(page, true);
     await stubProfile(page);
 
-    await takeMobileSnapshot(page, PAGES.SETTINGS, 'settings', t('sign_up.form.name_input.label'));
+    await takeMobileSnapshot(page, PAGES.SETTINGS, 'settings', t('settings.profile.full_name'));
   });
 });

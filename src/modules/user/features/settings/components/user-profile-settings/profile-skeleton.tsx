@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 
 import type {
+  ProfileSkeletonFieldProps,
   ProfileSkeletonSectionId,
   ProfileSkeletonSectionProps,
 } from '../../types/components/user-profile-settings';
@@ -15,7 +16,7 @@ import styles from './styles';
 const SECTIONS: readonly ProfileSkeletonSectionId[] = ['personal', 'password'];
 
 const SECTION_FIELDS = {
-  personal: ['name', 'email'],
+  personal: ['email'],
   password: ['current-password', 'new-password'],
 } as const;
 
@@ -37,6 +38,15 @@ function SkeletonHeader(): JSX.Element {
   );
 }
 
+function SkeletonField({ field }: ProfileSkeletonFieldProps): JSX.Element {
+  return (
+    <Box sx={styles.skeletonField}>
+      <UISkeletonBlock id={`profile-skeleton-label-${field}`} sx={styles.skeletonLabel} />
+      <UISkeletonBlock id={`profile-skeleton-input-${field}`} sx={styles.skeletonInput} />
+    </Box>
+  );
+}
+
 function SkeletonSection({ section }: ProfileSkeletonSectionProps): JSX.Element {
   return (
     <>
@@ -44,10 +54,7 @@ function SkeletonSection({ section }: ProfileSkeletonSectionProps): JSX.Element 
         <UISkeletonBlock id={`profile-skeleton-title-${section}`} sx={styles.skeletonTitle} />
       </Box>
       {SECTION_FIELDS[section].map((field) => (
-        <Box key={field} sx={styles.skeletonField}>
-          <UISkeletonBlock id={`profile-skeleton-label-${field}`} sx={styles.skeletonLabel} />
-          <UISkeletonBlock id={`profile-skeleton-input-${field}`} sx={styles.skeletonInput} />
-        </Box>
+        <SkeletonField key={field} field={field} />
       ))}
     </>
   );
@@ -74,10 +81,10 @@ export default function ProfileSkeleton(): JSX.Element {
   return (
     <Box aria-hidden="true" sx={styles.skeleton}>
       <SkeletonHeader />
+      <SkeletonField field="name" />
       {SECTIONS.map((section) => (
         <SkeletonSection key={section} section={section} />
       ))}
-      <UISkeletonBlock id="profile-skeleton-policy" sx={styles.skeletonPolicy} />
       <Box sx={formStyles.actionsDivider} />
       <SkeletonActions />
     </Box>
