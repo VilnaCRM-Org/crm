@@ -155,6 +155,20 @@ describe('SessionLinkFactory over the container Apollo client', () => {
     );
   });
 
+  it("leaves a newer session alone when a 401 answers an earlier token's request", async () => {
+    const later = buildToken();
+    answerQuery(() => {
+      authStore.setState({ token: later });
+      return problem(401);
+    });
+
+    await sendProfile();
+
+    expect(authStore.getState().token).toBe(later);
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['a GraphQL 401 at HTTP 200', { message: 'Unauthorized', extensions: { status: 401 } }],
     ['Access Denied. without a status', { message: 'Access Denied.' }],
