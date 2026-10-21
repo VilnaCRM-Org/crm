@@ -42,6 +42,7 @@ function currentPasswordRule(
   const required = t('sign_up.form.password_input.required');
   return {
     validate: (value, values) => value !== '' || changes.detect(user, values) === null || required,
+    deps: ['newPassword'],
   };
 }
 
