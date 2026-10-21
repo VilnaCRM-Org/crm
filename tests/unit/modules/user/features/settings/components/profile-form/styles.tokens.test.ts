@@ -256,17 +256,9 @@ describe('profile form styles', () => {
     });
   });
 
-  it('sets the hint in muted Inter and the status on a 25 px line, empty at no cost', async () => {
-    const { hint, status } = await loadStyles();
+  it('sets the status on a 25 px line, empty at no cost', async () => {
+    const { status } = await loadStyles();
 
-    expect(hint).toEqual({
-      margin: '0 0 1rem',
-      fontFamily: 'Inter',
-      fontWeight: 500,
-      fontSize: '0.875rem',
-      lineHeight: '1.25rem',
-      color: '#57595B',
-    });
     expect(status).toEqual({
       margin: 0,
       fontFamily: 'Golos',

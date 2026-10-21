@@ -49,6 +49,64 @@ const subject = (busy = false): JSX.Element => (
 
 jest.mock('@/i18n', () => ({ __esModule: true, default: { addResourceBundle: jest.fn() } }));
 
+const HIDDEN = { position: 'absolute', width: '1px', height: '1px' };
+
+describe('ChangePassword rule list at rest', () => {
+  it('keeps the rules and the hint out of sight until the new password is used', () => {
+    render(subject(), {
+      wrapper: ({ children }) => (
+        <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
+      ),
+    });
+
+    expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
+    expect(
+      screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
+    ).toHaveStyle(HIDDEN);
+  });
+
+  it('shows the rules while the empty new password has focus', async () => {
+    const user = userEvent.setup();
+    render(subject(), {
+      wrapper: ({ children }) => (
+        <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
+      ),
+    });
+
+    await user.click(screen.getByLabelText('Новий пароль'));
+
+    expect(screen.getByRole('list')).not.toHaveStyle(HIDDEN);
+
+    await user.tab();
+    await user.tab();
+
+    expect(screen.getByLabelText('Новий пароль')).not.toHaveFocus();
+    expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
+  });
+
+  it('keeps the rules in sight once the new password holds a value, focused or not', async () => {
+    const user = userEvent.setup();
+    render(subject(), {
+      wrapper: ({ children }) => (
+        <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
+      ),
+    });
+
+    await user.type(screen.getByLabelText('Новий пароль'), 'a');
+    await user.tab();
+    await user.tab();
+
+    expect(screen.getByLabelText('Новий пароль')).not.toHaveFocus();
+    expect(screen.getByRole('list')).not.toHaveStyle(HIDDEN);
+
+    await user.clear(screen.getByLabelText('Новий пароль'));
+    await user.tab();
+    await user.tab();
+
+    expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
+  });
+});
+
 describe('ChangePassword', () => {
   it('renders the section heading, both fields and the hint in Ukrainian', () => {
     render(<Provider i18n={createSettingsLocaleI18n('uk')}>{subject()}</Provider>);

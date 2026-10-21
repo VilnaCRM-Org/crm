@@ -171,14 +171,6 @@ export default {
     [SETTINGS_TABLET]: { marginBlock: '-0.0625rem' },
     [SETTINGS_DESKTOP]: { marginBlock: '-0.1875rem' },
   },
-  hint: {
-    margin: '0 0 1rem',
-    fontFamily: 'Inter',
-    fontWeight: 500,
-    fontSize: '0.875rem',
-    lineHeight: '1.25rem',
-    color: customColors.text.muted,
-  },
   actionsDivider: {
     ...SETTINGS_DIVIDER,
     marginTop: '1rem',
