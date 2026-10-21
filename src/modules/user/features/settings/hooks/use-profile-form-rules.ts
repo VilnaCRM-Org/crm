@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { ValidateResult } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import type { PasswordRuleViewSet } from '@/components/types/ui-password-policy-rules';
@@ -46,8 +47,13 @@ function currentPasswordRule(
 
 function newPasswordRule(changes: ProfileChangeDetector, t: TFunction): ProfileFieldRules {
   const validate = passwordValidator.create<ProfileFormValues>(t);
+  const sameAsCurrent = t('settings.errors.new_password_same');
   return {
-    validate: (value, values) => !changes.passwordChanged(value) || validate(value, values),
+    validate: (value, values): ValidateResult | Promise<ValidateResult> => {
+      if (!changes.passwordChanged(value)) return true;
+      const policy = validate(value, values);
+      return policy !== true ? policy : value !== values.currentPassword || sameAsCurrent;
+    },
   };
 }
 
