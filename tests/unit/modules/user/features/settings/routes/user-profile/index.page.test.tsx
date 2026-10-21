@@ -12,7 +12,7 @@ import { answerProfileOperation } from '@tests/integration/mocks/profile-operati
 import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 
-const NAME = 'Ваш ПІБ';
+const NAME = 'Ваше ПІБ';
 const CURRENT = 'Поточний пароль';
 const NEW = 'Новий пароль';
 const SAVED = 'Зміни збережено';
