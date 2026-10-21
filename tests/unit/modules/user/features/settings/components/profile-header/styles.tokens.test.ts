@@ -23,7 +23,7 @@ describe('profile header styles', () => {
       borderRadius: '50%',
       [TABLET]: { width: '6.1875rem', height: '6.1875rem' },
     });
-    expect(styles.greeting).toMatchObject({ color: '#57595B', fontSize: '1rem' });
+    expect(styles.greeting).toMatchObject({ color: '#969B9D', fontSize: '1rem' });
     expect(styles.header).toMatchObject({ gap: '1.25rem' });
   });
 

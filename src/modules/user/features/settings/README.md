@@ -160,6 +160,9 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
   appear while the field has focus or a value. A new password equal to the current one is
   refused once the policy passes.
+- **"Вітаємо!" uses the Figma grey `#969B9D`** at 2.81:1, below the 4.5:1 text minimum, by the
+  product owner's call; `#settings-greeting` carries a scoped `color-contrast` exception in
+  `tests/utils/a11y/axe-config.ts`, tracked with the other palette debt in #276.
 - **The pencil badge is decoration** (`315:11418`): a 26 px `#1EAEFF` disc with the white
   `edit-02` outline at the monogram's corner, 5 px lower on a phone, inside the hidden
   monogram. Uploading a photo waits for user-service#519 and is tracked in #361.
