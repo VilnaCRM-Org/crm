@@ -237,7 +237,12 @@ accessibility criteria sit inside their requirement and NFR-6 to NFR-8 hold the 
 keeps the committed block: no dev-only flag transform exists, so a developer runs
 `make start-prod` to see the page. The shipped default is `false`. No other flag exists
 (`FeatureFlag` is `never` since issue #309 removed `forgotPassword`, reconciled 2026-10-16), so
-`userSettings` is the only one and the first variable the test stack passes.
+`userSettings` is the only one and the first variable the test stack passes. `twoFactorAuth`,
+named by FR-2 and FR-3, is the two-factor bundle's flag (#331): that bundle declares it in the
+same four sites, ships it `false`, enables it per environment and deletes it under the same
+lifecycle, so this feature adds no declaration site, test, compose variable or
+`docs/feature-flags.md` row for it. Until #331 lands the flag is absent, every `twoFactorAuth`
+case below reads as off, and the cases with it on are #331's acceptance (amendment 2026-10-21).
 
 - Given the committed block, the in-code defaults and the test stack with no override, when
   read, then the shipped values are `false` and the test stack renders `true`.
@@ -597,7 +602,10 @@ One shared rule ends a session, and only the shared link applies it (D10, R11, R
 a non-anonymous operation answered by a transport HTTP 401, which is how user-service answers an
 invalid, expired or revoked token before GraphQL runs, ends the session exactly as sign-out does:
 it clears the observability user, the sandbox demo session and the token. No GraphQL error and no
-other status ends a session. The protected route then sees the
+other status ends a session, and a 401 ends one only while the store still holds the token the
+failing request carried, so a late answer to a request sent with an earlier token, or with none,
+leaves a session begun since, or a sign-out already done, alone (amendment 2026-10-21). The
+protected route then sees the
 token lost without a sign-out click and redirects to `/sign-in` with `state.from` naming
 `/settings` and focus on `main`, which shows "Сеанс завершився. Увійдіть знову." once, in a
 neutral info tone rather than #315's green success check; a first visit without a token shows
@@ -623,6 +631,9 @@ in over REST today).
   password fields are empty.
 - Given a 401 on `SignInUser`, or a sign-out through the home button, when it settles, then the
   link does nothing and no notice shows.
+- Given a 401 that answers a request sent with an earlier token, or with none, after the store
+  moved to a newer token or to signed out, when it settles, then the link leaves the store as it
+  is and no notice shows.
 - Given a signed-in user who opens a password-reset link, when `RequestPasswordReset` or
   `ConfirmPasswordReset` is sent, then it carries no `Authorization` header, and a 401 on it never
   ends the session.
@@ -1150,18 +1161,19 @@ Acceptance:
 
 ## 7. Dependencies and prerequisites
 
-| Prerequisite                                           | Owner         | Needed for          |
-| ------------------------------------------------------ | ------------- | ------------------- |
-| P.2: TB-1 gate, suffixes (chore #332, merged, PR #333) | chore #332    | NFR-14, NFR-15      |
-| P.2: Zustand stores (chore #334, merged, PR #333)      | Zustand chore | FR-19, FR-21        |
-| P.1: folders, `UserEntity`, TB-2 check (#315, PR #340) | #315          | NFR-14, NFR-15      |
-| P.1: #315 implemented; this branch stacks on PR #340   | crm           | FR-10, FR-16, FR-25 |
-| Route key, contract, shell and route flag gate (R17)   | settings      | FR-2, FR-3          |
-| Bearer link, session end and its notice                | settings      | FR-19, FR-21        |
-| Toast primitive (settings only, R16)                   | settings      | FR-20               |
-| One home link, reused by the 2FA bundle                | settings      | FR-4                |
-| User-service release of `main`'s authentication (G1)   | user-service  | production only     |
-| Figma design gate through the Figma MCP                | tooling       | UI stories          |
+| Prerequisite                                                   | Owner         | Needed for          |
+| -------------------------------------------------------------- | ------------- | ------------------- |
+| P.2: TB-1 gate, suffixes (chore #332, merged, PR #333)         | chore #332    | NFR-14, NFR-15      |
+| P.2: Zustand stores (chore #334, merged, PR #333)              | Zustand chore | FR-19, FR-21        |
+| P.1: folders, `UserEntity`, TB-2 check (#315, PR #340)         | #315          | NFR-14, NFR-15      |
+| P.1: #315 implemented; this branch stacks on PR #340           | crm           | FR-10, FR-16, FR-25 |
+| Route key, contract, shell and route flag gate (R17)           | settings      | FR-2, FR-3          |
+| Bearer link, session end and its notice                        | settings      | FR-19, FR-21        |
+| Toast primitive (settings only, R16)                           | settings      | FR-20               |
+| One home link, reused by the 2FA bundle                        | settings      | FR-4                |
+| User-service release of `main`'s authentication (G1)           | user-service  | production only     |
+| CORS admits the crm request headers (#514), or same-origin API | user-service  | production only     |
+| Figma design gate through the Figma MCP                        | tooling       | UI stories          |
 
 P.2 is PR #333, merged into `main`: the chore #332 (typed-boundaries gate) and the chore
 `zustand-client-state` (#334; `useAuthStore` and `useConnectivityStore`, ADR-002's "Current
@@ -1193,7 +1205,9 @@ belong to other work; G11 is tracked upstream and G12 is noted in research §4.8
 
 Not dispatched with this feature; no story waits for them.
 
-1. Enable `userSettings` in production once G1 ships and is deployed.
+1. Enable `userSettings` in production once G1 ships and is deployed, and either user-service
+   CORS admits `Authorization`, `X-Request-Id` and `X-Correlation-Id` (#514, research §4.5) or
+   the API is served same-origin.
 2. Bump the contract pin to that release; no schema change is expected (D5).
 3. Avatar upload (G5) and social networks link, list and unlink (G6) once user-service has them.
 4. App-shell navigation with a user-menu entry replacing the home link (D3).
