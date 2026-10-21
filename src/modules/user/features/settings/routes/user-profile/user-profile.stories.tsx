@@ -21,9 +21,11 @@ const meta: Meta<typeof UserProfile> = {
           'the Data provider behind `AUTH_TOKENS.ProfileProvider`, so each story registers a ' +
           'stub against that token before the page mounts: `Loaded` answers with a seeded user ' +
           'and echoes a Save back as saved, `LoadFailed` answers every request as a transient ' +
-          'failure. In the app it renders inside AppLayout, behind ProtectedRoute and the ' +
-          'userSettings flag.',
+          'failure. The token is shared by every story in one frame, so the docs page renders ' +
+          'each story in its own frame. In the app it renders inside AppLayout, behind ' +
+          'ProtectedRoute and the userSettings flag.',
       },
+      story: { inline: false },
     },
     layout: 'fullscreen',
   },
