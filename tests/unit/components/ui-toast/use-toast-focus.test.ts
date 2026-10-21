@@ -184,4 +184,81 @@ describe('useToastFocus', () => {
     expect(() => toastFocus.dismiss(3)).not.toThrow();
     expect(onDismiss).toHaveBeenCalledWith(3);
   });
+
+  describe('a toast pushed out by the cap while it holds focus', () => {
+    const toast = (id: number): ToastItemSet['items'][number] => ({
+      id,
+      tone: 'success',
+      message: `Сповіщення ${id}`,
+    });
+    const before: ToastItemSet = { items: [toast(1), toast(2), toast(3)] };
+    const after: ToastItemSet = { items: [toast(2), toast(3), toast(4)] };
+
+    interface Eviction {
+      readonly settle: () => void;
+      readonly next: HTMLButtonElement;
+      readonly newest: HTMLButtonElement;
+    }
+
+    type PickFocus = (first: HTMLElement, close: HTMLButtonElement) => HTMLElement;
+
+    const evictFirst = (focusedInFirst: PickFocus): Eviction => {
+      const { result, rerender } = renderHook(
+        ({ toasts }: { toasts: ToastItemSet }) =>
+          useToastFocus({ toasts, returnFocusRef: { current: null }, onDismiss: jest.fn() }),
+        { initialProps: { toasts: before } }
+      );
+      const first = document.createElement('div');
+      const close1 = document.createElement('button');
+      first.append(close1);
+      document.body.append(first);
+      const next = button('close 2');
+      button('close 3');
+      const detach = result.current.closeRef(1)(close1);
+      result.current.closeRef(2)(next);
+      focusedInFirst(first, close1).focus();
+      (detach as () => void)();
+      first.remove();
+      const newest = button('close 4');
+      result.current.closeRef(4)(newest);
+      return { settle: (): void => rerender({ toasts: after }), next, newest };
+    };
+
+    const closeButtonOf: PickFocus = (_first, close) => close;
+
+    const actionButtonOf: PickFocus = (first) => {
+      const action = document.createElement('button');
+      action.textContent = 'action 1';
+      first.prepend(action);
+      return action;
+    };
+
+    it('hands focus to the newest close button, not the next one, once it fell to the body', () => {
+      const { settle, next, newest } = evictFirst(closeButtonOf);
+
+      settle();
+
+      expect(newest).toHaveFocus();
+      expect(next).not.toHaveFocus();
+    });
+
+    it('treats a focused action button before the close button as held focus', () => {
+      const { settle, newest } = evictFirst(actionButtonOf);
+
+      settle();
+
+      expect(newest).toHaveFocus();
+    });
+
+    it('does not override focus another control took in the same commit', () => {
+      const { settle, newest } = evictFirst(closeButtonOf);
+      const elsewhere = button('elsewhere');
+      elsewhere.focus();
+
+      settle();
+
+      expect(elsewhere).toHaveFocus();
+      expect(newest).not.toHaveFocus();
+    });
+  });
 });
