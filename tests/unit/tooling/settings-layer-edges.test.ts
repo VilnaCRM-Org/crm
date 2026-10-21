@@ -17,7 +17,8 @@ interface ImportEdge {
   readonly target: string;
 }
 
-const IMPORT_PATTERN = /^(?:import|export)\s+(type\s+)?[^;]*?from\s+'([^']+)';/gms;
+const STATIC_IMPORT_PATTERN = /^(?:import|export)\s+(type\s+)?[^;]*?from\s+'([^']+)';/gms;
+const DYNAMIC_IMPORT_PATTERN = /\bimport\s*\(\s*(?:\/\*.*?\*\/\s*)?'([^']+)'\s*\)/gs;
 
 const toPosix = (filePath: string): string =>
   path.relative(repoRoot, filePath).split(path.sep).join('/');
@@ -33,11 +34,16 @@ const resolveTarget = (file: string, specifier: string): string => {
   return specifier.replace(/^@\//, 'src/');
 };
 
-const edgesOf = ({ file, source }: SourceFile): ImportEdge[] =>
-  [...source.matchAll(IMPORT_PATTERN)].map((match) => ({
+const edgesOf = ({ file, source }: SourceFile): ImportEdge[] => [
+  ...[...source.matchAll(STATIC_IMPORT_PATTERN)].map((match) => ({
     typeOnly: match[1] !== undefined,
     target: resolveTarget(file, match[2] ?? ''),
-  }));
+  })),
+  ...[...source.matchAll(DYNAMIC_IMPORT_PATTERN)].map((match) => ({
+    typeOnly: false,
+    target: resolveTarget(file, match[1] ?? ''),
+  })),
+];
 
 const folderOf = (file: string): string | null =>
   GUARDED_FOLDERS.find((folder) => file.startsWith(`${settingsRoot}/${folder}/`)) ?? null;
@@ -79,6 +85,15 @@ describe('settings layer edges (AR-8)', () => {
 
   it('keeps every component, hook and route off Repositories and Transformers', () => {
     expect(violationsOf(realFiles())).toEqual([]);
+  });
+
+  it('lets a route lazy-load its own page', () => {
+    const route = fixture(
+      'routes/index.ts',
+      `const load = () => import(/* webpackChunkName: "settings" */ './user-profile');\n`
+    );
+
+    expect(violationsOf([route])).toEqual([]);
   });
 
   it('lets a hook import the Data provider by type', () => {
@@ -154,6 +169,24 @@ describe('settings layer edges (AR-8)', () => {
         'routes/index.ts',
         "export { default as ProfileProvider } from '../data-providers/profile-provider';\n"
       ),
+    ],
+    [
+      'a route lazy-loading a Repository',
+      fixture(
+        'routes/index.ts',
+        `const load = () => import(/* webpackChunkName: "x" */ '../repositories');\n`
+      ),
+    ],
+    [
+      'a hook lazy-loading the Data provider',
+      fixture(
+        'hooks/use-thing.ts',
+        "const load = () => import('../data-providers/profile-provider');\n"
+      ),
+    ],
+    [
+      'a component lazy-loading the Transformer',
+      fixture('components/thing/index.tsx', "const load = () => import('../../transformers');\n"),
     ],
   ])('fails for %s', (_name, sourceFile) => {
     expect(violationsOf([sourceFile])).not.toEqual([]);
