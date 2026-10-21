@@ -4,6 +4,7 @@ workflowType: architecture
 project_name: crm
 date: 2026-10-05
 revised: 2026-10-19
+iteration: 3
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'architect (Winston), autonomous run'
@@ -91,8 +92,8 @@ inputDocuments:
 
 # Architecture: password recovery for the user module (create new password)
 
-**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-14 **Feature:**
-`create-new-password`
+**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-14 and 2026-10-19
+**Feature:** `create-new-password`
 
 Predecessors: [run summary](./run-summary-create-new-password-2026-10-05.md),
 [research](./research-create-new-password-2026-10-05.md),
