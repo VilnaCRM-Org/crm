@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
 
 import type { ToastItemSet } from '@/components/types/ui-toast';
@@ -129,5 +130,91 @@ describe('useStackClearance', () => {
 
     expect(padding()).toBe('');
     expect(measure).toHaveBeenCalledTimes(1);
+  });
+
+  describe('the focused control under the stack', () => {
+    const nativeScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    let scrollIntoView: jest.Mock;
+
+    beforeEach(() => {
+      scrollIntoView = jest.fn();
+      HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    });
+
+    afterEach(() => {
+      HTMLElement.prototype.scrollIntoView = nativeScrollIntoView;
+      document.body.replaceChildren();
+    });
+
+    const focusedAt = (bottom: number, parent: HTMLElement = document.body): HTMLButtonElement => {
+      const control = document.createElement('button');
+      jest.spyOn(control, 'getBoundingClientRect').mockReturnValue({ bottom } as DOMRect);
+      parent.append(control);
+      control.focus();
+      return control;
+    };
+
+    it('is scrolled into view when it reaches below the top of the stack', () => {
+      const control = focusedAt(720);
+
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+      expect(scrollIntoView.mock.contexts[0]).toBe(control);
+    });
+
+    it('is scrolled into view again after a resize moves the stack over it', () => {
+      const control = focusedAt(560);
+      const node = stack(704);
+      renderHook(() => useStackClearance({ current: node }, toastSet(1)));
+      jest.mocked(node.getBoundingClientRect).mockReturnValue({ top: 512 } as DOMRect);
+
+      resize();
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView.mock.contexts[0]).toBe(control);
+    });
+
+    it('stays put when it ends exactly at the top of the stack', () => {
+      focusedAt(704);
+
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('is not looked for when nothing has focus', () => {
+      jest
+        .spyOn(document.body, 'getBoundingClientRect')
+        .mockReturnValue({ bottom: 2000 } as DOMRect);
+
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      expect(document.body).toHaveFocus();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('is not looked for when the document reports no active element', () => {
+      jest.spyOn(document, 'activeElement', 'get').mockReturnValue(null);
+      jest
+        .spyOn(document.body, 'getBoundingClientRect')
+        .mockReturnValue({ bottom: 2000 } as DOMRect);
+
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      expect(padding()).toBe('96px');
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('stays put when it is a close button inside the stack', () => {
+      const node = stack(704);
+      document.body.append(node);
+      focusedAt(760, node);
+
+      renderHook(() => useStackClearance({ current: node }, toastSet(1)));
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
   });
 });
