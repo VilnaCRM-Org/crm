@@ -91,7 +91,9 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     ]);
   });
 
-  test('offers no stop for a two-factor card', async ({ page }) => {
+  test('keeps the control count after an unconfirmed save (no stop from the empty slot)', async ({
+    page,
+  }) => {
     await openSettings(
       page,
       stubProfile(page, {

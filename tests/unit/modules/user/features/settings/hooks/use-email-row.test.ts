@@ -50,7 +50,12 @@ describe('useEmailRow', () => {
   it('reports the confirmation and the resend action of an idle online row', () => {
     const { result } = renderHook(() => useEmailRow(props(true), false));
 
-    expect(result.current).toStrictEqual({ confirmed: true, busy: false, resend });
+    expect(result.current).toStrictEqual({
+      confirmed: true,
+      busy: false,
+      resending: false,
+      resend,
+    });
   });
 
   it.each([
@@ -63,6 +68,15 @@ describe('useEmailRow', () => {
 
     const { result } = renderHook(() => useEmailRow(props(false), saving));
 
-    expect(result.current).toStrictEqual({ confirmed: false, busy: true, resend });
+    expect(result.current).toStrictEqual({ confirmed: false, busy: true, resending, resend });
+  });
+
+  it('reports a running resend on its own, so the form can hold Save until it settles', () => {
+    mockEmailResend.mockReturnValue({ isSubmitting: true, resend });
+
+    const { result } = renderHook(() => useEmailRow(props(false), false));
+
+    expect(result.current.resending).toBe(true);
+    expect(result.current.busy).toBe(true);
   });
 });

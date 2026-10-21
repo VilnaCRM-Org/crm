@@ -81,6 +81,9 @@ test.describe('Settings on touch devices (issue #330)', () => {
 
     await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(1);
+    expect(stub.calls.find((call) => call.operation === 'UpdateUser')?.variables).toEqual({
+      input: expect.objectContaining({ id: PROFILE_NODE.id, initials: NEW_NAME }),
+    });
   });
 
   test('changes an e-mail and resends the link with taps only', async ({ page }) => {

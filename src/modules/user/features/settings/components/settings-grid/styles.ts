@@ -1,6 +1,4 @@
-import breakpointsTheme from '@/components/ui-breakpoints';
-
-const { md, lg } = breakpointsTheme.breakpoints.values;
+import { SETTINGS_DESKTOP, SETTINGS_TABLET } from '../profile-form/styles';
 
 export default {
   grid: {
@@ -9,10 +7,10 @@ export default {
     gap: '0.75rem',
     alignItems: 'start',
 
-    [`@media (min-width:${md}px)`]: {
+    [SETTINGS_TABLET]: {
       gridTemplateColumns: 'minmax(0, 46.8125rem)',
     },
-    [`@media (min-width:${lg + 1}px)`]: {
+    [SETTINGS_DESKTOP]: {
       gridTemplateColumns: 'minmax(0, 42.1875rem)',
       gridAutoFlow: 'column',
       gridAutoColumns: 'minmax(0, 29.9375rem)',

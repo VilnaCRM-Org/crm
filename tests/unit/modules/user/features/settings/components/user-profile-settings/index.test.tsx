@@ -214,6 +214,18 @@ describe('UserProfileSettings', () => {
     expect(screen.getByRole('alert')).toBeEmptyDOMElement();
   });
 
+  it.each(['loading', 'failed'] as const)(
+    'keeps the form off the page while a retry is %s even though the entity is kept',
+    (status) => {
+      render(card({ status, user: buildUserEntity({ fullName: 'Олена Петренко' }) }), { wrapper });
+
+      expect(screen.queryByText('Вітаємо!')).not.toBeInTheDocument();
+      expect(screen.queryByText('Олена Петренко')).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    }
+  );
+
   it('renders nothing but the status region for a ready state without an entity', () => {
     render(card({ status: 'ready', user: null }), { wrapper });
 

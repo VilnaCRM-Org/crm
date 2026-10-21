@@ -59,9 +59,30 @@ describe('ChangePassword', () => {
       'current-password'
     );
     expect(screen.getByLabelText('Новий пароль')).toHaveAttribute('autocomplete', 'new-password');
+    expect(screen.getByLabelText('Поточний пароль')).toHaveAttribute(
+      'placeholder',
+      'Введіть пароль'
+    );
+    expect(screen.getByLabelText('Новий пароль')).toHaveAttribute('placeholder', 'Створіть пароль');
     expect(
       screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
     ).toBeInTheDocument();
+  });
+
+  it('describes the new password by the hint and the rule list, the current one by neither', () => {
+    render(<Provider i18n={createSettingsLocaleI18n('uk')}>{subject()}</Provider>);
+
+    const describedBy =
+      screen.getByLabelText('Новий пароль').getAttribute('aria-describedby') ?? '';
+
+    expect(describedBy.split(' ')).toEqual(
+      expect.arrayContaining(['new-password-hint', 'new-password-rules'])
+    );
+    expect(
+      screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
+    ).toHaveAttribute('id', 'new-password-hint');
+    expect(screen.getByRole('list')).toHaveAttribute('id', 'new-password-rules');
+    expect(screen.getByLabelText('Поточний пароль')).not.toHaveAttribute('aria-describedby');
   });
 
   it('makes both password fields read-only, and only them, while busy', async () => {
@@ -86,7 +107,7 @@ describe('ChangePassword', () => {
 
     expect(items).toHaveLength(4);
     items.forEach((item) => expect(item).not.toHaveTextContent(/password_policy\./));
-    expect(items[0]).toHaveTextContent(/8|символ/i);
+    expect(items[0]).toHaveTextContent('Від 8 до 64 символів');
   });
 
   it('renders the same rules and the section copy in English', async () => {

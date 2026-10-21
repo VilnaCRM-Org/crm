@@ -162,7 +162,7 @@ export default function ProfileForm(props: ProfileFormProps): JSX.Element {
       onInvalid={save.block}
       defaultValues={defaults}
       isSubmitting={save.isSubmitting}
-      showTitle={false}
+      isSubmitDisabled={emailRow.resending}
       title={null}
       submitLabel={t('settings.profile.save')}
       submittingLabel={t('settings.profile.saving')}

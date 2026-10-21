@@ -3,30 +3,27 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { withFormProvider } from '@stories/form-decorators';
 import { noop } from '@stories/story-callbacks';
 
+import type { ProfileFormValues } from '../../types/user-profile/profile-form-values';
+
 import ClearButton from './clear-button';
+
+const DEFAULTS: ProfileFormValues = {
+  fullName: 'Олена Петренко',
+  email: 'olena.petrenko@example.com',
+  currentPassword: '',
+  newPassword: '',
+};
 
 const meta: Meta<typeof ClearButton> = {
   title: 'Settings/ClearButton',
   component: ClearButton,
   tags: ['autodocs'],
   args: {
-    defaults: {
-      fullName: 'Олена Петренко',
-      email: 'olena.petrenko@example.com',
-      currentPassword: '',
-      newPassword: '',
-    },
+    defaults: DEFAULTS,
     busy: false,
     onClear: noop,
   },
-  decorators: [
-    withFormProvider({
-      fullName: 'Олена Петренко',
-      email: 'olena.petrenko@example.com',
-      currentPassword: '',
-      newPassword: '',
-    }),
-  ],
+  decorators: [withFormProvider(DEFAULTS)],
   parameters: {
     docs: {
       description: {

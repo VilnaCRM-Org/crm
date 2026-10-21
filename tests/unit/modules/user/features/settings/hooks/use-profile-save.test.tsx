@@ -247,7 +247,7 @@ describe('useProfileSave', () => {
   });
 
   it('adopts the entity, shows a draft per changed aspect and bumps settled', async () => {
-    const { props, adopt, show } = harness();
+    const { props, adopt, show, focus } = harness();
     const entity = buildUserEntity();
     mockUpdate.mockResolvedValue({ kind: 'ok', user: entity });
     const { result } = renderHook(() => useProfileSave(props), { wrapper });
@@ -272,6 +272,24 @@ describe('useProfileSave', () => {
       ],
     });
     expect(result.current.state.settled).toBe(1);
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves focus to the save button once per settled save, success or failure', async () => {
+    const { props, focus } = harness();
+    mockUpdate.mockResolvedValueOnce(okOutcome()).mockResolvedValueOnce(failedOutcome('rejected'));
+    const { result } = renderHook(() => useProfileSave(props), { wrapper });
+
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+    expect(focus).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+
+    expect(result.current.state.settled).toBe(2);
+    expect(focus).toHaveBeenCalledTimes(2);
   });
 
   it.each([
@@ -299,7 +317,7 @@ describe('useProfileSave', () => {
   });
 
   it('publishes the field errors as the outcome orders them, without a toast', async () => {
-    const { props, show } = harness();
+    const { props, show, focus } = harness();
     mockUpdate.mockResolvedValue({
       kind: 'invalid',
       errors: {
@@ -326,6 +344,7 @@ describe('useProfileSave', () => {
     expect(result.current.state.settled).toBe(0);
     expect(result.current.state.noChanges).toBe(false);
     expect(show).not.toHaveBeenCalled();
+    expect(focus).not.toHaveBeenCalled();
   });
 
   it('shows the transient failure with a retry that clicks the save button', async () => {
