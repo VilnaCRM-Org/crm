@@ -1240,18 +1240,18 @@ Not dispatched with this feature; no story waits for them.
 
 None blocks v1; each default holds until the design owner answers (research §8.1).
 
-| Question                         | v1 default                                           |
-| -------------------------------- | ---------------------------------------------------- |
-| Error toast frame                | success layout on `#FDECEC`, icon `#DC3939` (FR-20)  |
-| Field error states               | existing style, text colour fixed at source (FR-26)  |
-| Page-load error state            | a message and a retry button in place of the card    |
-| After an e-mail change           | toast plus "not confirmed · resend"; no inbox panel  |
-| Subtitle, copy, mobile header    | FR-3 and §12 drafts; mobile keeps the desktop title  |
-| "Очистити" colours               | outlined, label at 4.5:1 or more, never primary blue |
-| Greeting and resend overrides    | greeting `#969B9D` kept (amended); resend `#0074B5`  |
-| Monogram without a pencil badge  | decorative, hidden from assistive technology         |
-| Optional hint under the password | the FR-10 text                                       |
-| Toast timing                     | no timer; close, action or overflow only (FR-20)     |
+| Question                         | v1 default                                            |
+| -------------------------------- | ----------------------------------------------------- |
+| Error toast frame                | success layout on `#FDECEC`, icon `#DC3939` (FR-20)   |
+| Field error states               | existing style, text colour fixed at source (FR-26)   |
+| Page-load error state            | a message and a retry button in place of the card     |
+| After an e-mail change           | toast plus "not confirmed · resend"; no inbox panel   |
+| Subtitle, copy, mobile header    | FR-3 and §12 drafts; mobile keeps the desktop title   |
+| "Очистити" colours               | outlined, label at 4.5:1 or more, never primary blue  |
+| Greeting and resend overrides    | greeting `#969B9D` kept (amended); resend `#0074B5`   |
+| Monogram and pencil badge        | decorative (badge amended 2026-10-21), hidden from AT |
+| Optional hint under the password | the FR-10 text                                        |
+| Toast timing                     | no timer; close, action or overflow only (FR-20)      |
 
 ## 11. Traceability
 

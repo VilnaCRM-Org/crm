@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-20
-iteration: 5
+revised: 2026-10-21
+iteration: 6
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -19,7 +19,7 @@ inputDocuments:
 # Epics and stories: user settings for the user module
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
-2026-10-16, amended 2026-10-19 and 2026-10-20 **Feature:** `user-settings`
+2026-10-16, amended 2026-10-19, 2026-10-20 and 2026-10-21 **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md),
 [brief](./brief-user-settings-2026-10-06.md), [PRD](./prd-user-settings-2026-10-06.md) and
@@ -1316,7 +1316,7 @@ catalog, so `src/i18n/localization.json` is unchanged), unit tests with jest-axe
 
 **Acceptance Criteria:**
 
-- Given the Figma design gate on the header of `313:10242`, when it runs before code, then the monogram, greeting and name follow the frame without the photo and pencil badge; an unreachable MCP reports `BLOCKED`.
+- Given the Figma design gate on the header of `313:10242`, when it runs before code, then the monogram, greeting and name follow the frame without the photo, and the pencil badge (amended 2026-10-21) is drawn as decoration; an unreachable MCP reports `BLOCKED`.
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП"; "Admin" shows "A"; "Олена Іванівна Петренко" shows "ОІ"; an empty name shows a decorative person glyph; letters are upper-cased with `toUpperCase`, never a `toLocale*` call.
 - Given the monogram, when the accessibility tree is read, then it is `aria-hidden="true"`, and "Вітаємо!" and the name are plain text with no heading or image role and no control.
 - Given the computed styles, when they are read, then the greeting is `#969B9D` (the Figma grey the product owner kept on 2026-10-21 under a scoped exception; the planned `#57595B` is superseded) and the monogram letters are `#1A1C1E` on a `#E1E7EA` disc (13.69:1).
@@ -1958,7 +1958,7 @@ So that the next iteration has frames for the states v1 composed on its own.
 
 **Acceptance Criteria:**
 
-- Given PRD §10, when the questions are sent, then they cover the error toast frame, field error states, the page-load error state, the post-change e-mail state, the subtitle and mobile header, the "Очистити" colours, the greeting and resend overrides, the monogram without a pencil badge, the optional-password hint, toast timing, and the tone of the `/sign-in` "session ended" notice (Story 1.8 draws it as `info`, with no frame).
+- Given PRD §10, when the questions are sent, then they cover the error toast frame, field error states, the page-load error state, the post-change e-mail state, the subtitle and mobile header, the "Очистити" colours, the greeting and resend overrides, the monogram with its decorative pencil badge (amended 2026-10-21), the optional-password hint, toast timing, and the tone of the `/sign-in` "session ended" notice (Story 1.8 draws it as `info`, with no frame).
 
 ## Dependency graph
 

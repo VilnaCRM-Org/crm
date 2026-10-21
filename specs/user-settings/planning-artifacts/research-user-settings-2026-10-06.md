@@ -152,19 +152,19 @@ crm's is `#DC3939` (`src/styles/colors.ts:15-17`).
 
 ### 3.4 Contrast (WCAG 2.1 AA, computed)
 
-| Pair                                 | Ratio | Verdict                                   |
-| ------------------------------------ | ----- | ----------------------------------------- |
-| `#969B9D` greeting on white          | 2.81  | fail; kept 2026-10-21 under an exception  |
-| `#1EAEFF` resend link on white       | 2.46  | fail; use `linkText` `#0074B5` (5.04)     |
-| white on `#1EAEFF` Save button       | 2.46  | existing debt, #276 exception (§5.6)      |
-| `#1A1C1E` on `#E8F4EF` success toast | 15.15 | pass                                      |
-| `#38B386` icon on `#E8F4EF`          | 2.34  | below 3:1; icon decorative, `aria-hidden` |
-| `#1A1C1E` on `#FDECEC` error toast   | 14.96 | pass                                      |
-| `#DC3939` icon on `#FDECEC`          | 3.92  | pass for a graphic (3:1)                  |
-| `#DC3939` field error text on white  | 4.48  | fail; existing app-wide style             |
-| `red` `UIForm` banner text on white  | 4.00  | fail; existing (§5.5)                     |
-| `#4CAF50` theme success on white     | 2.78  | never usable as text                      |
-| `#D0D4D8` input stroke on white      | 1.49  | existing field style app-wide             |
+| Pair                                 | Ratio | Verdict                                                                                                                              |
+| ------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `#969B9D` greeting on white          | 2.81  | fail; D15 planned `#57595B` (7.03); superseded 2026-10-21: kept under the scoped `#settings-greeting` exception (architecture §5.10) |
+| `#1EAEFF` resend link on white       | 2.46  | fail; use `linkText` `#0074B5` (5.04)                                                                                                |
+| white on `#1EAEFF` Save button       | 2.46  | existing debt, #276 exception (§5.6)                                                                                                 |
+| `#1A1C1E` on `#E8F4EF` success toast | 15.15 | pass                                                                                                                                 |
+| `#38B386` icon on `#E8F4EF`          | 2.34  | below 3:1; icon decorative, `aria-hidden`                                                                                            |
+| `#1A1C1E` on `#FDECEC` error toast   | 14.96 | pass                                                                                                                                 |
+| `#DC3939` icon on `#FDECEC`          | 3.92  | pass for a graphic (3:1)                                                                                                             |
+| `#DC3939` field error text on white  | 4.48  | fail; existing app-wide style                                                                                                        |
+| `red` `UIForm` banner text on white  | 4.00  | fail; existing (§5.5)                                                                                                                |
+| `#4CAF50` theme success on white     | 2.78  | never usable as text                                                                                                                 |
+| `#D0D4D8` input stroke on white      | 1.49  | existing field style app-wide                                                                                                        |
 
 The field error row is new evidence: `MuiFormHelperText` error text uses `paletteColors.error.main`
 at 14 px, weight 500 (`src/components/ui-form-input-field/theme.ts:98-110`), so it is normal
