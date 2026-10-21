@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -53,7 +53,9 @@ describe('profile form accessibility', () => {
     await userEvent.type(screen.getByLabelText('Новий пароль'), 'Next12345');
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
 
+    expect(document.forms[0]).toHaveAttribute('aria-busy', 'true');
     await expectNoA11yViolations(view.container);
   });
 
