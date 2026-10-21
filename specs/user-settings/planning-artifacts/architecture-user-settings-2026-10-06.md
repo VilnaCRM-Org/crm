@@ -2865,10 +2865,12 @@ outside their owners.
 Decision: paletteColors.error.text (#C62828) for field-error text app-wide; the greeting and
 resend control use existing passing tokens; A11Y_EXCEPTIONS gains nothing.
 Rejected: a new contrast exception.
+Amendment 2026-10-21: the greeting keeps the Figma grey #969B9D by the product owner's decision;
+A11Y_EXCEPTIONS gains the scoped #settings-greeting entry, tracked in #276 (§5.10).
 
 ### The local mock is a stateless happy path
-Decision: users, updateUser (owner check and one violation) and resendEmailToUser answer from
-one seeded user; every error shape lives in msw and page.route.
+Decision: users, updateUser (owner check and one violation) and resendEmailToUser (the same owner
+check) answer from one seeded user; every error shape lives in msw and page.route.
 Rejected: a stateful mock that models 401, 429, 5xx and the time-out.
 
 ### Upstream requests

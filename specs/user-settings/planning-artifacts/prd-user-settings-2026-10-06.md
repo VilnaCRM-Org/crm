@@ -790,7 +790,8 @@ with "Access Denied." carrying `extensions.code` `FORBIDDEN` and `extensions.sta
 owner check), an `email` failing the mock's e-mail rule answers a `BAD_USER_INPUT` 422 violation
 with the message `email: <text>`, and any other input returns the seeded user with the sent
 fields applied, unconfirmed on an e-mail change, without storing them; `resendEmailToUser`
-returns the seeded user's `id` and `confirmed`. Every error carries an `extensions.code` so
+applies the same owner check (amendment 2026-10-21) and returns the seeded user's `id` and
+`confirmed`. Every error carries an `extensions.code` so
 `formatError` keeps its message (`docker/apollo-server/lib/format-error.ts:13-32`). The mock
 reads no token and keeps no state; the transport 401, the wrong password, the taken e-mail, 429,
 5xx, the resend time-out and the empty connection are answered by msw in the integration suite

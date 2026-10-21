@@ -546,8 +546,9 @@ tokens that already pass, and `A11Y_EXCEPTIONS` gains no entry.
 **Context.** The local Apollo mock is for development, and the browser lanes cannot reach it.
 
 **Decision.** `users`, `updateUser` (the owner check and one e-mail violation) and
-`resendEmailToUser` answer from one seeded user. Every other error shape — the transport 401, the
-wrong password, the taken e-mail, 429, 5xx, the time-out — lives in msw and `page.route`.
+`resendEmailToUser` (the same owner check) answer from one seeded user. Every other error shape —
+the transport 401, the wrong password, the taken e-mail, 429, 5xx, the time-out — lives in msw and
+`page.route`.
 
 **Rejected.** A stateful mock that models 401, 429, 5xx and the time-out (it would be a second,
 untested implementation of the backend).
