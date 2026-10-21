@@ -139,6 +139,13 @@ describe('settings layer edges (AR-8)', () => {
       ),
     ],
     [
+      'a hook importing the Data provider through an inline type specifier',
+      fixture(
+        'hooks/use-thing.ts',
+        "import { type ProfileProvider } from '../data-providers/profile-provider';\n"
+      ),
+    ],
+    [
       'a route importing a Repository through the alias',
       fixture(
         'routes/user-profile/index.tsx',
