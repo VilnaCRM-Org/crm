@@ -37,3 +37,17 @@ export default meta;
 type Story = StoryObj<typeof UILiveStatus>;
 
 export const Empty: Story = {};
+
+export const Assertive: Story = {
+  args: { politeness: 'assertive', message: 'Не вдалося зберегти зміни' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The assertive variant renders `role="alert"`, which interrupts the screen reader. ' +
+          'The toast stack keeps one mounted for error texts, beside the polite one for ' +
+          'success texts. Nothing is painted; inspect the DOM to see the region and its text.',
+      },
+    },
+  },
+};
