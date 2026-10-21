@@ -18,6 +18,14 @@ const SEEDED_USER: User = {
 
 const SEEDED_CURSOR = 'MA==';
 
+const rejectForeignUser = (id: string): void => {
+  if (id !== SEEDED_USER.id) {
+    throw new GraphQLError('Access Denied.', {
+      extensions: { code: 'FORBIDDEN', status: 403 },
+    });
+  }
+};
+
 export const profileResolvers = {
   Query: {
     users: async (): Promise<UserConnection> => ({
@@ -33,11 +41,7 @@ export const profileResolvers = {
   },
   Mutation: {
     updateUser: async (_: unknown, { input }: { input: UpdateUserInput }): Promise<UserPayload> => {
-      if (input.id !== SEEDED_USER.id) {
-        throw new GraphQLError('Access Denied.', {
-          extensions: { code: 'FORBIDDEN', status: 403 },
-        });
-      }
+      rejectForeignUser(input.id);
       const email = input.email ?? SEEDED_USER.email;
       if (email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(email)) {
         rejectViolation('email', 'This value is not a valid email address.');
@@ -55,9 +59,12 @@ export const profileResolvers = {
     resendEmailToUser: async (
       _: unknown,
       { input }: { input: ResendEmailToUserInput }
-    ): Promise<UserPayload> => ({
-      user: { ...SEEDED_USER, confirmed: false },
-      clientMutationId: input.clientMutationId ?? null,
-    }),
+    ): Promise<UserPayload> => {
+      rejectForeignUser(input.id);
+      return {
+        user: { ...SEEDED_USER, confirmed: false },
+        clientMutationId: input.clientMutationId ?? null,
+      };
+    },
   },
 };
