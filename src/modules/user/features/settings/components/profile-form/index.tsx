@@ -98,6 +98,16 @@ function PersonalDetails({ rules, refocus, emailRow, busy }: PersonalDetailsProp
 
   return (
     <>
+      <UIFormField<ProfileFormValues>
+        name="fullName"
+        label={t('settings.profile.full_name')}
+        placeholder={t('sign_up.form.name_input.placeholder')}
+        type="text"
+        autoComplete="name"
+        rules={rules.fullName}
+        inputProps={{ readOnly: busy }}
+        sx={styles.field}
+      />
       <UITypography
         component="h2"
         tabIndex={-1}
@@ -106,16 +116,6 @@ function PersonalDetails({ rules, refocus, emailRow, busy }: PersonalDetailsProp
       >
         {t('settings.profile.sections.personal')}
       </UITypography>
-      <UIFormField<ProfileFormValues>
-        name="fullName"
-        label={t('sign_up.form.name_input.label')}
-        placeholder={t('sign_up.form.name_input.placeholder')}
-        type="text"
-        autoComplete="name"
-        rules={rules.fullName}
-        inputProps={{ readOnly: busy }}
-        sx={styles.field}
-      />
       <EmailField rules={rules} emailRow={emailRow} busy={busy} />
     </>
   );

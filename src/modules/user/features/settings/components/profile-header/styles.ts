@@ -1,7 +1,7 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const { md } = breakpointsTheme.breakpoints.values;
+const { md, lg } = breakpointsTheme.breakpoints.values;
 
 export default {
   header: {
@@ -12,10 +12,12 @@ export default {
     [`@media (min-width:${md}px)`]: {
       alignItems: 'center',
       gap: '3.625rem',
-      marginBottom: '1.5rem',
+      marginBottom: '1.5625rem',
     },
+    [`@media (min-width:${lg + 1}px)`]: { marginBottom: '1.75rem' },
   },
   monogram: {
+    position: 'relative',
     flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
@@ -35,6 +37,20 @@ export default {
       fontSize: '2.25rem',
     },
   },
+  badge: {
+    position: 'absolute',
+    right: 0,
+    bottom: '-0.3125rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '1.625rem',
+    height: '1.625rem',
+    borderRadius: '50%',
+    backgroundColor: customColors.brand.blue,
+    [`@media (min-width:${md}px)`]: { bottom: 0 },
+  },
+  badgeIcon: { width: '1rem', height: '1rem', fill: 'none' },
   glyph: {
     fontSize: '2rem',
     [`@media (min-width:${md}px)`]: { fontSize: '3rem' },
@@ -53,7 +69,7 @@ export default {
     fontWeight: 500,
     fontSize: '1rem',
     lineHeight: '1.125rem',
-    color: customColors.text.muted,
+    color: customColors.text.secondary,
   },
   name: {
     margin: 0,

@@ -20,7 +20,7 @@ describe('ProfileHeader', () => {
   it.each([
     ['Олена Петренко', 'ОП'],
     ['Admin', 'A'],
-    ['Олена Іванівна Петренко', 'ОІ'],
+    ['Петренко Олена Іванівна', 'ОП'],
     ['  олена   петренко  ', 'ОП'],
     ['😀 smile', '😀S'],
     ['Анна-Марія\tКоваль', 'АК'],
@@ -28,6 +28,18 @@ describe('ProfileHeader', () => {
     render(<ProfileHeader fullName={name} />, { wrapper });
 
     expect(monogramOf(letters)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['Маслова Евгения Олеговна', 'Евгения Маслова'],
+    ['Петренко Олена Іванівна Друга', 'Олена Петренко'],
+    ['  Петренко\tОлена   Іванівна ', 'Олена Петренко'],
+    ['Олена Петренко', 'Олена Петренко'],
+    ['Admin', 'Admin'],
+  ])('greets the full name "%s" by first name and surname as "%s"', (name, shown) => {
+    render(<ProfileHeader fullName={name} />, { wrapper });
+
+    expect(screen.getByText(shown, { selector: 'p', normalizer: (text) => text })).toBeVisible();
   });
 
   it('upper-cases a lower-case name', () => {
@@ -75,14 +87,26 @@ describe('ProfileHeader', () => {
   it('colours the greeting, the name and the monogram from the palette', () => {
     render(<ProfileHeader fullName="Олена Петренко" />, { wrapper });
 
-    expect(screen.getByText('Вітаємо!')).toHaveStyle({ color: '#57595B' });
+    expect(screen.getByText('Вітаємо!')).toHaveStyle({ color: '#969B9D' });
+    expect(screen.getByText('Вітаємо!')).toHaveAttribute('id', 'settings-greeting');
     expect(screen.getByText('Олена Петренко')).toHaveStyle({ color: '#1A1C1E' });
   });
 
-  it('renders no photo, pencil badge, upload control or file input', () => {
+  it('renders no photo, upload control or file input until user-service stores avatars', () => {
     const { container } = render(<ProfileHeader fullName="Олена Петренко" />, { wrapper });
 
-    expect(container.innerHTML).not.toMatch(/<img|<input|type="file"|<button|EditOutlined/);
+    expect(container.innerHTML).not.toMatch(/<img|<input|type="file"|<button/);
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('draws the pencil badge as decoration inside the hidden monogram', () => {
+    render(<ProfileHeader fullName="Олена Петренко" />, { wrapper });
+
+    const monogram = screen.getByText('ОП');
+
+    expect(monogram).toHaveAttribute('aria-hidden', 'true');
+    expect(monogram.innerHTML).toMatch(/^ОП<div[^>]*><svg/);
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 
   it.each(['Олена Петренко', ''])('has no axe violation for the name "%s"', async (name) => {

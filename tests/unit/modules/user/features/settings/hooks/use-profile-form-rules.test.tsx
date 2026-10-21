@@ -73,6 +73,19 @@ describe('useProfileFormRules', () => {
     expect(run(rules().newPassword, 'Password123')).toBe(true);
   });
 
+  it('refuses a new password that repeats the current one, once the policy passes', () => {
+    const current = values({ currentPassword: 'Password123' });
+
+    expect(run(rules().newPassword, 'Password123', current)).toBe(
+      'Новий пароль має відрізнятися від поточного'
+    );
+    expect(run(rules().newPassword, 'Password124', current)).toBe(true);
+    expect(run(rules().newPassword, ' Password123', current)).toBe(true);
+    expect(run(rules().newPassword, 'Pa1', values({ currentPassword: 'Pa1' }))).toBe(
+      'Будь ласка, введіть від 8 до 64 символів'
+    );
+  });
+
   it('treats a whitespace-only new password as left empty, never as required', () => {
     expect(run(rules().newPassword, ' ')).toBe(true);
     expect(run(rules().newPassword, '   ')).toBe(true);

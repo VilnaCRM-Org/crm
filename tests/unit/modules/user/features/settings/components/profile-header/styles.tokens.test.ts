@@ -23,7 +23,7 @@ describe('profile header styles', () => {
       borderRadius: '50%',
       [TABLET]: { width: '6.1875rem', height: '6.1875rem' },
     });
-    expect(styles.greeting).toMatchObject({ color: '#57595B', fontSize: '1rem' });
+    expect(styles.greeting).toMatchObject({ color: '#969B9D', fontSize: '1rem' });
     expect(styles.header).toMatchObject({ gap: '1.25rem' });
   });
 
@@ -45,14 +45,35 @@ describe('profile header styles', () => {
     });
   });
 
-  it('leaves 20 px under the header on a phone and 24 px from the tablet frame', async () => {
+  it('leaves 20 / 25 / 28 px between the header and the name row, as Figma does', async () => {
     const { header } = await loadStyles();
 
     expect(header).toMatchObject({
       alignItems: 'flex-start',
       marginBottom: '1.25rem',
-      [TABLET]: { alignItems: 'center', gap: '3.625rem', marginBottom: '1.5rem' },
+      [TABLET]: { alignItems: 'center', gap: '3.625rem', marginBottom: '1.5625rem' },
+      '@media (min-width:1025px)': { marginBottom: '1.75rem' },
     });
+  });
+
+  it('pins the pencil badge to the monogram corner, 5 px lower on a phone', async () => {
+    const { monogram, badge, badgeIcon } = await loadStyles();
+
+    expect(monogram).toMatchObject({ position: 'relative' });
+    expect(badge).toEqual({
+      position: 'absolute',
+      right: 0,
+      bottom: '-0.3125rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '1.625rem',
+      height: '1.625rem',
+      borderRadius: '50%',
+      backgroundColor: '#1EAEFF',
+      [TABLET]: { bottom: 0 },
+    });
+    expect(badgeIcon).toEqual({ width: '1rem', height: '1rem', fill: 'none' });
   });
 
   it('drops the phone text block 11 px below the monogram top, as Figma draws it', async () => {

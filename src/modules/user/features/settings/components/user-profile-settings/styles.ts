@@ -78,7 +78,6 @@ export default {
     [SETTINGS_TABLET]: { flex: '1 1 0', minWidth: 0, height: '4.375rem' },
     [SETTINGS_DESKTOP]: { height: '4rem' },
   },
-  skeletonPolicy: { height: '9.375rem', [SETTINGS_TABLET]: { height: '7rem' } },
   skeletonActions: {
     display: 'flex',
     flexDirection: 'column',

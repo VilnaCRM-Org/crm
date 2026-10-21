@@ -13,9 +13,10 @@ const meta: Meta<typeof ProfileHeader> = {
       description: {
         component:
           'The greeting at the top of the profile card: a decorative monogram of the first ' +
-          'letters of the first two name words on a #E1E7EA disc, "Вітаємо!" in #57595B and the ' +
-          'name in #1A1C1E. An empty name shows a person glyph. There is no photo, pencil badge ' +
-          'or upload control.',
+          'letters of the greeted name on a #E1E7EA disc with a decorative pencil badge, ' +
+          '"Вітаємо!" in the Figma grey #969B9D (an accepted contrast exception) and the name in ' +
+          '#1A1C1E. A full ПІБ is greeted by first name and surname. An empty name shows a ' +
+          'person glyph. There is no photo, upload control or file input.',
       },
       story: { inline: false },
     },
