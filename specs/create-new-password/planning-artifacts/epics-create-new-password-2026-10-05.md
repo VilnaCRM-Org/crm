@@ -4,6 +4,7 @@ workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-05
 revised: 2026-10-19
+iteration: 3
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -47,7 +48,8 @@ inputDocuments:
 
 # Epics and stories: password recovery for the user module (create new password)
 
-**Author:** BMad (Product Manager) **Date:** 2026-10-05 **Feature:** `create-new-password`
+**Author:** BMad (Product Manager) **Date:** 2026-10-05, revised 2026-10-13 and 2026-10-19
+**Feature:** `create-new-password`
 
 ## Overview
 

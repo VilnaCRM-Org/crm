@@ -3,7 +3,7 @@ status: complete
 workflowType: research
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-20
+revised: 2026-10-21
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 inputDocuments:

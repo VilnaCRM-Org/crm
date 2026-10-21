@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-20
-iteration: 4
+revised: 2026-10-21
+iteration: 5
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -15,8 +15,8 @@ inputDocuments:
 
 # PRD: user settings for the `user` module
 
-**Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16 and
-2026-10-20 **Feature:** `user-settings`
+**Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
+2026-10-20 and 2026-10-21 **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and

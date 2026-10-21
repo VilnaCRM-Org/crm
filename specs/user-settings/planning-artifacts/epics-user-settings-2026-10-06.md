@@ -4,6 +4,7 @@ workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
 revised: 2026-10-20
+iteration: 5
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
