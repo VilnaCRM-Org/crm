@@ -301,7 +301,10 @@ integration tests via `jest.mutation.config.ts` — a flat union of both suites,
 jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
-instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
+instrumentation) and the settings `ready-story-provider` test, which imports a `*.stories.tsx` file
+that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
+shard that selects it and pins only story wiring outside the mutate scope. The config also uses
+ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
 These keep the run affordable — parallelism comes from the 30-way shard count rather than
 Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
 weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
@@ -335,13 +338,15 @@ claims. Three settings in `stryker.config.mjs` keep that true, and
   restricts each run to the test files that actually reach the mutated file; mutants now come back
   `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
   under the CI budget. That selection is **not transitive**: `jest.mutation.config.ts` roots only
-  the two test trees and the runner adds just the mutated file's own folder, so Jest records no
-  dependency edge through any other `src/` module, and a test is selected only when it imports
-  the file directly, through a module in that folder, or through a helper under `tests/unit` or
-  `tests/integration`. A test that reaches the file through a parent component is listed in
-  `coveredBy` by the dry run but never runs against the mutant, so its assertion kills nothing and
-  the mutant comes back `Survived` with `testsCompleted` below its `coveredBy` count — the shape
-  of the 48 survivors issue #330 killed by moving each assertion into the unit's own test file.
+  the two test trees and the runner adds just the mutated file's own folder (with its subfolders),
+  so Jest records no dependency edge through any other `src/` module, and a test is selected only
+  when it imports the file directly, through a module under that folder, or through a helper under
+  `tests/unit` or `tests/integration`. A file high in the tree widens its own selection with it:
+  `src/app.tsx` roots all of `src/`, and `src/modules/user/index.ts` the whole user module. A test
+  that reaches the file through a parent component is listed in `coveredBy` by the dry run but
+  never runs against the mutant, so its assertion kills nothing and the mutant comes back
+  `Survived` with `testsCompleted` below its `coveredBy` count — the shape of the 48 survivors
+  issue #330 killed by moving each assertion into the unit's own test file.
   A unit's behavioural assertions therefore live in its own direct test. Adding `./src` to
   `roots` would make selection transitive, and was measured against this tree with Jest's own
   haste map and resolver: the mutant-weighted number of test files a mutant run loads rises from
