@@ -36,7 +36,7 @@ export default function SocialNetworks(): JSX.Element {
     { label: 'GitHub', Icon: GitHub },
     { label: 'Twitter', Icon: Twitter },
   ];
-  const status = `, ${t('settings.social.linking_unavailable')}`;
+  const status = t('settings.social.linking_unavailable');
 
   return (
     <Box sx={styles.card}>
