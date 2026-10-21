@@ -124,7 +124,11 @@ field, in field order, that has one.
 effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the
 e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
 so even a resend that settles before React commits the adopted entity is dropped. The reducer's
-`confirm` still carries the e-mail as a second guard.
+`confirm` still carries the e-mail as a second guard. The two requests never overlap in the other
+direction either: `useEmailRow` reports `resending`, and `ProfileForm` hands it to `UIForm` as
+`isSubmitDisabled`, so Save is held (without the saving spinner, and with Clear still active) until
+the resend settles. A save for the unchanged address can therefore never be followed by an older
+`confirmed` flag from a resend that was already in flight.
 
 ## Figma parity
 
@@ -139,6 +143,10 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
+- **Desktop content is centred.** Figma left-aligns the columns beside a 238 px sidebar the
+  app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
+  columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
+  lands, and the heading stays aligned with the card's left edge.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.

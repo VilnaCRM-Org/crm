@@ -24,7 +24,7 @@ export interface ProfileLoadReducerState {
   readonly user: UserEntity | null;
   readonly version: number;
   readonly refocus: boolean;
-  readonly attempt: number;
+  readonly reload: boolean;
 }
 
 export interface RetryProfileLoadAction {

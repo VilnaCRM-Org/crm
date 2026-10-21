@@ -6,9 +6,16 @@ import type {
   UserServiceFailureReason,
 } from '@/modules/user/types/user-service/user-service-failure';
 import { buildProfileChange, buildUserNode } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const errors = new UserServiceErrorTransformer();
 const transformer = new GraphQLProfileTransformer(errors);
+
+const isolatedTransformer = (): Promise<GraphQLProfileTransformer> =>
+  loadIsolated(async () => {
+    const { default: Transformer } = await import('@/modules/user/features/settings/transformers');
+    return new Transformer(errors);
+  });
 
 const failure = (
   reason: UserServiceFailureReason,
@@ -131,8 +138,10 @@ describe('GraphQLProfileTransformer.failed', () => {
     ['refused', 'rejected'],
     ['unknown', 'rejected'],
     ['invalid_password', 'rejected'],
-  ] as const)('maps %s to %s', (reason, expected) => {
-    expect(transformer.failed(failure(reason))).toEqual({ kind: 'failed', reason: expected });
+  ] as const)('maps %s to %s', async (reason, expected) => {
+    const isolated = await isolatedTransformer();
+
+    expect(isolated.failed(failure(reason))).toEqual({ kind: 'failed', reason: expected });
   });
 });
 
@@ -150,8 +159,10 @@ describe('GraphQLProfileTransformer.invalid', () => {
     ['email', 'other', { field: 'email', reason: 'email_invalid' }],
     ['password', 'other', { field: 'currentPassword', reason: 'password_not_accepted' }],
     ['newPassword', 'other', { field: 'newPassword', reason: 'new_password_rejected' }],
-  ] as const)('maps a %s violation (%s) to its field error', (path, reason, expected) => {
-    expect(transformer.invalid(failure('violation', [{ path, reason }]))).toEqual({
+  ] as const)('maps a %s violation (%s) to its field error', async (path, reason, expected) => {
+    const isolated = await isolatedTransformer();
+
+    expect(isolated.invalid(failure('violation', [{ path, reason }]))).toEqual({
       kind: 'invalid',
       errors: { items: [expected] },
     });
@@ -201,6 +212,18 @@ describe('GraphQLProfileTransformer.invalid', () => {
     ['a rate limit', failure('rate_limited')],
     ['a server failure', failure('server')],
     ['an unauthenticated failure', failure('unauthenticated')],
+    [
+      'a rate limit whose items would map to a field error',
+      failure('rate_limited', [{ path: 'email', reason: 'taken' }]),
+    ],
+    [
+      'an unknown failure whose items would map to a field error',
+      failure('unknown', [{ path: 'initials', reason: 'other' }]),
+    ],
+    [
+      'a refusal whose items would map to a field error',
+      failure('refused', [{ path: 'email', reason: 'other' }]),
+    ],
   ])('gives null for %s', (_name, input) => {
     expect(transformer.invalid(input)).toBeNull();
   });
