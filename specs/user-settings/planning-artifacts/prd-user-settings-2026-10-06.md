@@ -4,7 +4,7 @@ workflowType: prd
 project_name: crm
 date: 2026-10-06
 revised: 2026-10-21
-iteration: 5
+iteration: 6
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -16,7 +16,7 @@ inputDocuments:
 # PRD: user settings for the `user` module
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
-2026-10-20 and 2026-10-21 **Feature:** `user-settings`
+2026-10-20 and 2026-10-21 (twice) **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and
@@ -120,7 +120,9 @@ feature before settings uses them (D11).
 
 ### Non-goals
 
-- Avatar upload, crop and removal (D2, G5) and the social networks card (D2, G6).
+- Avatar upload, crop and removal (D2, G5) and linking, listing or unlinking social accounts
+  (G6). The social networks card itself was a non-goal (D2); amended 2026-10-21, it renders
+  UI-only (FR-7a).
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3).
 - Delete account, a sessions list, and the 2FA card itself (2FA bundle, #331).
 - Special handling for OAuth-created users (P2, G4); a `me` query or JWT decoding (D4, G2).
@@ -145,6 +147,7 @@ Settled before this stage; the architecture and epics stages treat them as fixed
 | U6           | Secrets: no cache, minimal fields, abort check, no retry        | research §6.1  |
 | U7, U10      | Repository conventions bind; decisions in the module README     | research §5.7  |
 | D1, D2       | Name, e-mail, resend, password, toasts, slot; no avatar/socials | research §1    |
+| D2a          | 2026-10-21: social card UI-only, no actions (FR-7a); amends D2  | owner decision |
 | D3           | No shell menu; one flag-gated home link shared with 2FA         | research §1    |
 | D4, D5       | `users(first: 1)` and its IRI; no schema extension              | research §4.3  |
 | D6, P1       | Current password on every Save; only changed fields are sent    | research §4.4  |
@@ -186,10 +189,12 @@ only stacking and toast placement change.
 
 1. From "Налаштування" on `/` the user lands on `/settings` with focus on `main`; the `h1` and
    subtitle render at once and a skeleton, announced as "Завантаження профілю…", holds the card.
-2. The card shows a decorative monogram, "Вітаємо!" and the name; the `h2` "Особисті дані" over
-   the prefilled name and e-mail; the `h2` "Пароль" over the empty current and new password with
-   eye toggles and four live policy rules; then "Зберегти зміни" and "Очистити". The 2FA column
-   sits to the right when its flag is on.
+2. The card shows a decorative monogram, "Вітаємо!" and the name; the prefilled "Ваше ПІБ" row,
+   then the `h2` "Особисті дані" over the prefilled e-mail (amended 2026-10-21, FR-8); the `h2`
+   "Пароль" over the empty current and new password with eye toggles, the four policy rules
+   shown while the new password has focus or a value (FR-10); then "Зберегти зміни" and
+   "Очистити". The 2FA column sits to the right when its flag is on, and the UI-only "Соціальні
+   мережі" card follows (FR-7a, amended 2026-10-21).
 3. Name, then current password, then Save: the spinner shows, "Збереження…" is announced, the
    toast "Зміни збережено" appears bottom-right, the header shows the new name, both password
    fields empty and the form is pristine.
@@ -385,12 +390,39 @@ amendment below. A successful name change updates it from the payload.
 > Assumption: the monogram is the upper-cased first letter of each of the first two words of the
 > name, or a decorative person glyph for an empty name; it carries nothing the name does not.
 
+> Amendment 2026-10-21 (product owner): the name line under "Вітаємо!" shows the first name and
+> surname only. The field holds a ПІБ (surname, first name, patronymic), so a value of three or
+> more words greets with the second word then the first ("Маслова Евгения Олеговна" → "Евгения
+> Маслова"); one or two words show as typed. The monogram is built from the greeted name, so the
+> first criterion above now reads: "Петренко Олена Іванівна" greets "Олена Петренко" with the
+> monogram "ОП"; "Олена Петренко" greets "Олена Петренко" with "ОП"; "Admin" shows "A"; an empty
+> name shows the decorative person glyph. The assumption above applies to the greeted name, not
+> to the raw field value.
+
+#### FR-7a — Social networks card, UI only (added 2026-10-21)
+
+Amendment 2026-10-21 (product owner; supersedes the §2 non-goal and D2's "no social networks
+card"): a second card "Соціальні мережі" renders Figma-exact (desktop `476:46530`, tablet
+`386:27239`, mobile `386:27457`) with four tiles, Google, Facebook, GitHub and Twitter. It has no
+working action, because user-service has no signed-in link, list or unlink (G6); linking stays
+out of scope until it does (Follow-up 5.5). The tiles are the items of a `<ul role="list">`
+labelled by the card's heading, and each carries a visually hidden status from the
+`settings.social.*` keys, ", linking not available yet" / ", підключення поки недоступне" (the
+separator lives in the catalog). The four brand icons move from `@auth/assets/social-links/` to
+`src/assets/icons/social/` and are shared with the sign-in and sign-up OAuth buttons
+(`oauth-providers.ts`).
+
+- Given the loaded page, when the list named "Соціальні мережі" is queried, then it holds four
+  list items whose accessible names end with the not-available status.
+- Given the card, when it is tabbed through, then it has no focus stop, button, link or handler.
+
 ### 5.3 The profile form
 
 #### FR-8 — Form structure, labels and autocomplete
 
-One form. Section "Особисті дані" (`h2`) holds "Ваше ім’я та прізвище" (`autocomplete="name"`,
-prefilled), "E-mail" (the sign-up label since #311, `type="email"`, `autocomplete="email"`,
+One form. A row above the sections holds "Ваше ПІБ" (`autocomplete="name"`, prefilled; amended
+2026-10-21, below — it was "Ваше ім’я та прізвище" inside "Особисті дані"). Section "Особисті
+дані" (`h2`) holds "E-mail" (the sign-up label since #311, `type="email"`, `autocomplete="email"`,
 prefilled) and the row of
 FR-15. Section "Пароль" (`h2`) holds "Поточний пароль" (`autocomplete="current-password"`) and the
 optional "Новий пароль" (`autocomplete="new-password"`), both empty with eye toggles. The footer
@@ -405,8 +437,17 @@ holds "Зберегти зміни" (the submit) and "Очистити"; Enter i
 - Given a field in error, when it renders, then it has `aria-invalid="true"` and an
   `aria-describedby` naming the visible error text.
 
-> Assumption: the fields reuse sign-up's labels (`src/modules/user/features/auth/i18n/uk.json:32`,
-> `:39`), not a literal "Ваше ПІБ" / "Ваш e-mail", so one value has one name across the app.
+> Assumption (superseded 2026-10-21 for the name): the fields reuse sign-up's labels
+> (`src/modules/user/features/auth/i18n/uk.json:32`, `:39`), not a literal "Ваше ПІБ" / "Ваш
+> e-mail", so one value has one name across the app. The e-mail keeps the sign-up label.
+
+> Amendment 2026-10-21 (product owner): the full-name field is a row above the "Особисті дані"
+> `h2`, matching Figma `315:11316`, where that section holds only the e-mail and the name sits at
+> the top under the header. Its label is the new settings key `settings.profile.full_name`, "Ваше
+> ПІБ" / "Your full name" (the owner chose "Ваше ПІБ"; the neuter agrees with "прізвище"), not the
+> reused sign-up label "Ваше ім’я та прізвище". The `h2` "Особисті дані" therefore heads only the
+> e-mail and the row of FR-15; the name field is named by its own visible label. The loading
+> skeleton follows the same order.
 
 #### FR-9 — Name, e-mail and current-password validation
 
@@ -448,6 +489,17 @@ hint says the field is optional; no confirmation field is drawn and none is adde
 
 > Assumption: the hint reads "Необов’язково. Залиште порожнім, щоб не змінювати пароль."; four
 > unmet rules under an empty optional field would otherwise read as a demand.
+
+> Amendment 2026-10-21 (product owner; supersedes the visible hint and the always-shown list
+> above): Figma draws no hint and no rule list for the field at rest. The hint is visually hidden
+> but stays in the field's `aria-describedby`, and the four policy rules appear only while the
+> field has focus or a value. When an empty field loses focus the rules stay 200 ms more
+> (`useBlurHold`, `RULES_COLLAPSE_DELAY_MS`), so a click on "Зберегти зміни" that starts the blur
+> lands before the button moves. A new password equal to the current one is refused once the
+> policy passes (`settings.errors.new_password_same`), and the new-password rule re-validates
+> when the current password changes. Accessibility trade-off, recorded honestly: the optional
+> state is announced to assistive technology but is not shown visually; the owner chose this to
+> match Figma.
 
 #### FR-11 — Change detection and the update input
 
@@ -688,6 +740,26 @@ toast's close button, else to "Зберегти зміни". Reduced motion remo
 > Overflow removes the oldest toast of either kind; it follows the user's next action, not a
 > timer, so "errors never auto-dismiss" holds.
 
+> Amendment 2026-10-21 (implementation decision, accessibility-reviewed in PR #354, commit
+> `69b4ffea`; supersedes "an error toast has `role="alert"`" in the text and first criterion
+> above): no toast carries a role of its own. Two always-mounted `UILiveStatus` regions announce
+> the queue: a polite one (`role="status"`) for success texts and an assertive one
+> (`politeness="assertive"`, `role="alert"`) for error texts, both alternating a mark so an
+> identical repeat is spoken again. Each close button is described by its own message. Reason: a
+> `role="alert"` element created and filled in one commit is dropped by several screen readers,
+> and the alert wrapped the toast's own buttons; an always-mounted region is the reliable
+> pattern. Closing a toast moves focus to the next close button, then the previous one, then
+> "Зберегти зміни" while it is connected and enabled, then the settings `h1` (`tabindex="-1"`),
+> so focus never drops to `body`; a toast pushed out by the cap while it holds focus hands focus
+> to the newest close button. The first criterion now reads: an error toast's text is announced
+> once through the always-mounted assertive region.
+
+> Amendment 2026-10-21 (implementation decision, commit `8f8bf93a`; supersedes the check icon
+> `#38B386` above): the success check uses `paletteColors.success.text` `#2E7D32` (4.55:1 on
+> `#E8F4EF`) instead of a new `success.icon` token, because the Figma `#38B386` reaches only
+> 2.34:1 on that surface, under the 3:1 non-text floor (WCAG 1.4.11). In forced-colors mode the
+> toast keeps a `CanvasText` border, since the surface colour disappears there.
+
 ### 5.6 Transport, secrets and telemetry
 
 #### FR-21 — Bearer header on GraphQL requests
@@ -780,13 +852,15 @@ every auth error state. No existing visual baseline renders a field error (each 
 snapshots a resting or valid-input state), so the auth baselines do not change and the new
 `/settings` field-error pair of NFR-3 is the first visual record of the token. Save keeps
 the existing #276 exception (`form button[type="submit"].MuiButton-contained`); "Очистити" needs
-none, and `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts:27-54`) gains no entry.
+none, and `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts:27-54`) gains no entry (superseded
+2026-10-21 for the greeting, below).
 
 - Given field errors on `/settings`, when axe runs in three engines, then no `color-contrast`
   violation is reported outside the existing #276 entry.
 - Given field-error helper text anywhere, when its colour is read, then it reaches 4.5:1 on white.
 - Given the CI visual suite on this change, when it runs, then no existing baseline changes,
-  because none renders a field error, and `A11Y_EXCEPTIONS` gained no entry.
+  because none renders a field error, and `A11Y_EXCEPTIONS` gained no entry (superseded
+  2026-10-21: it gains exactly one, `#settings-greeting`, per the amendment below).
 
 > Amendment 2026-10-21: the greeting override is withdrawn by the product owner's decision.
 > "Вітаємо!" keeps the Figma grey `#969B9D` (2.81:1) and `#settings-greeting` is the ninth
@@ -805,8 +879,11 @@ with "Access Denied." carrying `extensions.code` `FORBIDDEN` and `extensions.sta
 owner check), an `email` failing the mock's e-mail rule answers a `BAD_USER_INPUT` 422 violation
 with the message `email: <text>`, and any other input returns the seeded user with the sent
 fields applied, unconfirmed on an e-mail change, without storing them; `resendEmailToUser`
-applies the same owner check (amendment 2026-10-21) and returns the seeded user's `id` and
-`confirmed`. Every error carries an `extensions.code` so
+applies the same owner check (amendment 2026-10-21) and returns the seeded user's `id` with
+`confirmed: false` (amended 2026-10-21; it returned the seed's `confirmed`, which is true). A
+resend never confirms and is only meaningful for an unconfirmed address: answering `true` made
+the dev page mark a just-changed address confirmed and hide the resend action, while the page
+keeps showing the unconfirmed row after a resend. Every error carries an `extensions.code` so
 `formatError` keeps its message (`docker/apollo-server/lib/format-error.ts:13-32`). The mock
 reads no token and keeps no state; the transport 401, the wrong password, the taken e-mail, 429,
 5xx, the resend time-out and the empty connection are answered by msw in the integration suite
@@ -835,8 +912,14 @@ Every string exists in both catalogs with identical key sets, or reuses an ident
 eager string; no literal ships in source (D14). §12 holds the drafts. The settings copy ships as a
 lazy catalog the settings route registers (#315's mechanism, `config/i18n-catalog-policy.json`),
 so the eager catalog every page downloads grows only by the keys other pages render (the home
-link, the session-ended notice, the toast's close label); the merged catalog is regenerated for
-those. #315's lazy recovery keys are never referenced from settings (reconciled 2026-10-16).
+link, the session-ended notice); the merged catalog is regenerated for those. #315's lazy
+recovery keys are never referenced from settings (reconciled 2026-10-16). Amended 2026-10-21:
+the toast's close label (`ui_toast.close`) is no longer eager. `ui_toast.*` is a lazy catalog
+owned by `src/components/ui-toast/` and registered when `UIToast` evaluates, through the one
+`lazyCatalogLoader`, because only the lazy settings chunk renders a toast; this keeps the label
+off the eager `index.js` that `/sign-in` downloads (mobile Lighthouse headroom). The full-name
+label is the new settings key `settings.profile.full_name` (FR-8 amendment), not a reused
+sign-up string, and the social card's statuses are `settings.social.*` (FR-7a).
 
 - Given the two catalogs, when `make lint-i18n` runs, then key sets are identical, no string is
   empty and every `t()` key resolves in both locales.
@@ -931,9 +1014,12 @@ the link.
 gzip entrypoint 165 000 B and chunk 130 000 B; Lighthouse script 265 000 B and total 480 000 B.
 The page is the lazy `settings` chunk; the eager entrypoint grows only by the route key, the
 contract with its flag and the route flag gate shared with the two-factor bundle (#331, R17),
-plus the protected route's session-ended notice rule and three eager catalog keys (the home link,
-the session-ended notice, the toast's close label), under 1 kB gzip together; every other
-settings string ships in a lazy catalog (#315's mechanism, `config/i18n-catalog-policy.json`).
+plus the protected route's session-ended notice rule and two eager catalog keys (the home link,
+the session-ended notice), under 1 kB gzip together; every other settings string ships in a lazy
+catalog (#315's mechanism, `config/i18n-catalog-policy.json`). Amended 2026-10-21: the toast's
+close label was the third eager key; it now ships in the lazy `ui_toast.*` catalog owned by
+`src/components/ui-toast/` and registered when `UIToast` evaluates (FR-28), so it stays off the
+eager `index.js` that `/sign-in` downloads.
 The Data provider, Transformers, Repository, zod, tsyringe, Apollo and the link stay off the
 static graph from
 `src/index.tsx`, with no eager `@mui/material` import (CLAUDE.md, "The MUI theme engine is not
@@ -951,11 +1037,18 @@ and no budget is raised.
 
 WCAG 2.1 AA is binding (`docs/accessibility/acceptance-standard.md`, U11): jest-axe over the new
 components and every page state, `@axe-core/playwright` on `/settings` in three engines, no
-positive `tabindex`, no new `A11Y_EXCEPTIONS` entry. One `h1` and `h2` sections; visible
-associated labels with FR-8's autocomplete tokens; `aria-invalid` and `aria-describedby` on
-errors; each outcome announced once; no meaning by colour alone; FR-26's overrides. Ahead of the
-standard: inputs, Save, "Очистити" and toast buttons 44 CSS px tall on mobile, "Надіслати
-повторно" 24 px; the eye toggle keeps its known 32 px shared gap (issue #154).
+positive `tabindex`, no new `A11Y_EXCEPTIONS` entry beyond the one below. One `h1` and `h2`
+sections; visible associated labels with FR-8's autocomplete tokens; `aria-invalid` and
+`aria-describedby` on errors; each outcome announced once; no meaning by colour alone; FR-26's
+overrides. Ahead of the standard: inputs, Save, "Очистити" and toast buttons 44 CSS px tall on
+mobile, "Надіслати повторно" 24 px; the eye toggle keeps its known 32 px shared gap (issue #154).
+
+> Amendment 2026-10-21 (product owner, FR-7 and FR-26): "no new `A11Y_EXCEPTIONS` entry" is
+> superseded by exactly one new entry. "Вітаємо!" keeps the Figma grey `#969B9D` (2.81:1) under
+> the scoped `color-contrast` exception `#settings-greeting` in `tests/utils/a11y/axe-config.ts`,
+> tracked in #276; no other entry is added. The optional state of "Новий пароль" is announced
+> through `aria-describedby` but not shown visually (FR-10 amendment, the owner's call to match
+> Figma).
 
 ### NFR-7 — Keyboard contract
 
@@ -1225,7 +1318,8 @@ Not dispatched with this feature; no story waits for them.
    CORS admits `Authorization`, `X-Request-Id` and `X-Correlation-Id` (#514, research §4.5) or
    the API is served same-origin.
 2. Bump the contract pin to that release; no schema change is expected (D5).
-3. Avatar upload (G5) and social networks link, list and unlink (G6) once user-service has them.
+3. Avatar upload (G5) and social networks link, list and unlink (G6) once user-service has them;
+   the UI-only card of FR-7a (2026-10-21) is what gets wired.
 4. App-shell navigation with a user-menu entry replacing the home link (D3).
 5. OAuth-created users and password-free profile changes once upstream allows (P1, P2, G4).
 6. Client throttling of "Надіслати повторно" tied to the upstream limiter (P4, #470).
@@ -1250,8 +1344,9 @@ None blocks v1; each default holds until the design owner answers (research §8.
 | "Очистити" colours               | outlined, label at 4.5:1 or more, never primary blue  |
 | Greeting and resend overrides    | greeting `#969B9D` kept (amended); resend `#0074B5`   |
 | Monogram and pencil badge        | decorative (badge amended 2026-10-21), hidden from AT |
-| Optional hint under the password | the FR-10 text                                        |
+| Optional hint under the password | FR-10 text, visually hidden (amended 2026-10-21)      |
 | Toast timing                     | no timer; close, action or overflow only (FR-20)      |
+| Social networks card             | UI-only, no actions (FR-7a, amended 2026-10-21)       |
 
 ## 11. Traceability
 
@@ -1264,7 +1359,8 @@ None blocks v1; each default holds until the design owner answers (research §8.
 | FR-5  | §4.3, §5.3       | §6     | D4; Miro "User settings" → API            |
 | FR-6  | §3.5, §5.5       | §3     | no frame (D18, R7)                        |
 | FR-7  | §3.2, §3.4       | §4     | `313:10242` header; D2, D15               |
-| FR-8  | §3.2, §5.5       | §4     | `313:10242` card                          |
+| FR-7a | §3.2             | §4     | `476:46530`, `386:27239`, `386:27457`     |
+| FR-8  | §3.2, §5.5       | §4     | `313:10242` card; `315:11316` name row    |
 | FR-9  | §4.4, §5.5       | §4     | D6, P1                                    |
 | FR-10 | §6.1             | §4     | `313:10242` "Пароль" block (U3)           |
 | FR-11 | §4.4             | §3, §6 | D6, G3                                    |
@@ -1297,9 +1393,16 @@ Drafts for FR-28, `uk` then `en`; "reused" strings come from the sign-up, auth o
 - Greeting "Вітаємо!" / "Welcome!"; loading "Завантаження профілю…" / "Loading your profile…";
   load failure "Не вдалося завантажити профіль" / "Your profile could not be loaded".
 - Sections "Особисті дані" / "Personal details" and "Пароль" / "Password"; fields "Поточний
-  пароль" / "Current password" and "Новий пароль" / "New password"; name and e-mail reused.
+  пароль" / "Current password" and "Новий пароль" / "New password"; e-mail reused; the name is
+  "Ваше ПІБ" / "Your full name" (`settings.profile.full_name`, amended 2026-10-21; it was the
+  reused sign-up label).
 - Hint "Необов’язково. Залиште порожнім, щоб не змінювати пароль." / "Optional. Leave empty to
-  keep your current password."
+  keep your current password." (visually hidden, still described; FR-10 amendment 2026-10-21).
+- Same as current (added 2026-10-21): `settings.errors.new_password_same`, refusing a new
+  password equal to the current one.
+- Social networks card (added 2026-10-21, FR-7a): "Соціальні мережі" with Google, Facebook,
+  GitHub and Twitter, each with the hidden status ", підключення поки недоступне" / ", linking not
+  available yet" (`settings.social.*`).
 - "Зберегти зміни" / "Save changes"; "Очистити" / "Clear"; "Збереження…" / "Saving…"; "Немає змін
   для збереження" / "There are no changes to save"; "Закрити сповіщення" / "Close notification".
 - Row "E-mail не підтверджено" / "E-mail not confirmed"; "Надіслати повторно" / "Send again".
@@ -1328,8 +1431,9 @@ The boundary Ralph builds within; §2 "Non-goals" and §9 "Follow-ups" give the 
 Follow-ups 5.1 to 5.13 hold the deferred work. Appended last so the section numbers the epics and
 architecture cite do not move.
 
-- Avatar upload, crop and removal (D2, G5; Follow-up 5.4) and the social networks card with link,
-  list and unlink (D2, G6; Follow-up 5.5).
+- Avatar upload, crop and removal (D2, G5; Follow-up 5.4) and social networks link, list and
+  unlink (G6; Follow-up 5.5). The card itself renders UI-only since the 2026-10-21 amendment
+  (FR-7a), with no working action.
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3; Follow-up 5.6);
   the home link of FR-4 is the only entry point.
 - The two-factor authentication sign-in challenge: it is #331's own page (Figma `72:4846`, "Назад",

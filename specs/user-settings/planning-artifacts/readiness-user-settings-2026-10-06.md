@@ -3,10 +3,10 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-20
+revised: 2026-10-21
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
-iteration: 3
+iteration: 4
 finalReview: opus
 author: 'implementation-readiness checker (architect, Validate mode), autonomous run'
 inputDocuments:
@@ -250,7 +250,8 @@ removed from the naming policy and the burn-down; #315 Epic 0 owns the `data-pro
   `UserEntity`, `UserProfileSettings`, `2FASettings`, `SocialNetworks`;
   `UserProfileSettings` → `UserEntity` and → `RestorePassword` → `RestorePasswordDTO`. All are
   used; `SocialNetworks` and the component-level "User profile" menu are named gaps (A §17.3
-  G-1, G-2).
+  G-1, G-2). Amended 2026-10-21: `SocialNetworks` is built UI-only (PRD FR-7a); only
+  `UserSocialNetworkEntity` and the actions stay a gap.
 - `State [Redux]` is drawn `State [Zustand]`, the `useAuthStore` Zustand store (replacing the
   then-current reactive var, client-state pass below); the board has no Provider → State edge, and
   the plan draws none.
@@ -537,3 +538,54 @@ reads 25 stories, 1.1 to 4.6, with no warning; the story-body audit is clean; pr
 W3 and W7 only; `prettier --check` passes on the seven artifacts; the TB-1 blocks of P and A
 still hash to `eb676341…` and are identical. The pin is unchanged: PR #340 head `f8ff83c7`. The
 verdict above holds.
+
+## Amendments 2026-10-21 (product owner and implementation decisions)
+
+An FR/NFR review gate compared the implementation with this bundle and flagged nine deviations.
+Each is a decision already taken and implemented, so the bundle records it as a dated amendment
+in place, keeping the superseded text visible; one requirement remains for each.
+
+1. **Social networks card, UI only** (product owner). The card renders Figma-exact (desktop
+   `476:46530`, tablet `386:27239`, mobile `386:27457`): "Соціальні мережі" over Google,
+   Facebook, GitHub and Twitter tiles in a `<ul role="list">` labelled by the heading, each with a
+   visually hidden ", linking not available yet" / ", підключення поки недоступне" status
+   (`settings.social.*`, the separator in the catalog), and no working action, because
+   user-service has no link, list or unlink (G6). The four brand icons moved from
+   `@auth/assets/social-links/` to `src/assets/icons/social/` and are shared with the OAuth
+   buttons (`oauth-providers.ts`). Supersedes the PRD §2 non-goal, D2's "no social card", UX-DR-5,
+   architecture G-1, Follow-up 5.5's "PRD amendment first" and Story 1.1's "only the eye icons
+   move"; new PRD FR-7a.
+2. **Full-name row** (product owner). The name is a row above the "Особисті дані" `h2`, as in
+   Figma `315:11316`, labelled "Ваше ПІБ" / "Your full name" (`settings.profile.full_name`), not
+   the reused sign-up label; the `h2` heads only the e-mail, and the skeleton follows the same
+   order (PRD FR-8, FR-28).
+3. **Greeting text** (product owner). The name line greets with the first name and surname
+   only: three or more words show the second word then the first ("Маслова Евгения Олеговна" →
+   "Евгения Маслова"), one or two show as typed, and the monogram is built from the greeted name
+   (PRD FR-7, Story 3.1).
+4. **New password at rest** (product owner). The optional hint is visually hidden but stays in
+   `aria-describedby`; the rules show only while the field has focus or a value, held 200 ms
+   after an empty field blurs (`useBlurHold`, `RULES_COLLAPSE_DELAY_MS`); a new password equal to
+   the current one is refused (`settings.errors.new_password_same`). Accessibility trade-off: the
+   optional state is announced but not shown visually (PRD FR-10).
+5. **Greeting colour** (product owner, carried everywhere). "Вітаємо!" keeps `#969B9D` (2.81:1)
+   under the one new scoped exception `#settings-greeting`, tracked in #276; PRD NFR-6, the brief
+   release gate (0 → 1), the epics DoD, NFR-6 summary and Story 4.4 now say so.
+6. **Toast announcements** (implementation, accessibility-reviewed in PR #354, commit
+   `69b4ffea`). No toast carries a role; a polite and an assertive always-mounted `UILiveStatus`
+   region announce success and error texts with an alternating mark, and each close button is
+   described by its message, because an alert created and filled in one commit is dropped by
+   several screen readers (PRD FR-20, architecture §5.8, Story 1.9).
+7. **Success icon colour** (implementation, commit `8f8bf93a`). The check uses `success.text`
+   `#2E7D32` (4.55:1 on `#E8F4EF`); the Figma `#38B386` reaches 2.34:1, under the 3:1 non-text
+   floor, so no `success.icon` token exists (PRD FR-20, architecture §5.8, Story 1.9).
+8. **Toast close label lazy** (implementation, commit `cbd5344d`). `ui_toast.*` is a lazy
+   catalog owned by `src/components/ui-toast/`, registered when `UIToast` evaluates through the
+   one `lazyCatalogLoader`, so the label stays off the eager `index.js` of `/sign-in`; AR-2's
+   list of lazy catalogs includes it (PRD FR-28, NFR-5).
+9. **Mock resend** (implementation, commits `9d6337e6` and `a603705e`). The mock answers a resend
+   with the seed's `id` and `confirmed: false` behind the same owner check as `updateUser`,
+   because a resend never confirms (PRD FR-27, architecture §5.12, Story 2.1).
+
+Story 2.2's `buildUserNode` delegating to `buildGraphqlUser` is unchanged: the code is brought to
+the requirement, not the other way round.

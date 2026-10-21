@@ -57,7 +57,10 @@ section `6242:41691`. Only what user-service has a backend for is planned, over 
   toasts, and the right-hand slot column where the 2FA bundle mounts its card.
 - **Out of scope, no backend anywhere (D2):** avatar upload, crop and removal (a decorative
   monogram derived from the name replaces the photo; no pencil badge) and the social networks
-  section (not rendered). Both get user-service feature issues and crm follow-ups. Delete
+  section (not rendered). Both get user-service feature issues and crm follow-ups. Amended
+  2026-10-21 (product owner): the social networks card renders UI-only, Figma-exact (`476:46530`,
+  `386:27239`, `386:27457`), with no working action; linking, listing and unlinking stay out of
+  scope (G6). Delete
   account and a sessions list are neither designed nor planned.
 - **Not this feature (D3):** the app-shell sidebar, header and user menu around the page; the
   app-shell PRD excludes navigation menus
@@ -132,7 +135,8 @@ sidebar and header (search, notifications, tasks, user chip) are shell work (D3)
 ### 3.2 Page content (desktop `313:10242`)
 
 - Title "Настройка", subtitle "Описание страницы настроек"; the right column holds the 2FA card
-  and a second card holds social networks (Google, Facebook, GitHub, Twitter; out of scope).
+  and a second card holds social networks (Google, Facebook, GitHub, Twitter; out of scope;
+  amended 2026-10-21: rendered UI-only, its actions still out of scope).
 - Profile card: a 100 px avatar with a pencil badge; "Добро пожаловать!" in `#969B9D` and the
   name in bold; field "Ваше ФИО"; heading "Личные данные" over "Ваш e-mail"; heading "Пароль"
   over "Текущий пароль" and "Новый пароль" (masked, eye toggle, no confirmation field); one
@@ -158,7 +162,7 @@ crm's is `#DC3939` (`src/styles/colors.ts:15-17`).
 | `#1EAEFF` resend link on white       | 2.46  | fail; use `linkText` `#0074B5` (5.04)                                                                                                |
 | white on `#1EAEFF` Save button       | 2.46  | existing debt, #276 exception (§5.6)                                                                                                 |
 | `#1A1C1E` on `#E8F4EF` success toast | 15.15 | pass                                                                                                                                 |
-| `#38B386` icon on `#E8F4EF`          | 2.34  | below 3:1; icon decorative, `aria-hidden`                                                                                            |
+| `#38B386` icon on `#E8F4EF`          | 2.34  | below 3:1; amended 2026-10-21: the success check uses `success.text` `#2E7D32` (4.55:1) instead                                      |
 | `#1A1C1E` on `#FDECEC` error toast   | 14.96 | pass                                                                                                                                 |
 | `#DC3939` icon on `#FDECEC`          | 3.92  | pass for a graphic (3:1)                                                                                                             |
 | `#DC3939` field error text on white  | 4.48  | fail; existing app-wide style                                                                                                        |
@@ -177,6 +181,9 @@ text that needs 4.5:1, and settings shows field errors (wrong current password, 
 ### 3.5 Missing from the design
 
 1. Error toasts: per U2 the same layout as success, error styling, `role="alert"`; no frame.
+   Amended 2026-10-21: no toast carries a role; error texts are announced by an always-mounted
+   assertive region, because an alert created and filled in one commit is dropped by several
+   screen readers (architecture §5.8).
 2. Field and server errors: wrong current password, weak new password, invalid or taken e-mail,
    empty or malformed name.
 3. The state right after an e-mail change (only "not confirmed · resend" is drawn).
@@ -198,7 +205,9 @@ text that needs 4.5:1, and settings shows field errors (wrong current password, 
 > the desktop title and subtitle.
 >
 > Assumption: the design's order stays, but headings name what they hold: "Особисті дані" over
-> name and e-mail, "Пароль" over the password pair.
+> name and e-mail, "Пароль" over the password pair. Superseded 2026-10-21 (product owner): the
+> design's order and headings stay as drawn in `315:11316`; the name is a row "Ваше ПІБ" above
+> "Особисті дані", which heads only the e-mail.
 
 ### 3.7 Miro
 
@@ -455,7 +464,8 @@ It reads no token and keeps no state; the transport 401, the wrong password, the
 session with the problem+json body and `WWW-Authenticate` header of §4.5. The mock adds
 `extensions.code` (`BAD_USER_INPUT` beside the 422 violation) because its `formatError`
 rewrites a code-less error (`docker/apollo-server/lib/format-error.ts:13-20`). It sends no
-e-mails and answers in English only.
+e-mails and answers in English only. Amended 2026-10-21: a resend answers the seed's `id` with
+`confirmed: false`, because a resend never confirms an address (architecture §5.12).
 
 ## 5. crm current state
 
