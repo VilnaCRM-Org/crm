@@ -21,6 +21,10 @@
       "email_unconfirmed": "E-mail not confirmed",
       "resend": "Send again"
     },
+    "social": {
+      "heading": "Social networks",
+      "linking_unavailable": "linking not available yet"
+    },
     "toasts": {
       "saved": "Changes saved",
       "email_sent": "We sent a confirmation link to the new address",
