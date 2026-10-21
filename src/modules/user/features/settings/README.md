@@ -14,7 +14,7 @@ error. The decisions are recorded in `## User Settings decisions` of the
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
   (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
-  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`.
+  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
 - `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and the three GraphQL document seams.
@@ -160,8 +160,9 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   follows the greeted name.
 - **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
   optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
-  appear while the field has focus or a value. A new password equal to the current one is
-  refused once the policy passes.
+  appear while the field has focus or a value. When an empty field loses focus `useBlurHold` keeps
+  them for 200 ms more, so a click on Save that starts the blur lands before Save moves up. A new
+  password equal to the current one is refused once the policy passes.
 - **"Вітаємо!" uses the Figma grey `#969B9D`** at 2.81:1, below the 4.5:1 text minimum, by the
   product owner's call; `#settings-greeting` carries a scoped `color-contrast` exception in
   `tests/utils/a11y/axe-config.ts`, tracked with the other palette debt in #276.
