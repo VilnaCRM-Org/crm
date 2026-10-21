@@ -79,10 +79,21 @@ describe('ProfileHeader', () => {
     expect(screen.getByText('Олена Петренко')).toHaveStyle({ color: '#1A1C1E' });
   });
 
-  it('renders no photo, pencil badge, upload control or file input', () => {
+  it('renders no photo, upload control or file input until user-service stores avatars', () => {
     const { container } = render(<ProfileHeader fullName="Олена Петренко" />, { wrapper });
 
-    expect(container.innerHTML).not.toMatch(/<img|<input|type="file"|<button|EditOutlined/);
+    expect(container.innerHTML).not.toMatch(/<img|<input|type="file"|<button/);
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('draws the pencil badge as decoration inside the hidden monogram', () => {
+    render(<ProfileHeader fullName="Олена Петренко" />, { wrapper });
+
+    const monogram = screen.getByText('ОП');
+
+    expect(monogram).toHaveAttribute('aria-hidden', 'true');
+    expect(monogram.innerHTML).toMatch(/^ОП<div[^>]*><svg/);
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 
   it.each(['Олена Петренко', ''])('has no axe violation for the name "%s"', async (name) => {

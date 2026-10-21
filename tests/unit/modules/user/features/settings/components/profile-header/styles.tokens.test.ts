@@ -55,6 +55,26 @@ describe('profile header styles', () => {
     });
   });
 
+  it('pins the pencil badge to the monogram corner, 5 px lower on a phone', async () => {
+    const { monogram, badge, badgeIcon } = await loadStyles();
+
+    expect(monogram).toMatchObject({ position: 'relative' });
+    expect(badge).toEqual({
+      position: 'absolute',
+      right: 0,
+      bottom: '-0.3125rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '1.625rem',
+      height: '1.625rem',
+      borderRadius: '50%',
+      backgroundColor: '#1EAEFF',
+      [TABLET]: { bottom: 0 },
+    });
+    expect(badgeIcon).toEqual({ width: '1rem', height: '1rem' });
+  });
+
   it('drops the phone text block 11 px below the monogram top, as Figma draws it', async () => {
     const { text } = await loadStyles();
 
