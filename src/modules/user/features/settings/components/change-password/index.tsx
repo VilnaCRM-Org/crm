@@ -32,13 +32,36 @@ function CurrentPassword({ rules, busy }: CurrentPasswordProps): JSX.Element {
   );
 }
 
+function NewPassword({ rules, evaluate, busy }: ChangePasswordProps): JSX.Element {
+  const { t } = useTranslation();
+  const newPassword = useWatch<ProfileFormValues, 'newPassword'>({ name: 'newPassword' });
+
+  return (
+    <Box data-empty={newPassword === ''} sx={passwordStyles.newPassword}>
+      <UIPasswordField<ProfileFormValues>
+        name="newPassword"
+        label={t('settings.profile.new_password')}
+        placeholder={t('sign_up.form.password_input.placeholder')}
+        autoComplete="new-password"
+        describedBy={`${NEW_PASSWORD_HINT_ID} ${NEW_PASSWORD_RULES_ID}`}
+        rules={rules.newPassword}
+        readOnly={busy}
+        sx={styles.field}
+      />
+      <UITypography id={NEW_PASSWORD_HINT_ID} sx={passwordStyles.hint}>
+        {t('settings.profile.new_password_hint')}
+      </UITypography>
+      <UIPasswordPolicyRules id={NEW_PASSWORD_RULES_ID} name="newPassword" evaluate={evaluate} />
+    </Box>
+  );
+}
+
 export default function ChangePassword({
   rules,
   evaluate,
   busy,
 }: ChangePasswordProps): JSX.Element {
   const { t } = useTranslation();
-  const newPassword = useWatch<ProfileFormValues, 'newPassword'>({ name: 'newPassword' });
 
   return (
     <>
@@ -46,22 +69,7 @@ export default function ChangePassword({
         {t('settings.profile.sections.password')}
       </UITypography>
       <CurrentPassword rules={rules} busy={busy} />
-      <Box data-empty={newPassword === ''} sx={passwordStyles.newPassword}>
-        <UIPasswordField<ProfileFormValues>
-          name="newPassword"
-          label={t('settings.profile.new_password')}
-          placeholder={t('sign_up.form.password_input.placeholder')}
-          autoComplete="new-password"
-          describedBy={`${NEW_PASSWORD_HINT_ID} ${NEW_PASSWORD_RULES_ID}`}
-          rules={rules.newPassword}
-          readOnly={busy}
-          sx={styles.field}
-        />
-        <UITypography id={NEW_PASSWORD_HINT_ID} sx={passwordStyles.hint}>
-          {t('settings.profile.new_password_hint')}
-        </UITypography>
-        <UIPasswordPolicyRules id={NEW_PASSWORD_RULES_ID} name="newPassword" evaluate={evaluate} />
-      </Box>
+      <NewPassword rules={rules} evaluate={evaluate} busy={busy} />
     </>
   );
 }
