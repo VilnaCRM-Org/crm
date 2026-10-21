@@ -150,7 +150,7 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
   lands, and the heading stays aligned with the card's left edge.
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
-  header leaves 20 / 25 / 28 px to it, its label is "Ваш ПІБ" (Figma "Ваше ФИО"), and the
+  header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
 - **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
   optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
