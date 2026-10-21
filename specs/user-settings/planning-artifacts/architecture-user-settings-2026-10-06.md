@@ -2343,6 +2343,10 @@ component type.
   `ProfileForm` and `ChangePassword` hold no rule closures (§7.2).
 - `useToastQueue()` returns the `ToastQueue` of §5.8 over its file-level reducer: one hook
   function, the reducer, and at most three closures (`show`, `dismiss`, the memoised result).
+  Amended 2026-10-21: the file holds four functions (the hook, `reduceToasts`, `showToasts` and
+  `spokenText`, which builds the polite and the assertive text) and six closures (four array
+  callbacks, `show` and `dismiss`; no memoised result). That is the policy's per-file closure
+  cap, so `make lint-metrics` passes and any further closure needs the file split first.
 
 The retry action clicks Save rather than calling `form.requestSubmit()`, so a retry runs the
 form's own validation and Save with the current values and focus lands on "Зберегти зміни"
