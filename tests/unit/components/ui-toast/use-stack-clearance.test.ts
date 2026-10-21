@@ -195,6 +195,18 @@ describe('useStackClearance', () => {
       expect(scrollIntoView).not.toHaveBeenCalled();
     });
 
+    it('is not looked for when the document reports no active element', () => {
+      jest.spyOn(document, 'activeElement', 'get').mockReturnValue(null);
+      jest
+        .spyOn(document.body, 'getBoundingClientRect')
+        .mockReturnValue({ bottom: 2000 } as DOMRect);
+
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      expect(padding()).toBe('96px');
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
     it('stays put when it is a close button inside the stack', () => {
       const node = stack(704);
       document.body.append(node);
