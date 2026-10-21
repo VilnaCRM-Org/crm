@@ -281,12 +281,20 @@ used by settings alone (R16).
 - FR-6: skeleton with a polite loading status; a read failure shows an alert and a user-initiated
   retry; focus on the card's first heading after a successful retry.
 - FR-7: decorative monogram, greeting and the name; no avatar controls (the `#57595B` greeting was
-  superseded 2026-10-21: the Figma grey `#969B9D` stays, under a scoped exception).
+  superseded 2026-10-21: the Figma grey `#969B9D` stays, under a scoped exception). Amended
+  2026-10-21: the name line greets with the first name and surname only, taken from the ПІБ
+  (three or more words show the second word then the first), and the monogram follows it.
+- FR-7a (added 2026-10-21): a UI-only "Соціальні мережі" card, Figma-exact, four tiles in a
+  labelled list, each with a hidden "linking not available yet" status; no actions (G6).
 - FR-8: one form, two `h2` sections, labelled fields with `autocomplete`, eye toggles, Save and
-  Clear; Enter submits.
+  Clear; Enter submits. Amended 2026-10-21: the name is a row above "Особисті дані", labelled
+  "Ваше ПІБ" (`settings.profile.full_name`), so that `h2` heads only the e-mail.
 - FR-9: name and e-mail validated only while changed; the current password required for every
   Save with a change and never checked against the policy.
 - FR-10: optional new password under the shared policy, with four live rules and a hint.
+  Amended 2026-10-21: the hint is visually hidden but described, the rules show only while the
+  field has focus or a value (held 200 ms after an empty blur), and a new password equal to the
+  current one is refused.
 - FR-11: change detection (trimmed name, trimmed lower-cased e-mail, filled new password); a
   no-change status; an input carrying only the changed fields.
 - FR-12: native busy state, single flight, Save disabled offline, focus never left on `body`.
@@ -302,7 +310,8 @@ used by settings alone (R16).
 - FR-19: a transport 401 ends the session through the shared link; redirect with the notice; the
   owner refusal does nothing.
 - FR-20: toast primitive: two tones, a polite region, alert errors, no timer, at most three,
-  focus rules and placement.
+  focus rules and placement. Amended 2026-10-21: no toast carries a role; errors are announced
+  through a second always-mounted assertive region; the success check uses `#2E7D32`.
 - FR-21: `Authorization: Bearer` on non-anonymous GraphQL operations through `SessionLinkFactory`.
 - FR-22: `no-cache`, minimal selection, abort check and no retry on all three operations;
   documents against pinned v2.8.0; the query-seam policy edit.
@@ -315,10 +324,11 @@ used by settings alone (R16).
   was superseded 2026-10-21: it keeps `#969B9D` under the scoped `#settings-greeting` exception
   (tracked in #276), the one new exception.
 - FR-27: a stateless local Apollo mock answers the three operations: the seeded user, one
-  violation and the owner check.
+  violation and the owner check; a resend answers `confirmed: false` (amended 2026-10-21).
 - FR-28: every string in `uk` and `en`; the `settings.*` copy in a lazy catalog the settings
-  route registers, the few keys other pages render (home link, session-ended notice, toast
-  close) in eager catalogs with the merged catalog regenerated.
+  route registers, the few keys other pages render (home link, session-ended notice) in eager
+  catalogs with the merged catalog regenerated. Amended 2026-10-21: the toast close label is in
+  the lazy `ui_toast.*` catalog the toast owns, not eager.
 - FR-29: route-coverage rows, axe route scan, keyboard spec and mobile spec; Lighthouse URL list
   unchanged.
 - FR-30: the User Settings decisions in a `## User Settings decisions` section of
@@ -338,7 +348,8 @@ used by settings alone (R16).
 - NFR-5: bundle and paint-path budgets; eager growth under 1 kB gzip; nothing new on the static
   graph from `src/index.tsx`.
 - NFR-6: WCAG 2.1 AA; jest-axe and axe in three engines; 44 CSS px mobile targets and a 24 px
-  resend control; no new `A11Y_EXCEPTIONS` entry.
+  resend control; no new `A11Y_EXCEPTIONS` entry except the scoped `#settings-greeting` one
+  (amended 2026-10-21, tracked in #276).
 - NFR-7: keyboard order and focus rules with the repository `:focus-visible` ring.
 - NFR-8: mobile touch lane on Pixel 7 and iPhone 14.
 - NFR-9: secrets never in a URL, storage, the cache, logs or telemetry; passwords emptied; no new
@@ -373,7 +384,9 @@ used by settings alone (R16).
   exists. Amendment 2026-10-19: one shared `lazyCatalogLoader` (`src/lib/locale-catalog`,
   `register(i18n, catalog: LocaleCatalogPair)`) replaces `RecoveryCatalogLoader`,
   `SettingsCatalogLoader` (Story 1.6) and `PasswordPolicyCatalogLoader` (Story 1.1); each
-  owner keeps its own JSON import.
+  owner keeps its own JSON import. Amendment 2026-10-21 (commit `cbd5344d`): the list of
+  catalogs it registers widens to the toast catalog, `ui_toast.*`, owned by
+  `src/components/ui-toast/` and registered when `UIToast` evaluates.
 - AR-3 (§6): approved class suffixes (`Provider`, `Transformer`, `Repository`, `Detector`,
   `Loader`, and `Factory` for `SessionLinkFactory`, with `Transformer` added by the chore #332)
   and no policy edit of this plan's own; no new `*Controller`, `*Service`, `*Handler`,
@@ -421,7 +434,10 @@ used by settings alone (R16).
   2026-10-21: it keeps the Figma grey `#969B9D` under a scoped `#settings-greeting` exception.
 - UX-DR-5: no photo or social networks card (D2); the monogram is decorative. Amended 2026-10-21:
   it carries the Figma pencil badge (`315:11418`) as decoration only, with no role, handler or
-  focus stop.
+  focus stop. Amended 2026-10-21 again (product owner): the social networks card renders UI-only,
+  Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`), "Соціальні мережі"
+  with Google, Facebook, GitHub and Twitter, no working action (PRD FR-7a); "no social networks
+  card" is superseded.
 - UX-DR-6: every user-facing story runs the `figma-design-check` gate through the Figma MCP before
   UI code is written; an unreachable MCP reports `BLOCKED`, never a skip.
 
@@ -436,6 +452,7 @@ used by settings alone (R16).
 | FR-5        | 2.2, 2.3, 3.2, 4.2                                                          |
 | FR-6        | 2.3, 3.2, 3.4, 4.2, 4.5                                                     |
 | FR-7        | 3.1, 3.5, 4.5                                                               |
+| FR-7a       | 1.1, 3.1, 4.5 (added 2026-10-21)                                            |
 | FR-8        | 3.4, 4.2                                                                    |
 | FR-9        | 1.1, 3.3, 3.4, 4.2                                                          |
 | FR-10       | 1.1, 3.4                                                                    |
@@ -511,7 +528,9 @@ Each story's own criteria add to these; a story is not done until all of them ho
   through `tests/unit/utils/isolated-module.ts`; an equivalent mutant is removed by the simpler
   program, or annotated with its proof only where no refactor exists.
 - **Accessibility.** jest-axe (`expectNoA11yViolations`) on every new rendering component and
-  state; no positive `tabindex`; no new `A11Y_EXCEPTIONS` entry; text at 4.5:1 or more.
+  state; no positive `tabindex`; no new `A11Y_EXCEPTIONS` entry (amended 2026-10-21: except the
+  one scoped `#settings-greeting` entry of PRD FR-26, tracked in #276); text at 4.5:1 or more,
+  the greeting excepted.
 - **i18n.** Every key a story first uses lands in `uk` and `en` in that story, followed by
   `make i18n-generate`; catalog edits are append-only so parallel stories merge cleanly. The
   `settings.*` keys live in the lazy settings catalog (Story 1.6), which the generator leaves out
@@ -572,8 +591,8 @@ So that settings reuses one implementation of each without crossing the sibling-
 
 **Dispatch:** Independent; runs after P.1 and P.2.
 
-**Requirements:** FR-9, FR-10, FR-25, FR-28, NFR-1, NFR-2, NFR-3, NFR-6, NFR-14 (architecture
-§5.9).
+**Requirements:** FR-7a, FR-9, FR-10, FR-25, FR-28, NFR-1, NFR-2, NFR-3, NFR-6, NFR-14
+(architecture §5.9; FR-7a for the icon move, amendment 2026-10-21).
 
 > Assumption (reconciliation 2026-10-16): #315's `PasswordPolicyRules` evaluates the watched
 > value and translates its labels itself, and its `password_policy.*` keys sit in the lazy
@@ -604,6 +623,10 @@ of `@auth/hooks/use-server-field-error.ts`, placed beside its component as
 `ui-form/use-offline-submit.ts` is), one `src/components/types/<component>/index.ts` per moved
 component (MOVE of `@auth/types/components/{form-field,password-field,password-policy-rules,server-field-error}.ts`),
 `src/assets/icons/{eye,eye-off}.svg` (MOVE from `@auth/assets/`),
+`src/assets/icons/social/{google,facebook,github,twitter}-color.svg` (MOVE from
+`@auth/assets/social-links/`, amendment 2026-10-21) with
+`@auth/components/form-section/components/auth-provider-buttons/oauth-providers.ts` and its three
+tests (MODIFY: import paths only),
 `@auth/components/form-section/components/styles.ts` (MODIFY: keeps only `formFieldWrapper` with
 `fieldGapMargins`, which every auth caller passes through the `sx` of each `UIFormField` and
 `UIPasswordField` it renders), `config/i18n-catalog-policy.json` (MODIFY: a `lazyCatalogs` entry for
@@ -658,7 +681,7 @@ calls are re-pointed to `@/assets/icons/eye*.svg`, because the moved SVGs no lon
 - Given `UIFormField` with `describedBy` and `sx`, when it renders, then the input's `aria-describedby` keeps #315's order (the `describedBy` ids, then `<name>-helper-text` while an error shows), and the auth spacing reaches it through `sx`, so sign-in, sign-up and the #315 pages render the same DOM and computed styles.
 - Given `UIPasswordField` with an `sx`, when it renders, then it forwards that `sx` to its `UIFormField` grid unchanged, the optional `sx` is declared in `src/components/types/ui-password-field/index.ts`, and without one the grid carries no auth spacing.
 - Given sign-in and `/password-reset`, when they render, then each password-field grid still carries the `formFieldWrapper` margin it has on PR #340 (on sign-in the second of three sibling `div`s, on `/password-reset` the first new-password field), because `login-form-fields.tsx`, `registration-form-fields.tsx`, `reset-password-form.tsx` and `create-new-password-form.tsx` pass `formFieldWrapper` to every `UIFormField` and `UIPasswordField` they render (must-fail: a password field rendered without it changes the sign-in or `/password-reset` visual baseline in CI).
-- Given the eye icons and the field styles, when the move lands, then only `eye.svg` and `eye-off.svg` moved, `UIFormField` and `UIPasswordField` import only their own `styles.ts`, and no file under `src/components` imports `form-section/components/styles.ts`.
+- Given the eye icons and the field styles, when the move lands, then only `eye.svg` and `eye-off.svg` moved (superseded 2026-10-21: the four social brand icons also moved, from `@auth/assets/social-links/` to `src/assets/icons/social/`, shared by the sign-in and sign-up OAuth buttons in `oauth-providers.ts` and the settings social card of PRD FR-7a; `eye-hover.svg` and `eye-off-disabled.svg` still stay), `UIFormField` and `UIPasswordField` import only their own `styles.ts`, and no file under `src/components` imports `form-section/components/styles.ts`.
 - Given `tests/unit/config/eslint-policy.test.ts` and `scripts/ci/print-eslint-policy-config.mjs`, when the test runs, then both name the same auth component that stays where it is as their sample `.tsx` and the test passes.
 - Given the story-coverage test, when it runs, then `UIFormField`, `UIPasswordField` and `UIPasswordPolicyRules` have their moved stories and `UIServerFieldError` keeps its `EXEMPT` reason at its new path.
 - Given the CI visual suite, when it runs on this change, then no baseline changes; a changed sign-in, sign-up or password-recovery baseline stops the story for a report instead of a re-baseline.
@@ -1079,27 +1102,49 @@ So that I know what happened and never lose a confirmation to a timer.
 (NEW), `src/components/types/ui-toast/index.ts` (NEW: the §5.8 types),
 `src/hooks/use-toast-queue.ts` (NEW: the hook and its file-level reducer),
 `src/styles/colors.ts` (MODIFY: `success.surface` `#E8F4EF`, `success.icon` `#38B386`,
-`error.surface` `#FDECEC`),
+`error.surface` `#FDECEC`; amended 2026-10-21, commit `8f8bf93a`: no `success.icon` token, the
+check uses the existing `success.text` `#2E7D32`),
 `src/assets/icons/{toast-success,toast-error}.svg` (NEW, drawn with `currentColor`),
 `src/components/ui-toast/i18n/{uk,en}.json` (NEW: `ui_toast.close`), `src/i18n/localization.json`
-(REGEN), `src/components/ui-toast/{ui-toast,ui-toast-stack}.stories.tsx` (NEW), unit tests with
+(REGEN; amended 2026-10-21, commit `cbd5344d`: `ui_toast.*` is a lazy catalog, so
+`config/i18n-catalog-policy.json` gains its entry owned by `components/ui-toast`, `UIToast`
+registers it through `lazyCatalogLoader` when it evaluates, `tests/unit/utils/create-toast-locale-i18n.ts`
+serves the tests, and `localization.json` does not gain the key),
+`src/components/ui-live-status/index.tsx` and its type (MODIFY, amendment 2026-10-21, commit
+`69b4ffea`: an optional `politeness` prop, `assertive` rendering `role="alert"`),
+`src/components/ui-toast/{ui-toast,ui-toast-stack}.stories.tsx` (NEW), unit tests with
 jest-axe.
+
+> Amendment 2026-10-21 (implementation decisions, accessibility-reviewed in PR #354). Commit
+> `69b4ffea`: no toast carries a role of its own. `UIToastStack` renders two always-mounted
+> `UILiveStatus` regions, a polite one (`role="status"`) for success texts and an assertive one
+> (`politeness="assertive"`, `role="alert"`) for error texts, both alternating a mark so an
+> identical repeat is spoken again, and each close button is described by its own message. A
+> `role="alert"` element created and filled in one commit is dropped by several screen readers,
+> so an always-mounted region is the reliable pattern. Closing a toast moves focus to the next
+> close button, then the previous one, then `returnFocusRef` while it is connected and enabled,
+> then `fallbackFocusRef`; a toast pushed out by the cap while it holds focus hands focus to the
+> newest close button. Commit `8f8bf93a`: the success check is `#2E7D32` (`success.text`, 4.55:1
+> on `#E8F4EF`) because the Figma `#38B386` reaches only 2.34:1, under the 3:1 non-text floor
+> (WCAG 1.4.11); forced-colors mode draws a `CanvasText` border. Commit `cbd5344d`: the close
+> label is lazy (above). The criteria below read with these amendments; the superseded text is
+> kept and marked.
 
 **Gates:** DoD local gates; `make lint-i18n`, `make lint-metrics`; the Figma design gate.
 
 **Acceptance Criteria:**
 
 - Given the Figma design gate run through the Figma MCP before code, when it reads `315:11754` and `318:13410`, then the toast follows that layout and the error tone reuses it on its own surface; an unreachable MCP reports `BLOCKED`.
-- Given tone `success`, when `UIToast` renders, then the text is `#1A1C1E` on `#E8F4EF` (15.15:1), a check icon in `#38B386` has `aria-hidden="true"`, the toast itself has no role, and a close button is named "Закрити сповіщення" (en "Close notification"); tone `error` shows `#1A1C1E` on `#FDECEC` (14.96:1), an icon in `#DC3939` and `role="alert"`.
+- Given tone `success`, when `UIToast` renders, then the text is `#1A1C1E` on `#E8F4EF` (15.15:1), a check icon in `#38B386` (superseded 2026-10-21: `#2E7D32`, 4.55:1) has `aria-hidden="true"`, the toast itself has no role, and a close button is named "Закрити сповіщення" (en "Close notification") and described by the toast's message; tone `error` shows `#1A1C1E` on `#FDECEC` (14.96:1), an icon in `#DC3939` and `role="alert"` (superseded 2026-10-21: no role on the toast; its text is announced by the stack's assertive region).
 - Given a `ToastAction` (`label`, `onActivate`), when it is activated by Enter, Space or a click, then the toast is removed and `onActivate` runs once; the action is an underlined text button labelled in `#1A1C1E`, never the link token `#0074B5`, and the close icon is `#1A1C1E`.
 - Given `useToastQueue`, when `show` receives a `ToastDraftSet` of three drafts in one call, then they appear in one commit in that order with ids from the reducer's counter; when a fourth arrives, the oldest toast of either tone is removed; and with fake timers advanced 60 seconds every toast is still shown.
-- Given `UIToastStack` with no toasts, when it renders, then one visually hidden polite `role="status"` region (`UILiveStatus`) is present from the first render; three success toasts that arrive together are one update of its text, an identical repeat changes the text through the alternating zero-width mark, and an error toast's text never enters the region.
-- Given a toast closed by its button, when it leaves, then focus moves to the next toast's close button, or to `returnFocusRef` when it was the last, and no toast takes focus when it mounts.
+- Given `UIToastStack` with no toasts, when it renders, then one visually hidden polite `role="status"` region (`UILiveStatus`) is present from the first render; three success toasts that arrive together are one update of its text, an identical repeat changes the text through the alternating zero-width mark, and an error toast's text never enters the region; amended 2026-10-21: a second always-mounted assertive region (`role="alert"`) is present from the first render and carries the error texts with the same alternating mark.
+- Given a toast closed by its button, when it leaves, then focus moves to the next toast's close button, or to `returnFocusRef` when it was the last, and no toast takes focus when it mounts (amended 2026-10-21: then the previous close button, `returnFocusRef` only while it is connected and enabled, then `fallbackFocusRef`; a toast evicted by the cap while focused hands focus to the newest close button).
 - Given toasts on screen, when the layout effect runs with a stubbed `getBoundingClientRect`, then the root element's `scroll-padding-bottom` equals the stack's height; it is measured again whenever the toast set changes (a capped queue that swaps one toast for a taller one keeps its count) and on every window resize, and it is cleared when the stack empties or unmounts.
 - Given the style objects loaded in the test body, when they are read, then the colours come from the palette tokens, the stack is fixed bottom-right from the `sm` breakpoint and spans the bottom below it, the buttons have a 44 CSS px minimum height below `sm` (measured in Story 4.3), and no transition or keyframes exist.
 - Given both tones with and without an action, and one, three and mixed-tone stacks, when jest-axe runs, then there is no violation, and the two story files show each case.
 - Given the toast types, when `make lint-eslint` runs the TB-1 selectors, then `ToastItem` extends `ToastDraft` instead of an inline `Omit`, `show` takes a `ToastDraftSet`, `toasts` is a `ToastItemSet`, `ToastQueue` is a named interface, and no file carries a suppression.
-- Given the change, when the DoD gates run, then ESLint, `tsc`, dependency-cruiser (`no-components-import-modules`), jscpd and `make lint-metrics` report nothing (`use-toast-queue.ts` at two functions and at most three closures), `ui_toast.close` exists in `uk` and `en`, unit coverage stays at 100% and Stryker reports zero survivors.
+- Given the change, when the DoD gates run, then ESLint, `tsc`, dependency-cruiser (`no-components-import-modules`), jscpd and `make lint-metrics` report nothing (`use-toast-queue.ts` at two functions and at most three closures), `ui_toast.close` exists in `uk` and `en` (in the lazy toast catalog since the 2026-10-21 amendment, never in `localization.json`), unit coverage stays at 100% and Stryker reports zero survivors.
 
 ## Epic 2: Profile data access and the local mock
 
@@ -1161,7 +1206,7 @@ assertions are unchanged).
 - Given `updateUser` whose `id` is not the seeded IRI, when it runs, then the answer is HTTP 200 with "Access Denied.", `extensions.code` `FORBIDDEN` and `extensions.status` 403.
 - Given `updateUser` with an `email` that fails the mock's e-mail rule, when it runs, then the answer carries `extensions.code` `BAD_USER_INPUT`, `extensions.status` 422 and the message `email: <text>` with user-service's English validator text.
 - Given a valid `updateUser` carrying some of `initials`, `email` and `newPassword`, when it runs, then the payload is the seeded user with the sent `initials` and `email` applied, an e-mail change sets `confirmed` to `false`, and a second request starts again from the seed.
-- Given `resendEmailToUser`, when it runs, then `user { id confirmed }` of the seeded user returns.
+- Given `resendEmailToUser`, when it runs, then `user { id confirmed }` of the seeded user returns (superseded 2026-10-21, commits `9d6337e6` and `a603705e`: an `id` other than the seeded IRI is refused with the same "Access Denied." `FORBIDDEN` 403 as `updateUser`, and otherwise the answer is the seed's `id` with `confirmed: false`, because a resend never confirms and is only meaningful for an unconfirmed address; answering the seed's `confirmed: true` made the dev page mark a just-changed address confirmed and hide the resend action).
 - Given every error row, when it is answered, then it carries an `extensions.code`, so `formatError` keeps its message; each error test spies `console.error` and asserts its `'GraphQL Error:'` call; `format-error.ts` is not edited.
 - Given the tests, when they run with `TEST_ENV=server`, then they build their own `ApolloServer` with the real `formatError` and the exported resolvers, open no port, import no `server.ts`, cover every new branch under `docker/apollo-server/lib/`, the existing `createUser` tests pass unchanged, and `password-reset.test.ts` and `pending-schema.test.ts` pass with only `PROFILE_SDL_FIXTURE` added to their `typeDefs` and every assertion unchanged (must-fail: without the fixture, building their server throws because `Query.users` is not in the schema).
 - Given `server.ts`, `package.json` and `bun.lock`, when the story lands, then none of them changed, and the rebuilt `apollo` container starts healthy and answers `users(first: 1)`.
@@ -1304,20 +1349,25 @@ So that I can see whose profile I am editing.
 
 **Dispatch:** Depends on: 1.6.
 
-**Requirements:** FR-7, FR-26, FR-28, NFR-1, NFR-6, NFR-14 (architecture §7.2).
+**Requirements:** FR-7, FR-7a, FR-26, FR-28, NFR-1, NFR-6, NFR-14 (architecture §7.2; FR-7a
+added 2026-10-21).
 
 **Files:** `settings/components/profile-header/index.tsx`, `styles.ts` and a story (NEW),
 `settings/types/components/profile-header.ts` (NEW: `ProfileHeaderProps`),
 `settings/i18n/{uk,en}.json` (MODIFY: `settings.profile.greeting`, in the lazy settings
 catalog, so `src/i18n/localization.json` is unchanged), unit tests with jest-axe rendered through
-`createSettingsLocaleI18n`.
+`createSettingsLocaleI18n`. Added 2026-10-21 (FR-7a): `settings/components/social-networks/`
+(`index.tsx`, `styles.ts`, a story), `settings/types/components/social-networks.ts`, the
+`settings.social.*` keys, and the card placed in `settings/routes/user-profile/index.tsx` under
+the profile card.
 
 **Gates:** DoD local gates; `make lint-i18n`; the Figma design gate.
 
 **Acceptance Criteria:**
 
 - Given the Figma design gate on the header of `313:10242`, when it runs before code, then the monogram, greeting and name follow the frame without the photo, and the pencil badge (amended 2026-10-21) is drawn as decoration; an unreachable MCP reports `BLOCKED`.
-- Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП"; "Admin" shows "A"; "Олена Іванівна Петренко" shows "ОІ"; an empty name shows a decorative person glyph; letters are upper-cased with `toUpperCase`, never a `toLocale*` call.
+- Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП"; "Admin" shows "A"; "Олена Іванівна Петренко" shows "ОІ"; an empty name shows a decorative person glyph; letters are upper-cased with `toUpperCase`, never a `toLocale*` call. Superseded 2026-10-21 (product owner): the name line under "Вітаємо!" shows the first name and surname only, because the field holds a ПІБ (surname, first name, patronymic); three or more words show the second word then the first, one or two words show as typed, and the monogram is built from the greeted name. The cases are: "Петренко Олена Іванівна" greets "Олена Петренко" with "ОП"; "Олена Петренко" greets "Олена Петренко" with "ОП"; "Маслова Евгения Олеговна" greets "Евгения Маслова" with "ЕМ"; "Admin" shows "A"; an empty name shows the decorative person glyph.
+- Given the page grid (FR-7a, added 2026-10-21, product owner), when the loaded page renders, then a UI-only "Соціальні мережі" card follows the profile card, Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`): a `<ul role="list">` labelled by the heading holds four list items, Google, Facebook, GitHub and Twitter, with the icons from `src/assets/icons/social/`, each with a visually hidden status from `settings.social.*` (", linking not available yet" / ", підключення поки недоступне", the separator in the catalog); no tile is a button, link or focus stop, and jest-axe reports no violation.
 - Given the monogram, when the accessibility tree is read, then it is `aria-hidden="true"`, and "Вітаємо!" and the name are plain text with no heading or image role and no control.
 - Given the computed styles, when they are read, then the greeting is `#969B9D` (the Figma grey the product owner kept on 2026-10-21 under a scoped exception; the planned `#57595B` is superseded) and the monogram letters are `#1A1C1E` on a `#E1E7EA` disc (13.69:1).
 - Given the header, when it renders, then no photo, upload control or file input exists, and the pencil badge (amended 2026-10-21) is decoration inside the `aria-hidden` monogram with no role, handler or focus stop.
@@ -1458,12 +1508,12 @@ and working with the plain `PasswordChange`),
 
 - Given `UIForm` without the new props, when sign-in, sign-up and the #315 forms render, then their DOM equals PR #340's and no baseline changes; with `submitRef` the ref receives the submit `button` and `useOfflineSubmit` and #315's `ErrorBanner` focus return use it; `submitSx` is merged after `styles.submitButton` and the `submitSpacing` variant; and a `footer` sits inside the `<form>` after the submit control and before the `UILiveStatus`, where a `type="button"` never submits.
 - Given the Figma design gate on `313:10242`, `313:10480` and `313:10606`, when it runs before code, then the card, sections, fields and the Save and "Очистити" pills follow the frames with the PRD §12 copy; an unreachable MCP reports `BLOCKED`.
-- Given the loaded page, when the form renders, then `h2` "Особисті дані" heads "Ваше ім’я та прізвище" (`autocomplete="name"`, prefilled) and "E-mail" (the reused `sign_up.form.email_input.label`, `type="email"`, `autocomplete="email"`, prefilled), and `h2` "Пароль" heads "Поточний пароль" (`autocomplete="current-password"`) and "Новий пароль" (`autocomplete="new-password"`), both empty with eye toggles; each field is found by its visible label.
+- Given the loaded page, when the form renders, then `h2` "Особисті дані" heads "Ваше ім’я та прізвище" (`autocomplete="name"`, prefilled) and "E-mail" (superseded 2026-10-21, product owner: the name is a row above `h2` "Особисті дані", matching Figma `315:11316`, labelled "Ваше ПІБ" by the new `settings.profile.full_name`, so the `h2` heads only "E-mail" and the row of Story 3.6; the skeleton follows the same order) (the reused `sign_up.form.email_input.label`, `type="email"`, `autocomplete="email"`, prefilled), and `h2` "Пароль" heads "Поточний пароль" (`autocomplete="current-password"`) and "Новий пароль" (`autocomplete="new-password"`), both empty with eye toggles; each field is found by its visible label.
 - Given a settings test built with `createSettingsLocaleI18n`, when `ChangePassword` renders, then the four `UIPasswordPolicyRules` labels and their met or unmet words render translated in `uk` and `en` and no raw `password_policy.*` key appears (must-fail: the helper without the policy catalog renders the raw keys).
 - Given an eye toggle activated with Space, when it updates, then the field shows text, the button name changes from "Показати пароль" to "Приховати пароль" and `aria-pressed` is `"true"`.
 - Given a loaded name "admin" that fails the client rule and only the e-mail changed, when Save runs with the current password, then no name error shows and the request is sent; a name edited to the single word "Олена" shows "Будь ласка, введіть повне ім’я у правильному форматі", takes focus and sends nothing.
 - Given a change and an empty current password, when Save runs, then that field shows "Це поле обов'язкове", takes focus, and nothing is sent; with only the current password typed, nothing is sent, no field error shows and a polite status in the form says "Немає змін для збереження"; the current password `abc` with a change raises no client error.
-- Given an empty new password and a changed name, when Save runs, then the input has no `newPassword` and no rule error shows; with `Pa1` typed, only the length rule of `UIPasswordPolicyRules` is unmet; with `Пароль123`, Save shows the shared uppercase message, focuses the field and sends nothing, because `useProfileFormRules` wraps `passwordValidator.create(t)` so that an empty or whitespace-only value passes (the field is optional) and any other value gets the per-rule message, not #315's `createChecklistGate`; the field's `aria-describedby` names the hint "Необов’язково. Залиште порожнім, щоб не змінювати пароль." and the rule list.
+- Given an empty new password and a changed name, when Save runs, then the input has no `newPassword` and no rule error shows; with `Pa1` typed, only the length rule of `UIPasswordPolicyRules` is unmet; with `Пароль123`, Save shows the shared uppercase message, focuses the field and sends nothing, because `useProfileFormRules` wraps `passwordValidator.create(t)` so that an empty or whitespace-only value passes (the field is optional) and any other value gets the per-rule message, not #315's `createChecklistGate`; the field's `aria-describedby` names the hint "Необов’язково. Залиште порожнім, щоб не змінювати пароль." and the rule list. Amended 2026-10-21 (product owner, matching Figma): the hint is visually hidden but stays in `aria-describedby`; the rule list renders only while the field has focus or a value, and after an empty field blurs it stays 200 ms more (`useBlurHold`, `RULES_COLLAPSE_DELAY_MS`) so a click on Save that starts the blur lands before Save moves; a new password equal to the current one is refused once the policy passes (`settings.errors.new_password_same`), and the new-password rule re-validates when the current password changes. The optional state is announced but not shown visually, the owner's recorded trade-off.
 - Given Save, when it runs, then the button is disabled with the spinner and keeps the name "Зберегти зміни", the form has `aria-busy`, "Збереження…" is announced, Enter in any field submits, and offline the button is disabled and described by the offline notice.
 - Given a settled Save that adopts or ends in a toast, when it settles, then focus is on "Зберегти зміни"; a Save that ends in field errors focuses the first field in error in DOM order with `aria-invalid="true"`; a successful retry of a failed read focuses `h2` "Особисті дані", which has `tabIndex={-1}` (when that heading is the `UIForm` title, #315's `titleRef` `RefCallback<HTMLElement>` focuses it instead of a second hand-rolled ref).
 - Given a Save adoption, when the form's `key` changes, then the form reads the new defaults, both password fields are empty and the form is pristine; a resend's `confirm` never changes the `key`.
@@ -1709,7 +1759,7 @@ So that I can change my profile without a mouse or sight.
 
 **Acceptance Criteria:**
 
-- Given the route scan in chromium, firefox and webkit, when `/settings` is scanned loaded, then axe reports no violation outside the #276 entry and no positive `tabindex` exists; the states with field errors, the unconfirmed row and toasts are scanned too with the same result, and `A11Y_EXCEPTIONS` keeps the entries it has on the base branch, with none added.
+- Given the route scan in chromium, firefox and webkit, when `/settings` is scanned loaded, then axe reports no violation outside the #276 entry and no positive `tabindex` exists; the states with field errors, the unconfirmed row and toasts are scanned too with the same result, and `A11Y_EXCEPTIONS` keeps the entries it has on the base branch, with none added. Amended 2026-10-21 (product owner, PRD FR-7, FR-26, NFR-6): exactly one entry is added, the scoped `color-contrast` exception `#settings-greeting` for "Вітаємо!" in `#969B9D` (2.81:1), tracked in #276, and axe reports no violation outside the #276 entries, that one included.
 - Given `expectTabOrder`, when the keyboard spec tabs through the loaded page with the unconfirmed row and a toast showing, then the order is the name, the e-mail, "Надіслати повторно", the current password, its toggle, the new password, its toggle, "Зберегти зміни", "Очистити", the toast buttons and then the footer, and every stop is `:focus-visible` with the repository ring.
 - Given the eye toggle focused, when Space is pressed, then it toggles; when Enter is pressed in a field, then the form submits.
 - Given the focus rules, when a Save settles, a Save ends in field errors, "Очистити" runs, the last toast closes and a session ends, then focus is on "Зберегти зміни", on the first field in error, on "Очистити", on "Зберегти зміни" and on `main` of `/sign-in` respectively.
@@ -1724,7 +1774,8 @@ So that any later pixel regression on the page fails CI.
 
 **Dispatch:** Depends on: 1.3, 4.2.
 
-**Requirements:** FR-3, FR-6, FR-7, FR-15, FR-20, FR-29, NFR-3 (PRD NFR-3).
+**Requirements:** FR-3, FR-6, FR-7, FR-7a, FR-15, FR-20, FR-29, NFR-3 (PRD NFR-3; FR-7a added
+2026-10-21: the resting baselines include the social networks card).
 
 **Files:** `tests/visual/visual-comparison.settings.spec.ts` (NEW),
 `tests/visual/mobile/settings.spec.ts` (NEW), `tests/visual/constants.ts` (MODIFY where it lists
@@ -1860,7 +1911,7 @@ So that I can sign in with them.
 
 **Acceptance Criteria:**
 
-- Given signed-in link, list and unlink operations released upstream, when the follow-up is planned, then the Figma social networks card and its success toasts get a PRD amendment that reuses the toast primitive.
+- Given signed-in link, list and unlink operations released upstream, when the follow-up is planned, then the Figma social networks card and its success toasts get a PRD amendment that reuses the toast primitive. Amended 2026-10-21 (product owner): the card itself already renders UI-only (PRD FR-7a, Story 3.1), so the follow-up wires link, list and unlink and their toasts into that card; no PRD amendment is needed first for the card, only for the actions.
 
 ### Follow-up 5.6: Reach settings from app-shell navigation (D3)
 

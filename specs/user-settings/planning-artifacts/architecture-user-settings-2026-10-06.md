@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
 revised: 2026-10-21
-iteration: 6
+iteration: 7
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -165,6 +165,8 @@ Twelve decisions shape everything below:
 8. **A new `UIToastStack` primitive, used by settings alone** (D9, U2, R14, R16): success toasts
    announced through one always-mounted polite region, error toasts as `role="alert"`, no timer,
    at most three, the oldest leaving first; the queue is a reducer in `useToastQueue` (§5.8).
+   Amended 2026-10-21: no toast carries a role; errors are announced through a second
+   always-mounted assertive region (§5.8 amendment, commit `69b4ffea`).
 9. **#315's password pieces leave `@auth` before settings uses them** (U3, D11): the policy and
    the name and e-mail validators to `src/modules/user/lib/validations/`, the field, rule list
    and server-error components to `src/components` with the policy passed as props, and the rule
@@ -427,7 +429,7 @@ frontend carries and displays them; it adds no class, rule or layer around them.
 | ------------------------- | --------------------------------------------------------------- |
 | `UserEntity`              | imported; the page loads it and passes it down as itself (TB-2) |
 | `RestorePasswordDTO`      | not used: #315's forgotten-password request (Q-1, §17.3 G-5)    |
-| `UserSocialNetworkEntity` | not built: social networks have no backend (G-1)                |
+| `UserSocialNetworkEntity` | not built: no backend; the card is UI-only (G-1, amended 10-21) |
 
 The settings password change is `PasswordChange`, a plain pair outside the domain folder: it is
 not a board type, so it carries no `Dto` suffix.
@@ -475,7 +477,7 @@ flowchart TB
   ups["User profile settings<br/>[React component]<br/>UserProfile page, /settings"]:::component
   us["User settings<br/>[React component]<br/>UserProfileSettings"]:::component
   twofa["2FA<br/>[React component]<br/>TwoFactorSettings, #331"]:::external
-  social["Social networks<br/>[React component]<br/>not built (D2, G6)"]:::external
+  social["Social networks<br/>[React component]<br/>UI only, no actions (FR-7a, 2026-10-21; G6)"]:::component
   api["API<br/>[Software System]"]:::external
   state[("State [Zustand]<br/>useAuthStore<br/>[Zustand store]")]:::component
   gate["RouteFlagGate, ProtectedRoute<br/>[Decorator]"]:::component
@@ -483,7 +485,7 @@ flowchart TB
   gate -->|"FeatureFlag, RedirectNavigationState"| ups
   ups -->|"UserProfileSettingsProps: UserEntity"| us
   ups -.->|"twoFactorAuth on"| twofa
-  ups -.->|"not built (G-1)"| social
+  ups -->|"UI only, no props (G-1 amended 2026-10-21)"| social
   ups -->|"1 request to API: read → UserEntity"| api
   us -->|"1 request to API: ProfileChange → UserEntity"| api
   twofa -->|"1 request to API"| api
@@ -566,11 +568,11 @@ flowchart LR
   RPD["PasswordChange<br/>[type], not a board DTO"]:::code
   TFS["TwoFactorSettings<br/>[component], #331"]:::external
   TFE["TwoFactorSettingsEntity<br/>[type], #331"]:::external
-  SN["SocialNetworks<br/>[component], not built"]:::external
+  SN["SocialNetworks<br/>[component], UI only (2026-10-21)"]:::code
   UP -->|"UserEntity, loaded by useProfileLoad"| UE
   UP -->|"UserProfileSettingsProps: UserEntity"| UPS
   UP -.->|"slot, twoFactorAuth on"| TFS
-  UP -.->|"not built (G-1)"| SN
+  UP -->|"UI only, no entity (G-1 amended 2026-10-21)"| SN
   UPS -->|"UserEntity, the user prop"| UE
   UPS -->|"ChangePasswordProps"| RP
   RP -->|"PasswordChange"| RPD
@@ -1356,9 +1358,33 @@ export interface ToastQueue {
   `error.surface` `#FDECEC`; icons are new SVGs in `src/assets/icons/` drawn with
   `currentColor`.
 
+> Amendment 2026-10-21 (implementation decision, accessibility-reviewed in PR #354, commit
+> `69b4ffea`; supersedes "error toasts are `role="alert"`" under **Visible toasts** and the
+> single region under **Announcement**): no toast carries a role of its own. `UIToastStack`
+> renders two always-mounted `UILiveStatus` regions: the polite one (`role="status"`) for the
+> success texts and an assertive one (`politeness="assertive"`, which renders `role="alert"`)
+> for the error texts that `useToastQueue` builds from the error drafts. Both alternate the same
+> mark, so an identical repeat is spoken again. Each close button is described by its own
+> message. Reason: a `role="alert"` element created and filled in one commit is dropped by
+> several screen readers, and the alert wrapped the toast's own buttons; an always-mounted
+> region is the reliable pattern. **Focus** is widened the same way: closing a toast moves
+> focus to the next close button, then the previous one, then `returnFocusRef` only while it is
+> connected and enabled, then `fallbackFocusRef` (the settings `h1`, `tabindex="-1"`), so a close
+> while Save is disabled never drops focus to `body`; a toast pushed out by the three-toast cap
+> while it holds focus hands focus to the newest close button.
+
+> Amendment 2026-10-21 (implementation decision, commit `8f8bf93a`; supersedes `success.icon`
+> under **Tokens** and the success icon `#38B386` under **Layout**): the success check uses
+> `paletteColors.success.text` `#2E7D32`, 4.55:1 on the `#E8F4EF` surface. The Figma `#38B386`
+> reaches only 2.34:1 there, under the 3:1 non-text floor (WCAG 1.4.11), so no `success.icon`
+> token is added. In forced-colors mode the toast gets a `CanvasText` border, because the surface
+> colour disappears there; normal rendering is unchanged.
+
 > Assumption: the toast's close label lives in its own catalog
 > (`src/components/ui-toast/i18n/`, key `ui_toast.close`) because the toast is new, so the
-> primitive needs no prop for it; the identical auth string (`notifications.close`,
+> primitive needs no prop for it (amended 2026-10-21, commit `cbd5344d`: that catalog is lazy,
+> owned by `src/components/ui-toast/` and registered when `UIToast` evaluates through the one
+> `lazyCatalogLoader`, §5.16); the identical auth string (`notifications.close`,
 > `auth/i18n/uk.json:101`) stays where it is. The moved `UIPasswordField` keeps the existing
 > `auth.password.*` keys (`auth/i18n/uk.json:17-20`) so sign-in, sign-up and #315 keep their
 > tests and strings unchanged (§5.9).
@@ -1399,7 +1425,11 @@ Story 1.1 (P.1: stacked on PR #340) moves, never copies:
 
 - Only `eye.svg` and `eye-off.svg` move: they are the two icons anything imports
   (`form-section/components/styles.ts`); `eye-hover.svg` and `eye-off-disabled.svg` have no
-  importer and stay where they are.
+  importer and stay where they are. Amended 2026-10-21 (product owner, the UI-only social card,
+  §7.2): the four social brand icons also move, from `@auth/assets/social-links/` to
+  `src/assets/icons/social/`, and are shared by the settings `SocialNetworks` card and the
+  sign-in and sign-up OAuth buttons (`oauth-providers.ts`); "only the eye icons move" is
+  superseded.
 - The styles move with the components that use them, because `src/components` may not import a
   feature (`no-components-import-feature-internals`). `formFieldLabel` and `formFieldInput` move
   to `ui-form-field/styles.ts`; `endAdornment`, `passwordButton`, `StyledEyeIcon` and
@@ -1564,7 +1594,14 @@ and the two resolver files never import each other. The file holds one constant 
 | update    | `email` failing the mock's e-mail rule | `email:` violation, `BAD_USER_INPUT`, 422 |
 | update    | otherwise                              | the seeded user with the sent fields      |
 | resend    | `id` not the seeded IRI                | "Access Denied." `FORBIDDEN`, status 403  |
-| resend    | otherwise                              | `user { id confirmed }` of the seed       |
+| resend    | otherwise                              | the seed's `id` with `confirmed: false`   |
+
+Amendment 2026-10-21 (commits `9d6337e6` and `a603705e`): the resend row answered `user { id
+confirmed }` of the seed, which is `confirmed: true`, so the dev page marked a just-changed
+address confirmed and hid the resend action. A resend never confirms and is only meaningful for
+an unconfirmed address, and the page keeps showing the unconfirmed row after a resend, so the
+stateless answer now carries the seed's `id` with `confirmed: false`. The owner check of the row
+above (`a603705e`) is shared with `updateUser`.
 
 The update answer echoes the sent `initials` and `email` (an e-mail change sets `confirmed`
 false) and stores nothing. Every error carries a code so `formatError` keeps its message (U4).
@@ -1701,6 +1738,11 @@ catalog.
   `sign_up.form.password_input.*`, `auth.password.show` / `.hide` and `auth.error.tryAgain`.
   #315's lazy `password_reset.errors.policy_rejected` is not reusable outside the recovery
   owners, so settings declares `settings.errors.new_password_rejected` with the same text.
+  Amended 2026-10-21 (product owner): the name field no longer reuses
+  `sign_up.form.name_input.label`; it is labelled by the lazy `settings.profile.full_name`, "Ваше
+  ПІБ" / "Your full name" (§7.2). The social card's heading and per-tile statuses are lazy
+  `settings.social.*` keys, and `settings.errors.new_password_same` refuses a new password equal
+  to the current one (§7.2).
 
 §11 lists every key.
 
@@ -1728,7 +1770,9 @@ class name in kebab case. The Provider, the Transformer, the Repository and the 
 `@injectable()` and are registered against their own tokens; the detector is container-free and
 built by the save hook in a `useState` initializer; `LazyCatalogLoader` is the one stateless
 module singleton every lazy catalog shares, the accepted exception #315 made for its
-`RecoveryCatalogLoader` (AR-2), which it replaces together with this plan's two copies; #315's
+`RecoveryCatalogLoader` (AR-2), which it replaces together with this plan's two copies; it
+registers four lazy catalogs, the recovery, password-policy, settings and toast catalogs (the
+toast catalog added to AR-2's list 2026-10-21, commit `cbd5344d`); #315's
 transformer is `@injectable()` and registered with `registerSingleton` in
 `registerResponseMappers`, inside the DI gate's scope (`src/modules/*/transformers/`).
 
@@ -2106,6 +2150,17 @@ UserProfile [component]<route> (settings/routes/user-profile/index.tsx)
   └ UIToastStack toasts: ToastItemSet, announcement, returnFocusRef=saveRef
 ```
 
+Amendment 2026-10-21 (product owner): the tree above changes in four places. (1) `UIFormField
+fullName` moves above `h2 "Особисті дані"`, matching Figma `315:11316`, where that section holds
+only the e-mail and the name sits at the top under the header; it is labelled by
+`settings.profile.full_name` ("Ваше ПІБ"), and the `h2` heads only the e-mail and its
+`EmailStatusRow`. `ProfileSkeleton` follows the same order. (2) `ProfileHeader` greets with the
+first name and surname derived from the ПІБ (§7.2). (3) The new-password hint is visually hidden
+but stays in `aria-describedby`, and `UIPasswordPolicyRules` renders only while the field has
+focus or a value, held 200 ms after an empty field blurs (§7.2). (4) The grid gains a UI-only
+`SocialNetworks` card after `UserProfileSettings` ("Соціальні мережі", Figma `476:46530`,
+`386:27239`, `386:27457`; §7.2), which closes G-1 for the view (§17.3).
+
 `ProfileSkeleton`, `ProfileLoadError`, `ProfileHeader`, `ProfileForm`, `EmailStatusRow` and
 `ClearButton` are child components drawn inside the board's `UserProfileSettings [component]`
 box, as the board's Interactive access control frame draws "Child component" boxes under its
@@ -2126,6 +2181,7 @@ root page component; none of them reaches a hook other than its parent's or a Da
 | `ClearButton`         | `profile-form/clear-button`        | child      | FR-13 `type="button"` |
 | `UIToastStack`        | `src/components/ui-toast/index`    | UI library | FR-20 stack, region   |
 | `UIToast`             | `src/components/ui-toast/ui-toast` | UI library | FR-20 toast, close    |
+| `SocialNetworks`      | `social-networks/index` (added)    | component  | FR-7a, UI only        |
 
 Every component takes one named props interface from §6.1 or §5.8; no component imports a Data
 provider, Transformer or Repository, even as a type, and no component reaches the container
@@ -2134,7 +2190,30 @@ other than through a hook.
 - **`ProfileHeader`.** The monogram is the upper-cased first letter of each of the first two
   words (`toUpperCase`, the raw-Intl gate forbids `toLocale*`), `#1A1C1E` on a `#E1E7EA` disc
   (13.69:1), `aria-hidden`; an empty name shows a decorative person glyph. "Вітаємо!" and the name
-  are plain text, no heading role.
+  are plain text, no heading role. Amended 2026-10-21 (product owner): the name line shows the
+  first name and surname only. The field holds a ПІБ (surname, first name, patronymic), so a
+  value of three or more words greets with the second word then the first ("Маслова Евгения
+  Олеговна" → "Евгения Маслова"); one or two words show as typed. The monogram is built from the
+  greeted name: "Петренко Олена Іванівна" → "Олена Петренко", "ОП"; "Олена Петренко" → "Олена
+  Петренко", "ОП"; "Admin" → "A"; empty → the person glyph.
+- **`SocialNetworks`** (added 2026-10-21, product owner; PRD FR-7a). A second card "Соціальні
+  мережі" renders Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`) with
+  four tiles, Google, Facebook, GitHub and Twitter, and no working action, because user-service
+  has no signed-in link, list or unlink (G6). The tiles are the items of a `<ul role="list">`
+  labelled by the heading; each carries a visually hidden status from `settings.social.*`, ",
+  linking not available yet" / ", підключення поки недоступне" (the separator lives in the
+  catalog). The four brand icons move from `@auth/assets/social-links/` to
+  `src/assets/icons/social/` and are shared with the sign-in and sign-up OAuth buttons
+  (`oauth-providers.ts`).
+- **New password at rest** (amended 2026-10-21, product owner; PRD FR-10). Figma draws no hint
+  and no rule list, so the optional-field hint is visually hidden but stays in the field's
+  `aria-describedby`, and the four rules render only while the field has focus or a value. When
+  an empty field loses focus the rules stay 200 ms more (`useBlurHold`,
+  `RULES_COLLAPSE_DELAY_MS`), so a click on Save that starts the blur lands before Save moves. A
+  new password equal to the current one is refused once the policy passes
+  (`settings.errors.new_password_same`), and the new-password rule re-validates when the current
+  password changes. Trade-off: the optional state is announced to assistive technology but not
+  shown visually (the owner's call to match Figma).
 - **`UserProfileSettings`** renders from the `ProfileLoadState` the page passes (its `status`
   and its `user`, the page's `UserEntity` itself, TB-2) and calls no load hook of its own. It
   keeps one polite `UILiveStatus` mounted in every state; its text is "Завантаження профілю…"
@@ -2345,6 +2424,8 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
 - `@auth/components/form-section/validations/*` MOVE; `@auth/types/validations/*` MOVE.
 - `@auth/assets/{eye,eye-off}.svg` MOVE; `@auth/components/form-section/components/styles.ts`
   MOD (keeps only `formFieldWrapper`, or is deleted, §5.9).
+- `@auth/assets/social-links/*` MOVE to `src/assets/icons/social/` and the OAuth provider list
+  (`oauth-providers.ts`) MOD to import them from there (amendment 2026-10-21, §5.9, §7.2).
 - `@auth/routes/recovery-catalog/i18n/{en,uk}.json` MOD (the `password_policy.*` keys leave);
   #315's `@auth/routes/recovery-catalog/recovery-catalog-loader.ts` and its test DELETE (the
   recovery layout registers the catalog through `lazyCatalogLoader`).
@@ -2381,15 +2462,19 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
 - `src/components/ui-form/{index.tsx,use-offline-submit.ts}` MOD (`submitRef`, `submitSx`,
   `footer`).
 - `src/components/ui-form-input-field/theme.ts` MOD (`error.text`); `src/styles/colors.ts` MOD.
-- `src/assets/icons/{eye,eye-off,toast-success,toast-error}.svg`.
+- `src/assets/icons/{eye,eye-off,toast-success,toast-error}.svg`; `src/assets/icons/social/`
+  (the four brand icons, MOVE, amendment 2026-10-21).
+- `settings/components/social-networks/` with its story (the UI-only card, amendment 2026-10-21,
+  §7.2).
 - `src/hooks/use-toast-queue.ts` (its types live in `src/components/types/ui-toast/index.ts`).
 - `src/features/home/{index.tsx,styles.ts,i18n/en.json,i18n/uk.json}` MOD (§5.15).
 - `src/config/runtime/{feature-flag-service,app-config-schema}.ts`, `types/feature-flag.ts`
   MOD (`userSettings`, the first flag since #309); `src/config/runtime/README.md` MOD.
 - `src/services/observability/pii-scrubber.ts` MOD (`initials`).
 - `src/api/generated/graphql.ts` MOD (`make codegen`); `src/i18n/localization.json` MOD
-  (`make i18n-generate`, eager keys only: `ui_toast.close`, `home.settings_link`,
-  `sign_in.notices.session_ended`).
+  (`make i18n-generate`, eager keys only: `home.settings_link`,
+  `sign_in.notices.session_ended`; `ui_toast.close` was listed here and is lazy since the
+  amendment of 2026-10-19, recorded again 2026-10-21, §5.16).
 
 **Config, tooling, mock and docs:**
 
@@ -2440,12 +2525,12 @@ name roles from `config/class-naming-policy.js`.
 Budgets are unchanged (`config/performance-budget.json:3-15`); both affected chunks are measured
 in the pull request's bundle-size report and no budget is raised (NFR-5, R14).
 
-| Chunk         | What settings adds                                                           | Estimate        |
-| ------------- | ---------------------------------------------------------------------------- | --------------- |
-| Eager entry   | route key, contract and flag, `RouteFlagGate`, notice rule, three eager keys | < 1 kB gzip     |
-| `settings`    | page, components, five hooks, detector, toast                                | 8-12 kB gzip    |
-| Shared fields | moved field components, served from `auth-forms` and `auth-forms-vendors`    | ±0              |
-| Deferred DI   | provider, transformer, repository, documents, schemas, link                  | +6 to +9 kB raw |
+| Chunk         | What settings adds                                                         | Estimate        |
+| ------------- | -------------------------------------------------------------------------- | --------------- |
+| Eager entry   | route key, contract and flag, `RouteFlagGate`, notice rule, two eager keys | < 1 kB gzip     |
+| `settings`    | page, components, five hooks, detector, toast                              | 8-12 kB gzip    |
+| Shared fields | moved field components, served from `auth-forms` and `auth-forms-vendors`  | ±0              |
+| Deferred DI   | provider, transformer, repository, documents, schemas, link                | +6 to +9 kB raw |
 
 - **Eager.** The registry imports contracts statically (`src/routes/registry.ts:1-6`), so the
   settings contract, `ROUTE_PATHS.settings`, the gate (no MUI, no Apollo) and
@@ -2484,41 +2569,46 @@ Every string exists in `uk` and `en` with identical key sets; `make i18n-generat
 catalog, and the two keys other pages render (`home.settings_link`,
 `sign_in.notices.session_ended`) in eager catalogs (§5.16).
 
-| Key (`settings.*` unless noted) | `uk`                                               |
-| ------------------------------- | -------------------------------------------------- |
-| `title`, `heading`              | Налаштування                                       |
-| `subtitle`                      | Керуйте особистими даними та безпекою облікового…  |
-| `profile.greeting`              | Вітаємо!                                           |
-| `profile.loading`               | Завантаження профілю…                              |
-| `profile.load_failed`           | Не вдалося завантажити профіль                     |
-| `profile.sections.personal`     | Особисті дані                                      |
-| `profile.sections.password`     | Пароль                                             |
-| `profile.current_password`      | Поточний пароль                                    |
-| `profile.new_password`          | Новий пароль                                       |
-| `profile.new_password_hint`     | Необов’язково. Залиште порожнім, щоб не змінювати… |
-| `profile.save`                  | Зберегти зміни                                     |
-| `profile.saving`                | Збереження…                                        |
-| `profile.clear`                 | Очистити                                           |
-| `profile.no_changes`            | Немає змін для збереження                          |
-| `profile.email_unconfirmed`     | E-mail не підтверджено                             |
-| `profile.resend`                | Надіслати повторно                                 |
-| `toasts.saved`                  | Зміни збережено                                    |
-| `toasts.email_sent`             | Ми надіслали посилання для підтвердження на нову…  |
-| `toasts.password_changed`       | Ви успішно змінили пароль                          |
-| `toasts.resent`                 | Посилання для підтвердження надіслано повторно     |
-| `toasts.save_failed_transient`  | Не вдалося зберегти зміни. Перевірте з’єднання…    |
-| `toasts.save_failed`            | Не вдалося зберегти зміни. Спробуйте пізніше.      |
-| `toasts.rate_limited`           | Забагато спроб. Спробуйте пізніше.                 |
-| `toasts.resend_failed`          | Не вдалося надіслати посилання. Спробуйте ще раз.  |
-| `errors.password_wrong`         | Неправильний поточний пароль                       |
-| `errors.password_not_accepted`  | Поточний пароль не прийнято. Перевірте його та…    |
-| `errors.new_password_rejected`  | Пароль не відповідає вимогам. Перевірте правила…   |
-| `ui_toast.close`                | Закрити сповіщення                                 |
-| `home.settings_link`            | Налаштування                                       |
-| `sign_in.notices.session_ended` | Сеанс завершився. Увійдіть знову.                  |
+| Key (`settings.*` unless noted)    | `uk`                                               |
+| ---------------------------------- | -------------------------------------------------- |
+| `title`, `heading`                 | Налаштування                                       |
+| `subtitle`                         | Керуйте особистими даними та безпекою облікового…  |
+| `profile.greeting`                 | Вітаємо!                                           |
+| `profile.loading`                  | Завантаження профілю…                              |
+| `profile.load_failed`              | Не вдалося завантажити профіль                     |
+| `profile.sections.personal`        | Особисті дані                                      |
+| `profile.sections.password`        | Пароль                                             |
+| `profile.current_password`         | Поточний пароль                                    |
+| `profile.new_password`             | Новий пароль                                       |
+| `profile.new_password_hint`        | Необов’язково. Залиште порожнім, щоб не змінювати… |
+| `profile.save`                     | Зберегти зміни                                     |
+| `profile.saving`                   | Збереження…                                        |
+| `profile.clear`                    | Очистити                                           |
+| `profile.no_changes`               | Немає змін для збереження                          |
+| `profile.email_unconfirmed`        | E-mail не підтверджено                             |
+| `profile.resend`                   | Надіслати повторно                                 |
+| `toasts.saved`                     | Зміни збережено                                    |
+| `toasts.email_sent`                | Ми надіслали посилання для підтвердження на нову…  |
+| `toasts.password_changed`          | Ви успішно змінили пароль                          |
+| `toasts.resent`                    | Посилання для підтвердження надіслано повторно     |
+| `toasts.save_failed_transient`     | Не вдалося зберегти зміни. Перевірте з’єднання…    |
+| `toasts.save_failed`               | Не вдалося зберегти зміни. Спробуйте пізніше.      |
+| `toasts.rate_limited`              | Забагато спроб. Спробуйте пізніше.                 |
+| `toasts.resend_failed`             | Не вдалося надіслати посилання. Спробуйте ще раз.  |
+| `errors.password_wrong`            | Неправильний поточний пароль                       |
+| `errors.password_not_accepted`     | Поточний пароль не прийнято. Перевірте його та…    |
+| `errors.new_password_rejected`     | Пароль не відповідає вимогам. Перевірте правила…   |
+| `profile.full_name` (10-21)        | Ваше ПІБ                                           |
+| `errors.new_password_same` (10-21) | Новий пароль має відрізнятися від поточного        |
+| `social.*` (10-21)                 | Соціальні мережі; ", підключення поки недоступне"  |
+| `ui_toast.close`                   | Закрити сповіщення                                 |
+| `home.settings_link`               | Налаштування                                       |
+| `sign_in.notices.session_ended`    | Сеанс завершився. Увійдіть знову.                  |
 
 Full texts (the table truncates with "…") and the `en` strings are PRD §12 verbatim. Reused
-eager keys: `sign_up.form.name_input.label`, `sign_up.form.email_input.label` ("E-mail" since
+eager keys: `sign_up.form.name_input.label` (superseded 2026-10-21 by
+`settings.profile.full_name`, "Ваше ПІБ" / "Your full name", the product owner's choice),
+`sign_up.form.email_input.label` ("E-mail" since
 #311), the name and e-mail format messages, `sign_up.errors.email_used`,
 `sign_up.form.password_input.*`, `auth.password.show` / `.hide`, `auth.error.tryAgain`. The
 rule-list labels `password_policy.rules.*` and `password_policy.state.*` are rendered by
@@ -2862,6 +2952,10 @@ Rejected: rendering the challenge inside /settings.
 Decision: UIToastStack, success toasts announced through one always-mounted polite region, error
 toasts as alerts, at most three, no timer, focus returned to Save.
 Rejected: a timer (a confirmation could be lost); a toast per field error.
+Amendment 2026-10-21: no toast carries a role; error texts are announced through a second
+always-mounted assertive UILiveStatus region (role="alert"), because an alert created and filled in
+one commit is dropped by several screen readers. The success check uses success.text #2E7D32
+(4.55:1) instead of #38B386 (2.34:1, under the 3:1 icon floor).
 
 ### The settings copy is a lazy catalog
 Decision: settings/i18n is listed in config/i18n-catalog-policy.json and registered through the
@@ -2880,6 +2974,8 @@ A11Y_EXCEPTIONS gains the scoped #settings-greeting entry, tracked in #276 (§5.
 ### The local mock is a stateless happy path
 Decision: users, updateUser (owner check and one violation) and resendEmailToUser (the same owner
 check) answer from one seeded user; every error shape lives in msw and page.route.
+Amendment 2026-10-21: a resend answers the seed's id with confirmed false, because a resend never
+confirms an address.
 Rejected: a stateful mock that models 401, 429, 5xx and the time-out.
 
 ### Upstream requests
@@ -2996,7 +3092,7 @@ captured 2026-10-08 (contract §1; screenshots in `crm-worktrees/_planning-share
 | User module `[module]` (25)                      | `src/modules/user`, feature `settings`      |
 | "User profile settings" `[React component]` (01) | `UserProfile` page at `/settings`           |
 | → "User settings" `[React component]` (01)       | `UserProfileSettings`                       |
-| → "2FA", → "Social networks" (01)                | #331's `TwoFactorSettings`; not built (G-1) |
+| → "2FA", → "Social networks" (01)                | #331's slot; `SocialNetworks` UI-only (G-1) |
 | "User settings" → API "1 request to API" (01)    | `GraphQLProfileRepository` → user-service   |
 | "User profile" → BFF "Log-out" (01)              | not on this page (G-2)                      |
 | State `[Redux]` (01)                             | `useAuthStore`, drawn `State [Zustand]`     |
@@ -3004,7 +3100,7 @@ captured 2026-10-08 (contract §1; screenshots in `crm-worktrees/_planning-share
 | `UserProfile` → `UserEntity [type]` (21)         | `useProfileLoad` in the page; #315's type   |
 | `UserProfile` → `UserProfileSettings` (21)       | the grid's first child                      |
 | `UserProfile` → `2FASettings` (21)               | the `TwoFactorSettings` slot (#331)         |
-| `UserProfile` → `SocialNetworks` (21)            | not built (G-1)                             |
+| `UserProfile` → `SocialNetworks` (21)            | UI-only card, no entity (G-1, 2026-10-21)   |
 | `UserProfileSettings` → `UserEntity` (21)        | the `user` prop, the page's `UserEntity`    |
 | `UserProfileSettings` → `RestorePassword` (21)   | `ChangePassword`, renamed (G-5)             |
 | `RestorePassword` → `RestorePasswordDTO` (21)    | #315's flow (Q-1); here `PasswordChange`    |
@@ -3038,7 +3134,12 @@ box (§17.2) and the gaps of §17.3.
 ### 17.3 Gaps and conformance notes
 
 - **G-1.** `SocialNetworks [component]` and `UserSocialNetworkEntity [type]` are not built:
-  user-service has no signed-in link, list or unlink (D2, G6, Follow-up 5.5).
+  user-service has no signed-in link, list or unlink (D2, G6, Follow-up 5.5). Amended 2026-10-21
+  (product owner): `SocialNetworks [component]` is built UI-only, Figma-exact (`476:46530`,
+  `386:27239`, `386:27457`), four tiles in a `<ul role="list">` labelled by "Соціальні мережі",
+  each with a visually hidden "linking not available yet" status and no action (§7.2, PRD FR-7a).
+  `UserSocialNetworkEntity [type]` stays unbuilt: the card takes no data, and linking stays out
+  of scope until G6 ships.
 - **G-2.** The component-level "User profile" card (header menu with "user settings" and
   "Log-out" to the BFF) is app-shell work (D3, Follow-up 5.6); the home link stands in for its
   "user settings" entry and touches no BFF.
