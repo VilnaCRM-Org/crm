@@ -23,15 +23,16 @@ jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () => ({
 }));
 
 describe('UserProfile', () => {
-  it('renders one level-1 heading and the subtitle from the settings catalog', () => {
+  it('renders one level-1 heading, the social card heading and the subtitle', () => {
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
         <UserProfile />
       </I18nextProvider>
     );
 
-    expect(screen.getAllByRole('heading')).toHaveLength(1);
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByRole('heading', { level: 1, name: 'Налаштування' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Соціальні мережі' })).toBeInTheDocument();
     expect(
       screen.getByText('Керуйте особистими даними та безпекою облікового запису.')
     ).toBeInTheDocument();
