@@ -638,7 +638,10 @@ e-mails and answers in English only.
   generated wiring does not compile until the token name is fixed by hand.
 - **Performance** (`config/performance-budget.json:3-15`): eager entrypoint 470 000 raw /
   165 000 gzip, any asset 400 000 raw / 130 000 gzip, Lighthouse 265 000 script / 480 000 total.
-  Settings must be its own lazy chunk and must not grow the deferred DI chunk.
+  Settings must be its own lazy chunk; the deferred DI chunk grows only by the settings
+  data-access classes and the Bearer link registered in `user/config/di.ts`, measured in the
+  pull request with no budget raised (PRD NFR-5, architecture §10; amendment 2026-10-21, the
+  earlier "must not grow" wording predated the link of §7).
 - **ADR numbers (superseded 2026-10-16):** on 2026-10-06 the plan reserved the next ADR number;
   PR #333 has since deleted every ADR from 003 up, so no ADR is written and the decisions go into
   `src/modules/user/README.md` (U10).

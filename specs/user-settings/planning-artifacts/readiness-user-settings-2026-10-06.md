@@ -176,9 +176,13 @@ mock keeps no token rule.
 
 - **P.1 gates everything.** Stories 1.1, 1.9 and 3.5 consume #315's pieces; a #315 change of
   name or shape before merge needs a correct-course pass on those stories.
-- **Shared pieces.** Whichever of settings and 2FA lands first builds the link, normalizer,
-  gate, shell, notice and mock auth; the second lander's correct-course pass must trim the
-  matching stories before Ralph runs, as E "Shared pieces" states. The 2FA link story still
+- **Shared pieces.** Superseded 2026-10-08 ("Owners" under the Simplification pass below):
+  iteration 1 let whichever of settings and 2FA landed first build the link, normalizer, gate,
+  shell, notice and mock auth, and had the second lander trim the matching stories before Ralph
+  ran. #330 now owns the route key, the `UserProfile` shell, `RouteFlagGate`,
+  `SessionLinkFactory`, the `session_ended` notice, the `UIForm` submit fields, the `error.text`
+  token and the home link; #315 owns `UserServiceErrorTransformer`, `useAbortableSubmit`,
+  `SignInNotice` and the password pieces; the mock keeps no token rule. The 2FA link story still
   names the unauthenticated text as a link constant (F3).
 - **CI-only proof.** The e2e, visual, a11y, Lighthouse, bundle-size and Stryker results exist
   only in CI; the deferred DI chunk's headroom rests on a 2026-07-20 baseline
