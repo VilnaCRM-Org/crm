@@ -3,6 +3,7 @@ status: complete
 workflowType: research
 project_name: crm
 date: 2026-10-06
+revised: 2026-10-20
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 inputDocuments:
@@ -27,23 +28,22 @@ This artifact is self-contained: the brief, PRD, architecture and epics read onl
 `U1`-`U11` (user, binding), `D1`-`D18` (main agent) and the `R` amendments refer to the run's
 decision record and are restated where they shape a finding.
 
-> Reconciliation 2026-10-16: the crm evidence below was gathered at `origin/main` `58099168` and
-> is kept as gathered. Branch `feat/330-user-settings` now stacks on PR #340 (crm #315
-> implemented) over PR #333 (merged), so these findings are superseded where they differ: the
-> session store is `useAuthStore` (Zustand, ADR-002 "Current rules") registered as
-> `AUTH_TOKENS.AuthStore`, not a reactive var; no feature flag exists (`FeatureFlag` is `never`;
-> issue #309 removed `forgotPassword`); only ADR-001 and ADR-002 exist, so no ADR is written;
-> #315 added the feature and module `transformers/` and `data-providers/` folders,
-> `UserServiceErrorTransformer` in `src/modules/user/transformers/`, `useAbortableSubmit`, the
-> sign-in notice, a pending GraphQL contract mechanism and lazy i18n catalogs
-> (`config/i18n-catalog-policy.json`); `A11Y_EXCEPTIONS` holds eight entries; the Lighthouse URL
-> list holds eight URLs; sign-up's e-mail label is "E-mail" since #311; ui-toolkit is pinned at
-> v0.8.0 (still no toast); #315 shipped no flag, so no `:-true` compose precedent exists;
-> P.1 is this branch stacked on PR #340, not a merged #315; #330 alone builds the Bearer link and
-> the page shell; no dev flag transform exists (the dev server keeps the committed block); and the
-> mock reads no token, because the browser lanes stub every settings read (P6 superseded by R28),
-> which retires risk 10 below. Line citations below are as of `58099168`. The architecture's reconciliation table and the run
-> summary list the consequences.
+> Reconciliation 2026-10-16: the crm evidence below was gathered at `origin/main` `58099168` and is
+> kept as gathered. Branch `feat/330-user-settings` now stacks on PR #340 (crm #315 implemented)
+> over PR #333 (merged), so these findings are superseded where they differ: the session store is
+> `useAuthStore` (Zustand, ADR-002 "Current rules") registered as `AUTH_TOKENS.AuthStore`, not a
+> reactive var; no feature flag exists (`FeatureFlag` is `never`; issue #309 removed
+> `forgotPassword`); only ADR-001 and ADR-002 exist, so no ADR is written; crm #315 added the
+> feature and module `transformers/` and `data-providers/` folders, `UserServiceErrorTransformer` in
+> `src/modules/user/transformers/`, `useAbortableSubmit`, the sign-in notice, a pending GraphQL
+> contract mechanism and lazy i18n catalogs (`config/i18n-catalog-policy.json`); `A11Y_EXCEPTIONS`
+> holds eight entries; the Lighthouse URL list holds eight URLs; sign-up's e-mail label is "E-mail"
+> since #311; ui-toolkit is pinned at v0.8.0 (still no toast); crm #315 shipped no flag, so no
+> `:-true` compose precedent exists; P.1 is this branch stacked on PR #340, not a merged crm #315;
+> #330 alone builds the Bearer link and the page shell; no dev flag transform exists (the dev server
+> keeps the committed block); and the mock reads no token, because the browser lanes stub every
+> settings read (P6 superseded by R28), which retires risk 10 below. Line citations below are as of
+> `58099168`. The architecture's reconciliation table and the run summary list the consequences.
 
 ## 1. Task framing and scope
 
@@ -100,7 +100,7 @@ user-service answers into crm outcomes and i18n keys (U8).
   `security.yaml` files, and the PHP ranges cited in §4.4-§4.7.
 - **Design:** Figma file `xZ7ccrH6d4QyqLQsayFSEX`, page "Design CRM" `0:1`, group `6242:41691`;
   Miro board "Frontend C4 Architecture VilnaCRM" (`uXjVMG64hTs=`), read from screenshots.
-- **Sibling bundles:** #315 create-new-password in
+- **Sibling bundles:** crm #315 create-new-password in
   `/home/dima/Desktop/crm/specs/create-new-password/planning-artifacts/` (readiness `complete`,
   uncommitted); two-factor authentication (research, brief, PRD) in
   `/home/dima/Desktop/crm-worktrees/2fa-planning/specs/two-factor-authentication/`.
@@ -439,11 +439,11 @@ G9 and G10 belong to other work. Filing happens after readiness.
 
 ### 4.9 Existing issues (do not duplicate)
 
-Open: #469 (inert GraphQL limiters), #470 (create, reset request, **resend**, confirm lack
-GraphQL limiters), #462, #463, #468 (OAuth auto-link pre-hijack), #477, #473, #472, #421, the
-locale pair #395 and #349, #458 (release pipeline), #512, and #513 (release with password
-reset). Fixed on main and closed: #320 (owner-scoped reads), #315, #318, #312, #313. No issue
-exists for G2-G10 or G12.
+Open: #469 (inert GraphQL limiters), #470 (create, reset request, **resend**, confirm lack GraphQL
+limiters), #462, #463, #468 (OAuth auto-link pre-hijack), #477, #473, #472, #421, the locale pair
+#395 and #349, #458 (release pipeline), #512, and #513 (release with password reset). Fixed on main
+and closed: #320 (owner-scoped reads), user-service #315, #318, #312, #313. No issue exists for
+G2-G10 or G12.
 
 ### 4.10 Known mock drift
 
@@ -537,7 +537,7 @@ e-mails and answers in English only.
   `src/config/runtime/types/feature-flag.ts:1-5`, `src/config/runtime/feature-flag-service.ts:4-6`,
   `src/config/runtime/app-config-schema.ts:18-22` and `public/index.html:27-29`. The env line is
   `.env.example:66`; the test stack passes it as `${…-}` (`docker-compose.test.yml:21`); the dev
-  compose has no passthrough and the dev server does not render the block (#315 adds both).
+  compose has no passthrough and the dev server does not render the block (crm #315 adds both).
 - `useFeatureFlag` is a synchronous, container-free read (`src/hooks/use-feature-flag.ts:8-10`).
   `tests/unit/tooling/runtime-config-contract.test.ts` ties the four sites (`:105-117`),
   `.env.example` (`:119`) and the docs (`:152-156`), and forbids shipping `forgotPassword` on
@@ -638,7 +638,10 @@ e-mails and answers in English only.
   generated wiring does not compile until the token name is fixed by hand.
 - **Performance** (`config/performance-budget.json:3-15`): eager entrypoint 470 000 raw /
   165 000 gzip, any asset 400 000 raw / 130 000 gzip, Lighthouse 265 000 script / 480 000 total.
-  Settings must be its own lazy chunk and must not grow the deferred DI chunk.
+  Settings must be its own lazy chunk; the deferred DI chunk grows only by the settings
+  data-access classes and the Bearer link registered in `user/config/di.ts`, measured in the
+  pull request with no budget raised (PRD NFR-5, architecture §10; amendment 2026-10-21, the
+  earlier "must not grow" wording predated the link of §7).
 - **ADR numbers (superseded 2026-10-16):** on 2026-10-06 the plan reserved the next ADR number;
   PR #333 has since deleted every ADR from 003 up, so no ADR is written and the decisions go into
   `src/modules/user/README.md` (U10).
@@ -654,20 +657,20 @@ e-mails and answers in English only.
 
 ### 6.1 crm #315 create-new-password
 
-The settings "Пароль" block (`313:10242`) is the only drawn new-password field; #315 accepted
+The settings "Пароль" block (`313:10242`) is the only drawn new-password field; crm #315 accepted
 its own form as a composition of record without a frame
 (`…/prd-create-new-password-2026-10-05.md:191,814`). U3 makes the settings block the design of
-record for both: one password field, one policy. #315 places every shared piece under `@auth`:
+record for both: one password field, one policy. crm #315 places every shared piece under `@auth`:
 
-| #315 piece                                        | #315 § | Settings use                  |
-| ------------------------------------------------- | ------ | ----------------------------- |
-| `PasswordValidator` + `evaluate()`                | 5.8    | new-password policy           |
-| `PasswordPolicyRules` (live rule list)            | 5.8    | rules under "Новий пароль"    |
-| `PasswordField` (`name`, `rules`, `describedBy`)  | 5.10   | current and new password      |
-| `ServerFieldError` (`setError` + `setFocus`)      | 5.11   | server field errors           |
-| `UIForm` `errorAction`, `titleRef` (shared)       | 5.11   | banner Retry; plus Clear slot |
-| `no-cache`, no retry, abort check before `mutate` | 5.1    | same rules for `updateUser`   |
-| Pending-contract mechanism                        | 5.16   | not needed (D5)               |
+| crm #315 piece                                    | crm #315 § | Settings use                  |
+| ------------------------------------------------- | ---------- | ----------------------------- |
+| `PasswordValidator` + `evaluate()`                | 5.8        | new-password policy           |
+| `PasswordPolicyRules` (live rule list)            | 5.8        | rules under "Новий пароль"    |
+| `PasswordField` (`name`, `rules`, `describedBy`)  | 5.10       | current and new password      |
+| `ServerFieldError` (`setError` + `setFocus`)      | 5.11       | server field errors           |
+| `UIForm` `errorAction`, `titleRef` (shared)       | 5.11       | banner Retry; plus Clear slot |
+| `no-cache`, no retry, abort check before `mutate` | 5.1        | same rules for `updateUser`   |
+| Pending-contract mechanism                        | 5.16       | not needed (D5)               |
 
 Facts that carry over (`…/architecture-create-new-password-2026-10-05.md:763-815`): the policy
 narrows uppercase to ASCII `[A-Z]`, **keeps** the crm-only lowercase rule `\p{Ll}` and lists all
@@ -681,12 +684,12 @@ the server error on the next edit; `errorAction` renders inside the `role="alert
   `src/components` with the policy passed in as props. Prerequisite P.1: this branch stacked on
   PR #340 (crm #315 implemented); the move is the first settings story unless #340 changes before
   it merges.
-- **Design deltas.** Settings has current + new and no confirmation; #315 has new +
+- **Design deltas.** Settings has current + new and no confirmation; crm #315 has new +
   confirmation (`name="confirmPassword"`, equality rule). The current-password field takes only
   `required` and `autoComplete="current-password"`; upstream also runs the policy on `password`,
   so a 422 on `password` maps to that field (D6). The single Save / Clear pair lands in the same
-  shape as #315's `UIForm` additions.
-- **Shared infrastructure #315 brings:** the dev-stack `APP_CONFIG_FLAG_*` `:-true`
+  shape as crm #315's `UIForm` additions.
+- **Shared infrastructure crm #315 brings:** the dev-stack `APP_CONFIG_FLAG_*` `:-true`
   passthroughs and the dev-only rsbuild runtime-block renderer (§5.14 of its architecture), and
   the first edit of the security category union (`password_reset`).
 
@@ -735,7 +738,7 @@ cited by id only because that bundle is still being edited:
 
 1. **Production exposure before G1:** against v2.8.0, `users(first: 1)` returns an arbitrary
    user and `updateUser` needs no token; `userSettings` stays off in production (U5).
-2. **Prerequisite chain:** this branch stacked on PR #340 (crm #315 implemented) and #315's
+2. **Prerequisite chain:** this branch stacked on PR #340 (crm #315 implemented) and crm #315's
    pieces moved out of `@auth` (P.1); #330 alone builds the Bearer link and the page shell, which
    #331 imports; a change to #340 before it merges blocks passwords.
 3. **Scaffolder mismatch:** `USER_TOKENS` against `AUTH_TOKENS` (§5.7); budget the manual fix.

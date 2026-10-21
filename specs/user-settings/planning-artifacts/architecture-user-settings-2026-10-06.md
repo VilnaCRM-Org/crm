@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-16
+revised: 2026-10-20
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -18,8 +18,8 @@ inputDocuments:
 
 # Architecture: user settings for the user module
 
-**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08 **Feature:**
-`user-settings`
+**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19 and
+2026-10-20 **Feature:** `user-settings`
 
 Predecessors: [research](./research-user-settings-2026-10-06.md) (cited "research §N"),
 [brief](./brief-user-settings-2026-10-06.md) ("brief §N") and the authoritative
@@ -1109,6 +1109,10 @@ infrastructure drawn inside the board's Repository → API edge (contract §2), 
   sign-out class shared with `logout()` is not built (a new `*Handler` module singleton), and the
   render-path `authActions` cannot be injected: the container would import the auth composition
   root that lazily imports the container, a `no-circular` cycle (amendment 2026-10-19).
+  Amendment 2026-10-21: the `setContext` half also records the token it sent as `sessionToken`
+  on the operation context (`SessionLinkContext`), and the `onError` half ends the session only
+  while the store still holds that token, so a late 401 for a request sent with an earlier
+  token, or with none, leaves a session begun since, or a sign-out already done, alone.
 - **Adapter policy entry** (R17): the file value-imports `ApolloLink`, `from`, `setContext` and
   `onError` inside a DI-gated folder, which the third-party allowlist rejects
   (`config/di-collaborator-policy.js`, `ALLOWED_LIBRARIES`). `RESTRICTED_LIBRARY_ADAPTERS` gains a

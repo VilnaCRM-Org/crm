@@ -930,9 +930,11 @@ Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are regi
 render-path pattern (issue #115).
 
 Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
-flag is declared today: `forgotPassword`, the last one, was removed in #309, and an environment
-that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
+flag is declared today, `userSettings` (issue #330), shipped off in the committed block and switched
+on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`. Only an unknown `APP_CONFIG_FLAG_*`
+name fails container start: `forgotPassword` was removed in #309, so an environment that still sets
+`APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value must unset it.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -1004,11 +1006,10 @@ module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf librarie
 
 Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
 `reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
-behind an adapter — Apollo through `ApolloLinkFactory` (the link chain) and `SessionLinkFactory`
-(the Bearer token and the 401 sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two
-`RESTRICTED_LIBRARY_ADAPTERS` entries — Sentry and
-`web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
-contract module and passed to collaborators as data.
+behind an adapter: Apollo through `ApolloLinkFactory` (the link chain) and `SessionLinkFactory`
+(the Bearer token and the 401 sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two files
+`RESTRICTED_LIBRARY_ADAPTERS` lists; Sentry and `web-vitals` through the observability boundary;
+zod schemas declared in a `response-schemas` contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
