@@ -7,6 +7,7 @@ import UIPasswordField from '@/components/ui-password-field';
 import UIPasswordPolicyRules from '@/components/ui-password-policy-rules';
 import UITypography from '@/components/ui-typography';
 
+import useBlurHold from '../../hooks/use-blur-hold';
 import type {
   ChangePasswordProps,
   CurrentPasswordProps,
@@ -14,7 +15,11 @@ import type {
 import type { ProfileFormValues } from '../../types/user-profile/profile-form-values';
 import styles from '../profile-form/styles';
 
-import passwordStyles, { NEW_PASSWORD_HINT_ID, NEW_PASSWORD_RULES_ID } from './styles';
+import passwordStyles, {
+  NEW_PASSWORD_HINT_ID,
+  NEW_PASSWORD_RULES_ID,
+  RULES_COLLAPSE_DELAY_MS,
+} from './styles';
 
 function CurrentPassword({ rules, busy }: CurrentPasswordProps): JSX.Element {
   const { t } = useTranslation();
@@ -35,9 +40,15 @@ function CurrentPassword({ rules, busy }: CurrentPasswordProps): JSX.Element {
 function NewPassword({ rules, evaluate, busy }: ChangePasswordProps): JSX.Element {
   const { t } = useTranslation();
   const newPassword = useWatch<ProfileFormValues, 'newPassword'>({ name: 'newPassword' });
+  const hold = useBlurHold(RULES_COLLAPSE_DELAY_MS);
 
   return (
-    <Box data-empty={newPassword === ''} sx={passwordStyles.newPassword}>
+    <Box
+      data-empty={newPassword === ''}
+      data-held={hold.held}
+      onBlur={hold.onBlur}
+      sx={passwordStyles.newPassword}
+    >
       <UIPasswordField<ProfileFormValues>
         name="newPassword"
         label={t('settings.profile.new_password')}

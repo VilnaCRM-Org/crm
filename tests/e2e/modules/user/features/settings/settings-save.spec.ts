@@ -96,6 +96,21 @@ test.describe('Settings save journeys (issue #330)', () => {
     ]);
   });
 
+  test('saves when Save is clicked straight from the empty, focused new password', async ({
+    page,
+  }) => {
+    stub = await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
+    await openLoadedSettings(page);
+    await editName(page, NEW_NAME, password);
+    await newPasswordField(page).click();
+    await expect(page.locator('#new-password-rules')).toBeVisible();
+
+    await saveButton(page).click();
+
+    await expectSuccessToast(page, text.saved);
+    expect(stub.count('UpdateUser')).toBe(1);
+  });
+
   test('saves an e-mail, shows the unconfirmed row and resends the link once', async ({ page }) => {
     stub = await stubProfile(page, {
       UpdateUser: [replyWithSaved({ email: newEmail, confirmed: false })],

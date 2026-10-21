@@ -21,16 +21,18 @@ const VISUALLY_HIDDEN = {
 };
 
 describe('change password styles', () => {
-  it('hides the hint, and the rules while the empty new password has no focus', async () => {
+  it('hides the hint, and the rules of an empty, unfocused, unheld new password', async () => {
     const styles = await loadModule();
 
     expect(styles.NEW_PASSWORD_HINT_ID).toBe('new-password-hint');
     expect(styles.NEW_PASSWORD_RULES_ID).toBe('new-password-rules');
+    expect(styles.RULES_COLLAPSE_DELAY_MS).toBe(200);
     expect(styles.default).toEqual({
       hint: VISUALLY_HIDDEN,
       newPassword: {
         position: 'relative',
-        '&[data-empty="true"]:not(:focus-within) #new-password-rules': VISUALLY_HIDDEN,
+        '&[data-empty="true"]:not(:focus-within):not([data-held="true"]) #new-password-rules':
+          VISUALLY_HIDDEN,
       },
     });
   });

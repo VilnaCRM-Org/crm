@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -51,13 +51,32 @@ jest.mock('@/i18n', () => ({ __esModule: true, default: { addResourceBundle: jes
 
 const HIDDEN = { position: 'absolute', width: '1px', height: '1px' };
 
+const mountSection = (): ReturnType<typeof userEvent.setup> => {
+  render(subject(), {
+    wrapper: ({ children }) => (
+      <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
+    ),
+  });
+  return userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+};
+
+const advance = (ms: number): void => {
+  act(() => {
+    jest.advanceTimersByTime(ms);
+  });
+};
+
 describe('ChangePassword rule list at rest', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('keeps the rules and the hint out of sight until the new password is used', () => {
-    render(subject(), {
-      wrapper: ({ children }) => (
-        <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
-      ),
-    });
+    mountSection();
 
     expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
     expect(
@@ -65,13 +84,8 @@ describe('ChangePassword rule list at rest', () => {
     ).toHaveStyle(HIDDEN);
   });
 
-  it('shows the rules while the empty new password has focus', async () => {
-    const user = userEvent.setup();
-    render(subject(), {
-      wrapper: ({ children }) => (
-        <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
-      ),
-    });
+  it('shows the rules while the empty new password has focus, then for 200 ms after', async () => {
+    const user = mountSection();
 
     await user.click(screen.getByLabelText('Новий пароль'));
 
@@ -81,20 +95,24 @@ describe('ChangePassword rule list at rest', () => {
     await user.tab();
 
     expect(screen.getByLabelText('Новий пароль')).not.toHaveFocus();
+    expect(screen.getByRole('list')).not.toHaveStyle(HIDDEN);
+
+    advance(199);
+
+    expect(screen.getByRole('list')).not.toHaveStyle(HIDDEN);
+
+    advance(1);
+
     expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
   });
 
   it('keeps the rules in sight once the new password holds a value, focused or not', async () => {
-    const user = userEvent.setup();
-    render(subject(), {
-      wrapper: ({ children }) => (
-        <Provider i18n={createSettingsLocaleI18n('uk')}>{children}</Provider>
-      ),
-    });
+    const user = mountSection();
 
     await user.type(screen.getByLabelText('Новий пароль'), 'a');
     await user.tab();
     await user.tab();
+    advance(200);
 
     expect(screen.getByLabelText('Новий пароль')).not.toHaveFocus();
     expect(screen.getByRole('list')).not.toHaveStyle(HIDDEN);
@@ -102,6 +120,7 @@ describe('ChangePassword rule list at rest', () => {
     await user.clear(screen.getByLabelText('Новий пароль'));
     await user.tab();
     await user.tab();
+    advance(200);
 
     expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
   });
