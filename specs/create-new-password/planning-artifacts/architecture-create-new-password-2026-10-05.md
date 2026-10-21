@@ -1586,11 +1586,12 @@ sites use it: `CardBackControl` link mode, the sent step's "До входу" and
 state's "Запросити нове посилання"; each arrives on a page whose `AuthPageLayout` runs
 `useArrivalFocus`.
 
-**"Назад" colour: an accessibility override of the Figma token.** Figma `72:5605` styles the row
-with `Font/300 (Placeholder) #969B9D`, about 2.8:1 on white, below WCAG 1.4.3. The text and
-chevron render in `Font/200 #404142` (`paletteColors.text.primary`, about 10:1) with the Golos
-Medium 15/18 size and weight, and `minHeight: '1.5rem'`. `figma-design-check` records this as a
-reviewed deviation, and the design owner is asked to confirm (PRD §10).
+**"Назад" colour: the Figma token under a scoped exception.** Figma `72:5605` styles the row
+with `Font/300 (Placeholder) #969B9D`, about 2.81:1 on white, below WCAG 1.4.3. The text and
+chevron render in it (`customColors.text.secondary`) with the Golos Medium 15/18 size and
+weight, and `minHeight: '1.5rem'`, by the user's decision of 2026-10-21 that replaced the earlier
+`Font/200 #404142` override. The axe scans carry a scoped #276 `color-contrast` entry for it, and
+the focus ring stays `#404142` (10.2:1) (PRD §10).
 
 The two primary links of `RecoveryResultView` take the Figma primary pill, white on `#1EAEFF`
 (2.45:1), the palette debt issue #276 tracks. This feature adds exactly one scoped

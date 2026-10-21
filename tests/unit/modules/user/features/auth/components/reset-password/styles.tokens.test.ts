@@ -6,9 +6,24 @@ const loadStyles = (): Promise<ResetPasswordStyles> =>
   loadIsolated(async () => (await import('@auth/components/reset-password/styles')).default);
 
 const TEXT_PRIMARY = '#404142';
+const TEXT_SECONDARY = '#969B9D';
 const TEXT_DARK = '#1A1C1E';
 
 describe('reset password styles', () => {
+  it('matches the Figma tablet card between 768 and 1439 px only', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.recoveryCard).toEqual({
+      '@media (min-width:768px) and (max-width:1439.95px)': {
+        maxWidth: '39.75rem',
+        padding: '1.9375rem 2.4375rem',
+        '& form > h1 + p': { marginBottom: '1.25rem' },
+        '& label': { fontSize: '1rem', lineHeight: 1.125, marginBottom: '0.5625rem' },
+        '& form > button[type="submit"]': { marginBottom: '0.0625rem' },
+      },
+    });
+  });
+
   it('pins every backControl token', async () => {
     const styles = await loadStyles();
 
@@ -26,10 +41,10 @@ describe('reset password styles', () => {
       fontSize: '0.9375rem',
       lineHeight: '1.125rem',
       letterSpacing: 0,
-      color: TEXT_PRIMARY,
+      color: TEXT_SECONDARY,
       textTransform: 'none',
-      '& svg': { flexShrink: 0, color: TEXT_PRIMARY },
-      '&:visited': { color: TEXT_PRIMARY },
+      '& svg': { flexShrink: 0, color: TEXT_SECONDARY },
+      '&:visited': { color: TEXT_SECONDARY },
       '&:hover': { backgroundColor: 'transparent' },
       '&::before': {
         content: '""',
@@ -46,34 +61,6 @@ describe('reset password styles', () => {
       },
       '@media (min-width:1440px)': {
         marginTop: '-0.1875rem',
-      },
-    });
-  });
-
-  it('pins every demoResetLink token', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.demoResetLink).toEqual({
-      display: 'flex',
-      alignItems: 'center',
-      width: 'fit-content',
-      minHeight: '2.75rem',
-      marginTop: '1rem',
-      marginInline: 'auto',
-      padding: '0 0.5rem',
-      fontFamily: 'Golos',
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: '1.125rem',
-      color: TEXT_PRIMARY,
-      textDecoration: 'underline',
-      textTransform: 'none',
-      '&:visited': { color: TEXT_PRIMARY },
-      '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
-      '&:focus-visible, &.Mui-focusVisible': {
-        outline: `2px solid ${TEXT_PRIMARY}`,
-        outlineOffset: '2px',
-        borderRadius: '0.25rem',
       },
     });
   });
@@ -151,8 +138,8 @@ describe('reset password styles', () => {
     const styles = await loadStyles();
 
     expect(Object.keys(styles)).toEqual([
+      'recoveryCard',
       'backControl',
-      'demoResetLink',
       'resultTitle',
       'resultBody',
       'resultAction',

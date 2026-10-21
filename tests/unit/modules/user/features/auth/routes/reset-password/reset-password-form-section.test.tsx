@@ -54,6 +54,17 @@ async function submitEmail(): Promise<void> {
   await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 }
 
+jest.mock('@auth/components/reset-password/styles', () => {
+  const actual = jest.requireActual('@auth/components/reset-password/styles');
+  return {
+    __esModule: true,
+    default: { ...actual.default, recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' } },
+  };
+});
+
+const recoveryCard = (): HTMLElement | undefined =>
+  screen.getAllByRole('generic').find((element) => element.id === 'auth-form-card');
+
 describe('ResetPasswordFormSection', () => {
   beforeEach(() => {
     resetClientStores();
@@ -61,6 +72,12 @@ describe('ResetPasswordFormSection', () => {
       kind: 'sent',
       maskedEmail: 'eir*****@gmail.com',
     });
+  });
+
+  it('draws the request form in the recovery card variant', () => {
+    render(<ResetPasswordFormSection />, { wrapper: Wrapper });
+
+    expect(recoveryCard()).toHaveStyle({ borderTopColor: 'rgb(1, 2, 3)' });
   });
 
   it('renders the request form with Назад linking to /sign-in', async () => {
@@ -83,22 +100,7 @@ describe('ResetPasswordFormSection', () => {
     await expectNoA11yViolations(view.container);
   });
 
-  it('offers the demo reset link on the sent step only for the demo e-mail', async () => {
-    render(<ResetPasswordFormSection />, { wrapper: Wrapper });
-    await userEvent.type(screen.getByRole('textbox', { name: 'E-mail' }), 'demo@vilnacrm.com');
-    await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
-
-    await screen.findByRole('heading', { level: 1, name: 'Перевірте пошту' });
-    const links = screen.getAllByRole('link');
-    expect(links.map((link) => link.textContent)).toEqual([
-      'До входу',
-      'Відкрити посилання з листа (демо)',
-    ]);
-    expect(links[1]).toHaveAttribute('href', '/password-reset?token=sandbox-demo-reset-token');
-    expect(screen.getByRole('status')).not.toContainElement(links[1] ?? null);
-  });
-
-  it('shows no demo link on the sent step for any other e-mail', async () => {
+  it('offers only the sign-in link on the sent step', async () => {
     render(<ResetPasswordFormSection />, { wrapper: Wrapper });
     await submitEmail();
 

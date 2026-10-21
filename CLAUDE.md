@@ -32,7 +32,7 @@ The project uses Docker for all development and testing. Commands are managed vi
 ### Starting Development
 
 ```bash
-make start          # Start dev server (port 3000)
+make start          # Start dev server (port 3000), Mockoon, Apollo and Mailpit (inbox :8025)
 make start-prod     # Start the prod-parity stack (port 3001; test-harness image, see #158)
 make sh             # Open shell in dev container
 ```
@@ -528,12 +528,13 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries eight `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries nine `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
-text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the password-recovery
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
 in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
-issue #315), tracked in issue #276 and deleted when it closes.
+and the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
+decision, both issue #315), tracked in issue #276 and deleted when it closes.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
 

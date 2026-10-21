@@ -917,11 +917,11 @@ submit-button entry carries. It uses the same reason and `PALETTE_CONTRAST_ISSUE
 when issue #276 closes; no other new entry is allowed. The WCAG 2.2 target-size ratchet applies
 ahead of the standard: the in-card "Назад", "До входу" and "Запросити нове посилання" controls are ≥
 24 CSS px tall, and the primary controls (text inputs, submit) meet the mobile lane's 44 px floor.
-The in-card "Назад" text and its chevron render in `Font/200 #404142`, not the Figma `72:5605` style
-(`Font/300 (Placeholder) #969B9D`, "15 (medium)" Golos Medium 15/18), because that grey is about
-2.8:1 on white and fails WCAG 1.4.3; the size and weight of the Figma style are kept. This is a
-reviewed accessibility override of the design token, recorded through `figma-design-check`
-(accessibility may override the visual design) and raised with the design owner (§10). If any other
+The in-card "Назад" text and its chevron render in the Figma `72:5605` style
+(`Font/300 (Placeholder) #969B9D`, "15 (medium)" Golos Medium 15/18), about 2.81:1 on white,
+under WCAG 1.4.3. The user decided on 2026-10-21 to follow Figma rather than the earlier
+`Font/200 #404142` accessibility override, so the row takes a second scoped #276
+`color-contrast` entry; its focus ring stays `#404142` (10.2:1) so focus visibility still passes. If any other
 new text would render a token below 4.5:1, the implementing story stops and reports; it never adds a
 second exception. Step changes move focus to the new heading; results are announced once through a
 polite status region; errors through the focused alert banner; field errors keep `aria-invalid` and
@@ -1275,8 +1275,8 @@ For the design owner:
    instead of the primary pill? Not blocking: until answered they ship as the pill under the one
    scoped exception of NFR-9.
 6. Accept the in-card "Назад" in `Font/200 #404142` instead of the `72:5605` placeholder grey
-   `#969B9D` (about 2.8:1 on white)? Not blocking: the accessibility override of NFR-9 ships
-   until a token at or above 4.5:1 is chosen.
+   `#969B9D` (about 2.8:1 on white)? Answered 2026-10-21: no, the row follows Figma `#969B9D`
+   under a scoped #276 exception until a token at or above 4.5:1 is chosen.
 
 For the architecture owner (@kravalg):
 
