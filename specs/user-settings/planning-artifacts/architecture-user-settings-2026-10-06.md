@@ -2244,6 +2244,7 @@ other than through a hook.
   four rules, `evaluate` and the memoised result). `ProfileForm` passes the hooks' own `save` and `resend`
   functions to the form and the row (stable references, so `react/jsx-no-bind` stays silent) and
   keeps the `settled` layout effect and the `fieldErrors.items.map` (at most three closures).
+- **Measured budgets (amendment 2026-10-21).** The per-file counts in this section and in §7.3 were planning estimates; measured with rust-code-analysis 0.0.25 at #354 head 10c00282, against the per-file caps of `config/metrics-policy.json` (10 functions, 6 closures, 15 in all), the files hold: `profile-form/index.tsx` 5 functions and 4 closures, `change-password/index.tsx` 3 and 0, `use-profile-form-rules.ts` 5 and 5, `use-profile-load.ts` 6 and 5, `use-profile-save.ts` 8 and 4, `use-email-resend.ts` 3 and 1, `use-blur-hold.ts` 1 and 4. The extra functions are named sub-components and file-level helpers split out to keep each function inside the function-level LLOC, Halstead and exit limits; `make lint-metrics` passes on all of them.
 - **`EmailStatusRow`** renders only while `confirmed` is false: `p id={statusId}` "E-mail не
   підтверджено", a separator, and a `button type="button"` styled as a link in `#0074B5`, at
   least 24 px tall. The e-mail field's `describedBy` includes `statusId`. While a resend or a
