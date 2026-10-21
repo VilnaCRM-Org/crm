@@ -312,22 +312,25 @@ touches `useAuthStore`.
 
 **Rejected.** Redirecting signed-in users away (breaks a link opened in a signed-in browser).
 
-### The "Назад" colour overrides the Figma token
+### The "Назад" colour follows the Figma token
 
 **Context.** Figma `72:5605` draws the "Назад" row of the recovery cards in `Font/300`
-`#969B9D`, about 2.8:1 on white, below WCAG 1.4.3.
+`#969B9D`, about 2.81:1 on white, below WCAG 1.4.3.
 
-**Decision.** `CardBackControl` renders the text and chevron in `Font/200` `#404142`
-(`customColors.text.primary`, about 10:1), keeping the Golos Medium 15/18 type of the frame. The
-design owner is asked to confirm the token. The primary result links ("До входу", "Запросити
-нове посилання") keep the Figma pill, white on `#1EAEFF` (2.45:1); one scoped `color-contrast`
-entry in `A11Y_EXCEPTIONS` covers exactly those two links under issue #276. The owner confirmed
-that choice on 2026-10-14, following the DEV-67 decision for the sign-in "Забули пароль?" link:
-the brand fill stays until #276 resolves the palette for every exempted control at once.
+**Decision.** `CardBackControl` renders the text and chevron in the Figma `#969B9D`
+(`customColors.text.secondary`) with the Golos Medium 15/18 type of the frame, by the user's
+decision of 2026-10-21; its focus ring stays `#404142` (10.2:1), so focus visibility still passes
+WCAG 2.4.7 and 1.4.11. The primary result links ("До входу", "Запросити нове посилання") keep the
+Figma pill, white on `#1EAEFF` (2.45:1). Two scoped `color-contrast` entries in `A11Y_EXCEPTIONS`
+cover exactly those links and the back row under issue #276. The owner confirmed the pill on
+2026-10-14, following the DEV-67 decision for the sign-in "Забули пароль?" link: the brand
+colours stay until #276 resolves the palette for every exempted control at once.
 
-**Rejected.** Shipping the Figma grey (fails WCAG 1.4.3); a second contrast exception for the
-back row; an accessible `#0074B5` fill or a dark label on the two links alone, which would leave
-them unlike the Figma frames and every other brand-colour control before #276 decides.
+**Rejected.** `Font/200` `#404142` for the back row (about 10:1, but unlike the Figma frame the
+pixel-parity tests compare against); a grey focus ring (2.81:1 fails the 3:1 of WCAG 1.4.11 and
+cannot take an exception); an accessible `#0074B5` fill or a dark label on the two links alone,
+which would leave them unlike the Figma frames and every other brand-colour control before #276
+decides.
 
 ### No feature flag
 
