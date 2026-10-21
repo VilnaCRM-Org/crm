@@ -1563,7 +1563,8 @@ and the two resolver files never import each other. The file holds one constant 
 | update    | `id` not the seeded IRI                | "Access Denied." `FORBIDDEN`, status 403  |
 | update    | `email` failing the mock's e-mail rule | `email:` violation, `BAD_USER_INPUT`, 422 |
 | update    | otherwise                              | the seeded user with the sent fields      |
-| resend    | any request                            | `user { id confirmed }` of the seed       |
+| resend    | `id` not the seeded IRI                | "Access Denied." `FORBIDDEN`, status 403  |
+| resend    | otherwise                              | `user { id confirmed }` of the seed       |
 
 The update answer echoes the sent `initials` and `email` (an e-mail change sets `confirmed`
 false) and stores nothing. Every error carries a code so `formatError` keeps its message (U4).

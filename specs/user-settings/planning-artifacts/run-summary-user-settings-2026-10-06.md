@@ -102,75 +102,76 @@ decisions, `R` ids amend the `D` ids they name after research, review or agreeme
 planning session, `P` ids settle the product questions research §8.2 raised, and `M` ids record
 the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 
-| Id  | Decision                                                                                                            |
-| --- | ------------------------------------------------------------------------------------------------------------------- |
-| U1  | Plan only what user-service has a backend for; GraphQL only, never REST                                             |
-| U2  | Every success toast has an error counterpart with the same layout                                                   |
-| U3  | The settings "Пароль" block is #315's design of record: one password field, one policy                              |
-| U4  | Mock only operations that exist verbatim upstream; mock errors carry `extensions.code`                              |
-| U5  | Superseded by R28: flag off in production, on in the test stack (dev keeps the block)                               |
-| U6  | Secret-bearing mutations: `no-cache`, minimal selection, abort check, no automatic retry                            |
-| U7  | crm conventions: classes, type-only files, DI tokens, approved suffixes, rca caps                                   |
-| U8  | Plain DDD vocabulary; GoF names only with a second implementation; no catalogue                                     |
-| U9  | Prefer existing components; every repo claim carries a checked `path:line`                                          |
-| U10 | ADR-021; Deciders @kravalg (superseded 2026-10-16: README decisions, no ADR, `[no-adr]`)                            |
-| U11 | Accessibility overrides design: text under 4.5:1 is overridden, not copied                                          |
-| D1  | v1 scope: `/settings` profile card (name, e-mail + resend, password), toasts, 2FA slot                              |
-| D2  | No avatar upload and no social networks section (no backend); decorative monogram                                   |
-| D3  | No app-shell navigation; one flag-gated home link to `/settings`, shared with 2FA                                   |
-| D4  | Current user from `users(first: 1)`; its IRI `id` addresses both mutations                                          |
-| D5  | No pending schema extension: every operation used is in pinned v2.8.0                                               |
-| D6  | Current password on every Save; only changed fields; e-mail by normalised diff                                      |
-| D7  | One success toast per changed aspect; the form adopts the returned user                                             |
-| D8  | Errors become crm field errors or toasts; never server text verbatim                                                |
-| D9  | New `src/components/ui-toast`: polite success, alert errors, max 3                                                  |
-| D10 | Bearer header on GraphQL; automatic sign-out only under the shared 401 rule                                         |
-| D11 | New `settings` feature; #315's shared pieces move out of `@auth`; prerequisite P.1                                  |
-| D12 | Superseded by R28: #330 owns route, shell and link; the mock keeps no auth rule                                     |
-| D13 | Flag `userSettings` declared everywhere a flag must be                                                              |
-| D14 | Copy translated to `uk` and `en`; real subtitle; sections named for content                                         |
-| D15 | Contrast overrides: resend link `#0074B5`; the greeting keeps `#969B9D` under a scoped exception (2026-10-21)       |
-| D16 | Withdrawn 2026-10-08 (R28): no security signal for a rejected current password                                      |
-| D17 | Password change revokes other sessions upstream (main); no client logic depends on it                               |
-| D18 | Page-level skeleton while loading; read failure shows a retry                                                       |
-| R1  | Fence languages `text`, `ts`, `mermaid`, `json`, `bash` (MD040 rejects `graphql`)                                   |
-| R2  | Upstream cited as `M:`/`T:` base + path + `#L` anchor                                                               |
-| R3  | Wrong current password recognised by its en and uk message, never by `extensions.code`                              |
-| R4  | The Bearer link does not grow `src/modules/user/config/di.ts` beyond its function cap                               |
-| R5  | The scaffolder writes `USER_TOKENS`; the scaffold story fixes the wiring by hand                                    |
-| R6  | Flags are read at render time, never while the router is built                                                      |
-| R7  | The page owns its load state; `UIAsyncSection` does not fit                                                         |
-| R8  | Field-error text contrast fixed at its source token                                                                 |
-| R9  | 2FA reports outcomes in its card; settings is the toast's only consumer                                             |
-| R10 | Mock answers a tokenless settings call with "Access Denied." and `FORBIDDEN`                                        |
-| R11 | Bearer link `SessionLinkFactory` in `@auth/repositories`, composed in the module `di.ts`                            |
-| R12 | 2FA status travels in `ProtectedOutletContext`; settings adds nothing to it                                         |
-| R13 | Superseded by R28: the mock reads no token (was: one mock token rule)                                               |
-| R14 | Eager growth is the route declaration and gate only; no toast auto-dismisses                                        |
-| R15 | Superseded by R28: no mock token, no `mock-expired-token` (was: 2FA agreed R13)                                     |
-| R16 | The toast is built and used by settings only                                                                        |
-| R17 | Superseded by R28: scalar `flag` + `RouteFlagGate`; shared failure types; link session end                          |
-| R18 | One `access_denied` reason; "Access Denied." tested with no extensions and with status 403                          |
-| R19 | Shared pieces keep one name and behaviour; normalizer rows append-only; `error.text` token                          |
-| R20 | Superseded by R28: no mock expired-token 401 (the mock reads no token)                                              |
-| R21 | Superseded by R28: a transport 401 alone ends the session (was: link rule (a))                                      |
-| R22 | Superseded by R28: a transport 401 alone ends the session; shared mock and msw names                                |
-| R23 | ~~Undecorated normalizer~~ (withdrawn 2026-10-16); status-less 401 is no session end; equality test once both exist |
-| R24 | Superseded by R25: the two-class Data provider box is withdrawn (verification F5)                                   |
-| R25 | Superseded by R28: one `ProfileProvider`, three `@inject`, no deps bag or closure                                   |
-| R26 | #315's one `UserServiceFailure`, `FieldViolation` path and reason; members only appended                            |
-| R27 | Superseded by R28: settings adds no registrar closure; the link's `SessionLinkDeps` adds one (4 of 6)               |
-| R28 | Simplification 2026-10-08: one owner per shared piece; no signal; one Transformer; scalar                           |
-|     | `flag`; transport 401 alone ends a session; stateless mock; no glue hook or queue class                             |
-| M1  | Miro board layers only: route, component, hook, Data provider ⇄ Transformer, Repository                             |
-| M2  | TB-1: named types at every layer boundary; collections as `*Set`; gate in chore #332                                |
-| M3  | Client state in Zustand stores (`useAuthStore`); chore `zustand-client-state` lands first                           |
-| P1  | v1 accepts the current password for a name-only change (G4 asks upstream)                                           |
-| P2  | No special handling for OAuth-created users in v1                                                                   |
-| P3  | Password success toast uses the design copy only                                                                    |
-| P4  | Resend is disabled only while in flight; client throttling is a follow-up                                           |
-| P5  | Wrong-password classification matches en and uk text; no request-language pinning                                   |
-| P6  | Superseded by R28: the mock reads no token                                                                          |
+| Id   | Decision                                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------------------------- |
+| U1   | Plan only what user-service has a backend for; GraphQL only, never REST                                             |
+| U2   | Every success toast has an error counterpart with the same layout                                                   |
+| U3   | The settings "Пароль" block is #315's design of record: one password field, one policy                              |
+| U4   | Mock only operations that exist verbatim upstream; mock errors carry `extensions.code`                              |
+| U5   | Superseded by R28: flag off in production, on in the test stack (dev keeps the block)                               |
+| U6   | Secret-bearing mutations: `no-cache`, minimal selection, abort check, no automatic retry                            |
+| U7   | crm conventions: classes, type-only files, DI tokens, approved suffixes, rca caps                                   |
+| U8   | Plain DDD vocabulary; GoF names only with a second implementation; no catalogue                                     |
+| U9   | Prefer existing components; every repo claim carries a checked `path:line`                                          |
+| U10  | ADR-021; Deciders @kravalg (superseded 2026-10-16: README decisions, no ADR, `[no-adr]`)                            |
+| U11  | Accessibility overrides design: text under 4.5:1 is overridden, not copied                                          |
+| D1   | v1 scope: `/settings` profile card (name, e-mail + resend, password), toasts, 2FA slot                              |
+| D2   | No avatar upload and no social networks section (no backend); decorative monogram                                   |
+| D3   | No app-shell navigation; one flag-gated home link to `/settings`, shared with 2FA                                   |
+| D4   | Current user from `users(first: 1)`; its IRI `id` addresses both mutations                                          |
+| D5   | No pending schema extension: every operation used is in pinned v2.8.0                                               |
+| D6   | Current password on every Save; only changed fields; e-mail by normalised diff                                      |
+| D7   | One success toast per changed aspect; the form adopts the returned user                                             |
+| D8   | Errors become crm field errors or toasts; never server text verbatim                                                |
+| D9   | New `src/components/ui-toast`: polite success, alert errors, max 3                                                  |
+| D10  | Bearer header on GraphQL; automatic sign-out only under the shared 401 rule                                         |
+| D11  | New `settings` feature; #315's shared pieces move out of `@auth`; prerequisite P.1                                  |
+| D12  | Superseded by R28: #330 owns route, shell and link; the mock keeps no auth rule                                     |
+| D13  | Flag `userSettings` declared everywhere a flag must be                                                              |
+| D14  | Copy translated to `uk` and `en`; real subtitle; sections named for content                                         |
+| D15  | Superseded for the greeting 2026-10-21 (D15a): contrast overrides: greeting `#57595B`, resend link `#0074B5`        |
+| D15a | 2026-10-21: the greeting keeps `#969B9D` under a scoped `#settings-greeting` exception; resend link stays `#0074B5` |
+| D16  | Withdrawn 2026-10-08 (R28): no security signal for a rejected current password                                      |
+| D17  | Password change revokes other sessions upstream (main); no client logic depends on it                               |
+| D18  | Page-level skeleton while loading; read failure shows a retry                                                       |
+| R1   | Fence languages `text`, `ts`, `mermaid`, `json`, `bash` (MD040 rejects `graphql`)                                   |
+| R2   | Upstream cited as `M:`/`T:` base + path + `#L` anchor                                                               |
+| R3   | Wrong current password recognised by its en and uk message, never by `extensions.code`                              |
+| R4   | The Bearer link does not grow `src/modules/user/config/di.ts` beyond its function cap                               |
+| R5   | The scaffolder writes `USER_TOKENS`; the scaffold story fixes the wiring by hand                                    |
+| R6   | Flags are read at render time, never while the router is built                                                      |
+| R7   | The page owns its load state; `UIAsyncSection` does not fit                                                         |
+| R8   | Field-error text contrast fixed at its source token                                                                 |
+| R9   | 2FA reports outcomes in its card; settings is the toast's only consumer                                             |
+| R10  | Mock answers a tokenless settings call with "Access Denied." and `FORBIDDEN`                                        |
+| R11  | Bearer link `SessionLinkFactory` in `@auth/repositories`, composed in the module `di.ts`                            |
+| R12  | 2FA status travels in `ProtectedOutletContext`; settings adds nothing to it                                         |
+| R13  | Superseded by R28: the mock reads no token (was: one mock token rule)                                               |
+| R14  | Eager growth is the route declaration and gate only; no toast auto-dismisses                                        |
+| R15  | Superseded by R28: no mock token, no `mock-expired-token` (was: 2FA agreed R13)                                     |
+| R16  | The toast is built and used by settings only                                                                        |
+| R17  | Superseded by R28: scalar `flag` + `RouteFlagGate`; shared failure types; link session end                          |
+| R18  | One `access_denied` reason; "Access Denied." tested with no extensions and with status 403                          |
+| R19  | Shared pieces keep one name and behaviour; normalizer rows append-only; `error.text` token                          |
+| R20  | Superseded by R28: no mock expired-token 401 (the mock reads no token)                                              |
+| R21  | Superseded by R28: a transport 401 alone ends the session (was: link rule (a))                                      |
+| R22  | Superseded by R28: a transport 401 alone ends the session; shared mock and msw names                                |
+| R23  | ~~Undecorated normalizer~~ (withdrawn 2026-10-16); status-less 401 is no session end; equality test once both exist |
+| R24  | Superseded by R25: the two-class Data provider box is withdrawn (verification F5)                                   |
+| R25  | Superseded by R28: one `ProfileProvider`, three `@inject`, no deps bag or closure                                   |
+| R26  | #315's one `UserServiceFailure`, `FieldViolation` path and reason; members only appended                            |
+| R27  | Superseded by R28: settings adds no registrar closure; the link's `SessionLinkDeps` adds one (4 of 6)               |
+| R28  | Simplification 2026-10-08: one owner per shared piece; no signal; one Transformer; scalar                           |
+|      | `flag`; transport 401 alone ends a session; stateless mock; no glue hook or queue class                             |
+| M1   | Miro board layers only: route, component, hook, Data provider ⇄ Transformer, Repository                             |
+| M2   | TB-1: named types at every layer boundary; collections as `*Set`; gate in chore #332                                |
+| M3   | Client state in Zustand stores (`useAuthStore`); chore `zustand-client-state` lands first                           |
+| P1   | v1 accepts the current password for a name-only change (G4 asks upstream)                                           |
+| P2   | No special handling for OAuth-created users in v1                                                                   |
+| P3   | Password success toast uses the design copy only                                                                    |
+| P4   | Resend is disabled only while in flight; client throttling is a follow-up                                           |
+| P5   | Wrong-password classification matches en and uk text; no request-language pinning                                   |
+| P6   | Superseded by R28: the mock reads no token                                                                          |
 
 ## GitHub issues
 

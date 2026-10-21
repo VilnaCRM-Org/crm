@@ -143,7 +143,7 @@ Every control works by touch, and focus moves to the first field in error, scrol
 ### The Page
 
 - `h1` "Налаштування" with a real subtitle (D14); a header with a decorative monogram from the
-  name (no photo, no pencil badge, D2), "Вітаємо!" in `#57595B` instead of the failing `#969B9D`
+  name (no photo; the pencil badge is decoration only, amended 2026-10-21, D2), "Вітаємо!" in `#57595B` instead of the failing `#969B9D`
   (D15; superseded 2026-10-21: the product owner kept `#969B9D` under a scoped exception) and the
   name in bold.
 - "Особисті дані" holds name and e-mail; resend is a button (it sends mail) styled as a link in
@@ -379,16 +379,16 @@ readiness; nothing already tracked (research §4.9) is filed again.
 
 None of the design questions in research §8.1 blocks v1; these defaults hold until answered:
 
-| Question                  | v1 default until answered                                   |
-| ------------------------- | ----------------------------------------------------------- |
-| Error toast frame         | success layout on `#FDECEC`, `#1A1C1E` text, `#DC3939` icon |
-| Field error states        | existing style, text colour fixed at its token (R8)         |
-| Page-load error state     | a message and a retry button in place of the card           |
-| After an e-mail change    | toast plus "not confirmed · resend"; no "check inbox" panel |
-| Copy and mobile header    | §4 drafts; mobile keeps the desktop title and subtitle      |
-| "Очистити" colours        | outlined, label at 4.5:1 or more, never primary blue        |
-| Contrast overrides        | resend `#0074B5` (5.04:1); greeting `#969B9D` kept, amended |
-| Monogram, no pencil badge | decorative, hidden from assistive technology, until avatars |
+| Question                   | v1 default until answered                                    |
+| -------------------------- | ------------------------------------------------------------ |
+| Error toast frame          | success layout on `#FDECEC`, `#1A1C1E` text, `#DC3939` icon  |
+| Field error states         | existing style, text colour fixed at its token (R8)          |
+| Page-load error state      | a message and a retry button in place of the card            |
+| After an e-mail change     | toast plus "not confirmed · resend"; no "check inbox" panel  |
+| Copy and mobile header     | §4 drafts; mobile keeps the desktop title and subtitle       |
+| "Очистити" colours         | outlined, label at 4.5:1 or more, never primary blue         |
+| Contrast overrides         | resend `#0074B5` (5.04:1); greeting `#969B9D` kept, amended  |
+| Monogram, decorative badge | decorative pencil badge (amended 2026-10-21), hidden from AT |
 
 The four product questions (research §8.2) are settled by P1-P4, each with a follow-up in §6.
 
