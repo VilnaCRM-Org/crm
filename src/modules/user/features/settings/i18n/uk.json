@@ -24,7 +24,7 @@
     },
     "social": {
       "heading": "Соціальні мережі",
-      "linking_unavailable": "підключення поки недоступне"
+      "linking_unavailable": ", підключення поки недоступне"
     },
     "toasts": {
       "saved": "Зміни збережено",
