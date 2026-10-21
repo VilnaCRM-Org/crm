@@ -80,4 +80,11 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
       'Recovery in-card link buttons: white on the Figma primary #1EAEFF is 2.45:1; design-owned.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
+  {
+    ruleId: 'color-contrast',
+    selector: '#settings-greeting',
+    reason:
+      'Settings greeting: Figma grey #969B9D on white is 2.81:1; product-owner call, issue #330.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
 ];

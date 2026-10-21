@@ -40,7 +40,7 @@ export default function ProfileHeader({ fullName }: ProfileHeaderProps): JSX.Ele
         </Box>
       </Box>
       <Box sx={styles.text}>
-        <Box component="p" sx={styles.greeting}>
+        <Box component="p" id="settings-greeting" sx={styles.greeting}>
           {t('settings.profile.greeting')}
         </Box>
         <Box component="p" sx={styles.name}>

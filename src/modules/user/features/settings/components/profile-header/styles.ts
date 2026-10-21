@@ -69,7 +69,7 @@ export default {
     fontWeight: 500,
     fontSize: '1rem',
     lineHeight: '1.125rem',
-    color: customColors.text.muted,
+    color: customColors.text.secondary,
   },
   name: {
     margin: 0,

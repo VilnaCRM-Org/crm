@@ -87,7 +87,8 @@ describe('ProfileHeader', () => {
   it('colours the greeting, the name and the monogram from the palette', () => {
     render(<ProfileHeader fullName="Олена Петренко" />, { wrapper });
 
-    expect(screen.getByText('Вітаємо!')).toHaveStyle({ color: '#57595B' });
+    expect(screen.getByText('Вітаємо!')).toHaveStyle({ color: '#969B9D' });
+    expect(screen.getByText('Вітаємо!')).toHaveAttribute('id', 'settings-greeting');
     expect(screen.getByText('Олена Петренко')).toHaveStyle({ color: '#1A1C1E' });
   });
 
