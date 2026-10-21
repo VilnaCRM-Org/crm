@@ -91,6 +91,21 @@ export const Confirmation: Story = {
   },
 };
 
+export const ReadOnly: Story = {
+  args: { readOnly: true },
+  decorators: [withFormProvider({ password: 'Secret123' })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'While a form is busy (the settings Save) the field is `readOnly`: the value cannot ' +
+          'change, but the field keeps its focus and tab stop and the visibility toggle still ' +
+          'works, unlike a disabled field, which would drop focus.',
+      },
+    },
+  },
+};
+
 export const DescribedBy: Story = {
   args: { describedBy: RULES_ID },
   decorators: [withPolicyRules, withFormProvider({ password: '' })],
