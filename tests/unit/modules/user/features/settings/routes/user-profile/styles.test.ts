@@ -30,6 +30,14 @@ describe('user profile page styles', () => {
         },
       },
       header: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+      profileColumn: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        minWidth: 0,
+        '@media (min-width:768px)': { gap: '0.9375rem' },
+        '@media (min-width:1025px)': { gap: '1.1875rem' },
+      },
       heading: {
         margin: 0,
         fontFamily: 'Golos, sans-serif',

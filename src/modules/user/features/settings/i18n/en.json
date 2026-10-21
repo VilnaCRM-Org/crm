@@ -11,6 +11,7 @@
         "personal": "Personal details",
         "password": "Password"
       },
+      "full_name": "Your full name",
       "current_password": "Current password",
       "new_password": "New password",
       "new_password_hint": "Optional. Leave empty to keep your current password.",
@@ -20,6 +21,10 @@
       "no_changes": "There are no changes to save",
       "email_unconfirmed": "E-mail not confirmed",
       "resend": "Send again"
+    },
+    "social": {
+      "heading": "Social networks",
+      "linking_unavailable": "linking not available yet"
     },
     "toasts": {
       "saved": "Changes saved",
@@ -34,7 +39,8 @@
     "errors": {
       "password_wrong": "The current password is incorrect",
       "password_not_accepted": "The current password was not accepted. Check it and try again.",
-      "new_password_rejected": "The password does not meet the requirements. Check the rules below"
+      "new_password_rejected": "The password does not meet the requirements. Check the rules below",
+      "new_password_same": "The new password must differ from the current one"
     }
   }
 }

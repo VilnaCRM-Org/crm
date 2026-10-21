@@ -90,10 +90,12 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
 No file names a controller, a service or a handler: the board has none. Gaps that remain gaps:
-the board's social-network component is not built (user-service has no link, list or unlink), the
-header menu with the "Log-out" edge is app-shell work and the home link stands in for it, the
-two-factor card is #331's, and the session link reads and resets `useAuthStore` without a
-Repository → State edge on the board.
+the board's social-network component is presentational only — `SocialNetworks` draws the Figma
+card as a list rather than buttons, each tile telling a screen reader that linking is not
+available yet, because user-service has no link, list or unlink — the header menu with the
+"Log-out" edge is app-shell work and the home link stands in for it, the two-factor card
+belongs to #331, and the session link reads and resets `useAuthStore` without a Repository →
+State edge on the board.
 
 ## Data provider outcomes
 
@@ -147,6 +149,30 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
   columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
   lands, and the heading stays aligned with the card's left edge.
+- **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
+  header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
+  "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
+  The field holds the full ПІБ (surname, first name, patronymic), while the header greets by
+  first name and surname: three or more words show as the second then the first ("Маслова
+  Евгения Олеговна" → "Евгения Маслова"), one or two words show as typed, and the monogram
+  follows the greeted name.
+- **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
+  optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
+  appear while the field has focus or a value. A new password equal to the current one is
+  refused once the policy passes.
+- **"Вітаємо!" uses the Figma grey `#969B9D`** at 2.81:1, below the 4.5:1 text minimum, by the
+  product owner's call; `#settings-greeting` carries a scoped `color-contrast` exception in
+  `tests/utils/a11y/axe-config.ts`, tracked with the other palette debt in #276.
+- **The pencil badge is decoration** (`315:11418`): a 26 px `#1EAEFF` disc with the white
+  `edit-02` outline at the monogram's corner, 5 px lower on a phone, inside the hidden
+  monogram. Uploading a photo waits for user-service#519 and is tracked in #361.
+- **The social networks card sits under the profile card in one column** (`476:46530`,
+  `386:27239`, `386:27457`), 12 / 15 / 19 px below it, so the 2FA card still takes the second
+  grid column. Its tiles follow each frame as drawn, including the ones that disagree: a 1 px
+  border below 1025 px and 2 px above, 9 / 12 / 4 px between columns, a 42 px bottom inset on
+  desktop against 23 px at the top, icon-only tiles below 768 px that fill the columns first
+  (Google and GitHub on top, as on the sign-in provider grid), and the Figma heading copy
+  "Социальные сети" translated to "Соціальні мережі" / "Social networks".
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.
