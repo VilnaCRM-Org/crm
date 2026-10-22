@@ -149,16 +149,18 @@ Every control works by touch, and focus moves to the first field in error, scrol
   name in bold. Amended 2026-10-21 (product owner): the name line shows the first name and
   surname only, taken from the ПІБ ("Петренко Олена Іванівна" greets "Олена Петренко", monogram
   "ОП"), and the monogram follows the greeted name.
-- "Особисті дані" holds name and e-mail; resend is a button (it sends mail) styled as a link in
-  `#0074B5` instead of the failing `#1EAEFF` (D15). "Пароль" holds "Поточний пароль", required
-  for every Save (P1), and the optional "Новий пароль" under the shared policy (U3). Amended
-  2026-10-21 (product owner, Figma `315:11316`): the name is a row "Ваше ПІБ" above "Особисті
-  дані", which holds only the e-mail; the optional hint under "Новий пароль" is visually hidden
-  but still announced, and its policy rules show only while the field has focus or a value.
-- One "Зберегти зміни" / "Очистити" pair, "Очистити" passing contrast without an exception; the
-  2FA column under its own flag (D12); toasts with polite success, alert errors that stay until
-  closed, a localized close button and at most three visible (D9). Amended 2026-10-21: no toast
-  carries a role; two always-mounted regions announce success (polite) and errors (assertive).
+- "Особисті дані" holds name and e-mail (superseded 2026-10-21: the "Ваше ПІБ" row sits above the
+  section, which holds only the e-mail and its status row); resend is a button (it sends mail)
+  styled as a link in `#0074B5` instead of the failing `#1EAEFF` (D15). "Пароль" holds "Поточний
+  пароль", required for every Save (P1), and the optional "Новий пароль" under the shared policy
+  (U3). Amended 2026-10-21 (product owner, Figma `315:11316`): the name is a row "Ваше ПІБ" above
+  "Особисті дані", which holds only the e-mail; the optional hint under "Новий пароль" is visually
+  hidden but still announced, and its policy rules show only while the field has focus or a value.
+- One "Зберегти зміни" / "Очистити" pair, "Очистити" passing contrast without an exception; the 2FA
+  column under its own flag (D12); toasts with polite success, alert errors (superseded 2026-10-21,
+  D9a) that stay until closed, a localized close button and at most three visible (D9). Amended
+  2026-10-21: no toast carries a role; two always-mounted regions announce success (polite) and
+  errors (assertive).
 - A UI-only "Соціальні мережі" card (added 2026-10-21, product owner): Figma-exact, Google,
   Facebook, GitHub and Twitter tiles, each saying that linking is not available yet; no actions,
   because user-service cannot link, list or unlink (G6).
@@ -183,12 +185,13 @@ Every control works by touch, and focus moves to the first field in error, scrol
 
 The Russian Figma copy is translated, not copied (D14); English is the fallback. Drafts: subtitle
 "Керуйте своїм ім’ям, електронною поштою та паролем." (Manage your name, e-mail address and
-password.); sections "Особисті дані" (Personal details) over name and e-mail and "Пароль" over
-the password pair; fields "Ваше ім’я та прізвище" and "E-mail" (sign-up's labels; "E-mail"
-since #311; the name label is "Ваше ПІБ" since 2026-10-21),
-"Поточний пароль" and "Новий пароль"; toasts "Зміни збережено", "Ми надіслали посилання для
-підтвердження на нову адресу", "Ви успішно змінили пароль", "Посилання для підтвердження
-надіслано повторно"; close button "Закрити сповіщення"; errors as in §3.
+password.); sections "Особисті дані" (Personal details) over name and e-mail (superseded 2026-10-21:
+the "Ваше ПІБ" row sits above the section, and "Особисті дані" holds only the e-mail and its status
+row) and "Пароль" over the password pair; fields "Ваше ім’я та прізвище" and "E-mail" (sign-up's
+labels; "E-mail" since #311; the name label is "Ваше ПІБ" since 2026-10-21), "Поточний пароль" and
+"Новий пароль"; toasts "Зміни збережено", "Ми надіслали посилання для підтвердження на нову адресу",
+"Ви успішно змінили пароль", "Посилання для підтвердження надіслано повторно"; close button "Закрити
+сповіщення"; errors as in §3.
 
 > Assumption: the fields reuse sign-up's labels, not a literal "Ваше ПІБ" / "Ваш e-mail", so one
 > value has one name across the app. Superseded for the name on 2026-10-21: the product owner
@@ -324,7 +327,10 @@ existing baseline renders a field error.
 - **Secrets (U6).** Password mutations bypass the Apollo cache, select only needed fields, check
   the abort signal before sending and never retry on their own.
 - **Accessibility.** WCAG 2.1 AA in jsdom and three engines; text below 4.5:1 is overridden
-  (U11); the existing Save exception (#276) is the only one the page relies on.
+  (U11); the page relies on exactly two exceptions: the Save button's existing #276 entry and
+  the new scoped `#settings-greeting` entry (tracked in #276), the product owner's 2026-10-21
+  decision, re-confirmed after a side-by-side comparison (superseded 2026-10-21: "the existing
+  Save exception (#276) is the only one the page relies on").
 
 ### Risks
 
@@ -372,7 +378,7 @@ readiness; nothing already tracked (research §4.9) is filed again.
 | U6       | Password mutations: no cache, minimal selection, abort check, no automatic retry  |
 | U11      | Accessibility overrides design: text under 4.5:1 is overridden, not copied        |
 | D1       | v1: `/settings` card with name, e-mail and resend, password, toasts, 2FA slot     |
-| D2       | No avatar or social networks: no backend; a decorative monogram instead           |
+| D2       | No avatar or social networks (social part superseded 2026-10-21, D2a); monogram   |
 | D2a      | 2026-10-21: the social networks card renders UI-only, no actions; amends D2       |
 | D3       | No app-shell menu; one flag-gated home link, shared with 2FA                      |
 | D4       | Current user from `users(first: 1)`; its `id` addresses both mutations            |
@@ -380,13 +386,14 @@ readiness; nothing already tracked (research §4.9) is filed again.
 | D6       | Current password on every Save; only changed fields; e-mail by normalised diff    |
 | D7       | One success toast per changed aspect; form re-reads the result, clears passwords  |
 | D8, R3   | Errors become field errors or toasts in crm copy; wrong password known by text    |
-| D9, R16  | New toast, settings only: polite success, alert errors, none auto-dismiss, max 3  |
+| D9, R16  | Superseded 2026-10-21 (D9a): toast, settings only: polite success, alert errors   |
+| D9a      | 2026-10-21: no toast role; polite region for success, assertive one for errors    |
 | D10, R11 | Bearer link on GraphQL; automatic sign-out only under the shared rule (R17)       |
 | D11      | #315's shared pieces leave the auth feature before settings uses them             |
 | D12      | Route, gate, shell, Bearer header: built by settings, imported by 2FA             |
 | D13, R6  | Route renders only while `userSettings` is on; a render-time gate (R17)           |
 | D14      | Copy translated to `uk` and `en`; real subtitle; sections named for content       |
-| D15, R8  | Contrast fixed at source for greeting, resend link and field-error text           |
+| D15, R8  | Source contrast: greeting (superseded 2026-10-21), resend link, field-error text  |
 | D16      | Withdrawn 2026-10-08: no security signal for a rejected current password          |
 | D17      | Password change signs out other sessions upstream; the client does not rely on it |
 | D18, R7  | The page owns its load state: skeleton, then an error state with a retry          |

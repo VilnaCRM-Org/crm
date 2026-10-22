@@ -18,13 +18,19 @@ inputDocuments:
   - specs/user-settings/planning-artifacts/run-summary-user-settings-2026-10-06.md
 ---
 
-**Verdict: PASS**
+**Verdict: PASS** (iteration 3, before the 2026-10-21 amendments)
 (0 Critical, 0 High, 0 Medium, 0 Low remaining. The final review found 0 Critical, 0 High,
 1 Medium and 12 Low and fixed all 13 in the artifacts.)
 
+**Iteration 4 (2026-10-21).** This record now covers iteration 4: the dated 2026-10-21
+amendments that answer the nine deviations an FR/NFR review gate found between the
+implementation and this bundle, listed in "Amendments 2026-10-21" near the end. The iteration-3
+PASS verdict above covered the bundle before those amendments; iteration 4 adds no new verdict.
+
 # Implementation readiness: user settings, final review
 
-Final record of iteration 3 after the closing Opus review. Artifact keys: R research, B brief,
+Final record of iteration 3 after the closing Opus review (superseded 2026-10-21: the record now
+also carries iteration 4, the 2026-10-21 amendments). Artifact keys: R research, B brief,
 P PRD, A architecture, E epics (story numbers), S run summary. Repository lines are at
 `origin/main` `58099168`; upstream lines at user-service `main` `a95c1e85`.
 

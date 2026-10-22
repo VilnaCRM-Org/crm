@@ -2133,33 +2133,41 @@ UserProfile [component]<route> (settings/routes/user-profile/index.tsx)
   │ │ ├ loading: ProfileSkeleton (aria-hidden)
   │ │ ├ failed:  ProfileLoadError (role=alert text, "Спробувати ще раз", focused after a retry)
   │ │ └ ready:   card
-  │ │    ├ ProfileHeader (monogram aria-hidden, "Вітаємо!", name)
-  │ │    └ ProfileForm          useProfileSave, useEmailResend, useProfileFormRules
+  │ │    ├ ProfileHeader (monogram aria-hidden + decorative pencil badge, "Вітаємо!",
+  │ │    │               first name and surname taken from the ПІБ)
+  │ │    └ ProfileForm          useProfileFormModel (useProfileSave, useProfileFormRules,
+  │ │       │                   useEmailRow → useEmailResend)
   │ │       └ UIForm key=version, submitRef=saveRef, footer=ClearButton
+  │ │          ├ UIFormField fullName "Ваше ПІБ" (autocomplete name)
   │ │          ├ h2 "Особисті дані" (focus target after a retry)
-  │ │          ├ UIFormField fullName (autocomplete name)
   │ │          ├ UIFormField email (type email, autocomplete email) + EmailStatusRow
   │ │          ├ ChangePassword [component]     the PasswordChange fields; rules as props
   │ │          │ ├ h2 "Пароль"
   │ │          │ ├ UIPasswordField currentPassword (autocomplete current-password)
-  │ │          │ └ UIPasswordField newPassword (autocomplete new-password) + hint
-  │ │          │     + UIPasswordPolicyRules
+  │ │          │ └ UIPasswordField newPassword (autocomplete new-password) + hidden hint
+  │ │          │     + UIPasswordPolicyRules (only while focused or holding a value)
   │ │          ├ UIServerFieldError × ProfileFieldErrorSet items
-  │ │          └ p role=status (no-change text), always mounted
+  │ │          ├ p role=status (no-change text), always mounted
+  │ │          └ Save "Зберегти зміни" + ClearButton "Очистити"
+  │ ├ SocialNetworks [component] (UI only)   h2 "Соціальні мережі"
+  │ │ └ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
+  │ │    each with a visually hidden "linking not available yet" status; no action
   │ └ TwoFactorSettings (twoFactorAuth; 2FA bundle, board 2FASettings)
   └ UIToastStack toasts: ToastItemSet, announcement, returnFocusRef=saveRef
 ```
 
-Amendment 2026-10-21 (product owner): the tree above changes in four places. (1) `UIFormField
-fullName` moves above `h2 "Особисті дані"`, matching Figma `315:11316`, where that section holds
-only the e-mail and the name sits at the top under the header; it is labelled by
+Amendment 2026-10-21 (product owner): the tree above shows the amended page; it changed in four
+places, and the superseded 2026-10-06 tree had `UIFormField fullName` under `h2 "Особисті дані"`, a
+header of monogram, "Вітаємо!" and the name as typed, the rules always shown, and no social card.
+(1) `UIFormField fullName` moves above `h2 "Особисті дані"`, matching Figma `315:11316`, where that
+section holds only the e-mail and the name sits at the top under the header; it is labelled by
 `settings.profile.full_name` ("Ваше ПІБ"), and the `h2` heads only the e-mail and its
 `EmailStatusRow`. `ProfileSkeleton` follows the same order. (2) `ProfileHeader` greets with the
-first name and surname derived from the ПІБ (§7.2). (3) The new-password hint is visually hidden
-but stays in `aria-describedby`, and `UIPasswordPolicyRules` renders only while the field has
-focus or a value, held 200 ms after an empty field blurs (§7.2). (4) The grid gains a UI-only
-`SocialNetworks` card after `UserProfileSettings` ("Соціальні мережі", Figma `476:46530`,
-`386:27239`, `386:27457`; §7.2), which closes G-1 for the view (§17.3).
+first name and surname derived from the ПІБ (§7.2). (3) The new-password hint is visually hidden but
+stays in `aria-describedby`, and `UIPasswordPolicyRules` renders only while the field has focus or a
+value, held 200 ms after an empty field blurs (§7.2). (4) The grid gains a UI-only `SocialNetworks`
+card after `UserProfileSettings` ("Соціальні мережі", Figma `476:46530`, `386:27239`, `386:27457`;
+§7.2), which closes G-1 for the view (§17.3).
 
 `ProfileSkeleton`, `ProfileLoadError`, `ProfileHeader`, `ProfileForm`, `EmailStatusRow` and
 `ClearButton` are child components drawn inside the board's `UserProfileSettings [component]`
@@ -2237,13 +2245,16 @@ other than through a hook.
 - **`ChangePassword`** (drawn where the board's `RestorePassword [component]` sits, renamed
   because `RestorePasswordDTO` is #315's, §17.3 G-5; working with `PasswordChange`) renders the
   `h2` "Пароль", the current and new password fields, the hint and the rule list from the
-  `ChangePasswordProps` it receives (one function, at most two closures).
+  `ChangePasswordProps` it receives (one function, at most two closures; superseded 2026-10-21:
+  three functions and no closure, measured, see "Measured budgets" below).
 - **Closure budget** (`nom_closures_file_max: 6`, `config/metrics-policy.json:15`). The four
   conditional `validate` rules and the policy `evaluate` callback live in
   `settings/hooks/use-profile-form-rules.ts` (one function and at most six closures, the cap: the
-  four rules, `evaluate` and the memoised result). `ProfileForm` passes the hooks' own `save` and `resend`
+  four rules, `evaluate` and the memoised result; superseded 2026-10-21: five functions and five
+  closures, measured). `ProfileForm` passes the hooks' own `save` and `resend`
   functions to the form and the row (stable references, so `react/jsx-no-bind` stays silent) and
-  keeps the `settled` layout effect and the `fieldErrors.items.map` (at most three closures).
+  keeps the `settled` layout effect and the `fieldErrors.items.map` (at most three closures;
+  superseded 2026-10-21: five functions and four closures, measured).
 - **Measured budgets (amendment 2026-10-21).** The per-file counts in this section and in §7.3 were planning estimates; measured with rust-code-analysis 0.0.25 at #354 head 10c00282, against the per-file caps of `config/metrics-policy.json` (10 functions, 6 closures, 15 in all), the files hold: `profile-form/index.tsx` 5 functions and 4 closures, `change-password/index.tsx` 3 and 0, `use-profile-form-rules.ts` 5 and 5, `use-profile-load.ts` 6 and 5, `use-profile-save.ts` 8 and 4, `use-email-resend.ts` 3 and 1, `use-blur-hold.ts` 1 and 4. The extra functions are named sub-components and file-level helpers split out to keep each function inside the function-level LLOC, Halstead and exit limits; `make lint-metrics` passes on all of them.
 - **`EmailStatusRow`** renders only while `confirmed` is false: `p id={statusId}` "E-mail не
   підтверджено", a separator, and a `button type="button"` styled as a link in `#0074B5`, at
@@ -2309,7 +2320,8 @@ component type.
   the first, aborted one. The state lives in a file-level reducer (`useReducer`) and the read
   runs through a file-level async loader that dispatches only while its signal is not aborted,
   so the file holds three functions and at most five closures: the effect, its cleanup, `retry`,
-  `adopt` and `confirm` (§12). The reducer has at most three exits (`nexits_max` 3,
+  `adopt` and `confirm` (§12; superseded 2026-10-21: six functions and five closures, measured).
+  The reducer has at most three exits (`nexits_max` 3,
   `config/metrics-policy.json:8`): `retry` and `adopt` return early, and `loaded`, `failed` and
   `confirm` share one merging return.
 - `useProfileSave(props: ProfileEditContext)` resolves `AUTH_TOKENS.ProfileProvider` through
@@ -2328,26 +2340,27 @@ component type.
   `noChanges`, and so does `block()`, which `ProfileForm` hands `UIForm` as `onInvalid`, so a Save
   that client validation stops never leaves an earlier no-change status under the field error.
   At most two functions and six closures (the initializer, the run, `save`, `clear`, `block`, the
-  retry action).
+  retry action; superseded 2026-10-21: eight functions and four closures, measured).
 - `useEmailResend(user, adoption, toasts)` runs `provider.resend(user.id, signal)` through
   `useAbortableSubmit`; a result whose e-mail `adoption.isCurrent` no longer accepts → nothing
   (no confirm, toast or focus move); `sent` (carrying `confirmed`) →
   `adoption.confirm(user.email, confirmed)` and the
   `settings.toasts.resent` draft, never `adopt`, so the form is not remounted; `rate_limited` →
   the rate-limit draft; `transient` and `rejected` → the resend-failed draft; `session_ended`
-  and a `null` → nothing. One function and at most three closures.
+  and a `null` → nothing. One function and at most three closures (superseded 2026-10-21: three
+  functions and one closure, measured).
 - `useProfileFormRules(user, changes)` returns the `ProfileFormRules`: the four conditional
   rules, each reading the other values from react-hook-form's `validate(value, values)`
   arguments, and the policy `evaluate`, a stable `PasswordRuleEvaluator` that returns
   `passwordValidator.evaluate(value)` unchanged (#315's `PasswordRuleResultSet` is assignable to
   `PasswordRuleViewSet`, and `UIPasswordPolicyRules` translates the labels itself, §5.9), so
   `ProfileForm` and `ChangePassword` hold no rule closures (§7.2).
-- `useToastQueue()` returns the `ToastQueue` of §5.8 over its file-level reducer: one hook
-  function, the reducer, and at most three closures (`show`, `dismiss`, the memoised result).
-  Amended 2026-10-21: the file holds four functions (the hook, `reduceToasts`, `showToasts` and
-  `spokenText`, which builds the polite and the assertive text) and six closures (four array
-  callbacks, `show` and `dismiss`; no memoised result). That is the policy's per-file closure
-  cap, so `make lint-metrics` passes and any further closure needs the file split first.
+- `useToastQueue()` returns the `ToastQueue` of §5.8 over its file-level reducer: one hook function,
+  the reducer, and at most three closures (`show`, `dismiss`, the memoised result). Superseded
+  2026-10-21 by the measured count: the file holds four functions (the hook, `reduceToasts`,
+  `showToasts` and `spokenText`, which builds the polite and the assertive text) and six closures
+  (four array callbacks, `show` and `dismiss`; no memoised result). That is the policy's per-file
+  closure cap, so `make lint-metrics` passes and any further closure needs the file split first.
 
 The retry action clicks Save rather than calling `form.requestSubmit()`, so a retry runs the
 form's own validation and Save with the current values and focus lands on "Зберегти зміни"
@@ -2632,21 +2645,28 @@ lazy `password_reset.*` keys. `document.title` is
 | `settings/transformers/graphql-profile-transformer` | 8         | ≤ 2      |
 | `settings/repositories/graphql-profile-repository`  | 4         | 0        |
 | `settings/utils/profile-change-detector`            | 4         | 0        |
-| `settings/hooks/use-profile-load`                   | 3         | ≤ 5      |
-| `settings/hooks/use-profile-save`                   | ≤ 2       | ≤ 5      |
-| `settings/hooks/use-email-resend`                   | 1         | ≤ 3      |
-| `settings/hooks/use-profile-form-rules`             | 1         | 6 (cap)  |
-| `settings/components/profile-form/index.tsx`        | 1         | ≤ 3      |
-| `settings/components/change-password/index.tsx`     | 1         | ≤ 2      |
+| `settings/hooks/use-profile-load`                   | 6         | 5        |
+| `settings/hooks/use-profile-save`                   | 8         | 4        |
+| `settings/hooks/use-email-resend`                   | 3         | 1        |
+| `settings/hooks/use-profile-form-rules`             | 5         | 5        |
+| `settings/components/profile-form/index.tsx`        | 5         | 4        |
+| `settings/components/change-password/index.tsx`     | 3         | 0        |
 | `@auth/repositories/session-link-factory`           | 2         | 2        |
 | `user/transformers/user-service-error-transformer`  | ≤ 10      | ≤ 2      |
 | `settings/routes/user-profile/settings-catalog-…`   | 1         | 0        |
 | `src/components/ui-password-policy-rules/…-loader`  | 1         | 0        |
-| `src/hooks/use-toast-queue`                         | 2         | ≤ 3      |
+| `src/hooks/use-toast-queue`                         | 4         | 6 (cap)  |
 | `src/routes/route-flag-gate.tsx`                    | 1         | ≤ 2      |
 | `src/routes/route-composer.tsx` (MOD)               | 7         | 5        |
 | `src/routes/route-mapper.tsx` (MOD)                 | 5         | 2        |
 | `user/config/di.ts` (MOD)                           | 9         | 3, +0    |
+
+Amendment 2026-10-21: the six rows from `use-profile-load` to `change-password` and the
+`use-toast-queue` row hold the counts measured with rust-code-analysis 0.0.25 at #354 head
+10c00282; every file stays within the per-file caps. The superseded planned values were
+`use-profile-load` 3 / ≤ 5, `use-profile-save` ≤ 2 / ≤ 5, `use-email-resend` 1 / ≤ 3,
+`use-profile-form-rules` 1 / 6 (cap), `profile-form/index.tsx` 1 / ≤ 3,
+`change-password/index.tsx` 1 / ≤ 2 and `use-toast-queue` 2 / ≤ 3 (functions / closures).
 
 Every class constructor takes at most three arguments (`nargs_function_max` 3;
 `ProfileProvider` takes three), and every hook at most three (`useEmailResend` takes three,
@@ -2663,7 +2683,8 @@ loader beside the hook, and the reducer has at most three exits (`retry` and `ad
 early; `loaded`, `failed` and `confirm` share one merging return), cyclomatic at most 10, LLOC
 at most 10 (`nexits_max` 3, `config/metrics-policy.json:8`); `use-toast-queue` keeps its
 reducer at file level; and `use-profile-form-rules` reaches the cap with four rules, `evaluate`
-and its `map`. The module-private tables (the toast keys in the hooks, the failure table and
+and its `map` (superseded 2026-10-21: it measures five closures; `use-toast-queue` is the file at
+the cap, with six). The module-private tables (the toast keys in the hooks, the failure table and
 `FIELD_BY_PATH` in `GraphQLProfileTransformer`) are data maps with no function values (#180),
 loaded inside the test body for mutation (NFR-1).
 
