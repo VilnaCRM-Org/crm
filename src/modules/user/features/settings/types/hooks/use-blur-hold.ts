@@ -1,4 +1,4 @@
 export interface BlurHold {
   readonly held: boolean;
-  readonly onBlur: () => void;
+  readonly onBlur: (() => void) | undefined;
 }
