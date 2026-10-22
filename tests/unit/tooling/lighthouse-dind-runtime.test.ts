@@ -76,10 +76,12 @@ describe('Lighthouse DIND runtime contract', () => {
           '/forbidden',
           '/server-error',
           '/definitely-not-a-route',
+          '/password-recovery',
+          '/password-reset?token=LighthouseAuditResetToken0000001',
         ].map(route => 'http://localhost:3001' + route);
         if (desktop.ci.collect.url.join(',') !== expected.join(',')) process.exit(11);
         if (mobile.ci.collect.url.join(',') !== desktop.ci.collect.url.join(',')) process.exit(12);
-        if (constants.pages.length !== 6) process.exit(13);
+        if (constants.pages.length !== 8) process.exit(13);
       `;
       execFileSync(process.execPath, ['-e', script], {
         env: {

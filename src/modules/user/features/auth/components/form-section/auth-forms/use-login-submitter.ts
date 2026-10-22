@@ -1,29 +1,26 @@
 import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
+import type { AuthError, AuthErrorKind } from '@auth/types/auth-error';
 import type { LoginActions, LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
-import type { LoginUserDto } from '@auth/types/credentials';
 
-import LoginErrorMessageNormalizer, { UNKNOWN_KEY } from './login-error-message';
+const UNEXPECTED_ERROR_KEY = 'failure_responses.client_errors.unexpected_error';
+const RATE_LIMITED_KEY = 'sign_in.errors.rate_limited';
+const RATE_LIMITED_STATUS = 429;
 
-const I18N_KEY_SEGMENT_RE = /^[a-z0-9_]+$/i;
-const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
+const MESSAGE_KEY_BY_KIND = new Map<AuthErrorKind, string>([
+  ['authentication', 'sign_in.errors.invalid_credentials'],
+  ['network', 'failure_responses.network_errors.network_error'],
+  ['server', 'failure_responses.server_errors.server_error'],
+  ['validation', 'failure_responses.client_errors.something_went_wrong'],
+]);
 
-function isI18nKey(value: string): boolean {
-  const segments = value.split('.');
-  return segments.length > 1 && segments.every((segment) => I18N_KEY_SEGMENT_RE.test(segment));
-}
-
-function resolveLoginReason(normalized: string, t: TFunction): string {
-  if (!isI18nKey(normalized)) return t(UNKNOWN_KEY);
-  return t(normalized, { defaultValue: '' }) || t(UNKNOWN_KEY);
-}
-
-function formatLoginError(raw: string | null, t: TFunction): string {
-  if (!raw) return '';
-  const normalized = loginErrorMessageNormalizer.normalize(raw);
-  return t('sign_in.errors.login', { reason: resolveLoginReason(normalized, t) });
+function loginErrorMessage(error: AuthError | null, t: TFunction): string {
+  if (error === null) return '';
+  if (error.status === RATE_LIMITED_STATUS) return t(RATE_LIMITED_KEY);
+  return t(MESSAGE_KEY_BY_KIND.get(error.kind) ?? UNEXPECTED_ERROR_KEY);
 }
 
 function clearLoginError(controllers: Set<AbortController>): void {
@@ -48,11 +45,12 @@ function useLoginControllers(): MutableRefObject<Set<AbortController>> {
   return loginControllersRef;
 }
 
-function useAbortableLogin(actions: LoginActions): LoginSubmitter['handleLogin'] {
-  const loginControllersRef = useLoginControllers();
-
+function useAbortableLogin(
+  actions: LoginActions,
+  loginControllersRef: MutableRefObject<Set<AbortController>>
+): LoginSubmitter['handleLogin'] {
   return useCallback(
-    async (data: LoginUserDto): Promise<void> => {
+    async (data: SignInDto): Promise<void> => {
       const controller = new AbortController();
       loginControllersRef.current.add(controller);
 
@@ -69,13 +67,26 @@ function useAbortableLogin(actions: LoginActions): LoginSubmitter['handleLogin']
 
 export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
   const state = useAuthState();
-  const isSubmitting = AuthStoreSelectors.loginLoading(state);
-  const rawError = AuthStoreSelectors.loginError(state);
-  const handleLogin = useAbortableLogin(authActions);
+  const loginControllersRef = useLoginControllers();
+  const login = useAbortableLogin(authActions, loginControllersRef);
+  const lastSubmitted = useRef<SignInDto | null>(null);
+
+  const handleLogin = useCallback(
+    (data: SignInDto): Promise<void> => {
+      lastSubmitted.current = data;
+      return login(data);
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, login is a stable useCallback
+    [login]
+  );
 
   return {
-    error: formatLoginError(rawError?.displayMessage ?? null, t),
-    isSubmitting,
+    error: loginErrorMessage(AuthStoreSelectors.loginError(state), t),
+    isSubmitting: AuthStoreSelectors.loginLoading(state),
     handleLogin,
+    handleRetry: (): void => {
+      if (lastSubmitted.current !== null) void login(lastSubmitted.current);
+    },
+    handleBack: (): void => clearLoginError(loginControllersRef.current),
   };
 }

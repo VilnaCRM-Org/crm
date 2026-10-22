@@ -71,4 +71,20 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
       'Error-page status digits: #1EAEFF / #FFC01E on #FBFBFB are 2.37:1 / 1.58:1; design-owned.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
+  {
+    ruleId: 'color-contrast',
+    selector:
+      '#auth-form-card > a.MuiButton-contained[href="/sign-in"], ' +
+      '#auth-form-card > a.MuiButton-contained[href="/password-recovery"]',
+    reason:
+      'Recovery in-card link buttons: white on the Figma primary #1EAEFF is 2.45:1; design-owned.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
+    selector: '#settings-greeting',
+    reason:
+      'Settings greeting: Figma grey #969B9D on white is 2.81:1; product-owner call, issue #330.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
 ];

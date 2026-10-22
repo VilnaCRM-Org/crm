@@ -112,6 +112,16 @@ jest.mock('@auth/routes/sign-in', () => ({
   default: (): ReactElement => <div>sign in page</div>,
 }));
 
+jest.mock('@auth/routes/reset-password', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div>password recovery page</div>,
+}));
+
+jest.mock('@auth/routes/create-new-password', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div>password reset page</div>,
+}));
+
 describe('routes', () => {
   const RouterProvider =
     jest.requireActual<typeof import('react-router')>('react-router').RouterProvider;
@@ -143,6 +153,16 @@ describe('routes', () => {
   it('renders SignIn at /sign-in (AC1)', async () => {
     renderAt('/sign-in');
     expect(await screen.findByText('sign in page')).toBeInTheDocument();
+  });
+
+  it('renders the password recovery page at /password-recovery (#315)', async () => {
+    renderAt('/password-recovery');
+    expect(await screen.findByText('password recovery page')).toBeInTheDocument();
+  });
+
+  it('renders the create-new-password page at /password-reset (#315)', async () => {
+    renderAt('/password-reset');
+    expect(await screen.findByText('password reset page')).toBeInTheDocument();
   });
 
   it('renders NotFound on unknown path (AC2)', async () => {

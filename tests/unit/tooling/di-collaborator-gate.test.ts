@@ -101,6 +101,23 @@ describe('DI collaborator gate — one policy, two layers (issue #130)', () => {
     expect(rule.to.dependencyTypesNot).toContain('type-only');
   });
 
+  it.each(['data-providers', 'transformers'])(
+    'gates the feature %s folder on both layers',
+    (folder) => {
+      const file = `src/modules/user/features/auth/${folder}/hypothetical-thing.ts`;
+
+      expect(policy.LOGIC_SOURCE_GLOBS).toContain(`src/modules/*/features/*/${folder}/**/*.ts`);
+      expect(inScope(file)).toBe(true);
+    }
+  );
+
+  it('gates the module-shared transformers folder on both layers', () => {
+    const file = 'src/modules/user/transformers/hypothetical-thing.ts';
+
+    expect(policy.LOGIC_SOURCE_GLOBS).toContain('src/modules/*/transformers/**/*.ts');
+    expect(inScope(file)).toBe(true);
+  });
+
   it('wires the ESLint gate straight from the same shared policy', () => {
     const config = readFile('eslint.config.mjs');
 
@@ -236,7 +253,9 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     './mutation',
     './create-user-mutation-runner',
     '@/services/evil-mutation',
+    '@/services/evil-query',
     '@auth/utils/sneaky-mutation',
+    '@auth/utils/sneaky-query',
     '@/services/evil/http-error',
     '@/services/https-client/response-messages-builder',
     '@/utils/error-codes',
@@ -279,6 +298,9 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     '@/services/error/error-codes',
     '@auth/utils/response-schemas',
     './create-user-mutation',
+    './current-user-query',
+    '@/modules/user/features/settings/repositories/update-user-mutation',
+    '@/modules/user/features/settings/repositories/current-user-query',
     './base-api',
     '@/modules/user',
     '@/modules/user/features/auth',

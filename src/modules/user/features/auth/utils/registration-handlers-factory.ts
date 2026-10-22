@@ -1,4 +1,4 @@
-import type { RegisterUserDto } from '@auth/types/credentials';
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type {
   RegistrationStoreActions,
   RegistrationHandlerDeps,
@@ -23,14 +23,14 @@ export default class RegistrationHandlersFactory {
     };
   }
 
-  private normalize(data: RegisterUserDto): RegisterUserDto {
+  private normalize(data: SignUpDto): SignUpDto {
     return {
       ...data,
       fullName: data.fullName.trim(),
     };
   }
 
-  private async handleRegister(data: RegisterUserDto): Promise<void> {
+  private async handleRegister(data: SignUpDto): Promise<void> {
     const normalized = this.normalize(data);
     this.deps.lastSubmittedDataRef.current = normalized;
     await this.actions.registerUser(normalized);

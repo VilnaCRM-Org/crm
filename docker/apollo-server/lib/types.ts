@@ -13,6 +13,59 @@ export interface User {
   initials: string;
 }
 
+export interface RequestPasswordResetInput {
+  email: string;
+  clientMutationId?: string | null;
+}
+
+export interface ConfirmPasswordResetInput {
+  token: string;
+  newPassword: string;
+  clientMutationId?: string | null;
+}
+
+export interface UpdateUserInput {
+  id: string;
+  initials?: string | null;
+  email?: string | null;
+  newPassword?: string | null;
+  password: string;
+  clientMutationId?: string | null;
+}
+
+export interface ResendEmailToUserInput {
+  id: string;
+  clientMutationId?: string | null;
+}
+
+export interface UserPayload {
+  user: User;
+  clientMutationId: string | null;
+}
+
+export interface UserEdge {
+  node: User;
+  cursor: string;
+}
+
+export interface UserPageInfo {
+  startCursor: string;
+  endCursor: string;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface UserConnection {
+  edges: UserEdge[];
+  pageInfo: UserPageInfo;
+  totalCount: number;
+}
+
+export interface PasswordResetPayload {
+  user: null;
+  clientMutationId: string | null;
+}
+
 interface CreateUserPayload {
   user: User;
   clientMutationId: string;
@@ -46,4 +99,9 @@ export interface MutationResolvers {
 
 export interface CustomFormattedError extends GraphQLFormattedError {
   details?: string;
+}
+
+export interface SchemaSource {
+  schemaFilePath: string;
+  pendingSchemaDir: string;
 }

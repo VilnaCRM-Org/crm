@@ -12,7 +12,6 @@ signUp	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-for
 signUp	visual	tests/visual/visual-comparison.sign-up.spec.ts	Full-viewport-matrix screenshots of /sign-up.
 signIn	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-form.spec.ts	Drives the login form on /sign-in end to end.
 signIn	visual	tests/visual/visual-comparison.sign-in.spec.ts	Full-viewport-matrix screenshots of /sign-in.
-passwordRecovery	allowlisted	-	Declared ahead of the flow it names (issue #315): no route contract renders /password-recovery yet; the sign-in forgot-password link always renders and lands on the not-found page, which the notFound rows cover, until #315 registers the route and expires this row.
 notFound	e2e	tests/e2e/modules/not-found.spec.ts	Renders the 404 page on unknown and deep paths, its focused heading and title, and follows its home link.
 notFound	visual	tests/visual/visual-comparison.not-found.spec.ts	Desktop, tablet and mobile screenshots of the 404 page on the catch-all route.
 home	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the authenticated home route with axe against the WCAG 2.1 AA tag set.
@@ -40,3 +39,25 @@ serverError	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Tabs once to th
 notFound	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders the catch-all page by client-side navigation with no failed request.
 forbidden	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /forbidden by client-side navigation with no failed request.
 serverError	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /server-error by client-side navigation with no failed request.
+passwordRecovery	e2e	tests/e2e/modules/user/features/auth/password-recovery.spec.ts	Drives the request step on /password-recovery: one request per submit, the masked sent step, field errors, the 5 s banner, Назад and До входу without a document load.
+passwordRecovery	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-recovery and asserts the in-form offline notice and disabled submit.
+passwordReset	e2e	tests/e2e/modules/user/features/auth/password-reset.spec.ts	Drives /password-reset: the token strip, one confirm request, the sign-in notice, the invalid-link state, field and banner errors, and Назад without a document load.
+passwordReset	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /password-reset with a token and asserts the in-form offline notice and disabled submit.
+passwordRecovery	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-recovery with axe against the WCAG 2.1 AA tag set.
+passwordRecovery	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the request form, the auto-hiding banner and the sent step with the keyboard only.
+passwordReset	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /password-reset with a token, once the new-password form is visible, with axe.
+passwordReset	e2e	tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts	Drives the new-password form and the invalid-link state with the keyboard only.
+passwordRecovery	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the request step with taps only on Pixel 7 and iPhone 14 and measures its touch targets and overflow.
+passwordReset	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the reset step with taps only on Pixel 7 and iPhone 14, toggles visibility and checks the keyboard-height viewport.
+passwordRecovery	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the request form, the sent step at three sizes, and the card width against /sign-in.
+passwordReset	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the new-password form, the invalid-link state and the /sign-in notice at three sizes.
+settings	e2e	tests/e2e/modules/user/features/settings/settings.spec.ts	Opens /settings with the userSettings flag forced on and off, with and without a token: the sign-in redirect, the not-found page with no chunk request, and the page shell.
+settings	e2e	tests/e2e/modules/user/features/settings/settings-save.spec.ts	Opens /settings through the home link and saves a name, an e-mail (with the resend) and all three aspects, sends nothing for a password-only edit, and checks the exact UpdateUser input keys.
+settings	e2e	tests/e2e/modules/user/features/settings/settings-failures.spec.ts	Drives the wrong-password, taken-e-mail, 429 and 503 retry outcomes and the offline-disabled Save on /settings.
+settings	e2e	tests/e2e/modules/user/features/settings/settings-session.spec.ts	Ends the session with a transport 401 on UpdateUser, lands on /sign-in with the notice and focus, and returns to /settings after login.
+settings	e2e	tests/e2e/mobile/settings-touch.spec.ts	Completes name, e-mail, password and resend changes with taps only on the mobile projects, with touch-target, overflow (390, 412, 320 px), keyboard-height and toast-clearance checks.
+settings	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the loaded /settings page with axe against the WCAG 2.1 AA tag set.
+settings	e2e	tests/e2e/a11y/settings-states.a11y.spec.ts	Scans the unconfirmed row, field errors, success and error toasts and the load failure on /settings with axe.
+settings	e2e	tests/e2e/a11y/settings-keyboard.a11y.spec.ts	Drives /settings with the keyboard only: tab order, eye toggle Space, Enter submit and the focus rules after save, errors, Clear, toast close and session end.
+settings	visual	tests/visual/visual-comparison.settings.spec.ts	Full-matrix screenshots of the resting /settings page and desktop, tablet and mobile screenshots of the unconfirmed row, field errors, success toasts, transient toast, skeleton and load failure.
+settings	visual	tests/visual/mobile/settings.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the resting /settings page.

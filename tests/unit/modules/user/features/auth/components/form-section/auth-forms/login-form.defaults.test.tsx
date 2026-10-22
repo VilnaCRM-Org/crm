@@ -13,8 +13,8 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({ t: (key: string): string => key }),
 }));
 
-jest.mock('@auth/assets/eye.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/eye-off.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye-off.svg', () => ({ ReactComponent: 'svg' }));
 
 jest.mock('@auth/stores', () => ({
   __esModule: true,
@@ -36,7 +36,7 @@ describe('LoginForm default values', () => {
     const { default: LoginForm } =
       await import('@auth/components/form-section/auth-forms/login-form');
 
-    render(<LoginForm />);
+    render(<LoginForm postLogin={{ signedIn: false, proceed: jest.fn() }} />);
 
     expect(screen.getByPlaceholderText('sign_in.form.email_input.placeholder')).toHaveValue('');
     expect(screen.getByPlaceholderText('sign_in.form.password_input.placeholder')).toHaveValue('');

@@ -17,17 +17,18 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                    | Responsibility                                                |
-| ----------------------- | ------------------------------------------------------------- |
-| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
-| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape   |
-| `app-routes.ts`         | The app shell's own contract (home, 404, 403, 5xx)            |
-| `registry.ts`           | Collects every module contract into one list                  |
-| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index   |
-| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement` |
-| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError` |
-| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate |
-| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`      |
+| File                    | Responsibility                                                 |
+| ----------------------- | -------------------------------------------------------------- |
+| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `flag`)    |
+| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape    |
+| `app-routes.ts`         | The app shell's own contract (home, 404, 403, 5xx)             |
+| `registry.ts`           | Collects every module contract into one list                   |
+| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index    |
+| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`  |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError`  |
+| `route-flag-gate.tsx`   | Renders the not-found page while a matched route's flag is off |
+| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate  |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`       |
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -41,6 +42,27 @@ chunk fails to load, and a **public** route's loader is further wrapped in a
 protected route never auto-reloads — the auth token is memory-only — so its second
 failure reaches the route `errorElement` and its **Reload the page** button.
 
+## Registered routes
+
+| Key                | Path                 | Contract                   | Guard     |
+| ------------------ | -------------------- | -------------------------- | --------- |
+| `home`             | `/` (index)          | `app-routes.ts`            | protected |
+| `signUp`           | `/sign-up`           | `@auth/routes` (user.auth) | public    |
+| `signIn`           | `/sign-in`           | `@auth/routes` (user.auth) | public    |
+| `passwordRecovery` | `/password-recovery` | `@auth/routes` (user.auth) | public    |
+| `passwordReset`    | `/password-reset`    | `@auth/routes` (user.auth) | public    |
+| `settings`         | `/settings`          | settings routes            | protected |
+| `forbidden`        | `/forbidden`         | `app-routes.ts`            | public    |
+| `serverError`      | `/server-error`      | `app-routes.ts`            | public    |
+| `notFound`         | `*`                  | `app-routes.ts`            | public    |
+
+`/settings` (issue #330) is the only flagged route: `flag: 'userSettings'`, so it renders the
+not-found page while the flag is off (see "Flagged routes"). Its contract is
+`src/modules/user/features/settings/routes/index.ts` and its page the lazy `settings` chunk.
+
+`/password-recovery` and `/password-reset` (issue #315) render the `ResetPassword` and
+`CreateNewPassword` pages; signed-in users are not redirected away from either.
+
 ## The contract
 
 ```ts
@@ -48,6 +70,7 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 interface RouteCommon {
   readonly load: () => Promise<{ default: ComponentType }>; // per-route code split
   readonly guard?: 'protected' | 'public'; // top-level only; resolved by the composer
+  readonly flag?: FeatureFlag; // top-level only; checked when the route renders
   readonly meta?: { titleKey?: string; permission?: string };
 }
 interface IndexRoute extends RouteCommon {
@@ -83,6 +106,36 @@ from `src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={useOutletContext()} />` — a bare `<Outlet />` resets the
 context to `undefined` in react-router 7. The home page at `/`
 (`@/features/home`) reads `signOut` from that context.
+
+## Flagged routes (issue #330)
+
+A top-level route may declare `flag: <FeatureFlag>`, the runtime flag that switches it on (see
+`docs/feature-flags.md`). The route is **always registered**: no flag is read while the router is
+built. `src/routes/routes.tsx` builds the router at module evaluation, before `index.tsx`
+validates the runtime configuration block, and a flag read parses that block and throws on
+malformed JSON, which would skip the bootstrap error fallback. The flag is therefore resolved when
+a matched route renders:
+
+- `RouteMapper` copies `flag` into the route's `handle` (`RouteHandle`).
+- When at least one route declares a flag, `RouteComposer` wraps the root's children in exactly one
+  pathless `RouteFlagGate` route with its own `errorElement`, above the `ProtectedRoute` branch and
+  the public pages. A registry with no flagged route gets no gate level and the tree is unchanged.
+- `RouteFlagGate` reads `useMatches()` and `featureFlagService.isEnabled` during render. While a
+  matched route's flag is off it renders the composer's own not-found element (the `error-page`
+  chunk, loaded exactly as for an unknown path), so the flagged page element never renders and its
+  chunk is never requested. Otherwise it renders its `Outlet`. The element is the one the composer
+  already mapped for the public `*` route, not a second mapping, so a flag-off page and a real
+  404 share one loader graph and one lazy component.
+- Because the gate sits above `ProtectedRoute`, a flag-off protected page shows the not-found page
+  to a visitor without a token too, with no redirect to `/sign-in`.
+- `RouteValidator` rejects a flagged registry with no public route at `ROUTE_PATHS.notFound`
+  ("A flagged route needs a registered public not-found route") and a nested route that declares
+  `flag`, like a
+  nested `guard`: `flag` is top-level only because the `RouteFlagGate` decides once per matched
+  route, at render time.
+
+The gate's prop is named `notFound`, not `fallback`, so the Suspense-fallback ESLint gate never has
+to judge it. It imports neither tsyringe, `@/providers/di`, Apollo, zod nor `@mui/*`.
 
 ## Errors and fallbacks (issue #116)
 

@@ -35,16 +35,19 @@ const LOGIC_SOURCE_GLOBS = [
   'src/services/**/*.ts',
   'src/utils/**/*.ts',
   'src/modules/*/store/**/*.ts',
+  'src/modules/*/transformers/**/*.ts',
+  'src/modules/*/features/*/data-providers/**/*.ts',
   'src/modules/*/features/*/repositories/**/*.ts',
   'src/modules/*/features/*/stores/**/*.ts',
+  'src/modules/*/features/*/transformers/**/*.ts',
   'src/modules/*/features/*/utils/**/*.ts',
 ];
 
 const LOGIC_SOURCE_PATHS = [
   '^src/services/',
   '^src/utils/',
-  '^src/modules/[^/]+/store/',
-  '^src/modules/[^/]+/features/[^/]+/(?:repositories|stores|utils)/',
+  '^src/modules/[^/]+/(?:store|transformers)/',
+  '^src/modules/[^/]+/features/[^/]+/(?:data-providers|repositories|stores|transformers|utils)/',
 ];
 
 /**
@@ -174,6 +177,10 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'The zod response-contract module itself; declares schemas consumed as data.',
   },
   {
+    path: 'src/modules/user/features/settings/utils/response-schemas.ts',
+    reason: 'The settings zod response-contract module; declares schemas consumed as data.',
+  },
+  {
     path: 'src/modules/user/features/auth/utils/map-registration-error.ts',
     reason: 'Container-free registration-error mapper singleton on the render path.',
   },
@@ -285,8 +292,8 @@ const ALLOWED_TARGETS = [
   {
     id: 'graphql-documents',
     reason: 'A generated GraphQL document seam is a static query artifact, not behavior.',
-    path: '^src/modules/[^/]+/features/[^/]+/repositories/[a-z0-9-]+-mutation[.]ts$',
-    specifier: `(?:${RELATIVE}|${REPOSITORIES})[a-z0-9-]+-mutation$`,
+    path: '^src/modules/[^/]+/features/[^/]+/repositories/[a-z0-9-]+-(?:mutation|query)[.]ts$',
+    specifier: `(?:${RELATIVE}|${REPOSITORIES})[a-z0-9-]+-(?:mutation|query)$`,
     sample: 'src/modules/user/features/auth/repositories/create-user-mutation.ts',
     sampleSpecifier: './create-user-mutation',
   },
@@ -347,6 +354,12 @@ const RESTRICTED_LIBRARY_ADAPTERS = [
   {
     path: 'src/services/observability/apollo-link-factory.ts',
     reason: 'The injectable adapter that builds the Apollo link chain — it must touch Apollo.',
+  },
+  {
+    path: 'src/modules/user/features/auth/repositories/session-link-factory.ts',
+    reason:
+      'The injectable adapter that builds the session link — it attaches the token and ends ' +
+      'a dead session, so it must touch Apollo.',
   },
 ];
 

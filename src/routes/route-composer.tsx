@@ -7,6 +7,7 @@ import type { FallbackLandmark } from '@/components/types/error-boundary';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
 import ProtectedRoute from '@auth/components/protected-route';
 
+import RouteFlagGate from './route-flag-gate';
 import routeMapper from './route-mapper';
 import ROUTE_PATHS from './route-paths';
 import routeValidator from './route-validator';
@@ -55,9 +56,33 @@ class RouteComposer {
   }
 
   private children(routes: readonly AppRouteObject[]): RouteObject[] {
-    const secured = routes.filter((route) => route.guard === 'protected');
-    const open = routes.filter((route) => route.guard !== 'protected');
-    return [...this.protectedBranch(secured), ...this.pages(open, 'main')];
+    const secured: AppRouteObject[] = [];
+    const open: AppRouteObject[] = [];
+    for (const route of routes) {
+      (route.guard === 'protected' ? secured : open).push(route);
+    }
+    const pages = this.pages(open, 'main');
+    return this.gated(routes, pages, [...this.protectedBranch(secured), ...pages]);
+  }
+
+  private gated(
+    routes: readonly AppRouteObject[],
+    pages: readonly RouteObject[],
+    branches: RouteObject[]
+  ): RouteObject[] {
+    const notFound = routes.some((route) => route.flag !== undefined)
+      ? pages.find((page) => page.path === ROUTE_PATHS.notFound)
+      : undefined;
+    if (notFound === undefined) {
+      return branches;
+    }
+    return [
+      {
+        element: <RouteFlagGate notFound={notFound.element} />,
+        errorElement: <RouteError landmark="main" />,
+        children: branches,
+      },
+    ];
   }
 
   private protectedBranch(routes: readonly AppRouteObject[]): RouteObject[] {

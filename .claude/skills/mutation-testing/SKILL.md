@@ -52,7 +52,15 @@ to buy wall-clock — that trades the gate's honesty for speed:
 - `jest.enableFindRelatedTests: true`. With it off, every mutant run reloads the entire test suite
   and only then filters by `testNamePattern`; runs blow past the timeout window and land as
   `Timeout` — counted as detected, but earned by hanging. Turning it on is also the single biggest
-  runtime lever (the full sharded run went from ~110 min to a few minutes per shard).
+  runtime lever (the full sharded run went from ~110 min to a few minutes per shard). Selection is
+  not transitive: the config roots only `tests/unit` and `tests/integration`, and the runner adds
+  the mutated file's own folder, so a test is selected only when it imports the file directly,
+  through a module in that folder, or through a helper under those test trees. A test that reaches
+  it through a parent component is covered by the dry run but never runs against the mutant, which
+  then survives with `testsCompleted` below `coveredBy`. Keep a unit's behavioural assertions in
+  its own direct test file. Adding `./src` to `roots` makes selection transitive but was measured
+  at 7.6× more test-file loads per mutant (9× for the median file); re-measure shard wall-clock
+  and raise the shard count before taking it.
 
 Two more settings keep the checker affordable, and they must be measured together rather than
 credited individually: `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches

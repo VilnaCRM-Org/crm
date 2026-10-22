@@ -161,15 +161,18 @@ unscoped mobile projects would re-record the entire 13-screen desktop visual sui
 more project names.
 
 - **Touch E2E** — [`tests/e2e/mobile/`](tests/e2e/mobile/): sign-in and sign-up completed with
-  `tap()` only, switcher navigation, empty-form validation (no request fired), the
+  `tap()` only, the password recovery request and reset steps (`/password-recovery`,
+  `/password-reset`) completed the same way with their own touch-target, overflow and
+  keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
   overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
-- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up` and
-  the three error pages (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so
-  the baselines are true 2.625× / 3× rasters and catch the asset and raster regressions that
-  CSS-scaled desktop snapshots average away. Baselines live in
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
+  two password recovery pages (`/password-recovery`, `/password-reset`) and the three error pages
+  (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so the baselines are true
+  2.625× / 3× rasters and catch the asset and raster regressions that CSS-scaled desktop snapshots
+  average away. Baselines live in
   `tests/visual/mobile/auth.spec.ts-snapshots/` and
   `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
 
@@ -250,6 +253,7 @@ make test-memory-leak      # Memlab memory leak tests
 make test-load             # K6 load testing (homepage)
 make test-load-signup      # K6 load testing (signup API)
 make test-load-error-pages # K6 load testing (403, 5xx and 404 error pages)
+make test-load-password-recovery # K6 load testing (password recovery pages)
 make lighthouse-desktop    # Lighthouse audit (desktop)
 make lighthouse-mobile     # Lighthouse audit (mobile)
 make test-mutation         # Stryker mutation testing
@@ -261,6 +265,13 @@ three on desktop and mobile under the unchanged budgets, `make test-load-error-p
 `error pages load testing` job) requests all three under the homepage's k6 budgets, and the
 `tests/memory-leak/tests/error-pages.js` memlab scenario walks them from `/sign-in` and back.
 
+The password recovery pages (`/password-recovery` and `/password-reset`, issue #315) ride the same
+lanes: Lighthouse audits both, the reset page with a fixed dummy `?token=` so it renders the form
+rather than the invalid-link view; `make test-load-password-recovery` (the
+`password recovery load testing` job) requests both under the homepage's k6 budgets; and the
+`tests/memory-leak/tests/password-recovery.js` memlab scenario types into the request form,
+fills the reset form until its client validation fires, and returns to `/sign-in`.
+
 Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 - smoke, average, stress, spike
@@ -268,7 +279,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-24-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+30-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -290,15 +301,22 @@ integration tests via `jest.mutation.config.ts` — a flat union of both suites,
 jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
-instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 24-way shard count rather than
+instrumentation), the `tests/unit/config/eslint-policy` test (it resolves `eslint.config.mjs`
+through a child `node` process and reaches no `src` module, so it kills nothing and only adds
+process churn) and the settings `ready-story-provider` test, which imports a `*.stories.tsx` file
+that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
+shard that selects it and pins only story wiring outside the mutate scope. The config also uses
+ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
+These keep the run affordable — parallelism comes from the 30-way shard count rather than
 Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
 weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
 invalidates, and those cluster by area. A diff touching one area can therefore land most of its
-re-run cost in a single shard; 24 shards keep that hot shard inside the `timeout-minutes` kill
+re-run cost in a single shard; 30 shards keep that hot shard inside the `timeout-minutes` kill
 switch. Raise the count if a shard starts approaching it — never the kill switch. The count went
 from 16 to 24 when Stryker 10's `CallExpression` mutator added 164 mutants and a cold run pushed
-shards 5 and 14 into the 15-minute kill switch.
+shards 5 and 14 into the 15-minute kill switch, and from 24 to 30 when the password-recovery
+files repacked the split so a cold shard 6 drew 443 mutants (the next heaviest drew 291) and hit
+the kill switch at 250 tested; the same packing at 30 caps the heaviest shard at 240.
 
 ### Honest mutant classification (issue #171)
 
@@ -321,7 +339,22 @@ claims. Three settings in `stryker.config.mjs` keep that true, and
   `Timeout` — counted as detected, but earned by hanging rather than by an assertion. Turning it on
   restricts each run to the test files that actually reach the mutated file; mutants now come back
   `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
-  under the CI budget.
+  under the CI budget. That selection is **not transitive**: `jest.mutation.config.ts` roots only
+  the two test trees and the runner adds just the mutated file's own folder (with its subfolders),
+  so Jest records no dependency edge through any other `src/` module, and a test is selected only
+  when it imports the file directly, through a module under that folder, or through a helper under
+  `tests/unit` or `tests/integration`. A file high in the tree widens its own selection with it:
+  `src/app.tsx` roots all of `src/`, and `src/modules/user/index.ts` the whole user module. A test
+  that reaches the file through a parent component is listed in `coveredBy` by the dry run but
+  never runs against the mutant, so its assertion kills nothing and the mutant comes back
+  `Survived` with `testsCompleted` below its `coveredBy` count — the shape of the 48 survivors
+  issue #330 killed by moving each assertion into the unit's own test file.
+  A unit's behavioural assertions therefore live in its own direct test. Adding `./src` to
+  `roots` would make selection transitive, and was measured against this tree with Jest's own
+  haste map and resolver: the mutant-weighted number of test files a mutant run loads rises from
+  25,584 to 194,773 (7.6×, 9× for the median file), which would push shards past the 15-minute
+  kill switch and bring back the `Timeout` inflation above. Take it only with the shard
+  wall-clock re-measured and the shard count raised first.
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
 independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
@@ -357,27 +390,49 @@ Two remedies, in order:
    two programs cannot be told apart, not that a test was hard to write. **Placement is
    load-bearing:** Stryker reads the directive from a node's `leadingComments` and keys
    `next-line` off _that node's_ line, so the comment has to lead a node starting on the mutant's
-   own line. Any node will do: `password-field.tsx` leads the whole `const toggle = …` statement
+   own line. Any node will do: `ui-password-field/index.tsx` leads the whole `const toggle = …` statement
    and its inline deps array is annotated fine. What fails is a comment with no node to lead —
    dangling at the end of a block, the natural-looking spot above `}, []);`, it attaches to nothing
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at ten sites, and it comes in
-two shapes. Nine are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
-compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The tenth,
-`use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
-`ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
-`actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
-box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
-Hoisting either literal to a named constant would remove the mutant, but
+Fifteen directives are annotated today, at two mutators. Fourteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+`[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
+constant one-element array is equal on every render and the effect or memo fires exactly as it
+does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+and each is equivalent for a reason worth stating separately:
+
+- `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
+  `authActions` module singleton and `loginControllersRef` is a `useRef` box, so neither identity
+  ever changes and an emptied list memoizes exactly the same callback.
+- `use-login-submitter.ts` also annotates `[login]` on `handleLogin`: `login` is that same
+  memoized callback, so its identity never changes either.
+- `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
+  the `run` callback handed to `useAbortableSubmit`. `provider` comes from
+  `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
+  the token is a module constant; `src/modules/user/config/di.ts` binds it with
+  `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
+  therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
+
+Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding an eleventh needs the same standard of
-proof, and a non-empty array needs the stability argument spelled out, not assumed.
+array literal, so there is nothing left to change.
+
+The fifteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+`{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
+re-validates the confirmation field when the new password changes once the confirmation is touched
+or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
+form and the effect also re-runs on edits to the other fields. The only other field the user edits
+is `confirmPassword` itself, and the effect only triggers in that same armed window, where the form
+(`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
+re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
+the same result and no rendered state differs. Narrowing the watch is what the source should say,
+so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth needs the same
+standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 242 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 347 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -503,13 +558,15 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries seven `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries nine `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
-error-page primary actions and decorative status digits, and the sign-in "Забули пароль?" brand
-text link at 2.45:1 by the product owner's DEV-67 decision, issue #309), tracked in issue #276
-and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
-button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
-entry carries all four fields.
+error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the password-recovery
+in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
+issue #315, and the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product owner's
+call on issue #330), tracked in issue #276 and deleted when it closes.
+`tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
+fail, that a wildcard is never honoured, and that every entry carries all four fields.
 
 **No suppression:** fix the defect at the source, or add a scoped entry with its tracking issue —
 never `eslint-disable`, an `axe.configure` rule removal, `test.skip`/`test.fixme`, or a
@@ -529,9 +586,11 @@ are informational.
 
 The visual helpers wait on conditions rather than the clock:
 [`tests/visual/wait-for-stable-dom.ts`](tests/visual/wait-for-stable-dom.ts) resolves once
-`document.readyState` is `complete`, `document.fonts.status` is `loaded`, and a DOM fingerprint has
-held for five consecutive frames, replacing the two 3-second sleeps in `stabilize-page.ts` and the
-300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244 visual tests).
+`document.readyState` is `complete`, `document.fonts.status` is `loaded`, and a fingerprint of the
+DOM and the scroll position has held for five consecutive frames, replacing the two 3-second sleeps
+in `stabilize-page.ts` and the 300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244
+visual tests). The scroll position is in the fingerprint because a full-page WebKit capture draws a
+`position: fixed` element (the toast stack) where it sits at the current scroll offset.
 
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
@@ -1018,7 +1077,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 24-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 30-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1719,6 +1778,31 @@ Both are plain Node over the working tree — no Docker and no dev container, li
 `make lint-lockfile` and `make check-env-sync`. Catalogs are discovered by walking `src/`
 for folders named `i18n`, so a new feature is covered the moment it ships one.
 
+**Lazy catalogs are gated like eager ones, and scoped to their owners.** The single policy list
+[`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) names each catalog a route
+chunk registers at runtime instead of the merged file (see "Localization" under Architecture),
+as a `{ "catalog", "owners" }` entry; both the generator and the gate read it
+(`I18N_CATALOG_POLICY` overrides the path for fixtures). A lazy catalog still goes through checks
+1, 2 and the extra rejections below; check 3 expects it **absent** from
+`src/i18n/localization.json`, so a lazy key that leaks into the merged file is reported stale.
+Check 4 resolves a call site against the merged catalog plus **only** the lazy catalogs whose
+`owners` (files or folders under `src/`) cover that file. A lazy key used anywhere else fails as
+`[lazy-key-scope]`: the catalog exists at runtime only once an owning route module has registered
+it, so the same `t('password_policy.rules.length')` in a sign-up component would render the raw
+key on `/sign-up`. The owners are the two recovery route folders, the recovery component folders,
+`use-recovery-failure-banner.ts`, and the auth route contract
+`routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
+through `usePageTitle` after its module has registered the catalog). The settings catalog
+(issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
+the settings `components/` and `hooks/` folders that page renders, and the settings route contract
+`routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
+`transformers/` load in the container chunk and own no settings key. The toast catalog
+(`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
+label stays off `/sign-in`. Adding an owner is a reviewed
+policy edit and must name a file only the registering routes import. A policy entry that names no
+discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
+unreadable or malformed policy fails the run before any check.
+
 **What the gate enforces:**
 
 1. **Locale completeness** — every `src/**/i18n/` catalog holds exactly the required locales
@@ -1738,7 +1822,10 @@ for folders named `i18n`, so a new feature is covered the moment it ships one.
 It additionally rejects the ways those four could be gamed or silently defeated: a translation
 that is present but empty or whitespace-only; two catalogs claiming the same key (the generator
 merges last-writer-wins over an **unsorted** directory walk, so the winner would depend on
-filesystem order); a source translation file parked in the generated `src/i18n/` directory; a
+filesystem order); two catalogs that disagree on whether a key is a translation or an object
+(`a.b` a string in one, `a.b.c` nested under it in another — eager or lazy, in either direction —
+which would abort the merge or silently drop a subtree, so the gate reports it and stops before
+merging); a source translation file parked in the generated `src/i18n/` directory; a
 duplicate JSON key (`JSON.parse` keeps the last one and reports nothing, so a repeated key
 silently discards a translation); and a run that discovers no catalogs or no keys, which fails
 rather than reporting a vacuous pass.
@@ -1748,9 +1835,11 @@ uses `one`/`other` while `uk` uses `one`/`few`/`many`/`other`, and a base key re
 its categories exists. Requiring byte-identical key sets would make correct i18next
 pluralization unsatisfiable.
 
-The gate is six modules:
+The gate is seven modules:
 
 - `check-i18n-parity.mjs` — catalog validation, merged-catalog freshness, reporting.
+- [`i18n-key-claims.mjs`](scripts/ci/i18n-key-claims.mjs) — which catalog claims a key: one owner
+  per key, and no key that is a translation in one catalog and an object in another.
 - [`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) — source scanning and key resolution.
 - [`i18n-source-tokens.mjs`](scripts/ci/i18n-source-tokens.mjs) — the lexical pass that separates
   code from prose, so a key inside a comment or a string is never read as a call site and a real
@@ -1845,6 +1934,36 @@ registry ("Adding a page" below); never eagerly import a page. Three checks fail
 - `RouteFallback`
   ([`tests/unit/components/route-fallback/route-fallback.test.tsx`](tests/unit/components/route-fallback/route-fallback.test.tsx))
   pins the deferred-paint and live-region behavior.
+
+**Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
+subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
+two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds two
+top-level `splitChunks.cacheGroups` entries, `authFormsVendors` (chunk `auth-forms-vendors`)
+and `authForms` (chunk `auth-forms`), built by
+[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
+per module: each `test` admits a module only when both the `sign-in-form-section` and the
+`sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`, and
+then by resource: a module under `node_modules` goes to `auth-forms-vendors`, anything else to
+`auth-forms`, so every shared module lands in exactly one of the two. Two groups rather than one
+because `main` ships that shared code as two parallel chunks (the shared dependencies and the
+shared app code), and a single merged chunk changed the shape of the network graph Lighthouse's
+simulated throttling builds for `/sign-up`, costing about two points of mobile score on slow
+runners. Both `chunks` filters also admit the two recovery form-section chunks, so a recovery
+route that needs one of those shared modules depends on the same two chunks — already cached
+after the usual `/sign-in` → "Forgot password" → `/password-recovery` path — instead of carrying
+its own copy. They admit the `settings` page chunk too (`SETTINGS_CHUNKS`, issue #330), so
+`/settings` takes the shared form fields and react-hook-form from the same two chunks. The
+trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads both chunks whole,
+including sign-in/sign-up-only shared modules it does not run; no recovery URL is in the
+Lighthouse budget, `/sign-in` is. The chunk names live in that file and
+`tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule of both groups,
+including that a vendor module never reaches `auth-forms` and an app module never reaches
+`auth-forms-vendors`; the `performance serving` test pins the wiring of both groups and that
+each selects the chunk names the loaders' `webpackChunkName` values emit, so renaming a loader's
+chunk cannot silently disable either group. Chunk
+sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
+clears the mobile floor is decided by CI Lighthouse, not by a local build.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same
@@ -2009,7 +2128,8 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 - **ESLint** (`no-restricted-syntax` on `src/**/*.tsx`) fails a `new <PascalCaseClass>()`.
   Built-in constructors (`new Error/URL/Date/Map/…`) are allowlisted out of the selector.
 - **dependency-cruiser** `components-no-direct-injectable-import` fails a **value**-import of
-  `src/services/**`, `…/repositories/**`, `src/modules/*/store/**`, `*-factory`, `*-mapper`, or
+  `src/services/**`, `…/data-providers/**`, `…/repositories/**`, `…/transformers/**`,
+  `src/modules/*/store/**`, `src/modules/*/transformers/**`, `*-factory`, `*-mapper`, or
   `*error-handler*` into a component. `import type` stays allowed — annotations bind nothing.
 
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
@@ -2037,10 +2157,8 @@ enforced by two rules:
   for. The code-split boundary is where the cost stops.
 
 **Honest limitation:** the gate is syntactic and `.tsx`-only. Hooks (`use-*.ts`) are **not**
-covered — `new LoginErrorMessageNormalizer()` in
-`@auth/components/form-section/auth-forms/use-login-submitter.ts` and
-`new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts` stay
-review-gate concerns. ESLint cannot
+covered — `new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts`
+stays a review-gate concern. ESLint cannot
 know which PascalCase identifier is behavioral (the built-in allowlist must be maintained), and
 dependency-cruiser keys on path conventions, so a behavioral class placed outside those paths or
 re-exported through a barrel is not caught. Satisfy both gates by adding the token, registering
@@ -2189,7 +2307,7 @@ class Service {}
 
 // GOOD — domain noun + recognized pattern suffix; the role is self-evident
 class ApiErrorFactory {} // repositories/api-error-factory.ts
-class EmailValidator {} // form-section/validations/email.ts
+class EmailValidator {} // user/lib/validations/email.ts
 class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
 class LoginResponseMapper {} // store/login-response-mapper.ts
 class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
@@ -2261,13 +2379,15 @@ allowed carve-outs.
 | Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
 | Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
 | Constant maps        | `response-messages`, `error-codes`                                   |
-| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` (GraphQL)            |
+| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` / `*-query.ts`       |
 | Public barrels       | `@/modules/<m>`, `@auth` — the only cross-boundary path (issue #107) |
 | Pure leaf libraries  | `uuid`                                                               |
 
 **Third-party policy — position (A), adapter + token.** A behavioral library is wrapped behind an
 `@injectable()` adapter and a token rather than called from a feature class: Apollo through
-`ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
+`ApolloLinkFactory` (the link chain) and `SessionLinkFactory` (the Bearer token and the 401
+sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two files `RESTRICTED_LIBRARY_ADAPTERS`
+lists; Sentry and `web-vitals` through the
 observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
 and passed to collaborators **as data**. This is enforced as an **allowlist**, not a denylist of
 known-behavioral packages: only `tsyringe`, `reflect-metadata`, and `uuid` may be value-imported
@@ -2299,15 +2419,17 @@ scopes its `to` clause to `^src/`.
 fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
 starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
 
-**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
-`src/modules/*/features/*/{repositories,stores,utils}/**`.
+**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`,
+`src/modules/*/transformers/**`, and
+`src/modules/*/features/*/{data-providers,repositories,stores,transformers,utils}/**`.
 
 Three different things are outside the gate, and the distinction matters when you add a file:
 
 - **Never in scope** (no policy entry needed): anything outside those globs — a feature's
   `components/` folder, plus `src/components/**`, `src/styles/**`, `src/routes/**`,
-  `src/providers/**` and `src/config/**` — which is why the form-section `validations/*`
-  singletons need no carve-out despite being container-free.
+  `src/providers/**`, `src/config/**` and `src/modules/*/lib/**` — which is why the validator
+  singletons in `src/modules/user/lib/validations/` need no policy entry despite being
+  container-free: no `LOGIC_SOURCE_GLOBS` entry matches them.
 - **In scope but exempted by file kind** in `EXEMPT_PATTERNS`: React components (`.tsx`),
   tests/stories/`.d.ts`, type-only files, hooks (`use-*.ts` — `use-auth-token` sits inside the
   gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
@@ -2441,11 +2563,13 @@ tooling without a TypeScript loader, so that is an i18n boot-path restructuring,
 change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
-flag is declared today: the last one, `forgotPassword`, was removed in #309 when the sign-in
-"Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
-block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
-to a non-empty value fails container start and must unset it.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
+flag is declared today, `userSettings` (issue #330), shipped off in the committed block
+`{ "flags": { "userSettings": false } }` (the test stack's `docker-compose.test.yml` switches it on
+through `APP_CONFIG_FLAG_USER_SETTINGS`, default `true`). The earlier `forgotPassword` flag was
+removed in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an
+environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container
+start with `Known flags: userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2495,6 +2619,27 @@ Deep-importing a feature page from the shell fails
 `routes.tsx`, or a route object with an `element` and no `errorElement` inside
 `src/routes/**`, fails the issue-#116 ESLint selectors (see pattern 14).
 
+**Flagged routes (issue #330)** — a top-level route contract may declare `flag: <FeatureFlag>`.
+The route is always registered; `RouteMapper` copies the flag into the route's `handle` and one
+eager `RouteFlagGate`, above `ProtectedRoute`, reads it when the route renders and shows the
+not-found page while it is off, so neither the sign-in redirect nor the page chunk is reached.
+`/settings` is the example: `flag: 'userSettings'` in
+`src/modules/user/features/settings/routes/index.ts`. See `src/routes/README.md`.
+
+**Toasts (issue #330)** — `UIToastStack` (`src/components/ui-toast/`, state in `useToastQueue`)
+is the one transient-message surface: no timer, so a toast stays until the user closes it; two
+always-mounted `UILiveStatus` regions announce the queue, a polite one for success texts and an
+assertive one (`politeness="assertive"`, `role="alert"`) for error texts, both with the
+alternating mark so an identical repeat is spoken again; no toast carries a role of its own, and
+each close button is described by its message; at most three are shown. Closing a toast moves
+focus to the next close button, then the previous one, then the control the page names
+(`returnFocusRef`) while it is connected and enabled, then `fallbackFocusRef` (the settings
+`<h1 tabindex="-1">`); a toast pushed out by the cap while it holds focus hands it to the newest
+close button. The stack reserves `scroll-padding-bottom` so a focused control is never hidden
+under it, and when it measures itself over a control that already has focus (the settled Save, focused
+in the same commit that pushes the toast) it scrolls that control into view, so the result does not
+depend on which layout effect runs first.
+
 ### GraphQL Setup
 
 Apollo Server runs in development for local GraphQL API:
@@ -2519,9 +2664,39 @@ verified in CI.
 - **Source of truth**: `src/**/i18n/{en,uk}.json`, one catalog folder per feature or component
   (for example `src/modules/user/features/auth/i18n/` and `src/components/error-page/i18n/`).
   Both locales are mandatory and their key sets must stay identical.
-- **Derived artifact**: `src/i18n/localization.json`, the merge of every catalog into
+- **Derived artifact**: `src/i18n/localization.json`, the merge of every **eager** catalog into
   `{ [locale]: { translation: … } }` by `scripts/localization-generator.js`. It is committed,
   so a catalog edit is only half a change until the merged file is regenerated.
+- **Lazy catalogs**: a catalog listed in
+  [`config/i18n-catalog-policy.json`](config/i18n-catalog-policy.json) (`lazyCatalogs`, paths
+  relative to `src/`) is left out of the merged file, because `src/i18n.js` imports that file into
+  the eager `index.js` every page downloads. Its route chunk imports it instead and registers both
+  locales synchronously when the route module evaluates — before the page's `usePageTitle` runs —
+  through the one container-free `lazyCatalogLoader` singleton
+  (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
+  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls
+  `addResourceBundle` for both locales; the owner keeps the JSON import, so the chunk split does
+  not move, and a new lazy catalog adds no loader class. Four lazy catalogs exist today: the
+  password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
+  `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
+  which the `reset-password` and `create-new-password` route modules render; the password-policy
+  copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
+  when that component module evaluates; the settings copy (`settings.*`), owned by
+  `src/modules/user/features/settings/` and registered when the `UserProfile` route module
+  evaluates; and the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered
+  when `UIToast` evaluates. The recovery keys were 3,742 B of the minified merged
+  catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and
+  still about 0.95 KB above the #333 base (46,946 B), so the move alone does not restore the
+  `/sign-in` headroom (that base already scored a median of about 0.8375 against the 0.84 mobile
+  floor). Keep a key eager when a page outside those routes renders it
+  (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
+  Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
+  catalog only, exactly like an eager page, and tests of the recovery routes and their components
+  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
+  `createToastLocaleI18n`), so a lazy key leaking into an eager page renders raw in that
+  page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which reads the
+  policy and registers every lazy catalog from its JSON files) keep the copy available for every
+  story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.
@@ -2835,7 +3010,8 @@ The baseline: `default-src 'self'`; `script-src 'self'` (no `'unsafe-inline'`, n
 `font-src 'self'`; `connect-src 'self'` + API origins; `manifest-src 'self'`;
 `frame-ancestors 'none'`; `form-action 'self'`; `base-uri 'self'`; `object-src 'none'`; plus
 HSTS (`max-age=31536000; includeSubDomains`), `X-Frame-Options: DENY`,
-`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin` (never the full URL, which
+would carry a password-reset token into an access log),
 `Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
 `Cross-Origin-Resource-Policy: same-origin`. `Cross-Origin-Opener-Policy` is deliberately absent:
 browsers ignore it on a plain-http, non-localhost origin and log a console error per document,
@@ -2897,7 +3073,8 @@ replaces.
    `src/modules/user/types/api-errors/` (type-only — see pattern 6).
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
+2. **Form Validation**: Centralized in the user module (`src/modules/user/lib/validations/`),
+   shared by every feature
 
 3. **Routing**: Module-owned route contracts collected by a registry and
    assembled by a composer into `createBrowserRouter` (see "Route Registry"

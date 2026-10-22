@@ -56,6 +56,22 @@ describe('component DI gate (issue #128)', () => {
     expect(report.depcruise.typeImport).toEqual([]);
   });
 
+  it.each(['dataProvider', 'transformer'])(
+    'dependency-cruiser fails a component value-importing a feature %s',
+    (layer) => {
+      expect(report.depcruise[`${layer}ValueImport`]).toEqual([
+        'components-no-direct-injectable-import',
+      ]);
+    }
+  );
+
+  it.each(['dataProvider', 'transformer'])(
+    'dependency-cruiser allows a type-only import of a feature %s',
+    (layer) => {
+      expect(report.depcruise[`${layer}TypeImport`]).toEqual([]);
+    }
+  );
+
   it('dependency-cruiser leaves the auth carve-out to no-feature-ui-to-services', () => {
     expect(report.depcruise.authCarveOut).toEqual(['no-feature-ui-to-services']);
   });

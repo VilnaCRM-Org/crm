@@ -3,6 +3,14 @@
 import fs from 'fs';
 import path from 'path';
 
+import {
+  AUTH_FORM_CHUNKS,
+  authFormsCacheGroup,
+  authFormsVendorsCacheGroup,
+  RECOVERY_FORM_CHUNKS,
+  SETTINGS_CHUNKS,
+} from '@scripts/auth-forms-chunk-group';
+
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 const readFile = (relativePath: string): string =>
@@ -73,7 +81,8 @@ describe('performance serving config', () => {
     // The serve command itself must stay byte-identical: the entrypoint wraps it, never
     // replaces it, so the production image keeps serving `dist` with the explicit serve config.
     expect(dockerfile).toContain(
-      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]'
+      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json", ' +
+        '"--no-request-logging"]'
     );
   });
 
@@ -119,6 +128,7 @@ describe('performance serving config', () => {
     const mapperSource = readFile('src/routes/route-mapper.tsx');
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const authRoutesSource = readFile('src/modules/user/features/auth/routes/index.ts');
+    const settingsRoutesSource = readFile('src/modules/user/features/settings/routes/index.ts');
     const routesSource = readFile('src/routes/routes.tsx');
     const rootLayoutSource = readFile('src/components/layouts/root-layout.tsx');
 
@@ -148,6 +158,14 @@ describe('performance serving config', () => {
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-in'\)/
     );
 
+    expect(settingsRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "settings" \*\/\s*'\.\/user-profile'\)/
+    );
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('./user-profile');
+    expect(staticImportsOf(readFile('src/routes/registry.ts'))).toContain(
+      '@/modules/user/features/settings/routes'
+    );
+
     // Pages are never statically imported (which would defeat code splitting).
     expect(routesSource).not.toContain('import SignUp');
     expect(routesSource).not.toContain('import SignIn');
@@ -156,6 +174,16 @@ describe('performance serving config', () => {
     expect(appRoutesSource).not.toContain('import ServerError');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
+    expect(staticImportsOf("import ResetPassword from './reset-password';\n")).toEqual([
+      './reset-password',
+    ]);
+    ['reset-password', 'create-new-password'].forEach((page) => {
+      expect(authRoutesSource).toMatch(
+        new RegExp(String.raw`import\(\s*/\* webpackChunkName: "${page}" \*/\s*'\./${page}'\)`)
+      );
+      expect(staticImportsOf(authRoutesSource)).not.toContain(`./${page}`);
+      expect(staticImportsOf(routesSource).filter((source) => source.includes(page))).toEqual([]);
+    });
 
     // The route-level Suspense boundary ships a non-null deferred fallback (RouteFallback),
     // never `fallback={null}` (issue #117). This pins the RootLayout boundary specifically; the
@@ -254,5 +282,111 @@ describe('performance serving config', () => {
       'import RegistrationNotification from ' +
         "'@auth/components/form-section/auth-forms/registration-notification';"
     );
+  });
+
+  it('keeps the sign-in notification out of the initial auth form chunk', () => {
+    const loginFormSource = readFile(
+      'src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx'
+    );
+
+    expect(loginFormSource).toContain(
+      'import registrationNotificationLoader, {\n' +
+        '  registrationNotificationPrefetcher,\n' +
+        "} from '@auth/utils/load-registration-notification';"
+    );
+    expect(loginFormSource).toContain(
+      'const RegistrationNotification = lazy(() => registrationNotificationLoader.load());'
+    );
+    expect(loginFormSource).toContain('registrationNotificationPrefetcher.prefetch();');
+    expect(loginFormSource).not.toContain(
+      "from '@auth/components/form-section/auth-forms/registration-notification';"
+    );
+  });
+
+  it('keeps the password-recovery copy out of the eager merged catalog', () => {
+    const merged = readJson<Record<string, { translation: Record<string, unknown> }>>(
+      'src/i18n/localization.json'
+    );
+    const policy = readJson<{ lazyCatalogs: { catalog: string; owners: string[] }[] }>(
+      'config/i18n-catalog-policy.json'
+    );
+    const recoveryRoutes = ['reset-password', 'create-new-password'].map((route) =>
+      readFile(`src/modules/user/features/auth/routes/${route}/index.tsx`)
+    );
+    const recoveryOwners =
+      policy.lazyCatalogs.find(
+        (entry) => entry.catalog === 'modules/user/features/auth/routes/recovery-catalog/i18n'
+      )?.owners ?? [];
+    const eagerSurfaces = [
+      'modules/user/features/auth/routes/sign-in/index.tsx',
+      'modules/user/features/auth/routes/sign-up/index.tsx',
+      'modules/user/features/auth/components/form-section/auth-forms/login-form.tsx',
+      'modules/user/features/auth/components/sign-in-notice/index.tsx',
+      'components/ui-form/index.tsx',
+    ];
+
+    expect(recoveryOwners).toEqual(
+      expect.arrayContaining([
+        'modules/user/features/auth/routes/reset-password',
+        'modules/user/features/auth/routes/create-new-password',
+      ])
+    );
+    eagerSurfaces.forEach((surface) => {
+      const owner = recoveryOwners.find(
+        (candidate) => surface === candidate || surface.startsWith(`${candidate}/`)
+      );
+      expect({ surface, owner }).toEqual({ surface, owner: undefined });
+    });
+    ['en', 'uk'].forEach((locale) => {
+      const namespaces = Object.keys(merged[locale]?.translation ?? {});
+      expect(namespaces).toContain('sign_in');
+      expect(namespaces).not.toContain('password_recovery');
+      expect(namespaces).not.toContain('password_reset');
+      expect(namespaces).not.toContain('password_policy');
+      expect(namespaces).not.toContain('settings');
+      expect(namespaces).not.toContain('ui_toast');
+    });
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
+    recoveryRoutes.forEach((routeSource) => {
+      expect(routeSource).toContain(
+        "import RecoveryPageLayout from '@auth/components/recovery-page-layout';"
+      );
+    });
+  });
+
+  it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {
+    const rsbuildConfigSource = readFile('rsbuild.config.ts');
+    const loaderChunkName = (route: string): string | undefined =>
+      /webpackChunkName: "([^"]+)"/.exec(
+        readFile(`src/modules/user/features/auth/routes/${route}/form-section-loader.ts`)
+      )?.[1];
+    const settingsChunkName = /webpackChunkName: "([^"]+)"/.exec(
+      readFile('src/modules/user/features/settings/routes/index.ts')
+    )?.[1];
+
+    expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
+      'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
+        'authForms: authFormsCacheGroup(), },'
+    );
+    expect([authFormsVendorsCacheGroup().name, authFormsCacheGroup().name]).toEqual([
+      'auth-forms-vendors',
+      'auth-forms',
+    ]);
+    [authFormsVendorsCacheGroup(), authFormsCacheGroup()].forEach((group) => {
+      const selects = group.chunks as (chunk: { name: string | undefined }) => boolean;
+      expect(
+        ['sign-in', 'sign-up', 'reset-password', 'create-new-password'].map((route) =>
+          selects({ name: loaderChunkName(route) })
+        )
+      ).toEqual([true, true, true, true]);
+      expect(selects({ name: settingsChunkName })).toBe(true);
+    });
+    expect(AUTH_FORM_CHUNKS).toEqual(['sign-in', 'sign-up'].map(loaderChunkName));
+    expect(RECOVERY_FORM_CHUNKS).toEqual(
+      ['reset-password', 'create-new-password'].map(loaderChunkName)
+    );
+    expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
   });
 });

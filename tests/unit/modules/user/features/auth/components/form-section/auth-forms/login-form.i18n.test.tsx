@@ -11,12 +11,12 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@auth/components/form-section/components/form-field', () => ({
+jest.mock('@/components/ui-form-field', () => ({
   __esModule: true,
   default: (): ReactElement => <input aria-label="email" />,
 }));
 
-jest.mock('@auth/components/form-section/components/password-field', () => ({
+jest.mock('@/components/ui-password-field', () => ({
   __esModule: true,
   default: (): ReactElement => <input aria-label="password" type="password" />,
 }));
@@ -30,13 +30,13 @@ jest.mock('@/components/ui-form', () => ({
   __esModule: true,
   default: (props: { children: ReactNode }): ReactElement => {
     mockUIForm(props);
-    return <form>{props.children}</form>;
+    return <form />;
   },
 }));
 
 describe('LoginForm heading translation contract', () => {
   it('passes the sign-in title and subtitle keys to the shared form', () => {
-    render(<LoginForm />);
+    render(<LoginForm postLogin={{ signedIn: false, proceed: jest.fn() }} />);
 
     expect(mockUIForm).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -48,7 +48,7 @@ describe('LoginForm heading translation contract', () => {
   });
 
   it('never reuses the sign-in title string as the subtitle', () => {
-    render(<LoginForm />);
+    render(<LoginForm postLogin={{ signedIn: false, proceed: jest.fn() }} />);
 
     const props = mockUIForm.mock.calls[0][0] as { title: string; subtitle: string };
 
@@ -58,7 +58,7 @@ describe('LoginForm heading translation contract', () => {
   });
 
   it('does not leak sign-up copy into the sign-in form', () => {
-    render(<LoginForm />);
+    render(<LoginForm postLogin={{ signedIn: false, proceed: jest.fn() }} />);
 
     const props = mockUIForm.mock.calls[0][0] as { title: string; subtitle: string };
 

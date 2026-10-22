@@ -1,18 +1,18 @@
 import { createRef } from 'react';
 
-import type { RegisterUserDto } from '@auth/types/credentials';
+import type { SignUpDto } from '@/modules/user';
 import RegistrationHandlersFactory from '@auth/utils/registration-handlers-factory';
 import { buildUser } from '@tests/builders';
 
 const createDeps = (
-  ref: { current: RegisterUserDto | null } = createRef<RegisterUserDto | null>() as {
-    current: RegisterUserDto | null;
+  ref: { current: SignUpDto | null } = createRef<SignUpDto | null>() as {
+    current: SignUpDto | null;
   }
 ): {
   deps: ConstructorParameters<typeof RegistrationHandlersFactory>[0];
   setView: jest.Mock;
   setFormKey: jest.Mock;
-  ref: { current: RegisterUserDto | null };
+  ref: { current: SignUpDto | null };
 } => {
   const setView = jest.fn();
   const setFormKey = jest.fn();
@@ -95,7 +95,7 @@ describe('RegistrationHandlersFactory', () => {
   });
 
   it('handleRetry resets and re-submits with the last submitted data', () => {
-    const last: RegisterUserDto = buildUser();
+    const last: SignUpDto = buildUser();
     const ref = { current: last };
     const { deps } = createDeps(ref);
     const { actions, registerUser, resetRegistration } = createActions();

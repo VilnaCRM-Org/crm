@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-
 import { ApolloServer, BaseContext } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import dotenv, { DotenvConfigOutput } from 'dotenv';
@@ -8,16 +6,14 @@ import { GraphQLError } from 'graphql';
 
 import { formatError } from './format-error';
 import { resolvers } from './resolvers';
+import { loadTypeDefs } from './schema-loader';
 import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdown-functions';
+import type { SchemaSource } from './types';
 
 const env: DotenvConfigOutput = dotenv.config();
 dotenvExpand.expand(env);
 
 export type ApolloServerInstance = ApolloServer<BaseContext> | undefined;
-
-interface StartServerOptions {
-  schemaFilePath: string;
-}
 
 export interface StartServerResult {
   server: ApolloServer<BaseContext>;
@@ -27,14 +23,8 @@ export interface StartServerResult {
 const parsedTimeout = Number(process.env.GRACEFUL_SHUTDOWN_TIMEOUT);
 const TIMEOUT = Number.isFinite(parsedTimeout) ? Math.max(1000, Math.floor(parsedTimeout)) : 10000;
 
-export async function startServer({
-  schemaFilePath,
-}: StartServerOptions): Promise<StartServerResult> {
-  const typeDefs: string = fs.readFileSync(schemaFilePath, 'utf-8');
-
-  if (!typeDefs) {
-    throw new Error('Failed to load schema from file.');
-  }
+export async function startServer(schemaSource: SchemaSource): Promise<StartServerResult> {
+  const typeDefs = loadTypeDefs(schemaSource);
 
   if (!resolvers || Object.keys(resolvers).length === 0) {
     throw new Error('Resolvers are missing or not defined properly.');
@@ -159,9 +149,11 @@ export async function setupUnhandledRejectionHandler(server: ApolloServerInstanc
 
 let isShuttingDown = false;
 
-export async function initializeServer(schemaFilePath: string): Promise<ApolloServer<BaseContext>> {
+export async function initializeServer(
+  schemaSource: SchemaSource
+): Promise<ApolloServer<BaseContext>> {
   try {
-    const { server } = await startServer({ schemaFilePath });
+    const { server } = await startServer(schemaSource);
 
     await setupUnhandledRejectionHandler(server);
 

@@ -5,7 +5,7 @@ describe('route registry', () => {
   it('collects the module route contracts in composition order with unique ids', () => {
     const ids = registry.items.map((module) => module.id);
 
-    expect(ids).toEqual(['app.shell', 'user.auth']);
+    expect(ids).toEqual(['app.shell', 'user.auth', 'user.settings']);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -46,17 +46,34 @@ describe('route registry', () => {
     ]);
   });
 
+  it('declares the settings page as a protected route behind the userSettings flag', () => {
+    const settings = registry.items
+      .flatMap((module) => module.routes)
+      .find((route) => route.path === ROUTE_PATHS.settings);
+
+    expect(registry.items.find((module) => module.id === 'user.settings')?.routes).toEqual([
+      settings,
+    ]);
+    expect(settings?.guard).toBe('protected');
+    expect(settings?.flag).toBe('userSettings');
+    expect(settings?.meta?.titleKey).toBe('settings.title');
+  });
+
   it('declares the auth pages as public routes carrying their title metadata', () => {
     const auth = registry.items.find((module) => module.id === 'user.auth');
 
     expect(auth?.routes.map((route) => route.path)).toEqual([
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
+      ROUTE_PATHS.passwordRecovery,
+      ROUTE_PATHS.passwordReset,
     ]);
     expect(auth?.routes.every((route) => route.guard === 'public')).toBe(true);
     expect(auth?.routes.map((route) => route.meta?.titleKey)).toEqual([
       'sign_up.title',
       'sign_in.title',
+      'password_recovery.title',
+      'password_reset.title',
     ]);
   });
 });

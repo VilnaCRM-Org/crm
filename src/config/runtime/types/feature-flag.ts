@@ -1,4 +1,4 @@
-export type FeatureFlag = never;
+export type FeatureFlag = 'userSettings';
 
 export interface FeatureFlagName {
   readonly name: FeatureFlag;

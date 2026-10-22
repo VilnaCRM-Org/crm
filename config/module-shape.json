@@ -3,17 +3,28 @@
   "namePattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
   "locales": ["en", "uk"],
   "module": {
-    "allowedFolders": ["config", "features", "hooks", "lib", "store", "types", "utils"]
+    "allowedFolders": [
+      "config",
+      "features",
+      "hooks",
+      "lib",
+      "store",
+      "transformers",
+      "types",
+      "utils"
+    ]
   },
   "feature": {
     "allowedFolders": [
       "assets",
       "components",
+      "data-providers",
       "hooks",
       "i18n",
       "repositories",
       "routes",
       "stores",
+      "transformers",
       "types",
       "utils"
     ]
@@ -34,15 +45,17 @@
       "utils",
       "visual"
     ],
-    "moduleAllowedFolders": ["features", "helpers", "lib", "repositories", "store"],
+    "moduleAllowedFolders": ["features", "helpers", "lib", "repositories", "store", "transformers"],
     "featureAllowedFolders": [
       "assets",
       "components",
+      "data-providers",
       "hooks",
       "i18n",
       "repositories",
       "routes",
       "stores",
+      "transformers",
       "types",
       "utils"
     ]

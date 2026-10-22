@@ -214,7 +214,7 @@ server emits the same headers from the same file, so local and production cannot
 | `Cross-Origin-Resource-Policy` | response | `same-origin`                             |
 | `Content-Security-Policy`      | document | the directive set below                   |
 | `X-Frame-Options`              | document | `DENY`                                    |
-| `Referrer-Policy`              | document | `strict-origin-when-cross-origin`         |
+| `Referrer-Policy`              | document | `strict-origin`                           |
 | `Permissions-Policy`           | document | camera, microphone, geolocation, payment, |
 |                                |          | usb — all `()`                            |
 
@@ -223,6 +223,12 @@ document and ride the HTML shell only — every SPA route resolves to `/index.ht
 so every page gets them — because a CSP, a frame policy, a referrer policy or a permissions
 policy on a `.woff2` or a hashed chunk changes nothing in the browser and only adds bytes to
 each request on the mobile critical path, where the Lighthouse budget has no headroom.
+
+`Referrer-Policy` is `strict-origin`, not the browser default `strict-origin-when-cross-origin`:
+the password-reset link carries its token in the query string, and every same-origin request the
+page makes before it strips the token (the entry chunks, the fonts) would otherwise send the whole
+URL in `Referer`, straight into the static server's access log (issue #315). With `strict-origin`
+a request only ever names the origin.
 
 The Content-Security-Policy:
 
@@ -311,6 +317,11 @@ foreign origin the app must reach is a new entry in `connectSrcFromEnv` (an envi
 the app reads) rather than a hard-coded host. The floors are deliberate: relaxing one is a policy
 decision that changes the loader and its tests in the same reviewed change, never a lone edit to
 `serve.json`, which the drift gate rejects.
+
+**Access logs.** The password-reset link carries a single-use credential in its query string
+(`/password-reset?token=…`, issue #315). The deployable image therefore starts `serve` with
+`--no-request-logging`, so no request URL reaches the container log. A reverse proxy or CDN placed
+in front of the container must not log query strings either.
 
 ## Client security events (issue #159)
 

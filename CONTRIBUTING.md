@@ -347,6 +347,13 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
   protected page. The session is client-only and never calls the API, and it survives a reload
   until you sign out. The demo code ships in every production bundle but only activates on a
   `sandbox-crm-*` S3 website host; anywhere else those credentials go to the API like any others.
+- **A demo password reset.** On a sandbox (and in any non-production build), request a reset on
+  `/password-recovery` for `demo@vilnacrm.com`. The "check your e-mail" card then shows
+  "Відкрити посилання з листа (демо)", which stands in for the e-mail and opens
+  `/password-reset` with the demo reset token. Set any new password that meets the rules; the
+  confirmation lands on `/sign-in` with the password-changed notice. Neither step calls the API,
+  and the demo login password stays `Demo1234`. Any other address or token goes to the API as
+  usual.
 - **Deep links.** Every build emits `404.html` as a copy of `index.html`, so S3 answers
   `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
   still reports HTTP status 404 for those responses; the page itself renders normally.
@@ -414,7 +421,7 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 24-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 30-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
 file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
 whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
@@ -434,7 +441,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 24-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 30-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -458,10 +465,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=24  # repeat for 1..23
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=30  # repeat for 1..29
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=24 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=24
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=30 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=30
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and

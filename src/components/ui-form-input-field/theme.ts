@@ -17,6 +17,12 @@ export default createTheme({
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             border: `1px solid ${customColors.text.secondary}`,
           },
+          '&.Mui-error .MuiOutlinedInput-notchedOutline': {
+            borderColor: paletteColors.error.main,
+          },
+          '&.Mui-error.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderWidth: '2px',
+          },
           '&.Mui-disabled': {
             backgroundColor: paletteColors.background.subtle,
             color: customColors.text.secondary,
@@ -107,7 +113,7 @@ export default createTheme({
             fontSize: '0.875rem',
             lineHeight: '1.125rem',
             letterSpacing: 0,
-            color: paletteColors.error.main,
+            color: paletteColors.error.text,
           },
         },
       },
