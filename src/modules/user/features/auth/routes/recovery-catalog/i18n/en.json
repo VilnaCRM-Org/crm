@@ -38,17 +38,5 @@
       "body": "The password reset link is invalid or has expired. Request a new one.",
       "request_new": "Request a new link"
     }
-  },
-  "password_policy": {
-    "rules": {
-      "length": "8 to 64 characters",
-      "digit": "At least one digit",
-      "uppercase": "At least one uppercase Latin letter (A–Z)",
-      "lowercase": "At least one lowercase letter"
-    },
-    "state": {
-      "met": "met",
-      "unmet": "not met"
-    }
   }
 }

@@ -1,4 +1,4 @@
-import { paletteColors } from '@/styles/colors';
+import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
   notice: {
@@ -11,7 +11,10 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: '1.375rem',
     letterSpacing: 0,
-    color: paletteColors.success.text,
+  },
+  tones: {
+    success: { color: paletteColors.success.text },
+    neutral: { color: customColors.text.primary },
   },
   icon: {
     flexShrink: 0,
