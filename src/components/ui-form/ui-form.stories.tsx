@@ -94,8 +94,8 @@ export const WithFooter: Story = {
       description: {
         story:
           'A `footer` renders after the submit button inside the form, so a secondary ' +
-          '`type="button"` action such as the settings "Очистити" sits beside it without ' +
-          'submitting.',
+          '`type="button"` action such as the settings "Очистити" never submits; the page ' +
+          'that uses it (settings) lays the two side by side.',
       },
     },
   },

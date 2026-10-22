@@ -113,7 +113,7 @@ describe('profile form styles', () => {
     });
   });
 
-  it('places the resend link in the e-mail row and keeps the status one phrase', async () => {
+  it('sizes the resend link and its margins, and keeps the status one muted phrase', async () => {
     const { resendLink, emailStatus } = await loadStyles();
 
     expect(resendLink).toEqual({
