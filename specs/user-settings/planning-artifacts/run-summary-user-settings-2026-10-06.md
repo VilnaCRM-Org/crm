@@ -116,15 +116,16 @@ the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 | U10  | ADR-021; Deciders @kravalg (superseded 2026-10-16: README decisions, no ADR, `[no-adr]`)                            |
 | U11  | Accessibility overrides design: text under 4.5:1 is overridden, not copied                                          |
 | D1   | v1 scope: `/settings` profile card (name, e-mail + resend, password), toasts, 2FA slot                              |
-| D2   | No avatar upload and no social networks section (no backend); decorative monogram                                   |
-| D2a  | 2026-10-21: the social networks card renders UI-only with no actions; linking stays out (G6)                        |
+| D2   | Superseded 2026-10-21 for the social card (D2a): no avatar upload or social networks section; decorative monogram   |
+| D2a  | 2026-10-21: the social networks card renders UI-only with no actions (PRD FR-7a); linking stays out (G6)            |
 | D3   | No app-shell navigation; one flag-gated home link to `/settings`, shared with 2FA                                   |
 | D4   | Current user from `users(first: 1)`; its IRI `id` addresses both mutations                                          |
 | D5   | No pending schema extension: every operation used is in pinned v2.8.0                                               |
 | D6   | Current password on every Save; only changed fields; e-mail by normalised diff                                      |
 | D7   | One success toast per changed aspect; the form adopts the returned user                                             |
 | D8   | Errors become crm field errors or toasts; never server text verbatim                                                |
-| D9   | New `src/components/ui-toast`: polite success, alert errors, max 3                                                  |
+| D9   | Superseded 2026-10-21 (D9a): new `src/components/ui-toast`: polite success, alert errors, max 3                     |
+| D9a  | 2026-10-21: no toast role; always-mounted polite region for success, assertive `role="alert"` one for errors; max 3 |
 | D10  | Bearer header on GraphQL; automatic sign-out only under the shared 401 rule                                         |
 | D11  | New `settings` feature; #315's shared pieces move out of `@auth`; prerequisite P.1                                  |
 | D12  | Superseded by R28: #330 owns route, shell and link; the mock keeps no auth rule                                     |

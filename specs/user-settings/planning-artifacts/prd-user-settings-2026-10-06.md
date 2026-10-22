@@ -153,7 +153,8 @@ Settled before this stage; the architecture and epics stages treat them as fixed
 | D6, P1       | Current password on every Save; only changed fields are sent    | research §4.4  |
 | D7, P3       | One success toast per changed aspect; form adopts the payload   | brief §3       |
 | D8, R3       | Errors map to crm copy; wrong password known by message         | research §6.2  |
-| D9, R16      | Toast, settings only: polite success, alert errors, at most 3   | research §3.2  |
+| D9, R16      | Toast, settings only; superseded 2026-10-21 by D9a (alert role) | research §3.2  |
+| D9a          | 2026-10-21: no toast role; polite + assertive regions, max 3    | arch §5.8      |
 | D10, R11-R19 | `SessionLinkFactory` Bearer link; only it ends a session        | research §4.5  |
 | R28          | A transport 401 ends the session; no other answer does          | review §2.2    |
 | D11          | #315's shared pieces leave `@auth` before settings uses them    | research §6.1  |

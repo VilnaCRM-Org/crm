@@ -56,7 +56,8 @@ section `6242:41691`. Only what user-service has a backend for is planned, over 
   resend" state, a password change (current + new), one Save / Clear pair, success and error
   toasts, and the right-hand slot column where the 2FA bundle mounts its card.
 - **Out of scope, no backend anywhere (D2):** avatar upload, crop and removal (a decorative
-  monogram derived from the name replaces the photo; no pencil badge) and the social networks
+  monogram derived from the name replaces the photo; no pencil badge, superseded 2026-10-21: the
+  monogram carries the Figma pencil badge as decoration only) and the social networks
   section (not rendered). Both get user-service feature issues and crm follow-ups. Amended
   2026-10-21 (product owner): the social networks card renders UI-only, Figma-exact (`476:46530`,
   `386:27239`, `386:27457`), with no working action; linking, listing and unlinking stay out of
@@ -180,10 +181,10 @@ text that needs 4.5:1, and settings shows field errors (wrong current password, 
 
 ### 3.5 Missing from the design
 
-1. Error toasts: per U2 the same layout as success, error styling, `role="alert"`; no frame.
-   Amended 2026-10-21: no toast carries a role; error texts are announced by an always-mounted
-   assertive region, because an alert created and filled in one commit is dropped by several
-   screen readers (architecture §5.8).
+1. Error toasts: per U2 the same layout as success, error styling, `role="alert"` (superseded
+   2026-10-21, architecture §5.8); no frame. Amended 2026-10-21: no toast carries a role; error
+   texts are announced by an always-mounted assertive region, because an alert created and filled in
+   one commit is dropped by several screen readers (architecture §5.8).
 2. Field and server errors: wrong current password, weak new password, invalid or taken e-mail,
    empty or malformed name.
 3. The state right after an e-mail change (only "not confirmed · resend" is drawn).
@@ -595,12 +596,12 @@ e-mails and answers in English only. Amended 2026-10-21: a resend answers the se
   `#DC3939` (`:15-17`), success `#4CAF50` (`:18-20`), grey 50 `#969B9D` (`:38-40`),
   `decorative.divider #57595B` (`:58-60`), text `#404142` / `#969B9D` / `#1A1C1E` (`:61-65`).
   No `#E8F4EF` or `#FDECEC` token exists.
-- `A11Y_EXCEPTIONS` holds four `color-contrast` entries tracked in #276
-  (`tests/utils/a11y/axe-config.ts:27-54`), one being the contained submit
+- Before #330, `A11Y_EXCEPTIONS` holds eight `color-contrast` entries tracked in #276
+  (`tests/utils/a11y/axe-config.ts:27-83` at `e93b7a40`), one being the contained submit
   `form button[type="submit"].MuiButton-contained` (`:34-39`). A Save rendered by `UIForm`
   matches it; grey text, a primary-blue link or a secondary "Clear" button does not, and no new
   entry is allowed (D15; amended 2026-10-21: the product owner kept the greeting grey `#969B9D`,
-  so one scoped `#settings-greeting` entry is added).
+  so one scoped `#settings-greeting` entry is added as the ninth).
 
 ### 5.7 Constraints that shape the design
 
