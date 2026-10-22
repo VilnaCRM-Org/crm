@@ -40,14 +40,14 @@ function CurrentPassword({ rules, busy }: CurrentPasswordProps): JSX.Element {
 function NewPassword({ rules, evaluate, busy }: ChangePasswordProps): JSX.Element {
   const { t } = useTranslation();
   const newPassword = useWatch<ProfileFormValues, 'newPassword'>({ name: 'newPassword' });
-  const hold = useBlurHold(RULES_COLLAPSE_DELAY_MS);
   const empty = newPassword === '';
+  const hold = useBlurHold(RULES_COLLAPSE_DELAY_MS, empty);
 
   return (
     <Box
       data-empty={empty}
       data-held={hold.held}
-      onBlur={empty ? hold.onBlur : undefined}
+      onBlur={hold.onBlur}
       sx={passwordStyles.newPassword}
     >
       <UIPasswordField<ProfileFormValues>
