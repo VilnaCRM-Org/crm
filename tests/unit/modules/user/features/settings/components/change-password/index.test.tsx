@@ -106,6 +106,22 @@ describe('ChangePassword rule list at rest', () => {
     expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
   });
 
+  it('starts the hold only when the new password loses focus while empty', async () => {
+    const user = mountSection();
+
+    await user.type(screen.getByLabelText('Новий пароль'), 'a');
+    await user.tab();
+    await user.tab();
+
+    expect(jest.getTimerCount()).toBe(0);
+
+    await user.clear(screen.getByLabelText('Новий пароль'));
+    await user.tab();
+    await user.tab();
+
+    expect(jest.getTimerCount()).toBeGreaterThan(0);
+  });
+
   it('keeps the rules in sight once the new password holds a value, focused or not', async () => {
     const user = mountSection();
 

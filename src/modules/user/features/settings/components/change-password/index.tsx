@@ -41,12 +41,13 @@ function NewPassword({ rules, evaluate, busy }: ChangePasswordProps): JSX.Elemen
   const { t } = useTranslation();
   const newPassword = useWatch<ProfileFormValues, 'newPassword'>({ name: 'newPassword' });
   const hold = useBlurHold(RULES_COLLAPSE_DELAY_MS);
+  const empty = newPassword === '';
 
   return (
     <Box
-      data-empty={newPassword === ''}
+      data-empty={empty}
       data-held={hold.held}
-      onBlur={hold.onBlur}
+      onBlur={empty ? hold.onBlur : undefined}
       sx={passwordStyles.newPassword}
     >
       <UIPasswordField<ProfileFormValues>
