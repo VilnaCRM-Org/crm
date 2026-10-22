@@ -369,40 +369,40 @@ readiness; nothing already tracked (research §4.9) is filed again.
 
 ## 9. Decisions Shaping the Product
 
-| Id       | Decision                                                                          |
-| -------- | --------------------------------------------------------------------------------- |
-| U1       | GraphQL against user-service only; plan only what has a backend                   |
-| U2       | Every success toast has an error counterpart: same layout, error styling          |
-| U3       | The "Пароль" block is #315's design of record: one password field, one policy     |
-| U5       | Superseded by R28: off in production, on in the test stack; dev keeps the block   |
-| U6       | Password mutations: no cache, minimal selection, abort check, no automatic retry  |
-| U11      | Accessibility overrides design: text under 4.5:1 is overridden, not copied        |
-| D1       | v1: `/settings` card with name, e-mail and resend, password, toasts, 2FA slot     |
-| D2       | No avatar or social networks (social part superseded 2026-10-21, D2a); monogram   |
-| D2a      | 2026-10-21: the social networks card renders UI-only, no actions; amends D2       |
-| D3       | No app-shell menu; one flag-gated home link, shared with 2FA                      |
-| D4       | Current user from `users(first: 1)`; its `id` addresses both mutations            |
-| D5       | No schema extension: all three operations are in pinned v2.8.0                    |
-| D6       | Current password on every Save; only changed fields; e-mail by normalised diff    |
-| D7       | One success toast per changed aspect; form re-reads the result, clears passwords  |
-| D8, R3   | Errors become field errors or toasts in crm copy; wrong password known by text    |
-| D9, R16  | Superseded 2026-10-21 (D9a): toast, settings only: polite success, alert errors   |
-| D9a      | 2026-10-21: no toast role; polite region for success, assertive one for errors    |
-| D10, R11 | Bearer link on GraphQL; automatic sign-out only under the shared rule (R17)       |
-| D11      | #315's shared pieces leave the auth feature before settings uses them             |
-| D12      | Route, gate, shell, Bearer header: built by settings, imported by 2FA             |
-| D13, R6  | Route renders only while `userSettings` is on; a render-time gate (R17)           |
-| D14      | Copy translated to `uk` and `en`; real subtitle; sections named for content       |
-| D15, R8  | Source contrast: greeting (superseded 2026-10-21), resend link, field-error text  |
-| D16      | Withdrawn 2026-10-08: no security signal for a rejected current password          |
-| D17      | Password change signs out other sessions upstream; the client does not rely on it |
-| D18, R7  | The page owns its load state: skeleton, then an error state with a retry          |
-| P1       | A name-only change still needs the current password in v1                         |
-| P2       | No special handling for OAuth-created users in v1                                 |
-| P3       | Password toast is "Ви успішно змінили пароль", no mention of other devices        |
-| P4       | Resend is disabled only while in flight; no countdown                             |
-| P5       | Wrong-password text matched in `en` and `uk`; anything else is a generic toast    |
-| P6       | Superseded by R28: the mock reads no token                                        |
+| Id       | Decision                                                                             |
+| -------- | ------------------------------------------------------------------------------------ |
+| U1       | GraphQL against user-service only; plan only what has a backend                      |
+| U2       | Every success toast has an error counterpart: same layout, error styling             |
+| U3       | The "Пароль" block is #315's design of record: one password field, one policy        |
+| U5       | Superseded by R28: off in production, on in the test stack; dev keeps the block      |
+| U6       | Password mutations: no cache, minimal selection, abort check, no automatic retry     |
+| U11      | Accessibility overrides design: text under 4.5:1 is overridden, not copied           |
+| D1       | v1: `/settings` card with name, e-mail and resend, password, toasts, 2FA slot        |
+| D2       | No avatar or social networks (social part superseded 2026-10-21, D2a); monogram      |
+| D2a      | 2026-10-21: the social networks card renders UI-only, no actions; amends D2          |
+| D3       | No app-shell menu; one flag-gated home link, shared with 2FA                         |
+| D4       | Current user from `users(first: 1)`; its `id` addresses both mutations               |
+| D5       | No schema extension: all three operations are in pinned v2.8.0                       |
+| D6       | Current password on every Save; only changed fields; e-mail by normalised diff       |
+| D7       | One success toast per changed aspect; form re-reads the result, clears passwords     |
+| D8, R3   | Errors become field errors or toasts in crm copy; wrong password known by text       |
+| D9, R16  | Toast, settings only, at most 3, stays until closed; "alert errors" superseded (D9a) |
+| D9a      | 2026-10-21: no toast role; polite region for success, assertive one for errors       |
+| D10, R11 | Bearer link on GraphQL; automatic sign-out only under the shared rule (R17)          |
+| D11      | #315's shared pieces leave the auth feature before settings uses them                |
+| D12      | Route, gate, shell, Bearer header: built by settings, imported by 2FA                |
+| D13, R6  | Route renders only while `userSettings` is on; a render-time gate (R17)              |
+| D14      | Copy translated to `uk` and `en`; real subtitle; sections named for content          |
+| D15, R8  | Source contrast: greeting (superseded 2026-10-21), resend link, field-error text     |
+| D16      | Withdrawn 2026-10-08: no security signal for a rejected current password             |
+| D17      | Password change signs out other sessions upstream; the client does not rely on it    |
+| D18, R7  | The page owns its load state: skeleton, then an error state with a retry             |
+| P1       | A name-only change still needs the current password in v1                            |
+| P2       | No special handling for OAuth-created users in v1                                    |
+| P3       | Password toast is "Ви успішно змінили пароль", no mention of other devices           |
+| P4       | Resend is disabled only while in flight; no countdown                                |
+| P5       | Wrong-password text matched in `en` and `uk`; anything else is a generic toast       |
+| P6       | Superseded by R28: the mock reads no token                                           |
 
 ## 10. Open Questions for the Design Owner
 
