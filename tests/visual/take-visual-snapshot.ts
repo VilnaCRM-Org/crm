@@ -2,6 +2,7 @@ import { Page, expect } from '@playwright/test';
 
 import { currentLanguage, ScreenSize } from './constants';
 import stabilizePage from './stabilize-page';
+import { SNAPSHOT_OPTIONS } from './take-stable-snapshot';
 
 async function takeVisualSnapshot(
   page: Page,
@@ -15,11 +16,7 @@ async function takeVisualSnapshot(
 
   const snapshotName = fileName ?? `${currentLanguage}_${screen.name}.png`;
 
-  await expect(page).toHaveScreenshot(snapshotName, {
-    fullPage: true,
-    animations: 'disabled',
-    scale: 'css',
-  });
+  await expect(page).toHaveScreenshot(snapshotName, SNAPSHOT_OPTIONS);
 }
 
 export default takeVisualSnapshot;
