@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Route } from '@playwright/test';
 
 import {
   REGISTRATION_URL,
@@ -19,7 +19,17 @@ import stabilizePage from './stabilize-page';
 const successDescription: string = t('notifications.success.description');
 const errorTitle: string = t('notifications.error.title');
 
-async function submitRegistration(page: Page): Promise<void> {
+type RegistrationReply = (route: Route) => Promise<void>;
+
+async function submitRegistration(page: Page, reply: RegistrationReply): Promise<void> {
+  let release: () => void = () => undefined;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(REGISTRATION_API_URL, async (route) => {
+    await released;
+    await reply(route);
+  });
   await stabilizePage(page, REGISTRATION_URL);
 
   const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
@@ -28,6 +38,7 @@ async function submitRegistration(page: Page): Promise<void> {
   await fillInput(passwordInput, userData.password);
   await signupButton.click();
   await expect(signupButton).toBeDisabled();
+  release();
 }
 
 test.describe.parallel('Registration Notification Visual Tests', () => {
@@ -36,8 +47,7 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
       await page.setViewportSize({ width: screen.width, height: screen.height });
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
-      await page.route(REGISTRATION_API_URL, successResponse);
-      await submitRegistration(page);
+      await submitRegistration(page, successResponse);
 
       await expect(
         page.getByRole('heading', { level: 2, name: successNotificationTitle })
@@ -62,11 +72,7 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
       await page.setViewportSize({ width: screen.width, height: screen.height });
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
-      await page.route(
-        REGISTRATION_API_URL,
-        serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' })
-      );
-      await submitRegistration(page);
+      await submitRegistration(page, serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' }));
 
       await expect(page.getByRole('heading', { level: 2, name: errorTitle })).toBeFocused();
       await expect(page.getByRole('alert')).not.toBeEmpty();
