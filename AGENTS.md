@@ -930,9 +930,13 @@ Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are regi
 render-path pattern (issue #115).
 
 Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
-flag is declared today: `forgotPassword`, the last one, was removed in #309, and an environment
-that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
+flag is declared today, `userSettings` (issue #330), shipped off in the committed block and switched
+on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`. Container start fails on two flag
+shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*` name that matches no declared flag,
+and a declared flag whose value is not exactly `true` or `false`. `forgotPassword` was removed
+in #309, so an environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value
+must unset it.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -999,14 +1003,15 @@ only an annotation, make it `import type` (issue #88).
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
 `reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
-`error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
-public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+`error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
+module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
 
 Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
 `reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
-behind an adapter — Apollo through `ApolloLinkFactory` / `AUTH_TOKENS.ApolloClient`, Sentry and
-`web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
-contract module and passed to collaborators as data.
+behind an adapter: Apollo through `ApolloLinkFactory` (the link chain) and `SessionLinkFactory`
+(the Bearer token and the 401 sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two files
+`RESTRICTED_LIBRARY_ADAPTERS` lists; Sentry and `web-vitals` through the observability boundary;
+zod schemas declared in a `response-schemas` contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
@@ -1020,8 +1025,9 @@ core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) 
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
-load-bearing, so do not delete it. The form-section `validations/*` singletons live under
-`components/`, which no scope glob matches, so they alone need no policy entry.
+load-bearing, so do not delete it. The validator singletons live in
+`src/modules/user/lib/validations/`, which no `LOGIC_SOURCE_GLOBS` entry matches, so they need no
+policy entry.
 
 Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
 the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus
