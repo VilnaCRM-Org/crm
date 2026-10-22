@@ -5,16 +5,16 @@ import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import breakpointsTheme from '@/components/ui-breakpoints';
 import uiFormStyles from '@/components/ui-form/styles';
+import formFieldStyles from '@/components/ui-form-field/styles';
 import providerStyles from '@auth/components/form-section/components/auth-provider-buttons/styles';
-import formFieldStyles from '@auth/components/form-section/components/styles';
 import authFormSectionStyles, { fieldGapMargins } from '@auth/components/form-section/styles';
 import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
-jest.mock('@auth/assets/eye-off.svg', () => ({
+jest.mock('@/assets/icons/eye-off.svg', () => ({
   ReactComponent: 'svg',
 }));
 
-jest.mock('@auth/assets/eye.svg', () => ({
+jest.mock('@/assets/icons/eye.svg', () => ({
   ReactComponent: 'svg',
 }));
 

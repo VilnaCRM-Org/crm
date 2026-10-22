@@ -14,10 +14,13 @@ export const paletteColors = {
   },
   error: {
     main: '#DC3939',
+    text: '#C62828',
+    surface: '#FDECEC',
   },
   success: {
     main: '#4CAF50',
     text: '#2E7D32',
+    surface: '#E8F4EF',
   },
   warning: {
     main: '#FF9800',
@@ -68,6 +71,7 @@ export const customColors = {
     primary: '#404142',
     secondary: '#969B9D',
     dark: '#1A1C1E',
+    muted: '#57595B',
     heading: '#000000',
   },
   surface: {
