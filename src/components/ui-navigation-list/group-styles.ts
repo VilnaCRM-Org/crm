@@ -6,8 +6,16 @@ const hitArea = { content: '""', position: 'absolute' };
 
 export default {
   group: {
-    expanded: { ...groupBase, padding: '0 0 12px' },
-    collapsed: { ...groupBase, padding: 0 },
+    expanded: {
+      desktop: { ...groupBase, padding: '0 0 12px' },
+      tablet: { ...groupBase, padding: '0 0 12px' },
+      drawer: { ...groupBase, width: '233px', padding: '0 0 14px' },
+    },
+    collapsed: {
+      desktop: { ...groupBase, padding: 0 },
+      tablet: { ...groupBase, padding: 0 },
+      drawer: { ...groupBase, width: '233px', padding: 0 },
+    },
   },
   subList: { margin: 0, padding: 0, listStyle: 'none' },
   toggleBase: {
@@ -42,7 +50,15 @@ export default {
       height: '24px',
       '&::after': { ...hitArea, inset: '-10px' },
     },
+    drawer: {
+      left: '185px',
+      top: '12px',
+      width: '24px',
+      height: '24px',
+      '&::after': { ...hitArea, inset: '-10px' },
+    },
   },
+  toggleDrawerCollapsed: { top: '18px' },
   toggleGlyph: {
     expanded: { transform: 'rotate(90deg)' },
     collapsed: { transform: 'rotate(-90deg)' },

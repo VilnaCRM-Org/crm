@@ -3,6 +3,7 @@ import { screen, within } from '@testing-library/react';
 import { lazy } from 'react';
 
 import UIAppHeader from '@/components/ui-app-header';
+import navigationItems from '@/components/ui-app-shell/navigation-items';
 import renderShell from '@tests/unit/utils/render-shell';
 
 const NeverResolves = lazy(() => new Promise<never>(() => undefined));
@@ -132,5 +133,33 @@ describe('UIAppHeader', () => {
     expect(screen.getByRole('searchbox', { name: 'Пошук' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Сповіщення' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Завдання' })).toBeDisabled();
+  });
+
+  describe('navigation', () => {
+    const navigation = { items: navigationItems, signOut: jest.fn() };
+
+    it('ends the mobile header with the Open menu burger', () => {
+      renderShell(<UIAppHeader layout="mobile" navigation={navigation} />);
+
+      const burger = screen.getByRole('button', { name: 'Open menu', hidden: true });
+      const controls = within(screen.getByRole('banner')).getAllByRole('button', { hidden: true });
+
+      expect(controls.at(-1)).toBe(burger);
+      expect(burger).toHaveAttribute('aria-expanded', 'false');
+      expect(burger).toHaveAttribute('aria-haspopup', 'dialog');
+      expect(burger).not.toHaveAttribute('aria-controls');
+    });
+
+    it.each(['tablet', 'desktop'] as const)('renders no burger at %s', (layout) => {
+      renderShell(<UIAppHeader layout={layout} navigation={navigation} />);
+
+      expect(screen.queryByRole('button', { name: 'Open menu' })).not.toBeInTheDocument();
+    });
+
+    it('renders no burger on mobile when no navigation is given', () => {
+      renderShell(<UIAppHeader layout="mobile" />);
+
+      expect(screen.queryByRole('button', { name: 'Open menu' })).not.toBeInTheDocument();
+    });
   });
 });

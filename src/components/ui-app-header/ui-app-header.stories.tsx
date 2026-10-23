@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
+import { storyItems } from '@stories/navigation-story-items';
 import { withMemoryRouter } from '@stories/router-decorators';
+import { noop } from '@stories/story-callbacks';
 
 import UIAppHeader from '.';
 
@@ -36,6 +38,10 @@ export const Desktop: Story = {};
 export const Tablet: Story = { args: { layout: 'tablet' } };
 
 export const Mobile: Story = { args: { layout: 'mobile' } };
+
+export const MobileWithNavigation: Story = {
+  args: { layout: 'mobile', navigation: { items: storyItems, signOut: noop } },
+};
 
 export const DesktopWithBadges: Story = {
   args: { badgeCounts: { notifications: 1, tasks: 8 } },

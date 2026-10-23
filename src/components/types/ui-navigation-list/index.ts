@@ -9,6 +9,8 @@ import type {
 } from '../ui-app-shell/navigation-item';
 import type { ActivateHandler, SidebarLayout, SignOutHandler } from '../ui-sidebar';
 
+export type NavigationLayout = SidebarLayout | 'drawer';
+
 export type NavigationListVariant = 'expanded' | 'rail';
 
 export type NavigationRowVariant = 'item' | 'sub' | 'rail';
@@ -18,14 +20,14 @@ export type RailShape = 'desktop' | 'tablet' | 'tabletProducts' | 'tabletCompact
 export type NavigationRowId = NavigationItemId | 'signOut';
 
 export interface UINavigationListProps {
-  readonly layout: SidebarLayout;
+  readonly layout: NavigationLayout;
   readonly variant: NavigationListVariant;
   readonly items: NavigationItemSet;
   readonly signOut: SignOutHandler;
 }
 
 export interface NavigationRowProps {
-  readonly layout: SidebarLayout;
+  readonly layout: NavigationLayout;
   readonly variant: NavigationRowVariant;
   readonly id: NavigationRowId;
   readonly label: string;
@@ -34,6 +36,7 @@ export interface NavigationRowProps {
   readonly current?: boolean | undefined;
   readonly onActivate?: ActivateHandler | undefined;
   readonly shape?: RailShape | undefined;
+  readonly open?: boolean | undefined;
 }
 
 export interface NavigationRailItemProps {
@@ -47,13 +50,13 @@ export interface NavigationRailItemProps {
 }
 
 export interface NavigationGroupProps {
-  readonly layout: SidebarLayout;
+  readonly layout: NavigationLayout;
   readonly group: NavigationGroup;
   readonly currentId: NavigationItemId | null;
 }
 
 export interface NavigationGroupToggleProps {
-  readonly layout: SidebarLayout;
+  readonly layout: NavigationLayout;
   readonly expanded: boolean;
   readonly controls: string;
   readonly onToggle: ActivateHandler;
@@ -87,19 +90,35 @@ export interface NavigationRailTooltipProps {
 }
 
 export interface NavigationSubListProps {
-  readonly layout: SidebarLayout;
+  readonly layout: NavigationLayout;
   readonly id: string;
   readonly leaves: NavigationLeafSet;
   readonly currentId: NavigationItemId | null;
 }
 
 export interface NavigationItemsProps {
-  readonly layout: SidebarLayout;
+  readonly layout: NavigationLayout;
   readonly items: NavigationItemSet;
   readonly currentId: NavigationItemId | null;
 }
 
 export interface NavigationSignOutProps {
+  readonly layout: NavigationLayout;
+  readonly variant: NavigationListVariant;
+  readonly onSignOut: ActivateHandler;
+}
+
+export interface NavigationRailItemsProps {
+  readonly layout: SidebarLayout;
+  readonly items: NavigationItemSet;
+  readonly currentId: NavigationItemId | null;
+}
+
+export interface NavigationDrawerSignOutProps {
+  readonly onSignOut: ActivateHandler;
+}
+
+export interface NavigationSidebarSignOutProps {
   readonly layout: SidebarLayout;
   readonly variant: NavigationListVariant;
   readonly onSignOut: ActivateHandler;

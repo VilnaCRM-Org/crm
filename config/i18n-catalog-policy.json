@@ -34,7 +34,8 @@
         "components/ui-app-shell",
         "components/ui-app-header",
         "components/ui-sidebar",
-        "components/ui-navigation-list"
+        "components/ui-navigation-list",
+        "components/ui-navigation-drawer"
       ]
     }
   ]

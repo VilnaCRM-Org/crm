@@ -6,7 +6,7 @@ import HeaderSearch from '@/components/ui-app-header/header-search';
 import renderShell from '@tests/unit/utils/render-shell';
 
 describe('HeaderSearch', () => {
-  it.each(['desktop', 'tablet'] as const)(
+  it.each(['desktop', 'tablet', 'drawer'] as const)(
     'renders a natively disabled search input named Search at %s',
     (layout) => {
       renderShell(<HeaderSearch layout={layout} />);
