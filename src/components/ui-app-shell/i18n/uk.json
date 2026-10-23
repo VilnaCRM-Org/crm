@@ -1,0 +1,50 @@
+{
+  "app_shell": {
+    "navigation": {
+      "label": "Основна навігація"
+    },
+    "items": {
+      "boards": "Дошки",
+      "products": "Продукти",
+      "orders": "Замовлення",
+      "contacts": "Контакти",
+      "analytics": "Аналітика",
+      "settings": "Налаштування",
+      "integrations": "Інтеграції",
+      "webhooks": "Вебхуки",
+      "billing": "Білінг"
+    },
+    "sign_out": "Вийти",
+    "search": {
+      "label": "Пошук",
+      "placeholder": "Щось шукаєте?"
+    },
+    "unavailable": "Ще недоступно",
+    "notifications": {
+      "label": "Сповіщення",
+      "count_one": "{{count}} сповіщення",
+      "count_few": "{{count}} сповіщення",
+      "count_many": "{{count}} сповіщень",
+      "count_other": "{{count}} сповіщення"
+    },
+    "tasks": {
+      "label": "Завдання",
+      "count_one": "{{count}} завдання",
+      "count_few": "{{count}} завдання",
+      "count_many": "{{count}} завдань",
+      "count_other": "{{count}} завдання"
+    },
+    "drawer": {
+      "open": "Відкрити меню",
+      "close": "Закрити меню"
+    },
+    "sidebar": {
+      "collapse": "Згорнути бічну панель",
+      "expand": "Розгорнути бічну панель"
+    },
+    "settings_group": {
+      "collapse": "Згорнути налаштування",
+      "expand": "Розгорнути налаштування"
+    }
+  }
+}
