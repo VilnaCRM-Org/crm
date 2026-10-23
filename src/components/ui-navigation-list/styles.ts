@@ -49,6 +49,8 @@ export const control = {
 
 const rowBase = { ...control, padding: '0 0 0 24px', gap: '8px' };
 
+const drawerBorder = `1px solid ${paletteColors.background.subtle}`;
+
 const subBase = { ...control, display: 'block', fontWeight: 400, lineHeight: '18px' };
 
 const dividerBase = { height: '1px', margin: '0 0 21px', border: 0 };
@@ -75,23 +77,45 @@ export default {
       listStyle: 'none',
       overflow: 'visible',
     },
+    drawer: { margin: '8px 0 0', padding: 0, listStyle: 'none' },
   },
   item: { position: 'relative', flexShrink: 0, margin: 0, padding: 0, listStyle: 'none' },
+  itemDrawer: {
+    position: 'relative',
+    flexShrink: 0,
+    width: '233px',
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+  },
   row: {
     desktop: { ...rowBase, height: '54px', fontSize: '16px', lineHeight: '18px' },
     tablet: { ...rowBase, height: '66px', fontSize: '18px', lineHeight: '22px' },
+    drawer: { ...rowBase, height: '60px', fontSize: '16px', lineHeight: '18px' },
   },
-  rowById: { desktop: noOverrides, tablet: tabletOverrides },
+  rowById: { desktop: noOverrides, tablet: tabletOverrides, drawer: noOverrides },
+  rowOpen: { desktop: noOverrides, tablet: noOverrides, drawer: { height: '48px' } },
   action: { ...rowBase, height: '54px', fontSize: '16px', lineHeight: '18px' },
+  actionDrawer: {
+    ...rowBase,
+    height: '54px',
+    padding: '0 0 1px 24px',
+    borderTop: drawerBorder,
+    fontSize: '16px',
+    lineHeight: '18px',
+  },
   icon: {
     desktop: { width: '24px', height: '24px' },
     tablet: { width: '28px', height: '28px' },
+    drawer: { width: '24px', height: '24px' },
     action: { width: '24px', height: '24px' },
   },
   sub: {
     desktop: { ...subBase, height: '42px', padding: '9px 0 0 56px', fontSize: '16px' },
     tablet: { ...subBase, height: '46px', padding: '8px 0 0 60px', fontSize: '18px' },
+    drawer: { ...subBase, height: '42px', padding: '12px 0 0 56px', fontSize: '16px' },
   },
+  signOutDrawer: { margin: 0, padding: 0, listStyle: 'none' },
   signOut: {
     position: 'sticky',
     bottom: 0,

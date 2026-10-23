@@ -203,4 +203,22 @@ describe('header styles', () => {
       width: '1px',
     });
   });
+
+  it('places the drawer search in the panel at 10,13 with the mobile disabled look', async () => {
+    const { search, searchInput, magnifier } = await loadStyles();
+
+    expect(search.drawer).toMatchObject({
+      width: '293px',
+      height: '48px',
+      margin: '13px 10px 0',
+      backgroundColor: '#EAECEE',
+    });
+    expect(searchInput.drawer).toMatchObject({ paddingLeft: '44px', fontSize: '14px' });
+    expect(magnifier.drawer).toMatchObject({
+      top: '14px',
+      left: '14px',
+      width: '20px',
+      height: '20px',
+    });
+  });
 });

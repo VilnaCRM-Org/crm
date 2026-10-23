@@ -16,15 +16,24 @@ const iconStyleOf = ({ layout, variant, id, shape }: NavigationRowProps): SxProp
   ({
     item: id === 'signOut' ? styles.icon.action : styles.icon[layout],
     sub: styles.icon[layout],
-    rail: railStyles.railIcon[shape ?? layout],
+    rail: railStyles.railIcon[shape ?? 'desktop'],
   })[variant];
 
-const sxOf = ({ layout, variant, id, shape }: NavigationRowProps): SxProps<Theme> =>
+const actionOf = (layout: NavigationRowProps['layout']): SxProps<Theme> =>
+  layout === 'drawer' ? styles.actionDrawer : styles.action;
+
+const sxOf = ({ layout, variant, id, shape, open }: NavigationRowProps): SxProps<Theme> =>
   ({
     item:
-      id === 'signOut' ? styles.action : { ...styles.row[layout], ...styles.rowById[layout][id] },
+      id === 'signOut'
+        ? actionOf(layout)
+        : {
+            ...styles.row[layout],
+            ...styles.rowById[layout][id],
+            ...(open ? styles.rowOpen[layout] : {}),
+          },
     sub: styles.sub[layout],
-    rail: railStyles.rail[shape ?? layout],
+    rail: railStyles.rail[shape ?? 'desktop'],
   })[variant];
 
 export default function NavigationRow(props: NavigationRowProps): JSX.Element {

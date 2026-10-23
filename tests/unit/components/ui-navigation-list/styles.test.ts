@@ -30,6 +30,11 @@ describe('navigation list styles', () => {
         listStyle: 'none',
         overflow: 'visible',
       },
+      drawer: {
+        margin: '8px 0 0',
+        padding: 0,
+        listStyle: 'none',
+      },
     });
   });
 
@@ -39,6 +44,19 @@ describe('navigation list styles', () => {
     expect(styles.item).toEqual({
       position: 'relative',
       flexShrink: 0,
+      margin: 0,
+      padding: 0,
+      listStyle: 'none',
+    });
+  });
+
+  it('pins itemDrawer', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.itemDrawer).toEqual({
+      position: 'relative',
+      flexShrink: 0,
+      width: '233px',
       margin: 0,
       padding: 0,
       listStyle: 'none',
@@ -143,6 +161,53 @@ describe('navigation list styles', () => {
         fontSize: '18px',
         lineHeight: '22px',
       },
+      drawer: {
+        display: 'flex',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+        width: '100%',
+        margin: 0,
+        border: 0,
+        background: 'transparent',
+        textAlign: 'left',
+        textDecoration: 'none',
+        cursor: 'pointer',
+        fontFamily: 'Inter, sans-serif',
+        fontWeight: 500,
+        whiteSpace: 'nowrap',
+        color: '#404142',
+        '& svg': {
+          flexShrink: 0,
+          fill: 'none',
+          color: '#969B9D',
+        },
+        '&:hover': {
+          backgroundColor: '#F4F5F6',
+          color: '#1A1C1E',
+          '& svg': {
+            color: '#404142',
+          },
+        },
+        '&[aria-current="page"]': {
+          backgroundColor: 'rgba(30, 174, 255, 0.1)',
+          color: '#0399ED',
+          '& svg': {
+            color: '#0399ED',
+          },
+        },
+        '&:focus-visible': {
+          outline: '2px solid #1A1C1E',
+          outlineOffset: '-2px',
+        },
+        '&:focus:not(:focus-visible)': {
+          outline: 'none',
+        },
+        padding: '0 0 0 24px',
+        gap: '8px',
+        height: '60px',
+        fontSize: '16px',
+        lineHeight: '18px',
+      },
     });
   });
 
@@ -159,6 +224,19 @@ describe('navigation list styles', () => {
         settings: {
           paddingTop: '6px',
         },
+      },
+      drawer: {},
+    });
+  });
+
+  it('pins rowOpen', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.rowOpen).toEqual({
+      desktop: {},
+      tablet: {},
+      drawer: {
+        height: '48px',
       },
     });
   });
@@ -215,6 +293,59 @@ describe('navigation list styles', () => {
     });
   });
 
+  it('pins actionDrawer', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.actionDrawer).toEqual({
+      display: 'flex',
+      alignItems: 'center',
+      boxSizing: 'border-box',
+      width: '100%',
+      margin: 0,
+      border: 0,
+      background: 'transparent',
+      textAlign: 'left',
+      textDecoration: 'none',
+      cursor: 'pointer',
+      fontFamily: 'Inter, sans-serif',
+      fontWeight: 500,
+      whiteSpace: 'nowrap',
+      color: '#404142',
+      '& svg': {
+        flexShrink: 0,
+        fill: 'none',
+        color: '#969B9D',
+      },
+      '&:hover': {
+        backgroundColor: '#F4F5F6',
+        color: '#1A1C1E',
+        '& svg': {
+          color: '#404142',
+        },
+      },
+      '&[aria-current="page"]': {
+        backgroundColor: 'rgba(30, 174, 255, 0.1)',
+        color: '#0399ED',
+        '& svg': {
+          color: '#0399ED',
+        },
+      },
+      '&:focus-visible': {
+        outline: '2px solid #1A1C1E',
+        outlineOffset: '-2px',
+      },
+      '&:focus:not(:focus-visible)': {
+        outline: 'none',
+      },
+      padding: '0 0 1px 24px',
+      gap: '8px',
+      height: '54px',
+      borderTop: '1px solid #E1E7EA',
+      fontSize: '16px',
+      lineHeight: '18px',
+    });
+  });
+
   it('pins icon', async () => {
     const styles = await loadStyles();
 
@@ -226,6 +357,10 @@ describe('navigation list styles', () => {
       tablet: {
         width: '28px',
         height: '28px',
+      },
+      drawer: {
+        width: '24px',
+        height: '24px',
       },
       action: {
         width: '24px',
@@ -330,6 +465,62 @@ describe('navigation list styles', () => {
         padding: '8px 0 0 60px',
         fontSize: '18px',
       },
+      drawer: {
+        display: 'block',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+        width: '100%',
+        margin: 0,
+        border: 0,
+        background: 'transparent',
+        textAlign: 'left',
+        textDecoration: 'none',
+        cursor: 'pointer',
+        fontFamily: 'Inter, sans-serif',
+        fontWeight: 400,
+        whiteSpace: 'nowrap',
+        color: '#404142',
+        '& svg': {
+          flexShrink: 0,
+          fill: 'none',
+          color: '#969B9D',
+        },
+        '&:hover': {
+          backgroundColor: '#F4F5F6',
+          color: '#1A1C1E',
+          '& svg': {
+            color: '#404142',
+          },
+        },
+        '&[aria-current="page"]': {
+          backgroundColor: 'rgba(30, 174, 255, 0.1)',
+          color: '#0399ED',
+          '& svg': {
+            color: '#0399ED',
+          },
+        },
+        '&:focus-visible': {
+          outline: '2px solid #1A1C1E',
+          outlineOffset: '-2px',
+        },
+        '&:focus:not(:focus-visible)': {
+          outline: 'none',
+        },
+        lineHeight: '18px',
+        height: '42px',
+        padding: '12px 0 0 56px',
+        fontSize: '16px',
+      },
+    });
+  });
+
+  it('pins signOutDrawer', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.signOutDrawer).toEqual({
+      margin: 0,
+      padding: 0,
+      listStyle: 'none',
     });
   });
 

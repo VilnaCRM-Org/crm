@@ -145,14 +145,17 @@ export default {
   search: {
     desktop: { ...searchBox, width: '477px', height: '48px' },
     tablet: { ...searchBox, width: '360px', height: '52px' },
+    drawer: { ...searchBox, width: '293px', height: '48px', margin: '13px 10px 0' },
   },
   searchInput: {
     desktop: { ...searchInput, paddingLeft: '44px', fontSize: '14px' },
     tablet: { ...searchInput, paddingLeft: '48px', fontSize: '16px' },
+    drawer: { ...searchInput, paddingLeft: '44px', fontSize: '14px' },
   },
   magnifier: {
     desktop: { ...magnifier, width: '20px', height: '20px' },
     tablet: { ...magnifier, width: '24px', height: '24px' },
+    drawer: { ...magnifier, width: '20px', height: '20px' },
   },
   iconButton: {
     desktop: { ...iconButton, width: '48px', height: '48px' },

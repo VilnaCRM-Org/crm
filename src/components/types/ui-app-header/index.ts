@@ -1,15 +1,23 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref, RefObject } from 'react';
 
 import type { ShellLayout } from '../ui-app-shell';
+import type { NavigationItemSet } from '../ui-app-shell/navigation-item';
+import type { ActivateHandler, SignOutHandler } from '../ui-sidebar';
 
 import type { ShellBadgeCounts } from './shell-badge-counts';
 
 export type HeaderControlKind = 'notifications' | 'tasks';
 
-export type HeaderSearchLayout = 'tablet' | 'desktop';
+export type HeaderSearchLayout = 'tablet' | 'desktop' | 'drawer';
+
+export interface HeaderNavigation {
+  readonly items: NavigationItemSet;
+  readonly signOut: SignOutHandler;
+}
 
 export interface UIAppHeaderProps {
   readonly layout: ShellLayout;
+  readonly navigation?: HeaderNavigation | undefined;
   readonly badgeCounts?: ShellBadgeCounts | null | undefined;
   readonly userMenu?: ReactNode | undefined;
 }
@@ -36,4 +44,31 @@ export interface UserSlotFrameProps {
 export interface HeaderHiddenTextProps {
   readonly id: string;
   readonly children: ReactNode;
+}
+
+export interface MenuToggleButtonProps {
+  readonly open: boolean;
+  readonly controls?: string | undefined;
+  readonly onToggle: ActivateHandler;
+  readonly ref?: Ref<HTMLButtonElement> | undefined;
+}
+
+export interface MobileNavigationProps {
+  readonly items: NavigationItemSet;
+  readonly signOut: SignOutHandler;
+}
+
+export interface DrawerOpenFlags {
+  readonly open: boolean;
+  readonly restore: boolean;
+}
+
+export interface DrawerOpenState extends DrawerOpenFlags {
+  readonly show: ActivateHandler;
+  readonly dismiss: ActivateHandler;
+  readonly leave: ActivateHandler;
+}
+
+export interface DrawerFocusOptions extends DrawerOpenFlags {
+  readonly burger: RefObject<HTMLButtonElement | null>;
 }

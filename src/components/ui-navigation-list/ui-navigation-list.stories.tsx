@@ -12,7 +12,7 @@ const meta: Meta<typeof UINavigationList> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', variant: 'expanded', items: storyItems, signOut: noop },
   argTypes: {
-    layout: { control: 'select', options: ['desktop', 'tablet'] },
+    layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
     variant: { control: 'select', options: ['expanded', 'rail'] },
   },
   decorators: [withMemoryRouter('/')],
@@ -41,6 +41,8 @@ export const OnProducts: Story = { decorators: [withMemoryRouter('/products')] }
 export const OnSettings: Story = { decorators: [withMemoryRouter('/settings/webhooks')] };
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
+
+export const Drawer: Story = { args: { layout: 'drawer' } };
 
 export const Rail: Story = { args: { variant: 'rail' } };
 

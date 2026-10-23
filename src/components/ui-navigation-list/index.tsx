@@ -20,11 +20,14 @@ export default function UINavigationList({
   const available = useAvailableNavigationItems(items);
   const currentId = useCurrentNavigationItem(available);
   const onSignOut = useOnceCallback(signOut);
-  const Items = variant === 'rail' ? NavigationRailItems : NavigationExpandedItems;
 
   return (
-    <Box component="ol" sx={styles.list[variant]}>
-      <Items layout={layout} items={available} currentId={currentId} />
+    <Box component="ol" sx={styles.list[layout === 'drawer' ? 'drawer' : variant]}>
+      {variant === 'rail' && layout !== 'drawer' ? (
+        <NavigationRailItems layout={layout} items={available} currentId={currentId} />
+      ) : (
+        <NavigationExpandedItems layout={layout} items={available} currentId={currentId} />
+      )}
       <NavigationSignOut layout={layout} variant={variant} onSignOut={onSignOut} />
     </Box>
   );

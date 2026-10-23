@@ -191,7 +191,7 @@ describe('NavigationRow', () => {
 
   it.each([
     ['desktop', undefined, '56px', '40px'],
-    ['tablet', undefined, '60px', '44px'],
+    ['tablet', 'tablet', '60px', '44px'],
     ['tablet', 'tabletProducts', '60px', '44px'],
     ['tablet', 'tabletCompact', '56px', '40px'],
     ['tablet', 'action', '56px', '40px'],

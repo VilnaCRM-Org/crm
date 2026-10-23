@@ -74,6 +74,8 @@ describe('shell tokens', () => {
       handleShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
       tooltipShadow: '0 6px 17px rgba(37, 42, 49, 0.07)',
       tooltipText: '#191B1E',
+      drawerShadow: '-9px 4px 33px rgba(53, 59, 72, 0.07)',
+      scrim: 'rgba(54, 79, 93, 0.05)',
     });
   });
 

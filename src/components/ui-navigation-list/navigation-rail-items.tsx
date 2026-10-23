@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { NavigationItemsProps } from '@/components/types/ui-navigation-list';
+import type { NavigationRailItemsProps } from '@/components/types/ui-navigation-list';
 
 import NavigationRailItem from './navigation-rail-item';
 import styles from './styles';
@@ -11,7 +11,7 @@ export default function NavigationRailItems({
   layout,
   items,
   currentId,
-}: NavigationItemsProps): JSX.Element {
+}: NavigationRailItemsProps): JSX.Element {
   const { t } = useTranslation();
   const leaves = items.items.flatMap((item) =>
     'children' in item ? [item, ...item.children.items] : [item]

@@ -250,3 +250,58 @@ describe('UINavigationList', () => {
     expect(screen.queryByText('Ще недоступно')).not.toBeInTheDocument();
   });
 });
+
+describe('UINavigationList in the drawer', () => {
+  beforeEach(() => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('lists the same rows without a divider: Sign out carries its own top border', () => {
+    renderList({ layout: 'drawer' }, '/');
+
+    expect(linkTexts()).toEqual([
+      'Boards',
+      'Products',
+      'Orders',
+      'Contacts',
+      'Analytics',
+      'Settings',
+    ]);
+    expect(screen.queryByRole('separator', { hidden: true })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({
+      height: '54px',
+      borderTop: '1px solid #E1E7EA',
+    });
+  });
+
+  it('draws 60 px rows, a 48 px open Settings header and a 60 px collapsed one', () => {
+    const { unmount } = renderList({ layout: 'drawer' }, '/settings');
+
+    expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ height: '60px' });
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ height: '48px' });
+    expect(screen.getByRole('link', { name: 'Integrations' })).toHaveStyle({ height: '42px' });
+    unmount();
+
+    renderList({ layout: 'drawer' }, '/');
+
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ height: '60px' });
+  });
+
+  it('calls signOut once and keeps working the Settings chevron like the sidebar', async () => {
+    const user = userEvent.setup();
+    const signOut = jest.fn();
+    renderList({ layout: 'drawer', signOut }, '/boards');
+
+    await user.click(screen.getByRole('button', { name: 'Expand Settings' }));
+    expect(screen.getByRole('link', { name: 'Billing' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+});

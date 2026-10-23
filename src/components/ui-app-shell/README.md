@@ -132,3 +132,54 @@ What Figma leaves open, and how it was built:
   y 22), and the Products row is 67 px; both are reproduced.
 - Until the coming-soon routes of Story 2.5 add their `ROUTE_PATHS` keys, the item set holds the
   FR-18 paths as literals (`/boards`, `/settings/integrations` ...); Story 2.5 swaps them for the keys.
+
+## Mobile drawer
+
+Below 1024 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
+transparent target around the 24 px glyph at 336,16) and `UINavigationDrawer` opens a modal dialog
+named "Main navigation". It is MUI's `Modal`, so the focus trap, the hidden page (the app root,
+banner, main and footer lose their roles), the scroll lock and Escape are MUI's; no `inert`, `:has()`
+or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies of the logo, bell,
+list and avatar and the one operable `x-close` button, and a 313×622 panel at 62,56 with the
+disabled drawer search and the same `UINavigationList` as the sidebar in 60 px rows (the Settings
+header is 48 px while the group is open, as drawn). The panel slides in over 200 ms and the scrim
+fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0.
+
+Focus: the close button takes focus on open. Escape, the close button, the scrim and a tap on the
+header outside the panel close the drawer and return focus to the burger. A navigation row, a
+sub-item, Settings, Sign out or any route change close it without restoring the burger, so the
+destination's `<main>` keeps the focus `useArrivalFocus` gave it; widening the viewport unmounts the
+drawer and focuses `main[tabindex="-1"]`. Sign out closes the drawer and runs `signOut` once.
+
+### Measured against Figma (drawer, 375 wide)
+
+| Row                 | Figma                  | Measured            | Verdict |
+| ------------------- | ---------------------- | ------------------- | ------- |
+| P-33 burger glyph   | 336,16, 24×24          | 336,16, 24×24       | pass    |
+| P-38 burger target  | 326,6, 44×44           | 326,6, 44×44        | pass    |
+| P-43 drawer header  | 0,0, 375×56            | 0,0, 375×56         | pass    |
+| drawer logo         | 15,7, 125×42.067       | 15,7, 125×42.06     | pass    |
+| drawer bell, list   | 200,16 and 240,16      | 200,16 and 240,16   | pass    |
+| drawer close glyph  | 336,16, 24×24          | 336,16, 24×24       | pass    |
+| P-34 drawer panel   | 62,56, 313×622         | 62,56, 313×622      | pass    |
+| P-35 drawer search  | 72,69, 293×48          | 72,69, 293×48       | pass    |
+| P-36 first row      | 62,125, 233×60         | 62,125, 233×60      | pass    |
+| Settings group      | 233×188, header at 425 | 425 to 613 (188)    | pass    |
+| Settings chevron    | right 24, 24 px        | 247,437, 24×24      | pass    |
+| first sub-item text | x 56, y 60 in group    | x 56, y 60 in group | pass    |
+| P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass    |
+
+The scrim is `rgba(54,79,93,.05)` with a 4 px backdrop blur over the whole viewport; the 56 px header
+is painted above it. At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger
+and close targets are 42 px wide there, because a 44 px target at an 8 px inset would overflow the
+viewport and cause horizontal scroll (the known sizing gap of NFR-3 at 320 px). The Sign out row is
+314 px wide in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
+
+What Figma leaves open, and how it was built:
+
+- The drawer avatar copy is an empty aria-hidden 40 px box; the real avatar belongs to Story 2.4.
+- The footer drawn above the scrim in the mock is page content; the scrim here covers the viewport
+  below the header.
+- The collapsed Settings header is 60 px (as the other rows) and its chevron is centred on it; the
+  open header is the drawn 48 px.
+- The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.

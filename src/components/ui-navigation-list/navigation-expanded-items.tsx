@@ -21,7 +21,11 @@ export default function NavigationExpandedItems({
         'children' in item ? (
           <NavigationGroup key={item.id} layout={layout} group={item} currentId={currentId} />
         ) : (
-          <Box component="li" key={item.id} sx={styles.item}>
+          <Box
+            component="li"
+            key={item.id}
+            sx={layout === 'drawer' ? styles.itemDrawer : styles.item}
+          >
             <NavigationRow
               layout={layout}
               variant="item"

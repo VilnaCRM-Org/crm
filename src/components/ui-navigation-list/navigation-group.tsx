@@ -20,7 +20,7 @@ export default function NavigationGroup({
   const listId = useId();
 
   return (
-    <Box component="li" sx={expanded ? groupStyles.group.expanded : groupStyles.group.collapsed}>
+    <Box component="li" sx={groupStyles.group[expanded ? 'expanded' : 'collapsed'][layout]}>
       <NavigationRow
         layout={layout}
         variant="item"
@@ -29,6 +29,7 @@ export default function NavigationGroup({
         icon={group.icon}
         href={group.href}
         current={currentId === group.id}
+        open={expanded}
       />
       <NavigationGroupToggle
         layout={layout}

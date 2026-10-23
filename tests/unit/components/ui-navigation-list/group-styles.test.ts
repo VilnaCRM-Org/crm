@@ -11,18 +11,52 @@ describe('navigation group styles', () => {
 
     expect(styles.group).toEqual({
       expanded: {
-        position: 'relative',
-        flexShrink: 0,
-        margin: 0,
-        listStyle: 'none',
-        padding: '0 0 12px',
+        desktop: {
+          position: 'relative',
+          flexShrink: 0,
+          margin: 0,
+          listStyle: 'none',
+          padding: '0 0 12px',
+        },
+        tablet: {
+          position: 'relative',
+          flexShrink: 0,
+          margin: 0,
+          listStyle: 'none',
+          padding: '0 0 12px',
+        },
+        drawer: {
+          position: 'relative',
+          flexShrink: 0,
+          margin: 0,
+          listStyle: 'none',
+          width: '233px',
+          padding: '0 0 14px',
+        },
       },
       collapsed: {
-        position: 'relative',
-        flexShrink: 0,
-        margin: 0,
-        listStyle: 'none',
-        padding: 0,
+        desktop: {
+          position: 'relative',
+          flexShrink: 0,
+          margin: 0,
+          listStyle: 'none',
+          padding: 0,
+        },
+        tablet: {
+          position: 'relative',
+          flexShrink: 0,
+          margin: 0,
+          listStyle: 'none',
+          padding: 0,
+        },
+        drawer: {
+          position: 'relative',
+          flexShrink: 0,
+          margin: 0,
+          listStyle: 'none',
+          width: '233px',
+          padding: 0,
+        },
       },
     });
   });
@@ -94,6 +128,25 @@ describe('navigation group styles', () => {
           inset: '-10px',
         },
       },
+      drawer: {
+        left: '185px',
+        top: '12px',
+        width: '24px',
+        height: '24px',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          inset: '-10px',
+        },
+      },
+    });
+  });
+
+  it('pins toggleDrawerCollapsed', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.toggleDrawerCollapsed).toEqual({
+      top: '18px',
     });
   });
 
