@@ -27,6 +27,10 @@
     {
       "catalog": "components/ui-toast/i18n",
       "owners": ["components/ui-toast"]
+    },
+    {
+      "catalog": "components/ui-app-shell/i18n",
+      "owners": ["components/ui-app-shell"]
     }
   ]
 }
