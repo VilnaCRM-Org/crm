@@ -65,3 +65,70 @@ Two choices record what Figma leaves open:
   that shows through in the frame.
 - The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. Every header
   button is disabled, so the badge follows the disabled variant.
+
+## Sidebar
+
+`UISidebar` (`src/components/ui-sidebar/`) is one `<nav>` named "Main navigation" holding one ordered
+list (`UINavigationList`): the five product rows, the Settings group and, last, Sign out after a
+decorative divider. The rows come from the typed item set in `navigation-items.ts` (data, no
+function-valued property), so an RBAC filter can drop a row without leaving a gap. Items flagged
+`userSettings` (the Settings group and its three sub-items) are filtered while the flag is off.
+`useCurrentNavigationItem` marks the current page with `aria-current="page"`; the Settings group is
+expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron toggle lasts until the
+next route change. The handle collapses the panel to the rail (72 px desktop, 76 px tablet); the rail
+shows each row as an icon pill with a tooltip on hover and keyboard focus, and Escape hides it
+without moving focus. Nothing is persisted. Sign out runs through `useOnceCallback`, so a second
+activation before navigation does nothing.
+
+### Measured against Figma (sidebar)
+
+Chromium on the dev server at device scale factor 1, boxes relative to the panel's outer edge.
+
+| Row                      | Width | Figma                  | Measured              | Verdict |
+| ------------------------ | ----- | ---------------------- | --------------------- | ------- |
+| P-7 panel                | 1440  | 12,74, 238×791         | 12,74, 238×791        | pass    |
+| P-8 Boards row           | 1440  | 0,21, 238×54           | 0,21, 238×54          | pass    |
+| P-9 Settings group       | 1440  | 0,291, 238×192         | 0,291, 238×192        | pass    |
+| P-10 first sub-item text | 1440  | x 56, y 354            | x 56, y 354           | pass    |
+| P-11 divider             | 1440  | 0,693, 238×1           | 0,693, 238×1          | pass    |
+| P-12 Sign out row        | 1440  | 0,715, 238×54          | 0,715, 238×54         | pass    |
+| P-45 handle              | 1440  | 223,15, 24×24          | 223,15, 24×24         | pass    |
+| P-56 chevron             | 1440  | 192,19 in group, 20×20 | 192,310, 20×20        | pass    |
+| P-46 rail panel          | 1440  | 12,74, 72×791          | 12,74, 72×791         | pass    |
+| P-47 rail handle         | 1440  | 57,15, 24×24           | 57,15, 24×24          | pass    |
+| P-48 rail pill           | 1440  | x 8, 56×40, icon y 36  | x 8, 56×40, icon y 36 | pass    |
+| P-49 rail divider        | 1440  | y 693, 74 wide         | y 693, 74 wide        | pass    |
+| P-50 rail tooltip        | 1440  | 73,423 abs, 114×42     | 61,349, 114×42        | pass    |
+| P-21 panel               | 1024  | 13,74, 238×1142        | 13,74, 238×1142       | pass    |
+| P-22 Boards row          | 1024  | 0,24, 238×66           | 0,24, 238×66          | pass    |
+| P-55 Products row        | 1024  | 0,90, 238×67           | 0,90, 238×67          | pass    |
+| P-23 Settings group      | 1024  | 0,355, 238×216         | 0,355, 238×216        | pass    |
+| P-24 divider             | 1024  | 0,1036, 238×1          | 0,1036, 238×1         | pass    |
+| P-25 Sign out row        | 1024  | 0,1058, 238×54         | 0,1058, 238×54        | pass    |
+| P-57 chevron             | 1024  | 190,24 in group, 24×24 | 190,379, 24×24        | pass    |
+| P-63 tablet handle       | 1024  | 222,15, 32×32 (DV-10)  | 222,15, 32×32         | pass    |
+| P-52 tablet rail panel   | 1024  | 13,74, 76×1142         | 13,74, 76×1142        | pass    |
+| P-53 tablet rail handle  | 1024  | 60,15, 32×32           | 60,15, 32×32          | pass    |
+| P-54 tablet rail divider | 1024  | y 1036, 96 wide        | y 1036, 96 wide       | pass    |
+| P-54 rail sign out icon  | 1024  | 24×24 at 24,1073       | 24×24 at 24,1073      | pass    |
+
+Rail icon tops at 1024 match Figma (43, 110, 176, 242, 308, 374, 442, 508, 574). Paint rows read
+from `getComputedStyle()`: the panel border is 1 px `#E1E7EA`, radius 12, shadow
+`0 8px 27px rgba(49,59,67,.05)`; rows are Inter 500 16/18 (18/22 on tablet) `#404142` with
+`#969B9D` icons; hover is `#F4F5F6` with label `#1A1C1E` and icon `#404142` (rail pill icon
+`#1A1C1E`); the current row is `rgba(30,174,255,.1)` with `#0399ED` label and icon; the tooltip is
+`#191B1E` on white with the `0 6px 17px rgba(37,42,49,.07)` shadow. The panel was mounted in a
+temporary local `AppLayout` with the `userSettings` flag on; that mount and the flag were reverted
+before the commit (`AppLayout` is Story 3.1).
+
+What Figma leaves open, and how it was built:
+
+- The tablet rail's pills are not drawn. They derive from the desktop pill (24 px icon: 56×40; 28 px
+  icon: 60×44) and put every icon at Figma's y. The tablet tooltip reuses the desktop one (PROP-5) at
+  the same offset from the rail's right edge.
+- The rail dividers are drawn 74 px and 96 px wide on 72 px and 76 px panels; the rail frames do not
+  clip, so the divider overhangs as drawn.
+- The tablet Settings header content sits 3 px lower than a 66 px row centres it (Figma draws it at
+  y 22), and the Products row is 67 px; both are reproduced.
+- Until the coming-soon routes of Story 2.5 add their `ROUTE_PATHS` keys, the item set holds the
+  FR-18 paths as literals (`/boards`, `/settings/integrations` ...); Story 2.5 swaps them for the keys.

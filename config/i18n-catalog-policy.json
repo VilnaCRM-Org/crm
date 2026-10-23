@@ -30,7 +30,12 @@
     },
     {
       "catalog": "components/ui-app-shell/i18n",
-      "owners": ["components/ui-app-shell", "components/ui-app-header"]
+      "owners": [
+        "components/ui-app-shell",
+        "components/ui-app-header",
+        "components/ui-sidebar",
+        "components/ui-navigation-list"
+      ]
     }
   ]
 }
