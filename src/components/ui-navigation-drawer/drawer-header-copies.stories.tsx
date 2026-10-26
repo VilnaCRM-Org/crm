@@ -19,7 +19,8 @@ const meta: Meta<typeof DrawerHeaderCopies> = {
       description: {
         component:
           'The bell, list and avatar copies in the drawer header. They are aria-hidden and not ' +
-          'operable; the glyphs keep the disabled `#D0D4D8` of the header they cover.',
+          'operable; the glyphs keep the disabled `#D0D4D8` of the header they cover, and the ' +
+          'avatar is the 40 px `#E1E7EA` circle with the no-data person glyph.',
       },
       story: { inline: false },
     },

@@ -82,18 +82,51 @@ describe('UINavigationDrawer', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('asks to close on the scrim, which carries the 5 % tint', async () => {
+  it('asks to close on the full-viewport backdrop, which paints nothing itself', async () => {
     const onClose = jest.fn();
     renderDrawer({ onClose });
     await screen.findByRole('dialog');
-    const scrim = screen
+    const backdrop = screen
       .getAllByRole('generic', { hidden: true })
       .find((box) => box.className.includes('MuiBackdrop-root')) as HTMLElement;
 
-    expect(scrim).toHaveStyle({ backgroundColor: 'rgba(54, 79, 93, 0.05)' });
-    await userEvent.click(scrim);
+    expect(backdrop).toHaveClass('MuiBackdrop-invisible');
+    expect(backdrop).toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0)' });
+    await userEvent.click(backdrop);
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('paints the 5 % scrim behind the header and the panel, ending at the footer top', async () => {
+    const viewport = window.innerHeight;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 718 });
+    const footer = document.body.appendChild(document.createElement('footer'));
+    footer.getBoundingClientRect = (): DOMRect => ({ top: 678 }) as DOMRect;
+    renderDrawer();
+    const dialog = await screen.findByRole('dialog');
+    const [scrim] = within(dialog).getAllByRole('generic', { hidden: true });
+
+    expect(scrim).toHaveAttribute('aria-hidden', 'true');
+    expect(scrim).toHaveStyle({
+      position: 'absolute',
+      top: '0px',
+      bottom: '40px',
+      pointerEvents: 'none',
+      backgroundColor: 'rgba(54, 79, 93, 0.05)',
+    });
+    expect(within(dialog).getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
+
+    footer.remove();
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewport });
+  });
+
+  it('keeps the scrim on the whole viewport when no footer is in view', async () => {
+    renderDrawer();
+    const dialog = await screen.findByRole('dialog');
+
+    expect(within(dialog).getAllByRole('generic', { hidden: true })[0]).toHaveStyle({
+      bottom: '0px',
+    });
   });
 
   it('closes for navigation and signs out once when Sign out is activated', async () => {

@@ -1,6 +1,8 @@
-import { type KeyboardEvent, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { RailTooltipBehavior, RailTooltipState } from '@/components/types/ui-navigation-list';
+
+import useDocumentEscape from './use-document-escape';
 
 export default function useRailTooltip(): RailTooltipBehavior {
   const [state, setState] = useState<RailTooltipState>('idle');
@@ -9,9 +11,8 @@ export default function useRailTooltip(): RailTooltipBehavior {
     []
   );
   const hide = useCallback((): void => setState('idle'), []);
-  const dismiss = useCallback((event: KeyboardEvent<HTMLDivElement>): void => {
-    if (event.key === 'Escape') setState('dismissed');
-  }, []);
+
+  useDocumentEscape(state === 'shown', () => setState('dismissed'));
 
   return {
     visible: state === 'shown',
@@ -20,7 +21,6 @@ export default function useRailTooltip(): RailTooltipBehavior {
       onMouseLeave: hide,
       onFocus: show,
       onBlur: hide,
-      onKeyDown: dismiss,
     },
   };
 }

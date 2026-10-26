@@ -17,11 +17,12 @@ const setup = (
 function useBoth(): {
   disclosure: ReturnType<typeof useGroupDisclosure>;
   go: (to: string) => void;
+  back: () => void;
 } {
   const disclosure = useGroupDisclosure('/settings');
   const navigate = useNavigate();
 
-  return { disclosure, go: (to) => navigate(to) };
+  return { disclosure, go: (to) => navigate(to), back: () => navigate(-1) };
 }
 
 describe('useGroupDisclosure', () => {
@@ -64,6 +65,40 @@ describe('useGroupDisclosure', () => {
     act(() => result.current.go('/settings/billing'));
 
     expect(result.current.disclosure.expanded).toBe(true);
+  });
+
+  it('does not re-apply a toggle when the route returns to the path it was set on', () => {
+    const { result } = setup('/boards');
+
+    act(() => result.current.disclosure.toggle());
+    expect(result.current.disclosure.expanded).toBe(true);
+
+    act(() => result.current.go('/products'));
+    act(() => result.current.go('/boards'));
+
+    expect(result.current.disclosure.expanded).toBe(false);
+  });
+
+  it('does not re-apply a toggle-closed when the route returns to the settings path', () => {
+    const { result } = setup('/settings');
+
+    act(() => result.current.disclosure.toggle());
+    expect(result.current.disclosure.expanded).toBe(false);
+
+    act(() => result.current.go('/settings/billing'));
+    act(() => result.current.go('/settings'));
+
+    expect(result.current.disclosure.expanded).toBe(true);
+  });
+
+  it('does not re-apply a toggle when browser Back returns to the path it was set on', () => {
+    const { result } = setup('/boards');
+
+    act(() => result.current.disclosure.toggle());
+    act(() => result.current.go('/products'));
+    act(() => result.current.back());
+
+    expect(result.current.disclosure.expanded).toBe(false);
   });
 
   it('keeps the override while the route does not change', () => {

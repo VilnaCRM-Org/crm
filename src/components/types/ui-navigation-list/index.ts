@@ -75,16 +75,11 @@ export interface GroupDisclosureState {
   readonly toggle: ActivateHandler;
 }
 
-export interface DisclosureOverride {
-  readonly pathname: string;
-  readonly expanded: boolean;
-}
-
 export type RailTooltipState = 'idle' | 'shown' | 'dismissed';
 
 export type RailTooltipHandlers = Pick<
   HTMLAttributes<HTMLDivElement>,
-  'onMouseEnter' | 'onMouseLeave' | 'onFocus' | 'onBlur' | 'onKeyDown'
+  'onMouseEnter' | 'onMouseLeave' | 'onFocus' | 'onBlur'
 >;
 
 export interface RailTooltipBehavior {

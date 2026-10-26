@@ -1,3 +1,4 @@
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
 import type { JSX } from 'react';
 
@@ -11,7 +12,9 @@ export default function DrawerHeaderCopies(): JSX.Element {
     <>
       <Box component={BellIcon} aria-hidden="true" focusable="false" sx={styles.glyph} />
       <Box component={TasksIcon} aria-hidden="true" focusable="false" sx={styles.glyph} />
-      <Box aria-hidden="true" sx={styles.avatar} />
+      <Box aria-hidden="true" sx={styles.avatar}>
+        <PersonOutlinedIcon sx={styles.avatarGlyph} />
+      </Box>
     </>
   );
 }
