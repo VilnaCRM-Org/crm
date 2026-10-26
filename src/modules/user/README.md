@@ -397,6 +397,22 @@ its owner.
 does not own); a pending schema extension for a `me` query (a contract the backend has not
 agreed to).
 
+### One mapper names the user for the settings header and the shell chip
+
+**Context.** The settings header already derived a display name and monogram from the full name;
+the header chip in the app shell shows the same two values.
+
+**Decision.** `UserDisplayNameMapper` (`store/user-display-name-mapper.ts`, token
+`AUTH_TOKENS.UserDisplayNameMapper`, registered as a singleton) is the only place the rule lives.
+A name of three or more words reads as `<first> <last>` from the first two words reversed, and the
+monogram is the upper-cased first letter of each word of the display name; an empty name yields an
+empty monogram, which both consumers draw as the person glyph. `useDisplayName` serves the
+settings header and `useCurrentUser` the chip, which reads `ProfileProvider` once per pathname
+change and keeps the previous identity when a read ends the session.
+
+**Rejected.** A copy of the rule in the chip (it would drift from the header); resolving the user
+from the JWT (see the previous record).
+
 ### The settings layers follow the Miro board
 
 **Context.** The folders, the Data provider ⇄ Transformer edge and the container-free loader

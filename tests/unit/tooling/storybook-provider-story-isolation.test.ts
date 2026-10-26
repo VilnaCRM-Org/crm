@@ -44,6 +44,7 @@ describe('stories that register a Data provider stub against the shared containe
   it('finds the settings stories that stub the provider', () => {
     expect(stories).toEqual([
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
+      `${SETTINGS_ROOT}/components/user-menu/current-user-menu.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-profile-settings/user-profile-settings.stories.tsx`,
       `${SETTINGS_ROOT}/routes/user-profile/user-profile.stories.tsx`,
     ]);

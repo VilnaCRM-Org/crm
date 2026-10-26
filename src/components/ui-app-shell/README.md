@@ -183,3 +183,51 @@ What Figma leaves open, and how it was built:
 - The collapsed Settings header is 60 px (as the other rows) and its chevron is centred on it; the
   open header is the drawn 48 px.
 - The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.
+
+### Measured against Figma (user chip and menu)
+
+The chip and its menu live in the `user` module (`settings/components/user-menu/`), not here; the
+rows are recorded beside the other surfaces. Measured in Chromium on the 3004 preview with the shell
+header mounted temporarily in `AppLayout`, `userSettings` on for the three-item rows, the
+`CurrentUser` reply stubbed to a two-word name, device scale factor 1, `scrollY` 0.
+
+| Row                     | Width | Figma               | Measured               | Verdict |
+| ----------------------- | ----- | ------------------- | ---------------------- | ------- |
+| P-6 chip                | 1440  | 1203,8, 225×48      | 1203,8, 225×48         | pass    |
+| chip avatar             | 1440  | 1211,15, 32         | 1211,15, 32×32         | pass    |
+| chip name text box      | 1440  | x 1253, 121 wide    | 1253,22, 121×18        | pass    |
+| chip caret              | 1440  | 192,14 in chip, 20  | 1395,22, 20×20         | pass    |
+| P-14 menu card, 3 items | 1440  | 1203,8, 225×180     | 1203,8, 225×180        | pass    |
+| P-59 menu card, 1 item  | 1440  | 1203,8, 225×92      | 1203,8, 225×92         | pass    |
+| menu items              | 1440  | 225×44, text x 20   | 225×44, text x 1223    | pass    |
+| P-20 chip               | 1024  | 759,6, 253×52       | 759,6, 253×52          | pass    |
+| chip avatar             | 1024  | 775,16, 32          | 775,16, 32×32          | pass    |
+| chip name text box      | 1024  | x 817, 138 wide     | 817,23, 138×18         | pass    |
+| chip caret              | 1024  | 217,16 in chip, 20  | 976,22, 20×20          | pass    |
+| P-27 menu card, 3 items | 1024  | 759,6, 253×232      | 759,6, 253×232         | pass    |
+| P-60 menu card, 1 item  | 1024  | 759,6, 253×112      | 759,6, 253×112         | pass    |
+| menu items              | 1024  | 253×60, text x 20   | 253×60, text x 779     | pass    |
+| P-32 avatar             | 375   | 280,8, 40×40        | 280,8, 40×40           | pass    |
+| P-38 avatar target      | 375   | 278,6, 44×44        | 278,6, 44×44           | pass    |
+| P-37 popover, 3 items   | 375   | 140,53, 225×142     | 140,53, 225×142        | pass    |
+| popover caret           | 375   | 26×6 above the body | 288,53, 26×6           | pass    |
+| popover items           | 375   | 225×44, 2 px apart  | 225×44 at 59, 105, 151 | pass    |
+| P-61 popover, 1 item    | 375   | 140,53, 225×50      | body 140,59, 225×44    | pass    |
+
+Paint and type, read with `getComputedStyle()` at each width the row is drawn for: the chip is white
+with a 1 px `#D0D4D8` border and an 8 px radius; the name is Inter 500 14/18 (16/18 at 1024) in
+`#1A1C1E`; the caret is `#969B9D` and rotated to point down; the avatar fill is `#E1E7EA` with a
+Golos 700 12 px (15 px at 375) monogram in `#1A1C1E`; the card shadow is
+`0 8px 27px rgba(49,59,67,.05)` and the popover's `.14`; the focused or hovered item is `#F4F5F6`.
+
+States measured: a focused item shows `#F4F5F6` with a 2 px `#1A1C1E` ring at offset -2 px, and the
+chip a ring at offset +2 px; the caret transform is the same open and closed; no `TouchRipple` is
+rendered; a name too long for the 121 / 138 px text box keeps the chip at its Figma width, ends in an
+ellipsis and stays whole in the accessible name; at 320 px the popover sits at x 92 to 317 and the
+document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
+focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
+closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none is made.
+
+A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
+stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how
+Figma's 92 / 180 / 232 stack the items.

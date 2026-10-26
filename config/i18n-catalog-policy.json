@@ -37,6 +37,13 @@
         "components/ui-navigation-list",
         "components/ui-navigation-drawer"
       ]
+    },
+    {
+      "catalog": "modules/user/features/settings/components/user-menu/i18n",
+      "owners": [
+        "modules/user/features/settings/components/user-menu",
+        "modules/user/features/settings/hooks/use-chip-label.ts"
+      ]
     }
   ]
 }
