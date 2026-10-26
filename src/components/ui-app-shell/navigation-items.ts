@@ -12,13 +12,33 @@ import ROUTE_PATHS from '@/routes/route-paths';
 
 const navigationItems: NavigationItemSet = {
   items: [
-    { id: 'boards', href: '/boards', labelKey: 'app_shell.items.boards', icon: BoardsIcon },
-    { id: 'products', href: '/products', labelKey: 'app_shell.items.products', icon: ProductsIcon },
-    { id: 'orders', href: '/orders', labelKey: 'app_shell.items.orders', icon: OrdersIcon },
-    { id: 'contacts', href: '/contacts', labelKey: 'app_shell.items.contacts', icon: ContactsIcon },
+    {
+      id: 'boards',
+      href: ROUTE_PATHS.boards,
+      labelKey: 'app_shell.items.boards',
+      icon: BoardsIcon,
+    },
+    {
+      id: 'products',
+      href: ROUTE_PATHS.products,
+      labelKey: 'app_shell.items.products',
+      icon: ProductsIcon,
+    },
+    {
+      id: 'orders',
+      href: ROUTE_PATHS.orders,
+      labelKey: 'app_shell.items.orders',
+      icon: OrdersIcon,
+    },
+    {
+      id: 'contacts',
+      href: ROUTE_PATHS.contacts,
+      labelKey: 'app_shell.items.contacts',
+      icon: ContactsIcon,
+    },
     {
       id: 'analytics',
-      href: '/analytics',
+      href: ROUTE_PATHS.analytics,
       labelKey: 'app_shell.items.analytics',
       icon: AnalyticsIcon,
     },
@@ -32,21 +52,21 @@ const navigationItems: NavigationItemSet = {
         items: [
           {
             id: 'integrations',
-            href: '/settings/integrations',
+            href: ROUTE_PATHS.settingsIntegrations,
             labelKey: 'app_shell.items.integrations',
             icon: IntegrationsIcon,
             flag: 'userSettings',
           },
           {
             id: 'webhooks',
-            href: '/settings/webhooks',
+            href: ROUTE_PATHS.settingsWebhooks,
             labelKey: 'app_shell.items.webhooks',
             icon: WebhooksIcon,
             flag: 'userSettings',
           },
           {
             id: 'billing',
-            href: '/settings/billing',
+            href: ROUTE_PATHS.settingsBilling,
             labelKey: 'app_shell.items.billing',
             icon: BillingIcon,
             flag: 'userSettings',

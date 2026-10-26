@@ -11,6 +11,24 @@ const settingsRoutes: RouteModule = {
       load: () => import(/* webpackChunkName: "settings" */ './user-profile'),
       meta: { titleKey: 'settings.title' },
     },
+    {
+      path: ROUTE_PATHS.settingsIntegrations,
+      guard: 'protected',
+      flag: 'userSettings',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
+      path: ROUTE_PATHS.settingsWebhooks,
+      guard: 'protected',
+      flag: 'userSettings',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
+      path: ROUTE_PATHS.settingsBilling,
+      guard: 'protected',
+      flag: 'userSettings',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
   ],
 };
 

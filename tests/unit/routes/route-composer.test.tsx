@@ -320,16 +320,29 @@ describe('route composer flag gate (Story 1.5)', () => {
     expect(notFound).toBe(page?.element);
   });
 
-  it('emits exactly one gate for the real registry and flags only the settings page', () => {
+  it('emits exactly one gate for the real registry and flags only the settings routes', () => {
     const tree = routeComposer.compose(registry).items;
 
     expect(walk(tree).filter((route) => isGate(route))).toHaveLength(1);
-    expect(walk(tree).filter((route) => route.handle !== undefined)).toEqual([
-      expect.objectContaining({ path: ROUTE_PATHS.settings, handle: { flag: 'userSettings' } }),
-    ]);
+    expect(walk(tree).filter((route) => route.handle !== undefined)).toEqual(
+      [
+        ROUTE_PATHS.settings,
+        ROUTE_PATHS.settingsIntegrations,
+        ROUTE_PATHS.settingsWebhooks,
+        ROUTE_PATHS.settingsBilling,
+      ].map((path) => expect.objectContaining({ path, handle: { flag: 'userSettings' } }))
+    );
     expect(protectedBranchOf(tree).layout.children?.map((route) => route.path)).toEqual([
       undefined,
+      ROUTE_PATHS.boards,
+      ROUTE_PATHS.products,
+      ROUTE_PATHS.orders,
+      ROUTE_PATHS.contacts,
+      ROUTE_PATHS.analytics,
       ROUTE_PATHS.settings,
+      ROUTE_PATHS.settingsIntegrations,
+      ROUTE_PATHS.settingsWebhooks,
+      ROUTE_PATHS.settingsBilling,
     ]);
   });
 

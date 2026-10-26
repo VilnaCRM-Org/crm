@@ -1,6 +1,8 @@
 import type { Preview } from '@storybook/react-webpack5';
 import type { ViewportMap } from 'storybook/viewport';
 import resources from '../src/i18n/localization.json';
+import comingSoonEn from '@/components/coming-soon/i18n/en.json';
+import comingSoonUk from '@/components/coming-soon/i18n/uk.json';
 import appShellEn from '@/components/ui-app-shell/i18n/en.json';
 import appShellUk from '@/components/ui-app-shell/i18n/uk.json';
 import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
@@ -44,6 +46,7 @@ lazyCatalogLoader.register(i18next, { en: policyEn, uk: policyUk });
 lazyCatalogLoader.register(i18next, { en: settingsEn, uk: settingsUk });
 lazyCatalogLoader.register(i18next, { en: toastEn, uk: toastUk });
 lazyCatalogLoader.register(i18next, { en: appShellEn, uk: appShellUk });
+lazyCatalogLoader.register(i18next, { en: comingSoonEn, uk: comingSoonUk });
 lazyCatalogLoader.register(i18next, { en: userMenuEn, uk: userMenuUk });
 
 const customViewports: ViewportMap = {

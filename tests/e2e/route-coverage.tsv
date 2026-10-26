@@ -61,3 +61,19 @@ settings	e2e	tests/e2e/a11y/settings-states.a11y.spec.ts	Scans the unconfirmed r
 settings	e2e	tests/e2e/a11y/settings-keyboard.a11y.spec.ts	Drives /settings with the keyboard only: tab order, eye toggle Space, Enter submit and the focus rules after save, errors, Clear, toast close and session end.
 settings	visual	tests/visual/visual-comparison.settings.spec.ts	Full-matrix screenshots of the resting /settings page and desktop, tablet and mobile screenshots of the unconfirmed row, field errors, success toasts, transient toast, skeleton and load failure.
 settings	visual	tests/visual/mobile/settings.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the resting /settings page.
+boards	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /boards directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
+products	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /products directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
+orders	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /orders directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
+contacts	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /contacts directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
+analytics	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /analytics directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
+settingsIntegrations	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /settings/integrations with the userSettings flag on and off: the section page, and the not-found page with no coming-soon chunk request while the flag is off.
+settingsWebhooks	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /settings/webhooks with the userSettings flag on and off: the section page, and the not-found page with no coming-soon chunk request while the flag is off.
+settingsBilling	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /settings/billing with the userSettings flag on and off: the section page, and the not-found page with no coming-soon chunk request while the flag is off.
+boards	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /boards with a seeded token with axe against the WCAG 2.1 AA tag set.
+products	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /products with a seeded token with axe against the WCAG 2.1 AA tag set.
+orders	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /orders with a seeded token with axe against the WCAG 2.1 AA tag set.
+contacts	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /contacts with a seeded token with axe against the WCAG 2.1 AA tag set.
+analytics	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /analytics with a seeded token with axe against the WCAG 2.1 AA tag set.
+settingsIntegrations	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/integrations with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
+settingsWebhooks	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/webhooks with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
+settingsBilling	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/billing with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.

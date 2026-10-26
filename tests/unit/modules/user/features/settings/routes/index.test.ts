@@ -8,6 +8,13 @@ jest.mock('@/modules/user/features/settings/routes/user-profile', () => ({
   },
 }));
 
+jest.mock('@/components/coming-soon', () => ({
+  __esModule: true,
+  default: function MockComingSoon(): null {
+    return null;
+  },
+}));
+
 interface LoadedContract {
   readonly settingsRoutes: RouteModule;
   readonly settingsPath: string;
@@ -20,12 +27,44 @@ const loadContract = (): Promise<LoadedContract> =>
   }));
 
 describe('settings route contract', () => {
-  it('registers one module named user.settings with a single route', async () => {
+  it('registers user.settings with /settings and three coming-soon routes', async () => {
     const { settingsRoutes } = await loadContract();
 
     expect(settingsRoutes.id).toBe('user.settings');
-    expect(settingsRoutes.routes).toHaveLength(1);
+    expect(settingsRoutes.routes.map(({ path }) => path)).toEqual([
+      '/settings',
+      '/settings/integrations',
+      '/settings/webhooks',
+      '/settings/billing',
+    ]);
   });
+
+  it.each(['/settings/integrations', '/settings/webhooks', '/settings/billing'])(
+    'declares %s as a protected route behind the userSettings flag',
+    async (path) => {
+      const { settingsRoutes } = await loadContract();
+      const route = settingsRoutes.routes.find((candidate) => candidate.path === path);
+
+      expect(route).toEqual({
+        path,
+        guard: 'protected',
+        flag: 'userSettings',
+        load: expect.any(Function),
+      });
+    }
+  );
+
+  it.each(['/settings/integrations', '/settings/webhooks', '/settings/billing'])(
+    'lazy-loads the shared coming-soon page for %s',
+    async (path) => {
+      const { settingsRoutes } = await loadContract();
+      const route = settingsRoutes.routes.find((candidate) => candidate.path === path);
+
+      const loaded = await route?.load();
+
+      expect(loaded?.default.name).toBe('MockComingSoon');
+    }
+  );
 
   it('declares /settings as a protected route behind the userSettings flag', async () => {
     const { settingsRoutes, settingsPath } = await loadContract();

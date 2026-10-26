@@ -44,21 +44,41 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 
 ## Registered routes
 
-| Key                | Path                 | Contract                   | Guard     |
-| ------------------ | -------------------- | -------------------------- | --------- |
-| `home`             | `/` (index)          | `app-routes.ts`            | protected |
-| `signUp`           | `/sign-up`           | `@auth/routes` (user.auth) | public    |
-| `signIn`           | `/sign-in`           | `@auth/routes` (user.auth) | public    |
-| `passwordRecovery` | `/password-recovery` | `@auth/routes` (user.auth) | public    |
-| `passwordReset`    | `/password-reset`    | `@auth/routes` (user.auth) | public    |
-| `settings`         | `/settings`          | settings routes            | protected |
-| `forbidden`        | `/forbidden`         | `app-routes.ts`            | public    |
-| `serverError`      | `/server-error`      | `app-routes.ts`            | public    |
-| `notFound`         | `*`                  | `app-routes.ts`            | public    |
+| Key                    | Path                     | Contract                   | Guard     |
+| ---------------------- | ------------------------ | -------------------------- | --------- |
+| `home`                 | `/` (index)              | `app-routes.ts`            | protected |
+| `signUp`               | `/sign-up`               | `@auth/routes` (user.auth) | public    |
+| `signIn`               | `/sign-in`               | `@auth/routes` (user.auth) | public    |
+| `passwordRecovery`     | `/password-recovery`     | `@auth/routes` (user.auth) | public    |
+| `passwordReset`        | `/password-reset`        | `@auth/routes` (user.auth) | public    |
+| `settings`             | `/settings`              | settings routes            | protected |
+| `forbidden`            | `/forbidden`             | `app-routes.ts`            | public    |
+| `serverError`          | `/server-error`          | `app-routes.ts`            | public    |
+| `boards`               | `/boards`                | `app-routes.ts`            | protected |
+| `products`             | `/products`              | `app-routes.ts`            | protected |
+| `orders`               | `/orders`                | `app-routes.ts`            | protected |
+| `contacts`             | `/contacts`              | `app-routes.ts`            | protected |
+| `analytics`            | `/analytics`             | `app-routes.ts`            | protected |
+| `settingsIntegrations` | `/settings/integrations` | settings routes            | protected |
+| `settingsWebhooks`     | `/settings/webhooks`     | settings routes            | protected |
+| `settingsBilling`      | `/settings/billing`      | settings routes            | protected |
+| `notFound`             | `*`                      | `app-routes.ts`            | public    |
 
-`/settings` (issue #330) is the only flagged route: `flag: 'userSettings'`, so it renders the
-not-found page while the flag is off (see "Flagged routes"). Its contract is
-`src/modules/user/features/settings/routes/index.ts` and its page the lazy `settings` chunk.
+`/settings` (issue #330) and the three `/settings/…` coming-soon routes are the flagged routes:
+`flag: 'userSettings'`, so each renders the not-found page while the flag is off (see "Flagged
+routes"). Their contract is `src/modules/user/features/settings/routes/index.ts`; `/settings`
+renders the lazy `settings` chunk.
+
+## Coming-soon routes (issue #362)
+
+The eight planned sections (`boards`, `products`, `orders`, `contacts`, `analytics`,
+`settingsIntegrations`, `settingsWebhooks`, `settingsBilling`) are protected routes whose loaders
+all `import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon')`, so Rspack emits
+one shared chunk. `ComingSoonPage` finds its section from the pathname in the typed
+`comingSoonSections` list, so no contract passes the section down. The five product routes are
+shell-owned in `app-routes.ts` until their modules exist; each then moves to that module's
+contract with the same path and the same key. The three settings routes sit in the settings
+contract beside `/settings` so the flag gate covers them with no composer change.
 
 `/password-recovery` and `/password-reset` (issue #315) render the `ResetPassword` and
 `CreateNewPassword` pages; signed-in users are not redirected away from either.
