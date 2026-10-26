@@ -39,6 +39,10 @@
       ]
     },
     {
+      "catalog": "components/coming-soon/i18n",
+      "owners": ["components/coming-soon"]
+    },
+    {
       "catalog": "modules/user/features/settings/components/user-menu/i18n",
       "owners": [
         "modules/user/features/settings/components/user-menu",

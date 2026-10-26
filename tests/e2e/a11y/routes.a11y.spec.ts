@@ -27,6 +27,10 @@ async function prepareSettings(page: Page): Promise<void> {
   await stubProfile(page);
 }
 
+async function prepareFlagOn(page: Page): Promise<void> {
+  await signInWithFlag(page, true);
+}
+
 const routeScans: readonly RouteScan[] = [
   { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', seedAuth: true },
   {
@@ -34,6 +38,29 @@ const routeScans: readonly RouteScan[] = [
     path: ROUTE_PATHS.settings,
     ready: 'main form button[type="submit"]',
     prepare: prepareSettings,
+  },
+  { key: 'boards', path: ROUTE_PATHS.boards, ready: 'main h1', seedAuth: true },
+  { key: 'products', path: ROUTE_PATHS.products, ready: 'main h1', seedAuth: true },
+  { key: 'orders', path: ROUTE_PATHS.orders, ready: 'main h1', seedAuth: true },
+  { key: 'contacts', path: ROUTE_PATHS.contacts, ready: 'main h1', seedAuth: true },
+  { key: 'analytics', path: ROUTE_PATHS.analytics, ready: 'main h1', seedAuth: true },
+  {
+    key: 'settingsIntegrations',
+    path: ROUTE_PATHS.settingsIntegrations,
+    ready: 'main h1',
+    prepare: prepareFlagOn,
+  },
+  {
+    key: 'settingsWebhooks',
+    path: ROUTE_PATHS.settingsWebhooks,
+    ready: 'main h1',
+    prepare: prepareFlagOn,
+  },
+  {
+    key: 'settingsBilling',
+    path: ROUTE_PATHS.settingsBilling,
+    ready: 'main h1',
+    prepare: prepareFlagOn,
   },
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },

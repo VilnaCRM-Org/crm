@@ -161,6 +161,12 @@ describe('performance serving config', () => {
     expect(settingsRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "settings" \*\/\s*'\.\/user-profile'\)/
     );
+    const comingSoonLoader =
+      /import\(\s*\/\* webpackChunkName: "coming-soon" \*\/\s*'@\/components\/coming-soon'\)/g;
+    expect(appRoutesSource.match(comingSoonLoader)).toHaveLength(5);
+    expect(settingsRoutesSource.match(comingSoonLoader)).toHaveLength(3);
+    expect(staticImportsOf(appRoutesSource)).not.toContain('@/components/coming-soon');
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('@/components/coming-soon');
     expect(staticImportsOf(settingsRoutesSource)).not.toContain('./user-profile');
     expect(staticImportsOf(readFile('src/routes/registry.ts'))).toContain(
       '@/modules/user/features/settings/routes'
@@ -241,7 +247,7 @@ describe('performance serving config', () => {
     );
 
     expect(errorRouteChunks).toHaveLength(3);
-    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(4);
+    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(9);
     expect(errorPageLoaderSource).toContain('webpackChunkName: "error-page"');
 
     const renderAt = entrySource.lastIndexOf('root.render(');

@@ -40,6 +40,11 @@ describe('route registry', () => {
     expect(serverError?.guard).toBe('public');
     expect(shell?.routes.map((route) => route.path)).toEqual([
       undefined,
+      ROUTE_PATHS.boards,
+      ROUTE_PATHS.products,
+      ROUTE_PATHS.orders,
+      ROUTE_PATHS.contacts,
+      ROUTE_PATHS.analytics,
       ROUTE_PATHS.forbidden,
       ROUTE_PATHS.serverError,
       ROUTE_PATHS.notFound,
@@ -51,12 +56,38 @@ describe('route registry', () => {
       .flatMap((module) => module.routes)
       .find((route) => route.path === ROUTE_PATHS.settings);
 
-    expect(registry.items.find((module) => module.id === 'user.settings')?.routes).toEqual([
-      settings,
+    expect(
+      registry.items.find((module) => module.id === 'user.settings')?.routes.map(({ path }) => path)
+    ).toEqual([
+      ROUTE_PATHS.settings,
+      ROUTE_PATHS.settingsIntegrations,
+      ROUTE_PATHS.settingsWebhooks,
+      ROUTE_PATHS.settingsBilling,
     ]);
     expect(settings?.guard).toBe('protected');
     expect(settings?.flag).toBe('userSettings');
     expect(settings?.meta?.titleKey).toBe('settings.title');
+  });
+
+  it('declares the eight coming-soon routes, the settings three behind the flag', () => {
+    const routes = registry.items.flatMap((module) => module.routes);
+    const comingSoon = [
+      [ROUTE_PATHS.boards, undefined],
+      [ROUTE_PATHS.products, undefined],
+      [ROUTE_PATHS.orders, undefined],
+      [ROUTE_PATHS.contacts, undefined],
+      [ROUTE_PATHS.analytics, undefined],
+      [ROUTE_PATHS.settingsIntegrations, 'userSettings'],
+      [ROUTE_PATHS.settingsWebhooks, 'userSettings'],
+      [ROUTE_PATHS.settingsBilling, 'userSettings'],
+    ] as const;
+
+    for (const [path, flag] of comingSoon) {
+      const route = routes.find((candidate) => candidate.path === path);
+
+      expect(route?.guard).toBe('protected');
+      expect(route?.flag).toBe(flag);
+    }
   });
 
   it('declares the auth pages as public routes carrying their title metadata', () => {
