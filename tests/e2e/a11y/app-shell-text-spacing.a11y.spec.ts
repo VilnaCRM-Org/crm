@@ -1,7 +1,11 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  type ProfileReplies,
+  replyWithProfile,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   burgerOf,
   chipOf,
@@ -26,6 +30,22 @@ interface SpacingViewport {
   readonly height: number;
 }
 
+interface ChipFrame {
+  readonly viewport: SpacingViewport;
+  readonly chipWidth: number;
+}
+
+interface TextFit {
+  readonly scrollWidth: number;
+  readonly clientWidth: number;
+}
+
+interface Edges {
+  readonly left: number;
+  readonly right: number;
+  readonly width: number;
+}
+
 const TEXT_SPACING_OVERRIDES = [
   '* { line-height: 1.5 !important; letter-spacing: 0.12em !important;',
   'word-spacing: 0.16em !important; }',
@@ -40,19 +60,46 @@ const spacingViewports: readonly SpacingViewport[] = [
   { width: 375, height: 812 },
 ];
 
-async function openSpaced(page: Page, viewport: SpacingViewport): Promise<void> {
+const chipFrames: readonly ChipFrame[] = [
+  { viewport: { width: 1440, height: 900 }, chipWidth: 225 },
+  { viewport: { width: 1024, height: 768 }, chipWidth: 253 },
+];
+
+const STUB_NAME = 'Олена Петренко';
+const LONG_NAME = 'Олександр Дуже-Довгопрізвищенко';
+
+async function openShell(
+  page: Page,
+  viewport: SpacingViewport,
+  replies: ProfileReplies = {}
+): Promise<void> {
   await page.setViewportSize(viewport);
   await seedPreloadedAuthToken(page);
   await overrideRuntimeConfig(page, { flags: { userSettings: true } });
-  await stubProfile(page);
+  await stubProfile(page, replies);
   await page.goto(ROUTE_PATHS.settings, { waitUntil: 'domcontentloaded' });
   await expectShellReady(page);
   await expect(chipOf(page)).toHaveAccessibleName(/\S/u);
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
+}
+
+async function openSpaced(page: Page, viewport: SpacingViewport): Promise<void> {
+  await openShell(page, viewport);
   await page.addStyleTag({ content: TEXT_SPACING_OVERRIDES });
 }
+
+const fitOf = (name: Locator): Promise<TextFit> =>
+  name.evaluate((box) => ({ scrollWidth: box.scrollWidth, clientWidth: box.clientWidth }));
+
+const edgesOf = async (box: Locator): Promise<Edges> => {
+  const rect = await box.boundingBox();
+  expect(rect).not.toBeNull();
+  const { x, width } = rect ?? { x: 0, width: 0 };
+
+  return { left: x, right: x + width, width };
+};
 
 function measure(scope: Locator): Promise<SpacingReport> {
   return scope.evaluate(
@@ -140,6 +187,43 @@ test.describe('App shell WCAG 1.4.12 text spacing (issue #362)', () => {
       await openSpaced(page, viewport);
 
       expect(await measure(sidebarOf(page))).toEqual({ clipped: [], overlapping: [] });
+    });
+  }
+
+  for (const { viewport, chipWidth } of chipFrames) {
+    test(`grows the chip leftward before the name truncates at ${viewport.width} px`, async ({
+      page,
+    }) => {
+      await openShell(page, viewport);
+      const chip = chipOf(page);
+      const name = chip.getByText(STUB_NAME, { exact: true });
+      const atRest = await edgesOf(chip);
+      expect(atRest.width + 2).toBe(chipWidth);
+
+      await page.addStyleTag({ content: TEXT_SPACING_OVERRIDES });
+
+      await expect
+        .poll(async () => {
+          const fit = await fitOf(name);
+
+          return fit.scrollWidth <= fit.clientWidth;
+        })
+        .toBe(true);
+      const spaced = await edgesOf(chip);
+      expect(Math.abs(spaced.right - atRest.right)).toBeLessThanOrEqual(TOLERANCE);
+      expect(spaced.left).toBeLessThan(atRest.left);
+      expect(await measure(page.getByRole('banner'))).toEqual({ clipped: [], overlapping: [] });
+    });
+
+    test(`keeps the Figma chip and an ellipsis for a long name at ${viewport.width} px`, async ({
+      page,
+    }) => {
+      await openShell(page, viewport, { CurrentUser: [replyWithProfile({ initials: LONG_NAME })] });
+      const chip = chipOf(page);
+      const fit = await fitOf(chip.getByText(LONG_NAME, { exact: true }));
+
+      expect((await edgesOf(chip)).width + 2).toBe(chipWidth);
+      expect(fit.scrollWidth).toBeGreaterThan(fit.clientWidth);
     });
   }
 

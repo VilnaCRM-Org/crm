@@ -28,16 +28,6 @@ const chipBase = {
   fontFamily: FONT,
 };
 
-const nameBase = {
-  position: 'absolute',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  fontWeight: 500,
-  lineHeight: '18px',
-  color: customColors.text.dark,
-};
-
 const caretBase = {
   position: 'absolute',
   width: '20px',
@@ -48,9 +38,7 @@ const caretBase = {
 };
 
 const cardBase = {
-  position: 'absolute',
-  top: 0,
-  right: 0,
+  position: 'relative',
   zIndex: 2,
   boxSizing: 'border-box',
   border: `1px solid ${customColors.checkbox.main}`,
@@ -79,16 +67,25 @@ const itemBase = {
   },
 };
 
+const cardItemEdges = {
+  '&[href]:first-of-type, &:only-child': {
+    borderTop: `1px solid ${paletteColors.background.subtle}`,
+  },
+  '&:last-child': { borderRadius: '0 0 7px 7px' },
+};
+
+const cardList = { margin: '1px -1px -1px', padding: 0, listStyle: 'none' };
+
 export default {
   root: {
-    desktop: { ...root, width: '225px', height: '48px' },
-    tablet: { ...root, width: '253px', height: '52px' },
+    desktop: { ...root, width: 'max-content', minWidth: '225px', height: '48px' },
+    tablet: { ...root, width: 'max-content', minWidth: '253px', height: '52px' },
     mobile: { ...root, width: '40px', height: '40px' },
   },
   backdrop: { position: 'fixed', inset: 0, zIndex: 1 },
   card: {
-    desktop: { ...cardBase, width: '225px', minHeight: '48px' },
-    tablet: { ...cardBase, width: '253px', minHeight: '52px' },
+    desktop: { ...cardBase, minWidth: '225px', minHeight: '48px' },
+    tablet: { ...cardBase, minWidth: '253px', minHeight: '52px' },
     open: { boxShadow: customColors.shell.cardShadow },
   },
   chip: {
@@ -124,17 +121,13 @@ export default {
     },
   },
   glyph: { chip: { fontSize: '20px' }, avatar: { fontSize: '24px' } },
-  name: {
-    desktop: { ...nameBase, left: '49px', top: '13px', width: '121px', fontSize: '14px' },
-    tablet: { ...nameBase, left: '57px', top: '16px', width: '138px', fontSize: '16px' },
-  },
   caret: {
-    desktop: { ...caretBase, left: '191px', top: '13px' },
-    tablet: { ...caretBase, left: '216px', top: '15px' },
+    desktop: { ...caretBase, right: '12px', top: '13px' },
+    tablet: { ...caretBase, right: '15px', top: '15px' },
   },
   list: {
-    desktop: { margin: '1px -1px -1px', padding: 0, listStyle: 'none' },
-    tablet: { margin: '1px -1px -1px', padding: 0, listStyle: 'none' },
+    desktop: cardList,
+    tablet: cardList,
     mobile: {
       display: 'flex',
       flexDirection: 'column',
@@ -145,11 +138,21 @@ export default {
     },
   },
   item: {
-    desktop: { ...itemBase, height: '44px', fontSize: '14px', lineHeight: '18px' },
-    tablet: { ...itemBase, height: '60px', fontSize: '16px', lineHeight: '18px' },
+    desktop: {
+      ...itemBase,
+      ...cardItemEdges,
+      height: '44px',
+      fontSize: '14px',
+      lineHeight: '18px',
+    },
+    tablet: {
+      ...itemBase,
+      ...cardItemEdges,
+      height: '60px',
+      fontSize: '16px',
+      lineHeight: '18px',
+    },
     mobile: { ...itemBase, height: '44px', fontSize: '14px', lineHeight: '18px' },
-    first: { borderTop: `1px solid ${paletteColors.background.subtle}` },
-    last: { borderRadius: '0 0 7px 7px' },
   },
   popover: {
     position: 'absolute',

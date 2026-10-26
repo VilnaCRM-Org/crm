@@ -7,6 +7,7 @@ import type { UserChipBodyProps } from '../../types/components/user-menu';
 
 import styles from './styles';
 import UserAvatar from './user-avatar';
+import UserChipName from './user-chip-name';
 
 export default function UserChipBody({ layout, identity }: UserChipBodyProps): JSX.Element {
   return (
@@ -14,9 +15,7 @@ export default function UserChipBody({ layout, identity }: UserChipBodyProps): J
       <Box sx={{ position: 'absolute', ...styles.avatar.chip[layout] }}>
         <UserAvatar monogram={identity?.monogram ?? ''} size="chip" />
       </Box>
-      <Box component="span" sx={styles.name[layout]}>
-        {identity?.displayName}
-      </Box>
+      <UserChipName layout={layout} name={identity?.displayName} />
       <Box component={CaretIcon} aria-hidden="true" focusable="false" sx={styles.caret[layout]} />
     </>
   );

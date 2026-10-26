@@ -13,13 +13,17 @@ describe('UserChip', () => {
     ['desktop', '14px', '121px', '46px'],
     ['tablet', '16px', '138px', '50px'],
   ] as const)(
-    'draws the %s chip: name %s in a %s box, %s tall',
-    (layout, fontSize, width, height) => {
+    'draws the %s chip: name %s in a box at least %s wide, %s tall',
+    (layout, fontSize, minWidth, height) => {
       renderShell(
         <UserChip layout={layout} identity={identity} menu={buildUserMenuState()} menuId="m" />
       );
 
-      expect(screen.getByText('Anna Koval')).toHaveStyle({ fontSize, width, lineHeight: '18px' });
+      expect(screen.getByText('Anna Koval')).toHaveStyle({
+        fontSize,
+        minWidth,
+        lineHeight: '18px',
+      });
       expect(screen.getByRole('button')).toHaveStyle({ height });
     }
   );

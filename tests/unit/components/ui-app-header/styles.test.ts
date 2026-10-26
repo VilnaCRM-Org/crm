@@ -182,8 +182,18 @@ describe('header styles', () => {
   it("reserves the chip's border box in the user slot", async () => {
     const { slot, slotPlaceholder } = await loadStyles();
 
-    expect(slot.desktop).toEqual({ flexShrink: 0, width: '225px', height: '48px' });
-    expect(slot.tablet).toEqual({ flexShrink: 0, width: '253px', height: '52px' });
+    expect(slot.desktop).toEqual({
+      flexShrink: 0,
+      width: 'max-content',
+      minWidth: '225px',
+      height: '48px',
+    });
+    expect(slot.tablet).toEqual({
+      flexShrink: 0,
+      width: 'max-content',
+      minWidth: '253px',
+      height: '52px',
+    });
     expect(slot.mobile).toEqual({ flexShrink: 0, width: '40px', height: '40px' });
     expect(slotPlaceholder).toEqual({ width: '100%', height: '100%' });
   });

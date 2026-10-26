@@ -266,6 +266,8 @@ header mounted temporarily in `AppLayout`, `userSettings` on for the three-item 
 | P-14 menu card, 3 items | 1440  | 1203,8, 225×180     | 1203,8, 225×180        | pass    |
 | P-59 menu card, 1 item  | 1440  | 1203,8, 225×92      | 1203,8, 225×92         | pass    |
 | menu items              | 1440  | 225×44, text x 20   | 225×44, text x 1223    | pass    |
+| menu divider            | 1440  | `#E1E7EA` 1 px top  | 1 px at 1203,56        | pass    |
+| last item corners       | 1440  | radius 0 0 7 7      | 7 px at 1203,144       | pass    |
 | P-20 chip               | 1024  | 759,6, 253×52       | 759,6, 253×52          | pass    |
 | chip avatar             | 1024  | 775,16, 32          | 775,16, 32×32          | pass    |
 | chip name text box      | 1024  | x 817, 138 wide     | 817,23, 138×18         | pass    |
@@ -273,6 +275,8 @@ header mounted temporarily in `AppLayout`, `userSettings` on for the three-item 
 | P-27 menu card, 3 items | 1024  | 759,6, 253×232      | 759,6, 253×232         | pass    |
 | P-60 menu card, 1 item  | 1024  | 759,6, 253×112      | 759,6, 253×112         | pass    |
 | menu items              | 1024  | 253×60, text x 20   | 253×60, text x 779     | pass    |
+| menu divider            | 1024  | `#E1E7EA` 1 px top  | 1 px at 759,58         | pass    |
+| last item corners       | 1024  | radius 0 0 7 7      | 7 px at 759,178        | pass    |
 | P-32 avatar             | 375   | 280,8, 40×40        | 280,8, 40×40           | pass    |
 | P-38 avatar target      | 375   | 278,6, 44×44        | 278,6, 44×44           | pass    |
 | P-37 popover, 3 items   | 375   | 140,53, 225×142     | 140,53, 225×142        | pass    |
@@ -290,7 +294,14 @@ Golos 700 12 px (15 px at 375) monogram in `#1A1C1E`; the card shadow is
 States measured: a focused item shows `#F4F5F6` with a 2 px `#1A1C1E` ring at offset -2 px, and the
 chip a ring at offset +2 px; the caret transform is the same open and closed; no `TouchRipple` is
 rendered; a name too long for the 121 / 138 px text box keeps the chip at its Figma width, ends in an
-ellipsis and stays whole in the accessible name; at 320 px the popover sits at x 92 to 317 and the
+ellipsis and stays whole in the accessible name; under the WCAG 1.4.12 text-spacing overrides the
+name box is a minimum rather than a fixed width: two hidden copies of the name, one with the page's
+spacing and one held at normal spacing, are measured with a `ResizeObserver`, and the name box and
+the chip widen by the difference, capped at the free header space (425 px at 1440, 116 px at 1024),
+so the chip keeps its right edge and grows leftward, pushing the search and the two icon buttons into
+that space, before the ellipsis applies; the divider sits on the first item drawn, which is Sign out
+when `userSettings` is off, and only the desktop and tablet cards draw it, as the mobile popover's
+items are 2 px apart; at 320 px the popover sits at x 92 to 317 and the
 document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
 focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
 closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none is made.

@@ -65,7 +65,7 @@ describe('UserMenu', () => {
     renderMenu({ identity: { displayName: 'Олександр Дуже-Довгопрізвищенко', monogram: 'ОД' } });
 
     expect(screen.getByText('Олександр Дуже-Довгопрізвищенко')).toHaveStyle({
-      width: '121px',
+      minWidth: '121px',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
