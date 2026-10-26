@@ -13,14 +13,14 @@ const focusOnMount: RefCallback<HTMLButtonElement> = (node) => {
   node?.focus();
 };
 
-export default function DrawerHeader({ onDismiss }: DrawerHeaderProps): JSX.Element {
+export default function DrawerHeader({ onDismiss, avatar }: DrawerHeaderProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
     <Box role="presentation" onClick={onDismiss} sx={styles.header}>
       <Box component="img" src={logoMobile} alt="" aria-hidden="true" sx={styles.logo} />
       <Box sx={styles.cluster}>
-        <DrawerHeaderCopies />
+        <DrawerHeaderCopies avatar={avatar} />
         <Box
           component="button"
           type="button"

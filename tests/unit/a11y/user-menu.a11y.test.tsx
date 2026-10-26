@@ -89,7 +89,7 @@ describe('the user chip and its menu accessibility (Story 2.4)', () => {
       stubViewportWidth(width);
       jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
       const { container } = renderShell(
-        <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} />,
+        <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />,
         { locale: 'uk' }
       );
 

@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 import type { ProtectedOutletContext } from './protected-outlet-context';
 
@@ -8,7 +8,13 @@ export type ShellChunkFailureHandler = (source: ShellChunkSource, error: unknown
 
 export type ShellFailureHandler = (error: unknown) => void;
 
-export interface ShellSlotProps extends ProtectedOutletContext {
+export type ShellAvatarHandler = (avatar: ReactNode) => void;
+
+export interface ShellSlotHostProps extends ProtectedOutletContext {
+  readonly onAvatar: ShellAvatarHandler;
+}
+
+export interface ShellSlotProps extends ShellSlotHostProps {
   readonly onChunkFailure: ShellChunkFailureHandler;
 }
 
@@ -22,4 +28,4 @@ export interface RouteModuleShell {
   readonly userMenu?: ShellSlotLoad | undefined;
 }
 
-export type UserMenuSlot = ComponentType<ProtectedOutletContext>;
+export type UserMenuSlot = ComponentType<ShellSlotHostProps>;

@@ -1,12 +1,27 @@
 import '@testing-library/jest-dom';
-import { act, screen, within } from '@testing-library/react';
+import { act, isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
 
 import UIAppShell from '@/components/ui-app-shell';
 import featureFlagService from '@/config/runtime/feature-flag-service';
 import type { UserMenuSlot } from '@/routes/types/shell-slot';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
+
+const AvatarMenu: UserMenuSlot = ({ onAvatar }) => {
+  useEffect(() => {
+    onAvatar(<span>ОП</span>);
+  }, [onAvatar]);
+
+  return <span>chip</span>;
+};
+
+const openDrawer = async (): Promise<HTMLElement> => {
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Open menu' }));
+
+  return screen.findByRole('dialog', { name: 'Main navigation' });
+};
 
 const Menu: UserMenuSlot = ({ signOut }) => (
   <button type="button" onClick={signOut}>
@@ -106,5 +121,26 @@ describe('UIAppShell', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Open menu' }));
 
     expect(screen.getByRole('dialog', { name: 'Main navigation' })).toBeInTheDocument();
+  });
+
+  it('paints the avatar the user menu slot publishes in the drawer header copy', async () => {
+    renderAt(375, AvatarMenu);
+
+    const dialog = await openDrawer();
+    const copy = within(dialog).getByText('ОП');
+
+    expect(isInaccessible(copy)).toBe(true);
+    within(dialog)
+      .getAllByRole('button')
+      .forEach((button) => expect(button).not.toContainElement(copy));
+  });
+
+  it('keeps the no-data placeholder in the drawer header without a user menu slot', async () => {
+    renderAt(375);
+
+    const dialog = await openDrawer();
+
+    expect(dialog).toContainHTML('PersonOutlinedIcon');
+    expect(within(dialog).queryByText('ОП')).not.toBeInTheDocument();
   });
 });

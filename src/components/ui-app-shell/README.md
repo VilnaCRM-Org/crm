@@ -21,7 +21,9 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 - **The user slot is a prop.** Nothing under `src/components/` imports `src/modules/`. The settings
   route contract declares `shell.userMenu`, a loader for `UserMenuSlot`; the composer hands
   `AppLayout` the result of `routeMapper.shellSlot(load)`, so `AppLayout` receives only a
-  component that takes `signOut`. See "Shell slots" in `src/routes/README.md`.
+  component that takes `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
+  publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
+  `HeaderNavigation`). See "Shell slots" in `src/routes/README.md`.
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
   `AppLayout` calls its `onShellFailure` prop once (the composer binds it to
   `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
@@ -221,7 +223,7 @@ close it without restoring the burger, so the destination's `<main>` keeps the f
 | Settings chevron    | right 24, 24 px        | 247,437, 24×24      | pass      |
 | first sub-item text | x 56, y 60 in group    | x 56, y 60 in group | pass      |
 | P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass      |
-| drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, glyph | see below |
+| drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
 | scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
 
 The scrim (`DrawerScrim`) is `rgba(54,79,93,.05)` with a 4 px backdrop blur, painted as an
@@ -231,8 +233,11 @@ viewport when no footer is in view), so the footer paints untinted and unblurred
 (V-3); the 56 px header is painted above the scrim. Under it, MUI's backdrop is `invisible`: it paints
 nothing and stays the full-viewport hit target, so a tap on the footer closes the drawer instead of
 following a footer link. Measured at 375×812 on `/boards`: the footer starts at y 604.4, the scrim
-box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`. The avatar copy measures
-`rgb(225, 231, 234)`, a 50 % radius, `rgb(26, 28, 30)` and a 24 px glyph.
+box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`. With the user resolved
+(`userSettings` on, one stubbed `CurrentUser` reply) the avatar copy and the header avatar it covers
+both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15 px Golos 700
+`rgb(26, 28, 30)`; the copy sits under `aria-hidden`, holds no focusable element, and the page made
+one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
 
 At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
 are 42 px wide there, because a 44 px target at an 8 px inset would overflow the viewport and cause
@@ -241,11 +246,14 @@ Figma and 313 px here: the panel clips the extra pixel, so the painted box is eq
 
 What Figma leaves open, and how it was built:
 
-- The drawer avatar copy is the aria-hidden 40 px `#E1E7EA` circle with the 24 px person glyph in
-  `#1A1C1E`, the generic no-data avatar the header shows before a user resolves. Figma fills it with
-  a photo; no current-user data reaches `src/components/` (the user slot is module-owned behind the
-  route registry), so the copy cannot show the monogram the covered header avatar shows once the user
-  resolves. Carrying it would need an avatar slot through the route shell contract.
+- The drawer avatar copy is the header avatar itself: the user menu slot publishes an aria-hidden
+  copy of its 40 px `UserAvatar` through the shell slot's `onAvatar` callback, so it shows the same
+  monogram (`ОП` for the demo user), the same no-data person glyph while the user is pending, while
+  `userSettings` is off or after a failed read, and costs no second `currentUser` read. Figma fills
+  it with a photo; user-service has no avatar field (G5 in `src/modules/user/README.md`), so the
+  monogram stands in for it exactly as it does in the header. Until the slot chunk loads, or when
+  it fails, the drawer keeps its own 40 px `#E1E7EA` circle with the 24 px person glyph in
+  `#1A1C1E`, the same size, so nothing shifts.
 - The collapsed Settings header is 60 px (as the other rows) and its chevron is centred on it; the
   open header is the drawn 48 px.
 - The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.

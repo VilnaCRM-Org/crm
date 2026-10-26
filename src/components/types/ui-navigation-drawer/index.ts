@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import type { NavigationItemSet } from '../ui-app-shell/navigation-item';
 import type { ActivateHandler, SignOutHandler } from '../ui-sidebar';
 
@@ -8,10 +10,16 @@ export interface UINavigationDrawerProps {
   readonly signOut: SignOutHandler;
   readonly onClose: ActivateHandler;
   readonly onNavigate: ActivateHandler;
+  readonly avatar?: ReactNode | undefined;
 }
 
 export interface DrawerHeaderProps {
   readonly onDismiss: ActivateHandler;
+  readonly avatar?: ReactNode | undefined;
+}
+
+export interface DrawerHeaderCopiesProps {
+  readonly avatar?: ReactNode | undefined;
 }
 
 export interface DrawerPanelProps {

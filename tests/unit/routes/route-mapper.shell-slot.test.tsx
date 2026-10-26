@@ -41,7 +41,7 @@ describe('RouteMapper shell slot', () => {
     const Slot = routeMapper.shellSlot(() => Promise.resolve({ default: LoadedSlot }));
     render(
       <Suspense fallback={<p>pending</p>}>
-        <Slot signOut={signOut} />
+        <Slot signOut={signOut} onAvatar={jest.fn()} />
       </Suspense>
     );
 
@@ -56,7 +56,7 @@ describe('RouteMapper shell slot', () => {
     const Slot = routeMapper.shellSlot(() => Promise.reject(failure));
     render(
       <Suspense fallback={<p>pending</p>}>
-        <Slot signOut={jest.fn()} />
+        <Slot signOut={jest.fn()} onAvatar={jest.fn()} />
       </Suspense>
     );
 
@@ -69,7 +69,7 @@ describe('RouteMapper shell slot', () => {
     const Slot = routeMapper.shellSlot(() => Promise.resolve({ default: LoadedSlot }));
     render(
       <Suspense fallback={<p>pending</p>}>
-        <Slot signOut={jest.fn()} />
+        <Slot signOut={jest.fn()} onAvatar={jest.fn()} />
       </Suspense>
     );
 

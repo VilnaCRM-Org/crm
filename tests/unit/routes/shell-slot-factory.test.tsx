@@ -9,11 +9,12 @@ import type { ShellSlotProps } from '@/routes/types/shell-slot';
 const chunkFailure = (): Error =>
   Object.assign(new Error('Loading chunk user-menu failed.'), { name: 'ChunkLoadError' });
 
-function LoadedSlot({ signOut, onChunkFailure }: ShellSlotProps): JSX.Element {
+function LoadedSlot({ signOut, onChunkFailure, onAvatar }: ShellSlotProps): JSX.Element {
   const failInner = useCallback(
     () => onChunkFailure('app-shell:current-user', 'inner'),
     [onChunkFailure]
   );
+  const publish = useCallback(() => onAvatar('avatar copy'), [onAvatar]);
 
   return (
     <>
@@ -23,15 +24,22 @@ function LoadedSlot({ signOut, onChunkFailure }: ShellSlotProps): JSX.Element {
       <button type="button" onClick={failInner}>
         fail inner
       </button>
+      <button type="button" onClick={publish}>
+        publish avatar
+      </button>
     </>
   );
 }
 
-const mount = (Slot: ReturnType<ShellSlotFactory['create']>, signOut = jest.fn()): void => {
+const mount = (
+  Slot: ReturnType<ShellSlotFactory['create']>,
+  signOut = jest.fn(),
+  onAvatar = jest.fn()
+): void => {
   render(
     <div role="group" aria-label="slot">
       <Suspense fallback={<p>pending</p>}>
-        <Slot signOut={signOut} />
+        <Slot signOut={signOut} onAvatar={onAvatar} />
       </Suspense>
     </div>
   );
@@ -53,6 +61,30 @@ describe('ShellSlotFactory', () => {
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(report).toHaveBeenCalledTimes(1);
     expect(report).toHaveBeenCalledWith('app-shell:current-user', 'inner');
+  });
+
+  it('hands the loaded slot the host avatar callback unchanged', async () => {
+    const onAvatar = jest.fn();
+    const Slot = new ShellSlotFactory(jest.fn()).create(() =>
+      Promise.resolve({ default: LoadedSlot })
+    );
+    mount(Slot, jest.fn(), onAvatar);
+
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'publish avatar' }));
+
+    expect(onAvatar).toHaveBeenCalledTimes(1);
+    expect(onAvatar).toHaveBeenCalledWith('avatar copy');
+  });
+
+  it('publishes no avatar from the empty slot a twice-failed chunk leaves', async () => {
+    const report = jest.fn();
+    const onAvatar = jest.fn();
+    const Slot = new ShellSlotFactory(report).create(() => Promise.reject(chunkFailure()));
+    mount(Slot, jest.fn(), onAvatar);
+
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+
+    expect(onAvatar).not.toHaveBeenCalled();
   });
 
   it('shows the Suspense fallback while the chunk is pending', () => {

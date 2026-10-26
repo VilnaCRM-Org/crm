@@ -8,6 +8,7 @@ import useUserMenu from '../../hooks/use-user-menu';
 import type { UserMenuProps } from '../../types/components/user-menu';
 
 import styles from './styles';
+import useAvatarCopy from './use-avatar-copy';
 import UserChip from './user-chip';
 import UserMenuCard from './user-menu-card';
 import UserMenuItems from './user-menu-items';
@@ -16,7 +17,9 @@ export default function UserMenu({
   identity,
   settingsAvailable,
   signOut,
+  onAvatar,
 }: UserMenuProps): JSX.Element {
+  useAvatarCopy({ identity, onAvatar });
   const layout = useShellLayout();
   const menu = useUserMenu({ layout });
   const menuId = useId();
