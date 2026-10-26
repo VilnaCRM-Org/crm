@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 
 import UserChipBody from '@/modules/user/features/settings/components/user-menu/user-chip-body';
 
+const identity = { displayName: 'Anna Koval', monogram: 'AK' };
+
 describe('UserChipBody', () => {
   it('draws the monogram, the name and a decorative caret', () => {
-    const { container } = render(
-      <UserChipBody layout="desktop" identity={{ displayName: 'Anna Koval', monogram: 'AK' }} />
-    );
+    const { container } = render(<UserChipBody layout="desktop" identity={identity} />);
 
     expect(screen.getByText('AK')).toHaveStyle({ width: '32px', height: '32px' });
     expect(screen.getByText('Anna Koval')).toHaveStyle({ left: '49px', top: '13px' });
@@ -15,9 +15,7 @@ describe('UserChipBody', () => {
   });
 
   it('places the tablet name at 57,16 in 16 px', () => {
-    render(
-      <UserChipBody layout="tablet" identity={{ displayName: 'Anna Koval', monogram: 'AK' }} />
-    );
+    render(<UserChipBody layout="tablet" identity={identity} />);
 
     expect(screen.getByText('Anna Koval')).toHaveStyle({
       left: '57px',

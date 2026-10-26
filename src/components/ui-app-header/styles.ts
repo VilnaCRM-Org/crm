@@ -185,8 +185,8 @@ export default {
     textAlign: 'center',
   },
   slot: {
-    desktop: { flexShrink: 0, width: '225px', height: '48px' },
-    tablet: { flexShrink: 0, width: '253px', height: '52px' },
+    desktop: { flexShrink: 0, width: 'max-content', minWidth: '225px', height: '48px' },
+    tablet: { flexShrink: 0, width: 'max-content', minWidth: '253px', height: '52px' },
     mobile: { flexShrink: 0, width: '40px', height: '40px' },
   },
   slotPlaceholder: { width: '100%', height: '100%' },

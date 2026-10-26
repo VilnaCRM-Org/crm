@@ -12,11 +12,19 @@ describe('UserSlotFrame', () => {
   it.each([
     ['desktop', '225px', '48px'],
     ['tablet', '253px', '52px'],
-    ['mobile', '40px', '40px'],
-  ] as const)('reserves the %s chip box', (layout, width, height) => {
-    render(<UserSlotFrame layout={layout} />);
+  ] as const)(
+    'reserves the %s chip box at %s wide at least and sizes to a wider chip',
+    (layout, minWidth, height) => {
+      render(<UserSlotFrame layout={layout} />);
 
-    expect(boxes()[1]).toHaveStyle({ width, height });
+      expect(boxes()[1]).toHaveStyle({ width: 'max-content', minWidth, height });
+    }
+  );
+
+  it('reserves the 40 px mobile avatar box', () => {
+    render(<UserSlotFrame layout="mobile" />);
+
+    expect(boxes()[1]).toHaveStyle({ width: '40px', height: '40px' });
   });
 
   it('holds an aria-hidden placeholder filling the box while no slot is given', () => {

@@ -8,6 +8,9 @@ import renderShell from '@tests/unit/utils/render-shell';
 
 type Props = Parameters<typeof UserMenuItems>[0];
 
+const DIVIDER = { borderTopWidth: '1px', borderTopStyle: 'solid', borderTopColor: '#E1E7EA' };
+const ROUNDED = { borderRadius: '0 0 7px 7px' };
+
 const renderItems = (props: Partial<Props> = {}, locale: 'en' | 'uk' = 'en'): void => {
   renderShell(
     <UserMenuItems
@@ -85,5 +88,41 @@ describe('UserMenuItems', () => {
     renderItems({ layout });
 
     screen.getAllByRole('menuitem').forEach((item) => expect(item).toHaveStyle({ height }));
+  });
+
+  it.each(['desktop', 'tablet'] as const)(
+    'draws the #E1E7EA divider on the first %s item and rounds the last one',
+    (layout) => {
+      renderItems({ layout });
+      const [profile, settings, signOut] = screen.getAllByRole('menuitem');
+
+      expect(profile).toHaveStyle(DIVIDER);
+      expect(settings).not.toHaveStyle(DIVIDER);
+      expect(signOut).not.toHaveStyle(DIVIDER);
+      expect(signOut).toHaveStyle(ROUNDED);
+      expect(profile).not.toHaveStyle(ROUNDED);
+      expect(settings).not.toHaveStyle(ROUNDED);
+    }
+  );
+
+  it.each(['desktop', 'tablet'] as const)(
+    'gives the lone %s Sign out both the divider and the rounded corners',
+    (layout) => {
+      renderItems({ layout, settingsAvailable: false });
+
+      expect(screen.getByRole('menuitem', { name: 'Sign out' })).toHaveStyle({
+        ...DIVIDER,
+        ...ROUNDED,
+      });
+    }
+  );
+
+  it('draws no divider and no rounded item in the mobile popover', () => {
+    renderItems({ layout: 'mobile' });
+
+    screen.getAllByRole('menuitem').forEach((item) => {
+      expect(item).not.toHaveStyle(DIVIDER);
+      expect(item).not.toHaveStyle(ROUNDED);
+    });
   });
 });

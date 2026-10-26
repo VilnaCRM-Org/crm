@@ -44,6 +44,11 @@ export interface UserChipBodyProps {
   readonly identity: UserDisplayName | null;
 }
 
+export interface UserChipNameProps {
+  readonly layout: 'desktop' | 'tablet';
+  readonly name: string | undefined;
+}
+
 export interface UserMenuItemsProps {
   readonly layout: ShellLayout;
   readonly menuId: string;

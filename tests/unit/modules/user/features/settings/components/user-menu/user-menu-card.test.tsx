@@ -10,11 +10,12 @@ describe('UserMenuCard', () => {
   it.each([
     ['desktop', '225px'],
     ['tablet', '253px'],
-  ] as const)('grows the %s chip in place into a card %s wide', (layout, width) => {
+  ] as const)('grows the %s chip in place into a card at least %s wide', (layout, minWidth) => {
     render(<UserMenuCard layout={layout} open chip={chip} items={items} />);
 
     expect(screen.getAllByRole('generic', { hidden: true })[1]).toHaveStyle({
-      width,
+      position: 'relative',
+      minWidth,
       border: '1px solid #D0D4D8',
       borderRadius: '8px',
     });

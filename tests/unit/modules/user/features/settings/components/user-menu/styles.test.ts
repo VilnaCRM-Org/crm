@@ -17,13 +17,15 @@ describe('user menu styles', () => {
       desktop: {
         position: 'relative',
         flexShrink: 0,
-        width: '225px',
+        width: 'max-content',
+        minWidth: '225px',
         height: '48px',
       },
       tablet: {
         position: 'relative',
         flexShrink: 0,
-        width: '253px',
+        width: 'max-content',
+        minWidth: '253px',
         height: '52px',
       },
       mobile: {
@@ -50,27 +52,23 @@ describe('user menu styles', () => {
 
     expect(styles.card).toEqual({
       desktop: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
+        position: 'relative',
         zIndex: 2,
         boxSizing: 'border-box',
         border: '1px solid #D0D4D8',
         borderRadius: '8px',
         backgroundColor: '#FFFFFF',
-        width: '225px',
+        minWidth: '225px',
         minHeight: '48px',
       },
       tablet: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
+        position: 'relative',
         zIndex: 2,
         boxSizing: 'border-box',
         border: '1px solid #D0D4D8',
         borderRadius: '8px',
         backgroundColor: '#FFFFFF',
-        width: '253px',
+        minWidth: '253px',
         minHeight: '52px',
       },
       open: {
@@ -208,39 +206,6 @@ describe('user menu styles', () => {
     });
   });
 
-  it('pins name', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.name).toEqual({
-      desktop: {
-        position: 'absolute',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        fontWeight: 500,
-        lineHeight: '18px',
-        color: '#1A1C1E',
-        left: '49px',
-        top: '13px',
-        width: '121px',
-        fontSize: '14px',
-      },
-      tablet: {
-        position: 'absolute',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        fontWeight: 500,
-        lineHeight: '18px',
-        color: '#1A1C1E',
-        left: '57px',
-        top: '16px',
-        width: '138px',
-        fontSize: '16px',
-      },
-    });
-  });
-
   it('pins caret', async () => {
     const styles = await loadStyles();
 
@@ -252,7 +217,7 @@ describe('user menu styles', () => {
         transform: 'rotate(-90deg)',
         fill: 'none',
         color: '#969B9D',
-        left: '191px',
+        right: '12px',
         top: '13px',
       },
       tablet: {
@@ -262,7 +227,7 @@ describe('user menu styles', () => {
         transform: 'rotate(-90deg)',
         fill: 'none',
         color: '#969B9D',
-        left: '216px',
+        right: '15px',
         top: '15px',
       },
     });
@@ -316,6 +281,12 @@ describe('user menu styles', () => {
           outline: '2px solid #1A1C1E',
           outlineOffset: '-2px',
         },
+        '&[href]:first-of-type, &:only-child': {
+          borderTop: '1px solid #E1E7EA',
+        },
+        '&:last-child': {
+          borderRadius: '0 0 7px 7px',
+        },
         height: '44px',
         fontSize: '14px',
         lineHeight: '18px',
@@ -338,6 +309,12 @@ describe('user menu styles', () => {
         '&:focus-visible, &.Mui-focusVisible': {
           outline: '2px solid #1A1C1E',
           outlineOffset: '-2px',
+        },
+        '&[href]:first-of-type, &:only-child': {
+          borderTop: '1px solid #E1E7EA',
+        },
+        '&:last-child': {
+          borderRadius: '0 0 7px 7px',
         },
         height: '60px',
         fontSize: '16px',
@@ -365,12 +342,6 @@ describe('user menu styles', () => {
         height: '44px',
         fontSize: '14px',
         lineHeight: '18px',
-      },
-      first: {
-        borderTop: '1px solid #E1E7EA',
-      },
-      last: {
-        borderRadius: '0 0 7px 7px',
       },
     });
   });
