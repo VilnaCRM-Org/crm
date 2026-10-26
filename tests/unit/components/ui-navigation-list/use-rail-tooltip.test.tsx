@@ -1,13 +1,14 @@
 import { act, renderHook } from '@testing-library/react';
-import type { KeyboardEvent } from 'react';
 
 import useRailTooltip from '@/components/ui-navigation-list/use-rail-tooltip';
 
-const key = (value: string): KeyboardEvent<HTMLDivElement> =>
-  ({ key: value }) as KeyboardEvent<HTMLDivElement>;
-
 const enter = (handler: ((event: never) => void) | undefined): void =>
   act(() => handler?.({} as never));
+
+const press = (value: string): void =>
+  act(() => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: value }));
+  });
 
 describe('useRailTooltip', () => {
   it('starts hidden', () => {
@@ -34,14 +35,22 @@ describe('useRailTooltip', () => {
     expect(result.current.visible).toBe(false);
   });
 
-  it('hides on Escape and stays hidden while the pointer or focus remains', () => {
+  it('hides a hovered tooltip on an Escape pressed anywhere in the document', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    press('Escape');
+
+    expect(result.current.visible).toBe(false);
+  });
+
+  it('stays hidden after Escape while the pointer or focus remains', () => {
     const { result } = renderHook(() => useRailTooltip());
 
     enter(result.current.handlers.onFocus);
-    act(() => result.current.handlers.onKeyDown?.(key('Escape')));
-    expect(result.current.visible).toBe(false);
-
+    press('Escape');
     enter(result.current.handlers.onMouseEnter);
+
     expect(result.current.visible).toBe(false);
   });
 
@@ -49,7 +58,7 @@ describe('useRailTooltip', () => {
     const { result } = renderHook(() => useRailTooltip());
 
     enter(result.current.handlers.onFocus);
-    act(() => result.current.handlers.onKeyDown?.(key('Escape')));
+    press('Escape');
     enter(result.current.handlers.onBlur);
     enter(result.current.handlers.onFocus);
 
@@ -60,8 +69,54 @@ describe('useRailTooltip', () => {
     const { result } = renderHook(() => useRailTooltip());
 
     enter(result.current.handlers.onFocus);
-    act(() => result.current.handlers.onKeyDown?.(key('Enter')));
+    press('Enter');
 
     expect(result.current.visible).toBe(true);
+  });
+
+  it('stops listening for Escape once the tooltip is hidden', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onMouseLeave);
+    press('Escape');
+    enter(result.current.handlers.onMouseEnter);
+
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('does not listen for Escape before the tooltip is first shown', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    press('Escape');
+    enter(result.current.handlers.onMouseEnter);
+
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('removes the document listener it added when it unmounts', () => {
+    const add = jest.spyOn(document, 'addEventListener');
+    const remove = jest.spyOn(document, 'removeEventListener');
+    const { result, unmount } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    const added = add.mock.calls.find(([type]) => type === 'keydown');
+    unmount();
+
+    expect(added).toBeDefined();
+    expect(remove).toHaveBeenCalledWith('keydown', added?.[1]);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
+  it('exposes no keydown handler on the wrapper', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    expect(Object.keys(result.current.handlers).sort()).toEqual([
+      'onBlur',
+      'onFocus',
+      'onMouseEnter',
+      'onMouseLeave',
+    ]);
   });
 });

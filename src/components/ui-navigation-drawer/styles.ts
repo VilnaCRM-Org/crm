@@ -13,7 +13,12 @@ const ring = {
 const glyph = { display: 'block', flexShrink: 0, width: '24px', height: '24px' };
 
 export default {
-  backdrop: {
+  scrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    pointerEvents: 'none',
     backgroundColor: customColors.shell.scrim,
     backdropFilter: 'blur(4px)',
     WebkitBackdropFilter: 'blur(4px)',
@@ -50,7 +55,19 @@ export default {
     marginTop: '8px',
   },
   glyph: { ...glyph, color: customColors.checkbox.main },
-  avatar: { flexShrink: 0, width: '40px', height: '40px' },
+  avatar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    backgroundColor: paletteColors.background.subtle,
+    color: customColors.text.dark,
+  },
+  avatarGlyph: { fontSize: '24px' },
   close: {
     ...ring,
     display: 'block',

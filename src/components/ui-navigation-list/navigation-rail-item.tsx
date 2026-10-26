@@ -20,7 +20,6 @@ export default function NavigationRailItem(props: NavigationRailItemProps): JSX.
       onMouseLeave={handlers.onMouseLeave}
       onFocus={handlers.onFocus}
       onBlur={handlers.onBlur}
-      onKeyDown={handlers.onKeyDown}
     >
       <NavigationRow
         layout={layout}

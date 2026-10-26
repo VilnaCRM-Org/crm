@@ -6,14 +6,25 @@ const loadStyles = (): Promise<Styles> =>
   loadIsolated(async () => (await import('@/components/ui-navigation-drawer/styles')).default);
 
 describe('navigation drawer styles', () => {
-  it('pins backdrop', async () => {
+  it('pins scrim', async () => {
     const styles = await loadStyles();
 
-    expect(styles.backdrop).toEqual({
+    expect(styles.scrim).toEqual({
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      pointerEvents: 'none',
       backgroundColor: 'rgba(54, 79, 93, 0.05)',
       backdropFilter: 'blur(4px)',
       WebkitBackdropFilter: 'blur(4px)',
     });
+  });
+
+  it('leaves the backdrop unpainted', async () => {
+    const styles = await loadStyles();
+
+    expect(styles).not.toHaveProperty('backdrop');
   });
 
   it('pins dialog', async () => {
@@ -91,10 +102,23 @@ describe('navigation drawer styles', () => {
     const styles = await loadStyles();
 
     expect(styles.avatar).toEqual({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       flexShrink: 0,
+      boxSizing: 'border-box',
       width: '40px',
       height: '40px',
+      borderRadius: '50%',
+      backgroundColor: '#E1E7EA',
+      color: '#1A1C1E',
     });
+  });
+
+  it('pins avatarGlyph', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.avatarGlyph).toEqual({ fontSize: '24px' });
   });
 
   it('pins close', async () => {

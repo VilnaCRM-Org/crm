@@ -46,6 +46,44 @@ describe('NavigationRailItem', () => {
     expect(screen.getByRole('link', { name: 'Boards' })).toHaveFocus();
   });
 
+  it('hides a hovered tooltip on Escape while focus sits on another control', async () => {
+    const user = userEvent.setup();
+    renderShell(
+      <>
+        <button type="button">Other</button>
+        <NavigationRailItem
+          layout="desktop"
+          id="boards"
+          label="Boards"
+          icon={icon}
+          href="/boards"
+        />
+      </>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Other' }));
+    await user.hover(screen.getByRole('link', { name: 'Boards' }));
+    expect(screen.getAllByText('Boards')).toHaveLength(2);
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.getAllByText('Boards')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Other' })).toHaveFocus();
+  });
+
+  it('hides a hovered tooltip on Escape while nothing holds focus', async () => {
+    const user = userEvent.setup();
+    renderShell(
+      <NavigationRailItem layout="desktop" id="boards" label="Boards" icon={icon} href="/boards" />
+    );
+
+    await user.hover(screen.getByRole('link', { name: 'Boards' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.getAllByText('Boards')).toHaveLength(1);
+    expect(document.body).toHaveFocus();
+  });
+
   it('keeps the tooltip inside the hover region of its row', async () => {
     const user = userEvent.setup();
     renderShell(

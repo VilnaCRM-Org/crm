@@ -19,3 +19,7 @@ export interface DrawerPanelProps {
   readonly signOut: SignOutHandler;
   readonly onNavigate: ActivateHandler;
 }
+
+export interface DrawerScrimProps {
+  readonly duration: number;
+}

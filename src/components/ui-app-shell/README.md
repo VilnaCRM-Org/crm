@@ -99,17 +99,20 @@ Two choices record what Figma leaves open:
 
 ## Sidebar
 
-`UISidebar` (`src/components/ui-sidebar/`) is one `<nav>` named "Main navigation" holding one ordered
-list (`UINavigationList`): the five product rows, the Settings group and, last, Sign out after a
-decorative divider. The rows come from the typed item set in `navigation-items.ts` (data, no
+`UISidebar` (`src/components/ui-sidebar/`) is one `<nav>` named "Main navigation" holding one
+ordered list (`UINavigationList`): the five product rows, the Settings group and, last, Sign out
+after a decorative divider. The rows come from the typed item set in `navigation-items.ts` (data, no
 function-valued property), so an RBAC filter can drop a row without leaving a gap. Items flagged
 `userSettings` (the Settings group and its three sub-items) are filtered while the flag is off.
 `useCurrentNavigationItem` marks the current page with `aria-current="page"`; the Settings group is
 expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron toggle lasts until the
-next route change. The handle collapses the panel to the rail (72 px desktop, 76 px tablet); the rail
-shows each row as an icon pill with a tooltip on hover and keyboard focus, and Escape hides it
-without moving focus. Nothing is persisted. Sign out runs through `useOnceCallback`, so a second
-activation before navigation does nothing.
+next route change; any pathname change clears it, so returning to the path it was set on (a link or
+browser Back) shows the route rule again. The handle collapses the panel to the rail (72 px desktop,
+76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
+While a tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
+a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
+is persisted. Sign out runs through `useOnceCallback`, so a second activation before navigation does
+nothing.
 
 ### Measured against Figma (sidebar)
 
@@ -142,6 +145,23 @@ Chromium on the dev server at device scale factor 1, boxes relative to the panel
 | P-53 tablet rail handle  | 1024  | 60,15, 32×32           | 60,15, 32×32          | pass    |
 | P-54 tablet rail divider | 1024  | y 1036, 96 wide        | y 1036, 96 wide       | pass    |
 | P-54 rail sign out icon  | 1024  | 24×24 at 24,1073       | 24×24 at 24,1073      | pass    |
+| handle chevron           | 1440  | points left            | points left           | pass    |
+| rail handle chevron      | 1440  | points right           | points right          | pass    |
+| Settings chevron, open   | 1440  | points up              | points up             | pass    |
+| Settings chevron, closed | 1440  | points down (NFR-22a)  | points down           | pass    |
+| tablet handle chevron    | 1024  | points left (DV-10)    | points left           | pass    |
+| tablet rail handle       | 1024  | points right           | points right          | pass    |
+| tablet Settings, open    | 1024  | points up              | points up             | pass    |
+
+Every chevron is one glyph, `chevron-left.svg`, which now carries the Figma master geometry
+`M12.5 15L7.5 10L12.5 5` (a left chevron) turned by each consumer's CSS: none on the expanded handle,
+`rotate(180deg)` on the rail handle, `rotate(90deg)` and `rotate(-90deg)` on the open and closed
+Settings chevron, and `rotate(-90deg)` on the chip caret. The directions were read in Chromium from
+the path's screen matrix on the 3004 dev server and are pinned by
+`tests/unit/tooling/shell-chevron-direction.test.ts`. An earlier revision of these tables passed the
+chevrons on box geometry alone while the asset held the rotated chip-caret appearance (a downward V),
+so the handle pointed down, the rail handle up, the Settings chevron left and right and the chip
+caret right; the boxes were right and the directions were wrong.
 
 Rail icon tops at 1024 match Figma (43, 110, 176, 242, 308, 374, 442, 508, 574). Paint rows read
 from `getComputedStyle()`: the panel border is 1 px `#E1E7EA`, radius 12, shadow
@@ -174,43 +194,58 @@ or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies 
 list and avatar and the one operable `x-close` button, and a 313×622 panel at 62,56 with the
 disabled drawer search and the same `UINavigationList` as the sidebar in 60 px rows (the Settings
 header is 48 px while the group is open, as drawn). The panel slides in over 200 ms and the scrim
-fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0.
+fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0
+(`useDrawerMotion`).
 
-Focus: the close button takes focus on open. Escape, the close button, the scrim and a tap on the
-header outside the panel close the drawer and return focus to the burger. A navigation row, a
-sub-item, Settings, Sign out or any route change close it without restoring the burger, so the
-destination's `<main>` keeps the focus `useArrivalFocus` gave it; widening the viewport unmounts the
-drawer and focuses `main[tabindex="-1"]`. Sign out closes the drawer and runs `signOut` once.
+Focus: the close button takes focus on open. Escape, the close button, a tap anywhere outside the
+panel (the scrim, the untinted footer, or the header outside the close button) close the drawer and
+return focus to the burger. A navigation row, a sub-item, Settings, Sign out or any route change
+close it without restoring the burger, so the destination's `<main>` keeps the focus
+`useArrivalFocus` gave it; widening the viewport unmounts the drawer and focuses
+`main[tabindex="-1"]`. Sign out closes the drawer and runs `signOut` once.
 
 ### Measured against Figma (drawer, 375 wide)
 
-| Row                 | Figma                  | Measured            | Verdict |
-| ------------------- | ---------------------- | ------------------- | ------- |
-| P-33 burger glyph   | 336,16, 24×24          | 336,16, 24×24       | pass    |
-| P-38 burger target  | 326,6, 44×44           | 326,6, 44×44        | pass    |
-| P-43 drawer header  | 0,0, 375×56            | 0,0, 375×56         | pass    |
-| drawer logo         | 15,7, 125×42.067       | 15,7, 125×42.06     | pass    |
-| drawer bell, list   | 200,16 and 240,16      | 200,16 and 240,16   | pass    |
-| drawer close glyph  | 336,16, 24×24          | 336,16, 24×24       | pass    |
-| P-34 drawer panel   | 62,56, 313×622         | 62,56, 313×622      | pass    |
-| P-35 drawer search  | 72,69, 293×48          | 72,69, 293×48       | pass    |
-| P-36 first row      | 62,125, 233×60         | 62,125, 233×60      | pass    |
-| Settings group      | 233×188, header at 425 | 425 to 613 (188)    | pass    |
-| Settings chevron    | right 24, 24 px        | 247,437, 24×24      | pass    |
-| first sub-item text | x 56, y 60 in group    | x 56, y 60 in group | pass    |
-| P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass    |
+| Row                 | Figma                  | Measured            | Verdict   |
+| ------------------- | ---------------------- | ------------------- | --------- |
+| P-33 burger glyph   | 336,16, 24×24          | 336,16, 24×24       | pass      |
+| P-38 burger target  | 326,6, 44×44           | 326,6, 44×44        | pass      |
+| P-43 drawer header  | 0,0, 375×56            | 0,0, 375×56         | pass      |
+| drawer logo         | 15,7, 125×42.067       | 15,7, 125×42.06     | pass      |
+| drawer bell, list   | 200,16 and 240,16      | 200,16 and 240,16   | pass      |
+| drawer close glyph  | 336,16, 24×24          | 336,16, 24×24       | pass      |
+| P-34 drawer panel   | 62,56, 313×622         | 62,56, 313×622      | pass      |
+| P-35 drawer search  | 72,69, 293×48          | 72,69, 293×48       | pass      |
+| P-36 first row      | 62,125, 233×60         | 62,125, 233×60      | pass      |
+| Settings group      | 233×188, header at 425 | 425 to 613 (188)    | pass      |
+| Settings chevron    | right 24, 24 px        | 247,437, 24×24      | pass      |
+| first sub-item text | x 56, y 60 in group    | x 56, y 60 in group | pass      |
+| P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass      |
+| drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, glyph | see below |
+| scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
 
-The scrim is `rgba(54,79,93,.05)` with a 4 px backdrop blur over the whole viewport; the 56 px header
-is painted above it. At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger
-and close targets are 42 px wide there, because a 44 px target at an 8 px inset would overflow the
-viewport and cause horizontal scroll (the known sizing gap of NFR-3 at 320 px). The Sign out row is
-314 px wide in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
+The scrim (`DrawerScrim`) is `rgba(54,79,93,.05)` with a 4 px backdrop blur, painted as an
+aria-hidden layer that takes no pointer events and ends at the top of the page footer
+(`useFooterInset` measures the `<footer>` outside `<main>` on open and on resize, and keeps the whole
+viewport when no footer is in view), so the footer paints untinted and unblurred as Figma draws it
+(V-3); the 56 px header is painted above the scrim. Under it, MUI's backdrop is `invisible`: it paints
+nothing and stays the full-viewport hit target, so a tap on the footer closes the drawer instead of
+following a footer link. Measured at 375×812 on `/boards`: the footer starts at y 604.4, the scrim
+box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`. The avatar copy measures
+`rgb(225, 231, 234)`, a 50 % radius, `rgb(26, 28, 30)` and a 24 px glyph.
+
+At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
+are 42 px wide there, because a 44 px target at an 8 px inset would overflow the viewport and cause
+horizontal scroll (the known sizing gap of NFR-3 at 320 px). The Sign out row is 314 px wide in
+Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
 
 What Figma leaves open, and how it was built:
 
-- The drawer avatar copy is an empty aria-hidden 40 px box; the real avatar belongs to Story 2.4.
-- The footer drawn above the scrim in the mock is page content; the scrim here covers the viewport
-  below the header.
+- The drawer avatar copy is the aria-hidden 40 px `#E1E7EA` circle with the 24 px person glyph in
+  `#1A1C1E`, the generic no-data avatar the header shows before a user resolves. Figma fills it with
+  a photo; no current-user data reaches `src/components/` (the user slot is module-owned behind the
+  route registry), so the copy cannot show the monogram the covered header avatar shows once the user
+  resolves. Carrying it would need an avatar slot through the route shell contract.
 - The collapsed Settings header is 60 px (as the other rows) and its chevron is centred on it; the
   open header is the drawn 48 px.
 - The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.
@@ -247,7 +282,8 @@ header mounted temporarily in `AppLayout`, `userSettings` on for the three-item 
 
 Paint and type, read with `getComputedStyle()` at each width the row is drawn for: the chip is white
 with a 1 px `#D0D4D8` border and an 8 px radius; the name is Inter 500 14/18 (16/18 at 1024) in
-`#1A1C1E`; the caret is `#969B9D` and rotated to point down; the avatar fill is `#E1E7EA` with a
+`#1A1C1E`; the caret is `#969B9D` and points down (measured from the path's screen matrix at 1440 and
+1024; the master left chevron turned by `rotate(-90deg)`); the avatar fill is `#E1E7EA` with a
 Golos 700 12 px (15 px at 375) monogram in `#1A1C1E`; the card shadow is
 `0 8px 27px rgba(49,59,67,.05)` and the popover's `.14`; the focused or hovered item is `#F4F5F6`.
 

@@ -1,7 +1,6 @@
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Slide from '@mui/material/Slide';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,9 +8,9 @@ import type { UINavigationDrawerProps } from '@/components/types/ui-navigation-d
 
 import DrawerHeader from './drawer-header';
 import DrawerPanel from './drawer-panel';
+import DrawerScrim from './drawer-scrim';
 import styles from './styles';
-
-const MOTION_MS = 200;
+import useDrawerMotion from './use-drawer-motion';
 
 export default function UINavigationDrawer({
   open,
@@ -22,8 +21,7 @@ export default function UINavigationDrawer({
   onNavigate,
 }: UINavigationDrawerProps): JSX.Element {
   const { t } = useTranslation();
-  const reduced = useMediaQuery('(prefers-reduced-motion: reduce)');
-  const duration = reduced ? 0 : MOTION_MS;
+  const duration = useDrawerMotion();
 
   return (
     <Modal
@@ -31,7 +29,7 @@ export default function UINavigationDrawer({
       onClose={onClose}
       disableRestoreFocus
       disableEnforceFocus
-      slotProps={{ backdrop: { sx: styles.backdrop, transitionDuration: duration } }}
+      slotProps={{ backdrop: { invisible: true, transitionDuration: duration } }}
     >
       <Box
         id={id}
@@ -41,6 +39,7 @@ export default function UINavigationDrawer({
         tabIndex={-1}
         sx={styles.dialog}
       >
+        <DrawerScrim duration={duration} />
         <DrawerHeader onDismiss={onClose} />
         <Slide in appear direction="left" timeout={duration}>
           <Box sx={styles.panel}>
