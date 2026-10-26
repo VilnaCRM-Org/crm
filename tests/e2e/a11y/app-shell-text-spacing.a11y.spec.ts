@@ -17,6 +17,7 @@ import {
   userMenuOf,
 } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { t } from '@tests/e2e/utils/initialize-localization';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
@@ -90,8 +91,30 @@ async function openSpaced(page: Page, viewport: SpacingViewport): Promise<void> 
   await page.addStyleTag({ content: TEXT_SPACING_OVERRIDES });
 }
 
+function doubleTextIn(scope: Locator): Promise<void> {
+  return scope.evaluate((root) => {
+    const boxes = [root, ...root.querySelectorAll('*')].filter(
+      (element): element is HTMLElement | SVGElement =>
+        element instanceof HTMLElement || element instanceof SVGElement
+    );
+    const sizes = boxes.map((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+    boxes.forEach((element, index) => {
+      element.style.setProperty('font-size', `${(sizes[index] ?? 0) * 2}px`, 'important');
+    });
+  });
+}
+
+async function openEnlarged(page: Page, viewport: SpacingViewport): Promise<void> {
+  await openShell(page, viewport);
+  await doubleTextIn(page.locator('#root'));
+}
+
 const fitOf = (name: Locator): Promise<TextFit> =>
   name.evaluate((box) => ({ scrollWidth: box.scrollWidth, clientWidth: box.clientWidth }));
+
+const topOf = (box: Element): number => box.getBoundingClientRect().top;
+
+const bottomOf = (box: Element): number => box.getBoundingClientRect().bottom;
 
 const edgesOf = async (box: Locator): Promise<Edges> => {
   const rect = await box.boundingBox();
@@ -233,6 +256,78 @@ test.describe('App shell WCAG 1.4.12 text spacing (issue #362)', () => {
     await expect(drawerOf(page)).toBeVisible();
 
     expect(await measure(drawerOf(page))).toEqual({ clipped: [], overlapping: [] });
+    await expect(
+      drawerOf(page).getByRole('button', { name: shellText.closeMenu, exact: true })
+    ).toBeVisible();
+  });
+});
+
+test.describe('App shell WCAG 1.4.4 200 % text size (issue #362)', () => {
+  for (const viewport of spacingViewports) {
+    const size = `${viewport.width} x ${viewport.height}`;
+
+    test(`clips and overlaps nothing in the closed shell at 200 % text size at ${size}`, async ({
+      page,
+    }) => {
+      await openEnlarged(page, viewport);
+
+      await expect
+        .poll(() => measure(page.getByRole('banner')))
+        .toEqual({ clipped: [], overlapping: [] });
+    });
+
+    test(`fits the open chip menu at 200 % text size at ${size}`, async ({ page }) => {
+      await openEnlarged(page, viewport);
+      await openChipMenu(page);
+      await doubleTextIn(userMenuOf(page));
+
+      await expect.poll(() => measure(userMenuOf(page))).toEqual({ clipped: [], overlapping: [] });
+      await expect
+        .poll(() => measure(page.getByRole('banner')))
+        .toEqual({ clipped: [], overlapping: [] });
+    });
+  }
+
+  for (const viewport of spacingViewports.filter(({ width }) => width >= 1024)) {
+    test(`fits the scrolled sidebar at 200 % text size at ${viewport.width} px`, async ({
+      page,
+    }) => {
+      await openEnlarged(page, viewport);
+      await sidebarOf(page)
+        .getByRole('list')
+        .first()
+        .evaluate((list) => list.scrollTo({ top: list.scrollHeight }));
+
+      await expect.poll(() => measure(sidebarOf(page))).toEqual({ clipped: [], overlapping: [] });
+    });
+  }
+
+  test('keeps a focused sub-item clear of the sticky Sign out at 200 % text at 1024 px', async ({
+    page,
+  }) => {
+    await openEnlarged(page, { width: 1024, height: 768 });
+    const sidebar = sidebarOf(page);
+    const signOut = sidebar.getByRole('button', { name: shellText.signOut, exact: true });
+    const billing = sidebar.getByRole('link', { name: t('app_shell.items.billing'), exact: true });
+    await sidebar.getByRole('link', { name: t('app_shell.items.webhooks'), exact: true }).focus();
+
+    await page.keyboard.press('Tab');
+
+    await expect(billing).toBeFocused();
+    await expect
+      .poll(async () => (await signOut.evaluate(topOf)) - (await billing.evaluate(bottomOf)))
+      .toBeGreaterThanOrEqual(0);
+  });
+
+  test('clips and overlaps nothing with the drawer open at 200 % text size at 375 x 812', async ({
+    page,
+  }) => {
+    await openEnlarged(page, { width: 375, height: 812 });
+    await burgerOf(page).click();
+    await expect(drawerOf(page)).toBeVisible();
+    await doubleTextIn(drawerOf(page));
+
+    await expect.poll(() => measure(drawerOf(page))).toEqual({ clipped: [], overlapping: [] });
     await expect(
       drawerOf(page).getByRole('button', { name: shellText.closeMenu, exact: true })
     ).toBeVisible();

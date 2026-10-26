@@ -35,16 +35,23 @@ export interface TabStop {
   visibleFocus?: boolean;
 }
 
+export type TabKey = 'Tab' | 'Shift+Tab';
+
 /**
- * Presses Tab once and asserts `stop` is the element that received keyboard focus and that the
- * browser marks it `:focus-visible`; with `visibleFocus`, also that its styling changed.
+ * Presses `key` (Tab by default) once and asserts `stop` is the element that received keyboard
+ * focus and that the browser marks it `:focus-visible`; with `visibleFocus`, also that its
+ * styling changed.
  */
-export async function expectNextTabStop(page: Page, stop: TabStop): Promise<void> {
+export async function expectNextTabStop(
+  page: Page,
+  stop: TabStop,
+  key: TabKey = 'Tab'
+): Promise<void> {
   const resting = await focusStyleOf(stop.locator);
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(key);
 
   const active = await describeActive(page);
-  await expect(stop.locator, `Tab landed on ${active}`).toBeFocused();
+  await expect(stop.locator, `${key} landed on ${active}`).toBeFocused();
   expect(
     await stop.locator.evaluate((element) => element.matches(':focus-visible')),
     `${active} is focused without :focus-visible`
@@ -56,11 +63,15 @@ export async function expectNextTabStop(page: Page, stop: TabStop): Promise<void
   }
 }
 
-/** Asserts that pressing Tab visits `stops` in exactly this order, one press per stop. */
-export async function expectTabOrder(page: Page, stops: readonly TabStop[]): Promise<void> {
+/** Asserts that pressing `key` visits `stops` in exactly this order, one press per stop. */
+export async function expectTabOrder(
+  page: Page,
+  stops: readonly TabStop[],
+  key: TabKey = 'Tab'
+): Promise<void> {
   expect(stops.length).toBeGreaterThan(0);
   for (const stop of stops) {
-    await expectNextTabStop(page, stop);
+    await expectNextTabStop(page, stop, key);
   }
 }
 

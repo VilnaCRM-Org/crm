@@ -4,8 +4,8 @@ import { customColors, paletteColors } from '@/styles/colors';
 const FONT = 'Inter, sans-serif';
 
 const tabletOverrides: Partial<Record<NavigationRowId, object>> = {
-  products: { height: '67px', paddingTop: '1px' },
-  settings: { paddingTop: '6px' },
+  products: { minHeight: '67px', paddingTop: '3px' },
+  settings: { paddingTop: '8px' },
 };
 
 const noOverrides: Partial<Record<NavigationRowId, object>> = {};
@@ -31,7 +31,8 @@ export const control = {
   cursor: 'pointer',
   fontFamily: FONT,
   fontWeight: 500,
-  whiteSpace: 'nowrap',
+  whiteSpace: 'normal',
+  overflowWrap: 'anywhere',
   color: customColors.text.primary,
   '& svg': { flexShrink: 0, fill: 'none', color: customColors.text.secondary },
   '&:hover': {
@@ -47,11 +48,11 @@ export const control = {
   ...insetFocus,
 };
 
-const rowBase = { ...control, padding: '0 0 0 24px', gap: '8px' };
+const rowBase = { ...control, padding: '2px 0 2px 24px', gap: '8px' };
 
 const drawerBorder = `1px solid ${paletteColors.background.subtle}`;
 
-const subBase = { ...control, display: 'block', fontWeight: 400, lineHeight: '18px' };
+const subBase = { ...control, display: 'block', fontWeight: 400 };
 
 const groupLabelBase = { minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere' };
 
@@ -68,6 +69,7 @@ export default {
       padding: 0,
       listStyle: 'none',
       overflowY: 'auto',
+      scrollPaddingBottom: '76px',
     },
     rail: {
       display: 'flex',
@@ -91,20 +93,20 @@ export default {
     listStyle: 'none',
   },
   row: {
-    desktop: { ...rowBase, height: '54px', fontSize: '16px', lineHeight: '18px' },
-    tablet: { ...rowBase, height: '66px', fontSize: '18px', lineHeight: '22px' },
-    drawer: { ...rowBase, height: '60px', fontSize: '16px', lineHeight: '18px' },
+    desktop: { ...rowBase, minHeight: '54px', fontSize: '16px', lineHeight: '1.125' },
+    tablet: { ...rowBase, minHeight: '66px', fontSize: '18px', lineHeight: 'calc(22 / 18)' },
+    drawer: { ...rowBase, minHeight: '60px', fontSize: '16px', lineHeight: '1.125' },
   },
   rowById: { desktop: noOverrides, tablet: tabletOverrides, drawer: noOverrides },
-  rowOpen: { desktop: noOverrides, tablet: noOverrides, drawer: { height: '48px' } },
-  action: { ...rowBase, height: '54px', fontSize: '16px', lineHeight: '18px' },
+  rowOpen: { desktop: noOverrides, tablet: noOverrides, drawer: { minHeight: '48px' } },
+  action: { ...rowBase, minHeight: '54px', fontSize: '16px', lineHeight: '1.125' },
   actionDrawer: {
     ...rowBase,
-    height: '54px',
-    padding: '0 0 1px 24px',
+    minHeight: '54px',
+    padding: '2px 0 3px 24px',
     borderTop: drawerBorder,
     fontSize: '16px',
-    lineHeight: '18px',
+    lineHeight: '1.125',
   },
   icon: {
     desktop: { width: '24px', height: '24px' },
@@ -113,9 +115,27 @@ export default {
     action: { width: '24px', height: '24px' },
   },
   sub: {
-    desktop: { ...subBase, height: '42px', padding: '9px 0 0 56px', fontSize: '16px' },
-    tablet: { ...subBase, height: '46px', padding: '8px 0 0 60px', fontSize: '18px' },
-    drawer: { ...subBase, height: '42px', padding: '12px 0 0 56px', fontSize: '16px' },
+    desktop: {
+      ...subBase,
+      minHeight: '42px',
+      padding: '9px 0 2px 56px',
+      fontSize: '16px',
+      lineHeight: '1.125',
+    },
+    tablet: {
+      ...subBase,
+      minHeight: '46px',
+      padding: '8px 0 4px 60px',
+      fontSize: '18px',
+      lineHeight: '1',
+    },
+    drawer: {
+      ...subBase,
+      minHeight: '42px',
+      padding: '12px 0 2px 56px',
+      fontSize: '16px',
+      lineHeight: '1.125',
+    },
   },
   groupLabel: {
     desktop: { ...groupLabelBase, maxWidth: '136px' },

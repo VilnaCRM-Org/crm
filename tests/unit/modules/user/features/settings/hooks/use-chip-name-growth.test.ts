@@ -42,6 +42,36 @@ describe('useChipNameGrowth', () => {
     expect(result.current.grow).toBe(26);
   });
 
+  it('grows by the width the enlarged name needs beyond its Figma width', () => {
+    const observer = stubResizeObserver();
+    const { result } = renderHook(() => useChipNameGrowth());
+    const node = sizersOf(250, 200);
+    node.style.setProperty('font-size', '28px');
+    node.style.setProperty('--chip-name-base', '14px');
+
+    act(() => {
+      result.current.sizers(node);
+    });
+    act(observer.fire);
+
+    expect(result.current.grow).toBe(150);
+  });
+
+  it('grows by the spacing alone when the text keeps its Figma size', () => {
+    const observer = stubResizeObserver();
+    const { result } = renderHook(() => useChipNameGrowth());
+    const node = sizersOf(125.3, 100);
+    node.style.setProperty('font-size', '16px');
+    node.style.setProperty('--chip-name-base', '16px');
+
+    act(() => {
+      result.current.sizers(node);
+    });
+    act(observer.fire);
+
+    expect(result.current.grow).toBe(26);
+  });
+
   it('never shrinks the box when the spaced copy is the narrower one', () => {
     const observer = stubResizeObserver();
     const { result } = renderHook(() => useChipNameGrowth());

@@ -54,8 +54,8 @@ export default {
     },
   },
   sizers: {
-    desktop: { ...sizerBox, fontSize: '14px' },
-    tablet: { ...sizerBox, fontSize: '16px' },
+    desktop: { ...sizerBox, fontSize: '14px', '--chip-name-base': '14px' },
+    tablet: { ...sizerBox, fontSize: '16px', '--chip-name-base': '16px' },
   },
   copy: {
     spaced: { ...copyBase, '&::before': copyText },

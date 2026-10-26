@@ -14,7 +14,7 @@ describe('NavigationDrawerSignOut', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({
-      height: '54px',
+      minHeight: '54px',
       borderTop: '1px solid #E1E7EA',
     });
     expect(screen.queryByRole('separator', { hidden: true })).not.toBeInTheDocument();

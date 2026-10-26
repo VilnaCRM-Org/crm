@@ -16,7 +16,7 @@ import {
 } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { expectArrowKeyWalk, expectTabOrder } from '@tests/utils/a11y/keyboard';
+import { expectArrowKeyWalk, expectTabOrder, type TabStop } from '@tests/utils/a11y/keyboard';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
@@ -208,6 +208,25 @@ test.describe('Focus clears the sticky header at 1000 x 300 (WCAG 2.4.11)', () =
   });
 });
 
+const drawerCloseOf = (page: Page): Locator =>
+  drawerOf(page).getByRole('button', { name: shellText.closeMenu, exact: true });
+
+function drawerStops(page: Page, subItems: boolean): TabStop[] {
+  const drawerRowOf = (id: string): Locator =>
+    drawerOf(page).getByRole('link', { name: labelOf(id), exact: true });
+  const chevron = drawerOf(page).getByRole('button', {
+    name: subItems ? shellText.groupCollapse : shellText.groupExpand,
+    exact: true,
+  });
+  const subs = subItems ? SUB_ITEM_IDS.map(drawerRowOf) : [];
+  const signOut = drawerOf(page).getByRole('button', { name: shellText.signOut, exact: true });
+
+  return [...PRODUCT_IDS, 'settings']
+    .map(drawerRowOf)
+    .concat(chevron, subs, signOut)
+    .map((locator) => ({ locator, visibleFocus: true }));
+}
+
 test.describe('App shell keyboard contract at 375 px (issue #362)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
@@ -221,27 +240,30 @@ test.describe('App shell keyboard contract at 375 px (issue #362)', () => {
     ]);
   });
 
-  test('opens the drawer with Enter, cycles Tab inside it and closes on Escape', async ({
-    page,
-  }) => {
-    await openAs(page, ROUTE_PATHS.home);
-    await burgerOf(page).focus();
+  for (const { path, subItems } of [
+    { path: ROUTE_PATHS.home, subItems: false },
+    { path: ROUTE_PATHS.settings, subItems: true },
+  ]) {
+    test(`cycles Tab and Shift+Tab in order with visible focus in the drawer on ${path}`, async ({
+      page,
+    }) => {
+      await openAs(page, path);
+      await burgerOf(page).focus();
 
-    await page.keyboard.press('Enter');
-    const dialog = drawerOf(page);
-    await expect(dialog).toBeVisible();
-    await expect(
-      dialog.getByRole('button', { name: shellText.closeMenu, exact: true })
-    ).toBeFocused();
-    for (let step = 0; step < 14; step += 1) {
-      await page.keyboard.press('Tab');
-      await expect(dialog.locator(':focus')).toHaveCount(1);
-    }
-    await page.keyboard.press('Escape');
+      await page.keyboard.press('Enter');
+      const dialog = drawerOf(page);
+      await expect(dialog).toBeVisible();
+      const close = { locator: drawerCloseOf(page), visibleFocus: true };
+      await expect(close.locator).toBeFocused();
+      const stops = drawerStops(page, subItems);
+      await expectTabOrder(page, [...stops, close]);
+      await expectTabOrder(page, [...stops.toReversed(), close], 'Shift+Tab');
+      await page.keyboard.press('Escape');
 
-    await expect(dialog).toHaveCount(0);
-    await expect(burgerOf(page)).toBeFocused();
-  });
+      await expect(dialog).toHaveCount(0);
+      await expect(burgerOf(page)).toBeFocused();
+    });
+  }
 
   test('hides the banner, main and footer from the tree while the drawer is open', async ({
     page,

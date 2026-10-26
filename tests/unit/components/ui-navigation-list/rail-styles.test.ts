@@ -23,7 +23,8 @@ describe('navigation rail styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -67,7 +68,8 @@ describe('navigation rail styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -111,7 +113,8 @@ describe('navigation rail styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -155,7 +158,8 @@ describe('navigation rail styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -199,7 +203,8 @@ describe('navigation rail styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
