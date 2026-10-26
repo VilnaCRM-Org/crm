@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type JSX, Suspense } from 'react';
+import { type JSX, Suspense, useCallback } from 'react';
 
 import ShellSlotFactory from '@/routes/shell-slot-factory';
 import type { ShellSlotProps } from '@/routes/types/shell-slot';
@@ -10,12 +10,17 @@ const chunkFailure = (): Error =>
   Object.assign(new Error('Loading chunk user-menu failed.'), { name: 'ChunkLoadError' });
 
 function LoadedSlot({ signOut, onChunkFailure }: ShellSlotProps): JSX.Element {
+  const failInner = useCallback(
+    () => onChunkFailure('app-shell:current-user', 'inner'),
+    [onChunkFailure]
+  );
+
   return (
     <>
       <button type="button" onClick={signOut}>
         sign out
       </button>
-      <button type="button" onClick={() => onChunkFailure('app-shell:current-user', 'inner')}>
+      <button type="button" onClick={failInner}>
         fail inner
       </button>
     </>
