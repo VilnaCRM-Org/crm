@@ -165,7 +165,9 @@ more project names.
   `/password-reset`) completed the same way with their own touch-target, overflow and
   keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
-  overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
+  overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
+  same for the app shell: the drawer, the avatar menu, a 44 px tap area on every shell control and no
+  overflow at device width and 320 px. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
@@ -565,8 +567,8 @@ text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the 
 in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
 issue #315, and the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product owner's
 call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED` on the
-10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in issue #276 and
-deleted when it closes.
+10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
+issue #276 and deleted when it closes.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
 

@@ -7,7 +7,7 @@ import {
   replyWithGraphQLError,
   replyWithProfile,
   replyWithSaved,
-  signInWithFlag,
+  signInToSettings,
   stubProfile,
   type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -60,7 +60,7 @@ async function saveName(page: Page): Promise<void> {
 
 test.describe('Settings keyboard contract (issue #330)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
   });
 
   test('Tab visits the form, the toast and the footer in reading order', async ({ page }) => {

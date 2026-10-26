@@ -6,7 +6,7 @@ import {
   replyWithGraphQLError,
   replyWithSaved,
   replyWithStatus,
-  signInWithFlag,
+  signInToSettings,
   stubProfile,
   watchContactedOrigins,
   type StubbedProfile,
@@ -33,7 +33,7 @@ test.describe('Settings save failures (issue #330)', () => {
 
   test.beforeEach(async ({ page }) => {
     contacted = watchContactedOrigins(page);
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
   });
 
   test.afterEach(async ({ page, context }) => {

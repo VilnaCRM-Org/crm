@@ -7,7 +7,7 @@ import {
   replyWithResent,
   replyWithSaved,
   replyWithStatus,
-  signInWithFlag,
+  signInToSettings,
   stubProfile,
   type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -22,6 +22,7 @@ import {
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import { burgerOf, drawerOf, shellText } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 
@@ -56,7 +57,8 @@ async function typeByTap(field: Locator, value: string): Promise<void> {
 
 async function openByTap(page: Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('link', { name: text.homeLink, exact: true }).tap();
+  await burgerOf(page).tap();
+  await drawerOf(page).getByRole('link', { name: shellText.settings, exact: true }).tap();
   await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
 }
 
@@ -70,7 +72,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
   let stub: StubbedProfile;
 
   test.beforeEach(async ({ page }) => {
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
   });
 
   test('changes a name with taps only', async ({ page }) => {
