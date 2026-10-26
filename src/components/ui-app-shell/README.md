@@ -161,8 +161,8 @@ What Figma leaves open, and how it was built:
   clip, so the divider overhangs as drawn.
 - The tablet Settings header content sits 3 px lower than a 66 px row centres it (Figma draws it at
   y 22), and the Products row is 67 px; both are reproduced.
-- Until the coming-soon routes of Story 2.5 add their `ROUTE_PATHS` keys, the item set holds the
-  FR-18 paths as literals (`/boards`, `/settings/integrations` ...); Story 2.5 swaps them for the keys.
+- The item set reads every FR-18 destination from its `ROUTE_PATHS` key (`boards`,
+  `settingsIntegrations` ...), which the coming-soon routes of Story 2.5 added.
 
 ## Mobile drawer
 
@@ -352,10 +352,20 @@ The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`.
 rail content start, has no Figma value yet (UX 10.2, V-9): the tablet page follows the rail edge
 (x 89, title x 101) until it is measured.
 
-### Visual baselines (Story 3.4) are not recorded yet
+### Visual baselines (Story 3.4)
 
-The 134 changed baselines have to come from the pinned Playwright container on a production build
-(`make test-visual-update`, `--workers=1`), because fonts and raster output differ on the host. That
-stack binds ports 3001 and 8080, which another project's containers already hold on this machine, and
-a production image build is CI-only here, so the recording has to be done where the pinned stack can
-start. Nothing else in the story depends on it.
+The baselines were recorded in the pinned Playwright container against a freshly built
+`test-harness` image (`make start-prod`, then `playwright test tests/visual --update-snapshots
+--workers=1`); the whole visual suite passed, 490 tests.
+
+- **Changed, 134:** exactly the protected pages. The 39 home snapshots (13 viewports, three engines)
+  show the shell without badges and without home's former Settings link and Sign out button
+  (FR-15); the 93 desktop and 2 mobile settings snapshots show the shell and the left-aligned page.
+  No public page (sign-in, sign-up, password recovery, error pages) changed.
+- **Added, 88:** the eight coming-soon routes at the three Figma widths in three engines
+  (`visual-comparison.coming-soon.spec.ts`, 72) and on both mobile projects
+  (`mobile/coming-soon.spec.ts`, 16). These pages have no Figma frame: their layout is the **OQ-28
+  proposal**, not a measured design, and a later Figma frame replaces them.
+- **Allowed difference (d):** the home baselines run without a `CurrentUser` stub, so the chip shows
+  its no-data state (the generic avatar, no name); the settings and coming-soon baselines stub the
+  profile, so their chip shows the name. No baseline shows a badge.
