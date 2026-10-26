@@ -82,6 +82,14 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
   },
   {
     ruleId: 'color-contrast',
+    selector: 'nav a[aria-current="page"], [role="dialog"] a[aria-current="page"]',
+    reason:
+      'Current navigation row and sub-item: Figma active #0399ED on the 10% #1EAEFF tint is ' +
+      '2.8:1; owner-accepted in OQ-14.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
     selector: '#settings-greeting',
     reason:
       'Settings greeting: Figma grey #969B9D on white is 2.81:1; product-owner call, issue #330.',
