@@ -65,6 +65,21 @@ describe('the exception allowlist', () => {
     }
   });
 
+  it('holds the ten reviewed entries, the tenth being the current navigation row (X-1)', () => {
+    expect(A11Y_EXCEPTIONS).toHaveLength(10);
+    expect(A11Y_EXCEPTIONS.map(({ ruleId }) => ruleId)).toEqual(
+      A11Y_EXCEPTIONS.map(() => 'color-contrast')
+    );
+    expect(A11Y_EXCEPTIONS.filter(({ selector }) => selector.includes('aria-current'))).toEqual([
+      {
+        ruleId: 'color-contrast',
+        selector: 'nav a[aria-current="page"], [role="dialog"] a[aria-current="page"]',
+        reason: expect.stringContaining('#0399ED on the 10% #1EAEFF tint'),
+        trackingUrl: 'https://github.com/VilnaCRM-Org/crm/issues/276',
+      },
+    ]);
+  });
+
   it('removes only the node whose element matches the rule and the selector', async () => {
     const { container } = render(
       <div>
