@@ -347,10 +347,14 @@ sidebar at top 74.
   and the chip menu (1440 and 1024), every row and sub-item, the disabled controls, no badge, the
   `CurrentUser` request counts, the flag-off menu and no shell chunk on the public pages.
 - `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` (desktop engines): Tab order at 1440, 1024 and
-  375, the handle, the chip menu arrow-key walk, Escape and Tab, the drawer focus cycle and how the
-  drawer hides the page.
-- `tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts` (desktop engines): WCAG 1.4.12 text spacing,
-  with no clipped and no overlapping label in the closed shell, the open menu and the open drawer.
+  375, the handle, the chip menu arrow-key walk, Escape and Tab, the drawer's full Tab order on `/`
+  and `/settings` (close, the rows, Settings and its chevron, the sub-items on `/settings`, Sign out,
+  back to close) walked forward and again with Shift+Tab, how the drawer hides the page, and focus
+  never hidden under the sticky header (WCAG 2.4.11, 1440x400 and 1000x300).
+- `tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts` (desktop engines): WCAG 1.4.12 text spacing
+  and WCAG 1.4.4 200 % text size, with no clipped and no overlapping label in the closed shell, the
+  open menu, the sidebar and the open drawer, the chip growing leftward instead of clipping, and a
+  sub-item focused at 200 % kept clear of the sticky Sign out.
 - `tests/e2e/mobile/app-shell-touch.spec.ts` (both mobile projects): the drawer opened and closed by
   tap, Settings and Sign out from the drawer and the avatar menu, a 44 px tap area on every control
   and no horizontal overflow at device width and 320 px.

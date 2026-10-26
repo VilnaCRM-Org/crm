@@ -273,7 +273,7 @@ describe('UINavigationList in the drawer', () => {
     ]);
     expect(screen.queryByRole('separator', { hidden: true })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({
-      height: '54px',
+      minHeight: '54px',
       borderTop: '1px solid #E1E7EA',
     });
   });
@@ -281,14 +281,14 @@ describe('UINavigationList in the drawer', () => {
   it('draws 60 px rows, a 48 px open Settings header and a 60 px collapsed one', () => {
     const { unmount } = renderList({ layout: 'drawer' }, '/settings');
 
-    expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ height: '60px' });
-    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ height: '48px' });
-    expect(screen.getByRole('link', { name: 'Integrations' })).toHaveStyle({ height: '42px' });
+    expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ minHeight: '60px' });
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ minHeight: '48px' });
+    expect(screen.getByRole('link', { name: 'Integrations' })).toHaveStyle({ minHeight: '42px' });
     unmount();
 
     renderList({ layout: 'drawer' }, '/');
 
-    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ height: '60px' });
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ minHeight: '60px' });
   });
 
   it('calls signOut once and keeps working the Settings chevron like the sidebar', async () => {

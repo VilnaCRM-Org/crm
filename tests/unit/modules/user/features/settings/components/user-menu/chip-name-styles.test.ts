@@ -78,8 +78,8 @@ describe('user chip name styles', () => {
     };
 
     expect(styles.sizers).toEqual({
-      desktop: { ...box, fontSize: '14px' },
-      tablet: { ...box, fontSize: '16px' },
+      desktop: { ...box, fontSize: '14px', '--chip-name-base': '14px' },
+      tablet: { ...box, fontSize: '16px', '--chip-name-base': '16px' },
     });
   });
 

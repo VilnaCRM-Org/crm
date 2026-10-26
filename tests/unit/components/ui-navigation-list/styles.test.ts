@@ -19,6 +19,7 @@ describe('navigation list styles', () => {
         padding: 0,
         listStyle: 'none',
         overflowY: 'auto',
+        scrollPaddingBottom: '76px',
       },
       rail: {
         display: 'flex',
@@ -80,7 +81,8 @@ describe('navigation list styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -108,11 +110,11 @@ describe('navigation list styles', () => {
         '&:focus:not(:focus-visible)': {
           outline: 'none',
         },
-        padding: '0 0 0 24px',
+        padding: '2px 0 2px 24px',
         gap: '8px',
-        height: '54px',
+        minHeight: '54px',
         fontSize: '16px',
-        lineHeight: '18px',
+        lineHeight: '1.125',
       },
       tablet: {
         display: 'flex',
@@ -127,7 +129,8 @@ describe('navigation list styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -155,11 +158,11 @@ describe('navigation list styles', () => {
         '&:focus:not(:focus-visible)': {
           outline: 'none',
         },
-        padding: '0 0 0 24px',
+        padding: '2px 0 2px 24px',
         gap: '8px',
-        height: '66px',
+        minHeight: '66px',
         fontSize: '18px',
-        lineHeight: '22px',
+        lineHeight: 'calc(22 / 18)',
       },
       drawer: {
         display: 'flex',
@@ -174,7 +177,8 @@ describe('navigation list styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 500,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -202,11 +206,11 @@ describe('navigation list styles', () => {
         '&:focus:not(:focus-visible)': {
           outline: 'none',
         },
-        padding: '0 0 0 24px',
+        padding: '2px 0 2px 24px',
         gap: '8px',
-        height: '60px',
+        minHeight: '60px',
         fontSize: '16px',
-        lineHeight: '18px',
+        lineHeight: '1.125',
       },
     });
   });
@@ -218,11 +222,11 @@ describe('navigation list styles', () => {
       desktop: {},
       tablet: {
         products: {
-          height: '67px',
-          paddingTop: '1px',
+          minHeight: '67px',
+          paddingTop: '3px',
         },
         settings: {
-          paddingTop: '6px',
+          paddingTop: '8px',
         },
       },
       drawer: {},
@@ -236,7 +240,7 @@ describe('navigation list styles', () => {
       desktop: {},
       tablet: {},
       drawer: {
-        height: '48px',
+        minHeight: '48px',
       },
     });
   });
@@ -257,7 +261,8 @@ describe('navigation list styles', () => {
       cursor: 'pointer',
       fontFamily: 'Inter, sans-serif',
       fontWeight: 500,
-      whiteSpace: 'nowrap',
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
       color: '#404142',
       '& svg': {
         flexShrink: 0,
@@ -285,11 +290,11 @@ describe('navigation list styles', () => {
       '&:focus:not(:focus-visible)': {
         outline: 'none',
       },
-      padding: '0 0 0 24px',
+      padding: '2px 0 2px 24px',
       gap: '8px',
-      height: '54px',
+      minHeight: '54px',
       fontSize: '16px',
-      lineHeight: '18px',
+      lineHeight: '1.125',
     });
   });
 
@@ -309,7 +314,8 @@ describe('navigation list styles', () => {
       cursor: 'pointer',
       fontFamily: 'Inter, sans-serif',
       fontWeight: 500,
-      whiteSpace: 'nowrap',
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
       color: '#404142',
       '& svg': {
         flexShrink: 0,
@@ -337,12 +343,12 @@ describe('navigation list styles', () => {
       '&:focus:not(:focus-visible)': {
         outline: 'none',
       },
-      padding: '0 0 1px 24px',
+      padding: '2px 0 3px 24px',
       gap: '8px',
-      height: '54px',
+      minHeight: '54px',
       borderTop: '1px solid #E1E7EA',
       fontSize: '16px',
-      lineHeight: '18px',
+      lineHeight: '1.125',
     });
   });
 
@@ -386,7 +392,8 @@ describe('navigation list styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 400,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -414,9 +421,9 @@ describe('navigation list styles', () => {
         '&:focus:not(:focus-visible)': {
           outline: 'none',
         },
-        lineHeight: '18px',
-        height: '42px',
-        padding: '9px 0 0 56px',
+        lineHeight: '1.125',
+        minHeight: '42px',
+        padding: '9px 0 2px 56px',
         fontSize: '16px',
       },
       tablet: {
@@ -432,7 +439,8 @@ describe('navigation list styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 400,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -460,9 +468,9 @@ describe('navigation list styles', () => {
         '&:focus:not(:focus-visible)': {
           outline: 'none',
         },
-        lineHeight: '18px',
-        height: '46px',
-        padding: '8px 0 0 60px',
+        lineHeight: '1',
+        minHeight: '46px',
+        padding: '8px 0 4px 60px',
         fontSize: '18px',
       },
       drawer: {
@@ -478,7 +486,8 @@ describe('navigation list styles', () => {
         cursor: 'pointer',
         fontFamily: 'Inter, sans-serif',
         fontWeight: 400,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'normal',
+        overflowWrap: 'anywhere',
         color: '#404142',
         '& svg': {
           flexShrink: 0,
@@ -506,9 +515,9 @@ describe('navigation list styles', () => {
         '&:focus:not(:focus-visible)': {
           outline: 'none',
         },
-        lineHeight: '18px',
-        height: '42px',
-        padding: '12px 0 0 56px',
+        lineHeight: '1.125',
+        minHeight: '42px',
+        padding: '12px 0 2px 56px',
         fontSize: '16px',
       },
     });

@@ -67,12 +67,12 @@ const slidingPanel = (): HTMLElement =>
 
 type FocusStep = readonly ['link' | 'button', string];
 
-const expectFocusSequence = async (steps: readonly FocusStep[]): Promise<void> => {
+const expectFocusSequence = async (steps: readonly FocusStep[], shift = false): Promise<void> => {
   const [step, ...rest] = steps;
   if (step === undefined) return;
-  await userEvent.tab();
+  await userEvent.tab({ shift });
   expect(screen.getByRole(step[0], { name: step[1] })).toHaveFocus();
-  await expectFocusSequence(rest);
+  await expectFocusSequence(rest, shift);
 };
 
 describe('MobileNavigation', () => {
@@ -168,6 +168,31 @@ describe('MobileNavigation', () => {
       ['button', 'Close menu'],
       ['link', 'Boards'],
     ]);
+  });
+
+  it('cycles Shift+Tab back from close through Sign out, sub-items, chevron and rows', async () => {
+    renderNavigation('/settings');
+    await open();
+
+    await expectFocusSequence(
+      [
+        ['button', 'Sign out'],
+        ['link', 'Billing'],
+        ['link', 'Webhooks'],
+        ['link', 'Integrations'],
+        ['button', 'Collapse Settings'],
+        ['link', 'Settings'],
+        ['link', 'Analytics'],
+        ['link', 'Contacts'],
+        ['link', 'Orders'],
+        ['link', 'Products'],
+        ['link', 'Boards'],
+        ['button', 'Close menu'],
+        ['button', 'Sign out'],
+      ],
+      true
+    );
+    expect(screen.getByRole('main', { hidden: true })).not.toHaveFocus();
   });
 
   it('skips the sub-items in the Tab cycle while the Settings group is collapsed', async () => {

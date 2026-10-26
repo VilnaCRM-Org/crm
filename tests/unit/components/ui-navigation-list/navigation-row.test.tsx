@@ -203,7 +203,7 @@ describe('NavigationRow', () => {
       <NavigationRow layout={layout} variant="item" id={id} label="Row" icon={icon} href="/x" />
     );
 
-    expect(screen.getByRole('link', { name: 'Row' })).toHaveStyle({ height });
+    expect(screen.getByRole('link', { name: 'Row' })).toHaveStyle({ minHeight: height });
   });
 
   it('sizes the sign out row to 54 px on the tablet layout too', () => {
@@ -219,7 +219,7 @@ describe('NavigationRow', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({
-      height: '54px',
+      minHeight: '54px',
       fontSize: '16px',
     });
   });

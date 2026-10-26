@@ -62,7 +62,7 @@ describe('DrawerPanel', () => {
       'Analytics',
       'Settings',
     ]);
-    expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ height: '60px' });
+    expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ minHeight: '60px' });
     expect(screen.getAllByRole('listitem')[0]).toHaveStyle({ width: '233px' });
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
   });
