@@ -182,4 +182,31 @@ describe('UISidebar', () => {
 
     expect(container).not.toContainHTML('MuiTouchRipple');
   });
+
+  it('keeps the page 41 px clear of the desktop rail, so it starts at x 125 (P-51)', async () => {
+    const user = userEvent.setup();
+    renderSidebar({ layout: 'desktop' });
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+
+    const wrapper = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
+
+    expect(styleRuleFor(wrapper)?.getPropertyValue('margin-right')).toBe('41px');
+  });
+
+  it.each([
+    ['desktop', false],
+    ['tablet', false],
+    ['tablet', true],
+  ] as const)(
+    'adds no right margin to the %s sidebar when collapsed is %s',
+    async (layout, collapsed) => {
+      const user = userEvent.setup();
+      renderSidebar({ layout });
+      if (collapsed) await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+
+      const wrapper = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
+
+      expect(styleRuleFor(wrapper)?.getPropertyValue('margin-right')).toBe('');
+    }
+  );
 });

@@ -321,3 +321,33 @@ Playwright container and run in CI only.
   other label, row, chip name and menu item.
 - **The disabled bell and list** keep Figma's 40 px pitch and are not measured by the tap-area
   check (OQ-15).
+
+### Measured against Figma (remaining UX 10.2 rows, issue #362)
+
+Measured on the 3004 dev server with `getBoundingClientRect()` (text rows with a `Range` over the
+label); the rows not listed here are in the tables above.
+
+| Row                          | Width | Figma          | Measured       | Result |
+| ---------------------------- | ----- | -------------- | -------------- | ------ |
+| P-13 Settings title start    | 1440  | x 262, y 92    | x 262, y 92    | pass   |
+| P-26 Settings title start    | 1024  | x 263, y 88    | x 263, y 88    | pass   |
+| P-51 desktop rail page start | 1440  | 125, title 137 | 125, title 137 | pass   |
+| P-58 first sub-item text     | 1024  | x 73, y 503    | x 73, y 503    | pass   |
+| P-64 current sub-item tint   | 1440  | 12,419, 238×42 | 12,419, 238×42 | pass   |
+| P-65 current sub-item tint   | 1024  | 13,495, 238×46 | 13,495, 238×46 | pass   |
+
+P-51 failed on the first measurement: the page followed the rail edge to x 84 (title x 96). The
+desktop rail wrapper now keeps a 41 px right margin, so the navigation column is 12 + 72 + 41 = 125
+px wide and the page starts where Figma draws it. P-58's text box is 18 px tall in Figma and starts
+at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
+The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`. P-62, the tablet
+rail content start, has no Figma value yet (UX 10.2, V-9): the tablet page follows the rail edge
+(x 89, title x 101) until it is measured.
+
+### Visual baselines (Story 3.4) are not recorded yet
+
+The 134 changed baselines have to come from the pinned Playwright container on a production build
+(`make test-visual-update`, `--workers=1`), because fonts and raster output differ on the host. That
+stack binds ports 3001 and 8080, which another project's containers already hold on this machine, and
+a production image build is CI-only here, so the recording has to be done where the pinned stack can
+start. Nothing else in the story depends on it.
