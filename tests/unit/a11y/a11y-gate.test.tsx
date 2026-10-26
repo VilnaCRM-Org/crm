@@ -73,7 +73,9 @@ describe('the exception allowlist', () => {
     expect(A11Y_EXCEPTIONS.filter(({ selector }) => selector.includes('aria-current'))).toEqual([
       {
         ruleId: 'color-contrast',
-        selector: 'nav a[aria-current="page"], [role="dialog"] a[aria-current="page"]',
+        selector:
+          'nav a[aria-current="page"], nav a[aria-current="page"] > span, ' +
+          '[role="dialog"] a[aria-current="page"], [role="dialog"] a[aria-current="page"] > span',
         reason: expect.stringContaining('#0399ED on the 10% #1EAEFF tint'),
         trackingUrl: 'https://github.com/VilnaCRM-Org/crm/issues/276',
       },

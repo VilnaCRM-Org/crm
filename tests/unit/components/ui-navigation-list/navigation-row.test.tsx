@@ -65,6 +65,41 @@ describe('NavigationRow', () => {
     expect(screen.getByRole('link', { name: 'Boards' })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('wraps the label of a group header in a box that keeps clear of the chevron', () => {
+    renderRow(
+      <NavigationRow
+        layout="tablet"
+        variant="item"
+        id="settings"
+        label="Settings"
+        icon={icon}
+        href="/settings"
+        grouped
+      />
+    );
+
+    const label = screen.getByText('Settings');
+
+    expect(label.tagName).toBe('SPAN');
+    expect(screen.getByRole('link', { name: 'Settings' })).toContainElement(label);
+    expect(label).toHaveStyle({ maxWidth: '131px', overflowWrap: 'anywhere' });
+  });
+
+  it('leaves the label of an ungrouped row as plain link text', () => {
+    renderRow(
+      <NavigationRow
+        layout="tablet"
+        variant="item"
+        id="boards"
+        label="Boards"
+        icon={icon}
+        href="/boards"
+      />
+    );
+
+    expect(screen.getByText('Boards')).toBe(screen.getByRole('link', { name: 'Boards' }));
+  });
+
   it('navigates without a document load and asks the page to focus main, on click', async () => {
     const user = userEvent.setup();
     renderRow(

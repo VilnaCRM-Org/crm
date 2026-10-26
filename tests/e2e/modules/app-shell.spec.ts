@@ -1,4 +1,4 @@
-import type { Page, Request } from '@playwright/test';
+import type { Locator, Page, Request } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import {
@@ -7,7 +7,9 @@ import {
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
+  burgerOf,
   chipOf,
+  drawerOf,
   expectShellReady,
   menuItemOf,
   openChipMenu,
@@ -58,6 +60,28 @@ const labelOf = (id: string): string => t(`app_shell.items.${id}`);
 const sectionOf = (id: string): string => t(`coming_soon.sections.${id}`);
 const linkOf = (page: Page, id: string): ReturnType<typeof sidebarOf> =>
   sidebarOf(page).getByRole('link', { name: labelOf(id), exact: true });
+
+interface GroupLabelFit {
+  readonly lines: number;
+  readonly overshoot: number;
+}
+
+const groupLabelFitOf = (scope: Locator): Promise<GroupLabelFit> =>
+  scope.evaluate((root, name): GroupLabelFit => {
+    const link = [...root.querySelectorAll('a')].find((anchor) => anchor.textContent === name);
+    const label = link?.querySelector('span');
+    const toggle = link?.parentElement?.querySelector('button[aria-expanded]');
+    if (!label || !toggle) throw new Error('The Settings group header is not rendered');
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    const text = range.getBoundingClientRect();
+    const lineHeight = parseFloat(getComputedStyle(label).lineHeight);
+
+    return {
+      lines: Math.round(text.height / lineHeight),
+      overshoot: Math.max(0, text.right - toggle.getBoundingClientRect().left),
+    };
+  }, labelOf('settings'));
 
 async function openProtected(
   page: Page,
@@ -174,6 +198,34 @@ test.describe('App shell on desktop (issue #362)', () => {
       await expect(sidebarOf(page).locator('[aria-current="page"]')).toHaveCount(1);
     });
   }
+
+  for (const width of [1440, 1024]) {
+    test(`keeps the Settings label on one line and clear of its chevron at ${width} px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await openProtected(page, ROUTE_PATHS.home);
+
+      const fit = await groupLabelFitOf(sidebarOf(page));
+
+      expect(fit.lines).toBe(1);
+      expect(fit.overshoot).toBeLessThanOrEqual(1);
+    });
+  }
+
+  test('keeps the Settings label on one line and clear of its chevron in the drawer', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await openProtected(page, ROUTE_PATHS.home);
+    await burgerOf(page).click();
+    await expect(drawerOf(page)).toBeVisible();
+
+    const fit = await groupLabelFitOf(drawerOf(page));
+
+    expect(fit.lines).toBe(1);
+    expect(fit.overshoot).toBeLessThanOrEqual(1);
+  });
 
   test('does nothing when the disabled search, bell and list are clicked', async ({ page }) => {
     await openProtected(page, ROUTE_PATHS.home);

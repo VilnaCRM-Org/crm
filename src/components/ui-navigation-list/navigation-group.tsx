@@ -30,6 +30,7 @@ export default function NavigationGroup({
         href={group.href}
         current={currentId === group.id}
         open={expanded}
+        grouped
       />
       <NavigationGroupToggle
         layout={layout}

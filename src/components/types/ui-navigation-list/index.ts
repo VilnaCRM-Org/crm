@@ -37,6 +37,14 @@ export interface NavigationRowProps {
   readonly onActivate?: ActivateHandler | undefined;
   readonly shape?: RailShape | undefined;
   readonly open?: boolean | undefined;
+  readonly grouped?: boolean | undefined;
+}
+
+export interface NavigationRowLabelProps {
+  readonly layout: NavigationLayout;
+  readonly variant: NavigationRowVariant;
+  readonly label: string;
+  readonly grouped?: boolean | undefined;
 }
 
 export interface NavigationRailItemProps {

@@ -7,6 +7,7 @@ import type { NavigationRowProps } from '@/components/types/ui-navigation-list';
 import ROUTE_PATHS from '@/routes/route-paths';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 
+import NavigationRowLabel from './navigation-row-label';
 import railStyles from './rail-styles';
 import styles from './styles';
 
@@ -37,7 +38,7 @@ const sxOf = ({ layout, variant, id, shape, open }: NavigationRowProps): SxProps
   })[variant];
 
 export default function NavigationRow(props: NavigationRowProps): JSX.Element {
-  const { variant, label, icon: Icon, href, current, onActivate } = props;
+  const { variant, label, icon: Icon, href, current, onActivate, grouped, layout } = props;
   const handleLink = useLinkClickHandler<HTMLAnchorElement>(href ?? ROUTE_PATHS.home, {
     state: FOCUS_ON_ARRIVAL,
   });
@@ -46,13 +47,7 @@ export default function NavigationRow(props: NavigationRowProps): JSX.Element {
       {Icon && (
         <Box component={Icon} aria-hidden="true" focusable="false" sx={iconStyleOf(props)} />
       )}
-      {variant === 'rail' ? (
-        <Box component="span" sx={styles.hidden}>
-          {label}
-        </Box>
-      ) : (
-        label
-      )}
+      <NavigationRowLabel layout={layout} variant={variant} label={label} grouped={grouped} />
     </>
   );
 
