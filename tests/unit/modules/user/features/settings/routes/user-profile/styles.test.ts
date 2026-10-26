@@ -14,6 +14,13 @@ describe('user profile page styles', () => {
     const styles = await loadStyles();
 
     expect(styles).toEqual({
+      container: {
+        boxSizing: 'border-box',
+        width: '100%',
+        paddingInline: '15px',
+        '@media (min-width:768px)': { paddingInline: '26px' },
+        '@media (min-width:1024px)': { paddingInline: '12px' },
+      },
       content: {
         display: 'flex',
         flexDirection: 'column',
@@ -24,9 +31,6 @@ describe('user profile page styles', () => {
         '@media (min-width:1025px)': {
           gap: '0.75rem',
           paddingTop: '1.75rem',
-          width: 'fit-content',
-          maxWidth: '100%',
-          marginInline: 'auto',
         },
       },
       header: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
@@ -59,5 +63,15 @@ describe('user profile page styles', () => {
         color: '#404142',
       },
     });
+  });
+
+  it('left-aligns the content from the breakpoint, keeping gap and paddingTop', async () => {
+    const styles = await loadStyles();
+    const wide = styles.content['@media (min-width:1025px)'];
+
+    expect(wide).toEqual({ gap: '0.75rem', paddingTop: '1.75rem' });
+    expect(wide).not.toHaveProperty('width');
+    expect(wide).not.toHaveProperty('maxWidth');
+    expect(wide).not.toHaveProperty('marginInline');
   });
 });

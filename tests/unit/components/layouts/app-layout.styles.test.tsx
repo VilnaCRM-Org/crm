@@ -11,7 +11,14 @@ jest.mock('react-router', () => ({
   Outlet: (): ReactElement => <span>route-outlet</span>,
   useLocation: (): { state: null } => ({ state: null }),
   useNavigate: (): jest.Mock => jest.fn(),
-  useOutletContext: (): undefined => undefined,
+  useOutletContext: (): { signOut: () => void } => ({ signOut: (): void => undefined }),
+}));
+
+jest.mock('@/components/layouts/app-shell-loader', () => ({
+  __esModule: true,
+  default: {
+    load: (): Promise<unknown> => Promise.resolve({ default: (): ReactElement => <header /> }),
+  },
 }));
 
 jest.mock('@/components/ui-footer', () => ({
@@ -34,11 +41,11 @@ async function renderLayout(): Promise<void> {
 }
 
 describe('AppLayout stretching', () => {
-  it('lets the main landmark grow as a full-height flex column', async () => {
+  it('lets the main landmark fill its grid cell as a flex column', async () => {
     await renderLayout();
 
     expect(screen.getByRole('main')).toHaveStyle({
-      flexGrow: '1',
+      minWidth: '0',
       display: 'flex',
       flexDirection: 'column',
     });

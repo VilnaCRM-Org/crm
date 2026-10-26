@@ -8,6 +8,13 @@ jest.mock('@/modules/user/features/settings/routes/user-profile', () => ({
   },
 }));
 
+jest.mock('@/modules/user/features/settings/components/user-menu/user-menu-slot', () => ({
+  __esModule: true,
+  default: function MockUserMenuSlot(): null {
+    return null;
+  },
+}));
+
 jest.mock('@/components/coming-soon', () => ({
   __esModule: true,
   default: function MockComingSoon(): null {
@@ -88,5 +95,15 @@ describe('settings route contract', () => {
 
     expect(loaded?.default).toEqual(expect.any(Function));
     expect(loaded?.default.name).toBe('MockUserProfile');
+  });
+
+  it('declares the user menu slot as a lazy loader of the user-menu-slot module', async () => {
+    const { settingsRoutes } = await loadContract();
+    const userMenu = settingsRoutes.shell?.userMenu;
+
+    const loaded = await userMenu?.();
+
+    expect(Object.keys(settingsRoutes.shell ?? {})).toEqual(['userMenu']);
+    expect(loaded?.default.name).toBe('MockUserMenuSlot');
   });
 });

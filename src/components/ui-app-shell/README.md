@@ -4,6 +4,37 @@ The shell is the persistent frame of every protected page: the header, the sideb
 drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; nothing here imports
 `src/modules/`. Planning artifacts live in `specs/app-shell-navigation/planning-artifacts/`.
 
+## App shell decisions (issue #362)
+
+- **The frame is eager, everything visible is lazy.** `AppLayout` (`src/components/layouts/`)
+  owns a CSS grid and two `aria-hidden`, non-null placeholders: a 64 px sticky header slot and,
+  from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where the loaded
+  sidebar's inset is 13 px). `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader`
+  around a `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and
+  no public page requests the shell. The sidebar breakpoint is a number in
+  `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the eager path
+  cannot import `@/components/ui-breakpoints`.
+- **The grid places items by line, not by area name.** A sticky element is limited to its grid
+  area, so the header slot spans every row (`grid-row: 1 / -1`, `align-self: start`, 64 px tall)
+  and sticks for the whole page. The navigation slot and `<main>` share row 2; the loaded sidebar
+  sticks 74 px from the top inside its stretched cell.
+- **The user slot is a prop.** Nothing under `src/components/` imports `src/modules/`. The settings
+  route contract declares `shell.userMenu`, a loader for `UserMenuSlot`; the composer hands
+  `AppLayout` the result of `routeMapper.shellSlot(load)`, so `AppLayout` receives only a
+  component that takes `signOut`. See "Shell slots" in `src/routes/README.md`.
+- **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
+  `AppLayout` calls its `onShellFailure` prop once (the composer binds it to
+  `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
+  frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
+  the document. `app-layout.tsx` imports nothing from `src/services/`.
+- **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
+  supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
+  optional `userMenu` slot and an `onShellFailure` callback, typed in
+  `src/components/types/layouts/app-layout.ts`.
+- **Home and settings lose their stopgaps.** `/` no longer renders its own Sign out button or
+  link to `/settings` (the sidebar, the drawer and the chip menu own both), and `/settings` no
+  longer centres its content (see the settings README).
+
 ## Layouts
 
 `useShellLayout()` returns `'mobile'` below 1024 px, `'tablet'` from 1024 to 1439 px and
@@ -231,3 +262,26 @@ closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none i
 A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
 stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how
 Figma's 92 / 180 / 232 stack the items.
+
+### Measured against Figma (frame and settings alignment, issue #362)
+
+Measured in Chromium on the 3004 dev server with `getBoundingClientRect()`, session restored from the
+sandbox demo marker and the `userSettings` flag forced on.
+
+| Row                         | Width           | Figma          | Measured            | Result |
+| --------------------------- | --------------- | -------------- | ------------------- | ------ |
+| header                      | all             | 64 px tall     | 0,0 w×64            | pass   |
+| sidebar panel               | 1440            | 12,74 238×791  | 12,74 238×791       | pass   |
+| sidebar panel (fits 900 px) | 1024            | 13,74 238 wide | 13,74 238 wide      | pass   |
+| `<main>` left edge          | 1440            | 250            | 250                 | pass   |
+| `<main>` left edge          | 1024            | 251            | 251                 | pass   |
+| `/settings` title left edge | 1440            | 262            | 262                 | pass   |
+| `/settings` title left edge | 1024            | 263            | 263                 | pass   |
+| `/settings` title left edge | 375             | unchanged 15   | 15                  | pass   |
+| horizontal overflow         | 1440, 1024, 375 | none           | scrollWidth = width | pass   |
+
+The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, which put the title at x 283 and
+x 374; the settings page therefore uses its own container (12 px from the sidebar). The tablet
+panel's height is the viewport minus 86 px by design (UX 4.3), not the drawn 1142 px, so it is not a
+row. With the viewport 500 px tall and the page scrolled 300 px, the header stays at top 0 and the
+sidebar at top 74.

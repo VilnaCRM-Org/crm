@@ -98,6 +98,12 @@ react-router **outlet context**: `ProtectedRoute` renders
 `<Outlet context={{ signOut }} />` typed as `ProtectedOutletContext`
 (`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it.
 
+`AppLayout` also forwards `signOut` to the app shell, and the shell's user chip and menu are the
+one piece of this module that appears in it. They are not exported through the barrel: the
+settings route contract declares them as `shell.userMenu` (a lazy `user-menu` chunk), and the
+route composer hands `AppLayout` the loaded component as a prop (see "Shell slots" in
+`src/routes/README.md`). The `user` module stays out of every public page's chunks.
+
 `signOut` comes from the `useSignOut` hook (`stores/use-sign-out.ts`). It loads
 `@auth/stores` with a **dynamic** `import()` through a `ChunkRetryLoader`, so
 the eager entrypoint does not grow, and calls `authActions.logout()` on the

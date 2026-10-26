@@ -83,6 +83,28 @@ contract beside `/settings` so the flag gate covers them with no composer change
 `/password-recovery` and `/password-reset` (issue #315) render the `ResetPassword` and
 `CreateNewPassword` pages; signed-in users are not redirected away from either.
 
+## Shell slots (issue #362)
+
+A module may put one piece of its UI into the app shell without the shell importing the module.
+`RouteModule.shell` is an optional `RouteModuleShell`; today it carries `userMenu`, a loader of a
+component that takes `signOut` and an `onChunkFailure` callback. The settings contract declares it
+(`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and hands
+`AppLayout` `routeMapper.shellSlot(load)`, a lazy component wrapped like a page chunk (one
+re-import, the MUI theme shell loaded in parallel). `RouteValidator` rejects a registry in which
+two modules declare `shell.userMenu`.
+
+- **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
+  failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
+  are untouched and nothing reloads.
+- **The current-user chunk** reports through the `onChunkFailure` callback the mapper binds
+  (`source: 'app-shell:current-user'`); `AppLayout` reports the shell chunk with
+  `routeMapper.chunkFailureReporter('app-shell:load')`.
+- **Why the mapper captures:** a component under `src/components/` must not import
+  `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
+  route layer is the only place that reaches the observability boundary.
+- **ADR drift:** `route-composer.tsx` changed, so the pull request carries the `adr:not-required`
+  label; the decision lives here and in the shell README.
+
 ## The contract
 
 ```ts
