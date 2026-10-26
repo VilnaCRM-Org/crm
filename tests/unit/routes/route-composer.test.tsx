@@ -84,6 +84,58 @@ describe('route composer', () => {
     expect(layout.children?.some((route) => route.index)).toBe(true);
   });
 
+  it('hands AppLayout the mapper slot and the app-shell:load reporter (OQ-17)', () => {
+    const slot = (): null => null;
+    const reporter = jest.fn();
+    const shellSlot = jest.spyOn(routeMapper, 'shellSlot').mockReturnValue(slot);
+    const reporterFor = jest.spyOn(routeMapper, 'chunkFailureReporter').mockReturnValue(reporter);
+
+    const tree = routeComposer.compose(registry).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<{
+      userMenu: unknown;
+      onShellFailure: unknown;
+    }>;
+
+    expect(shellSlot).toHaveBeenCalledTimes(1);
+    expect(shellSlot).toHaveBeenCalledWith(
+      registry.items.find((module) => module.id === 'user.settings')?.shell?.userMenu
+    );
+    expect(reporterFor).toHaveBeenCalledWith('app-shell:load');
+    expect(props.userMenu).toBe(slot);
+    expect(props.onShellFailure).toBe(reporter);
+    jest.restoreAllMocks();
+  });
+
+  it('passes AppLayout no badge counts, so no page renders a badge (FR-19)', () => {
+    const tree = routeComposer.compose(registry).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<Record<string, unknown>>;
+
+    expect(Object.keys(props).sort()).toEqual(['onShellFailure', 'userMenu']);
+  });
+
+  it('gives AppLayout no slot when no module declares shell.userMenu', () => {
+    const modules: RouteModule[] = [
+      ...registry.items.filter((module) => module.id !== 'user.settings'),
+    ];
+    const shellSlot = jest.spyOn(routeMapper, 'shellSlot');
+
+    const tree = routeComposer.compose({ items: modules }).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<{ userMenu: unknown }>;
+
+    expect(shellSlot).not.toHaveBeenCalled();
+    expect(props.userMenu).toBeUndefined();
+    jest.restoreAllMocks();
+  });
+
+  it('renders no AppLayout anywhere on the public branch', () => {
+    const tree = routeComposer.compose(registry).items;
+
+    expect(walk(publicLevelOf(tree)).some((route) => typeOf(route) === AppLayout)).toBe(false);
+  });
+
   it('keeps public routes directly under the gate route, itself directly under RootLayout', () => {
     const tree = routeComposer.compose(registry).items;
     // Everything that is not the protected branch is a flat public route.

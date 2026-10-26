@@ -3,6 +3,10 @@ import type { RouteModule } from '@/routes/types/route-module';
 
 const settingsRoutes: RouteModule = {
   id: 'user.settings',
+  shell: {
+    userMenu: () =>
+      import(/* webpackChunkName: "user-menu" */ '../components/user-menu/user-menu-slot'),
+  },
   routes: [
     {
       path: ROUTE_PATHS.settings,

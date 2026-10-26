@@ -4,9 +4,12 @@ import ROUTE_PATHS from '@/routes/route-paths';
 import routeValidator from '@/routes/route-validator';
 import type { AppRouteObject } from '@/routes/types/app-route';
 import type { RouteModule } from '@/routes/types/route-module';
+import type { ShellSlotModule } from '@/routes/types/shell-slot';
 
 const page = (): Promise<{ default: ComponentType }> =>
   Promise.resolve({ default: (): null => null });
+
+const slotLoad = (): Promise<ShellSlotModule> => Promise.resolve({ default: (): null => null });
 
 describe('route validator', () => {
   it('accepts unique module ids and locatable routes', () => {
@@ -147,6 +150,27 @@ describe('route validator', () => {
 
     expect(() => routeValidator.validate({ items: modules })).toThrow(
       'Nested routes must not declare a guard'
+    );
+  });
+
+  it('accepts one module that declares shell.userMenu', () => {
+    const modules: RouteModule[] = [
+      { id: 'a', routes: [{ index: true, load: page }] },
+      { id: 'b', routes: [{ path: '/b', load: page }], shell: { userMenu: slotLoad } },
+      { id: 'c', routes: [{ path: '/c', load: page }], shell: {} },
+    ];
+
+    expect(() => routeValidator.validate({ items: modules })).not.toThrow();
+  });
+
+  it('rejects two modules that both declare shell.userMenu (negative)', () => {
+    const modules: RouteModule[] = [
+      { id: 'first', routes: [{ path: '/a', load: page }], shell: { userMenu: slotLoad } },
+      { id: 'second', routes: [{ path: '/b', load: page }], shell: { userMenu: slotLoad } },
+    ];
+
+    expect(() => routeValidator.validate({ items: modules })).toThrow(
+      'Only one route module may declare shell.userMenu (first, second)'
     );
   });
 });

@@ -43,6 +43,40 @@ const resolveLocalModule = (importer: string, specifier: string): string | null 
   return found;
 };
 
+interface EagerGraph {
+  readonly files: ReadonlySet<string>;
+  readonly muiEdges: readonly string[];
+}
+
+const eagerGraphOf = (entry: string, read: (file: string) => string = readFile): EagerGraph => {
+  const files = new Set<string>();
+  const muiEdges: string[] = [];
+  const pending = [entry];
+
+  while (pending.length > 0) {
+    const file = pending.pop() ?? '';
+    if (!files.has(file)) {
+      files.add(file);
+      for (const specifier of staticImportsOf(read(file))) {
+        const local = resolveLocalModule(file, specifier);
+        if (local) pending.push(local);
+        else if (specifier.startsWith('@mui/')) muiEdges.push(`${file} -> ${specifier}`);
+      }
+    }
+  }
+
+  return { files, muiEdges };
+};
+
+const SHELL_ONLY_FOLDERS = [
+  'src/components/ui-app-shell/',
+  'src/components/ui-app-header/',
+  'src/components/ui-sidebar/',
+  'src/components/ui-navigation-list/',
+  'src/components/ui-navigation-drawer/',
+  'src/modules/user/features/settings/components/user-menu/',
+];
+
 describe('performance serving config', () => {
   it('ships immutable cache headers for built static assets', () => {
     const serveConfig = readJson<{
@@ -238,6 +272,72 @@ describe('performance serving config', () => {
     );
   });
 
+  it('keeps the shell, the user menu and the current-user read off the eager path (NFR-5)', () => {
+    const { files, muiEdges } = eagerGraphOf('src/index.tsx');
+    const eagerShell = [...files].filter((file) =>
+      SHELL_ONLY_FOLDERS.some((folder) => file.startsWith(folder))
+    );
+    const settingsHooks = [...files].filter((file) => file.includes('hooks/use-current-user'));
+
+    expect(files.has('src/components/layouts/app-layout.tsx')).toBe(true);
+    expect(files.has('src/components/layouts/app-layout.styles.ts')).toBe(true);
+    expect(eagerShell).toEqual([]);
+    expect(settingsHooks).toEqual([]);
+    expect(muiEdges).toEqual(['src/providers/app-providers.tsx -> @mui/material/styles']);
+  });
+
+  it('fails the eager-path check when AppLayout imports a shell file (must-fail)', () => {
+    const appLayout = 'src/components/layouts/app-layout.tsx';
+    const tainted = (file: string): string =>
+      file === appLayout
+        ? `${readFile(file)}\nimport UIAppShell from '@/components/ui-app-shell';\n`
+        : readFile(file);
+
+    const { files, muiEdges } = eagerGraphOf('src/index.tsx', tainted);
+
+    expect(files.has('src/components/ui-app-shell/index.tsx')).toBe(true);
+    expect(muiEdges.length).toBeGreaterThan(1);
+  });
+
+  it('loads the shell through a ThemedChunkLoader named ui-app-shell (AD-1)', () => {
+    const loaderSource = readFile('src/components/layouts/app-shell-loader.ts');
+
+    expect(loaderSource).toContain('new ThemedChunkLoader<UIAppShellProps>(');
+    expect(loaderSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "ui-app-shell" \*\/\s*'@\/components\/ui-app-shell'\s*\)/
+    );
+    expect(staticImportsOf(readFile('src/components/layouts/app-layout.tsx'))).toEqual(
+      expect.arrayContaining(['./app-shell-loader'])
+    );
+  });
+
+  it('imports the user-menu and current-user chunks only through import() (AD-1)', () => {
+    const settingsContract = readFile('src/modules/user/features/settings/routes/index.ts');
+    const slot = readFile(
+      'src/modules/user/features/settings/components/user-menu/user-menu-slot.tsx'
+    );
+    const currentUserLoader = readFile(
+      'src/modules/user/features/settings/components/user-menu/current-user-menu-loader.ts'
+    );
+
+    expect(settingsContract).toMatch(
+      new RegExp(
+        String.raw`userMenu: \(\) =>\s*import\(\s*/\* webpackChunkName: "user-menu" \*/\s*` +
+          String.raw`'\.\./components/user-menu/user-menu-slot'\s*\)`
+      )
+    );
+    expect(staticImportsOf(settingsContract)).not.toContain(
+      '../components/user-menu/user-menu-slot'
+    );
+    expect(currentUserLoader).toMatch(/import\(\s*\/\* webpackChunkName: "current-user" \*\//);
+    expect(
+      staticImportsOf(slot).some((specifier) => specifier.includes('current-user-menu.'))
+    ).toBe(false);
+    expect(
+      staticImportsOf(slot).filter((specifier) => specifier.endsWith('current-user-menu'))
+    ).toEqual([]);
+  });
+
   it('warms the shared error-page chunk and its font faces after load (issue #309)', () => {
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const errorPageLoaderSource = readFile('src/components/error-boundary/error-page-loader.ts');
@@ -368,7 +468,7 @@ describe('performance serving config', () => {
       /webpackChunkName: "([^"]+)"/.exec(
         readFile(`src/modules/user/features/auth/routes/${route}/form-section-loader.ts`)
       )?.[1];
-    const settingsChunkName = /webpackChunkName: "([^"]+)"/.exec(
+    const settingsChunkName = /webpackChunkName: "([^"]+)" \*\/\s*'\.\/user-profile'/.exec(
       readFile('src/modules/user/features/settings/routes/index.ts')
     )?.[1];
 

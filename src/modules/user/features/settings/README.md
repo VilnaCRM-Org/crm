@@ -54,7 +54,7 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 
 ```text
 UserProfile [component]<route>          title, toast queue, useProfileLoad
-└ UIContainer
+└ Box container                       15 / 26 px inset, 12 px from the sidebar at 1024+
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column is the 2FA slot
   │ ├ UserProfileSettings               loading | failed | ready
@@ -147,10 +147,13 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
-- **Desktop content is centred.** Figma left-aligns the columns beside a 238 px sidebar the
-  app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
-  columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
-  lands, and the heading stays aligned with the card's left edge.
+- **Desktop content is left-aligned beside the sidebar.** The app shell (issue #362) now draws
+  the 238 px sidebar Figma shows, so above 1024 px the content no longer centres: the heading and
+  the grid start at the content column's own left edge, 12 px from the sidebar (x 262 at 1440,
+  x 263 at 1024). The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, so the page
+  uses its own container with the same 15 and 26 px insets below 1024 and a 12 px inset from
+  1024 up (AV-7 measured the toolkit padding and found it does not yield the Figma start). The page keeps its `gap` and `paddingTop`; `width: fit-content`, `maxWidth` and
+  `marginInline: auto` are gone. The 2FA column, when it lands, widens the grid to the right.
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
   header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
