@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, type RenderResult, screen } from '@testing-library/react';
 import type { JSX, ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Outlet, Route, Routes, useNavigate, useOutletContext } from 'react-router';
@@ -70,8 +70,8 @@ async function renderLayout(
   page: JSX.Element = <div>home page</div>,
   signOut: () => void = jest.fn(),
   userMenu?: UserMenuSlot
-): Promise<void> {
-  render(
+): Promise<RenderResult> {
+  const view = render(
     <I18nextProvider i18n={testI18n}>
       <MemoryRouter initialEntries={entries}>
         <Routes>
@@ -88,6 +88,8 @@ async function renderLayout(
 
   await screen.findByRole('contentinfo');
   await screen.findByRole('banner');
+
+  return view;
 }
 
 describe('AppLayout', () => {
@@ -166,6 +168,17 @@ describe('AppLayout', () => {
     await renderLayout([{ pathname: '/', state: { focusMain: true } }] as Entry);
 
     expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('reserves the sticky header height as top scroll padding until it unmounts', async () => {
+    const view = await renderLayout(['/']);
+    const root = document.documentElement;
+
+    expect(root.style.getPropertyValue('scroll-padding-top')).toBe('64px');
+
+    view.unmount();
+
+    expect(root.style.getPropertyValue('scroll-padding-top')).toBe('');
   });
 
   it('keeps the main landmark programmatically focusable but outside the tab order', async () => {

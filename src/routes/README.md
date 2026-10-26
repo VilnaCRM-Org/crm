@@ -141,7 +141,11 @@ size-holding placeholders, a header slot and a navigation column), the page's `<
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
 and is reported through the `onShellFailure` callback the composer passes beside the optional
-`userMenu` slot (see "Shell slots"). The footer is loaded lazily behind its own `<Suspense>`,
+`userMenu` slot (see "Shell slots"). While it is mounted, `useHeaderClearance` (through
+`useFrameFocus`) reserves the 64 px sticky header as `scroll-padding-top` on the document, so a
+control that receives keyboard focus is never scrolled under the header (WCAG 2.4.11), the top
+counterpart of the toast stack's `scroll-padding-bottom`. The footer is loaded lazily behind its
+own `<Suspense>`,
 because `AppLayout` is in the eager entrypoint and a static footer import would spend the remaining
 raw entrypoint budget. Its fallback is an empty, `aria-hidden` box that only holds the footer's
 height: the page is already usable, so the chrome shows no loader and announces nothing while its

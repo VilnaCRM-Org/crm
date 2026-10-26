@@ -8,6 +8,7 @@ const HEADER_HEIGHT = '64px';
 
 export default {
   sidebarBreakpoint: SIDEBAR_BREAKPOINT,
+  headerHeight: HEADER_HEIGHT,
   frame: {
     flexGrow: 1,
     display: 'grid',

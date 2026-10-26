@@ -140,6 +140,74 @@ for (const width of [1440, 1024]) {
   });
 }
 
+const HEADER_BOTTOM = 64;
+
+const topOf = (locator: Locator): Promise<number> =>
+  locator.evaluate((node) => node.getBoundingClientRect().top);
+
+const headerBottomOf = (page: Page): Promise<number> =>
+  page.getByRole('banner').evaluate((node) => node.getBoundingClientRect().bottom);
+
+const homeLinkOf = (page: Page): Locator =>
+  page.getByRole('main').getByRole('link', { name: t('coming_soon.home_link'), exact: true });
+
+async function expectWalkClearOfHeader(
+  page: Page,
+  stops: Locator[],
+  key: 'Tab' | 'Shift+Tab'
+): Promise<void> {
+  for (const stop of stops) {
+    await page.keyboard.press(key);
+    await expect(stop).toBeFocused();
+    await expect.poll(() => topOf(stop)).toBeGreaterThanOrEqual(HEADER_BOTTOM);
+  }
+}
+
+for (const { path, subItems } of [
+  { path: ROUTE_PATHS.analytics, subItems: false },
+  { path: ROUTE_PATHS.settingsBilling, subItems: true },
+]) {
+  test.describe(`Focus clears the sticky header on ${path} at 1440 x 400 (WCAG 2.4.11)`, () => {
+    test.use({ viewport: { width: 1440, height: 400 } });
+
+    test('Shift+Tab back from the scrolled footer keeps the handle and rows clear', async ({
+      page,
+    }) => {
+      await openAs(page, path);
+      const footerLinks = page.getByRole('contentinfo').getByRole('link');
+      const stops = [
+        ...sidebarStops(page, subItems)
+          .slice(2)
+          .map(({ locator }) => locator),
+        homeLinkOf(page),
+        footerLinks.first(),
+        footerLinks.last(),
+      ];
+      await chipOf(page).focus();
+
+      expect(await headerBottomOf(page)).toBe(HEADER_BOTTOM);
+      await expectWalkClearOfHeader(page, stops, 'Tab');
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+      await expectWalkClearOfHeader(page, stops.slice(0, -1).reverse(), 'Shift+Tab');
+    });
+  });
+}
+
+test.describe('Focus clears the sticky header at 1000 x 300 (WCAG 2.4.11)', () => {
+  test.use({ viewport: { width: 1000, height: 300 } });
+
+  test('Shift+Tab from the footer keeps the coming-soon home link below the header', async ({
+    page,
+  }) => {
+    await openAs(page, ROUTE_PATHS.analytics);
+    await page.getByRole('contentinfo').getByRole('link').first().focus();
+
+    expect(await headerBottomOf(page)).toBe(HEADER_BOTTOM);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expectWalkClearOfHeader(page, [homeLinkOf(page)], 'Shift+Tab');
+  });
+});
+
 test.describe('App shell keyboard contract at 375 px (issue #362)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
