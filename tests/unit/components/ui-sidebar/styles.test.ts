@@ -28,6 +28,7 @@ describe('sidebar styles', () => {
             transitionDuration: '0s',
           },
           width: '72px',
+          marginRight: '41px',
         },
       },
       tablet: {

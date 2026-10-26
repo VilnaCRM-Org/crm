@@ -42,7 +42,10 @@ const handle = {
 
 export default {
   wrapper: {
-    desktop: { expanded: { ...wrapper, width: '238px' }, rail: { ...wrapper, width: '72px' } },
+    desktop: {
+      expanded: { ...wrapper, width: '238px' },
+      rail: { ...wrapper, width: '72px', marginRight: '41px' },
+    },
     tablet: { expanded: { ...wrapper, width: '238px' }, rail: { ...wrapper, width: '76px' } },
   },
   panel: {
