@@ -84,3 +84,19 @@ settings	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Tabs through the sid
 home	e2e	tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts	Applies the WCAG 1.4.12 text-spacing overrides to the closed shell, the open chip menu and the open drawer at 1440, 1024 and 375.
 home	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Opens and closes the drawer by tap on both mobile projects, uses Settings and Sign out from it and from the avatar menu, and measures the touch targets and overflow.
 settings	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Reaches /settings by tap from the drawer and from the avatar menu with main focused.
+boards	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /boards coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+boards	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /boards coming-soon page inside the shell.
+products	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /products coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+products	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /products coming-soon page inside the shell.
+orders	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /orders coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+orders	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /orders coming-soon page inside the shell.
+contacts	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /contacts coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+contacts	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /contacts coming-soon page inside the shell.
+analytics	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /analytics coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+analytics	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /analytics coming-soon page inside the shell.
+settingsIntegrations	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /settings/integrations coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+settingsIntegrations	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /settings/integrations coming-soon page inside the shell.
+settingsWebhooks	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /settings/webhooks coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+settingsWebhooks	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /settings/webhooks coming-soon page inside the shell.
+settingsBilling	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /settings/billing coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+settingsBilling	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /settings/billing coming-soon page inside the shell.
