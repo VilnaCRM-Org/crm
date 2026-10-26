@@ -54,6 +54,14 @@ describe('app layout styles', () => {
     });
   });
 
+  it('exposes the header height the sticky slot and the first grid row share', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.headerHeight).toBe('64px');
+    expect(styles.headerSlot.height).toBe(styles.headerHeight);
+    expect(styles.frame.gridTemplateRows).toBe(`${styles.headerHeight} 1fr auto`);
+  });
+
   it('places the navigation slot and shows its placeholder only from the breakpoint', async () => {
     const styles = await loadStyles();
 

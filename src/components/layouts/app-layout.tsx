@@ -4,12 +4,12 @@ import { Outlet, useOutletContext } from 'react-router';
 
 import type { AppLayoutProps } from '@/components/types/layouts/app-layout';
 import type { UIAppShellProps } from '@/components/types/ui-app-shell';
-import useArrivalFocus from '@/hooks/use-arrival-focus';
 import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
 
 import styles from './app-layout.styles';
 import appShellLoader from './app-shell-loader';
 import footerLoader from './footer-loader';
+import useFrameFocus from './use-frame-focus';
 
 function FooterUnavailable(): null {
   return null;
@@ -41,7 +41,7 @@ function ShellPlaceholders(): JSX.Element {
 }
 
 export default function AppLayout({ userMenu, onShellFailure }: AppLayoutProps): JSX.Element {
-  const focusOnArrival = useArrivalFocus();
+  const focusOnArrival = useFrameFocus();
   const outletContext = useOutletContext<ProtectedOutletContext>();
   const report = useRef(onShellFailure);
   report.current = onShellFailure;
