@@ -11,10 +11,12 @@ error. The decisions are recorded in `## User Settings decisions` of the
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
-- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
-  (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`.
+- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form` (`ClearButton`,
+  `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`, `user-menu` (the
+  app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
-  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`.
+  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`, `useDisplayName`,
+  `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
 - `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and the three GraphQL document seams.
@@ -91,13 +93,13 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | Repository → API edge | the container's Apollo client with the `SessionLinkFactory` link |
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
-No file names a controller, a service or a handler: the board has none. Gaps that remain gaps:
-the board's social-network component is presentational only — `SocialNetworks` draws the Figma
-card as a list rather than buttons, each tile telling a screen reader that linking is not
-available yet, because user-service has no link, list or unlink — the header menu with the
-"Log-out" edge is app-shell work and the home link stands in for it, the two-factor card
-belongs to #331, and the session link reads and resets `useAuthStore` without a Repository →
-State edge on the board.
+No file names a controller, a service or a handler: the board has none. Gaps that remain gaps: the
+board's social-network component is presentational only — `SocialNetworks` draws the Figma card as a
+list rather than buttons, each tile telling a screen reader that linking is not available yet,
+because user-service has no link, list or unlink — the header menu with the "Log-out" edge is now
+drawn (the app-shell user menu in `components/user-menu/`, declared as `shell.userMenu` in
+`routes/index.ts`, issue #362) and is no longer one of them, the two-factor card belongs to #331,
+and the session link reads and resets `useAuthStore` without a Repository → State edge on the board.
 
 ## Data provider outcomes
 
@@ -147,13 +149,16 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
-- **Desktop content is left-aligned beside the sidebar.** The app shell (issue #362) now draws
-  the 238 px sidebar Figma shows, so above 1024 px the content no longer centres: the heading and
-  the grid start at the content column's own left edge, 12 px from the sidebar (x 262 at 1440,
-  x 263 at 1024). The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, so the page
-  uses its own container with the same 15 and 26 px insets below 1024 and a 12 px inset from
-  1024 up (AV-7 measured the toolkit padding and found it does not yield the Figma start). The page keeps its `gap` and `paddingTop`; `width: fit-content`, `maxWidth` and
-  `marginInline: auto` are gone. The 2FA column, when it lands, widens the grid to the right.
+- **Desktop content is left-aligned beside the sidebar.** The app shell (issue #362) now draws the
+  238 px sidebar Figma shows, so above 1024 px the content no longer centres: the heading and the
+  grid start at the content column's own left edge, 12 px from the sidebar (x 262 at 1440, x 263 at
+  1024 with the sidebar expanded; collapsed to the rail, x 137 at 1440 and x 101 at 1024, the latter
+  not yet measured against Figma — see P-51 and P-62 in the shell README). The toolkit `UIContainer`
+  pads 32 px at 1024 and 124 px at 1440, so the page uses its own container with the same 15 and 26
+  px insets below 1024 and a 12 px inset from 1024 up (AV-7 measured the toolkit padding and found
+  it does not yield the Figma start). The page keeps its `gap` and `paddingTop`;
+  `width: fit-content`, `maxWidth` and `marginInline: auto` are gone. The 2FA column, when it lands,
+  widens the grid to the right.
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
   header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.

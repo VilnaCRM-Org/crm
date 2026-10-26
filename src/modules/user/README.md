@@ -104,21 +104,20 @@ settings route contract declares them as `shell.userMenu` (a lazy `user-menu` ch
 route composer hands `AppLayout` the loaded component as a prop (see "Shell slots" in
 `src/routes/README.md`). The `user` module stays out of every public page's chunks.
 
-`signOut` comes from the `useSignOut` hook (`stores/use-sign-out.ts`). It loads
-`@auth/stores` with a **dynamic** `import()` through a `ChunkRetryLoader`, so
-the eager entrypoint does not grow, and calls `authActions.logout()` on the
-singleton. A final load failure is reported through `observabilityCore` with
-`source: 'auth:sign-out'` and leaves the user on the protected page, where the
-button can be pressed again. This failure is deliberately silent (accepted in
-the approved design: no live region on the page), and there is no busy state
-while the chunk loads; surfacing either is a design-owner follow-up. Once the
-token is cleared, the guard redirects to `/sign-in` with
-`state.focusMain: true` — set only after a sign-out, never for an
-unauthenticated visit — and `AuthPageLayout` moves focus to its `<main>` once,
-through the same `useArrivalFocus` hook (`src/hooks/use-arrival-focus.ts`) that
-`AppLayout` uses after a login. The hook then replaces the entry's state with
-`focusMain: false` (keeping `from`), so returning to that entry with Back never
-moves focus again, even though `AuthPageLayout` remounts with every auth page.
+`signOut` comes from the `useSignOut` hook (`stores/use-sign-out.ts`). It loads `@auth/stores` with
+a **dynamic** `import()` through a `ChunkRetryLoader`, so the eager entrypoint does not grow, and
+calls `authActions.logout()` on the singleton. A final load failure is reported through
+`observabilityCore` with `source: 'auth:sign-out'` and leaves the user on the protected page. Each
+shell sign-out control (the sidebar or drawer row and the chip-menu item) runs `signOut` through
+`useOnceCallback`, so the control that was used stays inert until it remounts; the other one can
+still be used. This failure is deliberately silent (accepted in the approved design: no live region
+on the page), and there is no busy state while the chunk loads; surfacing either is a design-owner
+follow-up. Once the token is cleared, the guard redirects to `/sign-in` with `state.focusMain: true`
+— set only after a sign-out, never for an unauthenticated visit — and `AuthPageLayout` moves focus
+to its `<main>` once, through the same `useArrivalFocus` hook (`src/hooks/use-arrival-focus.ts`)
+that `AppLayout` uses after a login. The hook then replaces the entry's state with
+`focusMain: false` (keeping `from`), so returning to that entry with Back never moves focus again,
+even though `AuthPageLayout` remounts with every auth page.
 
 ## Password recovery decisions
 
@@ -570,9 +569,9 @@ darkening `error.main` itself (it would change every border and icon that meets 
 (7.03:1) at the source, as the field errors are fixed above.
 
 **Decision.** The product owner kept the Figma token (2026-10-21). `#settings-greeting` carries a
-scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, the ninth entry, tracked
-with the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276) and
-deleted when it closes; the name beside the greeting stays `#1A1C1E`.
+scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, the tenth entry, tracked with
+the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276) and deleted
+when it closes; the name beside the greeting stays `#1A1C1E`.
 
 **Rejected.** `#57595B` at the source (the page would stop matching the frames); an unscoped
 exception (the gate accepts one rule, one selector, a reason and a tracking issue per entry).
