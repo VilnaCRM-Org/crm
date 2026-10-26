@@ -8,6 +8,8 @@ import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
 import toastEn from '@/components/ui-toast/i18n/en.json';
 import toastUk from '@/components/ui-toast/i18n/uk.json';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
+import userMenuEn from '@/modules/user/features/settings/components/user-menu/i18n/en.json';
+import userMenuUk from '@/modules/user/features/settings/components/user-menu/i18n/uk.json';
 import settingsEn from '@/modules/user/features/settings/i18n/en.json';
 import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
 import recoveryEn from '@auth/routes/recovery-catalog/i18n/en.json';
@@ -42,6 +44,7 @@ lazyCatalogLoader.register(i18next, { en: policyEn, uk: policyUk });
 lazyCatalogLoader.register(i18next, { en: settingsEn, uk: settingsUk });
 lazyCatalogLoader.register(i18next, { en: toastEn, uk: toastUk });
 lazyCatalogLoader.register(i18next, { en: appShellEn, uk: appShellUk });
+lazyCatalogLoader.register(i18next, { en: userMenuEn, uk: userMenuUk });
 
 const customViewports: ViewportMap = {
   xs: {

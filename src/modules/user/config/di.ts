@@ -12,6 +12,7 @@ import GraphQLProfileTransformer from '@/modules/user/features/settings/transfor
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
 import type ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
@@ -132,6 +133,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
       UserServiceErrorTransformer
     );
     container.registerSingleton(AUTH_TOKENS.GraphQLProfileTransformer, GraphQLProfileTransformer);
+    container.registerSingleton(AUTH_TOKENS.UserDisplayNameMapper, UserDisplayNameMapper);
   }
 
   private registerApis(container: DependencyContainer): void {

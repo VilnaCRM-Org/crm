@@ -1,0 +1,144 @@
+import { act, renderHook } from '@testing-library/react';
+import type { JSX, KeyboardEvent, ReactNode } from 'react';
+import { MemoryRouter, useNavigate } from 'react-router';
+
+import type { ShellLayout } from '@/components/types/ui-app-shell';
+import useUserMenu from '@/modules/user/features/settings/hooks/use-user-menu';
+import type { UserMenuState } from '@/modules/user/features/settings/types/hooks/use-user-menu';
+
+interface Harness {
+  readonly menu: UserMenuState;
+  readonly go: (to: string) => void;
+}
+
+interface KeyStub {
+  readonly event: KeyboardEvent<HTMLButtonElement>;
+  readonly preventDefault: jest.Mock;
+}
+
+const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
+  <MemoryRouter initialEntries={['/']}>{children}</MemoryRouter>
+);
+
+const keyStub = (value: string): KeyStub => {
+  const preventDefault = jest.fn();
+
+  return {
+    event: { key: value, preventDefault } as unknown as KeyboardEvent<HTMLButtonElement>,
+    preventDefault,
+  };
+};
+
+const renderMenu = (
+  layout: ShellLayout
+): ReturnType<typeof renderHook<Harness, { current: ShellLayout }>> =>
+  renderHook(
+    ({ current }: { current: ShellLayout }): Harness => {
+      const navigate = useNavigate();
+
+      return {
+        menu: useUserMenu({ layout: current }),
+        go: (to: string): void => void navigate(to),
+      };
+    },
+    { wrapper, initialProps: { current: layout } }
+  );
+
+describe('useUserMenu', () => {
+  it('starts closed and opens and closes on demand', () => {
+    const { result } = renderMenu('desktop');
+
+    expect(result.current.menu.open).toBe(false);
+    act(() => result.current.menu.show());
+    expect(result.current.menu.open).toBe(true);
+    act(() => result.current.menu.close());
+    expect(result.current.menu.open).toBe(false);
+  });
+
+  it('dismiss closes the menu and returns focus to the chip', () => {
+    const { result } = renderMenu('desktop');
+    const chip = document.createElement('button');
+    document.body.append(chip);
+    result.current.menu.chip.current = chip;
+    act(() => result.current.menu.show());
+
+    act(() => result.current.menu.dismiss());
+
+    expect(result.current.menu.open).toBe(false);
+    expect(chip).toHaveFocus();
+    chip.remove();
+  });
+
+  it('opens on ArrowDown from the chip and stops the page from scrolling', () => {
+    const { result } = renderMenu('tablet');
+    const { event, preventDefault } = keyStub('ArrowDown');
+
+    act(() => result.current.menu.chipKeyDown(event));
+
+    expect(result.current.menu.open).toBe(true);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['Enter', ' ', 'ArrowUp', 'Escape', 'a'])('ignores %j on the chip', (value) => {
+    const { result } = renderMenu('desktop');
+    const { event, preventDefault } = keyStub(value);
+
+    act(() => result.current.menu.chipKeyDown(event));
+
+    expect(result.current.menu.open).toBe(false);
+    expect(preventDefault).not.toHaveBeenCalled();
+  });
+
+  it.each(['Escape', 'Tab'])(
+    'closes the open menu on %s and gives the focus to the chip',
+    (value) => {
+      const { result } = renderMenu('desktop');
+      const chip = document.createElement('button');
+      document.body.append(chip);
+      result.current.menu.chip.current = chip;
+      act(() => result.current.menu.show());
+
+      act(() => result.current.menu.menuKeyDown(keyStub(value).event));
+
+      expect(result.current.menu.open).toBe(false);
+      expect(chip).toHaveFocus();
+      chip.remove();
+    }
+  );
+
+  it.each(['ArrowDown', 'Home', 'Enter', 'a'])('keeps the menu open on %s', (value) => {
+    const { result } = renderMenu('desktop');
+    act(() => result.current.menu.show());
+
+    act(() => result.current.menu.menuKeyDown(keyStub(value).event));
+
+    expect(result.current.menu.open).toBe(true);
+  });
+
+  it('closes when the route changes', () => {
+    const { result } = renderMenu('desktop');
+    act(() => result.current.menu.show());
+
+    act(() => result.current.go('/settings'));
+
+    expect(result.current.menu.open).toBe(false);
+  });
+
+  it('closes when the viewport crosses a layout boundary', () => {
+    const { result, rerender } = renderMenu('mobile');
+    act(() => result.current.menu.show());
+
+    rerender({ current: 'tablet' });
+
+    expect(result.current.menu.open).toBe(false);
+  });
+
+  it('stays open across an unrelated re-render', () => {
+    const { result, rerender } = renderMenu('desktop');
+    act(() => result.current.menu.show());
+
+    rerender({ current: 'desktop' });
+
+    expect(result.current.menu.open).toBe(true);
+  });
+});
