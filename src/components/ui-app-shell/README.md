@@ -86,9 +86,9 @@ buttons are `#E1E7EA` with a `#D0D4D8` glyph and no border; the badge is 18 px, 
 Inter 500 12/18, digits within 0.2 px of Figma's text origin.
 
 The badge rows were measured with counts 1 and 8 passed through the header, as the header stories
-do. The header is not mounted by `AppLayout` yet (Story 3.1), so the rows above were read from a
-temporary local mount that was removed again; the burger (P-33) and the drawer rows belong to the
-drawer story.
+do. `AppLayout` now mounts the header through the shell (Story 3.1) but passes no counts, so the
+rows above were read from a temporary local mount that was removed again; the burger (P-33) and the
+drawer rows belong to the drawer story.
 
 Two choices record what Figma leaves open:
 

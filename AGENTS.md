@@ -241,12 +241,17 @@ backend-touching feature.
 
 Every user-facing string is a translated key, and every key exists in **both** locales. The
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
-`src/i18n/localization.json` is their merge, produced by `scripts/localization-generator.js`
-and refreshed with `make i18n-generate`. The build never regenerates it.
+`src/i18n/localization.json` is the merge of every **eager** catalog, produced by
+`scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
+regenerates it. The seven catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+(password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
+`coming_soon.*` and the user menu `user_menu.*`) are left out of it and registered by their owning
+chunk; a key in one of them resolves only in the files its `owners` list names.
 
-- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`,
-  run `make i18n-generate`, and commit the regenerated merged catalog together with the catalog
-  edit. Never hand-edit `src/i18n/localization.json`.
+- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
+  `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a
+  lazy catalog leaves the merged file unchanged; a new lazy catalog or owner is a reviewed edit to
+  `config/i18n-catalog-policy.json`). Never hand-edit `src/i18n/localization.json`.
 - **Gate** — `make lint-i18n` (in `make lint` and in the CI lint phase, so it gates every pull
   request) fails on a missing or stray locale file in a `src/**/i18n/` catalog, an `en`/`uk`
   key-set mismatch inside a catalog, a stale `src/i18n/localization.json`, or a `t()` key —
@@ -1412,10 +1417,14 @@ and [tests/console-gate/README.md](tests/console-gate/README.md).
    binaries. For a static page, follow the `notFound` / submit-loader precedent and use a small
    local screens array instead; regenerate with a spec-scoped `--update-snapshots`, never the
    repo-wide `make test-visual-update`, then re-run **without** the flag and require green.
-5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
-   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
-   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
-   `setViewportSize` call would discard the device viewport.
+5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated baselines for `/sign-in`,
+   `/sign-up`, `/password-recovery` and `/password-reset` (`auth.spec.ts`), the three error pages
+   (`error-pages.spec.ts`), `/settings` (`settings.spec.ts`) and the eight coming-soon sections
+   inside the app shell — `/boards`, `/products`, `/orders`, `/contacts`, `/analytics`,
+   `/settings/integrations`, `/settings/webhooks`, `/settings/billing` (`coming-soon.spec.ts`, issue
+   #362) — recorded per mobile project with `scale: 'device'` so the real 2.625×/3× DPR raster is
+   gated. Never reuse `take-visual-snapshot.ts` there — its `setViewportSize` call would discard the
+   device viewport.
 
 ## Troubleshooting Guide
 

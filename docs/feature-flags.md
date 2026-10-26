@@ -103,7 +103,11 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 ### `userSettings`
 
-Gates the `/settings` page (issue #330). The `FeatureFlag` union has this one member,
+Gates the `/settings` page (issue #330), the three coming-soon settings pages
+`/settings/integrations`, `/settings/webhooks` and `/settings/billing` (issue #362), and their entry
+points in the app shell: the sidebar and drawer Settings group, whose items declare
+`flag: 'userSettings'`, and the user menu's profile and Settings links, which load the current-user
+chunk only while the flag is on. The `FeatureFlag` union has this one member,
 `FEATURE_FLAG_DEFAULTS.userSettings` is `false`, the committed block ships
 `{ "flags": { "userSettings": false } }`, and the schema's `flags` object is strict, so a block or
 an environment that still names a removed flag fails fast.
@@ -113,10 +117,12 @@ an environment that still names a removed flag fails fast.
   `FEATURE_FLAG_DEFAULTS` must stay `false` (a contract test fails otherwise).
 - **Roll out:** on in the test stack once the page is complete, then in production after the
   user-service authentication surface ships (request G1). The test stack is on:
-  `docker-compose.test.yml` passes `APP_CONFIG_FLAG_USER_SETTINGS=${APP_CONFIG_FLAG_USER_SETTINGS:-true}`
-  to the `prod` service, so the Playwright, a11y and visual suites see the home link and the
-  `/settings` page, while `docker-compose.yml` and the committed block stay `false`. Set the
-  variable to `false` to run the stack without the page.
+  `docker-compose.test.yml` passes
+  `APP_CONFIG_FLAG_USER_SETTINGS=${APP_CONFIG_FLAG_USER_SETTINGS:-true}` to the `prod` service, so
+  the Playwright, a11y and visual suites see the shell's Settings navigation group, the user menu's
+  profile and Settings links, the `/settings` page and the three `/settings/…` coming-soon pages,
+  while `docker-compose.yml` and the committed block stay `false`. Set the variable to `false` to
+  run the stack without the page.
 - **Owner:** the user settings feature (issue #330).
 - **Removal trigger:** delete the flag once production has it on and the page is stable; step 3
   of the lifecycle above applies.
@@ -142,7 +148,10 @@ A route contract declares `flag: 'userSettings'` instead of reading the flag its
 visitor without a token gets the same page and the chunk is never requested. `/settings` is the
 example (`src/modules/user/features/settings/routes/index.ts`); the mechanics are in
 [`src/routes/README.md`](../src/routes/README.md#flagged-routes-issue-330). Gate the entry points
-too: the home page renders its "Налаштування" link only while the flag is on.
+too: a shell navigation item declares the same `flag` (`NavigationLeaf.flag`, used in
+`src/components/ui-app-shell/navigation-items.ts`), which `useAvailableNavigationItems` drops while
+the flag is off, and the user menu renders its profile and Settings links only while
+`useFeatureFlag('userSettings')` is on.
 
 ## Rules
 
