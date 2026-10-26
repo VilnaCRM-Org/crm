@@ -53,6 +53,8 @@ const drawerBorder = `1px solid ${paletteColors.background.subtle}`;
 
 const subBase = { ...control, display: 'block', fontWeight: 400, lineHeight: '18px' };
 
+const groupLabelBase = { minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere' };
+
 const dividerBase = { height: '1px', margin: '0 0 21px', border: 0 };
 
 export default {
@@ -114,6 +116,11 @@ export default {
     desktop: { ...subBase, height: '42px', padding: '9px 0 0 56px', fontSize: '16px' },
     tablet: { ...subBase, height: '46px', padding: '8px 0 0 60px', fontSize: '18px' },
     drawer: { ...subBase, height: '42px', padding: '12px 0 0 56px', fontSize: '16px' },
+  },
+  groupLabel: {
+    desktop: { ...groupLabelBase, maxWidth: '136px' },
+    tablet: { ...groupLabelBase, maxWidth: '131px' },
+    drawer: { ...groupLabelBase, maxWidth: '129px' },
   },
   signOutDrawer: { margin: 0, padding: 0, listStyle: 'none' },
   signOut: {

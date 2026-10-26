@@ -514,6 +514,17 @@ describe('navigation list styles', () => {
     });
   });
 
+  it('pins groupLabel to the room between the label and the chevron box', async () => {
+    const styles = await loadStyles();
+    const wrapping = { minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere' };
+
+    expect(styles.groupLabel).toEqual({
+      desktop: { ...wrapping, maxWidth: '136px' },
+      tablet: { ...wrapping, maxWidth: '131px' },
+      drawer: { ...wrapping, maxWidth: '129px' },
+    });
+  });
+
   it('pins signOutDrawer', async () => {
     const styles = await loadStyles();
 

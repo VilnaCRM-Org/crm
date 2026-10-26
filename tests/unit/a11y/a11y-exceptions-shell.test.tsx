@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import '@testing-library/jest-dom';
-import { screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import ComingSoonPage from '@/components/coming-soon';
@@ -93,6 +93,37 @@ describe('the exception allowlist against the assembled shell (issue #362)', () 
     expect(matching(nav, CURRENT)).toEqual([boards]);
     expect(boards).toHaveAttribute('aria-current', 'page');
     expect(matching(screen.getByRole('banner'), CURRENT)).toHaveLength(0);
+  });
+
+  it('matches the label box of a current group header, and no other label box', () => {
+    render(
+      <div>
+        <nav>
+          <a href="/settings" aria-current="page">
+            <span>Current group</span>
+          </a>
+          <a href="/boards">
+            <span>Other group</span>
+          </a>
+        </nav>
+        <div role="dialog">
+          <a href="/settings" aria-current="page">
+            <span>Drawer group</span>
+          </a>
+        </div>
+        <footer>
+          <a href="/x" aria-current="page">
+            <span>Outside the navigation</span>
+          </a>
+        </footer>
+      </div>
+    );
+    const labelled = ['Current group', 'Other group', 'Drawer group', 'Outside the navigation'];
+
+    expect(labelled.filter((text) => screen.getByText(text).matches(CURRENT))).toEqual([
+      'Current group',
+      'Drawer group',
+    ]);
   });
 
   it('matches the current row inside the open drawer too', async () => {

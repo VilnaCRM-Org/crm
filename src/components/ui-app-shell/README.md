@@ -312,15 +312,23 @@ Playwright container and run in CI only.
 
 ### Known gaps, deliberately not fixed (design-owned)
 
-- **Settings label under its chevron at the WCAG 1.4.12 text-spacing override.** Figma draws the
-  Settings chevron 192 px (desktop) and 190 px (tablet) into a row whose label already ends at 184
-  and 204 px at rest, so the label ends 1 px past the chevron at 1024 even before the override.
-  With letter, word and line spacing raised the label ends at 207 px (1440) and 229 px (1024) against
-  a chevron at 204 and 203. Letting the row wrap would change a measured Figma box (NFR-22), so the
-  text-spacing spec leaves the chevrons and the handle out of the overlap check and checks every
-  other label, row, chip name and menu item.
 - **The disabled bell and list** keep Figma's 40 px pitch and are not measured by the tap-area
   check (OQ-15).
+
+### DV-11: the Settings label keeps clear of its chevron (owner decision, 2026-10-26)
+
+Figma draws the Settings chevron 192 px (desktop) and 190 px (tablet) into a row whose label already
+ends at 184 and 204 px at rest, and with letter, word and line spacing raised (WCAG 1.4.12) the label
+ran 3 px (1440) and 26 px (1024) under it. The group header's label is now a box whose width stops at
+the chevron's box: 136 px on desktop, 131 px on tablet and 129 px in the drawer. At rest the label
+keeps its Figma position, size and single line (68 to 184 px at 1440, 73 to 203.5 px at 1024); under
+the override it wraps inside its own box (two lines, ending at 196 and 192 px against chevrons at 204
+and 203) and the row keeps its Figma height. The tablet box is 1 px wider than the room to the
+chevron because Inter's advance for the label is 130.52 px against 130 px of room; narrowing it to
+the exact room would wrap the word at rest, so the label's advance box stays 0.52 px inside the
+chevron's button box at 1024 (the right side bearing of the last glyph, no ink). Every other row
+keeps the 0 px rule. `app-shell-text-spacing.a11y.spec.ts` no longer excludes the chevrons: it checks
+text against every other control's box, and a chevron, which holds no text, is checked as a box.
 
 ### Measured against Figma (remaining UX 10.2 rows, issue #362)
 

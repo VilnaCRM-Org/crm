@@ -80,8 +80,14 @@ function measure(scope: Locator): Promise<SpacingReport> {
         );
       });
       const textOf = (element: Element): DOMRect => {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         const range = document.createRange();
-        range.selectNodeContents(element);
+        const first = walker.nextNode();
+        if (first === null) return new DOMRect();
+        range.setStartBefore(first);
+        let last: Node = first;
+        for (let next = walker.nextNode(); next !== null; next = walker.nextNode()) last = next;
+        range.setEndAfter(last);
 
         return rectOf(range);
       };
@@ -103,12 +109,7 @@ function measure(scope: Locator): Promise<SpacingReport> {
     },
     {
       tolerance: TOLERANCE,
-      handles: [
-        shellText.collapse,
-        shellText.expand,
-        shellText.groupCollapse,
-        shellText.groupExpand,
-      ],
+      handles: [shellText.collapse, shellText.expand],
     }
   );
 }
