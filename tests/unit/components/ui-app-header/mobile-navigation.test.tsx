@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { screen, waitFor, within } from '@testing-library/react';
+import { isInaccessible, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type JSX, useCallback } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
@@ -122,6 +122,16 @@ describe('MobileNavigation', () => {
     screen.getByRole('button', { name: 'Open menu' }).focus();
     await userEvent.keyboard(' ');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('paints the given avatar in the drawer header copy', async () => {
+    renderShell(
+      <MobileNavigation items={navigationItems} signOut={jest.fn()} avatar={<span>ОП</span>} />
+    );
+
+    const dialog = await open();
+
+    expect(isInaccessible(within(dialog).getByText('ОП'))).toBe(true);
   });
 
   it('holds the navigation list and a disabled search inside the dialog', async () => {

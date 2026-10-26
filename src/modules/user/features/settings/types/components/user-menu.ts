@@ -10,19 +10,29 @@ export type UserMenuChunkSource = 'app-shell:current-user';
 
 export type UserMenuChunkFailureHandler = (source: UserMenuChunkSource, error: unknown) => void;
 
+export type UserAvatarCopyHandler = (avatar: ReactNode) => void;
+
 export interface UserMenuSlotProps {
   readonly signOut: SignOutHandler;
   readonly onChunkFailure: UserMenuChunkFailureHandler;
+  readonly onAvatar: UserAvatarCopyHandler;
 }
 
 export interface CurrentUserMenuProps {
   readonly signOut: SignOutHandler;
+  readonly onAvatar: UserAvatarCopyHandler;
 }
 
 export interface UserMenuProps {
   readonly identity: UserDisplayName | null;
   readonly settingsAvailable: boolean;
   readonly signOut: SignOutHandler;
+  readonly onAvatar?: UserAvatarCopyHandler | undefined;
+}
+
+export interface UserAvatarCopyOptions {
+  readonly identity: UserDisplayName | null;
+  readonly onAvatar?: UserAvatarCopyHandler | undefined;
 }
 
 export type UserAvatarSize = 'chip' | 'avatar';

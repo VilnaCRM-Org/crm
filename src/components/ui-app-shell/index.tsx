@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import type { JSX } from 'react';
+import { type JSX, type ReactNode, useState } from 'react';
 
 import type { UIAppShellProps } from '@/components/types/ui-app-shell';
 import UIAppHeader from '@/components/ui-app-header';
@@ -17,14 +17,17 @@ lazyCatalogLoader.register(i18n, { en, uk });
 
 export default function UIAppShell({ signOut, userMenu: UserMenu }: UIAppShellProps): JSX.Element {
   const layout = useShellLayout();
+  const [avatar, setAvatar] = useState<ReactNode>(null);
 
   return (
     <>
       <Box sx={styles.header}>
         <UIAppHeader
           layout={layout}
-          navigation={{ items: navigationItems, signOut }}
-          userMenu={UserMenu === undefined ? undefined : <UserMenu signOut={signOut} />}
+          navigation={{ items: navigationItems, signOut, avatar }}
+          userMenu={
+            UserMenu === undefined ? undefined : <UserMenu signOut={signOut} onAvatar={setAvatar} />
+          }
         />
       </Box>
       {layout !== 'mobile' && (

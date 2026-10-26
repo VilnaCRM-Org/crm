@@ -21,7 +21,7 @@ route set discoverable (audit, nav, sitemap).
 | ----------------------- | -------------------------------------------------------------- |
 | `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `flag`)    |
 | `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape    |
-| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, sources    |
+| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, `onAvatar` |
 | `app-routes.ts`         | Shell contract: home, five coming-soon routes, 404, 403, 5xx   |
 | `shell-slot-factory.ts` | Wraps `shell.userMenu` in a lazy, retrying slot component      |
 | `registry.ts`           | Collects every module contract into one list                   |
@@ -89,11 +89,25 @@ contract beside `/settings` so the flag gate covers them with no composer change
 
 A module may put one piece of its UI into the app shell without the shell importing the module.
 `RouteModule.shell` is an optional `RouteModuleShell`; today it carries `userMenu`, a loader of a
-component that takes `signOut` and an `onChunkFailure` callback. The settings contract declares it
+component that takes `signOut`, an `onChunkFailure` callback and an `onAvatar` callback
+(`ShellSlotProps`). The settings contract declares it
 (`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and hands
 `AppLayout` `routeMapper.shellSlot(load)`, a lazy component wrapped like a page chunk (one
 re-import, the MUI theme shell loaded in parallel). `RouteValidator` rejects a registry in which
 two modules declare `shell.userMenu`.
+
+- **The avatar copy (`onAvatar`):** the host (`UIAppShell`) renders the slot with
+  `ShellSlotHostProps` — `signOut` plus `onAvatar`, its own state setter — and the factory passes
+  both through. The loaded slot calls `onAvatar` with an aria-hidden, non-focusable copy of the
+  avatar it is showing, and with `null` when it unmounts; the shell hands that node to the mobile
+  drawer, whose opaque header covers the header avatar. It is the slot's output, not a second slot:
+  a second component reading the user would issue a second `currentUser` query (the read is
+  `no-cache` and re-runs on every navigation) and flash the glyph before the monogram on every
+  drawer open, and copying the user into a client store is what the state rules forbid. So the copy
+  costs no request, no chunk and no new contract key. Before the slot loads, after its chunk fails
+  twice, or without a declaring module, `onAvatar` is never called and the drawer keeps its 40 px
+  `#E1E7EA` placeholder with the no-data glyph, the same size, so nothing shifts and nothing is
+  announced.
 
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
   failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell

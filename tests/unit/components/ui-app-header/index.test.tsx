@@ -1,10 +1,12 @@
 import '@testing-library/jest-dom';
-import { screen, within } from '@testing-library/react';
+import { isInaccessible, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { lazy } from 'react';
 
 import UIAppHeader from '@/components/ui-app-header';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import renderShell from '@tests/unit/utils/render-shell';
+import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 const NeverResolves = lazy(() => new Promise<never>(() => undefined));
 
@@ -138,6 +140,10 @@ describe('UIAppHeader', () => {
   describe('navigation', () => {
     const navigation = { items: navigationItems, signOut: jest.fn() };
 
+    afterEach(() => {
+      Reflect.deleteProperty(window, 'matchMedia');
+    });
+
     it('ends the mobile header with the Open menu burger', () => {
       renderShell(<UIAppHeader layout="mobile" navigation={navigation} />);
 
@@ -154,6 +160,18 @@ describe('UIAppHeader', () => {
       renderShell(<UIAppHeader layout={layout} navigation={navigation} />);
 
       expect(screen.queryByRole('button', { name: 'Open menu' })).not.toBeInTheDocument();
+    });
+
+    it('hands the navigation avatar to the drawer header copy on mobile', async () => {
+      stubMotionPreference(true);
+      renderShell(
+        <UIAppHeader layout="mobile" navigation={{ ...navigation, avatar: <span>ОП</span> }} />
+      );
+
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Open menu' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Main navigation' });
+
+      expect(isInaccessible(within(dialog).getByText('ОП'))).toBe(true);
     });
 
     it('renders no burger on mobile when no navigation is given', () => {

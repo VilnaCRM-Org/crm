@@ -289,4 +289,22 @@ describe('UserMenu', () => {
 
     expect(chip()).toHaveTextContent(/^$/u);
   });
+
+  it('publishes an aria-hidden copy of its own avatar through onAvatar', () => {
+    const onAvatar = jest.fn();
+    stubViewportWidth(375);
+    renderShell(
+      <UserMenu identity={identity} settingsAvailable signOut={jest.fn()} onAvatar={onAvatar} />,
+      { locale: 'uk' }
+    );
+
+    expect(onAvatar).toHaveBeenCalledTimes(1);
+    renderShell(<>{onAvatar.mock.calls[0]?.[0]}</>);
+    const copies = screen.getAllByText('ЄМ');
+    expect(copies).toHaveLength(2);
+    expect(copies[1]).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('button', { name: /Меню користувача/u })).not.toContainElement(
+      copies[1] ?? null
+    );
+  });
 });

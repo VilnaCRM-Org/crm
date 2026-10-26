@@ -13,6 +13,7 @@ export type HeaderSearchLayout = 'tablet' | 'desktop' | 'drawer';
 export interface HeaderNavigation {
   readonly items: NavigationItemSet;
   readonly signOut: SignOutHandler;
+  readonly avatar?: ReactNode | undefined;
 }
 
 export interface UIAppHeaderProps {
@@ -56,6 +57,7 @@ export interface MenuToggleButtonProps {
 export interface MobileNavigationProps {
   readonly items: NavigationItemSet;
   readonly signOut: SignOutHandler;
+  readonly avatar?: ReactNode | undefined;
 }
 
 export interface DrawerOpenFlags {

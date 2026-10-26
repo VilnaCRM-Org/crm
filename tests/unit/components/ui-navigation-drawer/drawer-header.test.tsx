@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { screen } from '@testing-library/react';
+import { isInaccessible, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import DrawerHeader from '@/components/ui-navigation-drawer/drawer-header';
@@ -56,5 +56,16 @@ describe('DrawerHeader', () => {
     expect(screen.getByRole('presentation')).toHaveStyle({ height: '56px' });
     expect(screen.getByRole('button')).toHaveStyle({ width: '44px', height: '44px' });
     expect(container).not.toContainHTML('MuiTouchRipple');
+  });
+
+  it('puts the supplied avatar in the aria-hidden copy, outside the one operable control', () => {
+    renderShell(<DrawerHeader onDismiss={jest.fn()} avatar={<span>ОП</span>} />);
+
+    const copy = screen.getByText('ОП');
+
+    expect(isInaccessible(copy)).toBe(true);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Close menu' })).not.toContainElement(copy);
+    expect(screen.queryByRole('button', { name: /ОП/u })).not.toBeInTheDocument();
   });
 });

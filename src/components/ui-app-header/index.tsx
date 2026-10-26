@@ -25,7 +25,11 @@ export default function UIAppHeader({
         <HeaderIconButton layout={layout} kind="tasks" count={badgeCounts?.tasks} />
         <UserSlotFrame layout={layout}>{userMenu}</UserSlotFrame>
         {layout === 'mobile' && navigation && (
-          <MobileNavigation items={navigation.items} signOut={navigation.signOut} />
+          <MobileNavigation
+            items={navigation.items}
+            signOut={navigation.signOut}
+            avatar={navigation.avatar}
+          />
         )}
       </Box>
     </Box>

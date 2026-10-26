@@ -19,6 +19,7 @@ export default function UINavigationDrawer({
   signOut,
   onClose,
   onNavigate,
+  avatar,
 }: UINavigationDrawerProps): JSX.Element {
   const { t } = useTranslation();
   const duration = useDrawerMotion();
@@ -40,7 +41,7 @@ export default function UINavigationDrawer({
         sx={styles.dialog}
       >
         <DrawerScrim duration={duration} />
-        <DrawerHeader onDismiss={onClose} />
+        <DrawerHeader onDismiss={onClose} avatar={avatar} />
         <Slide in appear direction="left" timeout={duration}>
           <Box sx={styles.panel}>
             <DrawerPanel items={items} signOut={signOut} onNavigate={onNavigate} />

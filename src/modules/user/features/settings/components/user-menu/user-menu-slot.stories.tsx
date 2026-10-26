@@ -10,7 +10,7 @@ const meta: Meta<typeof UserMenuSlot> = {
   component: UserMenuSlot,
   tags: ['autodocs'],
   decorators: [withMemoryRouter('/')],
-  args: { signOut: noop, onChunkFailure: noop },
+  args: { signOut: noop, onChunkFailure: noop, onAvatar: noop },
   parameters: {
     docs: {
       description: {
@@ -19,7 +19,9 @@ const meta: Meta<typeof UserMenuSlot> = {
           'renders ' +
           'the name-less menu with Sign out only and requests nothing: no `current-user` chunk ' +
           'and no `currentUser` read. With the flag on it shows the name-less chip at once and ' +
-          'swaps in the one that reads. A failing chunk is reported once and the chip stays.',
+          'swaps in the one that reads. A failing chunk is reported once and the chip stays. ' +
+          'Each state hands the shell, through `onAvatar`, an aria-hidden copy of the avatar ' +
+          'it shows, which the mobile drawer header paints.',
       },
       story: { inline: false },
     },

@@ -14,11 +14,15 @@ import UserMenu from '.';
 
 lazyCatalogLoader.register(i18n, { en, uk });
 
-function PendingMenu({ signOut }: CurrentUserMenuProps): JSX.Element {
-  return <UserMenu identity={null} settingsAvailable signOut={signOut} />;
+function PendingMenu({ signOut, onAvatar }: CurrentUserMenuProps): JSX.Element {
+  return <UserMenu identity={null} settingsAvailable signOut={signOut} onAvatar={onAvatar} />;
 }
 
-export default function UserMenuSlot({ signOut, onChunkFailure }: UserMenuSlotProps): JSX.Element {
+export default function UserMenuSlot({
+  signOut,
+  onChunkFailure,
+  onAvatar,
+}: UserMenuSlotProps): JSX.Element {
   const settingsAvailable = useFeatureFlag('userSettings');
   const report = useRef(onChunkFailure);
   report.current = onChunkFailure;
@@ -33,11 +37,13 @@ export default function UserMenuSlot({ signOut, onChunkFailure }: UserMenuSlotPr
   );
 
   if (!settingsAvailable)
-    return <UserMenu identity={null} settingsAvailable={false} signOut={signOut} />;
+    return (
+      <UserMenu identity={null} settingsAvailable={false} signOut={signOut} onAvatar={onAvatar} />
+    );
 
   return (
-    <Suspense fallback={<PendingMenu signOut={signOut} />}>
-      <CurrentUserMenu signOut={signOut} />
+    <Suspense fallback={<PendingMenu signOut={signOut} onAvatar={onAvatar} />}>
+      <CurrentUserMenu signOut={signOut} onAvatar={onAvatar} />
     </Suspense>
   );
 }

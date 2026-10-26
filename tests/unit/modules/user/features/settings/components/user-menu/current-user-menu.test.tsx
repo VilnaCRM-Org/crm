@@ -42,7 +42,7 @@ describe('CurrentMenu', () => {
         confirmed: true,
       },
     });
-    renderShell(<CurrentMenu signOut={jest.fn()} />);
+    renderShell(<CurrentMenu signOut={jest.fn()} onAvatar={jest.fn()} />);
 
     expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'User menu' }));
@@ -55,7 +55,7 @@ describe('CurrentMenu', () => {
 
   it('stays name-less and operable when the read fails, with no error text', async () => {
     mockRead.mockResolvedValue({ kind: 'failed', reason: 'transient' });
-    renderShell(<CurrentMenu signOut={jest.fn()} />);
+    renderShell(<CurrentMenu signOut={jest.fn()} onAvatar={jest.fn()} />);
 
     await waitFor(() => expect(mockRead).toHaveBeenCalled());
 
@@ -67,11 +67,32 @@ describe('CurrentMenu', () => {
     const user = userEvent.setup();
     const signOut = jest.fn();
     mockRead.mockReturnValue(new Promise(() => undefined));
-    renderShell(<CurrentMenu signOut={signOut} />);
+    renderShell(<CurrentMenu signOut={signOut} onAvatar={jest.fn()} />);
 
     await user.click(screen.getByRole('button', { name: 'User menu' }));
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
 
     expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('publishes the same monogram avatar the chip shows once the user is read', async () => {
+    stubViewportWidth(375);
+    const onAvatar = jest.fn();
+    mockRead.mockResolvedValue({
+      kind: 'ok',
+      user: {
+        id: 'u',
+        fullName: 'Петренко Олена Іванівна',
+        email: 'o@example.com',
+        confirmed: true,
+      },
+    });
+    renderShell(<CurrentMenu signOut={jest.fn()} onAvatar={onAvatar} />);
+
+    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+    const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
+
+    expect(container).toHaveTextContent('ОП');
+    expect(mockRead).toHaveBeenCalledTimes(1);
   });
 });

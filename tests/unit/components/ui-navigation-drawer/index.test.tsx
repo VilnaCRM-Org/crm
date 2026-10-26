@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { screen, waitFor, within } from '@testing-library/react';
+import { isInaccessible, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
@@ -18,6 +18,7 @@ const renderDrawer = (props: Partial<DrawerProps> = {}): ReturnType<typeof rende
       signOut={props.signOut ?? jest.fn()}
       onClose={props.onClose ?? jest.fn()}
       onNavigate={props.onNavigate ?? jest.fn()}
+      avatar={props.avatar}
     />
   );
 
@@ -28,6 +29,14 @@ describe('UINavigationDrawer', () => {
 
   afterEach(() => {
     Reflect.deleteProperty(window, 'matchMedia');
+  });
+
+  it('paints the supplied avatar in the aria-hidden header copy', async () => {
+    renderDrawer({ avatar: <span>ОП</span> });
+
+    await screen.findByRole('dialog', { name: 'Main navigation' });
+
+    expect(isInaccessible(screen.getByText('ОП'))).toBe(true);
   });
 
   it('renders nothing while closed', () => {

@@ -35,7 +35,9 @@ jest.mock('@/components/layouts/app-shell-loader', () => ({
                 <button type="button" onClick={signOut}>
                   shell sign out
                 </button>
-                {UserMenu === undefined ? null : <UserMenu signOut={signOut} />}
+                {UserMenu === undefined ? null : (
+                  <UserMenu signOut={signOut} onAvatar={jest.fn()} />
+                )}
               </header>
               <nav aria-label="Main navigation">shell navigation</nav>
             </>

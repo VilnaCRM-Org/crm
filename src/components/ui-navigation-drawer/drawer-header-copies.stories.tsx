@@ -20,7 +20,8 @@ const meta: Meta<typeof DrawerHeaderCopies> = {
         component:
           'The bell, list and avatar copies in the drawer header. They are aria-hidden and not ' +
           'operable; the glyphs keep the disabled `#D0D4D8` of the header they cover, and the ' +
-          'avatar is the 40 px `#E1E7EA` circle with the no-data person glyph.',
+          'avatar is the 40 px `#E1E7EA` circle. It shows the no-data person glyph until the ' +
+          "user module's menu slot supplies a copy of the header avatar, which takes its place.",
       },
       story: { inline: false },
     },
@@ -32,3 +33,5 @@ export default meta;
 type Story = StoryObj<typeof DrawerHeaderCopies>;
 
 export const Default: Story = {};
+
+export const SuppliedAvatar: Story = { args: { avatar: 'ОП' } };

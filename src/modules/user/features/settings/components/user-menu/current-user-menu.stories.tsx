@@ -10,7 +10,7 @@ const meta: Meta<typeof CurrentUserMenu> = {
   title: 'Settings/UserMenu/CurrentUserMenu',
   component: CurrentUserMenu,
   tags: ['autodocs'],
-  args: { signOut: noop },
+  args: { signOut: noop, onAvatar: noop },
   decorators: [withMemoryRouter('/'), withProfileProvider(loadedProfile())],
   parameters: {
     docs: {

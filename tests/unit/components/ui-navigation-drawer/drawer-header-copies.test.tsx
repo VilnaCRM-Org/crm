@@ -43,4 +43,20 @@ describe('DrawerHeaderCopies', () => {
     expect(avatarCopy()).not.toHaveAttribute('tabindex');
     expect(avatarCopy()).not.toContainHTML('tabindex');
   });
+
+  it('paints a supplied avatar inside the circle in place of the no-data glyph', () => {
+    render(<DrawerHeaderCopies avatar="ОП" />);
+    const circle = avatarCopy();
+
+    expect(circle).toHaveAttribute('aria-hidden', 'true');
+    expect(circle).toHaveTextContent(/^ОП$/u);
+    expect(circle).not.toContainHTML('PersonOutlinedIcon');
+    expect(circle).toHaveStyle({ width: '40px', height: '40px', borderRadius: '50%' });
+  });
+
+  it('keeps the no-data glyph while the supplied avatar is null', () => {
+    render(<DrawerHeaderCopies avatar={null} />);
+
+    expect(avatarCopy()).toContainHTML('data-testid="PersonOutlinedIcon"');
+  });
 });

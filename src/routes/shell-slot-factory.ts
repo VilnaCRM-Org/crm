@@ -4,9 +4,9 @@ import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 
-import type { ProtectedOutletContext } from './types/protected-outlet-context';
 import type {
   ShellChunkFailureHandler,
+  ShellSlotHostProps,
   ShellSlotLoad,
   ShellSlotModule,
   ShellSlotProps,
@@ -35,8 +35,8 @@ export default class ShellSlotFactory {
       })
     );
 
-    return function BoundUserMenuSlot({ signOut }: ProtectedOutletContext) {
-      return createElement(Slot, { signOut, onChunkFailure: report });
+    return function BoundUserMenuSlot({ signOut, onAvatar }: ShellSlotHostProps) {
+      return createElement(Slot, { signOut, onAvatar, onChunkFailure: report });
     };
   }
 }

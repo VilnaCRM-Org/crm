@@ -8,7 +8,7 @@ import comingSoonUk from '@/components/coming-soon/i18n/uk.json';
 import AppLayout from '@/components/layouts/app-layout';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/user-menu-slot';
-import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
+import type { ShellSlotHostProps } from '@/routes/types/shell-slot';
 
 import createAppShellLocaleI18n from './create-app-shell-locale-i18n';
 import stubViewportWidth from './stub-viewport-width';
@@ -22,8 +22,8 @@ interface AppShellRenderOptions {
 
 const ignoreChunkFailure = (): undefined => undefined;
 
-function BoundUserMenu({ signOut }: ProtectedOutletContext): JSX.Element {
-  return <UserMenuSlot signOut={signOut} onChunkFailure={ignoreChunkFailure} />;
+function BoundUserMenu({ signOut, onAvatar }: ShellSlotHostProps): JSX.Element {
+  return <UserMenuSlot signOut={signOut} onChunkFailure={ignoreChunkFailure} onAvatar={onAvatar} />;
 }
 
 const renderAppShell = async ({

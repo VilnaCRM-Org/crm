@@ -45,7 +45,9 @@ describe('UserMenuSlot', () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
     const load = jest.spyOn(loader, 'load');
     const user = userEvent.setup();
-    renderShell(<UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} />);
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
+    );
 
     await user.click(screen.getByRole('button', { name: 'User menu' }));
 
@@ -57,7 +59,9 @@ describe('UserMenuSlot', () => {
   it('shows the operable name-less chip while the flag is on, then reads once', async () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     const user = userEvent.setup();
-    renderShell(<UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} />);
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
+    );
 
     expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
     await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(1));
@@ -73,7 +77,9 @@ describe('UserMenuSlot', () => {
     const onChunkFailure = jest.fn();
     const user = userEvent.setup();
     const signOut = jest.fn();
-    renderShell(<UserMenuSlot signOut={signOut} onChunkFailure={onChunkFailure} />);
+    renderShell(
+      <UserMenuSlot signOut={signOut} onChunkFailure={onChunkFailure} onAvatar={jest.fn()} />
+    );
 
     await waitFor(() => expect(onChunkFailure).toHaveBeenCalledTimes(1));
     await act(async () => new Promise((done) => setTimeout(done, 400)));
@@ -84,5 +90,45 @@ describe('UserMenuSlot', () => {
     expect(onChunkFailure).toHaveBeenCalledTimes(1);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(mockRead).not.toHaveBeenCalled();
+  });
+
+  it('publishes the no-data avatar copy while the flag is off, reading nothing', () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
+    const onAvatar = jest.fn();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
+    );
+
+    expect(onAvatar).toHaveBeenCalledTimes(1);
+    const { container } = renderShell(<>{onAvatar.mock.calls[0]?.[0]}</>);
+    expect(container).toContainHTML('PersonOutlinedIcon');
+    expect(mockRead).not.toHaveBeenCalled();
+  });
+
+  it('publishes the no-data avatar copy while the current user is pending', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const onAvatar = jest.fn();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
+    );
+
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(1));
+    const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
+    expect(container).toContainHTML('PersonOutlinedIcon');
+  });
+
+  it('keeps publishing the no-data avatar copy after the current-user chunk fails', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    jest.spyOn(loader, 'load').mockRejectedValue(new Error('chunk failed'));
+    const onAvatar = jest.fn();
+    const onChunkFailure = jest.fn();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={onChunkFailure} onAvatar={onAvatar} />
+    );
+
+    await waitFor(() => expect(onChunkFailure).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onAvatar).toHaveBeenLastCalledWith(expect.anything()));
+    const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
+    expect(container).toContainHTML('PersonOutlinedIcon');
   });
 });
