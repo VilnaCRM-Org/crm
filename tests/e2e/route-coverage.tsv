@@ -22,10 +22,10 @@ notFound	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the catch-all route with a
 signIn	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-retry.spec.ts	Drives the sign-in form through dropped, 5xx and permanent login responses to pin the retry policy (issue #147).
 signIn	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /sign-in and asserts the in-form offline notice and disabled submit.
 signUp	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /sign-up and asserts the in-form offline notice and disabled submit.
-home	e2e	tests/e2e/modules/home.spec.ts	Renders the authenticated home page (heading, description, sign out, shell footer) and signs out to /sign-in.
+home	e2e	tests/e2e/modules/home.spec.ts	Renders the authenticated home page (heading, description, the shell banner and sidebar, footer) and signs out through the sidebar to /sign-in.
 signIn	e2e	tests/e2e/modules/home.spec.ts	Lands on /sign-in after signing out from home and asserts its heading and the focused main landmark.
-home	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Drives the home page with the keyboard only: tab order through sign out and the footer links, visible focus, Enter and Space sign-out.
-signIn	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Lands on /sign-in after a keyboard sign-out from home and asserts the focused main landmark.
+home	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Drives the home page with the keyboard only: the sidebar sign out into the footer links, visible focus, Enter and Space sign-out.
+signIn	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Lands on /sign-in after a keyboard sign-out through the sidebar and asserts the focused main landmark.
 forbidden	e2e	tests/e2e/modules/error-pages.spec.ts	Renders /forbidden with and without a seeded token, follows its home link and proves the request-access button is inert.
 forbidden	visual	tests/visual/visual-comparison.error-pages.spec.ts	1440 x 940 and 1024 x 1366 screenshots of /forbidden.
 forbidden	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /forbidden with axe against the WCAG 2.1 AA tag set.
@@ -77,3 +77,10 @@ analytics	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /analytics with a seeded 
 settingsIntegrations	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/integrations with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
 settingsWebhooks	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/webhooks with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
 settingsBilling	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/billing with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
+home	e2e	tests/e2e/modules/app-shell.spec.ts	Proves the shell on home at 1440: Settings, Sign out and every row from the sidebar and the chip menu, the disabled controls, no badge, the CurrentUser request counts and no shell chunk on the public pages.
+settings	e2e	tests/e2e/modules/app-shell.spec.ts	Opens /settings from the sidebar and the chip menu at 1440 and 1024 with main focused, signs out from it, and reads CurrentUser twice on a cold load.
+home	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Walks the shell with the keyboard at 1440, 1024 and 375: tab order, the handle, the chip menu arrow keys, Escape and Tab, and the drawer focus and exposure.
+settings	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Tabs through the sidebar on /settings with the three sub-items after the Settings chevron.
+home	e2e	tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts	Applies the WCAG 1.4.12 text-spacing overrides to the closed shell, the open chip menu and the open drawer at 1440, 1024 and 375.
+home	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Opens and closes the drawer by tap on both mobile projects, uses Settings and Sign out from it and from the avatar menu, and measures the touch targets and overflow.
+settings	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Reaches /settings by tap from the drawer and from the avatar menu with main focused.

@@ -110,6 +110,13 @@ export async function signInWithFlag(page: Page, userSettings: boolean): Promise
   await overrideRuntimeConfig(page, { flags: { userSettings } });
 }
 
+const CURRENT_USER_CHUNK = /current-user[^/]*\.js(?:\?.*)?$/;
+
+export async function signInToSettings(page: Page): Promise<void> {
+  await signInWithFlag(page, true);
+  await page.route(CURRENT_USER_CHUNK, (route) => route.abort());
+}
+
 export function watchContactedOrigins(page: Page): () => string[] {
   const urls: string[] = [];
   page.on('request', (request: Request) => {

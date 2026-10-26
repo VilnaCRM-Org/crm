@@ -6,9 +6,10 @@ import {
   signInWithFlag,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import { chipOf, openChipMenu, sidebarOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const UNKNOWN_PATH = '/definitely-not-a-route';
 const POSITIVE_TABINDEX = '[tabindex]:not([tabindex="0"]):not([tabindex="-1"])';
@@ -18,49 +19,79 @@ interface RouteScan {
   path: string;
   query?: () => string;
   ready: string;
-  seedAuth?: boolean;
+  shell?: boolean;
   prepare?: (page: Page) => Promise<void>;
 }
 
-async function prepareSettings(page: Page): Promise<void> {
+async function prepareShell(page: Page): Promise<void> {
   await signInWithFlag(page, true);
   await stubProfile(page);
 }
 
-async function prepareFlagOn(page: Page): Promise<void> {
-  await signInWithFlag(page, true);
-}
-
 const routeScans: readonly RouteScan[] = [
-  { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', seedAuth: true },
+  { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', shell: true, prepare: prepareShell },
   {
     key: 'settings',
     path: ROUTE_PATHS.settings,
     ready: 'main form button[type="submit"]',
-    prepare: prepareSettings,
+    shell: true,
+    prepare: prepareShell,
   },
-  { key: 'boards', path: ROUTE_PATHS.boards, ready: 'main h1', seedAuth: true },
-  { key: 'products', path: ROUTE_PATHS.products, ready: 'main h1', seedAuth: true },
-  { key: 'orders', path: ROUTE_PATHS.orders, ready: 'main h1', seedAuth: true },
-  { key: 'contacts', path: ROUTE_PATHS.contacts, ready: 'main h1', seedAuth: true },
-  { key: 'analytics', path: ROUTE_PATHS.analytics, ready: 'main h1', seedAuth: true },
+  {
+    key: 'boards',
+    path: ROUTE_PATHS.boards,
+    ready: 'main h1',
+    shell: true,
+    prepare: prepareShell,
+  },
+  {
+    key: 'products',
+    path: ROUTE_PATHS.products,
+    ready: 'main h1',
+    shell: true,
+    prepare: prepareShell,
+  },
+  {
+    key: 'orders',
+    path: ROUTE_PATHS.orders,
+    ready: 'main h1',
+    shell: true,
+    prepare: prepareShell,
+  },
+  {
+    key: 'contacts',
+    path: ROUTE_PATHS.contacts,
+    ready: 'main h1',
+    shell: true,
+    prepare: prepareShell,
+  },
+  {
+    key: 'analytics',
+    path: ROUTE_PATHS.analytics,
+    ready: 'main h1',
+    shell: true,
+    prepare: prepareShell,
+  },
   {
     key: 'settingsIntegrations',
     path: ROUTE_PATHS.settingsIntegrations,
     ready: 'main h1',
-    prepare: prepareFlagOn,
+    shell: true,
+    prepare: prepareShell,
   },
   {
     key: 'settingsWebhooks',
     path: ROUTE_PATHS.settingsWebhooks,
     ready: 'main h1',
-    prepare: prepareFlagOn,
+    shell: true,
+    prepare: prepareShell,
   },
   {
     key: 'settingsBilling',
     path: ROUTE_PATHS.settingsBilling,
     ready: 'main h1',
-    prepare: prepareFlagOn,
+    shell: true,
+    prepare: prepareShell,
   },
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
@@ -81,13 +112,19 @@ const routeScans: readonly RouteScan[] = [
 ];
 
 async function openRoute(page: Page, scan: RouteScan): Promise<void> {
-  if (scan.seedAuth) {
-    await seedPreloadedAuthToken(page);
-  }
   await scan.prepare?.(page);
   await page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(scan.ready).first()).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
+  if (scan.shell) {
+    await expectShellRendered(page);
+  }
+}
+
+async function expectShellRendered(page: Page): Promise<void> {
+  await expect(page.getByRole('banner')).toBeVisible();
+  await expect(sidebarOf(page)).toBeVisible();
+  await expect(chipOf(page)).toBeVisible();
 }
 
 test.describe('WCAG 2.1 AA route scans (issue #118)', () => {
@@ -106,4 +143,29 @@ test.describe('WCAG 2.1 AA route scans (issue #118)', () => {
       await expect(page.locator(POSITIVE_TABINDEX)).toHaveCount(0);
     });
   }
+
+  test('home with userSettings off has no axe violations outside the allowlist', async ({
+    page,
+  }) => {
+    await signInWithFlag(page, false);
+    await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
+    await expectShellRendered(page);
+
+    await expectNoAxeViolations(page);
+  });
+
+  test('home with the user menu open has no axe violations outside the allowlist', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await prepareShell(page);
+    await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
+    await expectShellRendered(page);
+    await openChipMenu(page);
+
+    await expect(
+      page.getByRole('menuitem', { name: t('user_menu.sign_out'), exact: true })
+    ).toBeVisible();
+    await expectNoAxeViolations(page);
+  });
 });
