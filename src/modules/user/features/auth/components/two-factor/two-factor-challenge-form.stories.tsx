@@ -68,3 +68,11 @@ export const Transient: Story = {
 export const Checking: Story = {
   args: { state: { ...RESTING, value: '123456', isSubmitting: true } },
 };
+
+export const Recovery: Story = {
+  args: { state: { ...RESTING, mode: 'recovery' } },
+};
+
+export const RecoveryWrongCode: Story = {
+  args: { state: { ...RESTING, mode: 'recovery', fieldError: 'invalid_code', focusRequest: 1 } },
+};

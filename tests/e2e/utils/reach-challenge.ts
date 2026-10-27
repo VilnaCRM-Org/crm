@@ -22,6 +22,12 @@ export const challengeText = {
   lockedNotice: t('sign_in.notices.account_locked'),
   back: t('password_recovery.back'),
   retry: t('auth.error.tryAgain'),
+  recoveryLabel: t('two_factor.recovery.label'),
+  recoverySubtitle: t('two_factor.recovery.subtitle'),
+  useRecovery: t('two_factor.recovery.use_recovery'),
+  useAuthenticator: t('two_factor.recovery.use_authenticator'),
+  recoveryFormat: t('two_factor.errors.recovery_format'),
+  recoveryInvalid: t('two_factor.errors.recovery_invalid'),
 } as const;
 
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
@@ -39,6 +45,15 @@ export const confirmButtonOf = (page: Page): Locator =>
 
 export const challengeBackOf = (page: Page): Locator =>
   page.getByRole('button', { name: challengeText.back, exact: true });
+
+export const recoveryFieldOf = (page: Page): Locator =>
+  page.getByRole('textbox', { name: challengeText.recoveryLabel, exact: true });
+
+export const recoveryToggleOf = (page: Page): Locator =>
+  page.getByRole('button', { name: challengeText.useRecovery, exact: true });
+
+export const authenticatorToggleOf = (page: Page): Locator =>
+  page.getByRole('button', { name: challengeText.useAuthenticator, exact: true });
 
 export const challengeRetryOf = (page: Page): Locator =>
   page.getByRole('button', { name: challengeText.retry, exact: true });

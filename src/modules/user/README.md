@@ -696,6 +696,12 @@ submit. What it deliberately does not copy, for Follow-up 5.4 to reconcile with 
   border the error red and the focus ring the shared two-colour ring, where the frames draw a thin
   grey border only.
 
+- **Recovery mode (D12).** None of the three frames draws it; the research lists the recovery-code
+  entry as a missing frame. The mode is built from the story's own acceptance criteria: one
+  labelled field with the `XXXX-XXXX` helper, no placeholder, the strong grey border and the
+  shared invalid state, and a `UILinkButton` toggle in the form footer, which replaces the frames'
+  "Надіслати код ще раз" row. Design owns the final look.
+
 The live measurement at 1440, 1024 and 375 px on port 3005 could not run in this worktree, whose
 shared `node_modules` lacks `zustand` and the ui-toolkit, so the dev server cannot build. The
 recorded frame sizes (card 502 × 404, cells 64 × 86 at 8 px, mobile cells 49 × 64 at 4 px) are what

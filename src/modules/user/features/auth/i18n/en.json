@@ -121,7 +121,16 @@
     "cell_label": "Digit {{position}} of {{total}}",
     "submit_button": "Confirm",
     "submitting": "Verifying…",
+    "recovery": {
+      "label": "Recovery code",
+      "helper": "Format: XXXX-XXXX",
+      "subtitle": "Enter one of the recovery codes you saved during setup.",
+      "use_recovery": "Use a recovery code",
+      "use_authenticator": "Use a code from the app"
+    },
     "errors": {
+      "recovery_format": "Enter the recovery code in the format XXXX-XXXX",
+      "recovery_invalid": "Invalid recovery code. Try again.",
       "incomplete": "Enter all 6 digits of the code",
       "format": "The code must be exactly six digits",
       "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
