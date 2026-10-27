@@ -27,6 +27,9 @@ const AUTH_TOKENS = Object.freeze({
   GraphQLSignInRepository: Symbol('GraphQLSignInRepository'),
   GraphQLSignInTransformer: Symbol('GraphQLSignInTransformer'),
   GraphQLSignInProvider: Symbol('GraphQLSignInProvider'),
+  GraphQLTwoFactorSettingsRepository: Symbol('GraphQLTwoFactorSettingsRepository'),
+  GraphQLTwoFactorSettingsTransformer: Symbol('GraphQLTwoFactorSettingsTransformer'),
+  TwoFactorSettingsProvider: Symbol('TwoFactorSettingsProvider'),
 } as const);
 
 export default AUTH_TOKENS;

@@ -1,10 +1,15 @@
 import 'reflect-metadata';
 
-import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
-import Direct from '@/modules/user/features/settings/transformers/graphql-profile-transformer';
+import GraphQLProfileTransformer, {
+  GraphQLTwoFactorSettingsTransformer,
+} from '@/modules/user/features/settings/transformers';
 
 describe('settings transformers barrel', () => {
   it('re-exports the profile transformer as its default', () => {
-    expect(GraphQLProfileTransformer).toBe(Direct);
+    expect(GraphQLProfileTransformer.name).toBe('GraphQLProfileTransformer');
+  });
+
+  it('re-exports the two-factor settings transformer by name', () => {
+    expect(GraphQLTwoFactorSettingsTransformer.name).toBe('GraphQLTwoFactorSettingsTransformer');
   });
 });
