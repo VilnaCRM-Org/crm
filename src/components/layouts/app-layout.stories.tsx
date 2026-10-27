@@ -27,12 +27,27 @@ function StubUserMenu({ signOut }: SignOutContext): JSX.Element {
   );
 }
 
-function AppLayoutStory({ withUserMenu }: { withUserMenu?: boolean }): JSX.Element {
+function AppLayoutStory({
+  withUserMenu,
+  withBanner,
+}: {
+  withUserMenu?: boolean;
+  withBanner?: boolean;
+}): JSX.Element {
   return (
     <DataRouterStory
       routes={[
         {
-          element: <Outlet context={storySignOut} />,
+          element: (
+            <Outlet
+              context={{
+                ...storySignOut,
+                banner: withBanner ? (
+                  <UITypography role="status">Банер, який передає ProtectedRoute</UITypography>
+                ) : undefined,
+              }}
+            />
+          ),
           children: [
             {
               element: <AppLayout userMenu={withUserMenu ? StubUserMenu : undefined} />,
@@ -72,3 +87,5 @@ type Story = StoryObj<typeof AppLayoutStory>;
 export const WithPage: Story = {};
 
 export const WithUserMenuSlot: Story = { args: { withUserMenu: true } };
+
+export const WithBanner: Story = { args: { withBanner: true } };

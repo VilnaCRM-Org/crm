@@ -88,6 +88,7 @@ home	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Walks the shell with the
 settings	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Tabs through the sidebar on /settings with the three sub-items after the Settings chevron.
 home	e2e	tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts	Applies the WCAG 1.4.12 text-spacing overrides to the closed shell, the open chip menu and the open drawer at 1440, 1024 and 375.
 home	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Opens and closes the drawer by tap on both mobile projects, uses Settings and Sign out from it and from the avatar menu, and measures the touch targets and overflow.
+home	e2e	tests/e2e/modules/user/features/auth/two-factor-low-codes.spec.ts	Lands on / after a recovery-code sign-in that reports 0, 1 or 2 remaining codes: the status notice at the top of main with its link to /settings and close button, no focus taken, the shared focus ring, dismissal, and no notice or chunk request without a reported count.
 settings	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Reaches /settings by tap from the drawer and from the avatar menu with main focused.
 boards	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /boards coming-soon page inside the shell, with a seeded session and the userSettings flag on.
 boards	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /boards coming-soon page inside the shell.

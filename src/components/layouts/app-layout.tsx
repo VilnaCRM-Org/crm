@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { type ComponentType, type JSX, lazy, Suspense, useRef, useState } from 'react';
+import { type ComponentType, type JSX, lazy, Suspense, useState } from 'react';
 import { Outlet, useOutletContext } from 'react-router';
 
 import type { AppLayoutProps } from '@/components/types/layouts/app-layout';
@@ -10,6 +10,7 @@ import styles from './app-layout.styles';
 import appShellLoader from './app-shell-loader';
 import footerLoader from './footer-loader';
 import useFrameFocus from './use-frame-focus';
+import useLatestRef from './use-latest-ref';
 
 function FooterUnavailable(): null {
   return null;
@@ -43,8 +44,7 @@ function ShellPlaceholders(): JSX.Element {
 export default function AppLayout({ userMenu, onShellFailure }: AppLayoutProps): JSX.Element {
   const focusOnArrival = useFrameFocus();
   const outletContext = useOutletContext<ProtectedOutletContext>();
-  const report = useRef(onShellFailure);
-  report.current = onShellFailure;
+  const report = useLatestRef(onShellFailure);
   const [AppShell] = useState<ComponentType<UIAppShellProps>>(() =>
     lazy(() =>
       appShellLoader.load().catch((error: unknown) => {
@@ -61,6 +61,7 @@ export default function AppLayout({ userMenu, onShellFailure }: AppLayoutProps):
         <AppShell signOut={outletContext.signOut} userMenu={userMenu} />
       </Suspense>
       <Main ref={focusOnArrival} tabIndex={-1}>
+        {outletContext.banner}
         <Outlet context={outletContext} />
       </Main>
       <FooterArea>
