@@ -1,4 +1,3 @@
-import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
@@ -36,25 +35,12 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
     ...over,
   }) as AuthRepository;
 
-const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions({
-    repository: makeRepo(over),
-    authRequestErrors,
-    authState: useAuthStore,
-    securitySignals,
-    sandboxDemoSession: sandboxDemoSessionProvider,
-  }).login({
-    email: 'a@b.c',
-    password: 'p',
-  });
-
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({
     repository: makeRepo(over),
     authRequestErrors,
     authState: useAuthStore,
     securitySignals,
-    sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
     fullName: 'A',
     email: 'a@b.c',
@@ -67,22 +53,28 @@ describe('AuthStoreActions integration coverage', () => {
     useAuthStore.setState(CLEARED_AUTH_STATE, true);
   });
 
-  it('preserves a structured auth error thrown by login', async () => {
+  it('preserves a structured auth error thrown by register', async () => {
     const error: AuthError = { kind: 'server', displayMessage: 'Down', retryable: true };
-    await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: error });
+    await registerWith({ register: jest.fn().mockRejectedValue(error) });
+    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: error });
   });
 
-  it('normalizes a non-Error thrown login rejection', async () => {
-    await loginWith({ login: jest.fn().mockRejectedValue('boom') });
-    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+  it('normalizes a non-Error thrown register rejection', async () => {
+    await registerWith({ register: jest.fn().mockRejectedValue('boom') });
+    expect(useAuthStore.getState().registerError).toMatchObject({
+      kind: 'unknown',
+      retryable: false,
+    });
   });
 
   it('normalizes a thrown Error with an undefined message', async () => {
     const error = new Error();
     error.message = undefined as unknown as string;
-    await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
+    await registerWith({ register: jest.fn().mockRejectedValue(error) });
+    expect(useAuthStore.getState().registerError).toMatchObject({
+      kind: 'unknown',
+      retryable: false,
+    });
   });
 
   it.each([
@@ -91,9 +83,9 @@ describe('AuthStoreActions integration coverage', () => {
     ['an ABORT_ERR code', Object.assign(new Error('stopped'), { code: 'ABORT_ERR' })],
     ['an abort message', new Error('Request was aborted')],
     ['a cancel message', new Error('User cancelled the request')],
-  ])('treats a thrown login rejection with %s as aborted', async (_label, error) => {
-    await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
+  ])('treats a thrown register rejection with %s as aborted', async (_label, error) => {
+    await registerWith({ register: jest.fn().mockRejectedValue(error) });
+    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
   it('normalizes a generic thrown register error', async () => {
@@ -109,63 +101,13 @@ describe('AuthStoreActions integration coverage', () => {
     expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
-  it('signs the demo credentials in without reaching the repository', async () => {
-    const login = jest.fn();
-
-    await new AuthStoreActions({
-      repository: makeRepo({ login }),
-      authRequestErrors,
-      authState: useAuthStore,
-      securitySignals,
-      sandboxDemoSession: sandboxDemoSessionProvider,
-    }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' });
-
-    expect(login).not.toHaveBeenCalled();
-    expect(useAuthStore.getState()).toMatchObject({
-      loginLoading: false,
-      email: 'demo@vilnacrm.com',
-      token: 'sandbox-demo-session-token',
-    });
-    expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBe('demo@vilnacrm.com');
-    sandboxDemoSessionProvider.signOut();
-  });
-
-  it('settles a canceled demo-credential login as aborted instead of signing in', async () => {
-    const aborted = { kind: 'network', displayMessage: '', retryable: false, aborted: true };
-    const login = jest.fn().mockResolvedValue({ ok: false, error: aborted });
-    const controller = new AbortController();
-    controller.abort();
-
-    await new AuthStoreActions({
-      repository: makeRepo({ login }),
-      authRequestErrors,
-      authState: useAuthStore,
-      securitySignals,
-      sandboxDemoSession: sandboxDemoSessionProvider,
-    }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' }, controller.signal);
-
-    expect(login).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState()).toMatchObject({
-      loginLoading: false,
-      token: null,
-      loginError: null,
-    });
-  });
-
-  it('tags an opaque observability identity after a successful login', async () => {
-    await loginWith({});
-
-    expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
-  });
-
   it('applies a repository-reported error result to the auth state', async () => {
     const error: AuthError = {
-      kind: 'authentication',
-      displayMessage: 'Invalid',
+      kind: 'conflict',
+      displayMessage: 'Exists',
       retryable: false,
     };
-    await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error }) });
-    expect(useAuthStore.getState().loginError).toEqual(error);
+    await registerWith({ register: jest.fn().mockResolvedValue({ ok: false, error }) });
+    expect(useAuthStore.getState().registerError).toEqual(error);
   });
 });

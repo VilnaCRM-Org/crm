@@ -6,7 +6,7 @@ import type { ObservabilityService } from '@/services/types/observability/observ
 import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 import type { AuthError } from '@auth/types/auth-error';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
-import { buildEmail, buildPassword } from '@tests/builders';
+import { buildEmail, buildPassword, buildPendingSessionId } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const buildRecorder = (): SecurityEventRecorder => ({
@@ -41,12 +41,72 @@ describe('AuthSecuritySignals', () => {
 
     new AuthSecuritySignals(recorder, observability).loginSettled({
       ok: true,
-      value: { email: buildEmail(), token: 'session-token' },
+      value: { kind: 'session', email: buildEmail(), token: 'session-token' },
     });
 
     expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
     expect((observability.setUser as jest.Mock).mock.calls[0][0].id).toHaveLength(36);
     expect(recorder.authFailure).not.toHaveBeenCalled();
+  });
+
+  it('tags no identity for a pending challenge, which is not a sign-in', () => {
+    const observability = buildObservability();
+    const recorder = buildRecorder();
+
+    new AuthSecuritySignals(recorder, observability).loginSettled({
+      ok: true,
+      value: { kind: 'challenge', email: buildEmail(), pendingSessionId: buildPendingSessionId() },
+    });
+
+    expect(observability.setUser).not.toHaveBeenCalled();
+    expect(recorder.authFailure).not.toHaveBeenCalled();
+  });
+
+  it('records locked for a failure with status 423', () => {
+    const recorder = buildRecorder();
+
+    new AuthSecuritySignals(recorder, buildObservability()).loginSettled({
+      ok: false,
+      error: { ...authError('authentication'), status: 423, reason: 'locked' },
+    });
+
+    expect(recorder.authFailure).toHaveBeenCalledWith('login', 'locked');
+  });
+
+  it('records rate_limited for a failure with status 429', () => {
+    const recorder = buildRecorder();
+
+    new AuthSecuritySignals(recorder, buildObservability()).loginSettled({
+      ok: false,
+      error: { ...authError('server'), status: 429, reason: 'rate_limited' },
+    });
+
+    expect(recorder.authFailure).toHaveBeenCalledWith('login', 'rate_limited');
+  });
+
+  it('records the same reason for both causes of invalid_credentials', () => {
+    const recorder = buildRecorder();
+    const signals = new AuthSecuritySignals(recorder, buildObservability());
+    const invalid = { ...authError('authentication'), reason: 'invalid_credentials' as const };
+
+    signals.loginSettled({ ok: false, error: invalid });
+    signals.loginSettled({ ok: false, error: { ...invalid } });
+
+    const reasons = (recorder.authFailure as jest.Mock).mock.calls.map(([, reason]) => reason);
+    expect(reasons).toEqual(['authentication', 'authentication']);
+  });
+
+  it('records transient server and network failures as server and network', () => {
+    const recorder = buildRecorder();
+    const signals = new AuthSecuritySignals(recorder, buildObservability());
+
+    signals.loginSettled({ ok: false, error: authError('server') });
+    signals.loginSettled({ ok: false, error: authError('network') });
+
+    expect((recorder.authFailure as jest.Mock).mock.calls).toEqual([
+      ['login', 'server'],
+      ['login', 'network'],
+    ]);
   });
 
   it('emits an auth_failure for a rejected login result', () => {
@@ -93,17 +153,17 @@ describe('AuthSecuritySignals', () => {
   ])('maps the %s auth-error kind onto the security-event reason', (kind) => {
     const recorder = buildRecorder();
 
-    new AuthSecuritySignals(recorder, buildObservability()).loginFailed(authError(kind));
+    new AuthSecuritySignals(recorder, buildObservability()).registerFailed(authError(kind));
 
-    expect(recorder.authFailure).toHaveBeenCalledWith('login', kind);
+    expect(recorder.authFailure).toHaveBeenCalledWith('registration', kind);
   });
 
   it('reports an unrecognized auth-error kind as unknown', () => {
     const recorder = buildRecorder();
 
-    new AuthSecuritySignals(recorder, buildObservability()).loginFailed({ kind: 'teapot' });
+    new AuthSecuritySignals(recorder, buildObservability()).registerFailed({ kind: 'teapot' });
 
-    expect(recorder.authFailure).toHaveBeenCalledWith('login', 'unknown');
+    expect(recorder.authFailure).toHaveBeenCalledWith('registration', 'unknown');
   });
 
   it.each([[null], [undefined], ['boom'], [42]])(
@@ -120,23 +180,23 @@ describe('AuthSecuritySignals', () => {
   it('classifies a 429 rejection as rate_limited regardless of its kind', () => {
     const recorder = buildRecorder();
 
-    new AuthSecuritySignals(recorder, buildObservability()).loginFailed({
+    new AuthSecuritySignals(recorder, buildObservability()).registerFailed({
       status: 429,
       kind: 'server',
     });
 
-    expect(recorder.authFailure).toHaveBeenCalledWith('login', 'rate_limited');
+    expect(recorder.authFailure).toHaveBeenCalledWith('registration', 'rate_limited');
   });
 
   it('ignores a non-numeric status when classifying the failure', () => {
     const recorder = buildRecorder();
 
-    new AuthSecuritySignals(recorder, buildObservability()).loginFailed({
+    new AuthSecuritySignals(recorder, buildObservability()).registerFailed({
       status: '429',
       kind: 'network',
     });
 
-    expect(recorder.authFailure).toHaveBeenCalledWith('login', 'network');
+    expect(recorder.authFailure).toHaveBeenCalledWith('registration', 'network');
   });
 
   // Asserted against the payload the real recorder emits, not against the two-argument call this
@@ -147,7 +207,7 @@ describe('AuthSecuritySignals', () => {
     const password = buildPassword();
     const email = buildEmail();
 
-    new AuthSecuritySignals(securityEventCore, buildObservability()).loginFailed({
+    new AuthSecuritySignals(securityEventCore, buildObservability()).registerFailed({
       kind: 'authentication',
       displayMessage: `Invalid credentials for ${email}`,
       password,
@@ -177,14 +237,16 @@ describe('AuthSecuritySignals', () => {
     const recorder = buildRecorder();
     const signals = new Signals(recorder, buildObservability());
 
-    signals.loginFailed(authError('authentication'));
-    signals.loginFailed(authError('network'));
-    signals.loginFailed({ status: 429, kind: 'server' });
+    signals.registerFailed(authError('authentication'));
+    signals.registerFailed(authError('network'));
+    signals.registerFailed({ status: 429, kind: 'server' });
+    signals.registerFailed({ status: 423, kind: 'authentication' });
 
     expect((recorder.authFailure as jest.Mock).mock.calls).toEqual([
-      ['login', 'authentication'],
-      ['login', 'network'],
-      ['login', 'rate_limited'],
+      ['registration', 'authentication'],
+      ['registration', 'network'],
+      ['registration', 'rate_limited'],
+      ['registration', 'locked'],
     ]);
   });
 });

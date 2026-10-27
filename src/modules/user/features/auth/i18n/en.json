@@ -81,7 +81,9 @@
     "errors": {
       "load_failed": "Failed to load sign-in form. Please try again.",
       "invalid_credentials": "Invalid e-mail or password",
-      "rate_limited": "Too many sign-in attempts. Try again later"
+      "locked": "Your account is temporarily locked after too many failed attempts. Try again later.",
+      "rate_limited": "Too many sign-in attempts. Try again later",
+      "transient": "The request could not be sent. Check your connection and try again."
     },
     "form": {
       "email_input": {
@@ -101,12 +103,41 @@
     },
     "notices": {
       "password_reset": "Your password has been changed. Sign in with your new password.",
-      "session_ended": "Your session has ended. Please sign in again."
+      "session_ended": "Your session has ended. Please sign in again.",
+      "two_factor_expired": "The time to confirm your sign-in has run out. Please sign in again.",
+      "account_locked": "Your account is temporarily locked after too many failed attempts. Try again later."
     },
     "success": {
       "title": "Welcome back!",
       "description": "You have signed in successfully",
       "button": "Continue"
+    }
+  },
+  "two_factor": {
+    "title": "Two-factor authentication",
+    "subtitle": "Enter the six-digit code from the Google Authenticator app.",
+    "note": "You can enter the code within 5 minutes of signing in.",
+    "code_label": "Verification code",
+    "cell_label": "Digit {{position}} of {{total}}",
+    "submit_button": "Confirm",
+    "submitting": "Verifying…",
+    "recovery": {
+      "label": "Recovery code",
+      "helper": "Format: XXXX-XXXX",
+      "subtitle": "Enter one of the recovery codes you saved during setup.",
+      "use_recovery": "Use a recovery code",
+      "use_authenticator": "Use a code from the app"
+    },
+    "errors": {
+      "recovery_format": "Enter the recovery code in the format XXXX-XXXX",
+      "recovery_invalid": "Invalid recovery code. Try again.",
+      "incomplete": "Enter all 6 digits of the code",
+      "format": "The code must be exactly six digits",
+      "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
+    },
+    "banner": {
+      "rate_limited": "Too many attempts. Wait a minute and try again.",
+      "transient": "The code could not be verified. Check your connection and try again."
     }
   },
   "notifications": {
@@ -150,5 +181,12 @@
     "logo_alt": "VilnaCRM logo",
     "privacy": "Privacy Policy",
     "usage_policy": "Terms of Use"
+  },
+  "recovery_codes_notice": {
+    "remaining_one": "{{count}} recovery code left. Generate new codes in settings.",
+    "remaining_other": "{{count}} recovery codes left. Generate new codes in settings.",
+    "none": "You are out of recovery codes. Generate new codes now.",
+    "open_settings": "Open settings",
+    "dismiss": "Dismiss notice"
   }
 }
