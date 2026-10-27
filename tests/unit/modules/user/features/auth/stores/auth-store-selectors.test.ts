@@ -11,6 +11,7 @@ const base: AuthState = {
   registerError: { kind: 'conflict', displayMessage: 'y', retryable: false },
   twoFactorStatus: 'unknown',
   pendingSessionId: null,
+  recoveryCodesRemaining: null,
 };
 
 describe('AuthStoreSelectors', () => {

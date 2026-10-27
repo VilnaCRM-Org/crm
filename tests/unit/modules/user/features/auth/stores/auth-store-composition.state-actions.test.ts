@@ -22,6 +22,7 @@ const CLEARED: AuthState = {
   registerError: null,
   twoFactorStatus: 'unknown',
   pendingSessionId: null,
+  recoveryCodesRemaining: null,
 };
 
 const loginError: AuthError = { kind: 'authentication', displayMessage: 'No', retryable: false };
@@ -37,6 +38,7 @@ const POPULATED: AuthState = {
   registerError,
   twoFactorStatus: 'enabled',
   pendingSessionId: buildPendingSessionId(),
+  recoveryCodesRemaining: 2,
 };
 
 const loadPopulatedBarrel = async (): Promise<Barrel> => {

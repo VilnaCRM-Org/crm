@@ -15,3 +15,14 @@ export const answerSignIn = (respond: () => Response): AnsweredSignIn[] => {
   );
   return answered;
 };
+
+export const answerChallenge = (respond: () => Response): AnsweredSignIn[] => {
+  const answered: AnsweredSignIn[] = [];
+  server.use(
+    userServiceGraphql.mutation('CompleteTwoFactorUser', ({ variables, request }) => {
+      answered.push({ variables, authorization: request.headers.get('authorization') });
+      return respond();
+    })
+  );
+  return answered;
+};

@@ -14,6 +14,7 @@ export interface AuthState {
   registerError: AuthError | null;
   twoFactorStatus: TwoFactorStatus;
   pendingSessionId: string | null;
+  recoveryCodesRemaining: number | null;
 }
 
 export type AuthStatePatch = Partial<AuthState>;

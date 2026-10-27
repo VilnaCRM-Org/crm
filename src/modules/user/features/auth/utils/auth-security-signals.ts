@@ -10,6 +10,7 @@ import type {
 } from '@/services/types/security-events/security-event';
 import type { AuthError } from '@auth/types/auth-error';
 import type { RegisterResult } from '@auth/types/auth-repository';
+import type { ChallengeResult } from '@auth/types/two-factor/challenge';
 import type { SignInResult } from '@auth/types/two-factor/sign-in';
 
 const TOO_MANY_REQUESTS = 429;
@@ -39,6 +40,14 @@ export default class AuthSecuritySignals {
     }
     if (result.error.aborted) return;
     this.recorder.authFailure('login', this.reasonOf(result.error));
+  }
+
+  public challengeSettled(result: ChallengeResult): void {
+    if (result.kind === 'completed') {
+      this.observability.setUser({ id: uuidv4() });
+      return;
+    }
+    this.recorder.authFailure('login', result.reason);
   }
 
   public registerSettled(result: RegisterResult): void {

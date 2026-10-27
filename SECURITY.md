@@ -334,12 +334,12 @@ path is a verified no-op.
 
 ### Emitted events
 
-| Event                   | Category                 | Raised by                            |
-| ----------------------- | ------------------------ | ------------------------------------ |
-| `auth_failure`          | `login` / `registration` | a rejected login or registration     |
-| `auth_failure_burst`    | `login` / `registration` | a failure past the threshold         |
-| `unauthorized_response` | `transport`              | a `401` or `403` REST response       |
-| `error_boundary_catch`  | `render`                 | a boundary or route catching a crash |
+| Event                   | Category                 | Raised by                                  |
+| ----------------------- | ------------------------ | ------------------------------------------ |
+| `auth_failure`          | `login` / `registration` | a rejected login, registration or 2FA code |
+| `auth_failure_burst`    | `login` / `registration` | a failure past the threshold               |
+| `unauthorized_response` | `transport`              | a `401` or `403` REST response             |
+| `error_boundary_catch`  | `render`                 | a boundary or route catching a crash       |
 
 Each event reaches Sentry as a `SecurityEventSignal` exception named `security.<event>`, with
 the structured payload in `extra`:
@@ -364,9 +364,15 @@ the structured payload in `extra`:
 The payload is credential-free by construction, not by filtering. `reason` is a bounded code in
 every case, but the set it is drawn from depends on the event: `auth_failure` and
 `auth_failure_burst` use `authentication`, `validation`, `conflict`, `server`, `network`,
-`rate_limited`, `locked` or `unknown`, derived from the auth error kind or the HTTP status (a
-sign-in refused with HTTP 423 records `locked`, and a pending two-factor challenge records
-nothing: it is not a sign-in);
+`rate_limited`, `locked`, `invalid_code`, `expired_session` or `unknown`, derived from the auth
+error kind or the HTTP status (a sign-in refused with HTTP 423 records `locked`, and a pending
+two-factor challenge records nothing: it is not a sign-in). The second step, completing that
+challenge, is emitted by `AuthSecuritySignals.challengeSettled` under the `login` category with
+the challenge's own reason — `invalid_code`, `expired_session`, `locked`, `rate_limited`,
+`network` or `server` — so five wrong codes inside the window raise the same
+`auth_failure_burst` as five wrong passwords; a completed challenge records no failure and only
+tags the opaque session identity, and the submitted code and the pending session id never reach
+the reporter;
 `unauthorized_response` uses `http_401` or `http_403`; and `error_boundary_catch` uses the
 boundary surface — `app` for the shell's root `UIErrorBoundary`, `auth` for the auth feature's
 boundary, and `route` for a route error reported through the router's `onError` seam behind each

@@ -146,15 +146,18 @@ describe('SessionLinkFactory', () => {
     expect(setState).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves the session alone when an anonymous operation is answered with 401', async () => {
-    const { link, clearUser, signOut, setState } = harness({ token: buildToken() }, unauthorized);
+  it.each(['ConfirmPasswordReset', 'SignInUser', 'CompleteTwoFactorUser'])(
+    'leaves the session alone when %s is answered with 401',
+    async (name) => {
+      const { link, clearUser, signOut, setState } = harness({ token: buildToken() }, unauthorized);
 
-    await send(link, 'ConfirmPasswordReset');
+      await send(link, name);
 
-    expect(clearUser).not.toHaveBeenCalled();
-    expect(signOut).not.toHaveBeenCalled();
-    expect(setState).not.toHaveBeenCalled();
-  });
+      expect(clearUser).not.toHaveBeenCalled();
+      expect(signOut).not.toHaveBeenCalled();
+      expect(setState).not.toHaveBeenCalled();
+    }
+  );
 
   it("leaves a newer session alone when a 401 answers an earlier token's request", async () => {
     const session: SessionBox = { token: buildToken() };
