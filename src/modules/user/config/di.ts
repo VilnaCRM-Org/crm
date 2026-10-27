@@ -6,9 +6,15 @@ import sandboxDemoSessionProvider, {
   type SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
-import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
-import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
-import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
+import ProfileProvider, {
+  TwoFactorSettingsProvider,
+} from '@/modules/user/features/settings/data-providers';
+import GraphQLProfileRepository, {
+  GraphQLTwoFactorSettingsRepository,
+} from '@/modules/user/features/settings/repositories';
+import GraphQLProfileTransformer, {
+  GraphQLTwoFactorSettingsTransformer,
+} from '@/modules/user/features/settings/transformers';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
@@ -134,6 +140,15 @@ class UserModuleRegistrar implements ModuleRegistrar {
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInRepository, GraphQLSignInRepository);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInTransformer, GraphQLSignInTransformer);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInProvider, GraphQLSignInProvider);
+    container.registerSingleton(
+      AUTH_TOKENS.GraphQLTwoFactorSettingsRepository,
+      GraphQLTwoFactorSettingsRepository
+    );
+    container.registerSingleton(
+      AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer,
+      GraphQLTwoFactorSettingsTransformer
+    );
+    container.registerSingleton(AUTH_TOKENS.TwoFactorSettingsProvider, TwoFactorSettingsProvider);
   }
 
   private registerRepository(container: DependencyContainer): void {

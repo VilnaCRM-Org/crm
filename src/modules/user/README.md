@@ -831,6 +831,30 @@ selects the target's contents and reports `failed`, never moving focus.
 `tests/unit/tooling/qr-code-containment.test.ts` pins that `qrcode-generator` has one importer
 and that nothing outside the settings feature imports the image or the hook.
 
+### The 2FA settings path is a Data provider, a Transformer and a transport-only Repository
+
+**Context.** The four settings mutations carry secrets: the setup answer holds the TOTP secret
+and the otpauth URI, confirm and regenerate hold the recovery codes. None of them may reach the
+Apollo cache, a log or a type that is not named.
+
+**Decision.** `TwoFactorSettingsProvider` (`settings/data-providers/`) takes exactly three
+collaborators: `GraphQLTwoFactorSettingsRepository`, `GraphQLTwoFactorSettingsTransformer` and the
+shared `UserServiceErrorTransformer`. Each of its four methods resolves a
+`TwoFactorSettingsOutcome`: `changed` with a `TwoFactorSettingsEntity`, or `failed` with one of nine
+reasons. The repository only sends: one uncached `mutate` per call with a fresh `clientMutationId`,
+the caller's signal and, for confirm and disable, the `TwoFactorDto` code; an already aborted signal
+throws an `AbortError` before Apollo is called. The transformer holds the failure table as
+module-level data and narrows each answer through the zod schemas in
+`settings/utils/response-schemas.ts`, so a recovery code list that is not an array of strings is a
+`server` failure. The documents select only `otpauthUri` and `secret`, `recoveryCodes`, or
+`success`. The provider records no security signal; `session_ended` covers a transport 401 and
+"Access Denied.", and the session link has already ended the session by then.
+
+**Code fact (2026-10-27).** The settings feature gains `data-providers/index.ts`, which default
+exports the profile provider and names the 2FA one. `repositories/` and `transformers/` already had
+such barrels, and the 2FA provider's file name is too long to import on one line under the 100
+column limit, which prettier cannot wrap for a single specifier.
+
 ### `UIForm` explains a submit that cannot be pressed yet
 
 **Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user
