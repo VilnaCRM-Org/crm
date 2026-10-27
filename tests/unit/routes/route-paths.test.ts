@@ -12,6 +12,7 @@ describe('ROUTE_PATHS', () => {
       home: '/',
       signUp: '/sign-up',
       signIn: '/sign-in',
+      twoFactorChallenge: '/sign-in/two-factor',
       passwordRecovery: '/password-recovery',
       passwordReset: '/password-reset',
       settings: '/settings',
