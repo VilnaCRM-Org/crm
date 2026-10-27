@@ -86,7 +86,11 @@ function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element 
     <>
       <FormHeader header={header} bannerShown={Boolean(lead.error)} />
       {lead.notice}
-      <ErrorBanner error={lead.error} returnFocusRef={offline.submitRef} />
+      <ErrorBanner
+        error={lead.error}
+        action={lead.errorAction}
+        returnFocusRef={offline.submitRef}
+      />
       <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
     </>
   );
@@ -165,7 +169,7 @@ export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JS
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         onInvalid={props.onInvalid}
         header={headerOf(props)}
-        lead={{ error: props.error ?? null, notice: props.notice }}
+        lead={{ error: props.error ?? null, notice: props.notice, errorAction: props.errorAction }}
         submit={submitOf(props)}
         submitting={submitting}
         announceSubmitting={props.submittingAnnouncement ?? submitting}

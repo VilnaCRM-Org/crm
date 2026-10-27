@@ -1687,6 +1687,16 @@ register. The pinned checksums (`config/ui-toolkit-checksums.json:1029-1040`) do
 - Any requirement the props cannot meet is an override documented in the register and a
   ui-toolkit issue, never an `A11Y_EXCEPTIONS` entry.
 
+Code facts (Story 2.1, 2026-10-27): the seam's props are `control`, `name`, `rules`, `label`,
+`cellLabel` (a `PinCellLabel`, cell number to string), `helperText`, `error`, `disabled` and `id`;
+a failed form rule sets the invalid state and its message wins over `helperText`. The toolkit
+root is a `FormControl` holding the `role="group"` row, so the `sx` also targets `[role="group"]`
+for the gap and the root for `width: 100%`. React Hook Form's `setFocus` defers with
+`setTimeout`, so tests await it; submit-time focus is synchronous. `UIForm`'s `errorAction` is a
+`UIFormErrorAction` (`label`, `onClick`), drawn as a `UILinkButton` inside the focused banner
+after the alert text. The ESLint probe lists in `tests/unit/config/eslint-policy.test.ts` need the
+seam file, and `scripts/ci/eslint-gate-fixtures.mjs` carries three seam fixtures.
+
 ### 6.12 `UIForm` `submitBlockedReason`
 
 `UIForm` (`src/components/ui-form/index.tsx`) arrives with the `errorAction` and `titleRef` that
