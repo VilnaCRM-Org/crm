@@ -33,6 +33,22 @@ export const twoFactorText = {
   rateLimited: t('settings.two_factor.banner.rate_limited'),
   transient: t('settings.two_factor.banner.transient'),
   retry: t('auth.error.tryAgain'),
+  openDisable: t('settings.two_factor.on.disable'),
+  openRegenerate: t('settings.two_factor.on.regenerate'),
+  cancel: t('settings.two_factor.cancel'),
+  disableTitle: t('settings.two_factor.disable.title'),
+  disableDescription: t('settings.two_factor.disable.description'),
+  disableLabel: t('settings.two_factor.disable.code_label'),
+  disableSubmit: t('settings.two_factor.disable.submit'),
+  regenerateTitle: t('settings.two_factor.regenerate.title'),
+  regenerateDescription: t('settings.two_factor.regenerate.description'),
+  regenerateSubmit: t('settings.two_factor.regenerate.submit'),
+  reauthMessage: t('settings.two_factor.reauth.message'),
+  reauthSignIn: t('settings.two_factor.reauth.sign_in'),
+  formatError: t('settings.two_factor.errors.format'),
+  statusDisabled: t('settings.two_factor.status.disabled'),
+  statusAlreadyOff: t('settings.two_factor.status.already_off'),
+  sessionEnded: t('sign_in.notices.session_ended'),
 } as const;
 
 export const KEY_IN_GROUPS = 'JBSW Y3DP EHPK 3PXP';
@@ -127,3 +143,42 @@ export const copiedText = (page: Page): Promise<string | undefined> =>
 
 export const selectedText = (page: Page): Promise<string> =>
   page.evaluate(() => window.getSelection()?.toString() ?? '');
+
+export const openDisableOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.openDisable, exact: true });
+
+export const openRegenerateOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.openRegenerate, exact: true });
+
+export const cancelOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.cancel, exact: true });
+
+export const disableHeadingOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('heading', { level: 3, name: twoFactorText.disableTitle, exact: true });
+
+export const regenerateHeadingOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('heading', {
+    level: 3,
+    name: twoFactorText.regenerateTitle,
+    exact: true,
+  });
+
+export const disableFieldOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('textbox', { name: twoFactorText.disableLabel, exact: true });
+
+export const disableSubmitOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.disableSubmit, exact: true });
+
+export const regenerateSubmitOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.regenerateSubmit, exact: true });
+
+export const reauthSignInOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.reauthSignIn, exact: true });
+
+export async function enableTwoFactor(page: Page): Promise<void> {
+  await reachCodes(page);
+  await savedBoxOf(page).focus();
+  await page.keyboard.press('Space');
+  await doneOf(page).click();
+  await expect(statusHeadingOf(page, twoFactorText.statusOn)).toBeFocused();
+}

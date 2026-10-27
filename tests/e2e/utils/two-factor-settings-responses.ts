@@ -12,6 +12,17 @@ export const SETUP_SECRET = 'JBSWY3DPEHPK3PXP';
 const SETUP_LABEL = 'VilnaCRM%3Aolena.petrenko%40example.com';
 
 export const SETUP_URI = `otpauth://totp/${SETUP_LABEL}?secret=${SETUP_SECRET}&issuer=VilnaCRM`;
+export const NEW_RECOVERY_CODES: readonly string[] = [
+  'A2BC-3DEF',
+  'G4HJ-5KMN',
+  'P6QR-7STV',
+  'W8XY-9Z2A',
+  'B3CD-4EFG',
+  'H5JK-6MNP',
+  'Q7RS-8TVW',
+  'X9YZ-2ABC',
+];
+
 export const RECOVERY_CODES: readonly string[] = [
   'K7QM-4RTD',
   'W2XB-9NHF',
@@ -29,7 +40,15 @@ export type SetupOutcome =
 export type ConfirmOutcome =
   'confirmed' | 'invalid_code' | 'setup_not_initiated' | 'rate_limited' | 'unavailable' | 'network';
 
+export type DisableOutcome =
+  'disabled' | 'invalid_code' | 'not_enabled' | 'rate_limited' | 'unavailable' | 'network';
+
+export type RegenerateOutcome =
+  'regenerated' | 'reauth_required' | 'not_enabled' | 'rate_limited' | 'unavailable' | 'network';
+
 const SETUP_OPERATION = 'SetupTwoFactorUser';
+const DISABLE_OPERATION = 'DisableTwoFactorUser';
+const REGENERATE_OPERATION = 'RegenerateRecoveryCodesUser';
 const CONFIRM_OPERATION = 'ConfirmTwoFactorUser';
 
 const transport: Record<'rate_limited' | 'unavailable' | 'network', SignInReply> = {
@@ -71,4 +90,38 @@ export function stubConfirm(
   outcomes: readonly (ConfirmOutcome | SignInReply)[] = ['confirmed']
 ): Promise<StubbedSignIn> {
   return stubOperation(page, CONFIRM_OPERATION, CONFIRM_REPLIES, 'confirmed', outcomes);
+}
+
+const NOT_ENABLED = 'Two-factor authentication is not enabled.';
+
+export const DISABLE_REPLIES: Record<DisableOutcome, SignInReply> = {
+  disabled: (route) =>
+    json(route, 200, { data: { disableTwoFactorUser: { user: { success: true } } } }),
+  invalid_code: (route) => json(route, 200, graphQLFailure('Invalid two-factor code.', 401)),
+  not_enabled: (route) => json(route, 200, graphQLFailure(NOT_ENABLED, 403)),
+  ...transport,
+};
+
+export const REGENERATE_REPLIES: Record<RegenerateOutcome, SignInReply> = {
+  regenerated: (route) =>
+    json(route, 200, {
+      data: { regenerateRecoveryCodesUser: { user: { recoveryCodes: [...NEW_RECOVERY_CODES] } } },
+    }),
+  reauth_required: (route) => json(route, 200, graphQLFailure('Re-authentication required.', 403)),
+  not_enabled: (route) => json(route, 200, graphQLFailure(NOT_ENABLED, 403)),
+  ...transport,
+};
+
+export function stubDisable(
+  page: Page,
+  outcomes: readonly (DisableOutcome | SignInReply)[] = ['disabled']
+): Promise<StubbedSignIn> {
+  return stubOperation(page, DISABLE_OPERATION, DISABLE_REPLIES, 'disabled', outcomes);
+}
+
+export function stubRegenerate(
+  page: Page,
+  outcomes: readonly (RegenerateOutcome | SignInReply)[] = ['regenerated']
+): Promise<StubbedSignIn> {
+  return stubOperation(page, REGENERATE_OPERATION, REGENERATE_REPLIES, 'regenerated', outcomes);
 }
