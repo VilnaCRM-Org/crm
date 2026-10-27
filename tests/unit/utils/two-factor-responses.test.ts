@@ -4,8 +4,8 @@ import {
   SIGN_IN_ACCESS_TOKEN,
   SIGN_IN_PENDING_SESSION_ID,
   SIGN_IN_REPLIES,
+  replyWithUnauthenticated,
   stubSignIn,
-  type SignInOutcome,
 } from '../../e2e/utils/two-factor-responses';
 
 type PageTarget = Parameters<typeof stubSignIn>[0];
@@ -37,7 +37,7 @@ const signInBody = (variables?: Record<string, unknown>): unknown => ({
 });
 
 const register = async (
-  outcomes?: readonly SignInOutcome[]
+  outcomes?: Parameters<typeof stubSignIn>[1]
 ): Promise<{
   handler: RouteHandler;
   route: jest.Mock;
@@ -201,6 +201,22 @@ describe('stubSignIn', () => {
 
     expect(empty.fallback).toHaveBeenCalledTimes(1);
     expect(stub.count()).toBe(0);
+  });
+
+  it('answers with a caller-supplied reply in place of a named outcome', async () => {
+    const message = 'Account bob@example.com is unknown';
+    const { handler } = await register([replyWithUnauthenticated(message), 'challenge']);
+    const first = fakeRoute(signInBody());
+    const second = fakeRoute(signInBody());
+
+    await handler(first);
+    await handler(second);
+
+    expect(bodyOf(first)).toEqual({
+      data: null,
+      errors: [{ message, extensions: { status: 401 } }],
+    });
+    expect(bodyOf(second)).toHaveProperty('data.signInUser.user.twoFactorEnabled', true);
   });
 
   it('covers every outcome with a reply', () => {

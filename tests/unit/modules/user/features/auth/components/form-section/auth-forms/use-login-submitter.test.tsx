@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
 import { useAuthStore } from '@auth/stores';
-import type { AuthErrorKind } from '@auth/types/auth-error';
+import type { SignInFailureReason } from '@auth/types/two-factor/sign-in-failure';
 import { buildCredentials } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -48,31 +48,45 @@ describe('useLoginSubmitter', () => {
   });
 
   it.each([
-    ['authentication', undefined, 'sign_in.errors.invalid_credentials'],
-    ['network', undefined, 'failure_responses.network_errors.network_error'],
-    ['server', undefined, 'failure_responses.server_errors.server_error'],
-    ['validation', undefined, 'failure_responses.client_errors.something_went_wrong'],
-    ['conflict', undefined, 'failure_responses.client_errors.unexpected_error'],
-    ['unknown', undefined, 'failure_responses.client_errors.unexpected_error'],
-    ['server', 429, 'sign_in.errors.rate_limited'],
-    ['server', 503, 'failure_responses.server_errors.server_error'],
-  ] as const)('maps a %s failure (status %p) to %s', (kind, status, key) => {
+    ['invalid_credentials', 'authentication', false, 'sign_in.errors.invalid_credentials'],
+    ['locked', 'authentication', false, 'sign_in.errors.locked'],
+    ['rate_limited', 'server', false, 'sign_in.errors.rate_limited'],
+    ['transient', 'network', true, 'sign_in.errors.transient'],
+    ['transient', 'server', true, 'sign_in.errors.transient'],
+  ] as const)(
+    'maps the %s reason of a %s failure (retryable %s) to %s',
+    (reason, kind, retryable, key) => {
+      useAuthStore.setState({
+        loginError: { kind, displayMessage: 'Raw backend text', retryable, reason },
+      });
+
+      const { result } = renderHook(() => useLoginSubmitter(t));
+
+      expect(result.current.error).toBe(key);
+      expect(result.current.error).not.toContain('Raw backend text');
+      expect(result.current.retryable).toBe(retryable);
+    }
+  );
+
+  it('treats a failure without a reason as transient and retryable', () => {
     useAuthStore.setState({
-      loginError: {
-        kind,
-        displayMessage: 'Raw backend text',
-        retryable: false,
-        ...(status === undefined ? {} : { status }),
-      },
+      loginError: { kind: 'network', displayMessage: 'Raw backend text', retryable: true },
     });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
-    expect(result.current.error).toBe(key);
-    expect(result.current.error).not.toContain('Raw backend text');
+    expect(result.current.error).toBe('sign_in.errors.transient');
+    expect(result.current.retryable).toBe(true);
   });
 
-  it('maps every failure to its key when the module loads inside the test', async () => {
+  it('offers no retry and no message when nothing failed', () => {
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    expect(result.current.error).toBe('');
+    expect(result.current.retryable).toBe(false);
+  });
+
+  it('maps every reason to its key when the module loads inside the test', async () => {
     const fresh = await loadIsolated(async () => {
       jest.doMock('react', () => React);
       return {
@@ -81,13 +95,13 @@ describe('useLoginSubmitter', () => {
         store: (await import('@auth/stores')).useAuthStore,
       };
     });
-    const errorFor = (kind: AuthErrorKind, status?: number): string => {
+    const errorFor = (reason: SignInFailureReason): string => {
       fresh.store.setState({
         loginError: {
-          kind,
+          kind: 'authentication',
           displayMessage: 'Raw backend text',
           retryable: false,
-          ...(status === undefined ? {} : { status }),
+          reason,
         },
       });
       const { result, unmount } = renderHook(() => fresh.hook(t));
@@ -96,12 +110,10 @@ describe('useLoginSubmitter', () => {
       return shown;
     };
 
-    expect(errorFor('authentication')).toBe('sign_in.errors.invalid_credentials');
-    expect(errorFor('network')).toBe('failure_responses.network_errors.network_error');
-    expect(errorFor('server')).toBe('failure_responses.server_errors.server_error');
-    expect(errorFor('validation')).toBe('failure_responses.client_errors.something_went_wrong');
-    expect(errorFor('unknown')).toBe('failure_responses.client_errors.unexpected_error');
-    expect(errorFor('server', 429)).toBe('sign_in.errors.rate_limited');
+    expect(errorFor('invalid_credentials')).toBe('sign_in.errors.invalid_credentials');
+    expect(errorFor('locked')).toBe('sign_in.errors.locked');
+    expect(errorFor('rate_limited')).toBe('sign_in.errors.rate_limited');
+    expect(errorFor('transient')).toBe('sign_in.errors.transient');
   });
 
   it('retries with the values submitted last', async () => {

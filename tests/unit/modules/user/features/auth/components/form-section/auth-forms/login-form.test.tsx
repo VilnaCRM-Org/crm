@@ -39,6 +39,7 @@ interface AuthError {
   kind: string;
   displayMessage: string;
   retryable: boolean;
+  reason?: string;
 }
 
 const authStoreState: {
@@ -76,7 +77,7 @@ interface StubNotificationProps {
   flow: string;
   errorText: string;
   onBack: () => void;
-  onRetry: () => void;
+  onRetry?: () => void;
 }
 
 function StubNotification(props: StubNotificationProps): ReactElement {
@@ -87,9 +88,11 @@ function StubNotification(props: StubNotificationProps): ReactElement {
       <button type="button" onClick={props.onBack}>
         notification back
       </button>
-      <button type="button" onClick={props.onRetry}>
-        notification retry
-      </button>
+      {props.onRetry !== undefined && (
+        <button type="button" onClick={props.onRetry}>
+          notification retry
+        </button>
+      )}
     </section>
   );
 }
@@ -252,6 +255,7 @@ describe('LoginForm', () => {
       kind: 'authentication',
       displayMessage: 'Invalid credentials',
       retryable: false,
+      reason: 'invalid_credentials',
     };
     const onViewChange = jest.fn();
 
@@ -260,6 +264,7 @@ describe('LoginForm', () => {
     const card = await screen.findByRole('region', { name: 'notification error' });
     expect(card).toHaveTextContent('sign_in.errors.invalid_credentials');
     expect(card).not.toHaveTextContent('Invalid credentials');
+    expect(screen.queryByRole('button', { name: 'notification retry' })).not.toBeInTheDocument();
     expect(mockNotification).toHaveBeenLastCalledWith(
       expect.objectContaining({ flow: 'signIn', view: 'error' })
     );
@@ -278,6 +283,41 @@ describe('LoginForm', () => {
     expect(onViewChange).toHaveBeenLastCalledWith('form');
     expect(lastUIFormProps()).toEqual(expect.objectContaining({ isSubmitDisabled: false }));
     expect(screen.getByRole('group', { name: 'login-form inert=false' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['invalid_credentials', 'authentication'],
+    ['locked', 'authentication'],
+    ['rate_limited', 'server'],
+  ])('offers no retry for the %s card', async (reason, kind) => {
+    authStoreState.loginError = { kind, displayMessage: 'raw', retryable: false, reason };
+
+    render(<LoginForm postLogin={signedOut()} />);
+
+    expect(await screen.findByRole('region', { name: 'notification error' })).toHaveTextContent(
+      `sign_in.errors.${reason}`
+    );
+    expect(screen.getByRole('button', { name: 'notification back' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'notification retry' })).not.toBeInTheDocument();
+    expect(mockNotification).toHaveBeenLastCalledWith(
+      expect.objectContaining({ onRetry: undefined })
+    );
+  });
+
+  it('offers retry for the transient card', async () => {
+    authStoreState.loginError = {
+      kind: 'network',
+      displayMessage: 'raw',
+      retryable: true,
+      reason: 'transient',
+    };
+
+    render(<LoginForm postLogin={signedOut()} />);
+
+    expect(await screen.findByRole('region', { name: 'notification error' })).toHaveTextContent(
+      'sign_in.errors.transient'
+    );
+    expect(screen.getByRole('button', { name: 'notification retry' })).toBeInTheDocument();
   });
 
   it('retries with the credentials submitted last', async () => {

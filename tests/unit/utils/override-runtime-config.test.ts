@@ -11,6 +11,7 @@ type FakeRoute = {
   fetch: () => Promise<{ text: () => Promise<string> }>;
   fulfill: jest.Mock;
   continue: jest.Mock;
+  fallback: jest.Mock;
 };
 
 const SHELL = [
@@ -41,6 +42,7 @@ const documentRoute = (body: string, fulfill: jest.Mock): FakeRoute => ({
   }),
   fulfill,
   continue: jest.fn(),
+  fallback: jest.fn(),
 });
 
 const renderedConfig = (html: string): unknown => {
@@ -87,21 +89,29 @@ describe('overrideRuntimeConfig', () => {
     expect(renderedConfig(options.body)).toEqual({ apiBaseUrl: 'http://x/</script><b>' });
   });
 
-  it('passes non-document requests through untouched', async () => {
-    const { handler } = await registerHandler({});
-    const continueRoute = jest.fn().mockResolvedValue(undefined);
-    const mockRoute = {
-      request: (): { resourceType: () => string } => ({ resourceType: (): string => 'script' }),
-      fetch: jest.fn(),
-      fulfill: jest.fn(),
-      continue: continueRoute,
-    };
+  it.each(['script', 'fetch', 'xhr'])(
+    'hands a %s request to the next handler so a stub registered earlier still answers',
+    async (resourceType) => {
+      const { handler } = await registerHandler({});
+      const fallback = jest.fn().mockResolvedValue(undefined);
+      const mockRoute = {
+        request: (): { resourceType: () => string } => ({
+          resourceType: (): string => resourceType,
+        }),
+        fetch: jest.fn(),
+        fulfill: jest.fn(),
+        continue: jest.fn(),
+        fallback,
+      };
 
-    await handler(mockRoute);
+      await handler(mockRoute);
 
-    expect(continueRoute).toHaveBeenCalledTimes(1);
-    expect(mockRoute.fulfill).not.toHaveBeenCalled();
-  });
+      expect(fallback).toHaveBeenCalledTimes(1);
+      expect(mockRoute.continue).not.toHaveBeenCalled();
+      expect(mockRoute.fetch).not.toHaveBeenCalled();
+      expect(mockRoute.fulfill).not.toHaveBeenCalled();
+    }
+  );
 
   it('fails loudly when the served document ships no configuration block', async () => {
     const fulfill = jest.fn().mockResolvedValue(undefined);
