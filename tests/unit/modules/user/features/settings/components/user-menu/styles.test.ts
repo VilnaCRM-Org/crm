@@ -274,6 +274,7 @@ describe('user menu styles', () => {
         fontWeight: 500,
         color: '#1A1C1E',
         textDecoration: 'none',
+        '&:visited': { color: '#1A1C1E' },
         '&:hover, &:focus-visible, &.Mui-focusVisible': {
           backgroundColor: '#F4F5F6',
         },
@@ -303,6 +304,7 @@ describe('user menu styles', () => {
         fontWeight: 500,
         color: '#1A1C1E',
         textDecoration: 'none',
+        '&:visited': { color: '#1A1C1E' },
         '&:hover, &:focus-visible, &.Mui-focusVisible': {
           backgroundColor: '#F4F5F6',
         },
@@ -332,6 +334,7 @@ describe('user menu styles', () => {
         fontWeight: 500,
         color: '#1A1C1E',
         textDecoration: 'none',
+        '&:visited': { color: '#1A1C1E' },
         '&:hover, &:focus-visible, &.Mui-focusVisible': {
           backgroundColor: '#F4F5F6',
         },
@@ -381,4 +384,17 @@ describe('user menu styles', () => {
       overflow: 'hidden',
     });
   });
+  it.each(['desktop', 'tablet', 'mobile'] as const)(
+    'keeps a visited %s menu item in its label colour, ahead of hover',
+    async (layout) => {
+      const item = (await loadStyles()).item[layout];
+      const keys = Object.keys(item);
+
+      expect(item).toHaveProperty(['&:visited'], { color: '#1A1C1E' });
+      expect(keys.indexOf('&:visited')).toBeGreaterThan(-1);
+      expect(keys.indexOf('&:visited')).toBeLessThan(
+        keys.indexOf('&:hover, &:focus-visible, &.Mui-focusVisible')
+      );
+    }
+  );
 });

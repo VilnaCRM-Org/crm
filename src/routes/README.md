@@ -17,20 +17,25 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                    | Responsibility                                                 |
-| ----------------------- | -------------------------------------------------------------- |
-| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `flag`)    |
-| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape    |
-| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, `onAvatar` |
-| `app-routes.ts`         | Shell contract: home, five coming-soon routes, 404, 403, 5xx   |
-| `shell-slot-factory.ts` | Wraps `shell.userMenu` in a lazy, retrying slot component      |
-| `registry.ts`           | Collects every module contract into one list                   |
-| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index    |
-| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`  |
-| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError`  |
-| `route-flag-gate.tsx`   | Renders the not-found page while a matched route's flag is off |
-| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate  |
-| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`       |
+| File                    | Responsibility                                                     |
+| ----------------------- | ------------------------------------------------------------------ |
+| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `flag`)        |
+| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape        |
+| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, `onAvatar`     |
+| `app-routes.ts`         | Shell contract: home, five coming-soon routes, 404, 403, 5xx       |
+| `shell-slot-factory.ts` | Wraps `shell.userMenu` in a lazy, retrying slot component          |
+| `registry.ts`           | Collects every module contract into one list                       |
+| `route-validator.ts`    | Rejects an invalid contract when the router is built (rules below) |
+| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`      |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError`      |
+| `route-flag-gate.tsx`   | Renders the not-found page while a matched route's flag is off     |
+| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate      |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`           |
+
+`route-validator.ts` throws when two modules share an `id`, when more than one module declares
+`shell.userMenu`, when any route declares a `flag` but no public (unguarded) route is registered at
+`ROUTE_PATHS.notFound` for the flag gate to render, when a nested route declares a `guard` or a
+`flag` (both are top-level only), and when a route has neither a `path` nor `index: true`.
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint

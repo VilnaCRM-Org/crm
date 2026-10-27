@@ -18,6 +18,7 @@ import {
   sidebarSettingsOf,
   sidebarSignOutOf,
   userMenuOf,
+  visitedColourOf,
 } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -55,6 +56,9 @@ const PUBLIC_PATHS: readonly string[] = [
 ];
 
 const SHELL_CHUNK = /ui-app-shell|user-menu|current-user/;
+
+const LABEL_COLOUR = 'rgb(64, 65, 66)';
+const MENU_COLOUR = 'rgb(26, 28, 30)';
 
 const labelOf = (id: string): string => t(`app_shell.items.${id}`);
 const sectionOf = (id: string): string => t(`coming_soon.sections.${id}`);
@@ -154,6 +158,17 @@ test.describe('App shell on desktop (issue #362)', () => {
     await expectSettingsPage(page);
     await expect(sidebarSettingsOf(page)).toHaveAttribute('aria-current', 'page');
     await expect(sidebarOf(page).locator('[aria-current="page"]')).toHaveCount(1);
+  });
+
+  test('keeps visited rows, sub-items and menu links in their label colour over a:visited', async ({
+    page,
+  }) => {
+    await openProtected(page, ROUTE_PATHS.settings);
+
+    expect(await visitedColourOf(linkOf(page, 'boards'))).toBe(LABEL_COLOUR);
+    expect(await visitedColourOf(linkOf(page, 'integrations'))).toBe(LABEL_COLOUR);
+    await openChipMenu(page);
+    expect(await visitedColourOf(menuItemOf(page, shellText.settingsItem))).toBe(MENU_COLOUR);
   });
 
   for (const width of [1440, 1024]) {

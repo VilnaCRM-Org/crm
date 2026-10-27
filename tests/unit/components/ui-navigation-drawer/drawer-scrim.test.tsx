@@ -39,6 +39,24 @@ describe('DrawerScrim', () => {
     expect(scrim()).toHaveStyle({ bottom: '40px' });
   });
 
+  it('subscribes to resizes once while it re-renders and unsubscribes when it unmounts', () => {
+    const add = jest.spyOn(window, 'addEventListener');
+    const remove = jest.spyOn(window, 'removeEventListener');
+    const { rerender, unmount } = render(<DrawerScrim duration={0} />);
+
+    rerender(<DrawerScrim duration={200} />);
+    rerender(<DrawerScrim duration={0} />);
+    const added = add.mock.calls.filter(([type]) => type === 'resize');
+    const removedWhileOpen = remove.mock.calls.filter(([type]) => type === 'resize').length;
+    unmount();
+
+    expect(added).toHaveLength(1);
+    expect(removedWhileOpen).toBe(0);
+    expect(remove).toHaveBeenCalledWith('resize', added[0]?.[1]);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
   it('fades in over the given duration', () => {
     render(<DrawerScrim duration={200} />);
 

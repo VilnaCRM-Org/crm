@@ -192,6 +192,18 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expectTapArea(drawerSignOutOf(page), 'drawer sign out');
   });
 
+  test('keeps the burger and the drawer close control at 44 px at 320 px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await openAt(page, ROUTE_PATHS.home);
+    await expectTapArea(burgerOf(page), 'burger');
+    await expectTapArea(chipOf(page), 'avatar');
+
+    await burgerOf(page).tap();
+    await expect(drawerOf(page)).toBeVisible();
+
+    await expectTapArea(closeOf(page), 'close');
+  });
+
   test('has no horizontal overflow at device width, with the drawer open', async ({ page }) => {
     await openAt(page, ROUTE_PATHS.settings);
     await expectNoHorizontalOverflow(page);

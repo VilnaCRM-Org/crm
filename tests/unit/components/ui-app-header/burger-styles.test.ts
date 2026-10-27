@@ -29,13 +29,13 @@ describe('burger styles', () => {
     expect(glyph).toEqual({ display: 'block', width: '24px', height: '24px' });
   });
 
-  it('trims the target to the viewport at 320 px', async () => {
+  it('keeps the 44 px target at 320 px by moving the trimmed right edge to the left', async () => {
     const { burger } = await loadStyles();
 
+    expect(burger.width).toBe('44px');
     expect(burger['@media (max-width:374px)']).toEqual({
-      width: '42px',
-      margin: '-10px -8px -10px -10px',
-      paddingRight: '8px',
+      margin: '-10px -8px -10px -12px',
+      padding: '10px 8px 10px 12px',
     });
   });
 });

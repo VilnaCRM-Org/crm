@@ -31,3 +31,5 @@ export interface DrawerPanelProps {
 export interface DrawerScrimProps {
   readonly duration: number;
 }
+
+export type FooterInsetRef = (scrim: HTMLElement | null) => (() => void) | undefined;

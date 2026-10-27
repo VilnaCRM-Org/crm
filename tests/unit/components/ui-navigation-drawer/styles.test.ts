@@ -144,9 +144,8 @@ describe('navigation drawer styles', () => {
       cursor: 'pointer',
       color: '#404142',
       '@media (max-width:374px)': {
-        width: '42px',
-        margin: '-10px -8px -10px -10px',
-        paddingRight: '8px',
+        margin: '-10px -8px -10px -12px',
+        padding: '10px 8px 10px 12px',
       },
     });
   });

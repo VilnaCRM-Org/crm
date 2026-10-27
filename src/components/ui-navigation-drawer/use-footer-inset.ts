@@ -1,7 +1,20 @@
-import { useLayoutEffect, useState } from 'react';
+import type { FooterInsetRef } from '@/components/types/ui-navigation-drawer';
 
 class FooterInsetSource {
-  public read(): number {
+  public attach: FooterInsetRef = (scrim) => {
+    if (scrim === null) return undefined;
+
+    const place = (): void => {
+      scrim.style.setProperty('bottom', `${this.read()}px`);
+    };
+
+    place();
+    window.addEventListener('resize', place);
+
+    return (): void => window.removeEventListener('resize', place);
+  };
+
+  private read(): number {
     const footer = [...document.querySelectorAll('footer')].find(
       (candidate) => candidate.closest('main') === null
     );
@@ -14,17 +27,6 @@ class FooterInsetSource {
 
 const footerInsetSource = new FooterInsetSource();
 
-export default function useFooterInset(): number {
-  const [inset, setInset] = useState(0);
-
-  useLayoutEffect(() => {
-    const measure = (): void => setInset(footerInsetSource.read());
-
-    measure();
-    window.addEventListener('resize', measure);
-
-    return (): void => window.removeEventListener('resize', measure);
-  });
-
-  return inset;
+export default function useFooterInset(): FooterInsetRef {
+  return footerInsetSource.attach;
 }

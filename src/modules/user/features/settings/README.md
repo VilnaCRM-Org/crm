@@ -56,7 +56,7 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 
 ```text
 UserProfile [component]<route>          title, toast queue, useProfileLoad
-└ Box container                       15 / 26 px inset, 12 px from the sidebar at 1024+
+└ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column is the 2FA slot
   │ ├ UserProfileSettings               loading | failed | ready
@@ -154,9 +154,10 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   grid start at the content column's own left edge, 12 px from the sidebar (x 262 at 1440, x 263 at
   1024 with the sidebar expanded; collapsed to the rail, x 137 at 1440 and x 101 at 1024, the latter
   not yet measured against Figma — see P-51 and P-62 in the shell README). The toolkit `UIContainer`
-  pads 32 px at 1024 and 124 px at 1440, so the page uses its own container with the same 15 and 26
-  px insets below 1024 and a 12 px inset from 1024 up (AV-7 measured the toolkit padding and found
-  it does not yield the Figma start). The page keeps its `gap` and `paddingTop`;
+  pads 32 px at 1024 and 124 px at 1440 (AV-7 measured it and found it does not yield the Figma
+  start), so the page renders inside the shared `UIShellContent` (15 / 26 / 12 px insets; see
+  [frame and settings alignment](../../../../components/ui-app-shell/README.md#measured-against-figma-frame-and-settings-alignment-issue-362)
+  in the shell README). The page keeps its `gap` and `paddingTop`;
   `width: fit-content`, `maxWidth` and `marginInline: auto` are gone. The 2FA column, when it lands,
   widens the grid to the right.
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the

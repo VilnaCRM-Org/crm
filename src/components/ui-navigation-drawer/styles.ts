@@ -1,14 +1,7 @@
+import edgeButtonStyles from '@/components/ui-app-header/edge-button-styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
 const NARROWEST = '@media (max-width:374px)';
-
-const ring = {
-  '&:focus-visible': {
-    outline: `2px solid ${customColors.text.dark}`,
-    outlineOffset: '2px',
-  },
-  '&:focus:not(:focus-visible)': { outline: 'none' },
-};
 
 const glyph = { display: 'block', flexShrink: 0, width: '24px', height: '24px' };
 
@@ -68,21 +61,7 @@ export default {
     color: customColors.text.dark,
   },
   avatarGlyph: { fontSize: '24px' },
-  close: {
-    ...ring,
-    display: 'block',
-    flexShrink: 0,
-    boxSizing: 'border-box',
-    width: '44px',
-    height: '44px',
-    margin: '-10px',
-    padding: '10px',
-    border: 0,
-    background: 'transparent',
-    cursor: 'pointer',
-    color: customColors.text.primary,
-    [NARROWEST]: { width: '42px', margin: '-10px -8px -10px -10px', paddingRight: '8px' },
-  },
+  close: { ...edgeButtonStyles.target, color: customColors.text.primary },
   closeGlyph: glyph,
   panel: {
     position: 'absolute',

@@ -65,3 +65,23 @@ export async function openDrawer(page: Page): Promise<void> {
   await burgerOf(page).click();
   await expect(drawerOf(page)).toBeVisible();
 }
+
+const VISITED_MARKER = 'pw-visited';
+
+export const visitedColourOf = (link: Locator): Promise<string> =>
+  link.evaluate((element, marker): string => {
+    const visitedRules = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
+      .filter((rule) => rule.selectorText.includes(':visited'))
+      .map((rule) => rule.cssText.replaceAll(':visited', `.${marker}`));
+    const style = document.createElement('style');
+    style.textContent = visitedRules.join('\n');
+    document.head.append(style);
+    element.classList.add(marker);
+    const colour = getComputedStyle(element).color;
+    element.classList.remove(marker);
+    style.remove();
+
+    return colour;
+  }, VISITED_MARKER);
