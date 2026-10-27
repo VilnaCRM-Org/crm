@@ -1,4 +1,5 @@
 import GraphQLPasswordRecoveryRepository from './graphql-password-recovery-repository';
+import GraphQLSignInRepository from './graphql-sign-in-repository';
 
 export { default as ApiErrorFactory } from './api-error-factory';
 export { default as AuthErrorFactory } from './auth-error-factory';
@@ -8,4 +9,4 @@ export { default as LoginAPI } from './login-api';
 export { default as RegistrationAPI } from './registration-api';
 export type { RequestOptions } from './types';
 
-export { GraphQLPasswordRecoveryRepository };
+export { GraphQLPasswordRecoveryRepository, GraphQLSignInRepository };

@@ -1,0 +1,10 @@
+mutation SignInUser($input: signInUserInput!) {
+  signInUser(input: $input) {
+    user {
+      success
+      twoFactorEnabled
+      accessToken
+      pendingSessionId
+    }
+  }
+}
