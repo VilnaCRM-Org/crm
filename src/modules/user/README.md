@@ -679,6 +679,28 @@ the outlined one match no `A11Y_EXCEPTIONS` entry, and no browser axe scan opens
 `color-contrast` rule is not exercised for it. A scan needs a scoped exception under issue #276,
 which is the owner's call; none was added here.
 
+### The challenge page against Figma (frames 72:4846, 72:4882, 72:4918)
+
+The Figma MCP was reachable, and the three frames were read on 2026-10-27. The page keeps their
+structure: the shared card with "Назад", the title, the subtitle and a row of six cells above the
+submit. What it deliberately does not copy, for Follow-up 5.4 to reconcile with design:
+
+- **Copy (D1).** The frames still carry the e-mail wording ("Ми надіслали Вам лист на пошту …")
+  and a "Надіслати код ще раз" row with a `00:34` countdown. The page uses the authenticator copy
+  from the PRD and has no e-mail, resend row or countdown.
+- **Tablet cells.** The 1024 frame draws cells of about 86 × 130 px that fill the card; the page
+  keeps the 64 × 86 desktop cell (8 px gap) from the `md` breakpoint up and the 49 × 64 cell
+  (4 px gap) below it,
+  so the card width stays the sign-in card's at every width.
+- **Pin-input overrides (NFR-6).** The cell border is `paletteColors.border.strong`, the invalid
+  border the error red and the focus ring the shared two-colour ring, where the frames draw a thin
+  grey border only.
+
+The live measurement at 1440, 1024 and 375 px on port 3005 could not run in this worktree, whose
+shared `node_modules` lacks `zustand` and the ui-toolkit, so the dev server cannot build. The
+recorded frame sizes (card 502 × 404, cells 64 × 86 at 8 px, mobile cells 49 × 64 at 4 px) are what
+the pin-input styles and their tests pin; the measurement is left for CI or the owner.
+
 ### The pending file lives in #315's mechanism
 
 **Context.** No user-service tag declares the six operations, and the pinned schema is what

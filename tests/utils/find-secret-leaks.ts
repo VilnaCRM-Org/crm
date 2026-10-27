@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 
 export interface ClientStateDump {
   readonly url: string;
+  readonly title: string;
   readonly historyState: string;
   readonly localStorage: string;
   readonly sessionStorage: string;
@@ -59,6 +60,7 @@ export async function readClientState(): Promise<ClientStateDump> {
 
   return {
     url: window.location.href,
+    title: document.title,
     historyState: JSON.stringify(window.history.state),
     localStorage: entriesOf(window.localStorage),
     sessionStorage: entriesOf(window.sessionStorage),
@@ -68,6 +70,7 @@ export async function readClientState(): Promise<ClientStateDump> {
 
 const PLACES: readonly (keyof ClientStateDump)[] = [
   'url',
+  'title',
   'historyState',
   'localStorage',
   'sessionStorage',

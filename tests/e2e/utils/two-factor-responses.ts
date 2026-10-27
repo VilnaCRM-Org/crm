@@ -2,6 +2,7 @@ import type { Page, Request, Route } from '@playwright/test';
 
 const GRAPHQL_URL = '**/graphql';
 const SIGN_IN_OPERATION = 'SignInUser';
+const CHALLENGE_OPERATION = 'CompleteTwoFactorUser';
 
 export const SIGN_IN_ACCESS_TOKEN = 'e2e-access-token';
 export const SIGN_IN_PENDING_SESSION_ID = '01JAQZ8M3K5N7P9R2T4V6X8Z0B';
@@ -90,20 +91,67 @@ const recordOf = (request: Request): RecordedSignIn => ({
   url: request.url(),
 });
 
-const replyOf = (outcome: SignInOutcome | SignInReply | undefined): SignInReply =>
-  typeof outcome === 'function' ? outcome : SIGN_IN_REPLIES[outcome ?? 'session'];
-
-export async function stubSignIn(
+async function stubOperation<TOutcome extends string>(
   page: Page,
-  outcomes: readonly (SignInOutcome | SignInReply)[] = ['session']
+  operation: string,
+  replies: Readonly<Record<TOutcome, SignInReply>>,
+  fallback: TOutcome,
+  outcomes: readonly (TOutcome | SignInReply)[]
 ): Promise<StubbedSignIn> {
   const calls: RecordedSignIn[] = [];
   const count = (): number => calls.length;
+  const pick = (outcome: TOutcome | SignInReply | undefined): SignInReply =>
+    typeof outcome === 'function' ? outcome : replies[outcome ?? fallback];
 
   await page.route(GRAPHQL_URL, async (route: Route) => {
-    if (bodyOf(route.request())?.operationName !== SIGN_IN_OPERATION) return route.fallback();
+    if (bodyOf(route.request())?.operationName !== operation) return route.fallback();
     calls.push(recordOf(route.request()));
-    return replyOf(outcomes[Math.min(count(), outcomes.length) - 1])(route);
+    return pick(outcomes[Math.min(count(), outcomes.length) - 1])(route);
   });
   return { calls, count };
+}
+
+export function stubSignIn(
+  page: Page,
+  outcomes: readonly (SignInOutcome | SignInReply)[] = ['session']
+): Promise<StubbedSignIn> {
+  return stubOperation(page, SIGN_IN_OPERATION, SIGN_IN_REPLIES, 'session', outcomes);
+}
+
+export const CHALLENGE_ACCESS_TOKEN = 'e2e-challenge-token';
+
+export type ChallengeOutcome =
+  | 'completed'
+  | 'invalid_code'
+  | 'expired_session'
+  | 'locked'
+  | 'rate_limited'
+  | 'unavailable'
+  | 'network';
+
+const completion = (user: Record<string, unknown>): unknown => ({
+  data: { completeTwoFactorUser: { user: { twoFactorEnabled: true, ...user } } },
+});
+
+export const CHALLENGE_REPLIES: Record<ChallengeOutcome, SignInReply> = {
+  completed: (route) =>
+    json(
+      route,
+      200,
+      completion({ accessToken: CHALLENGE_ACCESS_TOKEN, recoveryCodesRemaining: null })
+    ),
+  invalid_code: (route) => json(route, 200, graphQLFailure('Invalid two-factor code.', 401)),
+  expired_session: (route) =>
+    json(route, 200, graphQLFailure('Invalid or expired two-factor session.', 401)),
+  locked: (route) => json(route, 200, graphQLFailure('Account is locked.', 423)),
+  rate_limited: (route) => route.fulfill({ status: 429, body: '' }),
+  unavailable: (route) => route.fulfill({ status: 503, body: '' }),
+  network: (route) => route.abort('failed'),
+};
+
+export function stubChallenge(
+  page: Page,
+  outcomes: readonly (ChallengeOutcome | SignInReply)[] = ['completed']
+): Promise<StubbedSignIn> {
+  return stubOperation(page, CHALLENGE_OPERATION, CHALLENGE_REPLIES, 'completed', outcomes);
 }
