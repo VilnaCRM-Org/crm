@@ -49,7 +49,9 @@ test.describe('Settings save journeys (issue #330)', () => {
     expectNoPersonalDataInUrls(contacted(), [password, newPassword, newEmail, NEW_NAME]);
   });
 
-  test('opens through the home link: skeleton first, then the card, one read', async ({ page }) => {
+  test('opens through the sidebar Settings link: skeleton first, then the card, one read', async ({
+    page,
+  }) => {
     const gate = holdReply(replyWithProfile());
     stub = await stubProfile(page, { CurrentUser: [gate.reply] });
     await page.goto('/', { waitUntil: 'domcontentloaded' });

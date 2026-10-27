@@ -109,6 +109,21 @@ describe('useRailTooltip', () => {
     remove.mockRestore();
   });
 
+  it('subscribes to keydown once while a shown tooltip re-renders', () => {
+    const add = jest.spyOn(document, 'addEventListener');
+    const { result, rerender } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    rerender();
+    enter(result.current.handlers.onFocus);
+    rerender();
+    const keydowns = add.mock.calls.filter(([type]) => type === 'keydown');
+    add.mockRestore();
+
+    expect(result.current.visible).toBe(true);
+    expect(keydowns).toHaveLength(1);
+  });
+
   it('hands out the row it is attached to as the anchor only while the tooltip shows', () => {
     const row = document.createElement('div');
     const { result } = renderHook(() => useRailTooltip());

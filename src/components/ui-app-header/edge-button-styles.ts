@@ -18,6 +18,7 @@ export default {
     background: 'transparent',
     cursor: 'pointer',
     '@media (max-width:374px)': {
+      '&:focus-visible': { outlineOffset: '-2px' },
       margin: '-10px -8px -10px -12px',
       padding: '10px 8px 10px 12px',
     },
