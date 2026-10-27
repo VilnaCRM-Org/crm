@@ -1024,6 +1024,23 @@ code decides: the settings ring is the page's, not the toolkit's.
 hidden `placeholder="0"` is read) needs a person with both screen readers; its evidence is
 listed for Follow-up 5.7, and the specs above do not stand in for it.
 
+### Both surfaces have a touch lane
+
+**Context.** The cells, the toggle and the confirmation controls are new tap targets whose size
+and layout only a device context measures.
+
+**Decision.** `tests/e2e/mobile/two-factor-challenge-touch.spec.ts` and
+`two-factor-settings-touch.spec.ts` run on `mobile-chrome` and `mobile-safari` against GraphQL
+stubs per `operationName`. Sign-in, the challenge in both modes, enrolment, turning 2FA off and
+regenerating the codes finish with `tap()`; the code is typed with the keyboard after the first
+cell is tapped, as a phone keyboard would. They pin 44 CSS px for the cells, the fields and every
+submit, 24 CSS px for "Назад", the mode toggle, the copy buttons and the checkbox, no horizontal
+overflow at 320, 390 and 412 px, every setup or challenge cell inside its card's content box at 320,
+360, 600 and 767 px, and a submit that stays in view when the layout viewport shrinks to keyboard
+height. The reduced-motion check pins what the feature itself declares: the card, the section and
+the heading carry no `transition-duration` or `animation-name`, and the page's `scroll-behavior`
+is not `smooth`; MUI's own button transitions are the toolkit's and are not measured.
+
 ## Enforcement
 
 `make lint` runs all three gates; fix a violation by routing through the
