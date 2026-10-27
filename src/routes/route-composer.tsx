@@ -14,6 +14,7 @@ import routeValidator from './route-validator';
 import type { AppRouteObject } from './types/app-route';
 import type { ComposedRoutes } from './types/composed-routes';
 import type { RouteModuleRegistry } from './types/route-module';
+import type { UserMenuSlot } from './types/shell-slot';
 
 class RouteComposer {
   public compose(registry: RouteModuleRegistry): ComposedRoutes {
@@ -25,7 +26,7 @@ class RouteComposer {
           path: ROUTE_PATHS.home,
           element: <RootLayout />,
           errorElement: <RouteError landmark="main" />,
-          children: this.children(routes),
+          children: this.children(routes, this.userMenuSlot(registry)),
         },
       ],
     };
@@ -55,14 +56,21 @@ class RouteComposer {
     return new Error(String(error));
   }
 
-  private children(routes: readonly AppRouteObject[]): RouteObject[] {
+  private userMenuSlot(registry: RouteModuleRegistry): UserMenuSlot | undefined {
+    for (const { shell } of registry.items) {
+      if (shell?.userMenu !== undefined) return routeMapper.shellSlot(shell.userMenu);
+    }
+    return undefined;
+  }
+
+  private children(routes: readonly AppRouteObject[], userMenu?: UserMenuSlot): RouteObject[] {
     const secured: AppRouteObject[] = [];
     const open: AppRouteObject[] = [];
     for (const route of routes) {
       (route.guard === 'protected' ? secured : open).push(route);
     }
     const pages = this.pages(open, 'main');
-    return this.gated(routes, pages, [...this.protectedBranch(secured), ...pages]);
+    return this.gated(routes, pages, [...this.protectedBranch(secured, userMenu), ...pages]);
   }
 
   private gated(
@@ -85,7 +93,10 @@ class RouteComposer {
     ];
   }
 
-  private protectedBranch(routes: readonly AppRouteObject[]): RouteObject[] {
+  private protectedBranch(
+    routes: readonly AppRouteObject[],
+    userMenu?: UserMenuSlot
+  ): RouteObject[] {
     if (routes.length === 0) {
       return [];
     }
@@ -95,7 +106,16 @@ class RouteComposer {
         element: <ProtectedRoute />,
         errorElement,
         children: [
-          { element: <AppLayout />, errorElement, children: this.pages(routes, 'region') },
+          {
+            element: (
+              <AppLayout
+                userMenu={userMenu}
+                onShellFailure={routeMapper.chunkFailureReporter('app-shell:load')}
+              />
+            ),
+            errorElement,
+            children: this.pages(routes, 'region'),
+          },
         ],
       },
     ];

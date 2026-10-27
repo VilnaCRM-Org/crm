@@ -27,6 +27,27 @@
     {
       "catalog": "components/ui-toast/i18n",
       "owners": ["components/ui-toast"]
+    },
+    {
+      "catalog": "components/ui-app-shell/i18n",
+      "owners": [
+        "components/ui-app-shell",
+        "components/ui-app-header",
+        "components/ui-sidebar",
+        "components/ui-navigation-list",
+        "components/ui-navigation-drawer"
+      ]
+    },
+    {
+      "catalog": "components/coming-soon/i18n",
+      "owners": ["components/coming-soon"]
+    },
+    {
+      "catalog": "modules/user/features/settings/components/user-menu/i18n",
+      "owners": [
+        "modules/user/features/settings/components/user-menu",
+        "modules/user/features/settings/hooks/use-chip-label.ts"
+      ]
     }
   ]
 }

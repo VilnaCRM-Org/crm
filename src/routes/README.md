@@ -17,18 +17,25 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                    | Responsibility                                                 |
-| ----------------------- | -------------------------------------------------------------- |
-| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `flag`)    |
-| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape    |
-| `app-routes.ts`         | The app shell's own contract (home, 404, 403, 5xx)             |
-| `registry.ts`           | Collects every module contract into one list                   |
-| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index    |
-| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`  |
-| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError`  |
-| `route-flag-gate.tsx`   | Renders the not-found page while a matched route's flag is off |
-| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate  |
-| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`       |
+| File                    | Responsibility                                                     |
+| ----------------------- | ------------------------------------------------------------------ |
+| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `flag`)        |
+| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape        |
+| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, `onAvatar`     |
+| `app-routes.ts`         | Shell contract: home, five coming-soon routes, 404, 403, 5xx       |
+| `shell-slot-factory.ts` | Wraps `shell.userMenu` in a lazy, retrying slot component          |
+| `registry.ts`           | Collects every module contract into one list                       |
+| `route-validator.ts`    | Rejects an invalid contract when the router is built (rules below) |
+| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`      |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError`      |
+| `route-flag-gate.tsx`   | Renders the not-found page while a matched route's flag is off     |
+| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate      |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`           |
+
+`route-validator.ts` throws when two modules share an `id`, when more than one module declares
+`shell.userMenu`, when any route declares a `flag` but no public (unguarded) route is registered at
+`ROUTE_PATHS.notFound` for the flag gate to render, when a nested route declares a `guard` or a
+`flag` (both are top-level only), and when a route has neither a `path` nor `index: true`.
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -44,24 +51,82 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 
 ## Registered routes
 
-| Key                | Path                 | Contract                   | Guard     |
-| ------------------ | -------------------- | -------------------------- | --------- |
-| `home`             | `/` (index)          | `app-routes.ts`            | protected |
-| `signUp`           | `/sign-up`           | `@auth/routes` (user.auth) | public    |
-| `signIn`           | `/sign-in`           | `@auth/routes` (user.auth) | public    |
-| `passwordRecovery` | `/password-recovery` | `@auth/routes` (user.auth) | public    |
-| `passwordReset`    | `/password-reset`    | `@auth/routes` (user.auth) | public    |
-| `settings`         | `/settings`          | settings routes            | protected |
-| `forbidden`        | `/forbidden`         | `app-routes.ts`            | public    |
-| `serverError`      | `/server-error`      | `app-routes.ts`            | public    |
-| `notFound`         | `*`                  | `app-routes.ts`            | public    |
+| Key                    | Path                     | Contract                   | Guard     |
+| ---------------------- | ------------------------ | -------------------------- | --------- |
+| `home`                 | `/` (index)              | `app-routes.ts`            | protected |
+| `signUp`               | `/sign-up`               | `@auth/routes` (user.auth) | public    |
+| `signIn`               | `/sign-in`               | `@auth/routes` (user.auth) | public    |
+| `passwordRecovery`     | `/password-recovery`     | `@auth/routes` (user.auth) | public    |
+| `passwordReset`        | `/password-reset`        | `@auth/routes` (user.auth) | public    |
+| `settings`             | `/settings`              | settings routes            | protected |
+| `forbidden`            | `/forbidden`             | `app-routes.ts`            | public    |
+| `serverError`          | `/server-error`          | `app-routes.ts`            | public    |
+| `boards`               | `/boards`                | `app-routes.ts`            | protected |
+| `products`             | `/products`              | `app-routes.ts`            | protected |
+| `orders`               | `/orders`                | `app-routes.ts`            | protected |
+| `contacts`             | `/contacts`              | `app-routes.ts`            | protected |
+| `analytics`            | `/analytics`             | `app-routes.ts`            | protected |
+| `settingsIntegrations` | `/settings/integrations` | settings routes            | protected |
+| `settingsWebhooks`     | `/settings/webhooks`     | settings routes            | protected |
+| `settingsBilling`      | `/settings/billing`      | settings routes            | protected |
+| `notFound`             | `*`                      | `app-routes.ts`            | public    |
 
-`/settings` (issue #330) is the only flagged route: `flag: 'userSettings'`, so it renders the
-not-found page while the flag is off (see "Flagged routes"). Its contract is
-`src/modules/user/features/settings/routes/index.ts` and its page the lazy `settings` chunk.
+`/settings` (issue #330) and the three `/settings/…` coming-soon routes are the flagged routes:
+`flag: 'userSettings'`, so each renders the not-found page while the flag is off (see "Flagged
+routes"). Their contract is `src/modules/user/features/settings/routes/index.ts`; `/settings`
+renders the lazy `settings` chunk.
+
+## Coming-soon routes (issue #362)
+
+The eight planned sections (`boards`, `products`, `orders`, `contacts`, `analytics`,
+`settingsIntegrations`, `settingsWebhooks`, `settingsBilling`) are protected routes whose loaders
+all `import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon')`, so Rspack emits
+one shared chunk. `ComingSoonPage` finds its section from the pathname in the typed
+`comingSoonSections` list, so no contract passes the section down. The five product routes are
+shell-owned in `app-routes.ts` until their modules exist; each then moves to that module's
+contract with the same path and the same key. The three settings routes sit in the settings
+contract beside `/settings` so the flag gate covers them with no composer change.
 
 `/password-recovery` and `/password-reset` (issue #315) render the `ResetPassword` and
 `CreateNewPassword` pages; signed-in users are not redirected away from either.
+
+## Shell slots (issue #362)
+
+A module may put one piece of its UI into the app shell without the shell importing the module.
+`RouteModule.shell` is an optional `RouteModuleShell`; today it carries `userMenu`, a loader of a
+component that takes `signOut`, an `onChunkFailure` callback and an `onAvatar` callback
+(`ShellSlotProps`). The settings contract declares it
+(`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and hands
+`AppLayout` `routeMapper.shellSlot(load)`, a lazy component wrapped like a page chunk (one
+re-import, the MUI theme shell loaded in parallel). `RouteValidator` rejects a registry in which
+two modules declare `shell.userMenu`.
+
+- **The avatar copy (`onAvatar`):** the host (`UIAppShell`) renders the slot with
+  `ShellSlotHostProps` — `signOut` plus `onAvatar`, its own state setter — and the factory passes
+  both through. The loaded slot calls `onAvatar` with an aria-hidden, non-focusable copy of the
+  avatar it is showing, and with `null` when it unmounts; the shell hands that node to the mobile
+  drawer, whose opaque header covers the header avatar. It is the slot's output, not a second slot:
+  a second component reading the user would issue a second `currentUser` query (the read is
+  `no-cache` and re-runs on every navigation) and flash the glyph before the monogram on every
+  drawer open, and copying the user into a client store is what the state rules forbid. So the copy
+  costs no request, no chunk and no new contract key. Before the slot loads, after its chunk fails
+  twice, or without a declaring module, `onAvatar` is never called and the drawer keeps its 40 px
+  `#E1E7EA` placeholder with the no-data glyph, the same size, so nothing shifts and nothing is
+  announced.
+
+- **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
+  failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
+  are untouched and nothing reloads.
+- **The current-user chunk** carries only the identity source: the slot keeps one menu mounted
+  and the chunk reports the identity it reads, so the chip keeps focus and an open menu when it
+  arrives (see `src/modules/user/features/settings/README.md`). Its failure is reported through
+  the `onChunkFailure` callback the mapper binds (`source: 'app-shell:current-user'`); `AppLayout`
+  reports the shell chunk with `routeMapper.chunkFailureReporter('app-shell:load')`.
+- **Why the mapper captures:** a component under `src/components/` must not import
+  `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
+  route layer is the only place that reaches the observability boundary.
+- **ADR drift:** `route-composer.tsx` changed, so the pull request carries the `adr:not-required`
+  label; the decision lives here and in the shell README.
 
 ## The contract
 
@@ -90,22 +155,31 @@ applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
-`AppLayout` is the shell chrome of every protected page (issue #106). It renders
-the page's `<main>` and, after it as a sibling, the shared `UIFooter`, so the
-footer keeps its `contentinfo` role and never sits inside `<main>`. The footer
-is loaded lazily behind its own `<Suspense>`, because `AppLayout` is in the
-eager entrypoint and a static footer import would spend the remaining raw
-entrypoint budget. Its fallback is an empty, `aria-hidden` box that only holds
-the footer's height: the page is already usable, so the chrome shows no loader
-and announces nothing while its chunk loads. The chunk comes through a `ChunkRetryLoader`
-(`src/components/layouts/footer-loader.ts`, issue #147), and a load that still
-fails resolves to an empty component: a missing footer never reaches the
-`AppLayout` `errorElement` and never replaces the page. `AppLayout` also forwards
-`ProtectedRoute`'s outlet context (`ProtectedOutletContext`, `{ signOut }`,
-from `src/routes/types/protected-outlet-context.ts`) to the page with
-`<Outlet context={useOutletContext()} />` — a bare `<Outlet />` resets the
-context to `undefined` in react-router 7. The home page at `/`
-(`@/features/home`) reads `signOut` from that context.
+`AppLayout` is the shell chrome of every protected page (issues #106, #362). It hands
+`appShellLoader` to `AppLayoutFrame`, a CSS grid frame that renders, in order, the lazy
+`UIAppShell` (header, sidebar from 1024 px or mobile drawer below it, built by `useAppShell` from
+that loader behind a `<Suspense>` whose fallback is `AppShellPlaceholders`, two `aria-hidden`
+size-holding placeholders, a header slot and a navigation column), the page's `<main>` and, after it
+as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
+inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
+and is reported through the `onShellFailure` callback the composer passes beside the optional
+`userMenu` slot (see "Shell slots"). While it is mounted, `useHeaderClearance` (through
+`useFrameFocus`) reserves the 64 px sticky header as `scroll-padding-top` on the document, so a
+control that receives keyboard focus is never scrolled under the header (WCAG 2.4.11), the top
+counterpart of the toast stack's `scroll-padding-bottom`. The footer is loaded lazily behind its
+own `<Suspense>`,
+because `AppLayout` is in the eager entrypoint and a static footer import would spend the remaining
+raw entrypoint budget. Its fallback is an empty, `aria-hidden` box that only holds the footer's
+height: the page is already usable, so the chrome shows no loader and announces nothing while its
+chunk loads. The chunk comes through a `ChunkRetryLoader`
+(`src/components/layouts/footer-loader.ts`, issue #147), and a load that still fails resolves to an
+empty component: a missing footer never reaches the `AppLayout` `errorElement` and never replaces
+the page. `AppLayout` also forwards `ProtectedRoute`'s outlet context (`ProtectedOutletContext`,
+`{ signOut }`, from `src/routes/types/protected-outlet-context.ts`) to the page with
+`<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
+react-router 7 — and hands the same `signOut` to the lazy app shell
+(`<AppShell signOut={outletContext.signOut} userMenu={userMenu} />`), whose sidebar, drawer and user
+menu are the sign-out controls (issue #362). The home page at `/` no longer reads the context.
 
 ## Flagged routes (issue #330)
 
