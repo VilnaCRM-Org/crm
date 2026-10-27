@@ -113,6 +113,24 @@
       "button": "Continue"
     }
   },
+  "two_factor": {
+    "title": "Two-factor authentication",
+    "subtitle": "Enter the six-digit code from the Google Authenticator app.",
+    "note": "You can enter the code within 5 minutes of signing in.",
+    "code_label": "Verification code",
+    "cell_label": "Digit {{position}} of {{total}}",
+    "submit_button": "Confirm",
+    "submitting": "Verifying…",
+    "errors": {
+      "incomplete": "Enter all 6 digits of the code",
+      "format": "The code must be exactly six digits",
+      "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
+    },
+    "banner": {
+      "rate_limited": "Too many attempts. Wait a minute and try again.",
+      "transient": "The code could not be verified. Check your connection and try again."
+    }
+  },
   "notifications": {
     "close": "Close notification",
     "success": {

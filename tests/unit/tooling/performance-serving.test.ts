@@ -9,6 +9,7 @@ import {
   authFormsVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
+  TWO_FACTOR_FORM_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
@@ -488,11 +489,13 @@ describe('performance serving config', () => {
         )
       ).toEqual([true, true, true, true]);
       expect(selects({ name: settingsChunkName })).toBe(true);
+      expect(selects({ name: loaderChunkName('two-factor') })).toBe(true);
     });
     expect(AUTH_FORM_CHUNKS).toEqual(['sign-in', 'sign-up'].map(loaderChunkName));
     expect(RECOVERY_FORM_CHUNKS).toEqual(
       ['reset-password', 'create-new-password'].map(loaderChunkName)
     );
     expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
+    expect(TWO_FACTOR_FORM_CHUNKS).toEqual([loaderChunkName('two-factor')]);
   });
 });

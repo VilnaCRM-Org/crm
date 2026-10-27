@@ -8,11 +8,13 @@ export const RECOVERY_FORM_CHUNKS: readonly string[] = [
   'create-new-password-form-section',
 ];
 export const SETTINGS_CHUNKS: readonly string[] = ['settings'];
+export const TWO_FACTOR_FORM_CHUNKS: readonly string[] = ['two-factor-form-section'];
 
 const formSectionChunks = new Set([
   ...AUTH_FORM_CHUNKS,
   ...RECOVERY_FORM_CHUNKS,
   ...SETTINGS_CHUNKS,
+  ...TWO_FACTOR_FORM_CHUNKS,
 ]);
 const NODE_MODULES = /[\\/]node_modules[\\/]/;
 

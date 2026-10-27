@@ -96,6 +96,7 @@ describe('route registry', () => {
     expect(auth?.routes.map((route) => route.path)).toEqual([
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
+      ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
     ]);
@@ -103,6 +104,7 @@ describe('route registry', () => {
     expect(auth?.routes.map((route) => route.meta?.titleKey)).toEqual([
       'sign_up.title',
       'sign_in.title',
+      'two_factor.title',
       'password_recovery.title',
       'password_reset.title',
     ]);

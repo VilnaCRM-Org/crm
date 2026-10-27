@@ -235,6 +235,28 @@ describe('UIPinInput', () => {
     await waitFor(() => expect(cells()[0]).toHaveFocus());
   });
 
+  it.each([
+    ['', 0],
+    ['1', 1],
+    ['1234', 4],
+    ['12345', 5],
+    ['123456', 0],
+  ])('focuses the first empty cell for the value %j (cell %i)', async (value, expected) => {
+    let focusCode = (): void => undefined;
+    render(
+      <Harness
+        defaultValue={value}
+        onControl={(_control, setFocus) => {
+          focusCode = setFocus;
+        }}
+      />
+    );
+
+    act(() => focusCode());
+
+    await waitFor(() => expect(cells()[expected]).toHaveFocus());
+  });
+
   it('prefers the form rule message over the helper text prop', async () => {
     let submit = async (): Promise<void> => undefined;
     function Submitting(): JSX.Element {
