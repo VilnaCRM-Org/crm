@@ -29,8 +29,8 @@ describe('TwoFactorPanel', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders only the heading for a view this story does not build', () => {
-      renderPanel(panelProps({ view: viewState('codes') }));
+    it('renders only the heading for a view that has no component yet', () => {
+      renderPanel(panelProps({ view: viewState('disable') }));
 
       expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
       expect(screen.queryByRole('button')).not.toBeInTheDocument();

@@ -897,6 +897,21 @@ the card is a named region, and the `h3` carries the view title and takes focus 
 Ukrainian from the story; the frames' Russian text is not used. Live measurement on port 3005 could
 not run here, so the sizes above are pinned in unit tests and the CI visual lane is the measurement.
 
+### The codes view, the status headings and the flag gate
+
+The codes view is a `UIForm` whose submit is "Готово". It shows the eight codes as an ordered list
+(`#1A1C1E` on `#EAECEE`), an outlined "Скопіювати коди" button that copies them newline-separated
+through `useCopyToClipboard`, and a `UICheckbox` "Я зберіг(-ла) коди в надійному місці". While the
+box is unticked the form passes `submitBlockedReason`, so "Готово" stays focusable, is
+`aria-disabled` and described by the reason, and sends nothing; the ticked state is local to the view,
+and the view that replaces it holds no code. The on view and any off view with a status code show one
+focused level-3 status heading, the only announcement: "Двофакторну автентифікацію ввімкнено" with a
+decorative icon, "вже ввімкнено", "Налаштування застаріло. Почніть знову.", "вимкнено" and "вже
+вимкнено". `/settings` mounts the card as the second child of `SettingsGrid` through a small
+`TwoFactorSection` that reads the `twoFactorAuth` flag, so with the flag off no 2FA hook is called
+and the grid renders as before. The views for disable, regenerate and re-authentication belong to the
+next story.
+
 ### `UIForm` explains a submit that cannot be pressed yet
 
 **Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user

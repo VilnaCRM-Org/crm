@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
 
+import useStatusText from '../../hooks/use-status-text';
 import useTwoFactorBanner from '../../hooks/use-two-factor-banner';
 import type { TwoFactorSettingsProps } from '../../types/two-factor/settings-view';
 
 import OffGuide from './off-guide';
+import StatusHeading from './status-heading';
 
 const NO_VALUES: FieldValues = {};
 
@@ -18,6 +20,7 @@ export default function OffView({
 }: TwoFactorSettingsProps): JSX.Element {
   const { t } = useTranslation();
   const banner = useTwoFactorBanner(view.banner, callbacks.retry);
+  const status = useStatusText(view);
 
   return (
     <UIForm<FieldValues>
@@ -31,6 +34,7 @@ export default function OffView({
       submitLabel={t('settings.two_factor.start')}
       submittingLabel={t('settings.two_factor.preparing')}
     >
+      <StatusHeading text={status} icon={false} />
       <OffGuide />
     </UIForm>
   );
