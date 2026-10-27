@@ -1,0 +1,500 @@
+# App shell
+
+The shell is the persistent frame of every protected page: the header, the sidebar and the mobile
+drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; nothing here imports
+`src/modules/`. Planning artifacts live in `specs/app-shell-navigation/planning-artifacts/`.
+
+## App shell decisions (issue #362)
+
+- **The frame is eager, everything visible is lazy.** `AppLayout` (`src/components/layouts/`)
+  hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid and renders
+  `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky header slot and,
+  from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where the loaded
+  sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the frame
+  receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
+  `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
+  public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
+  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
+  1440 px. The sidebar breakpoint is a number in
+  `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the eager path
+  cannot import `@/components/ui-breakpoints`.
+- **The grid places items by line, not by area name.** A sticky element is limited to its grid
+  area, so the header slot spans every row (`grid-row: 1 / -1`, `align-self: start`, 64 px tall)
+  and sticks for the whole page. The navigation slot and `<main>` share row 2; the loaded sidebar
+  sticks 74 px from the top inside its stretched cell.
+- **The user slot is a prop.** Nothing under `src/components/` imports `src/modules/`. The settings
+  route contract declares `shell.userMenu`, a loader for `UserMenuSlot`; the composer hands
+  `AppLayout` the result of `routeMapper.shellSlot(load)`, so `AppLayout` receives only a
+  component that takes `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
+  publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
+  `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
+  the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
+  `src/routes/README.md`.
+- **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
+  `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
+  it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
+  frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
+  the document. Nothing under `src/components/layouts/` imports from `src/services/`.
+- **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
+  supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
+  optional `userMenu` slot and an `onShellFailure` callback, typed in
+  `src/components/types/layouts/app-layout.ts`.
+- **Home and settings lose their stopgaps.** `/` no longer renders its own Sign out button or
+  link to `/settings` (the sidebar, the drawer and the chip menu own both), and `/settings` no
+  longer centres its content (see the settings README).
+
+## Layouts
+
+`useShellLayout()` returns `'mobile'` below 1024 px, `'tablet'` from 1024 to 1439 px and
+`'desktop'` from 1440 px. It reads the two breakpoints from the crm scale (`lg`, `xl`) through
+`useMediaQuery` with `noSsr`, so the first render is already the right layout.
+
+## Header
+
+`UIAppHeader` (`src/components/ui-app-header/`) is the 64 px banner. Search, bell and list are
+natively `disabled` and described by the visually hidden status "Not available yet"; the mobile
+header has no search. The bell and list take an optional badge count that only stories pass: the
+header stories feed exactly 1 and 8, and no page, hook or route passes a count. The badge is
+painted in the disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
+The user slot reserves the chip's box with an `aria-hidden` placeholder until the chip arrives.
+
+### Measured against Figma
+
+Chromium on the dev server at device scale factor 1, `scrollY` 0, `getBoundingClientRect()` and
+`getComputedStyle()`; boxes are x, y, width × height in CSS px.
+
+| Row            | Width | Figma             | Measured            | Verdict |
+| -------------- | ----- | ----------------- | ------------------- | ------- |
+| P-1 header     | 1440  | 0,0, 1440×64      | 0,0, 1440×64        | pass    |
+| P-2 logo       | 1440  | 32,8, 143×48.125  | 32,8, 143×48.125    | pass    |
+| P-3 search     | 1440  | 600,8, 477×48     | 600,8, 477×48       | pass    |
+| P-4 bell       | 1440  | 1087,8, 48×48     | 1087,8, 48×48       | pass    |
+| P-5 list       | 1440  | 1145,8, 48×48     | 1145,8, 48×48       | pass    |
+| P-6 chip slot  | 1440  | 1203,8, 225×48    | 1203,8, 225×48      | pass    |
+| P-39 badge     | 1440  | 34,30 in bell, 18 | 34,30 in bell, 18   | pass    |
+| P-40 badge     | 1440  | 34,30 in list, 18 | 34,30 in list, 18   | pass    |
+| P-15 header    | 1024  | 0,0, 1024×64      | 0,0, 1024×64        | pass    |
+| P-16 logo      | 1024  | 12,8, 143×48.125  | 12,8, 143×48.125    | pass    |
+| P-17 search    | 1024  | 271,6, 360×52     | 271,6, 360×52       | pass    |
+| P-18 bell      | 1024  | 639,6, 52×52      | 639,6, 52×52        | pass    |
+| P-19 list      | 1024  | 699,6, 52×52      | 699,6, 52×52        | pass    |
+| P-20 chip slot | 1024  | 759,6, 253×52     | 759,6, 253×52       | pass    |
+| P-41 badge     | 1024  | 34,30 in bell, 18 | 34,30 in bell, 18   | pass    |
+| P-42 badge     | 1024  | 34,30 in list, 18 | 34,30 in list, 18   | pass    |
+| P-28 header    | 375   | 0,0, 375×64       | 0,0, 375×64         | pass    |
+| P-29 logo      | 375   | 15,7, 125×42.067  | 15,6.97, 125×42.063 | pass    |
+| P-30 bell      | 375   | 200,16, 24×24     | 200,16, 24×24       | pass    |
+| P-31 list      | 375   | 240,16, 24×24     | 240,16, 24×24       | pass    |
+| P-32 avatar    | 375   | 280,8, 40×40      | 280,8, 40×40        | pass    |
+
+Paint rows read from `getComputedStyle()`: the desktop header border is 1 px `#E1E7EA` on four
+sides and the tablet and mobile headers draw none; the disabled search is `#EAECEE` with no border,
+radius 8, placeholder `#969B9D`, Inter 500 14/18 (desktop) and 16/18 (tablet); the disabled round
+buttons are `#E1E7EA` with a `#D0D4D8` glyph and no border; the badge is 18 px, radius 45, white
+Inter 500 12/18, digits within 0.2 px of Figma's text origin.
+
+The badge rows were measured with counts 1 and 8 passed through the header, as the header stories
+do. `AppLayout` now mounts the header through the shell (Story 3.1) but passes no counts, so the
+rows above were read from a temporary local mount that was removed again; the burger (P-33) and the
+drawer rows belong to the drawer story.
+
+Two choices record what Figma leaves open:
+
+- The desktop frame has no fill, so the sticky header paints the page colour `#FBFBFB`, the colour
+  that shows through in the frame.
+- The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. Every header
+  button is disabled, so the badge follows the disabled variant.
+
+## Sidebar
+
+`UISidebar` (`src/components/ui-sidebar/`) is one `<nav>` named "Main navigation" holding one
+ordered list (`UINavigationList`): the five product rows, the Settings group and, last, Sign out
+after a decorative divider. The rows come from the typed item set in `navigation-items.ts` (data, no
+function-valued property), so an RBAC filter can drop a row without leaving a gap. Items flagged
+`userSettings` (the Settings group and its three sub-items) are filtered while the flag is off.
+`useCurrentNavigationItem` marks the current page with `aria-current="page"`; the Settings group is
+expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron toggle lasts until the
+next route change; any pathname change clears it, so returning to the path it was set on (a link or
+browser Back) shows the route rule again. The handle collapses the panel to the rail (72 px desktop,
+76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
+While a tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
+a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
+is persisted. Sign out runs through `useOnceCallback`, so a second activation before navigation does
+nothing.
+
+### Measured against Figma (sidebar)
+
+Chromium on the dev server at device scale factor 1, boxes relative to the panel's outer edge.
+
+| Row                      | Width | Figma                  | Measured              | Verdict |
+| ------------------------ | ----- | ---------------------- | --------------------- | ------- |
+| P-7 panel                | 1440  | 12,74, 238×791         | 12,74, 238×791        | pass    |
+| P-8 Boards row           | 1440  | 0,21, 238×54           | 0,21, 238×54          | pass    |
+| P-9 Settings group       | 1440  | 0,291, 238×192         | 0,291, 238×192        | pass    |
+| P-10 first sub-item text | 1440  | x 56, y 354            | x 56, y 354           | pass    |
+| P-11 divider             | 1440  | 0,693, 238×1           | 0,693, 238×1          | pass    |
+| P-12 Sign out row        | 1440  | 0,715, 238×54          | 0,715, 238×54         | pass    |
+| P-45 handle              | 1440  | 223,15, 24×24          | 223,15, 24×24         | pass    |
+| P-56 chevron             | 1440  | 192,19 in group, 20×20 | 192,310, 20×20        | pass    |
+| P-46 rail panel          | 1440  | 12,74, 72×791          | 12,74, 72×791         | pass    |
+| P-47 rail handle         | 1440  | 57,15, 24×24           | 57,15, 24×24          | pass    |
+| P-48 rail pill           | 1440  | x 8, 56×40, icon y 36  | x 8, 56×40, icon y 36 | pass    |
+| P-49 rail divider        | 1440  | y 693, 74 wide         | y 693, 74 wide        | pass    |
+| P-50 rail tooltip        | 1440  | 73,423 abs, 114×42     | 61,349, 114×42        | pass    |
+| P-21 panel               | 1024  | 13,74, 238×1142        | 13,74, 238×1142       | pass    |
+| P-22 Boards row          | 1024  | 0,24, 238×66           | 0,24, 238×66          | pass    |
+| P-55 Products row        | 1024  | 0,90, 238×67           | 0,90, 238×67          | pass    |
+| P-23 Settings group      | 1024  | 0,355, 238×216         | 0,355, 238×216        | pass    |
+| P-24 divider             | 1024  | 0,1036, 238×1          | 0,1036, 238×1         | pass    |
+| P-25 Sign out row        | 1024  | 0,1058, 238×54         | 0,1058, 238×54        | pass    |
+| P-57 chevron             | 1024  | 190,24 in group, 24×24 | 190,379, 24×24        | pass    |
+| P-63 tablet handle       | 1024  | 222,15, 32×32 (DV-10)  | 222,15, 32×32         | pass    |
+| P-52 tablet rail panel   | 1024  | 13,74, 76×1142         | 13,74, 76×1142        | pass    |
+| P-53 tablet rail handle  | 1024  | 60,15, 32×32           | 60,15, 32×32          | pass    |
+| P-54 tablet rail divider | 1024  | y 1036, 96 wide        | y 1036, 96 wide       | pass    |
+| P-54 rail sign out icon  | 1024  | 24×24 at 24,1073       | 24×24 at 24,1073      | pass    |
+| handle chevron           | 1440  | points left            | points left           | pass    |
+| rail handle chevron      | 1440  | points right           | points right          | pass    |
+| Settings chevron, open   | 1440  | points up              | points up             | pass    |
+| Settings chevron, closed | 1440  | points down (NFR-22a)  | points down           | pass    |
+| tablet handle chevron    | 1024  | points left (DV-10)    | points left           | pass    |
+| tablet rail handle       | 1024  | points right           | points right          | pass    |
+| tablet Settings, open    | 1024  | points up              | points up             | pass    |
+
+Every chevron is one glyph, `chevron-left.svg`, which now carries the Figma master geometry
+`M12.5 15L7.5 10L12.5 5` (a left chevron) turned by each consumer's CSS: none on the expanded handle,
+`rotate(180deg)` on the rail handle, `rotate(90deg)` and `rotate(-90deg)` on the open and closed
+Settings chevron, and `rotate(-90deg)` on the chip caret. The directions were read in Chromium from
+the path's screen matrix on the 3004 dev server and are pinned by
+`tests/unit/tooling/shell-chevron-direction.test.ts`. An earlier revision of these tables passed the
+chevrons on box geometry alone while the asset held the rotated chip-caret appearance (a downward V),
+so the handle pointed down, the rail handle up, the Settings chevron left and right and the chip
+caret right; the boxes were right and the directions were wrong.
+
+Rail icon tops at 1024 match Figma (43, 110, 176, 242, 308, 374, 442, 508, 574). Paint rows read
+from `getComputedStyle()`: the panel border is 1 px `#E1E7EA`, radius 12, shadow
+`0 8px 27px rgba(49,59,67,.05)`; rows are Inter 500 16/18 (18/22 on tablet) `#404142` with
+`#969B9D` icons; hover is `#F4F5F6` with label `#1A1C1E` and icon `#404142` (rail pill icon
+`#1A1C1E`); the current row is `rgba(30,174,255,.1)` with `#0399ED` label and icon; the tooltip is
+`#191B1E` on white with the `0 6px 17px rgba(37,42,49,.07)` shadow. The panel was mounted in a
+temporary local `AppLayout` with the `userSettings` flag on; that mount and the flag were reverted
+before the commit (`AppLayout` is Story 3.1).
+
+What Figma leaves open, and how it was built:
+
+- The tablet rail's pills are not drawn. They derive from the desktop pill (24 px icon: 56×40; 28 px
+  icon: 60×44) and put every icon at Figma's y. The tablet tooltip reuses the desktop one (PROP-5) at
+  the same offset from the rail's right edge.
+- The rail dividers are drawn 74 px and 96 px wide on 72 px and 76 px panels. Their boxes keep the
+  drawn width, but the rail list is a scroll container (FR-14, OQ-21: below about 809 px of tablet
+  layout height and 635 px of desktop height the rail is taller than the card), so the overhang is
+  clipped at the list's edge rather than painted past the card.
+- The collapsed rail scrolls like the expanded panel: the list is `overflow-y: auto` with a 76 px
+  scroll padding under the sticky Sign out, so a focused row is never covered, and its scrollbar is
+  hidden (a classic scrollbar cannot fit a 72 px icon rail); the wheel, touch and Tab still scroll
+  it. The tooltip is `position: fixed` at its row's box plus the drawn offset and is re-measured on
+  every scroll and resize, so the scrolling list never clips it.
+  `app-shell.spec.ts` checks the rail at 1280×720: the list and Sign out stay inside the card, the
+  last row is reached by scrolling and by Tab above the sticky Sign out, and a scrolled row's
+  tooltip paints in full outside the card.
+- The list carries `tabindex="-1"` in the sidebar layouts (not in the drawer, whose list never
+  scrolls). Firefox otherwise makes an overflowing scroll container a Tab stop of its own, an
+  unnamed list between the handle and the first row; every item is a control, so the list needs
+  no stop to be scrolled by keyboard, and its role is unchanged.
+- The sticky card is limited to the navigation grid row, so once the footer scrolls in it moves up
+  under the 64 px header. Chromium and WebKit scroll a focused sidebar control fully into view,
+  honouring the list's `scroll-padding-bottom` and the root `scroll-padding-top`. Firefox scrolls
+  only a control that is entirely out of view, so a partly visible one stays clipped by the list or
+  under the header (the collapse handle entirely, at 1440×400). One frame after a sidebar control
+  takes focus, `useStickyFocusClearance` scrolls it into view within its list
+  (`block: 'nearest'`) and, only when the header still covers it, scrolls the page up by the
+  covered height rounded up to a whole pixel, checking once more in the next frame. Focus then
+  lands clear of the header and of the sticky Sign out in every engine (WCAG 2.4.11).
+- The tablet Settings header content sits 3 px lower than a 66 px row centres it (Figma draws it at
+  y 22), and the Products row is 67 px; both are reproduced.
+- The item set reads every FR-18 destination from its `ROUTE_PATHS` key (`boards`,
+  `settingsIntegrations` ...), which the coming-soon routes of Story 2.5 added.
+
+## Mobile drawer
+
+Below 1024 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
+transparent target around the 24 px glyph at 336,16) and `UINavigationDrawer` opens a modal dialog
+named "Main navigation". It is MUI's `Modal`, so the focus trap, the hidden page (the app root,
+banner, main and footer lose their roles), the scroll lock and Escape are MUI's; no `inert`, `:has()`
+or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies of the logo, bell,
+list and avatar and the one operable `x-close` button, and a 313×622 panel at 62,56 with the
+disabled drawer search and the same `UINavigationList` as the sidebar in 60 px rows (the Settings
+header is 48 px while the group is open, as drawn). The panel slides in over 200 ms and the scrim
+fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0
+(`useDrawerMotion`).
+
+Focus: the close button takes focus on open. Escape, the close button, a tap anywhere outside the
+panel (the scrim, the untinted footer, or the header outside the close button) close the drawer and
+return focus to the burger. A navigation row, a sub-item, Settings, Sign out or any route change
+close it without restoring the burger, so the destination's `<main>` keeps the focus
+`useArrivalFocus` gave it; widening the viewport unmounts the drawer and focuses
+`main[tabindex="-1"]`. Sign out closes the drawer and runs `signOut` once.
+
+### Measured against Figma (drawer, 375 wide)
+
+| Row                 | Figma                  | Measured            | Verdict   |
+| ------------------- | ---------------------- | ------------------- | --------- |
+| P-33 burger glyph   | 336,16, 24×24          | 336,16, 24×24       | pass      |
+| P-38 burger target  | 326,6, 44×44           | 326,6, 44×44        | pass      |
+| P-43 drawer header  | 0,0, 375×56            | 0,0, 375×56         | pass      |
+| drawer logo         | 15,7, 125×42.067       | 15,7, 125×42.06     | pass      |
+| drawer bell, list   | 200,16 and 240,16      | 200,16 and 240,16   | pass      |
+| drawer close glyph  | 336,16, 24×24          | 336,16, 24×24       | pass      |
+| P-34 drawer panel   | 62,56, 313×622         | 62,56, 313×622      | pass      |
+| P-35 drawer search  | 72,69, 293×48          | 72,69, 293×48       | pass      |
+| P-36 first row      | 62,125, 233×60         | 62,125, 233×60      | pass      |
+| Settings group      | 233×188, header at 425 | 425 to 613 (188)    | pass      |
+| Settings chevron    | right 24, 24 px        | 247,437, 24×24      | pass      |
+| first sub-item text | x 56, y 60 in group    | x 56, y 60 in group | pass      |
+| P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass      |
+| drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
+| scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
+
+The scrim (`DrawerScrim`) is `rgba(54,79,93,.05)` with a 4 px backdrop blur, painted as an
+aria-hidden layer that takes no pointer events and ends at the top of the page footer
+(`useFooterInset` measures the `<footer>` outside `<main>` on open and on resize, and keeps the whole
+viewport when no footer is in view), so the footer paints untinted and unblurred as Figma draws it
+(V-3); the 56 px header is painted above the scrim. Under it, MUI's backdrop is `invisible`: it paints
+nothing and stays the full-viewport hit target, so a tap on the footer closes the drawer instead of
+following a footer link. Measured at 375×812 on `/boards`: the footer starts at y 604.4, the scrim
+box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`. With the user resolved
+(`userSettings` on, one stubbed `CurrentUser` reply) the avatar copy and the header avatar it covers
+both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15 px Golos 700
+`rgb(26, 28, 30)`; the copy sits under `aria-hidden`, holds no focusable element, and the page made
+one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
+
+At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
+stay 44×44 there: both share `edgeButtonStyles.target`, which below 375 px trims the right extension
+to the 8 px inset and gives the 2 px to the left (12 px), so the glyph does not move, the page does
+not scroll sideways and the burger stays clear of the avatar target. Below 375 px their focus ring is
+drawn inside the button (`outline-offset: -2px`), so the 8 px inset never clips it at the viewport's
+right edge. The Sign out row is 314 px wide
+in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
+
+What Figma leaves open, and how it was built:
+
+- The drawer avatar copy is the header avatar itself: the user menu slot publishes an aria-hidden
+  copy of its 40 px `UserAvatar` through the shell slot's `onAvatar` callback, so it shows the same
+  monogram (`ОП` for the demo user), the same no-data person glyph while the user is pending, while
+  `userSettings` is off or after a failed read, and costs no second `currentUser` read. Figma fills
+  it with a photo; user-service has no avatar field (G5 in `src/modules/user/README.md`), so the
+  monogram stands in for it exactly as it does in the header. Until the slot chunk loads, or when
+  it fails, the drawer keeps its own 40 px `#E1E7EA` circle with the 24 px person glyph in
+  `#1A1C1E`, the same size, so nothing shifts.
+- The collapsed Settings header is 60 px (as the other rows) and its chevron is centred on it; the
+  open header is the drawn 48 px.
+- The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.
+
+### Measured against Figma (user chip and menu)
+
+The chip and its menu live in the `user` module (`settings/components/user-menu/`), not here; the
+rows are recorded beside the other surfaces. Measured in Chromium on the 3004 preview with the shell
+header mounted temporarily in `AppLayout`, `userSettings` on for the three-item rows, the
+`CurrentUser` reply stubbed to a two-word name, device scale factor 1, `scrollY` 0.
+
+| Row                     | Width | Figma               | Measured               | Verdict |
+| ----------------------- | ----- | ------------------- | ---------------------- | ------- |
+| P-6 chip                | 1440  | 1203,8, 225×48      | 1203,8, 225×48         | pass    |
+| chip avatar             | 1440  | 1211,15, 32         | 1211,15, 32×32         | pass    |
+| chip name text box      | 1440  | x 1253, 121 wide    | 1253,22, 121×18        | pass    |
+| chip caret              | 1440  | 192,14 in chip, 20  | 1395,22, 20×20         | pass    |
+| P-14 menu card, 3 items | 1440  | 1203,8, 225×180     | 1203,8, 225×180        | pass    |
+| P-59 menu card, 1 item  | 1440  | 1203,8, 225×92      | 1203,8, 225×92         | pass    |
+| menu items              | 1440  | 225×44, text x 20   | 225×44, text x 1223    | pass    |
+| menu divider            | 1440  | `#E1E7EA` 1 px top  | 1 px at 1203,56        | pass    |
+| last item corners       | 1440  | radius 0 0 7 7      | 7 px at 1203,144       | pass    |
+| P-20 chip               | 1024  | 759,6, 253×52       | 759,6, 253×52          | pass    |
+| chip avatar             | 1024  | 775,16, 32          | 775,16, 32×32          | pass    |
+| chip name text box      | 1024  | x 817, 138 wide     | 817,23, 138×18         | pass    |
+| chip caret              | 1024  | 217,16 in chip, 20  | 976,22, 20×20          | pass    |
+| P-27 menu card, 3 items | 1024  | 759,6, 253×232      | 759,6, 253×232         | pass    |
+| P-60 menu card, 1 item  | 1024  | 759,6, 253×112      | 759,6, 253×112         | pass    |
+| menu items              | 1024  | 253×60, text x 20   | 253×60, text x 779     | pass    |
+| menu divider            | 1024  | `#E1E7EA` 1 px top  | 1 px at 759,58         | pass    |
+| last item corners       | 1024  | radius 0 0 7 7      | 7 px at 759,178        | pass    |
+| P-32 avatar             | 375   | 280,8, 40×40        | 280,8, 40×40           | pass    |
+| P-38 avatar target      | 375   | 278,6, 44×44        | 278,6, 44×44           | pass    |
+| P-37 popover, 3 items   | 375   | 140,53, 225×142     | 140,53, 225×142        | pass    |
+| popover caret           | 375   | 26×6 above the body | 288,53, 26×6           | pass    |
+| popover items           | 375   | 225×44, 2 px apart  | 225×44 at 59, 105, 151 | pass    |
+| P-61 popover, 1 item    | 375   | 140,53, 225×50      | body 140,59, 225×44    | pass    |
+
+Paint and type, read with `getComputedStyle()` at each width the row is drawn for: the chip is white
+with a 1 px `#D0D4D8` border and an 8 px radius; the name is Inter 500 14/18 (16/18 at 1024) in
+`#1A1C1E`; the caret is `#969B9D` and points down (measured from the path's screen matrix at 1440 and
+1024; the master left chevron turned by `rotate(-90deg)`); the avatar fill is `#E1E7EA` with a
+Golos 700 12 px (15 px at 375) monogram in `#1A1C1E`; the card shadow is
+`0 8px 27px rgba(49,59,67,.05)` and the popover's `.14`; the focused or hovered item is `#F4F5F6`.
+
+States measured: a focused item shows `#F4F5F6` with a 2 px `#1A1C1E` ring at offset -2 px, and the
+chip a ring at offset +2 px; the caret transform is the same open and closed; no `TouchRipple` is
+rendered; a name too long for the 121 / 138 px text box keeps the chip at its Figma width, ends in an
+ellipsis and stays whole in the accessible name; under the WCAG 1.4.12 text-spacing overrides the
+name box is a minimum rather than a fixed width: two hidden copies of the name, one with the page's
+spacing and one held at normal spacing, are measured with a `ResizeObserver`, and the name box and
+the chip widen by the difference, capped at the free header space (425 px at 1440, 116 px at 1024),
+so the chip keeps its right edge and grows leftward, pushing the search and the two icon buttons into
+that space, before the ellipsis applies; the divider sits on the first item drawn, which is Sign out
+when `userSettings` is off, and only the desktop and tablet cards draw it, as the mobile popover's
+items are 2 px apart; at 320 px the popover sits at x 92 to 317 and the
+document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
+focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
+closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none is made.
+
+A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
+stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how
+Figma's 92 / 180 / 232 stack the items.
+
+### Measured against Figma (frame and settings alignment, issue #362)
+
+Measured in Chromium on the 3004 dev server with `getBoundingClientRect()`, session restored from the
+sandbox demo marker and the `userSettings` flag forced on.
+
+| Row                         | Width           | Figma          | Measured            | Result |
+| --------------------------- | --------------- | -------------- | ------------------- | ------ |
+| header                      | all             | 64 px tall     | 0,0 w×64            | pass   |
+| sidebar panel               | 1440            | 12,74 238×791  | 12,74 238×791       | pass   |
+| sidebar panel (fits 900 px) | 1024            | 13,74 238 wide | 13,74 238 wide      | pass   |
+| `<main>` left edge          | 1440            | 250            | 250                 | pass   |
+| `<main>` left edge          | 1024            | 251            | 251                 | pass   |
+| `/settings` title left edge | 1440            | 262            | 262                 | pass   |
+| `/settings` title left edge | 1024            | 263            | 263                 | pass   |
+| `/settings` title left edge | 375             | unchanged 15   | 15                  | pass   |
+| `/` title left edge         | 1440            | 262            | 262                 | pass   |
+| `/` title left edge         | 1024            | 263            | 263                 | pass   |
+| `/` title left edge         | 375             | unchanged 15   | 15                  | pass   |
+| horizontal overflow         | 1440, 1024, 375 | none           | scrollWidth = width | pass   |
+
+The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, which put the title at x 283 and
+x 374. Both pages now render inside the shared `UIShellContent`
+(`src/components/ui-shell-content/`), whose insets are 15 px, 26 px from 768 px and 12 px from
+1024 px, so the title starts 12 px from the sidebar; below 1024 px those are the toolkit
+container's own 15 px and 26 px, so the mobile and small-tablet insets are unchanged. The `/` rows
+were measured by `tests/e2e/modules/home.spec.ts` on the 3004 dev server (sidebar expanded). The
+tablet
+panel's height is the viewport minus 86 px by design (UX 4.3), not the drawn 1142 px, so it is not a
+row. With the viewport 500 px tall and the page scrolled 300 px, the header stays at top 0 and the
+sidebar at top 74.
+
+## Browser proofs (issue #362)
+
+- `tests/e2e/modules/app-shell.spec.ts` (desktop engines): Settings and Sign out from the sidebar
+  and the chip menu (1440 and 1024), every row and sub-item, the disabled controls, no badge, the
+  `CurrentUser` request counts, the flag-off menu and no shell chunk on the public pages.
+- `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` (desktop engines): Tab order at 1440, 1024 and
+  375, the handle, the chip menu arrow-key walk, Escape and Tab, the drawer's full Tab order on `/`
+  and `/settings` (close, the rows, Settings and its chevron, the sub-items on `/settings`, Sign out,
+  back to close) walked forward and again with Shift+Tab, how the drawer hides the page, and focus
+  never hidden under the sticky header (WCAG 2.4.11, 1440x400 and 1000x300).
+- `tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts` (desktop engines): WCAG 1.4.12 text spacing
+  and WCAG 1.4.4 200 % text size, with no clipped and no overlapping label in the closed shell, the
+  open menu, the sidebar and the open drawer, the chip growing leftward instead of clipping, and a
+  sub-item focused at 200 % kept clear of the sticky Sign out.
+- `tests/e2e/mobile/app-shell-touch.spec.ts` (both mobile projects): the drawer opened and closed by
+  tap, Settings and Sign out from the drawer and the avatar menu, a 44 px tap area on every control
+  but the 42 px drawer sub-items (see "Known gaps"), and no horizontal overflow at device width and
+  320 px.
+- `tests/e2e/a11y/routes.a11y.spec.ts` (desktop engines): axe over `/`, `/settings` and the eight
+  coming-soon routes with the shell loaded, `/` with `userSettings` off and `/` with the menu open.
+
+The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) abort the
+`current-user` chunk, so the chip never issues the second read OQ-25 introduced and their ordered
+replies stay deterministic; `app-shell.spec.ts` is the one spec that lets the chip read.
+
+Run here against the 3004 dev server with the host Chromium (`chromium-dev` and `mobile-chrome-dev`,
+`--workers=1`): every spec above passes. Firefox, WebKit and `mobile-safari` need the pinned
+Playwright container and run in CI only.
+
+### Known gaps, deliberately not fixed (design-owned)
+
+- **The disabled bell and list** keep Figma's 40 px pitch and are not measured by the tap-area
+  check (OQ-15).
+- **The drawer sub-items** Integrations, Webhooks and Billing keep Figma's 42 px PROP-18 pitch, under
+  the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
+  instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
+  sub-items do not overlap.
+- **Three grey glyphs under 3:1** (WCAG 1.4.11, owner decision, 2026-10-27, issue #276). Three
+  active controls are identified at rest only by a `#969B9D` glyph on white, 2.81:1 against the
+  3:1 of SC 1.4.11 Non-text Contrast: the Settings disclosure chevron in the sidebar and the drawer
+  (`ui-navigation-list/group-styles.ts`, its state exposed through `aria-expanded`), the icon-only
+  sidebar collapse handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
+  (`ui-navigation-list/styles.ts` through `rail-styles.ts`, label visually hidden). The product
+  owner keeps Figma's `#969B9D` and accepts a scoped exception for exactly these three controls in
+  their resting state, tracked in issue #276 with the other palette exceptions. Hover (`#404142`)
+  passes, the current rail row falls under the existing current-row entry (PRD NFR-4 X-1), and
+  focus indicators still reach
+  3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
+  `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
+
+### DV-11: the Settings label keeps clear of its chevron (owner decision, 2026-10-26)
+
+Figma draws the Settings chevron 192 px (desktop) and 190 px (tablet) into a row whose label already
+ends at 184 and 204 px at rest, and with letter, word and line spacing raised (WCAG 1.4.12) the label
+ran 3 px (1440) and 26 px (1024) under it. The group header's label is now a box whose width stops at
+the chevron's box: 136 px on desktop, 131 px on tablet and 129 px in the drawer. At rest the label
+keeps its Figma position, size and single line (68 to 184 px at 1440, 73 to 203.5 px at 1024); under
+the override it wraps inside its own box (two lines, ending at 196 and 192 px against chevrons at 204
+and 203) and the row keeps its Figma height. The tablet box is 1 px wider than the room to the
+chevron because Inter's advance for the label is 130.52 px against 130 px of room; narrowing it to
+the exact room would wrap the word at rest, so the label's advance box stays 0.52 px inside the
+chevron's button box at 1024 (the right side bearing of the last glyph, no ink). Every other row
+keeps the 0 px rule. `app-shell-text-spacing.a11y.spec.ts` no longer excludes the chevrons: it checks
+text against every other control's box, and a chevron, which holds no text, is checked as a box.
+
+### Measured against Figma (remaining UX 10.2 rows, issue #362)
+
+Measured on the 3004 dev server with `getBoundingClientRect()` (text rows with a `Range` over the
+label); the rows not listed here are in the tables above.
+
+| Row                          | Width | Figma          | Measured       | Result |
+| ---------------------------- | ----- | -------------- | -------------- | ------ |
+| P-13 Settings title start    | 1440  | x 262, y 92    | x 262, y 92    | pass   |
+| P-26 Settings title start    | 1024  | x 263, y 88    | x 263, y 88    | pass   |
+| P-51 desktop rail page start | 1440  | 125, title 137 | 125, title 137 | pass   |
+| P-58 first sub-item text     | 1024  | x 73, y 503    | x 73, y 503    | pass   |
+| P-64 current sub-item tint   | 1440  | 12,419, 238×42 | 12,419, 238×42 | pass   |
+| P-65 current sub-item tint   | 1024  | 13,495, 238×46 | 13,495, 238×46 | pass   |
+
+P-51 failed on the first measurement: the page followed the rail edge to x 84 (title x 96). The
+desktop rail wrapper now keeps a 41 px right margin, so the navigation column is 12 + 72 + 41 = 125
+px wide and the page starts where Figma draws it. P-58's text box is 18 px tall in Figma and starts
+at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
+The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`. P-62, the tablet
+rail content start, has no Figma value yet (UX 10.2, V-9): the tablet page follows the rail edge
+(x 89, title x 101) until it is measured.
+
+### Visual baselines (Story 3.4)
+
+The baselines were recorded in the pinned Playwright container against a freshly built
+`test-harness` image (`make start-prod`, then `playwright test tests/visual --update-snapshots
+--workers=1`); the whole visual suite passed, 490 tests.
+
+- **Changed, 134:** exactly the protected pages. The 39 home snapshots (13 viewports, three engines)
+  show the shell without badges and without home's former Settings link and Sign out button
+  (FR-15); the 93 desktop and 2 mobile settings snapshots show the shell and the left-aligned page.
+  No public page (sign-in, sign-up, password recovery, error pages) changed.
+- **Added, 88:** the eight coming-soon routes at the three Figma widths in three engines
+  (`visual-comparison.coming-soon.spec.ts`, 72) and on both mobile projects
+  (`mobile/coming-soon.spec.ts`, 16). These pages have no Figma frame: their layout is the **OQ-28
+  proposal**, not a measured design, and a later Figma frame replaces them.
+- **Shell states:** `visual-comparison.app-shell.spec.ts` captures the user menu open and the
+  sidebar collapsed to the rail (on `/boards`) at 1440 and 1024, and the expanded tablet panel with
+  its handle (DV-10) and the Settings group open at 1024, in three engines;
+  `mobile/app-shell.spec.ts` captures home with the closed header, the drawer open on `/settings`
+  with its current row (viewport only, since the drawer is an overlay) and the menu open, on both
+  mobile projects (15 and 6 baselines). Every interaction goes through a role or a label.
+- **Allowed difference (d):** content that has no data is absent: no baseline shows a badge. Every
+  protected-page spec (home, settings, coming-soon and the shell states) runs with the
+  `userSettings` flag on and one stubbed `CurrentUser` reply, so the chip always shows the same
+  name and monogram and never depends on the backend.
+- **Visited links:** the global `a:visited` colour in `src/index.css` no longer reaches the shell:
+  the navigation rows, sub-items, rail items and user menu links set their own `:visited` colour
+  ahead of hover and the current state, so a Firefox run whose shared history marks a route visited
+  captures the same labels as a fresh one. Re-recording after that fix and the `CurrentUser` stub
+  (599 visual tests passed) changed the 39 home snapshots and 31 Firefox snapshots that had captured
+  blue visited labels (17 settings, 14 coming-soon), and added the 21 shell-state baselines.
