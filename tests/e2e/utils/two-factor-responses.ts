@@ -46,6 +46,11 @@ const graphQLFailure = (message: string, status: number): unknown => ({
   errors: [{ message, extensions: { status } }],
 });
 
+export const replyWithUnauthenticated =
+  (message: string): SignInReply =>
+  (route) =>
+    json(route, 200, graphQLFailure(message, 401));
+
 export const SIGN_IN_REPLIES: Record<SignInOutcome, SignInReply> = {
   session: (route) =>
     json(
@@ -67,7 +72,7 @@ export const SIGN_IN_REPLIES: Record<SignInOutcome, SignInReply> = {
         pendingSessionId: SIGN_IN_PENDING_SESSION_ID,
       })
     ),
-  unauthenticated: (route) => json(route, 200, graphQLFailure('Invalid credentials.', 401)),
+  unauthenticated: replyWithUnauthenticated('Invalid credentials.'),
   violation: (route) =>
     json(route, 200, graphQLFailure('email: This value is not a valid email address.', 422)),
   locked: (route) => json(route, 200, graphQLFailure('Account is locked.', 423)),
@@ -85,9 +90,12 @@ const recordOf = (request: Request): RecordedSignIn => ({
   url: request.url(),
 });
 
+const replyOf = (outcome: SignInOutcome | SignInReply | undefined): SignInReply =>
+  typeof outcome === 'function' ? outcome : SIGN_IN_REPLIES[outcome ?? 'session'];
+
 export async function stubSignIn(
   page: Page,
-  outcomes: readonly SignInOutcome[] = ['session']
+  outcomes: readonly (SignInOutcome | SignInReply)[] = ['session']
 ): Promise<StubbedSignIn> {
   const calls: RecordedSignIn[] = [];
   const count = (): number => calls.length;
@@ -95,8 +103,7 @@ export async function stubSignIn(
   await page.route(GRAPHQL_URL, async (route: Route) => {
     if (bodyOf(route.request())?.operationName !== SIGN_IN_OPERATION) return route.fallback();
     calls.push(recordOf(route.request()));
-    const outcome = outcomes[Math.min(count(), outcomes.length) - 1] ?? 'session';
-    return SIGN_IN_REPLIES[outcome](route);
+    return replyOf(outcomes[Math.min(count(), outcomes.length) - 1])(route);
   });
   return { calls, count };
 }

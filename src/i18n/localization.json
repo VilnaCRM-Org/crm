@@ -133,7 +133,9 @@
         "errors": {
           "load_failed": "Failed to load sign-in form. Please try again.",
           "invalid_credentials": "Invalid e-mail or password",
-          "rate_limited": "Too many sign-in attempts. Try again later"
+          "locked": "Your account is temporarily locked after too many failed attempts. Try again later.",
+          "rate_limited": "Too many sign-in attempts. Try again later",
+          "transient": "The request could not be sent. Check your connection and try again."
         },
         "form": {
           "email_input": {
@@ -339,7 +341,9 @@
         "errors": {
           "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
           "invalid_credentials": "Невірна електронна адреса або пароль",
-          "rate_limited": "Забагато спроб входу. Спробуйте пізніше"
+          "locked": "Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше.",
+          "rate_limited": "Забагато спроб входу. Спробуйте пізніше",
+          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
         },
         "form": {
           "email_input": {

@@ -18,7 +18,9 @@ export const signInSuccessCard = {
 
 export const signInErrorMessages = {
   invalidCredentials: t('sign_in.errors.invalid_credentials'),
+  locked: t('sign_in.errors.locked'),
   rateLimited: t('sign_in.errors.rate_limited'),
+  transient: t('sign_in.errors.transient'),
   network: t('failure_responses.network_errors.network_error'),
   server: t('failure_responses.server_errors.server_error'),
   validation: t('failure_responses.client_errors.something_went_wrong'),
@@ -51,6 +53,20 @@ export async function expectSignInErrorCard(page: Page, message: string): Promis
   await expect(errorCardHeading(page)).toBeFocused();
   await expect(errorCardOf(page).getByRole('alert')).toHaveText(message);
   await expect(retryButtonOf(page)).toBeEnabled();
+  await expect(backButtonOf(page)).toBeEnabled();
+  await expect(page.locator('#login-form')).toHaveAttribute('inert', '');
+  await expect(page.locator('#auth-provider-buttons-container')).toHaveAttribute('inert', '');
+}
+
+export const errorCardBodyOf = (page: Page): Locator => errorCardHeading(page).locator('xpath=..');
+
+export async function expectSignInErrorCardWithoutRetry(
+  page: Page,
+  message: string
+): Promise<void> {
+  await expect(errorCardHeading(page)).toBeFocused();
+  await expect(errorCardBodyOf(page).getByRole('alert')).toHaveText(message);
+  await expect(retryButtonOf(page)).toHaveCount(0);
   await expect(backButtonOf(page)).toBeEnabled();
   await expect(page.locator('#login-form')).toHaveAttribute('inert', '');
   await expect(page.locator('#auth-provider-buttons-container')).toHaveAttribute('inert', '');

@@ -664,6 +664,21 @@ exactly as the REST placeholder had none.
 a placeholder with no working backend); waiting for the user-service release before building
 (it blocks on an unscheduled tag).
 
+### The sign-in failure card
+
+The result card reads its text from the failure reason of the `AuthError`
+(`invalid_credentials`, `locked`, `rate_limited`, `transient`), never from the upstream message,
+so two different 401 answers render the same card. `LoginSubmitter.retryable` mirrors
+`AuthError.retryable`, which only `transient` sets, and the card offers "Спробувати ще раз" only
+then; "Назад" is always there. When a retry settles with a reason that offers no Retry, the
+focused button leaves the card, so the heading takes focus back and the alert announces the new
+text.
+
+**Open design decision.** The card's contained button (white on the brand `#1EAEFF`, 2.45:1) and
+the outlined one match no `A11Y_EXCEPTIONS` entry, and no browser axe scan opens this card, so the
+`color-contrast` rule is not exercised for it. A scan needs a scoped exception under issue #276,
+which is the owner's call; none was added here.
+
 ### The pending file lives in #315's mechanism
 
 **Context.** No user-service tag declares the six operations, and the pinned schema is what
