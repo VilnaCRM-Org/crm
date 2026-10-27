@@ -1,7 +1,8 @@
 import { type JSX, useState } from 'react';
-import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
+import { SubmitHandler, FieldValues } from 'react-hook-form';
 
 import type {
+  BlockedReasonProps,
   FormBodyProps,
   FormHeaderProps,
   FormHeaderSectionProps,
@@ -20,7 +21,7 @@ import UITypography from '@/components/ui-typography';
 
 import ErrorBanner from './error-banner';
 import SubmitSpinner from './submit-spinner';
-import useOfflineSubmit from './use-offline-submit';
+import useFormSubmission from './use-form-submission';
 import useUIForm from './use-ui-form';
 
 const NO_STYLES = {};
@@ -58,6 +59,7 @@ function buildSubmitHandler<T extends FieldValues>(
 function SubmitControls({
   submitting,
   isSubmitDisabled,
+  blocked,
   submitLabel,
   describedBy,
   buttonRef,
@@ -72,6 +74,7 @@ function SubmitControls({
       loadingPosition="center"
       loadingIndicator={<SubmitSpinner />}
       disabled={isSubmitDisabled}
+      aria-disabled={blocked || undefined}
       aria-describedby={describedBy}
       variant="contained"
       sx={[styles.submitButton, spacing === 'tight' && styles.submitButtonTight, submitSx]}
@@ -79,6 +82,14 @@ function SubmitControls({
       {submitLabel}
     </UIButton>
   );
+}
+
+function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
+  return block.blocked ? (
+    <UITypography id={block.reasonId} sx={styles.blockedReason}>
+      {block.reason}
+    </UITypography>
+  ) : null;
 }
 
 function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element {
@@ -107,28 +118,27 @@ function FormBody<T extends FieldValues>({
   announceSubmitting,
   footer,
 }: FormBodyProps<T>): JSX.Element {
-  const methods = useFormContext<T>();
-  // Offline, the submit is disabled rather than allowed to fail: the notice sits inside the
-  // form after its heading so the registration overlay never covers it, the button describes
-  // itself by the notice, and focus moves there if the button held it (issue #147).
-  const offline = useOfflineSubmit(submit.submitRef);
+  const { offline, block, disabled } = useFormSubmission({
+    submit,
+    submitting,
+    handleSubmit,
+    onInvalid,
+  });
   return (
-    <form
-      noValidate
-      aria-busy={submitting}
-      onSubmit={methods.handleSubmit(handleSubmit, onInvalid)}
-    >
+    <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>
       <FormLead header={header} lead={lead} offline={offline} />
       {children}
       <SubmitControls
         submitting={submitting}
-        isSubmitDisabled={submit.isSubmitDisabled || !offline.online}
+        isSubmitDisabled={disabled}
+        blocked={block.blocked}
         submitLabel={submit.submitLabel}
-        describedBy={offline.noticeId}
+        describedBy={block.describedBy}
         buttonRef={offline.submitRef}
         spacing={submit.submitSpacing}
         submitSx={submit.submitSx}
       />
+      <BlockedReason block={block} />
       {footer}
       <UILiveStatus message={announceSubmitting ? submit.submittingLabel : ''} />
     </form>
@@ -153,6 +163,7 @@ function submitOf<T extends FieldValues>(props: UIFormProps<T>): FormSubmitProps
     submitLabel,
     submittingLabel,
     isSubmitDisabled,
+    blockedReason: props.submitBlockedReason,
     submitSpacing,
     submitRef: props.submitRef,
     submitSx: props.submitSx,

@@ -127,6 +127,22 @@ export const SubmitRef: Story = {
   },
 };
 
+export const SubmitBlocked: Story = {
+  args: { submitBlockedReason: 'Спочатку підтвердьте, що зберегли коди' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`submitBlockedReason` makes the submit `aria-disabled` rather than natively ' +
+          'disabled: it keeps its contained style and stays focusable, click, Enter and Space ' +
+          'send nothing, and the reason shows under the button in #404142 and describes it. ' +
+          'A native disabled state (offline, `isSubmitDisabled`, submitting) wins and hides ' +
+          'the reason.',
+      },
+    },
+  },
+};
+
 export const Offline: Story = {
   beforeEach: () => {
     useConnectivityStore.setState({ online: false });

@@ -831,6 +831,20 @@ selects the target's contents and reports `failed`, never moving focus.
 `tests/unit/tooling/qr-code-containment.test.ts` pins that `qrcode-generator` has one importer
 and that nothing outside the settings feature imports the image or the hook.
 
+### `UIForm` explains a submit that cannot be pressed yet
+
+**Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user
+confirms they saved the codes, but a natively disabled button leaves keyboard and screen reader
+users without the reason, because it drops out of the tab order.
+
+**Decision.** `UIForm` takes a scalar `submitBlockedReason`. While it is set, the submit is
+`aria-disabled="true"` instead of `disabled`, keeps its contained style and stays focusable; the
+form refuses the submit event, so click, Enter and Space call neither `onSubmit` nor validation;
+and the reason shows under the button in `#404142`, its id appended to `aria-describedby` after the
+offline notice id. A native disabled state wins: offline, `isSubmitDisabled` and submitting hide
+the reason and set `disabled`. Without the prop every existing form renders as before. The wiring
+sits in `use-form-submission.ts` and `use-submit-block.ts`, each with its own test.
+
 ### `UIPinInput` adopts the toolkit pin input with the project's overrides
 
 **Context.** The code is six digits typed or pasted. The toolkit's `UiPinInput` supplies the cells

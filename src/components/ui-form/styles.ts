@@ -115,6 +115,16 @@ export default {
     },
   },
 
+  blockedReason: {
+    marginTop: '0.5rem',
+    fontFamily: 'Golos',
+    fontWeight: 400,
+    fontSize: '0.875rem',
+    lineHeight: '1.25rem',
+    letterSpacing: 0,
+    color: customColors.text.primary,
+  },
+
   submitButtonTight: {
     marginTop: '1.0625rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
