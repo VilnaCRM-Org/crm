@@ -9,7 +9,15 @@ import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations'
 
 jest.mock('@/providers/di', () => ({
   __esModule: true,
-  useService: (): object => ({ update: jest.fn(), resend: jest.fn(), read: jest.fn() }),
+  useService: (): object => ({
+    update: jest.fn(),
+    resend: jest.fn(),
+    read: jest.fn(),
+    fromFullName: (fullName: string): object =>
+      new (jest.requireActual(
+        '@/modules/user/store/user-display-name-mapper'
+      ).default)().fromFullName(fullName),
+  }),
 }));
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (

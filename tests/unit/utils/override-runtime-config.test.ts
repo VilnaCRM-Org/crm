@@ -10,7 +10,7 @@ type FakeRoute = {
   request: () => { resourceType: () => string };
   fetch: () => Promise<{ text: () => Promise<string> }>;
   fulfill: jest.Mock;
-  continue: jest.Mock;
+  fallback: jest.Mock;
 };
 
 const SHELL = [
@@ -40,7 +40,7 @@ const documentRoute = (body: string, fulfill: jest.Mock): FakeRoute => ({
     text: async (): Promise<string> => body,
   }),
   fulfill,
-  continue: jest.fn(),
+  fallback: jest.fn(),
 });
 
 const renderedConfig = (html: string): unknown => {
@@ -87,19 +87,22 @@ describe('overrideRuntimeConfig', () => {
     expect(renderedConfig(options.body)).toEqual({ apiBaseUrl: 'http://x/</script><b>' });
   });
 
-  it('passes non-document requests through untouched', async () => {
+  it('hands non-document requests to the next route handler untouched', async () => {
     const { handler } = await registerHandler({});
-    const continueRoute = jest.fn().mockResolvedValue(undefined);
+    const fallbackRoute = jest.fn().mockResolvedValue(undefined);
     const mockRoute = {
       request: (): { resourceType: () => string } => ({ resourceType: (): string => 'script' }),
       fetch: jest.fn(),
       fulfill: jest.fn(),
-      continue: continueRoute,
+      continue: jest.fn(),
+      fallback: fallbackRoute,
     };
 
     await handler(mockRoute);
 
-    expect(continueRoute).toHaveBeenCalledTimes(1);
+    expect(fallbackRoute).toHaveBeenCalledTimes(1);
+    expect(mockRoute.continue).not.toHaveBeenCalled();
+    expect(mockRoute.fetch).not.toHaveBeenCalled();
     expect(mockRoute.fulfill).not.toHaveBeenCalled();
   });
 

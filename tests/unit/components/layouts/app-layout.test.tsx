@@ -1,10 +1,12 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, type RenderResult, screen } from '@testing-library/react';
 import type { JSX, ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Outlet, Route, Routes, useNavigate, useOutletContext } from 'react-router';
 
 import AppLayout from '@/components/layouts/app-layout';
+import type { UIAppShellProps } from '@/components/types/ui-app-shell';
 import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
+import type { UserMenuSlot } from '@/routes/types/shell-slot';
 import testI18n from '@tests/i18n/test-i18n';
 
 let mockFooterPending = false;
@@ -15,6 +17,33 @@ jest.mock('@/components/ui-footer', () => ({
   default: (): ReactElement => {
     if (mockFooterPending) throw mockNeverSettles;
     return <footer>shell footer</footer>;
+  },
+}));
+
+let mockShellPending = false;
+
+jest.mock('@/components/layouts/app-shell-loader', () => ({
+  __esModule: true,
+  default: {
+    load: (): Promise<unknown> =>
+      Promise.resolve({
+        default: ({ signOut, userMenu: UserMenu }: UIAppShellProps): ReactElement => {
+          if (mockShellPending) throw mockNeverSettles;
+          return (
+            <>
+              <header>
+                <button type="button" onClick={signOut}>
+                  shell sign out
+                </button>
+                {UserMenu === undefined ? null : (
+                  <UserMenu signOut={signOut} onAvatar={jest.fn()} />
+                )}
+              </header>
+              <nav aria-label="Main navigation">shell navigation</nav>
+            </>
+          );
+        },
+      }),
   },
 }));
 
@@ -41,14 +70,15 @@ function SignOutProbe(): JSX.Element {
 async function renderLayout(
   entries: Entry,
   page: JSX.Element = <div>home page</div>,
-  signOut: () => void = jest.fn()
-): Promise<void> {
-  render(
+  signOut: () => void = jest.fn(),
+  userMenu?: UserMenuSlot
+): Promise<RenderResult> {
+  const view = render(
     <I18nextProvider i18n={testI18n}>
       <MemoryRouter initialEntries={entries}>
         <Routes>
           <Route element={<Outlet context={{ signOut }} />}>
-            <Route element={<AppLayout />}>
+            <Route element={<AppLayout userMenu={userMenu} />}>
               <Route path="/" element={page} />
               <Route path="/deals" element={<div>deals page</div>} />
             </Route>
@@ -59,6 +89,9 @@ async function renderLayout(
   );
 
   await screen.findByRole('contentinfo');
+  await screen.findByRole('banner');
+
+  return view;
 }
 
 describe('AppLayout', () => {
@@ -90,8 +123,10 @@ describe('AppLayout', () => {
         <I18nextProvider i18n={testI18n}>
           <MemoryRouter>
             <Routes>
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<div>home page</div>} />
+              <Route element={<Outlet context={{ signOut: jest.fn() }} />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<div>home page</div>} />
+                </Route>
               </Route>
             </Routes>
           </MemoryRouter>
@@ -137,6 +172,17 @@ describe('AppLayout', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
+  it('reserves the sticky header height as top scroll padding until it unmounts', async () => {
+    const view = await renderLayout(['/']);
+    const root = document.documentElement;
+
+    expect(root.style.getPropertyValue('scroll-padding-top')).toBe('64px');
+
+    view.unmount();
+
+    expect(root.style.getPropertyValue('scroll-padding-top')).toBe('');
+  });
+
   it('keeps the main landmark programmatically focusable but outside the tab order', async () => {
     await renderLayout(['/']);
 
@@ -174,5 +220,100 @@ describe('AppLayout', () => {
 
     expect(screen.getByText('probe')).toBeInTheDocument();
     expect(main).not.toHaveFocus();
+  });
+
+  it('orders the landmarks banner, navigation, main and contentinfo, one of each', async () => {
+    await renderLayout(['/']);
+
+    const landmarks = [
+      screen.getByRole('banner'),
+      screen.getByRole('navigation', { name: 'Main navigation' }),
+      screen.getByRole('main'),
+      screen.getByRole('contentinfo'),
+    ];
+
+    const followed = landmarks
+      .slice(1)
+      .map((next, index) => (landmarks[index] as HTMLElement).compareDocumentPosition(next));
+
+    expect(followed).toEqual(landmarks.slice(1).map(() => Node.DOCUMENT_POSITION_FOLLOWING));
+    expect(screen.getAllByRole('banner')).toHaveLength(1);
+    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('hands the shell the outlet sign out and the user menu slot', async () => {
+    const signOut = jest.fn();
+    const userMenu: UserMenuSlot = ({ signOut: menuSignOut }) => (
+      <button type="button" onClick={menuSignOut}>
+        slot sign out
+      </button>
+    );
+    await renderLayout(['/'], undefined, signOut, userMenu);
+
+    act(() => screen.getByRole('button', { name: 'shell sign out' }).click());
+    act(() => screen.getByRole('button', { name: 'slot sign out' }).click());
+
+    expect(signOut).toHaveBeenCalledTimes(2);
+  });
+
+  it('focuses main, not the header or the navigation, on arrival', async () => {
+    await renderLayout([{ pathname: '/', state: { focusMain: true } }] as Entry);
+
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'shell sign out' })).not.toHaveFocus();
+  });
+
+  it('keeps the shell out of the routed page and the footer out of the shell', async () => {
+    await renderLayout(['/']);
+
+    expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('banner'));
+    expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('navigation'));
+    expect(screen.getByRole('contentinfo')).not.toContainElement(screen.getByRole('banner'));
+  });
+
+  it('reserves the header and navigation column with two empty hidden placeholders', async () => {
+    jest.useFakeTimers();
+    mockShellPending = true;
+
+    try {
+      render(
+        <I18nextProvider i18n={testI18n}>
+          <MemoryRouter>
+            <Routes>
+              <Route element={<Outlet context={{ signOut: jest.fn() }} />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<div>home page</div>} />
+                </Route>
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </I18nextProvider>
+      );
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(1000);
+      });
+
+      const placeholders = screen
+        .queryAllByRole('generic', { hidden: true })
+        .filter((element) => element.getAttribute('aria-hidden') === 'true')
+        .filter((element) => window.getComputedStyle(element).minHeight !== '4.125rem');
+
+      expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+      expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+      expect(placeholders).toHaveLength(2);
+      for (const placeholder of placeholders) expect(placeholder).toBeEmptyDOMElement();
+      expect(placeholders[0]).toHaveStyle({ height: '64px', position: 'sticky' });
+      expect(placeholders[1]).toHaveStyle({ width: '250px' });
+      expect(screen.getByRole('main').compareDocumentPosition(placeholders[0] as Node)).toBe(
+        Node.DOCUMENT_POSITION_PRECEDING
+      );
+      expect(screen.getByRole('main')).toHaveTextContent('home page');
+    } finally {
+      mockShellPending = false;
+      jest.useRealTimers();
+    }
   });
 });
