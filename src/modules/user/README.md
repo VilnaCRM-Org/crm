@@ -822,6 +822,15 @@ by a round-trip test that decodes the drawn path back to the exact URI.
 `data:` image (a second rendering path outside the security headers' review); hand-rolling the
 encoder (an untested numeric core).
 
+**Built in Story 3.1.** `QrCodeImage` takes a `value` and a `label` (`QrCodeImageProps`), merges
+each row's runs of dark modules into one subpath and caps its width at 200 px; the Figma size is
+measured where Story 3.4 composes it. `useCopyToClipboard` publishes `ClipboardCopy` (`status`
+`idle` / `copied` / `failed` and `copy({ text, fallbackTarget })`): it writes through
+`navigator.clipboard.writeText`, and when the API is missing (an insecure origin) or rejects it
+selects the target's contents and reports `failed`, never moving focus.
+`tests/unit/tooling/qr-code-containment.test.ts` pins that `qrcode-generator` has one importer
+and that nothing outside the settings feature imports the image or the hook.
+
 ### `UIPinInput` adopts the toolkit pin input with the project's overrides
 
 **Context.** The code is six digits typed or pasted. The toolkit's `UiPinInput` supplies the cells
