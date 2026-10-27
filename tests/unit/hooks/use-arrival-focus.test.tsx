@@ -72,6 +72,17 @@ describe('useArrivalFocus', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
+  it('never focuses an element a modal still hides, but still clears the marker', () => {
+    render(
+      <div aria-hidden="true">{tree([{ pathname: '/', state: { focusMain: true } }] as Entry)}</div>
+    );
+
+    expect(screen.getByRole('main', { hidden: true })).not.toHaveFocus();
+    expect(screen.getByRole('status', { name: 'history', hidden: true })).toHaveTextContent(
+      'REPLACE / {"focusMain":false}'
+    );
+  });
+
   it('clears the marker from the landing entry in place, keeping the rest of its state', () => {
     renderAt([
       {

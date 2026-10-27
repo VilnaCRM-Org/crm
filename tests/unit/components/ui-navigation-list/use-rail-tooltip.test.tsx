@@ -109,6 +109,29 @@ describe('useRailTooltip', () => {
     remove.mockRestore();
   });
 
+  it('hands out the row it is attached to as the anchor only while the tooltip shows', () => {
+    const row = document.createElement('div');
+    const { result } = renderHook(() => useRailTooltip());
+
+    act(() => result.current.ref(row));
+    expect(result.current.anchor).toBeNull();
+
+    enter(result.current.handlers.onFocus);
+    expect(result.current.anchor).toBe(row);
+
+    enter(result.current.handlers.onBlur);
+    expect(result.current.anchor).toBeNull();
+  });
+
+  it('hands out no anchor while shown before it is attached to a row', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+
+    expect(result.current.visible).toBe(true);
+    expect(result.current.anchor).toBeNull();
+  });
+
   it('exposes no keydown handler on the wrapper', () => {
     const { result } = renderHook(() => useRailTooltip());
 

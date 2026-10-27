@@ -29,7 +29,11 @@ describe('navigation list styles', () => {
         margin: '0 -1px',
         padding: 0,
         listStyle: 'none',
-        overflow: 'visible',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        scrollPaddingBottom: '76px',
+        scrollbarWidth: 'none',
+        '&::-webkit-scrollbar': { display: 'none' },
       },
       drawer: {
         margin: '8px 0 0',

@@ -62,6 +62,27 @@ describe('useDrawerFocus', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
+  it('moves focus to main once a drawer left for a navigation has closed', () => {
+    const burger = createRef<HTMLButtonElement>();
+    const view = render(<Page mounted open restore={false} burger={burger} />);
+    expect(screen.getByRole('main')).not.toHaveFocus();
+
+    view.rerender(<Page mounted open={false} restore={false} burger={burger} />);
+
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'burger' })).not.toHaveFocus();
+  });
+
+  it('does not move focus to main for a drawer that was never open', () => {
+    const burger = createRef<HTMLButtonElement>();
+    const view = render(<Page mounted open={false} restore burger={burger} />);
+    screen.getByRole('button', { name: 'burger' }).blur();
+
+    view.rerender(<Page mounted open={false} restore={false} burger={burger} />);
+
+    expect(screen.getByRole('main')).not.toHaveFocus();
+  });
+
   it('does not move focus when it unmounts while the drawer is closed', () => {
     const burger = createRef<HTMLButtonElement>();
     const view = render(<Page mounted open={false} restore={false} burger={burger} />);

@@ -39,12 +39,12 @@ describe('useCloseOnNavigation', () => {
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call back for a navigation to the route it opened on', () => {
+  it('calls back for a navigation to the route it opened on, as any location change', () => {
     const onNavigate = jest.fn();
     const { go } = setup(onNavigate);
 
     act(() => go('/'));
 
-    expect(onNavigate).not.toHaveBeenCalled();
+    expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 });

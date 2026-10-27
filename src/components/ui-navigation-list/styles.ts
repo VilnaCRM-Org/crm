@@ -58,28 +58,26 @@ const groupLabelBase = { minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywh
 
 const dividerBase = { height: '1px', margin: '0 0 21px', border: 0 };
 
+const scrollingList = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: '1 1 auto',
+  minHeight: 0,
+  margin: '0 -1px',
+  padding: 0,
+  listStyle: 'none',
+  overflowY: 'auto',
+  scrollPaddingBottom: '76px',
+};
+
 export default {
   list: {
-    expanded: {
-      display: 'flex',
-      flexDirection: 'column',
-      flex: '1 1 auto',
-      minHeight: 0,
-      margin: '0 -1px',
-      padding: 0,
-      listStyle: 'none',
-      overflowY: 'auto',
-      scrollPaddingBottom: '76px',
-    },
+    expanded: scrollingList,
     rail: {
-      display: 'flex',
-      flexDirection: 'column',
-      flex: '1 1 auto',
-      minHeight: 0,
-      margin: '0 -1px',
-      padding: 0,
-      listStyle: 'none',
-      overflow: 'visible',
+      ...scrollingList,
+      overflowX: 'hidden',
+      scrollbarWidth: 'none',
+      '&::-webkit-scrollbar': { display: 'none' },
     },
     drawer: { margin: '8px 0 0', padding: 0, listStyle: 'none' },
   },

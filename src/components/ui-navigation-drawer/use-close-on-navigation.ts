@@ -4,10 +4,10 @@ import { useLocation } from 'react-router';
 import type { ActivateHandler } from '@/components/types/ui-sidebar';
 
 export default function useCloseOnNavigation(onNavigate: ActivateHandler): void {
-  const { pathname } = useLocation();
-  const opened = useRef(pathname);
+  const { key } = useLocation();
+  const opened = useRef(key);
 
   useEffect(() => {
-    if (pathname !== opened.current) onNavigate();
-  }, [pathname, onNavigate]);
+    if (key !== opened.current) onNavigate();
+  }, [key, onNavigate]);
 }

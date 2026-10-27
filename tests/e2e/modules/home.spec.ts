@@ -48,6 +48,21 @@ test.describe('Home page E2E Tests (issue #106)', () => {
     await expect(sidebarSignOutOf(page)).toBeEnabled();
   });
 
+  for (const [width, left] of [
+    [1440, 262],
+    [1024, 263],
+    [375, 15],
+  ] as const) {
+    test(`starts the content at x ${left} at ${width} px, as settings does`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await expectShellReady(page);
+
+      const heading = page.getByRole('heading', { level: 1, name: homeHeading });
+
+      await expect.poll(async () => (await heading.boundingBox())?.x).toBe(left);
+    });
+  }
+
   test('renders the shell footer as a contentinfo landmark outside main', async ({ page }) => {
     const footer = page.getByRole('contentinfo');
 
