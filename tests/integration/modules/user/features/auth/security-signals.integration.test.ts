@@ -21,12 +21,13 @@ describe('auth security signals (integration)', () => {
     ['an undefined rejection', undefined, 'unknown'],
     ['a rate-limited rejection', { status: 429, kind: 'server' }, 'rate_limited'],
     ['a non-numeric status', { status: '429', kind: 'network' }, 'network'],
+    ['a locked rejection', { status: 423, kind: 'authentication' }, 'locked'],
   ])('classifies %s as %s', (_label, error, reason) => {
     const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
 
-    resolveSignals().loginFailed(error);
+    resolveSignals().registerFailed(error);
 
-    expect(authFailure).toHaveBeenCalledWith('login', reason);
+    expect(authFailure).toHaveBeenCalledWith('registration', reason);
   });
 
   it('classifies a registration rejection under the registration category', () => {
@@ -37,13 +38,30 @@ describe('auth security signals (integration)', () => {
     expect(authFailure).toHaveBeenCalledWith('registration', 'conflict');
   });
 
+  it('records a locked sign-in under the login category through the container', () => {
+    const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
+
+    resolveSignals().loginSettled({
+      ok: false,
+      error: {
+        kind: 'authentication',
+        displayMessage: 'sign_in.errors.locked',
+        retryable: false,
+        status: 423,
+        reason: 'locked',
+      },
+    });
+
+    expect(authFailure).toHaveBeenCalledWith('login', 'locked');
+  });
+
   it('tags an opaque identity on a successful login without leaking an address', async () => {
     const observabilityCore = (await import('@/services/observability/observability-core')).default;
     const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
 
     resolveSignals().loginSettled({
       ok: true,
-      value: { email: 'user@example.com', token: 'session-token' },
+      value: { kind: 'session', email: 'user@example.com', token: 'session-token' },
     });
 
     const identity = setUser.mock.calls[0]?.[0] as { id: string };

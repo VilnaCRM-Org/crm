@@ -183,7 +183,7 @@ describe('user module composition root', () => {
     expect(child.resolve(AUTH_TOKENS.AuthStore)).toBe(useAuthStore);
   });
 
-  it('hands the container-free sandbox demo seed to the store actions by value', () => {
+  it('registers the sandbox demo seed by value, out of the store deps', () => {
     const child = registeredContainer();
     child.register(AUTH_TOKENS.AuthRepository, { useValue: {} });
     child.register(AUTH_TOKENS.AuthRequestErrors, { useValue: {} });
@@ -191,8 +191,8 @@ describe('user module composition root', () => {
 
     expect(child.resolve(AUTH_TOKENS.SandboxDemoSessionProvider)).toBe(sandboxDemoSessionProvider);
     expect(
-      child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps).sandboxDemoSession
-    ).toBe(sandboxDemoSessionProvider);
+      Object.keys(child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps)).sort()
+    ).toEqual(['authRequestErrors', 'authState', 'repository', 'securitySignals']);
   });
 
   it('hands the session link the logout() collaborators and the cleared auth state', () => {

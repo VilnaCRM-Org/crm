@@ -5,7 +5,7 @@ import useAuthState from '@auth/stores/use-auth-state';
 import type useAuthStoreHook from '@auth/stores/use-auth-store';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthState } from '@auth/types/auth-store';
-import { buildEmail, buildFullName, buildToken } from '@tests/builders';
+import { buildEmail, buildFullName, buildPendingSessionId, buildToken } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 import { PRELOADED_AUTH_TOKEN_WINDOW_KEY } from '@tests/utils/seed-preloaded-auth-token';
@@ -24,6 +24,7 @@ const CLEARED: AuthState = {
   registerLoading: false,
   registerError: null,
   twoFactorStatus: 'unknown',
+  pendingSessionId: null,
 };
 
 type AuthStoreModule = {
@@ -179,6 +180,15 @@ describe('useAuthStore', () => {
 
       expect(useAuthStore.getState()).toEqual({ ...CLEARED, email, twoFactorStatus: 'enabled' });
     });
+  });
+
+  it('starts without a pending session and clears one with the rest of the state', async () => {
+    expect((await loadFresh()).default.getState().pendingSessionId).toBeNull();
+
+    useAuthStore.setState({ pendingSessionId: buildPendingSessionId(), email: buildEmail() });
+    useAuthStore.setState(CLEARED_AUTH_STATE);
+
+    expect(useAuthStore.getState().pendingSessionId).toBeNull();
   });
 
   it('holds data only: no action, no function member, no persisted copy', () => {

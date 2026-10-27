@@ -2,9 +2,12 @@ import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
+import useAuthProviderLoader from '@auth/hooks/use-auth-provider-loader';
+import useSignInSubmit from '@auth/hooks/use-sign-in-submit';
 import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
 import type { AuthError, AuthErrorKind } from '@auth/types/auth-error';
-import type { LoginActions, LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
+import type { LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
+import type { SignInRun } from '@auth/types/sign-in/sign-in-run';
 
 const UNEXPECTED_ERROR_KEY = 'failure_responses.client_errors.unexpected_error';
 const RATE_LIMITED_KEY = 'sign_in.errors.rate_limited';
@@ -46,7 +49,7 @@ function useLoginControllers(): MutableRefObject<Set<AbortController>> {
 }
 
 function useAbortableLogin(
-  actions: LoginActions,
+  run: SignInRun,
   loginControllersRef: MutableRefObject<Set<AbortController>>
 ): LoginSubmitter['handleLogin'] {
   return useCallback(
@@ -55,20 +58,20 @@ function useAbortableLogin(
       loginControllersRef.current.add(controller);
 
       try {
-        await actions.loginUser(data, controller.signal);
+        await run(data, controller.signal);
       } finally {
         loginControllersRef.current.delete(controller);
       }
     },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-    [actions, loginControllersRef]
+    [run, loginControllersRef]
   );
 }
 
 export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
   const state = useAuthState();
   const loginControllersRef = useLoginControllers();
-  const login = useAbortableLogin(authActions, loginControllersRef);
+  const login = useAbortableLogin(useSignInSubmit(useAuthProviderLoader()), loginControllersRef);
   const lastSubmitted = useRef<SignInDto | null>(null);
 
   const handleLogin = useCallback(

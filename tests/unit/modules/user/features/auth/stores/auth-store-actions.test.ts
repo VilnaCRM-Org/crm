@@ -1,8 +1,5 @@
 import { createStore } from 'zustand';
 
-import sandboxDemoSessionProvider, {
-  type SandboxDemoSessionProvider,
-} from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
@@ -47,25 +44,12 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
     ...over,
   }) as AuthRepository;
 
-const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions({
-    repository: makeRepo(over),
-    authRequestErrors,
-    authState: useAuthStore,
-    securitySignals,
-    sandboxDemoSession: sandboxDemoSessionProvider,
-  }).login({
-    email,
-    password,
-  });
-
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({
     repository: makeRepo(over),
     authRequestErrors,
     authState: useAuthStore,
     securitySignals,
-    sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
     fullName,
     email,
@@ -82,17 +66,6 @@ const abortError = {
 describe('AuthStoreActions', () => {
   beforeEach(() => resetClientStores());
 
-  it('sets the session and tags an opaque observability identity on successful login', async () => {
-    await loginWith({});
-    expect(useAuthStore.getState()).toMatchObject({
-      loginLoading: false,
-      email,
-      token,
-      loginError: null,
-    });
-    expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
-  });
-
   it('writes state through the injected auth store, not the module singleton', async () => {
     const injectedState = createStore<AuthState>()(() => ({ ...CLEARED_AUTH_STATE }));
 
@@ -101,27 +74,10 @@ describe('AuthStoreActions', () => {
       authRequestErrors,
       authState: injectedState,
       securitySignals,
-      sandboxDemoSession: sandboxDemoSessionProvider,
-    }).login({ email, password });
+    }).register({ fullName, email, password });
 
-    expect(injectedState.getState()).toMatchObject({ loginLoading: false, email, token });
-    expect(useAuthStore.getState()).toMatchObject({ email: '', token: null });
-  });
-
-  it('stores a structured error and tags no identity when login fails', async () => {
-    const error: AuthError = {
-      kind: 'authentication',
-      displayMessage: 'Invalid',
-      retryable: false,
-    };
-    await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error }) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: error });
-    expect(observability.setUser).not.toHaveBeenCalled();
-  });
-
-  it('keeps login error null when the repository reports an abort', async () => {
-    await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error: abortError }) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(injectedState.getState()).toMatchObject({ registerLoading: false, user: { email } });
+    expect(useAuthStore.getState().user).toBeNull();
   });
 
   it('sets the user on successful registration', async () => {
@@ -144,40 +100,6 @@ describe('AuthStoreActions', () => {
     expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
-  it('preserves a structured auth error thrown by the login repository', async () => {
-    const error: AuthError = { kind: 'server', displayMessage: 'Down', retryable: true };
-    await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: error });
-  });
-
-  it('normalizes a generic thrown login error to an unknown auth error', async () => {
-    await loginWith({ login: jest.fn().mockRejectedValue(new Error('Unexpected failure')) });
-    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
-  });
-
-  it('normalizes a non-Error thrown login rejection', async () => {
-    await loginWith({ login: jest.fn().mockRejectedValue('boom') });
-    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
-  });
-
-  it('normalizes a thrown Error with an undefined message', async () => {
-    const error = new Error();
-    error.message = undefined as unknown as string;
-    await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(useAuthStore.getState().loginError).toMatchObject({ kind: 'unknown', retryable: false });
-  });
-
-  it.each([
-    ['an abort marker object', { aborted: true }],
-    ['an AbortError name', Object.assign(new Error('stopped'), { name: 'AbortError' })],
-    ['an ABORT_ERR code', Object.assign(new Error('stopped'), { code: 'ABORT_ERR' })],
-    ['an abort message', new Error('Request was aborted')],
-    ['a cancel message', new Error('User cancelled the request')],
-  ])('treats a thrown login rejection with %s as aborted', async (_label, error) => {
-    await loginWith({ login: jest.fn().mockRejectedValue(error) });
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
-  });
-
   it('normalizes a generic thrown register error to an unknown auth error', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue(new Error('Unexpected failure')) });
     expect(useAuthStore.getState().registerError).toMatchObject({
@@ -198,20 +120,6 @@ describe('AuthStoreActions', () => {
       retryable: false,
     };
 
-    it('emits a login auth_failure when the repository reports rejected credentials', async () => {
-      await loginWith({
-        login: jest.fn().mockResolvedValue({ ok: false, error: invalidCredentials }),
-      });
-
-      expect(recorder.authFailure).toHaveBeenCalledWith('login', 'authentication');
-    });
-
-    it('emits a login auth_failure when applyLoginRejection handles a throw', async () => {
-      await loginWith({ login: jest.fn().mockRejectedValue(invalidCredentials) });
-
-      expect(recorder.authFailure).toHaveBeenCalledWith('login', 'authentication');
-    });
-
     it('emits a registration auth_failure for a rejected registration result', async () => {
       await registerWith({
         register: jest
@@ -228,14 +136,6 @@ describe('AuthStoreActions', () => {
       expect(recorder.authFailure).toHaveBeenCalledWith('registration', 'authentication');
     });
 
-    it('stays silent on a successful login and on an aborted attempt', async () => {
-      await loginWith({});
-      await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error: abortError }) });
-      await loginWith({ login: jest.fn().mockRejectedValue({ aborted: true }) });
-
-      expect(recorder.authFailure).not.toHaveBeenCalled();
-    });
-
     it('stays silent on an aborted registration attempt', async () => {
       await registerWith({
         register: jest.fn().mockResolvedValue({ ok: false, error: abortError }),
@@ -243,123 +143,6 @@ describe('AuthStoreActions', () => {
       await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
 
       expect(recorder.authFailure).not.toHaveBeenCalled();
-    });
-
-    it('never passes the submitted password or session token to the recorder', async () => {
-      await loginWith({ login: jest.fn().mockRejectedValue(invalidCredentials) });
-
-      const emitted = JSON.stringify((recorder.authFailure as jest.Mock).mock.calls);
-      expect(emitted).not.toContain(password);
-      expect(emitted).not.toContain(token);
-      expect(emitted).not.toContain(email);
-    });
-  });
-
-  describe('sandbox demo session (#309)', () => {
-    const demoSession = { email, token };
-
-    const actionsWith = (
-      repository: AuthRepository,
-      session: { email: string; token: string } | null
-    ): { actions: AuthStoreActions; signIn: jest.Mock } => {
-      const signIn = jest.fn().mockReturnValue(session);
-      const actions = new AuthStoreActions({
-        repository,
-        authRequestErrors,
-        authState: useAuthStore,
-        securitySignals,
-        sandboxDemoSession: { signIn } as unknown as SandboxDemoSessionProvider,
-      });
-
-      return { actions, signIn };
-    };
-
-    it('publishes no demo session for a login canceled before it ran', async () => {
-      const repository = makeRepo({
-        login: jest.fn().mockResolvedValue({ ok: false, error: abortError }),
-      });
-      const { actions, signIn } = actionsWith(repository, demoSession);
-      const controller = new AbortController();
-      controller.abort();
-
-      await actions.login({ email, password }, controller.signal);
-
-      expect(signIn).not.toHaveBeenCalled();
-      expect(repository.login).toHaveBeenCalledWith({ email, password }, controller.signal);
-      expect(useAuthStore.getState()).toMatchObject({
-        loginLoading: false,
-        token: null,
-        loginError: null,
-      });
-      expect(observability.setUser).not.toHaveBeenCalled();
-      expect(recorder.authFailure).not.toHaveBeenCalled();
-    });
-
-    it('still signs in with the demo session under a live, unaborted signal', async () => {
-      const repository = makeRepo();
-      const { actions } = actionsWith(repository, demoSession);
-
-      await actions.login({ email, password }, new AbortController().signal);
-
-      expect(repository.login).not.toHaveBeenCalled();
-      expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, email, token });
-    });
-
-    it('signs in with the demo session without calling the repository', async () => {
-      const repository = makeRepo();
-      const { actions, signIn } = actionsWith(repository, demoSession);
-
-      await actions.login({ email, password });
-
-      expect(signIn).toHaveBeenCalledWith({ email, password });
-      expect(repository.login).not.toHaveBeenCalled();
-      expect(useAuthStore.getState()).toMatchObject({
-        loginLoading: false,
-        email,
-        token,
-        loginError: null,
-      });
-    });
-
-    it('settles the demo login like a real one: an opaque identity and no failure', async () => {
-      const { actions } = actionsWith(makeRepo(), demoSession);
-
-      await actions.login({ email, password });
-
-      expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
-      expect(recorder.authFailure).not.toHaveBeenCalled();
-    });
-
-    it('falls through to the repository with credentials and signal on no match', async () => {
-      const repository = makeRepo();
-      const { actions } = actionsWith(repository, null);
-      const signal = new AbortController().signal;
-
-      await actions.login({ email, password }, signal);
-
-      expect(repository.login).toHaveBeenCalledWith({ email, password }, signal);
-      expect(useAuthStore.getState()).toMatchObject({ email, token });
-    });
-
-    it('signs in with the published demo credentials through the real provider', async () => {
-      const repository = makeRepo();
-      const demoEmail = 'demo@vilnacrm.com';
-
-      await new AuthStoreActions({
-        repository,
-        authRequestErrors,
-        authState: useAuthStore,
-        securitySignals,
-        sandboxDemoSession: sandboxDemoSessionProvider,
-      }).login({ email: demoEmail, password: 'Demo1234' });
-
-      expect(repository.login).not.toHaveBeenCalled();
-      expect(useAuthStore.getState()).toMatchObject({
-        email: demoEmail,
-        token: 'sandbox-demo-session-token',
-      });
-      expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBe(demoEmail);
-      sandboxDemoSessionProvider.signOut();
     });
   });
 });

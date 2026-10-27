@@ -2162,6 +2162,18 @@ value registration. `SignInFailureReason` lives in `types/two-factor/sign-in-fai
 `auth-error.ts` imports it and `sign-in.ts` imports `AuthResult` from `auth-error.ts`
 (`no-circular`). `signIn` resolves `SignInUserMutation | null` (Apollo's `data` may be absent).
 
+Code facts (Story 2.2 step B, 2026-10-27): `useSignInSubmit` keeps one stable `SignInRun` in a
+`useState` initializer (no dependency array, so no Stryker annotation) and splits into small module
+functions to stay inside the 10-line function cap: `signInDemo`, `resolveProvider`, `recordSignal`
+and `runSignIn`. The sandbox demo credentials answer a session without resolving the container,
+so they record no security signal and tag no observability identity (the old `login` did both);
+the settled result reaches `loginSettled` only for a live signal and a non-aborted result. Removing
+`AuthStoreActions.login` and `DeferredAuthActions.loginUser` deleted the login halves of eight
+unit and integration test files, whose cases now live in `use-sign-in-submit.test.ts`, the
+sign-in provider integration test and the registration equivalents of the shared classification
+cases. The reason texts of the result card stay with Story 2.4: until then a `locked` or
+`transient` error renders through the existing kind mapping.
+
 > Assumption (reconciliation 2026-10-27): the six new bindings live in one new step,
 > `registerUserServiceProviders(container)` (the sign-in repository, transformer and provider in
 > Story 2.2; the settings three in Story 3.2), and Story 2.2 makes room for it by folding

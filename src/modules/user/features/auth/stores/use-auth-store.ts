@@ -13,6 +13,7 @@ export const CLEARED_AUTH_STATE: AuthState = {
   registerLoading: false,
   registerError: null,
   twoFactorStatus: 'unknown',
+  pendingSessionId: null,
 };
 
 const useAuthStore = create<AuthState>()(() => {

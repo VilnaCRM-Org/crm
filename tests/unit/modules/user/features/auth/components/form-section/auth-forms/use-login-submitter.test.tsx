@@ -3,11 +3,18 @@ import type { TFunction } from 'i18next';
 import * as React from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
-import { useAuthStore, authActions } from '@auth/stores';
+import { useAuthStore } from '@auth/stores';
 import type { AuthErrorKind } from '@auth/types/auth-error';
 import { buildCredentials } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
+
+const mockRun = jest.fn();
+
+jest.mock('@auth/hooks/use-sign-in-submit', () => ({
+  __esModule: true,
+  default: (): jest.Mock => mockRun,
+}));
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
   if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
@@ -26,6 +33,7 @@ function createDeferred(): { promise: Promise<void>; resolve: () => void } {
 describe('useLoginSubmitter', () => {
   beforeEach(() => {
     resetClientStores();
+    mockRun.mockReset();
   });
 
   afterEach(() => {
@@ -97,7 +105,7 @@ describe('useLoginSubmitter', () => {
   });
 
   it('retries with the values submitted last', async () => {
-    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    mockRun.mockResolvedValue(undefined);
     const first = buildCredentials();
     const second = buildCredentials();
     const { result } = renderHook(() => useLoginSubmitter(t));
@@ -110,18 +118,17 @@ describe('useLoginSubmitter', () => {
       result.current.handleRetry();
     });
 
-    expect(loginUser).toHaveBeenCalledTimes(3);
-    expect(loginUser).toHaveBeenLastCalledWith(second, expect.any(AbortSignal));
-    expect(loginUser.mock.contexts[2]).toBe(authActions);
+    expect(mockRun).toHaveBeenCalledTimes(3);
+    expect(mockRun).toHaveBeenLastCalledWith(second, expect.any(AbortSignal));
   });
 
   it('does nothing on retry before any submit', () => {
-    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    mockRun.mockResolvedValue(undefined);
     const { result } = renderHook(() => useLoginSubmitter(t));
 
     act(() => result.current.handleRetry());
 
-    expect(loginUser).not.toHaveBeenCalled();
+    expect(mockRun).not.toHaveBeenCalled();
   });
 
   it('clears the shown error on back', () => {
@@ -147,8 +154,8 @@ describe('useLoginSubmitter', () => {
     expect(useAuthStore.getState().loginError).toBeNull();
   });
 
-  it('invokes the loginUser action when handleLogin is called', async () => {
-    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+  it('hands the credentials and a signal to the sign-in run on handleLogin', async () => {
+    mockRun.mockResolvedValue(undefined);
     const credentials = buildCredentials();
 
     const { result } = renderHook(() => useLoginSubmitter(t));
@@ -157,20 +164,7 @@ describe('useLoginSubmitter', () => {
       await result.current.handleLogin(credentials);
     });
 
-    expect(loginUser).toHaveBeenCalledWith(credentials, expect.any(AbortSignal));
-  });
-
-  it('calls loginUser on the store singleton so the deferred root keeps its receiver', async () => {
-    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
-
-    const { result } = renderHook(() => useLoginSubmitter(t));
-
-    await act(async () => {
-      await result.current.handleLogin(buildCredentials());
-    });
-
-    expect(loginUser.mock.contexts).toHaveLength(1);
-    expect(loginUser.mock.contexts[0]).toBe(authActions);
+    expect(mockRun).toHaveBeenCalledWith(credentials, expect.any(AbortSignal));
   });
 
   it('does not restore a late login error after unmount', async () => {
@@ -180,17 +174,15 @@ describe('useLoginSubmitter', () => {
       displayMessage: 'late failure',
       retryable: false,
     };
-    jest
-      .spyOn(authActions, 'loginUser')
-      .mockImplementation(async (_data, signal?: AbortSignal): Promise<void> => {
-        await deferred.promise;
+    mockRun.mockImplementation(async (_data, signal?: AbortSignal): Promise<void> => {
+      await deferred.promise;
 
-        if (signal?.aborted) {
-          return;
-        }
+      if (signal?.aborted) {
+        return;
+      }
 
-        useAuthStore.setState({ loginError: lateError });
-      });
+      useAuthStore.setState({ loginError: lateError });
+    });
 
     const { result, unmount } = renderHook(() => useLoginSubmitter(t));
     let pendingLogin!: Promise<void>;

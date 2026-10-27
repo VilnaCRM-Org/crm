@@ -49,11 +49,18 @@ const authStoreState: {
   loginLoading: false,
 };
 
+const mockSignInRun = (...args: unknown[]): unknown => mockLoginUser(...args);
+
+jest.mock('@auth/hooks/use-sign-in-submit', () => ({
+  __esModule: true,
+  default: (): typeof mockSignInRun => mockSignInRun,
+}));
+
 jest.mock('@auth/stores', () => ({
   __esModule: true,
   useAuthState: (): typeof authStoreState => authStoreState,
+  AuthProviderLoader: class {},
   authActions: {
-    loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
     clearLoginError: (): void => {
       authStoreState.loginError = null;
     },
