@@ -21,10 +21,6 @@ export const signInErrorMessages = {
   locked: t('sign_in.errors.locked'),
   rateLimited: t('sign_in.errors.rate_limited'),
   transient: t('sign_in.errors.transient'),
-  network: t('failure_responses.network_errors.network_error'),
-  server: t('failure_responses.server_errors.server_error'),
-  validation: t('failure_responses.client_errors.something_went_wrong'),
-  unexpected: t('failure_responses.client_errors.unexpected_error'),
 } as const;
 
 export const errorCardHeading = (page: Page): Locator =>

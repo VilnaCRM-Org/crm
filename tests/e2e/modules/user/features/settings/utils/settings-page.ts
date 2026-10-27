@@ -106,9 +106,6 @@ export function expectOnlyAllowedOrigins(
   expect(originsOf(urls).filter((origin) => !permitted.includes(origin))).toEqual([]);
 }
 
-export const configuredRestOrigin = (documentUrl: string): string =>
-  configuredOrigin(process.env.REACT_APP_MOCKOON_URL, documentUrl);
-
 export function expectNoPersonalDataInUrls(urls: readonly string[], secrets: string[]): void {
   const decoded = urls.map((url) => decodeURIComponent(url));
   expect(decoded.filter((url) => secrets.some((secret) => url.includes(secret)))).toEqual([]);

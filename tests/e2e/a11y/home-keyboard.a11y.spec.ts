@@ -1,4 +1,4 @@
-import type { Page, Route } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
@@ -10,10 +10,9 @@ import {
   expectSignInSuccessCard,
   successCardHeading,
 } from '@tests/e2e/utils/sign-in-result-card';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
-
-const LOGIN_API_URL = '**/api/users';
 
 const homeHeading: string = t('home.heading');
 const signInTitle: string = t('sign_in.title');
@@ -32,19 +31,6 @@ async function openHome(page: Page): Promise<void> {
 async function focusSignOut(page: Page): Promise<void> {
   await sidebarSignOutOf(page).focus();
   await expect(sidebarSignOutOf(page)).toBeFocused();
-}
-
-async function answerLoginWithToken(route: Route): Promise<void> {
-  if (route.request().method() !== 'POST') {
-    await route.fallback();
-    return;
-  }
-
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ token: 'e2e-login-token' }),
-  });
 }
 
 async function signInFromKeyboard(page: Page): Promise<void> {
@@ -95,7 +81,7 @@ test.describe('Home page keyboard contract (issue #106)', () => {
   test('signing back in focuses the success card and Enter on Продовжити returns home', async ({
     page,
   }) => {
-    await page.route(LOGIN_API_URL, answerLoginWithToken);
+    await stubSignIn(page, ['session']);
     await focusSignOut(page);
     await page.keyboard.press('Enter');
     await expectSignedOutToSignIn(page);
