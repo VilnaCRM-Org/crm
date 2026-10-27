@@ -449,7 +449,7 @@ The baselines were recorded in the pinned Playwright container against a freshly
   its handle (DV-10) and the Settings group open at 1024, in three engines;
   `mobile/app-shell.spec.ts` captures home with the closed header, the drawer open on `/settings`
   with its current row (viewport only, since the drawer is an overlay) and the menu open, on both
-  mobile projects. Every interaction goes through a role or a label.
+  mobile projects (15 and 6 baselines). Every interaction goes through a role or a label.
 - **Allowed difference (d):** content that has no data is absent: no baseline shows a badge. Every
   protected-page spec (home, settings, coming-soon and the shell states) runs with the
   `userSettings` flag on and one stubbed `CurrentUser` reply, so the chip always shows the same
@@ -457,4 +457,6 @@ The baselines were recorded in the pinned Playwright container against a freshly
 - **Visited links:** the global `a:visited` colour in `src/index.css` no longer reaches the shell:
   the navigation rows, sub-items, rail items and user menu links set their own `:visited` colour
   ahead of hover and the current state, so a Firefox run whose shared history marks a route visited
-  captures the same labels as a fresh one.
+  captures the same labels as a fresh one. Re-recording after that fix and the `CurrentUser` stub
+  (599 visual tests passed) changed the 39 home snapshots and 31 Firefox snapshots that had captured
+  blue visited labels (17 settings, 14 coming-soon), and added the 21 shell-state baselines.
