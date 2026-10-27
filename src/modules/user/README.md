@@ -912,6 +912,21 @@ decorative icon, "вже ввімкнено", "Налаштування заст
 and the grid renders as before. The views for disable, regenerate and re-authentication belong to the
 next story.
 
+### The 2FA card in the browser lane
+
+`tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts` drives the card with a seeded
+token and both flags forced on through `overrideRuntimeConfig`, with the setup and confirm answers
+stubbed by `two-factor-settings-responses.ts` (each with a unit test) and the profile by
+`stubProfile`. It covers the flag gate, the Authorization header, the busy status, focus on each new
+heading, the QR image, the key in groups of four, both clipboard paths, the three confirm outcomes,
+the recovery codes and the acknowledgement, Retry that sends exactly one more request, the shared
+`2px #1A1C1E` focus ring and the pin cells inside the card at 320, 360, 600, 767, 768 and 1024 px.
+`expectNoSecrets` runs after the steps that hold a secret. Playwright and the production stack are
+CI-only, so this spec ran nowhere in the local loop. The same applies to the bundle-size report that
+must show `qrcode-generator` only in the `settings` chunk: the PR comment is the evidence, and a
+sighting in the eager entry, an auth chunk or the deferred DI chunk is a defect to fix, not a budget
+to raise.
+
 ### `UIForm` explains a submit that cannot be pressed yet
 
 **Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user

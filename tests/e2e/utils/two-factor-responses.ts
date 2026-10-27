@@ -35,14 +35,14 @@ interface GraphQLRequestBody {
   readonly variables?: Record<string, unknown>;
 }
 
-const json = (route: Route, status: number, body: unknown): Promise<void> =>
+export const json = (route: Route, status: number, body: unknown): Promise<void> =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
 const signInUser = (user: Record<string, unknown>): unknown => ({
   data: { signInUser: { user: { success: true, ...user } } },
 });
 
-const graphQLFailure = (message: string, status: number): unknown => ({
+export const graphQLFailure = (message: string, status: number): unknown => ({
   data: null,
   errors: [{ message, extensions: { status } }],
 });
@@ -91,7 +91,7 @@ const recordOf = (request: Request): RecordedSignIn => ({
   url: request.url(),
 });
 
-async function stubOperation<TOutcome extends string>(
+export async function stubOperation<TOutcome extends string>(
   page: Page,
   operation: string,
   replies: Readonly<Record<TOutcome, SignInReply>>,
