@@ -8,7 +8,6 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
 import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
-import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
@@ -29,11 +28,10 @@ const ERROR_HANDLING_TOKENS = [
   AUTH_TOKENS.AuthSecuritySignals,
 ];
 const RESPONSE_MAPPER_TOKENS = [
-  AUTH_TOKENS.LoginResponseMapper,
   AUTH_TOKENS.RegistrationResponseMapper,
   AUTH_TOKENS.AuthUiErrorMapper,
 ];
-const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
+const API_TOKENS = [AUTH_TOKENS.RegistrationAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
 const PASSWORD_RECOVERY_TOKENS = [
   AUTH_TOKENS.PasswordRecoveryTransformer,
@@ -108,18 +106,19 @@ describe('user module composition root', () => {
     expectAllRegistered(registeredContainer(), ERROR_HANDLING_TOKENS);
   });
 
-  it('binds the login, registration and ui error response mappers', () => {
+  it('binds the registration and ui error response mappers', () => {
     const child = registeredContainer();
 
     expectAllRegistered(child, RESPONSE_MAPPER_TOKENS);
-    expect(child.resolve(AUTH_TOKENS.LoginResponseMapper)).toBeInstanceOf(LoginResponseMapper);
     expect(child.resolve(AUTH_TOKENS.RegistrationResponseMapper)).toBeInstanceOf(
       RegistrationResponseMapper
     );
   });
 
-  it('binds the login and registration apis', () => {
+  it('binds the registration api and no REST login', () => {
     expectAllRegistered(registeredContainer(), API_TOKENS);
+    expect(AUTH_TOKENS).not.toHaveProperty('LoginAPI');
+    expect(AUTH_TOKENS).not.toHaveProperty('LoginResponseMapper');
   });
 
   it('binds the auth repository and its dependency bundle', () => {
@@ -212,8 +211,8 @@ describe('user module composition root', () => {
   it('registers the mappers as singletons rather than per-resolve instances', () => {
     const child = registeredContainer();
 
-    const mapper = child.resolve(AUTH_TOKENS.LoginResponseMapper);
+    const mapper = child.resolve(AUTH_TOKENS.RegistrationResponseMapper);
 
-    expect(child.resolve(AUTH_TOKENS.LoginResponseMapper)).toBe(mapper);
+    expect(child.resolve(AUTH_TOKENS.RegistrationResponseMapper)).toBe(mapper);
   });
 });

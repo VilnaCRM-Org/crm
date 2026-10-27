@@ -1,7 +1,5 @@
 import { z } from '@/config/zod';
 
-export const LoginResponseSchema = z.object({ token: z.string() });
-
 export const RegistrationResponseSchema = z.object({
   fullName: z.string().optional(),
   email: z.string().optional(),

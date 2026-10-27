@@ -324,7 +324,6 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildCredentials(overrides?)` → `{ email, password }` (`SignInDto` from `@/modules/user`).
 - `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
 - `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
-- `buildLoginResponse(overrides?)` → `{ token }`.
 - `buildResetToken()` → a 32-character alphanumeric password-reset token.
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
@@ -360,7 +359,7 @@ FAKER_SEED=12345 make test-unit-client
 
 Determinism keeps visual snapshots stable. The shared integration mock server
 (`tests/integration/mocks/server.ts`) exposes its generated defaults
-(`defaultLoginResponse`, `defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
+(`defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
 against those exports rather than literals.
 
 ### When NOT to use a builder
@@ -810,7 +809,7 @@ class Service {}
 class ApiErrorFactory {}
 class EmailValidator {}
 class ApiErrorGuard {}
-class LoginResponseMapper {}
+class RegistrationResponseMapper {}
 class FetchHttpsClient {}
 ```
 
@@ -1008,7 +1007,7 @@ register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If 
 only an annotation, make it `import type` (issue #88).
 
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
-`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`reflect-metadata`, token modules, config data (`@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
 `error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
 module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).

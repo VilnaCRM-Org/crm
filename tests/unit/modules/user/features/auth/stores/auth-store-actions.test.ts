@@ -9,11 +9,10 @@ import type { AuthState } from '@auth/types/auth-store';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
-import { buildEmail, buildFullName, buildPassword, buildToken } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const email = buildEmail();
-const token = buildToken();
 const password = buildPassword();
 const fullName = buildFullName();
 
@@ -39,7 +38,6 @@ const securitySignals = new AuthSecuritySignals(recorder, observability);
 
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
-    login: jest.fn().mockResolvedValue({ ok: true, value: { email, token } }),
     register: jest.fn().mockResolvedValue({ ok: true, value: { email } }),
     ...over,
   }) as AuthRepository;

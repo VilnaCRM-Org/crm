@@ -10,7 +10,6 @@ import ProfileProvider from '@/modules/user/features/settings/data-providers/pro
 import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
-import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
@@ -28,7 +27,6 @@ import {
   AuthErrorFactory,
   GraphQLPasswordRecoveryRepository,
   GraphQLSignInRepository,
-  LoginAPI,
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
@@ -117,7 +115,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
   }
 
   private registerResponseMappers(container: DependencyContainer): void {
-    container.registerSingleton(AUTH_TOKENS.LoginResponseMapper, LoginResponseMapper);
     container.registerSingleton(AUTH_TOKENS.RegistrationResponseMapper, RegistrationResponseMapper);
     container.registerSingleton(AUTH_TOKENS.AuthUiErrorMapper, AuthUiErrorMapper);
     container.registerSingleton(
@@ -134,7 +131,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
 
   private registerUserServiceProviders(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.RegistrationAPI, RegistrationAPI);
-    container.registerSingleton(AUTH_TOKENS.LoginAPI, LoginAPI);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInRepository, GraphQLSignInRepository);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInTransformer, GraphQLSignInTransformer);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInProvider, GraphQLSignInProvider);
@@ -156,9 +152,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {
     return {
-      loginAPI: c.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI),
       registrationAPI: c.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI),
-      loginResponseMapper: c.resolve<LoginResponseMapper>(AUTH_TOKENS.LoginResponseMapper),
       registrationResponseMapper: c.resolve<RegistrationResponseMapper>(
         AUTH_TOKENS.RegistrationResponseMapper
       ),

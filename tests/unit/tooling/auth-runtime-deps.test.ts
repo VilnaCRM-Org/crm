@@ -12,13 +12,12 @@ describe('auth client runtime dependencies', () => {
   it('keeps auth response validation centralized in dedicated mappers', () => {
     const apiResponses = readFile('src/modules/user/features/auth/types/api-responses.ts');
     const responseSchemas = readFile('src/modules/user/features/auth/utils/response-schemas.ts');
-    const loginMapper = readFile('src/modules/user/store/login-response-mapper.ts');
     const registrationMapper = readFile('src/modules/user/store/registration-response-mapper.ts');
 
     expect(apiResponses).not.toContain('z.object');
     expect(responseSchemas).toContain("from '@/config/zod'");
     expect(responseSchemas).toContain('z.object');
-    expect(loginMapper).toContain('LoginResponseSchema.safeParse(apiResponse)');
+    expect(responseSchemas).not.toContain('LoginResponseSchema');
     expect(registrationMapper).toContain('RegistrationResponseSchema.safeParse(apiResponse)');
   });
 

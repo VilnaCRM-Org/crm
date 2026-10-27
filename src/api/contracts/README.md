@@ -45,7 +45,7 @@ Data is **parsed, never cast**, before it leaves the repository layer:
 
 - **REST** — `HttpResponseProcessor.process(response, schema)` validates every JSON body with a
   zod schema. There is no unchecked `as T`. Repositories pass the generated-shape schema (e.g.
-  `LoginResponseSchema`); a schema violation becomes a typed `HttpError`
+  `RegistrationResponseSchema`); a schema violation becomes a typed `HttpError`
   (`INVALID_RESPONSE_SHAPE`), not a crash or a corrupted record.
 - **GraphQL** — `RegistrationAPI` validates the Apollo result with `CreateUserResultSchema`
   before returning; an invalid payload becomes a typed `ApiError` (`VALIDATION`).

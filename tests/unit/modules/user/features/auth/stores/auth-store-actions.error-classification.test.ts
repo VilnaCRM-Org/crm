@@ -57,7 +57,6 @@ const defer = <T>(): Deferred<T> => {
 const makeActions = (over: Partial<AuthRepository>): AuthStoreActions =>
   new AuthStoreActions({
     repository: {
-      login: jest.fn(),
       register: jest.fn().mockResolvedValue({ ok: true, value: { email, fullName } }),
       ...over,
     } as unknown as AuthRepository,
