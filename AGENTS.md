@@ -226,8 +226,9 @@ runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL 
 `RegistrationAPI`) — data is parsed, never cast.
 
 - **Which transport?** GraphQL (Apollo) for user/account **domain-graph** reads and mutations;
-  REST (`HttpsClient`) for non-graph endpoints (login/token, health, files). When both expose
-  the same resource, the write goes through GraphQL and the token/session concern through REST.
+  REST (`HttpsClient`) for non-graph endpoints (health, files). Sign-in and the two-factor
+  operations are GraphQL mutations; no REST login exists. When both expose the same resource,
+  GraphQL wins.
 - **Generated files are build output** — never hand-edit `src/api/generated/**`; change the
   spec/operation and rerun `make codegen`. They are excluded from every source gate via the gate
   configs, never with suppressions. CI (`static testing`) runs `make codegen-check` and fails on

@@ -270,7 +270,7 @@ describe('TwoFactorFormSection', () => {
       expect(completeChallenge).not.toHaveBeenCalled();
     });
 
-    it('empties the field and explains a wrong recovery code, with focus in the field', async () => {
+    it('empties the field and explains a wrong recovery code, keeping focus in it', async () => {
       completeChallenge.mockResolvedValue(failed('invalid_code'));
       mount();
       await openRecovery();

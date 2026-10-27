@@ -170,6 +170,10 @@ more project names.
   overflow at device width and 320 px. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
+  `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
+  the sign-in challenge in both modes and for enrolling, turning two-factor off and regenerating the
+  codes: 44 px cells, fields and submits, 24 px small controls, no overflow at 320, 390 and 412 px,
+  every pin cell inside its card at 320 to 767 px, and the empty submit and reduced-motion checks.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
   two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
   (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
@@ -3237,7 +3241,7 @@ replaces.
 
     | Call site                                   | Event                                 |
     | ------------------------------------------- | ------------------------------------- |
-    | `AuthSecuritySignals` (login)               | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (login, challenge)    | `auth_failure` / `auth_failure_burst` |
     | `AuthSecuritySignals` (registration)        | `auth_failure` / `auth_failure_burst` |
     | `HttpErrorResponseParser` (401 / 403)       | `unauthorized_response`               |
     | `UIErrorBoundary` (`app` / `auth`)          | `error_boundary_catch`                |

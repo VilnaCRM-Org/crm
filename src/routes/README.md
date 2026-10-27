@@ -172,11 +172,27 @@ chunk loads. The chunk comes through a `ChunkRetryLoader`
 (`src/components/layouts/footer-loader.ts`, issue #147), and a load that still fails resolves to an
 empty component: a missing footer never reaches the `AppLayout` `errorElement` and never replaces
 the page. `AppLayout` also forwards `ProtectedRoute`'s outlet context (`ProtectedOutletContext`,
-`{ signOut }`, from `src/routes/types/protected-outlet-context.ts`) to the page with
+`{ signOut, twoFactorStatus, setTwoFactorStatus, banner }`, from
+`src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
 react-router 7 — and hands the same `signOut` to the lazy app shell
 (`<AppShell signOut={outletContext.signOut} userMenu={userMenu} />`), whose sidebar, drawer and user
 menu are the sign-out controls (issue #362). The home page at `/` no longer reads the context.
+
+`twoFactorStatus` is `'enabled' | 'disabled' | 'unknown'` and is the one place the settings card
+and the guard share what is known about the account's two-factor state; `setTwoFactorStatus`
+publishes a change made on `/settings`. `banner` is optional: `ProtectedRoute` fills it with the
+low-recovery-codes notice after a recovery-code sign-in, and `AppLayout` renders it first inside
+`<main>` (issue #331).
+
+## The sign-in challenge route (issue #331)
+
+`ROUTE_PATHS.twoFactorChallenge` (`/sign-in/two-factor`, key `twoFactorChallenge`) is a public route
+owned by the auth feature's route contract (`@auth/routes`), rendered under `RootLayout` and never
+guarded or flagged. It is reached only with a pending session from a sign-in that asked for a
+code: a typed URL or a reload has none, so the route replaces itself with `/sign-in` and sends
+nothing. The page lazy-loads its form section behind the `two-factor-form-section` chunk and
+completes back to the destination `ProtectedRoute` preserved in `state.from`.
 
 ## Flagged routes (issue #330)
 

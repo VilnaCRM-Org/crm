@@ -2989,6 +2989,13 @@ layer contract (`_planning-shared/miro-layer-contract.md` §1, screenshots in
   `[Decorator]`, `[type]` (`*DTO`, `*Entity`), `[module]` and `[Software System]`. This design
   uses exactly that vocabulary, with no Strategy and no actions class of its own.
 
+Code facts (reconciled 2026-10-27, Story 4.5): the shipped code adds one class this section does not
+list, `TwoFactorFormSectionLoader` (`routes/two-factor/form-section-loader.ts`), the `*Loader` that
+lazy-loads the challenge form section. It copies its four siblings
+(`SignInFormSectionLoader`, `SignUpFormSectionLoader`, `ResetPasswordFormSectionLoader`,
+`CreateNewPasswordFormSectionLoader`), so it is a route-chunk loader and not a layer. No new class
+is named `*Controller`, `*Service` or `*Handler`.
+
 ### 19.2 Board element or edge → implementation
 
 User module, code level (`miro/20`, `miro/21`):
