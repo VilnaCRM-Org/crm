@@ -1,4 +1,4 @@
-import type { Page, Route } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
@@ -11,9 +11,8 @@ import {
   retryButtonOf,
   signInErrorMessages,
 } from '@tests/e2e/utils/sign-in-result-card';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
-
-const LOGIN_API_URL = '**/api/users';
 
 const backToMainLabel: string = t('buttons.back_to_main');
 const showPasswordLabel: string = t('auth.password.show');
@@ -26,23 +25,6 @@ const credentials = buildCredentials();
 async function openSignIn(page: Page): Promise<void> {
   await page.goto(ROUTE_PATHS.signIn, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('form button[type="submit"]')).toBeVisible();
-}
-
-function isPostLogin(route: Route): boolean {
-  return route.request().method() === 'POST';
-}
-
-async function rejectLogin(route: Route): Promise<void> {
-  if (!isPostLogin(route)) {
-    await route.fallback();
-    return;
-  }
-
-  await route.fulfill({
-    status: 401,
-    contentType: 'application/json',
-    body: JSON.stringify({ message: 'Invalid credentials' }),
-  });
 }
 
 test.describe('Sign-in form keyboard contract (issue #118)', () => {
@@ -112,19 +94,14 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
   });
 
   test('Enter in the password field submits the form', async ({ page }) => {
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (!isPostLogin(route)) return route.fallback();
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-    });
-    const login = page.waitForRequest(
-      (request) => request.url().includes('/api/users') && request.method() === 'POST'
-    );
+    const signIn = await stubSignIn(page, ['session']);
 
     await page.locator('#email').fill(credentials.email);
     await page.locator('#password').fill(credentials.password);
     await page.locator('#password').press('Enter');
 
-    expect((await login).postDataJSON()).toMatchObject({ email: credentials.email });
+    await expect.poll(() => signIn.count()).toBe(1);
+    expect(signIn.calls[0]?.variables['input']).toMatchObject({ email: credentials.email });
   });
 
   test('an empty submission moves the error into the accessibility tree', async ({ page }) => {
@@ -145,13 +122,13 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
   test('a failed sign-in focuses the error card and Enter on Назад restores the form', async ({
     page,
   }) => {
-    await page.route(LOGIN_API_URL, rejectLogin);
+    await stubSignIn(page, ['unavailable']);
 
     await page.locator('#email').fill(credentials.email);
     await page.locator('#password').fill(credentials.password);
     await page.locator('#password').press('Enter');
 
-    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
+    await expectSignInErrorCard(page, signInErrorMessages.transient);
     await expectTabOrder(page, [{ locator: retryButtonOf(page) }, { locator: backButtonOf(page) }]);
     await page.keyboard.press('Enter');
 
