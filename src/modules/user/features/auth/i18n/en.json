@@ -103,7 +103,9 @@
     },
     "notices": {
       "password_reset": "Your password has been changed. Sign in with your new password.",
-      "session_ended": "Your session has ended. Please sign in again."
+      "session_ended": "Your session has ended. Please sign in again.",
+      "two_factor_expired": "The time to confirm your sign-in has run out. Please sign in again.",
+      "account_locked": "Your account is temporarily locked after too many failed attempts. Try again later."
     },
     "success": {
       "title": "Welcome back!",
