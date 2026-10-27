@@ -12,7 +12,8 @@ import pinInputSx from '@/components/ui-pin-input/styles';
 
 const focusTargetOf = (group: HTMLElement): PinFocusTarget => ({
   focus: (): void => {
-    group.querySelector('input')?.focus();
+    const cells = Array.from(group.querySelectorAll('input'));
+    (cells.find((cell) => cell.value === '') ?? cells[0])?.focus();
   },
 });
 

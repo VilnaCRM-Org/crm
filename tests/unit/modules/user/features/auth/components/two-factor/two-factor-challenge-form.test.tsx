@@ -1,0 +1,217 @@
+import '@testing-library/jest-dom';
+import { act, render, screen, waitFor, type RenderResult } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { JSX } from 'react';
+import { I18nextProvider } from 'react-i18next';
+
+import TwoFactorChallengeForm from '@auth/components/two-factor/two-factor-challenge-form';
+import type {
+  TwoFactorChallengeProps,
+  TwoFactorChallengeState,
+} from '@auth/types/two-factor/challenge-view';
+import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+
+const RESTING: TwoFactorChallengeState = {
+  mode: 'totp',
+  value: '',
+  fieldError: null,
+  banner: null,
+  focusRequest: 0,
+  isSubmitting: false,
+};
+
+const callbacks = (): TwoFactorChallengeProps['callbacks'] => ({
+  submit: jest.fn(),
+  retry: jest.fn(),
+  switchMode: jest.fn(),
+});
+
+const tree = (
+  state: TwoFactorChallengeState,
+  handlers: TwoFactorChallengeProps['callbacks'],
+  locale: 'uk' | 'en' = 'uk'
+): JSX.Element => (
+  <I18nextProvider i18n={createLocaleI18n(locale)}>
+    <main>
+      <TwoFactorChallengeForm state={state} callbacks={handlers} />
+    </main>
+  </I18nextProvider>
+);
+
+const mount = (
+  state: Partial<TwoFactorChallengeState> = {},
+  handlers = callbacks(),
+  locale: 'uk' | 'en' = 'uk'
+): RenderResult & { handlers: TwoFactorChallengeProps['callbacks'] } => ({
+  ...render(tree({ ...RESTING, ...state }, handlers, locale)),
+  handlers,
+});
+
+const cells = (): HTMLInputElement[] => screen.getAllByRole('textbox');
+
+describe('TwoFactorChallengeForm', () => {
+  it('shows the heading, subtitle, note, six labelled cells and the submit in Ukrainian', () => {
+    mount();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Двофакторна автентифікація'
+    );
+    expect(
+      screen.getByText('Введіть шестизначний код із застосунку Google Authenticator.')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Код можна ввести протягом 5 хвилин після входу.')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Код підтвердження' })).toBeInTheDocument();
+    expect(cells()).toHaveLength(6);
+    expect(cells()[0]).toHaveAccessibleName('Цифра 1 з 6');
+    expect(cells()[5]).toHaveAccessibleName('Цифра 6 з 6');
+    expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeEnabled();
+  });
+
+  it('renders the English copy', () => {
+    mount({}, callbacks(), 'en');
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Two-factor authentication'
+    );
+    expect(screen.getByRole('group', { name: 'Verification code' })).toBeInTheDocument();
+    expect(cells()[0]).toHaveAccessibleName('Digit 1 of 6');
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument();
+  });
+
+  it('puts focus on the h1 and renders no provider button, switcher, e-mail or resend row', () => {
+    mount();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+    expect(screen.queryByRole('textbox', { name: /e-?mail|пошт/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/ще раз/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('hands the typed six digits to submit once, only when the user submits', async () => {
+    const { handlers } = mount();
+
+    await userEvent.type(cells()[0] as HTMLInputElement, '123456');
+    expect(handlers.submit).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
+
+    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
+    expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: '123456' });
+  });
+
+  it('hands a short value to submit too, so the hook can show the incomplete error', async () => {
+    const { handlers } = mount();
+
+    await userEvent.type(cells()[0] as HTMLInputElement, '1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
+
+    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
+    expect((handlers.submit as jest.Mock).mock.calls[0]?.[0]).toEqual({ twoFactorCode: '1234' });
+  });
+
+  it('marks the group invalid and describes it with the incomplete text', () => {
+    mount({ fieldError: 'incomplete', value: '1234', focusRequest: 1 });
+
+    const message = screen.getByText('Введіть усі 6 цифр коду');
+    expect(message).toBeInTheDocument();
+    cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
+    expect(
+      cells().some((cell) => cell.getAttribute('aria-describedby')?.includes(message.id))
+    ).toBe(true);
+  });
+
+  it('moves focus to the first empty cell when a focus is requested', async () => {
+    const handlers = callbacks();
+    const view = mount({}, handlers);
+    await userEvent.type(cells()[0] as HTMLInputElement, '1234');
+
+    view.rerender(
+      tree({ ...RESTING, fieldError: 'incomplete', value: '1234', focusRequest: 1 }, handlers)
+    );
+
+    await waitFor(() => expect(cells()[4]).toHaveFocus());
+  });
+
+  it('empties every cell and marks them invalid after a wrong code', async () => {
+    const handlers = callbacks();
+    const view = mount({}, handlers);
+    await userEvent.type(cells()[0] as HTMLInputElement, '123456');
+    view.rerender(tree({ ...RESTING, value: '123456' }, handlers));
+
+    view.rerender(
+      tree({ ...RESTING, value: '', fieldError: 'invalid_code', focusRequest: 1 }, handlers)
+    );
+
+    await waitFor(() => cells().forEach((cell) => expect(cell).toHaveValue('')));
+    cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
+    expect(
+      screen.getByText(
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.'
+      )
+    ).toBeInTheDocument();
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
+  });
+
+  it('shows the format text for a malformed value', () => {
+    mount({ fieldError: 'format' });
+
+    expect(screen.getByText('Код має складатися лише з шести цифр')).toBeInTheDocument();
+  });
+
+  it('marks the form busy, announces the check and locks the cells while submitting', () => {
+    mount({ isSubmitting: true, value: '123456' });
+
+    expect(document.forms[0]).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText('Перевірка…')).toHaveAttribute('role', 'status');
+    cells().forEach((cell) => {
+      expect(cell).toHaveAttribute('aria-disabled', 'true');
+      expect(cell).toHaveAttribute('readonly');
+    });
+  });
+
+  it('shows the rate-limit banner as a focused alert without a retry', () => {
+    mount({ banner: 'rate_limited' });
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Забагато спроб. Зачекайте хвилину і спробуйте знову.');
+    expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
+  });
+
+  it('shows the transient banner with a retry that calls retry once', async () => {
+    const { handlers } = mount({ banner: 'transient' });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    expect(handlers.retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no banner and no retry at rest', () => {
+    mount();
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['resting', {}],
+    ['incomplete', { fieldError: 'incomplete', value: '12', focusRequest: 1 }],
+    ['invalid code', { fieldError: 'invalid_code', focusRequest: 1 }],
+    ['rate limited', { banner: 'rate_limited' }],
+    ['transient', { banner: 'transient' }],
+    ['busy', { isSubmitting: true }],
+  ] as const)('has no accessibility violation in the %s state', async (_name, state) => {
+    const { container } = mount(state);
+
+    await act(async () => Promise.resolve());
+    await expectNoA11yViolations(container);
+  });
+
+  it('ignores a focus request of zero', () => {
+    mount({ focusRequest: 0 });
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+  });
+});

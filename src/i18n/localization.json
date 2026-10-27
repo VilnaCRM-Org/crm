@@ -165,6 +165,24 @@
           "button": "Continue"
         }
       },
+      "two_factor": {
+        "title": "Two-factor authentication",
+        "subtitle": "Enter the six-digit code from the Google Authenticator app.",
+        "note": "You can enter the code within 5 minutes of signing in.",
+        "code_label": "Verification code",
+        "cell_label": "Digit {{position}} of {{total}}",
+        "submit_button": "Confirm",
+        "submitting": "Verifying…",
+        "errors": {
+          "incomplete": "Enter all 6 digits of the code",
+          "format": "The code must be exactly six digits",
+          "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
+        },
+        "banner": {
+          "rate_limited": "Too many attempts. Wait a minute and try again.",
+          "transient": "The code could not be verified. Check your connection and try again."
+        }
+      },
       "notifications": {
         "close": "Close notification",
         "success": {
@@ -373,6 +391,24 @@
           "title": "Вітаємо!",
           "description": "Ви успішно увійшли",
           "button": "Продовжити"
+        }
+      },
+      "two_factor": {
+        "title": "Двофакторна автентифікація",
+        "subtitle": "Введіть шестизначний код із застосунку Google Authenticator.",
+        "note": "Код можна ввести протягом 5 хвилин після входу.",
+        "code_label": "Код підтвердження",
+        "cell_label": "Цифра {{position}} з {{total}}",
+        "submit_button": "Підтвердити",
+        "submitting": "Перевірка…",
+        "errors": {
+          "incomplete": "Введіть усі 6 цифр коду",
+          "format": "Код має складатися лише з шести цифр",
+          "invalid_code": "Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз."
+        },
+        "banner": {
+          "rate_limited": "Забагато спроб. Зачекайте хвилину і спробуйте знову.",
+          "transient": "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
         }
       },
       "notifications": {
