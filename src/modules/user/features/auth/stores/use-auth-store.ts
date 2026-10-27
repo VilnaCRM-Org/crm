@@ -12,6 +12,7 @@ export const CLEARED_AUTH_STATE: AuthState = {
   loginError: null,
   registerLoading: false,
   registerError: null,
+  twoFactorStatus: 'unknown',
 };
 
 const useAuthStore = create<AuthState>()(() => {

@@ -32,6 +32,23 @@ function SignInProbe(): JSX.Element {
   );
 }
 
+function ContextProbe(): JSX.Element {
+  const { twoFactorStatus, setTwoFactorStatus } = useOutletContext<ProtectedOutletContext>();
+  const recordEnabled = (): void => setTwoFactorStatus('enabled');
+  const recordDisabled = (): void => setTwoFactorStatus('disabled');
+  return (
+    <div>
+      <p>status:{twoFactorStatus}</p>
+      <button type="button" onClick={recordEnabled}>
+        record enabled
+      </button>
+      <button type="button" onClick={recordDisabled}>
+        record disabled
+      </button>
+    </div>
+  );
+}
+
 function DashboardProbe(): JSX.Element {
   const { signOut } = useOutletContext<ProtectedOutletContext>();
   return (
@@ -51,6 +68,7 @@ const renderWithRouter = (token: string | null, initialEntry = '/'): ReturnType<
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<DashboardProbe />} />
+          <Route path="/status" element={<ContextProbe />} />
         </Route>
         <Route path="/sign-in" element={<SignInProbe />} />
         <Route path="/sign-up" element={<div>sign up page</div>} />
@@ -175,6 +193,74 @@ describe('ProtectedRoute', () => {
 
     expect(await screen.findByText('focus main:true')).toBeInTheDocument();
     expect(screen.getByText('notice:undefined')).toBeInTheDocument();
+  });
+
+  describe('two-factor status in the outlet context', () => {
+    it('hands the page the signed-in status, unknown after boot', () => {
+      renderWithRouter(buildToken(), '/status');
+
+      expect(screen.getByText('status:unknown')).toBeInTheDocument();
+    });
+
+    it.each(['enabled', 'disabled'] as const)('reads %s from the store', (status) => {
+      renderWithRouter(buildToken(), '/status');
+
+      act(() => {
+        useAuthStore.setState({ twoFactorStatus: status });
+      });
+
+      expect(screen.getByText(`status:${status}`)).toBeInTheDocument();
+    });
+
+    it.each([
+      ['enabled', 'record enabled'],
+      ['disabled', 'record disabled'],
+    ] as const)('writes %s into the store with a status-only patch', (status, label) => {
+      renderWithRouter(buildToken(), '/status');
+      const setState = jest.spyOn(useAuthStore, 'setState');
+
+      act(() => {
+        screen.getByRole('button', { name: label }).click();
+      });
+
+      expect(setState).toHaveBeenCalledTimes(1);
+      expect(setState).toHaveBeenCalledWith({ twoFactorStatus: status });
+      expect(useAuthStore.getState().twoFactorStatus).toBe(status);
+      expect(screen.getByText(`status:${status}`)).toBeInTheDocument();
+    });
+
+    it('leaves the token and the other fields alone when it records a status', () => {
+      const token = buildToken();
+      renderWithRouter(token, '/status');
+      const before = useAuthStore.getState();
+
+      act(() => {
+        screen.getByRole('button', { name: 'record enabled' }).click();
+      });
+
+      expect(useAuthStore.getState()).toEqual({ ...before, twoFactorStatus: 'enabled' });
+      expect(useAuthStore.getState().token).toBe(token);
+    });
+
+    it('forgets the status with the token when the session ends', () => {
+      renderWithRouter(buildToken(), '/status');
+      act(() => {
+        screen.getByRole('button', { name: 'record enabled' }).click();
+      });
+
+      act(() => {
+        resetClientStores();
+      });
+
+      expect(useAuthStore.getState().twoFactorStatus).toBe('unknown');
+      expect(screen.getByText(/sign in page/)).toBeInTheDocument();
+    });
+
+    it('keeps the signOut member beside the status members', () => {
+      renderWithRouter(buildToken());
+
+      expect(screen.getByRole('button', { name: 'sign out' })).toBeInTheDocument();
+    });
   });
 
   it('shows no notice on a cold visit', () => {

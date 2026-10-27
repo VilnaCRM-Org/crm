@@ -102,8 +102,18 @@ The module barrel cannot export `authActions` (it would close a `no-circular`
 cycle and break barrel purity), and code outside the module may not import
 `@auth/stores`. The sign-out action therefore reaches protected pages through
 react-router **outlet context**: `ProtectedRoute` renders
-`<Outlet context={{ signOut }} />` typed as `ProtectedOutletContext`
+`<Outlet context={…} />` typed as `ProtectedOutletContext`
 (`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it.
+
+The outlet context is the **only seam** through which a non-auth feature reads or writes auth
+state. Besides `signOut` it carries the known two-factor status (`twoFactorStatus`, a
+`TwoFactorStatus` of `'enabled'`, `'disabled'` or `'unknown'`) and `setTwoFactorStatus`.
+`ProtectedRoute` reads the status from `useAuthStore` with a selector, and `setTwoFactorStatus`
+calls `useAuthStore.setState` with an `AuthStatePatch` holding that one field and nothing else, so
+the settings feature never imports the auth stores. The status lives in memory beside the token and
+returns to `'unknown'` with it when the session ends. The app shell and its user-menu slot keep
+receiving `signOut` alone, typed as `SignOutContext`
+(`Pick<ProtectedOutletContext, 'signOut'>`).
 
 `AppLayout` also forwards `signOut` to the app shell, and the shell's user chip and menu are the
 one piece of this module that appears in it. They are not exported through the barrel: the

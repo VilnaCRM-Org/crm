@@ -20,6 +20,7 @@ const CLEARED = {
   loginError: null,
   registerLoading: false,
   registerError: null,
+  twoFactorStatus: 'unknown',
 };
 
 const loginError: AuthError = { kind: 'authentication', displayMessage: 'No', retryable: false };
@@ -33,6 +34,7 @@ const POPULATED = {
   loginError,
   registerLoading: true,
   registerError,
+  twoFactorStatus: 'enabled',
 };
 
 const loadPopulatedBarrel = async (): Promise<Barrel> => {

@@ -1,5 +1,6 @@
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
+import type { TwoFactorStatus } from '@/routes/types/protected-outlet-context';
 
 import type { SafeUserInfo } from './api-responses';
 import type { AuthError } from './auth-error';
@@ -12,6 +13,7 @@ export interface AuthState {
   loginError: AuthError | null;
   registerLoading: boolean;
   registerError: AuthError | null;
+  twoFactorStatus: TwoFactorStatus;
 }
 
 export type AuthStatePatch = Partial<AuthState>;

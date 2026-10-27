@@ -1397,6 +1397,13 @@ home page reads no context. Tests that build the context by hand:
 `tests/unit/routes/shell-slot-factory.test.tsx`,
 `tests/unit/utils/render-app-shell.tsx`.
 
+Code facts (Story 1.5, 2026-10-27): `ProtectedOutletContext` has `signOut`, `twoFactorStatus` and
+`setTwoFactorStatus` as required members, and `banner?` is not added. Besides the five tests above,
+two files that build the context by hand needed the new members for `tsc`:
+`.storybook/router-decorators.tsx` (`storySignOut`) and `src/components/layouts/app-layout.stories.tsx`
+(its stub user menu is typed `SignOutContext`). `setTwoFactorStatus` is a module-level arrow in
+`protected-route/index.tsx`, so its identity is stable and no hook dependency array is introduced.
+
 > Assumption (reconciliation 2026-10-27): `SignOutContext` is declared in
 > `src/routes/types/protected-outlet-context.ts`, not in `@auth/types/sign-out.ts`, because the
 > routes types may not import a feature; `ShellSlotHostProps` and `SignOutState` extend it, so

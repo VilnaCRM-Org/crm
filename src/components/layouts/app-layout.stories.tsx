@@ -5,7 +5,7 @@ import { Outlet } from 'react-router';
 import AppLayout from '@/components/layouts/app-layout';
 import UIContainer from '@/components/ui-container';
 import UITypography from '@/components/ui-typography';
-import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
+import type { SignOutContext } from '@/routes/types/protected-outlet-context';
 import { DataRouterStory, storySignOut } from '@stories/router-decorators';
 
 function PlaceholderPage(): JSX.Element {
@@ -19,7 +19,7 @@ function PlaceholderPage(): JSX.Element {
   );
 }
 
-function StubUserMenu({ signOut }: ProtectedOutletContext): JSX.Element {
+function StubUserMenu({ signOut }: SignOutContext): JSX.Element {
   return (
     <button type="button" onClick={signOut}>
       Профіль
