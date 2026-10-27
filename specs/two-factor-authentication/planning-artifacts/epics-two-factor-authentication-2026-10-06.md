@@ -2261,6 +2261,12 @@ is `2px solid #0074B5`; `UIButton`'s contained ring is `#404142`
 top of a protected page's Tab order is the shell's (skip link, header, sidebar), and
 `tests/e2e/a11y/home-keyboard.a11y.spec.ts` is the shell-era precedent.
 
+Code facts (reconciled 2026-10-27, Story 4.2): the settings card's outlined buttons paint the
+settings ring `2px solid #1A1C1E` (`SETTINGS_FOCUS_RING`), not `#404142`; only the pin cells, the
+challenge's "Назад" and the recovery notice use `#404142`. The specs landed as
+`two-factor-challenge-{states,keyboard}.a11y.spec.ts` and
+`two-factor-settings-{states,keyboard}.a11y.spec.ts`, plus `tests/utils/a11y/expect-clean-scan.ts`.
+
 **Files:** `tests/e2e/a11y/two-factor-challenge-keyboard.a11y.spec.ts`,
 `tests/e2e/a11y/settings-two-factor-keyboard.a11y.spec.ts`,
 `tests/e2e/a11y/two-factor-states.a11y.spec.ts` (NEW), `tests/e2e/route-coverage.tsv` (MODIFY).
