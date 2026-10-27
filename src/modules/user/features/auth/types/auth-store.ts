@@ -1,4 +1,3 @@
-import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type { TwoFactorStatus } from '@/routes/types/protected-outlet-context';
 
@@ -14,6 +13,7 @@ export interface AuthState {
   registerLoading: boolean;
   registerError: AuthError | null;
   twoFactorStatus: TwoFactorStatus;
+  pendingSessionId: string | null;
 }
 
 export type AuthStatePatch = Partial<AuthState>;
@@ -23,7 +23,6 @@ export interface AuthStateWriter {
 }
 
 export interface AuthActions {
-  loginUser: (credentials: SignInDto, signal?: AbortSignal) => Promise<void>;
   registerUser: (credentials: SignUpDto, signal?: AbortSignal) => Promise<void>;
   logout: () => void;
   reset: () => void;

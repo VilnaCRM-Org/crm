@@ -9,9 +9,11 @@ import type {
   SecurityEventRecorder,
 } from '@/services/types/security-events/security-event';
 import type { AuthError } from '@auth/types/auth-error';
-import type { LoginResult, RegisterResult } from '@auth/types/auth-repository';
+import type { RegisterResult } from '@auth/types/auth-repository';
+import type { SignInResult } from '@auth/types/two-factor/sign-in';
 
 const TOO_MANY_REQUESTS = 429;
+const LOCKED = 423;
 
 const KNOWN_REASONS: ReadonlySet<string> = new Set<AuthFailureReason>([
   'authentication',
@@ -30,13 +32,13 @@ export default class AuthSecuritySignals {
     private readonly observability: ObservabilityService
   ) {}
 
-  public loginSettled(result: LoginResult): void {
+  public loginSettled(result: SignInResult): void {
     if (result.ok) {
-      this.observability.setUser({ id: uuidv4() });
+      if (result.value.kind === 'session') this.observability.setUser({ id: uuidv4() });
       return;
     }
     if (result.error.aborted) return;
-    this.loginFailed(result.error);
+    this.recorder.authFailure('login', this.reasonOf(result.error));
   }
 
   public registerSettled(result: RegisterResult): void {
@@ -44,16 +46,14 @@ export default class AuthSecuritySignals {
     this.registerFailed(result.error);
   }
 
-  public loginFailed(error: unknown): void {
-    this.recorder.authFailure('login', this.reasonOf(error));
-  }
-
   public registerFailed(error: unknown): void {
     this.recorder.authFailure('registration', this.reasonOf(error));
   }
 
   private reasonOf(error: unknown): AuthFailureReason {
-    if (this.statusOf(error) === TOO_MANY_REQUESTS) return 'rate_limited';
+    const status = this.statusOf(error);
+    if (status === TOO_MANY_REQUESTS) return 'rate_limited';
+    if (status === LOCKED) return 'locked';
     const kind = (error as Partial<AuthError> | null | undefined)?.kind;
     return KNOWN_REASONS.has(kind as string) ? (kind as AuthFailureReason) : 'unknown';
   }

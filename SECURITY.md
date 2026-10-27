@@ -364,7 +364,9 @@ the structured payload in `extra`:
 The payload is credential-free by construction, not by filtering. `reason` is a bounded code in
 every case, but the set it is drawn from depends on the event: `auth_failure` and
 `auth_failure_burst` use `authentication`, `validation`, `conflict`, `server`, `network`,
-`rate_limited` or `unknown`, derived from the auth error kind or the HTTP status;
+`rate_limited`, `locked` or `unknown`, derived from the auth error kind or the HTTP status (a
+sign-in refused with HTTP 423 records `locked`, and a pending two-factor challenge records
+nothing: it is not a sign-in);
 `unauthorized_response` uses `http_401` or `http_403`; and `error_boundary_catch` uses the
 boundary surface — `app` for the shell's root `UIErrorBoundary`, `auth` for the auth feature's
 boundary, and `route` for a route error reported through the router's `onError` seam behind each

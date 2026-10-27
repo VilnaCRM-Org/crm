@@ -7,9 +7,3 @@ export interface LoginSubmitter {
   handleRetry: () => void;
   handleBack: () => void;
 }
-
-export type LoginUser = (data: SignInDto, signal?: AbortSignal) => Promise<void>;
-
-export interface LoginActions {
-  loginUser: LoginUser;
-}

@@ -1,18 +1,16 @@
-import { delay, http, HttpResponse } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 import '../../../../../setup';
-import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import type LoginAPI from '@auth/repositories/login-api';
 import type RegistrationAPI from '@auth/repositories/registration-api';
 import { useAuthStore, AuthStoreSelectors, authActions } from '@auth/stores';
 import {
   buildClientMutationId,
   buildCredentials,
   buildGraphqlUser,
-  buildLoginResponse,
   buildRegistrationResponse,
+  buildPendingSessionId,
   buildToken,
   buildUser,
 } from '@tests/builders';
@@ -62,170 +60,16 @@ describe('Auth Store Integration', () => {
     });
   });
 
-  describe('successful login flow', () => {
-    it('should update state to pending when login starts', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, async () => {
-          await delay(50);
-          return HttpResponse.json(buildLoginResponse());
-        })
-      );
-
-      const promise = authActions.loginUser(buildCredentials());
-      expect(useAuthStore.getState().loginLoading).toBe(true);
-
-      await promise;
-      expect(useAuthStore.getState().loginLoading).toBe(false);
-    });
-
-    it('should update state on successful login', async () => {
-      const credentials = buildCredentials();
-      const { token } = buildLoginResponse();
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
-
-      await authActions.loginUser(credentials);
-
-      const state = useAuthStore.getState();
-
-      expect(state.loginLoading).toBe(false);
-      expect(state.email).toBe(credentials.email);
-      expect(state.token).toBe(token);
-      expect(state.loginError).toBeNull();
-    });
-
-    it('should normalize email to lowercase', async () => {
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json(buildLoginResponse())));
-
-      await authActions.loginUser({ email: 'USER@TEST.COM', password: 'pass' });
-
-      const state = useAuthStore.getState();
-      expect(state.email).toBe('user@test.com');
-    });
-
-    it('should handle multiple successful logins', async () => {
-      const firstCredentials = buildCredentials();
-      const firstToken = buildToken();
-      const secondCredentials = buildCredentials();
-      const secondToken = buildToken();
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: firstToken })));
-
-      await authActions.loginUser(firstCredentials);
-      expect(useAuthStore.getState().token).toBe(firstToken);
-
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: secondToken })));
-
-      await authActions.loginUser(secondCredentials);
-
-      const state = useAuthStore.getState();
-      expect(state.token).toBe(secondToken);
-      expect(state.email).toBe(secondCredentials.email);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should set error state on 401 authentication error', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, () =>
-          HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 })
-        )
-      );
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.token).toBeNull();
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should set error state on network failure', async () => {
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.error()));
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.token).toBeNull();
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should set error state on 400 validation error', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, () =>
-          HttpResponse.json({ message: 'Invalid data' }, { status: 400 })
-        )
-      );
-
-      await authActions.loginUser({ email: 'invalid', password: '123' });
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should clear previous error on new login attempt', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, () =>
-          HttpResponse.json({ message: 'Invalid' }, { status: 401 })
-        )
-      );
-
-      await authActions.loginUser(buildCredentials());
-      expect(useAuthStore.getState().loginError).toBeTruthy();
-
-      const newToken = buildToken();
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: newToken })));
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginError).toBeNull();
-      expect(state.token).toBe(newToken);
-    });
-
-    it('should handle 500 server error', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, () =>
-          HttpResponse.json({ message: 'Internal server error' }, { status: 500 })
-        )
-      );
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should handle various HTTP error codes', async () => {
-      const errorCodes = [403, 404, 408, 422, 429, 502, 503, 504];
-
-      for (const code of errorCodes) {
-        authActions.reset();
-        server.use(
-          http.post(API_ENDPOINTS.LOGIN, () =>
-            HttpResponse.json({ message: `Error ${code}` }, { status: code })
-          )
-        );
-
-        await authActions.loginUser(buildCredentials());
-
-        const state = useAuthStore.getState();
-        expect(state.loginLoading).toBe(false);
-        expect(state.loginError).toBeTruthy();
-      }
-    });
-  });
-
   describe('logout action', () => {
     it('should clear all auth state on logout', async () => {
       const credentials = buildCredentials();
-      const { token } = buildLoginResponse();
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
-
-      await authActions.loginUser(credentials);
-      expect(useAuthStore.getState().token).toBe(token);
-      expect(useAuthStore.getState().email).toBe(credentials.email);
+      const token = buildToken();
+      useAuthStore.setState({
+        email: credentials.email,
+        token,
+        twoFactorStatus: 'enabled',
+        pendingSessionId: buildPendingSessionId(),
+      });
 
       authActions.logout();
 
@@ -236,52 +80,8 @@ describe('Auth Store Integration', () => {
       expect(state.loginLoading).toBe(false);
       expect(state.registerError).toBeNull();
       expect(state.registerLoading).toBe(false);
-    });
-  });
-
-  describe('request cancellation', () => {
-    it('should handle cancelled requests', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, async () => {
-          await createDelayedPromise(100);
-          return HttpResponse.json(buildLoginResponse());
-        })
-      );
-
-      const abortController = new AbortController();
-      const promise = authActions.loginUser(buildCredentials(), abortController.signal);
-
-      abortController.abort();
-      await promise;
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeNull();
-    });
-  });
-
-  describe('schema validation', () => {
-    it('should handle invalid response schema', async () => {
-      server.use(
-        http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ invalidField: 'value' }))
-      );
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-      expect(state.token).toBeNull();
-    });
-
-    it('surfaces a login error when the server returns no content (204)', async () => {
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => new HttpResponse(null, { status: 204 })));
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginError).toBeTruthy();
-      expect(state.token).toBeNull();
+      expect(state.twoFactorStatus).toBe('unknown');
+      expect(state.pendingSessionId).toBeNull();
     });
   });
 
@@ -429,109 +229,11 @@ describe('Auth Store Integration', () => {
     });
   });
 
-  describe('loginUser abort handling', () => {
-    it('should handle pre-aborted signal', async () => {
-      const abortController = new AbortController();
-      abortController.abort();
-
-      await authActions.loginUser(buildCredentials(), abortController.signal);
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeNull();
-    });
-
-    it('should handle DOMException abort from LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      jest
-        .spyOn(loginAPI, 'login')
-        .mockRejectedValue(new DOMException('The operation was aborted', 'AbortError'));
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeNull();
-    });
-
-    it('should handle error with AbortError name from LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      const abortError = new Error('Operation cancelled');
-      abortError.name = 'AbortError';
-      jest.spyOn(loginAPI, 'login').mockRejectedValue(abortError);
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeNull();
-    });
-
-    it('should handle error with abort in message from LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Request was aborted by user'));
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeNull();
-    });
-
-    it('should not treat non-abort errors as abort', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Network failure'));
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should not treat non-Error objects as abort', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      jest.spyOn(loginAPI, 'login').mockRejectedValue('string error');
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should handle null error thrown by LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      jest.spyOn(loginAPI, 'login').mockRejectedValue(null);
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-    });
-
-    it('should handle error with undefined message', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      const error = new Error();
-      error.message = undefined as unknown as string;
-      jest.spyOn(loginAPI, 'login').mockRejectedValue(error);
-
-      await authActions.loginUser(buildCredentials());
-
-      const state = useAuthStore.getState();
-      expect(state.loginLoading).toBe(false);
-      expect(state.loginError).toBeTruthy();
-    });
-  });
-
   describe('selectors', () => {
     it('should select state values correctly', async () => {
       const credentials = buildCredentials();
-      const { token } = buildLoginResponse();
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
-
-      await authActions.loginUser(credentials);
+      const token = buildToken();
+      useAuthStore.setState({ email: credentials.email, token });
 
       const state = useAuthStore.getState();
       expect(AuthStoreSelectors.email(state)).toBe(credentials.email);
@@ -560,21 +262,6 @@ describe('Auth Store Integration', () => {
   });
 
   describe('real integration with DI container', () => {
-    it('should use real LoginAPI from DI container', async () => {
-      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
-      expect(loginAPI).toBeDefined();
-
-      const credentials = buildCredentials();
-      const { token } = buildLoginResponse();
-      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
-
-      await authActions.loginUser(credentials);
-
-      const state = useAuthStore.getState();
-      expect(state.token).toBe(token);
-      expect(state.email).toBe(credentials.email);
-    });
-
     it('should use real RegistrationAPI from DI container', async () => {
       const registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
       expect(registrationAPI).toBeDefined();

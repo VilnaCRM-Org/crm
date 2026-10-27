@@ -2,7 +2,6 @@ import type { DependencyContainer, InjectionToken } from 'tsyringe';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
-import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
@@ -29,14 +28,6 @@ class DeferredAuthActions implements AuthActions {
     displayMessage: 'Failed to load the authentication service. Please try again.',
     retryable: true,
   };
-
-  public async loginUser(credentials: SignInDto, signal?: AbortSignal): Promise<void> {
-    this.state.setState({ loginLoading: true, loginError: null });
-    const actions = await this.resolveSafely((error) =>
-      this.state.setState({ loginLoading: false, loginError: signal?.aborted ? null : error })
-    );
-    if (actions) await actions.login(credentials, signal);
-  }
 
   public async registerUser(credentials: SignUpDto, signal?: AbortSignal): Promise<void> {
     this.state.setState({ registerLoading: true, registerError: null, user: null });

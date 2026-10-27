@@ -72,9 +72,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
         authRequestErrors: c.resolve<AuthRequestErrors>(AUTH_TOKENS.AuthRequestErrors),
         authState: c.resolve<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore),
         securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
-        sandboxDemoSession: c.resolve<SandboxDemoSessionProvider>(
-          AUTH_TOKENS.SandboxDemoSessionProvider
-        ),
       }),
     });
   }
