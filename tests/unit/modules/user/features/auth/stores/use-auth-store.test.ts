@@ -25,6 +25,7 @@ const CLEARED: AuthState = {
   registerError: null,
   twoFactorStatus: 'unknown',
   pendingSessionId: null,
+  recoveryCodesRemaining: null,
 };
 
 type AuthStoreModule = {
@@ -189,6 +190,16 @@ describe('useAuthStore', () => {
     useAuthStore.setState(CLEARED_AUTH_STATE);
 
     expect(useAuthStore.getState().pendingSessionId).toBeNull();
+  });
+
+  it('starts with no recovery-code count and clears one with the rest of the state', async () => {
+    expect((await loadFresh()).default.getState().recoveryCodesRemaining).toBeNull();
+
+    useAuthStore.setState({ recoveryCodesRemaining: 1, email: buildEmail() });
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBe(1);
+    useAuthStore.setState(CLEARED_AUTH_STATE);
+
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
   });
 
   it('holds data only: no action, no function member, no persisted copy', () => {

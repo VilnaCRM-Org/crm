@@ -1,12 +1,17 @@
 import { injectable } from 'tsyringe';
 
-import type { SignInUserMutation } from '@/api/generated/graphql';
+import type { CompleteTwoFactorUserMutation, SignInUserMutation } from '@/api/generated/graphql';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type {
   UserServiceFailure,
   UserServiceFailureReason,
 } from '@/modules/user/types/user-service/user-service-failure';
 import type { AuthError } from '@auth/types/auth-error';
+import type {
+  ChallengeFailedOutcome,
+  ChallengeFailureReason,
+  ChallengeResult,
+} from '@auth/types/two-factor/challenge';
 import type { SignInResult } from '@auth/types/two-factor/sign-in';
 
 const ABORTED_ERROR: AuthError = {
@@ -58,6 +63,20 @@ const FAILURES = new Map<UserServiceFailureReason, AuthError>([
   ['aborted', ABORTED_ERROR],
 ]);
 
+const CHALLENGE_FAILURES = new Map<UserServiceFailureReason, ChallengeFailureReason>([
+  ['invalid_code', 'invalid_code'],
+  ['violation', 'invalid_code'],
+  ['expired_session', 'expired_session'],
+  ['unauthenticated', 'expired_session'],
+  ['refused', 'expired_session'],
+  ['locked', 'locked'],
+  ['rate_limited', 'rate_limited'],
+  ['network', 'network'],
+  ['aborted', 'network'],
+]);
+
+const SERVER_CHALLENGE_FAILURE: ChallengeFailedOutcome = { kind: 'failed', reason: 'server' };
+
 @injectable()
 export default class GraphQLSignInTransformer {
   public toSignInResult(
@@ -80,5 +99,22 @@ export default class GraphQLSignInTransformer {
 
   public toSignInFailure(failure: UserServiceFailure): SignInResult {
     return { ok: false, error: FAILURES.get(failure.reason) ?? TRANSIENT_SERVER };
+  }
+
+  public toChallengeResult(
+    payload: CompleteTwoFactorUserMutation | null | undefined
+  ): ChallengeResult {
+    const data = payload?.completeTwoFactorUser?.user;
+    if (!data?.accessToken) return SERVER_CHALLENGE_FAILURE;
+    return {
+      kind: 'completed',
+      token: data.accessToken,
+      recoveryCodesRemaining: data.recoveryCodesRemaining ?? null,
+    };
+  }
+
+  public toChallengeFailure(failure: UserServiceFailure): ChallengeFailedOutcome {
+    const reason = CHALLENGE_FAILURES.get(failure.reason);
+    return reason === undefined ? SERVER_CHALLENGE_FAILURE : { kind: 'failed', reason };
   }
 }

@@ -4,6 +4,7 @@ import UserServiceErrorTransformer from '@/modules/user/transformers';
 import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider';
 import type { GraphQLSignInRepository } from '@auth/repositories';
 import GraphQLSignInTransformer from '@auth/transformers/graphql-sign-in-transformer';
+import type { TwoFactorChallengeInput } from '@auth/types/two-factor/challenge';
 import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 
 const setUp = (): {
@@ -98,10 +99,79 @@ describe('GraphQLSignInProvider.login', () => {
     });
   });
 
-  it('takes exactly three collaborators and has one public method', () => {
+  it('takes exactly three collaborators and has two public methods', () => {
     expect(GraphQLSignInProvider.length).toBe(3);
     expect(
       Object.getOwnPropertyNames(GraphQLSignInProvider.prototype).filter((n) => n !== 'constructor')
-    ).toEqual(['login']);
+    ).toEqual(['login', 'completeChallenge']);
+  });
+});
+
+describe('GraphQLSignInProvider.completeChallenge', () => {
+  const challenge = (): TwoFactorChallengeInput => ({
+    pendingSessionId: buildPendingSessionId(),
+    twoFactorCode: '123456',
+  });
+
+  const setUpChallenge = (): ReturnType<typeof setUp> & { complete: jest.Mock } => {
+    const complete = jest.fn();
+    const repository = { completeChallenge: complete } as unknown as GraphQLSignInRepository;
+    const transformer = new GraphQLSignInTransformer();
+    const errors = new UserServiceErrorTransformer();
+    return {
+      provider: new GraphQLSignInProvider(repository, transformer, errors),
+      signIn: jest.fn(),
+      complete,
+      transformer,
+      errors,
+    };
+  };
+
+  it('hands the payload to toChallengeResult and returns its result', async () => {
+    const { provider, complete, transformer } = setUpChallenge();
+    const input = challenge();
+    const token = buildToken();
+    const payload = {
+      completeTwoFactorUser: {
+        user: { twoFactorEnabled: true, accessToken: token, recoveryCodesRemaining: 1 },
+      },
+    };
+    complete.mockResolvedValue(payload);
+    const toResult = jest.spyOn(transformer, 'toChallengeResult');
+    const { signal } = new AbortController();
+
+    const result = await provider.completeChallenge(input, signal);
+
+    expect(complete).toHaveBeenCalledWith(input, signal);
+    expect(toResult).toHaveBeenCalledWith(payload);
+    expect(result).toBe(toResult.mock.results[0]?.value);
+    expect(result).toEqual({ kind: 'completed', token, recoveryCodesRemaining: 1 });
+  });
+
+  it('normalises a thrown error with the signal and maps it via toChallengeFailure', async () => {
+    const { provider, complete, transformer, errors } = setUpChallenge();
+    const thrown = new Error('network down');
+    complete.mockRejectedValue(thrown);
+    const normalize = jest.spyOn(errors, 'normalize');
+    const toFailure = jest.spyOn(transformer, 'toChallengeFailure');
+    const { signal } = new AbortController();
+
+    const result = await provider.completeChallenge(challenge(), signal);
+
+    expect(normalize).toHaveBeenCalledWith(thrown, signal);
+    expect(toFailure).toHaveBeenCalledWith(normalize.mock.results[0]?.value);
+    expect(result).toBe(toFailure.mock.results[0]?.value);
+  });
+
+  it('gives a network outcome for an aborted signal', async () => {
+    const { provider, complete } = setUpChallenge();
+    complete.mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(provider.completeChallenge(challenge(), controller.signal)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'network',
+    });
   });
 });
