@@ -1,5 +1,4 @@
 const AUTH_TOKENS = Object.freeze({
-  LoginAPI: Symbol('LoginAPI'),
   RegistrationAPI: Symbol('RegistrationAPI'),
   ApolloClient: Symbol('ApolloClient'),
   SessionLinkFactory: Symbol('SessionLinkFactory'),
@@ -9,7 +8,6 @@ const AUTH_TOKENS = Object.freeze({
   ApiStatusErrorFactory: Symbol('ApiStatusErrorFactory'),
   AuthRepository: Symbol('AuthRepository'),
   AuthRepositoryDeps: Symbol('AuthRepositoryDeps'),
-  LoginResponseMapper: Symbol('LoginResponseMapper'),
   RegistrationResponseMapper: Symbol('RegistrationResponseMapper'),
   AuthUiErrorMapper: Symbol('AuthUiErrorMapper'),
   AuthErrorHandler: Symbol('AuthErrorHandler'),

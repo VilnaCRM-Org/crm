@@ -14,7 +14,6 @@ barrel — never a deep internal path.
 - `ApiError` — the module's public error type (consumed by the shared
   `error-parser`).
 - `AuthRepository` (type) — the public repository interface.
-- `LoginResponse` (type) — the public login response shape.
 - `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`,
   `TwoFactorDto` (types) — the board's User domain, see "The User domain types" below.
 
@@ -41,10 +40,10 @@ this codebase:
 
 ### Feature barrel — `@auth` (`src/modules/user/features/auth/index.ts`)
 
-- `LoginResponseSchema`, `RegistrationResponseSchema` — response validators.
+- `RegistrationResponseSchema` — the registration response validator.
 - `AuthErrorHandler` (type) — the injected error-handler type; the concrete
   class is DI-wired, not exported as a value.
-- `LoginResponse`, `RegistrationResponse`, `SafeUserInfo` (types).
+- `RegistrationResponse`, `SafeUserInfo` (types).
 
 Everything else is **private** to the module and must not cross the boundary:
 `repositories/*-impl.ts`, `store/*-mapper.ts`, the `lib/api-errors/*`
