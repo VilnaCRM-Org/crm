@@ -133,6 +133,15 @@ const completion = (user: Record<string, unknown>): unknown => ({
   data: { completeTwoFactorUser: { user: { twoFactorEnabled: true, ...user } } },
 });
 
+export const replyWithRemainingCodes =
+  (remaining: number): SignInReply =>
+  (route) =>
+    json(
+      route,
+      200,
+      completion({ accessToken: CHALLENGE_ACCESS_TOKEN, recoveryCodesRemaining: remaining })
+    );
+
 export const CHALLENGE_REPLIES: Record<ChallengeOutcome, SignInReply> = {
   completed: (route) =>
     json(

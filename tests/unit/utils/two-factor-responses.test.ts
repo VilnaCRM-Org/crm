@@ -6,6 +6,7 @@ import {
   SIGN_IN_ACCESS_TOKEN,
   SIGN_IN_PENDING_SESSION_ID,
   SIGN_IN_REPLIES,
+  replyWithRemainingCodes,
   replyWithUnauthenticated,
   stubChallenge,
   stubSignIn,
@@ -235,6 +236,29 @@ describe('stubSignIn', () => {
         'violation',
       ].sort()
     );
+  });
+});
+
+describe('replyWithRemainingCodes', () => {
+  it.each([0, 1, 2])('completes the challenge reporting %i remaining codes', async (remaining) => {
+    const route = jest.fn().mockResolvedValue(undefined);
+    await stubChallenge({ route } as unknown as PageTarget, [replyWithRemainingCodes(remaining)]);
+    const [, handler] = route.mock.calls[0] as [unknown, RouteHandler];
+    const call = fakeRoute({ operationName: 'CompleteTwoFactorUser' });
+
+    await handler(call);
+
+    expect(bodyOf(call)).toEqual({
+      data: {
+        completeTwoFactorUser: {
+          user: {
+            twoFactorEnabled: true,
+            accessToken: CHALLENGE_ACCESS_TOKEN,
+            recoveryCodesRemaining: remaining,
+          },
+        },
+      },
+    });
   });
 });
 

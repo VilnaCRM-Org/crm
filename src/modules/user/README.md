@@ -932,6 +932,26 @@ for a stale sign-in shows the re-authentication message, focused, with an outlin
 (text `#1A1C1E`) that runs the outlet `signOut` as `callbacks.signInAgain`; the section never ends a
 session on its own.
 
+### The low recovery codes notice
+
+**Figma.** There is no frame for the notice, so it takes the settings card tokens (white, 1 px
+`#E1E7EA` border, 12 px radius) and the story's colours: the link `#0074B5`, the outlined
+"Закрити сповіщення" button with border `#80878A` and text `#1B2327`, and the shared `2px #404142`
+focus ring.
+
+**Behaviour.** A challenge that completed with a recovery code and reported two or fewer remaining
+codes leaves that number in the auth store. `ProtectedRoute` reads it through
+`useRecoveryCodesBanner` and puts the lazily loaded `RecoveryCodesNotice` into the outlet context as
+`banner`; `AppLayout` renders it first inside `<main>`, so a page without one keeps exactly the DOM
+it had. The hook builds the lazy component once per mount in a `useState` initializer, from a
+`ThemedChunkLoader` over a `ChunkRetryLoader` and `muiThemeShellLoader`, behind the non-null
+`RouteFallback`; with no count the chunk is never requested, and a chunk that cannot load renders
+nothing rather than breaking the page. The notice is a polite `role="status"` region that mounts
+empty, is filled in an effect and never takes focus; the count has uk one, few, many and other
+forms and en one and other forms, and zero reads "Резервні коди закінчилися". The link goes to
+`/settings` client-side and, like the button and arriving on `/settings`, clears the count;
+sign-out and a reload clear it because the store is memory-only.
+
 ### The 2FA card in the browser lane
 
 `tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts` drives the card with a seeded
