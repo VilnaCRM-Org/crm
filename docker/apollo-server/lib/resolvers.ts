@@ -9,6 +9,7 @@ import {
   RequestPasswordResetInput,
   User,
 } from './types';
+import { twoFactorResolvers } from './two-factor-resolvers';
 import { EMAIL_REGEX, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
@@ -116,6 +117,7 @@ export const resolvers = {
       return passwordResetPayload(input.clientMutationId);
     },
     ...profileResolvers.Mutation,
+    ...twoFactorResolvers.Mutation,
   },
 };
 

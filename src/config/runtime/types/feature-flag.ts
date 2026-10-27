@@ -1,4 +1,4 @@
-export type FeatureFlag = 'userSettings';
+export type FeatureFlag = 'userSettings' | 'twoFactorAuth';
 
 export interface FeatureFlagName {
   readonly name: FeatureFlag;

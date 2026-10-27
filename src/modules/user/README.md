@@ -14,9 +14,8 @@ barrel — never a deep internal path.
 - `ApiError` — the module's public error type (consumed by the shared
   `error-parser`).
 - `AuthRepository` (type) — the public repository interface.
-- `LoginResponse` (type) — the public login response shape.
-- `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`
-  (types) — the board's User domain, see "The User domain types" below.
+- `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`,
+  `TwoFactorDto` (types) — the board's User domain, see "The User domain types" below.
 
 Two deliberate deviations from the issue's illustrative example, both forced by
 this codebase:
@@ -41,10 +40,10 @@ this codebase:
 
 ### Feature barrel — `@auth` (`src/modules/user/features/auth/index.ts`)
 
-- `LoginResponseSchema`, `RegistrationResponseSchema` — response validators.
+- `RegistrationResponseSchema` — the registration response validator.
 - `AuthErrorHandler` (type) — the injected error-handler type; the concrete
   class is DI-wired, not exported as a value.
-- `LoginResponse`, `RegistrationResponse`, `SafeUserInfo` (types).
+- `RegistrationResponse`, `SafeUserInfo` (types).
 
 Everything else is **private** to the module and must not cross the boundary:
 `repositories/*-impl.ts`, `store/*-mapper.ts`, the `lib/api-errors/*`
@@ -56,8 +55,15 @@ barrel, never by a deep `types/user/*` import.
 
 `src/modules/user/types/user/` holds the `[type]` cards of the Miro board's User module frame,
 one type-only file per card: `UserEntity`, `SignInDto`, `SignUpDto` (which `extends SignInDto`),
-`RestorePasswordDto` and `CreateNewPasswordDto`. They are plain `readonly` data interfaces with
-no logic; the business rules stay in user-service.
+`RestorePasswordDto`, `CreateNewPasswordDto` and `TwoFactorDto` (the board's `2FADTO`, one
+`twoFactorCode` field holding a canonical TOTP or recovery code). They are plain `readonly` data
+interfaces with no logic; the business rules stay in user-service.
+
+The two-factor code unions the sign-in challenge and the settings section share live in
+`src/modules/user/types/two-factor/code.ts`, and `TwoFactorCodeNormalizer`
+(`src/modules/user/lib/two-factor-code-normalizer.ts`) turns what a person typed into the canonical
+code or `null`. It is an undecorated class with one public method and no collaborator, never
+registered in the container; each hook builds one per mount.
 
 TB-2: a board type crosses component and form boundaries as itself (`UIForm<SignInDto>`), and
 form values may only `extends` a DTO to add UI-only fields. The `*Dto` and `*Entity` names are
@@ -95,8 +101,18 @@ The module barrel cannot export `authActions` (it would close a `no-circular`
 cycle and break barrel purity), and code outside the module may not import
 `@auth/stores`. The sign-out action therefore reaches protected pages through
 react-router **outlet context**: `ProtectedRoute` renders
-`<Outlet context={{ signOut }} />` typed as `ProtectedOutletContext`
+`<Outlet context={…} />` typed as `ProtectedOutletContext`
 (`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it.
+
+The outlet context is the **only seam** through which a non-auth feature reads or writes auth
+state. Besides `signOut` it carries the known two-factor status (`twoFactorStatus`, a
+`TwoFactorStatus` of `'enabled'`, `'disabled'` or `'unknown'`) and `setTwoFactorStatus`.
+`ProtectedRoute` reads the status from `useAuthStore` with a selector, and `setTwoFactorStatus`
+calls `useAuthStore.setState` with an `AuthStatePatch` holding that one field and nothing else, so
+the settings feature never imports the auth stores. The status lives in memory beside the token and
+returns to `'unknown'` with it when the session ends. The app shell and its user-menu slot keep
+receiving `signOut` alone, typed as `SignOutContext`
+(`Pick<ProtectedOutletContext, 'signOut'>`).
 
 `AppLayout` also forwards `signOut` to the app shell, and the shell's user chip and menu are the
 one piece of this module that appears in it. They are not exported through the barrel: the
@@ -616,6 +632,431 @@ test stack, and G1 blocks production only. The page is tracked in
 and `X-Correlation-Id`) is the production blocker for every GraphQL call from the SPA. The page,
 its shared pieces and its layer stack are described in the
 [settings feature README](features/settings/README.md).
+
+## Two-factor authentication decisions
+
+The durable decisions of two-factor authentication
+([issue #331](https://github.com/VilnaCRM-Org/crm/issues/331)). They live here rather than in an
+ADR by the maintainer's decision, and each one states its context, the decision and the options
+it rejected. The full design is
+[the two-factor architecture](../../../specs/two-factor-authentication/planning-artifacts/architecture-two-factor-authentication-2026-10-06.md).
+What [Password recovery decisions](#password-recovery-decisions) and
+[User Settings decisions](#user-settings-decisions) already record — the board's layers, the
+container-free provider loader, `UserServiceErrorTransformer`, the pending-schema mechanism, the
+session link and the `/settings` page — is referenced below, not repeated.
+
+### GraphQL-only sign-in, with the REST login removed
+
+**Context.** Sign-in was a REST placeholder that posted to the create-user endpoint and could not
+express a second step. user-service implements `signInUser` and the 2FA mutations over GraphQL on
+`main` only; the pinned `v2.8.0` has none of them, and the user's rule is that every
+user-service operation goes through a GraphQL repository.
+
+**Decision.** `useSignInSubmit` resolves `GraphQLSignInProvider` through the container-free
+`AuthProviderLoader`, writes the result to `useAuthStore` and records the security signal; the
+provider calls the transport-only `GraphQLSignInRepository` and translates through
+`GraphQLSignInTransformer` and `UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`,
+`LoginResponseMapper` and `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and
+logout are unchanged. Production sign-in has no backend until user-service ships `signInUser`,
+exactly as the REST placeholder had none.
+
+**Rejected.** Keeping the REST placeholder behind a flag-selected sign-in Strategy (a Strategy over
+a placeholder with no working backend); waiting for the user-service release before building
+(it blocks on an unscheduled tag).
+
+### The sign-in failure card
+
+The result card reads its text from the failure reason of the `AuthError`
+(`invalid_credentials`, `locked`, `rate_limited`, `transient`), never from the upstream message,
+so two different 401 answers render the same card. `LoginSubmitter.retryable` mirrors
+`AuthError.retryable`, which only `transient` sets, and the card offers "Спробувати ще раз" only
+then; "Назад" is always there. When a retry settles with a reason that offers no Retry, the
+focused button leaves the card, so the heading takes focus back and the alert announces the new
+text.
+
+**Open design decision.** The card's contained button (white on the brand `#1EAEFF`, 2.45:1) and
+the outlined one match no `A11Y_EXCEPTIONS` entry, and no browser axe scan opens this card, so the
+`color-contrast` rule is not exercised for it. A scan needs a scoped exception under issue #276,
+which is the owner's call; none was added here.
+
+### The challenge page against Figma (frames 72:4846, 72:4882, 72:4918)
+
+The Figma MCP was reachable, and the three frames were read on 2026-10-27. The page keeps their
+structure: the shared card with "Назад", the title, the subtitle and a row of six cells above the
+submit. What it deliberately does not copy, for Follow-up 5.4 to reconcile with design:
+
+- **Copy (D1).** The frames still carry the e-mail wording ("Ми надіслали Вам лист на пошту …")
+  and a "Надіслати код ще раз" row with a `00:34` countdown. The page uses the authenticator copy
+  from the PRD and has no e-mail, resend row or countdown.
+- **Tablet cells.** The 1024 frame draws cells of about 86 × 130 px that fill the card; the page
+  keeps the 64 × 86 desktop cell (8 px gap) from the `md` breakpoint up and the 49 × 64 cell
+  (4 px gap) below it,
+  so the card width stays the sign-in card's at every width.
+- **Pin-input overrides (NFR-6).** The cell border is `paletteColors.border.strong`, the invalid
+  border the error red and the focus ring the shared two-colour ring, where the frames draw a thin
+  grey border only.
+
+- **Recovery mode (D12).** None of the three frames draws it; the research lists the recovery-code
+  entry as a missing frame. The mode is built from the story's own acceptance criteria: one
+  labelled field with the `XXXX-XXXX` helper, no placeholder, the strong grey border and the
+  shared invalid state, and a `UILinkButton` toggle in the form footer, which replaces the frames'
+  "Надіслати код ще раз" row. Design owns the final look.
+
+The live measurement at 1440, 1024 and 375 px on port 3005 could not run in this worktree, whose
+shared `node_modules` lacks `zustand` and the ui-toolkit, so the dev server cannot build. The
+recorded frame sizes (card 502 × 404, cells 64 × 86 at 8 px, mobile cells 49 × 64 at 4 px) are what
+the pin-input styles and their tests pin; the measurement is left for CI or the owner.
+
+### The pending file lives in #315's mechanism
+
+**Context.** No user-service tag declares the six operations, and the pinned schema is what
+codegen and the local mock read.
+
+**Decision.** `src/api/contracts/pending/two-factor-authentication.graphql` opens with
+`# pending-against: v2.8.0` and holds one `extend type Mutation`, the input, payload and
+payload-data types in the upstream field order, and `scalar Iterable`, declared once. `codegen.ts`
+maps `Iterable` to `unknown`, never `any`, and the stateless mock answers the six operations from
+`docker/apollo-server/lib/two-factor-resolvers.ts`. The pin bump deletes the file by hand; there
+is no expiry checker.
+
+**Rejected.** A second mechanism for this feature (two ways to extend the schema); hand-written
+operation types (they would drift from the contract); a stateful mock (every refusal is exercised
+by `page.route` stubs and msw handlers, where CI runs it).
+
+### The token and the pending session stay in memory, in `useAuthStore`
+
+**Context.** A pending session id is a credential for one challenge, and the access token must
+not outlive the tab. The auth paint path stays free of tsyringe, Apollo and zod.
+
+**Decision.** `pendingSessionId`, `twoFactorStatus` and `recoveryCodesRemaining` live in the
+Zustand store `useAuthStore` beside the token, never inside it, and hooks write them with
+`setState`; the store gains no action and no `persist` middleware. A reload, a logout and arrival
+on `/sign-in` clear the pending session. No refresh token is kept anywhere in client state, and
+the id never appears in a URL or in `history.state`. See
+[`docs/state-architecture.md`](../../../docs/state-architecture.md).
+
+**Rejected.** Persisting either value (a stolen tab or a stray log would replay a session);
+carrying the id in the URL or router state (it would reach history and referrers); a challenge
+actions class on the store (the board draws the hook writing State directly).
+
+### The challenge is a page-guarded public route
+
+**Context.** A sign-in can return a challenge in every environment, so the route must be reachable
+whether or not the settings flag is on, yet it must not render without a pending session.
+
+**Decision.** `/sign-in/two-factor` is registered with `guard: 'public'` and no flag. The page
+renders only while a pending session id exists in the store; without one — a typed URL, a reload,
+a new tab or Forward — it replaces itself with `/sign-in`, with no notice and no request. A
+completed challenge calls the same `postLogin.proceed()` as a password sign-in, and the redirect
+target never lands on the challenge itself.
+
+**Rejected.** Gating the route behind a flag (a challenge could not complete where the flag is
+off); a protected route (the user has no token yet); keeping the challenge across a reload (the
+server session lives 300 s and allows five attempts, and the client holds no copy of it).
+
+### The 2FA section lives in `features/settings` and reaches auth state through the outlet context
+
+**Context.** Sibling features may not import each other, yet the section must know whether 2FA is
+on and tell the app when that changes.
+
+**Decision.** `TwoFactorSettings` fills the slot of the settings `UserProfile` page and reaches
+`TwoFactorSettingsProvider` through React hooks. The known status — `'enabled'`, `'disabled'` or
+`'unknown'` — is read and written only through the protected outlet context that `ProtectedRoute`
+provides: `signOut`, `twoFactorStatus` and `setTwoFactorStatus`, the last of which calls
+`useAuthStore.setState` with an `AuthStatePatch` and nothing else. That context is the only seam
+through which a non-auth feature reads or writes auth state; `SignOutContext` stays the pick of
+`signOut` that the shell and its user-menu slot receive.
+
+**Rejected.** Importing `useAuthStore` from the settings feature (a feature-to-feature edge that
+dependency-cruiser forbids); a status query (user-service has no 2FA query, and `User` exposes no
+2FA field); a second store for the status (two sources for one fact).
+
+### The flag gates only the 2FA section
+
+**Context.** The operations are mocked until a release carries them, so production must keep the
+management UI hidden, while the challenge must keep working wherever a sign-in returns one.
+
+**Decision.** `twoFactorAuth` is a runtime flag shipped `false`, declared in the `FeatureFlag`
+union, `FEATURE_FLAG_DEFAULTS`, the strict schema, the committed block and `.env.example`. The
+`UserProfile` page reads it with `useFeatureFlag('twoFactorAuth')` when it renders and shows the
+section only while it is on. No route contract lists it and no sign-in code reads it. The test
+stack passes `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, so every
+browser lane renders the section by default (an explicit `false` runs without it), and production
+enables it in Follow-up 5.1; the flag is deleted once production has run with it on.
+
+**Rejected.** A flag that selects the sign-in transport (the decision above removed the choice); a
+route-level flag on the challenge (see the previous records); no flag at all (production would
+show management screens against a backend that cannot answer them).
+
+### 2FA failures are classified by rows appended to the shared transformer
+
+**Context.** user-service answers the 2FA refusals with a status and an English message and no
+`extensions.code`, and two 401s on one operation (a wrong code and an expired session) differ only
+by their text.
+
+**Decision.** `UserServiceErrorTransformer` gains the reasons `locked`, `invalid_code`,
+`expired_session`, `setup_not_initiated`, `already_enabled`, `not_enabled` and `reauth_required`.
+A `423` gives `locked`; six exact messages give the others, matched whole, with or without a
+status; `twoFactorCode` joins the properties whose violations classify as `violation`. The rows
+are appended to the two-step classification above, and every earlier row keeps its result. The
+sign-in and settings Data providers map the reason to their own outcome; no hook reads a GraphQL
+shape or an English message.
+
+**Rejected.** A contains-match on the message (`Invalid two-factor code. Retry` must not classify
+as a wrong code); reading `extensions.code` (upstream sends none); a second classifier per feature
+(the shape step is shared).
+
+### The QR encoder is `qrcode-generator`, drawn as SVG in the settings chunk
+
+**Context.** user-service returns an `otpauthUri` and the raw `secret`, never an image. The
+secret must not leave the browser, and the content security policy allows only same-origin
+images and `data:`.
+
+**Decision.** `qrcode-generator` (MIT, pinned exactly) encodes the URI at error correction `M`.
+`qr-code-image.tsx` is the only file that imports it; it reads the module matrix and draws one
+`<svg role="img">` path on a white quiet zone of four modules, with no `dangerouslySetInnerHTML`,
+no `data:` URI, no network and no `eval`. The encoder is loaded with the settings chunk, never
+the eager entry or the auth chunks. A decoder (`jsqr`, Apache-2.0) is a `devDependency` used only
+by a round-trip test that decodes the drawn path back to the exact URI.
+
+**Rejected.** A QR image service (it would send the secret to a third party); a canvas or
+`data:` image (a second rendering path outside the security headers' review); hand-rolling the
+encoder (an untested numeric core).
+
+**Built in Story 3.1.** `QrCodeImage` takes a `value` and a `label` (`QrCodeImageProps`), merges
+each row's runs of dark modules into one subpath and caps its width at 200 px; the Figma size is
+measured where Story 3.4 composes it. `useCopyToClipboard` publishes `ClipboardCopy` (`status`
+`idle` / `copied` / `failed` and `copy({ text, fallbackTarget })`): it writes through
+`navigator.clipboard.writeText`, and when the API is missing (an insecure origin) or rejects it
+selects the target's contents and reports `failed`, never moving focus.
+`tests/unit/tooling/qr-code-containment.test.ts` pins that `qrcode-generator` has one importer
+and that nothing outside the settings feature imports the image or the hook.
+
+### The 2FA settings path is a Data provider, a Transformer and a transport-only Repository
+
+**Context.** The four settings mutations carry secrets: the setup answer holds the TOTP secret
+and the otpauth URI, confirm and regenerate hold the recovery codes. None of them may reach the
+Apollo cache, a log or a type that is not named.
+
+**Decision.** `TwoFactorSettingsProvider` (`settings/data-providers/`) takes exactly three
+collaborators: `GraphQLTwoFactorSettingsRepository`, `GraphQLTwoFactorSettingsTransformer` and the
+shared `UserServiceErrorTransformer`. Each of its four methods resolves a
+`TwoFactorSettingsOutcome`: `changed` with a `TwoFactorSettingsEntity`, or `failed` with one of nine
+reasons. The repository only sends: one uncached `mutate` per call with a fresh `clientMutationId`,
+the caller's signal and, for confirm and disable, the `TwoFactorDto` code; an already aborted signal
+throws an `AbortError` before Apollo is called. The transformer holds the failure table as
+module-level data and narrows each answer through the zod schemas in
+`settings/utils/response-schemas.ts`, so a recovery code list that is not an array of strings is a
+`server` failure. The documents select only `otpauthUri` and `secret`, `recoveryCodes`, or
+`success`. The provider records no security signal; `session_ended` covers a transport 401 and
+"Access Denied.", and the session link has already ended the session by then.
+
+**Code fact (2026-10-27).** The settings feature gains `data-providers/index.ts`, which default
+exports the profile provider and names the 2FA one. `repositories/` and `transformers/` already had
+such barrels, and the 2FA provider's file name is too long to import on one line under the 100
+column limit, which prettier cannot wrap for a single specifier.
+
+### The 2FA section is coordinated by hooks that hold the secrets in React state
+
+**Context.** The settings section turns 2FA on, off and regenerates its recovery codes. The TOTP
+secret, the otpauth URI and the recovery codes must live only as long as the view that shows them.
+
+**Decision.** `useTwoFactorSettings` resolves the provider with `useService`, reads
+`twoFactorStatus` and `setTwoFactorStatus` from the outlet context, builds one
+`TwoFactorCodeNormalizer` per mount and composes `useTwoFactorSetup`, `useTwoFactorDisable` and
+`useRecoveryCodesRegenerate`. Nothing is sent on mount. Each operation is a `TwoFactorOperationPlan`:
+typed module-level data naming the view after a changed outcome, the status to record and one row
+per expected failure. `useTwoFactorSettle` applies a plan; a failure with no row becomes the
+`rate_limited` banner or the Retry-able `transient` one, and `session_ended` publishes nothing and
+calls neither `recordStatus` nor a sign-out, because the session link has ended the session and the
+`ProtectedRoute` redirect unmounts the section. `useSettledSubmit` and `useCodeSubmit` wrap
+`useAbortableSubmit` with the settle step, the last input for Retry and the code normalisation
+(six digits to confirm, six digits or `XXXX-XXXX` to disable). `useTwoFactorTransition` keeps the
+entity and the view state, and reconciles every transition: the URI and key survive only in the
+`setup` view, the recovery codes only in `codes`, and the status follows the view, so "Готово", a
+stale setup and unmount all leave an entity with `null` secrets.
+
+### The 2FA card against the Figma frames (313:10242, 313:10480, 313:10606)
+
+**Check.** `figma-design-check` ran against the CRM design file with the Figma MCP answering. The
+desktop frame puts the setup card (479 px wide) beside the 675 px profile column, and the tablet and
+mobile frames stack it below; `SettingsGrid` already has that 479 px second column, so the card is
+its second child. The card takes its tokens from the frame: a white card with a 1 px `#E1E7EA`
+border and a 12 px radius, the title in Golos Bold 22 `#1A1C1E`, a divider under the header, 24 px
+`#E1E7EA` step badges with Inter Medium 16 `#57595B`, step text in Golos SemiBold 16 `#404142`, the
+QR code in a `#FBFBFB` frame with a 12 px radius, and the key chip on `#EAECEE` with a 4 px radius
+and Golos SemiBold 16 `#57595B`.
+
+**Deviations, all recorded.** The frames carry no off view and no start button, so the off view is
+built from the story: a description, the three steps and the contained "Почати налаштування"
+submit. The frames show the key twice, as the manual key under the QR code and again under step 3;
+the card shows it once, with a separate outlined "Скопіювати ключ" button (border `#80878A`, text
+`#1B2327`) in place of the copy glyph inside the chip. The Google logo is dropped, the app is named
+in the step text only, and the info-circle callout that quotes a seven-day reset is not built,
+because the product makes no such promise. The frames have no section heading; the `h2` is added so
+the card is a named region, and the `h3` carries the view title and takes focus on arrival. Copy is
+Ukrainian from the story; the frames' Russian text is not used. Live measurement on port 3005 could
+not run here, so the sizes above are pinned in unit tests and the CI visual lane is the measurement.
+
+### The codes view, the status headings and the flag gate
+
+The codes view is a `UIForm` whose submit is "Готово". It shows the eight codes as an ordered list
+(`#1A1C1E` on `#EAECEE`), an outlined "Скопіювати коди" button that copies them newline-separated
+through `useCopyToClipboard`, and a `UICheckbox` "Я зберіг(-ла) коди в надійному місці". While the
+box is unticked the form passes `submitBlockedReason`, so "Готово" stays focusable, is
+`aria-disabled` and described by the reason, and sends nothing; the ticked state is local to the view,
+and the view that replaces it holds no code. The on view and any off view with a status code show one
+focused level-3 status heading, the only announcement: "Двофакторну автентифікацію ввімкнено" with a
+decorative icon, "вже ввімкнено", "Налаштування застаріло. Почніть знову.", "вимкнено" and "вже
+вимкнено". `/settings` mounts the card as the second child of `SettingsGrid` through a small
+`TwoFactorSection` that reads the `twoFactorAuth` flag, so with the flag off no 2FA hook is called
+and the grid renders as before. The views for disable, regenerate and re-authentication belong to the
+next story.
+
+### Turning 2FA off and regenerating the codes
+
+**Figma.** The three frames (313:10242, 313:10480, 313:10606) draw only the setup card; they hold no
+on view, no disable or regenerate confirmation and no re-authentication message, so these views are
+built from the story copy and the card's tokens, and no state is invented beyond it.
+
+**Behaviour.** The on view keeps its status heading and adds two outlined buttons, "Вимкнути" and
+"Створити нові резервні коди" (border `#80878A`, text `#1B2327`). Each opens a `UIForm` confirmation
+with a focused level-3 title, "Скасувати" in the form's footer, and the banners of the other views.
+The disable form has one labelled "Код підтвердження" text field with no placeholder; it takes six
+digits or `XXXX-XXXX` (the hook normalises it) and shows the format or wrong-code text with
+`aria-invalid`, described by the helper text, with focus back in the field after every settle.
+"Скасувати" or Escape returns to the on view with focus on the button that opened the confirmation:
+`usePreviousView` records the view each view came from once per change, and the panel hands it to
+the views through `ArrivalContext`, so the plain on view takes focus on its heading only when a
+transition (done, setup 409) brought the user there and never on first render. A regenerate refused
+for a stale sign-in shows the re-authentication message, focused, with an outlined "Увійти знову"
+(text `#1A1C1E`) that runs the outlet `signOut` as `callbacks.signInAgain`; the section never ends a
+session on its own.
+
+### The low recovery codes notice
+
+**Figma.** There is no frame for the notice, so it takes the settings card tokens (white, 1 px
+`#E1E7EA` border, 12 px radius) and the story's colours: the link `#0074B5`, the outlined
+"Закрити сповіщення" button with border `#80878A` and text `#1B2327`, and the shared `2px #404142`
+focus ring.
+
+**Behaviour.** A challenge that completed with a recovery code and reported two or fewer remaining
+codes leaves that number in the auth store. `ProtectedRoute` reads it through
+`useRecoveryCodesBanner` and puts the lazily loaded `RecoveryCodesNotice` into the outlet context as
+`banner`; `AppLayout` renders it first inside `<main>`, so a page without one keeps exactly the DOM
+it had. The hook builds the lazy component once per mount in a `useState` initializer, from a
+`ThemedChunkLoader` over a `ChunkRetryLoader` and `muiThemeShellLoader`, behind the non-null
+`RouteFallback`; with no count the chunk is never requested, and a chunk that cannot load renders
+nothing rather than breaking the page. The notice is a polite `role="status"` region that mounts
+empty, is filled in an effect and never takes focus; the count has uk one, few, many and other
+forms and en one and other forms, and zero reads "Резервні коди закінчилися". The link goes to
+`/settings` client-side and, like the button and arriving on `/settings`, clears the count;
+sign-out and a reload clear it because the store is memory-only.
+
+### The 2FA card in the browser lane
+
+`tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts` drives the card with a seeded
+token and both flags forced on through `overrideRuntimeConfig`, with the setup and confirm answers
+stubbed by `two-factor-settings-responses.ts` (each with a unit test) and the profile by
+`stubProfile`. It covers the flag gate, the Authorization header, the busy status, focus on each new
+heading, the QR image, the key in groups of four, both clipboard paths, the three confirm outcomes,
+the recovery codes and the acknowledgement, Retry that sends exactly one more request, the shared
+`2px #1A1C1E` focus ring and the pin cells inside the card at 320, 360, 600, 767, 768 and 1024 px.
+`expectNoSecrets` runs after the steps that hold a secret. Playwright and the production stack are
+CI-only, so this spec ran nowhere in the local loop. `two-factor-manage.spec.ts` does the same for
+turning 2FA off and regenerating the codes, and also drives the re-authentication sign-in back to
+`/settings`. The same applies to the bundle-size report that
+must show `qrcode-generator` only in the `settings` chunk: the PR comment is the evidence, and a
+sighting in the eager entry, an auth chunk or the deferred DI chunk is a defect to fix, not a budget
+to raise.
+
+### `UIForm` explains a submit that cannot be pressed yet
+
+**Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user
+confirms they saved the codes, but a natively disabled button leaves keyboard and screen reader
+users without the reason, because it drops out of the tab order.
+
+**Decision.** `UIForm` takes a scalar `submitBlockedReason`. While it is set, the submit is
+`aria-disabled="true"` instead of `disabled`, keeps its contained style and stays focusable; the
+form refuses the submit event, so click, Enter and Space call neither `onSubmit` nor validation;
+and the reason shows under the button in `#404142`, its id appended to `aria-describedby` after the
+offline notice id. A native disabled state wins: offline, `isSubmitDisabled` and submitting hide
+the reason and set `disabled`. Without the prop every existing form renders as before. The wiring
+sits in `use-form-submission.ts` and `use-submit-block.ts`, each with its own test.
+
+### `UIPinInput` adopts the toolkit pin input with the project's overrides
+
+**Context.** The code is six digits typed or pasted. The toolkit's `UiPinInput` supplies the cells
+but its default border, focus ring, gap and placeholder do not meet the accessibility target.
+
+**Decision.** `src/components/ui-pin-input/` is the only file importing
+`@vilnacrm/ui-toolkit/ui-pin-input`. It overrides the rest border with `#80878A`, paints the shared
+`focusVisibleRing` (`2px solid #404142`, offset `2px`), sets the cell gap and size per breakpoint
+(8 px and 64 × 86 px from `md`; 4 px and at most 49 × 64 px below it), hides the toolkit's
+constant `placeholder="0"` with a transparent `::placeholder` colour, and takes the group label
+and a per-cell label from the caller. It adds no live region: one element carries the error
+message. `docs/ui-toolkit.md` lists the overrides.
+
+**Rejected.** Forking the toolkit component (it would stop tracking the pin); six separate text
+inputs (no paste handling); an `sx` breakpoint key for the sizes (the project's `md` comes from
+`breakpointsTheme`, not the MUI default).
+
+### Both surfaces are scanned and tabbed in every state
+
+**Context.** The challenge and the settings card each have several states that only differ by
+what a screen reader announces and where Tab goes, and the route scan alone sees one of them.
+
+**Decision.** Four Playwright specs under `tests/e2e/a11y/` cover them in all three desktop
+engines: `two-factor-challenge-states` and `two-factor-settings-states` run the allowlisted axe
+scan plus the no-positive-`tabindex` check (`expectCleanScan`) on every state, and
+`two-factor-challenge-keyboard` and `two-factor-settings-keyboard` walk the tab order with
+`expectTabOrder`, then check Enter, Space, Escape, the focus target of each change and the
+colours with `toHaveCSS`. `A11Y_EXCEPTIONS` keeps its ten entries; the unit test that pins the
+count is unchanged. The keyboard specs start from the heading that holds focus after the
+transition; the challenge climbs with Shift+Tab to reach back-to-main, and the off view starts
+from a click on the section heading. The
+settings card paints its outlined buttons with the settings ring, `2px solid #1A1C1E`, offset
+2 px, as `profile-form` does; the pin cells and the challenge's own controls keep `#404142`
+and the mode toggle `#0074B5`. The story text named `#404142` for every new control, and the
+code decides: the settings ring is the page's, not the toolkit's.
+
+**Not done here.** The NVDA and VoiceOver pass (group name, cell names, one error, whether the
+hidden `placeholder="0"` is read) needs a person with both screen readers; its evidence is
+listed for Follow-up 5.7, and the specs above do not stand in for it.
+
+### Both surfaces have a touch lane
+
+**Context.** The cells, the toggle and the confirmation controls are new tap targets whose size
+and layout only a device context measures.
+
+**Decision.** `tests/e2e/mobile/two-factor-challenge-touch.spec.ts` and
+`two-factor-settings-touch.spec.ts` run on `mobile-chrome` and `mobile-safari` against GraphQL
+stubs per `operationName`. Sign-in, the challenge in both modes, enrolment, turning 2FA off and
+regenerating the codes finish with `tap()`; the code is typed with the keyboard after the first
+cell is tapped, as a phone keyboard would. They pin 44 CSS px for the cells, the fields and every
+submit, 24 CSS px for "Назад", the mode toggle, the copy buttons and the checkbox, no horizontal
+overflow at 320, 390 and 412 px, every setup or challenge cell inside its card's content box at 320,
+360, 600 and 767 px, and a submit that stays in view when the layout viewport shrinks to keyboard
+height. The reduced-motion check pins what the feature itself declares: the card, the section and
+the heading carry no `transition-duration` or `animation-name`, and the page's `scroll-behavior`
+is not `smooth`; MUI's own button transitions are the toolkit's and are not measured.
+
+### The visual baselines come from CI
+
+**Context.** Baselines recorded on a laptop differ from the pinned Playwright image by font
+hinting and sub-pixel rasterisation, so a local run would fail the first CI run.
+
+**Decision.** `tests/visual/visual-comparison.two-factor.spec.ts` and
+`tests/visual/mobile/two-factor.spec.ts` are committed without images. The first CI `visual
+tests` run on the branch fails on the missing baselines and uploads the actual screenshots as an
+artifact; those files, copied unchanged into the matching `-snapshots` folders, are the baselines.
+No existing baseline changes. The desktop spec records the challenge in authenticator mode and the
+settings off state on the full 13-size matrix, and recovery mode, the wrong-code error, setup with
+the fixed secret and QR, the recovery codes, on, the disable confirmation, re-authentication,
+`/sign-in` with the expired notice and `/` with the low-codes notice at desktop, tablet and mobile
+sizes. The mobile spec records the challenge and the settings off state on both device projects.
+Each test asserts the expected heading before the snapshot's `waitForStableDom` runs, so a redirect
+or a not-found page is never recorded in its place.
 
 ## Enforcement
 
