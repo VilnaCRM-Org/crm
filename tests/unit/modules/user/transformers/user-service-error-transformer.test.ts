@@ -52,6 +52,7 @@ describe('UserServiceErrorTransformer', () => {
     [0, 'network'],
     [401, 'unauthenticated'],
     [422, 'violation'],
+    [423, 'locked'],
     [429, 'rate_limited'],
   ])('maps a freshly loaded status %i to %s', async (statusCode, reason) => {
     const loaded = await loadTransformer();
@@ -64,7 +65,7 @@ describe('UserServiceErrorTransformer', () => {
     });
   });
 
-  it.each(['email', 'token', 'newPassword', 'initials', 'password'])(
+  it.each(['email', 'token', 'newPassword', 'initials', 'password', 'twoFactorCode'])(
     'recognises a %s violation with a freshly loaded property list',
     async (path) => {
       const loaded = await loadTransformer();
@@ -245,6 +246,67 @@ describe('UserServiceErrorTransformer', () => {
     );
 
     expect(coded).toEqual(plain);
+  });
+
+  describe('two-factor rows', () => {
+    it.each([
+      ['a transport 423', serverError(423)],
+      [
+        'a GraphQL extensions.status 423',
+        graphQLError('Account temporarily locked', { status: 423 }),
+      ],
+    ])('classifies %s as locked with status 423', (_name, error) => {
+      expect(transformer.normalize(error)).toEqual(failed('locked', 423));
+    });
+
+    it.each<[string, UserServiceFailureReason]>([
+      ['Invalid two-factor code.', 'invalid_code'],
+      ['Invalid or expired two-factor session.', 'expired_session'],
+      ['Two-factor setup not initiated.', 'setup_not_initiated'],
+      ['Two-factor authentication is already enabled.', 'already_enabled'],
+      ['Two-factor authentication is not enabled.', 'not_enabled'],
+      ['Re-authentication required.', 'reauth_required'],
+    ])('classifies "%s" as %s with and without a status', async (message, reason) => {
+      const loaded = await loadTransformer();
+
+      expect(loaded.normalize(graphQLError(message))).toEqual(failed(reason, null));
+      expect(loaded.normalize(graphQLError(message, { status: 401 }))).toEqual(failed(reason, 401));
+      expect(loaded.normalize(graphQLError(message, { status: 403 }))).toEqual(failed(reason, 403));
+    });
+
+    it.each([
+      'Invalid two-factor code. Retry',
+      'invalid two-factor code.',
+      'Invalid two-factor code',
+      'Re-authentication required. Now',
+    ])('does not match "%s" by contains or case', (message) => {
+      expect(transformer.normalize(graphQLError(message))).toEqual(failed('refused', null));
+      expect(transformer.normalize(graphQLError(message, { status: 401 }))).toEqual(
+        failed('unauthenticated', 401)
+      );
+    });
+
+    it.each(['twoFactorCode', 'password'])('reads a %s violation line as a violation', (path) => {
+      expect(transformer.normalize(graphQLError(`${path}: This value is not valid.`))).toEqual(
+        violation(path, null)
+      );
+    });
+
+    it.each([
+      ['Invalid two-factor code.', { status: 401 }],
+      ['Invalid or expired two-factor session.', { status: 401 }],
+      ['Two-factor authentication is not enabled.', { status: 403 }],
+      ['Account temporarily locked', { status: 423 }],
+      ['Something else', { status: 409 }],
+      ['twoFactorCode: This value is not valid.', { status: 422 }],
+    ])('gives "%s" the same result with and without extensions.code', (message, extensions) => {
+      const plain = transformer.normalize(graphQLError(message, extensions));
+      const coded = transformer.normalize(
+        graphQLError(message, { ...extensions, code: 'SOME_CODE' })
+      );
+
+      expect(coded).toEqual(plain);
+    });
   });
 
   it('leaves the resend time-out to the refusal step', () => {
