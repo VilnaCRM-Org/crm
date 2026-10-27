@@ -14,13 +14,6 @@ describe('user profile page styles', () => {
     const styles = await loadStyles();
 
     expect(styles).toEqual({
-      container: {
-        boxSizing: 'border-box',
-        width: '100%',
-        paddingInline: '15px',
-        '@media (min-width:768px)': { paddingInline: '26px' },
-        '@media (min-width:1024px)': { paddingInline: '12px' },
-      },
       content: {
         display: 'flex',
         flexDirection: 'column',

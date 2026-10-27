@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react';
+import type { HTMLAttributes, RefCallback } from 'react';
 
 import type {
   NavigationGroup,
@@ -84,12 +84,20 @@ export type RailTooltipHandlers = Pick<
 
 export interface RailTooltipBehavior {
   readonly visible: boolean;
+  readonly anchor: HTMLElement | null;
+  readonly ref: RefCallback<HTMLDivElement>;
   readonly handlers: RailTooltipHandlers;
 }
 
 export interface NavigationRailTooltipProps {
   readonly label: string;
   readonly shape: RailShape;
+  readonly anchor: HTMLElement;
+}
+
+export interface RailTooltipPosition {
+  readonly left: number;
+  readonly top: number;
 }
 
 export interface NavigationSubListProps {

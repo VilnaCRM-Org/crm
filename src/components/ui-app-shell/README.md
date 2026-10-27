@@ -179,8 +179,18 @@ What Figma leaves open, and how it was built:
 - The tablet rail's pills are not drawn. They derive from the desktop pill (24 px icon: 56×40; 28 px
   icon: 60×44) and put every icon at Figma's y. The tablet tooltip reuses the desktop one (PROP-5) at
   the same offset from the rail's right edge.
-- The rail dividers are drawn 74 px and 96 px wide on 72 px and 76 px panels; the rail frames do not
-  clip, so the divider overhangs as drawn.
+- The rail dividers are drawn 74 px and 96 px wide on 72 px and 76 px panels. Their boxes keep the
+  drawn width, but the rail list is a scroll container (FR-14, OQ-21: below about 809 px of tablet
+  layout height and 635 px of desktop height the rail is taller than the card), so the overhang is
+  clipped at the list's edge rather than painted past the card.
+- The collapsed rail scrolls like the expanded panel: the list is `overflow-y: auto` with a 76 px
+  scroll padding under the sticky Sign out, so a focused row is never covered, and its scrollbar is
+  hidden (a classic scrollbar cannot fit a 72 px icon rail); the wheel, touch and Tab still scroll
+  it. The tooltip is `position: fixed` at its row's box plus the drawn offset and is re-measured on
+  every scroll and resize, so the scrolling list never clips it.
+  `app-shell.spec.ts` checks the rail at 1280×720: the list and Sign out stay inside the card, the
+  last row is reached by scrolling and by Tab above the sticky Sign out, and a scrolled row's
+  tooltip paints in full outside the card.
 - The tablet Settings header content sits 3 px lower than a 66 px row centres it (Figma draws it at
   y 22), and the Products row is 67 px; both are reproduced.
 - The item set reads every FR-18 destination from its `ROUTE_PATHS` key (`boards`,
@@ -333,10 +343,18 @@ sandbox demo marker and the `userSettings` flag forced on.
 | `/settings` title left edge | 1440            | 262            | 262                 | pass   |
 | `/settings` title left edge | 1024            | 263            | 263                 | pass   |
 | `/settings` title left edge | 375             | unchanged 15   | 15                  | pass   |
+| `/` title left edge         | 1440            | 262            | 262                 | pass   |
+| `/` title left edge         | 1024            | 263            | 263                 | pass   |
+| `/` title left edge         | 375             | unchanged 15   | 15                  | pass   |
 | horizontal overflow         | 1440, 1024, 375 | none           | scrollWidth = width | pass   |
 
 The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, which put the title at x 283 and
-x 374; the settings page therefore uses its own container (12 px from the sidebar). The tablet
+x 374. Both pages now render inside the shared `UIShellContent`
+(`src/components/ui-shell-content/`), whose insets are 15 px, 26 px from 768 px and 12 px from
+1024 px, so the title starts 12 px from the sidebar; below 1024 px those are the toolkit
+container's own 15 px and 26 px, so the mobile and small-tablet insets are unchanged. The `/` rows
+were measured by `tests/e2e/modules/home.spec.ts` on the 3004 dev server (sidebar expanded). The
+tablet
 panel's height is the viewport minus 86 px by design (UX 4.3), not the drawn 1142 px, so it is not a
 row. With the viewport 500 px tall and the page scrolled 300 px, the header stays at top 0 and the
 sidebar at top 74.

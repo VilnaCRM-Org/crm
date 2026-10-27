@@ -4,18 +4,6 @@ import { customColors } from '@/styles/colors';
 const { md, lg, xl } = breakpointsTheme.breakpoints.values;
 
 export default {
-  container: {
-    boxSizing: 'border-box',
-    width: '100%',
-    paddingInline: '15px',
-
-    [`@media (min-width:${md}px)`]: {
-      paddingInline: '26px',
-    },
-    [`@media (min-width:${lg}px)`]: {
-      paddingInline: '12px',
-    },
-  },
   content: {
     display: 'flex',
     flexDirection: 'column',

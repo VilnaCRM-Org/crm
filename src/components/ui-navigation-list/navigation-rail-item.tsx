@@ -10,11 +10,12 @@ import useRailTooltip from './use-rail-tooltip';
 
 export default function NavigationRailItem(props: NavigationRailItemProps): JSX.Element {
   const { layout, id, label } = props;
-  const { visible, handlers } = useRailTooltip();
+  const { anchor, ref, handlers } = useRailTooltip();
   const shape = layout === 'desktop' ? 'desktop' : (railStyles.tabletShapes[id] ?? 'tablet');
 
   return (
     <Box
+      ref={ref}
       sx={railStyles.railItem[shape]}
       onMouseEnter={handlers.onMouseEnter}
       onMouseLeave={handlers.onMouseLeave}
@@ -32,7 +33,7 @@ export default function NavigationRailItem(props: NavigationRailItemProps): JSX.
         current={props.current}
         onActivate={props.onActivate}
       />
-      {visible && <NavigationRailTooltip label={label} shape={shape} />}
+      {anchor !== null && <NavigationRailTooltip label={label} shape={shape} anchor={anchor} />}
     </Box>
   );
 }

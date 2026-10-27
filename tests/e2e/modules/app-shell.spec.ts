@@ -83,6 +83,45 @@ const groupLabelFitOf = (scope: Locator): Promise<GroupLabelFit> =>
     };
   }, labelOf('settings'));
 
+interface ViewportRect {
+  readonly top: number;
+  readonly bottom: number;
+  readonly left: number;
+  readonly right: number;
+}
+
+const rectOf = (locator: Locator): Promise<ViewportRect> =>
+  locator.evaluate((element): ViewportRect => {
+    const box = element.getBoundingClientRect();
+
+    return { top: box.top, bottom: box.bottom, left: box.left, right: box.right };
+  });
+
+const railListOf = (page: Page): Locator => sidebarOf(page).locator('ol').first();
+
+const signOutItemOf = (page: Page): Locator => sidebarOf(page).locator('li').last();
+
+const tooltipOf = (page: Page, id: string): Locator =>
+  sidebarOf(page)
+    .locator('[aria-hidden="true"]')
+    .filter({ hasText: labelOf(id) });
+
+async function collapseAtShortTablet(page: Page): Promise<void> {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openProtected(page, ROUTE_PATHS.settings);
+  await page.getByRole('button', { name: shellText.collapse, exact: true }).click();
+  await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toBeVisible();
+}
+
+async function expectAboveSignOut(page: Page, id: string): Promise<void> {
+  const row = await rectOf(linkOf(page, id));
+  const list = await rectOf(railListOf(page));
+  const signOut = await rectOf(signOutItemOf(page));
+
+  expect(row.top).toBeGreaterThanOrEqual(list.top - 0.5);
+  expect(row.bottom).toBeLessThanOrEqual(signOut.top + 0.5);
+}
+
 async function openProtected(
   page: Page,
   path: string,
@@ -227,6 +266,33 @@ test.describe('App shell on desktop (issue #362)', () => {
     expect(fit.overshoot).toBeLessThanOrEqual(1);
   });
 
+  for (const startPath of [ROUTE_PATHS.settings, ROUTE_PATHS.home]) {
+    test(`closes the drawer on its Settings row on ${startPath} at 375 px`, async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await openProtected(page, startPath);
+      await burgerOf(page).click();
+      await expect(drawerOf(page)).toBeVisible();
+      await page.evaluate(() => {
+        const probe = window as Window & { hiddenAtFocus?: boolean[] };
+        probe.hiddenAtFocus = [];
+        document.addEventListener('focusin', (event) => {
+          const target = event.target as Element;
+          probe.hiddenAtFocus?.push(target.closest('[aria-hidden="true"]') !== null);
+        });
+      });
+
+      await drawerOf(page).getByRole('link', { name: shellText.settings, exact: true }).click();
+
+      await expect(drawerOf(page)).toHaveCount(0);
+      await expect(page).toHaveURL(ROUTE_PATHS.settings);
+      await expect(page.getByRole('main')).toBeFocused();
+      const hiddenAtFocus = await page.evaluate(
+        () => (window as Window & { hiddenAtFocus?: boolean[] }).hiddenAtFocus
+      );
+      expect(hiddenAtFocus).not.toContain(true);
+    });
+  }
+
   test('does nothing when the disabled search, bell and list are clicked', async ({ page }) => {
     await openProtected(page, ROUTE_PATHS.home);
     await page.waitForLoadState('networkidle');
@@ -350,4 +416,71 @@ test.describe('App shell on desktop (issue #362)', () => {
       expect(chunks).toEqual([]);
     });
   }
+});
+
+test.describe('Collapsed rail on a short tablet viewport, 1280x720 (FR-14, OQ-21)', () => {
+  test('scrolls its rows inside the card and keeps Sign out inside the card', async ({ page }) => {
+    await collapseAtShortTablet(page);
+
+    const card = await rectOf(sidebarOf(page));
+    const list = await rectOf(railListOf(page));
+    const signOut = await rectOf(sidebarSignOutOf(page));
+
+    expect(list.top).toBeGreaterThanOrEqual(card.top);
+    expect(list.bottom).toBeLessThanOrEqual(card.bottom + 0.5);
+    expect(signOut.top).toBeGreaterThanOrEqual(card.top);
+    expect(signOut.bottom).toBeLessThanOrEqual(card.bottom);
+    expect(await railListOf(page).evaluate((ol) => ol.scrollHeight > ol.clientHeight)).toBe(true);
+    const spill = await page.evaluate(
+      ({ x, y }) => document.elementFromPoint(x, y)?.closest('nav') ?? null,
+      { x: (card.left + card.right) / 2, y: card.bottom + 4 }
+    );
+    expect(spill).toBeNull();
+  });
+
+  test('reaches the last row by scrolling the rail list', async ({ page }) => {
+    await collapseAtShortTablet(page);
+
+    await railListOf(page).evaluate((ol) => ol.scrollTo({ top: ol.scrollHeight }));
+
+    await expectAboveSignOut(page, 'billing');
+  });
+
+  test('reaches the last row and Sign out with Tab, never under the sticky Sign out', async ({
+    page,
+  }) => {
+    await collapseAtShortTablet(page);
+    await linkOf(page, 'webhooks').focus();
+
+    await page.keyboard.press('Tab');
+    await expect(linkOf(page, 'billing')).toBeFocused();
+    await expectAboveSignOut(page, 'billing');
+
+    await page.keyboard.press('Tab');
+    await expect(sidebarSignOutOf(page)).toBeFocused();
+    await expect(sidebarSignOutOf(page)).toBeInViewport({ ratio: 1 });
+  });
+
+  test('paints the tooltip of a scrolled row in full, outside the card', async ({ page }) => {
+    await collapseAtShortTablet(page);
+    await railListOf(page).evaluate((ol) => ol.scrollTo({ top: ol.scrollHeight }));
+
+    await linkOf(page, 'billing').hover();
+
+    const tooltip = tooltipOf(page, 'billing');
+    await expect(tooltip).toBeVisible();
+    const card = await rectOf(sidebarOf(page));
+    const row = await rectOf(linkOf(page, 'billing'));
+    const box = await rectOf(tooltip);
+    expect(box.right).toBeGreaterThan(card.right);
+    const drift = (box.top + box.bottom) / 2 - (row.top + row.bottom) / 2;
+    expect(Math.abs(drift)).toBeLessThanOrEqual(4);
+    const painted = await tooltip.evaluate((element): boolean => {
+      const edge = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(edge.right - 6, (edge.top + edge.bottom) / 2);
+
+      return hit !== null && element.contains(hit);
+    });
+    expect(painted).toBe(true);
+  });
 });

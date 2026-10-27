@@ -295,6 +295,36 @@ describe('MobileNavigation', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
+  it('closes and focuses main when the row of the current page is activated', async () => {
+    renderNavigation('/settings');
+    const dialog = await open();
+
+    await userEvent.click(within(dialog).getByRole('link', { name: 'Settings' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByLabelText('location')).toHaveTextContent('/settings|');
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Open menu' })).not.toHaveFocus();
+  });
+
+  it.each(['/settings', '/'])(
+    'never focuses main while the page is still hidden behind the drawer (from %s)',
+    async (path) => {
+      renderNavigation(path);
+      const dialog = await open();
+      const main = screen.getByRole('main', { hidden: true });
+      const hiddenAtFocus: boolean[] = [];
+      main.addEventListener('focus', () => {
+        hiddenAtFocus.push(isInaccessible(main));
+      });
+
+      await userEvent.click(within(dialog).getByRole('link', { name: 'Settings' }));
+
+      await waitFor(() => expect(screen.getByRole('main')).toHaveFocus());
+      expect(hiddenAtFocus).toEqual([false]);
+    }
+  );
+
   it('marks Settings current when the drawer opens on /settings', async () => {
     renderNavigation('/settings');
 

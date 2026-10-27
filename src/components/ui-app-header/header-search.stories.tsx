@@ -7,7 +7,7 @@ const meta: Meta<typeof HeaderSearch> = {
   component: HeaderSearch,
   tags: ['autodocs'],
   args: { layout: 'desktop' },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] } },
   parameters: {
     docs: {
       description: {
@@ -15,7 +15,8 @@ const meta: Meta<typeof HeaderSearch> = {
           "The header search in Figma's disabled variant: `#EAECEE`, no border, `#969B9D` " +
           'placeholder and magnifier. A natively disabled input named "Search" described by ' +
           '"Not available yet": it takes no input, no focus and sends no request. The mobile ' +
-          'header has no search at all.',
+          'header has no search at all; the `drawer` layout is the full-width copy at the top ' +
+          'of the mobile navigation drawer.',
       },
       story: { inline: false },
     },
@@ -29,3 +30,5 @@ type Story = StoryObj<typeof HeaderSearch>;
 export const Desktop: Story = {};
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
+
+export const Drawer: Story = { args: { layout: 'drawer' } };

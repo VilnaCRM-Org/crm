@@ -314,24 +314,24 @@ describe('navigation rail styles', () => {
 
     expect(styles.tooltip).toEqual({
       desktop: {
-        left: '61px',
-        top: '4px',
+        left: 61,
+        top: 4,
       },
       tablet: {
-        left: '65px',
-        top: '8px',
+        left: 65,
+        top: 8,
       },
       tabletProducts: {
-        left: '65px',
-        top: '9px',
+        left: 65,
+        top: 9,
       },
       tabletCompact: {
-        left: '65px',
-        top: '10px',
+        left: 65,
+        top: 10,
       },
       action: {
-        left: '65px',
-        top: '4px',
+        left: 65,
+        top: 4,
       },
     });
   });
@@ -340,7 +340,7 @@ describe('navigation rail styles', () => {
     const styles = await loadStyles();
 
     expect(styles.tooltipBase).toEqual({
-      position: 'absolute',
+      position: 'fixed',
       zIndex: 1,
       display: 'flex',
       alignItems: 'center',

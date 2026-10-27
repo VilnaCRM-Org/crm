@@ -1,11 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import { type JSX, useState } from 'react';
+
+import type { RailShape } from '@/components/types/ui-navigation-list';
 
 import NavigationRailTooltip from './navigation-rail-tooltip';
 
-const meta: Meta<typeof NavigationRailTooltip> = {
+interface RailTooltipStoryArgs {
+  readonly label: string;
+  readonly shape: RailShape;
+}
+
+function TooltipBesideRow({ label, shape }: RailTooltipStoryArgs): JSX.Element {
+  const [row, setRow] = useState<HTMLDivElement | null>(null);
+
+  return (
+    <div style={{ width: 240, height: 80 }}>
+      <div ref={setRow} style={{ width: 72, height: 54 }} />
+      {row && <NavigationRailTooltip label={label} shape={shape} anchor={row} />}
+    </div>
+  );
+}
+
+const meta: Meta<RailTooltipStoryArgs> = {
   title: 'Shell/Navigation/NavigationRailTooltip',
-  component: NavigationRailTooltip,
+  component: TooltipBesideRow,
   tags: ['autodocs'],
   args: { label: 'Інтеграції', shape: 'desktop' },
   argTypes: {
@@ -14,21 +32,16 @@ const meta: Meta<typeof NavigationRailTooltip> = {
       options: ['desktop', 'tablet', 'tabletProducts', 'tabletCompact', 'action'],
     },
   },
-  decorators: [
-    (Story): JSX.Element => (
-      <div style={{ position: 'relative', width: 240, height: 80 }}>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     docs: {
       description: {
         component:
           'The rail tooltip `386:26142`: a 6×20.79 caret in `#E1E7EA` and a white body with an ' +
           'inside 1 px `#E1E7EA` stroke, radius 8, padding 12/16, Inter 500 16/18 `#191B1E`, ' +
-          'shadow `0 6px 17px rgba(37,42,49,.07)`. It is hidden from assistive technology: the ' +
-          'row keeps its label as text.',
+          'shadow `0 6px 17px rgba(37,42,49,.07)`. It is fixed to the viewport at its row’s ' +
+          'offset and follows the row when the rail list or the page scrolls, so the scrolling ' +
+          'rail never clips it. It is hidden from assistive technology: the row keeps its label ' +
+          'as text.',
       },
       story: { inline: false },
     },
@@ -37,7 +50,7 @@ const meta: Meta<typeof NavigationRailTooltip> = {
 
 export default meta;
 
-type Story = StoryObj<typeof NavigationRailTooltip>;
+type Story = StoryObj<RailTooltipStoryArgs>;
 
 export const Desktop: Story = {};
 

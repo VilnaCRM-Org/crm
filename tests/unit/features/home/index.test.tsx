@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { i18n as I18nType } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
+import UIShellContent from '@/components/ui-shell-content';
 import Home from '@/features/home';
 import localization from '@/i18n/localization.json';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
@@ -83,6 +84,20 @@ describe('Home page', () => {
       fontWeight: '700',
       fontSize: '1.375rem',
     });
+  });
+
+  it('starts its content at the shell content insets, as the settings page does (NFR-22)', () => {
+    const view = render(<UIShellContent>probe</UIShellContent>);
+    const shellContent = screen.getByText('probe').className;
+    view.unmount();
+    renderHome();
+
+    const holders = screen
+      .getAllByRole('generic')
+      .filter((box) => box.className === shellContent)
+      .filter((box) => within(box).queryByRole('heading', { level: 1 }) !== null);
+
+    expect(holders).toHaveLength(1);
   });
 
   it('titles the document from the home.title key', () => {

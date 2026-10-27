@@ -97,6 +97,24 @@ describe('NavigationRailItem', () => {
     expect(within(region).getAllByText('Boards')).toHaveLength(2);
   });
 
+  it('fixes the tooltip to the viewport at its offset from this row', async () => {
+    const user = userEvent.setup();
+    const box = jest
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(12, 300, 72, 54));
+    renderShell(
+      <NavigationRailItem layout="tablet" id="boards" label="Boards" icon={icon} href="/boards" />
+    );
+
+    await user.hover(screen.getByRole('link', { name: 'Boards' }));
+
+    const tooltip = screen
+      .getAllByRole('generic', { hidden: true })
+      .find((box) => box.getAttribute('aria-hidden') === 'true');
+    expect(tooltip).toHaveStyle({ position: 'fixed', left: '77px', top: '308px' });
+    box.mockRestore();
+  });
+
   it('behaves as an action row for sign out: one call per activation', async () => {
     const user = userEvent.setup();
     const onActivate = jest.fn();
