@@ -9,13 +9,17 @@ import type {
   TwoFactorSettingsView,
 } from '../../types/two-factor/settings-view';
 
+import CodesView from './codes-view';
 import OffView from './off-view';
+import OnView from './on-view';
 import SetupView from './setup-view';
 import styles from './styles';
 
 const VIEWS = new Map<TwoFactorSettingsView, ComponentType<TwoFactorSettingsProps>>([
   ['off', OffView],
   ['setup', SetupView],
+  ['codes', CodesView],
+  ['on', OnView],
 ]);
 
 export default function TwoFactorPanel({

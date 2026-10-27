@@ -10,8 +10,10 @@ import type {
   TwoFactorSettingsViewState,
 } from '../../types/two-factor/settings-view';
 
+import CodesView from './codes-view';
 import ConfirmCodeField from './confirm-code-field';
 import OffView from './off-view';
+import OnView from './on-view';
 import SetupView from './setup-view';
 import Panel from './two-factor-panel';
 
@@ -41,6 +43,23 @@ const SETUP_SETTINGS: TwoFactorSettingsEntity = {
   otpauthUri:
     'otpauth://totp/VilnaCRM%3Airyna%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=VilnaCRM',
   secret: 'JBSWY3DPEHPK3PXP',
+};
+
+const CODES_SETTINGS: TwoFactorSettingsEntity = {
+  ...NO_SECRETS,
+  status: 'enabled',
+  recoveryCodes: {
+    items: [
+      'K7QM-4RTD',
+      'W2XB-9NHF',
+      'P5ZC-1LVA',
+      'D8GJ-6YSE',
+      'T3UR-7KBN',
+      'H4EW-2MQX',
+      'C9FA-5ZPL',
+      'N6VD-8JTG',
+    ].map((value) => ({ value })),
+  },
 };
 
 const viewOf = (
@@ -115,6 +134,25 @@ export const SetupTransient: Story = {
   args: { settings: SETUP_SETTINGS, view: viewOf('setup', { banner: 'transient' }) },
 };
 
+export const OffStale: Story = {
+  args: { view: viewOf('off', { statusCode: 'stale' }) },
+};
+
+export const Codes: Story = {
+  args: { settings: CODES_SETTINGS, view: viewOf('codes') },
+};
+
+export const On: Story = {
+  args: { settings: { ...NO_SECRETS, status: 'enabled' }, view: viewOf('on') },
+};
+
+export const OnAlreadyEnabled: Story = {
+  args: {
+    settings: { ...NO_SECRETS, status: 'enabled' },
+    view: viewOf('on', { statusCode: 'already_on' }),
+  },
+};
+
 export const ThroughTheIndex: Story = {
   render: (args) => (
     <TwoFactorPanel
@@ -161,5 +199,29 @@ export const ConfirmFieldOnly: Story = {
     >
       <ConfirmCodeField view={args.view} disabled={args.isSubmitting} />
     </UIForm>
+  ),
+};
+
+export const CodesViewOnly: Story = {
+  args: { settings: CODES_SETTINGS, view: viewOf('codes') },
+  render: (args) => (
+    <CodesView
+      settings={args.settings}
+      view={args.view}
+      callbacks={args.callbacks}
+      isSubmitting={args.isSubmitting}
+    />
+  ),
+};
+
+export const OnViewOnly: Story = {
+  args: { settings: { ...NO_SECRETS, status: 'enabled' }, view: viewOf('on') },
+  render: (args) => (
+    <OnView
+      settings={args.settings}
+      view={args.view}
+      callbacks={args.callbacks}
+      isSubmitting={args.isSubmitting}
+    />
   ),
 };
