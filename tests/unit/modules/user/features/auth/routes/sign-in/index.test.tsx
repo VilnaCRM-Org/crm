@@ -12,7 +12,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import SignIn from '@/modules/user/features/auth/routes/sign-in';
 import ROUTE_PATHS from '@/routes/route-paths';
 import useAuthStore from '@auth/stores/use-auth-store';
-import { buildToken } from '@tests/builders';
+import { buildPendingSessionId, buildToken } from '@tests/builders';
 import renderWithProviders, { testI18n, testTheme } from '@tests/unit/utils/render-with-providers';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -70,6 +70,7 @@ jest.mock('@/components/skeletons/auth-skeleton', () => ({
 
 const PROTECTED_DESTINATION = '/deals';
 const DESTINATION_TEXT = 'protected destination';
+const CHALLENGE_TEXT = 'challenge page';
 
 function renderSignInRoute(): RenderResult {
   const entry = {
@@ -182,5 +183,41 @@ describe('SignIn page', () => {
 
     await screen.findByRole('heading', { level: 1, name: 'Authentication' });
     expect(screen.queryByText(/Your password has been changed/)).not.toBeInTheDocument();
+  });
+
+  describe('two-factor hand-off (issue #331)', () => {
+    it('discards a pending session when the page is reached', async () => {
+      useAuthStore.setState({ pendingSessionId: buildPendingSessionId() });
+
+      renderWithProviders(<SignIn />);
+
+      await screen.findByRole('heading', { level: 1, name: 'Authentication' });
+      expect(useAuthStore.getState().pendingSessionId).toBeNull();
+    });
+
+    it('moves to the challenge route with the from target when a session appears', async () => {
+      const entry = {
+        pathname: ROUTE_PATHS.signIn,
+        state: { from: { pathname: PROTECTED_DESTINATION } },
+      };
+      render(
+        <MemoryRouter initialEntries={[entry]}>
+          <ThemeProvider theme={testTheme}>
+            <I18nextProvider i18n={testI18n}>
+              <Routes>
+                <Route path={ROUTE_PATHS.signIn} element={<SignIn />} />
+                <Route path={ROUTE_PATHS.twoFactorChallenge} element={<p>{CHALLENGE_TEXT}</p>} />
+              </Routes>
+            </I18nextProvider>
+          </ThemeProvider>
+        </MemoryRouter>
+      );
+      await screen.findByRole('heading', { level: 1, name: 'Authentication' });
+
+      act(() => useAuthStore.setState({ pendingSessionId: buildPendingSessionId() }));
+
+      expect(await screen.findByText(CHALLENGE_TEXT)).toBeInTheDocument();
+      expect(useAuthStore.getState().token).toBeNull();
+    });
   });
 });

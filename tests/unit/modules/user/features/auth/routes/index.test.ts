@@ -14,12 +14,13 @@ describe('auth route contract', () => {
     expect((await loadAuthRoutes()).id).toBe('user.auth');
   });
 
-  it('declares exactly the sign-up, sign-in and both recovery routes, in that order', async () => {
+  it('declares sign-up, sign-in, challenge and both recovery routes in that order', async () => {
     const { routes } = await loadAuthRoutes();
 
     expect(routes.map((route) => route.path)).toEqual([
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
+      ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
     ]);
@@ -31,6 +32,7 @@ describe('auth route contract', () => {
     expect(routes.map((route) => route.meta)).toEqual([
       { titleKey: 'sign_up.title' },
       { titleKey: 'sign_in.title' },
+      { titleKey: 'two_factor.title' },
       { titleKey: 'password_recovery.title' },
       { titleKey: 'password_reset.title' },
     ]);
@@ -39,9 +41,28 @@ describe('auth route contract', () => {
   it('leaves every route public and lazily loaded', async () => {
     const { routes } = await loadAuthRoutes();
 
-    expect(routes.map((route) => route.guard)).toEqual(['public', 'public', 'public', 'public']);
+    expect(routes.map((route) => route.guard)).toEqual([
+      'public',
+      'public',
+      'public',
+      'public',
+      'public',
+    ]);
     routes.forEach((route) => {
       expect(typeof route.load).toBe('function');
     });
+  });
+
+  it('declares the challenge as a flag-free public route', async () => {
+    const { routes } = await loadAuthRoutes();
+    const challenge = routes.find((route) => route.path === ROUTE_PATHS.twoFactorChallenge);
+
+    expect(challenge).toEqual({
+      path: '/sign-in/two-factor',
+      guard: 'public',
+      load: expect.any(Function),
+      meta: { titleKey: 'two_factor.title' },
+    });
+    expect(challenge).not.toHaveProperty('flag');
   });
 });

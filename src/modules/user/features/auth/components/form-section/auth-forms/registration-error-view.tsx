@@ -1,12 +1,11 @@
 import { Box, Typography } from '@mui/material';
-import { type JSX, useEffect, useState } from 'react';
+import { type JSX, type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/ui-button';
 import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
-import useFocusOnMount from '@/utils/use-focus-on-mount';
 import type {
   ErrorActionButtonProps,
   ErrorAlertProps,
@@ -96,13 +95,27 @@ function ErrorAlert({ text }: ErrorAlertProps): JSX.Element {
   );
 }
 
+function useHeadingFocus(text: string): RefObject<HTMLHeadingElement | null> {
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const focusedOnce = useRef(false);
+
+  useEffect(() => {
+    if (!focusedOnce.current || document.activeElement === document.body) {
+      headingRef.current?.focus();
+    }
+    focusedOnce.current = true;
+  }, [text]);
+
+  return headingRef;
+}
+
 function ErrorMessage({ title, text }: ErrorMessageProps): JSX.Element {
-  const focusOnMount = useFocusOnMount<HTMLHeadingElement>();
+  const headingRef = useHeadingFocus(text);
   return (
     <>
       <UITypography
         component="h2"
-        ref={focusOnMount}
+        ref={headingRef}
         tabIndex={-1}
         sx={[styles.messageTitle, styles.headingFocus]}
       >

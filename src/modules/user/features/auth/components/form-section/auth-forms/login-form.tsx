@@ -86,7 +86,7 @@ function LoginNotificationPanel({
         errorText={submitter.error}
         isSubmitting={submitter.isSubmitting}
         onBack={view === 'success' ? postLogin.proceed : backToForm}
-        onRetry={submitter.handleRetry}
+        onRetry={submitter.retryable ? submitter.handleRetry : undefined}
       />
     </Suspense>
   );

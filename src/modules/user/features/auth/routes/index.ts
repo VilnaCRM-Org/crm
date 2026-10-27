@@ -17,6 +17,12 @@ const authRoutes: RouteModule = {
       meta: { titleKey: 'sign_in.title' },
     },
     {
+      path: ROUTE_PATHS.twoFactorChallenge,
+      guard: 'public',
+      load: () => import(/* webpackChunkName: "two-factor-challenge" */ './two-factor'),
+      meta: { titleKey: 'two_factor.title' },
+    },
+    {
       path: ROUTE_PATHS.passwordRecovery,
       guard: 'public',
       load: () => import(/* webpackChunkName: "reset-password" */ './reset-password'),
