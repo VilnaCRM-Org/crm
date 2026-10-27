@@ -12,6 +12,28 @@ import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 const mockRead = jest.fn();
 
+const READ_USER = {
+  kind: 'ok',
+  user: { id: 'u', fullName: 'Петренко Олена Іванівна', email: 'o@example.com', confirmed: true },
+};
+
+type LoadedModule = Awaited<ReturnType<typeof loader.load>>;
+
+function holdCurrentUserChunk(): () => Promise<void> {
+  let release: (module: LoadedModule) => void = () => undefined;
+  const held = new Promise<LoadedModule>((resolve) => {
+    release = resolve;
+  });
+  jest.spyOn(loader, 'load').mockReturnValue(held);
+
+  return async () => {
+    const actual: LoadedModule = jest.requireActual(
+      '@/modules/user/features/settings/components/user-menu/current-user-menu'
+    );
+    await act(async () => release(actual));
+  };
+}
+
 jest.mock('@/providers/di', () => {
   const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
   const tokens = jest.requireActual('@/modules/user/config/tokens').default;
@@ -68,6 +90,65 @@ describe('UserMenuSlot', () => {
     await user.click(screen.getByRole('button', { name: 'User menu' }));
 
     expect(screen.getAllByRole('menuitem')).toHaveLength(3);
+  });
+
+  it('keeps the open menu and its focused item when the current-user chunk resolves', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    mockRead.mockResolvedValue(READ_USER);
+    const resolveChunk = holdCurrentUserChunk();
+    const user = userEvent.setup();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
+    );
+    const chip = screen.getByRole('button', { name: 'User menu' });
+
+    await user.click(chip);
+    await user.keyboard('{ArrowDown}');
+    const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
+    expect(settingsItem).toHaveFocus();
+    await resolveChunk();
+    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+
+    expect(screen.getByRole('button', { name: 'Олена Петренко, User menu' })).toBe(chip);
+    expect(chip).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menuitem', { name: 'Settings' })).toBe(settingsItem);
+    expect(settingsItem).toHaveFocus();
+    expect(mockRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps focus on the same chip node when the chunk resolves with the menu closed', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    mockRead.mockResolvedValue(READ_USER);
+    const resolveChunk = holdCurrentUserChunk();
+    const onAvatar = jest.fn();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
+    );
+    const chip = screen.getByRole('button', { name: 'User menu' });
+    act(() => chip.focus());
+
+    await resolveChunk();
+    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+
+    expect(chip).toHaveFocus();
+    const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
+    expect(container).toHaveTextContent('ОП');
+  });
+
+  it('signs out once across the chunk resolving, with the same once-guard', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const resolveChunk = holdCurrentUserChunk();
+    const signOut = jest.fn();
+    const user = userEvent.setup();
+    renderShell(<UserMenuSlot signOut={signOut} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'User menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    await resolveChunk();
+    await user.click(screen.getByRole('button', { name: 'User menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the pending chip operable and reports the chunk failure exactly once', async () => {

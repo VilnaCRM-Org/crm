@@ -117,9 +117,11 @@ two modules declare `shell.userMenu`.
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
   failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
   are untouched and nothing reloads.
-- **The current-user chunk** reports through the `onChunkFailure` callback the mapper binds
-  (`source: 'app-shell:current-user'`); `AppLayout` reports the shell chunk with
-  `routeMapper.chunkFailureReporter('app-shell:load')`.
+- **The current-user chunk** carries only the identity source: the slot keeps one menu mounted
+  and the chunk reports the identity it reads, so the chip keeps focus and an open menu when it
+  arrives (see `src/modules/user/features/settings/README.md`). Its failure is reported through
+  the `onChunkFailure` callback the mapper binds (`source: 'app-shell:current-user'`); `AppLayout`
+  reports the shell chunk with `routeMapper.chunkFailureReporter('app-shell:load')`.
 - **Why the mapper captures:** a component under `src/components/` must not import
   `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
   route layer is the only place that reaches the observability boundary.

@@ -14,6 +14,15 @@ error. The decisions are recorded in `## User Settings decisions` of the
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form` (`ClearButton`,
   `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`, `user-menu` (the
   app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
+- `components/user-menu/user-menu-slot.tsx` — `UserMenuSlot`, the `user-menu` chunk entry. It
+  mounts one `UserMenu` for its whole life and owns the identity it shows. While `userSettings` is
+  on it lazy-loads only the identity source, `CurrentUserMenu` (chunk `current-user`), which
+  renders nothing, calls `useCurrentUser()` and reports the identity through `onIdentity`. The
+  Suspense fallback around it renders nothing too, because the loading UI is the name-less chip
+  outside the boundary. So the chip, its focus, an open menu with its focused item, the menu id and
+  the once-only Sign out survive the chunk arriving: only the chip's name and monogram change. A
+  failed chunk is reported once as `app-shell:current-user` and the chip stays name-less; with the
+  flag off nothing is loaded or read.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.

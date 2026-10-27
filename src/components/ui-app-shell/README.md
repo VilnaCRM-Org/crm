@@ -23,7 +23,9 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   `AppLayout` the result of `routeMapper.shellSlot(load)`, so `AppLayout` receives only a
   component that takes `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
   publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
-  `HeaderNavigation`). See "Shell slots" in `src/routes/README.md`.
+  `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
+  the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
+  `src/routes/README.md`.
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
   `AppLayout` calls its `onShellFailure` prop once (the composer binds it to
   `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
@@ -252,7 +254,9 @@ one `CurrentUser` request in all. Before the user resolves the copy is the 24 px
 At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
 stay 44×44 there: both share `edgeButtonStyles.target`, which below 375 px trims the right extension
 to the 8 px inset and gives the 2 px to the left (12 px), so the glyph does not move, the page does
-not scroll sideways and the burger stays clear of the avatar target. The Sign out row is 314 px wide
+not scroll sideways and the burger stays clear of the avatar target. Below 375 px their focus ring is
+drawn inside the button (`outline-offset: -2px`), so the 8 px inset never clips it at the viewport's
+right edge. The Sign out row is 314 px wide
 in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
 
 What Figma leaves open, and how it was built:
@@ -376,7 +380,8 @@ sidebar at top 74.
   sub-item focused at 200 % kept clear of the sticky Sign out.
 - `tests/e2e/mobile/app-shell-touch.spec.ts` (both mobile projects): the drawer opened and closed by
   tap, Settings and Sign out from the drawer and the avatar menu, a 44 px tap area on every control
-  and no horizontal overflow at device width and 320 px.
+  but the 42 px drawer sub-items (see "Known gaps"), and no horizontal overflow at device width and
+  320 px.
 - `tests/e2e/a11y/routes.a11y.spec.ts` (desktop engines): axe over `/`, `/settings` and the eight
   coming-soon routes with the shell loaded, `/` with `userSettings` off and `/` with the menu open.
 
@@ -392,6 +397,10 @@ Playwright container and run in CI only.
 
 - **The disabled bell and list** keep Figma's 40 px pitch and are not measured by the tap-area
   check (OQ-15).
+- **The drawer sub-items** Integrations, Webhooks and Billing keep Figma's 42 px PROP-18 pitch, under
+  the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
+  instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
+  sub-items do not overlap.
 
 ### DV-11: the Settings label keeps clear of its chevron (owner decision, 2026-10-26)
 

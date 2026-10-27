@@ -2,6 +2,7 @@ import type { Page, Request } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
+import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -19,10 +20,8 @@ interface Section {
   readonly headingKey: string;
 }
 
-const BOARDS: Section = { path: ROUTE_PATHS.boards, headingKey: 'coming_soon.sections.boards' };
-
 const PRODUCT_SECTIONS: readonly Section[] = [
-  BOARDS,
+  { path: ROUTE_PATHS.boards, headingKey: 'coming_soon.sections.boards' },
   { path: ROUTE_PATHS.products, headingKey: 'coming_soon.sections.products' },
   { path: ROUTE_PATHS.orders, headingKey: 'coming_soon.sections.orders' },
   { path: ROUTE_PATHS.contacts, headingKey: 'coming_soon.sections.contacts' },
@@ -34,6 +33,8 @@ const SETTINGS_SECTIONS: readonly Section[] = [
   { path: ROUTE_PATHS.settingsWebhooks, headingKey: 'coming_soon.sections.webhooks' },
   { path: ROUTE_PATHS.settingsBilling, headingKey: 'coming_soon.sections.billing' },
 ];
+
+const ALL_SECTIONS: readonly Section[] = [...PRODUCT_SECTIONS, ...SETTINGS_SECTIONS];
 
 const message: string = t('coming_soon.message');
 const homeLinkLabel: string = t('coming_soon.home_link');
@@ -66,7 +67,7 @@ async function expectSectionPage(page: Page, section: Section): Promise<void> {
 }
 
 test.describe('Coming-soon routes (issue #362)', () => {
-  for (const section of [...PRODUCT_SECTIONS, ...SETTINGS_SECTIONS]) {
+  for (const section of ALL_SECTIONS) {
     test(`renders the ${section.path} section with its heading, message and title`, async ({
       page,
     }) => {
@@ -76,25 +77,27 @@ test.describe('Coming-soon routes (issue #362)', () => {
     });
   }
 
-  test('follows the home link in the router, with no document load and main focused', async ({
-    page,
-  }) => {
-    await openSection(page, BOARDS);
-    await page.evaluate(() => {
-      (window as unknown as { documentMarker: boolean }).documentMarker = true;
+  for (const section of ALL_SECTIONS) {
+    test(`follows the home link from ${section.path} with no document load, main focused`, async ({
+      page,
+    }) => {
+      await openSection(page, section);
+      await page.evaluate(() => {
+        (window as unknown as { documentMarker: boolean }).documentMarker = true;
+      });
+
+      await page.getByRole('link', { name: homeLinkLabel }).click();
+
+      await expect(page).toHaveURL(ROUTE_PATHS.home);
+      await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
+      await expect(page.locator('main')).toBeFocused();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { documentMarker?: boolean }).documentMarker === true
+        )
+      ).toBe(true);
     });
-
-    await page.getByRole('link', { name: homeLinkLabel }).click();
-
-    await expect(page).toHaveURL(ROUTE_PATHS.home);
-    await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
-    await expect(page.locator('main')).toBeFocused();
-    expect(
-      await page.evaluate(
-        () => (window as unknown as { documentMarker?: boolean }).documentMarker === true
-      )
-    ).toBe(true);
-  });
+  }
 
   for (const section of SETTINGS_SECTIONS) {
     test(`shows not-found and no chunk request on ${section.path} with the flag off`, async ({
@@ -116,32 +119,37 @@ test.describe('Coming-soon routes (issue #362)', () => {
     });
   }
 
-  test('sends a signed-out visitor to sign-in and back to the section after login', async ({
-    page,
-  }) => {
-    await page.route(LOGIN_API_URL, async (route) => {
-      if (route.request().method() !== 'POST') return route.fallback();
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ token: 'e2e-session-token' }),
+  for (const section of ALL_SECTIONS) {
+    test(`sends a signed-out visitor from ${section.path} to sign-in and back after login`, async ({
+      page,
+    }) => {
+      await setFlag(page, true);
+      await stubProfile(page);
+      await page.route(LOGIN_API_URL, async (route) => {
+        if (route.request().method() !== 'POST') return route.fallback();
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ token: 'e2e-session-token' }),
+        });
       });
+
+      await signOutToSignIn(page);
+      await bounceFromProtectedDestination(page, section.path);
+
+      const from = await page.evaluate(
+        () =>
+          (window.history.state as { usr?: { from?: { pathname?: string } } }).usr?.from?.pathname
+      );
+      expect(from).toBe(section.path);
+
+      await fillInput(page.getByPlaceholder(emailPlaceholder), credentials.email);
+      await fillInput(page.getByPlaceholder(passwordPlaceholder), credentials.password);
+      await page.getByRole('button', { name: submitLabel }).click();
+      await expectSignInSuccessCard(page);
+      await continueButtonOf(page).click();
+
+      await expectSectionPage(page, section);
     });
-
-    await signOutToSignIn(page);
-    await bounceFromProtectedDestination(page, BOARDS.path);
-
-    const from = await page.evaluate(
-      () => (window.history.state as { usr?: { from?: { pathname?: string } } }).usr?.from?.pathname
-    );
-    expect(from).toBe(BOARDS.path);
-
-    await fillInput(page.getByPlaceholder(emailPlaceholder), credentials.email);
-    await fillInput(page.getByPlaceholder(passwordPlaceholder), credentials.password);
-    await page.getByRole('button', { name: submitLabel }).click();
-    await expectSignInSuccessCard(page);
-    await continueButtonOf(page).click();
-
-    await expectSectionPage(page, BOARDS);
-  });
+  }
 });

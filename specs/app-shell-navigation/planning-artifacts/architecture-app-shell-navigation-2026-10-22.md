@@ -229,7 +229,8 @@ src/routes/route-composer.tsx ──static──> src/components/layouts/app-lay
    │     ├─ UIAppHeader  (banner: logo, search, bell, list, slot frame, burger)
    │     │     ├─ slot frame ─> Suspense(slot placeholder) ─> userMenu({ signOut })   [user-menu]
    │     │     │        UserMenuSlot ─ flag off ─> UserMenu(identity: null)
-   │     │     │                     └ flag on  ─> Suspense(UserMenu pending) ─> CurrentUserMenu
+   │     │     │                     └ flag on  ─> UserMenu(identity state) + Suspense(nothing)
+   │     │     │                                      ─> CurrentUserMenu (renders null, onIdentity)
    │     │     │                                      useCurrentUser → useService(ProfileProvider)
    │     │     │                                                                      [current-user]
    │     │     └─ UINavigationDrawer (below the sidebar breakpoint, while open)
@@ -279,8 +280,9 @@ ProtectedRoute → AppLayout renders frame: header placeholder, nav placeholder,
   ▼                             ▼
 UIAppShell mounts: registers the shell catalog, renders header + sidebar in the reserved areas
 UIAppHeader renders slot frame → user-menu chunk requested (ThemedChunkLoader + ChunkRetryLoader)
-UserMenuSlot: registers the chip catalog; flag on → renders Suspense(UserMenu identity=null)
-  → current-user chunk (+ DI async chunk) → CurrentUserMenu → useCurrentUser: one read
+UserMenuSlot: registers the chip catalog; flag on → renders UserMenu(identity=null) beside an
+  empty Suspense → current-user chunk (+ DI async chunk) → CurrentUserMenu (renders null)
+  → useCurrentUser: one read → onIdentity → the same UserMenu re-renders
   → ok: UserMenu(identity) | failed: UserMenu(identity=null) | session_ended: link signs out
 ```
 
@@ -458,9 +460,13 @@ focus trap the APG menu button does not want (FR-6.1 N "no focus is trapped"). _
 
 **AD-8. Two-stage user-aware slot.** `UserMenuSlot` (chunk `user-menu`) is container-free: it reads
 `useFeatureFlag('userSettings')` and, while off, renders `UserMenu` without any read. While on, it
+keeps one `UserMenu` mounted outside any Suspense boundary, name-less until an identity arrives (the
+FR-5.3 "read pending" row: person glyph; My profile, Settings and Sign out operable), and beside it
 renders `CurrentUserMenu` (chunk `current-user`, loaded through a `ChunkRetryLoader` instance in
-`current-user-menu-loader.ts`, NEW) inside a Suspense whose fallback is the name-less `UserMenu` (the
-FR-5.3 "read pending" row: person glyph; My profile, Settings and Sign out operable). `useCurrentUser()` resolves
+`current-user-menu-loader.ts`, NEW) inside a Suspense with an empty fallback. `CurrentUserMenu`
+renders nothing and reports the identity through `onIdentity`, so the chip, an open menu and its
+focus survive the chunk resolving (amended 2026-10-27, gate iteration 5: the earlier design used the
+name-less `UserMenu` as the Suspense fallback and remounted it, dropping focus). `useCurrentUser()` resolves
 `ProfileProvider` with `useService(AUTH_TOKENS.ProfileProvider)` and calls `read(signal)` once per
 mount, aborting on unmount, exactly as `use-profile-load.ts:74-87` does; it returns a named
 `CurrentUserState`. The display name and monogram come from `UserDisplayNameMapper` (§5.8).

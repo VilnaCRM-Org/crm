@@ -1051,6 +1051,13 @@ they are not pointer targets; if they ever become active, their 40 px pitch is r
 sizing gap (like the auth switcher gap in CLAUDE.md), never fixed by moving pixels. Asserted with
 `expectTouchTarget` on both mobile projects.
 
+**Owner decision, 2026-10-27 (drawer sub-items).** The drawer's Settings sub-items Integrations,
+Webhooks and Billing keep Figma's 42 px PROP-18 pitch (FR-13.5) and are a second known sizing gap
+beside the bell and list, never fixed by moving pixels. Each sub-item still answers a tap across
+its whole 42 px height and the drawer row width, and adjacent sub-item targets do not overlap;
+`tests/e2e/mobile/app-shell-touch.spec.ts` asserts that rule on both mobile projects instead of the
+44 px floor.
+
 ### NFR-4 — Contrast (WCAG 1.4.3, 1.4.11)
 
 Text at 4.5:1 and UI graphics at 3:1 for every active control. Under full Figma parity (NFR-22,

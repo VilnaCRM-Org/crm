@@ -12,9 +12,10 @@ export default function useRailTooltip(): RailTooltipBehavior {
     []
   );
   const hide = useCallback((): void => setState('idle'), []);
+  const [dismiss] = useState(() => (): void => setState('dismissed'));
   const visible = state === 'shown';
 
-  useDocumentEscape(visible, () => setState('dismissed'));
+  useDocumentEscape(visible, dismiss);
 
   return {
     visible,
