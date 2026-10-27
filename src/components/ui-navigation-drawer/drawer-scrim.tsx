@@ -8,11 +8,11 @@ import styles from './styles';
 import useFooterInset from './use-footer-inset';
 
 export default function DrawerScrim({ duration }: DrawerScrimProps): JSX.Element {
-  const bottom = useFooterInset();
+  const insetRef = useFooterInset();
 
   return (
     <Fade in appear timeout={duration}>
-      <Box aria-hidden="true" sx={{ ...styles.scrim, bottom: `${bottom}px` }} />
+      <Box ref={insetRef} aria-hidden="true" sx={styles.scrim} />
     </Fade>
   );
 }

@@ -6,6 +6,7 @@ import { Route, Routes } from 'react-router';
 
 import type { NavigationIcon } from '@/components/types/ui-app-shell/navigation-item';
 import NavigationRow from '@/components/ui-navigation-list/navigation-row';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
 
@@ -47,6 +48,23 @@ describe('NavigationRow', () => {
     expect(link).not.toHaveAttribute('aria-current');
     expect(link).not.toHaveAttribute('aria-disabled');
     expect(screen.queryByText('Not available yet')).not.toBeInTheDocument();
+  });
+
+  it('keeps the label colour on a visited row, over the global a:visited', () => {
+    renderRow(
+      <NavigationRow
+        layout="desktop"
+        variant="item"
+        id="boards"
+        label="Boards"
+        icon={icon}
+        href="/boards"
+      />
+    );
+
+    const link = screen.getByRole('link', { name: 'Boards' });
+
+    expect(styleRuleFor(link, ':visited')?.color).toBe('#404142');
   });
 
   it('marks the current row with aria-current="page" and nothing else', () => {

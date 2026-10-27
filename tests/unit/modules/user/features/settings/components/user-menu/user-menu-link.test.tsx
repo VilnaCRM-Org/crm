@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 
 import UserMenuLink from '@/modules/user/features/settings/components/user-menu/user-menu-link';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
 
@@ -32,6 +33,14 @@ describe('UserMenuLink', () => {
     renderLink();
 
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+  });
+
+  it('keeps its label colour once visited, over the global a:visited', () => {
+    renderLink();
+
+    const link = screen.getByRole('menuitem', { name: 'Settings' });
+
+    expect(styleRuleFor(link, ':visited')?.color).toBe('#1A1C1E');
   });
 
   it('closes the menu and navigates with state.focusMain when activated', async () => {

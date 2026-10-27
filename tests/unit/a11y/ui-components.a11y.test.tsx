@@ -17,6 +17,7 @@ import UILiveStatus from '@/components/ui-live-status';
 import UINavigationDrawer from '@/components/ui-navigation-drawer';
 import UINavigationList from '@/components/ui-navigation-list';
 import UIOfflineNotice from '@/components/ui-offline-notice';
+import UIShellContent from '@/components/ui-shell-content';
 import UISidebar from '@/components/ui-sidebar';
 import UITextField from '@/components/ui-text-field';
 import UITypography from '@/components/ui-typography';
@@ -194,6 +195,18 @@ const componentCases: ComponentCase[] = [
     shell: true,
   },
   {
+    name: 'UIShellContent inside main with a page heading',
+    element: (
+      <main>
+        <UIShellContent>
+          <UITypography component="h1">Налаштування</UITypography>
+        </UIShellContent>
+      </main>
+    ),
+    withProviders: true,
+    shell: true,
+  },
+  {
     name: 'UIAppShell on desktop',
     element: <UIAppShell signOut={jest.fn()} />,
     withProviders: true,
@@ -218,12 +231,16 @@ describe('WCAG 2.1 AA axe gate over the UI components (issue #118)', () => {
     }
   );
 
-  it.each(['UIAppHeader', 'UISidebar', 'UINavigationList', 'UINavigationDrawer', 'UIAppShell'])(
-    'carries a componentCases row for the shell component %s (NFR-16)',
-    (component) => {
-      expect(componentCases.some(({ name }) => name.startsWith(component))).toBe(true);
-    }
-  );
+  it.each([
+    'UIAppHeader',
+    'UISidebar',
+    'UINavigationList',
+    'UINavigationDrawer',
+    'UIAppShell',
+    'UIShellContent',
+  ])('carries a componentCases row for the shell component %s (NFR-16)', (component) => {
+    expect(componentCases.some(({ name }) => name.startsWith(component))).toBe(true);
+  });
 
   it('keeps one main, one h1 and the footer outside main on the home page', async () => {
     const { container } = renderWithProviders(<HomeRoutes withLayout />);

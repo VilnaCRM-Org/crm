@@ -58,6 +58,7 @@ const itemBase = {
   fontWeight: 500,
   color: customColors.text.dark,
   textDecoration: 'none',
+  '&:visited': { color: customColors.text.dark },
   '&:hover, &:focus-visible, &.Mui-focusVisible': {
     backgroundColor: paletteColors.background.paper,
   },

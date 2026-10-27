@@ -35,6 +35,7 @@ export const control = {
   overflowWrap: 'anywhere',
   color: customColors.text.primary,
   '& svg': { flexShrink: 0, fill: 'none', color: customColors.text.secondary },
+  '&:visited': { color: customColors.text.primary },
   '&:hover': {
     backgroundColor: paletteColors.background.paper,
     color: customColors.text.dark,

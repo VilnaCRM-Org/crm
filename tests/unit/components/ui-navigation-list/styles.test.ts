@@ -93,6 +93,7 @@ describe('navigation list styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           color: '#1A1C1E',
@@ -141,6 +142,7 @@ describe('navigation list styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           color: '#1A1C1E',
@@ -189,6 +191,7 @@ describe('navigation list styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           color: '#1A1C1E',
@@ -273,6 +276,7 @@ describe('navigation list styles', () => {
         fill: 'none',
         color: '#969B9D',
       },
+      '&:visited': { color: '#404142' },
       '&:hover': {
         backgroundColor: '#F4F5F6',
         color: '#1A1C1E',
@@ -326,6 +330,7 @@ describe('navigation list styles', () => {
         fill: 'none',
         color: '#969B9D',
       },
+      '&:visited': { color: '#404142' },
       '&:hover': {
         backgroundColor: '#F4F5F6',
         color: '#1A1C1E',
@@ -404,6 +409,7 @@ describe('navigation list styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           color: '#1A1C1E',
@@ -451,6 +457,7 @@ describe('navigation list styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           color: '#1A1C1E',
@@ -498,6 +505,7 @@ describe('navigation list styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           color: '#1A1C1E',
@@ -589,6 +597,28 @@ describe('navigation list styles', () => {
       },
     });
   });
+
+  it.each([
+    ['desktop row', (styles: Styles): object => styles.row.desktop],
+    ['tablet row', (styles: Styles): object => styles.row.tablet],
+    ['drawer row', (styles: Styles): object => styles.row.drawer],
+    ['action', (styles: Styles): object => styles.action],
+    ['drawer action', (styles: Styles): object => styles.actionDrawer],
+    ['desktop sub-item', (styles: Styles): object => styles.sub.desktop],
+    ['tablet sub-item', (styles: Styles): object => styles.sub.tablet],
+    ['drawer sub-item', (styles: Styles): object => styles.sub.drawer],
+  ])(
+    'keeps a visited %s in the label colour, ahead of hover and the current row',
+    async (_name, pick) => {
+      const anchor = pick(await loadStyles());
+      const keys = Object.keys(anchor);
+
+      expect(anchor).toHaveProperty(['&:visited'], { color: '#404142' });
+      expect(keys.indexOf('&:visited')).toBeGreaterThan(-1);
+      expect(keys.indexOf('&:visited')).toBeLessThan(keys.indexOf('&:hover'));
+      expect(keys.indexOf('&:hover')).toBeLessThan(keys.indexOf('&[aria-current="page"]'));
+    }
+  );
 
   it('pins hidden', async () => {
     const styles = await loadStyles();

@@ -31,6 +31,7 @@ describe('navigation rail styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           '& svg': {
@@ -76,6 +77,7 @@ describe('navigation rail styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           '& svg': {
@@ -121,6 +123,7 @@ describe('navigation rail styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           '& svg': {
@@ -166,6 +169,7 @@ describe('navigation rail styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           '& svg': {
@@ -211,6 +215,7 @@ describe('navigation rail styles', () => {
           fill: 'none',
           color: '#969B9D',
         },
+        '&:visited': { color: '#404142' },
         '&:hover': {
           backgroundColor: '#F4F5F6',
           '& svg': {
@@ -377,4 +382,17 @@ describe('navigation rail styles', () => {
       color: '#191B1E',
     });
   });
+
+  it.each(['desktop', 'tablet', 'tabletProducts', 'tabletCompact', 'action'] as const)(
+    'keeps a visited %s rail item in the label colour, ahead of hover and the current item',
+    async (shape) => {
+      const pill = (await loadStyles()).rail[shape];
+      const keys = Object.keys(pill);
+
+      expect(pill).toHaveProperty(['&:visited'], { color: '#404142' });
+      expect(keys.indexOf('&:visited')).toBeGreaterThan(-1);
+      expect(keys.indexOf('&:visited')).toBeLessThan(keys.indexOf('&:hover'));
+      expect(keys.indexOf('&:hover')).toBeLessThan(keys.indexOf('&[aria-current="page"]'));
+    }
+  );
 });

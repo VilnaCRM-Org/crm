@@ -7,7 +7,9 @@
 # browser scope, must state the reason in details, and must not also carry a suite row.
 route	suite	spec	details
 home	e2e	tests/e2e/modules/back-to-main.spec.ts	Navigates to the home route through the back-to-main control and asserts the resulting URL.
-home	visual	tests/visual/visual-comparison.spec.ts	Full-viewport-matrix screenshots of the authenticated home page.
+home	visual	tests/visual/visual-comparison.spec.ts	Full-viewport-matrix screenshots of the authenticated home page, with the userSettings flag on and a stubbed CurrentUser.
+home	visual	tests/visual/visual-comparison.app-shell.spec.ts	1440 and 1024 screenshots of home with the user menu open, and 1024 screenshots of the expanded tablet panel with its handle and the Settings group open.
+home	visual	tests/visual/mobile/app-shell.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of home with the closed mobile header and with the user menu open.
 signUp	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/registration-form.spec.ts	Drives the registration form on /sign-up end to end.
 signUp	visual	tests/visual/visual-comparison.sign-up.spec.ts	Full-viewport-matrix screenshots of /sign-up.
 signIn	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-form.spec.ts	Drives the login form on /sign-in end to end.
@@ -61,6 +63,7 @@ settings	e2e	tests/e2e/a11y/settings-states.a11y.spec.ts	Scans the unconfirmed r
 settings	e2e	tests/e2e/a11y/settings-keyboard.a11y.spec.ts	Drives /settings with the keyboard only: tab order, eye toggle Space, Enter submit and the focus rules after save, errors, Clear, toast close and session end.
 settings	visual	tests/visual/visual-comparison.settings.spec.ts	Full-matrix screenshots of the resting /settings page and desktop, tablet and mobile screenshots of the unconfirmed row, field errors, success toasts, transient toast, skeleton and load failure.
 settings	visual	tests/visual/mobile/settings.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the resting /settings page.
+settings	visual	tests/visual/mobile/app-shell.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the navigation drawer open on /settings with its current row.
 boards	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /boards directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
 products	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /products directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
 orders	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /orders directly with a seeded session: the section heading, message and document title inside the shell, the home link without a document load, the sign-in redirect and return.
@@ -86,6 +89,7 @@ home	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Opens and closes the drawer by
 settings	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Reaches /settings by tap from the drawer and from the avatar menu with main focused.
 boards	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /boards coming-soon page inside the shell, with a seeded session and the userSettings flag on.
 boards	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /boards coming-soon page inside the shell.
+boards	visual	tests/visual/visual-comparison.app-shell.spec.ts	1440 and 1024 screenshots of /boards with the sidebar collapsed to the rail and the Boards item current.
 products	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /products coming-soon page inside the shell, with a seeded session and the userSettings flag on.
 products	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /products coming-soon page inside the shell.
 orders	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /orders coming-soon page inside the shell, with a seeded session and the userSettings flag on.

@@ -250,9 +250,10 @@ both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15
 one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
 
 At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
-are 42 px wide there, because a 44 px target at an 8 px inset would overflow the viewport and cause
-horizontal scroll (the known sizing gap of NFR-3 at 320 px). The Sign out row is 314 px wide in
-Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
+stay 44×44 there: both share `edgeButtonStyles.target`, which below 375 px trims the right extension
+to the 8 px inset and gives the 2 px to the left (12 px), so the glyph does not move, the page does
+not scroll sideways and the burger stays clear of the avatar target. The Sign out row is 314 px wide
+in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
 
 What Figma leaves open, and how it was built:
 
@@ -443,6 +444,17 @@ The baselines were recorded in the pinned Playwright container against a freshly
   (`visual-comparison.coming-soon.spec.ts`, 72) and on both mobile projects
   (`mobile/coming-soon.spec.ts`, 16). These pages have no Figma frame: their layout is the **OQ-28
   proposal**, not a measured design, and a later Figma frame replaces them.
-- **Allowed difference (d):** the home baselines run without a `CurrentUser` stub, so the chip shows
-  its no-data state (the generic avatar, no name); the settings and coming-soon baselines stub the
-  profile, so their chip shows the name. No baseline shows a badge.
+- **Shell states:** `visual-comparison.app-shell.spec.ts` captures the user menu open and the
+  sidebar collapsed to the rail (on `/boards`) at 1440 and 1024, and the expanded tablet panel with
+  its handle (DV-10) and the Settings group open at 1024, in three engines;
+  `mobile/app-shell.spec.ts` captures home with the closed header, the drawer open on `/settings`
+  with its current row (viewport only, since the drawer is an overlay) and the menu open, on both
+  mobile projects. Every interaction goes through a role or a label.
+- **Allowed difference (d):** content that has no data is absent: no baseline shows a badge. Every
+  protected-page spec (home, settings, coming-soon and the shell states) runs with the
+  `userSettings` flag on and one stubbed `CurrentUser` reply, so the chip always shows the same
+  name and monogram and never depends on the backend.
+- **Visited links:** the global `a:visited` colour in `src/index.css` no longer reaches the shell:
+  the navigation rows, sub-items, rail items and user menu links set their own `:visited` colour
+  ahead of hover and the current state, so a Firefox run whose shared history marks a route visited
+  captures the same labels as a fresh one.
