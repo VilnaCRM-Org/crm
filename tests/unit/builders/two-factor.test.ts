@@ -5,6 +5,7 @@ import {
   buildOtpauthUri,
   buildPendingSessionId,
   buildRecoveryCode,
+  buildRecoveryCodeSet,
   buildTotpCode,
   buildTotpSecret,
 } from '@tests/builders';
@@ -87,5 +88,26 @@ describe('two-factor builders', () => {
 
     expect(second).toEqual(first);
     expect(first[0]).not.toBe(first[1]);
+  });
+
+  it('builds a recovery code set of eight XXXX-XXXX codes in an items collection', () => {
+    const set = buildRecoveryCodeSet();
+
+    expect(Object.keys(set)).toEqual(['items']);
+    expect(set.items).toHaveLength(8);
+    for (const code of set.items) {
+      expect(Object.keys(code)).toEqual(['value']);
+      expect(code.value).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/u);
+    }
+  });
+
+  it('makes buildRecoveryCodeSet deterministic per seed and different per call', () => {
+    faker.seed(SEED);
+    const first = [buildRecoveryCodeSet(), buildRecoveryCodeSet()];
+    faker.seed(SEED);
+    const second = [buildRecoveryCodeSet(), buildRecoveryCodeSet()];
+
+    expect(second).toEqual(first);
+    expect(first[0]).not.toEqual(first[1]);
   });
 });

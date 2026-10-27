@@ -1,5 +1,7 @@
 import { faker } from '@faker-js/faker';
 
+import type { RecoveryCodeSet } from '@/modules/user/types/user/two-factor-settings-entity';
+
 import { buildEmail } from './user';
 
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -16,6 +18,10 @@ export function buildRecoveryCode(): string {
   const group = (): string => faker.string.alphanumeric({ length: 4, casing: 'upper' });
 
   return `${group()}-${group()}`;
+}
+
+export function buildRecoveryCodeSet(): RecoveryCodeSet {
+  return { items: Array.from({ length: 8 }, () => ({ value: buildRecoveryCode() })) };
 }
 
 export function buildPendingSessionId(): string {
