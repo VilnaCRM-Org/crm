@@ -10,6 +10,7 @@ import type { TwoFactorSettingsOutcome } from '../two-factor/outcome';
 import type {
   TwoFactorOperationPlan,
   TwoFactorSettingsTransition,
+  TwoFactorSettingsView,
   TwoFactorSettle,
 } from '../two-factor/settings-view';
 
@@ -55,3 +56,8 @@ export interface TwoFactorOperations {
 }
 
 export type CodeSubmit = SettledSubmit<TwoFactorDto>;
+
+export interface ViewTrack {
+  readonly view: TwoFactorSettingsView;
+  readonly from: TwoFactorSettingsView | null;
+}

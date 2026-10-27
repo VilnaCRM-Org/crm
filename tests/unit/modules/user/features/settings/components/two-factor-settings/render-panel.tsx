@@ -38,6 +38,7 @@ export const fakeCallbacks = (): { [K in keyof TwoFactorSettingsCallbacks]: jest
   regenerate: jest.fn(),
   cancel: jest.fn(),
   retry: jest.fn(),
+  signInAgain: jest.fn(),
 });
 
 export const panelProps = (

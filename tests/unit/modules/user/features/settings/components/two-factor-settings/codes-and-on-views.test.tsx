@@ -170,7 +170,7 @@ describe('the codes view', () => {
 });
 
 describe('the on view and the status headings', () => {
-  it('shows the on heading with a decorative icon and moves focus to it', () => {
+  it('shows the on heading with a decorative icon, without stealing focus on first render', () => {
     renderPanel(
       panelProps({ view: viewState('on'), settings: { ...EMPTY_SETTINGS, status: 'enabled' } })
     );
@@ -179,10 +179,27 @@ describe('the on view and the status headings', () => {
       level: 3,
       name: 'Двофакторну автентифікацію ввімкнено',
     });
-    expect(heading).toHaveFocus();
+    expect(heading).not.toHaveFocus();
     expect(heading.innerHTML).toMatch(/<svg[^>]*aria-hidden="true"/);
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('moves focus to the on heading when the codes view hands over with Готово', () => {
+    const props = codesProps();
+    const utils = renderPanel(props);
+
+    utils.rerender(
+      <TwoFactorPanel
+        settings={{ ...EMPTY_SETTINGS, status: 'enabled' }}
+        view={viewState('on')}
+        callbacks={props.callbacks}
+        isSubmitting={false}
+      />
+    );
+
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Двофакторну автентифікацію ввімкнено' })
+    ).toHaveFocus();
   });
 
   it('shows the already-on heading when 2FA turned out to be enabled', () => {

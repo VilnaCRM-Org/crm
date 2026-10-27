@@ -236,6 +236,16 @@ describe('useTwoFactorSettings', () => {
       expect(result.current.view.view).toBe('on');
     });
 
+    it('signs in again through the outlet signOut, once, and changes no view', async () => {
+      const { result } = mount('enabled');
+
+      act(() => result.current.callbacks.signInAgain());
+
+      expect(signOut).toHaveBeenCalledTimes(1);
+      expect(result.current.view.view).toBe('on');
+      expect(setTwoFactorStatus).not.toHaveBeenCalled();
+    });
+
     it('shows the reauth view without ending the session', async () => {
       mockProvider.regenerate.mockResolvedValue(failed('reauth_required'));
       const { result } = mount('enabled');
