@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { buildResetToken } from '@tests/builders';
+import { buildCredentials, buildResetToken } from '@tests/builders';
 import {
   signInWithFlag,
   stubProfile,
@@ -9,6 +9,7 @@ import {
 import { chipOf, openChipMenu, sidebarOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { signInToChallenge } from '@tests/e2e/utils/reach-challenge';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 
 const UNKNOWN_PATH = '/definitely-not-a-route';
@@ -21,6 +22,7 @@ interface RouteScan {
   ready: string;
   shell?: boolean;
   prepare?: (page: Page) => Promise<void>;
+  open?: (page: Page) => Promise<void>;
 }
 
 async function prepareShell(page: Page): Promise<void> {
@@ -96,6 +98,12 @@ const routeScans: readonly RouteScan[] = [
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
   {
+    key: 'twoFactorChallenge',
+    path: ROUTE_PATHS.twoFactorChallenge,
+    ready: 'form button[type="submit"]',
+    open: openChallenge,
+  },
+  {
     key: 'passwordRecovery',
     path: ROUTE_PATHS.passwordRecovery,
     ready: 'form button[type="submit"]',
@@ -111,9 +119,14 @@ const routeScans: readonly RouteScan[] = [
   { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1' },
 ];
 
+async function openChallenge(page: Page): Promise<void> {
+  await signInToChallenge(page, buildCredentials());
+}
+
 async function openRoute(page: Page, scan: RouteScan): Promise<void> {
   await scan.prepare?.(page);
-  await page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' });
+  await (scan.open?.(page) ??
+    page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' }));
   await expect(page.locator(scan.ready).first()).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
   if (scan.shell) {

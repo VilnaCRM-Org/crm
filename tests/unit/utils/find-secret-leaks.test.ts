@@ -89,6 +89,7 @@ describe('findSecretLeaks', () => {
     window.localStorage.clear();
     window.sessionStorage.clear();
     window.history.replaceState(null, '', '/sign-in');
+    document.title = 'Sign in';
     installIndexedDb([]);
   });
 
@@ -102,12 +103,14 @@ describe('findSecretLeaks', () => {
     window.history.replaceState({ token }, '', `/sign-in?next=${password}`);
     window.localStorage.setItem('session', token);
     window.sessionStorage.setItem('draft', password);
+    document.title = `Code ${token}`;
     installIndexedDb([{ name: 'app', stores: [{ name: 'tokens', rows: [[{ token }]] }] }]);
 
     const leaks = await findSecretLeaks(livePage, secrets);
 
     expect(leaks).toEqual([
       { place: 'url', secret: 'password' },
+      { place: 'title', secret: 'token' },
       { place: 'historyState', secret: 'token' },
       { place: 'localStorage', secret: 'token' },
       { place: 'sessionStorage', secret: 'password' },
@@ -131,6 +134,7 @@ describe('findSecretLeaks', () => {
   it('passes the in-page reader to evaluate', async () => {
     const evaluate = jest.fn().mockResolvedValue({
       url: '',
+      title: '',
       historyState: 'null',
       localStorage: '[]',
       sessionStorage: '[]',
@@ -148,9 +152,10 @@ describe('readClientState', () => {
     window.localStorage.clear();
     window.sessionStorage.clear();
     window.history.replaceState(null, '', '/sign-in');
+    document.title = 'Sign in';
   });
 
-  it('dumps the url, history state and both storages', async () => {
+  it('dumps the url, title, history state and both storages', async () => {
     installIndexedDb([]);
     window.history.replaceState({ from: '/boards' }, '', '/sign-in');
     window.localStorage.setItem('a', '1');
@@ -158,6 +163,7 @@ describe('readClientState', () => {
 
     expect(await readClientState()).toEqual({
       url: `${window.location.origin}/sign-in`,
+      title: 'Sign in',
       historyState: '{"from":"/boards"}',
       localStorage: 'a=1',
       sessionStorage: 'b=2',
