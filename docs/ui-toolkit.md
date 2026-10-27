@@ -234,9 +234,9 @@ until a design-checked swap re-measures its reason against the pinned release.
 - **R11** CRM's skeleton is a named `section[aria-label]`; the toolkit skeleton deliberately
   stays a nameless busy container.
 - **R13** `UiButton`'s variant rules are `sx`, which beats the `MuiButton` `styleOverrides` in
-  `src/styles/theme.ts`: the outlined pill radius and `#969B9D` border replace CRM's 12 px
-  radius and `#E1E7EA` border, and the text variant loses MUI's `0.02857em` letter-spacing, so
-  the not-found, auth-provider and home buttons change.
+  `src/styles/theme.ts`: the outlined pill radius and `#969B9D` border replace CRM's 12 px radius
+  and `#E1E7EA` border, and the text variant loses MUI's `0.02857em` letter-spacing, so the
+  not-found and auth-provider buttons and the coming-soon home link change.
 - **R14** `loadingMode="native"` never forwards `loading` to MUI, so the `MuiButton-loading`
   class that the login and registration e2e specs and the unit tests select is gone.
 - **R15** `UiForm`'s submit differs: CRM's primary has no `contrastText`, so MUI gives the label
