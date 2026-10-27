@@ -1,10 +1,15 @@
 import {
   CONFIRM_REPLIES,
+  DISABLE_REPLIES,
+  NEW_RECOVERY_CODES,
+  REGENERATE_REPLIES,
   RECOVERY_CODES,
   SETUP_REPLIES,
   SETUP_SECRET,
   SETUP_URI,
   stubConfirm,
+  stubDisable,
+  stubRegenerate,
   stubSetup,
 } from '../../e2e/utils/two-factor-settings-responses';
 
@@ -211,6 +216,146 @@ describe('stubConfirm', () => {
         'network',
         'rate_limited',
         'setup_not_initiated',
+        'unavailable',
+      ].sort()
+    );
+  });
+});
+
+const registerDisable = async (
+  outcomes?: Parameters<typeof stubDisable>[1]
+): Promise<Registered> => {
+  const route = jest.fn().mockResolvedValue(undefined);
+  await stubDisable({ route } as unknown as PageTarget, outcomes);
+  return capture(route);
+};
+
+const registerRegenerate = async (
+  outcomes?: Parameters<typeof stubRegenerate>[1]
+): Promise<Registered> => {
+  const route = jest.fn().mockResolvedValue(undefined);
+  await stubRegenerate({ route } as unknown as PageTarget, outcomes);
+  return capture(route);
+};
+
+describe('stubDisable', () => {
+  it('answers disable with success and passes other operations on', async () => {
+    const { handler } = await registerDisable();
+    const call = fakeRoute('DisableTwoFactorUser', { input: { twoFactorCode: '123456' } });
+    const other = fakeRoute('RegenerateRecoveryCodesUser');
+
+    await handler(call);
+    await handler(other);
+
+    expect(bodyOf(call)).toEqual({ data: { disableTwoFactorUser: { user: { success: true } } } });
+    expect(other.fallback).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['invalid_code', 'Invalid two-factor code.', 401],
+    ['not_enabled', 'Two-factor authentication is not enabled.', 403],
+  ] as const)(
+    'answers %s as a GraphQL error carrying status %i',
+    async (outcome, message, status) => {
+      const { handler } = await registerDisable([outcome]);
+      const call = fakeRoute('DisableTwoFactorUser');
+
+      await handler(call);
+
+      expect(bodyOf(call)).toEqual({ data: null, errors: [{ message, extensions: { status } }] });
+    }
+  );
+
+  it.each([
+    ['rate_limited', 429],
+    ['unavailable', 503],
+  ] as const)('answers %s with an empty HTTP %i response', async (outcome, status) => {
+    const { handler } = await registerDisable([outcome]);
+    const call = fakeRoute('DisableTwoFactorUser');
+
+    await handler(call);
+
+    expect(call.fulfill).toHaveBeenCalledWith({ status, body: '' });
+  });
+
+  it('aborts the request for the network outcome', async () => {
+    const { handler } = await registerDisable(['network']);
+    const call = fakeRoute('DisableTwoFactorUser');
+
+    await handler(call);
+
+    expect(call.abort).toHaveBeenCalledWith('failed');
+  });
+
+  it('covers every outcome with a reply', () => {
+    expect(Object.keys(DISABLE_REPLIES).sort()).toEqual(
+      ['disabled', 'invalid_code', 'network', 'not_enabled', 'rate_limited', 'unavailable'].sort()
+    );
+  });
+});
+
+describe('stubRegenerate', () => {
+  it('answers regenerate with eight new codes that differ from the first set', async () => {
+    const { handler } = await registerRegenerate();
+    const call = fakeRoute('RegenerateRecoveryCodesUser');
+
+    await handler(call);
+
+    expect(NEW_RECOVERY_CODES).toHaveLength(8);
+    expect(NEW_RECOVERY_CODES.filter((code) => RECOVERY_CODES.includes(code))).toEqual([]);
+    for (const code of NEW_RECOVERY_CODES) expect(code).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
+    expect(bodyOf(call)).toEqual({
+      data: { regenerateRecoveryCodesUser: { user: { recoveryCodes: [...NEW_RECOVERY_CODES] } } },
+    });
+  });
+
+  it.each([
+    ['reauth_required', 'Re-authentication required.', 403],
+    ['not_enabled', 'Two-factor authentication is not enabled.', 403],
+  ] as const)(
+    'answers %s as a GraphQL error carrying status %i',
+    async (outcome, message, status) => {
+      const { handler } = await registerRegenerate([outcome]);
+      const call = fakeRoute('RegenerateRecoveryCodesUser');
+
+      await handler(call);
+
+      expect(bodyOf(call)).toEqual({ data: null, errors: [{ message, extensions: { status } }] });
+    }
+  );
+
+  it.each([
+    ['rate_limited', 429],
+    ['unavailable', 503],
+  ] as const)('answers %s with an empty HTTP %i response', async (outcome, status) => {
+    const { handler } = await registerRegenerate([outcome]);
+    const call = fakeRoute('RegenerateRecoveryCodesUser');
+
+    await handler(call);
+
+    expect(call.fulfill).toHaveBeenCalledWith({ status, body: '' });
+  });
+
+  it('aborts the request for the network outcome and ignores other operations', async () => {
+    const { handler } = await registerRegenerate(['network']);
+    const call = fakeRoute('RegenerateRecoveryCodesUser');
+    const other = fakeRoute('DisableTwoFactorUser');
+
+    await handler(call);
+    await handler(other);
+
+    expect(call.abort).toHaveBeenCalledWith('failed');
+    expect(other.fallback).toHaveBeenCalledTimes(1);
+  });
+
+  it('covers every outcome with a reply', () => {
+    expect(Object.keys(REGENERATE_REPLIES).sort()).toEqual(
+      [
+        'network',
+        'not_enabled',
+        'rate_limited',
+        'reauth_required',
+        'regenerated',
         'unavailable',
       ].sort()
     );
