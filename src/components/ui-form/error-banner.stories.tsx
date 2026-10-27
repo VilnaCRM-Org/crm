@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { createRef } from 'react';
 
+import { noop } from '@stories/story-callbacks';
+
 import ErrorBanner from './error-banner';
 
 const meta: Meta<typeof ErrorBanner> = {
@@ -30,3 +32,19 @@ export default meta;
 type Story = StoryObj<typeof ErrorBanner>;
 
 export const Default: Story = {};
+
+export const WithAction: Story = {
+  args: {
+    action: { label: 'Спробувати ще раз', onClick: noop },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With an `action`, a link button follows the alert text inside the focused banner, ' +
+          'so it is the next Tab stop. UIForm passes it through `errorAction`; it renders only ' +
+          'while there is an error.',
+      },
+    },
+  },
+};

@@ -133,7 +133,9 @@
         "errors": {
           "load_failed": "Failed to load sign-in form. Please try again.",
           "invalid_credentials": "Invalid e-mail or password",
-          "rate_limited": "Too many sign-in attempts. Try again later"
+          "locked": "Your account is temporarily locked after too many failed attempts. Try again later.",
+          "rate_limited": "Too many sign-in attempts. Try again later",
+          "transient": "The request could not be sent. Check your connection and try again."
         },
         "form": {
           "email_input": {
@@ -153,12 +155,41 @@
         },
         "notices": {
           "password_reset": "Your password has been changed. Sign in with your new password.",
-          "session_ended": "Your session has ended. Please sign in again."
+          "session_ended": "Your session has ended. Please sign in again.",
+          "two_factor_expired": "The time to confirm your sign-in has run out. Please sign in again.",
+          "account_locked": "Your account is temporarily locked after too many failed attempts. Try again later."
         },
         "success": {
           "title": "Welcome back!",
           "description": "You have signed in successfully",
           "button": "Continue"
+        }
+      },
+      "two_factor": {
+        "title": "Two-factor authentication",
+        "subtitle": "Enter the six-digit code from the Google Authenticator app.",
+        "note": "You can enter the code within 5 minutes of signing in.",
+        "code_label": "Verification code",
+        "cell_label": "Digit {{position}} of {{total}}",
+        "submit_button": "Confirm",
+        "submitting": "Verifying…",
+        "recovery": {
+          "label": "Recovery code",
+          "helper": "Format: XXXX-XXXX",
+          "subtitle": "Enter one of the recovery codes you saved during setup.",
+          "use_recovery": "Use a recovery code",
+          "use_authenticator": "Use a code from the app"
+        },
+        "errors": {
+          "recovery_format": "Enter the recovery code in the format XXXX-XXXX",
+          "recovery_invalid": "Invalid recovery code. Try again.",
+          "incomplete": "Enter all 6 digits of the code",
+          "format": "The code must be exactly six digits",
+          "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
+        },
+        "banner": {
+          "rate_limited": "Too many attempts. Wait a minute and try again.",
+          "transient": "The code could not be verified. Check your connection and try again."
         }
       },
       "notifications": {
@@ -202,6 +233,13 @@
         "logo_alt": "VilnaCRM logo",
         "privacy": "Privacy Policy",
         "usage_policy": "Terms of Use"
+      },
+      "recovery_codes_notice": {
+        "remaining_one": "{{count}} recovery code left. Generate new codes in settings.",
+        "remaining_other": "{{count}} recovery codes left. Generate new codes in settings.",
+        "none": "You are out of recovery codes. Generate new codes now.",
+        "open_settings": "Open settings",
+        "dismiss": "Dismiss notice"
       }
     }
   },
@@ -339,7 +377,9 @@
         "errors": {
           "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
           "invalid_credentials": "Невірна електронна адреса або пароль",
-          "rate_limited": "Забагато спроб входу. Спробуйте пізніше"
+          "locked": "Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше.",
+          "rate_limited": "Забагато спроб входу. Спробуйте пізніше",
+          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
         },
         "form": {
           "email_input": {
@@ -359,12 +399,41 @@
         },
         "notices": {
           "password_reset": "Пароль змінено. Увійдіть з новим паролем.",
-          "session_ended": "Сеанс завершився. Увійдіть знову."
+          "session_ended": "Сеанс завершився. Увійдіть знову.",
+          "two_factor_expired": "Час на підтвердження входу минув. Увійдіть знову.",
+          "account_locked": "Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше."
         },
         "success": {
           "title": "Вітаємо!",
           "description": "Ви успішно увійшли",
           "button": "Продовжити"
+        }
+      },
+      "two_factor": {
+        "title": "Двофакторна автентифікація",
+        "subtitle": "Введіть шестизначний код із застосунку Google Authenticator.",
+        "note": "Код можна ввести протягом 5 хвилин після входу.",
+        "code_label": "Код підтвердження",
+        "cell_label": "Цифра {{position}} з {{total}}",
+        "submit_button": "Підтвердити",
+        "submitting": "Перевірка…",
+        "recovery": {
+          "label": "Резервний код",
+          "helper": "Формат: XXXX-XXXX",
+          "subtitle": "Введіть один із резервних кодів, які ви зберегли під час налаштування.",
+          "use_recovery": "Використати резервний код",
+          "use_authenticator": "Використати код із застосунку"
+        },
+        "errors": {
+          "recovery_format": "Введіть резервний код у форматі XXXX-XXXX",
+          "recovery_invalid": "Невірний резервний код. Спробуйте ще раз.",
+          "incomplete": "Введіть усі 6 цифр коду",
+          "format": "Код має складатися лише з шести цифр",
+          "invalid_code": "Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз."
+        },
+        "banner": {
+          "rate_limited": "Забагато спроб. Зачекайте хвилину і спробуйте знову.",
+          "transient": "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
         }
       },
       "notifications": {
@@ -408,6 +477,15 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
+      },
+      "recovery_codes_notice": {
+        "remaining_one": "Залишився {{count}} резервний код. Створіть нові коди в налаштуваннях.",
+        "remaining_few": "Залишилося {{count}} резервні коди. Створіть нові коди в налаштуваннях.",
+        "remaining_many": "Залишилося {{count}} резервних кодів. Створіть нові коди в налаштуваннях.",
+        "remaining_other": "Залишилося {{count}} резервних кодів. Створіть нові коди в налаштуваннях.",
+        "none": "Резервні коди закінчилися. Створіть нові коди зараз.",
+        "open_settings": "Відкрити налаштування",
+        "dismiss": "Закрити сповіщення"
       }
     }
   }

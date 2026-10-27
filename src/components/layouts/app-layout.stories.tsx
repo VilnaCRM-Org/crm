@@ -5,7 +5,7 @@ import { Outlet } from 'react-router';
 import AppLayout from '@/components/layouts/app-layout';
 import UIContainer from '@/components/ui-container';
 import UITypography from '@/components/ui-typography';
-import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
+import type { SignOutContext } from '@/routes/types/protected-outlet-context';
 import { DataRouterStory, storySignOut } from '@stories/router-decorators';
 
 function PlaceholderPage(): JSX.Element {
@@ -19,7 +19,7 @@ function PlaceholderPage(): JSX.Element {
   );
 }
 
-function StubUserMenu({ signOut }: ProtectedOutletContext): JSX.Element {
+function StubUserMenu({ signOut }: SignOutContext): JSX.Element {
   return (
     <button type="button" onClick={signOut}>
       Профіль
@@ -27,12 +27,27 @@ function StubUserMenu({ signOut }: ProtectedOutletContext): JSX.Element {
   );
 }
 
-function AppLayoutStory({ withUserMenu }: { withUserMenu?: boolean }): JSX.Element {
+function AppLayoutStory({
+  withUserMenu,
+  withBanner,
+}: {
+  withUserMenu?: boolean;
+  withBanner?: boolean;
+}): JSX.Element {
   return (
     <DataRouterStory
       routes={[
         {
-          element: <Outlet context={storySignOut} />,
+          element: (
+            <Outlet
+              context={{
+                ...storySignOut,
+                banner: withBanner ? (
+                  <UITypography role="status">Банер, який передає ProtectedRoute</UITypography>
+                ) : undefined,
+              }}
+            />
+          ),
           children: [
             {
               element: <AppLayout userMenu={withUserMenu ? StubUserMenu : undefined} />,
@@ -72,3 +87,5 @@ type Story = StoryObj<typeof AppLayoutStory>;
 export const WithPage: Story = {};
 
 export const WithUserMenuSlot: Story = { args: { withUserMenu: true } };
+
+export const WithBanner: Story = { args: { withBanner: true } };

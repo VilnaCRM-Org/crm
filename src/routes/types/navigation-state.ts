@@ -4,7 +4,8 @@ export interface RedirectLocationLike {
   hash?: string;
 }
 
-export type ArrivalNotice = 'password_reset' | 'session_ended';
+export type ArrivalNotice =
+  'password_reset' | 'session_ended' | 'two_factor_expired' | 'account_locked';
 
 export interface RedirectNavigationState {
   from?: RedirectLocationLike;

@@ -1,6 +1,6 @@
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
-import type { FocusEvent, ReactNode, RefCallback, RefObject } from 'react';
+import type { FocusEvent, FormEventHandler, ReactNode, RefCallback, RefObject } from 'react';
 import type {
   SubmitErrorHandler,
   SubmitHandler,
@@ -16,6 +16,11 @@ export type TitleHeadingComponent = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 export type SubmitSpacing = 'default' | 'tight';
 
+export interface UIFormErrorAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   onInvalid?: SubmitErrorHandler<T> | undefined;
@@ -24,6 +29,7 @@ export interface UIFormProps<T extends FieldValues> {
   formOptions?: UIFormOptions<T>;
   isSubmitting?: boolean;
   error?: string | null | undefined;
+  errorAction?: UIFormErrorAction | undefined;
   submitLabel: string;
   title: ReactNode;
   subtitle?: ReactNode;
@@ -31,6 +37,7 @@ export interface UIFormProps<T extends FieldValues> {
   showSubtitle?: boolean;
   resetOnSuccess?: boolean | undefined;
   isSubmitDisabled?: boolean;
+  submitBlockedReason?: string | undefined;
   submittingLabel: string;
   submittingAnnouncement?: boolean;
   titleComponent?: TitleHeadingComponent;
@@ -52,6 +59,7 @@ export interface SubmitHandlerOptions<T extends FieldValues> {
 export interface SubmitControlsProps {
   submitting: boolean;
   isSubmitDisabled: boolean;
+  blocked: boolean;
   submitLabel: string;
   describedBy: string;
   buttonRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
@@ -68,6 +76,7 @@ export interface FocusReturnHandlers {
 
 export interface ErrorBannerProps {
   error?: string | null;
+  action?: UIFormErrorAction | undefined;
   returnFocusRef: FocusReturnTarget;
 }
 
@@ -105,6 +114,7 @@ export interface UseUIFormResult<T extends FieldValues> {
 
 export interface FormLeadProps {
   error: string | null;
+  errorAction?: UIFormErrorAction | undefined;
   notice?: ReactNode;
 }
 
@@ -118,9 +128,42 @@ export interface FormSubmitProps {
   submitLabel: string;
   submittingLabel: string;
   isSubmitDisabled: boolean;
+  blockedReason?: string | undefined;
   submitSpacing?: SubmitSpacing | undefined;
   submitRef?: FocusReturnTarget | undefined;
   submitSx?: SystemStyleObject<Theme> | undefined;
+}
+
+export interface SubmitBlockOptions {
+  reason?: string | undefined;
+  nativelyDisabled: boolean;
+  noticeId: string;
+  onSubmit: FormEventHandler<HTMLFormElement>;
+}
+
+export interface SubmitBlock {
+  blocked: boolean;
+  reason: string;
+  reasonId: string;
+  describedBy: string;
+  onSubmit: FormEventHandler<HTMLFormElement>;
+}
+
+export interface FormSubmissionOptions<T extends FieldValues> {
+  submit: FormSubmitProps;
+  submitting: boolean;
+  handleSubmit: SubmitHandler<T>;
+  onInvalid?: SubmitErrorHandler<T> | undefined;
+}
+
+export interface FormSubmission {
+  offline: OfflineSubmit;
+  block: SubmitBlock;
+  disabled: boolean;
+}
+
+export interface BlockedReasonProps {
+  block: SubmitBlock;
 }
 
 export interface FormBodyProps<T extends FieldValues> {

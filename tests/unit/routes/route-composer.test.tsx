@@ -149,6 +149,7 @@ describe('route composer', () => {
       ROUTE_PATHS.notFound,
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
+      ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
     ]);
