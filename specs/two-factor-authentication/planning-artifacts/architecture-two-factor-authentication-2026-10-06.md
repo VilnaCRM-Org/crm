@@ -1867,6 +1867,17 @@ and still has the REST `API_ENDPOINTS.LOGIN` handler; per-operation helpers live
 (`password-recovery-operations.ts`, `profile-operations.ts`). Server tests build schemas from
 `tests/apollo-server/mock-schema-fixtures.ts`, whose pinned SDL fixture lacks the 2FA operations.
 
+Code facts (Story 1.1, 2026-10-27): the pending file is
+`src/api/contracts/pending/two-factor-authentication.graphql`. Apollo builds the schema with
+`makeExecutableSchema`, which throws `Mutation.<name> defined in resolvers, but not in schema`, so
+every server test that uses the exported `resolvers` also spreads `TWO_FACTOR_SDL_FIXTURES`
+(`tests/apollo-server/two-factor-fixtures.ts`: the `Node` interface plus the pending file). A
+`GraphQLError` thrown without `extensions.code` gets `INTERNAL_SERVER_ERROR` and the real
+`formatError` masks its message, so the mock's one non-violation error (a well-formed code other
+than `123456` on completion, message `Invalid two-factor code.`, `extensions.status` 401) carries
+`code: 'UNAUTHENTICATED'`. The type bodies follow research §3.2; the upstream file could not be
+re-fetched during the story, so diff them against `a95c1e85` at the first opportunity.
+
 > Assumption (reconciliation 2026-10-27): the 2FA file opens with `# pending-against: v2.8.0`;
 > each violation is `rejectViolation('email' | 'twoFactorCode', …)`, so the shape matches #315's
 > and #330's rows and the transformer's violation step; integration answers go through a new
