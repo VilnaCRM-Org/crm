@@ -10,9 +10,14 @@ export class PiiScrubber {
     'apikey',
     'email',
     'initials',
+    'pendingsession',
+    'twofactorcode',
+    'recoverycode',
+    'otpauth',
   ];
 
   private readonly patterns: readonly RegExp[] = [
+    /otpauth:\/\/[^\s"']+/gi,
     /[^\s@]+@[^\s@]+\.[^\s@]+/g,
     /bearer\s+[\w.\-~+/]+=*/gi,
     /eyJ[\w-]+\.[\w-]+\.[\w-]+/g,

@@ -8,7 +8,16 @@ export type AuthFailureCategory = Extract<SecurityEventCategory, 'login' | 'regi
 export type SecurityEventSeverity = 'warning' | 'critical';
 
 export type AuthFailureReason =
-  'authentication' | 'validation' | 'conflict' | 'server' | 'network' | 'rate_limited' | 'unknown';
+  | 'authentication'
+  | 'validation'
+  | 'conflict'
+  | 'server'
+  | 'network'
+  | 'rate_limited'
+  | 'unknown'
+  | 'invalid_code'
+  | 'expired_session'
+  | 'locked';
 
 export interface AuthFailureWindow {
   readonly failureCount: number;
