@@ -147,6 +147,7 @@ describe('runtime configuration Integration', () => {
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(graphqlUrl);
     expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({
       userSettings: false,
+      twoFactorAuth: false,
     });
     expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });
@@ -191,7 +192,7 @@ describe('runtime configuration Integration', () => {
       userSettings: true,
     });
     expect(flags.isEnabled('userSettings')).toBe(true);
-    expect(flags.snapshot()).toEqual({ userSettings: true });
+    expect(flags.snapshot()).toEqual({ userSettings: true, twoFactorAuth: false });
   });
 
   it('names each declared flag through the container-resolved service', async () => {

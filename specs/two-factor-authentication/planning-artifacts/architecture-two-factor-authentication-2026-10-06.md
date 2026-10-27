@@ -2151,6 +2151,17 @@ ten functions today (constructor, `login`, `register` and seven helpers), so dro
 `applyLogin` and `applyLoginRejection` leaves seven, as planned. The `@injectable()` error
 transformer is `registerSingleton`-registered (§6.8).
 
+Code facts (Story 2.2 step A, 2026-10-27): the three sign-in bindings pushed `di.ts` past the
+rust-code-analysis file Halstead-volume cap (8,146 against 8,000) although the function and closure
+counts held. Only `src/modules/*/config/di.ts` may deep-import the feature, so the bindings cannot
+move to another file without a policy change. The registrar therefore folded `registerApis` into
+`registerUserServiceProviders` (it now holds the two API registrations beside the three sign-in
+bindings; Story 2.3's `registerApis` wording becomes "the providers step registers only
+`RegistrationAPI`") and dropped the redundant `<StoreApi<AuthState>>` argument of the `AuthStore`
+value registration. `SignInFailureReason` lives in `types/two-factor/sign-in-failure.ts`, because
+`auth-error.ts` imports it and `sign-in.ts` imports `AuthResult` from `auth-error.ts`
+(`no-circular`). `signIn` resolves `SignInUserMutation | null` (Apollo's `data` may be absent).
+
 > Assumption (reconciliation 2026-10-27): the six new bindings live in one new step,
 > `registerUserServiceProviders(container)` (the sign-in repository, transformer and provider in
 > Story 2.2; the settings three in Story 3.2), and Story 2.2 makes room for it by folding

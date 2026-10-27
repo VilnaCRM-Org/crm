@@ -20,18 +20,21 @@ import type { ObservabilityService } from '@/services/types/observability/observ
 import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
+import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
   AuthErrorFactory,
   GraphQLPasswordRecoveryRepository,
+  GraphQLSignInRepository,
   LoginAPI,
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
+import GraphQLSignInTransformer from '@auth/transformers/graphql-sign-in-transformer';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
@@ -47,10 +50,9 @@ import AUTH_TOKENS from './tokens';
 class UserModuleRegistrar implements ModuleRegistrar {
   public register(container: DependencyContainer): void {
     this.registerGraphqlClient(container);
-    this.registerErrorFactories(container);
     this.registerErrorHandling(container);
     this.registerResponseMappers(container);
-    this.registerApis(container);
+    this.registerUserServiceProviders(container);
     this.registerRepository(container);
     this.registerAuthState(container);
     this.registerSessionLink(container);
@@ -60,7 +62,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
   // tsyringe (issue #115). Registering it as a value is what lets the container-resolved store
   // actions inject it instead of value-importing it (issue #130).
   private registerAuthState(container: DependencyContainer): void {
-    container.register<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore, { useValue: useAuthStore });
+    container.register(AUTH_TOKENS.AuthStore, { useValue: useAuthStore });
     container.register(AUTH_TOKENS.SandboxDemoSessionProvider, {
       useValue: sandboxDemoSessionProvider,
     });
@@ -109,12 +111,9 @@ class UserModuleRegistrar implements ModuleRegistrar {
     });
   }
 
-  private registerErrorFactories(container: DependencyContainer): void {
+  private registerErrorHandling(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.ApiStatusErrorFactory, ApiStatusErrorFactory);
     container.registerSingleton(AUTH_TOKENS.ApiErrorFactory, ApiErrorFactory);
-  }
-
-  private registerErrorHandling(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.AuthErrorHandler, AuthErrorHandler);
     container.registerSingleton(AUTH_TOKENS.AuthRequestErrors, AuthRequestErrors);
     container.registerSingleton(AUTH_TOKENS.AuthSecuritySignals, AuthSecuritySignals);
@@ -136,9 +135,12 @@ class UserModuleRegistrar implements ModuleRegistrar {
     container.registerSingleton(AUTH_TOKENS.UserDisplayNameMapper, UserDisplayNameMapper);
   }
 
-  private registerApis(container: DependencyContainer): void {
+  private registerUserServiceProviders(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.RegistrationAPI, RegistrationAPI);
     container.registerSingleton(AUTH_TOKENS.LoginAPI, LoginAPI);
+    container.registerSingleton(AUTH_TOKENS.GraphQLSignInRepository, GraphQLSignInRepository);
+    container.registerSingleton(AUTH_TOKENS.GraphQLSignInTransformer, GraphQLSignInTransformer);
+    container.registerSingleton(AUTH_TOKENS.GraphQLSignInProvider, GraphQLSignInProvider);
   }
 
   private registerRepository(container: DependencyContainer): void {
