@@ -72,7 +72,8 @@
       },
       "errors": {
         "incomplete": "Enter all 6 digits of the code",
-        "invalid_code": "Invalid code. Try again."
+        "invalid_code": "Invalid code. Try again.",
+        "format": "Enter 6 digits or a recovery code in the format XXXX-XXXX"
       },
       "banner": {
         "rate_limited": "Too many attempts. Wait a minute and try again.",
@@ -96,6 +97,28 @@
         "stale": "The setup has expired. Start again.",
         "disabled": "Two-factor authentication is off.",
         "already_off": "Two-factor authentication is already off."
+      },
+      "cancel": "Cancel",
+      "on": {
+        "disable": "Turn off",
+        "regenerate": "Generate new recovery codes"
+      },
+      "disable": {
+        "title": "Turn off two-factor authentication",
+        "description": "Enter a code from the app or a recovery code.",
+        "code_label": "Verification code",
+        "submit": "Turn off",
+        "submitting": "Turning off…"
+      },
+      "regenerate": {
+        "title": "Generate new recovery codes",
+        "description": "The old recovery codes will stop working. Continue?",
+        "submit": "Generate codes",
+        "submitting": "Generating…"
+      },
+      "reauth": {
+        "message": "For security, new codes can only be generated within 5 minutes of signing in. Sign in again to continue.",
+        "sign_in": "Sign in again"
       }
     }
   }

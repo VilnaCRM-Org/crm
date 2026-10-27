@@ -38,6 +38,7 @@ export interface TwoFactorSettingsCallbacks {
   readonly regenerate: () => void;
   readonly cancel: () => void;
   readonly retry: () => void;
+  readonly signInAgain: () => void;
 }
 
 export interface TwoFactorSettingsProps {

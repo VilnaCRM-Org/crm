@@ -1,107 +1,39 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import UIForm from '@/components/ui-form';
-import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
-import type { TwoFactorSettingsEntity } from '@/modules/user/types/user/two-factor-settings-entity';
-import { noop } from '@stories/story-callbacks';
-
-import type {
-  TwoFactorSettingsCallbacks,
-  TwoFactorSettingsViewState,
-} from '../../types/two-factor/settings-view';
-
-import CodesView from './codes-view';
-import ConfirmCodeField from './confirm-code-field';
-import OffView from './off-view';
-import OnView from './on-view';
-import SetupView from './setup-view';
+import {
+  CALLBACKS,
+  CODES,
+  CODES_SETTINGS,
+  DISABLED_SETTINGS,
+  ENABLED_SETTINGS,
+  OFF,
+  OFF_RATE_LIMITED,
+  OFF_STALE,
+  OFF_TRANSIENT,
+  ON,
+  ON_ALREADY,
+  PANEL_DESCRIPTION,
+  SETUP,
+  SETUP_INCOMPLETE,
+  SETUP_RATE_LIMITED,
+  SETUP_SETTINGS,
+  SETUP_TRANSIENT,
+  SETUP_WRONG,
+} from './story-fixtures';
 import Panel from './two-factor-panel';
-
-import { TwoFactorPanel } from './index';
-
-const CALLBACKS: TwoFactorSettingsCallbacks = {
-  start: noop,
-  confirm: noop,
-  done: noop,
-  openDisable: noop,
-  disable: noop,
-  openRegenerate: noop,
-  regenerate: noop,
-  cancel: noop,
-  retry: noop,
-};
-
-const NO_SECRETS: TwoFactorSettingsEntity = {
-  status: 'disabled',
-  otpauthUri: null,
-  secret: null,
-  recoveryCodes: null,
-};
-
-const SETUP_SETTINGS: TwoFactorSettingsEntity = {
-  ...NO_SECRETS,
-  otpauthUri:
-    'otpauth://totp/VilnaCRM%3Airyna%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=VilnaCRM',
-  secret: 'JBSWY3DPEHPK3PXP',
-};
-
-const CODES_SETTINGS: TwoFactorSettingsEntity = {
-  ...NO_SECRETS,
-  status: 'enabled',
-  recoveryCodes: {
-    items: [
-      'K7QM-4RTD',
-      'W2XB-9NHF',
-      'P5ZC-1LVA',
-      'D8GJ-6YSE',
-      'T3UR-7KBN',
-      'H4EW-2MQX',
-      'C9FA-5ZPL',
-      'N6VD-8JTG',
-    ].map((value) => ({ value })),
-  },
-};
-
-const viewOf = (
-  view: TwoFactorSettingsViewState['view'],
-  overrides: Partial<TwoFactorSettingsViewState> = {}
-): TwoFactorSettingsViewState => ({
-  view,
-  fieldError: null,
-  banner: null,
-  statusCode: null,
-  ...overrides,
-});
 
 const meta: Meta<typeof Panel> = {
   title: 'Settings/TwoFactorSettings',
   component: Panel,
   tags: ['autodocs'],
-  args: {
-    settings: NO_SECRETS,
-    view: viewOf('off'),
-    callbacks: CALLBACKS,
-    isSubmitting: false,
-  },
+  args: { settings: DISABLED_SETTINGS, view: OFF, callbacks: CALLBACKS, isSubmitting: false },
   argTypes: {
     settings: { control: false },
     view: { control: false },
     callbacks: { control: false },
     isSubmitting: { control: 'boolean' },
   },
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The two-factor section of the settings page: a card named by its level-2 heading ' +
-          'that shows one view at a time. The off view explains the three steps and offers ' +
-          '"Почати налаштування"; the setup view shows the QR code, the key in groups of four ' +
-          'with a copy button, and the six-digit confirm field. The card follows the Figma ' +
-          'frames 313:10242, 313:10480 and 313:10606.',
-      },
-      story: { inline: false },
-    },
-  },
+  parameters: { docs: { description: { component: PANEL_DESCRIPTION }, story: { inline: false } } },
 };
 
 export default meta;
@@ -112,116 +44,34 @@ export const Off: Story = {};
 
 export const OffBusy: Story = { args: { isSubmitting: true } };
 
-export const OffRateLimited: Story = { args: { view: viewOf('off', { banner: 'rate_limited' }) } };
+export const OffRateLimited: Story = { args: { view: OFF_RATE_LIMITED } };
 
-export const OffTransient: Story = { args: { view: viewOf('off', { banner: 'transient' }) } };
+export const OffTransient: Story = { args: { view: OFF_TRANSIENT } };
 
-export const Setup: Story = { args: { settings: SETUP_SETTINGS, view: viewOf('setup') } };
+export const OffStale: Story = { args: { view: OFF_STALE } };
+
+export const Setup: Story = { args: { settings: SETUP_SETTINGS, view: SETUP } };
 
 export const SetupIncompleteCode: Story = {
-  args: { settings: SETUP_SETTINGS, view: viewOf('setup', { fieldError: 'incomplete' }) },
+  args: { settings: SETUP_SETTINGS, view: SETUP_INCOMPLETE },
 };
 
-export const SetupWrongCode: Story = {
-  args: { settings: SETUP_SETTINGS, view: viewOf('setup', { fieldError: 'invalid_code' }) },
-};
+export const SetupWrongCode: Story = { args: { settings: SETUP_SETTINGS, view: SETUP_WRONG } };
 
 export const SetupBusy: Story = {
-  args: { settings: SETUP_SETTINGS, view: viewOf('setup'), isSubmitting: true },
+  args: { settings: SETUP_SETTINGS, view: SETUP, isSubmitting: true },
+};
+
+export const SetupRateLimited: Story = {
+  args: { settings: SETUP_SETTINGS, view: SETUP_RATE_LIMITED },
 };
 
 export const SetupTransient: Story = {
-  args: { settings: SETUP_SETTINGS, view: viewOf('setup', { banner: 'transient' }) },
+  args: { settings: SETUP_SETTINGS, view: SETUP_TRANSIENT },
 };
 
-export const OffStale: Story = {
-  args: { view: viewOf('off', { statusCode: 'stale' }) },
-};
+export const Codes: Story = { args: { settings: CODES_SETTINGS, view: CODES } };
 
-export const Codes: Story = {
-  args: { settings: CODES_SETTINGS, view: viewOf('codes') },
-};
+export const On: Story = { args: { settings: ENABLED_SETTINGS, view: ON } };
 
-export const On: Story = {
-  args: { settings: { ...NO_SECRETS, status: 'enabled' }, view: viewOf('on') },
-};
-
-export const OnAlreadyEnabled: Story = {
-  args: {
-    settings: { ...NO_SECRETS, status: 'enabled' },
-    view: viewOf('on', { statusCode: 'already_on' }),
-  },
-};
-
-export const ThroughTheIndex: Story = {
-  render: (args) => (
-    <TwoFactorPanel
-      settings={args.settings}
-      view={args.view}
-      callbacks={args.callbacks}
-      isSubmitting={args.isSubmitting}
-    />
-  ),
-};
-
-export const OffViewOnly: Story = {
-  render: (args) => (
-    <OffView
-      settings={args.settings}
-      view={args.view}
-      callbacks={args.callbacks}
-      isSubmitting={args.isSubmitting}
-    />
-  ),
-};
-
-export const SetupViewOnly: Story = {
-  args: { settings: SETUP_SETTINGS, view: viewOf('setup') },
-  render: (args) => (
-    <SetupView
-      settings={args.settings}
-      view={args.view}
-      callbacks={args.callbacks}
-      isSubmitting={args.isSubmitting}
-    />
-  ),
-};
-
-export const ConfirmFieldOnly: Story = {
-  args: { view: viewOf('setup', { fieldError: 'invalid_code' }) },
-  render: (args) => (
-    <UIForm<TwoFactorDto>
-      defaultValues={{ twoFactorCode: '' }}
-      onSubmit={noop}
-      title="Підтвердження"
-      submitLabel="Підтвердити"
-      submittingLabel="Перевірка…"
-    >
-      <ConfirmCodeField view={args.view} disabled={args.isSubmitting} />
-    </UIForm>
-  ),
-};
-
-export const CodesViewOnly: Story = {
-  args: { settings: CODES_SETTINGS, view: viewOf('codes') },
-  render: (args) => (
-    <CodesView
-      settings={args.settings}
-      view={args.view}
-      callbacks={args.callbacks}
-      isSubmitting={args.isSubmitting}
-    />
-  ),
-};
-
-export const OnViewOnly: Story = {
-  args: { settings: { ...NO_SECRETS, status: 'enabled' }, view: viewOf('on') },
-  render: (args) => (
-    <OnView
-      settings={args.settings}
-      view={args.view}
-      callbacks={args.callbacks}
-      isSubmitting={args.isSubmitting}
-    />
-  ),
-};
+export const OnAlreadyEnabled: Story = { args: { settings: ENABLED_SETTINGS, view: ON_ALREADY } };

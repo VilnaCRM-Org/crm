@@ -15,7 +15,11 @@ import useTwoFactorDisable from './use-two-factor-disable';
 import useTwoFactorSetup from './use-two-factor-setup';
 import useTwoFactorTransition from './use-two-factor-transition';
 
-function propsOf(store: TransitionStore, operations: TwoFactorOperations): TwoFactorSettingsProps {
+function propsOf(
+  store: TransitionStore,
+  operations: TwoFactorOperations,
+  signInAgain: () => void
+): TwoFactorSettingsProps {
   const { setup, disable, regenerate } = operations;
   return {
     settings: store.current.settings,
@@ -30,6 +34,7 @@ function propsOf(store: TransitionStore, operations: TwoFactorOperations): TwoFa
       openRegenerate: regenerate.open,
       regenerate: regenerate.regenerate,
       cancel: disable.cancel,
+      signInAgain,
       retry: (): void => {
         setup.retry();
         disable.retry();
@@ -41,15 +46,18 @@ function propsOf(store: TransitionStore, operations: TwoFactorOperations): TwoFa
 
 export default function useTwoFactorSettings(): TwoFactorSettingsProps {
   const provider = useService<TwoFactorSettingsProvider>(AUTH_TOKENS.TwoFactorSettingsProvider);
-  const { twoFactorStatus, setTwoFactorStatus } = useOutletContext<ProtectedOutletContext>();
+  const { twoFactorStatus, setTwoFactorStatus, signOut } =
+    useOutletContext<ProtectedOutletContext>();
   const [normalizer] = useState(() => new TwoFactorCodeNormalizer());
   const store = useTwoFactorTransition(twoFactorStatus);
   const { read, apply } = store;
   const deps = { provider, normalizer, read, apply, recordStatus: setTwoFactorStatus };
 
-  return propsOf(store, {
+  const operations = {
     setup: useTwoFactorSetup(deps),
     disable: useTwoFactorDisable(deps),
     regenerate: useRecoveryCodesRegenerate(deps),
-  });
+  };
+
+  return propsOf(store, operations, signOut);
 }

@@ -31,6 +31,7 @@ export type {
   TwoFactorSettingsOutcome,
   TwoFactorSettingsProps,
   TwoFactorSettingsTransition,
+  TwoFactorSettingsView,
 };
 
 export const EMPTY_SETTINGS: TwoFactorSettingsEntity = {

@@ -912,6 +912,26 @@ decorative icon, "вже ввімкнено", "Налаштування заст
 and the grid renders as before. The views for disable, regenerate and re-authentication belong to the
 next story.
 
+### Turning 2FA off and regenerating the codes
+
+**Figma.** The three frames (313:10242, 313:10480, 313:10606) draw only the setup card; they hold no
+on view, no disable or regenerate confirmation and no re-authentication message, so these views are
+built from the story copy and the card's tokens, and no state is invented beyond it.
+
+**Behaviour.** The on view keeps its status heading and adds two outlined buttons, "Вимкнути" and
+"Створити нові резервні коди" (border `#80878A`, text `#1B2327`). Each opens a `UIForm` confirmation
+with a focused level-3 title, "Скасувати" in the form's footer, and the banners of the other views.
+The disable form has one labelled "Код підтвердження" text field with no placeholder; it takes six
+digits or `XXXX-XXXX` (the hook normalises it) and shows the format or wrong-code text with
+`aria-invalid`, described by the helper text, with focus back in the field after every settle.
+"Скасувати" or Escape returns to the on view with focus on the button that opened the confirmation:
+`usePreviousView` records the view each view came from once per change, and the panel hands it to
+the views through `ArrivalContext`, so the plain on view takes focus on its heading only when a
+transition (done, setup 409) brought the user there and never on first render. A regenerate refused
+for a stale sign-in shows the re-authentication message, focused, with an outlined "Увійти знову"
+(text `#1A1C1E`) that runs the outlet `signOut` as `callbacks.signInAgain`; the section never ends a
+session on its own.
+
 ### The 2FA card in the browser lane
 
 `tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts` drives the card with a seeded
