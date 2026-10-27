@@ -855,6 +855,26 @@ exports the profile provider and names the 2FA one. `repositories/` and `transfo
 such barrels, and the 2FA provider's file name is too long to import on one line under the 100
 column limit, which prettier cannot wrap for a single specifier.
 
+### The 2FA section is coordinated by hooks that hold the secrets in React state
+
+**Context.** The settings section turns 2FA on, off and regenerates its recovery codes. The TOTP
+secret, the otpauth URI and the recovery codes must live only as long as the view that shows them.
+
+**Decision.** `useTwoFactorSettings` resolves the provider with `useService`, reads
+`twoFactorStatus` and `setTwoFactorStatus` from the outlet context, builds one
+`TwoFactorCodeNormalizer` per mount and composes `useTwoFactorSetup`, `useTwoFactorDisable` and
+`useRecoveryCodesRegenerate`. Nothing is sent on mount. Each operation is a `TwoFactorOperationPlan`:
+typed module-level data naming the view after a changed outcome, the status to record and one row
+per expected failure. `useTwoFactorSettle` applies a plan; a failure with no row becomes the
+`rate_limited` banner or the Retry-able `transient` one, and `session_ended` publishes nothing and
+calls neither `recordStatus` nor a sign-out, because the session link has ended the session and the
+`ProtectedRoute` redirect unmounts the section. `useSettledSubmit` and `useCodeSubmit` wrap
+`useAbortableSubmit` with the settle step, the last input for Retry and the code normalisation
+(six digits to confirm, six digits or `XXXX-XXXX` to disable). `useTwoFactorTransition` keeps the
+entity and the view state, and reconciles every transition: the URI and key survive only in the
+`setup` view, the recovery codes only in `codes`, and the status follows the view, so "Готово", a
+stale setup and unmount all leave an entity with `null` secrets.
+
 ### `UIForm` explains a submit that cannot be pressed yet
 
 **Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user
