@@ -139,12 +139,16 @@ itself is still gated by `userSettings`, so managing 2FA in an environment needs
   strict schema, the committed block in `public/index.html`, and `.env.example`
   (`APP_CONFIG_FLAG_TWO_FACTOR_AUTH=`, empty, after `APP_CONFIG_FLAG_USER_SETTINGS=`).
 - **Test stack:** `docker-compose.test.yml` passes
-  `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH-}`. The `-` form leaves an
-  empty value empty, which the renderer ignores, so the stack renders the in-code `false` until
-  Story 4.1 switches it to `:-true` once every 2FA screen exists.
-- **Roll out:** the test stack enables it from Story 4.1; production enables it in Follow-up 5.1,
-  after a user-service release carries `signInUser` and the 2FA mutations. Until then the browser
-  specs force it per test through `overrideRuntimeConfig`.
+  `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, so the stack enables
+  the flag. The `:-` form also turns the empty value `.env` carries (the template declares the key
+  empty) into `true`, and an explicit `false` runs the stack without the section. The committed
+  block and `FEATURE_FLAG_DEFAULTS` still say `false`, so production and every other environment
+  keep it off.
+- **Roll out:** the test stack enables it (Story 4.1); production enables it in Follow-up 5.1,
+  after a user-service release carries `signInUser` and the 2FA mutations. A browser spec that
+  replaces the runtime block with `overrideRuntimeConfig` replaces the whole block, so it sees the
+  flag off unless it names it; the 2FA specs name it, and the settings specs, which do not, render
+  `/settings` exactly as before.
 - **Owner:** the two-factor authentication feature (issue #331).
 - **Removal trigger:** delete the flag once production has run with it on; step 3 of the
   lifecycle above applies.

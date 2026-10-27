@@ -780,8 +780,9 @@ management UI hidden, while the challenge must keep working wherever a sign-in r
 union, `FEATURE_FLAG_DEFAULTS`, the strict schema, the committed block and `.env.example`. The
 `UserProfile` page reads it with `useFeatureFlag('twoFactorAuth')` when it renders and shows the
 section only while it is on. No route contract lists it and no sign-in code reads it. The test
-stack passes `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH-}` until every
-screen exists, then enables it; the flag is deleted once production has run with it on.
+stack passes `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, so every
+browser lane renders the section by default (an explicit `false` runs without it), and production
+enables it in Follow-up 5.1; the flag is deleted once production has run with it on.
 
 **Rejected.** A flag that selects the sign-in transport (the decision above removed the choice); a
 route-level flag on the challenge (see the previous records); no flag at all (production would
