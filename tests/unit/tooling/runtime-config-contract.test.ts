@@ -240,15 +240,41 @@ describe('runtime configuration contract', () => {
     expect(lines[userSettings + 1]).toBe(`${TWO_FACTOR_AUTH_ENV_VAR}=`);
   });
 
-  it('passes an empty-preserving APP_CONFIG_FLAG_TWO_FACTOR_AUTH beside userSettings', () => {
+  it('turns an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH into true beside userSettings', () => {
     const lines = readFile('docker-compose.test.yml').split('\n');
     const userSettings = lines.findIndex((line) => line.includes(`${USER_SETTINGS_ENV_VAR}=`));
 
     expect(userSettings).toBeGreaterThan(-1);
+    expect(
+      lines
+        .filter((line) => line.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`))
+        .map((line) => line.trim())
+    ).toEqual([`- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`]);
     expect(lines[userSettings + 1]?.trim()).toBe(
-      `- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}-}`
+      `- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`
     );
     expect(readFile('docker-compose.yml')).not.toContain(TWO_FACTOR_AUTH_ENV_VAR);
+  });
+
+  it.each([
+    ['empty in .env', '', 'true'],
+    ['unset', undefined, 'true'],
+    ['an explicit true', 'true', 'true'],
+    ['an explicit false', 'false', 'false'],
+  ] as const)('resolves the test stack value for %s to %s', (_name, value, expected) => {
+    const line = readFile('docker-compose.test.yml')
+      .split('\n')
+      .find((candidate) => candidate.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`));
+    const fallback = /\$\{[A-Z_]+:-([^}]*)\}/.exec(line ?? '')?.[1] ?? '';
+
+    expect(value === undefined || value === '' ? fallback : value).toBe(expected);
+  });
+
+  it('keeps the shipped default false in the committed block and in the code defaults', () => {
+    expect(readFile('public/index.html')).toMatch(/"twoFactorAuth":\s*false/);
+    expect(readFile('src/config/runtime/feature-flag-service.ts')).toMatch(
+      /twoFactorAuth:\s*false/
+    );
   });
 
   it('keeps twoFactorAuth out of every route contract and out of the sign-in feature', () => {
