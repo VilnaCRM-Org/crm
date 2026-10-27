@@ -1,6 +1,6 @@
 import type useAuthStoreHook from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
-import type { AuthActions } from '@auth/types/auth-store';
+import type { AuthActions, AuthState } from '@auth/types/auth-store';
 import { buildEmail, buildFullName, buildToken } from '@tests/builders';
 
 interface Barrel {
@@ -12,7 +12,7 @@ const email = buildEmail();
 const fullName = buildFullName();
 const token = buildToken();
 
-const CLEARED = {
+const CLEARED: AuthState = {
   email: '',
   token: null,
   user: null,
@@ -26,7 +26,7 @@ const CLEARED = {
 const loginError: AuthError = { kind: 'authentication', displayMessage: 'No', retryable: false };
 const registerError: AuthError = { kind: 'conflict', displayMessage: 'Taken', retryable: false };
 
-const POPULATED = {
+const POPULATED: AuthState = {
   email,
   token,
   user: { email, fullName },

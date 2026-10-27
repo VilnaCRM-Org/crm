@@ -537,6 +537,7 @@ const uiToolkitSeams = [
   { subpath: 'ui-back-to-main', file: 'src/components/ui-back-to-main/index.tsx' },
   { subpath: 'ui-checkbox', file: 'src/components/ui-checkbox/index.tsx' },
   { subpath: 'ui-link', file: 'src/components/ui-text-link/index.tsx' },
+  { subpath: 'ui-pin-input', file: 'src/components/ui-pin-input/index.tsx' },
 ];
 const uiToolkitForbiddenPaths = [
   {
@@ -576,7 +577,7 @@ const uiToolkitImportPatterns = (seamSubpath) => [
     message:
       'Import ui-toolkit only through its CRM seam (src/components/ui-container, ' +
       'ui-typography, skeletons/ui-skeleton-*, ui-back-to-main, ui-checkbox, ui-text-link, ' +
-      'ui-breakpoints); a subpath the product owner has not adopted stays forbidden ' +
+      'ui-pin-input, ui-breakpoints); a subpath the product owner has not adopted stays forbidden ' +
       '(docs/ui-toolkit.md).',
   },
 ];

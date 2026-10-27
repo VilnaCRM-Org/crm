@@ -16,6 +16,11 @@ export type TitleHeadingComponent = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 export type SubmitSpacing = 'default' | 'tight';
 
+export interface UIFormErrorAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   onInvalid?: SubmitErrorHandler<T> | undefined;
@@ -24,6 +29,7 @@ export interface UIFormProps<T extends FieldValues> {
   formOptions?: UIFormOptions<T>;
   isSubmitting?: boolean;
   error?: string | null | undefined;
+  errorAction?: UIFormErrorAction | undefined;
   submitLabel: string;
   title: ReactNode;
   subtitle?: ReactNode;
@@ -68,6 +74,7 @@ export interface FocusReturnHandlers {
 
 export interface ErrorBannerProps {
   error?: string | null;
+  action?: UIFormErrorAction | undefined;
   returnFocusRef: FocusReturnTarget;
 }
 
@@ -105,6 +112,7 @@ export interface UseUIFormResult<T extends FieldValues> {
 
 export interface FormLeadProps {
   error: string | null;
+  errorAction?: UIFormErrorAction | undefined;
   notice?: ReactNode;
 }
 
