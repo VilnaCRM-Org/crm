@@ -38,6 +38,44 @@ export interface ResendEmailToUserInput {
   clientMutationId?: string | null;
 }
 
+export interface ClientMutationInput {
+  clientMutationId?: string | null;
+}
+
+export interface SignInUserInput extends ClientMutationInput {
+  email: string;
+  password: string;
+  rememberMe?: boolean | null;
+}
+
+export interface TwoFactorCodeInput extends ClientMutationInput {
+  twoFactorCode: string;
+}
+
+export interface CompleteTwoFactorInput extends TwoFactorCodeInput {
+  pendingSessionId: string;
+}
+
+export interface TwoFactorPayloadData {
+  id: string;
+  _id: string;
+  success: boolean;
+  twoFactorEnabled: boolean | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  pendingSessionId: string | null;
+  otpauthUri: string | null;
+  secret: string | null;
+  recoveryCodes: string[];
+  recoveryCodesRemaining: number | null;
+  warning: string | null;
+}
+
+export interface TwoFactorPayload {
+  user: TwoFactorPayloadData;
+  clientMutationId: string | null;
+}
+
 export interface UserPayload {
   user: User;
   clientMutationId: string | null;
