@@ -107,10 +107,9 @@ Gates the `/settings` page (issue #330), the three coming-soon settings pages
 `/settings/integrations`, `/settings/webhooks` and `/settings/billing` (issue #362), and their entry
 points in the app shell: the sidebar and drawer Settings group, whose items declare
 `flag: 'userSettings'`, and the user menu's profile and Settings links, which load the current-user
-chunk only while the flag is on. The `FeatureFlag` union has this one member,
-`FEATURE_FLAG_DEFAULTS.userSettings` is `false`, the committed block ships
-`{ "flags": { "userSettings": false } }`, and the schema's `flags` object is strict, so a block or
-an environment that still names a removed flag fails fast.
+chunk only while the flag is on. `FEATURE_FLAG_DEFAULTS.userSettings` is `false`, the committed
+block ships `"userSettings": false`, and the schema's `flags` object is strict, so a block or an
+environment that still names a removed flag fails fast.
 
 - **Default:** `false`. Against user-service v2.8.0, which authenticates nobody, a shipped `true`
   would read and update an arbitrary user, so the committed default and
@@ -127,6 +126,29 @@ an environment that still names a removed flag fails fast.
 - **Removal trigger:** delete the flag once production has it on and the page is stable; step 3
   of the lifecycle above applies.
 
+### `twoFactorAuth`
+
+Hides the two-factor authentication section of `/settings` (issue #331): the `UserProfile` page
+renders `TwoFactorSettings` only while `useFeatureFlag('twoFactorAuth')` is on. It gates nothing
+else. No route contract lists it, because `/sign-in/two-factor` must stay reachable in every
+environment (a sign-in can return a challenge anywhere), and no sign-in code reads it. The page
+itself is still gated by `userSettings`, so managing 2FA in an environment needs both on.
+
+- **Default:** `false` in `FEATURE_FLAG_DEFAULTS` and in the committed block.
+- **Declared in:** the `FeatureFlag` union and `FeatureFlagValues`, `FEATURE_FLAG_DEFAULTS`, the
+  strict schema, the committed block in `public/index.html`, and `.env.example`
+  (`APP_CONFIG_FLAG_TWO_FACTOR_AUTH=`, empty, after `APP_CONFIG_FLAG_USER_SETTINGS=`).
+- **Test stack:** `docker-compose.test.yml` passes
+  `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH-}`. The `-` form leaves an
+  empty value empty, which the renderer ignores, so the stack renders the in-code `false` until
+  Story 4.1 switches it to `:-true` once every 2FA screen exists.
+- **Roll out:** the test stack enables it from Story 4.1; production enables it in Follow-up 5.1,
+  after a user-service release carries `signInUser` and the 2FA mutations. Until then the browser
+  specs force it per test through `overrideRuntimeConfig`.
+- **Owner:** the two-factor authentication feature (issue #331).
+- **Removal trigger:** delete the flag once production has run with it on; step 3 of the
+  lifecycle above applies.
+
 ### `forgotPassword` (removed)
 
 `forgotPassword`, the first flag, gated the sign-in "Forgot password?" link. Issue #309 removed
@@ -139,7 +161,7 @@ retryable transient error rather than a missing page.
 `tests/unit/tooling/runtime-config-contract.test.ts` pins that the link is rendered and the
 route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any environment that still
 sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
-`Known flags: userSettings.` and must unset it.
+`Known flags: twoFactorAuth, userSettings.` and must unset it.
 
 ## Gating a route
 

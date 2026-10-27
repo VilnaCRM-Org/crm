@@ -91,10 +91,12 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual({ items: [{ name: 'userSettings' }] });
+    expect(flags.names()).toEqual({
+      items: [{ name: 'userSettings' }, { name: 'twoFactorAuth' }],
+    });
     expect(flags.isEnabled('userSettings')).toBe(false);
     expect(flags.isEnabled(PROBE_FLAG as never)).toBeUndefined();
-    expect(flags.snapshot()).toEqual({ userSettings: false });
+    expect(flags.snapshot()).toEqual({ userSettings: false, twoFactorAuth: false });
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
   });
 

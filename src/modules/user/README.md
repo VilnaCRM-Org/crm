@@ -617,6 +617,169 @@ and `X-Correlation-Id`) is the production blocker for every GraphQL call from th
 its shared pieces and its layer stack are described in the
 [settings feature README](features/settings/README.md).
 
+## Two-factor authentication decisions
+
+The durable decisions of two-factor authentication
+([issue #331](https://github.com/VilnaCRM-Org/crm/issues/331)). They live here rather than in an
+ADR by the maintainer's decision, and each one states its context, the decision and the options
+it rejected. The full design is
+[the two-factor architecture](../../../specs/two-factor-authentication/planning-artifacts/architecture-two-factor-authentication-2026-10-06.md).
+What [Password recovery decisions](#password-recovery-decisions) and
+[User Settings decisions](#user-settings-decisions) already record — the board's layers, the
+container-free provider loader, `UserServiceErrorTransformer`, the pending-schema mechanism, the
+session link and the `/settings` page — is referenced below, not repeated.
+
+### GraphQL-only sign-in, with the REST login removed
+
+**Context.** Sign-in was a REST placeholder that posted to the create-user endpoint and could not
+express a second step. user-service implements `signInUser` and the 2FA mutations over GraphQL on
+`main` only; the pinned `v2.8.0` has none of them, and the user's rule is that every
+user-service operation goes through a GraphQL repository.
+
+**Decision.** `useSignInSubmit` resolves `GraphQLSignInProvider` through the container-free
+`AuthProviderLoader`, writes the result to `useAuthStore` and records the security signal; the
+provider calls the transport-only `GraphQLSignInRepository` and translates through
+`GraphQLSignInTransformer` and `UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`,
+`LoginResponseMapper` and `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and
+logout are unchanged. Production sign-in has no backend until user-service ships `signInUser`,
+exactly as the REST placeholder had none.
+
+**Rejected.** Keeping the REST placeholder behind a flag-selected sign-in Strategy (a Strategy over
+a placeholder with no working backend); waiting for the user-service release before building
+(it blocks on an unscheduled tag).
+
+### The pending file lives in #315's mechanism
+
+**Context.** No user-service tag declares the six operations, and the pinned schema is what
+codegen and the local mock read.
+
+**Decision.** `src/api/contracts/pending/two-factor-authentication.graphql` opens with
+`# pending-against: v2.8.0` and holds one `extend type Mutation`, the input, payload and
+payload-data types in the upstream field order, and `scalar Iterable`, declared once. `codegen.ts`
+maps `Iterable` to `unknown`, never `any`, and the stateless mock answers the six operations from
+`docker/apollo-server/lib/two-factor-resolvers.ts`. The pin bump deletes the file by hand; there
+is no expiry checker.
+
+**Rejected.** A second mechanism for this feature (two ways to extend the schema); hand-written
+operation types (they would drift from the contract); a stateful mock (every refusal is exercised
+by `page.route` stubs and msw handlers, where CI runs it).
+
+### The token and the pending session stay in memory, in `useAuthStore`
+
+**Context.** A pending session id is a credential for one challenge, and the access token must
+not outlive the tab. The auth paint path stays free of tsyringe, Apollo and zod.
+
+**Decision.** `pendingSessionId`, `twoFactorStatus` and `recoveryCodesRemaining` live in the
+Zustand store `useAuthStore` beside the token, never inside it, and hooks write them with
+`setState`; the store gains no action and no `persist` middleware. A reload, a logout and arrival
+on `/sign-in` clear the pending session. No refresh token is kept anywhere in client state, and
+the id never appears in a URL or in `history.state`. See
+[`docs/state-architecture.md`](../../../docs/state-architecture.md).
+
+**Rejected.** Persisting either value (a stolen tab or a stray log would replay a session);
+carrying the id in the URL or router state (it would reach history and referrers); a challenge
+actions class on the store (the board draws the hook writing State directly).
+
+### The challenge is a page-guarded public route
+
+**Context.** A sign-in can return a challenge in every environment, so the route must be reachable
+whether or not the settings flag is on, yet it must not render without a pending session.
+
+**Decision.** `/sign-in/two-factor` is registered with `guard: 'public'` and no flag. The page
+renders only while a pending session id exists in the store; without one — a typed URL, a reload,
+a new tab or Forward — it replaces itself with `/sign-in`, with no notice and no request. A
+completed challenge calls the same `postLogin.proceed()` as a password sign-in, and the redirect
+target never lands on the challenge itself.
+
+**Rejected.** Gating the route behind a flag (a challenge could not complete where the flag is
+off); a protected route (the user has no token yet); keeping the challenge across a reload (the
+server session lives 300 s and allows five attempts, and the client holds no copy of it).
+
+### The 2FA section lives in `features/settings` and reaches auth state through the outlet context
+
+**Context.** Sibling features may not import each other, yet the section must know whether 2FA is
+on and tell the app when that changes.
+
+**Decision.** `TwoFactorSettings` fills the slot of the settings `UserProfile` page and reaches
+`TwoFactorSettingsProvider` through React hooks. The known status — `'enabled'`, `'disabled'` or
+`'unknown'` — is read and written only through the protected outlet context that `ProtectedRoute`
+provides: `signOut`, `twoFactorStatus` and `setTwoFactorStatus`, the last of which calls
+`useAuthStore.setState` with an `AuthStatePatch` and nothing else. That context is the only seam
+through which a non-auth feature reads or writes auth state; `SignOutContext` stays the pick of
+`signOut` that the shell and its user-menu slot receive.
+
+**Rejected.** Importing `useAuthStore` from the settings feature (a feature-to-feature edge that
+dependency-cruiser forbids); a status query (user-service has no 2FA query, and `User` exposes no
+2FA field); a second store for the status (two sources for one fact).
+
+### The flag gates only the 2FA section
+
+**Context.** The operations are mocked until a release carries them, so production must keep the
+management UI hidden, while the challenge must keep working wherever a sign-in returns one.
+
+**Decision.** `twoFactorAuth` is a runtime flag shipped `false`, declared in the `FeatureFlag`
+union, `FEATURE_FLAG_DEFAULTS`, the strict schema, the committed block and `.env.example`. The
+`UserProfile` page reads it with `useFeatureFlag('twoFactorAuth')` when it renders and shows the
+section only while it is on. No route contract lists it and no sign-in code reads it. The test
+stack passes `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH-}` until every
+screen exists, then enables it; the flag is deleted once production has run with it on.
+
+**Rejected.** A flag that selects the sign-in transport (the decision above removed the choice); a
+route-level flag on the challenge (see the previous records); no flag at all (production would
+show management screens against a backend that cannot answer them).
+
+### 2FA failures are classified by rows appended to the shared transformer
+
+**Context.** user-service answers the 2FA refusals with a status and an English message and no
+`extensions.code`, and two 401s on one operation (a wrong code and an expired session) differ only
+by their text.
+
+**Decision.** `UserServiceErrorTransformer` gains the reasons `locked`, `invalid_code`,
+`expired_session`, `setup_not_initiated`, `already_enabled`, `not_enabled` and `reauth_required`.
+A `423` gives `locked`; six exact messages give the others, matched whole, with or without a
+status; `twoFactorCode` joins the properties whose violations classify as `violation`. The rows
+are appended to the two-step classification above, and every earlier row keeps its result. The
+sign-in and settings Data providers map the reason to their own outcome; no hook reads a GraphQL
+shape or an English message.
+
+**Rejected.** A contains-match on the message (`Invalid two-factor code. Retry` must not classify
+as a wrong code); reading `extensions.code` (upstream sends none); a second classifier per feature
+(the shape step is shared).
+
+### The QR encoder is `qrcode-generator`, drawn as SVG in the settings chunk
+
+**Context.** user-service returns an `otpauthUri` and the raw `secret`, never an image. The
+secret must not leave the browser, and the content security policy allows only same-origin
+images and `data:`.
+
+**Decision.** `qrcode-generator` (MIT, pinned exactly) encodes the URI at error correction `M`.
+`qr-code-image.tsx` is the only file that imports it; it reads the module matrix and draws one
+`<svg role="img">` path on a white quiet zone of four modules, with no `dangerouslySetInnerHTML`,
+no `data:` URI, no network and no `eval`. The encoder is loaded with the settings chunk, never
+the eager entry or the auth chunks. A decoder (`jsqr`, Apache-2.0) is a `devDependency` used only
+by a round-trip test that decodes the drawn path back to the exact URI.
+
+**Rejected.** A QR image service (it would send the secret to a third party); a canvas or
+`data:` image (a second rendering path outside the security headers' review); hand-rolling the
+encoder (an untested numeric core).
+
+### `UIPinInput` adopts the toolkit pin input with the project's overrides
+
+**Context.** The code is six digits typed or pasted. The toolkit's `UiPinInput` supplies the cells
+but its default border, focus ring, gap and placeholder do not meet the accessibility target.
+
+**Decision.** `src/components/ui-pin-input/` is the only file importing
+`@vilnacrm/ui-toolkit/ui-pin-input`. It overrides the rest border with `#80878A`, paints the shared
+`focusVisibleRing` (`2px solid #404142`, offset `2px`), sets the cell gap and size per breakpoint
+(8 px and 64 × 86 px from `md`; 4 px and at most 49 × 64 px below it), hides the toolkit's
+constant `placeholder="0"` with a transparent `::placeholder` colour, and takes the group label
+and a per-cell label from the caller. It adds no live region: one element carries the error
+message. `docs/ui-toolkit.md` lists the overrides.
+
+**Rejected.** Forking the toolkit component (it would stop tracking the pin); six separate text
+inputs (no paste handling); an `sx` breakpoint key for the sizes (the project's `md` comes from
+`breakpointsTheme`, not the MUI default).
+
 ## Enforcement
 
 `make lint` runs all three gates; fix a violation by routing through the

@@ -1821,6 +1821,15 @@ renders the in-code `false`), and Story 4.1 switches it to `:-true`. The setting
 force flags through `signInWithFlag` and `overrideRuntimeConfig`
 (`tests/e2e/modules/user/features/settings/utils/profile-stub.ts`).
 
+Code facts (Story 1.2, 2026-10-27): the generic contract checks pass unchanged, but several tests
+pin the whole committed block or the flag list and so were extended with `twoFactorAuth`: the
+shipped-defaults equality in `runtime-config-contract.test.ts`, `feature-flag-service.test.ts`,
+`app-config.test.ts`, `render-app-config.test.js` (including the `Known flags:` lists, now
+`twoFactorAuth, userSettings`), `tests/bats/render_app_config.bats` and the runtime integration
+test. `scripts/render-app-config.js` needed no change: it accepts any flag present in the
+committed block, and an empty variable is ignored, which is why the `-` fallback renders `false`.
+`make check-env-sync` also compares the untracked local `.env`, which therefore needs the new key.
+
 ### 6.16 Pending contract and the stateless mock
 
 Story 1.1 of #315 builds `src/api/contracts/pending/`, the codegen schema array and the stateless
