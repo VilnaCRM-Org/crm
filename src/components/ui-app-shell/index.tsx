@@ -12,12 +12,14 @@ import uk from './i18n/uk.json';
 import navigationItems from './navigation-items';
 import styles from './styles';
 import useShellLayout from './use-shell-layout';
+import useStickyFocusClearance from './use-sticky-focus-clearance';
 
 lazyCatalogLoader.register(i18n, { en, uk });
 
 export default function UIAppShell({ signOut, userMenu: UserMenu }: UIAppShellProps): JSX.Element {
   const layout = useShellLayout();
   const [avatar, setAvatar] = useState<ReactNode>(null);
+  const clearHeaderOnFocus = useStickyFocusClearance();
 
   return (
     <>
@@ -32,7 +34,7 @@ export default function UIAppShell({ signOut, userMenu: UserMenu }: UIAppShellPr
       </Box>
       {layout !== 'mobile' && (
         <Box sx={styles.nav[layout]}>
-          <Box sx={styles.sticky}>
+          <Box sx={styles.sticky} onFocus={clearHeaderOnFocus}>
             <UISidebar layout={layout} items={navigationItems} signOut={signOut} />
           </Box>
         </Box>

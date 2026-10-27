@@ -96,6 +96,28 @@ describe('UINavigationList', () => {
     expect(screen.getAllByRole('list')).toHaveLength(1);
   });
 
+  it.each([
+    ['desktop', 'expanded'],
+    ['desktop', 'rail'],
+    ['tablet', 'expanded'],
+    ['tablet', 'rail'],
+  ] as const)(
+    'keeps the scrolling %s %s list out of the Tab order and keeps its list role',
+    (layout, variant) => {
+      renderList({ layout, variant });
+
+      const list = screen.getByRole('list');
+      expect(list).toHaveAttribute('tabindex', '-1');
+      expect(list).not.toHaveAttribute('aria-label');
+    }
+  );
+
+  it('leaves the non-scrolling drawer list without a tabindex', () => {
+    renderList({ layout: 'drawer' });
+
+    expect(screen.getByRole('list')).not.toHaveAttribute('tabindex');
+  });
+
   it('renders no Settings group and no sub-item while the userSettings flag is off', () => {
     isEnabled.mockReturnValue(false);
 

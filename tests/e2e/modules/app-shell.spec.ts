@@ -115,6 +115,7 @@ async function collapseAtShortTablet(page: Page): Promise<void> {
   await openProtected(page, ROUTE_PATHS.settings);
   await page.getByRole('button', { name: shellText.collapse, exact: true }).click();
   await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
 }
 
 async function expectAboveSignOut(page: Page, id: string): Promise<void> {

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, isInaccessible, screen, within } from '@testing-library/react';
+import { act, fireEvent, isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 
@@ -142,5 +142,28 @@ describe('UIAppShell', () => {
 
     expect(dialog).toContainHTML('PersonOutlinedIcon');
     expect(within(dialog).queryByText('ОП')).not.toBeInTheDocument();
+  });
+
+  it('scrolls a sidebar control the sticky header covers back below it on focus', () => {
+    const scrollBy = jest.fn();
+    Object.defineProperty(window, 'scrollBy', { configurable: true, value: scrollBy });
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: jest.fn(),
+    });
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+
+      return 1;
+    });
+    renderAt(1440);
+    const handle = screen.getByRole('button', { name: 'Collapse sidebar' });
+    jest.spyOn(handle, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 36, 24, 24));
+
+    fireEvent.focus(handle);
+
+    expect(scrollBy).toHaveBeenCalledWith({ top: -28 });
+    Reflect.deleteProperty(window, 'scrollBy');
+    Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
   });
 });
