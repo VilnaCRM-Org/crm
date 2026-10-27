@@ -875,6 +875,28 @@ entity and the view state, and reconciles every transition: the URI and key surv
 `setup` view, the recovery codes only in `codes`, and the status follows the view, so "Готово", a
 stale setup and unmount all leave an entity with `null` secrets.
 
+### The 2FA card against the Figma frames (313:10242, 313:10480, 313:10606)
+
+**Check.** `figma-design-check` ran against the CRM design file with the Figma MCP answering. The
+desktop frame puts the setup card (479 px wide) beside the 675 px profile column, and the tablet and
+mobile frames stack it below; `SettingsGrid` already has that 479 px second column, so the card is
+its second child. The card takes its tokens from the frame: a white card with a 1 px `#E1E7EA`
+border and a 12 px radius, the title in Golos Bold 22 `#1A1C1E`, a divider under the header, 24 px
+`#E1E7EA` step badges with Inter Medium 16 `#57595B`, step text in Golos SemiBold 16 `#404142`, the
+QR code in a `#FBFBFB` frame with a 12 px radius, and the key chip on `#EAECEE` with a 4 px radius
+and Golos SemiBold 16 `#57595B`.
+
+**Deviations, all recorded.** The frames carry no off view and no start button, so the off view is
+built from the story: a description, the three steps and the contained "Почати налаштування"
+submit. The frames show the key twice, as the manual key under the QR code and again under step 3;
+the card shows it once, with a separate outlined "Скопіювати ключ" button (border `#80878A`, text
+`#1B2327`) in place of the copy glyph inside the chip. The Google logo is dropped, the app is named
+in the step text only, and the info-circle callout that quotes a seven-day reset is not built,
+because the product makes no such promise. The frames have no section heading; the `h2` is added so
+the card is a named region, and the `h3` carries the view title and takes focus on arrival. Copy is
+Ukrainian from the story; the frames' Russian text is not used. Live measurement on port 3005 could
+not run here, so the sizes above are pinned in unit tests and the CI visual lane is the measurement.
+
 ### `UIForm` explains a submit that cannot be pressed yet
 
 **Context.** The recovery codes view of Story 3.4 must not let "Готово" send before the user
