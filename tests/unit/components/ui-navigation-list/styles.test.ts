@@ -20,6 +20,7 @@ describe('navigation list styles', () => {
         listStyle: 'none',
         overflowY: 'auto',
         scrollPaddingBottom: '76px',
+        '&:focus:not(:focus-visible)': { outline: 'none' },
       },
       rail: {
         display: 'flex',
@@ -32,6 +33,7 @@ describe('navigation list styles', () => {
         overflowX: 'hidden',
         overflowY: 'auto',
         scrollPaddingBottom: '76px',
+        '&:focus:not(:focus-visible)': { outline: 'none' },
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
       },

@@ -197,6 +197,19 @@ What Figma leaves open, and how it was built:
   `app-shell.spec.ts` checks the rail at 1280×720: the list and Sign out stay inside the card, the
   last row is reached by scrolling and by Tab above the sticky Sign out, and a scrolled row's
   tooltip paints in full outside the card.
+- The list carries `tabindex="-1"` in the sidebar layouts (not in the drawer, whose list never
+  scrolls). Firefox otherwise makes an overflowing scroll container a Tab stop of its own, an
+  unnamed list between the handle and the first row; every item is a control, so the list needs
+  no stop to be scrolled by keyboard, and its role is unchanged.
+- The sticky card is limited to the navigation grid row, so once the footer scrolls in it moves up
+  under the 64 px header. Chromium and WebKit scroll a focused sidebar control fully into view,
+  honouring the list's `scroll-padding-bottom` and the root `scroll-padding-top`. Firefox scrolls
+  only a control that is entirely out of view, so a partly visible one stays clipped by the list or
+  under the header (the collapse handle entirely, at 1440×400). One frame after a sidebar control
+  takes focus, `useStickyFocusClearance` scrolls it into view within its list
+  (`block: 'nearest'`) and, only when the header still covers it, scrolls the page up by the
+  covered height rounded up to a whole pixel, checking once more in the next frame. Focus then
+  lands clear of the header and of the sticky Sign out in every engine (WCAG 2.4.11).
 - The tablet Settings header content sits 3 px lower than a 66 px row centres it (Figma draws it at
   y 22), and the Products row is 67 px; both are reproduced.
 - The item set reads every FR-18 destination from its `ROUTE_PATHS` key (`boards`,
