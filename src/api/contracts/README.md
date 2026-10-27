@@ -30,10 +30,11 @@ Choose the transport by the nature of the endpoint, not by convenience:
   create/update/delete mutations. New user-graph features add a colocated `*.graphql` operation
   next to their repository and consume the generated `TypedDocumentNode`.
 - **Use REST (`HttpsClient`)** for endpoints that are **not** part of the GraphQL schema:
-  session/token exchange (login), health checks, binary/file transfer, and any infrastructure
-  or third-party endpoint the OpenAPI spec models but the graph does not.
-- **When both transports expose the same resource** (today `/api/users`), prefer GraphQL for
-  the write (`createUser`) and reserve REST for the token/session concern (`login`).
+  health checks, binary/file transfer, and any infrastructure or third-party endpoint the
+  OpenAPI spec models but the graph does not.
+- **Sign-in is GraphQL.** The token exchange is the `signInUser` mutation (and the 2FA
+  mutations after it), reached through `GraphQLSignInRepository`; no REST login exists.
+- **When both transports expose the same resource** (today `/api/users`), use GraphQL.
 
 The transport is an implementation detail of the **repository** layer. Components and hooks
 never see transport types — they consume repository return types (see the layered architecture
