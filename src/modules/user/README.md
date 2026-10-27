@@ -1001,6 +1001,29 @@ message. `docs/ui-toolkit.md` lists the overrides.
 inputs (no paste handling); an `sx` breakpoint key for the sizes (the project's `md` comes from
 `breakpointsTheme`, not the MUI default).
 
+### Both surfaces are scanned and tabbed in every state
+
+**Context.** The challenge and the settings card each have several states that only differ by
+what a screen reader announces and where Tab goes, and the route scan alone sees one of them.
+
+**Decision.** Four Playwright specs under `tests/e2e/a11y/` cover them in all three desktop
+engines: `two-factor-challenge-states` and `two-factor-settings-states` run the allowlisted axe
+scan plus the no-positive-`tabindex` check (`expectCleanScan`) on every state, and
+`two-factor-challenge-keyboard` and `two-factor-settings-keyboard` walk the tab order with
+`expectTabOrder`, then check Enter, Space, Escape, the focus target of each change and the
+colours with `toHaveCSS`. `A11Y_EXCEPTIONS` keeps its ten entries; the unit test that pins the
+count is unchanged. The keyboard specs start from the heading that holds focus after the
+transition; the challenge climbs with Shift+Tab to reach back-to-main, and the off view starts
+from a click on the section heading. The
+settings card paints its outlined buttons with the settings ring, `2px solid #1A1C1E`, offset
+2 px, as `profile-form` does; the pin cells and the challenge's own controls keep `#404142`
+and the mode toggle `#0074B5`. The story text named `#404142` for every new control, and the
+code decides: the settings ring is the page's, not the toolkit's.
+
+**Not done here.** The NVDA and VoiceOver pass (group name, cell names, one error, whether the
+hidden `placeholder="0"` is read) needs a person with both screen readers; its evidence is
+listed for Follow-up 5.7, and the specs above do not stand in for it.
+
 ## Enforcement
 
 `make lint` runs all three gates; fix a violation by routing through the
