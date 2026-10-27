@@ -226,8 +226,9 @@ runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL 
 `RegistrationAPI`) — data is parsed, never cast.
 
 - **Which transport?** GraphQL (Apollo) for user/account **domain-graph** reads and mutations;
-  REST (`HttpsClient`) for non-graph endpoints (login/token, health, files). When both expose
-  the same resource, the write goes through GraphQL and the token/session concern through REST.
+  REST (`HttpsClient`) for non-graph endpoints (health, files). Sign-in and the two-factor
+  operations are GraphQL mutations; no REST login exists. When both expose the same resource,
+  GraphQL wins.
 - **Generated files are build output** — never hand-edit `src/api/generated/**`; change the
   spec/operation and rerun `make codegen`. They are excluded from every source gate via the gate
   configs, never with suppressions. CI (`static testing`) runs `make codegen-check` and fails on
@@ -324,7 +325,6 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildCredentials(overrides?)` → `{ email, password }` (`SignInDto` from `@/modules/user`).
 - `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
 - `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
-- `buildLoginResponse(overrides?)` → `{ token }`.
 - `buildResetToken()` → a 32-character alphanumeric password-reset token.
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
@@ -360,7 +360,7 @@ FAKER_SEED=12345 make test-unit-client
 
 Determinism keeps visual snapshots stable. The shared integration mock server
 (`tests/integration/mocks/server.ts`) exposes its generated defaults
-(`defaultLoginResponse`, `defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
+(`defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
 against those exports rather than literals.
 
 ### When NOT to use a builder
@@ -810,7 +810,7 @@ class Service {}
 class ApiErrorFactory {}
 class EmailValidator {}
 class ApiErrorGuard {}
-class LoginResponseMapper {}
+class RegistrationResponseMapper {}
 class FetchHttpsClient {}
 ```
 
@@ -935,9 +935,11 @@ Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are regi
 render-path pattern (issue #115).
 
 Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
-flag is declared today, `userSettings` (issue #330), shipped off in the committed block and switched
-on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`. Container start fails on two flag
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. Two
+flags are declared today: `userSettings` (issue #330), shipped off in the committed block and
+switched on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`, and `twoFactorAuth`
+(issue 331), shipped off everywhere and gating only the 2FA section of `/settings`. Container
+start fails on two flag
 shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*` name that matches no declared flag,
 and a declared flag whose value is not exactly `true` or `false`. `forgotPassword` was removed
 in #309, so an environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value
@@ -1006,7 +1008,7 @@ register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If 
 only an annotation, make it `import type` (issue #88).
 
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
-`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`reflect-metadata`, token modules, config data (`@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
 `error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
 module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).

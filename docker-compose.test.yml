@@ -21,7 +21,9 @@ services:
       # The settings page (issue #330) ships off; the test stack is where it is switched on so the
       # e2e, a11y and visual suites exercise it. The `:-` form also turns an empty value in `.env`
       # (the template declares the key empty) into `true`; set it to `false` to run without it.
+      # The two-factor section (issue #331) is on in this stack the same way; production stays off.
       - APP_CONFIG_FLAG_USER_SETTINGS=${APP_CONFIG_FLAG_USER_SETTINGS:-true}
+      - APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3001']
       interval: 10s

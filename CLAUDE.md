@@ -170,6 +170,10 @@ more project names.
   overflow at device width and 320 px. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
+  `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
+  the sign-in challenge in both modes and for enrolling, turning two-factor off and regenerating the
+  codes: 44 px cells, fields and submits, 24 px small controls, no overflow at 320, 390 and 412 px,
+  every pin cell inside its card at 320 to 767 px, and the empty submit and reduced-motion checks.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
   two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
   (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
@@ -2321,7 +2325,7 @@ class Service {}
 class ApiErrorFactory {} // repositories/api-error-factory.ts
 class EmailValidator {} // user/lib/validations/email.ts
 class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
-class LoginResponseMapper {} // store/login-response-mapper.ts
+class RegistrationResponseMapper {} // store/registration-response-mapper.ts
 class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
 ```
 
@@ -2355,7 +2359,7 @@ given a suffix. Each selector has a must-fail fixture in `scripts/ci/eslint-gate
 `Linter` against banned, bare, unsuffixed, abstract-`Base*`, and approved names.
 
 **Honest limitation.** This is a **naming** gate, not a **role-correctness** gate. It catches
-`AuthManager` and a bare `Service`; it cannot tell whether a class named `LoginResponseMapper`
+`AuthManager` and a bare `Service`; it cannot tell whether a class named `RegistrationResponseMapper`
 also quietly does HTTP, or whether `ThingProcessor` hides a meaningless noun. Role ↔ name
 truthfulness is semantic and stays an agent rule plus a review-gate concern. Classes inside
 `use-*.ts` hook files (`AuthTokenStore`, `AsyncListLoader`) sit outside the `src/**/*.ts` scope
@@ -2376,9 +2380,9 @@ This is the next step after #89/#100: those made every behavioral unit an instan
 class; this governs _how those classes obtain each other_. A hard-wired collaborator resists
 substitution in tests, so the class only _looks_ injectable.
 
-`src/modules/user/features/auth/repositories/login-api.ts` is the exemplar — `HttpsClient` and
-`ApiErrorFactory` arrive via `@inject(TOKENS.X)`, and its remaining value imports are exactly the
-allowed carve-outs.
+`src/modules/user/features/auth/repositories/graphql-sign-in-repository.ts` is the exemplar — the
+Apollo client arrives via `@inject(AUTH_TOKENS.ApolloClient)`, and its remaining value imports are
+exactly the allowed carve-outs.
 
 **Allowed value imports inside a logic class:**
 
@@ -2388,7 +2392,7 @@ allowed carve-outs.
 | `extends` base class | `BaseAPI` — inheritance cannot be injected                           |
 | DI mechanism         | `tsyringe`, `reflect-metadata`                                       |
 | DI tokens            | `**/tokens.ts`                                                       |
-| Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
+| Config data          | `@/config/env`, `@/routes/route-paths`                               |
 | Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
 | Constant maps        | `response-messages`, `error-codes`                                   |
 | Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` / `*-query.ts`       |
@@ -2489,7 +2493,7 @@ import { Button } from '@/components/ui-button';
 import { CommentsList } from './comments-list';
 
 // Within the Auth feature (any depth): use the @auth alias
-import { LoginAPI } from '@auth/repositories';
+import { GraphQLSignInRepository } from '@auth/repositories';
 ```
 
 In addition to the project-wide `@/`, the Auth feature has its own scoped
@@ -2575,13 +2579,15 @@ tooling without a TypeScript loader, so that is an i18n boot-path restructuring,
 change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
-flag is declared today, `userSettings` (issue #330), shipped off in the committed block
-`{ "flags": { "userSettings": false } }` (the test stack's `docker-compose.test.yml` switches it on
-through `APP_CONFIG_FLAG_USER_SETTINGS`, default `true`). The earlier `forgotPassword` flag was
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. Two
+flags are declared today, both shipped off in the committed block
+`{ "flags": { "userSettings": false, "twoFactorAuth": false } }`: `userSettings` (issue #330; the
+test stack's `docker-compose.test.yml` switches it on through `APP_CONFIG_FLAG_USER_SETTINGS`,
+default `true`) and `twoFactorAuth` (issue #331; it hides only the 2FA section of `/settings`, and
+the test stack passes it through empty, so it renders `false`). The earlier `forgotPassword` flag was
 removed in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an
 environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container
-start with `Known flags: userSettings.` and must unset it.
+start with `Known flags: twoFactorAuth, userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -3168,7 +3174,7 @@ replaces.
 
 8. **Test data — Faker builders (issue #101)**: Tests generate arbitrary user/auth domain
    data (emails, names, passwords, ids, tokens) with `@faker-js/faker` via shared builders in
-   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`, `buildLoginResponse`,
+   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`,
    `buildCreateUserInput`, `buildGraphqlUser`, …), imported through the `@tests/*` alias.
    Builders return domain-valid data by construction and take an `overrides` object. Faker is
    seeded deterministically (`seedFaker()` in each runner's setup; default `DEFAULT_FAKER_SEED`,
@@ -3235,7 +3241,7 @@ replaces.
 
     | Call site                                   | Event                                 |
     | ------------------------------------------- | ------------------------------------- |
-    | `AuthSecuritySignals` (login)               | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (login, challenge)    | `auth_failure` / `auth_failure_burst` |
     | `AuthSecuritySignals` (registration)        | `auth_failure` / `auth_failure_burst` |
     | `HttpErrorResponseParser` (401 / 403)       | `unauthorized_response`               |
     | `UIErrorBoundary` (`app` / `auth`)          | `error_boundary_catch`                |
@@ -3330,7 +3336,7 @@ replaces.
     `no-await-in-loop` is an error, each attempt handed the budget that is left, giving up when
     the next wait would leave under 250 ms, and a caller abort mid-wait rejecting at once. The
     client retries `GET`/`PUT`/`DELETE` by default; a `POST`/`PATCH` needs `RequestConfig.retry:
-true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a create in**:
+true` (no caller opts in today; a token issue would be the one safe case). **Never opt a create in**:
     `RegistrationAPI` gets the deadline only, because API Platform merely echoes
     `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
     telemetry; only the final failure reaches the observability boundary.

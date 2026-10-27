@@ -7,10 +7,10 @@ import {
   expectSignInErrorCard,
   signInErrorMessages,
 } from '@tests/e2e/utils/sign-in-result-card';
+import { SIGN_IN_REPLIES, stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 
 import {
   credentials,
-  LOGIN_API_URL,
   newUser,
   REGISTRATION_API_URL,
   SIGN_IN_URL,
@@ -33,33 +33,18 @@ function isPost(route: Route): boolean {
   return route.request().method() === 'POST';
 }
 
-async function rejectLogin(route: Route): Promise<void> {
-  if (!isPost(route)) {
-    await route.fallback();
-    return;
-  }
-
-  await route.fulfill({
-    status: 401,
-    contentType: 'application/json',
-    body: JSON.stringify({ message: 'Invalid credentials' }),
-  });
-}
-
 test.describe('Auth flow driven by touch', () => {
   test('signs in with taps only and reports the in-flight busy state', async ({ page }) => {
-    let postCount = 0;
     let release: () => void = () => {};
     const inFlight = new Promise<void>((resolve) => {
       release = resolve;
     });
-
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (!isPost(route)) return route.fallback();
-      postCount += 1;
-      await inFlight;
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-    });
+    const signInStub = await stubSignIn(page, [
+      async (route: Route): Promise<void> => {
+        await inFlight;
+        await SIGN_IN_REPLIES.session(route);
+      },
+    ]);
 
     await page.goto(SIGN_IN_URL);
     await tapAndFill(page, signIn.emailPlaceholder, credentials.email);
@@ -70,7 +55,7 @@ test.describe('Auth flow driven by touch', () => {
 
     await expect(submit).toBeDisabled();
     await expect(page.locator('form')).toHaveAttribute('aria-busy', 'true');
-    await expect.poll(() => postCount).toBe(1);
+    await expect.poll(() => signInStub.count()).toBe(1);
 
     release();
   });
@@ -78,7 +63,7 @@ test.describe('Auth flow driven by touch', () => {
   test('a failed sign-in shows the error card and tapping Назад restores the form', async ({
     page,
   }) => {
-    await page.route(LOGIN_API_URL, rejectLogin);
+    await stubSignIn(page, ['unauthenticated']);
 
     await page.goto(SIGN_IN_URL);
     await tapAndFill(page, signIn.emailPlaceholder, credentials.email);

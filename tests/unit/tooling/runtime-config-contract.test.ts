@@ -105,6 +105,24 @@ const isRouteRegistered = (routePathKey: string): boolean =>
 
 const COMPOSE_FILES = ['docker-compose.yml', 'docker-compose.test.yml'];
 const USER_SETTINGS_ENV_VAR = `${FLAG_ENV_PREFIX}USER_SETTINGS`;
+const TWO_FACTOR_AUTH_ENV_VAR = `${FLAG_ENV_PREFIX}TWO_FACTOR_AUTH`;
+const AUTH_FEATURE = 'src/modules/user/features/auth';
+
+const filesNamingTheFlag = (contents: Record<string, string>): string[] =>
+  Object.entries(contents)
+    .filter(([, text]) => text.includes('twoFactorAuth'))
+    .map(([file]) => file);
+
+const sourceFiles = (relativeDir: string): string[] =>
+  fs.readdirSync(path.join(projectRoot, relativeDir), { withFileTypes: true }).flatMap((entry) => {
+    const child = path.posix.join(relativeDir, entry.name);
+
+    if (entry.isDirectory()) {
+      return sourceFiles(child);
+    }
+
+    return /\.(ts|tsx)$/u.test(entry.name) ? [child] : [];
+  });
 
 // Against user-service v2.8.0 a shipped `true` would read and update an arbitrary user, so a
 // default of `true` is a violation whether it sits in the service or in the committed block.
@@ -184,7 +202,7 @@ describe('runtime configuration contract', () => {
 
     expect(shippedTrueFlags(featureFlagService.snapshot())).toEqual([]);
     expect(shippedTrueFlags(committed)).toEqual([]);
-    expect(committed).toEqual({ userSettings: false });
+    expect(committed).toEqual({ userSettings: false, twoFactorAuth: false });
   });
 
   it('fails the shipped-default check on a flag that ships true (must-fail)', () => {
@@ -212,6 +230,70 @@ describe('runtime configuration contract', () => {
       composeEnablesUnguardedSettings(`      - ${USER_SETTINGS_ENV_VAR}=\${X:-false}`, [])
     ).toBe(false);
     expect(composeEnablesUnguardedSettings('image: node', [])).toBe(false);
+  });
+
+  it('declares an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH right after USER_SETTINGS', () => {
+    const lines = readFile('.env.example').split('\n');
+    const userSettings = lines.indexOf(`${USER_SETTINGS_ENV_VAR}=`);
+
+    expect(userSettings).toBeGreaterThan(-1);
+    expect(lines[userSettings + 1]).toBe(`${TWO_FACTOR_AUTH_ENV_VAR}=`);
+  });
+
+  it('turns an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH into true beside userSettings', () => {
+    const lines = readFile('docker-compose.test.yml').split('\n');
+    const userSettings = lines.findIndex((line) => line.includes(`${USER_SETTINGS_ENV_VAR}=`));
+
+    expect(userSettings).toBeGreaterThan(-1);
+    expect(
+      lines
+        .filter((line) => line.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`))
+        .map((line) => line.trim())
+    ).toEqual([`- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`]);
+    expect(lines[userSettings + 1]?.trim()).toBe(
+      `- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`
+    );
+    expect(readFile('docker-compose.yml')).not.toContain(TWO_FACTOR_AUTH_ENV_VAR);
+  });
+
+  it.each([
+    ['empty in .env', '', 'true'],
+    ['unset', undefined, 'true'],
+    ['an explicit true', 'true', 'true'],
+    ['an explicit false', 'false', 'false'],
+  ] as const)('resolves the test stack value for %s to %s', (_name, value, expected) => {
+    const line = readFile('docker-compose.test.yml')
+      .split('\n')
+      .find((candidate) => candidate.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`));
+    const fallback = /\$\{[A-Z_]+:-([^}]*)\}/.exec(line ?? '')?.[1] ?? '';
+
+    expect(value === undefined || value === '' ? fallback : value).toBe(expected);
+  });
+
+  it('keeps the shipped default false in the committed block and in the code defaults', () => {
+    expect(readFile('public/index.html')).toMatch(/"twoFactorAuth":\s*false/);
+    expect(readFile('src/config/runtime/feature-flag-service.ts')).toMatch(
+      /twoFactorAuth:\s*false/
+    );
+  });
+
+  it('keeps twoFactorAuth out of every route contract and out of the sign-in feature', () => {
+    const files = [...ROUTE_CONTRACTS, ...sourceFiles(AUTH_FEATURE)];
+
+    expect(files.length).toBeGreaterThan(50);
+    expect(
+      filesNamingTheFlag(Object.fromEntries(files.map((file) => [file, readFile(file)])))
+    ).toEqual([]);
+  });
+
+  it('flags a file that names twoFactorAuth, and only that file (must-fail)', () => {
+    expect(
+      filesNamingTheFlag({
+        'a.ts': "useFeatureFlag('twoFactorAuth')",
+        'b.ts': 'flag: "userSettings"',
+        'c.ts': 'const twoFactorAuth = 1;',
+      })
+    ).toEqual(['a.ts', 'c.ts']);
   });
 
   it('documents every registered feature flag in the feature-flag guide', () => {

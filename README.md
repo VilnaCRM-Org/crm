@@ -361,8 +361,10 @@ rebuild:
 
 The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
 not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
-deployment never starts serving. One flag is declared today, `userSettings` (issue #330): it ships
-off in the committed block and the test stack turns it on through `APP_CONFIG_FLAG_USER_SETTINGS`.
+deployment never starts serving. Two flags are declared today: `userSettings` (issue #330) ships
+off in the committed block and the test stack turns it on through
+`APP_CONFIG_FLAG_USER_SETTINGS`; `twoFactorAuth` (issue #331) ships off everywhere and hides the
+2FA section of `/settings`.
 Any other `APP_CONFIG_FLAG_*` name fails the start — an environment that still sets
 `APP_CONFIG_FLAG_FORGOT_PASSWORD` from the removed `forgotPassword` flag must unset it.
 Build-time `REACT_APP_*` values remain as defaults.

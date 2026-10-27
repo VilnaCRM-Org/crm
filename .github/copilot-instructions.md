@@ -40,7 +40,7 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **No static methods or free functions** in non-React `src/**/*.ts`: behaviour is an instance
   method on an `@injectable()` class, or on a module singleton (`export default new X()`) when
   the file must stay container-free. Hooks (`use-*.ts`) and `.tsx` components are exempt.
-- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `LoginResponseMapper`,
+- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `RegistrationResponseMapper`,
   `EmailValidator`): the suffix names the role from the approved table in
   `config/class-naming-policy.js` (mirrored in `CLAUDE.md`). Banned: `Manager`, `Helper`,
   `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, a bare

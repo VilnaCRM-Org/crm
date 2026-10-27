@@ -7,7 +7,7 @@
 # Every case copies public/index.html into BATS_TEST_TMPDIR first, so the committed artifact is
 # never mutated and each environment renders from the identical bytes a built image would ship;
 # only the flag-parsing cases render a fixture shell instead, because the committed one declares
-# a single flag, userSettings, shipped off.
+# two flags, userSettings and twoFactorAuth, shipped off.
 
 bats_require_minimum_version 1.5.0
 
@@ -17,10 +17,10 @@ STAGING_GRAPHQL_URL='https://staging.vilnacrm.example/graphql'
 PRODUCTION_API_BASE_URL='https://api.vilnacrm.example'
 PRODUCTION_GRAPHQL_URL='https://api.vilnacrm.example/graphql'
 
-STAGING_CONFIG='{"flags":{"userSettings":false}'
+STAGING_CONFIG='{"flags":{"userSettings":false,"twoFactorAuth":false}'
 STAGING_CONFIG="$STAGING_CONFIG,\"graphqlUrl\":\"$STAGING_GRAPHQL_URL\"}"
 
-PRODUCTION_CONFIG='{"flags":{"userSettings":false}'
+PRODUCTION_CONFIG='{"flags":{"userSettings":false,"twoFactorAuth":false}'
 PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\""
 PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"graphqlUrl\":\"$PRODUCTION_GRAPHQL_URL\"}"
 
@@ -67,7 +67,7 @@ copy_artifact() {
 }
 
 # Write a minimal shell whose committed block declares the fixture flag demoFlag and echo its
-# path. The real shell declares one flag, so the renderer's flag parsing is driven from here.
+# path. The real shell declares two flags, so the renderer's flag parsing is driven from here.
 flag_fixture() {
   local target="$BATS_TEST_TMPDIR/$1.html"
 
