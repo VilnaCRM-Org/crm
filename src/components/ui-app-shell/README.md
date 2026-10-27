@@ -7,11 +7,15 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 ## App shell decisions (issue #362)
 
 - **The frame is eager, everything visible is lazy.** `AppLayout` (`src/components/layouts/`)
-  owns a CSS grid and two `aria-hidden`, non-null placeholders: a 64 px sticky header slot and,
+  hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid and renders
+  `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky header slot and,
   from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where the loaded
-  sidebar's inset is 13 px). `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader`
-  around a `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and
-  no public page requests the shell. The sidebar breakpoint is a number in
+  sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the frame
+  receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
+  `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
+  public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
+  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
+  1440 px. The sidebar breakpoint is a number in
   `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the eager path
   cannot import `@/components/ui-breakpoints`.
 - **The grid places items by line, not by area name.** A sticky element is limited to its grid
@@ -27,10 +31,10 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
   `src/routes/README.md`.
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
-  `AppLayout` calls its `onShellFailure` prop once (the composer binds it to
-  `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
+  `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
+  it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
   frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
-  the document. `app-layout.tsx` imports nothing from `src/services/`.
+  the document. Nothing under `src/components/layouts/` imports from `src/services/`.
 - **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
   supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
   optional `userMenu` slot and an `onShellFailure` callback, typed in
@@ -401,6 +405,18 @@ Playwright container and run in CI only.
   the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
   instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
   sub-items do not overlap.
+- **Three grey glyphs under 3:1** (WCAG 1.4.11, owner decision, 2026-10-27, issue #276). Three
+  active controls are identified at rest only by a `#969B9D` glyph on white, 2.81:1 against the
+  3:1 of SC 1.4.11 Non-text Contrast: the Settings disclosure chevron in the sidebar and the drawer
+  (`ui-navigation-list/group-styles.ts`, its state exposed through `aria-expanded`), the icon-only
+  sidebar collapse handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
+  (`ui-navigation-list/styles.ts` through `rail-styles.ts`, label visually hidden). The product
+  owner keeps Figma's `#969B9D` and accepts a scoped exception for exactly these three controls in
+  their resting state, tracked in issue #276 with the other palette exceptions. Hover (`#404142`)
+  passes, the current rail row falls under the existing current-row entry (PRD NFR-4 X-1), and
+  focus indicators still reach
+  3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
+  `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
 
 ### DV-11: the Settings label keeps clear of its chevron (owner decision, 2026-10-26)
 

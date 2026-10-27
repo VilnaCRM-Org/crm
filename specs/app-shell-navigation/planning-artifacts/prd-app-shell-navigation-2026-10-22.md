@@ -1082,11 +1082,34 @@ entry, and it is enumerated here for the eight routes it reaches: `/boards`, `/p
 `/settings/billing`. The page renders no `#error-page-digits`, and every other text on it meets
 4.5:1 (architecture AV-6). The badge digits (white on `#1EAEFF`, 2.46:1) need no entry: badges render only in stories
 (FR-19), never on a page the browser lane scans. Grey icons `#969B9D` on
-white (2.81:1) and on `#FBFBFB` (≈ 2.7:1) appear only on decorative or natively disabled elements,
-which WCAG and axe exempt. Natively `disabled` controls (search, bell, list) are inactive
+white (2.81:1) and on `#FBFBFB` (≈ 2.7:1) are decorative or natively disabled everywhere except
+the three active controls the owner decision below names. Natively `disabled` controls (search, bell, list) are inactive
 user-interface components and are exempt. The former unavailable-row failure (`#D0D4D8`, 1.49:1)
 no longer exists: OQ-1 resolved to coming-soon links in the default row style. No rule-wide or
 wildcard exception, ever (`applyA11yExceptions`).
+
+**Owner decision, 2026-10-27 (WCAG 1.4.11 exception).** The earlier claim that `#969B9D` appears
+only on decorative or natively disabled elements was wrong. Three active controls are identified
+only by a `#969B9D` glyph on white, 2.81:1 against the 3:1 that SC 1.4.11 Non-text Contrast
+requires:
+
+1. the Settings disclosure chevron in the sidebar and the drawer
+   (`src/components/ui-navigation-list/group-styles.ts`), the visual cue of the collapsed or
+   expanded state, which assistive technology reads from `aria-expanded`;
+2. the sidebar collapse handle (`src/components/ui-sidebar/styles.ts`), an icon-only button named
+   by its `aria-label` and carrying `aria-expanded`;
+3. the default rows of the collapsed rail (`src/components/ui-navigation-list/styles.ts` through
+   `rail-styles.ts`), where the label is visually hidden and the icon is the only visual
+   identifier. In the expanded sidebar and the drawer the visible label identifies the row.
+
+The product owner keeps Figma's `#969B9D` (NFR-22) and accepts a scoped 1.4.11 exception for
+exactly these three controls in their resting state, tracked in issue #276 with the other palette
+exceptions and resolved when #276 closes or the token reaches 3:1. The hover glyph `#404142`
+passes, the current rail row is X-1, and focus indicators are not covered: they still reach 3:1
+against adjacent colours. axe's `color-contrast` rule evaluates text only and no axe rule tests
+1.4.11, so there is nothing for `A11Y_EXCEPTIONS` to scope: no entry exists or is added, and the
+X-1 table above is unchanged. The same record is in UX §11 and in
+`src/components/ui-app-shell/README.md`.
 
 ### NFR-5 — Bundle, eager path and public routes
 

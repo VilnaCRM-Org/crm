@@ -155,9 +155,10 @@ applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
-`AppLayout` is the shell chrome of every protected page (issues #106, #362). It is a CSS grid frame
-that renders, in order, the lazy `UIAppShell` (header, sidebar from 1024 px or mobile drawer below
-it, loaded through `appShellLoader` behind a `<Suspense>` whose fallback is two `aria-hidden`
+`AppLayout` is the shell chrome of every protected page (issues #106, #362). It hands
+`appShellLoader` to `AppLayoutFrame`, a CSS grid frame that renders, in order, the lazy
+`UIAppShell` (header, sidebar from 1024 px or mobile drawer below it, built by `useAppShell` from
+that loader behind a `<Suspense>` whose fallback is `AppShellPlaceholders`, two `aria-hidden`
 size-holding placeholders, a header slot and a navigation column), the page's `<main>` and, after it
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
