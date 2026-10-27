@@ -1041,6 +1041,23 @@ height. The reduced-motion check pins what the feature itself declares: the card
 the heading carry no `transition-duration` or `animation-name`, and the page's `scroll-behavior`
 is not `smooth`; MUI's own button transitions are the toolkit's and are not measured.
 
+### The visual baselines come from CI
+
+**Context.** Baselines recorded on a laptop differ from the pinned Playwright image by font
+hinting and sub-pixel rasterisation, so a local run would fail the first CI run.
+
+**Decision.** `tests/visual/visual-comparison.two-factor.spec.ts` and
+`tests/visual/mobile/two-factor.spec.ts` are committed without images. The first CI `visual
+tests` run on the branch fails on the missing baselines and uploads the actual screenshots as an
+artifact; those files, copied unchanged into the matching `-snapshots` folders, are the baselines.
+No existing baseline changes. The desktop spec records the challenge in authenticator mode and the
+settings off state on the full 13-size matrix, and recovery mode, the wrong-code error, setup with
+the fixed secret and QR, the recovery codes, on, the disable confirmation, re-authentication,
+`/sign-in` with the expired notice and `/` with the low-codes notice at desktop, tablet and mobile
+sizes. The mobile spec records the challenge and the settings off state on both device projects.
+Each test asserts the expected heading before the snapshot's `waitForStableDom` runs, so a redirect
+or a not-found page is never recorded in its place.
+
 ## Enforcement
 
 `make lint` runs all three gates; fix a violation by routing through the
