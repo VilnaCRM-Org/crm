@@ -15,8 +15,8 @@ barrel — never a deep internal path.
   `error-parser`).
 - `AuthRepository` (type) — the public repository interface.
 - `LoginResponse` (type) — the public login response shape.
-- `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`
-  (types) — the board's User domain, see "The User domain types" below.
+- `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`,
+  `TwoFactorDto` (types) — the board's User domain, see "The User domain types" below.
 
 Two deliberate deviations from the issue's illustrative example, both forced by
 this codebase:
@@ -56,8 +56,15 @@ barrel, never by a deep `types/user/*` import.
 
 `src/modules/user/types/user/` holds the `[type]` cards of the Miro board's User module frame,
 one type-only file per card: `UserEntity`, `SignInDto`, `SignUpDto` (which `extends SignInDto`),
-`RestorePasswordDto` and `CreateNewPasswordDto`. They are plain `readonly` data interfaces with
-no logic; the business rules stay in user-service.
+`RestorePasswordDto`, `CreateNewPasswordDto` and `TwoFactorDto` (the board's `2FADTO`, one
+`twoFactorCode` field holding a canonical TOTP or recovery code). They are plain `readonly` data
+interfaces with no logic; the business rules stay in user-service.
+
+The two-factor code unions the sign-in challenge and the settings section share live in
+`src/modules/user/types/two-factor/code.ts`, and `TwoFactorCodeNormalizer`
+(`src/modules/user/lib/two-factor-code-normalizer.ts`) turns what a person typed into the canonical
+code or `null`. It is an undecorated class with one public method and no collaborator, never
+registered in the container; each hook builds one per mount.
 
 TB-2: a board type crosses component and form boundaries as itself (`UIForm<SignInDto>`), and
 form values may only `extends` a DTO to add UI-only fields. The `*Dto` and `*Entity` names are
