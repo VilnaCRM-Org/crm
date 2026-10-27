@@ -155,7 +155,9 @@
         },
         "notices": {
           "password_reset": "Your password has been changed. Sign in with your new password.",
-          "session_ended": "Your session has ended. Please sign in again."
+          "session_ended": "Your session has ended. Please sign in again.",
+          "two_factor_expired": "The time to confirm your sign-in has run out. Please sign in again.",
+          "account_locked": "Your account is temporarily locked after too many failed attempts. Try again later."
         },
         "success": {
           "title": "Welcome back!",
@@ -363,7 +365,9 @@
         },
         "notices": {
           "password_reset": "Пароль змінено. Увійдіть з новим паролем.",
-          "session_ended": "Сеанс завершився. Увійдіть знову."
+          "session_ended": "Сеанс завершився. Увійдіть знову.",
+          "two_factor_expired": "Час на підтвердження входу минув. Увійдіть знову.",
+          "account_locked": "Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше."
         },
         "success": {
           "title": "Вітаємо!",
