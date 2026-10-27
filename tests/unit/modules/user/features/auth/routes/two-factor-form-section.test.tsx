@@ -214,4 +214,106 @@ describe('TwoFactorFormSection', () => {
     expect(challengeSettled).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  describe('recovery code', () => {
+    const recoveryField = (): HTMLInputElement =>
+      screen.getByRole('textbox', { name: 'Резервний код' });
+
+    const openRecovery = async (): Promise<void> => {
+      await userEvent.click(screen.getByRole('button', { name: 'Використати резервний код' }));
+      await waitFor(() => expect(recoveryField()).toHaveFocus());
+    };
+
+    const submitRecovery = async (text: string): Promise<void> => {
+      await userEvent.type(recoveryField(), text);
+      await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
+    };
+
+    it('replaces the cells with the labelled field, focused, and swaps the toggle', async () => {
+      mount();
+
+      await openRecovery();
+
+      expect(screen.getAllByRole('textbox')).toHaveLength(1);
+      expect(
+        screen.getByText('Введіть один із резервних кодів, які ви зберегли під час налаштування.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Використати код із застосунку' })
+      ).toBeInTheDocument();
+    });
+
+    it.each(['abcd2345', 'abcd-2345', ' AbCd 2345 '])('sends %j as ABCD-2345', async (typed) => {
+      completeChallenge.mockResolvedValue(failed('server'));
+      mount();
+      await openRecovery();
+
+      await submitRecovery(typed);
+
+      await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(1));
+      expect(completeChallenge).toHaveBeenCalledWith(
+        { twoFactorCode: 'ABCD-2345', pendingSessionId },
+        expect.any(AbortSignal)
+      );
+    });
+
+    it('shows the format error and sends nothing for a malformed code', async () => {
+      mount();
+      await openRecovery();
+
+      await submitRecovery('abc-123');
+
+      expect(
+        await screen.findByText('Введіть резервний код у форматі XXXX-XXXX')
+      ).toBeInTheDocument();
+      expect(recoveryField()).toHaveAttribute('aria-invalid', 'true');
+      expect(completeChallenge).not.toHaveBeenCalled();
+    });
+
+    it('empties the field and explains a wrong recovery code, with focus in the field', async () => {
+      completeChallenge.mockResolvedValue(failed('invalid_code'));
+      mount();
+      await openRecovery();
+
+      await submitRecovery('abcd2345');
+
+      const message = await screen.findByText('Невірний резервний код. Спробуйте ще раз.');
+      await waitFor(() => expect(recoveryField()).toHaveValue(''));
+      expect(recoveryField()).toHaveAttribute('aria-invalid', 'true');
+      expect(recoveryField()).toHaveAccessibleDescription(message.textContent ?? '');
+      await waitFor(() => expect(recoveryField()).toHaveFocus());
+      expect(useAuthStore.getState().pendingSessionId).toBe(pendingSessionId);
+    });
+
+    it('returns to the cells with the first one focused and nothing left over', async () => {
+      mount();
+      await openRecovery();
+      await userEvent.type(recoveryField(), 'abc');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Використати код із застосунку' }));
+
+      await waitFor(() => expect(cells()).toHaveLength(6));
+      await waitFor(() => expect(cells()[0]).toHaveFocus());
+      cells().forEach((cell) => expect(cell).toHaveValue(''));
+      expect(
+        screen.queryByText('Введіть резервний код у форматі XXXX-XXXX')
+      ).not.toBeInTheDocument();
+    });
+
+    it('completes with a recovery code and writes the token', async () => {
+      const token = buildToken();
+      completeChallenge.mockResolvedValue({ kind: 'completed', token, recoveryCodesRemaining: 1 });
+      mount();
+      await openRecovery();
+
+      await submitRecovery('abcd0001');
+
+      await waitFor(() => expect(useAuthStore.getState().token).toBe(token));
+      expect(completeChallenge.mock.calls[0]?.[0]).toEqual({
+        twoFactorCode: 'ABCD-0001',
+        pendingSessionId,
+      });
+      expect(useAuthStore.getState().recoveryCodesRemaining).toBe(1);
+    });
+  });
 });

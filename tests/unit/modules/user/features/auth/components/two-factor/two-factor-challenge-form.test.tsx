@@ -79,14 +79,17 @@ describe('TwoFactorChallengeForm', () => {
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument();
   });
 
-  it('puts focus on the h1 and renders no provider button, switcher, e-mail or resend row', () => {
+  it('puts focus on the h1 and renders only the submit and the mode toggle after it', () => {
     mount();
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
     expect(screen.queryByRole('textbox', { name: /e-?mail|пошт/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/ще раз/)).not.toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Підтвердити',
+      'Використати резервний код',
+    ]);
   });
 
   it('hands the typed six digits to submit once, only when the user submits', async () => {
@@ -213,5 +216,92 @@ describe('TwoFactorChallengeForm', () => {
     mount({ focusRequest: 0 });
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+  });
+
+  describe('recovery mode', () => {
+    it('shows the recovery subtitle, one labelled field and the way back to the app code', () => {
+      mount({ mode: 'recovery' });
+
+      expect(
+        screen.getByText('Введіть один із резервних кодів, які ви зберегли під час налаштування.')
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText('Введіть шестизначний код із застосунку Google Authenticator.')
+      ).not.toBeInTheDocument();
+      expect(screen.getAllByRole('textbox')).toHaveLength(1);
+      expect(screen.getByRole('textbox', { name: 'Резервний код' })).toBeInTheDocument();
+      expect(screen.queryByRole('group', { name: 'Код підтвердження' })).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Використати код із застосунку' })
+      ).toBeInTheDocument();
+    });
+
+    it('keeps the h1 and the note in both modes', () => {
+      mount({ mode: 'recovery' });
+
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Двофакторна автентифікація'
+      );
+      expect(
+        screen.getByText('Код можна ввести протягом 5 хвилин після входу.')
+      ).toBeInTheDocument();
+    });
+
+    it('hands the typed text to submit untouched, so the hook normalises it', async () => {
+      const { handlers } = mount({ mode: 'recovery' });
+
+      await userEvent.type(screen.getByRole('textbox', { name: 'Резервний код' }), 'abcd2345');
+      await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
+
+      await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
+      expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: 'abcd2345' });
+    });
+
+    it('asks the hook to switch mode when the toggle is activated', async () => {
+      const { handlers } = mount({ mode: 'recovery' });
+
+      await userEvent.click(screen.getByRole('button', { name: 'Використати код із застосунку' }));
+
+      expect(handlers.switchMode).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['recovery resting', { mode: 'recovery' }],
+      ['recovery busy', { mode: 'recovery', isSubmitting: true }],
+    ] as const)('has no accessibility violation in the %s state', async (_name, state) => {
+      const { container } = mount(state);
+
+      await act(async () => Promise.resolve());
+      await expectNoA11yViolations(container);
+    });
+
+    it.each([
+      ['recovery format error', { mode: 'recovery', fieldError: 'format', focusRequest: 1 }],
+      ['recovery wrong code', { mode: 'recovery', fieldError: 'invalid_code', focusRequest: 1 }],
+    ] as const)('has no accessibility violation in the %s state', async (_name, state) => {
+      const { container } = mount(state);
+
+      await waitFor(() =>
+        expect(screen.getByRole('textbox', { name: 'Резервний код' })).toHaveFocus()
+      );
+      await expectNoA11yViolations(container);
+    });
+  });
+
+  it('puts the mode toggle straight after the submit in the Tab order', async () => {
+    mount();
+    act(() => screen.getByRole('button', { name: 'Підтвердити' }).focus());
+
+    await userEvent.tab();
+
+    expect(screen.getByRole('button', { name: 'Використати резервний код' })).toHaveFocus();
+  });
+
+  it('keeps the toggle inert while the code is being checked', async () => {
+    const { handlers } = mount({ isSubmitting: true });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Використати резервний код' }));
+
+    expect(handlers.switchMode).not.toHaveBeenCalled();
   });
 });

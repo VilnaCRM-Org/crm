@@ -173,7 +173,16 @@
         "cell_label": "Digit {{position}} of {{total}}",
         "submit_button": "Confirm",
         "submitting": "Verifying…",
+        "recovery": {
+          "label": "Recovery code",
+          "helper": "Format: XXXX-XXXX",
+          "subtitle": "Enter one of the recovery codes you saved during setup.",
+          "use_recovery": "Use a recovery code",
+          "use_authenticator": "Use a code from the app"
+        },
         "errors": {
+          "recovery_format": "Enter the recovery code in the format XXXX-XXXX",
+          "recovery_invalid": "Invalid recovery code. Try again.",
           "incomplete": "Enter all 6 digits of the code",
           "format": "The code must be exactly six digits",
           "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
@@ -401,7 +410,16 @@
         "cell_label": "Цифра {{position}} з {{total}}",
         "submit_button": "Підтвердити",
         "submitting": "Перевірка…",
+        "recovery": {
+          "label": "Резервний код",
+          "helper": "Формат: XXXX-XXXX",
+          "subtitle": "Введіть один із резервних кодів, які ви зберегли під час налаштування.",
+          "use_recovery": "Використати резервний код",
+          "use_authenticator": "Використати код із застосунку"
+        },
         "errors": {
+          "recovery_format": "Введіть резервний код у форматі XXXX-XXXX",
+          "recovery_invalid": "Невірний резервний код. Спробуйте ще раз.",
           "incomplete": "Введіть усі 6 цифр коду",
           "format": "Код має складатися лише з шести цифр",
           "invalid_code": "Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз."

@@ -1,14 +1,13 @@
 import type { JSX } from 'react';
-import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import UIPinInput from '@/components/ui-pin-input';
 import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
+import useChallengeFieldSync, { CODE_FIELD_NAME } from '@auth/hooks/use-challenge-field-sync';
 import type { ChallengeCodeFieldProps } from '@auth/types/two-factor/challenge-components';
 
-const FIELD_NAME = 'twoFactorCode';
 const CELL_COUNT = 6;
 const NO_RULES = {};
 
@@ -20,21 +19,14 @@ const FIELD_ERROR_KEYS: Record<TwoFactorFieldError, string> = {
 
 export default function ChallengeCodeField({ state }: ChallengeCodeFieldProps): JSX.Element {
   const { t } = useTranslation();
-  const { control, setFocus, setValue } = useFormContext<TwoFactorDto>();
-  const { value, focusRequest, fieldError, isSubmitting } = state;
-
-  useEffect(() => {
-    if (value === '') setValue(FIELD_NAME, '');
-  }, [value, focusRequest, setValue]);
-
-  useEffect(() => {
-    if (focusRequest > 0) setFocus(FIELD_NAME);
-  }, [focusRequest, setFocus]);
+  const { control } = useFormContext<TwoFactorDto>();
+  const { fieldError, isSubmitting } = state;
+  useChallengeFieldSync(state);
 
   return (
     <UIPinInput<TwoFactorDto>
       control={control}
-      name={FIELD_NAME}
+      name={CODE_FIELD_NAME}
       rules={NO_RULES}
       label={t('two_factor.code_label')}
       cellLabel={(position: number): string =>

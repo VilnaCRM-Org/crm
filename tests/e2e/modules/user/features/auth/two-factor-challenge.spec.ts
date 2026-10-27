@@ -1,4 +1,4 @@
-import type { Route } from '@playwright/test';
+import type { Locator, Page, Route } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
@@ -12,9 +12,12 @@ import {
   challengeText,
   codeCellsOf,
   confirmButtonOf,
+  recoveryFieldOf,
   signInToChallenge,
   submitSignIn,
   typeCode,
+  authenticatorToggleOf,
+  recoveryToggleOf,
 } from '@tests/e2e/utils/reach-challenge';
 import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import {
@@ -26,6 +29,7 @@ import {
 
 const PRESERVED_DESTINATION = '/?tab=deals#pipeline';
 const CODE = '123456';
+const RECOVERY_CODE = 'ABCD-0001';
 const homeHeading: string = t('home.heading');
 
 const credentials = buildCredentials();
@@ -35,6 +39,25 @@ const secrets = {
   token: CHALLENGE_ACCESS_TOKEN,
   password: credentials.password,
 };
+
+interface ToggleRow {
+  readonly mode: string;
+  readonly enter: (page: Page) => Promise<void>;
+  readonly toggle: (page: Page) => Locator;
+}
+
+const TOGGLE_ROWS: readonly ToggleRow[] = [
+  {
+    mode: 'authenticator',
+    enter: async (): Promise<void> => undefined,
+    toggle: recoveryToggleOf,
+  },
+  {
+    mode: 'recovery',
+    enter: (page) => recoveryToggleOf(page).click(),
+    toggle: authenticatorToggleOf,
+  },
+];
 
 test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
   test('a typed URL without a pending session is replaced by /sign-in with no request', async ({
@@ -224,4 +247,89 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     release();
     await expect(page.getByRole('alert')).toHaveCount(0);
   });
+
+  test('a recovery code completes the sign-in and leaves no trace of the code', async ({
+    page,
+  }) => {
+    const challenge = await stubChallenge(page);
+    await stubSignIn(page, ['challenge']);
+    await signOutToSignIn(page);
+    await bounceFromProtectedDestination(page, PRESERVED_DESTINATION);
+    await submitSignIn(page, credentials);
+    await expect(challengeHeadingOf(page)).toBeVisible();
+    await recoveryToggleOf(page).click();
+    await expect(page.getByText(challengeText.recoverySubtitle)).toBeVisible();
+    await expect(recoveryFieldOf(page)).toBeFocused();
+
+    await recoveryFieldOf(page).fill('abcd0001');
+    await confirmButtonOf(page).click();
+
+    await expect(page).toHaveURL(PRESERVED_DESTINATION);
+    await expect(page.getByRole('main')).toBeFocused();
+    expect(challenge.count()).toBe(1);
+    expect(challenge.calls[0]?.variables['input']).toMatchObject({
+      pendingSessionId: SIGN_IN_PENDING_SESSION_ID,
+      twoFactorCode: RECOVERY_CODE,
+    });
+    await expectNoSecrets(page, { ...secrets, code: RECOVERY_CODE, typed: 'abcd0001' });
+  });
+
+  test('a malformed recovery code shows the format text and sends nothing', async ({ page }) => {
+    const challenge = await stubChallenge(page);
+    await signInToChallenge(page, credentials);
+    await recoveryToggleOf(page).click();
+
+    await recoveryFieldOf(page).fill('abc-123');
+    await confirmButtonOf(page).click();
+
+    await expect(page.getByText(challengeText.recoveryFormat)).toBeVisible();
+    await expect(recoveryFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+    expect(challenge.count()).toBe(0);
+  });
+
+  test('a wrong recovery code empties the field and keeps focus in it', async ({ page }) => {
+    await stubChallenge(page, ['invalid_code']);
+    await signInToChallenge(page, credentials);
+    await recoveryToggleOf(page).click();
+
+    await recoveryFieldOf(page).fill('abcd0002');
+    await confirmButtonOf(page).click();
+
+    await expect(page.getByText(challengeText.recoveryInvalid)).toBeVisible();
+    await expect(recoveryFieldOf(page)).toHaveValue('');
+    await expect(recoveryFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+    await expect(recoveryFieldOf(page)).toBeFocused();
+  });
+
+  test('switching back restores the cells with the first one focused', async ({ page }) => {
+    await signInToChallenge(page, credentials);
+    await recoveryToggleOf(page).click();
+    await recoveryFieldOf(page).fill('abc');
+
+    await authenticatorToggleOf(page).click();
+
+    await expect(codeCellsOf(page)).toHaveCount(6);
+    await expect(codeCellsOf(page).first()).toBeFocused();
+    await expect(codeCellsOf(page).first()).toHaveValue('');
+    await expect(recoveryFieldOf(page)).toHaveCount(0);
+  });
+
+  for (const row of TOGGLE_ROWS) {
+    test(`the mode toggle shows the link outline when tabbed to in ${row.mode} mode`, async ({
+      page,
+    }) => {
+      await signInToChallenge(page, credentials);
+      await row.enter(page);
+      const toggle = row.toggle(page);
+      await confirmButtonOf(page).focus();
+
+      await page.keyboard.press('Tab');
+
+      await expect(toggle).toBeFocused();
+      await expect(toggle).toHaveCSS('outline-style', 'solid');
+      await expect(toggle).toHaveCSS('outline-width', '2px');
+      await expect(toggle).toHaveCSS('outline-color', 'rgb(0, 116, 181)');
+      await expect(toggle).toHaveCSS('outline-offset', '2px');
+    });
+  }
 });
