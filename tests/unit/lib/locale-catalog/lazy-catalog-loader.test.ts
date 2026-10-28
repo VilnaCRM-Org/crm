@@ -71,8 +71,17 @@ describe('LazyCatalogLoader', () => {
     expect(instance.getResource(locale, 'translation', 'password_recovery.back')).toBe(back);
   });
 
-  it('ships the settings shell, profile, social and toast groups in both locales', () => {
-    const groups = ['errors', 'heading', 'profile', 'social', 'subtitle', 'title', 'toasts'];
+  it('ships the settings shell, profile, social, toast and two-factor groups in both locales', () => {
+    const groups = [
+      'errors',
+      'heading',
+      'profile',
+      'social',
+      'subtitle',
+      'title',
+      'toasts',
+      'two_factor',
+    ];
 
     expect(Object.keys(settingsEn.settings).sort()).toEqual(groups);
     expect(Object.keys(settingsUk.settings).sort()).toEqual(groups);
