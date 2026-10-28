@@ -35,7 +35,7 @@ function initialTransition(status: TwoFactorStatus): TwoFactorSettingsTransition
   const view = status === 'enabled' ? 'on' : 'off';
   return reconcile({
     settings: { status, otpauthUri: null, secret: null, recoveryCodes: null },
-    view: { view, fieldError: null, banner: null, statusCode: null },
+    view: { view, fieldError: null, banner: null, bannerOccurrence: 0, statusCode: null },
   });
 }
 

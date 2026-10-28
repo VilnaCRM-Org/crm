@@ -18,6 +18,8 @@ export default function TwoFactorChallengeForm(props: TwoFactorChallengeProps): 
       defaultValues={form.defaultValues}
       error={form.error}
       errorAction={form.errorAction}
+      errorOccurrence={form.errorOccurrence}
+      submitRef={form.submitRef}
       isSubmitting={state.isSubmitting}
       submitLabel={form.submitLabel}
       submittingLabel={form.submittingLabel}

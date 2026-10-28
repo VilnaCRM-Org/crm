@@ -17,5 +17,5 @@ export default function useCodeSubmit(
     return submit.send({ twoFactorCode });
   };
 
-  return { isSubmitting: submit.isSubmitting, send, resend: submit.resend };
+  return { isSubmitting: submit.isSubmitting, send };
 }

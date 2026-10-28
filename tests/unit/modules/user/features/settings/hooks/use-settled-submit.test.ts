@@ -53,50 +53,10 @@ describe('useSettledSubmit', () => {
     expect(settle).toHaveBeenCalledWith(failed, PLAN);
   });
 
-  it('resends the same input once more', async () => {
-    const run = jest.fn().mockResolvedValue(CHANGED);
-    const { result, settle } = mount(run);
-    await act(async () => result.current.send('input'));
+  it('offers only send and the busy flag, with no resend of a captured input', () => {
+    const { result } = mount(jest.fn());
 
-    await act(async () => result.current.resend());
-
-    expect(run).toHaveBeenCalledTimes(2);
-    expect(run.mock.calls[1]?.[0]).toBe('input');
-    expect(settle).toHaveBeenCalledTimes(2);
-  });
-
-  it('resends the latest input, not the first', async () => {
-    const run = jest.fn().mockResolvedValue(CHANGED);
-    const { result } = mount(run);
-    await act(async () => result.current.send('first'));
-    await act(async () => result.current.send('second'));
-
-    await act(async () => result.current.resend());
-
-    expect(run.mock.calls[2]?.[0]).toBe('second');
-  });
-
-  it('sends nothing on resend before any send', async () => {
-    const run = jest.fn();
-    const { result, settle } = mount(run);
-
-    await act(async () => result.current.resend());
-
-    expect(run).not.toHaveBeenCalled();
-    expect(settle).not.toHaveBeenCalled();
-  });
-
-  it('resends a null input as a real send', async () => {
-    const run = jest.fn().mockResolvedValue(CHANGED);
-    const { result } = renderHook(() =>
-      useSettledSubmit<null>({ run, plan: PLAN, settle: jest.fn() })
-    );
-    await act(async () => result.current.send(null));
-
-    await act(async () => result.current.resend());
-
-    expect(run).toHaveBeenCalledTimes(2);
-    expect(run.mock.calls[1]?.[0]).toBeNull();
+    expect(Object.keys(result.current).sort()).toEqual(['isSubmitting', 'send']);
   });
 
   it('sends one request for two quick sends and reports busy', async () => {

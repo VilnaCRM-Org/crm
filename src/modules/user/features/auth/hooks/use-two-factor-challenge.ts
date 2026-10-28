@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { Dispatch } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -27,16 +27,11 @@ function useChallengeSender(
   submitter: ChallengeSubmitter,
   dispatch: Dispatch<ChallengeAction>
 ): ChallengeSender {
-  const lastDto = useRef<TwoFactorDto | null>(null);
   const send = async (dto: TwoFactorDto, value: string): Promise<void> => {
-    lastDto.current = dto;
     dispatch({ type: 'submitted', value });
     dispatch({ type: 'settled', result: await submitter.submit(dto) });
   };
-  const retry = (value: string): void => {
-    if (lastDto.current !== null) void send(lastDto.current, value);
-  };
-  return { send, retry };
+  return { send };
 }
 
 function useChallengeCallbacks(deps: ChallengeCallbackDeps): TwoFactorChallengeCallbacks {
@@ -50,7 +45,6 @@ function useChallengeCallbacks(deps: ChallengeCallbackDeps): TwoFactorChallengeC
         dispatch({ type: 'rejected', value: dto.twoFactorCode, fieldError });
       }
     },
-    retry: (): void => sender.retry(view.value),
     switchMode: (): void => dispatch({ type: 'switched' }),
   };
 }

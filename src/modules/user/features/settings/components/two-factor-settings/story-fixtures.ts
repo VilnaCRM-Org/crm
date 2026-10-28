@@ -15,7 +15,6 @@ export const CALLBACKS: TwoFactorSettingsCallbacks = {
   openRegenerate: noop,
   regenerate: noop,
   cancel: noop,
-  retry: noop,
   signInAgain: noop,
 };
 
@@ -58,7 +57,7 @@ export const CODES_SETTINGS: TwoFactorSettingsEntity = {
   },
 };
 
-const CLEAN = { fieldError: null, banner: null, statusCode: null } as const;
+const CLEAN = { fieldError: null, banner: null, bannerOccurrence: 0, statusCode: null } as const;
 
 export const OFF: TwoFactorSettingsViewState = { view: 'off', ...CLEAN };
 export const OFF_RATE_LIMITED: TwoFactorSettingsViewState = { ...OFF, banner: 'rate_limited' };

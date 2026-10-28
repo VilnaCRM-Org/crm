@@ -13,6 +13,7 @@ export default function ErrorBanner({
   error,
   action,
   returnFocusRef,
+  unavailableReasonId,
 }: ErrorBannerProps): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLElement>();
   const focusReturn = useFocusReturn(Boolean(error), returnFocusRef);
@@ -30,7 +31,15 @@ export default function ErrorBanner({
       <UITypography role="alert" sx={styles.errorText}>
         {error}
       </UITypography>
-      {action && <UILinkButton onClick={action.onClick}>{action.label}</UILinkButton>}
+      {action && (
+        <UILinkButton
+          onClick={action.onClick}
+          unavailable={unavailableReasonId !== undefined}
+          describedBy={unavailableReasonId}
+        >
+          {action.label}
+        </UILinkButton>
+      )}
     </Box>
   );
 }

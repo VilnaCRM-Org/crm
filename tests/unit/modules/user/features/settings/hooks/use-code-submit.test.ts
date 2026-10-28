@@ -3,7 +3,7 @@ import { act, renderHook, type RenderHookResult } from '@testing-library/react';
 import useCodeSubmit from '@/modules/user/features/settings/hooks/use-code-submit';
 import type { CodeSubmit } from '@/modules/user/features/settings/types/hooks/two-factor-submit';
 import TwoFactorCodeNormalizer from '@/modules/user/lib/two-factor-code-normalizer';
-import { buildRecoveryCode, buildTotpCode } from '@tests/builders';
+import { buildTotpCode } from '@tests/builders';
 
 import {
   EMPTY_SETTINGS,
@@ -85,24 +85,10 @@ describe('useCodeSubmit', () => {
     }
   );
 
-  it('resends the last normalised code', async () => {
-    const { result, run } = mount('any', 'format');
-    const code = buildRecoveryCode();
-    await act(async () => result.current.send({ twoFactorCode: code.toLowerCase() }));
+  it('offers only send and the busy flag, with no resend of a captured code', () => {
+    const { result } = mount('totp', 'incomplete');
 
-    await act(async () => result.current.resend());
-
-    expect(run).toHaveBeenCalledTimes(2);
-    expect(run.mock.calls[1]?.[0]).toEqual({ twoFactorCode: code });
-  });
-
-  it('has nothing to resend after only a refused entry', async () => {
-    const { result, run } = mount('totp', 'incomplete');
-    await act(async () => result.current.send({ twoFactorCode: '12' }));
-
-    await act(async () => result.current.resend());
-
-    expect(run).not.toHaveBeenCalled();
+    expect(Object.keys(result.current).sort()).toEqual(['isSubmitting', 'send']);
   });
 
   it('reports busy while a send is in flight', async () => {

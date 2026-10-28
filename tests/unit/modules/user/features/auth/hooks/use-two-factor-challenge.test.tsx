@@ -86,9 +86,14 @@ describe('useTwoFactorChallenge', () => {
       value: '',
       fieldError: null,
       banner: null,
+      bannerOccurrence: 0,
       focusRequest: 0,
       isSubmitting: false,
     });
+  });
+
+  it('offers only submit and switchMode, with no separate retry', () => {
+    expect(Object.keys(setUp().result.current.callbacks).sort()).toEqual(['submit', 'switchMode']);
   });
 
   it('mirrors the in-flight flag of the submitter', () => {
@@ -215,6 +220,7 @@ describe('useTwoFactorChallenge', () => {
         value: '123456',
         fieldError: null,
         banner,
+        bannerOccurrence: 1,
         focusRequest: 0,
       });
     }
@@ -234,40 +240,62 @@ describe('useTwoFactorChallenge', () => {
       value: '123456',
       fieldError: null,
       banner: null,
+      bannerOccurrence: 0,
       focusRequest: 0,
     });
   });
 
-  it('clears the banner and the field error when a new submit starts', async () => {
+  it('keeps the banner while the next submit runs, then clears it on a wrong code', async () => {
     const view = setUp();
     await submitCode(view, '123456', failed('network'));
-    expect(view.result.current.state.banner).toBe('transient');
+    let settle: (result: ChallengeResult) => void = () => undefined;
+    mockSubmit.mockReturnValueOnce(
+      new Promise<ChallengeResult>((resolve) => {
+        settle = resolve;
+      })
+    );
 
-    await submitCode(view, '654321', failed('invalid_code'));
+    act(() => view.result.current.callbacks.submit({ twoFactorCode: '654321' }));
 
-    expect(view.result.current.state).toMatchObject({ banner: null, fieldError: 'invalid_code' });
-  });
-
-  it('retries with exactly one more identical request', async () => {
-    const view = setUp();
-    await submitCode(view, '123 456', failed('network'));
-    mockSubmit.mockResolvedValueOnce(failed('server'));
-
-    await act(async () => {
-      view.result.current.callbacks.retry();
+    expect(view.result.current.state).toMatchObject({
+      value: '654321',
+      banner: 'transient',
+      bannerOccurrence: 1,
+      fieldError: null,
     });
-
-    expect(mockSubmit).toHaveBeenCalledTimes(2);
-    expect(mockSubmit).toHaveBeenNthCalledWith(2, { twoFactorCode: '123456' });
-    expect(view.result.current.state).toMatchObject({ value: '123 456', banner: 'transient' });
+    await act(async () => settle(failed('invalid_code')));
+    expect(view.result.current.state).toMatchObject({
+      banner: null,
+      bannerOccurrence: 1,
+      fieldError: 'invalid_code',
+    });
   });
 
-  it('retries nothing before a code was sent', () => {
+  it('counts a repeated banner failure so the banner is raised again', async () => {
     const view = setUp();
+    await submitCode(view, '123456', failed('network'));
 
-    act(() => view.result.current.callbacks.retry());
+    await submitCode(view, '654321', failed('server'));
 
-    expect(mockSubmit).not.toHaveBeenCalled();
+    expect(mockSubmit).toHaveBeenLastCalledWith({ twoFactorCode: '654321' });
+    expect(view.result.current.state).toMatchObject({
+      value: '654321',
+      banner: 'transient',
+      bannerOccurrence: 2,
+    });
+  });
+
+  it('clears the banner when the next code is refused before it is sent', async () => {
+    const view = setUp();
+    await submitCode(view, '123456', failed('network'));
+
+    await submitCode(view, '12');
+
+    expect(view.result.current.state).toMatchObject({
+      banner: null,
+      bannerOccurrence: 1,
+      fieldError: 'incomplete',
+    });
   });
 
   it('switches mode, clears value and errors, asks for focus, and switches back', async () => {

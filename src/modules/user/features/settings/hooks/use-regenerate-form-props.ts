@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import useSubmitRetry from '@/hooks/use-submit-retry';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import type { RegenerateFormProps } from '../types/components/two-factor-settings';
@@ -14,7 +15,8 @@ export default function useRegenerateFormProps({
   callbacks,
 }: TwoFactorSettingsProps): RegenerateFormProps {
   const { t } = useTranslation();
-  const banner = useTwoFactorBanner(view.banner, callbacks.retry);
+  const { submitRef, retry } = useSubmitRetry();
+  const banner = useTwoFactorBanner(view.banner, retry);
   const titleRef = useFocusOnMount<HTMLElement>();
 
   return {
@@ -22,6 +24,8 @@ export default function useRegenerateFormProps({
     defaultValues: NO_VALUES,
     error: banner.error,
     errorAction: banner.action,
+    errorOccurrence: view.bannerOccurrence,
+    submitRef,
     title: t('settings.two_factor.regenerate.title'),
     titleRef,
     subtitle: t('settings.two_factor.regenerate.description'),

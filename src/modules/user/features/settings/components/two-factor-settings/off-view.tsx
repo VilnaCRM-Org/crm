@@ -3,6 +3,7 @@ import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
+import useSubmitRetry from '@/hooks/use-submit-retry';
 
 import useStatusText from '../../hooks/use-status-text';
 import useTwoFactorBanner from '../../hooks/use-two-factor-banner';
@@ -20,7 +21,8 @@ export default function OffView({
   isSubmitting,
 }: TwoFactorSettingsProps): JSX.Element {
   const { t } = useTranslation();
-  const banner = useTwoFactorBanner(view.banner, callbacks.retry);
+  const { submitRef, retry } = useSubmitRetry();
+  const banner = useTwoFactorBanner(view.banner, retry);
   const status = useStatusText(view);
 
   return (
@@ -30,6 +32,8 @@ export default function OffView({
       isSubmitting={isSubmitting}
       error={banner.error}
       errorAction={banner.action}
+      errorOccurrence={view.bannerOccurrence}
+      submitRef={submitRef}
       title=""
       showTitle={false}
       submitLabel={t('settings.two_factor.start')}

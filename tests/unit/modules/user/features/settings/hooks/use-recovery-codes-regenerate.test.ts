@@ -83,7 +83,7 @@ describe('useRecoveryCodesRegenerate', () => {
 
     expect(apply).toHaveBeenCalledWith({
       settings: ENABLED,
-      view: viewState('regenerate', { banner }),
+      view: viewState('regenerate', { banner, bannerOccurrence: 1 }),
     });
   });
 
@@ -110,26 +110,13 @@ describe('useRecoveryCodesRegenerate', () => {
     expect(utils.result.current.isSubmitting).toBe(true);
   });
 
-  it('sends exactly one more regenerate on retry from the confirmation', async () => {
-    const { utils, provider } = mount({
-      settings: ENABLED,
-      view: viewState('regenerate', { banner: 'transient' }),
-    });
-    provider.regenerate.mockResolvedValue(failed('network'));
+  it('offers no separate retry, since the form submit sends regenerate again', () => {
+    const { utils } = mount({ settings: ENABLED, view: viewState('regenerate') });
 
-    await act(async () => utils.result.current.retry());
-
-    expect(provider.regenerate).toHaveBeenCalledTimes(1);
+    expect(Object.keys(utils.result.current).sort()).toEqual([
+      'isSubmitting',
+      'open',
+      'regenerate',
+    ]);
   });
-
-  it.each(['off', 'setup', 'codes', 'on', 'disable', 'reauth'] as const)(
-    'does nothing on retry from the %s view',
-    async (view) => {
-      const { utils, provider } = mount({ settings: ENABLED, view: viewState(view) });
-
-      await act(async () => utils.result.current.retry());
-
-      expect(provider.regenerate).not.toHaveBeenCalled();
-    }
-  );
 });

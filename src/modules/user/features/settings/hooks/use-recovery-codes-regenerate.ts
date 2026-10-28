@@ -23,7 +23,7 @@ const REGENERATE_PLAN: TwoFactorOperationPlan = {
 export default function useRecoveryCodesRegenerate(
   deps: TwoFactorSettingsHookDeps
 ): RecoveryCodesRegenerate {
-  const { provider, read } = deps;
+  const { provider } = deps;
   const { settle, show } = useTwoFactorSettle(deps);
   const regenerating = useSettledSubmit<null>({
     run: (_input, signal) => provider.regenerate(signal),
@@ -35,8 +35,5 @@ export default function useRecoveryCodesRegenerate(
     isSubmitting: regenerating.isSubmitting,
     open: () => show('regenerate'),
     regenerate: () => regenerating.send(null),
-    retry: async (): Promise<void> => {
-      if (read().view.view === 'regenerate') await regenerating.send(null);
-    },
   };
 }

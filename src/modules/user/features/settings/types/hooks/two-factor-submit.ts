@@ -29,7 +29,6 @@ export interface SettledSubmitOptions<TInput> {
 export interface SettledSubmit<TInput> {
   readonly isSubmitting: boolean;
   readonly send: (input: TInput) => Promise<void>;
-  readonly resend: () => Promise<void>;
 }
 
 export interface CodeEntry {
@@ -37,10 +36,6 @@ export interface CodeEntry {
   readonly accept: TwoFactorCodeAcceptance;
   readonly refusal: TwoFactorFieldError;
   readonly refuse: TwoFactorSettle['refuse'];
-}
-
-export interface SentInput<TInput> {
-  readonly input: TInput;
 }
 
 export interface TransitionStore {

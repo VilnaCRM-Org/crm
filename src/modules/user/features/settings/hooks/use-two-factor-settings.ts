@@ -35,11 +35,6 @@ function propsOf(
       regenerate: regenerate.regenerate,
       cancel: disable.cancel,
       signInAgain,
-      retry: (): void => {
-        setup.retry();
-        disable.retry();
-        regenerate.retry();
-      },
     },
   };
 }

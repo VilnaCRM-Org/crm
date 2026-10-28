@@ -86,7 +86,7 @@ describe('useTwoFactorSetup', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: EMPTY_SETTINGS,
-        view: viewState('off', { banner }),
+        view: viewState('off', { banner, bannerOccurrence: 1 }),
       });
     });
 
@@ -191,7 +191,7 @@ describe('useTwoFactorSetup', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: setupView.settings,
-        view: viewState('setup', { banner: 'rate_limited' }),
+        view: viewState('setup', { banner: 'rate_limited', bannerOccurrence: 1 }),
       });
     });
   });
@@ -206,54 +206,43 @@ describe('useTwoFactorSetup', () => {
     });
   });
 
-  describe('retry', () => {
-    it('sends exactly one more setup from the off view', async () => {
-      const { utils, provider } = mount({
-        settings: EMPTY_SETTINGS,
-        view: viewState('off', { banner: 'transient' }),
-      });
-      provider.setup.mockResolvedValue(failed('network'));
-
-      await act(async () => utils.result.current.retry());
-
-      expect(provider.setup).toHaveBeenCalledTimes(1);
-      expect(provider.confirm).not.toHaveBeenCalled();
-    });
-
-    it('sends the last confirm again, identical, from the setup view', async () => {
+  describe('a second attempt after a transient failure', () => {
+    it('confirms the code as it is now, not the one that failed', async () => {
       const { utils, provider } = mount({
         ...setupView,
-        view: viewState('setup', { banner: 'transient' }),
+        view: viewState('setup', { banner: 'transient', bannerOccurrence: 1 }),
       });
       provider.confirm.mockResolvedValue(failed('network'));
-      const code = buildTotpCode();
+      const first = '123456';
+      const edited = '654321';
 
-      await act(async () => utils.result.current.confirm({ twoFactorCode: code }));
-      await act(async () => utils.result.current.retry());
+      await act(async () => utils.result.current.confirm({ twoFactorCode: first }));
+      await act(async () => utils.result.current.confirm({ twoFactorCode: edited }));
 
       expect(provider.confirm).toHaveBeenCalledTimes(2);
-      expect(provider.confirm.mock.calls[1]?.[0]).toEqual({ twoFactorCode: code });
+      expect(provider.confirm.mock.calls[1]?.[0]).toEqual({ twoFactorCode: edited });
     });
 
-    it('does nothing from the setup view before any confirm was sent', async () => {
-      const { utils, provider } = mount(setupView);
+    it('refuses an incomplete edit with the field error and sends nothing', async () => {
+      const transient = viewState('setup', { banner: 'transient', bannerOccurrence: 1 });
+      const { utils, provider, apply } = mount({ ...setupView, view: transient });
 
-      await act(async () => utils.result.current.retry());
+      await act(async () => utils.result.current.confirm({ twoFactorCode: '12' }));
 
       expect(provider.confirm).not.toHaveBeenCalled();
-      expect(provider.setup).not.toHaveBeenCalled();
+      expect(apply).toHaveBeenLastCalledWith({
+        ...setupView,
+        view: { ...transient, fieldError: 'incomplete', banner: null },
+      });
     });
 
-    it.each(['on', 'codes', 'disable', 'regenerate', 'reauth'] as const)(
-      'does nothing from the %s view',
-      async (view) => {
-        const { utils, provider } = mount({ settings: EMPTY_SETTINGS, view: viewState(view) });
-
-        await act(async () => utils.result.current.retry());
-
-        expect(provider.setup).not.toHaveBeenCalled();
-        expect(provider.confirm).not.toHaveBeenCalled();
-      }
-    );
+    it('offers no separate retry; start and confirm are what the forms submit', () => {
+      expect(Object.keys(mount(setupView).utils.result.current).sort()).toEqual([
+        'confirm',
+        'done',
+        'isSubmitting',
+        'start',
+      ]);
+    });
   });
 });

@@ -870,8 +870,14 @@ per expected failure. `useTwoFactorSettle` applies a plan; a failure with no row
 `rate_limited` banner or the Retry-able `transient` one, and `session_ended` publishes nothing and
 calls neither `recordStatus` nor a sign-out, because the session link has ended the session and the
 `ProtectedRoute` redirect unmounts the section. `useSettledSubmit` and `useCodeSubmit` wrap
-`useAbortableSubmit` with the settle step, the last input for Retry and the code normalisation
-(six digits to confirm, six digits or `XXXX-XXXX` to disable). `useTwoFactorTransition` keeps the
+`useAbortableSubmit` with the settle step and the code normalisation (six digits to confirm, six
+digits or `XXXX-XXXX` to disable). Retry keeps no captured input: the banner action clicks the
+form's own submit through `useSubmitRetry`, so react-hook-form validates and the normaliser reads
+the field as it is now, and a submit that is disabled while a request runs cannot send twice. The
+same holds for the sign-in challenge. Each banner failure bumps `bannerOccurrence`, which `UIForm`
+keys its banner by, so a second failure in a row mounts a fresh banner that takes focus and is
+announced again; offline, the Retry action is `aria-disabled` and described by the offline
+notice. `useTwoFactorTransition` keeps the
 entity and the view state, and reconciles every transition: the URI and key survive only in the
 `setup` view, the recovery codes only in `codes`, and the status follows the view, so "Готово", a
 stale setup and unmount all leave an entity with `null` secrets.

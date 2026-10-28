@@ -20,6 +20,7 @@ export interface TwoFactorSettingsViewState {
   readonly view: TwoFactorSettingsView;
   readonly fieldError: TwoFactorFieldError | null;
   readonly banner: TwoFactorBannerCode | null;
+  readonly bannerOccurrence: number;
   readonly statusCode: TwoFactorStatusCode | null;
 }
 
@@ -37,7 +38,6 @@ export interface TwoFactorSettingsCallbacks {
   readonly openRegenerate: () => void;
   readonly regenerate: () => void;
   readonly cancel: () => void;
-  readonly retry: () => void;
   readonly signInAgain: () => void;
 }
 

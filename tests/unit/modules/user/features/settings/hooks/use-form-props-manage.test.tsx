@@ -33,8 +33,10 @@ describe('useDisableFormProps', () => {
     });
   });
 
-  it('maps the banners and focuses the title ref', () => {
-    const props = panelProps({ view: viewState('disable', { banner: 'transient' }) });
+  it('maps the banners, carries their occurrence and the submit ref, and focuses the title', () => {
+    const props = panelProps({
+      view: viewState('disable', { banner: 'transient', bannerOccurrence: 2 }),
+    });
     const { result } = renderHook(() => useDisableFormProps(props), { wrapper });
     const node = document.createElement('h3');
     const focus = jest.spyOn(node, 'focus');
@@ -43,7 +45,9 @@ describe('useDisableFormProps', () => {
     (result.current.titleRef as (element: HTMLElement | null) => void)(node);
 
     expect(result.current.error).toContain('Не вдалося виконати дію');
-    expect(props.callbacks.retry).toHaveBeenCalledTimes(1);
+    expect(result.current.errorOccurrence).toBe(2);
+    expect(result.current.submitRef).toEqual({ current: null });
+    expect(props.callbacks.disable).not.toHaveBeenCalled();
     expect(focus).toHaveBeenCalledTimes(1);
   });
 
@@ -77,7 +81,9 @@ describe('useRegenerateFormProps', () => {
   });
 
   it('maps the banners and focuses the title ref', () => {
-    const props = panelProps({ view: viewState('regenerate', { banner: 'rate_limited' }) });
+    const props = panelProps({
+      view: viewState('regenerate', { banner: 'rate_limited', bannerOccurrence: 5 }),
+    });
     const { result } = renderHook(() => useRegenerate(props), { wrapper });
     const node = document.createElement('h3');
     const focus = jest.spyOn(node, 'focus');
@@ -86,6 +92,8 @@ describe('useRegenerateFormProps', () => {
 
     expect(result.current.error).toContain('Забагато спроб');
     expect(result.current.errorAction).toBeUndefined();
+    expect(result.current.errorOccurrence).toBe(5);
+    expect(result.current.submitRef).toEqual({ current: null });
     expect(focus).toHaveBeenCalledTimes(1);
   });
 });
