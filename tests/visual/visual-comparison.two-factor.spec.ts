@@ -109,6 +109,7 @@ test.describe.parallel('Two-factor visual tests (issue #331)', () => {
       await recoveryToggleOf(page).click();
       await recoveryFieldOf(page).fill(RECOVERY_CODE);
       await confirmButtonOf(page).click();
+      await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.home}$`));
       await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
       await expect(page.getByRole('status').filter({ hasText: lowCodesNotice })).toBeVisible();
 

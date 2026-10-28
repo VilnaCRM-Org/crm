@@ -1,5 +1,6 @@
 import type { Page, Request, Route } from '@playwright/test';
 
+import type { FeatureFlagValues } from '@/config/runtime/types/feature-flag';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
@@ -105,15 +106,24 @@ export async function stubProfile(
   return { calls, count };
 }
 
-export async function signInWithFlag(page: Page, userSettings: boolean): Promise<void> {
+const SETTINGS_FLAGS: FeatureFlagValues = { userSettings: true };
+
+export async function signInWithFlags(page: Page, flags: FeatureFlagValues): Promise<void> {
   await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings } });
+  await overrideRuntimeConfig(page, { flags });
+}
+
+export async function signInWithFlag(page: Page, userSettings: boolean): Promise<void> {
+  await signInWithFlags(page, { userSettings });
 }
 
 const CURRENT_USER_CHUNK = /current-user[^/]*\.js(?:\?.*)?$/;
 
-export async function signInToSettings(page: Page): Promise<void> {
-  await signInWithFlag(page, true);
+export async function signInToSettings(
+  page: Page,
+  flags: FeatureFlagValues = SETTINGS_FLAGS
+): Promise<void> {
+  await signInWithFlags(page, flags);
   await page.route(CURRENT_USER_CHUNK, (route) => route.abort());
 }
 

@@ -10,6 +10,7 @@ import type { TwoFactorSettingsProps } from '../../types/two-factor/settings-vie
 
 import OffGuide from './off-guide';
 import StatusHeading from './status-heading';
+import styles from './styles';
 
 const NO_VALUES: FieldValues = {};
 
@@ -33,6 +34,7 @@ export default function OffView({
       showTitle={false}
       submitLabel={t('settings.two_factor.start')}
       submittingLabel={t('settings.two_factor.preparing')}
+      submitSx={styles.submit}
     >
       <StatusHeading text={status} icon={false} focus />
       <OffGuide />

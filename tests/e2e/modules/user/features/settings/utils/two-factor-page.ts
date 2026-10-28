@@ -1,9 +1,9 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { expectInsideContentBox } from '@tests/e2e/mobile/utils/layout';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
+import { RECOVERY_CODES } from '@tests/e2e/utils/two-factor-settings-responses';
 
 import { signInToSettings } from './profile-stub';
 
@@ -57,9 +57,7 @@ export async function signInToTwoFactorSettings(
   page: Page,
   twoFactorAuth: boolean = true
 ): Promise<void> {
-  await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings: true, twoFactorAuth } });
-  await signInToSettings(page);
+  await signInToSettings(page, { userSettings: true, twoFactorAuth });
 }
 
 export const sectionOf = (page: Page): Locator =>
@@ -181,4 +179,39 @@ export async function enableTwoFactor(page: Page): Promise<void> {
   await page.keyboard.press('Space');
   await doneOf(page).click();
   await expect(statusHeadingOf(page, twoFactorText.statusOn)).toBeFocused();
+}
+
+export type Activate = (control: Locator) => Promise<void>;
+
+const SUBMIT = 'button[type="submit"]';
+const CARD_CODE = '123456';
+
+async function expectCardHolds(page: Page, selector: string, count: number): Promise<void> {
+  await expectInsideContentBox(sectionOf(page), selector, count);
+  const spill = await sectionOf(page).evaluate((card) => card.scrollWidth - card.clientWidth);
+  expect(spill).toBeLessThanOrEqual(0);
+}
+
+export async function expectEveryStateInsideCard(page: Page, activate: Activate): Promise<void> {
+  await expectCardHolds(page, SUBMIT, 1);
+  await activate(startOf(page));
+  await expect(setupHeadingOf(page)).toBeVisible();
+  await expectCardHolds(page, SUBMIT, 1);
+  await activate(codeCellsOf(page).first());
+  await page.keyboard.type(CARD_CODE);
+  await activate(confirmOf(page));
+  await expect(codesHeadingOf(page)).toBeVisible();
+  await expectCardHolds(page, 'li', RECOVERY_CODES.length);
+  await expectCardHolds(page, SUBMIT, 1);
+  await activate(sectionOf(page).getByText(twoFactorText.saved, { exact: true }));
+  await activate(doneOf(page));
+  await expect(statusHeadingOf(page, twoFactorText.statusOn)).toBeVisible();
+  await activate(openDisableOf(page));
+  await expect(disableHeadingOf(page)).toBeVisible();
+  await expectCardHolds(page, 'input', 1);
+  await expectCardHolds(page, SUBMIT, 1);
+  await activate(cancelOf(page));
+  await activate(openRegenerateOf(page));
+  await expect(regenerateHeadingOf(page)).toBeVisible();
+  await expectCardHolds(page, SUBMIT, 1);
 }
