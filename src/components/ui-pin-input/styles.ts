@@ -6,6 +6,8 @@ const CELL = '& .ui-pin-input__cell';
 const ACTIVE_CELL = '&& .ui-pin-input__cell';
 const ENABLED = ':not([aria-disabled="true"])';
 
+export const PIN_GROUP_WRAPPER_SX = { width: '100%' };
+
 export default {
   '&': {
     width: '100%',
