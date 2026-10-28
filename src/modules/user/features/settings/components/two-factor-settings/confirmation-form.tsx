@@ -5,6 +5,8 @@ import UIForm from '@/components/ui-form';
 
 import type { ConfirmationFormViewProps } from '../../types/components/two-factor-settings';
 
+import styles from './styles';
+
 export default function ConfirmationForm<T extends FieldValues>({
   form,
   isSubmitting,
@@ -25,6 +27,7 @@ export default function ConfirmationForm<T extends FieldValues>({
       submitLabel={form.submitLabel}
       submittingLabel={form.submittingLabel}
       submitBlockedReason={form.submitBlockedReason}
+      submitSx={styles.submit}
       footer={footer}
     >
       {children}

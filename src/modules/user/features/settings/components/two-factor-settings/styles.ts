@@ -1,6 +1,11 @@
 import { customColors, paletteColors } from '@/styles/colors';
 
-import { SETTINGS_FOCUS_RING, SETTINGS_PILL } from '../profile-form/styles';
+import {
+  SETTINGS_FIELD_WIDTH_RESET,
+  SETTINGS_FOCUS_RING,
+  SETTINGS_PILL,
+  SETTINGS_SUBMIT_WIDTH_RESET,
+} from '../profile-form/styles';
 
 export default {
   card: {
@@ -11,7 +16,9 @@ export default {
     fontFamily: 'Golos',
     color: customColors.text.primary,
     minWidth: 0,
+    ...SETTINGS_FIELD_WIDTH_RESET,
   },
+  submit: SETTINGS_SUBMIT_WIDTH_RESET,
   title: {
     margin: 0,
     paddingBottom: '1.5rem',
@@ -112,6 +119,7 @@ export default {
   },
   codeItem: {
     padding: '0.5rem 0.875rem',
+    overflowWrap: 'anywhere',
     backgroundColor: paletteColors.border.default,
     borderRadius: '0.25rem',
     fontFamily: 'Golos',

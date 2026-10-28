@@ -11,6 +11,7 @@ import {
   disableFieldOf,
   disableSubmitOf,
   doneOf,
+  expectEveryStateInsideCard,
   openDisableOf,
   openRegenerateOf,
   openSetup,
@@ -52,6 +53,7 @@ import expectTouchTarget from './utils/touch-target';
 const SETTINGS_URL = '/settings';
 const CODE = '123456';
 const CELL_COUNT = 6;
+const CARD_WIDTHS: readonly number[] = [320, 375, 390, 412, 767];
 const SECRETS = {
   secret: SETUP_SECRET,
   uri: SETUP_URI,
@@ -218,6 +220,16 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
       await openSetup(page);
 
       await expectInsideContentBox(sectionOf(page), 'input', CELL_COUNT);
+    });
+  }
+
+  for (const width of CARD_WIDTHS) {
+    test(`keeps each submit, the disable field and every code in the card at ${width} px`, async ({
+      page,
+    }) => {
+      await resizeTo(page, width);
+
+      await expectEveryStateInsideCard(page, (control) => control.tap());
     });
   }
 
