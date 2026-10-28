@@ -183,15 +183,19 @@ describe('useTwoFactorSetup', () => {
       expect(recordStatus).not.toHaveBeenCalled();
     });
 
-    it('keeps the setup view with a banner for rate_limited, network and server', async () => {
+    it.each([
+      ['rate_limited', 'rate_limited'],
+      ['network', 'transient'],
+      ['server', 'transient'],
+    ] as const)('keeps the setup view with the %s banner', async (reason, banner) => {
       const { utils, provider, apply } = mount(setupView);
-      provider.confirm.mockResolvedValue(failed('rate_limited'));
+      provider.confirm.mockResolvedValue(failed(reason));
 
       await act(async () => utils.result.current.confirm({ twoFactorCode: buildTotpCode() }));
 
       expect(apply).toHaveBeenCalledWith({
         settings: setupView.settings,
-        view: viewState('setup', { banner: 'rate_limited', bannerOccurrence: 1 }),
+        view: viewState('setup', { banner, bannerOccurrence: 1 }),
       });
     });
   });

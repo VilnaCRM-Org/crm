@@ -57,7 +57,7 @@ describe('ModeToggle', () => {
     expect(onSwitch).not.toHaveBeenCalled();
   });
 
-  it('is underlined in the link colour and darkens on hover', async () => {
+  it('is underlined in the link colour', async () => {
     render(tree('totp', false, jest.fn()));
     const toggle = screen.getByRole('button', { name: 'Використати резервний код' });
 

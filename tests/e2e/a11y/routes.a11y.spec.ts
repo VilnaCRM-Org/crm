@@ -11,9 +11,9 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { signInToChallenge } from '@tests/e2e/utils/reach-challenge';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
+import expectNoPositiveTabindex from '@tests/utils/a11y/expect-no-positive-tabindex';
 
 const UNKNOWN_PATH = '/definitely-not-a-route';
-const POSITIVE_TABINDEX = '[tabindex]:not([tabindex="0"]):not([tabindex="-1"])';
 
 interface RouteScan {
   key: keyof typeof ROUTE_PATHS;
@@ -153,7 +153,7 @@ test.describe('WCAG 2.1 AA route scans (issue #118)', () => {
     test(`${scan.key} (${scan.path}) declares no positive tabindex`, async ({ page }) => {
       await openRoute(page, scan);
 
-      await expect(page.locator(POSITIVE_TABINDEX)).toHaveCount(0);
+      await expectNoPositiveTabindex(page);
     });
   }
 

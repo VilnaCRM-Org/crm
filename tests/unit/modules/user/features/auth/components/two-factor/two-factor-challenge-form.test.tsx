@@ -178,6 +178,10 @@ describe('TwoFactorChallengeForm', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('Забагато спроб. Зачекайте хвилину і спробуйте знову.');
+    const banner = screen
+      .getAllByRole('generic')
+      .find((element) => element.tagName === 'SECTION' && element.contains(alert));
+    expect(banner).toHaveFocus();
     expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
   });
 

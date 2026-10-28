@@ -52,6 +52,7 @@ describe('AppLayout banner slot', () => {
     const main = screen.getByRole('main');
     const banner = screen.getByText('low codes');
     expect(main).toContainElement(banner);
+    expect(main.innerHTML).toMatch(/^<p>low codes<\/p>/);
     expect(banner.compareDocumentPosition(screen.getByRole('heading', { name: 'page' }))).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );

@@ -112,6 +112,7 @@ describe('UIForm errorAction', () => {
     render(<Form error="" errorAction={retry()} />);
 
     expect(screen.queryByRole('button', { name: ACTION_LABEL })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('renders the same banner as before when no action is given', () => {
