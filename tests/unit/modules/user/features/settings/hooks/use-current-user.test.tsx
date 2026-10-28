@@ -117,6 +117,64 @@ describe('useCurrentUser', () => {
     expect(first.aborted).toBe(true);
   });
 
+  const renderNavigable = (): {
+    result: { current: { state: ReturnType<typeof useCurrentUser>; go: (to: string) => void } };
+  } =>
+    renderHook(
+      () => {
+        const navigate = useNavigate();
+
+        return { state: useCurrentUser(), go: (to: string): void => void navigate(to) };
+      },
+      { wrapper }
+    );
+
+  const NAMED = {
+    status: 'ready',
+    identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
+  } as const;
+
+  it.each(['transient', 'rate_limited', 'rejected'] as const)(
+    'keeps the last good name when a later re-read fails with %s',
+    async (reason) => {
+      settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
+      const { result } = renderNavigable();
+      await waitFor(() => expect(result.current.state).toEqual(NAMED));
+      settle({ kind: 'failed', reason });
+
+      act(() => result.current.go('/boards'));
+
+      await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+      await act(async () => undefined);
+      expect(result.current.state).toEqual(NAMED);
+    }
+  );
+
+  it('clears the shown name when a later re-read reports the session ended', async () => {
+    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
+    const { result } = renderNavigable();
+    await waitFor(() => expect(result.current.state).toEqual(NAMED));
+    settle({ kind: 'failed', reason: 'session_ended' });
+
+    act(() => result.current.go('/boards'));
+
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: 'pending', identity: null })
+    );
+  });
+
+  it('stays name-less when a re-read after a failed first read fails again', async () => {
+    settle({ kind: 'failed', reason: 'transient' });
+    const { result } = renderNavigable();
+    await waitFor(() => expect(result.current.state.status).toBe('failed'));
+
+    act(() => result.current.go('/boards'));
+
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+    await act(async () => undefined);
+    expect(result.current.state).toEqual({ status: 'failed', identity: null });
+  });
+
   it('never shows the previous user on a fresh mount, not even for one render', async () => {
     settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) });
     const { result: before, unmount } = renderHook(() => useCurrentUser(), { wrapper });

@@ -1223,6 +1223,72 @@ describe('check-i18n-parity gate', () => {
       expect(result.status).toBe(1);
     });
 
+    describe('the repository policy', () => {
+      const repositoryPolicy = JSON.parse(
+        fs.readFileSync(path.join(repoRoot, 'config', 'i18n-catalog-policy.json'), 'utf8')
+      );
+      const SETTINGS_CATALOG = path.join('modules', 'user', 'features', 'settings', 'i18n');
+      const SETTINGS_FEATURE = path.join('modules', 'user', 'features', 'settings');
+
+      const isFileOwner = (owner) => /\.tsx?$/.test(owner);
+
+      const repositoryTree = () => {
+        const fixture = cleanFixture();
+        repositoryPolicy.lazyCatalogs.forEach(({ catalog, owners }, index) => {
+          const keys = catalog === SETTINGS_CATALOG ? { settings: { title: 'Settings' } } : {};
+          const own = { [`lazy_${index}`]: { label: `Label ${index}` }, ...keys };
+          writeJson(path.join(fixture.scanRoot, catalog, 'en.json'), own);
+          writeJson(path.join(fixture.scanRoot, catalog, 'uk.json'), own);
+          owners.forEach((owner) => {
+            const target = path.join(fixture.scanRoot, owner);
+            if (isFileOwner(owner)) writeText(target, 'export {};\n');
+            else fs.mkdirSync(target, { recursive: true });
+          });
+        });
+        writeJson(fixture.policyPath, repositoryPolicy);
+        return fixture;
+      };
+
+      const settingsKeyIn = (fixture, file) => {
+        const target = path.join(fixture.scanRoot, SETTINGS_FEATURE, file);
+        writeText(target, "const title = t('settings.title');\n");
+        return target;
+      };
+
+      it.each([
+        path.join('components', 'user-menu', 'user-chip.tsx'),
+        path.join('components', 'user-menu', 'current-user-menu.tsx'),
+        path.join('hooks', 'use-current-user.ts'),
+        path.join('hooks', 'use-user-menu.ts'),
+        path.join('hooks', 'use-user-menu-keys.ts'),
+        path.join('hooks', 'use-chip-label.ts'),
+        path.join('hooks', 'use-chip-name-growth.ts'),
+      ])('fails for a settings key used from the shell file %s', (file) => {
+        const fixture = repositoryTree();
+        const target = settingsKeyIn(fixture, file);
+
+        const result = runGate(fixture);
+
+        expect(result.stderr).toContain(`[lazy-key-scope] ${target}:1: "settings.title"`);
+        expect(result.status).toBe(1);
+      });
+
+      it.each([
+        path.join('routes', 'user-profile', 'index.tsx'),
+        path.join('components', 'profile-form', 'index.tsx'),
+        path.join('components', 'user-profile-settings', 'index.tsx'),
+        path.join('hooks', 'use-profile-save.ts'),
+      ])('resolves a settings key from the settings page file %s', (file) => {
+        const fixture = repositoryTree();
+        settingsKeyIn(fixture, file);
+
+        const result = runGate(fixture);
+
+        expect(result.stderr).toBe('');
+        expect(result.status).toBe(0);
+      });
+    });
+
     it('reads the repository policy when I18N_CATALOG_POLICY is unset', () => {
       const fixture = cleanFixture();
       const env = { ...process.env, I18N_SCAN_ROOT: fixture.scanRoot };

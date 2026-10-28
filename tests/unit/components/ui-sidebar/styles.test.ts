@@ -87,6 +87,14 @@ describe('sidebar styles', () => {
     });
   });
 
+  it('takes the panel block size from the layout, so the placeholder cannot drift', async () => {
+    const styles = await loadStyles();
+    const { default: layoutStyles } = await import('@/components/layouts/app-layout.styles');
+
+    expect(styles.panel.desktop).toEqual(expect.objectContaining(layoutStyles.navPanel.desktop));
+    expect(styles.panel.tablet).toEqual(expect.objectContaining(layoutStyles.navPanel.tablet));
+  });
+
   it('pins handle', async () => {
     const styles = await loadStyles();
 

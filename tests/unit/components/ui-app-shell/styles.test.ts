@@ -35,6 +35,13 @@ describe('app shell styles', () => {
     });
   });
 
+  it('insets both sidebars by the layout inset the placeholder height includes', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.nav.desktop.paddingTop).toBe(layoutStyles.navInsetTop);
+    expect(styles.nav.tablet.paddingTop).toBe(layoutStyles.navInsetTop);
+  });
+
   it('sticks the sidebar 74px from the top, under the 64px header', async () => {
     const styles = await loadStyles();
 
