@@ -48,6 +48,23 @@
         "modules/user/features/settings/components/user-menu",
         "modules/user/features/settings/hooks/use-chip-label.ts"
       ]
+    },
+    {
+      "catalog": "modules/user/features/auth/routes/two-factor-catalog/i18n",
+      "owners": [
+        "modules/user/features/auth/routes/index.ts",
+        "modules/user/features/auth/routes/two-factor",
+        "modules/user/features/auth/components/two-factor",
+        "modules/user/features/auth/hooks/use-challenge-banner.ts",
+        "modules/user/features/auth/hooks/use-challenge-copy.ts"
+      ]
+    },
+    {
+      "catalog": "modules/user/features/auth/components/recovery-codes-notice/i18n",
+      "owners": [
+        "modules/user/features/auth/components/recovery-codes-notice",
+        "modules/user/features/auth/hooks/use-recovery-notice-message.ts"
+      ]
     }
   ]
 }

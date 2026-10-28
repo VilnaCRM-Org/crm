@@ -8,8 +8,12 @@ import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import type { LocaleCatalogPair } from '@/lib/locale-catalog/types/locale-catalog-pair';
 import settingsEn from '@/modules/user/features/settings/i18n/en.json';
 import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
+import noticeEn from '@auth/components/recovery-codes-notice/i18n/en.json';
+import noticeUk from '@auth/components/recovery-codes-notice/i18n/uk.json';
 import recoveryEn from '@auth/routes/recovery-catalog/i18n/en.json';
 import recoveryUk from '@auth/routes/recovery-catalog/i18n/uk.json';
+import twoFactorEn from '@auth/routes/two-factor-catalog/i18n/en.json';
+import twoFactorUk from '@auth/routes/two-factor-catalog/i18n/uk.json';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 
 const createInstance = (seeded: Record<string, unknown> = {}): I18nInstance =>
@@ -37,6 +41,20 @@ const CATALOGS: ReadonlyArray<[string, LocaleCatalogPair, string, string, string
     'ui_toast.close',
     'Close notification',
     'Закрити сповіщення',
+  ],
+  [
+    'two-factor challenge',
+    { en: twoFactorEn, uk: twoFactorUk },
+    'two_factor.code_label',
+    'Verification code',
+    'Код підтвердження',
+  ],
+  [
+    'recovery-codes notice',
+    { en: noticeEn, uk: noticeUk },
+    'recovery_codes_notice.open_settings',
+    'Open settings',
+    'Відкрити налаштування',
   ],
 ];
 
@@ -71,7 +89,7 @@ describe('LazyCatalogLoader', () => {
     expect(instance.getResource(locale, 'translation', 'password_recovery.back')).toBe(back);
   });
 
-  it('ships the settings shell, profile, social, toast and two-factor groups in both locales', () => {
+  it('ships the settings shell, profile, social, toasts and two-factor groups per locale', () => {
     const groups = [
       'errors',
       'heading',

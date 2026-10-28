@@ -959,6 +959,29 @@ forms and en one and other forms, and zero reads "Резервні коди за
 `/settings` client-side and, like the button and arriving on `/settings`, clears the count;
 sign-out and a reload clear it because the store is memory-only.
 
+### The challenge and notice copy are lazy catalogs
+
+**Context.** The first cut put `two_factor.*` and `recovery_codes_notice.*` in the auth catalog,
+so 3,749 B of the minified merged catalog (about 0.9 KB gzip) shipped in the eager `index.js` of
+every page, and the CI Lighthouse `resource-summary:script:size` budget failed on `/sign-in`, the
+two recovery pages and `/`.
+
+**Decision.** Both are lazy catalogs in `config/i18n-catalog-policy.json`. The challenge copy lives
+in `features/auth/routes/two-factor-catalog/i18n` and registers when the `two-factor-challenge`
+route module evaluates, before `RecoveryPageLayout` sets the title; its owners are that route, the
+`components/two-factor` folder, the two challenge hooks that name its keys and the auth route
+contract for `meta.titleKey`. The notice copy lives in `components/recovery-codes-notice/i18n` and
+registers when the lazy `recovery-codes-notice` chunk evaluates; its owners are that component
+and `use-recovery-notice-message.ts`. The sign-in notices the challenge sends back
+(`sign_in.notices.two_factor_expired`, `sign_in.notices.account_locked`) stay in the auth catalog,
+because `/sign-in` renders them. Tests use `createTwoFactorLocaleI18n` and
+`createCodesNoticeLocaleI18n`; the `performance serving` test pins that no eager module
+imports either catalog or a challenge or notice component.
+
+**Rejected.** Keeping the copy eager (it costs every page, including those that never show a
+challenge); one catalog for both (the notice renders in the protected shell, the challenge on a
+public route, so either owner would pull the other's keys into its chunk).
+
 ### The 2FA card in the browser lane
 
 `tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts` drives the card with a seeded

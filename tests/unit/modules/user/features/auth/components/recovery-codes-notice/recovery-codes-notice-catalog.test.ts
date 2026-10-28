@@ -1,5 +1,7 @@
-import en from '@auth/i18n/en.json';
-import uk from '@auth/i18n/uk.json';
+import en from '@auth/components/recovery-codes-notice/i18n/en.json';
+import uk from '@auth/components/recovery-codes-notice/i18n/uk.json';
+import authEn from '@auth/i18n/en.json';
+import authUk from '@auth/i18n/uk.json';
 
 interface NoticeCatalog {
   readonly recovery_codes_notice: Record<string, string>;
@@ -31,6 +33,15 @@ describe('recovery codes notice catalog', () => {
         expect(catalog.recovery_codes_notice[key]).toContain('{{count}}');
       }
     }
+  });
+
+  it('holds only the notice namespace, which the eager auth catalog no longer carries', () => {
+    expect(Object.keys(en)).toEqual(['recovery_codes_notice']);
+    expect(Object.keys(uk)).toEqual(['recovery_codes_notice']);
+    expect(Object.keys(authEn)).not.toContain('recovery_codes_notice');
+    expect(Object.keys(authUk)).not.toContain('recovery_codes_notice');
+    expect(Object.keys(authEn)).not.toContain('two_factor');
+    expect(Object.keys(authUk)).not.toContain('two_factor');
   });
 
   it('names the none, link and dismiss texts in both languages', () => {

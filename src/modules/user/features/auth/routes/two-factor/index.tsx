@@ -2,12 +2,18 @@ import { type JSX, lazy, useEffect, useState } from 'react';
 import { Navigate } from 'react-router';
 
 import useOnceCallback from '@/hooks/use-once-callback';
+import i18n from '@/i18n';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import ROUTE_PATHS from '@/routes/route-paths';
 import RecoveryPageLayout from '@auth/components/recovery-page-layout';
 import usePostLoginRedirect from '@auth/hooks/use-post-login-redirect';
+import en from '@auth/routes/two-factor-catalog/i18n/en.json';
+import uk from '@auth/routes/two-factor-catalog/i18n/uk.json';
 import useAuthStore from '@auth/stores/use-auth-store';
 
 import twoFactorFormSectionLoader from './form-section-loader';
+
+lazyCatalogLoader.register(i18n, { en, uk });
 
 const TwoFactorFormSection = lazy(() => twoFactorFormSectionLoader.load());
 

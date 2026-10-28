@@ -1,0 +1,9 @@
+{
+  "recovery_codes_notice": {
+    "remaining_one": "{{count}} recovery code left. Generate new codes in settings.",
+    "remaining_other": "{{count}} recovery codes left. Generate new codes in settings.",
+    "none": "You are out of recovery codes. Generate new codes now.",
+    "open_settings": "Open settings",
+    "dismiss": "Dismiss notice"
+  }
+}

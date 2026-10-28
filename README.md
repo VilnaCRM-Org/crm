@@ -164,8 +164,9 @@ dependencies.
 
 Translations live in per-feature catalogs. Eager catalogs are merged into one committed file; the
 lazy catalogs listed in `config/i18n-catalog-policy.json` (password recovery, password policy,
-settings, toast, app shell, coming soon and the user menu) stay out of it and are registered by the
-route or component chunk that owns them.
+settings, toast, app shell, coming soon, the user menu, the two-factor challenge and the low
+recovery codes notice) stay out of it and are registered by the route or component chunk that owns
+them.
 
 - Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
 - Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are mandatory and
