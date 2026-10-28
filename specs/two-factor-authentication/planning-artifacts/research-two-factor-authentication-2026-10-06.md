@@ -3,6 +3,7 @@ status: complete
 workflowType: research
 project_name: crm
 date: 2026-10-06
+revised: 2026-10-08
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: BMad (Analyst)

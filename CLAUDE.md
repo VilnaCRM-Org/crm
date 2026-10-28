@@ -2591,10 +2591,11 @@ flags are declared today, both shipped off in the committed block
 `{ "flags": { "userSettings": false, "twoFactorAuth": false } }`: `userSettings` (issue #330; the
 test stack's `docker-compose.test.yml` switches it on through `APP_CONFIG_FLAG_USER_SETTINGS`,
 default `true`) and `twoFactorAuth` (issue #331; it hides only the 2FA section of `/settings`, and
-the test stack passes it through empty, so it renders `false`). The earlier `forgotPassword` flag was
-removed in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an
-environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container
-start with `Known flags: twoFactorAuth, userSettings.` and must unset it.
+the test stack switches it on the same way through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH`, default
+`true`, an explicit `false` turning it off). The earlier `forgotPassword` flag was removed in #309
+when the sign-in "Забули пароль?" link started rendering unconditionally; an environment that still
+sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
+`Known flags: twoFactorAuth, userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
