@@ -36,6 +36,7 @@ function AppLayoutStory({
 }): JSX.Element {
   return (
     <DataRouterStory
+      key={`${String(withUserMenu)}-${String(withBanner)}`}
       routes={[
         {
           element: (
