@@ -87,6 +87,7 @@ export default {
   card: {
     desktop: { ...cardBase, minWidth: '225px', minHeight: '48px' },
     tablet: { ...cardBase, minWidth: '253px', minHeight: '52px' },
+    mobile: { display: 'contents' },
     open: { boxShadow: customColors.shell.cardShadow },
   },
   chip: {

@@ -1,4 +1,4 @@
-import type { ReactNode, Ref, RefObject } from 'react';
+import type { ReactNode, Ref, RefCallback, RefObject } from 'react';
 
 import type { ShellLayout } from '../ui-app-shell';
 import type { NavigationItemSet } from '../ui-app-shell/navigation-item';
@@ -65,10 +65,17 @@ export interface DrawerOpenFlags {
   readonly restore: boolean;
 }
 
-export interface DrawerOpenState extends DrawerOpenFlags {
+export interface DrawerOpenControls {
   readonly show: ActivateHandler;
   readonly dismiss: ActivateHandler;
   readonly leave: ActivateHandler;
+}
+
+export interface DrawerOpenState extends DrawerOpenFlags, DrawerOpenControls {}
+
+export interface DrawerBurger {
+  readonly burger: RefObject<HTMLButtonElement | null>;
+  readonly attach: RefCallback<HTMLButtonElement>;
 }
 
 export interface DrawerFocusOptions extends DrawerOpenFlags {

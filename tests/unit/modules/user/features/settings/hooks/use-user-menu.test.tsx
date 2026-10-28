@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import type { JSX, KeyboardEvent, ReactNode } from 'react';
 import { MemoryRouter, useNavigate } from 'react-router';
 
@@ -140,5 +140,89 @@ describe('useUserMenu', () => {
     rerender({ current: 'desktop' });
 
     expect(result.current.menu.open).toBe(true);
+  });
+
+  it('returns focus to the chip when a layout change closes the open menu and drops focus', () => {
+    const { result, rerender } = renderMenu('desktop');
+    const chip = document.createElement('button');
+    document.body.append(chip);
+    result.current.menu.chip.current = chip;
+    act(() => result.current.menu.show());
+
+    rerender({ current: 'mobile' });
+
+    expect(result.current.menu.open).toBe(false);
+    expect(chip).toHaveFocus();
+    chip.remove();
+  });
+
+  it('returns focus to the chip again on every later layout change that closes the menu', () => {
+    const { result, rerender } = renderMenu('desktop');
+    const chip = document.createElement('button');
+    document.body.append(chip);
+    result.current.menu.chip.current = chip;
+    act(() => result.current.menu.show());
+    rerender({ current: 'mobile' });
+    chip.blur();
+    act(() => result.current.menu.show());
+
+    rerender({ current: 'tablet' });
+
+    expect(result.current.menu.open).toBe(false);
+    expect(chip).toHaveFocus();
+    chip.remove();
+  });
+
+  it('leaves focus on another element when a layout change closes the menu', () => {
+    const { result, rerender } = renderMenu('tablet');
+    const chip = document.createElement('button');
+    const other = document.createElement('button');
+    document.body.append(chip, other);
+    result.current.menu.chip.current = chip;
+    act(() => result.current.menu.show());
+    other.focus();
+
+    rerender({ current: 'desktop' });
+
+    expect(result.current.menu.open).toBe(false);
+    expect(other).toHaveFocus();
+    chip.remove();
+    other.remove();
+  });
+
+  it('does not focus the chip when the layout changes while the menu is closed', () => {
+    const { result, rerender } = renderMenu('desktop');
+    const chip = document.createElement('button');
+    document.body.append(chip);
+    result.current.menu.chip.current = chip;
+
+    rerender({ current: 'mobile' });
+
+    expect(chip).not.toHaveFocus();
+    chip.remove();
+  });
+
+  it('keeps every handler stable across renders', () => {
+    const { result, rerender } = renderMenu('desktop');
+    const { show, close, dismiss, chipKeyDown, menuKeyDown } = result.current.menu;
+
+    rerender({ current: 'desktop' });
+
+    expect(result.current.menu).toMatchObject({ show, close, dismiss, chipKeyDown, menuKeyDown });
+  });
+
+  it('leaves focus alone when it mounts with the chip attached', () => {
+    function ChipHarness(): JSX.Element {
+      const menu = useUserMenu({ layout: 'desktop' });
+
+      return (
+        <button type="button" ref={menu.chip}>
+          chip
+        </button>
+      );
+    }
+    render(<ChipHarness />, { wrapper });
+
+    expect(screen.getByRole('button', { name: 'chip' })).not.toHaveFocus();
   });
 });

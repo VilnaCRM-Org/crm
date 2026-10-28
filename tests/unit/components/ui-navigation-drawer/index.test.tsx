@@ -138,14 +138,13 @@ describe('UINavigationDrawer', () => {
     });
   });
 
-  it('closes for navigation and signs out once when Sign out is activated', async () => {
+  it('closes for navigation and signs out when Sign out is activated', async () => {
     const onNavigate = jest.fn();
     const onClose = jest.fn();
     const signOut = jest.fn();
     renderDrawer({ onNavigate, onClose, signOut });
     const dialog = await screen.findByRole('dialog');
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Sign out' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));

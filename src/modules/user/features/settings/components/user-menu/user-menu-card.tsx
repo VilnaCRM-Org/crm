@@ -13,7 +13,7 @@ export default function UserMenuCard({
 }: UserMenuCardProps): JSX.Element {
   if (layout === 'mobile') {
     return (
-      <>
+      <Box sx={styles.card.mobile}>
         {chip}
         {open && (
           <Box sx={styles.popover}>
@@ -21,7 +21,7 @@ export default function UserMenuCard({
             <Box sx={styles.popoverBody}>{items}</Box>
           </Box>
         )}
-      </>
+      </Box>
     );
   }
 

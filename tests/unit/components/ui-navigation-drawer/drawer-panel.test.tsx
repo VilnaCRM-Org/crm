@@ -77,4 +77,27 @@ describe('DrawerPanel', () => {
 
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
+
+  it('closes and signs out through the latest callbacks after they change', async () => {
+    const user = userEvent.setup();
+    const first = { onNavigate: jest.fn(), signOut: jest.fn() };
+    const second = { onNavigate: jest.fn(), signOut: jest.fn() };
+    const view = renderShell(
+      <DrawerPanel items={navigationItems} signOut={first.signOut} onNavigate={first.onNavigate} />
+    );
+
+    view.rerender(
+      <DrawerPanel
+        items={navigationItems}
+        signOut={second.signOut}
+        onNavigate={second.onNavigate}
+      />
+    );
+    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+
+    expect(first.onNavigate).not.toHaveBeenCalled();
+    expect(first.signOut).not.toHaveBeenCalled();
+    expect(second.onNavigate).toHaveBeenCalledTimes(1);
+    expect(second.signOut).toHaveBeenCalledTimes(1);
+  });
 });

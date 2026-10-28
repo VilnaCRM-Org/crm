@@ -50,10 +50,31 @@ describe('UserMenuCard', () => {
     render(<UserMenuCard layout="mobile" open chip={chip} items={items} />);
 
     expect(screen.getByRole('button', { name: 'chip' })).toBeInTheDocument();
-    expect(screen.getAllByRole('generic', { hidden: true })[1]).toHaveStyle({
+    expect(screen.getAllByRole('generic', { hidden: true })[2]).toHaveStyle({
       width: '225px',
       top: '45px',
       right: '-45px',
     });
+  });
+
+  it.each([
+    ['desktop', 'mobile'],
+    ['mobile', 'tablet'],
+  ] as const)('keeps the chip element when the layout moves from %s to %s', (from, to) => {
+    const view = render(<UserMenuCard layout={from} open={false} chip={chip} items={items} />);
+    const button = screen.getByRole('button', { name: 'chip' });
+
+    view.rerender(<UserMenuCard layout={to} open={false} chip={chip} items={items} />);
+
+    expect(screen.getByRole('button', { name: 'chip' })).toBe(button);
+  });
+
+  it('wraps the mobile chip in a box that draws nothing of its own', () => {
+    render(<UserMenuCard layout="mobile" open={false} chip={chip} items={items} />);
+
+    const [, wrapper] = screen.getAllByRole('generic', { hidden: true });
+
+    expect(wrapper).toContainElement(screen.getByRole('button', { name: 'chip' }));
+    expect(wrapper).toHaveStyle({ display: 'contents' });
   });
 });
