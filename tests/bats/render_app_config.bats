@@ -215,7 +215,7 @@ strip_config_block() {
   [[ "$stderr" == *'Known flags: demoFlag.'* ]]
 }
 
-@test "the committed shell declares only userSettings, so any other flag variable is unknown" {
+@test "the committed shell declares only twoFactorAuth and userSettings, so any other flag variable is unknown" {
   local artifact
   artifact="$(copy_artifact no-flags)"
 
@@ -223,7 +223,7 @@ strip_config_block() {
 
   [ "$status" -ne 0 ]
   [[ "$stderr" == *'names unknown feature flag "darkMode"'* ]]
-  [[ "$stderr" == *'Known flags: userSettings.'* ]]
+  [[ "$stderr" == *'Known flags: twoFactorAuth, userSettings.'* ]]
 }
 
 @test "the renderer refuses to run without a target argument" {
@@ -354,7 +354,7 @@ strip_config_block() {
 
   [ "$status" -eq 0 ]
   assert_output_contains 'started'
-  [ "$(config_block "$root/dist/index.html")" = "{\"flags\":{\"userSettings\":false},\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\"}" ]
+  [ "$(config_block "$root/dist/index.html")" = "{\"flags\":{\"userSettings\":false,\"twoFactorAuth\":false},\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\"}" ]
   [ "$(connect_src "$root/serve.json")" = "$(connect_src "$PROJECT_ROOT/serve.json") https://api.vilnacrm.example" ]
   diff "$PROJECT_ROOT/serve.json" "$root/config/serve.json"
 }
@@ -374,7 +374,7 @@ strip_config_block() {
 
   [ "$status" -ne 0 ]
   [[ "$output" != *"started"* ]]
-  [[ "$stderr" == *'names unknown feature flag "forgotPassword". Known flags: userSettings.'* ]]
+  [[ "$stderr" == *'names unknown feature flag "forgotPassword". Known flags: twoFactorAuth, userSettings.'* ]]
   [ "$(config_block "$artifact")" = "" ]
   diff "$PROJECT_ROOT/serve.json" "$SERVE_CONFIG"
 }
