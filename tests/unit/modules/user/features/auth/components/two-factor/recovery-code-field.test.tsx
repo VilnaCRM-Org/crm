@@ -96,6 +96,14 @@ describe('RecoveryCodeField', () => {
     expect(field()).toHaveAccessibleDescription(text);
   });
 
+  it('renders the error text in the accessible error text colour', async () => {
+    render(<Harness state={{ ...RESTING, fieldError: 'format' }} />);
+
+    const error = await screen.findByText('Введіть резервний код у форматі XXXX-XXXX');
+
+    expect(error).toHaveStyle({ color: 'rgb(198, 40, 40)' });
+  });
+
   it('clears the error text when the hook error goes away', async () => {
     const view = render(<Harness state={{ ...RESTING, fieldError: 'format' }} />);
     await screen.findByText('Введіть резервний код у форматі XXXX-XXXX');

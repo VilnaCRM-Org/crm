@@ -8,22 +8,22 @@ import type {
   TwoFactorSettingsView,
 } from '../types/two-factor/settings-view';
 
-const VIEW_STATUS = new Map<TwoFactorSettingsView, TwoFactorStatus>([
-  ['off', 'disabled'],
-  ['setup', 'disabled'],
-  ['on', 'enabled'],
-  ['codes', 'enabled'],
-  ['disable', 'enabled'],
-  ['regenerate', 'enabled'],
-  ['reauth', 'enabled'],
-]);
+const VIEW_STATUS: Record<TwoFactorSettingsView, TwoFactorStatus> = {
+  off: 'disabled',
+  setup: 'disabled',
+  on: 'enabled',
+  codes: 'enabled',
+  disable: 'enabled',
+  regenerate: 'enabled',
+  reauth: 'enabled',
+};
 
 function reconcile({ settings, view }: TwoFactorSettingsTransition): TwoFactorSettingsTransition {
   const showsSecret = view.view === 'setup';
   return {
     view,
     settings: {
-      status: VIEW_STATUS.get(view.view) ?? 'unknown',
+      status: VIEW_STATUS[view.view],
       otpauthUri: showsSecret ? settings.otpauthUri : null,
       secret: showsSecret ? settings.secret : null,
       recoveryCodes: view.view === 'codes' ? settings.recoveryCodes : null,
