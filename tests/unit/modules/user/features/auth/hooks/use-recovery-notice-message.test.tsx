@@ -3,11 +3,13 @@ import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import useRecoveryNoticeMessage from '@auth/hooks/use-recovery-notice-message';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createCodesNoticeLocaleI18n from '@tests/unit/utils/create-codes-notice-locale-i18n';
 
 const wrapperFor = (language: 'uk' | 'en'): ((props: { children: ReactNode }) => JSX.Element) => {
   function Wrapper({ children }: { children: ReactNode }): JSX.Element {
-    return <I18nextProvider i18n={createLocaleI18n(language)}>{children}</I18nextProvider>;
+    return (
+      <I18nextProvider i18n={createCodesNoticeLocaleI18n(language)}>{children}</I18nextProvider>
+    );
   }
   return Wrapper;
 };

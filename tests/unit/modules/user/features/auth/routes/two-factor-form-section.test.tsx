@@ -11,7 +11,7 @@ import TwoFactorFormSection from '@auth/routes/two-factor/two-factor-form-sectio
 import useAuthStore from '@auth/stores/use-auth-store';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import { buildPendingSessionId, buildToken } from '@tests/builders';
-import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -31,7 +31,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-const i18n = createRecoveryLocaleI18n('uk');
+const i18n = createTwoFactorLocaleI18n('uk');
 const FROM = { pathname: '/deals', search: '?tab=open', hash: '' };
 
 function Probe(): JSX.Element {

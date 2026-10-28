@@ -4,14 +4,14 @@ import { I18nextProvider } from 'react-i18next';
 
 import useChallengeFormProps from '@auth/hooks/use-challenge-form-props';
 import type { TwoFactorChallengeProps } from '@auth/types/two-factor/challenge-view';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 
 interface WrapperProps {
   readonly children: ReactNode;
 }
 
 function I18nWrapper({ children }: WrapperProps): JSX.Element {
-  return <I18nextProvider i18n={createLocaleI18n('uk')}>{children}</I18nextProvider>;
+  return <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>{children}</I18nextProvider>;
 }
 
 const propsOf = (
