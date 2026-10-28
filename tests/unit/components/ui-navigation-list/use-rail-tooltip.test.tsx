@@ -54,6 +54,49 @@ describe('useRailTooltip', () => {
     expect(result.current.visible).toBe(false);
   });
 
+  it('stays shown when the pointer leaves a row that still has keyboard focus', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onMouseLeave);
+
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('stays shown when focus leaves a row the pointer still hovers', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onBlur);
+
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('hides once both the pointer and focus have left', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onMouseLeave);
+    enter(result.current.handlers.onBlur);
+
+    expect(result.current.visible).toBe(false);
+  });
+
+  it('stays dismissed when the pointer leaves a row that keeps focus and returns', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onMouseEnter);
+    press('Escape');
+    enter(result.current.handlers.onMouseLeave);
+    enter(result.current.handlers.onMouseEnter);
+
+    expect(result.current.visible).toBe(false);
+  });
+
   it('shows again after a dismissed tooltip is left and entered anew', () => {
     const { result } = renderHook(() => useRailTooltip());
 

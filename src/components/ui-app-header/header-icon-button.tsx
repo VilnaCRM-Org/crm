@@ -7,6 +7,7 @@ import { ReactComponent as BellIcon } from '@/assets/icons/shell/bell-01.svg';
 import { ReactComponent as TasksIcon } from '@/assets/icons/shell/dotpoints-01.svg';
 import type { HeaderControlKind, HeaderIconButtonProps } from '@/components/types/ui-app-header';
 
+import badgeCountGuard from './badge-count-guard';
 import HeaderBadge from './header-badge';
 import HeaderHiddenText from './header-hidden-text';
 import styles from './styles';
@@ -24,7 +25,7 @@ export default function HeaderIconButton({
   const { t } = useTranslation();
   const statusId = useId();
   const countId = useId();
-  const showsCount = layout !== 'mobile' && typeof count === 'number' && count > 0;
+  const showsCount = layout !== 'mobile' && badgeCountGuard.shows(count);
 
   return (
     <>

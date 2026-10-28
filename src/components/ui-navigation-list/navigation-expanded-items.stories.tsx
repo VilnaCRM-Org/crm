@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
+import { withRoutedStoryList } from '@stories/list-decorators';
 import { storyItems } from '@stories/navigation-story-items';
-import { withMemoryRouter } from '@stories/router-decorators';
 
 import NavigationExpandedItems from './navigation-expanded-items';
 
@@ -12,14 +11,7 @@ const meta: Meta<typeof NavigationExpandedItems> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', items: storyItems, currentId: 'products' },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
-  decorators: [
-    withMemoryRouter('/products'),
-    (Story): JSX.Element => (
-      <ol style={{ width: 238, margin: 24, padding: 0, listStyle: 'none' }}>
-        <Story />
-      </ol>
-    ),
-  ],
+  decorators: withRoutedStoryList('/products', 238),
   parameters: {
     docs: {
       description: {

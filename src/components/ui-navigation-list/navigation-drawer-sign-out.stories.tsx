@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
-import { withMemoryRouter } from '@stories/router-decorators';
+import { withRoutedStoryList } from '@stories/list-decorators';
 import { noop } from '@stories/story-callbacks';
 
 import NavigationDrawerSignOut from './navigation-drawer-sign-out';
@@ -11,14 +10,7 @@ const meta: Meta<typeof NavigationDrawerSignOut> = {
   component: NavigationDrawerSignOut,
   tags: ['autodocs'],
   args: { onSignOut: noop },
-  decorators: [
-    withMemoryRouter('/'),
-    (Story): JSX.Element => (
-      <ol style={{ width: 313, margin: 24, padding: 0, listStyle: 'none' }}>
-        <Story />
-      </ol>
-    ),
-  ],
+  decorators: withRoutedStoryList('/', 313),
   parameters: {
     docs: {
       description: {
