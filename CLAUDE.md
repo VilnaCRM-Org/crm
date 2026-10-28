@@ -437,7 +437,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 425 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 443 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -3111,7 +3111,7 @@ replaces.
    #362): `AppLayout` reads `signOut` from the outlet context `ProtectedRoute` provides
    (`ProtectedOutletContext`, `{ signOut }`, issue #106) and passes it to `UIAppShell`, which
    renders it in the sidebar, the mobile navigation drawer and the user menu; `AppLayout` still
-   forwards the same context to the page outlet. The redirect sign-out causes carries
+   forwards the same context to the page outlet. The sign-out redirect carries
    `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
    `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
    focus again.
