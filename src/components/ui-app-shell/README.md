@@ -406,9 +406,12 @@ sidebar at top 74.
 - `tests/e2e/a11y/routes.a11y.spec.ts` (desktop engines): axe over `/`, `/settings` and the eight
   coming-soon routes with the shell loaded, `/` with `userSettings` off and `/` with the menu open.
 
-The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) abort the
-`current-user` chunk, so the chip never issues the second read OQ-25 introduced and their ordered
-replies stay deterministic; `app-shell.spec.ts` is the one spec that lets the chip read.
+The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) run the
+shell as in production, chip read included. To keep their ordered replies deterministic, the stub
+holds the `current-user` chunk until the page has sent its first read, takes the next read as the
+chip's and answers it with the default profile (recorded in `shellCalls`, not in `calls`), and only
+then answers the page's first read; every later read is the page's. A remount of the shell later in
+the same test (sign out and back in) is not split again, so those reads count as the page's.
 
 Run here against the 3004 dev server with the host Chromium (`chromium-dev` and `mobile-chrome-dev`,
 `--workers=1`): every spec above passes. Firefox, WebKit and `mobile-safari` need the pinned

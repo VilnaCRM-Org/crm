@@ -107,7 +107,23 @@ describe('useCurrentUser over the container (integration)', () => {
     expect(hook.current.identity).toBeNull();
   });
 
-  it('keeps the previous identity when a later read ends the session', async () => {
+  it('keeps the last good identity when a later read fails for another reason', async () => {
+    answerWith('Anna Koval');
+    const hook = mountCurrentUser();
+    await waitFor(() => expect(hook.current.status).toBe('ready'));
+
+    const failed = answerProfileOperation('CurrentUser', {
+      respond: () => new HttpResponse(null, { status: 400 }),
+    });
+    act(() => hook.current.go('/settings'));
+    await waitFor(() => expect(failed).toHaveLength(1));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+    expect(hook.current.status).toBe('ready');
+    expect(hook.current.identity).toEqual({ displayName: 'Anna Koval', monogram: 'AK' });
+  });
+
+  it('clears the previous identity when a later read ends the session', async () => {
     answerWith('Anna Koval');
     const hook = mountCurrentUser();
     await waitFor(() => expect(hook.current.status).toBe('ready'));
@@ -119,7 +135,7 @@ describe('useCurrentUser over the container (integration)', () => {
     await waitFor(() => expect(ended).toHaveLength(1));
     await waitFor(() => expect(useAuthStore.getState().token).toBeNull());
 
-    expect(hook.current.status).toBe('ready');
-    expect(hook.current.identity).toEqual({ displayName: 'Anna Koval', monogram: 'AK' });
+    await waitFor(() => expect(hook.current.status).toBe('pending'));
+    expect(hook.current.identity).toBeNull();
   });
 });

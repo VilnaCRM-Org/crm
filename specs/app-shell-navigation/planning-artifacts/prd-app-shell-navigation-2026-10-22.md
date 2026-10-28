@@ -406,6 +406,12 @@ x 280; it opens the mobile user menu `378:22885`.
 | Read `failed` (`session_ended`)                         | session already ended by the existing link | user lands on `/sign-in`       |
 | Chunk failed after one retry                            | the fallback stays; failure captured       | none; sidebar sign out remains |
 
+**Owner decision, 2026-10-28 (a failed re-read keeps the name).** The two `failed` rows apply to the
+first read of a mount. The chip re-reads on every pathname change, so a later `rate_limited`,
+`transient` or `rejected` re-read after a successful read keeps the last good display name and
+monogram instead of reverting to the name-less chip; a later `session_ended` re-read still clears
+the identity, and the existing session link ends the session.
+
 > Assumption: the pending and failed states reuse the name-less chip with the person glyph that
 > the settings header already uses for an empty monogram (research §7.3.1,
 > `profile-header/index.tsx:34`). They are not designed in Figma (OQ-16); the owner may ask for a

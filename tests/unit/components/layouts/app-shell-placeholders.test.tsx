@@ -43,6 +43,20 @@ describe('AppShellPlaceholders', () => {
     expect(declared(navigation, ['display', 'width'])).toEqual(['none', '250px']);
   });
 
+  it('holds the loaded navigation column height, capped by the viewport like the panel', () => {
+    render(<AppShellPlaceholders />);
+    const [, navigation] = placeholders();
+
+    expect(declared(navigation, ['height', 'max-height'])).toEqual(['801px', 'calc(100vh - 76px)']);
+  });
+
+  it('holds the taller tablet column height below 1440 px', () => {
+    render(<AppShellPlaceholders />);
+    const [, navigation = document.body] = placeholders();
+
+    expect(winningMediaValueFor(navigation, 'max-width:1439.95px', 'height')).toBe('1152px');
+  });
+
   it('shows the navigation column from 1024 px and widens it to 251 px below 1440 px', () => {
     render(<AppShellPlaceholders />);
     const [, navigation = document.body] = placeholders();

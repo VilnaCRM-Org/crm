@@ -39,6 +39,21 @@ describe('UINavigationDrawer', () => {
     expect(isInaccessible(screen.getByText('ОП'))).toBe(true);
   });
 
+  it('keeps the scrolling panel out of the Tab order so Firefox adds no unnamed stop', async () => {
+    renderDrawer();
+
+    const dialog = await screen.findByRole('dialog', { name: 'Main navigation' });
+    const nav = within(dialog).getByRole('navigation', { name: 'Main navigation' });
+    const panels = within(dialog)
+      .getAllByRole('generic')
+      .filter((element) => element.getAttribute('tabindex') === '-1');
+
+    expect(panels).toHaveLength(1);
+    expect(panels[0]).toContainElement(nav);
+    expect(panels[0]).not.toHaveAttribute('role');
+    expect(panels[0]).not.toHaveAttribute('aria-label');
+  });
+
   it('renders nothing while closed', () => {
     renderDrawer({ open: false });
 
