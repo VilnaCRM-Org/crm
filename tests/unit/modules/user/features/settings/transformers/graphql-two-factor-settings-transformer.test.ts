@@ -70,19 +70,24 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
       });
     });
 
-    it('keeps an empty list as an empty set', () => {
-      expect(transformer[method]({ [field]: { user: { recoveryCodes: [] } } } as never)).toEqual({
+    it('accepts a single non-empty code', () => {
+      expect(
+        transformer[method]({ [field]: { user: { recoveryCodes: ['ABCD-2345'] } } } as never)
+      ).toEqual({
         kind: 'changed',
         settings: {
           status: 'enabled',
           otpauthUri: null,
           secret: null,
-          recoveryCodes: { items: [] },
+          recoveryCodes: { items: [{ value: 'ABCD-2345' }] },
         },
       });
     });
 
     it.each([
+      ['an empty list', []],
+      ['a blank code', ['']],
+      ['a blank code among valid ones', ['ABCD-2345', '']],
       ['a string', 'ABCD-2345'],
       ['an object', { 0: 'ABCD-2345' }],
       ['numbers', [1, 2]],

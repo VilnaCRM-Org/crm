@@ -15,6 +15,7 @@ export default function CodesBlock({ codes }: CodesBlockProps): JSX.Element {
     <>
       <Box
         component="ol"
+        role="list"
         ref={listRef}
         aria-label={t('settings.two_factor.codes.list_label')}
         sx={styles.codeList}

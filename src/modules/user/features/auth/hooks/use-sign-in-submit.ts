@@ -57,11 +57,12 @@ async function recordSignal(
     .catch(() => undefined);
 }
 
-function signInDemo(dto: SignInDto, signal: AbortSignal): boolean {
+function signInDemo(dto: SignInDto, signal: AbortSignal): SignInResult | null {
   const demo = signal.aborted ? null : sandboxDemoSessionProvider.signIn(dto);
-  if (demo === null) return false;
-  useAuthStore.setState(patchOf({ kind: 'session', ...demo }));
-  return true;
+  if (demo === null) return null;
+  const outcome: SignInOutcome = { kind: 'session', ...demo };
+  useAuthStore.setState(patchOf(outcome));
+  return { ok: true, value: outcome };
 }
 
 async function resolveProvider(
@@ -83,7 +84,8 @@ async function runSignIn(
   signal: AbortSignal
 ): Promise<void> {
   useAuthStore.setState(START);
-  if (signInDemo(dto, signal)) return;
+  const demo = signInDemo(dto, signal);
+  if (demo !== null) return recordSignal(loader, demo, signal);
   const provider = await resolveProvider(loader, signal);
   if (provider === null) return;
   const result = await provider.login(dto, signal);

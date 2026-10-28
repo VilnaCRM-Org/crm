@@ -127,7 +127,23 @@ describe('settings response schemas', () => {
       });
     });
 
+    it('accepts a set of one one-character code', async () => {
+      const { ConfirmTwoFactorResultSchema, RegenerateRecoveryCodesResultSchema } =
+        await loadSchemas();
+      const user = { recoveryCodes: ['A'] };
+
+      expect(
+        ConfirmTwoFactorResultSchema.safeParse({ confirmTwoFactorUser: { user } }).success
+      ).toBe(true);
+      expect(
+        RegenerateRecoveryCodesResultSchema.safeParse({ regenerateRecoveryCodesUser: { user } })
+          .success
+      ).toBe(true);
+    });
+
     it.each([
+      ['an empty list', []],
+      ['a list holding a blank code', ['ABCD-2345', '']],
       ['a string', 'ABCD-2345'],
       ['an object', { 0: 'ABCD-2345' }],
       ['an array holding a number', ['ABCD-2345', 7]],

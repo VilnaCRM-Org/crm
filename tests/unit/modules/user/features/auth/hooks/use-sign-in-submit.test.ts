@@ -245,12 +245,14 @@ describe('useSignInSubmit', () => {
   });
 
   describe('sandbox demo credentials', () => {
-    it('signs in without resolving the container or sending a request', async () => {
+    it('signs in without resolving the provider or sending a request', async () => {
       const s = stubs();
 
       await runWith(s, DEMO);
 
-      expect(s.resolve).not.toHaveBeenCalled();
+      expect(s.resolve).toHaveBeenCalledTimes(1);
+      expect(s.resolve).toHaveBeenCalledWith(AUTH_TOKENS.AuthSecuritySignals);
+      expect(s.resolve).not.toHaveBeenCalledWith(AUTH_TOKENS.GraphQLSignInProvider);
       expect(s.login).not.toHaveBeenCalled();
       expect(useAuthStore.getState()).toEqual({
         ...CLEARED_AUTH_STATE,
@@ -258,6 +260,30 @@ describe('useSignInSubmit', () => {
         token: DEMO_TOKEN,
         twoFactorStatus: 'disabled',
       });
+      sandboxDemoSessionProvider.signOut();
+    });
+
+    it('records the demo session as a settled successful sign-in', async () => {
+      const s = stubs();
+
+      await runWith(s, DEMO);
+
+      expect(s.loginSettled).toHaveBeenCalledTimes(1);
+      expect(s.loginSettled).toHaveBeenCalledWith({
+        ok: true,
+        value: { kind: 'session', email: DEMO.email, token: DEMO_TOKEN },
+      });
+      sandboxDemoSessionProvider.signOut();
+    });
+
+    it('keeps the demo session when the signals fail to load', async () => {
+      const s = stubs();
+      s.resolve.mockRejectedValue(new Error('chunk'));
+
+      await runWith(s, DEMO);
+
+      expect(s.loginSettled).not.toHaveBeenCalled();
+      expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, token: DEMO_TOKEN });
       sandboxDemoSessionProvider.signOut();
     });
 
