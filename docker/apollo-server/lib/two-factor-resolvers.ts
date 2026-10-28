@@ -56,6 +56,10 @@ const twoFactorPayload = (
   clientMutationId: clientMutationId ?? null,
 });
 
+const rejectBlank = (property: string, value: string): void => {
+  if (value.trim() === '') rejectViolation(property, 'This value should not be blank.');
+};
+
 const rejectMalformedCode = (code: string, shapes: readonly RegExp[]): void => {
   if (!shapes.some((shape) => shape.test(code))) {
     rejectViolation('twoFactorCode', 'This value is not a valid two-factor code.');
@@ -82,6 +86,7 @@ export const twoFactorResolvers = {
       if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
+      rejectBlank('password', input.password);
       return twoFactorPayload(
         requiresChallenge(input.email)
           ? { twoFactorEnabled: true, pendingSessionId: MOCK_PENDING_SESSION_ID }
@@ -97,6 +102,7 @@ export const twoFactorResolvers = {
       _: unknown,
       { input }: { input: CompleteTwoFactorInput }
     ): Promise<TwoFactorPayload> => {
+      rejectBlank('pendingSessionId', input.pendingSessionId);
       rejectMalformedCode(input.twoFactorCode, [TOTP_CODE_REGEX, RECOVERY_CODE_REGEX]);
       rejectWrongCode(input.twoFactorCode);
       return twoFactorPayload(

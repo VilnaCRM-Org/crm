@@ -40,6 +40,8 @@ const OTPAUTH_URI =
   `?secret=${MOCK_SECRET}&issuer=VilnaCRM`;
 const EMAIL_VIOLATION = 'email: This value is not a valid email address.';
 const CODE_VIOLATION = 'twoFactorCode: This value is not a valid two-factor code.';
+const PASSWORD_VIOLATION = 'password: This value should not be blank.';
+const PENDING_SESSION_VIOLATION = 'pendingSessionId: This value should not be blank.';
 
 const execute = async (
   server: ApolloServer,
@@ -228,6 +230,33 @@ describe('2FA operations on the stateless mock', () => {
       });
       expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
     });
+
+    it.each(['', '   '])(
+      'rejects the blank password %p with a coded password violation and no token',
+      async (password) => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        const result = await execute(server, SIGN_IN, { email: buildEmail(), password });
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors?.[0]?.message).toBe(PASSWORD_VIOLATION);
+        expect(result.errors?.[0]?.extensions).toMatchObject({
+          code: 'BAD_USER_INPUT',
+          status: 422,
+        });
+        expect(result.data).toEqual({ signInUser: null });
+        expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+      }
+    );
+
+    it('checks the email before the password', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const result = await execute(server, SIGN_IN, { email: 'not-an-email', password: '' });
+
+      expect(result.errors?.[0]?.message).toBe(EMAIL_VIOLATION);
+      expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+    });
   });
 
   describe('completeTwoFactorUser', () => {
@@ -255,6 +284,27 @@ describe('2FA operations on the stateless mock', () => {
         },
       });
     });
+
+    it.each(['', '   '])(
+      'rejects the blank pending session id %p before checking the code',
+      async (blankSessionId) => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        const result = await execute(server, COMPLETE, {
+          pendingSessionId: blankSessionId,
+          twoFactorCode: '123456',
+        });
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors?.[0]?.message).toBe(PENDING_SESSION_VIOLATION);
+        expect(result.errors?.[0]?.extensions).toMatchObject({
+          code: 'BAD_USER_INPUT',
+          status: 422,
+        });
+        expect(result.data).toEqual({ completeTwoFactorUser: null });
+        expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+      }
+    );
 
     it.each(['12345', '1234567', 'abcdef', 'ABCD2345', 'abc-123', '123 456'])(
       'rejects the malformed code %p with a coded twoFactorCode violation at 422',

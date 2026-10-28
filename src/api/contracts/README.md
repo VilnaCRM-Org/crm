@@ -124,9 +124,10 @@ declaration silently, so each pending file opens with `# pending-against: <versi
   - `confirmTwoFactorUser` and `regenerateRecoveryCodesUser` answer the same eight fixed
     `recoveryCodes`.
   - `disableTwoFactorUser` answers `success: true`.
-  - A malformed e-mail on sign-in, or a malformed `twoFactorCode` on complete, confirm or disable,
-    answers one GraphQL error `<property>: <reason>` with
-    `extensions: { code: 'BAD_USER_INPUT', status: 422 }`.
+  - A malformed e-mail or a blank `password` on sign-in, a blank `pendingSessionId` on complete,
+    or a malformed `twoFactorCode` on complete, confirm or disable, answers one GraphQL error
+    `<property>: <reason>` with `extensions: { code: 'BAD_USER_INPUT', status: 422 }` and no token.
+    A blank value reads `This value should not be blank.`
 
   A recovery code is `XXXX-XXXX` from `A-Z0-9`, in either case. Confirm takes a six-digit code
   only, as upstream does.
