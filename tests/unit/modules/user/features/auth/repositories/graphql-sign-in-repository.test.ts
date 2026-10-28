@@ -139,6 +139,7 @@ describe('GraphQLSignInRepository', () => {
     expect(mutate).not.toHaveBeenCalled();
     expect(caught).toBeInstanceOf(DOMException);
     expect((caught as DOMException).name).toBe('AbortError');
+    expect((caught as DOMException).message).toBe('Sign-in request was aborted');
   });
 
   it('holds only the Apollo client and calls no transformer', () => {

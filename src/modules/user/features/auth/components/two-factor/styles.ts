@@ -38,7 +38,7 @@ export default {
       color: customColors.text.muted,
     },
     '& .Mui-error ~ .MuiFormHelperText-root, & .MuiFormHelperText-root.Mui-error': {
-      color: paletteColors.error.main,
+      color: paletteColors.error.text,
     },
   },
 } as const;

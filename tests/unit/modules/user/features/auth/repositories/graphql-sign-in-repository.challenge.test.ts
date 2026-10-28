@@ -141,5 +141,6 @@ describe('GraphQLSignInRepository.completeChallenge', () => {
     expect(mutate).not.toHaveBeenCalled();
     expect(caught).toBeInstanceOf(DOMException);
     expect((caught as DOMException).name).toBe('AbortError');
+    expect((caught as DOMException).message).toBe('Sign-in request was aborted');
   });
 });

@@ -118,8 +118,10 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
       ['a null user', { disableTwoFactorUser: { user: null } }],
       ['a null payload', { disableTwoFactorUser: null }],
       ['null data', null],
+      ['undefined data', undefined],
+      ['a success flag given as a string', { disableTwoFactorUser: { user: { success: 'true' } } }],
     ])('fails with the server reason for %s', (_name, payload) => {
-      expect(transformer.toDisableOutcome(payload)).toEqual(SERVER);
+      expect(transformer.toDisableOutcome(payload as never)).toEqual(SERVER);
     });
   });
 
