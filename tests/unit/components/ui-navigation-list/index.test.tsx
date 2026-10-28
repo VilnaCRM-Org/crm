@@ -108,14 +108,16 @@ describe('UINavigationList', () => {
 
       const list = screen.getByRole('list');
       expect(list).toHaveAttribute('tabindex', '-1');
+      expect(list).toHaveAttribute('role', 'list');
       expect(list).not.toHaveAttribute('aria-label');
     }
   );
 
-  it('leaves the non-scrolling drawer list without a tabindex', () => {
+  it('leaves the non-scrolling drawer list without a tabindex and keeps its list role', () => {
     renderList({ layout: 'drawer' });
 
     expect(screen.getByRole('list')).not.toHaveAttribute('tabindex');
+    expect(screen.getByRole('list')).toHaveAttribute('role', 'list');
   });
 
   it('renders no Settings group and no sub-item while the userSettings flag is off', () => {

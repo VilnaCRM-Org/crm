@@ -20,7 +20,7 @@ export default function NavigationGroupToggle({
       component="button"
       type="button"
       aria-expanded={expanded}
-      aria-controls={controls}
+      aria-controls={expanded ? controls : undefined}
       aria-label={t(
         expanded ? 'app_shell.settings_group.collapse' : 'app_shell.settings_group.expand'
       )}

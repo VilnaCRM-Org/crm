@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
+import { withRoutedStoryList } from '@stories/list-decorators';
 import { storyItems } from '@stories/navigation-story-items';
-import { withMemoryRouter } from '@stories/router-decorators';
 
 import NavigationRailItems from './navigation-rail-items';
 
@@ -12,14 +11,7 @@ const meta: Meta<typeof NavigationRailItems> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', items: storyItems, currentId: 'settings' },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
-  decorators: [
-    withMemoryRouter('/settings'),
-    (Story): JSX.Element => (
-      <ol style={{ width: 72, margin: 24, padding: 0, listStyle: 'none' }}>
-        <Story />
-      </ol>
-    ),
-  ],
+  decorators: withRoutedStoryList('/settings', 72),
   parameters: {
     docs: {
       description: {

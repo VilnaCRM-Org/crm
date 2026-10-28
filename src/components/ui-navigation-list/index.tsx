@@ -25,6 +25,7 @@ export default function UINavigationList({
   return (
     <Box
       component="ol"
+      role="list"
       tabIndex={scrolls ? -1 : undefined}
       sx={styles.list[scrolls ? variant : 'drawer']}
     >

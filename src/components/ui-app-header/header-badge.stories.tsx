@@ -22,8 +22,8 @@ const meta: Meta<typeof HeaderBadge> = {
           'The presentational count badge: 18 px, Inter 500 12/18 white digits, 34,30 inside the ' +
           'round button, painted in the disabled variant colour `#D0D4D8` because every header ' +
           'button is disabled. It is aria-hidden; the button description carries the count. ' +
-          'The stories pass exactly 1 and 8 for the owner to review with the team lead; no page ' +
-          'passes a count and a missing, null or zero count renders nothing.',
+          'It renders only a whole count of at least 1; a missing, null, zero or fractional ' +
+          'count, NaN or Infinity renders nothing.',
       },
       story: { inline: false },
     },

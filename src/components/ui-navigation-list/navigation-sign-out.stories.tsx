@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
-import { withMemoryRouter } from '@stories/router-decorators';
+import { withRoutedStoryList } from '@stories/list-decorators';
 import { noop } from '@stories/story-callbacks';
 
 import NavigationSignOut from './navigation-sign-out';
@@ -15,14 +14,7 @@ const meta: Meta<typeof NavigationSignOut> = {
     layout: { control: 'select', options: ['desktop', 'tablet'] },
     variant: { control: 'select', options: ['expanded', 'rail'] },
   },
-  decorators: [
-    withMemoryRouter('/'),
-    (Story): JSX.Element => (
-      <ol style={{ width: 238, margin: 24, padding: 0, listStyle: 'none' }}>
-        <Story />
-      </ol>
-    ),
-  ],
+  decorators: withRoutedStoryList('/', 238),
   parameters: {
     docs: {
       description: {

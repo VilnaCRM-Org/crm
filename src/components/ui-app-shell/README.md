@@ -54,7 +54,9 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 `UIAppHeader` (`src/components/ui-app-header/`) is the 64 px banner. Search, bell and list are
 natively `disabled` and described by the visually hidden status "Not available yet"; the mobile
 header has no search. The bell and list take an optional badge count that only stories pass: the
-header stories feed exactly 1 and 8, and no page, hook or route passes a count. The badge is
+header stories feed exactly 1 and 8, and no page, hook or route passes a count. One guard
+(`badge-count-guard.ts`) decides both the badge and the hidden count description: only a whole count
+of at least 1 shows, so zero, a fraction, `NaN` and `Infinity` show neither. The badge is
 painted in the disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
 The user slot reserves the chip's box with an `aria-hidden` placeholder until the chip arrives.
 
@@ -117,7 +119,9 @@ expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron to
 next route change; any pathname change clears it, so returning to the path it was set on (a link or
 browser Back) shows the route rule again. The handle collapses the panel to the rail (72 px desktop,
 76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
-While a tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
+Hover and focus are tracked apart, so the tooltip stays while either holds: the pointer leaving a
+row that keeps focus, or focus leaving a row the pointer still covers, does not hide it. While a
+tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
 a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
 is persisted. Sign out runs through `useOnceCallback`, so a second activation before navigation does
 nothing.
