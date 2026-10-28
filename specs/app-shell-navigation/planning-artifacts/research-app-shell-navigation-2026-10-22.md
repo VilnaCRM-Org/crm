@@ -825,4 +825,4 @@ Components `19:908`, Sandbox `145:12666`; about 30 700 nodes) matched every fram
 node against coming-soon, "в розробці", "незабаром", "скоро", placeholder, stub and empty (in
 English and Ukrainian, plus the Russian equivalents the file uses for frame names). No node
 matched; the only hits were unrelated text (an upload hint and a developer-docs mock). Verdict:
-**NOT FOUND**. The page is specified as a token-only proposal (UX §15) pending OQ-28.
+**NOT FOUND**. The page is specified as a token-only proposal (UX §15) accepted by the owner under OQ-28 and marked for designer confirmation.
