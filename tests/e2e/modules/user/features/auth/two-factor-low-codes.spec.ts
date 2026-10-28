@@ -1,6 +1,7 @@
 import type { Page, Request } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
+import { sidebarOf } from '@tests/e2e/utils/app-shell';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -34,6 +35,7 @@ const NOTICES = [
 const openSettings: string = t('recovery_codes_notice.open_settings');
 const dismiss: string = t('recovery_codes_notice.dismiss');
 const homeHeading: string = t('home.heading');
+const boards: string = t('app_shell.items.boards');
 
 const noticeRegionOf = (page: Page, text: string): ReturnType<Page['getByRole']> =>
   page.getByRole('status').filter({ hasText: text });
@@ -111,6 +113,13 @@ test.describe('Low recovery codes notice (issue #331)', () => {
     await landWith(page, 2);
 
     await page.getByRole('button', { name: dismiss }).click();
+    await expect(page.getByRole('button', { name: dismiss })).toHaveCount(0);
+
+    await sidebarOf(page).getByRole('link', { name: boards, exact: true }).click();
+    await expect(page).toHaveURL(/\/boards$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
 
     await expect(page.getByRole('button', { name: dismiss })).toHaveCount(0);
     await expect(page.getByRole('status').filter({ hasText: NOTICES[1].text })).toHaveCount(0);

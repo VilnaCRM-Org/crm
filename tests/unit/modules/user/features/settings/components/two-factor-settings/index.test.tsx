@@ -5,9 +5,10 @@ import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import TwoFactorSettings from '@/modules/user/features/settings/components/two-factor-settings';
+import { buildOtpauthUri, buildTotpSecret } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 
-import { panelProps, viewState } from './render-panel';
+import { EMPTY_SETTINGS, panelProps, viewState } from './render-panel';
 
 const mockHook = jest.fn();
 
@@ -47,11 +48,22 @@ describe('TwoFactorSettings', () => {
   });
 
   it('passes the busy flag and the view to the panel', () => {
-    mockHook.mockReturnValue(panelProps({ isSubmitting: true, view: viewState('off') }));
+    const settings = {
+      ...EMPTY_SETTINGS,
+      otpauthUri: buildOtpauthUri(),
+      secret: buildTotpSecret(),
+    };
+    mockHook.mockReturnValue(
+      panelProps({ isSubmitting: true, settings, view: viewState('setup') })
+    );
 
     render(<TwoFactorSettings />, { wrapper: Wrapper });
 
-    expect(screen.getByText('Підготовка…')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Налаштуйте двофакторну автентифікацію' })
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Цифра 1 з 6')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByRole('button', { name: 'Почати налаштування' })).not.toBeInTheDocument();
     expect(mockHook).toHaveBeenCalledTimes(1);
   });
 });

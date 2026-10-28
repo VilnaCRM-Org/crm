@@ -210,7 +210,16 @@ describe('TwoFactorPanel', () => {
       expect(screen.getByLabelText('Цифра 1 з 6')).toHaveAttribute('aria-disabled', 'true');
     });
 
-    it('shows the banners with Retry only for transient', async () => {
+    it('shows the rate-limited banner without Retry', () => {
+      renderPanel(setupProps({ view: viewState('setup', { banner: 'rate_limited' }) }));
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Забагато спроб. Зачекайте хвилину і спробуйте знову.'
+      );
+      expect(screen.queryByRole('button', { name: /спробувати/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the transient banner with a Retry that confirms the typed code once', async () => {
       const props = setupProps({ view: viewState('setup', { banner: 'transient' }) });
       renderPanel(props);
       await userEvent.type(screen.getByLabelText('Цифра 1 з 6'), '654321');

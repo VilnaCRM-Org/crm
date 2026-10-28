@@ -68,6 +68,7 @@ describe('useSignInSubmit', () => {
 
   afterEach(() => {
     localStorage.removeItem('vilnacrm.sandbox-demo-session');
+    jest.restoreAllMocks();
   });
 
   it('writes the loading state synchronously, before the provider resolves', async () => {
@@ -137,7 +138,6 @@ describe('useSignInSubmit', () => {
       token,
       twoFactorStatus: 'disabled',
     });
-    setState.mockRestore();
   });
 
   it('writes a challenge patch with the pending session and never a token', async () => {

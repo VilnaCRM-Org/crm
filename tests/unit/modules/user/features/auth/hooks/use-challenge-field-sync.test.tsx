@@ -83,6 +83,7 @@ describe('useChallengeFieldSync', () => {
     rerender({ ...RESTING, focusRequest: 2 });
 
     await waitFor(() => expect(harness().focus).toHaveBeenCalledTimes(2));
-    expect(harness().focus).toHaveBeenCalledWith('twoFactorCode');
+    expect(harness().focus).toHaveBeenNthCalledWith(1, 'twoFactorCode');
+    expect(harness().focus).toHaveBeenNthCalledWith(2, 'twoFactorCode');
   });
 });

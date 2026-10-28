@@ -69,6 +69,7 @@ describe('Auth Store Integration', () => {
         token,
         twoFactorStatus: 'enabled',
         pendingSessionId: buildPendingSessionId(),
+        recoveryCodesRemaining: 2,
       });
 
       authActions.logout();
@@ -82,6 +83,7 @@ describe('Auth Store Integration', () => {
       expect(state.registerLoading).toBe(false);
       expect(state.twoFactorStatus).toBe('unknown');
       expect(state.pendingSessionId).toBeNull();
+      expect(state.recoveryCodesRemaining).toBeNull();
     });
   });
 

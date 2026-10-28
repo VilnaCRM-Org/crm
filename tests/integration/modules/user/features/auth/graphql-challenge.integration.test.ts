@@ -4,7 +4,8 @@ import { HttpResponse } from 'msw';
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import securityEventCore from '@/services/security-events/security-event-core';
+import observabilityCore from '@/services/observability/observability-core';
+import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type {
@@ -163,16 +164,26 @@ describe('GraphQL challenge completion through the container (integration)', () 
   });
 
   it('records a failed completion under the login category through the container', () => {
-    const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
 
     signals.challengeSettled(failedWith('invalid_code'));
 
-    expect(authFailure).toHaveBeenCalledTimes(1);
-    expect(authFailure).toHaveBeenCalledWith('login', 'invalid_code');
+    expect(report).toHaveBeenCalledTimes(1);
+    const [signal, payload] = report.mock.calls[0] ?? [];
+    expect(signal).toBeInstanceOf(SecurityEventSignal);
+    expect(payload).toEqual({
+      event: 'auth_failure',
+      category: 'login',
+      reason: 'invalid_code',
+      severity: 'warning',
+      failureCount: 1,
+      windowMs: expect.any(Number),
+      threshold: expect.any(Number),
+      thresholdCrossed: false,
+    });
   });
 
-  it('tags an opaque identity for a completed challenge without leaking the token', async () => {
-    const observabilityCore = (await import('@/services/observability/observability-core')).default;
+  it('tags an opaque identity for a completed challenge without leaking the token', () => {
     const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
     const token = buildToken();
 

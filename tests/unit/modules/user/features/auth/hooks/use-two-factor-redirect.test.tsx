@@ -39,6 +39,10 @@ describe('useTwoFactorRedirect', () => {
     resetClientStores();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('discards a pending session on its first run and does not navigate', () => {
     useAuthStore.setState({ pendingSessionId });
 
@@ -54,7 +58,6 @@ describe('useTwoFactorRedirect', () => {
     mount();
 
     expect(setState).not.toHaveBeenCalled();
-    setState.mockRestore();
   });
 
   it('navigates once to the challenge with the from target only when a session appears', () => {

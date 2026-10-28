@@ -2,7 +2,9 @@ import 'reflect-metadata';
 
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import observabilityCore from '@/services/observability/observability-core';
 import securityEventCore from '@/services/security-events/security-event-core';
+import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
 const resolveSignals = (): AuthSecuritySignals =>
@@ -39,7 +41,7 @@ describe('auth security signals (integration)', () => {
   });
 
   it('records a locked sign-in under the login category through the container', () => {
-    const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
 
     resolveSignals().loginSettled({
       ok: false,
@@ -52,11 +54,22 @@ describe('auth security signals (integration)', () => {
       },
     });
 
-    expect(authFailure).toHaveBeenCalledWith('login', 'locked');
+    expect(report).toHaveBeenCalledTimes(1);
+    const [signal, payload] = report.mock.calls[0] ?? [];
+    expect(signal).toBeInstanceOf(SecurityEventSignal);
+    expect(payload).toEqual({
+      event: 'auth_failure',
+      category: 'login',
+      reason: 'locked',
+      severity: 'warning',
+      failureCount: 1,
+      windowMs: expect.any(Number),
+      threshold: expect.any(Number),
+      thresholdCrossed: false,
+    });
   });
 
-  it('tags an opaque identity on a successful login without leaking an address', async () => {
-    const observabilityCore = (await import('@/services/observability/observability-core')).default;
+  it('tags an opaque identity on a successful login without leaking an address', () => {
     const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
 
     resolveSignals().loginSettled({

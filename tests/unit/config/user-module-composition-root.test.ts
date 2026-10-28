@@ -44,6 +44,16 @@ const SETTINGS_TOKENS = [
   AUTH_TOKENS.GraphQLProfileRepository,
   AUTH_TOKENS.ProfileProvider,
 ];
+const SIGN_IN_TOKENS = [
+  AUTH_TOKENS.GraphQLSignInRepository,
+  AUTH_TOKENS.GraphQLSignInTransformer,
+  AUTH_TOKENS.GraphQLSignInProvider,
+];
+const TWO_FACTOR_SETTINGS_TOKENS = [
+  AUTH_TOKENS.GraphQLTwoFactorSettingsRepository,
+  AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer,
+  AUTH_TOKENS.TwoFactorSettingsProvider,
+];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
   AUTH_TOKENS.SandboxDemoSessionProvider,
@@ -60,6 +70,8 @@ const EVERY_TOKEN = [
   ...REPOSITORY_TOKENS,
   ...PASSWORD_RECOVERY_TOKENS,
   ...SETTINGS_TOKENS,
+  ...SIGN_IN_TOKENS,
+  ...TWO_FACTOR_SETTINGS_TOKENS,
   ...AUTH_STATE_TOKENS,
   ...SESSION_LINK_TOKENS,
 ];
@@ -160,6 +172,14 @@ describe('user module composition root', () => {
     const transformer = child.resolve(AUTH_TOKENS.GraphQLProfileTransformer);
     expect(transformer).toBeInstanceOf(GraphQLProfileTransformer);
     expect(child.resolve(AUTH_TOKENS.GraphQLProfileTransformer)).toBe(transformer);
+  });
+
+  it('binds the graphql sign-in repository, transformer and provider', () => {
+    expectAllRegistered(registeredContainer(), SIGN_IN_TOKENS);
+  });
+
+  it('binds the two-factor settings repository, transformer and provider', () => {
+    expectAllRegistered(registeredContainer(), TWO_FACTOR_SETTINGS_TOKENS);
   });
 
   it('binds the session link factory as a singleton over the session link bundle', () => {
