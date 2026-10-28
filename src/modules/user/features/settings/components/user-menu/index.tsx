@@ -2,7 +2,6 @@ import Box from '@mui/material/Box';
 import { type JSX, useId } from 'react';
 
 import useShellLayout from '@/components/ui-app-shell/use-shell-layout';
-import useOnceCallback from '@/hooks/use-once-callback';
 
 import useUserMenu from '../../hooks/use-user-menu';
 import type { UserMenuProps } from '../../types/components/user-menu';
@@ -23,7 +22,6 @@ export default function UserMenu({
   const layout = useShellLayout();
   const menu = useUserMenu({ layout });
   const menuId = useId();
-  const signOutOnce = useOnceCallback(signOut);
 
   return (
     <Box sx={styles.root[layout]}>
@@ -38,7 +36,7 @@ export default function UserMenu({
             menuId={menuId}
             settingsAvailable={settingsAvailable}
             menu={menu}
-            signOut={signOutOnce}
+            signOut={signOut}
           />
         }
       />

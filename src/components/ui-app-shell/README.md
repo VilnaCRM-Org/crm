@@ -123,8 +123,8 @@ Hover and focus are tracked apart, so the tooltip stays while either holds: the 
 row that keeps focus, or focus leaving a row the pointer still covers, does not hide it. While a
 tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
 a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
-is persisted. Sign out runs through `useOnceCallback`, so a second activation before navigation does
-nothing.
+is persisted. Sign out runs through the `useSignOut` latch the protected route provides, so a second
+activation of any shell control before navigation does nothing.
 
 ### Measured against Figma (sidebar)
 

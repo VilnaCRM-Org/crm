@@ -116,7 +116,10 @@ two modules declare `shell.userMenu`.
 
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
   failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
-  are untouched and nothing reloads.
+  are untouched and nothing reloads. Each mount of the slot creates its own lazy component and
+  holds its own `Suspense` boundary (an aria-hidden placeholder while the chunk loads), so a host
+  that mounts again after a twice-failed load imports the chunk again instead of keeping the empty
+  slot for the rest of the document.
 - **The current-user chunk** carries only the identity source: the slot keeps one menu mounted
   and the chunk reports the identity it reads, so the chip keeps focus and an open menu when it
   arrives (see `src/modules/user/features/settings/README.md`). Its failure is reported through

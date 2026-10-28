@@ -11,6 +11,12 @@ import styles from './styles';
 
 const FOCUS_ON_ARRIVAL: RedirectNavigationState = { focusMain: true };
 
+function activateOnSpace(event: KeyboardEvent<HTMLAnchorElement>): void {
+  if (event.key !== ' ') return;
+  event.preventDefault();
+  event.currentTarget.click();
+}
+
 export default function UserMenuLink({ layout, label, onClose }: UserMenuLinkProps): JSX.Element {
   const handleLink = useLinkClickHandler<HTMLAnchorElement>(ROUTE_PATHS.settings, {
     state: FOCUS_ON_ARRIVAL,
@@ -22,12 +28,6 @@ export default function UserMenuLink({ layout, label, onClose }: UserMenuLinkPro
     },
     [onClose, handleLink]
   );
-
-  const activateOnSpace = useCallback((event: KeyboardEvent<HTMLAnchorElement>): void => {
-    if (event.key !== ' ') return;
-    event.preventDefault();
-    event.currentTarget.click();
-  }, []);
 
   return (
     <MenuItem

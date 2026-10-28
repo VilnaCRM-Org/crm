@@ -65,4 +65,21 @@ describe('useRailTooltipPosition', () => {
 
     expect(measure).toHaveBeenCalledTimes(calls);
   });
+
+  it('follows a new anchor and offset on the next relayout', () => {
+    const first = movableAnchor();
+    const second = movableAnchor();
+    second.move(300);
+    const { result, rerender } = renderHook(
+      ({ anchor, offset }) => useRailTooltipPosition(anchor, offset),
+      { initialProps: { anchor: first.anchor, offset: OFFSET } }
+    );
+
+    rerender({ anchor: second.anchor, offset: { left: 10, top: 20 } });
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    expect(result.current).toEqual({ left: 22, top: 320 });
+  });
 });

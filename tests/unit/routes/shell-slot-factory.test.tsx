@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, type RenderResult, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type JSX, Suspense, useCallback } from 'react';
 
@@ -35,7 +35,7 @@ const mount = (
   Slot: ReturnType<ShellSlotFactory['create']>,
   signOut = jest.fn(),
   onAvatar = jest.fn()
-): void => {
+): RenderResult =>
   render(
     <div role="group" aria-label="slot">
       <Suspense fallback={<p>pending</p>}>
@@ -43,7 +43,6 @@ const mount = (
       </Suspense>
     </div>
   );
-};
 
 describe('ShellSlotFactory', () => {
   it('renders the loaded slot with the outlet sign-out and the failure handler bound', async () => {
@@ -87,13 +86,16 @@ describe('ShellSlotFactory', () => {
     expect(onAvatar).not.toHaveBeenCalled();
   });
 
-  it('shows the Suspense fallback while the chunk is pending', () => {
+  it('holds an aria-hidden placeholder of its own while the chunk is pending', () => {
     const report = jest.fn();
     const Slot = new ShellSlotFactory(report).create(() => new Promise(() => undefined));
 
     mount(Slot);
+    const slot = screen.getByRole('group', { name: 'slot' });
 
-    expect(screen.getByText('pending')).toBeInTheDocument();
+    expect(screen.queryByText('pending')).not.toBeInTheDocument();
+    expect(slot).toHaveTextContent(/^$/u);
+    expect(slot.innerHTML).toBe('<span aria-hidden="true"></span>');
     expect(report).not.toHaveBeenCalled();
   });
 
@@ -124,6 +126,38 @@ describe('ShellSlotFactory', () => {
     expect(report).toHaveBeenCalledWith('app-shell:user-menu', failure);
     expect(load).toHaveBeenCalledTimes(2);
     await waitFor(() => expect(screen.getByRole('group', { name: 'slot' })).toBeEmptyDOMElement());
+  });
+
+  it('loads the slot again when a host mounts after the chunk failed twice', async () => {
+    const report = jest.fn();
+    const load = jest
+      .fn()
+      .mockRejectedValueOnce(chunkFailure())
+      .mockRejectedValueOnce(chunkFailure())
+      .mockResolvedValueOnce({ default: LoadedSlot });
+    const Slot = new ShellSlotFactory(report).create(load);
+    const { unmount } = mount(Slot);
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+    unmount();
+
+    mount(Slot);
+
+    expect(await screen.findByRole('button', { name: 'sign out' })).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(3);
+    expect(report).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps one load per host across its re-renders', async () => {
+    const load = jest.fn().mockResolvedValue({ default: LoadedSlot });
+    const Slot = new ShellSlotFactory(jest.fn()).create(load);
+    const view = render(<Slot signOut={jest.fn()} onAvatar={jest.fn()} />);
+    await screen.findByRole('button', { name: 'sign out' });
+    const button = screen.getByRole('button', { name: 'sign out' });
+
+    view.rerender(<Slot signOut={jest.fn()} onAvatar={jest.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'sign out' })).toBe(button);
+    expect(load).toHaveBeenCalledTimes(1);
   });
 
   it('reports a non-chunk failure at once, without a second import', async () => {

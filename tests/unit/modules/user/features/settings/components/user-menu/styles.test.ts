@@ -71,6 +71,7 @@ describe('user menu styles', () => {
         minWidth: '253px',
         minHeight: '52px',
       },
+      mobile: { display: 'contents' },
       open: {
         boxShadow: '0 8px 27px rgba(49, 59, 67, 0.05)',
       },
