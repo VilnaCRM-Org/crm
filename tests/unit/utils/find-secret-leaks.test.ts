@@ -10,6 +10,7 @@ type PageEvaluator = Parameters<typeof findSecretLeaks>[0];
 interface FakeStore {
   readonly name: string;
   readonly rows: readonly unknown[];
+  readonly keys?: readonly unknown[];
 }
 
 interface FakeDatabase {
@@ -49,18 +50,18 @@ const installIndexedDb = (databases: readonly FakeDatabase[], failOpen = false):
           return transaction;
         },
       } as unknown as IDBDatabase;
+      const answer = (result: unknown): IDBRequest => {
+        const request = {} as IDBRequest;
+        queueMicrotask(() => request.onsuccess?.({ target: { result } } as never));
+        return request;
+      };
+      const storeOf = (store: string): FakeStore | undefined =>
+        found.stores.find((candidate) => candidate.name === store);
       Object.assign(transaction, {
         objectStore: (store: string): IDBObjectStore =>
           ({
-            getAll: (): IDBRequest => {
-              const getAll = {} as IDBRequest;
-              queueMicrotask(() =>
-                getAll.onsuccess?.({
-                  target: { result: found.stores.find((s) => s.name === store)?.rows },
-                } as never)
-              );
-              return getAll;
-            },
+            getAll: (): IDBRequest => answer(storeOf(store)?.rows),
+            getAllKeys: (): IDBRequest => answer(storeOf(store)?.keys ?? []),
           }) as unknown as IDBObjectStore,
       });
       Object.defineProperty(request, 'result', { value: database });
@@ -139,11 +140,33 @@ describe('findSecretLeaks', () => {
       localStorage: '[]',
       sessionStorage: '[]',
       indexedDB: '[[],[]]',
+      unreadable: [],
     });
 
     await findSecretLeaks({ evaluate } as unknown as PageEvaluator, secrets);
 
     expect(evaluate).toHaveBeenCalledWith(readClientState);
+  });
+
+  it('finds a secret held only as an out-of-line key', async () => {
+    installIndexedDb([{ name: 'app', stores: [{ name: 'sessions', rows: [], keys: [token] }] }]);
+
+    expect(await findSecretLeaks(livePage, secrets)).toEqual([
+      { place: 'indexedDB', secret: 'token' },
+    ]);
+  });
+
+  it('fails instead of reporting a clean page when a database cannot be serialised', async () => {
+    const unserialisable = {
+      toJSON: (): never => {
+        throw new Error('unserialisable');
+      },
+    };
+    installIndexedDb([{ name: 'bad', stores: [{ name: 's', rows: [unserialisable] }] }]);
+
+    await expect(findSecretLeaks(livePage, secrets)).rejects.toThrow(
+      'IndexedDB could not be scanned: bad'
+    );
   });
 });
 
@@ -168,18 +191,53 @@ describe('readClientState', () => {
       localStorage: 'a=1',
       sessionStorage: 'b=2',
       indexedDB: '[[],[]]',
+      unreadable: [],
     });
   });
 
-  it('dumps every row of every object store of every database', async () => {
+  it('dumps every row and every key of every object store of every database', async () => {
     installIndexedDb([
-      { name: 'one', stores: [{ name: 's', rows: [['x']] }] },
+      { name: 'one', stores: [{ name: 's', rows: [['x']], keys: ['k'] }] },
       { name: 'two', stores: [] },
     ]);
 
     const state = await readClientState();
 
-    expect(state.indexedDB).toBe('[["one","two"],["[[[\\"x\\"]]]",""]]');
+    expect(state.indexedDB).toBe('[["one","two"],["[[[\\"x\\"]],[\\"k\\"]]",""]]');
+    expect(state.unreadable).toEqual([]);
+  });
+
+  it('serialises a BigInt as its digits and a repeated or cyclic object as a marker', async () => {
+    const cyclic: { a: number; self?: unknown } = { a: 1 };
+    cyclic.self = cyclic;
+    installIndexedDb([
+      { name: 'odd', stores: [{ name: 's', rows: [{ n: BigInt(10), cyclic }], keys: [] }] },
+    ]);
+
+    const state = await readClientState();
+
+    expect(JSON.parse(state.indexedDB)).toEqual([
+      ['odd'],
+      ['[[{"n":"10","cyclic":{"a":1,"self":"[Repeated]"}}],[]]'],
+    ]);
+    expect(state.unreadable).toEqual([]);
+  });
+
+  it('settles a database it cannot serialise as unreadable rather than hanging', async () => {
+    const unserialisable = {
+      toJSON: (): never => {
+        throw new Error('unserialisable');
+      },
+    };
+    installIndexedDb([
+      { name: 'bad', stores: [{ name: 's', rows: [unserialisable] }] },
+      { name: 'good', stores: [{ name: 's', rows: ['y'] }] },
+    ]);
+
+    const state = await readClientState();
+
+    expect(state.indexedDB).toBe('[["bad","good"],[null,"[[\\"y\\"],[]]"]]');
+    expect(state.unreadable).toEqual(['bad']);
   });
 
   it('keeps going when a database fails to open or its transaction fails', async () => {
@@ -187,10 +245,13 @@ describe('readClientState', () => {
       { name: 'broken', stores: [{ name: 's', rows: [] }], failTransaction: true },
     ]);
 
-    expect((await readClientState()).indexedDB).toBe('[["broken"],[""]]');
+    expect(await readClientState()).toMatchObject({
+      indexedDB: '[["broken"],[""]]',
+      unreadable: [],
+    });
 
     installIndexedDb([{ name: 'gone', stores: [] }], true);
 
-    expect((await readClientState()).indexedDB).toBe('[["gone"],[""]]');
+    expect(await readClientState()).toMatchObject({ indexedDB: '[["gone"],[""]]', unreadable: [] });
   });
 });

@@ -7,10 +7,13 @@ export interface ClientStateDump {
   readonly localStorage: string;
   readonly sessionStorage: string;
   readonly indexedDB: string;
+  readonly unreadable: readonly string[];
 }
 
+export type ScannedPlace = Exclude<keyof ClientStateDump, 'unreadable'>;
+
 export interface SecretLeak {
-  readonly place: keyof ClientStateDump;
+  readonly place: ScannedPlace;
   readonly secret: string;
 }
 
@@ -24,7 +27,18 @@ export async function readClientState(): Promise<ClientStateDump> {
       .map((key) => `${key}=${storage.getItem(key)}`)
       .join('\n');
 
-  const dumpDatabase = (name: string): Promise<string> =>
+  const serialise = (value: unknown): string => {
+    const seen = new WeakSet<object>();
+    return JSON.stringify(value, (_key: string, item: unknown): unknown => {
+      if (typeof item === 'bigint') return item.toString();
+      if (typeof item !== 'object' || item === null) return item;
+      if (seen.has(item)) return '[Repeated]';
+      seen.add(item);
+      return item;
+    });
+  };
+
+  const dumpDatabase = (name: string): Promise<string | null> =>
     new Promise((resolve) => {
       const opened = indexedDB.open(name);
       opened.onerror = (): void => resolve('');
@@ -38,14 +52,21 @@ export async function readClientState(): Promise<ClientStateDump> {
         }
         const transaction = database.transaction(stores, 'readonly');
         const rows: unknown[] = [];
+        const collect = (event: Event): void => {
+          rows.push((event.target as IDBRequest).result);
+        };
         stores.forEach((store) => {
-          transaction.objectStore(store).getAll().onsuccess = (event): void => {
-            rows.push((event.target as IDBRequest).result);
-          };
+          const objectStore = transaction.objectStore(store);
+          objectStore.getAll().onsuccess = collect;
+          objectStore.getAllKeys().onsuccess = collect;
         });
         transaction.oncomplete = (): void => {
           database.close();
-          resolve(JSON.stringify(rows));
+          try {
+            resolve(serialise(rows));
+          } catch {
+            resolve(null);
+          }
         };
         transaction.onerror = (): void => {
           database.close();
@@ -65,10 +86,11 @@ export async function readClientState(): Promise<ClientStateDump> {
     localStorage: entriesOf(window.localStorage),
     sessionStorage: entriesOf(window.sessionStorage),
     indexedDB: JSON.stringify([names, dumps]),
+    unreadable: names.filter((_name, index) => dumps[index] === null),
   };
 }
 
-const PLACES: readonly (keyof ClientStateDump)[] = [
+const PLACES: readonly ScannedPlace[] = [
   'url',
   'title',
   'historyState',
@@ -88,6 +110,9 @@ export async function findSecretLeaks(
   secrets: NamedSecrets
 ): Promise<SecretLeak[]> {
   const dump = await page.evaluate(readClientState);
+  if (dump.unreadable.length > 0) {
+    throw new Error(`IndexedDB could not be scanned: ${dump.unreadable.join(', ')}`);
+  }
 
   return PLACES.flatMap((place) =>
     Object.entries(secrets)
