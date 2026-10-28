@@ -951,14 +951,16 @@ focus ring.
 codes leaves that number in the auth store. `ProtectedRoute` reads it through
 `useRecoveryCodesBanner` and puts the lazily loaded `RecoveryCodesNotice` into the outlet context as
 `banner`; `AppLayout` renders it first inside `<main>`, so a page without one keeps exactly the DOM
-it had. The hook builds the lazy component once per mount in a `useState` initializer, from a
-`ThemedChunkLoader` over a `ChunkRetryLoader` and `muiThemeShellLoader`, behind the non-null
-`RouteFallback`; with no count the chunk is never requested, and a chunk that cannot load renders
-nothing rather than breaking the page. The notice is a polite `role="status"` region that mounts
-empty, is filled in an effect and never takes focus; the count has uk one, few, many and other
-forms and en one and other forms, and zero reads "Резервні коди закінчилися". The link goes to
-`/settings` client-side and, like the button and arriving on `/settings`, clears the count;
-sign-out and a reload clear it because the store is memory-only.
+it had. The hook builds the lazy component once per mount in a `useState` initializer, from the
+container-free `recoveryNoticeLoader` singleton
+(`components/protected-route/recovery-notice-loader.ts`: a `ThemedChunkLoader` over a
+`ChunkRetryLoader` and `muiThemeShellLoader`, so a loaded chunk is reused across `ProtectedRoute`
+remounts), behind the non-null `RouteFallback`; with no count the chunk is never requested, and a
+chunk that cannot load renders nothing rather than breaking the page. The notice is a polite
+`role="status"` region that mounts empty, is filled in an effect and never takes focus; the count
+has uk one, few, many and other forms and en one and other forms, and zero reads "Резервні коди
+закінчилися". The link goes to `/settings` client-side and, like the button and arriving on
+`/settings`, clears the count; sign-out and a reload clear it because the store is memory-only.
 
 ### The challenge and notice copy are lazy catalogs
 

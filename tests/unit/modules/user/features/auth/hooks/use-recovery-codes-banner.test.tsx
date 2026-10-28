@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { JSX, ReactNode } from 'react';
+import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, useNavigate } from 'react-router';
 
@@ -10,30 +10,22 @@ import useAuthStore from '@auth/stores/use-auth-store';
 import testI18n from '@tests/i18n/test-i18n';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
-let mockNoticeLoads = 0;
-let mockNoticeFails = false;
 let navigate: ReturnType<typeof useNavigate> | undefined;
 
-jest.mock('@auth/components/recovery-codes-notice', () => {
-  mockNoticeLoads += 1;
-  if (mockNoticeFails) throw new Error('chunk failed');
-  return {
-    __esModule: true,
-    default: ({ count, onDismiss }: { count: number; onDismiss: () => void }): JSX.Element => (
-      <button type="button" onClick={onDismiss}>
-        notice:{count}
-      </button>
-    ),
-  };
-});
+const mockLoad = jest.fn();
 
-jest.mock('@/providers/mui-theme/mui-theme-shell-loader', () => ({
+jest.mock('@auth/components/protected-route/recovery-notice-loader', () => ({
   __esModule: true,
-  default: {
-    load: (): Promise<unknown> =>
-      Promise.resolve({ default: ({ children }: { children: ReactNode }): ReactNode => children }),
-  },
+  default: { load: (): Promise<unknown> => mockLoad() },
 }));
+
+function NoticeStub({ count, onDismiss }: { count: number; onDismiss: () => void }): JSX.Element {
+  return (
+    <button type="button" onClick={onDismiss}>
+      notice:{count}
+    </button>
+  );
+}
 
 function Probe(): JSX.Element {
   navigate = useNavigate();
@@ -56,16 +48,15 @@ const mount = (remaining: number | null, path = '/'): ReturnType<typeof render> 
 
 describe('useRecoveryCodesBanner', () => {
   beforeEach(() => {
-    jest.resetModules();
-    mockNoticeLoads = 0;
-    mockNoticeFails = false;
+    mockLoad.mockReset();
+    mockLoad.mockResolvedValue({ default: NoticeStub });
   });
 
   it('renders nothing and never requests the notice chunk without a reported count', () => {
     mount(null);
 
     expect(screen.getByRole('region', { name: 'banner' })).toBeEmptyDOMElement();
-    expect(mockNoticeLoads).toBe(0);
+    expect(mockLoad).not.toHaveBeenCalled();
   });
 
   it.each([0, 1, 2])('renders the notice for %i remaining code(s)', async (count) => {
@@ -88,7 +79,7 @@ describe('useRecoveryCodesBanner', () => {
 
     expect(screen.getByRole('region', { name: 'banner' })).toBeEmptyDOMElement();
     expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
-    expect(mockNoticeLoads).toBe(0);
+    expect(mockLoad).not.toHaveBeenCalled();
   });
 
   it('clears the count when the user arrives on /settings after mount', async () => {
@@ -118,15 +109,28 @@ describe('useRecoveryCodesBanner', () => {
     await act(async () => useAuthStore.setState({ recoveryCodesRemaining: 1 }));
 
     expect(await screen.findByRole('button', { name: 'notice:1' })).toBeInTheDocument();
-    expect(mockNoticeLoads).toBe(1);
+    expect(mockLoad).toHaveBeenCalledTimes(1);
   });
 
   it('shows nothing, and does not break the page, when the chunk cannot be loaded', async () => {
-    mockNoticeFails = true;
+    mockLoad.mockRejectedValue(new Error('chunk failed'));
     mount(1);
 
     await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
 
+    expect(mockLoad).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('region', { name: 'banner' })).toBeEmptyDOMElement();
+  });
+
+  it('asks the loader again on the next mount after a failed load', async () => {
+    mockLoad.mockRejectedValueOnce(new Error('chunk failed'));
+    const { unmount } = mount(1);
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+    unmount();
+
+    mount(1);
+
+    expect(await screen.findByRole('button', { name: 'notice:1' })).toBeInTheDocument();
+    expect(mockLoad).toHaveBeenCalledTimes(2);
   });
 });
