@@ -98,9 +98,11 @@ function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element 
       <FormHeader header={header} bannerShown={Boolean(lead.error)} />
       {lead.notice}
       <ErrorBanner
+        key={lead.errorOccurrence}
         error={lead.error}
         action={lead.errorAction}
         returnFocusRef={offline.submitRef}
+        unavailableReasonId={offline.online ? undefined : offline.noticeId}
       />
       <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
     </>
@@ -172,6 +174,7 @@ function submitOf<T extends FieldValues>(props: UIFormProps<T>): FormSubmitProps
 
 export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JSX.Element {
   const { onSubmit, defaultValues, formOptions = {}, isSubmitting, resetOnSuccess = false } = props;
+  const { error = null, notice, errorAction, errorOccurrence } = props;
   const { methods, submitting } = useUIForm<T>({ defaultValues, formOptions, isSubmitting });
 
   return (
@@ -180,7 +183,7 @@ export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JS
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         onInvalid={props.onInvalid}
         header={headerOf(props)}
-        lead={{ error: props.error ?? null, notice: props.notice, errorAction: props.errorAction }}
+        lead={{ error, notice, errorAction, errorOccurrence }}
         submit={submitOf(props)}
         submitting={submitting}
         announceSubmitting={props.submittingAnnouncement ?? submitting}

@@ -20,6 +20,8 @@ export default function ConfirmationForm<T extends FieldValues>({
       isSubmitting={isSubmitting}
       error={form.error}
       errorAction={form.errorAction}
+      errorOccurrence={form.errorOccurrence}
+      submitRef={form.submitRef}
       title={form.title}
       titleComponent="h3"
       titleRef={form.titleRef}

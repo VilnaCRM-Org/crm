@@ -90,6 +90,7 @@ describe('useTwoFactorSettings', () => {
         view,
         fieldError: null,
         banner: null,
+        bannerOccurrence: 0,
         statusCode: null,
       });
       expect(result.current.settings).toEqual({
@@ -141,6 +142,7 @@ describe('useTwoFactorSettings', () => {
         view: 'on',
         fieldError: null,
         banner: null,
+        bannerOccurrence: 0,
         statusCode: null,
       });
       expect(result.current.settings).toEqual({
@@ -285,48 +287,38 @@ describe('useTwoFactorSettings', () => {
         view: 'off',
         fieldError: null,
         banner,
+        bannerOccurrence: 1,
         statusCode: null,
       });
     });
 
-    it('retries exactly one more identical request from each view', async () => {
+    it('raises the banner once more for a second transient failure in a row', async () => {
       mockProvider.setup.mockResolvedValue(failed('network'));
       const { result } = mount();
       await act(async () => result.current.callbacks.start());
+      expect(result.current.view).toMatchObject({ banner: 'transient', bannerOccurrence: 1 });
 
-      await act(async () => result.current.callbacks.retry());
+      await act(async () => result.current.callbacks.start());
 
       expect(mockProvider.setup).toHaveBeenCalledTimes(2);
+      expect(result.current.view).toMatchObject({ banner: 'transient', bannerOccurrence: 2 });
     });
 
-    it('retries the last confirm from the setup view', async () => {
+    it('confirms the edited code after a transient failure', async () => {
       mockProvider.setup.mockResolvedValue(SETUP);
       mockProvider.confirm.mockResolvedValue(failed('network'));
       const { result } = mount();
       await act(async () => result.current.callbacks.start());
-      const code = buildTotpCode();
-      await act(async () => result.current.callbacks.confirm({ twoFactorCode: code }));
+      await act(async () => result.current.callbacks.confirm({ twoFactorCode: '123456' }));
 
-      await act(async () => result.current.callbacks.retry());
+      await act(async () => result.current.callbacks.confirm({ twoFactorCode: '654321' }));
 
       expect(mockProvider.confirm).toHaveBeenCalledTimes(2);
-      expect(mockProvider.confirm.mock.calls[1]?.[0]).toEqual({ twoFactorCode: code });
+      expect(mockProvider.confirm.mock.calls[1]?.[0]).toEqual({ twoFactorCode: '654321' });
     });
 
-    it('retries the last disable and the regenerate from their confirmations', async () => {
-      mockProvider.disable.mockResolvedValue(failed('network'));
-      mockProvider.regenerate.mockResolvedValue(failed('network'));
-      const { result } = mount('enabled');
-      act(() => result.current.callbacks.openDisable());
-      await act(async () => result.current.callbacks.disable({ twoFactorCode: buildTotpCode() }));
-      await act(async () => result.current.callbacks.retry());
-      act(() => result.current.callbacks.cancel());
-      act(() => result.current.callbacks.openRegenerate());
-      await act(async () => result.current.callbacks.regenerate());
-      await act(async () => result.current.callbacks.retry());
-
-      expect(mockProvider.disable).toHaveBeenCalledTimes(2);
-      expect(mockProvider.regenerate).toHaveBeenCalledTimes(2);
+    it('offers no separate retry callback', () => {
+      expect(mount().result.current.callbacks).not.toHaveProperty('retry');
     });
   });
 

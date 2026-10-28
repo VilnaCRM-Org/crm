@@ -48,6 +48,7 @@ export const viewState = (
   view,
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   statusCode: null,
   ...overrides,
 });

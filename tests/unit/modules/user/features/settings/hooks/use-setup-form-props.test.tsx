@@ -39,14 +39,18 @@ describe('useSetupFormProps', () => {
     expect(result.current.errorAction).toBeUndefined();
   });
 
-  it('turns the transient banner into an error with a Retry wired to retry', () => {
-    const props = panelProps({ view: viewState('setup', { banner: 'transient' }) });
+  it('turns the transient banner into an error with a Retry through the submit ref', () => {
+    const props = panelProps({
+      view: viewState('setup', { banner: 'transient', bannerOccurrence: 4 }),
+    });
     const { result } = renderHook(() => useSetupFormProps(props), { wrapper });
 
     expect(result.current.error).toContain('Не вдалося виконати дію');
-    result.current.errorAction?.onClick();
-
-    expect(props.callbacks.retry).toHaveBeenCalledTimes(1);
+    expect(result.current.errorAction?.label).toBe('Спробувати ще раз');
+    expect(result.current.errorOccurrence).toBe(4);
+    expect(result.current.submitRef).toEqual({ current: null });
+    expect(() => result.current.errorAction?.onClick()).not.toThrow();
+    expect(props.callbacks.confirm).not.toHaveBeenCalled();
   });
 
   it('turns the rate-limited banner into an error with no Retry', () => {

@@ -14,7 +14,7 @@ import {
 const KEPT_SECRET = buildTotpSecret();
 const current = {
   settings: { ...EMPTY_SETTINGS, secret: KEPT_SECRET, otpauthUri: 'otpauth://totp/x' },
-  view: viewState('setup', { fieldError: 'invalid_code' as const }),
+  view: viewState('setup', { fieldError: 'invalid_code' as const, bannerOccurrence: 3 }),
 };
 
 const row = (overrides: Partial<TwoFactorFailureRow> = {}): TwoFactorFailureRow => ({
@@ -60,7 +60,13 @@ describe('useTwoFactorSettle', () => {
     expect(apply).toHaveBeenCalledTimes(1);
     expect(apply).toHaveBeenCalledWith({
       settings,
-      view: { view: 'off', fieldError: null, banner: null, statusCode: 'disabled' },
+      view: {
+        view: 'off',
+        fieldError: null,
+        banner: null,
+        bannerOccurrence: 0,
+        statusCode: 'disabled',
+      },
     });
     expect(recordStatus).toHaveBeenCalledWith('disabled');
   });
@@ -87,7 +93,13 @@ describe('useTwoFactorSettle', () => {
 
     expect(apply).toHaveBeenCalledWith({
       settings: current.settings,
-      view: { view: 'off', fieldError: null, banner: null, statusCode: 'already_off' },
+      view: {
+        view: 'off',
+        fieldError: null,
+        banner: null,
+        bannerOccurrence: 3,
+        statusCode: 'already_off',
+      },
     });
     expect(recordStatus).toHaveBeenCalledWith('disabled');
   });
@@ -99,7 +111,13 @@ describe('useTwoFactorSettle', () => {
 
     expect(apply).toHaveBeenCalledWith({
       settings: current.settings,
-      view: { view: 'setup', fieldError: 'invalid_code', banner: null, statusCode: null },
+      view: {
+        view: 'setup',
+        fieldError: 'invalid_code',
+        banner: null,
+        bannerOccurrence: 3,
+        statusCode: null,
+      },
     });
     expect(recordStatus).not.toHaveBeenCalled();
   });
@@ -122,7 +140,7 @@ describe('useTwoFactorSettle', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: current.settings,
-        view: { view: 'setup', fieldError: null, banner, statusCode: null },
+        view: { view: 'setup', fieldError: null, banner, bannerOccurrence: 4, statusCode: null },
       });
       expect(recordStatus).not.toHaveBeenCalled();
     }
@@ -148,7 +166,13 @@ describe('useTwoFactorSettle', () => {
 
     expect(apply).toHaveBeenCalledWith({
       settings: current.settings,
-      view: { view: 'reauth', fieldError: null, banner: null, statusCode: null },
+      view: {
+        view: 'reauth',
+        fieldError: null,
+        banner: null,
+        bannerOccurrence: 3,
+        statusCode: null,
+      },
     });
   });
 
@@ -159,7 +183,13 @@ describe('useTwoFactorSettle', () => {
 
     expect(apply).toHaveBeenCalledWith({
       settings: current.settings,
-      view: { view: 'disable', fieldError: null, banner: null, statusCode: null },
+      view: {
+        view: 'disable',
+        fieldError: null,
+        banner: null,
+        bannerOccurrence: 0,
+        statusCode: null,
+      },
     });
   });
 
@@ -170,7 +200,13 @@ describe('useTwoFactorSettle', () => {
 
     expect(apply).toHaveBeenCalledWith({
       settings: current.settings,
-      view: { view: 'setup', fieldError: 'incomplete', banner: null, statusCode: null },
+      view: {
+        view: 'setup',
+        fieldError: 'incomplete',
+        banner: null,
+        bannerOccurrence: 3,
+        statusCode: null,
+      },
     });
   });
 });

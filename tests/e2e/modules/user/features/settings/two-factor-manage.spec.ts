@@ -236,6 +236,24 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       expect(disable.count()).toBe(1);
     });
 
+    test('retries a transient disable failure with the code as it is now', async ({ page }) => {
+      const disable = await stubDisable(page, ['unavailable', 'disabled']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+      await disableFieldOf(page).fill('123456');
+      await disableSubmitOf(page).click();
+      await expect(
+        sectionOf(page).getByRole('alert').filter({ hasText: twoFactorText.transient })
+      ).toBeVisible();
+
+      await disableFieldOf(page).fill('654321');
+      await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
+
+      await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
+      expect(disable.count()).toBe(2);
+      expect(disable.calls[1]?.variables['input']).toMatchObject({ twoFactorCode: '654321' });
+    });
+
     test('retries a transient regenerate failure exactly once more', async ({ page }) => {
       const regenerate = await stubRegenerate(page, ['unavailable', 'regenerated']);
       await enableTwoFactor(page);

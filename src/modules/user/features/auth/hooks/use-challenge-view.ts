@@ -18,6 +18,7 @@ const INITIAL_VIEW: ChallengeView = {
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
 };
 
@@ -35,22 +36,24 @@ export function fieldErrorOf(raw: string, mode: ChallengeView['mode']): TwoFacto
   return mode === 'totp' && SHORT_DIGITS.test(compact) ? 'incomplete' : 'format';
 }
 
+function raiseBanner(view: ChallengeView, banner: TwoFactorBannerCode | undefined): ChallengeView {
+  if (banner === undefined) return view;
+  return { ...view, banner, bannerOccurrence: view.bannerOccurrence + 1 };
+}
+
 function settle(view: ChallengeView, result: ChallengeResult | null): ChallengeView {
   if (result === null || result.kind === 'completed') return view;
-  if (result.reason === 'invalid_code') {
-    return { ...view, value: '', fieldError: 'invalid_code', focusRequest: view.focusRequest + 1 };
-  }
-  const banner = BANNER_BY_REASON.get(result.reason);
-  return banner === undefined ? view : { ...view, banner };
+  if (result.reason !== 'invalid_code')
+    return raiseBanner(view, BANNER_BY_REASON.get(result.reason));
+  const focusRequest = view.focusRequest + 1;
+  return { ...view, value: '', fieldError: 'invalid_code', banner: null, focusRequest };
 }
 
 function withInput(
   view: ChallengeView,
   action: ChallengeSubmittedAction | ChallengeRejectedAction
 ): ChallengeView {
-  if (action.type === 'submitted') {
-    return { ...view, value: action.value, fieldError: null, banner: null };
-  }
+  if (action.type === 'submitted') return { ...view, value: action.value, fieldError: null };
   const { value, fieldError } = action;
   return { ...view, value, fieldError, banner: null, focusRequest: view.focusRequest + 1 };
 }

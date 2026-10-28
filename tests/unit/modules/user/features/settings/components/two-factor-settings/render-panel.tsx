@@ -24,6 +24,7 @@ export const viewState = (
   view,
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   statusCode: null,
   ...overrides,
 });
@@ -37,7 +38,6 @@ export const fakeCallbacks = (): { [K in keyof TwoFactorSettingsCallbacks]: jest
   openRegenerate: jest.fn(),
   regenerate: jest.fn(),
   cancel: jest.fn(),
-  retry: jest.fn(),
   signInAgain: jest.fn(),
 });
 

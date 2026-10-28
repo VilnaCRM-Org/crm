@@ -30,6 +30,7 @@ export interface UIFormProps<T extends FieldValues> {
   isSubmitting?: boolean;
   error?: string | null | undefined;
   errorAction?: UIFormErrorAction | undefined;
+  errorOccurrence?: number | undefined;
   submitLabel: string;
   title: ReactNode;
   subtitle?: ReactNode;
@@ -78,6 +79,7 @@ export interface ErrorBannerProps {
   error?: string | null;
   action?: UIFormErrorAction | undefined;
   returnFocusRef: FocusReturnTarget;
+  unavailableReasonId?: string | undefined;
 }
 
 export interface FormHeaderSectionProps {
@@ -115,6 +117,7 @@ export interface UseUIFormResult<T extends FieldValues> {
 export interface FormLeadProps {
   error: string | null;
   errorAction?: UIFormErrorAction | undefined;
+  errorOccurrence?: number | undefined;
   notice?: ReactNode;
 }
 

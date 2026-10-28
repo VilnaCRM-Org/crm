@@ -17,13 +17,13 @@ const RESTING: TwoFactorChallengeState = {
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
   isSubmitting: false,
 };
 
 const callbacks = (): TwoFactorChallengeProps['callbacks'] => ({
   submit: jest.fn(),
-  retry: jest.fn(),
   switchMode: jest.fn(),
 });
 
@@ -181,15 +181,47 @@ describe('TwoFactorChallengeForm', () => {
     expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
   });
 
-  it('shows the transient banner with a retry that calls retry once', async () => {
-    const { handlers } = mount({ banner: 'transient' });
+  it('retries through the form submit with the code as it is now, keeping focus', async () => {
+    const handlers = callbacks();
+    const transient = { banner: 'transient', bannerOccurrence: 1 } as const;
+    const view = mount(transient, handlers);
+    await userEvent.type(cells()[0] as HTMLInputElement, '654321');
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
     );
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+    const pending = { ...RESTING, ...transient, value: '654321', isSubmitting: true };
+    view.rerender(tree(pending, handlers));
 
-    expect(handlers.retry).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
+    expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: '654321' });
+    expect(screen.getByRole('button', { name: 'Спробувати ще раз' })).toHaveFocus();
+  });
+
+  it('sends nothing from Retry while the previous check is still running', async () => {
+    const { handlers } = mount({ banner: 'transient', bannerOccurrence: 1, isSubmitting: true });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    expect(handlers.submit).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('raises a new focused banner when the same failure happens again', async () => {
+    const handlers = callbacks();
+    const view = mount({ banner: 'transient', bannerOccurrence: 1 }, handlers);
+    const first = screen.getByRole('alert');
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    view.rerender(tree({ ...RESTING, banner: 'transient', bannerOccurrence: 2 }, handlers));
+
+    const second = screen.getByRole('alert');
+    const banner = screen
+      .getAllByRole('generic')
+      .find((element) => element.tagName === 'SECTION' && element.contains(second));
+    expect(second).not.toBe(first);
+    expect(banner).toHaveFocus();
   });
 
   it('shows no banner and no retry at rest', () => {

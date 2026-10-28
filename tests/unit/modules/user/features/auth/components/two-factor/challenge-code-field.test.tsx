@@ -16,6 +16,7 @@ const RESTING: TwoFactorChallengeState = {
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
   isSubmitting: false,
 };
