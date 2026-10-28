@@ -401,11 +401,14 @@ surface.
 `piiScrubber` redacts a record key containing any of `password`, `token`, `authorization`,
 `cookie`, `secret`, `apikey`, `email`, `initials`, `pendingsession`, `twofactorcode`,
 `recoverycode` or `otpauth` (matched case-insensitively), and rewrites any `otpauth://` URI, e-mail
-address, bearer token, JWT or `token=` value found inside a string. Two-factor relies on `secret`,
-`pendingsession`, `twofactorcode`, `recoverycode` and `otpauth`: the setup secret, the pending
-session id, the submitted code, a recovery code and the `otpauth` URI never reach Sentry. The
-end-to-end specs also assert that none of them is left in the URL, the title, the history state,
-`localStorage`, `sessionStorage` or IndexedDB (`expectNoSecrets`).
+address, bearer token, JWT or `token=` value found inside a string, the value of a serialized JSON
+member whose name ends in `token`, `password` or `secret`, and the value after a
+`pendingSessionId`, `twoFactorCode`, `recoveryCode` or `recoveryCodes` label followed by `=` or
+`:` in free text or JSON (an unlabelled six-digit number is left alone). Two-factor relies on
+`secret`, `pendingsession`, `twofactorcode`, `recoverycode` and `otpauth`: the setup secret, the
+pending session id, the submitted code, a recovery code and the `otpauth` URI never reach Sentry.
+The end-to-end specs also assert that none of them is left in the URL, the title, the history
+state, `localStorage`, `sessionStorage` or IndexedDB (`expectNoSecrets`).
 
 ### Correlation
 

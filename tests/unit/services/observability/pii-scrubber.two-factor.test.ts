@@ -117,11 +117,74 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
   });
 
+  describe('labelled two-factor values in free text', () => {
+    it.each([
+      ['an = label', 'pendingSessionId=01JAQZ8M3K5N7P9R2T4V6X8Z0B', 'pendingSessionId=[redacted]'],
+      ['a : label', 'twoFactorCode:123456', 'twoFactorCode:[redacted]'],
+      ['a : label and a space', 'recoveryCode: AB12-CD34', 'recoveryCode: [redacted]'],
+      ['a plural label', 'recoveryCodes= EF56-GH78', 'recoveryCodes= [redacted]'],
+      ['a label and two spaces', 'twoFactorCode:  123456', 'twoFactorCode:  [redacted]'],
+      ['spaces around the =', 'twoFactorCode = 123456', 'twoFactorCode = [redacted]'],
+      ['an upper-case label', 'TWOFACTORCODE=654321', 'TWOFACTORCODE=[redacted]'],
+      ['a label inside a word', 'xpendingSessionId=01JB', 'xpendingSessionId=[redacted]'],
+      [
+        'the text after the value',
+        'retry twoFactorCode=123456 and pendingSessionId=01JB&step=2',
+        'retry twoFactorCode=[redacted] and pendingSessionId=[redacted]&step=2',
+      ],
+    ])('redacts the value after %s', (_name, input, expected) => {
+      expect(scrubMessage(input)).toEqual({ message: expected });
+    });
+
+    it('redacts a generated pending session id, TOTP code and recovery code', () => {
+      const pendingSessionId = buildPendingSessionId();
+      const code = buildTotpCode();
+      const recoveryCode = buildRecoveryCode();
+
+      expect(
+        scrubMessage(
+          `pendingSessionId=${pendingSessionId} twoFactorCode=${code} recoveryCode: ${recoveryCode}`
+        )
+      ).toEqual({
+        message: 'pendingSessionId=[redacted] twoFactorCode=[redacted] recoveryCode: [redacted]',
+      });
+    });
+
+    it.each([
+      ['an unlabelled six-digit number', 'order 123456 shipped'],
+      ['a label with no separator', 'twoFactorCode 123456'],
+      ['an unrelated label', 'orderCode=123456'],
+    ])('keeps %s', (_name, input) => {
+      expect(scrubMessage(input)).toEqual({ message: input });
+    });
+  });
+
+  describe('two-factor values in serialized JSON members', () => {
+    it.each([
+      ['pendingSessionId', '01JAQZ8M3K5N7P9R2T4V6X8Z0B'],
+      ['twoFactorCode', '123456'],
+      ['recoveryCode', 'AB12-CD34'],
+      ['secret', 'JBSWY3DPEHPK3PXP'],
+      ['totpSecret', 'JBSWY3DPEHPK3PXP'],
+      ['PENDINGSESSIONID', '01JB'],
+    ])('redacts the %s member value', (key, value) => {
+      expect(scrubMessage(`body {"${key}": "${value}","step":"2"}`)).toEqual({
+        message: `body {"${key}": "[redacted]","step":"2"}`,
+      });
+    });
+
+    it('keeps an unrelated JSON member value', () => {
+      const message = 'body {"orderCode":"123456"}';
+
+      expect(scrubMessage(message)).toEqual({ message });
+    });
+  });
+
   describe('patterns', () => {
     const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
 
     it('lists the otpauth pattern first, before the e-mail pattern', () => {
-      expect(patterns).toHaveLength(7);
+      expect(patterns).toHaveLength(8);
       expect(patterns[0]?.source).toBe(String.raw`otpauth:\/\/[^\s"']+`);
       expect(patterns[0]?.flags).toBe('gi');
       expect(patterns[1]?.source).toBe(String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`);
