@@ -29,7 +29,7 @@ export const ResendEmailResultSchema = z
   })
   .nullish();
 
-const RecoveryCodesUserSchema = z.object({ recoveryCodes: z.array(z.string()) });
+const RecoveryCodesUserSchema = z.object({ recoveryCodes: z.array(z.string().min(1)).min(1) });
 
 export const SetupTwoFactorResultSchema = z
   .object({

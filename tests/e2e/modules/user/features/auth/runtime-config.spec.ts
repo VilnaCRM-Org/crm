@@ -8,7 +8,7 @@ import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 const SIGN_IN_URL = '/sign-in';
 const RUNTIME_GRAPHQL_PATH = '/runtime-config-api/graphql';
-const BUILD_TIME_GRAPHQL_ORIGIN = new URL(process.env.REACT_APP_GRAPHQL_URL ?? '').origin;
+const BUILD_TIME_GRAPHQL_URL = new URL(process.env.REACT_APP_GRAPHQL_URL ?? '').href;
 
 const forgotPasswordLabel: string = t('sign_in.form.forgot_password');
 
@@ -48,7 +48,7 @@ test.describe('Runtime configuration', () => {
     await submitSignIn(page);
 
     await expect.poll(() => signIn.count()).toBe(1);
-    expect(new URL(signIn.calls[0]?.url ?? '').origin).toBe(BUILD_TIME_GRAPHQL_ORIGIN);
+    expect(signIn.calls[0]?.url).toBe(BUILD_TIME_GRAPHQL_URL);
   });
 
   test('sends sign-in to the runtime-configured GraphQL URL from the same artifact', async ({

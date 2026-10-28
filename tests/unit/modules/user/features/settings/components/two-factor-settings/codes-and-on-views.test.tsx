@@ -41,6 +41,12 @@ describe('the codes view', () => {
     expect(items).toHaveLength(8);
   });
 
+  it('keeps the list role on the unstyled code list', () => {
+    renderPanel(codesProps());
+
+    expect(screen.getByRole('list', { name: 'Резервні коди' })).toHaveAttribute('role', 'list');
+  });
+
   it('shows no list or copy button when the entity holds no codes', () => {
     renderPanel(codesProps({ settings: EMPTY_SETTINGS }));
 

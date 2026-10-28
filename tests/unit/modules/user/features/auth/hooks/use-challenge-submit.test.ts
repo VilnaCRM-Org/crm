@@ -292,6 +292,60 @@ describe('useChallengeSubmit', () => {
     expect(h.navigate).not.toHaveBeenCalled();
   });
 
+  it('does not navigate when the unmount lands while the result is being recorded', async () => {
+    const h = harness();
+    h.completeChallenge.mockResolvedValue(failed('expired_session'));
+    let releaseSignals: (signals: unknown) => void = () => undefined;
+    h.resolve.mockImplementation((token: symbol) =>
+      token === AUTH_TOKENS.GraphQLSignInProvider
+        ? Promise.resolve({ completeChallenge: h.completeChallenge })
+        : new Promise((r) => (releaseSignals = r))
+    );
+    const { result, unmount } = renderHook(() => useChallengeSubmit(h.deps));
+    let pending: Promise<ChallengeResult | null> = Promise.resolve(null);
+    act(() => {
+      pending = result.current.submit(dto);
+    });
+    await act(async () => Promise.resolve());
+
+    unmount();
+    releaseSignals({ challengeSettled: h.challengeSettled });
+    const outcome = await pending;
+
+    expect(outcome).toBeNull();
+    expect(h.challengeSettled).toHaveBeenCalledWith(failed('expired_session'));
+    expect(h.navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates once the result is recorded when the run was not aborted', async () => {
+    const h = harness();
+    h.completeChallenge.mockResolvedValue(failed('expired_session'));
+    let releaseSignals: (signals: unknown) => void = () => undefined;
+    h.resolve.mockImplementation((token: symbol) =>
+      token === AUTH_TOKENS.GraphQLSignInProvider
+        ? Promise.resolve({ completeChallenge: h.completeChallenge })
+        : new Promise((r) => (releaseSignals = r))
+    );
+    const { result } = renderHook(() => useChallengeSubmit(h.deps));
+    let pending: Promise<ChallengeResult | null> = Promise.resolve(null);
+    act(() => {
+      pending = result.current.submit(dto);
+    });
+    await act(async () => Promise.resolve());
+
+    expect(h.navigate).not.toHaveBeenCalled();
+    await act(async () => {
+      releaseSignals({ challengeSettled: h.challengeSettled });
+      await pending;
+    });
+
+    expect(h.navigate).toHaveBeenCalledTimes(1);
+    expect(h.navigate).toHaveBeenCalledWith(ROUTE_PATHS.signIn, {
+      replace: true,
+      state: { focusMain: true, notice: 'two_factor_expired' },
+    });
+  });
+
   it('still submits after a StrictMode style remount', async () => {
     const h = harness();
     h.completeChallenge.mockResolvedValue(failed('server'));

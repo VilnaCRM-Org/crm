@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -9,6 +9,9 @@ import KeyChip from '@/modules/user/features/settings/components/two-factor-sett
 import StepItem from '@/modules/user/features/settings/components/two-factor-settings/step-item';
 import { buildTotpSecret } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+
+import { panelProps, renderPanel, viewState } from './render-panel';
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return (
@@ -27,6 +30,21 @@ describe('StepItem', () => {
     expect(screen.getByRole('listitem')).toHaveTextContent('2Відскануйте QR-код');
     expect(screen.getByText('Відскануйте QR-код')).toBeInTheDocument();
     expect(screen.getByText('2')).toHaveAttribute('aria-hidden', 'true');
+  });
+});
+
+describe('the step guides', () => {
+  it.each([
+    ['setup', 'setup', 2],
+    ['off', 'off', 3],
+  ] as const)('keeps the list role on the unstyled %s step list', async (_name, view, steps) => {
+    const { container } = renderPanel(panelProps({ view: viewState(view) }));
+
+    const list = screen.getByRole('list');
+    expect(list.tagName).toBe('OL');
+    expect(list).toHaveAttribute('role', 'list');
+    expect(within(list).getAllByRole('listitem')).toHaveLength(steps);
+    await expectNoA11yViolations(container);
   });
 });
 
