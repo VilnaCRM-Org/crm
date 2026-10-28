@@ -46,7 +46,7 @@ REST, we use only graphql").
 | New hooks               | 8                    | 8                            |
 | New named types (§7.3)  | 57                   | 40                           |
 | Stories                 | 32                   | 23                           |
-| Acceptance criteria     | 444                  | 241                          |
+| Acceptance criteria     | 444                  | 243                          |
 | Follow-ups              | 9                    | 8                            |
 | DI tokens / closures    | 7–8 / 1              | 6 new, 2 removed / 0         |
 | GoF patterns            | Strategy, Proxy      | none                         |

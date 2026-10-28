@@ -15,7 +15,8 @@ barrel — never a deep internal path.
   `error-parser`).
 - `AuthRepository` (type) — the public repository interface.
 - `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`,
-  `TwoFactorDto` (types) — the board's User domain, see "The User domain types" below.
+  `TwoFactorDto`, `RecoveryCode`, `RecoveryCodeSet`, `TwoFactorSettingsEntity` (types) — the
+  board's User domain, see "The User domain types" below.
 
 Two deliberate deviations from the issue's illustrative example, both forced by
 this codebase:

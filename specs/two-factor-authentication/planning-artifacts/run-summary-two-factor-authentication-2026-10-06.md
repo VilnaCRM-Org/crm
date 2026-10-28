@@ -3,6 +3,7 @@ status: complete
 workflowType: run-summary
 project_name: crm
 date: 2026-10-06
+revised: 2026-10-27
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'orchestrator, autonomous run'
@@ -35,14 +36,19 @@ and `implementation_artifacts` at this bundle.
 
 - Scope: TOTP authenticator app plus eight recovery codes — the only mechanisms user-service
   implements (no e-mail or SMS code). A public challenge route `/sign-in/two-factor` after a
-  flag-on GraphQL `signInUser`, and a 2FA card as one section of the protected `/settings` page
-  (enrol with a client-rendered QR code, confirm, recovery codes once, disable, regenerate).
+  GraphQL `signInUser`, and a 2FA card as one section of the protected `/settings` page (enrol
+  with a client-rendered QR code, confirm, recovery codes once, disable, regenerate).
 - Backend: every operation exists only on user-service `main`; the frontend mocks them through a
-  self-expiring pending schema extension shared with crm #315, behind the `twoFactorAuth` runtime
-  flag (off in production, on in the dev and test stacks).
-- Stories: 32 in four epics (386 acceptance criteria), plus nine follow-ups; bmalph parses every
-  story with no warnings, and every dependency points backwards in file order.
-- Decision record: ADR-020 (Deciders: @kravalg).
+  self-expiring pending schema extension shared with crm #315. The `twoFactorAuth` runtime flag
+  (off in production, on in the test stack) gates only the 2FA section of `/settings`;
+  `/sign-in/two-factor` is reachable in every environment (`docs/feature-flags.md`,
+  "`twoFactorAuth`").
+- Stories: 32 in four epics (386 acceptance criteria) at this run, plus nine follow-ups; bmalph
+  parses every story with no warnings, and every dependency points backwards in file order. These
+  counts are superseded: the 2026-10-08 revision cut the plan to 23 stories and 243 criteria, and
+  the 2026-10-27 reconciliation brought it to 25 stories.
+- Decision record: `src/modules/user/README.md` (no ADR file exists from 003 up, as the PRD and
+  the readiness check record).
 
 ## Subagent Execution Log
 
