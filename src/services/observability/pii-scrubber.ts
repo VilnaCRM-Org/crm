@@ -24,6 +24,8 @@ export class PiiScrubber {
     /(?<=token=)[^&#\s]+/gi,
     /(?<=token%3d)(?:(?!%26|%23)[^&#\s])+/gi,
     /(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+/gi,
+    /(?<=recoveryCodes"?\s*[=:]\s*)\[[^\]]*\]/gi,
+    /(?<=recoveryCodes"?\s*[=:]\s*"?[\w\s,-]*,\s*)[\w-]+/gi,
     /(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)"?\s*[=:]\s*"?)[\w-]+/gi,
   ];
 

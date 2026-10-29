@@ -62,10 +62,10 @@ describe('PiiScrubber', () => {
     });
   });
 
-  it('keeps seven free-text patterns after the otpauth one', () => {
+  it('keeps nine free-text patterns after the otpauth one', () => {
     const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
 
-    expect(patterns.slice(1)).toHaveLength(7);
+    expect(patterns.slice(1)).toHaveLength(9);
   });
 
   it('redacts PII embedded in an object key', () => {
