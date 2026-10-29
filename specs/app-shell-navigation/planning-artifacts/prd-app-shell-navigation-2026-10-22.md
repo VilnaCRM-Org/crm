@@ -3,7 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-22
-iteration: 1
+revised: 2026-10-29
+iteration: 2
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -14,7 +15,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'pm (John), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/enterprise-app-shell/planning-artifacts/prd-enterprise-app-shell-2026-06-26.md
@@ -23,7 +24,10 @@ inputDocuments:
 
 # PRD: app shell navigation (header and sidebar)
 
-**Author:** pm (John), autonomous run **Date:** 2026-10-22 **Feature:** `app-shell-navigation`
+**Author:** pm (John), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28 and
+2026-10-29 (owner decisions on the drawer sub-items, the WCAG 1.4.11 exception and the failed chip
+re-read; each change is marked in place as a dated amendment or owner decision) **Feature:**
+`app-shell-navigation`
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md), the evidence base cited as
 "research §N", and [brief](./brief-app-shell-navigation-2026-10-22.md), cited as "brief §N". The

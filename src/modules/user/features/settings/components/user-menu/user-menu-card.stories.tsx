@@ -13,7 +13,11 @@ const meta: Meta<typeof UserMenuCard> = {
     open: true,
     chip: <button type="button">Чип</button>,
     items: (
-      <ul role="menu" aria-label="Меню користувача" style={{ margin: 0, padding: 0 }}>
+      <ul
+        role="menu"
+        aria-label="Меню користувача"
+        style={{ margin: 0, padding: 0, listStyle: 'none' }}
+      >
         <li role="menuitem" tabIndex={-1}>
           Вийти
         </li>

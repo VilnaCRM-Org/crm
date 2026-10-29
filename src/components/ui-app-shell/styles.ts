@@ -1,6 +1,6 @@
 import layoutStyles from '@/components/layouts/app-layout.styles';
 
-const STICKY_TOP = '74px';
+const STICKY_TOP = `calc(${layoutStyles.headerHeight} + ${layoutStyles.navInsetTop})`;
 
 export default {
   header: layoutStyles.headerSlot,

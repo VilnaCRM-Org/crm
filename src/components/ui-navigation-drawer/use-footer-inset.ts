@@ -9,10 +9,21 @@ class FooterInsetSource {
     };
 
     place();
-    window.addEventListener('resize', place);
 
-    return (): void => window.removeEventListener('resize', place);
+    return this.follow(place);
   };
+
+  private follow(place: () => void): () => void {
+    const mounts = new MutationObserver(place);
+
+    window.addEventListener('resize', place);
+    mounts.observe(document.body, { childList: true, subtree: true });
+
+    return (): void => {
+      window.removeEventListener('resize', place);
+      mounts.disconnect();
+    };
+  }
 
   private read(): number {
     const footer = [...document.querySelectorAll('footer')].find(

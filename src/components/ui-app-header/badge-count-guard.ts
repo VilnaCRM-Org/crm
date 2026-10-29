@@ -1,5 +1,5 @@
 class BadgeCountGuard {
-  public shows(count: number | null | undefined): count is number {
+  public shows(count: number | null | undefined): boolean {
     return Number.isInteger(count) && Number(count) >= 1;
   }
 }

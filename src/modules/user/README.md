@@ -493,8 +493,11 @@ request sent with an earlier token, or with none, leaves a session begun since, 
 already done, alone. Whether a network error is a 401 is asked of #315's
 `UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
 hooks read the status in one place. The settings page hooks do nothing on `session_ended` and rely
-on the link; the chip's `useCurrentUser` only clears its shown identity and leaves ending the
-session to the link.
+on the link to end a session whose request came back as a transport 401; the chip's
+`useCurrentUser` only clears its shown identity and leaves ending the session to the link. The
+settings Transformer also maps a GraphQL `Access Denied.` error (`access_denied`) to
+`session_ended`, and that error does not reach the link, so for it the shown identity is cleared
+while the token stays and the session is not ended.
 The link receives its five collaborators as one `SessionLinkDeps` value
 (`AUTH_TOKENS.SessionLinkDeps`): the store, `CLEARED_AUTH_STATE` itself rather than a copy, the
 sandbox demo session, `ObservabilityService` and the error transformer, because a constructor may

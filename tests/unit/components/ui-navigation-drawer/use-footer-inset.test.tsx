@@ -94,6 +94,31 @@ describe('useFooterInset', () => {
     expect(scrim).toHaveStyle({ bottom: '100px' });
   });
 
+  it('measures again when the lazy footer mounts deep in the page after the scrim', async () => {
+    const footerArea = document.body.appendChild(document.createElement('div'));
+    const scrim = document.createElement('div');
+    attach(scrim);
+    expect(scrim).toHaveStyle({ bottom: '0px' });
+
+    await act(async () => {
+      mountFooter(678, footerArea);
+    });
+
+    expect(scrim).toHaveStyle({ bottom: '40px' });
+  });
+
+  it('stops watching the page for a footer once its cleanup runs', async () => {
+    const scrim = document.createElement('div');
+    const cleanup = attach(scrim);
+
+    act(() => cleanup?.());
+    await act(async () => {
+      mountFooter(678);
+    });
+
+    expect(scrim).toHaveStyle({ bottom: '0px' });
+  });
+
   it('hands every render the same ref, so the scrim subscribes once', () => {
     const { result, rerender } = renderHook(() => useFooterInset());
     const first = result.current;

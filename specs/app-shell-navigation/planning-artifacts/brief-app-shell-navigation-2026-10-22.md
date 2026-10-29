@@ -14,7 +14,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'analyst (Mary), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/enterprise-app-shell/planning-artifacts/prd-enterprise-app-shell-2026-06-26.md
   - specs/user-settings/planning-artifacts/brief-user-settings-2026-10-06.md
@@ -335,7 +335,7 @@ the existing `home.sign_out` wording ("Вийти" / "Sign out") so the two surf
 | R-6  | Stacked PR gets no gating CI; a retarget after the squash shows #354 again                                                                                 | Medium | Cherry-pick onto a `main`-based branch (C-6)                                               |
 | R-7  | Active-row text `#0399ED` on its tint fails 4.5:1; grey icons are at 2.7-2.8:1                                                                             | Medium | OQ-14 resolved: exact Figma colour with a scoped, tracked exception (#276), never silently |
 | R-8  | Lazy shell catalog missing on `/` fails the console gate (`missingKey`)                                                                                    | Medium | The chunk registers its catalog; unit test with a locale helper                            |
-| R-9  | Duplicate `currentUser` request on `/settings` (`no-cache`, no deduplication)                                                                              | Low    | Shared current-user state, cleared on unmount (research §7.3.4)                            |
+| R-9  | Duplicate `currentUser` request on `/settings` (`no-cache`, no deduplication)                                                                              | Low    | Accepted per OQ-25: two independent reads, one by the chip and one by the page             |
 | R-10 | Design gaps tempt invented states (focus, sub-items, chip hover, collapsed group)                                                                          | Medium | C-5; OQ-13, OQ-16                                                                          |
 | R-11 | Breakpoint switch at 1024 conflicts with the repo's `lg + 1` convention; 1280/1366 baselines land in whichever layout wins                                 | Low    | OQ-5                                                                                       |
 | R-12 | Figma components have no variants or variables, so later design edits will not propagate                                                                   | Low    | Parity table pins measured values; re-measure on design change                             |
