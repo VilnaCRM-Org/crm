@@ -4,7 +4,7 @@ import fulfillCreateUserSuccess from '@tests/e2e/utils/create-user-response';
 import {
   backButtonOf,
   errorCardHeading,
-  expectSignInErrorCard,
+  expectSignInErrorCardWithoutRetry,
   signInErrorMessages,
 } from '@tests/e2e/utils/sign-in-result-card';
 import { SIGN_IN_REPLIES, stubSignIn } from '@tests/e2e/utils/two-factor-responses';
@@ -70,7 +70,7 @@ test.describe('Auth flow driven by touch', () => {
     await tapAndFill(page, signIn.passwordPlaceholder, credentials.password);
     await page.locator('button', { hasText: signIn.submitLabel }).tap();
 
-    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
+    await expectSignInErrorCardWithoutRetry(page, signInErrorMessages.invalidCredentials);
 
     await backButtonOf(page).tap();
 
