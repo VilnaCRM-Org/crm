@@ -67,7 +67,7 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   it('drops the answer of a read that a pathname change replaced', async () => {
-    answerProfileOperation('CurrentUser', {
+    const delayed = answerProfileOperation('CurrentUser', {
       respond: () =>
         HttpResponse.json({
           data: { users: { edges: [{ node: buildUserNode({ initials: 'Old Name' }) }] } },
@@ -75,12 +75,15 @@ describe('useCurrentUser over the container (integration)', () => {
       delayMs: 150,
     });
     const hook = mountCurrentUser();
-    answerWith('Anna Koval');
+    await waitFor(() => expect(delayed).toHaveLength(1));
+    const replacement = answerWith('Anna Koval');
 
     act(() => hook.current.go('/settings'));
     await waitFor(() => expect(hook.current.identity?.displayName).toBe('Anna Koval'));
     await act(() => new Promise((resolve) => setTimeout(resolve, 250)));
 
+    expect(replacement).toHaveLength(1);
+    expect(delayed).toHaveLength(1);
     expect(hook.current.identity?.displayName).toBe('Anna Koval');
   });
 

@@ -96,11 +96,12 @@ describe('UserChip', () => {
   });
 
   it('is the 40 px avatar alone on mobile: no name, no caret, a 44 px target', () => {
-    renderShell(
+    const { container } = renderShell(
       <UserChip layout="mobile" identity={identity} menu={buildUserMenuState()} menuId="m" />
     );
 
     expect(screen.queryByText('Anna Koval')).not.toBeInTheDocument();
+    expect(container).not.toContainHTML('focusable="false"');
     expect(screen.getByRole('button')).toHaveStyle({ width: '44px', height: '44px' });
     expect(screen.getByText('AK')).toHaveStyle({ width: '40px', height: '40px' });
   });
@@ -118,7 +119,7 @@ describe('UserChip', () => {
     const { container, rerender } = renderShell(
       <UserChip layout="desktop" identity={identity} menu={buildUserMenuState()} menuId="m" />
     );
-    expect(container).toContainHTML('aria-hidden="true"');
+    expect(container).toContainHTML('aria-hidden="true" focusable="false"');
 
     rerender(
       <UserChip
@@ -129,6 +130,14 @@ describe('UserChip', () => {
       />
     );
 
-    expect(container).toContainHTML('aria-hidden="true"');
+    expect(container).toContainHTML('aria-hidden="true" focusable="false"');
+  });
+
+  it('keeps the mobile avatar above the backdrop of the open menu', () => {
+    renderShell(
+      <UserChip layout="mobile" identity={identity} menu={buildUserMenuState()} menuId="m" />
+    );
+
+    expect(screen.getByRole('button')).toHaveStyle({ zIndex: '2' });
   });
 });
