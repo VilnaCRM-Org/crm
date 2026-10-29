@@ -21,6 +21,6 @@ export default function useSubmitBlock({
     reason,
     reasonId,
     describedBy: blocked ? `${noticeId} ${reasonId}` : noticeId,
-    onSubmit: blocked ? refuseSubmit : onSubmit,
+    onSubmit: blocked || nativelyDisabled ? refuseSubmit : onSubmit,
   };
 }

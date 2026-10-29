@@ -57,11 +57,22 @@ describe('useSubmitBlock', () => {
   });
 
   it('lets a native disabled state win over the reason', () => {
-    const onSubmit = jest.fn();
-    const block = run(REASON, true, onSubmit);
+    const block = run(REASON, true);
 
     expect(block.blocked).toBe(false);
     expect(block.describedBy).toBe(NOTICE_ID);
-    expect(block.onSubmit).toBe(onSubmit);
+  });
+
+  it.each([
+    ['with a reason', REASON],
+    ['without a reason', undefined],
+  ])('refuses the submit event while natively disabled %s', (_name, reason) => {
+    const onSubmit = jest.fn();
+    const event = submitEvent();
+
+    run(reason, true, onSubmit).onSubmit(event);
+
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
