@@ -319,17 +319,25 @@ ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
 These keep the run affordable — parallelism comes from the 40-way shard count rather than
 Stryker's in-process concurrency.
 
-**Shards are packed by mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's mutants
-with the instrumenter the pinned `@stryker-mutator/core` resolves, under the options Stryker uses
-when the config sets no `mutator` or `ignorers` (the config test pins that), and leaves out the
-mutants a `Stryker disable` directive already reports `Ignored`. It then packs heaviest file first
+**Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
+mutants with the instrumenter the pinned `@stryker-mutator/core` resolves, under the options Stryker
+uses when the config sets no `mutator` or `ignorers` (the config test pins that), and leaves out the
+mutants a `Stryker disable` directive already reports `Ignored`. A file with no mutant left goes
+to **no shard**: the barrels, token modules and route maps hold nothing to score, yet each one
+handed its shard a `findRelatedTests` set of the whole suite (one cold shard drew 57 of them, a
+3,779-test dry run, and timed out). Every other file is weighed by its **scored** mutants: a mutant
+outside every function body and instance property initializer runs on import, which
+`ignoreStatic` reports `Ignored` without running, so it costs nothing and does not count; a file
+whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
-2 s and 0.4 GB, so every shard job and the merge job count at run time and derive the same packing
-from the same commit; no weight file is committed, so none can go stale. File size was a poor
+4 s, so every shard job and the merge job count at run time and derive the same packing from the
+same commit; no weight file is committed, so none can go stale. At 528 files the scope holds 8,943
+runnable mutants, 6,471 of them scored, in 472 sharded files; 56 files run in no shard, and the 40
+shards hold 163 to 164 scored mutants and 7 to 13 files each. File size was a poor
 proxy for that load: at the two-factor scope (528 files, 9,232 mutants) a size packing held 149 to
 485 mutants per shard at 30 shards, first fell under 240 at 69 shards (225), and rose again to 270
-at 70 and 293 at 73. The mutant packing holds every shard within one mutant of the mean: 307 to
-308 at 30, 237 at 39, 230 to 231 at 40.
+at 70 and 293 at 73. Counting every runnable mutant, the packing held every shard within one
+mutant of the mean: 307 to 308 at 30, 237 at 39, 230 to 231 at 40.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
 kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
@@ -472,9 +480,11 @@ status decided against different source outrank the shard that actually re-ran t
 how a run once reported three survivors that every owning shard had already scored as `Ignored`.
 `merge-mutation-reports.ts` therefore rebuilds the same packing through the same
 `packMutateShards` the shard config slices, keeps each file only from the shard that owns it, and
-reports how many stale results it dropped. It also fails when a file the packing counted mutants
-in is missing from its owner's report: that means the merge packed the scope differently from the
-shards, and keeping only owned files would then silently score fewer files than the scope holds.
+reports how many stale results it dropped. It also fails when a sharded file is missing from its
+owner's report: that means the merge packed the scope differently from the shards, and keeping
+only owned files would then silently score fewer files than the scope holds. The files the packing
+leaves to no shard stay in its view as `unsharded`: they have no owner, so a result a stale
+incremental report still carries for one is discarded, and the merge prints how many there are.
 Do not "fix" a disagreement between shards by re-running until the ordering favours the answer
 you want.
 

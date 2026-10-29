@@ -403,7 +403,7 @@ off the test path so the unit fetch-stub and the integration MSW server never co
 excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
 text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
 type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
-CI runners are 2-core, so parallelism comes from the shard count (currently 16), not from Stryker's
+CI runners are 2-core, so parallelism comes from the shard count (currently 40), not from Stryker's
 in-process concurrency.
 
 **Every mutant is classified on its merits.** A score is only worth enforcing when each status was
@@ -423,13 +423,16 @@ regresses; never relax them to buy wall-clock.
 
 `mutation-testing.yml` fans `make test-mutation-shard` across a 40-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
-**mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed by
-file size, because the run costs whatever its slowest shard costs: round-robin left one shard
+**scored-mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed
+by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
 carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 485 mutants
-against a mean of 308. Every shard job and the merge job count each file's mutants at run time with
-the instrumenter the pinned Stryker core resolves (about 2 s for the whole scope), so they all
-derive the same packing from the same commit; the merge fails if a file the packing counted
-mutants in is missing from its owner's report.
+against a mean of 308. A static mutant (outside every function and instance property initializer,
+which `ignoreStatic` never runs) does not count, a file whose mutants are all static weighs 1, and
+a file with no runnable mutant (a barrel, a token module) goes to no shard, so its whole-suite
+related-test set no longer lands on one shard. Every shard job and the merge job count each file's
+mutants at run time with the instrumenter the pinned Stryker core resolves (about 4 s for the whole
+scope), so they all derive the same packing from the same commit; the merge fails if a sharded file
+is missing from its owner's report.
 On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
