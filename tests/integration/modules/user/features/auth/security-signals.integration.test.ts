@@ -3,12 +3,18 @@ import 'reflect-metadata';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import observabilityCore from '@/services/observability/observability-core';
+import securityEventConfig from '@/services/security-events/security-event-config';
 import securityEventCore from '@/services/security-events/security-event-core';
 import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
 import { buildEmail, buildPendingSessionId, buildRegistrationResponse } from '@tests/builders';
 
-const LATER_THAN_ANY_WINDOW_MS = 3_600_000;
+let clock = Date.now();
+
+const leaveEveryEarlierWindow = (): void => {
+  clock += securityEventConfig.windowMs() + 1;
+  jest.spyOn(Date, 'now').mockReturnValue(clock);
+};
 
 const resolveSignals = (): AuthSecuritySignals =>
   container.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals);
@@ -44,6 +50,7 @@ describe('auth security signals (integration)', () => {
   });
 
   it('records a locked sign-in under the login category through the container', () => {
+    leaveEveryEarlierWindow();
     const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
 
     resolveSignals().loginSettled({
@@ -66,8 +73,8 @@ describe('auth security signals (integration)', () => {
       reason: 'locked',
       severity: 'warning',
       failureCount: 1,
-      windowMs: expect.any(Number),
-      threshold: expect.any(Number),
+      windowMs: securityEventConfig.windowMs(),
+      threshold: securityEventConfig.threshold(),
       thresholdCrossed: false,
     });
   });
@@ -114,7 +121,7 @@ describe('auth security signals (integration)', () => {
   });
 
   it('records a failed registration and nothing for a successful or aborted one', () => {
-    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + LATER_THAN_ANY_WINDOW_MS);
+    leaveEveryEarlierWindow();
     const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
     const signals = resolveSignals();
 
@@ -139,8 +146,8 @@ describe('auth security signals (integration)', () => {
       reason: 'server',
       severity: 'warning',
       failureCount: 1,
-      windowMs: expect.any(Number),
-      threshold: expect.any(Number),
+      windowMs: securityEventConfig.windowMs(),
+      threshold: securityEventConfig.threshold(),
       thresholdCrossed: false,
     });
   });
