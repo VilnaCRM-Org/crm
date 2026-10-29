@@ -1,5 +1,3 @@
-import type { Locator, Page } from '@playwright/test';
-
 import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   codeListOf,
