@@ -162,13 +162,18 @@ dependencies.
 
 ### Localization
 
-Translations live in per-feature catalogs that are merged into one committed file.
+Translations live in per-feature catalogs. Eager catalogs are merged into one committed file; the
+lazy catalogs listed in `config/i18n-catalog-policy.json` (password recovery, password policy,
+settings, toast, app shell, coming soon and the user menu) stay out of it and are registered by the
+route or component chunk that owns them.
 
 - Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
-- Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are
-  mandatory and their key sets must match
-- Merged catalog: `src/i18n/localization.json` is committed, not built; regenerate it with
-  `make i18n-generate` whenever a catalog key is added, renamed, or removed
+- Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are mandatory and
+  their key sets must match
+- Merged catalog: `src/i18n/localization.json` (eager catalogs only) is committed, not built;
+  regenerate it with `make i18n-generate` whenever an eager catalog key is added, renamed, or
+  removed; a lazy catalog change needs no regeneration, and `make lint-i18n` checks it against the
+  owners in `config/i18n-catalog-policy.json`
 - Gate: `make lint-i18n` runs inside `make lint` and the CI lint phase, and fails on a missing
   locale file, a stray extra locale, an en/uk key mismatch, a stale merged catalog, or a `t()`
   key that is undefined in either locale
