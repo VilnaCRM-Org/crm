@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 
 const focusOnArrival: RefCallback<HTMLElement> = (node) => {
-  node?.focus();
+  if (node?.closest('[aria-hidden="true"]') === null) node.focus();
 };
 
 function withoutOneTimeMarkers(state: RedirectNavigationState | null): RedirectNavigationState {
