@@ -276,7 +276,7 @@ rule.
 | `ui-back-to-main`                                       | 2          | adopted | -             |
 | `ui-checkbox`                                           | 1          | adopted | -             |
 | `ui-text-link` (toolkit `ui-link`, `appearance="text"`) | 1          | adopted | -             |
-| `ui-pin-input` (toolkit `ui-pin-input`)                 | stories    | adopted | overrides     |
+| `ui-pin-input` (toolkit `ui-pin-input`)                 | 2          | adopted | overrides     |
 | `ui-button`                                             | 7          | local   | R2 R3 R13 R14 |
 | `ui-form`                                               | 2          | local   | R3 R14 R15    |
 | `ui-footer`                                             | 3          | local   | R16           |
