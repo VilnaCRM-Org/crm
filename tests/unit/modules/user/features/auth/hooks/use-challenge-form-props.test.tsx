@@ -57,7 +57,7 @@ describe('useChallengeFormProps', () => {
     const { result } = renderHook(() => useChallengeFormProps(props), { wrapper: I18nWrapper });
 
     expect(result.current.error).toBe(
-      "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
+      "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
     );
     expect(result.current.errorOccurrence).toBe(3);
     expect(result.current.errorAction?.label).toBe('Спробувати ще раз');
