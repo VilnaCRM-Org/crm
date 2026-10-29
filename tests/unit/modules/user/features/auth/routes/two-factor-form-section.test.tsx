@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -198,6 +198,33 @@ describe('TwoFactorFormSection', () => {
 
     await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(2));
     expect(completeChallenge.mock.calls[1]?.[0]).toEqual(completeChallenge.mock.calls[0]?.[0]);
+  });
+
+  it('never drops focus to the page while a Retry is pending or after it settles', async () => {
+    let answer: (result: ChallengeResult) => void = () => undefined;
+    completeChallenge.mockResolvedValueOnce(failed('server'));
+    completeChallenge.mockImplementationOnce(
+      () =>
+        new Promise<ChallengeResult>((resolve) => {
+          answer = resolve;
+        })
+    );
+    mount();
+    await enter('123456');
+    const retry = await screen.findByRole('button', { name: 'Спробувати ще раз' });
+
+    await userEvent.click(retry);
+
+    await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(2));
+    expect(retry).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+
+    await act(async () => answer(failed('invalid_code')));
+
+    expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeEnabled();
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
   });
 
   it('aborts a request in flight when Назад is activated and records nothing', async () => {

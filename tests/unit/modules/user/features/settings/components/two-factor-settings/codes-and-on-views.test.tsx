@@ -41,10 +41,14 @@ describe('the codes view', () => {
     expect(items).toHaveLength(8);
   });
 
-  it('keeps the list role on the unstyled code list', () => {
-    renderPanel(codesProps());
+  it('keeps the list role on the unstyled code list', async () => {
+    const { container } = renderPanel(codesProps());
 
-    expect(screen.getByRole('list', { name: 'Резервні коди' })).toHaveAttribute('role', 'list');
+    const list = screen.getByRole('list', { name: 'Резервні коди' });
+    expect(list.tagName).toBe('OL');
+    expect(list).toHaveAttribute('role', 'list');
+    expect(screen.getAllByRole('list')).toEqual([list]);
+    await expectNoA11yViolations(container);
   });
 
   it('shows no list or copy button when the entity holds no codes', () => {
