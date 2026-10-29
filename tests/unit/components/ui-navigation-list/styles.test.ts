@@ -1,9 +1,14 @@
 import loadIsolated from '@tests/unit/utils/isolated-module';
+import navigationControlStyle from '@tests/unit/utils/navigation-control-style';
 
 type Styles = (typeof import('@/components/ui-navigation-list/styles'))['default'];
 
 const loadStyles = (): Promise<Styles> =>
   loadIsolated(async () => (await import('@/components/ui-navigation-list/styles')).default);
+
+const ROW = { ...navigationControlStyle, padding: '2px 0 2px 24px', gap: '8px' };
+
+const SUB = { ...navigationControlStyle, display: 'block', fontWeight: 400 };
 
 describe('navigation list styles', () => {
   it('pins list', async () => {
@@ -74,153 +79,9 @@ describe('navigation list styles', () => {
     const styles = await loadStyles();
 
     expect(styles.row).toEqual({
-      desktop: {
-        display: 'flex',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        color: '#404142',
-        '& svg': {
-          flexShrink: 0,
-          fill: 'none',
-          color: '#969B9D',
-        },
-        '&:visited': { color: '#404142' },
-        '&:hover': {
-          backgroundColor: '#F4F5F6',
-          color: '#1A1C1E',
-          '& svg': {
-            color: '#404142',
-          },
-        },
-        '&[aria-current="page"]': {
-          backgroundColor: 'rgba(30, 174, 255, 0.1)',
-          color: '#0399ED',
-          '& svg': {
-            color: '#0399ED',
-          },
-        },
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
-        padding: '2px 0 2px 24px',
-        gap: '8px',
-        minHeight: '54px',
-        fontSize: '16px',
-        lineHeight: '1.125',
-      },
-      tablet: {
-        display: 'flex',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        color: '#404142',
-        '& svg': {
-          flexShrink: 0,
-          fill: 'none',
-          color: '#969B9D',
-        },
-        '&:visited': { color: '#404142' },
-        '&:hover': {
-          backgroundColor: '#F4F5F6',
-          color: '#1A1C1E',
-          '& svg': {
-            color: '#404142',
-          },
-        },
-        '&[aria-current="page"]': {
-          backgroundColor: 'rgba(30, 174, 255, 0.1)',
-          color: '#0399ED',
-          '& svg': {
-            color: '#0399ED',
-          },
-        },
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
-        padding: '2px 0 2px 24px',
-        gap: '8px',
-        minHeight: '66px',
-        fontSize: '18px',
-        lineHeight: 'calc(22 / 18)',
-      },
-      drawer: {
-        display: 'flex',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        color: '#404142',
-        '& svg': {
-          flexShrink: 0,
-          fill: 'none',
-          color: '#969B9D',
-        },
-        '&:visited': { color: '#404142' },
-        '&:hover': {
-          backgroundColor: '#F4F5F6',
-          color: '#1A1C1E',
-          '& svg': {
-            color: '#404142',
-          },
-        },
-        '&[aria-current="page"]': {
-          backgroundColor: 'rgba(30, 174, 255, 0.1)',
-          color: '#0399ED',
-          '& svg': {
-            color: '#0399ED',
-          },
-        },
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
-        padding: '2px 0 2px 24px',
-        gap: '8px',
-        minHeight: '60px',
-        fontSize: '16px',
-        lineHeight: '1.125',
-      },
+      desktop: { ...ROW, minHeight: '54px', fontSize: '16px', lineHeight: '1.125' },
+      tablet: { ...ROW, minHeight: '66px', fontSize: '18px', lineHeight: 'calc(22 / 18)' },
+      drawer: { ...ROW, minHeight: '60px', fontSize: '16px', lineHeight: '1.125' },
     });
   });
 
@@ -258,50 +119,7 @@ describe('navigation list styles', () => {
     const styles = await loadStyles();
 
     expect(styles.action).toEqual({
-      display: 'flex',
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      width: '100%',
-      margin: 0,
-      border: 0,
-      background: 'transparent',
-      textAlign: 'left',
-      textDecoration: 'none',
-      cursor: 'pointer',
-      fontFamily: 'Inter, sans-serif',
-      fontWeight: 500,
-      whiteSpace: 'normal',
-      overflowWrap: 'anywhere',
-      color: '#404142',
-      '& svg': {
-        flexShrink: 0,
-        fill: 'none',
-        color: '#969B9D',
-      },
-      '&:visited': { color: '#404142' },
-      '&:hover': {
-        backgroundColor: '#F4F5F6',
-        color: '#1A1C1E',
-        '& svg': {
-          color: '#404142',
-        },
-      },
-      '&[aria-current="page"]': {
-        backgroundColor: 'rgba(30, 174, 255, 0.1)',
-        color: '#0399ED',
-        '& svg': {
-          color: '#0399ED',
-        },
-      },
-      '&:focus-visible': {
-        outline: '2px solid #1A1C1E',
-        outlineOffset: '-2px',
-      },
-      '&:focus:not(:focus-visible)': {
-        outline: 'none',
-      },
-      padding: '2px 0 2px 24px',
-      gap: '8px',
+      ...ROW,
       minHeight: '54px',
       fontSize: '16px',
       lineHeight: '1.125',
@@ -312,50 +130,8 @@ describe('navigation list styles', () => {
     const styles = await loadStyles();
 
     expect(styles.actionDrawer).toEqual({
-      display: 'flex',
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      width: '100%',
-      margin: 0,
-      border: 0,
-      background: 'transparent',
-      textAlign: 'left',
-      textDecoration: 'none',
-      cursor: 'pointer',
-      fontFamily: 'Inter, sans-serif',
-      fontWeight: 500,
-      whiteSpace: 'normal',
-      overflowWrap: 'anywhere',
-      color: '#404142',
-      '& svg': {
-        flexShrink: 0,
-        fill: 'none',
-        color: '#969B9D',
-      },
-      '&:visited': { color: '#404142' },
-      '&:hover': {
-        backgroundColor: '#F4F5F6',
-        color: '#1A1C1E',
-        '& svg': {
-          color: '#404142',
-        },
-      },
-      '&[aria-current="page"]': {
-        backgroundColor: 'rgba(30, 174, 255, 0.1)',
-        color: '#0399ED',
-        '& svg': {
-          color: '#0399ED',
-        },
-      },
-      '&:focus-visible': {
-        outline: '2px solid #1A1C1E',
-        outlineOffset: '-2px',
-      },
-      '&:focus:not(:focus-visible)': {
-        outline: 'none',
-      },
+      ...ROW,
       padding: '2px 0 3px 24px',
-      gap: '8px',
       minHeight: '54px',
       borderTop: '1px solid #E1E7EA',
       fontSize: '16px',
@@ -391,144 +167,21 @@ describe('navigation list styles', () => {
 
     expect(styles.sub).toEqual({
       desktop: {
-        display: 'block',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 400,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        color: '#404142',
-        '& svg': {
-          flexShrink: 0,
-          fill: 'none',
-          color: '#969B9D',
-        },
-        '&:visited': { color: '#404142' },
-        '&:hover': {
-          backgroundColor: '#F4F5F6',
-          color: '#1A1C1E',
-          '& svg': {
-            color: '#404142',
-          },
-        },
-        '&[aria-current="page"]': {
-          backgroundColor: 'rgba(30, 174, 255, 0.1)',
-          color: '#0399ED',
-          '& svg': {
-            color: '#0399ED',
-          },
-        },
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
+        ...SUB,
         lineHeight: '1.125',
         minHeight: '42px',
         padding: '9px 0 2px 56px',
         fontSize: '16px',
       },
       tablet: {
-        display: 'block',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 400,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        color: '#404142',
-        '& svg': {
-          flexShrink: 0,
-          fill: 'none',
-          color: '#969B9D',
-        },
-        '&:visited': { color: '#404142' },
-        '&:hover': {
-          backgroundColor: '#F4F5F6',
-          color: '#1A1C1E',
-          '& svg': {
-            color: '#404142',
-          },
-        },
-        '&[aria-current="page"]': {
-          backgroundColor: 'rgba(30, 174, 255, 0.1)',
-          color: '#0399ED',
-          '& svg': {
-            color: '#0399ED',
-          },
-        },
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
+        ...SUB,
         lineHeight: '1',
         minHeight: '46px',
         padding: '8px 0 4px 60px',
         fontSize: '18px',
       },
       drawer: {
-        display: 'block',
-        alignItems: 'center',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 400,
-        whiteSpace: 'normal',
-        overflowWrap: 'anywhere',
-        color: '#404142',
-        '& svg': {
-          flexShrink: 0,
-          fill: 'none',
-          color: '#969B9D',
-        },
-        '&:visited': { color: '#404142' },
-        '&:hover': {
-          backgroundColor: '#F4F5F6',
-          color: '#1A1C1E',
-          '& svg': {
-            color: '#404142',
-          },
-        },
-        '&[aria-current="page"]': {
-          backgroundColor: 'rgba(30, 174, 255, 0.1)',
-          color: '#0399ED',
-          '& svg': {
-            color: '#0399ED',
-          },
-        },
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
+        ...SUB,
         lineHeight: '1.125',
         minHeight: '42px',
         padding: '12px 0 2px 56px',

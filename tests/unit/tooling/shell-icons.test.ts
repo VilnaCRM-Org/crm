@@ -53,11 +53,11 @@ class ShellSvgInspector {
       .trim()
       .split(/[\s,]+/)
       .map(Number);
-    const [minX, minY, width, height] = parts;
-    const valid =
-      parts.length === 4 && minX === 0 && minY === 0 && Number(width) > 0 && Number(height) > 0;
+    const [minX, minY, width = 0, height = 0] = parts;
+    const atOrigin = minX === 0 && minY === 0;
+    const sized = Math.min(width, height) > 0;
 
-    return valid ? { width: Number(width), height: Number(height) } : undefined;
+    return parts.length === 4 && atOrigin && sized ? { width, height } : undefined;
   }
 
   public childPaints(source: string, name: 'fill' | 'stroke'): string[] {

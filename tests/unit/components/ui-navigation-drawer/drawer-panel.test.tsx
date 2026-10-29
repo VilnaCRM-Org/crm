@@ -48,7 +48,12 @@ describe('DrawerPanel', () => {
       'Not available yet'
     );
     expect(screen.getAllByRole('navigation')).toHaveLength(1);
-    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole('searchbox', { name: 'Search' })
+        .compareDocumentPosition(screen.getByRole('navigation', { name: 'Main navigation' })) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('lists the same rows as the sidebar, in the 60 px drawer rows, ending with Sign out', () => {

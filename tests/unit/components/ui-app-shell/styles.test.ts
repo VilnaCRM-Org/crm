@@ -52,7 +52,6 @@ describe('app shell styles', () => {
     const styles = await loadStyles();
 
     expect(layoutStyles.navPlaceholder.width).toBe('250px');
-    expect(250).toBe(12 + 238);
     expect(
       layoutStyles.navPlaceholder['@media (min-width:1024px) and (max-width:1439.95px)'].width
     ).toBe(`${13 + 238}px`);

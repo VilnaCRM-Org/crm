@@ -23,12 +23,16 @@ const renderDrawer = (props: Partial<DrawerProps> = {}): ReturnType<typeof rende
   );
 
 describe('UINavigationDrawer', () => {
+  const viewport = window.innerHeight;
+
   beforeEach(() => {
     stubMotionPreference(true);
   });
 
   afterEach(() => {
     Reflect.deleteProperty(window, 'matchMedia');
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewport });
+    screen.queryByRole('contentinfo', { hidden: true })?.remove();
   });
 
   it('paints the supplied avatar in the aria-hidden header copy', async () => {
@@ -122,7 +126,6 @@ describe('UINavigationDrawer', () => {
   });
 
   it('paints the 5 % scrim behind the header and the panel, ending at the footer top', async () => {
-    const viewport = window.innerHeight;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 718 });
     const footer = document.body.appendChild(document.createElement('footer'));
     footer.getBoundingClientRect = (): DOMRect => ({ top: 678 }) as DOMRect;
@@ -139,9 +142,6 @@ describe('UINavigationDrawer', () => {
       backgroundColor: 'rgba(54, 79, 93, 0.05)',
     });
     expect(within(dialog).getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
-
-    footer.remove();
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewport });
   });
 
   it('keeps the scrim on the whole viewport when no footer is in view', async () => {
