@@ -8,6 +8,8 @@ import SecurityEventSignal from '@/services/security-events/security-event-signa
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
 import { buildEmail, buildPendingSessionId, buildRegistrationResponse } from '@tests/builders';
 
+const LATER_THAN_ANY_WINDOW_MS = 3_600_000;
+
 const resolveSignals = (): AuthSecuritySignals =>
   container.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals);
 
@@ -112,7 +114,8 @@ describe('auth security signals (integration)', () => {
   });
 
   it('records a failed registration and nothing for a successful or aborted one', () => {
-    const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + LATER_THAN_ANY_WINDOW_MS);
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
     const signals = resolveSignals();
 
     signals.registerSettled({ ok: true, value: buildRegistrationResponse() });
@@ -120,13 +123,25 @@ describe('auth security signals (integration)', () => {
       ok: false,
       error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
     });
-    expect(authFailure).not.toHaveBeenCalled();
+    expect(report).not.toHaveBeenCalled();
 
     signals.registerSettled({
       ok: false,
       error: { kind: 'server', displayMessage: 'errors.server', retryable: true },
     });
-    expect(authFailure).toHaveBeenCalledTimes(1);
-    expect(authFailure).toHaveBeenCalledWith('registration', 'server');
+    expect(report).toHaveBeenCalledTimes(1);
+    const [signal, payload] = report.mock.calls[0] ?? [];
+    expect(signal).toBeInstanceOf(SecurityEventSignal);
+    expect(signal).toHaveProperty('event', 'auth_failure');
+    expect(payload).toEqual({
+      event: 'auth_failure',
+      category: 'registration',
+      reason: 'server',
+      severity: 'warning',
+      failureCount: 1,
+      windowMs: expect.any(Number),
+      threshold: expect.any(Number),
+      thresholdCrossed: false,
+    });
   });
 });

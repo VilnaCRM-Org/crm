@@ -11,9 +11,11 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import observabilityCore from '@/services/observability/observability-core';
 import sessionCorrelation from '@/services/observability/session-correlation';
 import type RequestRetryService from '@/services/resilience/request-retry-service';
 import securityEventCore from '@/services/security-events/security-event-core';
+import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type { RetryOperation, RetryOptions } from '@/services/types/resilience/request-retry';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
@@ -453,9 +455,7 @@ describe('FetchHttpsClient Integration', () => {
     it.each([401, 403])(
       'reports an unauthorized %i response as a security event and throws its HttpError',
       async (status) => {
-        const unauthorized = jest
-          .spyOn(securityEventCore, 'unauthorizedResponse')
-          .mockImplementation();
+        const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
         mockFetch.mockResolvedValueOnce(
           new Response(JSON.stringify({ message: 'Denied' }), {
             status,
@@ -467,15 +467,21 @@ describe('FetchHttpsClient Integration', () => {
           status,
           message: 'Denied',
         });
-        expect(unauthorized).toHaveBeenCalledTimes(1);
-        expect(unauthorized).toHaveBeenCalledWith(status);
+        expect(report).toHaveBeenCalledTimes(1);
+        const [signal, payload] = report.mock.calls[0] ?? [];
+        expect(signal).toBeInstanceOf(SecurityEventSignal);
+        expect(signal).toHaveProperty('event', 'unauthorized_response');
+        expect(payload).toEqual({
+          event: 'unauthorized_response',
+          category: 'transport',
+          reason: `http_${status}`,
+          severity: 'warning',
+        });
       }
     );
 
     it('reports no security event for a 400 response', async () => {
-      const unauthorized = jest
-        .spyOn(securityEventCore, 'unauthorizedResponse')
-        .mockImplementation();
+      const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ message: 'Bad Request' }), {
           status: 400,
@@ -486,7 +492,7 @@ describe('FetchHttpsClient Integration', () => {
       await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toMatchObject({
         status: 400,
       });
-      expect(unauthorized).not.toHaveBeenCalled();
+      expect(report).not.toHaveBeenCalled();
     });
 
     it('throws the invalid-shape HttpError when a 200 body fails the schema', async () => {
