@@ -23,6 +23,7 @@ import {
   disableHeadingOf,
   disableSubmitOf,
   enableTwoFactor,
+  errorBannerOf,
   openDisableOf,
   openRegenerateOf,
   reauthSignInOf,
@@ -225,10 +226,8 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await disableFieldOf(page).fill('123456');
       await disableSubmitOf(page).click();
 
-      const banner = sectionOf(page)
-        .getByRole('alert')
-        .filter({ hasText: twoFactorText.rateLimited });
-      await expect(banner).toBeFocused();
+      await expect(sectionOf(page).getByRole('alert')).toHaveText(twoFactorText.rateLimited);
+      await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
       await expect(sectionOf(page).getByRole('button', { name: twoFactorText.retry })).toHaveCount(
         0
       );
@@ -259,9 +258,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await enableTwoFactor(page);
       await openRegenerateOf(page).click();
       await regenerateSubmitOf(page).click();
-      await expect(
-        sectionOf(page).getByRole('alert').filter({ hasText: twoFactorText.transient })
-      ).toBeFocused();
+      await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
       expect(regenerate.count()).toBe(1);
 
       await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
@@ -282,10 +279,15 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
     await expect(openDisableOf(page)).toHaveCSS('outline-width', SHARED_RING.width);
     await expect(openDisableOf(page)).toHaveCSS('outline-color', SHARED_RING.color);
     await openRegenerateOf(page).click();
+    await expect(regenerateHeadingOf(page)).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(regenerateSubmitOf(page)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(cancelOf(page)).toBeFocused();
     await expect(cancelOf(page)).toHaveCSS('outline-width', SHARED_RING.width);
     await expect(cancelOf(page)).toHaveCSS('outline-color', SHARED_RING.color);
     await regenerateSubmitOf(page).click();
+    await expect(sectionOf(page).getByText(twoFactorText.reauthMessage)).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(reauthSignInOf(page)).toBeFocused();
     await expect(reauthSignInOf(page)).toHaveCSS('outline-width', SHARED_RING.width);

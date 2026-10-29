@@ -194,6 +194,17 @@ describe('the on view and the status headings', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('gives Вимкнути and the regenerate button a 44 px tall target', () => {
+    renderPanel(
+      panelProps({ view: viewState('on'), settings: { ...EMPTY_SETTINGS, status: 'enabled' } })
+    );
+
+    expect(screen.getByRole('button', { name: 'Вимкнути' })).toHaveStyle({ height: '2.75rem' });
+    expect(screen.getByRole('button', { name: 'Створити нові резервні коди' })).toHaveStyle({
+      height: '2.75rem',
+    });
+  });
+
   it('moves focus to the on heading when the codes view hands over with Готово', () => {
     const props = codesProps();
     const utils = renderPanel(props);
