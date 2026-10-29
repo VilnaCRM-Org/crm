@@ -1,7 +1,15 @@
 import { expect, type Page } from '@playwright/test';
 
-const POSITIVE_TABINDEX = '[tabindex]:not([tabindex="0"]):not([tabindex="-1"])';
-
 export default async function expectNoPositiveTabindex(page: Page): Promise<void> {
-  await expect(page.locator(POSITIVE_TABINDEX)).toHaveCount(0);
+  const positive = await page
+    .locator('[tabindex]')
+    .evaluateAll((nodes) =>
+      nodes
+        .filter(
+          (node) => (node instanceof HTMLElement || node instanceof SVGElement) && node.tabIndex > 0
+        )
+        .map((node) => node.outerHTML)
+    );
+
+  expect(positive).toEqual([]);
 }

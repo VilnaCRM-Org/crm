@@ -41,6 +41,7 @@ describe('useDisableFormProps', () => {
     const node = document.createElement('h3');
     const focus = jest.spyOn(node, 'focus');
 
+    expect(result.current.errorAction?.label).toBe('Спробувати ще раз');
     result.current.errorAction?.onClick();
     (result.current.titleRef as (element: HTMLElement | null) => void)(node);
 
