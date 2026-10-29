@@ -1,22 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import { type JSX, useState } from 'react';
+import { type JSX, useCallback, useState } from 'react';
 
 import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
 import { loadedProfile, withProfileProvider } from '@stories/profile-provider-decorators';
 import { withMemoryRouter } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
 
+import type { CurrentUserMenuProps } from '../../types/components/user-menu';
+
 import CurrentUserMenu from './current-user-menu';
 
 import UserMenu from '.';
 
-function ReadingMenu(): JSX.Element {
+function ReadingMenu({ onIdentity }: CurrentUserMenuProps): JSX.Element {
   const [identity, setIdentity] = useState<UserDisplayName | null>(null);
+  const report = useCallback(
+    (next: UserDisplayName | null): void => {
+      setIdentity(next);
+      onIdentity(next);
+    },
+    [onIdentity]
+  );
 
   return (
     <>
       <UserMenu identity={identity} settingsAvailable signOut={noop} />
-      <CurrentUserMenu onIdentity={setIdentity} />
+      <CurrentUserMenu onIdentity={report} />
     </>
   );
 }
@@ -26,7 +35,7 @@ const meta: Meta<typeof CurrentUserMenu> = {
   component: CurrentUserMenu,
   tags: ['autodocs'],
   args: { onIdentity: noop },
-  render: () => <ReadingMenu />,
+  render: ({ onIdentity }) => <ReadingMenu onIdentity={onIdentity} />,
   decorators: [withMemoryRouter('/'), withProfileProvider(loadedProfile())],
   parameters: {
     docs: {

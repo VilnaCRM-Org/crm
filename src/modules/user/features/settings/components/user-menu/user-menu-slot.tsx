@@ -1,4 +1,12 @@
-import { type ComponentType, type JSX, lazy, Suspense, useRef, useState } from 'react';
+import {
+  type ComponentType,
+  type JSX,
+  lazy,
+  Suspense,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import useFeatureFlag from '@/hooks/use-feature-flag';
 import i18n from '@/i18n';
@@ -27,7 +35,9 @@ export default function UserMenuSlot({
   const settingsAvailable = useFeatureFlag('userSettings');
   const [identity, setIdentity] = useState<UserDisplayName | null>(null);
   const report = useRef(onChunkFailure);
-  report.current = onChunkFailure;
+  useLayoutEffect(() => {
+    report.current = onChunkFailure;
+  });
   const [CurrentUserMenu] = useState<ComponentType<CurrentUserMenuProps>>(() =>
     lazy(() =>
       currentUserMenuLoader.load().catch((error: unknown) => {

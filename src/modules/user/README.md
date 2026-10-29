@@ -102,15 +102,16 @@ react-router **outlet context**: `ProtectedRoute` renders
 one piece of this module that appears in it. They are not exported through the barrel: the
 settings route contract declares them as `shell.userMenu` (a lazy `user-menu` chunk), and the
 route composer hands `AppLayout` the loaded component as a prop (see "Shell slots" in
-`src/routes/README.md`). The `user` module stays out of every public page's chunks.
+`src/routes/README.md`). The shell user-menu code stays out of every public page's chunks.
 
 `signOut` comes from the `useSignOut` hook (`stores/use-sign-out.ts`). It loads `@auth/stores` with
 a **dynamic** `import()` through a `ChunkRetryLoader`, so the eager entrypoint does not grow, and
 calls `authActions.logout()` on the singleton. A final load failure is reported through
-`observabilityCore` with `source: 'auth:sign-out'` and leaves the user on the protected page. Each
-shell sign-out control (the sidebar or drawer row and the chip-menu item) runs `signOut` through
-`useOnceCallback`, so the control that was used stays inert until it remounts; the other one can
-still be used. This failure is deliberately silent (accepted in the approved design: no live region
+`observabilityCore` with `source: 'auth:sign-out'` and leaves the user on the protected page.
+`useSignOut` holds one re-entry latch for every shell sign-out control (the sidebar or drawer row
+and the chip-menu item): a second activation while a sign-out is pending does nothing, and the
+failure path clears the latch, so any control can retry. This failure is deliberately silent
+(accepted in the approved design: no live region
 on the page), and there is no busy state while the chunk loads; surfacing either is a design-owner
 follow-up. Once the token is cleared, the guard redirects to `/sign-in` with `state.focusMain: true`
 — set only after a sign-out, never for an unauthenticated visit — and `AuthPageLayout` moves focus

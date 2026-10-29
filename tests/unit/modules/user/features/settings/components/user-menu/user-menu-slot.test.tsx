@@ -135,20 +135,22 @@ describe('UserMenuSlot', () => {
     expect(container).toHaveTextContent('ОП');
   });
 
-  it('signs out once across the chunk resolving, with the same once-guard', async () => {
+  it('keeps the same chip mounted across the chunk resolving and signs out from it', async () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     const resolveChunk = holdCurrentUserChunk();
     const signOut = jest.fn();
     const user = userEvent.setup();
     renderShell(<UserMenuSlot signOut={signOut} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />);
+    const pendingChip = screen.getByRole('button', { name: 'User menu' });
 
-    await user.click(screen.getByRole('button', { name: 'User menu' }));
+    await user.click(pendingChip);
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
     await resolveChunk();
-    await user.click(screen.getByRole('button', { name: 'User menu' }));
+    expect(screen.getByRole('button', { name: /User menu/u })).toBe(pendingChip);
+    await user.click(pendingChip);
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(2);
   });
 
   it('keeps the pending chip operable and reports the chunk failure exactly once', async () => {
@@ -171,6 +173,28 @@ describe('UserMenuSlot', () => {
     expect(onChunkFailure).toHaveBeenCalledTimes(1);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(mockRead).not.toHaveBeenCalled();
+  });
+
+  it('reports a chunk failure to the handler of the latest render', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const failure = new Error('chunk failed');
+    let fail: (error: Error) => void = () => undefined;
+    jest.spyOn(loader, 'load').mockReturnValue(
+      new Promise<LoadedModule>((_resolve, reject) => {
+        fail = reject;
+      })
+    );
+    const first = jest.fn();
+    const latest = jest.fn();
+    const { rerender } = renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={first} onAvatar={jest.fn()} />
+    );
+
+    rerender(<UserMenuSlot signOut={jest.fn()} onChunkFailure={latest} onAvatar={jest.fn()} />);
+    await act(async () => fail(failure));
+
+    await waitFor(() => expect(latest).toHaveBeenCalledWith('app-shell:current-user', failure));
+    expect(first).not.toHaveBeenCalled();
   });
 
   it('publishes the no-data avatar copy while the flag is off, reading nothing', () => {

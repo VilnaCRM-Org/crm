@@ -11,7 +11,7 @@ describe('UserChipBody', () => {
 
     expect(screen.getByText('AK')).toHaveStyle({ width: '32px', height: '32px' });
     expect(screen.getByText('Anna Koval')).toHaveStyle({ left: '49px', top: '13px' });
-    expect(container).toContainHTML('aria-hidden="true"');
+    expect(container).toContainHTML('aria-hidden="true" focusable="false"');
   });
 
   it('places the tablet name at 57,16 in 16 px', () => {

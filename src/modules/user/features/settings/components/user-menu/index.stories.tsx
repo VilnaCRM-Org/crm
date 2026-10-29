@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
 import { withMemoryRouter } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
+import { withUserMenuPadding } from '@stories/user-menu-story-frame';
 
 import UserMenu from '.';
 
@@ -15,14 +15,7 @@ const meta: Meta<typeof UserMenu> = {
     settingsAvailable: true,
     signOut: noop,
   },
-  decorators: [
-    withMemoryRouter('/'),
-    (Story): JSX.Element => (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 24, minHeight: 280 }}>
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [withMemoryRouter('/'), withUserMenuPadding],
   parameters: {
     docs: {
       description: {
@@ -31,7 +24,8 @@ const meta: Meta<typeof UserMenu> = {
           'wider, the avatar below. Pending (no name yet) and the flag-off menu show the person ' +
           'glyph and are still operable; only Sign out remains while settings are off. Escape ' +
           'returns focus to the chip, Tab closes the menu and moves on, and a click outside ' +
-          'closes it without activating what lies under the pointer.',
+          'closes it without activating what lies under the pointer and returns focus to the ' +
+          'chip.',
       },
       story: { inline: false },
     },
