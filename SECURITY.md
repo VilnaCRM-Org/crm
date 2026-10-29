@@ -404,11 +404,15 @@ surface.
 address, bearer token, JWT or `token=` value found inside a string, the value of a serialized JSON
 member whose name ends in `token`, `password` or `secret`, and the value after a
 `pendingSessionId`, `twoFactorCode`, `recoveryCode` or `recoveryCodes` label followed by `=` or
-`:` in free text or JSON (an unlabelled six-digit number is left alone). After a `recoveryCodes`
-label it also replaces a bracketed array whole, quoted or not, and every code of a comma-separated
-list with or without spaces around the commas. The list match runs over letters, digits, `_`,
-`-`, spaces and commas, so it can redact prose that follows the list too; a scrubber errs towards
-removing more. The code list of a setup or regenerate response is redacted in any of these forms.
+`:` in free text or JSON (an unlabelled six-digit number is left alone). The label and the value
+may each sit in double quotes, single quotes or the backslash-escaped quotes of JSON serialized
+inside a string (`{\"twoFactorCode\":\"123456\"}`). After a `recoveryCodes` label it also
+replaces a bracketed array whole, quoted or not, and every code of a comma-separated list with or
+without spaces around the commas, each code bare or in any of those quotes. The list match runs
+over letters, digits, `_`, `-`, spaces, commas, quotes and backslashes and stops at a word followed
+by `=` or `:`, so the next member of a JSON object survives; it can still redact prose that follows
+the list, because a scrubber errs towards removing more. The code list of a setup or regenerate
+response is redacted in any of these forms.
 Two-factor relies on `secret`, `pendingsession`, `twofactorcode`, `recoverycode` and `otpauth`:
 the setup secret, the pending session id, the submitted code, a recovery code and the `otpauth`
 URI never reach Sentry.
