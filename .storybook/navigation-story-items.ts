@@ -18,6 +18,14 @@ const unflaggedItem = (item: NavigationItem): NavigationItem =>
 
 export const storyItems: NavigationItemSet = { items: navigationItems.items.map(unflaggedItem) };
 
-export const storyProducts: NavigationItemSet = { items: storyItems.items.slice(0, 5) };
+const isGroup = (item: NavigationItem): item is NavigationGroup => 'children' in item;
 
-export const storyGroup = storyItems.items.at(-1) as NavigationGroup;
+export const storyProducts: NavigationItemSet = {
+  items: storyItems.items.filter((item) => item.id !== 'settings'),
+};
+
+const group = storyItems.items.find(isGroup);
+
+if (group === undefined) throw new Error('The shell navigation items hold no group');
+
+export const storyGroup: NavigationGroup = group;
