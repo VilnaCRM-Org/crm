@@ -56,9 +56,12 @@ barrel, never by a deep `types/user/*` import.
 
 `src/modules/user/types/user/` holds the `[type]` cards of the Miro board's User module frame,
 one type-only file per card: `UserEntity`, `SignInDto`, `SignUpDto` (which `extends SignInDto`),
-`RestorePasswordDto`, `CreateNewPasswordDto` and `TwoFactorDto` (the board's `2FADTO`, one
-`twoFactorCode` field holding a canonical TOTP or recovery code). They are plain `readonly` data
-interfaces with no logic; the business rules stay in user-service.
+`RestorePasswordDto`, `CreateNewPasswordDto`, `TwoFactorDto` (the board's `2FADTO`, one
+`twoFactorCode` field holding a canonical TOTP or recovery code) and `TwoFactorSettingsEntity`
+(`two-factor-settings-entity.ts`: the status, the setup `otpauthUri` and `secret`, and the
+recovery codes). That last file also holds its two member types, `RecoveryCode` and the named
+collection `RecoveryCodeSet`, the one exception to one type per file. They are plain `readonly`
+data interfaces with no logic; the business rules stay in user-service.
 
 The two-factor code unions the sign-in challenge and the settings section share live in
 `src/modules/user/types/two-factor/code.ts`, and `TwoFactorCodeNormalizer`
