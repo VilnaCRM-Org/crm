@@ -54,7 +54,9 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 `UIAppHeader` (`src/components/ui-app-header/`) is the 64 px banner. Search, bell and list are
 natively `disabled` and described by the visually hidden status "Not available yet"; the mobile
 header has no search. The bell and list take an optional badge count that only stories pass: the
-header stories feed exactly 1 and 8, and no page, hook or route passes a count. The badge is
+header stories feed exactly 1 and 8, and no page, hook or route passes a count. One guard
+(`badge-count-guard.ts`) decides both the badge and the hidden count description: only a whole count
+of at least 1 shows, so zero, a fraction, `NaN` and `Infinity` show neither. The badge is
 painted in the disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
 The user slot reserves the chip's box with an `aria-hidden` placeholder until the chip arrives.
 
@@ -117,10 +119,12 @@ expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron to
 next route change; any pathname change clears it, so returning to the path it was set on (a link or
 browser Back) shows the route rule again. The handle collapses the panel to the rail (72 px desktop,
 76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
-While a tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
+Hover and focus are tracked apart, so the tooltip stays while either holds: the pointer leaving a
+row that keeps focus, or focus leaving a row the pointer still covers, does not hide it. While a
+tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
 a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
-is persisted. Sign out runs through `useOnceCallback`, so a second activation before navigation does
-nothing.
+is persisted. Sign out runs through the `useSignOut` latch the protected route provides, so a second
+activation of any shell control before navigation does nothing.
 
 ### Measured against Figma (sidebar)
 
@@ -344,7 +348,9 @@ when `userSettings` is off, and only the desktop and tablet cards draw it, as th
 items are 2 px apart; at 320 px the popover sits at x 92 to 317 and the
 document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
 focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
-closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none is made.
+closes it and returns focus to the chip. On mobile the avatar sits above the click-outside layer,
+so tapping it again closes the menu through the chip as it does at the wider layouts. One
+`CurrentUser` read is made on `/`; with `userSettings` off none is made.
 
 A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
 stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how
@@ -402,9 +408,12 @@ sidebar at top 74.
 - `tests/e2e/a11y/routes.a11y.spec.ts` (desktop engines): axe over `/`, `/settings` and the eight
   coming-soon routes with the shell loaded, `/` with `userSettings` off and `/` with the menu open.
 
-The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) abort the
-`current-user` chunk, so the chip never issues the second read OQ-25 introduced and their ordered
-replies stay deterministic; `app-shell.spec.ts` is the one spec that lets the chip read.
+The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) run the
+shell as in production, chip read included. To keep their ordered replies deterministic, the stub
+holds the `current-user` chunk until the page has sent its first read, takes the next read as the
+chip's and answers it with the default profile (recorded in `shellCalls`, not in `calls`), and only
+then answers the page's first read; every later read is the page's. A remount of the shell later in
+the same test (sign out and back in) is not split again, so those reads count as the page's.
 
 Run here against the 3004 dev server with the host Chromium (`chromium-dev` and `mobile-chrome-dev`,
 `--workers=1`): every spec above passes. Firefox, WebKit and `mobile-safari` need the pinned
