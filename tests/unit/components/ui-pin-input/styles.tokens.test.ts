@@ -36,6 +36,13 @@ describe('ui-pin-input styles', () => {
     expect(order.indexOf(ERROR_SELECTOR)).toBeGreaterThan(order.indexOf(HOVER_SELECTOR));
   });
 
+  it('paints the error helper text in #C62828 under an outranking selector', async () => {
+    const sx = await loadSx();
+
+    expect(sx['&& .MuiFormHelperText-root.Mui-error']).toEqual({ color: '#C62828' });
+    expect(contrast('#C62828', '#FFFFFF')).toBeCloseTo(5.62, 2);
+  });
+
   it('paints the focusVisibleRing values under an outranking selector', async () => {
     const sx = await loadSx();
 
