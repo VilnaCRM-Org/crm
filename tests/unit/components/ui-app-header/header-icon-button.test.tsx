@@ -54,12 +54,15 @@ describe('HeaderIconButton', () => {
   it.each([null, 0, 0.5, Number.NaN, Number.POSITIVE_INFINITY])(
     'shows no badge and no count text for %s',
     (count) => {
-      renderShell(<HeaderIconButton layout="tablet" kind="notifications" count={count} />);
+      const { container } = renderShell(
+        <HeaderIconButton layout="tablet" kind="notifications" count={count} />
+      );
 
       const button = screen.getByRole('button', { name: 'Notifications' });
 
       expect(button).toHaveTextContent(/^$/u);
       expect(button).toHaveAccessibleDescription('Not available yet');
+      expect(container).toHaveTextContent(/^Not available yet$/u);
     }
   );
 
@@ -79,6 +82,15 @@ describe('HeaderIconButton', () => {
       expect(button).toHaveTextContent(String(count));
     }
   );
+
+  it('shows 99+ on the badge over 99 and keeps the real count in the description', () => {
+    renderShell(<HeaderIconButton layout="desktop" kind="notifications" count={150} />);
+
+    const button = screen.getByRole('button', { name: 'Notifications' });
+
+    expect(button).toHaveTextContent(/^99\+$/u);
+    expect(button).toHaveAccessibleDescription('Not available yet 150 notifications');
+  });
 
   it.each([
     ['notifications', 1, 'Сповіщення', '1 сповіщення'],

@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import HeaderBadge from '@/components/ui-app-header/header-badge';
 
 describe('HeaderBadge', () => {
-  it.each([1, 2, 5, 8, 21])(
+  it.each([1, 2, 5, 8, 21, 99])(
     'renders the digits of %i hidden from assistive technology',
     (count) => {
       render(<HeaderBadge count={count} />);
@@ -12,9 +12,16 @@ describe('HeaderBadge', () => {
       const badge = screen.getByText(String(count));
 
       expect(badge).toHaveAttribute('aria-hidden', 'true');
-      expect(badge).toHaveStyle({ width: '18px', height: '18px', backgroundColor: '#D0D4D8' });
+      expect(badge).toHaveStyle({ minWidth: '18px', height: '18px', backgroundColor: '#D0D4D8' });
     }
   );
+
+  it.each([100, 150, 1000])('caps the count %i at 99+, as MUI Badge max does', (count) => {
+    const { container } = render(<HeaderBadge count={count} />);
+
+    expect(screen.getByText('99+')).toHaveAttribute('aria-hidden', 'true');
+    expect(container).toHaveTextContent(/^99\+$/u);
+  });
 
   it.each([0, -1, 0.5, 1.5, Number.NaN, Number.POSITIVE_INFINITY, null, undefined])(
     'renders no badge and no digit for %s',
