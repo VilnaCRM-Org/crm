@@ -5,6 +5,7 @@ import { focusVisibleRing } from '@/styles/focus-ring';
 const CELL = '& .ui-pin-input__cell';
 const ACTIVE_CELL = '&& .ui-pin-input__cell';
 const ENABLED = ':not([aria-disabled="true"])';
+const ERROR_HELPER = '&& .MuiFormHelperText-root.Mui-error';
 
 export const PIN_GROUP_WRAPPER_SX = { width: '100%' };
 
@@ -36,6 +37,9 @@ export default {
     borderColor: paletteColors.error.main,
   },
   [`${ACTIVE_CELL}:focus-visible${ENABLED}`]: focusVisibleRing['&:focus-visible'],
+  [ERROR_HELPER]: {
+    color: paletteColors.error.text,
+  },
   [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
     '& [role="group"]': {
       gap: '8px',
