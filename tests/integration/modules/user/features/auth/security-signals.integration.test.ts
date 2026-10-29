@@ -6,6 +6,7 @@ import observabilityCore from '@/services/observability/observability-core';
 import securityEventCore from '@/services/security-events/security-event-core';
 import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
+import { buildEmail, buildPendingSessionId, buildRegistrationResponse } from '@tests/builders';
 
 const resolveSignals = (): AuthSecuritySignals =>
   container.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals);
@@ -80,5 +81,52 @@ describe('auth security signals (integration)', () => {
     const identity = setUser.mock.calls[0]?.[0] as { id: string };
     expect(identity.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(Object.keys(identity)).toEqual(['id']);
+  });
+
+  it('tags no identity and records nothing when the sign-in asks for a challenge', () => {
+    const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+
+    resolveSignals().loginSettled({
+      ok: true,
+      value: {
+        kind: 'challenge',
+        email: buildEmail(),
+        pendingSessionId: buildPendingSessionId(),
+      },
+    });
+
+    expect(setUser).not.toHaveBeenCalled();
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('records nothing for an aborted sign-in', () => {
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+
+    resolveSignals().loginSettled({
+      ok: false,
+      error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
+    });
+
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('records a failed registration and nothing for a successful or aborted one', () => {
+    const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
+    const signals = resolveSignals();
+
+    signals.registerSettled({ ok: true, value: buildRegistrationResponse() });
+    signals.registerSettled({
+      ok: false,
+      error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
+    });
+    expect(authFailure).not.toHaveBeenCalled();
+
+    signals.registerSettled({
+      ok: false,
+      error: { kind: 'server', displayMessage: 'errors.server', retryable: true },
+    });
+    expect(authFailure).toHaveBeenCalledTimes(1);
+    expect(authFailure).toHaveBeenCalledWith('registration', 'server');
   });
 });
