@@ -55,6 +55,11 @@ export const recoveryToggleOf = (page: Page): Locator =>
 export const authenticatorToggleOf = (page: Page): Locator =>
   page.getByRole('button', { name: challengeText.useAuthenticator, exact: true });
 
+export const challengeBannerOf = (page: Page, text: string): Locator =>
+  page
+    .locator('section[tabindex="-1"]')
+    .filter({ has: page.getByRole('alert').filter({ hasText: text }) });
+
 export const challengeRetryOf = (page: Page): Locator =>
   page.getByRole('button', { name: challengeText.retry, exact: true });
 
