@@ -18,6 +18,7 @@ export interface ChallengeView {
   readonly value: string;
   readonly fieldError: TwoFactorFieldError | null;
   readonly banner: TwoFactorBannerCode | null;
+  readonly bannerOccurrence: number;
   readonly focusRequest: number;
 }
 
@@ -32,7 +33,6 @@ export interface TwoFactorChallengeState extends ChallengeView {
 
 export interface TwoFactorChallengeCallbacks {
   readonly submit: (dto: TwoFactorDto) => void;
-  readonly retry: () => void;
   readonly switchMode: () => void;
 }
 
@@ -77,7 +77,6 @@ export type ChallengeSubmitter = AbortableSubmit<TwoFactorDto, ChallengeResult>;
 
 export interface ChallengeSender {
   readonly send: (dto: TwoFactorDto, value: string) => Promise<void>;
-  readonly retry: (value: string) => void;
 }
 
 export interface ChallengeCallbackDeps {

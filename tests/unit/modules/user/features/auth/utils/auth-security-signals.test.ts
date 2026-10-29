@@ -84,7 +84,7 @@ describe('AuthSecuritySignals', () => {
     expect(recorder.authFailure).toHaveBeenCalledWith('login', 'rate_limited');
   });
 
-  it('records the same reason for both causes of invalid_credentials', () => {
+  it('records authentication for every invalid_credentials failure', () => {
     const recorder = buildRecorder();
     const signals = new AuthSecuritySignals(recorder, buildObservability());
     const invalid = { ...authError('authentication'), reason: 'invalid_credentials' as const };
