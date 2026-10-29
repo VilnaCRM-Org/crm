@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-22
 revised: 2026-10-29
-iteration: 2
+iteration: 3
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:

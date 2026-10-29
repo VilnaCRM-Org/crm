@@ -33,3 +33,8 @@ export interface DrawerScrimProps {
 }
 
 export type FooterInsetRef = (scrim: HTMLElement | null) => (() => void) | undefined;
+
+export interface FooterInsetFrames {
+  readonly schedule: () => void;
+  readonly cancel: () => void;
+}

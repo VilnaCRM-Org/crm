@@ -1,4 +1,4 @@
-import type { FooterInsetRef } from '@/components/types/ui-navigation-drawer';
+import type { FooterInsetFrames, FooterInsetRef } from '@/components/types/ui-navigation-drawer';
 
 class FooterInsetSource {
   public attach: FooterInsetRef = (scrim) => {
@@ -14,7 +14,8 @@ class FooterInsetSource {
   };
 
   private follow(place: () => void): () => void {
-    const mounts = new MutationObserver(place);
+    const frames = this.coalesce(place);
+    const mounts = new MutationObserver(frames.schedule);
 
     window.addEventListener('resize', place);
     mounts.observe(document.body, { childList: true, subtree: true });
@@ -22,6 +23,22 @@ class FooterInsetSource {
     return (): void => {
       window.removeEventListener('resize', place);
       mounts.disconnect();
+      frames.cancel();
+    };
+  }
+
+  private coalesce(place: () => void): FooterInsetFrames {
+    let frame = 0;
+
+    return {
+      schedule: (): void => {
+        if (frame !== 0) return;
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          place();
+        });
+      },
+      cancel: (): void => window.cancelAnimationFrame(frame),
     };
   }
 

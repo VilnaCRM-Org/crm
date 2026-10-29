@@ -18,6 +18,21 @@ const resize = (): void =>
     window.dispatchEvent(new Event('resize'));
   });
 
+const frames: FrameRequestCallback[] = [];
+
+const flushFrames = (): void =>
+  act(() => {
+    frames.splice(0).forEach((callback) => callback(0));
+  });
+
+const mutate = async (change: () => void): Promise<void> =>
+  act(async () => {
+    change();
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  });
+
 const cleanups: (() => void)[] = [];
 
 const attach = (scrim: HTMLElement | null): (() => void) | undefined => {
@@ -39,10 +54,17 @@ describe('useFooterInset', () => {
 
   beforeEach(() => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: VIEWPORT });
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+
+      return frames.length;
+    });
+    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     cleanups.splice(0).forEach((cleanup) => cleanup());
+    frames.splice(0);
     jest.restoreAllMocks();
     document.body.replaceChildren();
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: original });
@@ -96,15 +118,48 @@ describe('useFooterInset', () => {
 
   it('measures again when the lazy footer mounts deep in the page after the scrim', async () => {
     const footerArea = document.body.appendChild(document.createElement('div'));
-    const scrim = document.createElement('div');
+    const scrim = document.body.appendChild(document.createElement('div'));
     attach(scrim);
     expect(scrim).toHaveStyle({ bottom: '0px' });
 
-    await act(async () => {
-      mountFooter(678, footerArea);
-    });
+    await mutate(() => mountFooter(678, footerArea));
+    expect(scrim).toHaveStyle({ bottom: '0px' });
+    flushFrames();
 
     expect(scrim).toHaveStyle({ bottom: '40px' });
+  });
+
+  it('measures once per frame however many mutation batches arrive before it', async () => {
+    const footer = mountFooter(678);
+    const measure = jest.spyOn(footer, 'getBoundingClientRect');
+    attach(document.createElement('div'));
+    measure.mockClear();
+
+    await mutate(() => document.body.append(document.createElement('div')));
+    await mutate(() => document.body.append(document.createElement('div')));
+    flushFrames();
+
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1);
+    expect(measure).toHaveBeenCalledTimes(1);
+  });
+
+  it('schedules a new frame for mounts after the previous frame ran', async () => {
+    attach(document.createElement('div'));
+
+    await mutate(() => document.body.append(document.createElement('div')));
+    flushFrames();
+    await mutate(() => document.body.append(document.createElement('div')));
+
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels a pending frame when its cleanup runs', async () => {
+    const cleanup = attach(document.createElement('div'));
+
+    await mutate(() => document.body.append(document.createElement('div')));
+    act(() => cleanup?.());
+
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(1);
   });
 
   it('stops watching the page for a footer once its cleanup runs', async () => {
@@ -112,11 +167,11 @@ describe('useFooterInset', () => {
     const cleanup = attach(scrim);
 
     act(() => cleanup?.());
-    await act(async () => {
-      mountFooter(678);
-    });
+    await mutate(() => mountFooter(678));
+    flushFrames();
 
     expect(scrim).toHaveStyle({ bottom: '0px' });
+    expect(window.requestAnimationFrame).not.toHaveBeenCalled();
   });
 
   it('hands every render the same ref, so the scrim subscribes once', () => {
