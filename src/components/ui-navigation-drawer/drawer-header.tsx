@@ -1,20 +1,18 @@
 import Box from '@mui/material/Box';
-import type { JSX, RefCallback } from 'react';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import logoMobile from '@/assets/icons/shell/logo-mobile.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/shell/x-close.svg';
 import type { DrawerHeaderProps } from '@/components/types/ui-navigation-drawer';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import DrawerHeaderCopies from './drawer-header-copies';
 import styles from './styles';
 
-const focusOnMount: RefCallback<HTMLButtonElement> = (node) => {
-  node?.focus();
-};
-
 export default function DrawerHeader({ onDismiss, avatar }: DrawerHeaderProps): JSX.Element {
   const { t } = useTranslation();
+  const focusOnMount = useFocusOnMount<HTMLButtonElement>();
 
   return (
     <Box role="presentation" onClick={onDismiss} sx={styles.header}>
