@@ -414,7 +414,8 @@ A name of three or more words reads as `<first> <last>` from the first two words
 monogram is the upper-cased first letter of each word of the display name; an empty name yields an
 empty monogram, which both consumers draw as the person glyph. `useDisplayName` serves the
 settings header and `useCurrentUser` the chip, which reads `ProfileProvider` once per pathname
-change and keeps the previous identity when a read ends the session.
+change, keeps the last good identity when a later read fails for any reason but `session_ended`,
+and resets the identity to the name-less pending state when a read reports `session_ended`.
 
 **Rejected.** A copy of the rule in the chip (it would drift from the header); resolving the user
 from the JWT (see the previous record).
@@ -491,7 +492,9 @@ context and ends the session only while the store still holds that token, so a l
 request sent with an earlier token, or with none, leaves a session begun since, or a sign-out
 already done, alone. Whether a network error is a 401 is asked of #315's
 `UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
-hooks, which do nothing on `session_ended` and rely on the link, read the status in one place.
+hooks read the status in one place. The settings page hooks do nothing on `session_ended` and rely
+on the link; the chip's `useCurrentUser` only clears its shown identity and leaves ending the
+session to the link.
 The link receives its five collaborators as one `SessionLinkDeps` value
 (`AUTH_TOKENS.SessionLinkDeps`): the store, `CLEARED_AUTH_STATE` itself rather than a copy, the
 sandbox demo session, `ObservabilityService` and the error transformer, because a constructor may

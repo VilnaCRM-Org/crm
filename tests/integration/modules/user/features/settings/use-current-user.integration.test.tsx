@@ -4,6 +4,9 @@ import type { JSX, ReactNode } from 'react';
 import { MemoryRouter, useNavigate } from 'react-router';
 
 import '../../../../setup';
+import container from '@/config/dependency-injection-config';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
 import useCurrentUser from '@/modules/user/features/settings/hooks/use-current-user';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken, buildUserNode } from '@tests/builders';
@@ -111,6 +114,10 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   it('keeps the last good identity when a later read fails for another reason', async () => {
+    const read = jest.spyOn(
+      container.resolve<ProfileProvider>(AUTH_TOKENS.ProfileProvider),
+      'read'
+    );
     answerWith('Anna Koval');
     const hook = mountCurrentUser();
     await waitFor(() => expect(hook.current.status).toBe('ready'));
@@ -119,9 +126,13 @@ describe('useCurrentUser over the container (integration)', () => {
       respond: () => new HttpResponse(null, { status: 400 }),
     });
     act(() => hook.current.go('/settings'));
-    await waitFor(() => expect(failed).toHaveLength(1));
-    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+    await act(() =>
+      expect(read.mock.results[1]?.value).resolves.toEqual({ kind: 'failed', reason: 'rejected' })
+    );
+    read.mockRestore();
 
+    expect(failed).toHaveLength(1);
     expect(hook.current.status).toBe('ready');
     expect(hook.current.identity).toEqual({ displayName: 'Anna Koval', monogram: 'AK' });
   });
