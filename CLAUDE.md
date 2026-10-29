@@ -437,7 +437,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 425 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 443 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -1801,9 +1801,16 @@ key on `/sign-up`. The owners are the two recovery route folders, the recovery c
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
 through `usePageTitle` after its module has registered the catalog). The settings catalog
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
-the settings `components/` and `hooks/` folders that page renders, and the settings route contract
-`routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
-`transformers/` load in the container chunk and own no settings key. The toast catalog
+the six settings `components/` folders that page renders (`change-password`, `profile-form`,
+`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the nine
+`hooks/` files those components call (`use-blur-hold`, `use-display-name`, `use-email-resend`,
+`use-email-row`, `use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`,
+`use-profile-save` and `use-settled-focus`), and the settings route contract `routes/index.ts` for
+its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
+`use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
+protected page, before the settings catalog is registered, so they own no settings key; the
+feature's `data-providers/`, `repositories/` and `transformers/` load in the container chunk and
+own no settings key. The toast catalog
 (`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
 label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are owned the same
 way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
@@ -3111,7 +3118,7 @@ replaces.
    #362): `AppLayout` reads `signOut` from the outlet context `ProtectedRoute` provides
    (`ProtectedOutletContext`, `{ signOut }`, issue #106) and passes it to `UIAppShell`, which
    renders it in the sidebar, the mobile navigation drawer and the user menu; `AppLayout` still
-   forwards the same context to the page outlet. The redirect sign-out causes carries
+   forwards the same context to the page outlet. The sign-out redirect carries
    `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
    `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
    focus again.

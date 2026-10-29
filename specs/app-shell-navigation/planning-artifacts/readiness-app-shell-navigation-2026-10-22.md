@@ -2,7 +2,8 @@
 status: complete
 workflowType: implementation-readiness
 project_name: crm
-date: 2026-10-23
+date: 2026-10-22
+revised: 2026-10-23
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
