@@ -1,0 +1,81 @@
+import edgeButtonStyles from '@/components/ui-app-header/edge-button-styles';
+import { customColors, paletteColors } from '@/styles/colors';
+
+const NARROWEST = '@media (max-width:374px)';
+
+const glyph = { display: 'block', flexShrink: 0, width: '24px', height: '24px' };
+
+export default {
+  scrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    pointerEvents: 'none',
+    backgroundColor: customColors.shell.scrim,
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
+  },
+  dialog: {
+    position: 'fixed',
+    inset: 0,
+    pointerEvents: 'none',
+    outline: 'none',
+  },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    boxSizing: 'border-box',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    height: '56px',
+    padding: '0 15px',
+    pointerEvents: 'auto',
+    backgroundColor: paletteColors.background.default,
+    [NARROWEST]: { padding: '0 8px' },
+  },
+  logo: { display: 'block', flexShrink: 0, width: '125px', height: '42.067px', marginTop: '7px' },
+  cluster: {
+    display: 'flex',
+    alignItems: 'center',
+    flexShrink: 0,
+    gap: '16px',
+    width: '160px',
+    height: '40px',
+    marginTop: '8px',
+  },
+  glyph: { ...glyph, color: customColors.checkbox.main },
+  avatar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    boxSizing: 'border-box',
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    backgroundColor: paletteColors.background.subtle,
+    color: customColors.text.dark,
+  },
+  avatarGlyph: { fontSize: '24px' },
+  close: { ...edgeButtonStyles.target, color: customColors.text.primary },
+  closeGlyph: glyph,
+  panel: {
+    position: 'absolute',
+    top: '56px',
+    right: 0,
+    boxSizing: 'border-box',
+    width: 'min(313px, calc(100vw - 7px))',
+    height: '622px',
+    maxHeight: 'calc(100vh - 56px)',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    pointerEvents: 'auto',
+    backgroundColor: paletteColors.background.default,
+    boxShadow: customColors.shell.drawerShadow,
+    '&:focus:not(:focus-visible)': { outline: 'none' },
+  },
+} as const;
