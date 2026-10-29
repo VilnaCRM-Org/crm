@@ -16,11 +16,14 @@ describe('HeaderBadge', () => {
     }
   );
 
-  it.each([0, -1, null, undefined])('renders no badge and no digit for %s', (count) => {
-    const { container } = render(<HeaderBadge count={count} />);
+  it.each([0, -1, 0.5, 1.5, Number.NaN, Number.POSITIVE_INFINITY, null, undefined])(
+    'renders no badge and no digit for %s',
+    (count) => {
+      const { container } = render(<HeaderBadge count={count} />);
 
-    expect(container).toBeEmptyDOMElement();
-  });
+      expect(container).toBeEmptyDOMElement();
+    }
+  );
 
   it('renders no badge when the count prop is absent', () => {
     const { container } = render(<HeaderBadge />);

@@ -178,6 +178,7 @@ describe('navigation drawer styles', () => {
       pointerEvents: 'auto',
       backgroundColor: '#FFFFFF',
       boxShadow: '-9px 4px 33px rgba(53, 59, 72, 0.07)',
+      '&:focus:not(:focus-visible)': { outline: 'none' },
     });
   });
 

@@ -17,6 +17,8 @@ const AvatarMenu: UserMenuSlot = ({ onAvatar }) => {
   return <span>chip</span>;
 };
 
+const SIDEBAR_ROWS = ['Boards', 'Products', 'Orders', 'Contacts', 'Analytics', 'Settings'];
+
 const openDrawer = async (): Promise<HTMLElement> => {
   await userEvent.setup().click(screen.getByRole('button', { name: 'Open menu' }));
 
@@ -75,7 +77,7 @@ describe('UIAppShell', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent)
-    ).toEqual(expect.arrayContaining(['Boards', 'Products', 'Orders', 'Contacts', 'Analytics']));
+    ).toEqual(SIDEBAR_ROWS);
   });
 
   it('puts the banner before the navigation in the DOM', () => {
@@ -118,9 +120,14 @@ describe('UIAppShell', () => {
   it('opens the drawer with the same items from the burger below the breakpoint', async () => {
     renderAt(375);
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Open menu' }));
+    const dialog = await openDrawer();
 
-    expect(screen.getByRole('dialog', { name: 'Main navigation' })).toBeInTheDocument();
+    expect(
+      within(dialog)
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+    ).toEqual(SIDEBAR_ROWS);
+    expect(within(dialog).getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
   });
 
   it('paints the avatar the user menu slot publishes in the drawer header copy', async () => {

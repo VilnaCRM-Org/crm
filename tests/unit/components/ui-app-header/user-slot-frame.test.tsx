@@ -1,10 +1,14 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
-import { lazy } from 'react';
+import { act, render, screen } from '@testing-library/react';
+import { type ComponentType, type JSX, lazy } from 'react';
 
 import UserSlotFrame from '@/components/ui-app-header/user-slot-frame';
 
 const NeverResolves = lazy(() => new Promise<never>(() => undefined));
+
+function Chip(): JSX.Element {
+  return <button type="button">Chip</button>;
+}
 
 const boxes = (): HTMLElement[] => screen.getAllByRole('generic', { hidden: true });
 
@@ -48,6 +52,31 @@ describe('UserSlotFrame', () => {
 
     expect(placeholder).toHaveAttribute('aria-hidden', 'true');
     expect(placeholder).toBeEmptyDOMElement();
+  });
+
+  it('swaps the placeholder for the slot when its chunk arrives', async () => {
+    let arrive: (module: { default: ComponentType }) => void = () => undefined;
+    const Slot = lazy(
+      () =>
+        new Promise<{ default: ComponentType }>((resolve) => {
+          arrive = resolve;
+        })
+    );
+    render(
+      <UserSlotFrame layout="desktop">
+        <Slot />
+      </UserSlotFrame>
+    );
+    const [, , placeholder] = boxes();
+
+    expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByRole('button', { name: 'Chip' })).not.toBeInTheDocument();
+
+    await act(async () => arrive({ default: Chip }));
+
+    expect(await screen.findByRole('button', { name: 'Chip' })).toBeInTheDocument();
+    expect(placeholder).not.toBeInTheDocument();
+    expect(boxes()).toHaveLength(2);
   });
 
   it('renders the slot in place of the placeholder once it has arrived', () => {

@@ -60,8 +60,7 @@ describe('useAvailableNavigationItems', () => {
 
     renderHook(() => useAvailableNavigationItems(set));
 
-    expect(isEnabled).toHaveBeenCalledWith('userSettings');
-    expect(isEnabled).toHaveBeenCalledTimes(2);
+    expect(isEnabled.mock.calls).toEqual([['userSettings'], ['userSettings']]);
   });
 
   it('filters a sub-item on its own flag inside an available group', () => {
@@ -98,5 +97,19 @@ describe('useAvailableNavigationItems', () => {
     rerender();
 
     expect(result.current).toBe(first);
+  });
+
+  it('recomputes when it is handed a different set', () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const ordersOnly: NavigationItemSet = {
+      items: [{ id: 'orders', href: '/o', labelKey: 'e', icon }],
+    };
+    const { result, rerender } = renderHook(({ items }) => useAvailableNavigationItems(items), {
+      initialProps: { items: set },
+    });
+
+    rerender({ items: ordersOnly });
+
+    expect(idsOf(result.current)).toEqual(['orders']);
   });
 });

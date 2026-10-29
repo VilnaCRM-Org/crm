@@ -10,7 +10,14 @@ const press = (value: string): void =>
     document.dispatchEvent(new KeyboardEvent('keydown', { key: value }));
   });
 
+const keydownCalls = (spy: jest.SpyInstance): unknown[][] =>
+  spy.mock.calls.filter(([type]) => type === 'keydown');
+
 describe('useRailTooltip', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('starts hidden', () => {
     expect(renderHook(() => useRailTooltip()).result.current.visible).toBe(false);
   });
@@ -54,6 +61,49 @@ describe('useRailTooltip', () => {
     expect(result.current.visible).toBe(false);
   });
 
+  it('stays shown when the pointer leaves a row that still has keyboard focus', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onMouseLeave);
+
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('stays shown when focus leaves a row the pointer still hovers', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onBlur);
+
+    expect(result.current.visible).toBe(true);
+  });
+
+  it('hides once both the pointer and focus have left', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onMouseEnter);
+    enter(result.current.handlers.onMouseLeave);
+    enter(result.current.handlers.onBlur);
+
+    expect(result.current.visible).toBe(false);
+  });
+
+  it('stays dismissed when the pointer leaves a row that keeps focus and returns', () => {
+    const { result } = renderHook(() => useRailTooltip());
+
+    enter(result.current.handlers.onFocus);
+    enter(result.current.handlers.onMouseEnter);
+    press('Escape');
+    enter(result.current.handlers.onMouseLeave);
+    enter(result.current.handlers.onMouseEnter);
+
+    expect(result.current.visible).toBe(false);
+  });
+
   it('shows again after a dismissed tooltip is left and entered anew', () => {
     const { result } = renderHook(() => useRailTooltip());
 
@@ -75,22 +125,30 @@ describe('useRailTooltip', () => {
   });
 
   it('stops listening for Escape once the tooltip is hidden', () => {
+    const add = jest.spyOn(document, 'addEventListener');
+    const remove = jest.spyOn(document, 'removeEventListener');
     const { result } = renderHook(() => useRailTooltip());
 
     enter(result.current.handlers.onMouseEnter);
+    const [added] = keydownCalls(add);
     enter(result.current.handlers.onMouseLeave);
     press('Escape');
     enter(result.current.handlers.onMouseEnter);
 
+    expect(keydownCalls(remove)).toEqual([['keydown', added?.[1]]]);
     expect(result.current.visible).toBe(true);
   });
 
   it('does not listen for Escape before the tooltip is first shown', () => {
+    const add = jest.spyOn(document, 'addEventListener');
     const { result } = renderHook(() => useRailTooltip());
 
     press('Escape');
+    const beforeShown = keydownCalls(add).length;
     enter(result.current.handlers.onMouseEnter);
 
+    expect(beforeShown).toBe(0);
+    expect(keydownCalls(add)).toHaveLength(1);
     expect(result.current.visible).toBe(true);
   });
 
@@ -105,8 +163,6 @@ describe('useRailTooltip', () => {
 
     expect(added).toBeDefined();
     expect(remove).toHaveBeenCalledWith('keydown', added?.[1]);
-    add.mockRestore();
-    remove.mockRestore();
   });
 
   it('subscribes to keydown once while a shown tooltip re-renders', () => {
@@ -117,8 +173,7 @@ describe('useRailTooltip', () => {
     rerender();
     enter(result.current.handlers.onFocus);
     rerender();
-    const keydowns = add.mock.calls.filter(([type]) => type === 'keydown');
-    add.mockRestore();
+    const keydowns = keydownCalls(add);
 
     expect(result.current.visible).toBe(true);
     expect(keydowns).toHaveLength(1);

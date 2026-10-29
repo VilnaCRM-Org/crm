@@ -28,6 +28,7 @@ describe('NavigationSubList', () => {
     const links = within(list).getAllByRole('link');
 
     expect(list).toHaveAttribute('id', 'sub');
+    expect(list).toHaveAttribute('role', 'list');
     expect(links.map((link) => link.textContent)).toEqual(['Integrations', 'Webhooks', 'Billing']);
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '/settings/integrations',
