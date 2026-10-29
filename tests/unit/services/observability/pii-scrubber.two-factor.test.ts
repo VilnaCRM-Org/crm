@@ -11,9 +11,9 @@ import {
 } from '@tests/builders';
 
 describe('PiiScrubber two-factor redaction (#331)', () => {
-  const scrubber = new PiiScrubber();
+  const scrubber = (): PiiScrubber => new PiiScrubber();
   const scrubMessage = (message: string): unknown =>
-    scrubber.scrub({ message } as SentryEvent) as { message: string };
+    scrubber().scrub({ message } as SentryEvent) as { message: string };
 
   describe('denied keys', () => {
     const secrets = {
@@ -41,7 +41,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     } as unknown as SentryEvent;
 
     it('removes all seven values from every level of the event', () => {
-      const serialized = JSON.stringify(scrubber.scrub(event));
+      const serialized = JSON.stringify(scrubber().scrub(event));
 
       for (const value of values) {
         expect(serialized).not.toContain(value);
@@ -49,7 +49,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
 
     it('keeps the unrelated fields beside the dropped keys', () => {
-      const result = scrubber.scrub(event) as unknown as {
+      const result = scrubber().scrub(event) as unknown as {
         extra: { keep: string; variables: { input: Record<string, string> } };
         breadcrumbs: Array<{ data: Record<string, string> }>;
       };
@@ -57,7 +57,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
       expect(result.extra.keep).toBe('ok');
       expect(result.extra.variables.input).toEqual({ kept: 'in' });
       expect(result.breadcrumbs[0]?.data).toEqual({ kept: 'data' });
-      expect(Object.keys(scrubber.scrub(event))).toEqual(['extra', 'breadcrumbs']);
+      expect(Object.keys(scrubber().scrub(event))).toEqual(['extra', 'breadcrumbs']);
     });
 
     it.each([
@@ -69,7 +69,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
       ['recoveryCode'],
       ['otpauthUri'],
     ])('drops the key %s whatever its separators and case', (key) => {
-      const result = scrubber.scrub({ extra: { [key]: 'value', keep: 'ok' } } as SentryEvent);
+      const result = scrubber().scrub({ extra: { [key]: 'value', keep: 'ok' } } as SentryEvent);
 
       expect(result.extra).toEqual({ keep: 'ok' });
     });
@@ -91,7 +91,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
 
     it('is the only pattern that catches the @-free vector (must-fail without it)', () => {
-      const others = (Reflect.get(scrubber, 'patterns') as readonly RegExp[]).slice(1);
+      const others = (Reflect.get(scrubber(), 'patterns') as readonly RegExp[]).slice(1);
       const leftover = others.reduce(
         (text, pattern) => text.replace(pattern, '[redacted]'),
         vector
@@ -337,13 +337,39 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
   });
 
   describe('patterns', () => {
-    const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
+    const patternsOf = (): readonly RegExp[] =>
+      Reflect.get(scrubber(), 'patterns') as readonly RegExp[];
 
     it('lists the otpauth pattern first, before the e-mail pattern', () => {
+      const patterns = patternsOf();
+
       expect(patterns).toHaveLength(10);
       expect(patterns[0]?.source).toBe(String.raw`otpauth:\/\/[^\s"']+`);
       expect(patterns[0]?.flags).toBe('gi');
       expect(patterns[1]?.source).toBe(String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`);
+    });
+
+    it('pins every pattern and its flags, in the order the scrubber applies them', () => {
+      expect(patternsOf().map((pattern) => [pattern.source, pattern.flags])).toEqual([
+        [String.raw`otpauth:\/\/[^\s"']+`, 'gi'],
+        [String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`, 'g'],
+        [String.raw`bearer\s+[\w.\-~+/]+=*`, 'gi'],
+        [String.raw`eyJ[\w-]+\.[\w-]+\.[\w-]+`, 'g'],
+        [String.raw`(?<=token=)[^&#\s]+`, 'gi'],
+        [String.raw`(?<=token%3d)(?:(?!%26|%23)[^&#\s])+`, 'gi'],
+        [String.raw`(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+`, 'gi'],
+        [String.raw`(?<=recoveryCodes\\?["']?\s*[=:]\s*)\[[^\]]*\]`, 'gi'],
+        [
+          String.raw`(?<=recoveryCodes\\?["']?\s*[=:][\w\s,\\"'-]*,[\s\\"']*)` +
+            String.raw`[\w-]+(?![\w-]|\\?["']?\s*[=:])`,
+          'gi',
+        ],
+        [
+          String.raw`(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)` +
+            String.raw`\\?["']?\s*[=:]\s*\\?["']?)[\w-]+`,
+          'gi',
+        ],
+      ]);
     });
   });
 
