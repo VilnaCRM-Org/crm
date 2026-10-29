@@ -244,10 +244,12 @@ Every user-facing string is a translated key, and every key exists in **both** l
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
 `src/i18n/localization.json` is the merge of every **eager** catalog, produced by
 `scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
-regenerates it. The seven catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
 (password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
-`coming_soon.*` and the user menu `user_menu.*`) are left out of it and registered by their owning
-chunk; a key in one of them resolves only in the files its `owners` list names.
+`coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
+`auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
+`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+key in one of them resolves only in the files its `owners` list names.
 
 - **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
   `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a

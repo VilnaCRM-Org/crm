@@ -148,6 +148,11 @@ describe('TwoFactorFormSection', () => {
     await waitFor(() => cells().forEach((cell) => expect(cell).toHaveValue('')));
     cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
     await waitFor(() => expect(cells()[0]).toHaveFocus());
+    cells().forEach((cell) =>
+      expect(cell).toHaveAccessibleDescription(
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.'
+      )
+    );
     expect(useAuthStore.getState().pendingSessionId).toBe(pendingSessionId);
   });
 

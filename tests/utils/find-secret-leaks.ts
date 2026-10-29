@@ -27,6 +27,19 @@ export async function readClientState(): Promise<ClientStateDump> {
       .map((key) => `${key}=${storage.getItem(key)}`)
       .join('\n');
 
+  const passThroughTags = new Set(['Object', 'Array', 'Number', 'String', 'Boolean']);
+
+  const readable = (item: object): unknown => {
+    const tag = Object.prototype.toString.call(item).slice(8, -1);
+    if (tag === 'Map') return Array.from(item as Map<unknown, unknown>);
+    if (tag === 'Set') return Array.from(item as Set<unknown>);
+    if (tag === 'ArrayBuffer' || ArrayBuffer.isView(item)) {
+      return new TextDecoder().decode(item as ArrayBuffer);
+    }
+    if (passThroughTags.has(tag)) return item;
+    throw new Error(`Cannot serialise a ${tag}`);
+  };
+
   const serialise = (value: unknown): string => {
     const seen = new WeakSet<object>();
     return JSON.stringify(value, (_key: string, item: unknown): unknown => {
@@ -34,7 +47,7 @@ export async function readClientState(): Promise<ClientStateDump> {
       if (typeof item !== 'object' || item === null) return item;
       if (seen.has(item)) return '[Repeated]';
       seen.add(item);
-      return item;
+      return readable(item);
     });
   };
 

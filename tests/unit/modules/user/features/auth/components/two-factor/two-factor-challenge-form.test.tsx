@@ -116,12 +116,11 @@ describe('TwoFactorChallengeForm', () => {
   it('marks the group invalid and describes it with the incomplete text', () => {
     mount({ fieldError: 'incomplete', value: '1234', focusRequest: 1 });
 
-    const message = screen.getByText('Введіть усі 6 цифр коду');
-    expect(message).toBeInTheDocument();
-    cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
-    expect(
-      cells().some((cell) => cell.getAttribute('aria-describedby')?.includes(message.id))
-    ).toBe(true);
+    expect(screen.getByText('Введіть усі 6 цифр коду')).toBeInTheDocument();
+    cells().forEach((cell) => {
+      expect(cell).toHaveAttribute('aria-invalid', 'true');
+      expect(cell).toHaveAccessibleDescription('Введіть усі 6 цифр коду');
+    });
   });
 
   it('moves focus to the first empty cell when a focus is requested', async () => {
@@ -154,6 +153,11 @@ describe('TwoFactorChallengeForm', () => {
       )
     ).toBeInTheDocument();
     await waitFor(() => expect(cells()[0]).toHaveFocus());
+    cells().forEach((cell) =>
+      expect(cell).toHaveAccessibleDescription(
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.'
+      )
+    );
   });
 
   it('shows the format text for a malformed value', () => {

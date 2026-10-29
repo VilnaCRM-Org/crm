@@ -156,6 +156,33 @@ describe('findSecretLeaks', () => {
     ]);
   });
 
+  it.each([
+    ['a Map value', (): unknown => new Map([['session', token]])],
+    ['a Map key', (): unknown => new Map([[token, 'session']])],
+    ['a Set', (): unknown => new Set([token])],
+    ['an ArrayBuffer', (): unknown => new TextEncoder().encode(token).buffer],
+    ['a typed array', (): unknown => new TextEncoder().encode(token)],
+    ['a DataView', (): unknown => new DataView(new TextEncoder().encode(token).buffer)],
+  ])('finds a secret kept inside %s', async (_name, build) => {
+    installIndexedDb([{ name: 'app', stores: [{ name: 's', rows: [{ held: build() }] }] }]);
+
+    expect(await findSecretLeaks(livePage, secrets)).toEqual([
+      { place: 'indexedDB', secret: 'token' },
+    ]);
+  });
+
+  it.each([
+    ['a Blob', (): unknown => new Blob([token])],
+    ['a File', (): unknown => new File([token], 'session.txt')],
+    ['an Error', (): unknown => new Error(token)],
+  ])('fails instead of reporting a clean page when a store holds %s', async (_name, build) => {
+    installIndexedDb([{ name: 'opaque', stores: [{ name: 's', rows: [{ held: build() }] }] }]);
+
+    await expect(findSecretLeaks(livePage, secrets)).rejects.toThrow(
+      'IndexedDB could not be scanned: opaque'
+    );
+  });
+
   it('fails instead of reporting a clean page when a database cannot be serialised', async () => {
     const unserialisable = {
       toJSON: (): never => {
@@ -221,6 +248,47 @@ describe('readClientState', () => {
       ['[[{"n":"10","cyclic":{"a":1,"self":"[Repeated]"}}],[]]'],
     ]);
     expect(state.unreadable).toEqual([]);
+  });
+
+  it('serialises a Map as its entries, a Set as its items and bytes as text', async () => {
+    const bytes = new TextEncoder().encode('bytes');
+    installIndexedDb([
+      {
+        name: 'typed',
+        stores: [
+          {
+            name: 's',
+            rows: [
+              {
+                map: new Map([['k', new Set(['v'])]]),
+                buffer: bytes.buffer,
+                view: bytes,
+                plain: Object.create(null) as object,
+              },
+            ],
+            keys: [],
+          },
+        ],
+      },
+    ]);
+
+    const state = await readClientState();
+
+    expect(JSON.parse(state.indexedDB)).toEqual([
+      ['typed'],
+      ['[[{"map":[["k",["v"]]],"buffer":"bytes","view":"bytes","plain":{}}],[]]'],
+    ]);
+    expect(state.unreadable).toEqual([]);
+  });
+
+  it('marks a Map that contains itself as repeated', async () => {
+    const map = new Map<string, unknown>();
+    map.set('self', map);
+    installIndexedDb([{ name: 'loop', stores: [{ name: 's', rows: [map], keys: [] }] }]);
+
+    const state = await readClientState();
+
+    expect(JSON.parse(state.indexedDB)).toEqual([['loop'], ['[[[["self","[Repeated]"]]],[]]']]);
   });
 
   it('settles a database it cannot serialise as unreadable rather than hanging', async () => {
