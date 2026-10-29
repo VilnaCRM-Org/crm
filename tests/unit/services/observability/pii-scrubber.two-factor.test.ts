@@ -246,6 +246,96 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
   });
 
+  describe('quoted and escaped two-factor values', () => {
+    it.each([
+      ['a single-quoted code', "twoFactorCode: '123456' next", "twoFactorCode: '[redacted]' next"],
+      [
+        'a single-quoted session id',
+        "pendingSessionId: '01JAQZ8M3K5N7P9R2T4V6X8Z0B' next",
+        "pendingSessionId: '[redacted]' next",
+      ],
+      ['a single-quoted label', "{'twoFactorCode': '123456'}", "{'twoFactorCode': '[redacted]'}"],
+      [
+        'a single-quoted code array',
+        "recoveryCodes: ['AB12-CD34', 'EF56-GH78'] next",
+        'recoveryCodes: [redacted] next',
+      ],
+      [
+        'a single-quoted label and array',
+        "{'recoveryCodes': ['AB12-CD34']}",
+        "{'recoveryCodes': [redacted]}",
+      ],
+      [
+        'a double-quoted comma list',
+        'recoveryCodes: "AB12-CD34", "EF56-GH78", "IJ90-KL12"',
+        'recoveryCodes: "[redacted]", "[redacted]", "[redacted]"',
+      ],
+      [
+        'a single-quoted comma list',
+        "recoveryCodes: 'AB12-CD34','EF56-GH78'",
+        "recoveryCodes: '[redacted]','[redacted]'",
+      ],
+      [
+        'an escaped JSON code',
+        String.raw`{\"twoFactorCode\":\"123456\"}`,
+        String.raw`{\"twoFactorCode\":\"[redacted]\"}`,
+      ],
+      [
+        'an escaped JSON session id',
+        String.raw`{\"pendingSessionId\":\"01JB\",\"step\":\"2\"}`,
+        String.raw`{\"pendingSessionId\":\"[redacted]\",\"step\":\"2\"}`,
+      ],
+      [
+        'an escaped JSON code array',
+        String.raw`{\"recoveryCodes\":[\"AB12-CD34\",\"EF56-GH78\"],\"step\":\"2\"}`,
+        String.raw`{\"recoveryCodes\":[redacted],\"step\":\"2\"}`,
+      ],
+      [
+        'an escaped JSON comma list',
+        String.raw`{\"recoveryCodes\":\"AB12-CD34,EF56-GH78\",\"step\":\"2\"}`,
+        String.raw`{\"recoveryCodes\":\"[redacted],[redacted]\",\"step\":\"2\"}`,
+      ],
+      [
+        'an escaped JSON quoted list',
+        String.raw`{\"recoveryCodes\":\"AB12-CD34\",\"EF56-GH78\"}`,
+        String.raw`{\"recoveryCodes\":\"[redacted]\",\"[redacted]\"}`,
+      ],
+      [
+        'a single-quoted label and list before another member',
+        "{'recoveryCodes': 'AB12-CD34','EF56-GH78', 'step': '2'}",
+        "{'recoveryCodes': '[redacted]','[redacted]', 'step': '2'}",
+      ],
+      [
+        'a free-text list before another label',
+        'recoveryCodes=AB12-CD34,EF56-GH78,step=2',
+        'recoveryCodes=[redacted],[redacted],step=2',
+      ],
+    ])('redacts %s', (_name, input, expected) => {
+      expect(scrubMessage(input)).toEqual({ message: expected });
+    });
+
+    it('leaves no generated code of a quoted list behind', () => {
+      const codes = Array.from({ length: 8 }, () => buildRecoveryCode());
+      const quoted = codes.map((code) => `"${code}"`).join(', ');
+
+      const result = scrubMessage(`recoveryCodes: ${quoted}`) as { message: string };
+
+      expect(result.message).toBe(`recoveryCodes: ${codes.map(() => '"[redacted]"').join(', ')}`);
+    });
+
+    it('keeps the members that follow a quoted list', () => {
+      expect(scrubMessage('{"recoveryCodes": "AB12-CD34", "step" : "2", "next": "3"}')).toEqual({
+        message: '{"recoveryCodes": "[redacted]", "step" : "2", "next": "3"}',
+      });
+    });
+
+    it('keeps a quoted value after an unrelated label', () => {
+      const message = String.raw`orderCode: '123456', \"orderCodes\": \"AB12-CD34\"`;
+
+      expect(scrubMessage(message)).toEqual({ message });
+    });
+  });
+
   describe('patterns', () => {
     const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
 
