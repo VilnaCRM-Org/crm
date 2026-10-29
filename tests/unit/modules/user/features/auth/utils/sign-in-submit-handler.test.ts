@@ -112,6 +112,25 @@ describe('SignInSubmitHandler', () => {
     expect(state.twoFactorStatus).toBe('unknown');
   });
 
+  it('drops a token held from an earlier session when a challenge is issued', async () => {
+    const email = buildEmail();
+    const pendingSessionId = buildPendingSessionId();
+    useAuthStore.setState({ token: buildToken() });
+    const s = stubs({ ok: true, value: { kind: 'challenge', email, pendingSessionId } });
+    const setState = jest.spyOn(useAuthStore, 'setState');
+
+    await runWith(s);
+
+    expect(useAuthStore.getState()).toEqual({ ...CLEARED_AUTH_STATE, email, pendingSessionId });
+    expect(setState).toHaveBeenLastCalledWith({
+      loginLoading: false,
+      loginError: null,
+      email,
+      token: null,
+      pendingSessionId,
+    });
+  });
+
   it('writes the failure as loginError and stops loading', async () => {
     const s = stubs({ ok: false, error: invalid });
 
