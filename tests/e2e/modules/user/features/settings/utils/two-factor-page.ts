@@ -63,6 +63,11 @@ export async function signInToTwoFactorSettings(
 export const sectionOf = (page: Page): Locator =>
   page.getByRole('region', { name: twoFactorText.title, exact: true });
 
+export const errorBannerOf = (page: Page, text: string): Locator =>
+  sectionOf(page)
+    .locator('section[tabindex="-1"]')
+    .filter({ has: page.getByRole('alert').filter({ hasText: text }) });
+
 export const startOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.start, exact: true });
 

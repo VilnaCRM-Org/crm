@@ -1,6 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  PROFILE_NODE,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import { nameField } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import {
   cancelOf,
   codeCellsOf,
@@ -13,6 +17,7 @@ import {
   disableSubmitOf,
   doneOf,
   enableTwoFactor,
+  errorBannerOf,
   openDisableOf,
   openRegenerateOf,
   openSetup,
@@ -29,6 +34,7 @@ import {
   twoFactorText,
 } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { t } from '@tests/e2e/utils/initialize-localization';
 import {
   stubConfirm,
   stubDisable,
@@ -51,9 +57,6 @@ async function expectRing(target: Locator, color: string): Promise<void> {
   await expect(target).toHaveCSS('outline-offset', '2px');
 }
 
-const bannerOf = (page: Page, text: string): Locator =>
-  sectionOf(page).getByRole('alert').filter({ hasText: text });
-
 test.describe('Two-factor settings keyboard contract (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
     await signInToTwoFactorSettings(page);
@@ -63,12 +66,16 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await stubClipboard(page, 'works');
     await page.goto(SETTINGS_URL);
     await expect(sectionOf(page)).toBeVisible();
+    await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
   });
 
   test('off offers the start button as its only stop', async ({ page }) => {
-    await sectionOf(page).getByRole('heading', { level: 2, name: twoFactorText.title }).click();
+    await page.getByRole('button', { name: t('settings.profile.clear'), exact: true }).focus();
 
-    await expectTabOrder(page, [{ locator: startOf(page), visibleFocus: true }]);
+    await expectTabOrder(page, [
+      { locator: startOf(page), visibleFocus: true },
+      { locator: page.getByRole('contentinfo').getByRole('link', { name: t('footer.privacy') }) },
+    ]);
   });
 
   test('setup tabs from the copy button through the cells to Підтвердити', async ({ page }) => {
@@ -231,7 +238,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await openDisableOf(page).click();
     await disableFieldOf(page).fill('123456');
     await disableSubmitOf(page).click();
-    await expect(bannerOf(page, twoFactorText.rateLimited)).toBeFocused();
+    await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
 
     await page.keyboard.press('Escape');
 
