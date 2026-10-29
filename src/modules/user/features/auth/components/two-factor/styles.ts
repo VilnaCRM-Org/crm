@@ -24,6 +24,13 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: '1.125rem',
   },
+  toggle: {
+    minHeight: '1.5rem',
+    '&&:focus-visible': {
+      outline: `2px solid ${paletteColors.primary.linkText}`,
+      outlineOffset: '2px',
+    },
+  },
   recoveryField: {
     flexDirection: 'column',
     marginBottom: '1rem',

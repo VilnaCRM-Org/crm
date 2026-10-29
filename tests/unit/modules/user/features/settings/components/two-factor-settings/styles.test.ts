@@ -114,6 +114,7 @@ describe('two-factor settings styles', () => {
       },
       copyRow: { display: 'block', marginBottom: '1.25rem' },
       copyButton: { '&&': { ...PILL, ...OUTLINED, color: '#1B2327' } },
+      actionButton: { '&&': { ...PILL, ...OUTLINED, color: '#1B2327', height: '2.75rem' } },
       codeList: {
         display: 'grid',
         gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',

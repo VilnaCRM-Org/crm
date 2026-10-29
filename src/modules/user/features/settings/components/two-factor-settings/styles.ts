@@ -7,6 +7,16 @@ import {
   SETTINGS_SUBMIT_WIDTH_RESET,
 } from '../profile-form/styles';
 
+const OUTLINED_BUTTON = {
+  ...SETTINGS_PILL,
+  height: '2.5rem',
+  border: `1px solid ${paletteColors.border.strong}`,
+  backgroundColor: paletteColors.background.default,
+  color: customColors.brand.darkPrimary,
+  '&:hover': { backgroundColor: paletteColors.background.paper },
+  '&:focus-visible': SETTINGS_FOCUS_RING,
+};
+
 export default {
   card: {
     padding: '1.5rem 2rem 2rem',
@@ -98,17 +108,8 @@ export default {
     color: customColors.text.muted,
   },
   copyRow: { display: 'block', marginBottom: '1.25rem' },
-  copyButton: {
-    '&&': {
-      ...SETTINGS_PILL,
-      height: '2.5rem',
-      border: `1px solid ${paletteColors.border.strong}`,
-      backgroundColor: paletteColors.background.default,
-      color: customColors.brand.darkPrimary,
-      '&:hover': { backgroundColor: paletteColors.background.paper },
-      '&:focus-visible': SETTINGS_FOCUS_RING,
-    },
-  },
+  copyButton: { '&&': OUTLINED_BUTTON },
+  actionButton: { '&&': { ...OUTLINED_BUTTON, height: '2.75rem' } },
   codeList: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
