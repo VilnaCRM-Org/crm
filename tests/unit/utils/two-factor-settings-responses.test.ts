@@ -53,10 +53,16 @@ const capture = (route: jest.Mock): Registered => {
   return { handler, route };
 };
 
-const registerSetup = async (outcomes?: Parameters<typeof stubSetup>[1]): Promise<Registered> => {
+interface RegisteredSetup extends Registered {
+  readonly stub: Awaited<ReturnType<typeof stubSetup>>;
+}
+
+const registerSetup = async (
+  outcomes?: Parameters<typeof stubSetup>[1]
+): Promise<RegisteredSetup> => {
   const route = jest.fn().mockResolvedValue(undefined);
-  await stubSetup({ route } as unknown as PageTarget, outcomes);
-  return capture(route);
+  const stub = await stubSetup({ route } as unknown as PageTarget, outcomes);
+  return { ...capture(route), stub };
 };
 
 const registerConfirm = async (
@@ -125,11 +131,17 @@ describe('stubSetup', () => {
   });
 
   it('records only setup calls, with the Authorization header, and passes others on', async () => {
-    const { handler } = await registerSetup();
-    const other = fakeRoute('ConfirmTwoFactorUser');
+    const { handler, stub } = await registerSetup();
+    const variables = { input: { clientMutationId: 'setup-1' } };
+    const setup = fakeRoute('SetupTwoFactorUser', variables);
+    const other = fakeRoute('ConfirmTwoFactorUser', { input: { twoFactorCode: '123456' } });
 
+    await handler(setup);
     await handler(other);
 
+    expect(stub.count()).toBe(1);
+    expect(stub.calls).toEqual([{ variables, authorization: 'Bearer seeded', url: ENDPOINT }]);
+    expect(setup.fallback).not.toHaveBeenCalled();
     expect(other.fallback).toHaveBeenCalledTimes(1);
     expect(other.fulfill).not.toHaveBeenCalled();
   });

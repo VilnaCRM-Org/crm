@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import { type JSX, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import UIPinInput from '@/components/ui-pin-input';
@@ -23,7 +23,8 @@ function PinInputDemo({
   helperText,
   disabled,
 }: PinInputDemoProps): JSX.Element {
-  const { control } = useForm<CodeValues>({ defaultValues: { code: initialCode } });
+  const { control, reset } = useForm<CodeValues>({ defaultValues: { code: initialCode } });
+  useEffect(() => reset({ code: initialCode }), [initialCode, reset]);
 
   return (
     <UIPinInput<CodeValues>

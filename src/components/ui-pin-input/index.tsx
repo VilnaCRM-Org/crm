@@ -1,5 +1,6 @@
+import Box from '@mui/material/Box';
 import UiPinInput from '@vilnacrm/ui-toolkit/ui-pin-input';
-import type { ReactElement } from 'react';
+import type { FocusEvent, ReactElement } from 'react';
 import { Controller, type FieldValues } from 'react-hook-form';
 
 import type { RenderFieldArgs } from '@/components/types/ui-form-input-field';
@@ -8,7 +9,7 @@ import type {
   PinFocusTarget,
   UIPinInputProps,
 } from '@/components/types/ui-pin-input';
-import pinInputSx from '@/components/ui-pin-input/styles';
+import pinInputSx, { PIN_GROUP_WRAPPER_SX } from '@/components/ui-pin-input/styles';
 
 const focusTargetOf = (group: HTMLElement): PinFocusTarget => ({
   focus: (): void => {
@@ -16,6 +17,12 @@ const focusTargetOf = (group: HTMLElement): PinFocusTarget => ({
     (cells.find((cell) => cell.value === '') ?? cells[0])?.focus();
   },
 });
+
+const leftGroup = (event: FocusEvent<HTMLElement>): boolean => {
+  const next = event.relatedTarget;
+  if (next === null) return document.hasFocus();
+  return !event.currentTarget.contains(next);
+};
 
 function PinField<T extends FieldValues>({
   field,
@@ -30,20 +37,25 @@ function PinField<T extends FieldValues>({
   const registerGroup = (group: HTMLElement | null): void => {
     field.ref(group === null ? null : focusTargetOf(group));
   };
+  const touchOnLeave = (event: FocusEvent<HTMLElement>): void => {
+    if (leftGroup(event)) field.onBlur();
+  };
 
   return (
-    <UiPinInput
-      ref={registerGroup}
-      id={id}
-      label={label}
-      value={String(field.value ?? '')}
-      onChange={field.onChange}
-      cellLabel={cellLabel}
-      error={error === true || fieldState.invalid}
-      helperText={fieldState.error?.message ?? helperText}
-      disabled={disabled}
-      sx={pinInputSx}
-    />
+    <Box sx={PIN_GROUP_WRAPPER_SX} onBlur={touchOnLeave}>
+      <UiPinInput
+        ref={registerGroup}
+        id={id}
+        label={label}
+        value={String(field.value ?? '')}
+        onChange={field.onChange}
+        cellLabel={cellLabel}
+        error={error === true || fieldState.invalid}
+        helperText={fieldState.error?.message ?? helperText}
+        disabled={disabled}
+        sx={pinInputSx}
+      />
+    </Box>
   );
 }
 
