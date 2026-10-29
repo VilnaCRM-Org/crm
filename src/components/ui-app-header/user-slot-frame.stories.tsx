@@ -20,10 +20,11 @@ const meta: Meta<typeof UserSlotFrame> = {
     docs: {
       description: {
         component:
-          'The fixed-size box the user chip arrives in: 225×48 at desktop, 253×52 at tablet and ' +
-          'the 40 px avatar at mobile. While no chip has resolved it holds an aria-hidden, empty ' +
-          'placeholder of the same size, so the banner does not shift when the chip arrives. The ' +
-          "dashed outline is only the story's way of showing the box.",
+          'The box the user chip arrives in: at least 225×48 at desktop and 253×52 at tablet, ' +
+          'where a wider chip widens it (`max-content`), and a fixed 40 px avatar at mobile. ' +
+          'While no chip has resolved it holds an aria-hidden, empty placeholder at those ' +
+          'minimum sizes, so the banner does not shift when the chip arrives. The dashed outline ' +
+          "is only the story's way of showing the box.",
       },
       story: { inline: false },
     },

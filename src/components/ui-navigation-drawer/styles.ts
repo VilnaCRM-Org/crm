@@ -78,5 +78,4 @@ export default {
     boxShadow: customColors.shell.drawerShadow,
     '&:focus:not(:focus-visible)': { outline: 'none' },
   },
-  nav: { display: 'block' },
 } as const;

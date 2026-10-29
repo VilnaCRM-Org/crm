@@ -1422,9 +1422,10 @@ and [tests/console-gate/README.md](tests/console-gate/README.md).
    (`error-pages.spec.ts`), `/settings` (`settings.spec.ts`) and the eight coming-soon sections
    inside the app shell — `/boards`, `/products`, `/orders`, `/contacts`, `/analytics`,
    `/settings/integrations`, `/settings/webhooks`, `/settings/billing` (`coming-soon.spec.ts`, issue
-   #362) — recorded per mobile project with `scale: 'device'` so the real 2.625×/3× DPR raster is
-   gated. Never reuse `take-visual-snapshot.ts` there — its `setViewportSize` call would discard the
-   device viewport.
+   #362) and the app shell states — home with the closed header, the drawer open on `/settings` and
+   the user menu open (`app-shell.spec.ts`, issue #362) — recorded per mobile project with
+   `scale: 'device'` so the real 2.625×/3× DPR raster is gated. Never reuse
+   `take-visual-snapshot.ts` there — its `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 

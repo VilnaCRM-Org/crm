@@ -42,6 +42,7 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     server.resetHandlers();
   });
 
@@ -130,7 +131,6 @@ describe('useCurrentUser over the container (integration)', () => {
     await act(() =>
       expect(read.mock.results[1]?.value).resolves.toEqual({ kind: 'failed', reason: 'rejected' })
     );
-    read.mockRestore();
 
     expect(failed).toHaveLength(1);
     expect(hook.current.status).toBe('ready');

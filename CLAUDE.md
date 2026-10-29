@@ -174,12 +174,14 @@ more project names.
   two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
   (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
   shell (`/boards`, `/products`, `/orders`, `/contacts`, `/analytics`, `/settings/integrations`,
-  `/settings/webhooks`, `/settings/billing`, issue #362) captured with `scale: 'device'`, so the
-  baselines are true 2.625× / 3× rasters and catch the asset and raster regressions that CSS-scaled
-  desktop snapshots average away. Baselines live in `tests/visual/mobile/auth.spec.ts-snapshots/`,
+  `/settings/webhooks`, `/settings/billing`, issue #362) and the app shell states (home with the
+  closed header, the drawer open on `/settings` and the user menu open, issue #362) captured with
+  `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the asset and raster
+  regressions that CSS-scaled desktop snapshots average away. Baselines live in `tests/visual/mobile/auth.spec.ts-snapshots/`,
   `tests/visual/mobile/error-pages.spec.ts-snapshots/`,
-  `tests/visual/mobile/settings.spec.ts-snapshots/` and
-  `tests/visual/mobile/coming-soon.spec.ts-snapshots/`, one per page per mobile project.
+  `tests/visual/mobile/settings.spec.ts-snapshots/`,
+  `tests/visual/mobile/coming-soon.spec.ts-snapshots/` and
+  `tests/visual/mobile/app-shell.spec.ts-snapshots/`, one per page or shell state per mobile project.
 
 Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
 `e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in

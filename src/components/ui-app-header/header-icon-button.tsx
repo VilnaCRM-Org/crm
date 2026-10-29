@@ -47,7 +47,9 @@ export default function HeaderIconButton({
       </Box>
       <HeaderHiddenText id={statusId}>{t('app_shell.unavailable')}</HeaderHiddenText>
       {showsCount && (
-        <HeaderHiddenText id={countId}>{t(`app_shell.${kind}.count`, { count })}</HeaderHiddenText>
+        <HeaderHiddenText id={countId}>
+          {t(`app_shell.${kind}.count`, { count: Number(count) })}
+        </HeaderHiddenText>
       )}
     </>
   );

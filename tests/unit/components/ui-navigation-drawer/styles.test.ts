@@ -182,11 +182,9 @@ describe('navigation drawer styles', () => {
     });
   });
 
-  it('pins nav', async () => {
+  it('carries no nav entry, since the drawer panel styles its nav through the list', async () => {
     const styles = await loadStyles();
 
-    expect(styles.nav).toEqual({
-      display: 'block',
-    });
+    expect(styles).not.toHaveProperty('nav');
   });
 });

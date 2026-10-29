@@ -42,10 +42,12 @@ describe('app shell styles', () => {
     expect(styles.nav.tablet.paddingTop).toBe(layoutStyles.navInsetTop);
   });
 
-  it('sticks the sidebar 74px from the top, under the 64px header', async () => {
+  it('sticks the sidebar 74px from the top: the 64px header plus the 10px nav inset', async () => {
     const styles = await loadStyles();
 
-    expect(styles.sticky).toEqual({ position: 'sticky', top: '74px' });
+    expect(styles.sticky).toEqual({ position: 'sticky', top: 'calc(64px + 10px)' });
+    expect(layoutStyles.headerHeight).toBe('64px');
+    expect(layoutStyles.navInsetTop).toBe('10px');
   });
 
   it('builds a placeholder as wide as the loaded sidebar column it stands in for', async () => {

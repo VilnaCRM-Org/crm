@@ -49,7 +49,13 @@ export const Current: Story = { args: { current: true } };
 export const Tablet: Story = { args: { layout: 'tablet' } };
 
 export const SubItem: Story = {
-  args: { variant: 'sub', id: 'integrations', label: 'Інтеграції', icon: undefined },
+  args: {
+    variant: 'sub',
+    id: 'integrations',
+    label: 'Інтеграції',
+    icon: undefined,
+    href: '/settings/integrations',
+  },
 };
 
 export const Rail: Story = { args: { variant: 'rail' } };

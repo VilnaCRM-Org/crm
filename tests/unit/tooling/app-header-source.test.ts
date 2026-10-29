@@ -3,6 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 
+import modulesLayerImport from '@tests/unit/utils/modules-layer-import';
+
 const headerRoot = path.resolve(__dirname, '..', '..', '..', 'src', 'components', 'ui-app-header');
 
 const sources = (): string[] =>
@@ -30,10 +32,6 @@ describe('app header source', () => {
   });
 
   it('imports nothing from the modules layer, whichever quote or import form it uses', () => {
-    sources().forEach((source) =>
-      expect(source).not.toMatch(
-        /(?:\bfrom\s*|\bimport\s*\(\s*(?:\/\*.*?\*\/\s*)?)['"](?:@\/modules|@auth)/u
-      )
-    );
+    sources().forEach((source) => expect(source).not.toMatch(modulesLayerImport));
   });
 });
