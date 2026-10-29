@@ -196,7 +196,7 @@ describe('TwoFactorChallengeForm', () => {
     await userEvent.type(cells()[0] as HTMLInputElement, '654321');
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
+      "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
     );
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
     const pending = { ...RESTING, ...transient, value: '654321', isSubmitting: true };

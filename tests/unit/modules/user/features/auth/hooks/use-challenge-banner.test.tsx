@@ -43,7 +43,7 @@ describe('useChallengeBanner', () => {
     });
 
     expect(result.current.error).toBe(
-      "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
+      "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
     );
     expect(result.current.action?.label).toBe('Спробувати ще раз');
     result.current.action?.onClick();
@@ -56,7 +56,7 @@ describe('useChallengeBanner', () => {
     });
 
     expect(result.current.error).toBe(
-      'The code could not be verified. Check your connection and try again.'
+      'The request could not be sent. Check your connection and try again.'
     );
     expect(result.current.action?.label).toBe('Try again');
   });

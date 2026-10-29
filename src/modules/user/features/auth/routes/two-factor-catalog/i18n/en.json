@@ -23,7 +23,7 @@
     },
     "banner": {
       "rate_limited": "Too many attempts. Wait a minute and try again.",
-      "transient": "The code could not be verified. Check your connection and try again."
+      "transient": "The request could not be sent. Check your connection and try again."
     }
   }
 }
