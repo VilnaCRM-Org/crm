@@ -20,6 +20,7 @@ import {
   copyCodesOf,
   copyKeyOf,
   doneOf,
+  errorBannerOf,
   expectEveryStateInsideCard,
   KEY_IN_GROUPS,
   openSetup,
@@ -218,9 +219,11 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(codeListOf(page).getByRole('listitem')).toHaveText([...RECOVERY_CODES]);
       expect(confirm.count()).toBe(1);
       await expect(doneOf(page)).toHaveAttribute('aria-disabled', 'true');
+      await expect(doneOf(page)).toBeDisabled();
       await expect(doneOf(page)).toHaveAccessibleDescription(new RegExp(twoFactorText.blocked));
-      await doneOf(page).click();
-      await expect(doneOf(page)).toBeVisible();
+      await doneOf(page).click({ force: true });
+      await expect(codesHeadingOf(page)).toBeVisible();
+      await expect(codeListOf(page).getByRole('listitem')).toHaveText([...RECOVERY_CODES]);
       await expectNoSecrets(page, SECRETS);
     });
 
@@ -292,11 +295,8 @@ test.describe('Two-factor settings section (issue #331)', () => {
 
       await startOf(page).click();
 
-      const banner = sectionOf(page)
-        .getByRole('alert')
-        .filter({ hasText: twoFactorText.rateLimited });
-      await expect(banner).toBeVisible();
-      await expect(banner).toBeFocused();
+      await expect(sectionOf(page).getByRole('alert')).toHaveText(twoFactorText.rateLimited);
+      await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
       await expect(sectionOf(page).getByRole('button', { name: twoFactorText.retry })).toHaveCount(
         0
       );
@@ -309,9 +309,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       const setup = await stubSetup(page, ['unavailable', 'created']);
       await page.goto(SETTINGS_URL);
       await startOf(page).click();
-      await expect(
-        sectionOf(page).getByRole('alert').filter({ hasText: twoFactorText.transient })
-      ).toBeFocused();
+      await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
       expect(setup.count()).toBe(1);
 
       await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
@@ -327,16 +325,16 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await openSetup(page);
       await typeCode(page, '123456');
       await confirmOf(page).click();
-      await expect(
-        sectionOf(page).getByRole('alert').filter({ hasText: twoFactorText.transient })
-      ).toBeFocused();
+      await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
       await expect(qrOf(page)).toBeVisible();
 
       await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
 
       await expect(codesHeadingOf(page)).toBeFocused();
       expect(confirm.count()).toBe(2);
-      expect(confirm.calls[1]?.variables).toEqual(confirm.calls[0]?.variables);
+      const [first, second] = confirm.calls.map((call) => call.variables['input'] as object);
+      expect(first).toMatchObject({ twoFactorCode: '123456' });
+      expect({ ...second, clientMutationId: 0 }).toEqual({ ...first, clientMutationId: 0 });
     });
   });
 
