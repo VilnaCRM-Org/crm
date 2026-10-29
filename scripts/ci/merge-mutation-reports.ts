@@ -1,8 +1,13 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { shardMutateFiles } from './mutation-scope.mjs';
-import { type MutationReport, ownedShardReports, scoreReports } from './mutation-report';
+import { packMutateShards } from './mutation-scope.mjs';
+import {
+  type MutationReport,
+  ownedShardReports,
+  scoreReports,
+  unreportedOwnedFiles,
+} from './mutation-report';
 
 const SHARD_FILE = /^mutation-shard-\d+\.json$/;
 
@@ -31,17 +36,26 @@ function loadShardReports(dir: string): { name: string; report: MutationReport }
     });
 }
 
+/** Every mutated file's owning shard, and the subset the packing counted mutants in. */
+interface OwnerIndex {
+  owner: Map<string, number>;
+  mutated: Map<string, number>;
+}
+
 /** Map every mutated file to the one shard that owns it, using the same packing the shards ran. */
-function buildOwnerIndex(total: number): Map<string, number> {
+async function buildOwnerIndex(total: number): Promise<OwnerIndex> {
+  const { shards, weights } = await packMutateShards(total);
   const owner = new Map<string, number>();
+  const mutated = new Map<string, number>();
 
-  for (let index = 0; index < total; index += 1) {
-    for (const file of shardMutateFiles(total, index)) {
+  shards.forEach((files, index) => {
+    for (const file of files) {
       owner.set(file, index);
+      if ((weights.get(file) ?? 0) > 0) mutated.set(file, index);
     }
-  }
+  });
 
-  return owner;
+  return { owner, mutated };
 }
 
 /** Read the canonical `thresholds.break` from the real Stryker config so it can never drift. */
@@ -86,14 +100,19 @@ async function main(): Promise<void> {
   }
 
   const breakThreshold = await resolveBreakThreshold();
-  const owner = buildOwnerIndex(expectedShards);
-  const { reports, discarded } = ownedShardReports(
-    shards.map(({ name, report }) => ({
-      index: Number.parseInt(/\d+/.exec(name)?.[0] ?? '-1', 10),
-      report,
-    })),
-    (path) => owner.get(path)
-  );
+  const { owner, mutated } = await buildOwnerIndex(expectedShards);
+  const indexed = shards.map(({ name, report }) => ({
+    index: Number.parseInt(/\d+/.exec(name)?.[0] ?? '-1', 10),
+    report,
+  }));
+  const unreported = unreportedOwnedFiles(indexed, mutated);
+  if (unreported.length > 0) {
+    throw new Error(
+      `${unreported.length} mutated file(s) are missing from the shard that owns them ` +
+        `(first: ${unreported[0]}); the merge packed the scope differently from the shards.`
+    );
+  }
+  const { reports, discarded } = ownedShardReports(indexed, (path) => owner.get(path));
   const { tally, fileCount, mutationScore } = scoreReports(reports);
 
   if (!Number.isFinite(mutationScore) || tally.valid === 0) {
