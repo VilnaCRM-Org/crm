@@ -72,6 +72,7 @@ export class SignInSubmitHandler {
       ...SETTLED,
       loginError: null,
       email: outcome.email,
+      token: null,
       pendingSessionId: outcome.pendingSessionId,
     };
   }

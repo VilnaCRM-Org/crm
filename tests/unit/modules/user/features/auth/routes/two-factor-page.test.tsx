@@ -5,10 +5,13 @@ import { act, render, screen } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ROUTE_PATHS from '@/routes/route-paths';
 import TwoFactorChallenge from '@auth/routes/two-factor';
+import type { AuthProviderLoader } from '@auth/stores';
 import useAuthStore from '@auth/stores/use-auth-store';
-import { buildPendingSessionId, buildToken } from '@tests/builders';
+import signInSubmitHandler from '@auth/utils/sign-in-submit-handler';
+import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const mockLoadSection = jest.fn();
@@ -90,6 +93,31 @@ describe('TwoFactorChallenge page', () => {
     const landed = await screen.findByText(/^\/deals\?tab=open\|/);
     expect(landed).toHaveTextContent('{"focusMain":true}');
     expect(screen.queryByText('challenge section')).not.toBeInTheDocument();
+  });
+
+  it('proceeds home after a sign-in challenge issued while an earlier token was held', async () => {
+    useAuthStore.setState({ token: buildToken() });
+    const pendingSessionId = buildPendingSessionId();
+    const login = jest.fn().mockResolvedValue({
+      ok: true,
+      value: { kind: 'challenge', email: buildEmail(), pendingSessionId },
+    });
+    const resolve = jest.fn().mockResolvedValue({ login, loginSettled: jest.fn() });
+    await signInSubmitHandler.run(
+      {
+        loader: { resolve } as unknown as AuthProviderLoader,
+        store: useAuthStore,
+        demoSession: sandboxDemoSessionProvider,
+      },
+      { email: buildEmail(), password: buildPassword() },
+      new AbortController().signal
+    );
+    mount();
+    await screen.findByText('challenge section');
+
+    act(() => useAuthStore.setState({ pendingSessionId: null, token: buildToken() }));
+
+    expect(await screen.findByText(`${ROUTE_PATHS.home}|{"focusMain":true}`)).toBeInTheDocument();
   });
 
   it('proceeds to the home route when the challenge arrived without a from target', async () => {

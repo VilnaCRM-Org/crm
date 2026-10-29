@@ -740,7 +740,9 @@ not outlive the tab. The auth paint path stays free of tsyringe, Apollo and zod.
 **Decision.** `pendingSessionId`, `twoFactorStatus` and `recoveryCodesRemaining` live in the
 Zustand store `useAuthStore` beside the token, never inside it, and hooks write them with
 `setState`; the store gains no action and no `persist` middleware. A reload, a logout and arrival
-on `/sign-in` clear the pending session. No refresh token is kept anywhere in client state, and
+on `/sign-in` clear the pending session, and a challenge answer to sign-in clears any token the
+store still held, so completing the challenge is always the null-to-token change the post-login
+redirect waits for. No refresh token is kept anywhere in client state, and
 the id never appears in a URL or in `history.state`. See
 [`docs/state-architecture.md`](../../../docs/state-architecture.md).
 
