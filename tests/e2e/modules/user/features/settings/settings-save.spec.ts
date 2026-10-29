@@ -74,6 +74,7 @@ test.describe('Settings save journeys (issue #330)', () => {
     await expect(page.locator('#profile-skeleton-save')).toHaveCount(0);
     expect(documents).toEqual([]);
     expect(stub.count('CurrentUser')).toBe(1);
+    expect(stub.shellCalls).toHaveLength(1);
     expect(stub.calls[0]?.authorization).toMatch(/^Bearer \S+/);
   });
 

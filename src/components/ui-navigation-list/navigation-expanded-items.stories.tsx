@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Meta } from '@storybook/react-webpack5';
 
 import { withRoutedStoryList } from '@stories/list-decorators';
+import navigationListStories from '@stories/navigation-list-story';
 import { storyItems } from '@stories/navigation-story-items';
 
 import NavigationExpandedItems from './navigation-expanded-items';
@@ -10,24 +11,16 @@ const meta: Meta<typeof NavigationExpandedItems> = {
   component: NavigationExpandedItems,
   tags: ['autodocs'],
   args: { layout: 'desktop', items: storyItems, currentId: 'products' },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  argTypes: navigationListStories.layoutArgTypes,
   decorators: withRoutedStoryList('/products', 238),
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The rows of the expanded sidebar from the item set: the five product rows and the ' +
-          'Settings group, in Figma order.',
-      },
-      story: { inline: false },
-    },
-  },
+  parameters: navigationListStories.parameters(
+    'The rows of the expanded sidebar from the item set: the five product rows and the ' +
+      'Settings group, in Figma order.'
+  ),
 };
 
 export default meta;
 
-type Story = StoryObj<typeof NavigationExpandedItems>;
+export const Desktop = navigationListStories.desktop;
 
-export const Desktop: Story = {};
-
-export const Tablet: Story = { args: { layout: 'tablet' } };
+export const Tablet = navigationListStories.tablet;
