@@ -95,8 +95,26 @@ describe('SignInSubmitHandler', () => {
       loginError: null,
       email,
       token,
+      pendingSessionId: null,
       twoFactorStatus: 'disabled',
     });
+  });
+
+  it('drops a pending session left by an earlier challenge when a session is issued', async () => {
+    const email = buildEmail();
+    const token = buildToken();
+    useAuthStore.setState({ pendingSessionId: buildPendingSessionId() });
+    const s = stubs({ ok: true, value: { kind: 'session', email, token } });
+
+    await runWith(s);
+
+    expect(useAuthStore.getState()).toEqual({
+      ...CLEARED_AUTH_STATE,
+      email,
+      token,
+      twoFactorStatus: 'disabled',
+    });
+    expect(useAuthStore.getState().pendingSessionId).toBeNull();
   });
 
   it('writes a challenge patch with the pending session and never a token', async () => {
@@ -171,18 +189,54 @@ describe('SignInSubmitHandler', () => {
     expect(s.loginSettled).toHaveBeenCalledWith(result);
   });
 
-  it('writes the result but skips the signals when the signal aborted meanwhile', async () => {
+  it('writes loading false only and skips the signals for a failure after the abort', async () => {
     const s = stubs({ ok: false, error: invalid });
     const controller = new AbortController();
     s.login.mockImplementation(async () => {
       controller.abort();
       return { ok: false, error: invalid };
     });
+    const setState = jest.spyOn(useAuthStore, 'setState');
+
+    await expect(runWith(s, dto(), controller.signal)).resolves.toBe(true);
+
+    expect(setState).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith({ loginLoading: false });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
+    expect(s.loginSettled).not.toHaveBeenCalled();
+  });
+
+  it('does not apply a session that resolves after the abort', async () => {
+    const email = buildEmail();
+    const token = buildToken();
+    const s = stubs();
+    const controller = new AbortController();
+    s.login.mockImplementation(async () => {
+      controller.abort();
+      return { ok: true, value: { kind: 'session', email, token } };
+    });
+
+    await expect(runWith(s, dto(), controller.signal)).resolves.toBe(true);
+
+    expect(useAuthStore.getState()).toEqual(CLEARED_AUTH_STATE);
+    expect(useAuthStore.getState().token).toBeNull();
+    expect(s.resolve).toHaveBeenCalledTimes(1);
+    expect(s.loginSettled).not.toHaveBeenCalled();
+  });
+
+  it('does not apply a challenge that resolves after the abort', async () => {
+    const email = buildEmail();
+    const pendingSessionId = buildPendingSessionId();
+    const s = stubs();
+    const controller = new AbortController();
+    s.login.mockImplementation(async () => {
+      controller.abort();
+      return { ok: true, value: { kind: 'challenge', email, pendingSessionId } };
+    });
 
     await runWith(s, dto(), controller.signal);
 
-    expect(useAuthStore.getState().loginError).toEqual(invalid);
-    expect(s.loginSettled).not.toHaveBeenCalled();
+    expect(useAuthStore.getState()).toEqual(CLEARED_AUTH_STATE);
   });
 
   it('survives a failing signals step without disturbing the written state', async () => {

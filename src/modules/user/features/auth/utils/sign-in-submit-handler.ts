@@ -24,7 +24,7 @@ export class SignInSubmitHandler {
       .catch(() => null);
     if (provider === null) return false;
     const result = await provider.login(dto, signal);
-    context.store.setState(this.patchOfResult(result));
+    context.store.setState(signal.aborted ? SETTLED : this.patchOfResult(result));
     await this.recordSignal(context, result, signal);
     return true;
   }
@@ -65,6 +65,7 @@ export class SignInSubmitHandler {
         loginError: null,
         email: outcome.email,
         token: outcome.token,
+        pendingSessionId: null,
         twoFactorStatus: 'disabled',
       };
     }
