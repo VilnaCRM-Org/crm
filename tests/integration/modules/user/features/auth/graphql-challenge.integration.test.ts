@@ -7,6 +7,7 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import observabilityCore from '@/services/observability/observability-core';
 import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider';
+import type { GraphQLSignInRepository } from '@auth/repositories';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type {
   ChallengeFailureReason,
@@ -161,6 +162,24 @@ describe('GraphQL challenge completion through the container (integration)', () 
     expect(result).toEqual(failedWith('network'));
     expect(answered).toHaveLength(0);
     expect(write).not.toHaveBeenCalled();
+  });
+
+  it('resolves null from the repository when the server answers no data and no error', async () => {
+    const answered = answerChallenge((): Response => HttpResponse.json({ data: null }));
+    const repository = container.resolve<GraphQLSignInRepository>(
+      AUTH_TOKENS.GraphQLSignInRepository
+    );
+
+    await expect(repository.completeChallenge(challenge())).resolves.toBeNull();
+    expect(answered).toHaveLength(1);
+  });
+
+  it('classifies an answer with no data as a server failure', async () => {
+    answerChallenge((): Response => HttpResponse.json({ data: null }));
+
+    await expect(
+      provider.completeChallenge(challenge(), new AbortController().signal)
+    ).resolves.toEqual(failedWith('server'));
   });
 
   it('records a failed completion under the login category through the container', () => {

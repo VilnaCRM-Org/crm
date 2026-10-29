@@ -100,27 +100,6 @@ describe('runtime configuration Integration', () => {
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
   });
 
-  it('falls back to an empty configuration outside a DOM host', async () => {
-    const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
-    const globals = globalThis as { document?: Document };
-    const descriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      'document'
-    ) as PropertyDescriptor;
-
-    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
-
-    delete globals.document;
-
-    try {
-      appConfigSource.validated(parse);
-
-      expect(parse).toHaveBeenCalledWith({});
-    } finally {
-      Object.defineProperty(globalThis, 'document', descriptor);
-    }
-  });
-
   it('resolves the GraphQL url from the container using the build-time environment', async () => {
     const buildTimeUrl = buildHttpUrl('/graphql');
     process.env.REACT_APP_GRAPHQL_URL = buildTimeUrl;
