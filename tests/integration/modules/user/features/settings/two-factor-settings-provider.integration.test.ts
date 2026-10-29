@@ -217,4 +217,28 @@ describe('TwoFactorSettingsProvider over the container client (integration)', ()
 
     await expect(run('ConfirmTwoFactorUser')).resolves.toEqual(failed('server'));
   });
+
+  it.each([
+    ['SetupTwoFactorUser', { setupTwoFactorUser: { user: { otpauthUri: 1, secret: 2 } } }],
+    [
+      'RegenerateRecoveryCodesUser',
+      { regenerateRecoveryCodesUser: { user: { recoveryCodes: 'x' } } },
+    ],
+    ['DisableTwoFactorUser', { disableTwoFactorUser: { user: { success: 'yes' } } }],
+  ] as const)(
+    'settles a %s answer that fails its schema as the server failure',
+    async (operation, data) => {
+      answerTwoFactorSettings(operation, () => HttpResponse.json({ data }));
+
+      await expect(run(operation)).resolves.toEqual(failed('server'));
+    }
+  );
+
+  it('settles a disable the server reports as unsuccessful as the server failure', async () => {
+    answerTwoFactorSettings('DisableTwoFactorUser', () =>
+      HttpResponse.json({ data: { disableTwoFactorUser: { user: { success: false } } } })
+    );
+
+    await expect(run('DisableTwoFactorUser')).resolves.toEqual(failed('server'));
+  });
 });

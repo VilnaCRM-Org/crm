@@ -435,6 +435,78 @@ describe('FetchHttpsClient Integration', () => {
   });
 
   describe('error handling', () => {
+    it('rejects with an AbortError and sends nothing for a signal already aborted', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const caught = await client
+        .get(TEST_URL, { schema: passthrough, signal: controller.signal })
+        .catch((error: unknown) => error);
+
+      assertInstanceOf(caught, Error);
+      expect(caught.name).toBe('AbortError');
+      expect(caught.message).toBe('The operation was aborted');
+      expect(caught).not.toBeInstanceOf(HttpError);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it.each([401, 403])(
+      'reports an unauthorized %i response as a security event and throws its HttpError',
+      async (status) => {
+        const unauthorized = jest
+          .spyOn(securityEventCore, 'unauthorizedResponse')
+          .mockImplementation();
+        mockFetch.mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: 'Denied' }), {
+            status,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+
+        await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toMatchObject({
+          status,
+          message: 'Denied',
+        });
+        expect(unauthorized).toHaveBeenCalledTimes(1);
+        expect(unauthorized).toHaveBeenCalledWith(status);
+      }
+    );
+
+    it('reports no security event for a 400 response', async () => {
+      const unauthorized = jest
+        .spyOn(securityEventCore, 'unauthorizedResponse')
+        .mockImplementation();
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Bad Request' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(unauthorized).not.toHaveBeenCalled();
+    });
+
+    it('throws the invalid-shape HttpError when a 200 body fails the schema', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 1 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      const caught = await client
+        .get(TEST_URL, { schema: z.object({ id: z.string() }) })
+        .catch((error: unknown) => error);
+
+      assertInstanceOf(caught, HttpError);
+      expect(caught.status).toBe(200);
+      expect(caught.message).toBe(ResponseMessages.INVALID_RESPONSE_SHAPE);
+      expect(caught.cause).toBeInstanceOf(z.ZodError);
+    });
+
     it('should throw HttpError on 400 Bad Request', async () => {
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ message: 'Bad Request' }), {

@@ -244,4 +244,30 @@ describe('GraphQL sign-in through the container (integration)', () => {
 
     expect(errorOf(result)).toEqual(expect.objectContaining({ retryable: expect.any(Boolean) }));
   });
+
+  it('resolves null from the repository when the server answers no data and no error', async () => {
+    const answered = answerSignIn((): Response => HttpResponse.json({ data: null }));
+    const repository = container.resolve<GraphQLSignInRepository>(
+      AUTH_TOKENS.GraphQLSignInRepository
+    );
+
+    await expect(repository.signIn(dto())).resolves.toBeNull();
+    expect(answered).toHaveLength(1);
+  });
+
+  it('classifies an answer with no data as a retryable transient server failure', async () => {
+    answerSignIn((): Response => HttpResponse.json({ data: null }));
+
+    const result = await provider.login(dto(), new AbortController().signal);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        kind: 'server',
+        displayMessage: 'sign_in.errors.transient',
+        retryable: true,
+        reason: 'transient',
+      },
+    });
+  });
 });
