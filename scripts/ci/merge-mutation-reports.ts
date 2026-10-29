@@ -36,26 +36,26 @@ function loadShardReports(dir: string): { name: string; report: MutationReport }
     });
 }
 
-/** Every mutated file's owning shard, and the subset the packing counted mutants in. */
+/** Every sharded file's owning shard, and the scope files the packing left to no shard. */
 interface OwnerIndex {
   owner: Map<string, number>;
-  mutated: Map<string, number>;
+  unsharded: readonly string[];
 }
 
-/** Map every mutated file to the one shard that owns it, using the same packing the shards ran. */
+/**
+ * Map every sharded file to the one shard that owns it, using the same packing the shards ran. A
+ * file in `unsharded` holds no runnable mutant and runs in no shard, so it has no owner and any
+ * result a stale incremental report still carries for it is discarded.
+ */
 async function buildOwnerIndex(total: number): Promise<OwnerIndex> {
-  const { shards, weights } = await packMutateShards(total);
+  const { shards, unsharded } = await packMutateShards(total);
   const owner = new Map<string, number>();
-  const mutated = new Map<string, number>();
 
   shards.forEach((files, index) => {
-    for (const file of files) {
-      owner.set(file, index);
-      if ((weights.get(file) ?? 0) > 0) mutated.set(file, index);
-    }
+    for (const file of files) owner.set(file, index);
   });
 
-  return { owner, mutated };
+  return { owner, unsharded };
 }
 
 /** Read the canonical `thresholds.break` from the real Stryker config so it can never drift. */
@@ -100,12 +100,12 @@ async function main(): Promise<void> {
   }
 
   const breakThreshold = await resolveBreakThreshold();
-  const { owner, mutated } = await buildOwnerIndex(expectedShards);
+  const { owner, unsharded } = await buildOwnerIndex(expectedShards);
   const indexed = shards.map(({ name, report }) => ({
     index: Number.parseInt(/\d+/.exec(name)?.[0] ?? '-1', 10),
     report,
   }));
-  const unreported = unreportedOwnedFiles(indexed, mutated);
+  const unreported = unreportedOwnedFiles(indexed, owner);
   if (unreported.length > 0) {
     throw new Error(
       `${unreported.length} mutated file(s) are missing from the shard that owns them ` +
@@ -132,6 +132,7 @@ async function main(): Promise<void> {
         `ignored=${tally.ignored}`,
       `  detected=${tally.detected} valid=${tally.valid} mutationScore=${score}%`,
       `  discarded ${discarded} file result(s) reported by a shard that no longer owns them`,
+      `  ${unsharded.length} scope file(s) hold no runnable mutant and ran in no shard`,
       '',
     ].join('\n')
   );

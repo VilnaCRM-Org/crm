@@ -5,6 +5,7 @@ import path from 'path';
 
 import {
   collectMutateFiles,
+  packingWeights,
   packShards,
   shardMutateFiles,
 } from '../../../scripts/ci/mutation-scope.mjs';
@@ -27,8 +28,15 @@ interface StrykerConfigShape {
 interface PackedScope {
   shards: string[][];
   weights: Record<string, number>;
+  unsharded: string[];
+  runnable: Record<string, number>;
   fourth: string[];
   firstOfConfigTotal: string[];
+}
+
+interface MutantCount {
+  runnable: number;
+  scored: number;
 }
 
 const SHARD_CONFIG_TOTAL = 4;
@@ -186,10 +194,13 @@ describe('mutation shard slicing', () => {
 
   const packInChild = (total: number): PackedScope =>
     runScope<PackedScope>(
-      `const { shards, weights } = await scope.packMutateShards(${total});` +
+      `const { shards, weights, unsharded } = await scope.packMutateShards(${total});` +
         `const fourth = await scope.shardMutateFiles(${total}, 3);` +
         `const firstOfConfigTotal = scope.packShards(weights, ${SHARD_CONFIG_TOTAL})[0];` +
-        'return { shards, weights: Object.fromEntries(weights), fourth, firstOfConfigTotal };'
+        'const counts = await scope.countMutants(unsharded);' +
+        'const runnable = Object.fromEntries([...counts].map(([f, c]) => [f, c.runnable]));' +
+        'return { shards, weights: Object.fromEntries(weights), unsharded, runnable, fourth,' +
+        ' firstOfConfigTotal };'
     );
 
   const packed = packInChild(TOTAL);
@@ -208,20 +219,40 @@ describe('mutation shard slicing', () => {
     }
   });
 
-  it('covers the whole mutate scope exactly once across every shard', () => {
-    const union = packed.shards.flat().sort();
+  it('accounts for the whole mutate scope once, in a shard or in the unsharded list', () => {
+    const sharded = packed.shards.flat();
     expect(packed.shards).toHaveLength(TOTAL);
-    expect(union).toEqual([...everyFile].sort());
-    expect(new Set(union).size).toBe(everyFile.length);
+    expect([...sharded, ...packed.unsharded].sort()).toEqual([...everyFile].sort());
+    expect(new Set([...sharded, ...packed.unsharded]).size).toBe(everyFile.length);
+    expect(sharded.sort()).toEqual(Object.keys(packed.weights).sort());
   });
 
-  it('weighs every file by a counted, non-negative number of mutants', () => {
-    expect(Object.keys(packed.weights).sort()).toEqual([...everyFile].sort());
+  it('weighs every sharded file by a positive count of scored mutants', () => {
     for (const weight of Object.values(packed.weights)) {
       expect(Number.isInteger(weight)).toBe(true);
-      expect(weight).toBeGreaterThanOrEqual(0);
+      expect(weight).toBeGreaterThanOrEqual(1);
     }
     expect(load(everyFile)).toBeGreaterThan(0);
+  });
+
+  it('leaves only files without a runnable mutant out of every shard', () => {
+    expect(packed.unsharded.length).toBeGreaterThan(0);
+    expect(Object.keys(packed.runnable).sort()).toEqual([...packed.unsharded].sort());
+    expect(new Set(Object.values(packed.runnable))).toEqual(new Set([0]));
+    expect(packed.unsharded).toEqual(
+      expect.arrayContaining([
+        'src/modules/user/index.ts',
+        'src/routes/route-paths.ts',
+        'src/config/env/index.ts',
+      ])
+    );
+  });
+
+  it('spreads the files, so no shard draws a pile of cheap files and their related tests', () => {
+    const counts = packed.shards.map((files) => files.length);
+    const mean = counts.reduce((total, count) => total + count, 0) / counts.length;
+    expect(Math.min(...counts)).toBeGreaterThan(0);
+    expect(Math.max(...counts)).toBeLessThanOrEqual(2 * mean);
   });
 
   it('keeps the heaviest cold shard within the mutant cap the kill switch allows', () => {
@@ -252,12 +283,26 @@ describe('mutation shard slicing', () => {
       fs.writeFileSync(file, content);
       return file;
     };
-    const sum = 'export const sum = (a: number, b: number): number => a + b;\n';
-    const mutated = fixture('mutated.ts', sum);
-    const disabled = fixture('disabled.ts', `// Stryker disable next-line all: fixture\n${sum}`);
+    const sum = 'export function sum(a: number, b: number): number {\n  return a + b;\n}\n';
+    const inFunction = fixture('in-function.ts', sum);
+    const disabled = fixture('disabled.ts', `// Stryker disable all: fixture\n${sum}`);
     const typeOnly = fixture('type-only.ts', 'export type Sum = number;\n');
-    const counts = runScope<Record<string, number>>(
-      `const counts = await scope.countMutants(${JSON.stringify([mutated, disabled, typeOnly])});` +
+    const moduleLevel = fixture('module-level.ts', "export const LIST = ['a'];\n");
+    const arrow = fixture(
+      'arrow.ts',
+      'export const sum = (a: number, b: number): number => a + b;\n'
+    );
+    const instanceField = fixture(
+      'instance-field.ts',
+      "export class ListProvider {\n  private readonly items = ['a'];\n}\n"
+    );
+    const staticField = fixture(
+      'static-field.ts',
+      "export class ListProvider {\n  static readonly items = ['a'];\n}\n"
+    );
+    const files = [inFunction, disabled, typeOnly, moduleLevel, arrow, instanceField, staticField];
+    const counts = runScope<Record<string, MutantCount>>(
+      `const counts = await scope.countMutants(${JSON.stringify(files)});` +
         'return Object.fromEntries(counts);'
     );
 
@@ -265,16 +310,54 @@ describe('mutation shard slicing', () => {
       fs.rmSync(fixtureDir, { recursive: true, force: true });
     });
 
-    it('counts the mutants the test runner will execute', () => {
-      expect(counts[mutated]).toBeGreaterThan(0);
+    it('scores the mutants inside a function body: the block and the operator', () => {
+      expect(counts[inFunction]).toEqual({ runnable: 2, scored: 2 });
     });
 
     it('leaves out the mutants a Stryker disable directive reports as Ignored', () => {
-      expect(counts[disabled]).toBe(0);
+      expect(counts[disabled]).toEqual({ runnable: 0, scored: 0 });
     });
 
     it('keeps a file with nothing to mutate in the result at zero', () => {
-      expect(counts[typeOnly]).toBe(0);
+      expect(counts[typeOnly]).toEqual({ runnable: 0, scored: 0 });
+    });
+
+    it('counts a module-level literal as runnable but static, so it scores nothing', () => {
+      expect(counts[moduleLevel]).toEqual({ runnable: 2, scored: 0 });
+    });
+
+    it('scores the body of a module-level arrow but not the mutant replacing the arrow', () => {
+      expect(counts[arrow]).toEqual({ runnable: 2, scored: 1 });
+    });
+
+    it('scores an instance property initializer, run when a test constructs the class', () => {
+      expect(counts[instanceField]).toEqual({ runnable: 2, scored: 2 });
+    });
+
+    it('treats a static property initializer as static', () => {
+      expect(counts[staticField]).toEqual({ runnable: 2, scored: 0 });
+    });
+  });
+
+  describe('packing weights', () => {
+    const weights = packingWeights(
+      new Map([
+        ['barrel.ts', { runnable: 0, scored: 0 }],
+        ['styles.ts', { runnable: 3, scored: 0 }],
+        ['service.ts', { runnable: 5, scored: 4 }],
+      ])
+    );
+
+    it('weighs a file by its scored mutants', () => {
+      expect(weights.get('service.ts')).toBe(4);
+    });
+
+    it('gives a file whose runnable mutants are all static the minimum weight of 1', () => {
+      expect(weights.get('styles.ts')).toBe(1);
+    });
+
+    it('leaves a file without a runnable mutant out of the packing', () => {
+      expect([...weights.keys()]).toEqual(['styles.ts', 'service.ts']);
     });
   });
 
@@ -315,6 +398,15 @@ describe('mutation shard slicing', () => {
       const mean = loads.reduce((total, value) => total + value, 0) / loads.length;
       expect(shards.flat().sort()).toEqual([...many.keys()].sort());
       expect(Math.max(...loads)).toBeLessThanOrEqual(mean + Math.max(...many.values()));
+    });
+
+    it('spreads equally light files one per shard before stacking any', () => {
+      const light = new Map(['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', 'f.ts'].map((f) => [f, 1]));
+      expect(packShards(light, 3)).toEqual([
+        ['a.ts', 'd.ts'],
+        ['b.ts', 'e.ts'],
+        ['c.ts', 'f.ts'],
+      ]);
     });
 
     it('degrades to a single shard holding everything', () => {
