@@ -23,11 +23,17 @@ describe('app header source', () => {
     }
   );
 
-  it('uses no native CSS nesting: nested rules are written with the & selector', () => {
-    sources().forEach((source) => expect(source).not.toMatch(/^\s*[.#][\w-]+\s*\{/mu));
+  it('nests no bare class, id or attribute rule: nested rules use the & selector', () => {
+    sources().forEach((source) =>
+      expect(source).not.toMatch(/^\s*(?:[.#][\w-]+|\[[^\]\n]+\])\s*\{/mu)
+    );
   });
 
-  it('imports nothing from the modules layer', () => {
-    sources().forEach((source) => expect(source).not.toMatch(/from '@\/modules|from '@auth/u));
+  it('imports nothing from the modules layer, whichever quote or import form it uses', () => {
+    sources().forEach((source) =>
+      expect(source).not.toMatch(
+        /(?:\bfrom\s*|\bimport\s*\(\s*(?:\/\*.*?\*\/\s*)?)['"](?:@\/modules|@auth)/u
+      )
+    );
   });
 });

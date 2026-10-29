@@ -141,13 +141,14 @@ function measure(scope: Locator): Promise<SpacingReport> {
         const text = rectOf(range);
         const box = rectOf(element);
 
-        return (
-          text.width > 0 &&
-          (text.left < box.left - tolerance ||
-            text.right > box.right + tolerance ||
-            text.top < box.top - tolerance ||
-            text.bottom > box.bottom + tolerance)
-        );
+        const overflows = [
+          box.left - text.left,
+          text.right - box.right,
+          box.top - text.top,
+          text.bottom - box.bottom,
+        ];
+
+        return text.width > 0 && overflows.some((overflow) => overflow > tolerance);
       });
       const textOf = (element: Element): DOMRect => {
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -243,10 +244,12 @@ test.describe('App shell WCAG 1.4.12 text spacing (issue #362)', () => {
     }) => {
       await openShell(page, viewport, { CurrentUser: [replyWithProfile({ initials: LONG_NAME })] });
       const chip = chipOf(page);
-      const fit = await fitOf(chip.getByText(LONG_NAME, { exact: true }));
+      const name = chip.getByText(LONG_NAME, { exact: true });
+      const fit = await fitOf(name);
 
       expect((await edgesOf(chip)).width + 2).toBe(chipWidth);
       expect(fit.scrollWidth).toBeGreaterThan(fit.clientWidth);
+      await expect(name).toHaveCSS('text-overflow', 'ellipsis');
     });
   }
 

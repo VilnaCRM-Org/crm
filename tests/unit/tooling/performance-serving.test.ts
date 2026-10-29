@@ -235,25 +235,9 @@ describe('performance serving config', () => {
   });
 
   it('keeps the MUI theme engine off the eager path', () => {
-    const eagerMuiImports = new Set<string>();
-    const visited = new Set<string>();
-    const pending = ['src/index.tsx'];
+    const { muiEdges } = eagerGraphOf('src/index.tsx');
 
-    while (pending.length > 0) {
-      const file = pending.pop() ?? '';
-      if (!visited.has(file)) {
-        visited.add(file);
-        for (const specifier of staticImportsOf(readFile(file))) {
-          const local = resolveLocalModule(file, specifier);
-          if (local) pending.push(local);
-          else if (specifier.startsWith('@mui/')) eagerMuiImports.add(`${file} -> ${specifier}`);
-        }
-      }
-    }
-
-    expect([...eagerMuiImports]).toEqual([
-      'src/providers/app-providers.tsx -> @mui/material/styles',
-    ]);
+    expect(muiEdges).toEqual(['src/providers/app-providers.tsx -> @mui/material/styles']);
     expect(readFile('src/providers/app-providers.tsx')).toContain(
       "import { StyledEngineProvider } from '@mui/material/styles';"
     );
