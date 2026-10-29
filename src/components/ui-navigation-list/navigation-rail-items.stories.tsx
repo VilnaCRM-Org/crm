@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Meta } from '@storybook/react-webpack5';
 
 import { withRoutedStoryList } from '@stories/list-decorators';
+import navigationListStories from '@stories/navigation-list-story';
 import { storyItems } from '@stories/navigation-story-items';
 
 import NavigationRailItems from './navigation-rail-items';
@@ -10,24 +11,16 @@ const meta: Meta<typeof NavigationRailItems> = {
   component: NavigationRailItems,
   tags: ['autodocs'],
   args: { layout: 'desktop', items: storyItems, currentId: 'settings' },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  argTypes: navigationListStories.layoutArgTypes,
   decorators: withRoutedStoryList('/settings', 72),
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The rail rows: every product row, Settings and the three former sub-items as ' +
-          'top-level icon rows. There is no group and no chevron on the rail.',
-      },
-      story: { inline: false },
-    },
-  },
+  parameters: navigationListStories.parameters(
+    'The rail rows: every product row, Settings and the three former sub-items as ' +
+      'top-level icon rows. There is no group and no chevron on the rail.'
+  ),
 };
 
 export default meta;
 
-type Story = StoryObj<typeof NavigationRailItems>;
+export const Desktop = navigationListStories.desktop;
 
-export const Desktop: Story = {};
-
-export const Tablet: Story = { args: { layout: 'tablet' } };
+export const Tablet = navigationListStories.tablet;
