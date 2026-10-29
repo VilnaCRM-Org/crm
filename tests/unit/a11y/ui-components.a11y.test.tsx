@@ -159,22 +159,27 @@ const componentCases: ComponentCase[] = [
     shell: true,
   },
   {
-    name: 'UINavigationList in its expanded and rail variants',
+    name: 'UINavigationList in its expanded variant',
     element: (
-      <>
-        <UINavigationList
-          layout="desktop"
-          variant="expanded"
-          items={navigationItems}
-          signOut={jest.fn()}
-        />
-        <UINavigationList
-          layout="tablet"
-          variant="rail"
-          items={navigationItems}
-          signOut={jest.fn()}
-        />
-      </>
+      <UINavigationList
+        layout="desktop"
+        variant="expanded"
+        items={navigationItems}
+        signOut={jest.fn()}
+      />
+    ),
+    withProviders: true,
+    shell: true,
+  },
+  {
+    name: 'UINavigationList in its rail variant',
+    element: (
+      <UINavigationList
+        layout="tablet"
+        variant="rail"
+        items={navigationItems}
+        signOut={jest.fn()}
+      />
     ),
     withProviders: true,
     shell: true,

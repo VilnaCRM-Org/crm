@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import AppShellPlaceholders from '@/components/layouts/app-shell-placeholders';
 import { styleRuleFor, winningMediaValueFor } from '@tests/unit/utils/emotion-style-rules';
@@ -23,12 +23,9 @@ describe('AppShellPlaceholders', () => {
   });
 
   it('exposes nothing to assistive technology', () => {
-    render(<AppShellPlaceholders />);
-    const boxes = placeholders();
+    const { container } = render(<AppShellPlaceholders />);
 
-    expect(screen.queryAllByRole('generic').filter((element) => boxes.includes(element))).toEqual(
-      []
-    );
+    expect(within(container).queryAllByRole('generic')).toEqual([]);
     expect(screen.queryAllByRole('button')).toEqual([]);
     expect(screen.queryAllByRole('link')).toEqual([]);
   });
@@ -41,6 +38,20 @@ describe('AppShellPlaceholders', () => {
       declared(header, ['position', 'top', 'z-index', 'box-sizing', 'height', 'align-self'])
     ).toEqual(['sticky', '0', '1100', 'border-box', '64px', 'start']);
     expect(declared(navigation, ['display', 'width'])).toEqual(['none', '250px']);
+  });
+
+  it('holds the loaded navigation column height, capped by the viewport like the panel', () => {
+    render(<AppShellPlaceholders />);
+    const [, navigation] = placeholders();
+
+    expect(declared(navigation, ['height', 'max-height'])).toEqual(['801px', 'calc(100vh - 76px)']);
+  });
+
+  it('holds the taller tablet column height below 1440 px', () => {
+    render(<AppShellPlaceholders />);
+    const [, navigation = document.body] = placeholders();
+
+    expect(winningMediaValueFor(navigation, 'max-width:1439.95px', 'height')).toBe('1152px');
   });
 
   it('shows the navigation column from 1024 px and widens it to 251 px below 1440 px', () => {
