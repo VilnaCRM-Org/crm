@@ -175,6 +175,28 @@ describe('UserMenuSlot', () => {
     expect(mockRead).not.toHaveBeenCalled();
   });
 
+  it('reports a chunk failure to the handler of the latest render', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const failure = new Error('chunk failed');
+    let fail: (error: Error) => void = () => undefined;
+    jest.spyOn(loader, 'load').mockReturnValue(
+      new Promise<LoadedModule>((_resolve, reject) => {
+        fail = reject;
+      })
+    );
+    const first = jest.fn();
+    const latest = jest.fn();
+    const { rerender } = renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={first} onAvatar={jest.fn()} />
+    );
+
+    rerender(<UserMenuSlot signOut={jest.fn()} onChunkFailure={latest} onAvatar={jest.fn()} />);
+    await act(async () => fail(failure));
+
+    await waitFor(() => expect(latest).toHaveBeenCalledWith('app-shell:current-user', failure));
+    expect(first).not.toHaveBeenCalled();
+  });
+
   it('publishes the no-data avatar copy while the flag is off, reading nothing', () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
     const onAvatar = jest.fn();

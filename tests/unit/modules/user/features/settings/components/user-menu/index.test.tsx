@@ -152,7 +152,7 @@ describe('UserMenu', () => {
     expect(screen.getByRole('button', { name: 'after' })).toHaveFocus();
   });
 
-  it('closes on a click outside without moving focus to the clicked control', async () => {
+  it('closes on a click outside and refocuses the chip, not the clicked control', async () => {
     const user = userEvent.setup();
     renderMenu();
     await user.click(chip());
@@ -166,6 +166,7 @@ describe('UserMenu', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'after' })).not.toHaveFocus();
+    expect(chip()).toHaveFocus();
   });
 
   it('toggles closed when the chip is activated again', async () => {

@@ -98,25 +98,6 @@ describe('useCurrentUser', () => {
     expect(result.current).toEqual({ status: 'pending', identity: null });
   });
 
-  it('re-reads when the pathname changes and aborts the read in flight', async () => {
-    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) });
-    const { result } = renderHook(
-      () => {
-        const navigate = useNavigate();
-
-        return { state: useCurrentUser(), go: (to: string): void => void navigate(to) };
-      },
-      { wrapper }
-    );
-    await waitFor(() => expect(result.current.state.status).toBe('ready'));
-    const first = mockRead.mock.calls[0]?.[0] as AbortSignal;
-
-    act(() => result.current.go('/boards'));
-
-    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
-    expect(first.aborted).toBe(true);
-  });
-
   const renderNavigable = (): {
     result: { current: { state: ReturnType<typeof useCurrentUser>; go: (to: string) => void } };
   } =>
@@ -133,6 +114,33 @@ describe('useCurrentUser', () => {
     status: 'ready',
     identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
   } as const;
+
+  it('re-reads on a pathname change and drops the late answer of the read in flight', async () => {
+    const answers: Array<(outcome: ProfileReadOutcome) => void> = [];
+    mockRead.mockImplementation(
+      () =>
+        new Promise<ProfileReadOutcome>((done) => {
+          answers.push(done);
+        })
+    );
+    const { result } = renderNavigable();
+    const first = mockRead.mock.calls[0]?.[0] as AbortSignal;
+
+    act(() => result.current.go('/boards'));
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+    await act(async () =>
+      answers[1]?.({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) })
+    );
+    await act(async () =>
+      answers[0]?.({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) })
+    );
+
+    expect(first.aborted).toBe(true);
+    expect(result.current.state).toEqual({
+      status: 'ready',
+      identity: { displayName: 'Анна Коваль', monogram: 'АК' },
+    });
+  });
 
   it.each(['transient', 'rate_limited', 'rejected'] as const)(
     'keeps the last good name when a later re-read fails with %s',

@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen } from '@testing-library/react';
-import type { JSX, KeyboardEvent, ReactNode } from 'react';
-import { MemoryRouter, useNavigate } from 'react-router';
+import { type JSX, type KeyboardEvent, type ReactNode, useLayoutEffect } from 'react';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
 import useUserMenu from '@/modules/user/features/settings/hooks/use-user-menu';
@@ -122,6 +122,30 @@ describe('useUserMenu', () => {
     act(() => result.current.go('/settings'));
 
     expect(result.current.menu.open).toBe(false);
+  });
+
+  it('never commits the menu open on the new route', () => {
+    const commits: string[] = [];
+    const { result } = renderHook(
+      (): Harness => {
+        const navigate = useNavigate();
+        const { pathname } = useLocation();
+        const menu = useUserMenu({ layout: 'desktop' });
+        useLayoutEffect(() => {
+          commits.push(`${pathname} ${String(menu.open)}`);
+        });
+
+        return { menu, go: (to: string): void => void navigate(to) };
+      },
+      { wrapper }
+    );
+    act(() => result.current.menu.show());
+
+    act(() => result.current.go('/settings'));
+
+    expect(commits).toContain('/ true');
+    expect(commits).not.toContain('/settings true');
+    expect(commits.at(-1)).toBe('/settings false');
   });
 
   it('closes when the viewport crosses a layout boundary', () => {

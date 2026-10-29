@@ -348,7 +348,9 @@ when `userSettings` is off, and only the desktop and tablet cards draw it, as th
 items are 2 px apart; at 320 px the popover sits at x 92 to 317 and the
 document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
 focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
-closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none is made.
+closes it and returns focus to the chip. On mobile the avatar sits above the click-outside layer,
+so tapping it again closes the menu through the chip as it does at the wider layouts. One
+`CurrentUser` read is made on `/`; with `userSettings` off none is made.
 
 A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
 stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how

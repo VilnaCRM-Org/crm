@@ -53,15 +53,23 @@ function useLayoutClose({ layout, open, setOpen, chip }: UserMenuLayoutClose): v
   useChipRefocus({ refocus, setRefocus, chip });
 }
 
-export default function useUserMenu({ layout }: UserMenuOptions): UserMenuState {
+function useRouteClose(setOpen: Dispatch<SetStateAction<boolean>>): void {
   const { pathname } = useLocation();
+  const [shownPathname, setShownPathname] = useState(pathname);
+
+  if (shownPathname !== pathname) {
+    setShownPathname(pathname);
+    setOpen(false);
+  }
+}
+
+export default function useUserMenu({ layout }: UserMenuOptions): UserMenuState {
   const [open, setOpen] = useState(false);
   const chip = useRef<HTMLButtonElement>(null);
   const [controls] = useState(() => userMenuControls(setOpen, chip));
   const keys = useUserMenuKeys(controls);
   useLayoutClose({ layout, open, setOpen, chip });
-
-  useEffect(() => setOpen(false), [pathname]);
+  useRouteClose(setOpen);
 
   return { open, chip, ...controls, ...keys };
 }

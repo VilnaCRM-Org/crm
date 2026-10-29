@@ -25,7 +25,7 @@ export default function UserMenu({
 
   return (
     <Box sx={styles.root[layout]}>
-      {menu.open && <Box aria-hidden="true" onClick={menu.close} sx={styles.backdrop} />}
+      {menu.open && <Box aria-hidden="true" onClick={menu.dismiss} sx={styles.backdrop} />}
       <UserMenuCard
         layout={layout}
         open={menu.open}

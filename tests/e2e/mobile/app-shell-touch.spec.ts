@@ -208,6 +208,33 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect(page.getByRole('main')).toBeFocused();
   });
 
+  test('closes the avatar menu when the avatar is tapped again and keeps focus on it', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await chipOf(page).tap();
+    await expect(userMenuOf(page)).toBeVisible();
+
+    await chipOf(page).tap();
+
+    await expect(userMenuOf(page)).toBeHidden();
+    await expect(chipOf(page)).toBeFocused();
+  });
+
+  test('closes the avatar menu on a tap outside and returns focus to the avatar', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await chipOf(page).tap();
+    await expect(userMenuOf(page)).toBeVisible();
+
+    await page.touchscreen.tap(SCRIM_POINT.x, SCRIM_POINT.y);
+
+    await expect(userMenuOf(page)).toBeHidden();
+    await expect(chipOf(page)).toBeFocused();
+    await expect(page).toHaveURL(ROUTE_PATHS.home);
+  });
+
   test('signs out from the avatar menu', async ({ page }) => {
     await openAt(page, ROUTE_PATHS.home);
 
@@ -284,6 +311,16 @@ test.describe('App shell on touch devices (issue #362)', () => {
 
     await burgerOf(page).tap();
     await expect(drawerOf(page)).toBeVisible();
+
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('has no horizontal overflow at 320 px, with the avatar menu open', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await openAt(page, ROUTE_PATHS.home);
+
+    await chipOf(page).tap();
+    await expect(userMenuOf(page)).toBeVisible();
 
     await expectNoHorizontalOverflow(page);
   });

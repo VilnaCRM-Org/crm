@@ -96,6 +96,7 @@ export default {
     mobile: {
       ...chipBase,
       position: 'absolute',
+      zIndex: 2,
       inset: '-2px',
       width: '44px',
       height: '44px',

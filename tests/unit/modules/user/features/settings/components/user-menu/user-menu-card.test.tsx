@@ -50,11 +50,11 @@ describe('UserMenuCard', () => {
     render(<UserMenuCard layout="mobile" open chip={chip} items={items} />);
 
     expect(screen.getByRole('button', { name: 'chip' })).toBeInTheDocument();
-    expect(screen.getAllByRole('generic', { hidden: true })[2]).toHaveStyle({
-      width: '225px',
-      top: '45px',
-      right: '-45px',
-    });
+    const [, , popover, caret, body] = screen.getAllByRole('generic', { hidden: true });
+    expect(popover).toHaveStyle({ width: '225px', top: '45px', right: '-45px' });
+    expect(caret).toHaveStyle({ marginLeft: '148px', width: '26px', height: '6px' });
+    expect(body).toContainElement(screen.getByRole('menu'));
+    expect(body).toHaveStyle({ borderRadius: '8px', overflow: 'hidden' });
   });
 
   it.each([

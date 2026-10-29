@@ -123,13 +123,14 @@ two modules declare `shell.userMenu`.
 - **The current-user chunk** carries only the identity source: the slot keeps one menu mounted
   and the chunk reports the identity it reads, so the chip keeps focus and an open menu when it
   arrives (see `src/modules/user/features/settings/README.md`). Its failure is reported through
-  the `onChunkFailure` callback the mapper binds (`source: 'app-shell:current-user'`); `AppLayout`
-  reports the shell chunk with `routeMapper.chunkFailureReporter('app-shell:load')`.
+  the `onChunkFailure` callback the mapper binds (`source: 'app-shell:current-user'`); the shell
+  chunk's reporter, `routeMapper.chunkFailureReporter('app-shell:load')`, is passed by
+  `RouteComposer` to `AppLayout` as `onShellFailure`, and `AppLayout` only forwards it.
 - **Why the mapper captures:** a component under `src/components/` must not import
   `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
   route layer is the only place that reaches the observability boundary.
-- **ADR drift:** `route-composer.tsx` changed, so the pull request carries the `adr:not-required`
-  label; the decision lives here and in the shell README.
+- **No ADR:** the composer change is recorded here and in the shell README rather than in
+  `docs/adr/` (OQ-10).
 
 ## The contract
 
