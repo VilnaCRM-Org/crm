@@ -44,9 +44,9 @@ in `.claude/skills/architecture/SKILL.md`).
 
 Data is **parsed, never cast**, before it leaves the repository layer:
 
-- **REST** — `HttpResponseProcessor.process(response, schema)` validates every JSON body with a
-  zod schema. There is no unchecked `as T`. Repositories pass the generated-shape schema (e.g.
-  `RegistrationResponseSchema`); a schema violation becomes a typed `HttpError`
+- **REST** — every `HttpsClient` call carries `RequestConfig.schema`, and
+  `HttpResponseProcessor.process(response, schema)` validates the JSON body with that zod schema.
+  There is no unchecked `as T`. A schema violation becomes a typed `HttpError`
   (`INVALID_RESPONSE_SHAPE`), not a crash or a corrupted record.
 - **GraphQL** — `RegistrationAPI` validates the Apollo result with `CreateUserResultSchema`
   before returning; an invalid payload becomes a typed `ApiError` (`VALIDATION`).
@@ -124,9 +124,10 @@ declaration silently, so each pending file opens with `# pending-against: <versi
   - `confirmTwoFactorUser` and `regenerateRecoveryCodesUser` answer the same eight fixed
     `recoveryCodes`.
   - `disableTwoFactorUser` answers `success: true`.
-  - A malformed e-mail on sign-in, or a malformed `twoFactorCode` on complete, confirm or disable,
-    answers one GraphQL error `<property>: <reason>` with
-    `extensions: { code: 'BAD_USER_INPUT', status: 422 }`.
+  - A malformed e-mail or a blank `password` on sign-in, a blank `pendingSessionId` on complete,
+    or a malformed `twoFactorCode` on complete, confirm or disable, answers one GraphQL error
+    `<property>: <reason>` with `extensions: { code: 'BAD_USER_INPUT', status: 422 }` and no token.
+    A blank value reads `This value should not be blank.`
 
   A recovery code is `XXXX-XXXX` from `A-Z0-9`, in either case. Confirm takes a six-digit code
   only, as upstream does.

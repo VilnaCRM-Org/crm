@@ -117,11 +117,140 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
   });
 
+  describe('labelled two-factor values in free text', () => {
+    it.each([
+      ['an = label', 'pendingSessionId=01JAQZ8M3K5N7P9R2T4V6X8Z0B', 'pendingSessionId=[redacted]'],
+      ['a : label', 'twoFactorCode:123456', 'twoFactorCode:[redacted]'],
+      ['a : label and a space', 'recoveryCode: AB12-CD34', 'recoveryCode: [redacted]'],
+      ['a plural label', 'recoveryCodes= EF56-GH78', 'recoveryCodes= [redacted]'],
+      ['a label and two spaces', 'twoFactorCode:  123456', 'twoFactorCode:  [redacted]'],
+      ['spaces around the =', 'twoFactorCode = 123456', 'twoFactorCode = [redacted]'],
+      ['an upper-case label', 'TWOFACTORCODE=654321', 'TWOFACTORCODE=[redacted]'],
+      ['a label inside a word', 'xpendingSessionId=01JB', 'xpendingSessionId=[redacted]'],
+      [
+        'the text after the value',
+        'retry twoFactorCode=123456 and pendingSessionId=01JB&step=2',
+        'retry twoFactorCode=[redacted] and pendingSessionId=[redacted]&step=2',
+      ],
+    ])('redacts the value after %s', (_name, input, expected) => {
+      expect(scrubMessage(input)).toEqual({ message: expected });
+    });
+
+    it('redacts a generated pending session id, TOTP code and recovery code', () => {
+      const pendingSessionId = buildPendingSessionId();
+      const code = buildTotpCode();
+      const recoveryCode = buildRecoveryCode();
+
+      expect(
+        scrubMessage(
+          `pendingSessionId=${pendingSessionId} twoFactorCode=${code} recoveryCode: ${recoveryCode}`
+        )
+      ).toEqual({
+        message: 'pendingSessionId=[redacted] twoFactorCode=[redacted] recoveryCode: [redacted]',
+      });
+    });
+
+    it.each([
+      ['an unlabelled six-digit number', 'order 123456 shipped'],
+      ['a label with no separator', 'twoFactorCode 123456'],
+      ['an unrelated label', 'orderCode=123456'],
+    ])('keeps %s', (_name, input) => {
+      expect(scrubMessage(input)).toEqual({ message: input });
+    });
+  });
+
+  describe('two-factor values in serialized JSON members', () => {
+    it.each([
+      ['pendingSessionId', '01JAQZ8M3K5N7P9R2T4V6X8Z0B'],
+      ['twoFactorCode', '123456'],
+      ['recoveryCode', 'AB12-CD34'],
+      ['secret', 'JBSWY3DPEHPK3PXP'],
+      ['totpSecret', 'JBSWY3DPEHPK3PXP'],
+      ['PENDINGSESSIONID', '01JB'],
+    ])('redacts the %s member value', (key, value) => {
+      expect(scrubMessage(`body {"${key}": "${value}","step":"2"}`)).toEqual({
+        message: `body {"${key}": "[redacted]","step":"2"}`,
+      });
+    });
+
+    it('keeps an unrelated JSON member value', () => {
+      const message = 'body {"orderCode":"123456"}';
+
+      expect(scrubMessage(message)).toEqual({ message });
+    });
+  });
+
+  describe('recovery code lists', () => {
+    it('redacts a serialized JSON array of generated codes whole', () => {
+      const codes = [buildRecoveryCode(), buildRecoveryCode()];
+
+      const result = scrubMessage(`body {"recoveryCodes":${JSON.stringify(codes)},"step":"2"}`);
+
+      expect(result).toEqual({ message: 'body {"recoveryCodes":[redacted],"step":"2"}' });
+    });
+
+    it.each([
+      ['spaces around the separator', 'recoveryCodes = ["AB12-CD34", "EF56-GH78"]'],
+      ['a free-text array', 'recoveryCodes:[AB12-CD34,EF56-GH78]'],
+      ['an upper-case label', 'RECOVERYCODES:["AB12-CD34"]'],
+    ])('redacts the array after %s', (_name, input) => {
+      const result = scrubMessage(`${input} next`) as { message: string };
+
+      expect(result.message).toBe(`${input.slice(0, input.indexOf('['))}[redacted] next`);
+    });
+
+    it('keeps an array after an unrelated label', () => {
+      const message = 'orderCodes:["AB12-CD34"]';
+
+      expect(scrubMessage(message)).toEqual({ message });
+    });
+
+    it.each([
+      ['no spaces', 'recoveryCodes=AB12-CD34,EF56-GH78', 'recoveryCodes=[redacted],[redacted]'],
+      [
+        'a space after each comma',
+        'recoveryCodes= AB12-CD34, EF56-GH78, IJ90-KL12',
+        'recoveryCodes= [redacted], [redacted], [redacted]',
+      ],
+      [
+        'spaces around the separator',
+        'recoveryCodes = AB12-CD34 , EF56-GH78',
+        'recoveryCodes = [redacted] , [redacted]',
+      ],
+      [
+        'a JSON string value',
+        'body {"recoveryCodes": "AB12-CD34,EF56-GH78","step":"2"}',
+        'body {"recoveryCodes": "[redacted],[redacted]","step":"2"}',
+      ],
+      [
+        'the text after the list',
+        'recoveryCodes=AB12-CD34,EF56-GH78&step=2',
+        'recoveryCodes=[redacted],[redacted]&step=2',
+      ],
+    ])('redacts every code of a comma-separated list with %s', (_name, input, expected) => {
+      expect(scrubMessage(input)).toEqual({ message: expected });
+    });
+
+    it('leaves no generated code of a free-text list behind', () => {
+      const codes = Array.from({ length: 8 }, () => buildRecoveryCode());
+
+      const result = scrubMessage(`recoveryCodes: ${codes.join(', ')}`) as { message: string };
+
+      expect(result.message).toBe(`recoveryCodes: ${codes.map(() => '[redacted]').join(', ')}`);
+    });
+
+    it('keeps a comma-separated list after an unrelated label', () => {
+      const message = 'orderCodes=AB12-CD34,EF56-GH78';
+
+      expect(scrubMessage(message)).toEqual({ message });
+    });
+  });
+
   describe('patterns', () => {
     const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
 
     it('lists the otpauth pattern first, before the e-mail pattern', () => {
-      expect(patterns).toHaveLength(7);
+      expect(patterns).toHaveLength(10);
       expect(patterns[0]?.source).toBe(String.raw`otpauth:\/\/[^\s"']+`);
       expect(patterns[0]?.flags).toBe('gi');
       expect(patterns[1]?.source).toBe(String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`);

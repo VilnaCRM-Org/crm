@@ -23,7 +23,10 @@ export class PiiScrubber {
     /eyJ[\w-]+\.[\w-]+\.[\w-]+/g,
     /(?<=token=)[^&#\s]+/gi,
     /(?<=token%3d)(?:(?!%26|%23)[^&#\s])+/gi,
-    /(?<="[\w-]*(?:token|password)"\s*:\s*")(?:\\.|[^"\\])+/gi,
+    /(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+/gi,
+    /(?<=recoveryCodes"?\s*[=:]\s*)\[[^\]]*\]/gi,
+    /(?<=recoveryCodes"?\s*[=:]\s*"?[\w\s,-]*,\s*)[\w-]+/gi,
+    /(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)"?\s*[=:]\s*"?)[\w-]+/gi,
   ];
 
   public scrub(event: SentryEvent): SentryEvent {

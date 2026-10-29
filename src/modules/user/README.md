@@ -15,7 +15,8 @@ barrel — never a deep internal path.
   `error-parser`).
 - `AuthRepository` (type) — the public repository interface.
 - `UserEntity`, `SignInDto`, `SignUpDto`, `RestorePasswordDto`, `CreateNewPasswordDto`,
-  `TwoFactorDto` (types) — the board's User domain, see "The User domain types" below.
+  `TwoFactorDto`, `RecoveryCode`, `RecoveryCodeSet`, `TwoFactorSettingsEntity` (types) — the
+  board's User domain, see "The User domain types" below.
 
 Two deliberate deviations from the issue's illustrative example, both forced by
 this codebase:
@@ -652,8 +653,13 @@ express a second step. user-service implements `signInUser` and the 2FA mutation
 `main` only; the pinned `v2.8.0` has none of them, and the user's rule is that every
 user-service operation goes through a GraphQL repository.
 
-**Decision.** `useSignInSubmit` resolves `GraphQLSignInProvider` through the container-free
-`AuthProviderLoader`, writes the result to `useAuthStore` and records the security signal; the
+**Decision.** `useSignInSubmit` writes the loading state, then loads `SignInSubmitHandler`
+(`@auth/utils/sign-in-submit-handler`) behind a `ChunkRetryLoader`, so the handler and
+`AUTH_TOKENS` reach the browser on the first submit rather than with the `/sign-in` form chunk
+(the mobile Lighthouse script budget). The handler resolves `GraphQLSignInProvider` through the
+container-free `AuthProviderLoader`, writes the result to `useAuthStore` and records the security
+signal; a handler or provider that cannot load leaves the retryable load error.
+`useRecoveryRun` loads `AUTH_TOKENS` the same way for the two password-recovery pages. The
 provider calls the transport-only `GraphQLSignInRepository` and translates through
 `GraphQLSignInTransformer` and `UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`,
 `LoginResponseMapper` and `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and
@@ -870,8 +876,14 @@ per expected failure. `useTwoFactorSettle` applies a plan; a failure with no row
 `rate_limited` banner or the Retry-able `transient` one, and `session_ended` publishes nothing and
 calls neither `recordStatus` nor a sign-out, because the session link has ended the session and the
 `ProtectedRoute` redirect unmounts the section. `useSettledSubmit` and `useCodeSubmit` wrap
-`useAbortableSubmit` with the settle step, the last input for Retry and the code normalisation
-(six digits to confirm, six digits or `XXXX-XXXX` to disable). `useTwoFactorTransition` keeps the
+`useAbortableSubmit` with the settle step and the code normalisation (six digits to confirm, six
+digits or `XXXX-XXXX` to disable). Retry keeps no captured input: the banner action clicks the
+form's own submit through `useSubmitRetry`, so react-hook-form validates and the normaliser reads
+the field as it is now, and a submit that is disabled while a request runs cannot send twice. The
+same holds for the sign-in challenge. Each banner failure bumps `bannerOccurrence`, which `UIForm`
+keys its banner by, so a second failure in a row mounts a fresh banner that takes focus and is
+announced again; offline, the Retry action is `aria-disabled` and described by the offline
+notice. `useTwoFactorTransition` keeps the
 entity and the view state, and reconciles every transition: the URI and key survive only in the
 `setup` view, the recovery codes only in `codes`, and the status follows the view, so "Готово", a
 stale setup and unmount all leave an entity with `null` secrets.
@@ -944,14 +956,39 @@ focus ring.
 codes leaves that number in the auth store. `ProtectedRoute` reads it through
 `useRecoveryCodesBanner` and puts the lazily loaded `RecoveryCodesNotice` into the outlet context as
 `banner`; `AppLayout` renders it first inside `<main>`, so a page without one keeps exactly the DOM
-it had. The hook builds the lazy component once per mount in a `useState` initializer, from a
-`ThemedChunkLoader` over a `ChunkRetryLoader` and `muiThemeShellLoader`, behind the non-null
-`RouteFallback`; with no count the chunk is never requested, and a chunk that cannot load renders
-nothing rather than breaking the page. The notice is a polite `role="status"` region that mounts
-empty, is filled in an effect and never takes focus; the count has uk one, few, many and other
-forms and en one and other forms, and zero reads "Резервні коди закінчилися". The link goes to
-`/settings` client-side and, like the button and arriving on `/settings`, clears the count;
-sign-out and a reload clear it because the store is memory-only.
+it had. The hook builds the lazy component once per mount in a `useState` initializer, from the
+container-free `recoveryNoticeLoader` singleton
+(`components/protected-route/recovery-notice-loader.ts`: a `ThemedChunkLoader` over a
+`ChunkRetryLoader` and `muiThemeShellLoader`, so a loaded chunk is reused across `ProtectedRoute`
+remounts), behind the non-null `RouteFallback`; with no count the chunk is never requested, and a
+chunk that cannot load renders nothing rather than breaking the page. The notice is a polite
+`role="status"` region that mounts empty, is filled in an effect and never takes focus; the count
+has uk one, few, many and other forms and en one and other forms, and zero reads "Резервні коди
+закінчилися". The link goes to `/settings` client-side and, like the button and arriving on
+`/settings`, clears the count; sign-out and a reload clear it because the store is memory-only.
+
+### The challenge and notice copy are lazy catalogs
+
+**Context.** The first cut put `two_factor.*` and `recovery_codes_notice.*` in the auth catalog,
+so 3,749 B of the minified merged catalog (about 0.9 KB gzip) shipped in the eager `index.js` of
+every page, and the CI Lighthouse `resource-summary:script:size` budget failed on `/sign-in`, the
+two recovery pages and `/`.
+
+**Decision.** Both are lazy catalogs in `config/i18n-catalog-policy.json`. The challenge copy lives
+in `features/auth/routes/two-factor-catalog/i18n` and registers when the `two-factor-challenge`
+route module evaluates, before `RecoveryPageLayout` sets the title; its owners are that route, the
+`components/two-factor` folder, the two challenge hooks that name its keys and the auth route
+contract for `meta.titleKey`. The notice copy lives in `components/recovery-codes-notice/i18n` and
+registers when the lazy `recovery-codes-notice` chunk evaluates; its owners are that component
+and `use-recovery-notice-message.ts`. The sign-in notices the challenge sends back
+(`sign_in.notices.two_factor_expired`, `sign_in.notices.account_locked`) stay in the auth catalog,
+because `/sign-in` renders them. Tests use `createTwoFactorLocaleI18n` and
+`createCodesNoticeLocaleI18n`; the `performance serving` test pins that no eager module
+imports either catalog or a challenge or notice component.
+
+**Rejected.** Keeping the copy eager (it costs every page, including those that never show a
+challenge); one catalog for both (the notice renders in the protected shell, the challenge on a
+public route, so either owner would pull the other's keys into its chunk).
 
 ### The 2FA card in the browser lane
 
