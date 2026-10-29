@@ -1,4 +1,4 @@
-import { type ComponentType, lazy, useRef, useState } from 'react';
+import { type ComponentType, lazy, useLayoutEffect, useRef, useState } from 'react';
 
 import type { AppShellModuleLoader } from '@/components/types/layouts/app-layout-frame';
 import type { UIAppShellProps } from '@/components/types/ui-app-shell';
@@ -11,7 +11,9 @@ export default function useAppShell(
   onShellFailure: ShellFailureHandler | undefined
 ): ComponentType<UIAppShellProps> {
   const report = useRef(onShellFailure);
-  report.current = onShellFailure;
+  useLayoutEffect(() => {
+    report.current = onShellFailure;
+  });
   const [AppShell] = useState<ComponentType<UIAppShellProps>>(() =>
     lazy(() =>
       shellLoader.load().catch((error: unknown) => {

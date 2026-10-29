@@ -6,6 +6,11 @@ const TABLET_ONLY = `${FROM_SIDEBAR} and (max-width:${DESKTOP_BREAKPOINT - 0.05}
 
 const HEADER_HEIGHT = '64px';
 
+const NAV_INSET_TOP = 10;
+const NAV_VIEWPORT_GAP = 86;
+const NAV_PANEL_HEIGHT = { desktop: 791, tablet: 1142 } as const;
+const NAV_PANEL_MAX_HEIGHT = `calc(100vh - ${NAV_VIEWPORT_GAP}px)`;
+
 export default {
   sidebarBreakpoint: SIDEBAR_BREAKPOINT,
   headerHeight: HEADER_HEIGHT,
@@ -27,11 +32,18 @@ export default {
     height: HEADER_HEIGHT,
   },
   navSlot: { gridColumn: 1, gridRow: 2 },
+  navInsetTop: `${NAV_INSET_TOP}px`,
+  navPanel: {
+    desktop: { height: `${NAV_PANEL_HEIGHT.desktop}px`, maxHeight: NAV_PANEL_MAX_HEIGHT },
+    tablet: { height: `${NAV_PANEL_HEIGHT.tablet}px`, maxHeight: NAV_PANEL_MAX_HEIGHT },
+  },
   navPlaceholder: {
     display: 'none',
     width: '250px',
+    height: `${NAV_INSET_TOP + NAV_PANEL_HEIGHT.desktop}px`,
+    maxHeight: `calc(100vh - ${NAV_VIEWPORT_GAP - NAV_INSET_TOP}px)`,
     [FROM_SIDEBAR]: { display: 'block' },
-    [TABLET_ONLY]: { width: '251px' },
+    [TABLET_ONLY]: { width: '251px', height: `${NAV_INSET_TOP + NAV_PANEL_HEIGHT.tablet}px` },
   },
   main: {
     gridColumn: 1,
