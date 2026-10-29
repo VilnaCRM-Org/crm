@@ -4,7 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-22
-iteration: 1
+revised: 2026-10-29
+iteration: 2
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -15,7 +16,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'architect (Winston), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md
@@ -33,8 +34,10 @@ inputDocuments:
 
 # Architecture: app shell navigation (header, sidebar, drawer, user menu)
 
-**Author:** architect (Winston), autonomous run **Date:** 2026-10-22 **Feature:**
-`app-shell-navigation`
+**Author:** architect (Winston), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28
+and 2026-10-29 (shipped-design amendments: the user-menu slot, the AD-11 sign-out latch and the
+failed chip re-read; each change is marked in place as a dated amendment or owner decision)
+**Feature:** `app-shell-navigation`
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"),
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N"), the authoritative
