@@ -10,6 +10,7 @@ import {
   disableSubmitOf,
   doneOf,
   enableTwoFactor,
+  errorBannerOf,
   confirmOf,
   openDisableOf,
   openRegenerateOf,
@@ -36,9 +37,6 @@ import {
 import expectCleanScan from '@tests/utils/a11y/expect-clean-scan';
 
 const SETTINGS_URL = '/settings';
-
-const bannerOf = (page: Page, text: string): Locator =>
-  sectionOf(page).getByRole('alert').filter({ hasText: text });
 
 test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
@@ -191,7 +189,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await openDisableOf(page).click();
     await disableFieldOf(page).fill('123456');
     await disableSubmitOf(page).click();
-    await expect(bannerOf(page, twoFactorText.rateLimited)).toBeFocused();
+    await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
 
     await expectCleanScan(page);
   });
@@ -201,7 +199,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await enableTwoFactor(page);
     await openRegenerateOf(page).click();
     await regenerateSubmitOf(page).click();
-    await expect(bannerOf(page, twoFactorText.transient)).toBeFocused();
+    await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
     await expect(sectionOf(page).getByRole('button', { name: twoFactorText.retry })).toBeVisible();
 
     await expectCleanScan(page);

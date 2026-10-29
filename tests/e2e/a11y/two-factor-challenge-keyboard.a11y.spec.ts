@@ -132,6 +132,7 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
     await expect(recoveryToggleOf(page)).toHaveCSS('color', BRAND_LINK);
     await expectRing(recoveryToggleOf(page), BRAND_LINK);
     await recoveryToggleOf(page).click();
+    await expect(recoveryFieldOf(page)).toBeFocused();
     await confirmButtonOf(page).focus();
     await expectNextTabStop(page, { locator: authenticatorToggleOf(page) });
 
