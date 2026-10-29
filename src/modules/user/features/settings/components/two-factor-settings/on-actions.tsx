@@ -25,7 +25,7 @@ export default function OnActions({
         type="button"
         variant="outlined"
         onClick={onDisable}
-        sx={styles.copyButton}
+        sx={styles.actionButton}
       >
         {t('settings.two_factor.on.disable')}
       </UIButton>
@@ -34,7 +34,7 @@ export default function OnActions({
         type="button"
         variant="outlined"
         onClick={onRegenerate}
-        sx={styles.copyButton}
+        sx={styles.actionButton}
       >
         {t('settings.two_factor.on.regenerate')}
       </UIButton>

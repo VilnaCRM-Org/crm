@@ -12,7 +12,7 @@ export default function ModeToggle({ mode, busy, onSwitch }: ModeToggleProps): J
 
   return (
     <Box sx={styles.toggleRow}>
-      <UILinkButton unavailable={busy} onClick={onSwitch}>
+      <UILinkButton unavailable={busy} onClick={onSwitch} sx={styles.toggle}>
         {mode === 'totp'
           ? t('two_factor.recovery.use_recovery')
           : t('two_factor.recovery.use_authenticator')}

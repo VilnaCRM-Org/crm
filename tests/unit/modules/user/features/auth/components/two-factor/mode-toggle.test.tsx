@@ -33,6 +33,12 @@ describe('ModeToggle', () => {
     expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
   });
 
+  it.each(['totp', 'recovery'] as const)('gives the %s mode toggle a 24 px tall target', (mode) => {
+    render(tree(mode, false, jest.fn()));
+
+    expect(screen.getByRole('button')).toHaveStyle({ minHeight: '1.5rem' });
+  });
+
   it('switches once per activation, by click and by keyboard', async () => {
     const onSwitch = jest.fn();
     render(tree('totp', false, onSwitch));

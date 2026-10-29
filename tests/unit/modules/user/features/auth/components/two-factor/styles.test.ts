@@ -25,6 +25,10 @@ describe('two-factor challenge styles', () => {
         fontSize: '0.9375rem',
         lineHeight: '1.125rem',
       },
+      toggle: {
+        minHeight: '1.5rem',
+        '&&:focus-visible': { outline: '2px solid #0074B5', outlineOffset: '2px' },
+      },
       recoveryField: { flexDirection: 'column', marginBottom: '1rem' },
       recoveryLabel: {
         fontFamily: 'Inter, sans-serif',
