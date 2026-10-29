@@ -9,6 +9,10 @@ import renderShell from '@tests/unit/utils/render-shell';
 const icon = 'svg' as unknown as NavigationIcon;
 
 describe('NavigationRailItem', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders the row as a link named by its label, with no tooltip at rest', () => {
     renderShell(
       <NavigationRailItem layout="desktop" id="boards" label="Boards" icon={icon} href="/boards" />
@@ -99,7 +103,7 @@ describe('NavigationRailItem', () => {
 
   it('fixes the tooltip to the viewport at its offset from this row', async () => {
     const user = userEvent.setup();
-    const box = jest
+    jest
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockReturnValue(new DOMRect(12, 300, 72, 54));
     renderShell(
@@ -112,7 +116,6 @@ describe('NavigationRailItem', () => {
       .getAllByRole('generic', { hidden: true })
       .find((box) => box.getAttribute('aria-hidden') === 'true');
     expect(tooltip).toHaveStyle({ position: 'fixed', left: '77px', top: '308px' });
-    box.mockRestore();
   });
 
   it('behaves as an action row for sign out: one call per activation', async () => {

@@ -60,8 +60,7 @@ describe('useAvailableNavigationItems', () => {
 
     renderHook(() => useAvailableNavigationItems(set));
 
-    expect(isEnabled).toHaveBeenCalledWith('userSettings');
-    expect(isEnabled).toHaveBeenCalledTimes(2);
+    expect(isEnabled.mock.calls).toEqual([['userSettings'], ['userSettings']]);
   });
 
   it('filters a sub-item on its own flag inside an available group', () => {

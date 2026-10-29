@@ -18,9 +18,18 @@ const resize = (): void =>
     window.dispatchEvent(new Event('resize'));
   });
 
+const cleanups: (() => void)[] = [];
+
+const attach = (scrim: HTMLElement | null): (() => void) | undefined => {
+  const cleanup = renderHook(() => useFooterInset()).result.current(scrim);
+  if (cleanup !== undefined) cleanups.push(cleanup);
+
+  return cleanup;
+};
+
 const insetOf = (): string => {
   const scrim = document.createElement('div');
-  renderHook(() => useFooterInset()).result.current(scrim);
+  attach(scrim);
 
   return scrim.style.bottom;
 };
@@ -33,6 +42,8 @@ describe('useFooterInset', () => {
   });
 
   afterEach(() => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+    jest.restoreAllMocks();
     document.body.replaceChildren();
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: original });
   });
@@ -75,7 +86,7 @@ describe('useFooterInset', () => {
   it('measures again on a viewport resize', () => {
     const footer = mountFooter(678);
     const scrim = document.createElement('div');
-    renderHook(() => useFooterInset()).result.current(scrim);
+    attach(scrim);
 
     footer.getBoundingClientRect = (): DOMRect => ({ top: 618 }) as DOMRect;
     resize();
@@ -95,26 +106,21 @@ describe('useFooterInset', () => {
   it('stops listening for resizes when its cleanup runs', () => {
     const add = jest.spyOn(window, 'addEventListener');
     const remove = jest.spyOn(window, 'removeEventListener');
-    const cleanup = renderHook(() => useFooterInset()).result.current(
-      document.createElement('div')
-    );
+    const cleanup = attach(document.createElement('div'));
     const added = add.mock.calls.find(([type]) => type === 'resize');
 
     act(() => cleanup?.());
 
     expect(added).toBeDefined();
     expect(remove).toHaveBeenCalledWith('resize', added?.[1]);
-    add.mockRestore();
-    remove.mockRestore();
   });
 
   it('subscribes nothing when React detaches the ref', () => {
     const add = jest.spyOn(window, 'addEventListener');
 
-    const cleanup = renderHook(() => useFooterInset()).result.current(null);
+    const cleanup = attach(null);
 
     expect(cleanup).toBeUndefined();
     expect(add.mock.calls.filter(([type]) => type === 'resize')).toHaveLength(0);
-    add.mockRestore();
   });
 });
