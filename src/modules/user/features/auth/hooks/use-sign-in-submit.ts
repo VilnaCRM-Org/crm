@@ -15,7 +15,7 @@ const LOAD_FAILURE: AuthError = {
   retryable: true,
 };
 
-const START: AuthStatePatch = { loginLoading: true, loginError: null };
+const START: AuthStatePatch = { loginLoading: true };
 
 export const signInSubmitHandlerLoader = new ChunkRetryLoader(
   () => import('@auth/utils/sign-in-submit-handler')

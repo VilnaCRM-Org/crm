@@ -7,6 +7,7 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import {
   challengeBackOf,
+  challengeBannerOf,
   challengeHeadingOf,
   challengeRetryOf,
   challengeText,
@@ -199,9 +200,8 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await typeCode(page, CODE);
     await confirmButtonOf(page).click();
 
-    const banner = page.getByRole('alert').filter({ hasText: challengeText.rateLimited });
-    await expect(banner).toBeVisible();
-    await expect(banner).toBeFocused();
+    await expect(page.getByRole('alert')).toHaveText(challengeText.rateLimited);
+    await expect(challengeBannerOf(page, challengeText.rateLimited)).toBeFocused();
     await expect(challengeRetryOf(page)).toHaveCount(0);
   });
 
