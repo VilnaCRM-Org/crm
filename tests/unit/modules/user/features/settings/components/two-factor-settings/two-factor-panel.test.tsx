@@ -230,6 +230,29 @@ describe('TwoFactorPanel', () => {
       expect(props.callbacks.confirm).toHaveBeenCalledWith({ twoFactorCode: '654321' });
     });
 
+    it('hands focus from a closing banner to the code, never to the page', async () => {
+      const props = setupProps({
+        view: viewState('setup', { banner: 'transient', bannerOccurrence: 1 }),
+        isSubmitting: true,
+      });
+      const utils = renderPanel(props);
+      screen.getByRole('button', { name: /спробувати/i }).focus();
+
+      utils.rerender(
+        <TwoFactorPanel
+          settings={props.settings}
+          view={viewState('setup', { fieldError: 'invalid_code', bannerOccurrence: 1 })}
+          callbacks={props.callbacks}
+          isSubmitting={false}
+        />
+      );
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(document.body).not.toHaveFocus();
+      expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeEnabled();
+      await waitFor(() => expect(screen.getByLabelText('Цифра 1 з 6')).toHaveFocus());
+    });
+
     it.each([
       ['at rest', setupProps()],
       [
