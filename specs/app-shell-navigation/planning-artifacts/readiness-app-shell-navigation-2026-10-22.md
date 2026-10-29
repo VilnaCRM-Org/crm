@@ -20,9 +20,14 @@ inputDocuments:
   - specs/app-shell-navigation/planning-artifacts/epics-app-shell-navigation-2026-10-22.md
 ---
 
-**Current verdict: READY** (re-review 2, 2026-10-23: 0 Blocker, 0 Major, 3 Minor; see
-"Re-review 2 (2026-10-23)" below). The first pass and re-review 1 that follow are superseded
-history, kept for the record.
+**Current verdict: READY as of re-review 2 (2026-10-23), pre-amendment** (0 Blocker, 0 Major,
+3 Minor; see "Re-review 2 (2026-10-23)" below). The bundle was amended afterwards, on 2026-10-27,
+2026-10-28 and 2026-10-29, and readiness was not re-run on the amended text: those amendments
+record product-owner decisions taken during implementation and review (the 42 px drawer
+sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph gap, a failed chip re-read keeping the
+shown name, the single sign-out latch in `useSignOut`) and their dated notes in the PRD,
+architecture and epics. The first pass and re-review 1 that follow are superseded history, kept
+for the record.
 
 **First-pass verdict (superseded): NOT READY** (3 Blocker, 17 Major, 19 Minor). No story may be
 dispatched and no source file may change until every Blocker and Major below is corrected in the

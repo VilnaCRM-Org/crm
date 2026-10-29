@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-22
 revised: 2026-10-29
-iteration: 2
+iteration: 4
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
