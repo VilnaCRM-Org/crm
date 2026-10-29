@@ -2,10 +2,11 @@
 
 CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`. Since v0.6.0 it
 reads the breakpoints theme from it and renders seven toolkit components, each behind the CRM
-seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Since
-v0.8.0 it also renders the toolkit checkbox, the toolkit text link and the toolkit pin input
-(`UiPinInput`, behind `src/components/ui-pin-input`), each behind its own seam (see
-[Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
+seam it replaces: the container, typography, the four skeleton leaves and back-to-main. The
+v0.8.0 bump added the toolkit checkbox and the toolkit text link, and the two-factor change
+([#331](https://github.com/VilnaCRM-Org/crm/issues/331)) later adopted the toolkit pin input
+(`UiPinInput`, behind `src/components/ui-pin-input`) from the same release, each behind its own
+seam (see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
 reason recorded below. The installation was scoped by issue
 [#250](https://github.com/VilnaCRM-Org/crm/issues/250); why it is a release tarball is under
 [What is installed](#what-is-installed), and why each remaining primitive stays local is in the
@@ -218,8 +219,9 @@ This is the one register of the CRM primitives and themes, adopted or local, wit
 each local one stays local. The reason codes belong to this register only, and each holds for
 v0.6.0. A code keeps its number while its reason is true, and a retired code is never reused.
 v0.7.0 closed the upstream issues behind several codes (ui-toolkit #186 closes #191 to #199);
-the v0.8.0 bump adopted only the checkbox and the text link, and each local row stays local
-until a design-checked swap re-measures its reason against the pinned release.
+the v0.8.0 bump adopted only the checkbox and the text link, the two-factor change (#331) adopted
+the pin input from the same release, and each local row stays local until a design-checked swap
+re-measures its reason against the pinned release.
 
 - **R2** website-theme fallback: CRM's app theme fails the toolkit's `isUiTheme` guard, so a
   component that styles from the toolkit theme without `inheritTheme` falls back to the
@@ -434,7 +436,8 @@ CRM-side delta sits on the seam: `src/index.css` paints every `a:visited` with
 colours still apply), as the error-page home link already does.
 
 **The pin input.** `ui-pin-input` is the Figma "2FA item" (set 72:5171): six 64 × 86 cells with a
-1 px border and radius 12, the form's one-time code. It is adopted behind `src/components/ui-pin-input`
+1 px border and radius 12, the form's one-time code. It ships in v0.8.0 but was adopted by the
+two-factor change (#331), not by the bump, behind `src/components/ui-pin-input`
 (`UIPinInput`), which takes `control`, `name` and `rules` like `UIFormInputField` and renders the
 toolkit component through react-hook-form's `Controller`. The group is named by the caller's
 `label` and each cell by the caller's `cellLabel` ("Цифра N з 6" / "Digit N of 6"), so the seam
