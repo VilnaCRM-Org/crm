@@ -284,7 +284,21 @@ UserMenuSlot: registers the chip catalog; flag on → renders UserMenu(identity=
   empty Suspense → current-user chunk (+ DI async chunk) → CurrentUserMenu (renders null)
   → useCurrentUser: one read → onIdentity → the same UserMenu re-renders
   → ok: UserMenu(identity) | failed: UserMenu(identity=null) | session_ended: link signs out
+pathname change → useCurrentUser re-reads (the read in flight is aborted)
+  → ok: the new identity | failed: the last ready identity is kept, else identity=null
+  → session_ended: identity=null (pending) and the link signs out
 ```
+
+**Amendment, 2026-10-28 (owner decision: a failed re-read keeps the name).** The `failed` branch of
+the first read still renders the name-less chip. A `rate_limited`, `transient` or `rejected` re-read
+after a `ready` read keeps the last good display name and monogram, and a `session_ended` re-read
+resets the identity to pending while the existing session link ends the session (PRD FR-5.3).
+Tests: `tests/unit/modules/user/features/settings/hooks/use-current-user.test.tsx` ("keeps the last
+good name when a later re-read fails with %s", "clears the shown name when a later re-read reports
+the session ended", "stays name-less when a re-read after a failed first read fails again") and
+`tests/integration/modules/user/features/settings/use-current-user.integration.test.tsx` ("keeps the
+last good identity when a later read fails for another reason", "clears the previous identity when a
+later read ends the session").
 
 ### 4.2 Flag off (production today)
 
@@ -1037,9 +1051,11 @@ preview and attached to the PR before any baseline is recorded.
   every `src` file an integration test imports must reach 100 % from integration tests alone;
   rendering `CurrentUserMenu` would pull in `UserMenu`, `useUserMenu`, styles, the catalog consumers,
   the mapper, whose keyboard, breakpoint and popover branches no integration
-  test drives. Cases: flag off → zero `CurrentUser` requests; flag on → one; failed reads → the
-  name-less state and no console output; `session_ended` → the existing link signs out; sign out
-  then a second user → no stale name.
+  test drives. Cases: flag off → zero `CurrentUser` requests; flag on → one; a failed first read →
+  the name-less state and no console output; a failed re-read after a `ready` read → the last good
+  identity kept (owner decision 2026-10-28, §4.1); `session_ended`, first read or re-read → the
+  existing link signs out and the identity resets to pending; sign out then a second user → no
+  stale name.
 - **E2E (desktop projects).** NEW `tests/e2e/modules/app-shell.spec.ts`: Settings from the sidebar
   and from the chip, sign out from both, `aria-current` on `/settings` and none on `/`, every product
   row and sub-item navigating to its coming-soon route with that row current, no badge on any

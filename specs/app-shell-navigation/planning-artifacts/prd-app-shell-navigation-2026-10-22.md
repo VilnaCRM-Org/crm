@@ -423,6 +423,10 @@ the identity, and the existing session link ends the session.
   (SM-16, R-1) and the chip has no name.
 - **N** Given a failed read other than `session_ended`, when the chip renders, then no error text,
   toast or retry control appears and no `console.error` is emitted.
+- **N** Given a chip showing a name, when a pathname change re-reads and the re-read fails with
+  `rate_limited`, `transient` or `rejected`, then the chip keeps that name and monogram (owner
+  decision 2026-10-28); when the re-read reports `session_ended`, then the identity is cleared and
+  the existing session link ends the session.
 - **E** Given a sign out followed by a sign in as a different user in the same tab, when the chip
   renders, then it never shows the previous user's name, even for one frame.
 - **E** Given the chunk loading, when the fallback is replaced, then the header's layout does not
