@@ -11,6 +11,7 @@ const RESTING: TwoFactorChallengeState = {
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
   isSubmitting: false,
 };
@@ -82,6 +83,7 @@ describe('useChallengeFieldSync', () => {
     rerender({ ...RESTING, focusRequest: 2 });
 
     await waitFor(() => expect(harness().focus).toHaveBeenCalledTimes(2));
-    expect(harness().focus).toHaveBeenCalledWith('twoFactorCode');
+    expect(harness().focus).toHaveBeenNthCalledWith(1, 'twoFactorCode');
+    expect(harness().focus).toHaveBeenNthCalledWith(2, 'twoFactorCode');
   });
 });

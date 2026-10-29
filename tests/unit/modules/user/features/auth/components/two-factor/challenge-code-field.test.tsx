@@ -9,13 +9,14 @@ import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import ChallengeCodeField from '@auth/components/two-factor/challenge-code-field';
 import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 
 const RESTING: TwoFactorChallengeState = {
   mode: 'totp',
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
   isSubmitting: false,
 };
@@ -23,7 +24,7 @@ const RESTING: TwoFactorChallengeState = {
 function Harness({ state }: { state: TwoFactorChallengeState }): JSX.Element {
   const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
   return (
-    <I18nextProvider i18n={createLocaleI18n('uk')}>
+    <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>
       <FormProvider {...methods}>
         <ChallengeCodeField state={state} />
         <p aria-label="value">{methods.watch('twoFactorCode')}</p>

@@ -4,14 +4,14 @@ import { I18nextProvider } from 'react-i18next';
 
 import useChallengeFormProps from '@auth/hooks/use-challenge-form-props';
 import type { TwoFactorChallengeProps } from '@auth/types/two-factor/challenge-view';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 
 interface WrapperProps {
   readonly children: ReactNode;
 }
 
 function I18nWrapper({ children }: WrapperProps): JSX.Element {
-  return <I18nextProvider i18n={createLocaleI18n('uk')}>{children}</I18nextProvider>;
+  return <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>{children}</I18nextProvider>;
 }
 
 const propsOf = (
@@ -22,11 +22,12 @@ const propsOf = (
     value: '',
     fieldError: null,
     banner: null,
+    bannerOccurrence: 0,
     focusRequest: 0,
     isSubmitting: false,
     ...overrides,
   },
-  callbacks: { submit: jest.fn(), retry: jest.fn(), switchMode: jest.fn() },
+  callbacks: { submit: jest.fn(), switchMode: jest.fn() },
 });
 
 describe('useChallengeFormProps', () => {
@@ -51,15 +52,18 @@ describe('useChallengeFormProps', () => {
     });
   });
 
-  it('carries the banner text and its retry action', () => {
-    const props = propsOf({ banner: 'transient' });
+  it('carries the banner text, its occurrence and a retry that needs a submit button', () => {
+    const props = propsOf({ banner: 'transient', bannerOccurrence: 3 });
     const { result } = renderHook(() => useChallengeFormProps(props), { wrapper: I18nWrapper });
 
     expect(result.current.error).toBe(
       "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
     );
-    result.current.errorAction?.onClick();
-    expect(props.callbacks.retry).toHaveBeenCalledTimes(1);
+    expect(result.current.errorOccurrence).toBe(3);
+    expect(result.current.errorAction?.label).toBe('Спробувати ще раз');
+    expect(result.current.submitRef).toEqual({ current: null });
+    expect(() => result.current.errorAction?.onClick()).not.toThrow();
+    expect(props.callbacks.submit).not.toHaveBeenCalled();
   });
 
   it('has no banner at rest', () => {

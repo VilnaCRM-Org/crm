@@ -9,7 +9,7 @@ import type {
   TwoFactorChallengeProps,
   TwoFactorChallengeState,
 } from '@auth/types/two-factor/challenge-view';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const RESTING: TwoFactorChallengeState = {
@@ -17,13 +17,13 @@ const RESTING: TwoFactorChallengeState = {
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
   isSubmitting: false,
 };
 
 const callbacks = (): TwoFactorChallengeProps['callbacks'] => ({
   submit: jest.fn(),
-  retry: jest.fn(),
   switchMode: jest.fn(),
 });
 
@@ -32,7 +32,7 @@ const tree = (
   handlers: TwoFactorChallengeProps['callbacks'],
   locale: 'uk' | 'en' = 'uk'
 ): JSX.Element => (
-  <I18nextProvider i18n={createLocaleI18n(locale)}>
+  <I18nextProvider i18n={createTwoFactorLocaleI18n(locale)}>
     <main>
       <TwoFactorChallengeForm state={state} callbacks={handlers} />
     </main>
@@ -116,12 +116,11 @@ describe('TwoFactorChallengeForm', () => {
   it('marks the group invalid and describes it with the incomplete text', () => {
     mount({ fieldError: 'incomplete', value: '1234', focusRequest: 1 });
 
-    const message = screen.getByText('Введіть усі 6 цифр коду');
-    expect(message).toBeInTheDocument();
-    cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
-    expect(
-      cells().some((cell) => cell.getAttribute('aria-describedby')?.includes(message.id))
-    ).toBe(true);
+    expect(screen.getByText('Введіть усі 6 цифр коду')).toBeInTheDocument();
+    cells().forEach((cell) => {
+      expect(cell).toHaveAttribute('aria-invalid', 'true');
+      expect(cell).toHaveAccessibleDescription('Введіть усі 6 цифр коду');
+    });
   });
 
   it('moves focus to the first empty cell when a focus is requested', async () => {
@@ -154,6 +153,11 @@ describe('TwoFactorChallengeForm', () => {
       )
     ).toBeInTheDocument();
     await waitFor(() => expect(cells()[0]).toHaveFocus());
+    cells().forEach((cell) =>
+      expect(cell).toHaveAccessibleDescription(
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.'
+      )
+    );
   });
 
   it('shows the format text for a malformed value', () => {
@@ -178,18 +182,54 @@ describe('TwoFactorChallengeForm', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('Забагато спроб. Зачекайте хвилину і спробуйте знову.');
+    const banner = screen
+      .getAllByRole('generic')
+      .find((element) => element.tagName === 'SECTION' && element.contains(alert));
+    expect(banner).toHaveFocus();
     expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
   });
 
-  it('shows the transient banner with a retry that calls retry once', async () => {
-    const { handlers } = mount({ banner: 'transient' });
+  it('retries through the form submit with the code as it is now, keeping focus', async () => {
+    const handlers = callbacks();
+    const transient = { banner: 'transient', bannerOccurrence: 1 } as const;
+    const view = mount(transient, handlers);
+    await userEvent.type(cells()[0] as HTMLInputElement, '654321');
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       "Не вдалося перевірити код. Перевірте з'єднання та спробуйте ще раз."
     );
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+    const pending = { ...RESTING, ...transient, value: '654321', isSubmitting: true };
+    view.rerender(tree(pending, handlers));
 
-    expect(handlers.retry).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
+    expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: '654321' });
+    expect(screen.getByRole('button', { name: 'Спробувати ще раз' })).toHaveFocus();
+  });
+
+  it('sends nothing from Retry while the previous check is still running', async () => {
+    const { handlers } = mount({ banner: 'transient', bannerOccurrence: 1, isSubmitting: true });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    expect(handlers.submit).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('raises a new focused banner when the same failure happens again', async () => {
+    const handlers = callbacks();
+    const view = mount({ banner: 'transient', bannerOccurrence: 1 }, handlers);
+    const first = screen.getByRole('alert');
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    view.rerender(tree({ ...RESTING, banner: 'transient', bannerOccurrence: 2 }, handlers));
+
+    const second = screen.getByRole('alert');
+    const banner = screen
+      .getAllByRole('generic')
+      .find((element) => element.tagName === 'SECTION' && element.contains(second));
+    expect(second).not.toBe(first);
+    expect(banner).toHaveFocus();
   });
 
   it('shows no banner and no retry at rest', () => {

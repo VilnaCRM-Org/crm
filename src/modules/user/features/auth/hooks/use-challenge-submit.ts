@@ -80,7 +80,7 @@ async function runChallenge(
   if (signal.aborted) return result;
   if (result.kind === 'completed') useAuthStore.setState(completedPatch(result));
   await recordResult(deps.loader, result);
-  leaveFor(result, deps);
+  if (!signal.aborted) leaveFor(result, deps);
   return result;
 }
 

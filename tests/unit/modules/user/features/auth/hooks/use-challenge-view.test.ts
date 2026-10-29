@@ -23,11 +23,12 @@ describe('useChallengeView', () => {
       value: '',
       fieldError: null,
       banner: null,
+      bannerOccurrence: 0,
       focusRequest: 0,
     });
   });
 
-  it('records the submitted value and clears the field error and the banner', () => {
+  it('records the submitted value and clears the field error, keeping the banner raised', () => {
     const { result } = setUp();
     dispatchAll(
       result,
@@ -40,9 +41,23 @@ describe('useChallengeView', () => {
       mode: 'totp',
       value: '123456',
       fieldError: null,
-      banner: null,
+      banner: 'transient',
+      bannerOccurrence: 1,
       focusRequest: 1,
     });
+  });
+
+  it('raises the banner once more for each further banner failure', () => {
+    const { result } = setUp();
+    dispatchAll(
+      result,
+      { type: 'submitted', value: '123456' },
+      { type: 'settled', result: failed('network') },
+      { type: 'submitted', value: '123456' },
+      { type: 'settled', result: failed('rate_limited') }
+    );
+
+    expect(result.current.view).toMatchObject({ banner: 'rate_limited', bannerOccurrence: 2 });
   });
 
   it('keeps the rejected value, sets the field error, clears the banner and asks for focus', () => {
@@ -61,11 +76,13 @@ describe('useChallengeView', () => {
     });
   });
 
-  it('clears the value on invalid_code, flags it and asks for focus, keeping the mode', () => {
+  it('clears the value and the banner on invalid_code, flags it and asks for focus', () => {
     const { result } = setUp();
     dispatchAll(
       result,
       { type: 'switched' },
+      { type: 'submitted', value: 'ABCD-2345' },
+      { type: 'settled', result: failed('server') },
       { type: 'submitted', value: 'ABCD-2345' },
       { type: 'settled', result: failed('invalid_code') }
     );
@@ -75,6 +92,7 @@ describe('useChallengeView', () => {
       value: '',
       fieldError: 'invalid_code',
       banner: null,
+      bannerOccurrence: 1,
       focusRequest: 2,
     });
   });
@@ -96,6 +114,7 @@ describe('useChallengeView', () => {
       value: '123456',
       fieldError: null,
       banner,
+      bannerOccurrence: 1,
       focusRequest: 0,
     });
   });
@@ -117,7 +136,12 @@ describe('useChallengeView', () => {
 
   it('switches mode back and forth, clearing everything and asking for focus each time', () => {
     const { result } = setUp();
-    dispatchAll(result, { type: 'rejected', value: '1', fieldError: 'incomplete' });
+    dispatchAll(
+      result,
+      { type: 'submitted', value: '123456' },
+      { type: 'settled', result: failed('network') },
+      { type: 'rejected', value: '1', fieldError: 'incomplete' }
+    );
 
     dispatchAll(result, { type: 'switched' });
     expect(result.current.view).toEqual({
@@ -125,6 +149,7 @@ describe('useChallengeView', () => {
       value: '',
       fieldError: null,
       banner: null,
+      bannerOccurrence: 0,
       focusRequest: 2,
     });
 

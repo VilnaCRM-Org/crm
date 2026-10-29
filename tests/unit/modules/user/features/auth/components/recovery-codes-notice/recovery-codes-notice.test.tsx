@@ -7,7 +7,7 @@ import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import RecoveryCodesNotice from '@auth/components/recovery-codes-notice';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createCodesNoticeLocaleI18n from '@tests/unit/utils/create-codes-notice-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 type Language = 'uk' | 'en';
@@ -15,7 +15,7 @@ type Language = 'uk' | 'en';
 const wrapperFor = (language: Language): ((props: { children: ReactNode }) => JSX.Element) => {
   function Wrapper({ children }: { children: ReactNode }): JSX.Element {
     return (
-      <I18nextProvider i18n={createLocaleI18n(language)}>
+      <I18nextProvider i18n={createCodesNoticeLocaleI18n(language)}>
         <MemoryRouter initialEntries={['/']}>
           <Routes>
             <Route path="/" element={<main>{children}</main>} />
@@ -54,7 +54,7 @@ describe('RecoveryCodesNotice', () => {
 
   it('mounts its status region empty and fills it in an effect', () => {
     const view = renderToString(
-      <I18nextProvider i18n={createLocaleI18n('uk')}>
+      <I18nextProvider i18n={createCodesNoticeLocaleI18n('uk')}>
         <MemoryRouter>
           <RecoveryCodesNotice count={1} onDismiss={jest.fn()} />
         </MemoryRouter>

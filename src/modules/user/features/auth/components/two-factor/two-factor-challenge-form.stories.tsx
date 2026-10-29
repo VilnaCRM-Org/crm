@@ -11,6 +11,7 @@ const RESTING: TwoFactorChallengeState = {
   value: '',
   fieldError: null,
   banner: null,
+  bannerOccurrence: 0,
   focusRequest: 0,
   isSubmitting: false,
 };
@@ -28,7 +29,7 @@ const meta: Meta<typeof TwoFactorChallengeForm> = {
   ],
   args: {
     state: RESTING,
-    callbacks: { submit: noop, retry: noop, switchMode: noop },
+    callbacks: { submit: noop, switchMode: noop },
   },
   parameters: {
     docs: {

@@ -5,7 +5,7 @@ import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import ModeToggle from '@auth/components/two-factor/mode-toggle';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const tree = (
@@ -14,7 +14,7 @@ const tree = (
   onSwitch: () => void,
   locale: 'uk' | 'en' = 'uk'
 ): JSX.Element => (
-  <I18nextProvider i18n={createLocaleI18n(locale)}>
+  <I18nextProvider i18n={createTwoFactorLocaleI18n(locale)}>
     <main>
       <ModeToggle mode={mode} busy={busy} onSwitch={onSwitch} />
     </main>
@@ -57,7 +57,7 @@ describe('ModeToggle', () => {
     expect(onSwitch).not.toHaveBeenCalled();
   });
 
-  it('is underlined in the link colour and darkens on hover', async () => {
+  it('is underlined in the link colour', async () => {
     render(tree('totp', false, jest.fn()));
     const toggle = screen.getByRole('button', { name: 'Використати резервний код' });
 

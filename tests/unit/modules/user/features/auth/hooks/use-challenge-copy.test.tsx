@@ -3,7 +3,7 @@ import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import useChallengeCopy from '@auth/hooks/use-challenge-copy';
-import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 
 interface WrapperProps {
   readonly children: ReactNode;
@@ -11,7 +11,7 @@ interface WrapperProps {
 
 const wrapperFor = (locale: 'uk' | 'en'): ((props: WrapperProps) => JSX.Element) => {
   function I18nWrapper({ children }: WrapperProps): JSX.Element {
-    return <I18nextProvider i18n={createLocaleI18n(locale)}>{children}</I18nextProvider>;
+    return <I18nextProvider i18n={createTwoFactorLocaleI18n(locale)}>{children}</I18nextProvider>;
   }
   return I18nWrapper;
 };

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -11,7 +11,7 @@ import TwoFactorFormSection from '@auth/routes/two-factor/two-factor-form-sectio
 import useAuthStore from '@auth/stores/use-auth-store';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import { buildPendingSessionId, buildToken } from '@tests/builders';
-import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -31,7 +31,7 @@ jest.mock('@auth/assets/chevron-left.svg', () => ({
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-const i18n = createRecoveryLocaleI18n('uk');
+const i18n = createTwoFactorLocaleI18n('uk');
 const FROM = { pathname: '/deals', search: '?tab=open', hash: '' };
 
 function Probe(): JSX.Element {
@@ -148,6 +148,11 @@ describe('TwoFactorFormSection', () => {
     await waitFor(() => cells().forEach((cell) => expect(cell).toHaveValue('')));
     cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
     await waitFor(() => expect(cells()[0]).toHaveFocus());
+    cells().forEach((cell) =>
+      expect(cell).toHaveAccessibleDescription(
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.'
+      )
+    );
     expect(useAuthStore.getState().pendingSessionId).toBe(pendingSessionId);
   });
 
@@ -193,6 +198,33 @@ describe('TwoFactorFormSection', () => {
 
     await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(2));
     expect(completeChallenge.mock.calls[1]?.[0]).toEqual(completeChallenge.mock.calls[0]?.[0]);
+  });
+
+  it('never drops focus to the page while a Retry is pending or after it settles', async () => {
+    let answer: (result: ChallengeResult) => void = () => undefined;
+    completeChallenge.mockResolvedValueOnce(failed('server'));
+    completeChallenge.mockImplementationOnce(
+      () =>
+        new Promise<ChallengeResult>((resolve) => {
+          answer = resolve;
+        })
+    );
+    mount();
+    await enter('123456');
+    const retry = await screen.findByRole('button', { name: 'Спробувати ще раз' });
+
+    await userEvent.click(retry);
+
+    await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(2));
+    expect(retry).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+
+    await act(async () => answer(failed('invalid_code')));
+
+    expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeEnabled();
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
   });
 
   it('aborts a request in flight when Назад is activated and records nothing', async () => {

@@ -1,16 +1,29 @@
 import type { Decorator, Meta } from '@storybook/react-webpack5';
-import { type JSX, useState } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 
 import useAuthStore from '@auth/stores/use-auth-store';
 import authPageStories from '@stories/auth-page-story';
 
 import TwoFactorChallenge from '.';
 
-const withPendingSession: Decorator = function PendingSessionDecorator(Story): JSX.Element {
-  useState(() => {
-    useAuthStore.setState({ pendingSessionId: 'storybook-pending-session' });
-    return null;
+const STORY_PENDING_SESSION_ID = 'storybook-pending-session';
+
+function useStoryPendingSession(): void {
+  const [previousPendingSessionId] = useState(() => {
+    const previous = useAuthStore.getState().pendingSessionId;
+    useAuthStore.setState({ pendingSessionId: STORY_PENDING_SESSION_ID });
+    return previous;
   });
+  useEffect((): (() => void) => {
+    useAuthStore.setState({ pendingSessionId: STORY_PENDING_SESSION_ID });
+    return (): void => {
+      useAuthStore.setState({ pendingSessionId: previousPendingSessionId });
+    };
+  }, [previousPendingSessionId]);
+}
+
+const withPendingSession: Decorator = function PendingSessionDecorator(Story): JSX.Element {
+  useStoryPendingSession();
   return <Story />;
 };
 
