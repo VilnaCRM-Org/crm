@@ -1813,7 +1813,14 @@ label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are
 way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
 `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
 copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
-`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. Adding an owner is a
+`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. The two catalogs of
+two-factor sign-in (issue #331) follow suit: the challenge copy (`two_factor.*`) is owned by
+`auth/routes/two-factor`, `auth/components/two-factor`, the challenge hooks that name its keys
+(`use-challenge-banner.ts`, `use-challenge-copy.ts`) and the auth route contract `routes/index.ts`
+for its `meta.titleKey`; the low-codes notice copy (`recovery_codes_notice.*`) by
+`auth/components/recovery-codes-notice` and `auth/hooks/use-recovery-notice-message.ts`. The
+sign-in notices the challenge sends back (`sign_in.notices.two_factor_expired`,
+`sign_in.notices.account_locked`) stay eager, because `/sign-in` renders them. Adding an owner is a
 reviewed policy edit and must name a file only the registering routes import. A policy entry that
 names no discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`),
 and an unreadable or malformed policy fails the run before any check.
@@ -2584,10 +2591,11 @@ flags are declared today, both shipped off in the committed block
 `{ "flags": { "userSettings": false, "twoFactorAuth": false } }`: `userSettings` (issue #330; the
 test stack's `docker-compose.test.yml` switches it on through `APP_CONFIG_FLAG_USER_SETTINGS`,
 default `true`) and `twoFactorAuth` (issue #331; it hides only the 2FA section of `/settings`, and
-the test stack passes it through empty, so it renders `false`). The earlier `forgotPassword` flag was
-removed in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an
-environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container
-start with `Known flags: twoFactorAuth, userSettings.` and must unset it.
+the test stack switches it on the same way through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH`, default
+`true`, an explicit `false` turning it off). The earlier `forgotPassword` flag was removed in #309
+when the sign-in "Забули пароль?" link started rendering unconditionally; an environment that still
+sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
+`Known flags: twoFactorAuth, userSettings.` and must unset it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2701,7 +2709,7 @@ verified in CI.
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
   owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
   for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
-  lazy catalog adds no loader class. Seven lazy catalogs exist today: the password-recovery copy
+  lazy catalog adds no loader class. Nine lazy catalogs exist today: the password-recovery copy
   (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
@@ -2712,9 +2720,16 @@ verified in CI.
   `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
   `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
   `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
-  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; and the user-menu
+  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; the user-menu
   copy (`user_menu.*`), owned by `src/modules/user/features/settings/components/user-menu/` and
-  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates. The recovery keys were
+  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates; the two-factor challenge
+  copy (`two_factor.*`, issue #331), owned by
+  `src/modules/user/features/auth/routes/two-factor-catalog/` and registered when the
+  `two-factor-challenge` route module evaluates; and the low-codes notice copy
+  (`recovery_codes_notice.*`), owned by
+  `src/modules/user/features/auth/components/recovery-codes-notice/` and registered when the lazy
+  `RecoveryCodesNotice` chunk evaluates. Those two were 3,749 B of the minified merged catalog
+  (about 0.9 KB gzip) on every page. The recovery keys were
   3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
   raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
   does not restore the `/sign-in` headroom (that base already scored a median of about 0.8375
@@ -2724,7 +2739,9 @@ verified in CI.
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
   use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
   `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
-  user-menu catalog, and coming-soon tests `createComingSoonLocaleI18n`), so a lazy key leaking into
+  user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor challenge tests
+  `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card back control
+  reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key leaking into
   an eager page renders raw in that page's tests too. Storybook's preview and the e2e
   `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
   JSON files) keep the copy available for every story and spec.

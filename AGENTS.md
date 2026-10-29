@@ -244,10 +244,12 @@ Every user-facing string is a translated key, and every key exists in **both** l
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
 `src/i18n/localization.json` is the merge of every **eager** catalog, produced by
 `scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
-regenerates it. The seven catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
 (password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
-`coming_soon.*` and the user menu `user_menu.*`) are left out of it and registered by their owning
-chunk; a key in one of them resolves only in the files its `owners` list names.
+`coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
+`auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
+`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+key in one of them resolves only in the files its `owners` list names.
 
 - **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
   `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a
@@ -938,12 +940,12 @@ Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag
 container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. Two
 flags are declared today: `userSettings` (issue #330), shipped off in the committed block and
 switched on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`, and `twoFactorAuth`
-(issue 331), shipped off everywhere and gating only the 2FA section of `/settings`. Container
-start fails on two flag
-shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*` name that matches no declared flag,
-and a declared flag whose value is not exactly `true` or `false`. `forgotPassword` was removed
-in #309, so an environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value
-must unset it.
+(issue #331), shipped off in the committed block and in production, switched on in the test stack
+through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH` (default `true`), and gating only the 2FA section of
+`/settings`. Container start fails on two flag shapes (`scripts/render-app-config.js`): an
+`APP_CONFIG_FLAG_*` name that matches no declared flag, and a declared flag whose value is not
+exactly `true` or `false`. `forgotPassword` was removed in #309, so an environment that still sets
+`APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value must unset it.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`

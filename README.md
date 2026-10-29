@@ -164,8 +164,9 @@ dependencies.
 
 Translations live in per-feature catalogs. Eager catalogs are merged into one committed file; the
 lazy catalogs listed in `config/i18n-catalog-policy.json` (password recovery, password policy,
-settings, toast, app shell, coming soon and the user menu) stay out of it and are registered by the
-route or component chunk that owns them.
+settings, toast, app shell, coming soon, the user menu, the two-factor challenge and the low
+recovery codes notice) stay out of it and are registered by the route or component chunk that owns
+them.
 
 - Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
 - Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are mandatory and
@@ -363,8 +364,9 @@ The entrypoint validates every value and exits non-zero on an invalid URL, a fla
 not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
 deployment never starts serving. Two flags are declared today: `userSettings` (issue #330) ships
 off in the committed block and the test stack turns it on through
-`APP_CONFIG_FLAG_USER_SETTINGS`; `twoFactorAuth` (issue #331) ships off everywhere and hides the
-2FA section of `/settings`.
+`APP_CONFIG_FLAG_USER_SETTINGS`; `twoFactorAuth` (issue #331) hides the 2FA section of
+`/settings`, ships off in the committed block and in production, and the test stack turns it on
+the same way through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH` (default `true`).
 Any other `APP_CONFIG_FLAG_*` name fails the start — an environment that still sets
 `APP_CONFIG_FLAG_FORGOT_PASSWORD` from the removed `forgotPassword` flag must unset it.
 Build-time `REACT_APP_*` values remain as defaults.

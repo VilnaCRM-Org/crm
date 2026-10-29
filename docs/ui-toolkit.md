@@ -3,8 +3,9 @@
 CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`. Since v0.6.0 it
 reads the breakpoints theme from it and renders seven toolkit components, each behind the CRM
 seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Since
-v0.8.0 it also renders the toolkit checkbox and the toolkit text link, each behind its own seam
-(see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
+v0.8.0 it also renders the toolkit checkbox, the toolkit text link and the toolkit pin input
+(`UiPinInput`, behind `src/components/ui-pin-input`), each behind its own seam (see
+[Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
 reason recorded below. The installation was scoped by issue
 [#250](https://github.com/VilnaCRM-Org/crm/issues/250); why it is a release tarball is under
 [What is installed](#what-is-installed), and why each remaining primitive stays local is in the

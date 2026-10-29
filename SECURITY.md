@@ -401,11 +401,19 @@ surface.
 `piiScrubber` redacts a record key containing any of `password`, `token`, `authorization`,
 `cookie`, `secret`, `apikey`, `email`, `initials`, `pendingsession`, `twofactorcode`,
 `recoverycode` or `otpauth` (matched case-insensitively), and rewrites any `otpauth://` URI, e-mail
-address, bearer token, JWT or `token=` value found inside a string. Two-factor relies on `secret`,
-`pendingsession`, `twofactorcode`, `recoverycode` and `otpauth`: the setup secret, the pending
-session id, the submitted code, a recovery code and the `otpauth` URI never reach Sentry. The
-end-to-end specs also assert that none of them is left in the URL, the title, the history state,
-`localStorage`, `sessionStorage` or IndexedDB (`expectNoSecrets`).
+address, bearer token, JWT or `token=` value found inside a string, the value of a serialized JSON
+member whose name ends in `token`, `password` or `secret`, and the value after a
+`pendingSessionId`, `twoFactorCode`, `recoveryCode` or `recoveryCodes` label followed by `=` or
+`:` in free text or JSON (an unlabelled six-digit number is left alone). After a `recoveryCodes`
+label it also replaces a bracketed array whole, quoted or not, and every code of a comma-separated
+list with or without spaces around the commas. The list match runs over letters, digits, `_`,
+`-`, spaces and commas, so it can redact prose that follows the list too; a scrubber errs towards
+removing more. The code list of a setup or regenerate response is redacted in any of these forms.
+Two-factor relies on `secret`, `pendingsession`, `twofactorcode`, `recoverycode` and `otpauth`:
+the setup secret, the pending session id, the submitted code, a recovery code and the `otpauth`
+URI never reach Sentry.
+The end-to-end specs also assert that none of them is left in the URL, the title, the history
+state, `localStorage`, `sessionStorage` or IndexedDB (`expectNoSecrets`).
 
 ### Correlation
 

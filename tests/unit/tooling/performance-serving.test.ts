@@ -463,6 +463,118 @@ describe('performance serving config', () => {
     });
   });
 
+  it('keeps the two-factor challenge and recovery-codes notice copy off the eager path', () => {
+    const merged = readJson<Record<string, { translation: Record<string, unknown> }>>(
+      'src/i18n/localization.json'
+    );
+    const policy = readJson<{ lazyCatalogs: { catalog: string; owners: string[] }[] }>(
+      'config/i18n-catalog-policy.json'
+    );
+    const ownersOf = (catalog: string): string[] =>
+      policy.lazyCatalogs.find((entry) => entry.catalog === catalog)?.owners ?? [];
+    const challengeOwners = ownersOf('modules/user/features/auth/routes/two-factor-catalog/i18n');
+    const noticeOwners = ownersOf(
+      'modules/user/features/auth/components/recovery-codes-notice/i18n'
+    );
+    const { files } = eagerGraphOf('src/index.tsx');
+    const eagerSurfaces = [
+      'modules/user/features/auth/routes/sign-in/index.tsx',
+      'modules/user/features/auth/components/sign-in-notice/index.tsx',
+      'modules/user/features/auth/components/protected-route/index.tsx',
+      'modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
+      'modules/user/features/auth/hooks/use-two-factor-redirect.ts',
+      'components/ui-form/index.tsx',
+    ];
+    const lazyOnly = [
+      'src/modules/user/features/auth/routes/two-factor/',
+      'src/modules/user/features/auth/components/two-factor/',
+      'src/modules/user/features/auth/components/recovery-codes-notice/',
+    ];
+    const catalogEdges = [...files].flatMap((file) =>
+      staticImportsOf(readFile(file))
+        .filter((specifier) => /two-factor-catalog|recovery-codes-notice/.test(specifier))
+        .map((specifier) => `${file} -> ${specifier}`)
+    );
+
+    expect(challengeOwners).toEqual([
+      'modules/user/features/auth/routes/index.ts',
+      'modules/user/features/auth/routes/two-factor',
+      'modules/user/features/auth/components/two-factor',
+      'modules/user/features/auth/hooks/use-challenge-banner.ts',
+      'modules/user/features/auth/hooks/use-challenge-copy.ts',
+    ]);
+    expect(noticeOwners).toEqual([
+      'modules/user/features/auth/components/recovery-codes-notice',
+      'modules/user/features/auth/hooks/use-recovery-notice-message.ts',
+    ]);
+    eagerSurfaces.forEach((surface) => {
+      const owner = [...challengeOwners, ...noticeOwners].find(
+        (candidate) => surface === candidate || surface.startsWith(`${candidate}/`)
+      );
+      expect({ surface, owner }).toEqual({ surface, owner: undefined });
+    });
+    ['en', 'uk'].forEach((locale) => {
+      const translation = merged[locale]?.translation ?? {};
+      expect(Object.keys(translation)).not.toContain('two_factor');
+      expect(Object.keys(translation)).not.toContain('recovery_codes_notice');
+      expect(Object.keys(translation.sign_in ?? {})).toContain('notices');
+    });
+    expect(
+      (merged.en?.translation.sign_in as { notices: Record<string, string> }).notices
+        .two_factor_expired
+    ).toBe('The time to confirm your sign-in has run out. Please sign in again.');
+    expect(files.has('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toBe(
+      true
+    );
+    expect([...files].filter((file) => lazyOnly.some((folder) => file.startsWith(folder)))).toEqual(
+      []
+    );
+    expect(catalogEdges).toEqual([]);
+    expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
+      "import en from '@auth/routes/two-factor-catalog/i18n/en.json';"
+    );
+    expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
+      'lazyCatalogLoader.register(i18n, { en, uk });'
+    );
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-codes-notice/index.tsx')
+    ).toContain("import en from './i18n/en.json';");
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-codes-notice/index.tsx')
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
+  });
+
+  it.each([
+    'sign-in/sign-in-form-section.tsx',
+    'reset-password/reset-password-form-section.tsx',
+    'create-new-password/create-new-password-form-section.tsx',
+  ])('loads the auth tokens and the sign-in handler on submit, not with %s', (entry) => {
+    const { files } = eagerGraphOf(`src/modules/user/features/auth/routes/${entry}`);
+    const submitOnly = [
+      'src/modules/user/config/tokens.ts',
+      'src/modules/user/features/auth/utils/sign-in-submit-handler.ts',
+      'src/modules/user/features/auth/data-providers/graphql-sign-in-provider.ts',
+      'src/modules/user/features/auth/data-providers/password-recovery-provider.ts',
+    ];
+
+    expect(submitOnly.filter((file) => files.has(file))).toEqual([]);
+    expect(files.has('src/modules/user/features/auth/stores/index.ts')).toBe(true);
+  });
+
+  it('imports the sign-in handler and the auth tokens only through a chunk-retry loader', () => {
+    const signInSubmit = readFile('src/modules/user/features/auth/hooks/use-sign-in-submit.ts');
+    const recoveryRun = readFile('src/modules/user/features/auth/hooks/use-recovery-run.ts');
+
+    expect(signInSubmit).toContain(
+      "new ChunkRetryLoader(\n  () => import('@auth/utils/sign-in-submit-handler')\n);"
+    );
+    expect(recoveryRun).toContain(
+      "new ChunkRetryLoader(() => import('@/modules/user/config/tokens'));"
+    );
+    expect(staticImportsOf(signInSubmit)).not.toContain('@/modules/user/config/tokens');
+    expect(staticImportsOf(recoveryRun)).not.toContain('@/modules/user/config/tokens');
+  });
+
   it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {
     const rsbuildConfigSource = readFile('rsbuild.config.ts');
     const loaderChunkName = (route: string): string | undefined =>
