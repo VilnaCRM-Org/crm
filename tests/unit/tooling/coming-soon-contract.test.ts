@@ -28,7 +28,9 @@ describe('coming-soon source contract (issue #362)', () => {
 
   it('imports nothing from src/modules, whichever alias it uses', () => {
     for (const file of CODE_FILES) {
-      expect(readFileSync(file, 'utf8')).not.toMatch(/from '(@\/modules|@auth)/);
+      expect(readFileSync(file, 'utf8')).not.toMatch(
+        /(?:\bfrom\s*|\bimport\s*\(\s*(?:\/\*.*?\*\/\s*)?)['"](?:@\/modules|@auth)/u
+      );
     }
   });
 
@@ -71,6 +73,6 @@ describe('coming-soon source contract (issue #362)', () => {
         ? Object.entries(value).flatMap(([key, child]) => keys(child, `${prefix}${key}.`))
         : [prefix];
 
-    expect(keys(parse('uk'))).toEqual(keys(parse('en')));
+    expect(keys(parse('uk')).sort()).toEqual(keys(parse('en')).sort());
   });
 });

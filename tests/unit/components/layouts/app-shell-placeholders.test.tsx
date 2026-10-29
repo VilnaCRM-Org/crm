@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import AppShellPlaceholders from '@/components/layouts/app-shell-placeholders';
 import { styleRuleFor, winningMediaValueFor } from '@tests/unit/utils/emotion-style-rules';
@@ -23,12 +23,9 @@ describe('AppShellPlaceholders', () => {
   });
 
   it('exposes nothing to assistive technology', () => {
-    render(<AppShellPlaceholders />);
-    const boxes = placeholders();
+    const { container } = render(<AppShellPlaceholders />);
 
-    expect(screen.queryAllByRole('generic').filter((element) => boxes.includes(element))).toEqual(
-      []
-    );
+    expect(within(container).queryAllByRole('generic')).toEqual([]);
     expect(screen.queryAllByRole('button')).toEqual([]);
     expect(screen.queryAllByRole('link')).toEqual([]);
   });

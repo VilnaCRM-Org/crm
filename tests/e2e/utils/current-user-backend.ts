@@ -7,8 +7,9 @@ const GRAPHQL_URL = '**/graphql';
 export default async function stubCurrentUserBackend(context: BrowserContext): Promise<void> {
   const reply = replyWithProfile();
   await context.route(GRAPHQL_URL, async (route: Route) => {
-    const name = (route.request().postDataJSON() as { operationName?: string }).operationName;
-    if (name !== 'CurrentUser') return route.fallback();
+    if (route.request().method() !== 'POST') return route.fallback();
+    const body = route.request().postDataJSON() as { operationName?: string } | null;
+    if (body?.operationName !== 'CurrentUser') return route.fallback();
     return reply(route);
   });
 }
