@@ -653,8 +653,13 @@ express a second step. user-service implements `signInUser` and the 2FA mutation
 `main` only; the pinned `v2.8.0` has none of them, and the user's rule is that every
 user-service operation goes through a GraphQL repository.
 
-**Decision.** `useSignInSubmit` resolves `GraphQLSignInProvider` through the container-free
-`AuthProviderLoader`, writes the result to `useAuthStore` and records the security signal; the
+**Decision.** `useSignInSubmit` writes the loading state, then loads `SignInSubmitHandler`
+(`@auth/utils/sign-in-submit-handler`) behind a `ChunkRetryLoader`, so the handler and
+`AUTH_TOKENS` reach the browser on the first submit rather than with the `/sign-in` form chunk
+(the mobile Lighthouse script budget). The handler resolves `GraphQLSignInProvider` through the
+container-free `AuthProviderLoader`, writes the result to `useAuthStore` and records the security
+signal; a handler or provider that cannot load leaves the retryable load error.
+`useRecoveryRun` loads `AUTH_TOKENS` the same way for the two password-recovery pages. The
 provider calls the transport-only `GraphQLSignInRepository` and translates through
 `GraphQLSignInTransformer` and `UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`,
 `LoginResponseMapper` and `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and
