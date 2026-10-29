@@ -13,7 +13,7 @@ export default function SetupGuide({ otpauthUri }: SetupGuideProps): JSX.Element
 
   return (
     <>
-      <Box component="ol" sx={styles.steps}>
+      <Box component="ol" role="list" sx={styles.steps}>
         <StepItem position={1} text={t('settings.two_factor.steps.install')} />
         <StepItem position={2} text={t('settings.two_factor.steps.scan')} />
       </Box>

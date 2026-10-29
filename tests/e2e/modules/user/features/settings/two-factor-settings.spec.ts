@@ -20,6 +20,7 @@ import {
   copyCodesOf,
   copyKeyOf,
   doneOf,
+  expectEveryStateInsideCard,
   KEY_IN_GROUPS,
   openSetup,
   qrOf,
@@ -78,6 +79,17 @@ test.describe('Two-factor settings section (issue #331)', () => {
         .boundingBox();
       expect(section?.y).toBeGreaterThan(social?.y ?? 0);
     });
+  });
+
+  test('keeps every submit, the disable field and each code inside the card at 1024 px', async ({
+    page,
+  }) => {
+    await stubSetup(page);
+    await stubConfirm(page);
+    await page.setViewportSize({ width: 1024, height: 1000 });
+    await page.goto(SETTINGS_URL);
+
+    await expectEveryStateInsideCard(page, (control) => control.click());
   });
 
   test('leaves the section out and runs no 2FA operation while the flag is off', async ({

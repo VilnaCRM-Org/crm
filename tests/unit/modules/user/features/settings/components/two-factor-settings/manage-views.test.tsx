@@ -181,13 +181,15 @@ describe('the disable view', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
-  it('retries from the transient banner once', async () => {
-    const props = withView(viewState('disable', { banner: 'transient' }));
+  it('retries from the transient banner by submitting the code as it is now', async () => {
+    const props = withView(viewState('disable', { banner: 'transient', bannerOccurrence: 1 }));
     renderPanel(props);
+    await userEvent.type(screen.getByRole('textbox'), '654321');
 
     await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
 
-    expect(props.callbacks.retry).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(props.callbacks.disable).toHaveBeenCalledTimes(1));
+    expect(props.callbacks.disable).toHaveBeenCalledWith({ twoFactorCode: '654321' });
   });
 
   it.each([

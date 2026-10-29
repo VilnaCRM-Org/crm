@@ -28,7 +28,7 @@ const BANNERS = new Map<TwoFactorSettingsFailureReason, TwoFactorBannerCode>([
 ]);
 
 function freshView(view: TwoFactorSettingsView): TwoFactorSettingsViewState {
-  return { view, fieldError: null, banner: null, statusCode: null };
+  return { view, fieldError: null, banner: null, bannerOccurrence: 0, statusCode: null };
 }
 
 function show(deps: TwoFactorSettingsHookDeps, view: TwoFactorSettingsView): void {
@@ -46,15 +46,18 @@ function keepWithBanner(
 ): void {
   const { settings, view } = deps.read();
   const banner = BANNERS.get(reason);
-  if (banner !== undefined) deps.apply({ settings, view: { ...view, fieldError: null, banner } });
+  if (banner === undefined) return;
+  const bannerOccurrence = view.bannerOccurrence + 1;
+  deps.apply({ settings, view: { ...view, fieldError: null, banner, bannerOccurrence } });
 }
 
 function moveTo(deps: TwoFactorSettingsHookDeps, row: TwoFactorFailureRow): void {
   const { settings, view } = deps.read();
   const { fieldError, statusCode } = row;
+  const next = row.view ?? view.view;
   deps.apply({
     settings,
-    view: { view: row.view ?? view.view, fieldError, banner: null, statusCode },
+    view: { ...view, view: next, fieldError, banner: null, statusCode },
   });
   if (row.record !== null) deps.recordStatus(row.record);
 }

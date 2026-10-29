@@ -138,7 +138,7 @@ describe('useTwoFactorDisable', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: ENABLED,
-        view: viewState('disable', { banner }),
+        view: viewState('disable', { banner, bannerOccurrence: 1 }),
       });
     });
 
@@ -167,42 +167,44 @@ describe('useTwoFactorDisable', () => {
     });
   });
 
-  describe('retry', () => {
-    it('sends the last disable again, identical, from the confirmation', async () => {
+  describe('a second attempt after a transient failure', () => {
+    it('sends the code as it is now, not the one that failed', async () => {
       const { utils, provider } = mount({
         settings: ENABLED,
-        view: viewState('disable', { banner: 'transient' }),
+        view: viewState('disable', { banner: 'transient', bannerOccurrence: 1 }),
       });
       provider.disable.mockResolvedValue(failed('network'));
-      const code = buildTotpCode();
+      const first = buildTotpCode();
+      const edited = buildRecoveryCode();
 
-      await act(async () => utils.result.current.disable({ twoFactorCode: code }));
-      await act(async () => utils.result.current.retry());
+      await act(async () => utils.result.current.disable({ twoFactorCode: first }));
+      await act(async () => utils.result.current.disable({ twoFactorCode: edited }));
 
       expect(provider.disable).toHaveBeenCalledTimes(2);
-      expect(provider.disable.mock.calls[1]?.[0]).toEqual({ twoFactorCode: code });
+      expect(provider.disable.mock.calls[0]?.[0]).toEqual({ twoFactorCode: first });
+      expect(provider.disable.mock.calls[1]?.[0]).toEqual({ twoFactorCode: edited });
     });
 
-    it('does nothing before any disable was sent', async () => {
-      const { utils, provider } = mount();
+    it('refuses an invalid edit with the field error and sends nothing', async () => {
+      const transient = viewState('disable', { banner: 'transient', bannerOccurrence: 1 });
+      const { utils, provider, apply } = mount({ settings: ENABLED, view: transient });
 
-      await act(async () => utils.result.current.retry());
+      await act(async () => utils.result.current.disable({ twoFactorCode: 'abc' }));
 
       expect(provider.disable).not.toHaveBeenCalled();
+      expect(apply).toHaveBeenLastCalledWith({
+        settings: ENABLED,
+        view: { ...transient, fieldError: 'format', banner: null },
+      });
     });
 
-    it.each(['off', 'setup', 'codes', 'on', 'regenerate', 'reauth'] as const)(
-      'does nothing from the %s view',
-      async (view) => {
-        const { utils, provider } = mount({ settings: ENABLED, view: viewState(view) });
-        provider.disable.mockResolvedValue(failed('network'));
-        await act(async () => utils.result.current.disable({ twoFactorCode: buildTotpCode() }));
-        provider.disable.mockClear();
-
-        await act(async () => utils.result.current.retry());
-
-        expect(provider.disable).not.toHaveBeenCalled();
-      }
-    );
+    it('offers no separate retry of a captured code', () => {
+      expect(Object.keys(mount().utils.result.current).sort()).toEqual([
+        'cancel',
+        'disable',
+        'isSubmitting',
+        'open',
+      ]);
+    });
   });
 });

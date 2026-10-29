@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import useSubmitRetry from '@/hooks/use-submit-retry';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import type { DisableFormProps } from '../types/components/two-factor-settings';
@@ -14,7 +15,8 @@ export default function useDisableFormProps({
   callbacks,
 }: TwoFactorSettingsProps): DisableFormProps {
   const { t } = useTranslation();
-  const banner = useTwoFactorBanner(view.banner, callbacks.retry);
+  const { submitRef, retry } = useSubmitRetry();
+  const banner = useTwoFactorBanner(view.banner, retry);
   const titleRef = useFocusOnMount<HTMLElement>();
 
   return {
@@ -22,6 +24,8 @@ export default function useDisableFormProps({
     defaultValues: DEFAULT_VALUES,
     error: banner.error,
     errorAction: banner.action,
+    errorOccurrence: view.bannerOccurrence,
+    submitRef,
     title: t('settings.two_factor.disable.title'),
     titleRef,
     subtitle: t('settings.two_factor.disable.description'),

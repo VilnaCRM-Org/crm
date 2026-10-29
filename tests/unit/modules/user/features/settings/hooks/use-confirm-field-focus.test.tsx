@@ -23,6 +23,7 @@ const view = (
   view: name,
   fieldError,
   banner: null,
+  bannerOccurrence: 0,
   statusCode: null,
 });
 

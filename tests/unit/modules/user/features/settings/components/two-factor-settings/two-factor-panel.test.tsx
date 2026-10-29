@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
 import { buildOtpauthUri, buildTotpSecret } from '@tests/builders';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -81,14 +82,39 @@ describe('TwoFactorPanel', () => {
       expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
     });
 
-    it('shows the transient banner with a Retry that calls retry once', async () => {
+    it('shows the transient banner with a Retry that starts setup again once', async () => {
       const props = panelProps({ view: viewState('off', { banner: 'transient' }) });
       renderPanel(props);
 
       expect(screen.getByRole('alert')).toHaveTextContent('Не вдалося виконати дію');
       await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
 
-      expect(props.callbacks.retry).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(props.callbacks.start).toHaveBeenCalledTimes(1));
+    });
+
+    it('mounts a new, focused banner for a second transient failure in a row', async () => {
+      const first = panelProps({
+        view: viewState('off', { banner: 'transient', bannerOccurrence: 1 }),
+      });
+      const utils = renderPanel(first);
+      const firstAlert = screen.getByRole('alert');
+      await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
+
+      utils.rerender(
+        <TwoFactorPanel
+          settings={first.settings}
+          view={viewState('off', { banner: 'transient', bannerOccurrence: 2 })}
+          callbacks={first.callbacks}
+          isSubmitting={false}
+        />
+      );
+
+      const secondAlert = await screen.findByRole('alert');
+      expect(secondAlert).not.toBe(firstAlert);
+      const banner = screen
+        .getAllByRole('generic')
+        .find((element) => element.tagName === 'SECTION' && element.contains(secondAlert));
+      expect(banner).toHaveFocus();
     });
 
     it('has no accessibility violation, with or without a banner', async () => {
@@ -184,13 +210,47 @@ describe('TwoFactorPanel', () => {
       expect(screen.getByLabelText('Цифра 1 з 6')).toHaveAttribute('aria-disabled', 'true');
     });
 
-    it('shows the banners with Retry only for transient', async () => {
+    it('shows the rate-limited banner without Retry', () => {
+      renderPanel(setupProps({ view: viewState('setup', { banner: 'rate_limited' }) }));
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Забагато спроб. Зачекайте хвилину і спробуйте знову.'
+      );
+      expect(screen.queryByRole('button', { name: /спробувати/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the transient banner with a Retry that confirms the typed code once', async () => {
       const props = setupProps({ view: viewState('setup', { banner: 'transient' }) });
       renderPanel(props);
+      await userEvent.type(screen.getByLabelText('Цифра 1 з 6'), '654321');
 
       await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
 
-      expect(props.callbacks.retry).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(props.callbacks.confirm).toHaveBeenCalledTimes(1));
+      expect(props.callbacks.confirm).toHaveBeenCalledWith({ twoFactorCode: '654321' });
+    });
+
+    it('hands focus from a closing banner to the code, never to the page', async () => {
+      const props = setupProps({
+        view: viewState('setup', { banner: 'transient', bannerOccurrence: 1 }),
+        isSubmitting: true,
+      });
+      const utils = renderPanel(props);
+      screen.getByRole('button', { name: /спробувати/i }).focus();
+
+      utils.rerender(
+        <TwoFactorPanel
+          settings={props.settings}
+          view={viewState('setup', { fieldError: 'invalid_code', bannerOccurrence: 1 })}
+          callbacks={props.callbacks}
+          isSubmitting={false}
+        />
+      );
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(document.body).not.toHaveFocus();
+      expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeEnabled();
+      await waitFor(() => expect(screen.getByLabelText('Цифра 1 з 6')).toHaveFocus());
     });
 
     it.each([

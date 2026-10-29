@@ -21,7 +21,7 @@ const DISABLE_PLAN: TwoFactorOperationPlan = {
 };
 
 export default function useTwoFactorDisable(deps: TwoFactorSettingsHookDeps): TwoFactorDisable {
-  const { provider, normalizer, read } = deps;
+  const { provider, normalizer } = deps;
   const { settle, show, refuse } = useTwoFactorSettle(deps);
   const entry = { normalizer, accept: 'any', refusal: 'format', refuse } as const;
   const disabling = useCodeSubmit(entry, {
@@ -35,8 +35,5 @@ export default function useTwoFactorDisable(deps: TwoFactorSettingsHookDeps): Tw
     open: () => show('disable'),
     disable: disabling.send,
     cancel: () => show('on'),
-    retry: async (): Promise<void> => {
-      if (read().view.view === 'disable') await disabling.resend();
-    },
   };
 }

@@ -1,9 +1,7 @@
 import type { TwoFactorSetup } from '../types/hooks/two-factor-operations';
-import type { CodeSubmit, SettledSubmit } from '../types/hooks/two-factor-submit';
 import type {
   TwoFactorOperationPlan,
   TwoFactorSettingsHookDeps,
-  TwoFactorSettingsView,
 } from '../types/two-factor/settings-view';
 
 import useCodeSubmit from './use-code-submit';
@@ -32,17 +30,8 @@ const CONFIRM_PLAN: TwoFactorOperationPlan = {
   ]),
 };
 
-async function retrySetup(
-  view: TwoFactorSettingsView,
-  setup: SettledSubmit<null>,
-  confirmation: CodeSubmit
-): Promise<void> {
-  if (view === 'off') await setup.send(null);
-  if (view === 'setup') await confirmation.resend();
-}
-
 export default function useTwoFactorSetup(deps: TwoFactorSettingsHookDeps): TwoFactorSetup {
-  const { provider, normalizer, read } = deps;
+  const { provider, normalizer } = deps;
   const { settle, show, refuse } = useTwoFactorSettle(deps);
   const setup = useSettledSubmit<null>({
     run: (_input, signal) => provider.setup(signal),
@@ -61,6 +50,5 @@ export default function useTwoFactorSetup(deps: TwoFactorSettingsHookDeps): TwoF
     start: () => setup.send(null),
     confirm: confirmation.send,
     done: () => show('on'),
-    retry: (): Promise<void> => retrySetup(read().view.view, setup, confirmation),
   };
 }
