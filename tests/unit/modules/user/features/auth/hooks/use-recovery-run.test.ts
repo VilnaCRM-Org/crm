@@ -27,6 +27,10 @@ interface RunProps {
 }
 
 describe('useRecoveryRun', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('resolves the recovery provider and hands it the dto and signal', async () => {
     const provider = { name: 'provider' };
     const loader = providerLoader(provider);

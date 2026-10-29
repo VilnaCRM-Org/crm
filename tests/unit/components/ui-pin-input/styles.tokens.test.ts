@@ -90,4 +90,12 @@ describe('ui-pin-input styles', () => {
 
     expect(sx['&']).toEqual({ width: '100%' });
   });
+
+  it('makes the group wrapper full width so the root can fill it', async () => {
+    const wrapper = await loadIsolated(
+      async () => (await import('@/components/ui-pin-input/styles')).PIN_GROUP_WRAPPER_SX
+    );
+
+    expect(wrapper).toEqual({ width: '100%' });
+  });
 });
