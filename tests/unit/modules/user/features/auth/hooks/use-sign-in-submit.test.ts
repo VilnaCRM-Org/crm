@@ -72,9 +72,10 @@ describe('useSignInSubmit', () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it('writes the loading state synchronously, before the handler chunk loads', async () => {
+  it('writes the loading state synchronously and keeps the error the retry answers', async () => {
     const s = stubs();
-    useAuthStore.setState({ loginError: invalid });
+    useAuthStore.setState({ loginError: LOAD_FAILURE });
+    const setState = jest.spyOn(useAuthStore, 'setState');
     const { result } = renderHook(() => useSignInSubmit(s.loader));
 
     let pending!: Promise<void>;
@@ -82,7 +83,8 @@ describe('useSignInSubmit', () => {
       pending = result.current(dto(), new AbortController().signal);
     });
 
-    expect(useAuthStore.getState()).toMatchObject({ loginLoading: true, loginError: null });
+    expect(setState).toHaveBeenCalledWith({ loginLoading: true });
+    expect(useAuthStore.getState()).toMatchObject({ loginLoading: true, loginError: LOAD_FAILURE });
     await act(async () => {
       await pending;
     });
