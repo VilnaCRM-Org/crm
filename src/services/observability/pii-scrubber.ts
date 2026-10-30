@@ -10,15 +10,23 @@ export class PiiScrubber {
     'apikey',
     'email',
     'initials',
+    'pendingsession',
+    'twofactorcode',
+    'recoverycode',
+    'otpauth',
   ];
 
   private readonly patterns: readonly RegExp[] = [
+    /otpauth:\/\/[^\s"']+/gi,
     /[^\s@]+@[^\s@]+\.[^\s@]+/g,
     /bearer\s+[\w.\-~+/]+=*/gi,
     /eyJ[\w-]+\.[\w-]+\.[\w-]+/g,
     /(?<=token=)[^&#\s]+/gi,
     /(?<=token%3d)(?:(?!%26|%23)[^&#\s])+/gi,
-    /(?<="[\w-]*(?:token|password)"\s*:\s*")(?:\\.|[^"\\])+/gi,
+    /(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+/gi,
+    /(?<=recoveryCodes\\?["']?\s*[=:]\s*)\[[^\]]*\]/gi,
+    /(?<=recoveryCodes\\?["']?\s*[=:][\w\s,\\"'-]*,[\s\\"']*)[\w-]+(?![\w-]|\\?["']?\s*[=:])/gi,
+    /(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)\\?["']?\s*[=:]\s*\\?["']?)[\w-]+/gi,
   ];
 
   public scrub(event: SentryEvent): SentryEvent {

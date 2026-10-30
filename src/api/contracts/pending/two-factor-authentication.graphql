@@ -1,0 +1,170 @@
+# pending-against: v2.8.0
+# Two-factor authentication: sign-in over GraphQL and the five 2FA mutations.
+# Source: VilnaCRM-Org/user-service main at a95c1e854bf21770b7fc630611a8257b0f9c600b
+# (.github/graphql-spec/spec); type bodies in the upstream field order.
+# No release tag declares these operations yet. Follow-up 5.1 deletes this file with the
+# pin bump to the first release that does; `scalar Iterable` is declared here only, once
+# across all pending files.
+extend type Mutation {
+  signInUser(input: signInUserInput!): signInUserPayload
+  completeTwoFactorUser(input: completeTwoFactorUserInput!): completeTwoFactorUserPayload
+  setupTwoFactorUser(input: setupTwoFactorUserInput!): setupTwoFactorUserPayload
+  confirmTwoFactorUser(input: confirmTwoFactorUserInput!): confirmTwoFactorUserPayload
+  disableTwoFactorUser(input: disableTwoFactorUserInput!): disableTwoFactorUserPayload
+  regenerateRecoveryCodesUser(
+    input: regenerateRecoveryCodesUserInput!
+  ): regenerateRecoveryCodesUserPayload
+}
+
+scalar Iterable
+
+input signInUserInput {
+  clientMutationId: String
+  email: String!
+  password: String!
+  rememberMe: Boolean
+}
+
+type signInUserPayload {
+  user: signInUserPayloadData
+  clientMutationId: String
+}
+
+type signInUserPayloadData implements Node {
+  id: ID!
+  _id: String!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+  otpauthUri: String
+  secret: String
+  recoveryCodes: Iterable!
+  recoveryCodesRemaining: Int
+  warning: String
+}
+
+input completeTwoFactorUserInput {
+  clientMutationId: String
+  pendingSessionId: String!
+  twoFactorCode: String!
+}
+
+type completeTwoFactorUserPayload {
+  user: completeTwoFactorUserPayloadData
+  clientMutationId: String
+}
+
+type completeTwoFactorUserPayloadData implements Node {
+  id: ID!
+  _id: String!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+  otpauthUri: String
+  secret: String
+  recoveryCodes: Iterable!
+  recoveryCodesRemaining: Int
+  warning: String
+}
+
+input setupTwoFactorUserInput {
+  clientMutationId: String
+}
+
+type setupTwoFactorUserPayload {
+  user: setupTwoFactorUserPayloadData
+  clientMutationId: String
+}
+
+type setupTwoFactorUserPayloadData implements Node {
+  id: ID!
+  _id: String!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+  otpauthUri: String
+  secret: String
+  recoveryCodes: Iterable!
+  recoveryCodesRemaining: Int
+  warning: String
+}
+
+input confirmTwoFactorUserInput {
+  clientMutationId: String
+  twoFactorCode: String!
+}
+
+type confirmTwoFactorUserPayload {
+  user: confirmTwoFactorUserPayloadData
+  clientMutationId: String
+}
+
+type confirmTwoFactorUserPayloadData implements Node {
+  id: ID!
+  _id: String!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+  otpauthUri: String
+  secret: String
+  recoveryCodes: Iterable!
+  recoveryCodesRemaining: Int
+  warning: String
+}
+
+input disableTwoFactorUserInput {
+  clientMutationId: String
+  twoFactorCode: String!
+}
+
+type disableTwoFactorUserPayload {
+  user: disableTwoFactorUserPayloadData
+  clientMutationId: String
+}
+
+type disableTwoFactorUserPayloadData implements Node {
+  id: ID!
+  _id: String!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+  otpauthUri: String
+  secret: String
+  recoveryCodes: Iterable!
+  recoveryCodesRemaining: Int
+  warning: String
+}
+
+input regenerateRecoveryCodesUserInput {
+  clientMutationId: String
+}
+
+type regenerateRecoveryCodesUserPayload {
+  user: regenerateRecoveryCodesUserPayloadData
+  clientMutationId: String
+}
+
+type regenerateRecoveryCodesUserPayloadData implements Node {
+  id: ID!
+  _id: String!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+  otpauthUri: String
+  secret: String
+  recoveryCodes: Iterable!
+  recoveryCodesRemaining: Int
+  warning: String
+}

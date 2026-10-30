@@ -30,10 +30,11 @@ Choose the transport by the nature of the endpoint, not by convenience:
   create/update/delete mutations. New user-graph features add a colocated `*.graphql` operation
   next to their repository and consume the generated `TypedDocumentNode`.
 - **Use REST (`HttpsClient`)** for endpoints that are **not** part of the GraphQL schema:
-  session/token exchange (login), health checks, binary/file transfer, and any infrastructure
-  or third-party endpoint the OpenAPI spec models but the graph does not.
-- **When both transports expose the same resource** (today `/api/users`), prefer GraphQL for
-  the write (`createUser`) and reserve REST for the token/session concern (`login`).
+  health checks, binary/file transfer, and any infrastructure or third-party endpoint the
+  OpenAPI spec models but the graph does not.
+- **Sign-in is GraphQL.** The token exchange is the `signInUser` mutation (and the 2FA
+  mutations after it), reached through `GraphQLSignInRepository`; no REST login exists.
+- **When both transports expose the same resource** (today `/api/users`), use GraphQL.
 
 The transport is an implementation detail of the **repository** layer. Components and hooks
 never see transport types — they consume repository return types (see the layered architecture
@@ -43,9 +44,9 @@ in `.claude/skills/architecture/SKILL.md`).
 
 Data is **parsed, never cast**, before it leaves the repository layer:
 
-- **REST** — `HttpResponseProcessor.process(response, schema)` validates every JSON body with a
-  zod schema. There is no unchecked `as T`. Repositories pass the generated-shape schema (e.g.
-  `LoginResponseSchema`); a schema violation becomes a typed `HttpError`
+- **REST** — every `HttpsClient` call carries `RequestConfig.schema`, and
+  `HttpResponseProcessor.process(response, schema)` validates the JSON body with that zod schema.
+  There is no unchecked `as T`. A schema violation becomes a typed `HttpError`
   (`INVALID_RESPONSE_SHAPE`), not a crash or a corrupted record.
 - **GraphQL** — `RegistrationAPI` validates the Apollo result with `CreateUserResultSchema`
   before returning; an invalid payload becomes a typed `ApiError` (`VALIDATION`).
@@ -102,6 +103,43 @@ declaration silently, so each pending file opens with `# pending-against: <versi
   `extensions: { code: 'BAD_USER_INPUT', status: 422 }`.
 - **Removed by:** the contract pin bump to the first user-service release that declares both
   mutations (Follow-up 5.3).
+
+`src/api/contracts/pending/two-factor-authentication.graphql`:
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** `VilnaCRM-Org/user-service@a95c1e85`
+  (`a95c1e854bf21770b7fc630611a8257b0f9c600b`, `.github/graphql-spec/spec` on `main`). No release
+  tag declares these operations yet. The file holds one `extend type Mutation` with
+  `signInUser`, `completeTwoFactorUser`, `setupTwoFactorUser`, `confirmTwoFactorUser`,
+  `disableTwoFactorUser` and `regenerateRecoveryCodesUser`, their input, payload and payload-data
+  types in the upstream field order, and `scalar Iterable`, which no other pending file declares.
+  `codegen.ts` maps `Iterable` to `unknown`, never `any`.
+- **Mock rows** (`docker/apollo-server/lib/two-factor-resolvers.ts`, no state between requests):
+
+  - `signInUser` with a valid e-mail answers `accessToken` and `twoFactorEnabled: false`; with the
+    local part `2fa` it answers `pendingSessionId` and `twoFactorEnabled: true`, and no token.
+  - `completeTwoFactorUser` with `123456` answers `accessToken` and `twoFactorEnabled: true`; any
+    other well-formed code answers `Invalid two-factor code.` with `extensions.status` 401.
+  - `setupTwoFactorUser` answers a fixed `otpauthUri` and a 32-character `secret`.
+  - `confirmTwoFactorUser` and `regenerateRecoveryCodesUser` answer the same eight fixed
+    `recoveryCodes`.
+  - `disableTwoFactorUser` answers `success: true`.
+  - A malformed e-mail or a blank `password` on sign-in, a blank `pendingSessionId` on complete,
+    or a malformed `twoFactorCode` on complete, confirm or disable, answers one GraphQL error
+    `<property>: <reason>` with `extensions: { code: 'BAD_USER_INPUT', status: 422 }` and no token.
+    A blank value reads `This value should not be blank.`
+
+  A recovery code is `XXXX-XXXX` from `A-Z0-9`, in either case. Confirm takes a six-digit code
+  only, as upstream does.
+
+- **Layer split:** the mock answers only manual clicking through the local stack. Every other
+  upstream answer (401 and 403 on the protected operations, 409, 423, 429, 5xx, no answer) is
+  exercised where CI runs it: Playwright `page.route` stubs in the browser lanes and msw handlers
+  in the integration suite.
+- **Removed by:** the contract pin bump to the first user-service release that declares these
+  operations (Follow-up 5.1). The bump deletes this file, because graphql-codegen and Apollo
+  Server merge an identical duplicate declaration silently; the mock resolvers and the
+  `Iterable` mapping stay, since the pinned schema then declares the same operations and scalar.
 
 The mock is stateless: `requestPasswordResetUser` and `confirmPasswordResetUser` answer every
 valid input with the same payload, so domain refusals, `429`, `503` and aborts are exercised in
