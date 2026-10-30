@@ -24,6 +24,36 @@ describe('NavigationExpandedItems', () => {
     expect(screen.getByRole('button', { name: 'Expand Settings' })).toBeInTheDocument();
   });
 
+  it('holds a drawer product row item to the drawn 233 px width', () => {
+    renderShell(
+      <ol>
+        <NavigationExpandedItems layout="drawer" items={navigationItems} currentId={null} />
+      </ol>
+    );
+
+    const [boards] = screen.getAllByRole('listitem');
+
+    expect(boards).toContainElement(screen.getByRole('link', { name: 'Boards' }));
+    expect(boards).toHaveStyle({ position: 'relative', width: '233px' });
+  });
+
+  it.each(['desktop', 'tablet'] as const)(
+    'leaves a %s product row item at the width of its list',
+    (layout) => {
+      renderShell(
+        <ol>
+          <NavigationExpandedItems layout={layout} items={navigationItems} currentId={null} />
+        </ol>
+      );
+
+      const [boards] = screen.getAllByRole('listitem');
+
+      expect(boards).toContainElement(screen.getByRole('link', { name: 'Boards' }));
+      expect(boards).toHaveStyle({ position: 'relative' });
+      expect(boards).not.toHaveStyle({ width: '233px' });
+    }
+  );
+
   it('marks only the current row', () => {
     renderShell(
       <ol>

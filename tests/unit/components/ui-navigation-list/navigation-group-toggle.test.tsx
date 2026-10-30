@@ -102,4 +102,25 @@ describe('NavigationGroupToggle', () => {
 
     expect(screen.getByRole('button')).toHaveStyle({ width: size, height: size, left, top });
   });
+
+  it.each([
+    ['drawer', false, '18px'],
+    ['drawer', true, '12px'],
+    ['desktop', false, '19px'],
+    ['tablet', false, '24px'],
+  ] as const)(
+    'drops only the collapsed drawer toggle to 18 px: %s, expanded %s, at top %s',
+    (layout, expanded, top) => {
+      renderShell(
+        <NavigationGroupToggle
+          layout={layout}
+          expanded={expanded}
+          controls="x"
+          onToggle={jest.fn()}
+        />
+      );
+
+      expect(screen.getByRole('button')).toHaveStyle({ top });
+    }
+  );
 });

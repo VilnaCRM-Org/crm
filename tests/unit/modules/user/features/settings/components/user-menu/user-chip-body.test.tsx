@@ -14,6 +14,21 @@ describe('UserChipBody', () => {
     expect(container).toContainHTML('aria-hidden="true" focusable="false"');
   });
 
+  it.each([
+    ['desktop', '7px', '6px'],
+    ['tablet', '15px', '9px'],
+  ] as const)('pins the %s avatar box absolutely at %s,%s', (layout, left, top) => {
+    render(<UserChipBody layout={layout} identity={identity} />);
+
+    const avatar = screen.getByText('AK');
+    const frame = screen
+      .getAllByRole('generic')
+      .filter((box) => box !== avatar && box.contains(avatar))
+      .at(-1);
+
+    expect(frame).toHaveStyle({ position: 'absolute', left, top });
+  });
+
   it('places the tablet name at 57,16 in 16 px', () => {
     render(<UserChipBody layout="tablet" identity={identity} />);
 

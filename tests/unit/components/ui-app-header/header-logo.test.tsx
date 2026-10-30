@@ -1,12 +1,17 @@
 import '@testing-library/jest-dom';
+import Box from '@mui/material/Box';
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import { type JSX, useRef } from 'react';
+import * as ReactRouter from 'react-router';
 import { Route, Routes, useLocation } from 'react-router';
 
 import HeaderLogo from '@/components/ui-app-header/header-logo';
 import useArrivalFocus from '@/hooks/use-arrival-focus';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import renderShell from '@tests/unit/utils/render-shell';
+import ShellLocation from '@tests/unit/utils/shell-location';
 
 function Probe(): JSX.Element {
   const location = useLocation();
@@ -73,6 +78,34 @@ describe('HeaderLogo', () => {
 
     expect(screen.getByRole('main')).toHaveTextContent('/');
     expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('hands state.focusMain to / when the module loads inside the test', async () => {
+    const user = userEvent.setup();
+    const FreshHeaderLogo = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-router', () => ReactRouter);
+      jest.doMock('@mui/material/Box', () => ({ __esModule: true, default: Box }));
+      return (await import('@/components/ui-app-header/header-logo')).default;
+    });
+    renderShell(
+      <Routes>
+        <Route
+          path="*"
+          element={
+            <>
+              <FreshHeaderLogo layout="desktop" />
+              <ShellLocation />
+            </>
+          }
+        />
+      </Routes>,
+      { path: '/settings' }
+    );
+
+    await user.click(screen.getByRole('link', { name: 'VilnaCRM' }));
+
+    expect(screen.getByLabelText('location')).toHaveTextContent('/|{"focusMain":true}');
   });
 
   it('navigates with Enter as well', async () => {
