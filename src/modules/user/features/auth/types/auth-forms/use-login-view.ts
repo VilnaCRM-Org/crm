@@ -6,6 +6,11 @@ export interface LoginViewInput {
   readonly signedIn: boolean;
 }
 
+export interface LoginViewMemory {
+  readonly errorShown: boolean;
+  readonly returnCount: number;
+}
+
 export interface LoginViewState {
   readonly view: LoginView;
   readonly returnCount: number;

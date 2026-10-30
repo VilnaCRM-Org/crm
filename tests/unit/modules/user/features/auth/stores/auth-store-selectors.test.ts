@@ -9,9 +9,30 @@ const base: AuthState = {
   loginError: { kind: 'unknown', displayMessage: 'x', retryable: true },
   registerLoading: false,
   registerError: { kind: 'conflict', displayMessage: 'y', retryable: false },
+  twoFactorStatus: 'unknown',
+  pendingSessionId: null,
+  recoveryCodesRemaining: null,
 };
 
 describe('AuthStoreSelectors', () => {
+  it('keeps its nine public methods and gains none for the two-factor status', () => {
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(AuthStoreSelectors)).filter(
+      (name) => name !== 'constructor'
+    );
+
+    expect(methods.sort()).toEqual([
+      'email',
+      'isAuthenticated',
+      'loginError',
+      'loginLoading',
+      'registerError',
+      'registerLoading',
+      'registerRetryable',
+      'registerUser',
+      'token',
+    ]);
+  });
+
   it('reads scalar state', () => {
     expect(AuthStoreSelectors.email(base)).toBe('a@b.c');
     expect(AuthStoreSelectors.token(base)).toBe('t');

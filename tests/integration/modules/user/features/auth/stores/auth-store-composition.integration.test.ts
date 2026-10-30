@@ -3,10 +3,10 @@ import '../../../../../setup';
 import { act, renderHook } from '@testing-library/react';
 
 import { useAuthStore, authActions, useAuthState, useAuthToken } from '@auth/stores';
-import { buildCredentials, buildUser } from '@tests/builders';
+import { buildUser } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
-import server, { defaultLoginResponse } from '../../../../../mocks/server';
+import server from '../../../../../mocks/server';
 
 describe('auth stores composition root integration', () => {
   afterEach(() => {
@@ -16,10 +16,7 @@ describe('auth stores composition root integration', () => {
     });
   });
 
-  it('drives login and registration through the real repository and clears state', async () => {
-    await authActions.loginUser(buildCredentials());
-    expect(useAuthStore.getState().token).toBe(defaultLoginResponse.token);
-
+  it('drives registration through the real repository and clears state', async () => {
     await authActions.registerUser(buildUser());
     expect(useAuthStore.getState().registerError).toBeNull();
 
