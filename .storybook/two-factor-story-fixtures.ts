@@ -1,10 +1,10 @@
-import type { TwoFactorSettingsEntity } from '@/modules/user/types/user/two-factor-settings-entity';
-import { noop } from '@stories/story-callbacks';
-
 import type {
   TwoFactorSettingsCallbacks,
   TwoFactorSettingsViewState,
-} from '../../types/two-factor/settings-view';
+} from '../src/modules/user/features/settings/types/two-factor/settings-view';
+import type { TwoFactorSettingsEntity } from '../src/modules/user/types/user/two-factor-settings-entity';
+
+import { noop } from './story-callbacks';
 
 export const CALLBACKS: TwoFactorSettingsCallbacks = {
   start: noop,

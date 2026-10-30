@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -65,6 +65,15 @@ describe('useRecoveryCodesBanner', () => {
     expect(await screen.findByRole('button', { name: `notice:${count}` })).toBeInTheDocument();
   });
 
+  it('holds the route fallback status region while the notice chunk is loading', () => {
+    mockLoad.mockReturnValue(new Promise(() => undefined));
+
+    mount(1);
+
+    const banner = screen.getByRole('region', { name: 'banner' });
+    expect(within(banner).getByRole('status')).toBeInTheDocument();
+  });
+
   it('clears the count when the notice is dismissed', async () => {
     mount(1);
 
@@ -80,6 +89,16 @@ describe('useRecoveryCodesBanner', () => {
     expect(screen.getByRole('region', { name: 'banner' })).toBeEmptyDOMElement();
     expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
     expect(mockLoad).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing to the store on /settings when there is no count to clear', async () => {
+    mount(null, '/settings');
+    const setState = jest.spyOn(useAuthStore, 'setState');
+
+    await act(async () => navigate?.('/settings?tab=security'));
+
+    expect(setState).not.toHaveBeenCalled();
+    setState.mockRestore();
   });
 
   it('clears the count when the user arrives on /settings after mount', async () => {

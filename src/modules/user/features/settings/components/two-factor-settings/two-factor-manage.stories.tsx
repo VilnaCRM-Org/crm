@@ -12,7 +12,8 @@ import {
   REAUTH,
   REGENERATE,
   REGENERATE_RATE_LIMITED,
-} from './story-fixtures';
+} from '@stories/two-factor-story-fixtures';
+
 import Panel from './two-factor-panel';
 
 const meta: Meta<typeof Panel> = {

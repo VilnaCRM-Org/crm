@@ -144,6 +144,14 @@ describe('RecoveryCodeField', () => {
     expect(document.body).toHaveFocus();
   });
 
+  it('leaves focus where it is when an error arrives without a focus request', async () => {
+    render(<Harness state={{ ...RESTING, fieldError: 'format' }} />);
+
+    await screen.findByText('Введіть резервний код у форматі XXXX-XXXX');
+
+    expect(document.body).toHaveFocus();
+  });
+
   it.each([
     ['resting', {}],
     ['format error', { fieldError: 'format' }],

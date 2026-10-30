@@ -17,7 +17,7 @@ export default function CopyButton({
   failedText,
 }: CopyButtonProps): JSX.Element {
   const { status, copy } = useCopyToClipboard();
-  const [presses, setPresses] = useState(0);
+  const [marked, setMarked] = useState(true);
   const messages = new Map([
     ['copied', copiedText],
     ['failed', failedText],
@@ -25,7 +25,7 @@ export default function CopyButton({
   const message = messages.get(status);
 
   const onClick = (): void => {
-    setPresses(presses + 1);
+    setMarked(!marked);
     copy({ text, fallbackTarget: targetRef.current });
   };
 
@@ -35,9 +35,7 @@ export default function CopyButton({
         {label}
       </UIButton>
       <UILiveStatus
-        message={
-          message === undefined ? '' : `${message}${presses % 2 === 0 ? ALTERNATING_MARK : ''}`
-        }
+        message={message === undefined ? '' : `${message}${marked ? ALTERNATING_MARK : ''}`}
       />
     </>
   );

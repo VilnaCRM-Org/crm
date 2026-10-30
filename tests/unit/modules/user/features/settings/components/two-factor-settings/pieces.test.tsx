@@ -136,10 +136,10 @@ describe('CopyButton', () => {
     const button = screen.getByRole('button', { name: 'Copy' });
 
     await userEvent.click(button);
-    expect(screen.getByRole('status')).toHaveTextContent('Done');
+    expect(screen.getByRole('status')).toHaveTextContent(/^Done$/);
     await userEvent.click(button);
-    expect(screen.getByRole('status')).toHaveTextContent('Done​');
+    expect(screen.getByRole('status')).toHaveTextContent(/^Done\u200b$/);
     await userEvent.click(button);
-    expect(screen.getByRole('status')).toHaveTextContent('Done');
+    expect(screen.getByRole('status')).toHaveTextContent(/^Done$/);
   });
 });

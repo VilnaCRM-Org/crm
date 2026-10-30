@@ -3,11 +3,6 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import UIForm from '@/components/ui-form';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import { noop } from '@stories/story-callbacks';
-
-import ConfirmCodeField from './confirm-code-field';
-import DisableCodeField from './disable-code-field';
-import OffView from './off-view';
-import SetupView from './setup-view';
 import {
   CALLBACKS,
   DISABLE_WRONG,
@@ -16,7 +11,12 @@ import {
   SETUP,
   SETUP_SETTINGS,
   SETUP_WRONG,
-} from './story-fixtures';
+} from '@stories/two-factor-story-fixtures';
+
+import ConfirmCodeField from './confirm-code-field';
+import DisableCodeField from './disable-code-field';
+import OffView from './off-view';
+import SetupView from './setup-view';
 
 import { TwoFactorPanel } from './index';
 

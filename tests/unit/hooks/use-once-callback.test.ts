@@ -44,4 +44,18 @@ describe('useOnceCallback', () => {
 
     expect(result.current).toBe(first);
   });
+
+  it('runs the newest callback once a re-render hands it a different one', () => {
+    const initial = jest.fn();
+    const next = jest.fn();
+    const { result, rerender } = renderHook(({ callback }) => useOnceCallback(callback), {
+      initialProps: { callback: initial },
+    });
+
+    rerender({ callback: next });
+    result.current();
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(initial).not.toHaveBeenCalled();
+  });
 });

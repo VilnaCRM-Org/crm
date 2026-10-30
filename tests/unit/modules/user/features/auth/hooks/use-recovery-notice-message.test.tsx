@@ -31,6 +31,22 @@ describe('useRecoveryNoticeMessage', () => {
     expect(result.current).toBe(text);
   });
 
+  it('starts empty and fills the message after the first commit', () => {
+    const rendered: string[] = [];
+
+    renderHook(
+      () => {
+        const message = useRecoveryNoticeMessage(1);
+        rendered.push(message);
+        return message;
+      },
+      { wrapper: wrapperFor('en') }
+    );
+
+    expect(rendered[0]).toBe('');
+    expect(rendered.at(-1)).toBe('1 recovery code left. Generate new codes in settings.');
+  });
+
   it('follows the count', () => {
     const { result, rerender } = renderHook(({ count }) => useRecoveryNoticeMessage(count), {
       wrapper: wrapperFor('uk'),
