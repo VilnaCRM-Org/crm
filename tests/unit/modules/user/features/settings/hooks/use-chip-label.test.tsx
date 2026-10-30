@@ -38,4 +38,20 @@ describe('useChipLabel', () => {
 
     expect(result.current).toBe('Анна Коваль, Меню користувача');
   });
+
+  it('is the localized User menu alone for a whitespace-only display name', () => {
+    const { result } = renderHook(() => useChipLabel({ displayName: '   ', monogram: '' }), {
+      wrapper: wrapperFor('en'),
+    });
+
+    expect(result.current).toBe('User menu');
+  });
+
+  it('names the trimmed display name before the localized User menu', () => {
+    const { result } = renderHook(() => useChipLabel({ displayName: ' Ann ', monogram: 'A' }), {
+      wrapper: wrapperFor('en'),
+    });
+
+    expect(result.current).toBe('Ann, User menu');
+  });
 });

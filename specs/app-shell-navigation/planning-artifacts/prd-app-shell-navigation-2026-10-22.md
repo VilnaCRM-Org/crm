@@ -3,7 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-22
-iteration: 1
+revised: 2026-10-29
+iteration: 4
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -14,7 +15,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'pm (John), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/enterprise-app-shell/planning-artifacts/prd-enterprise-app-shell-2026-06-26.md
@@ -23,7 +24,10 @@ inputDocuments:
 
 # PRD: app shell navigation (header and sidebar)
 
-**Author:** pm (John), autonomous run **Date:** 2026-10-22 **Feature:** `app-shell-navigation`
+**Author:** pm (John), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28 and
+2026-10-29 (owner decisions on the drawer sub-items, the WCAG 1.4.11 exception and the failed chip
+re-read; each change is marked in place as a dated amendment or owner decision) **Feature:**
+`app-shell-navigation`
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md), the evidence base cited as
 "research §N", and [brief](./brief-app-shell-navigation-2026-10-22.md), cited as "brief §N". The
@@ -406,6 +410,12 @@ x 280; it opens the mobile user menu `378:22885`.
 | Read `failed` (`session_ended`)                         | session already ended by the existing link | user lands on `/sign-in`       |
 | Chunk failed after one retry                            | the fallback stays; failure captured       | none; sidebar sign out remains |
 
+**Owner decision, 2026-10-28 (a failed re-read keeps the name).** The two `failed` rows apply to the
+first read of a mount. The chip re-reads on every pathname change, so a later `rate_limited`,
+`transient` or `rejected` re-read after a successful read keeps the last good display name and
+monogram instead of reverting to the name-less chip; a later `session_ended` re-read still clears
+the identity, and the existing session link ends the session.
+
 > Assumption: the pending and failed states reuse the name-less chip with the person glyph that
 > the settings header already uses for an empty monogram (research §7.3.1,
 > `profile-header/index.tsx:34`). They are not designed in Figma (OQ-16); the owner may ask for a
@@ -417,6 +427,10 @@ x 280; it opens the mobile user menu `378:22885`.
   (SM-16, R-1) and the chip has no name.
 - **N** Given a failed read other than `session_ended`, when the chip renders, then no error text,
   toast or retry control appears and no `console.error` is emitted.
+- **N** Given a chip showing a name, when a pathname change re-reads and the re-read fails with
+  `rate_limited`, `transient` or `rejected`, then the chip keeps that name and monogram (owner
+  decision 2026-10-28); when the re-read reports `session_ended`, then the identity is cleared and
+  the existing session link ends the session.
 - **E** Given a sign out followed by a sign in as a different user in the same tab, when the chip
   renders, then it never shows the previous user's name, even for one frame.
 - **E** Given the chunk loading, when the fallback is replaced, then the header's layout does not
@@ -1051,6 +1065,13 @@ they are not pointer targets; if they ever become active, their 40 px pitch is r
 sizing gap (like the auth switcher gap in CLAUDE.md), never fixed by moving pixels. Asserted with
 `expectTouchTarget` on both mobile projects.
 
+**Owner decision, 2026-10-27 (drawer sub-items).** The drawer's Settings sub-items Integrations,
+Webhooks and Billing keep Figma's 42 px PROP-18 pitch (FR-13.5) and are a second known sizing gap
+beside the bell and list, never fixed by moving pixels. Each sub-item still answers a tap across
+its whole 42 px height and the drawer row width, and adjacent sub-item targets do not overlap;
+`tests/e2e/mobile/app-shell-touch.spec.ts` asserts that rule on both mobile projects instead of the
+44 px floor.
+
 ### NFR-4 — Contrast (WCAG 1.4.3, 1.4.11)
 
 Text at 4.5:1 and UI graphics at 3:1 for every active control. Under full Figma parity (NFR-22,
@@ -1075,11 +1096,34 @@ entry, and it is enumerated here for the eight routes it reaches: `/boards`, `/p
 `/settings/billing`. The page renders no `#error-page-digits`, and every other text on it meets
 4.5:1 (architecture AV-6). The badge digits (white on `#1EAEFF`, 2.46:1) need no entry: badges render only in stories
 (FR-19), never on a page the browser lane scans. Grey icons `#969B9D` on
-white (2.81:1) and on `#FBFBFB` (≈ 2.7:1) appear only on decorative or natively disabled elements,
-which WCAG and axe exempt. Natively `disabled` controls (search, bell, list) are inactive
+white (2.81:1) and on `#FBFBFB` (≈ 2.7:1) are decorative or natively disabled everywhere except
+the three active controls the owner decision below names. Natively `disabled` controls (search, bell, list) are inactive
 user-interface components and are exempt. The former unavailable-row failure (`#D0D4D8`, 1.49:1)
 no longer exists: OQ-1 resolved to coming-soon links in the default row style. No rule-wide or
 wildcard exception, ever (`applyA11yExceptions`).
+
+**Owner decision, 2026-10-27 (WCAG 1.4.11 exception).** The earlier claim that `#969B9D` appears
+only on decorative or natively disabled elements was wrong. Three active controls are identified
+only by a `#969B9D` glyph on white, 2.81:1 against the 3:1 that SC 1.4.11 Non-text Contrast
+requires:
+
+1. the Settings disclosure chevron in the sidebar and the drawer
+   (`src/components/ui-navigation-list/group-styles.ts`), the visual cue of the collapsed or
+   expanded state, which assistive technology reads from `aria-expanded`;
+2. the sidebar collapse handle (`src/components/ui-sidebar/styles.ts`), an icon-only button named
+   by its `aria-label` and carrying `aria-expanded`;
+3. the default rows of the collapsed rail (`src/components/ui-navigation-list/styles.ts` through
+   `rail-styles.ts`), where the label is visually hidden and the icon is the only visual
+   identifier. In the expanded sidebar and the drawer the visible label identifies the row.
+
+The product owner keeps Figma's `#969B9D` (NFR-22) and accepts a scoped 1.4.11 exception for
+exactly these three controls in their resting state, tracked in issue #276 with the other palette
+exceptions and resolved when #276 closes or the token reaches 3:1. The hover glyph `#404142`
+passes, the current rail row is X-1, and focus indicators are not covered: they still reach 3:1
+against adjacent colours. axe's `color-contrast` rule evaluates text only and no axe rule tests
+1.4.11, so there is nothing for `A11Y_EXCEPTIONS` to scope: no entry exists or is added, and the
+X-1 table above is unchanged. The same record is in UX §11 and in
+`src/components/ui-app-shell/README.md`.
 
 ### NFR-5 — Bundle, eager path and public routes
 

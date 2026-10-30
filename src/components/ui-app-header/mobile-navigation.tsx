@@ -1,4 +1,4 @@
-import { type JSX, useId, useRef } from 'react';
+import { type JSX, useId } from 'react';
 
 import type { MobileNavigationProps } from '@/components/types/ui-app-header';
 import UINavigationDrawer from '@/components/ui-navigation-drawer';
@@ -13,13 +13,12 @@ export default function MobileNavigation({
   avatar,
 }: MobileNavigationProps): JSX.Element {
   const dialogId = useId();
-  const burger = useRef<HTMLButtonElement>(null);
   const { open, restore, show, dismiss, leave } = useDrawerOpen();
-  useDrawerFocus({ open, restore, burger });
+  const attachBurger = useDrawerFocus({ open, restore });
 
   return (
     <>
-      <MenuToggleButton open={open} controls={dialogId} onToggle={show} ref={burger} />
+      <MenuToggleButton open={open} controls={dialogId} onToggle={show} ref={attachBurger} />
       <UINavigationDrawer
         open={open}
         id={dialogId}

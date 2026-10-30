@@ -1,7 +1,6 @@
 import layoutStyles from '@/components/layouts/app-layout.styles';
 
-const NAV_INSET_TOP = '10px';
-const STICKY_TOP = '74px';
+const STICKY_TOP = `calc(${layoutStyles.headerHeight} + ${layoutStyles.navInsetTop})`;
 
 export default {
   header: layoutStyles.headerSlot,
@@ -9,13 +8,13 @@ export default {
     desktop: {
       ...layoutStyles.navSlot,
       boxSizing: 'border-box',
-      paddingTop: NAV_INSET_TOP,
+      paddingTop: layoutStyles.navInsetTop,
       paddingLeft: '12px',
     },
     tablet: {
       ...layoutStyles.navSlot,
       boxSizing: 'border-box',
-      paddingTop: NAV_INSET_TOP,
+      paddingTop: layoutStyles.navInsetTop,
       paddingLeft: '13px',
     },
   },

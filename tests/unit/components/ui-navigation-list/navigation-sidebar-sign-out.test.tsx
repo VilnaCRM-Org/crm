@@ -17,8 +17,14 @@ describe('NavigationSidebarSignOut', () => {
       </ol>
     );
 
-    expect(screen.getByRole('separator', { hidden: true })).toHaveStyle({ width });
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    const divider = screen.getByRole('separator', { hidden: true });
+
+    expect(divider).toHaveStyle({ width });
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument();
+    expect(
+      divider.compareDocumentPosition(screen.getByRole('button', { name: 'Sign out' })) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it.each(['expanded', 'rail'] as const)(

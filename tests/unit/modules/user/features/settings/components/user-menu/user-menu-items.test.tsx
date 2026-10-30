@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { JSX } from 'react';
 
 import UserMenuItems from '@/modules/user/features/settings/components/user-menu/user-menu-items';
 import buildUserMenuState from '@tests/unit/utils/build-user-menu-state';
@@ -124,5 +125,29 @@ describe('UserMenuItems', () => {
       expect(item).not.toHaveStyle(DIVIDER);
       expect(item).not.toHaveStyle(ROUNDED);
     });
+  });
+
+  it('closes and signs out through the latest menu and signOut after they change', async () => {
+    const user = userEvent.setup();
+    const first = { menu: buildUserMenuState({ open: true }), signOut: jest.fn() };
+    const second = { menu: buildUserMenuState({ open: true }), signOut: jest.fn() };
+    const items = ({ menu, signOut }: typeof first): JSX.Element => (
+      <UserMenuItems
+        layout="desktop"
+        menuId="user-menu"
+        settingsAvailable
+        menu={menu}
+        signOut={signOut}
+      />
+    );
+    const view = renderShell(items(first));
+
+    view.rerender(items(second));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    expect(first.menu.close).not.toHaveBeenCalled();
+    expect(first.signOut).not.toHaveBeenCalled();
+    expect(second.menu.close).toHaveBeenCalledTimes(1);
+    expect(second.signOut).toHaveBeenCalledTimes(1);
   });
 });
