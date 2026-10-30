@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 
 import type { RailTooltipPosition } from '@/components/types/ui-navigation-list';
 import type { ActivateHandler } from '@/components/types/ui-sidebar';
@@ -10,7 +10,8 @@ const measure = (anchor: HTMLElement, offset: RailTooltipPosition): RailTooltipP
 };
 
 function useRelayout(follow: ActivateHandler): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
+    follow();
     window.addEventListener('scroll', follow, true);
     window.addEventListener('resize', follow);
 

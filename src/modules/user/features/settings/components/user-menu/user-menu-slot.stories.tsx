@@ -19,7 +19,9 @@ const meta: Meta<typeof UserMenuSlot> = {
           'renders ' +
           'the name-less menu with Sign out only and requests nothing: no `current-user` chunk ' +
           'and no `currentUser` read. With the flag on it shows the name-less chip at once and ' +
-          'swaps in the one that reads. A failing chunk is reported once and the chip stays. ' +
+          'loads only the identity source beside it, so the same chip takes the name when the ' +
+          'read succeeds and keeps its focus and open menu. A failing chunk is reported once ' +
+          'and the chip stays. ' +
           'Each state hands the shell, through `onAvatar`, an aria-hidden copy of the avatar ' +
           'it shows, which the mobile drawer header paints.',
       },

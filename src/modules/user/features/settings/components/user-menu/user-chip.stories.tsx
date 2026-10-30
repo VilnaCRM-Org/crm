@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
+import { withUserMenuFrame, withUserMenuPadding } from '@stories/user-menu-story-frame';
 import { closedMenu } from '@stories/user-menu-story-state';
 
 import UserChip from './user-chip';
@@ -16,13 +16,7 @@ const meta: Meta<typeof UserChip> = {
     menuId: 'user-menu',
   },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'mobile'] } },
-  decorators: [
-    (Story): JSX.Element => (
-      <div style={{ position: 'relative', width: 253, height: 56, margin: 24 }}>
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [withUserMenuFrame, withUserMenuPadding],
   parameters: {
     docs: {
       description: {

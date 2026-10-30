@@ -1,3 +1,8 @@
+import {
+  ERROR_PAGE_MOBILE as MOBILE,
+  ERROR_PAGE_PADDINGS,
+  ERROR_PAGE_TABLET as TABLET,
+} from '@tests/unit/components/error-page/styles/error-page-paddings';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type ComingSoonStylesModule = typeof import('@/components/coming-soon/styles');
@@ -8,9 +13,6 @@ const loadStyles = async (): Promise<ComingSoonStylesModule['default']> => {
   );
   return comingSoonStyles;
 };
-
-const TABLET = '@media (max-width: 1024px)';
-const MOBILE = '@media (max-width:767.95px)';
 
 describe('ComingSoonStyles', () => {
   it('builds a page surface that grows beside the shell with the error-page paddings', async () => {
@@ -24,10 +26,7 @@ describe('ComingSoonStyles', () => {
       width: '100%',
       boxSizing: 'border-box',
       backgroundColor: '#FBFBFB',
-      paddingTop: '76px',
-      paddingBottom: '121px',
-      [TABLET]: { paddingTop: '76px', paddingBottom: '121px' },
-      [MOBILE]: { paddingTop: '43.61px', paddingBottom: '73.91px' },
+      ...ERROR_PAGE_PADDINGS,
     });
   });
 

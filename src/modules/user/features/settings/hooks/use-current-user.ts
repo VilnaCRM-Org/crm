@@ -17,7 +17,9 @@ const settle = ({ outcome, mapper, previous }: CurrentUserSettlement): CurrentUs
     return { status: 'ready', identity: mapper.fromFullName(outcome.user.fullName) };
   }
 
-  return outcome.reason === 'session_ended' ? previous : FAILED;
+  if (outcome.reason === 'session_ended') return PENDING;
+
+  return previous.status === 'ready' ? previous : FAILED;
 };
 
 export default function useCurrentUser(): CurrentUserState {

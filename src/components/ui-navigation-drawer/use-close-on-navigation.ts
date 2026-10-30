@@ -5,9 +5,11 @@ import type { ActivateHandler } from '@/components/types/ui-sidebar';
 
 export default function useCloseOnNavigation(onNavigate: ActivateHandler): void {
   const { key } = useLocation();
-  const opened = useRef(key);
+  const handled = useRef(key);
 
   useEffect(() => {
-    if (key !== opened.current) onNavigate();
+    if (key === handled.current) return;
+    handled.current = key;
+    onNavigate();
   }, [key, onNavigate]);
 }

@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import type { Meta } from '@storybook/react-webpack5';
 
-import { withMemoryRouter } from '@stories/router-decorators';
+import { withRoutedStoryList } from '@stories/list-decorators';
+import navigationListStories from '@stories/navigation-list-story';
 import { noop } from '@stories/story-callbacks';
 
 import NavigationSidebarSignOut from './navigation-sidebar-sign-out';
@@ -11,34 +11,16 @@ const meta: Meta<typeof NavigationSidebarSignOut> = {
   component: NavigationSidebarSignOut,
   tags: ['autodocs'],
   args: { layout: 'desktop', variant: 'expanded', onSignOut: noop },
-  argTypes: {
-    layout: { control: 'select', options: ['desktop', 'tablet'] },
-    variant: { control: 'select', options: ['expanded', 'rail'] },
-  },
-  decorators: [
-    withMemoryRouter('/'),
-    (Story): JSX.Element => (
-      <ol style={{ width: 238, margin: 24, padding: 0, listStyle: 'none' }}>
-        <Story />
-      </ol>
-    ),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'The sidebar Sign out: a decorative `#E1E7EA` divider and the Sign out row, pinned to ' +
-          'the bottom of the panel. The rail draws the divider 74 px (96 px on tablet) wide.',
-      },
-      story: { inline: false },
-    },
-  },
+  argTypes: navigationListStories.layoutAndVariantArgTypes,
+  decorators: withRoutedStoryList('/', 238),
+  parameters: navigationListStories.parameters(
+    'The sidebar Sign out: a decorative `#E1E7EA` divider and the Sign out row, pinned to ' +
+      'the bottom of the panel. The rail draws the divider 74 px (96 px on tablet) wide.'
+  ),
 };
 
 export default meta;
 
-type Story = StoryObj<typeof NavigationSidebarSignOut>;
+export const Expanded = navigationListStories.desktop;
 
-export const Expanded: Story = {};
-
-export const Rail: Story = { args: { variant: 'rail' } };
+export const Rail = navigationListStories.rail;

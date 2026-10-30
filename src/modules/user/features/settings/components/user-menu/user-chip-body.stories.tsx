@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
+import { withUserMenuFrame, withUserMenuPadding } from '@stories/user-menu-story-frame';
+
 import UserChipBody from './user-chip-body';
 
 const meta: Meta<typeof UserChipBody> = {
@@ -8,6 +10,7 @@ const meta: Meta<typeof UserChipBody> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', identity: { displayName: 'Єва Мельник', monogram: 'ЄМ' } },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  decorators: [withUserMenuFrame, withUserMenuPadding],
   parameters: {
     docs: {
       description: {
