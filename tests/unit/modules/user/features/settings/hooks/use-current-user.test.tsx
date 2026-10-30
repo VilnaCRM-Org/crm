@@ -98,9 +98,10 @@ describe('useCurrentUser', () => {
     expect(result.current).toEqual({ status: 'pending', identity: null });
   });
 
-  it('re-reads when the pathname changes and aborts the read in flight', async () => {
-    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) });
-    const { result } = renderHook(
+  const renderNavigable = (): {
+    result: { current: { state: ReturnType<typeof useCurrentUser>; go: (to: string) => void } };
+  } =>
+    renderHook(
       () => {
         const navigate = useNavigate();
 
@@ -108,13 +109,78 @@ describe('useCurrentUser', () => {
       },
       { wrapper }
     );
-    await waitFor(() => expect(result.current.state.status).toBe('ready'));
+
+  const NAMED = {
+    status: 'ready',
+    identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
+  } as const;
+
+  it('re-reads on a pathname change and drops the late answer of the read in flight', async () => {
+    const answers: Array<(outcome: ProfileReadOutcome) => void> = [];
+    mockRead.mockImplementation(
+      () =>
+        new Promise<ProfileReadOutcome>((done) => {
+          answers.push(done);
+        })
+    );
+    const { result } = renderNavigable();
     const first = mockRead.mock.calls[0]?.[0] as AbortSignal;
+
+    act(() => result.current.go('/boards'));
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+    await act(async () =>
+      answers[1]?.({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) })
+    );
+    await act(async () =>
+      answers[0]?.({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) })
+    );
+
+    expect(first.aborted).toBe(true);
+    expect(result.current.state).toEqual({
+      status: 'ready',
+      identity: { displayName: 'Анна Коваль', monogram: 'АК' },
+    });
+  });
+
+  it.each(['transient', 'rate_limited', 'rejected'] as const)(
+    'keeps the last good name when a later re-read fails with %s',
+    async (reason) => {
+      settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
+      const { result } = renderNavigable();
+      await waitFor(() => expect(result.current.state).toEqual(NAMED));
+      settle({ kind: 'failed', reason });
+
+      act(() => result.current.go('/boards'));
+
+      await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+      await act(async () => undefined);
+      expect(result.current.state).toEqual(NAMED);
+    }
+  );
+
+  it('clears the shown name when a later re-read reports the session ended', async () => {
+    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
+    const { result } = renderNavigable();
+    await waitFor(() => expect(result.current.state).toEqual(NAMED));
+    settle({ kind: 'failed', reason: 'session_ended' });
+
+    act(() => result.current.go('/boards'));
+
+    await waitFor(() =>
+      expect(result.current.state).toEqual({ status: 'pending', identity: null })
+    );
+  });
+
+  it('stays name-less when a re-read after a failed first read fails again', async () => {
+    settle({ kind: 'failed', reason: 'transient' });
+    const { result } = renderNavigable();
+    await waitFor(() => expect(result.current.state.status).toBe('failed'));
 
     act(() => result.current.go('/boards'));
 
     await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
-    expect(first.aborted).toBe(true);
+    await act(async () => undefined);
+    expect(result.current.state).toEqual({ status: 'failed', identity: null });
   });
 
   it('never shows the previous user on a fresh mount, not even for one render', async () => {

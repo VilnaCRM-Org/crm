@@ -62,6 +62,10 @@ const routeErrorInfo = (overrides: Partial<ErrorInfoArg> = {}): ErrorInfoArg => 
 });
 
 describe('route composer', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('wraps every route in a single RootLayout under one flag gate (invariant A)', () => {
     const tree = routeComposer.compose(registry).items;
     const root = rootOf(tree);
@@ -104,10 +108,9 @@ describe('route composer', () => {
     expect(reporterFor).toHaveBeenCalledWith('app-shell:load');
     expect(props.userMenu).toBe(slot);
     expect(props.onShellFailure).toBe(reporter);
-    jest.restoreAllMocks();
   });
 
-  it('passes AppLayout no badge counts, so no page renders a badge (FR-19)', () => {
+  it('passes AppLayout only the shell slot and failure reporter, so no badge count (FR-19)', () => {
     const tree = routeComposer.compose(registry).items;
     const { layout } = protectedBranchOf(tree);
     const { props } = layout.element as ReactElement<Record<string, unknown>>;
@@ -127,7 +130,6 @@ describe('route composer', () => {
 
     expect(shellSlot).not.toHaveBeenCalled();
     expect(props.userMenu).toBeUndefined();
-    jest.restoreAllMocks();
   });
 
   it('renders no AppLayout anywhere on the public branch', () => {

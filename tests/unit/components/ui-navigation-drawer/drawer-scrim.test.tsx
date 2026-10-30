@@ -10,6 +10,7 @@ describe('DrawerScrim', () => {
   const original = window.innerHeight;
 
   afterEach(() => {
+    jest.restoreAllMocks();
     document.body.replaceChildren();
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: original });
   });
@@ -53,8 +54,6 @@ describe('DrawerScrim', () => {
     expect(added).toHaveLength(1);
     expect(removedWhileOpen).toBe(0);
     expect(remove).toHaveBeenCalledWith('resize', added[0]?.[1]);
-    add.mockRestore();
-    remove.mockRestore();
   });
 
   it('fades in over the given duration', () => {

@@ -2,7 +2,8 @@
 status: complete
 workflowType: implementation-readiness
 project_name: crm
-date: 2026-10-23
+date: 2026-10-22
+revised: 2026-10-29
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
@@ -10,7 +11,7 @@ iteration: 3
 verdict: READY
 author: 'implementation-readiness checker (independent reviewer), autonomous run'
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md
@@ -19,18 +20,27 @@ inputDocuments:
   - specs/app-shell-navigation/planning-artifacts/epics-app-shell-navigation-2026-10-22.md
 ---
 
-**Verdict: NOT READY** (3 Blocker, 17 Major, 19 Minor). No story may be dispatched and no source
-file may change until every Blocker and Major below is corrected in the artifacts and this check
-is re-run. This review changed no artifact; each finding states the exact correction.
+**Current verdict: READY as of re-review 2 (2026-10-23), pre-amendment** (0 Blocker, 0 Major,
+3 Minor; see "Re-review 2 (2026-10-23)" below). The bundle was amended afterwards, on 2026-10-27,
+2026-10-28 and 2026-10-29, and readiness was not re-run on the amended text: those amendments
+record product-owner decisions taken during implementation and review (the 42 px drawer
+sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph gap, a failed chip re-read keeping the
+shown name, the single sign-out latch in `useSignOut`) and their dated notes in the PRD,
+architecture and epics. The first pass and re-review 1 that follow are superseded history, kept
+for the record.
+
+**First-pass verdict (superseded): NOT READY** (3 Blocker, 17 Major, 19 Minor). No story may be
+dispatched and no source file may change until every Blocker and Major below is corrected in the
+artifacts and this check is re-run. This review changed no artifact; each finding states the exact
+correction.
 
 # Implementation readiness: app shell navigation
 
-Independent review of the six-artifact bundle for issue #362 against the worktree
-`/home/dima/Desktop/crm-worktrees/362-app-shell-navigation` at HEAD `9c1d2535`
-(`feat/362-app-shell-navigation`, stacked on PR #354). Artifact keys: R research, B brief, P PRD,
-U UX spec, A architecture, E epics (story numbers), T task brief. Every repository claim below
-was re-opened in this worktree on 2026-10-23; nothing was built, tested or run beyond `git log`,
-`git diff --stat`, file reads and a WCAG contrast computation.
+Independent review of the six-artifact bundle for issue #362 against a worktree of the branch at
+HEAD `9c1d2535` (`feat/362-app-shell-navigation`, stacked on PR #354). Artifact keys: R research, B
+brief, P PRD, U UX spec, A architecture, E epics (story numbers), T task brief. Every repository
+claim below was re-opened in this worktree on 2026-10-23; nothing was built, tested or run beyond
+`git log`, `git diff --stat`, file reads and a WCAG contrast computation.
 
 ## Check results
 

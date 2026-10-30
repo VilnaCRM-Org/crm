@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, isInaccessible, render, screen } from '@testing-library/react';
 
 import NavigationRailTooltip from '@/components/ui-navigation-list/navigation-rail-tooltip';
 
@@ -20,6 +20,9 @@ describe('NavigationRailTooltip', () => {
     const body = screen.getByText('Integrations');
 
     expect(body).toBeInTheDocument();
+    expect(isInaccessible(body)).toBe(true);
+    expect(tooltipOf()).toHaveAttribute('aria-hidden', 'true');
+    expect(tooltipOf()).toContainElement(body);
     expect(screen.queryAllByRole('generic')).toHaveLength(1);
     expect(screen.getAllByRole('generic', { hidden: true })).toHaveLength(4);
     expect(body).toHaveStyle({ color: '#191B1E', fontSize: '16px', lineHeight: '18px' });
