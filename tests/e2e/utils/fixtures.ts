@@ -1,5 +1,7 @@
 import { test as base, expect, type ConsoleMessage } from '@playwright/test';
 
+import stubCurrentUserBackend from '@tests/e2e/utils/current-user-backend';
+
 /**
  * Zero-tolerance runtime-error gate for the E2E suite (issue #168).
  *
@@ -34,6 +36,7 @@ interface ConsoleGuardFixtures {
   allowedConsoleErrors: RegExp[];
   /** Auto fixture that asserts no runtime errors escaped the test. */
   consoleGuard: void;
+  currentUserBackend: void;
 }
 
 // Chromium's synthetic console line for a 4xx/5xx resource. It always *starts*
@@ -73,6 +76,13 @@ export const test = base.extend<ConsoleGuardFixtures>({
 
       expect(pageErrors, 'uncaught page errors (zero tolerance)').toEqual([]);
       expect(consoleErrors, 'unexpected console errors').toEqual([]);
+    },
+    { auto: true },
+  ],
+  currentUserBackend: [
+    async ({ context }, use): Promise<void> => {
+      await stubCurrentUserBackend(context);
+      await use();
     },
     { auto: true },
   ],

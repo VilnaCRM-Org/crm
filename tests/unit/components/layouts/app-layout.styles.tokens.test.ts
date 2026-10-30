@@ -69,9 +69,30 @@ describe('app layout styles', () => {
     expect(styles.navPlaceholder).toEqual({
       display: 'none',
       width: '250px',
+      height: '801px',
+      maxHeight: 'calc(100vh - 76px)',
       [FROM_SIDEBAR]: { display: 'block' },
-      [`${FROM_SIDEBAR} and (max-width:1439.95px)`]: { width: '251px' },
+      [`${FROM_SIDEBAR} and (max-width:1439.95px)`]: { width: '251px', height: '1152px' },
     });
+  });
+
+  it('shares the sidebar panel block size and its inset below the header', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.navInsetTop).toBe('10px');
+    expect(styles.navPanel).toEqual({
+      desktop: { height: '791px', maxHeight: 'calc(100vh - 86px)' },
+      tablet: { height: '1142px', maxHeight: 'calc(100vh - 86px)' },
+    });
+  });
+
+  it('reserves the inset plus the panel, so the column keeps its height on load', async () => {
+    const styles = await loadStyles();
+    const tablet = styles.navPlaceholder[`${FROM_SIDEBAR} and (max-width:1439.95px)`];
+
+    expect(styles.navPlaceholder.height).toBe(`${10 + 791}px`);
+    expect(tablet.height).toBe(`${10 + 1142}px`);
+    expect(styles.navPlaceholder.maxHeight).toBe(`calc(100vh - ${86 - 10}px)`);
   });
 
   it('puts main in the second row, beside the navigation from the breakpoint', async () => {

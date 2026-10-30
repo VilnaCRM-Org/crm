@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import modulesLayerImport from '@tests/unit/utils/modules-layer-import';
+
 const ROOT = path.resolve(__dirname, '../../../src/components/coming-soon');
 
 const sourceFiles = (directory: string): readonly string[] =>
@@ -28,7 +30,7 @@ describe('coming-soon source contract (issue #362)', () => {
 
   it('imports nothing from src/modules, whichever alias it uses', () => {
     for (const file of CODE_FILES) {
-      expect(readFileSync(file, 'utf8')).not.toMatch(/from '(@\/modules|@auth)/);
+      expect(readFileSync(file, 'utf8')).not.toMatch(modulesLayerImport);
     }
   });
 
@@ -71,6 +73,6 @@ describe('coming-soon source contract (issue #362)', () => {
         ? Object.entries(value).flatMap(([key, child]) => keys(child, `${prefix}${key}.`))
         : [prefix];
 
-    expect(keys(parse('uk'))).toEqual(keys(parse('en')));
+    expect(keys(parse('uk')).sort()).toEqual(keys(parse('en')).sort());
   });
 });

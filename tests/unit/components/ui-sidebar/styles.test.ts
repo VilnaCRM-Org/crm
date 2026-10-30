@@ -5,6 +5,28 @@ type Styles = (typeof import('@/components/ui-sidebar/styles'))['default'];
 const loadStyles = (): Promise<Styles> =>
   loadIsolated(async () => (await import('@/components/ui-sidebar/styles')).default);
 
+const HANDLE = {
+  position: 'absolute',
+  zIndex: 1,
+  boxSizing: 'border-box',
+  display: 'block',
+  margin: 0,
+  padding: 0,
+  border: '1px solid #E1E7EA',
+  borderRadius: '33px',
+  backgroundColor: '#FFFFFF',
+  boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
+  color: '#969B9D',
+  cursor: 'pointer',
+  '&:focus-visible': {
+    outline: '2px solid #1A1C1E',
+    outlineOffset: '2px',
+  },
+  '&:focus:not(:focus-visible)': {
+    outline: 'none',
+  },
+};
+
 describe('sidebar styles', () => {
   it('pins wrapper', async () => {
     const styles = await loadStyles();
@@ -87,113 +109,25 @@ describe('sidebar styles', () => {
     });
   });
 
+  it('takes the panel block size from the layout, so the placeholder cannot drift', async () => {
+    const styles = await loadStyles();
+    const { default: layoutStyles } = await import('@/components/layouts/app-layout.styles');
+
+    expect(styles.panel.desktop).toEqual(expect.objectContaining(layoutStyles.navPanel.desktop));
+    expect(styles.panel.tablet).toEqual(expect.objectContaining(layoutStyles.navPanel.tablet));
+  });
+
   it('pins handle', async () => {
     const styles = await loadStyles();
 
     expect(styles.handle).toEqual({
       desktop: {
-        expanded: {
-          position: 'absolute',
-          zIndex: 1,
-          boxSizing: 'border-box',
-          display: 'block',
-          margin: 0,
-          padding: 0,
-          border: '1px solid #E1E7EA',
-          borderRadius: '33px',
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
-          color: '#969B9D',
-          cursor: 'pointer',
-          '&:focus-visible': {
-            outline: '2px solid #1A1C1E',
-            outlineOffset: '2px',
-          },
-          '&:focus:not(:focus-visible)': {
-            outline: 'none',
-          },
-          top: '15px',
-          left: '223px',
-          width: '24px',
-          height: '24px',
-        },
-        rail: {
-          position: 'absolute',
-          zIndex: 1,
-          boxSizing: 'border-box',
-          display: 'block',
-          margin: 0,
-          padding: 0,
-          border: '1px solid #E1E7EA',
-          borderRadius: '33px',
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
-          color: '#969B9D',
-          cursor: 'pointer',
-          '&:focus-visible': {
-            outline: '2px solid #1A1C1E',
-            outlineOffset: '2px',
-          },
-          '&:focus:not(:focus-visible)': {
-            outline: 'none',
-          },
-          top: '15px',
-          left: '57px',
-          width: '24px',
-          height: '24px',
-        },
+        expanded: { ...HANDLE, top: '15px', left: '223px', width: '24px', height: '24px' },
+        rail: { ...HANDLE, top: '15px', left: '57px', width: '24px', height: '24px' },
       },
       tablet: {
-        expanded: {
-          position: 'absolute',
-          zIndex: 1,
-          boxSizing: 'border-box',
-          display: 'block',
-          margin: 0,
-          padding: 0,
-          border: '1px solid #E1E7EA',
-          borderRadius: '33px',
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
-          color: '#969B9D',
-          cursor: 'pointer',
-          '&:focus-visible': {
-            outline: '2px solid #1A1C1E',
-            outlineOffset: '2px',
-          },
-          '&:focus:not(:focus-visible)': {
-            outline: 'none',
-          },
-          top: '15px',
-          left: '222px',
-          width: '32px',
-          height: '32px',
-        },
-        rail: {
-          position: 'absolute',
-          zIndex: 1,
-          boxSizing: 'border-box',
-          display: 'block',
-          margin: 0,
-          padding: 0,
-          border: '1px solid #E1E7EA',
-          borderRadius: '33px',
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
-          color: '#969B9D',
-          cursor: 'pointer',
-          '&:focus-visible': {
-            outline: '2px solid #1A1C1E',
-            outlineOffset: '2px',
-          },
-          '&:focus:not(:focus-visible)': {
-            outline: 'none',
-          },
-          top: '15px',
-          left: '60px',
-          width: '32px',
-          height: '32px',
-        },
+        expanded: { ...HANDLE, top: '15px', left: '222px', width: '32px', height: '32px' },
+        rail: { ...HANDLE, top: '15px', left: '60px', width: '32px', height: '32px' },
       },
     });
   });
