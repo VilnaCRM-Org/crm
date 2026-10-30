@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import UIShellContent from '@/components/ui-shell-content';
 import UIToastStack from '@/components/ui-toast';
 import UITypography from '@/components/ui-typography';
+import useFeatureFlag from '@/hooks/use-feature-flag';
 import usePageTitle from '@/hooks/use-page-title';
 import useToastQueue from '@/hooks/use-toast-queue';
 import i18n from '@/i18n';
@@ -12,6 +13,7 @@ import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
 import SettingsGrid from '../../components/settings-grid';
 import SocialNetworks from '../../components/social-networks';
+import TwoFactorSettings from '../../components/two-factor-settings';
 import UserProfileSettings from '../../components/user-profile-settings';
 import useProfileLoad from '../../hooks/use-profile-load';
 import en from '../../i18n/en.json';
@@ -48,6 +50,10 @@ function SettingsToasts({ queue, saveRef, headingRef }: SettingsToastsProps): JS
   );
 }
 
+function TwoFactorSection(): JSX.Element | null {
+  return useFeatureFlag('twoFactorAuth') ? <TwoFactorSettings /> : null;
+}
+
 export default function UserProfile(): JSX.Element {
   usePageTitle('settings.title');
   const load = useProfileLoad();
@@ -73,6 +79,7 @@ export default function UserProfile(): JSX.Element {
             />
             <SocialNetworks />
           </Box>
+          <TwoFactorSection />
         </SettingsGrid>
       </Box>
       <SettingsToasts queue={toasts} saveRef={saveRef} headingRef={headingRef} />

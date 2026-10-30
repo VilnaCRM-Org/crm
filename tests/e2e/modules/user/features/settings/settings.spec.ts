@@ -9,6 +9,7 @@ import {
   navigateClientSide,
   signOutToSignIn,
 } from '@tests/e2e/utils/sign-out';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 import fillInput from '../../../../utils/fill-input';
@@ -25,7 +26,6 @@ import {
 } from './utils/profile-stub';
 
 const SETTINGS_URL = '/settings';
-const LOGIN_API_URL = '**/api/users';
 const SETTINGS_CHUNK = /\/settings(?:\.[\w-]+)?\.js$/;
 
 const settingsTitle: string = `${t('settings.title')} - VilnaCRM`;
@@ -119,14 +119,7 @@ test.describe('Settings route', () => {
   }) => {
     await setFlag(page, true);
     await stubProfile(page);
-    await page.route(LOGIN_API_URL, async (route) => {
-      if (route.request().method() !== 'POST') return route.fallback();
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ token: 'e2e-session-token' }),
-      });
-    });
+    await stubSignIn(page, ['session']);
 
     await signOutToSignIn(page);
     await bounceFromProtectedDestination(page, SETTINGS_URL);
