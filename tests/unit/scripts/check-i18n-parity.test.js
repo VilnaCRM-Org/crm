@@ -27,8 +27,17 @@ const createFixture = () => {
   const scanRoot = path.join(root, 'src');
   const outputDir = path.join(scanRoot, 'i18n');
   fs.mkdirSync(outputDir, { recursive: true });
-  return { scanRoot, outputDir, mergedPath: path.join(outputDir, 'localization.json') };
+  const policyPath = path.join(root, 'i18n-catalog-policy.json');
+  writeJson(policyPath, { lazyCatalogs: [] });
+  return {
+    scanRoot,
+    outputDir,
+    policyPath,
+    mergedPath: path.join(outputDir, 'localization.json'),
+  };
 };
+
+const declareLazy = (fixture, lazyCatalogs) => writeJson(fixture.policyPath, { lazyCatalogs });
 
 const seedCatalog = (fixture, folder, en, uk) => {
   const dir = path.join(fixture.scanRoot, folder, 'i18n');
@@ -59,6 +68,7 @@ const runGate = (fixture, args = []) =>
       ...process.env,
       I18N_SCAN_ROOT: fixture.scanRoot,
       I18N_OUTPUT_DIR: fixture.outputDir,
+      I18N_CATALOG_POLICY: fixture.policyPath,
     },
   });
 
@@ -352,6 +362,26 @@ describe('check-i18n-parity gate', () => {
 
     expect(result.stderr).toContain('[key-ownership]');
     expect(result.stderr).toContain('"greeting.hello" is defined by 2 catalogs');
+    expect(result.status).toBe(1);
+  });
+
+  it('reports two eager catalogs that disagree on whether a key is an object', () => {
+    const fixture = cleanFixture();
+    const dir = seedCatalog(
+      fixture,
+      'other-feature',
+      { greeting: { bye: { soon: 'See you' } } },
+      { greeting: { bye: { soon: 'До зустрічі' } } }
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(
+      `[key-prefix] "greeting.bye" is a translation in ` +
+        `${path.join(fixture.scanRoot, 'greeting-feature', 'i18n')} but an object holding ` +
+        `"greeting.bye.soon" in ${dir}`
+    );
+    expect(result.stderr).not.toContain('TypeError');
     expect(result.status).toBe(1);
   });
 
@@ -881,6 +911,7 @@ describe('check-i18n-parity gate', () => {
         ...process.env,
         I18N_SCAN_ROOT: fixture.scanRoot,
         I18N_OUTPUT_DIR: customOutput,
+        I18N_CATALOG_POLICY: fixture.policyPath,
       },
     });
 
@@ -893,5 +924,387 @@ describe('check-i18n-parity gate', () => {
 
     expect(result.stderr).toContain('Usage: node scripts/ci/check-i18n-parity.mjs [--write]');
     expect(result.status).toBe(2);
+  });
+
+  describe('lazy catalogs', () => {
+    const LAZY_EN = { recovery: { title: 'Recover', back: 'Back' } };
+    const LAZY_UK = { recovery: { title: 'Відновлення', back: 'Назад' } };
+    const LAZY_FOLDER = path.join('recovery-route', 'i18n');
+    const LAZY_ENTRY = { catalog: LAZY_FOLDER, owners: ['recovery-route'] };
+
+    const lazyFixture = (entry = LAZY_ENTRY) => {
+      const fixture = cleanFixture();
+      const dir = seedCatalog(fixture, 'recovery-route', LAZY_EN, LAZY_UK);
+      declareLazy(fixture, [entry]);
+      return { fixture, dir };
+    };
+
+    const ownedFile = (fixture, name) => path.join(fixture.scanRoot, 'recovery-route', name);
+
+    it('keeps a declared lazy catalog out of the merged catalog yet resolves its keys', () => {
+      const { fixture } = lazyFixture();
+      writeText(
+        ownedFile(fixture, 'recovery.tsx'),
+        "const titleKey = 'recovery.title';\nconst back = t('recovery.back');\n"
+      );
+
+      const result = runGate(fixture);
+
+      expect(result.stdout).toContain('check-i18n-parity: OK — 2 catalog folder(s) (1 lazy)');
+      expect(result.stdout).toContain('2 merged key(s) per locale, 2 translation reference(s)');
+      expect(result.status).toBe(0);
+    });
+
+    it('merges an undeclared catalog eagerly, so the same tree reports a stale merge', () => {
+      const fixture = cleanFixture();
+      seedCatalog(fixture, 'recovery-route', LAZY_EN, LAZY_UK);
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`${fixture.mergedPath} is stale`);
+      expect(result.stderr).toContain('en.translation.recovery.title');
+      expect(result.status).toBe(1);
+    });
+
+    it('fails when the committed merged catalog carries a lazy catalog key', () => {
+      const { fixture } = lazyFixture();
+      seedMerged(fixture, mergedFrom({ ...EN_CATALOG, ...LAZY_EN }, { ...UK_CATALOG, ...LAZY_UK }));
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain('no longer produced by any catalog');
+      expect(result.stderr).toContain('uk.translation.recovery.back');
+      expect(result.status).toBe(1);
+    });
+
+    it('writes a merged catalog without the lazy catalog keys', () => {
+      const { fixture } = lazyFixture();
+      writeText(fixture.mergedPath, '{}');
+
+      const result = runGate(fixture, ['--write']);
+
+      expect(JSON.parse(fs.readFileSync(fixture.mergedPath, 'utf8'))).toEqual(
+        mergedFrom(EN_CATALOG, UK_CATALOG)
+      );
+      expect(result.status).toBe(0);
+    });
+
+    it('fails when a lazy catalog loses en/uk parity', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'uk.json'), { recovery: { title: 'Відновлення' } });
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`${dir}: en/uk key sets differ`);
+      expect(result.stderr).toContain('recovery.back');
+      expect(result.status).toBe(1);
+    });
+
+    it('fails when a lazy catalog key is held blank', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { recovery: { title: ' ', back: 'Back' } });
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`${path.join(dir, 'en.json')}: keys hold no usable text`);
+      expect(result.status).toBe(1);
+    });
+
+    it('fails for a t() call on a key the lazy catalog does not define', () => {
+      const { fixture } = lazyFixture();
+      const file = ownedFile(fixture, 'recovery.tsx');
+      writeText(file, "const label = t('recovery.missing');\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`${file}:1: "recovery.missing" is not defined in en, uk`);
+      expect(result.status).toBe(1);
+    });
+
+    it('fails for a *Key binding in a lazy namespace that the lazy catalog does not define', () => {
+      const { fixture } = lazyFixture();
+      const file = ownedFile(fixture, 'route.ts');
+      writeText(file, "export const meta = { titleKey: 'recovery.subtitle' };\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`${file}:1: "recovery.subtitle" is not defined in en, uk`);
+      expect(result.status).toBe(1);
+    });
+
+    it('fails for a key defined only in one locale of the lazy catalog', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { recovery: { ...LAZY_EN.recovery, hint: 'Hint' } });
+      const file = ownedFile(fixture, 'recovery.tsx');
+      writeText(file, "const hint = t('recovery.hint');\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`${file}:1: "recovery.hint" is not defined in uk`);
+      expect(result.status).toBe(1);
+    });
+
+    it('fails when a lazy catalog claims a key an eager catalog already owns', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { ...LAZY_EN, greeting: { hello: 'Hi' } });
+      writeJson(path.join(dir, 'uk.json'), { ...LAZY_UK, greeting: { hello: 'Привіт' } });
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain('[key-ownership] "greeting.hello" is defined by 2 catalogs');
+      expect(result.status).toBe(1);
+    });
+
+    it('reports a lazy object nested under an eager translation instead of crashing', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { ...LAZY_EN, greeting: { hello: { more: 'More' } } });
+      writeJson(path.join(dir, 'uk.json'), { ...LAZY_UK, greeting: { hello: { more: 'Ще' } } });
+      const eagerDir = path.join(fixture.scanRoot, 'greeting-feature', 'i18n');
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[key-prefix] "greeting.hello" is a translation in ${eagerDir} but an object holding ` +
+          `"greeting.hello.more" in ${dir}`
+      );
+      expect(result.stderr).not.toContain('TypeError');
+      expect(result.status).toBe(1);
+    });
+
+    it('reports a lazy translation that replaces an eager object', () => {
+      const { fixture, dir } = lazyFixture();
+      writeJson(path.join(dir, 'en.json'), { ...LAZY_EN, greeting: 'Greeting' });
+      writeJson(path.join(dir, 'uk.json'), { ...LAZY_UK, greeting: 'Вітання' });
+      writeText(ownedFile(fixture, 'recovery.tsx'), "const hello = t('greeting.hello');\n");
+      const eagerDir = path.join(fixture.scanRoot, 'greeting-feature', 'i18n');
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[key-prefix] "greeting" is a translation in ${dir} but an object holding ` +
+          `"greeting.bye", "greeting.hello" in ${eagerDir}`
+      );
+      expect(result.stderr).not.toContain('[undefined-key]');
+      expect(result.status).toBe(1);
+    });
+
+    it('fails for a t() call in an eager file on a key only a lazy catalog defines', () => {
+      const { fixture, dir } = lazyFixture();
+      const file = sourceFile(fixture, 'panel.tsx');
+      writeText(file, "const title = t('recovery.title');\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[lazy-key-scope] ${file}:1: "recovery.title" is defined only in the lazy catalog ` +
+          `${dir}, and ${fixture.policyPath} does not list this file among its owners`
+      );
+      expect(result.stderr).not.toContain('[undefined-key]');
+      expect(result.status).toBe(1);
+    });
+
+    it('fails for a *Key binding in an eager file naming a lazy-only key', () => {
+      const { fixture, dir } = lazyFixture();
+      const file = sourceFile(fixture, 'route.ts');
+      writeText(file, "export const meta = { titleKey: 'recovery.title' };\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[lazy-key-scope] ${file}:1: "recovery.title" is defined only in the lazy catalog ${dir}`
+      );
+      expect(result.status).toBe(1);
+    });
+
+    it('does not let an owner folder cover a sibling folder that shares its name prefix', () => {
+      const { fixture } = lazyFixture();
+      const file = path.join(fixture.scanRoot, 'recovery-route-extra', 'panel.tsx');
+      writeText(file, "const back = t('recovery.back');\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`[lazy-key-scope] ${file}:1: "recovery.back"`);
+      expect(result.status).toBe(1);
+    });
+
+    it('resolves a lazy key from an owner listed as a single file, and only from that file', () => {
+      const { fixture } = lazyFixture({
+        catalog: LAZY_FOLDER,
+        owners: [path.join('greeting-feature', 'routes.ts')],
+      });
+      writeText(
+        sourceFile(fixture, 'routes.ts'),
+        "export const meta = { titleKey: 'recovery.title' };\n"
+      );
+      const sibling = sourceFile(fixture, 'page.tsx');
+      writeText(sibling, "const back = t('recovery.back');\n");
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain('1 violation(s) found');
+      expect(result.stderr).toContain(`[lazy-key-scope] ${sibling}:1: "recovery.back"`);
+      expect(result.stderr).not.toContain('routes.ts');
+      expect(result.status).toBe(1);
+    });
+
+    it('keeps resolving eager keys from a lazy owner file', () => {
+      const { fixture } = lazyFixture();
+      writeText(
+        ownedFile(fixture, 'recovery.tsx'),
+        "const hello = t('greeting.hello');\nconst back = t('recovery.back');\n"
+      );
+
+      const result = runGate(fixture);
+
+      expect(result.stdout).toContain('2 translation reference(s)');
+      expect(result.status).toBe(0);
+    });
+
+    it('fails when the policy names an owner path that does not exist', () => {
+      const { fixture } = lazyFixture({
+        catalog: LAZY_FOLDER,
+        owners: ['recovery-route', 'gone-route/page.tsx'],
+      });
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[lazy-catalog] ${fixture.policyPath} lists "gone-route/page.tsx" as an owner of ` +
+          `"${LAZY_FOLDER}", but no file or folder exists there under ${fixture.scanRoot}`
+      );
+      expect(result.status).toBe(1);
+    });
+
+    it('fails when the policy declares a lazy catalog folder that does not exist', () => {
+      const fixture = cleanFixture();
+      declareLazy(fixture, [{ catalog: 'gone-route/i18n', owners: ['greeting-feature'] }]);
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[lazy-catalog] ${fixture.policyPath} declares "gone-route/i18n", but no ` +
+          `i18n/ catalog folder exists there under ${fixture.scanRoot}`
+      );
+      expect(result.status).toBe(1);
+    });
+
+    it.each([
+      ['a missing lazyCatalogs list', {}],
+      ['a non-array lazyCatalogs value', { lazyCatalogs: 'recovery-route/i18n' }],
+      ['a bare folder string without owners', { lazyCatalogs: ['recovery-route/i18n'] }],
+      ['a blank catalog folder', { lazyCatalogs: [{ catalog: '  ', owners: ['a'] }] }],
+      ['a non-string catalog folder', { lazyCatalogs: [{ catalog: 7, owners: ['a'] }] }],
+      ['a missing owners list', { lazyCatalogs: [{ catalog: 'r/i18n' }] }],
+      ['a non-array owners value', { lazyCatalogs: [{ catalog: 'r/i18n', owners: 'r' }] }],
+      ['an empty owners list', { lazyCatalogs: [{ catalog: 'r/i18n', owners: [] }] }],
+      ['a blank owner', { lazyCatalogs: [{ catalog: 'r/i18n', owners: ['r', ' '] }] }],
+      ['a non-string owner', { lazyCatalogs: [{ catalog: 'r/i18n', owners: [7] }] }],
+      ['a policy that is not an object', [LAZY_ENTRY]],
+    ])('exits 1 for a catalog policy with %s', (_label, policy) => {
+      const fixture = cleanFixture();
+      writeJson(fixture.policyPath, policy);
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toBe(
+        `check-i18n-parity: catalog policy ${fixture.policyPath} must declare "lazyCatalogs" ` +
+          'as an array of { "catalog": <folder>, "owners": [<file or folder>, ...] } entries\n'
+      );
+      expect(result.status).toBe(1);
+    });
+
+    it('exits 1 when the catalog policy file cannot be parsed', () => {
+      const fixture = cleanFixture();
+      writeText(fixture.policyPath, '{ "lazyCatalogs": [');
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(`cannot read catalog policy ${fixture.policyPath} — `);
+      expect(result.status).toBe(1);
+    });
+
+    describe('the repository policy', () => {
+      const repositoryPolicy = JSON.parse(
+        fs.readFileSync(path.join(repoRoot, 'config', 'i18n-catalog-policy.json'), 'utf8')
+      );
+      const SETTINGS_CATALOG = path.join('modules', 'user', 'features', 'settings', 'i18n');
+      const SETTINGS_FEATURE = path.join('modules', 'user', 'features', 'settings');
+
+      const isFileOwner = (owner) => /\.tsx?$/.test(owner);
+
+      const repositoryTree = () => {
+        const fixture = cleanFixture();
+        repositoryPolicy.lazyCatalogs.forEach(({ catalog, owners }, index) => {
+          const keys = catalog === SETTINGS_CATALOG ? { settings: { title: 'Settings' } } : {};
+          const own = { [`lazy_${index}`]: { label: `Label ${index}` }, ...keys };
+          writeJson(path.join(fixture.scanRoot, catalog, 'en.json'), own);
+          writeJson(path.join(fixture.scanRoot, catalog, 'uk.json'), own);
+          owners.forEach((owner) => {
+            const target = path.join(fixture.scanRoot, owner);
+            if (isFileOwner(owner)) writeText(target, 'export {};\n');
+            else fs.mkdirSync(target, { recursive: true });
+          });
+        });
+        writeJson(fixture.policyPath, repositoryPolicy);
+        return fixture;
+      };
+
+      const settingsKeyIn = (fixture, file) => {
+        const target = path.join(fixture.scanRoot, SETTINGS_FEATURE, file);
+        writeText(target, "const title = t('settings.title');\n");
+        return target;
+      };
+
+      it.each([
+        path.join('components', 'user-menu', 'user-chip.tsx'),
+        path.join('components', 'user-menu', 'current-user-menu.tsx'),
+        path.join('hooks', 'use-current-user.ts'),
+        path.join('hooks', 'use-user-menu.ts'),
+        path.join('hooks', 'use-user-menu-keys.ts'),
+        path.join('hooks', 'use-chip-label.ts'),
+        path.join('hooks', 'use-chip-name-growth.ts'),
+      ])('fails for a settings key used from the shell file %s', (file) => {
+        const fixture = repositoryTree();
+        const target = settingsKeyIn(fixture, file);
+
+        const result = runGate(fixture);
+
+        expect(result.stderr).toContain(`[lazy-key-scope] ${target}:1: "settings.title"`);
+        expect(result.status).toBe(1);
+      });
+
+      it.each([
+        path.join('routes', 'user-profile', 'index.tsx'),
+        path.join('components', 'profile-form', 'index.tsx'),
+        path.join('components', 'user-profile-settings', 'index.tsx'),
+        path.join('hooks', 'use-profile-save.ts'),
+      ])('resolves a settings key from the settings page file %s', (file) => {
+        const fixture = repositoryTree();
+        settingsKeyIn(fixture, file);
+
+        const result = runGate(fixture);
+
+        expect(result.stderr).toBe('');
+        expect(result.status).toBe(0);
+      });
+    });
+
+    it('reads the repository policy when I18N_CATALOG_POLICY is unset', () => {
+      const fixture = cleanFixture();
+      const env = { ...process.env, I18N_SCAN_ROOT: fixture.scanRoot };
+      delete env.I18N_CATALOG_POLICY;
+
+      const result = spawnSync(process.execPath, [scriptPath], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        env,
+      });
+
+      expect(result.stderr).toContain(
+        '[lazy-catalog] config/i18n-catalog-policy.json declares ' +
+          '"modules/user/features/auth/routes/recovery-catalog/i18n"'
+      );
+      expect(result.status).toBe(1);
+    });
   });
 });

@@ -7,7 +7,7 @@
 # Every case copies public/index.html into BATS_TEST_TMPDIR first, so the committed artifact is
 # never mutated and each environment renders from the identical bytes a built image would ship;
 # only the flag-parsing cases render a fixture shell instead, because the committed one declares
-# no flags.
+# two flags, userSettings and twoFactorAuth, shipped off.
 
 bats_require_minimum_version 1.5.0
 
@@ -17,10 +17,10 @@ STAGING_GRAPHQL_URL='https://staging.vilnacrm.example/graphql'
 PRODUCTION_API_BASE_URL='https://api.vilnacrm.example'
 PRODUCTION_GRAPHQL_URL='https://api.vilnacrm.example/graphql'
 
-STAGING_CONFIG='{"flags":{}'
+STAGING_CONFIG='{"flags":{"userSettings":false,"twoFactorAuth":false}'
 STAGING_CONFIG="$STAGING_CONFIG,\"graphqlUrl\":\"$STAGING_GRAPHQL_URL\"}"
 
-PRODUCTION_CONFIG='{"flags":{}'
+PRODUCTION_CONFIG='{"flags":{"userSettings":false,"twoFactorAuth":false}'
 PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\""
 PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"graphqlUrl\":\"$PRODUCTION_GRAPHQL_URL\"}"
 
@@ -67,7 +67,7 @@ copy_artifact() {
 }
 
 # Write a minimal shell whose committed block declares the fixture flag demoFlag and echo its
-# path. The real shell declares no flags, so the renderer's flag parsing is driven from here.
+# path. The real shell declares two flags, so the renderer's flag parsing is driven from here.
 flag_fixture() {
   local target="$BATS_TEST_TMPDIR/$1.html"
 
@@ -215,7 +215,7 @@ strip_config_block() {
   [[ "$stderr" == *'Known flags: demoFlag.'* ]]
 }
 
-@test "the committed shell declares no flags, so any flag variable is unknown" {
+@test "the committed shell declares only twoFactorAuth and userSettings, so any other flag variable is unknown" {
   local artifact
   artifact="$(copy_artifact no-flags)"
 
@@ -223,7 +223,7 @@ strip_config_block() {
 
   [ "$status" -ne 0 ]
   [[ "$stderr" == *'names unknown feature flag "darkMode"'* ]]
-  [[ "$stderr" == *'Known flags: (none).'* ]]
+  [[ "$stderr" == *'Known flags: twoFactorAuth, userSettings.'* ]]
 }
 
 @test "the renderer refuses to run without a target argument" {
@@ -354,7 +354,7 @@ strip_config_block() {
 
   [ "$status" -eq 0 ]
   assert_output_contains 'started'
-  [ "$(config_block "$root/dist/index.html")" = "{\"flags\":{},\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\"}" ]
+  [ "$(config_block "$root/dist/index.html")" = "{\"flags\":{\"userSettings\":false,\"twoFactorAuth\":false},\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\"}" ]
   [ "$(connect_src "$root/serve.json")" = "$(connect_src "$PROJECT_ROOT/serve.json") https://api.vilnacrm.example" ]
   diff "$PROJECT_ROOT/serve.json" "$root/config/serve.json"
 }
@@ -374,7 +374,7 @@ strip_config_block() {
 
   [ "$status" -ne 0 ]
   [[ "$output" != *"started"* ]]
-  [[ "$stderr" == *'names unknown feature flag "forgotPassword". Known flags: (none).'* ]]
+  [[ "$stderr" == *'names unknown feature flag "forgotPassword". Known flags: twoFactorAuth, userSettings.'* ]]
   [ "$(config_block "$artifact")" = "" ]
   diff "$PROJECT_ROOT/serve.json" "$SERVE_CONFIG"
 }

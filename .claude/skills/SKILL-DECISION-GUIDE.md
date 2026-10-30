@@ -275,7 +275,7 @@ call them (issue #130). Decide in this order:
    Done — no token needed.
 2. Is it a **contract or data** module (tokens, `@/config/api-config`,
    `@/config/env`, `@/routes/route-paths`, a domain/transport error class, a
-   constant map, a `response-schemas` zod contract, a `*-mutation` document, a
+   constant map, a `response-schemas` zod contract, a `*-mutation` or `*-query` document, a
    module/feature public barrel)? → value import is allowed as-is.
 3. Is it the **base class** you `extend`? → allowed, but keep the base a thin
    template and prefer composition for behavior.

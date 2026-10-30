@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import type { JSX } from 'react';
 
 import { RegistrationFormFields } from '@auth/components/form-section/auth-forms';
+import fieldStyles from '@auth/components/form-section/components/styles';
 import type { Validators } from '@auth/types/auth-forms/registration-form-fields';
 import { identityTranslator, stubValidators } from '@tests/unit/utils/auth-form-i18n';
 
@@ -12,12 +13,13 @@ type FieldProps = {
   type?: string;
   autoComplete: string;
   rules?: { required: string; validate: unknown };
+  sx?: unknown;
 };
 
 const mockFormField = jest.fn();
 const mockPasswordField = jest.fn();
 
-jest.mock('@auth/components/form-section/components/form-field', () => ({
+jest.mock('@/components/ui-form-field', () => ({
   __esModule: true,
   default: (props: FieldProps): JSX.Element => {
     mockFormField(props);
@@ -33,7 +35,7 @@ jest.mock('@auth/components/form-section/components/form-field', () => ({
   },
 }));
 
-jest.mock('@auth/components/form-section/components/password-field', () => ({
+jest.mock('@/components/ui-password-field', () => ({
   __esModule: true,
   default: (props: FieldProps): JSX.Element => {
     mockPasswordField(props);
@@ -126,6 +128,17 @@ describe('RegistrationFormFields translation contract', () => {
     );
   });
 
+  it('passes the auth field spacing to every field it renders', () => {
+    renderFields();
+
+    const rendered = [...mockFormField.mock.calls, ...mockPasswordField.mock.calls];
+
+    expect(rendered).toHaveLength(3);
+    rendered.forEach(([props]) => {
+      expect((props as FieldProps).sx).toBe(fieldStyles.formFieldWrapper);
+    });
+  });
+
   it('never reuses one field key for another field', () => {
     renderFields();
 
@@ -143,6 +156,11 @@ describe('RegistrationFormFields translation contract', () => {
       label: 'sign_up.form.password_input.label',
       placeholder: 'sign_up.form.password_input.placeholder',
       autoComplete: 'new-password',
+      rules: {
+        required: 'sign_up.form.password_input.required',
+        validate: validators.password,
+      },
+      sx: fieldStyles.formFieldWrapper,
     });
   });
 });

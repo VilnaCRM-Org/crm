@@ -1,0 +1,50 @@
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
+
+import { noop } from '@stories/story-callbacks';
+
+import ErrorBanner from './error-banner';
+
+const meta: Meta<typeof ErrorBanner> = {
+  title: 'Components/Inputs/UIForm/ErrorBanner',
+  component: ErrorBanner,
+  tags: ['autodocs'],
+  args: {
+    error: 'Не вдалося надіслати запит. Перевірте з’єднання та спробуйте ще раз.',
+    focusReturn: { onFocus: noop, onBlur: noop },
+  },
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'The form-level failure UIForm renders under its subtitle as a `role="alert"` message. ' +
+          'It takes focus when it appears and reports focus entering and leaving it through ' +
+          '`focusReturn`, the handlers UIForm owns: if the banner disappears while still ' +
+          'holding focus, UIForm moves focus to its submit button so keyboard users can ' +
+          'resubmit. This story renders the banner on its own with no-op handlers, so it shows ' +
+          'the message only.',
+      },
+    },
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof ErrorBanner>;
+
+export const Default: Story = {};
+
+export const WithAction: Story = {
+  args: {
+    action: { label: 'Спробувати ще раз', onClick: noop },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With an `action`, a link button follows the alert text inside the focused banner, ' +
+          'so it is the next Tab stop. UIForm passes it through `errorAction`; it renders only ' +
+          'while there is an error.',
+      },
+    },
+  },
+};

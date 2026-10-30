@@ -45,8 +45,8 @@ src/modules/<module>/
 │   ├── routes/index.ts           # module-owned route contract
 │   ├── stores/index.ts           # the one sanctioned DI seam for the feature
 │   ├── types/…                   # type-only files (issue #88)
-│   └── assets/, utils/           # kept by an empty .gitignore
-└── hooks/, lib/, store/, types/, utils/   # kept by an empty .gitignore
+│   └── assets/, data-providers/, transformers/, utils/   # kept by an empty .gitignore
+└── hooks/, lib/, store/, transformers/, types/, utils/   # kept by an empty .gitignore
 tests/unit/modules/<module>/features/<feature>/…   # hook + repository suites
 tests/e2e/modules/<module>/features/<feature>/…    # Playwright skeleton
 .github/CODEOWNERS                                 # one appended ownership line
@@ -79,12 +79,16 @@ run the E2E suite.
 folder names live. Both the generator and `.dependency-cruiser.js` read it, so the skeleton
 and the gate that judges it cannot disagree.
 
-- **Module root** — `config`, `features`, `hooks`, `lib`, `store`, `types`, `utils`.
-- **Feature root** — `assets`, `components`, `hooks`, `i18n`, `repositories`, `routes`,
-  `stores`, `types`, `utils`.
-- **`tests/` root** — `apollo-server`, `builders`, `e2e`, `integration`, `load`,
-  `memory-leak`, `mutation`, `unit`, `utils`, `visual`.
-- **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`.
+- **Module root** — `config`, `features`, `hooks`, `lib`, `store`, `transformers`, `types`,
+  `utils`.
+- **Feature root** — `assets`, `components`, `data-providers`, `hooks`, `i18n`,
+  `repositories`, `routes`, `stores`, `transformers`, `types`, `utils`. `data-providers` and
+  `transformers` hold the Miro board's `[Data provider]` and `[Transformer]` classes; the
+  generator keeps them, like `assets` and `utils`, as empty folders holding only a `.gitignore`,
+  because it scaffolds every allowed feature folder it does not fill with code.
+- **`tests/` root** — `apollo-server`, `builders`, `console-gate`, `e2e`, `fixtures`, `i18n`,
+  `integration`, `load`, `memory-leak`, `mutation`, `unit`, `utils`, `visual`.
+- **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`, `transformers`.
 - **Test feature root** — same list as the feature root.
 
 There is no `api/`, and no `helpers/` under `src/`: data access is `repositories/` and shared
@@ -110,10 +114,15 @@ variable is unset rather than falling back to a second copy, and it refuses to r
 the list names a target the Makefile does not define — otherwise a typo would silently drop a
 gate, since the Makefile marks every command-line goal phony.
 
-The generated route path is `/<module>/<feature>` (or just `/<module>` when the feature name
-matches the module). Feature names are only unique within a module and `RouteValidator` checks
-only for duplicate module ids, so an unqualified `/<feature>` would let one module's page
-shadow another's.
+The generated route path is `/<module>/<feature>` (or just `/<module>` when the feature name matches
+the module). Feature names are only unique within a module and `RouteValidator` does not check for
+duplicate paths, so an unqualified `/<feature>` would let one module's page shadow another's. The
+app shell already owns five top-level paths, `/boards`, `/products`, `/orders`, `/contacts` and
+`/analytics`, as coming-soon placeholders in `src/routes/app-routes.ts` (issue #362), so
+`make new-module name=orders` generates a second `/orders` route that nothing rejects. A module that
+implements one of those sections deletes the placeholder entry in the same change and points its
+contract at the existing `ROUTE_PATHS` key, as [`src/routes/README.md`](../src/routes/README.md)
+describes under "Coming-soon routes".
 
 ## Changing the templates
 

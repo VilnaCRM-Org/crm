@@ -1,11 +1,13 @@
-import { Box } from '@mui/material';
-import { type JSX } from 'react';
-import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
+import { type JSX, useState } from 'react';
+import { SubmitHandler, FieldValues } from 'react-hook-form';
 
 import type {
-  ErrorBannerProps,
+  BlockedReasonProps,
   FormBodyProps,
+  FormHeaderProps,
   FormHeaderSectionProps,
+  FormLeadSectionProps,
+  FormSubmitProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
   UIFormProps,
@@ -16,30 +18,28 @@ import styles from '@/components/ui-form/styles';
 import UILiveStatus from '@/components/ui-live-status';
 import UIOfflineNotice from '@/components/ui-offline-notice';
 import UITypography from '@/components/ui-typography';
-import useFocusOnMount from '@/utils/use-focus-on-mount';
 
+import ErrorBanner from './error-banner';
 import SubmitSpinner from './submit-spinner';
-import useOfflineSubmit from './use-offline-submit';
+import useFocusReturn from './use-focus-return';
+import useFormSubmission from './use-form-submission';
 import useUIForm from './use-ui-form';
 
-function ErrorBanner({ error }: ErrorBannerProps): JSX.Element | null {
-  const focusOnAppear = useFocusOnMount<HTMLDivElement>();
-  if (!error) return null;
-  return (
-    <Box ref={focusOnAppear} tabIndex={-1} sx={styles.errorBannerFocus}>
-      <UITypography role="alert" sx={{ color: 'red', marginBottom: '1rem' }}>
-        {error}
-      </UITypography>
-    </Box>
-  );
-}
+const NO_STYLES = {};
 
-function FormHeader({ header }: FormHeaderSectionProps): JSX.Element {
-  const { title, subtitle, showTitle, showSubtitle, titleComponent } = header;
+function FormHeader({ header, bannerShown }: FormHeaderSectionProps): JSX.Element {
+  const { title, subtitle, showTitle, showSubtitle, titleComponent, titleRef } = header;
+  const [bannerAtMount] = useState(bannerShown);
   return (
     <>
       {showTitle && title && (
-        <UITypography variant="h4" component={titleComponent} sx={styles.formTitle}>
+        <UITypography
+          variant="h4"
+          component={titleComponent}
+          sx={styles.formTitle}
+          ref={bannerAtMount ? undefined : titleRef}
+          tabIndex={titleRef ? -1 : undefined}
+        >
           {title}
         </UITypography>
       )}
@@ -60,9 +60,12 @@ function buildSubmitHandler<T extends FieldValues>(
 function SubmitControls({
   submitting,
   isSubmitDisabled,
+  blocked,
   submitLabel,
   describedBy,
   buttonRef,
+  spacing,
+  submitSx = NO_STYLES,
 }: SubmitControlsProps): JSX.Element {
   return (
     <UIButton
@@ -72,82 +75,124 @@ function SubmitControls({
       loadingPosition="center"
       loadingIndicator={<SubmitSpinner />}
       disabled={isSubmitDisabled}
+      aria-disabled={blocked || undefined}
       aria-describedby={describedBy}
       variant="contained"
-      sx={styles.submitButton}
+      sx={[styles.submitButton, spacing === 'tight' && styles.submitButtonTight, submitSx]}
     >
       {submitLabel}
     </UIButton>
   );
 }
 
+function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
+  return block.blocked ? (
+    <UITypography id={block.reasonId} sx={styles.blockedReason}>
+      {block.reason}
+    </UITypography>
+  ) : null;
+}
+
+function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element {
+  const focusReturn = useFocusReturn(Boolean(lead.error), offline.submitRef);
+
+  return (
+    <>
+      <FormHeader header={header} bannerShown={Boolean(lead.error)} />
+      {lead.notice}
+      <ErrorBanner
+        key={lead.errorOccurrence}
+        error={lead.error}
+        action={lead.errorAction}
+        focusReturn={focusReturn}
+        unavailableReasonId={offline.online ? undefined : offline.noticeId}
+      />
+      <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
+    </>
+  );
+}
+
 function FormBody<T extends FieldValues>({
   handleSubmit,
+  onInvalid,
   children,
-  error,
-  submitting,
-  isSubmitDisabled,
-  submitLabel,
-  submittingLabel,
-  announceSubmitting,
   header,
+  lead,
+  submit,
+  submitting,
+  announceSubmitting,
+  footer,
 }: FormBodyProps<T>): JSX.Element {
-  const methods = useFormContext<T>();
-  // Offline, the submit is disabled rather than allowed to fail: the notice sits inside the
-  // form after its heading so the registration overlay never covers it, the button describes
-  // itself by the notice, and focus moves there if the button held it (issue #147).
-  const offline = useOfflineSubmit();
+  const { offline, block, disabled } = useFormSubmission({
+    submit,
+    submitting,
+    handleSubmit,
+    onInvalid,
+  });
   return (
-    <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
-      <ErrorBanner error={error} />
-      <FormHeader header={header} />
-      <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
+    <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>
+      <FormLead header={header} lead={lead} offline={offline} />
       {children}
       <SubmitControls
         submitting={submitting}
-        isSubmitDisabled={isSubmitDisabled || !offline.online}
-        submitLabel={submitLabel}
-        describedBy={offline.noticeId}
+        isSubmitDisabled={disabled}
+        blocked={block.blocked}
+        submitLabel={submit.submitLabel}
+        describedBy={block.describedBy}
         buttonRef={offline.submitRef}
+        spacing={submit.submitSpacing}
+        submitSx={submit.submitSx}
       />
-      <UILiveStatus message={announceSubmitting ? submittingLabel : ''} />
+      <BlockedReason block={block} />
+      {footer}
+      <UILiveStatus message={announceSubmitting ? submit.submittingLabel : ''} />
     </form>
   );
 }
 
-export default function UIForm<T extends FieldValues>({
-  onSubmit,
-  defaultValues,
-  children,
-  formOptions = {},
-  isSubmitting,
-  error = null,
-  subtitle = null,
-  showTitle = true,
-  showSubtitle = true,
-  resetOnSuccess = false,
-  isSubmitDisabled = false,
-  submitLabel,
-  title,
-  submittingLabel,
-  titleComponent,
-  submittingAnnouncement,
-}: UIFormProps<T>): JSX.Element {
+function headerOf<T extends FieldValues>(props: UIFormProps<T>): FormHeaderProps {
+  const { title, subtitle = null, showTitle = true, showSubtitle = true } = props;
+  return {
+    title,
+    subtitle,
+    showTitle,
+    showSubtitle,
+    titleComponent: props.titleComponent,
+    titleRef: props.titleRef,
+  };
+}
+
+function submitOf<T extends FieldValues>(props: UIFormProps<T>): FormSubmitProps {
+  const { submitLabel, submittingLabel, isSubmitDisabled = false, submitSpacing } = props;
+  return {
+    submitLabel,
+    submittingLabel,
+    isSubmitDisabled,
+    blockedReason: props.submitBlockedReason,
+    submitSpacing,
+    submitRef: props.submitRef,
+    submitSx: props.submitSx,
+  };
+}
+
+export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JSX.Element {
+  const { onSubmit, defaultValues, formOptions = {}, isSubmitting, resetOnSuccess = false } = props;
+  const { error = null, notice, errorAction, errorOccurrence } = props;
   const { methods, submitting } = useUIForm<T>({ defaultValues, formOptions, isSubmitting });
 
   return (
     <FormProviderBridge methods={methods}>
       <FormBody
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
-        error={error}
-        header={{ title, subtitle, showTitle, showSubtitle, titleComponent }}
+        onInvalid={props.onInvalid}
+        header={headerOf(props)}
+        lead={{ error, notice, errorAction, errorOccurrence }}
+        submit={submitOf(props)}
         submitting={submitting}
-        isSubmitDisabled={isSubmitDisabled}
-        submitLabel={submitLabel}
-        submittingLabel={submittingLabel}
-        announceSubmitting={submittingAnnouncement ?? submitting}
+        announceSubmitting={props.submittingAnnouncement ?? submitting}
+        footer={props.footer}
       >
-        {children}
+        {props.children}
       </FormBody>
     </FormProviderBridge>
   );

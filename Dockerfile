@@ -1,7 +1,7 @@
 FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS base
 
 ARG BUN_VERSION=1.3.5
-ARG CURL_VERSION=8.14.1-r2
+ARG CURL_VERSION=8.14.1-r3
 ARG INSTALL_CHROMIUM=false
 ARG INSTALL_PLAYWRIGHT_BROWSERS=false
 
@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     git=2.47.3-r0 \
     jq=1.7.1-r0 \
     make=4.4.1-r2 \
-    python3=3.12.15-r0 && \
+    python3=3.12.16-r0 && \
     if [ "$INSTALL_CHROMIUM" = "true" ] || [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
       apk add --no-cache \
         chromium=136.0.7103.113-r0 \
@@ -136,7 +136,7 @@ RUN npm --prefix /usr/local/lib/node_modules/serve pkg set dependencies.compress
 # -------- Static Server Stage --------
 FROM mirror.gcr.io/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base
 
-ARG CURL_VERSION=8.14.1-r2
+ARG CURL_VERSION=8.14.1-r3
 ARG LIBSTDCPP_VERSION=14.2.0-r4
 ARG OPENSSL_VERSION=3.3.7-r2
 
@@ -170,7 +170,7 @@ EXPOSE 3001
 # compose restarts a container whose server stopped answering (issue #139).
 HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 CMD ["curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3001/"]
 
-CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json", "--no-request-logging"]
 
 
 # -------- Production Image --------

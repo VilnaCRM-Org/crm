@@ -2,10 +2,20 @@ const jsdomModule = require('jest-environment-jsdom');
 
 const JSDOMEnvironment = jsdomModule.default || jsdomModule.TestEnvironment || jsdomModule;
 
+const trackClosable = (HostChannel, register) =>
+  class TrackedChannel extends HostChannel {
+    constructor(...args) {
+      super(...args);
+      register(this);
+    }
+  };
+
 class JsdomFetchEnvironment extends JSDOMEnvironment {
   constructor(...args) {
     super(...args);
     const target = this.global;
+    const openChannels = [];
+    this.openChannels = openChannels;
     const nodeGlobals = {
       Headers: globalThis.Headers,
       Request: globalThis.Request,
@@ -21,8 +31,12 @@ class JsdomFetchEnvironment extends JSDOMEnvironment {
       structuredClone: globalThis.structuredClone,
       TransformStream: globalThis.TransformStream,
       WritableStream: globalThis.WritableStream,
-      BroadcastChannel: globalThis.BroadcastChannel,
-      MessageChannel: globalThis.MessageChannel,
+      BroadcastChannel: trackClosable(globalThis.BroadcastChannel, (channel) =>
+        openChannels.push(channel)
+      ),
+      MessageChannel: trackClosable(globalThis.MessageChannel, (channel) =>
+        openChannels.push(channel.port1, channel.port2)
+      ),
       MessagePort: globalThis.MessagePort,
       crypto: globalThis.crypto,
     };
@@ -31,6 +45,13 @@ class JsdomFetchEnvironment extends JSDOMEnvironment {
     }
     target.fetch = () =>
       Promise.reject(new Error('fetch is not implemented in this test environment'));
+  }
+
+  async teardown() {
+    for (const channel of this.openChannels.splice(0)) {
+      channel.close();
+    }
+    await super.teardown();
   }
 }
 

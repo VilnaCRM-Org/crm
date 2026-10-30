@@ -35,16 +35,23 @@ export interface TabStop {
   visibleFocus?: boolean;
 }
 
+export type TabKey = 'Tab' | 'Shift+Tab';
+
 /**
- * Presses Tab once and asserts `stop` is the element that received keyboard focus and that the
- * browser marks it `:focus-visible`; with `visibleFocus`, also that its styling changed.
+ * Presses `key` (Tab by default) once and asserts `stop` is the element that received keyboard
+ * focus and that the browser marks it `:focus-visible`; with `visibleFocus`, also that its
+ * styling changed.
  */
-export async function expectNextTabStop(page: Page, stop: TabStop): Promise<void> {
+export async function expectNextTabStop(
+  page: Page,
+  stop: TabStop,
+  key: TabKey = 'Tab'
+): Promise<void> {
   const resting = await focusStyleOf(stop.locator);
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(key);
 
   const active = await describeActive(page);
-  await expect(stop.locator, `Tab landed on ${active}`).toBeFocused();
+  await expect(stop.locator, `${key} landed on ${active}`).toBeFocused();
   expect(
     await stop.locator.evaluate((element) => element.matches(':focus-visible')),
     `${active} is focused without :focus-visible`
@@ -56,10 +63,51 @@ export async function expectNextTabStop(page: Page, stop: TabStop): Promise<void
   }
 }
 
-/** Asserts that pressing Tab visits `stops` in exactly this order, one press per stop. */
-export async function expectTabOrder(page: Page, stops: readonly TabStop[]): Promise<void> {
+/** Asserts that pressing `key` visits `stops` in exactly this order, one press per stop. */
+export async function expectTabOrder(
+  page: Page,
+  stops: readonly TabStop[],
+  key: TabKey = 'Tab'
+): Promise<void> {
   expect(stops.length).toBeGreaterThan(0);
   for (const stop of stops) {
-    await expectNextTabStop(page, stop);
+    await expectNextTabStop(page, stop, key);
+  }
+}
+
+async function expectFocusedWithChange(
+  target: Locator,
+  resting: FocusStyle | undefined
+): Promise<void> {
+  await expect(target).toBeFocused();
+  expect(await target.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
+  expect(await focusStyleOf(target), 'the focused item shows no visible change').not.toEqual(
+    resting
+  );
+}
+
+/**
+ * Walks a roving-focus list with the arrow keys, starting with `items[0]` focused: ArrowDown to
+ * the end, ArrowDown wrapping to the first, ArrowUp wrapping to the last, Home, then End. Every
+ * stop must be focused, `:focus-visible` and styled differently from its resting self.
+ */
+export async function expectArrowKeyWalk(page: Page, items: readonly Locator[]): Promise<void> {
+  expect(items.length).toBeGreaterThan(1);
+  await expect(items[0] as Locator).toBeFocused();
+  const resting: (FocusStyle | undefined)[] = [undefined];
+  for (const item of items.slice(1)) resting.push(await focusStyleOf(item));
+  const lastIndex = items.length - 1;
+  const stops: readonly (readonly [string, number])[] = [
+    ...items.slice(1).map((_item, index) => ['ArrowDown', index + 1] as const),
+    ['ArrowDown', 0],
+    ['ArrowUp', lastIndex],
+    ['Home', 0],
+    ['End', lastIndex],
+  ];
+
+  for (const [position, [key, index]] of stops.entries()) {
+    await page.keyboard.press(key);
+    await expectFocusedWithChange(items[index] as Locator, resting[index]);
+    if (position === 0) resting[0] = await focusStyleOf(items[0] as Locator);
   }
 }

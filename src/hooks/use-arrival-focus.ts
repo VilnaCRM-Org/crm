@@ -4,8 +4,12 @@ import { useLocation, useNavigate } from 'react-router';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 
 const focusOnArrival: RefCallback<HTMLElement> = (node) => {
-  node?.focus();
+  if (node?.closest('[aria-hidden="true"]') === null) node.focus();
 };
+
+function withoutOneTimeMarkers(state: RedirectNavigationState | null): RedirectNavigationState {
+  return state?.from ? { from: state.from, focusMain: false } : { focusMain: false };
+}
 
 export default function useArrivalFocus(): RefCallback<HTMLElement> | null {
   const location = useLocation();
@@ -16,7 +20,7 @@ export default function useArrivalFocus(): RefCallback<HTMLElement> | null {
   useEffect(() => {
     if (!focusMain) return;
 
-    navigate(location, { replace: true, state: { ...state, focusMain: false } });
+    navigate(location, { replace: true, state: withoutOneTimeMarkers(state) });
   }, [focusMain, location, navigate, state]);
 
   return focusMain ? focusOnArrival : null;

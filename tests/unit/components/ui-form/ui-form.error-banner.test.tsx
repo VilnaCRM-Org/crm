@@ -52,9 +52,7 @@ describe('UIForm error banner', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(ERROR_TEXT);
-    // cssstyle 4 (jsdom 26) no longer normalises a named colour on assignment, so the computed
-    // value is what the assertion has to name.
-    expect(alert).toHaveStyle({ color: 'rgb(255, 0, 0)' });
+    expect(alert).toHaveStyle({ color: 'rgb(198, 40, 40)' });
     expect(getComputedStyle(alert).marginBottom).toBe('1rem');
   });
 

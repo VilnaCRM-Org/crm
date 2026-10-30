@@ -1,13 +1,10 @@
-import type { LoginUserDto } from '@auth/types/credentials';
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 
 export interface LoginSubmitter {
   error: string;
   isSubmitting: boolean;
-  handleLogin: (data: LoginUserDto) => Promise<void>;
-}
-
-export type LoginUser = (data: LoginUserDto, signal?: AbortSignal) => Promise<void>;
-
-export interface LoginActions {
-  loginUser: LoginUser;
+  retryable: boolean;
+  handleLogin: (data: SignInDto) => Promise<void>;
+  handleRetry: () => void;
+  handleBack: () => void;
 }

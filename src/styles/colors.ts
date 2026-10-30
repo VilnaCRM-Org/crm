@@ -14,9 +14,13 @@ export const paletteColors = {
   },
   error: {
     main: '#DC3939',
+    text: '#C62828',
+    surface: '#FDECEC',
   },
   success: {
     main: '#4CAF50',
+    text: '#2E7D32',
+    surface: '#E8F4EF',
   },
   warning: {
     main: '#FF9800',
@@ -26,6 +30,7 @@ export const paletteColors = {
   },
   border: {
     default: '#EAECEE',
+    strong: '#80878A',
   },
   background: {
     default: '#FFFFFF',
@@ -67,6 +72,7 @@ export const customColors = {
     primary: '#404142',
     secondary: '#969B9D',
     dark: '#1A1C1E',
+    muted: '#57595B',
     heading: '#000000',
   },
   surface: {
@@ -82,5 +88,16 @@ export const customColors = {
   },
   checkbox: {
     main: '#D0D4D8',
+  },
+  shell: {
+    currentTint: 'rgba(30, 174, 255, 0.1)',
+    searchHoverShadow: '0 4px 9px rgba(74, 78, 95, 0.1)',
+    cardShadow: '0 8px 27px rgba(49, 59, 67, 0.05)',
+    popoverShadow: '0 8px 27px rgba(49, 59, 67, 0.14)',
+    handleShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
+    tooltipShadow: '0 6px 17px rgba(37, 42, 49, 0.07)',
+    tooltipText: '#191B1E',
+    drawerShadow: '-9px 4px 33px rgba(53, 59, 72, 0.07)',
+    scrim: 'rgba(54, 79, 93, 0.05)',
   },
 } as const;

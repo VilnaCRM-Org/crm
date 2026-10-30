@@ -5,7 +5,7 @@ import useAuthState from '@auth/stores/use-auth-state';
 import type useAuthStoreHook from '@auth/stores/use-auth-store';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthState } from '@auth/types/auth-store';
-import { buildEmail, buildFullName, buildToken } from '@tests/builders';
+import { buildEmail, buildFullName, buildPendingSessionId, buildToken } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 import { PRELOADED_AUTH_TOKEN_WINDOW_KEY } from '@tests/utils/seed-preloaded-auth-token';
@@ -23,6 +23,9 @@ const CLEARED: AuthState = {
   loginError: null,
   registerLoading: false,
   registerError: null,
+  twoFactorStatus: 'unknown',
+  pendingSessionId: null,
+  recoveryCodesRemaining: null,
 };
 
 type AuthStoreModule = {
@@ -141,6 +144,70 @@ describe('useAuthStore', () => {
 
     expect(state.token).toBe(token);
     expect(authStoreSelectors.isAuthenticated(state)).toBe(true);
+  });
+
+  describe('two-factor status', () => {
+    it('starts as unknown, with or without a seeded token', async () => {
+      expect((await loadFresh()).default.getState().twoFactorStatus).toBe('unknown');
+
+      window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = buildToken();
+      const seeded = (await loadFresh()).default.getState();
+
+      expect(seeded.token).not.toBeNull();
+      expect(seeded.twoFactorStatus).toBe('unknown');
+    });
+
+    it('returns to unknown with the token when the cleared state is written back', () => {
+      useAuthStore.setState({ token: buildToken(), twoFactorStatus: 'enabled' });
+
+      useAuthStore.setState(CLEARED_AUTH_STATE);
+
+      expect(useAuthStore.getState()).toMatchObject({ token: null, twoFactorStatus: 'unknown' });
+    });
+
+    it('returns to unknown through the reset helper', () => {
+      useAuthStore.setState({ twoFactorStatus: 'disabled' });
+
+      resetClientStores();
+
+      expect(useAuthStore.getState().twoFactorStatus).toBe('unknown');
+    });
+
+    it('merges a status patch without touching the other fields', () => {
+      const email = buildEmail();
+      useAuthStore.setState({ email });
+
+      useAuthStore.setState({ twoFactorStatus: 'enabled' });
+
+      expect(useAuthStore.getState()).toEqual({ ...CLEARED, email, twoFactorStatus: 'enabled' });
+    });
+  });
+
+  it('starts without a pending session and clears one with the rest of the state', async () => {
+    expect((await loadFresh()).default.getState().pendingSessionId).toBeNull();
+
+    useAuthStore.setState({ pendingSessionId: buildPendingSessionId(), email: buildEmail() });
+    useAuthStore.setState(CLEARED_AUTH_STATE);
+
+    expect(useAuthStore.getState().pendingSessionId).toBeNull();
+  });
+
+  it('starts with no recovery-code count and clears one with the rest of the state', async () => {
+    expect((await loadFresh()).default.getState().recoveryCodesRemaining).toBeNull();
+
+    useAuthStore.setState({ recoveryCodesRemaining: 1, email: buildEmail() });
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBe(1);
+    useAuthStore.setState(CLEARED_AUTH_STATE);
+
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
+  });
+
+  it('holds data only: no action, no function member, no persisted copy', () => {
+    const members = Object.values(useAuthStore.getState());
+
+    expect(members.filter((member) => typeof member === 'function')).toEqual([]);
+    expect(Object.keys(useAuthStore.getState()).sort()).toEqual(Object.keys(CLEARED).sort());
+    expect(Reflect.has(useAuthStore, 'persist')).toBe(false);
   });
 
   it('restores the initial state through the reset helper', () => {

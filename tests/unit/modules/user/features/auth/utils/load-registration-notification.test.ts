@@ -1,3 +1,4 @@
+import { waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 jest.mock('@auth/components/form-section/auth-forms/registration-notification', () => ({
@@ -50,6 +51,40 @@ describe('loadRegistrationNotification', () => {
     expect(attempts).toBe(2);
     expect(reload).not.toHaveBeenCalled();
     reload.mockRestore();
+  });
+
+  it('prefetches the notification without reporting anything when it loads', async () => {
+    const { default: observabilityCore } =
+      await import('@/services/observability/observability-core');
+    const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
+    const { default: loader, registrationNotificationPrefetcher } =
+      await import('@auth/utils/load-registration-notification');
+
+    registrationNotificationPrefetcher.prefetch();
+    await loader.load();
+
+    expect(capture).not.toHaveBeenCalled();
+    capture.mockRestore();
+  });
+
+  it('reports a failed prefetch instead of leaving the rejection unhandled', async () => {
+    const failure = new Error('prefetch boom');
+    jest.doMock('@auth/components/form-section/auth-forms/registration-notification', () => {
+      throw failure;
+    });
+    const { default: observabilityCore } =
+      await import('@/services/observability/observability-core');
+    const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
+    const { registrationNotificationPrefetcher } =
+      await import('@auth/utils/load-registration-notification');
+
+    registrationNotificationPrefetcher.prefetch();
+
+    await waitFor(() => {
+      expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:notification-prefetch' });
+    });
+    capture.mockRestore();
+    jest.dontMock('@auth/components/form-section/auth-forms/registration-notification');
   });
 
   it('resets the cache and rethrows if the dynamic import fails', async () => {

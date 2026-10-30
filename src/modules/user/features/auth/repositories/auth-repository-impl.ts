@@ -1,11 +1,11 @@
 import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 
 import type { AuthError } from '../types/auth-error';
-import type { AuthRepository, LoginResult, RegisterResult } from '../types/auth-repository';
+import type { AuthRepository, RegisterResult } from '../types/auth-repository';
 import type { AuthRepositoryDeps } from '../types/auth-repository-deps';
-import type { LoginUserDto, RegisterUserDto } from '../types/credentials';
 
 const ABORTED_ERROR: AuthError = {
   kind: 'network',
@@ -18,22 +18,7 @@ const ABORTED_ERROR: AuthError = {
 export default class AuthRepositoryImpl implements AuthRepository {
   constructor(@inject(AUTH_TOKENS.AuthRepositoryDeps) private readonly deps: AuthRepositoryDeps) {}
 
-  public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<LoginResult> {
-    try {
-      const apiResponse = await this.deps.loginAPI.login(credentials, { signal });
-      const mapped = this.deps.loginResponseMapper.map(apiResponse, credentials.email);
-      return mapped.ok
-        ? { ok: true, value: { email: mapped.value.email, token: mapped.value.token } }
-        : { ok: false, error: this.deps.authErrorFactory.fromUiError(mapped.error) };
-    } catch (err) {
-      return { ok: false, error: this.toError(err) };
-    }
-  }
-
-  public async register(
-    credentials: RegisterUserDto,
-    signal?: AbortSignal
-  ): Promise<RegisterResult> {
+  public async register(credentials: SignUpDto, signal?: AbortSignal): Promise<RegisterResult> {
     try {
       const apiResponse = await this.deps.registrationAPI.register(credentials, { signal });
       const mapped = this.deps.registrationResponseMapper.map(apiResponse);

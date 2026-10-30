@@ -2,11 +2,20 @@ const ROUTE_PATHS = {
   home: '/',
   signUp: '/sign-up',
   signIn: '/sign-in',
-  // Declared ahead of the flow it names (issue #315): the sign-in forgot-password link points
-  // here and lands on the not-found page until a route contract registers it.
+  twoFactorChallenge: '/sign-in/two-factor',
   passwordRecovery: '/password-recovery',
+  passwordReset: '/password-reset',
+  settings: '/settings',
   forbidden: '/forbidden',
   serverError: '/server-error',
+  boards: '/boards',
+  products: '/products',
+  orders: '/orders',
+  contacts: '/contacts',
+  analytics: '/analytics',
+  settingsIntegrations: '/settings/integrations',
+  settingsWebhooks: '/settings/webhooks',
+  settingsBilling: '/settings/billing',
   notFound: '*',
 } as const;
 

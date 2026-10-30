@@ -1,31 +1,38 @@
-import ROUTE_PATHS from '@/routes/route-paths';
+import type ROUTE_PATHS_TYPE from '@/routes/route-paths';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+
+const loadRoutePaths = (): Promise<typeof ROUTE_PATHS_TYPE> =>
+  loadIsolated(async () => (await import('@/routes/route-paths')).default);
 
 describe('ROUTE_PATHS', () => {
-  it('home is "/"', () => {
-    expect(ROUTE_PATHS.home).toBe('/');
+  it('pins every route path value', async () => {
+    const ROUTE_PATHS = await loadRoutePaths();
+
+    expect(ROUTE_PATHS).toStrictEqual({
+      home: '/',
+      signUp: '/sign-up',
+      signIn: '/sign-in',
+      twoFactorChallenge: '/sign-in/two-factor',
+      passwordRecovery: '/password-recovery',
+      passwordReset: '/password-reset',
+      settings: '/settings',
+      forbidden: '/forbidden',
+      serverError: '/server-error',
+      boards: '/boards',
+      products: '/products',
+      orders: '/orders',
+      contacts: '/contacts',
+      analytics: '/analytics',
+      settingsIntegrations: '/settings/integrations',
+      settingsWebhooks: '/settings/webhooks',
+      settingsBilling: '/settings/billing',
+      notFound: '*',
+    });
   });
 
-  it('signUp is "/sign-up"', () => {
-    expect(ROUTE_PATHS.signUp).toBe('/sign-up');
-  });
+  it('all values are strings (AC1)', async () => {
+    const ROUTE_PATHS = await loadRoutePaths();
 
-  it('signIn is "/sign-in"', () => {
-    expect(ROUTE_PATHS.signIn).toBe('/sign-in');
-  });
-
-  it('forbidden is "/forbidden"', () => {
-    expect(ROUTE_PATHS.forbidden).toBe('/forbidden');
-  });
-
-  it('serverError is "/server-error"', () => {
-    expect(ROUTE_PATHS.serverError).toBe('/server-error');
-  });
-
-  it('notFound is "*"', () => {
-    expect(ROUTE_PATHS.notFound).toBe('*');
-  });
-
-  it('all values are strings (AC1)', () => {
     for (const value of Object.values(ROUTE_PATHS)) {
       expect(typeof value).toBe('string');
     }

@@ -101,19 +101,83 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 ## Current flags
 
-None. The mechanism stays in place for the next rollout: the `FeatureFlag` union is `never`,
-`FEATURE_FLAG_DEFAULTS` is empty, the committed block ships `{ "flags": {} }`, and the schema's
-`flags` object is strict, so a block or an environment that still names a removed flag fails fast.
+### `userSettings`
+
+Gates the `/settings` page (issue #330), the three coming-soon settings pages
+`/settings/integrations`, `/settings/webhooks` and `/settings/billing` (issue #362), and their entry
+points in the app shell: the sidebar and drawer Settings group, whose items declare
+`flag: 'userSettings'`, and the user menu's profile and Settings links, which load the current-user
+chunk only while the flag is on. `FEATURE_FLAG_DEFAULTS.userSettings` is `false`, the committed
+block ships `"userSettings": false`, and the schema's `flags` object is strict, so a block or an
+environment that still names a removed flag fails fast.
+
+- **Default:** `false`. Against user-service v2.8.0, which authenticates nobody, a shipped `true`
+  would read and update an arbitrary user, so the committed default and
+  `FEATURE_FLAG_DEFAULTS` must stay `false` (a contract test fails otherwise).
+- **Roll out:** on in the test stack once the page is complete, then in production after the
+  user-service authentication surface ships (request G1). The test stack is on:
+  `docker-compose.test.yml` passes
+  `APP_CONFIG_FLAG_USER_SETTINGS=${APP_CONFIG_FLAG_USER_SETTINGS:-true}` to the `prod` service, so
+  the Playwright, a11y and visual suites see the shell's Settings navigation group, the user menu's
+  profile and Settings links, the `/settings` page and the three `/settings/…` coming-soon pages,
+  while `docker-compose.yml` and the committed block stay `false`. Set the variable to `false` to
+  run the stack without the page.
+- **Owner:** the user settings feature (issue #330).
+- **Removal trigger:** delete the flag once production has it on and the page is stable; step 3
+  of the lifecycle above applies.
+
+### `twoFactorAuth`
+
+Hides the two-factor authentication section of `/settings` (issue #331): the `UserProfile` page
+renders `TwoFactorSettings` only while `useFeatureFlag('twoFactorAuth')` is on. It gates nothing
+else. No route contract lists it, because `/sign-in/two-factor` must stay reachable in every
+environment (a sign-in can return a challenge anywhere), and no sign-in code reads it. The page
+itself is still gated by `userSettings`, so managing 2FA in an environment needs both on.
+
+- **Default:** `false` in `FEATURE_FLAG_DEFAULTS` and in the committed block.
+- **Declared in:** the `FeatureFlag` union and `FeatureFlagValues`, `FEATURE_FLAG_DEFAULTS`, the
+  strict schema, the committed block in `public/index.html`, and `.env.example`
+  (`APP_CONFIG_FLAG_TWO_FACTOR_AUTH=`, empty, after `APP_CONFIG_FLAG_USER_SETTINGS=`).
+- **Test stack:** `docker-compose.test.yml` passes
+  `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, so the stack enables
+  the flag. The `:-` form also turns the empty value `.env` carries (the template declares the key
+  empty) into `true`, and an explicit `false` runs the stack without the section. The committed
+  block and `FEATURE_FLAG_DEFAULTS` still say `false`, so production and every other environment
+  keep it off.
+- **Roll out:** the test stack enables it (Story 4.1); production enables it in Follow-up 5.1,
+  after a user-service release carries `signInUser` and the 2FA mutations. A browser spec that
+  replaces the runtime block with `overrideRuntimeConfig` replaces the whole block, so it sees the
+  flag off unless it names it; the 2FA specs name it, and the settings specs, which do not, render
+  `/settings` exactly as before.
+- **Owner:** the two-factor authentication feature (issue #331).
+- **Removal trigger:** delete the flag once production has run with it on; step 3 of the
+  lifecycle above applies.
+
+### `forgotPassword` (removed)
 
 `forgotPassword`, the first flag, gated the sign-in "Forgot password?" link. Issue #309 removed
-it by a product decision to show the link in the form before the recovery flow (#315) exists, so
-it skipped stage 2. The link points at `ROUTE_PATHS.passwordRecovery` and lands on the
-not-found page until #315 registers the route. The contract test that tied the flag's shipped
-default to that route went with the flag; `tests/unit/tooling/runtime-config-contract.test.ts`
-now pins that the link is rendered, the route is unregistered, and its row in
-`tests/e2e/route-coverage.tsv` stays allowlisted with a reason naming #315. Any environment that
-still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
-`Known flags: (none).` and must unset it.
+it by a product decision to show the link in the form before the recovery flow existed, so it
+skipped stage 2. The link points at `ROUTE_PATHS.passwordRecovery`, which #315 registers
+together with `/password-reset`, so the flow ships with no flag in any environment: the test
+stack, the sandboxes and production all render it. Production depends on its user-service
+serving the reset mutations; until a release carries them, the flow there answers with the
+retryable transient error rather than a missing page.
+`tests/unit/tooling/runtime-config-contract.test.ts` pins that the link is rendered and the
+route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any environment that still
+sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
+`Known flags: twoFactorAuth, userSettings.` and must unset it.
+
+## Gating a route
+
+A route contract declares `flag: 'userSettings'` instead of reading the flag itself; the eager
+`RouteFlagGate` renders the not-found page while the flag is off, above `ProtectedRoute`, so a
+visitor without a token gets the same page and the chunk is never requested. `/settings` is the
+example (`src/modules/user/features/settings/routes/index.ts`); the mechanics are in
+[`src/routes/README.md`](../src/routes/README.md#flagged-routes-issue-330). Gate the entry points
+too: a shell navigation item declares the same `flag` (`NavigationLeaf.flag`, used in
+`src/components/ui-app-shell/navigation-items.ts`), which `useAvailableNavigationItems` drops while
+the flag is off, and the user menu renders its profile and Settings links only while
+`useFeatureFlag('userSettings')` is on.
 
 ## Rules
 

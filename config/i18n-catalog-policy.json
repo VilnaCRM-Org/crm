@@ -1,0 +1,88 @@
+{
+  "lazyCatalogs": [
+    {
+      "catalog": "modules/user/features/auth/routes/recovery-catalog/i18n",
+      "owners": [
+        "modules/user/features/auth/routes/index.ts",
+        "modules/user/features/auth/routes/reset-password",
+        "modules/user/features/auth/routes/create-new-password",
+        "modules/user/features/auth/components/reset-password",
+        "modules/user/features/auth/components/create-new-password",
+        "modules/user/features/auth/hooks/use-recovery-failure-banner.ts"
+      ]
+    },
+    {
+      "catalog": "components/ui-password-policy-rules/i18n",
+      "owners": ["components/ui-password-policy-rules"]
+    },
+    {
+      "catalog": "modules/user/features/settings/i18n",
+      "owners": [
+        "modules/user/features/settings/routes/index.ts",
+        "modules/user/features/settings/routes/user-profile",
+        "modules/user/features/settings/components/change-password",
+        "modules/user/features/settings/components/profile-form",
+        "modules/user/features/settings/components/profile-header",
+        "modules/user/features/settings/components/settings-grid",
+        "modules/user/features/settings/components/social-networks",
+        "modules/user/features/settings/components/two-factor-settings",
+        "modules/user/features/settings/components/user-profile-settings",
+        "modules/user/features/settings/hooks/use-blur-hold.ts",
+        "modules/user/features/settings/hooks/use-codes-form-props.ts",
+        "modules/user/features/settings/hooks/use-disable-form-props.ts",
+        "modules/user/features/settings/hooks/use-display-name.ts",
+        "modules/user/features/settings/hooks/use-email-resend.ts",
+        "modules/user/features/settings/hooks/use-email-row.ts",
+        "modules/user/features/settings/hooks/use-profile-form-model.ts",
+        "modules/user/features/settings/hooks/use-profile-form-rules.ts",
+        "modules/user/features/settings/hooks/use-profile-load.ts",
+        "modules/user/features/settings/hooks/use-profile-save.ts",
+        "modules/user/features/settings/hooks/use-regenerate-form-props.ts",
+        "modules/user/features/settings/hooks/use-settled-focus.ts",
+        "modules/user/features/settings/hooks/use-setup-form-props.ts"
+      ]
+    },
+    {
+      "catalog": "components/ui-toast/i18n",
+      "owners": ["components/ui-toast"]
+    },
+    {
+      "catalog": "components/ui-app-shell/i18n",
+      "owners": [
+        "components/ui-app-shell",
+        "components/ui-app-header",
+        "components/ui-sidebar",
+        "components/ui-navigation-list",
+        "components/ui-navigation-drawer"
+      ]
+    },
+    {
+      "catalog": "components/coming-soon/i18n",
+      "owners": ["components/coming-soon"]
+    },
+    {
+      "catalog": "modules/user/features/settings/components/user-menu/i18n",
+      "owners": [
+        "modules/user/features/settings/components/user-menu",
+        "modules/user/features/settings/hooks/use-chip-label.ts"
+      ]
+    },
+    {
+      "catalog": "modules/user/features/auth/routes/two-factor-catalog/i18n",
+      "owners": [
+        "modules/user/features/auth/routes/index.ts",
+        "modules/user/features/auth/routes/two-factor",
+        "modules/user/features/auth/components/two-factor",
+        "modules/user/features/auth/hooks/use-challenge-banner.ts",
+        "modules/user/features/auth/hooks/use-challenge-copy.ts"
+      ]
+    },
+    {
+      "catalog": "modules/user/features/auth/components/recovery-codes-notice/i18n",
+      "owners": [
+        "modules/user/features/auth/components/recovery-codes-notice",
+        "modules/user/features/auth/hooks/use-recovery-notice-message.ts"
+      ]
+    }
+  ]
+}

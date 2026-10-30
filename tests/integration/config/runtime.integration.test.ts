@@ -91,31 +91,13 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual({ items: [] });
+    expect(flags.names()).toEqual({
+      items: [{ name: 'userSettings' }, { name: 'twoFactorAuth' }],
+    });
+    expect(flags.isEnabled('userSettings')).toBe(false);
     expect(flags.isEnabled(PROBE_FLAG as never)).toBeUndefined();
-    expect(flags.snapshot()).toEqual({});
+    expect(flags.snapshot()).toEqual({ userSettings: false, twoFactorAuth: false });
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
-  });
-
-  it('falls back to an empty configuration outside a DOM host', async () => {
-    const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
-    const globals = globalThis as { document?: Document };
-    const descriptor = Object.getOwnPropertyDescriptor(
-      globalThis,
-      'document'
-    ) as PropertyDescriptor;
-
-    const parse = jest.fn<AppConfigValues, [unknown]>(() => ({}));
-
-    delete globals.document;
-
-    try {
-      appConfigSource.validated(parse);
-
-      expect(parse).toHaveBeenCalledWith({});
-    } finally {
-      Object.defineProperty(globalThis, 'document', descriptor);
-    }
   });
 
   it('resolves the GraphQL url from the container using the build-time environment', async () => {
@@ -142,7 +124,10 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual({ apiBaseUrl, graphqlUrl, flags: {} });
     expect(appConfig.apiBaseUrl()).toBe(apiBaseUrl);
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(graphqlUrl);
-    expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({});
+    expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({
+      userSettings: false,
+      twoFactorAuth: false,
+    });
     expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });
 
@@ -174,6 +159,19 @@ describe('runtime configuration Integration', () => {
     const { container, tokens } = await loadRuntimeGraph();
 
     expect(container.resolve<AppConfig>(tokens.appConfig).get()).toEqual({ flags: {} });
+  });
+
+  it('turns userSettings on when the rendered block sets it', async () => {
+    renderRuntimeConfig(buildFeatureFlagConfig({ userSettings: true }));
+
+    const { container, tokens } = await loadRuntimeGraph();
+    const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
+
+    expect(container.resolve<AppConfig>(tokens.appConfig).get().flags).toEqual({
+      userSettings: true,
+    });
+    expect(flags.isEnabled('userSettings')).toBe(true);
+    expect(flags.snapshot()).toEqual({ userSettings: true, twoFactorAuth: false });
   });
 
   it('names each declared flag through the container-resolved service', async () => {

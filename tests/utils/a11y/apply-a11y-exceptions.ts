@@ -3,6 +3,7 @@ import type { A11yException } from './axe-config';
 
 interface ViolationNode {
   target: unknown[];
+  xpath?: unknown[] | undefined;
 }
 
 interface Violation {
@@ -14,18 +15,39 @@ export interface AxeResultsLike<V extends Violation = Violation> {
   violations: V[];
 }
 
-/** Answers whether the element axe addressed by `target` matches an exception's `selector`. */
-export type ElementMatcher = (target: string, selector: string) => Promise<boolean> | boolean;
+/**
+ * The element axe reported: its CSS `target`, which axe does not guarantee to be unique, and its
+ * `xpath` when the scan ran with the `xpath` option, which addresses exactly that element.
+ */
+export interface AddressedNode {
+  readonly target: string;
+  readonly xpath: string | undefined;
+}
 
-/** Matcher for a DOM available in-process (jsdom): resolves axe's target inside `root`. */
+/** Answers whether the element axe addressed matches an exception's `selector`. */
+export type ElementMatcher = (node: AddressedNode, selector: string) => Promise<boolean> | boolean;
+
+const elementAt = (root: ParentNode, node: AddressedNode): Element | null => {
+  if (node.xpath === undefined) return root.querySelector(node.target);
+  const owner = root.ownerDocument ?? document;
+  const found = owner.evaluate(node.xpath, owner, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+  return found.singleNodeValue instanceof Element ? found.singleNodeValue : null;
+};
+
+/** Matcher for a DOM available in-process (jsdom): resolves the reported element inside `root`. */
 export const domElementMatcher =
   (root: ParentNode): ElementMatcher =>
-  (target, selector) =>
-    root.querySelector(target)?.matches(selector) ?? false;
+  (node, selector) =>
+    elementAt(root, node)?.matches(selector) ?? false;
 
-const innermostTarget = (node: ViolationNode): string | undefined => {
-  const last = node.target.at(-1);
+const innermost = (path: unknown[] | undefined): string | undefined => {
+  const last = path?.at(-1);
   return typeof last === 'string' ? last : undefined;
+};
+
+const addressOf = (node: ViolationNode): AddressedNode | undefined => {
+  const target = innermost(node.target);
+  return target === undefined ? undefined : { target, xpath: innermost(node.xpath) };
 };
 
 const isExcepted = async (
@@ -34,13 +56,13 @@ const isExcepted = async (
   exceptions: readonly A11yException[],
   matches: ElementMatcher
 ): Promise<boolean> => {
-  const target = innermostTarget(node);
-  if (target === undefined) return false;
+  const address = addressOf(node);
+  if (address === undefined) return false;
   const applicable = exceptions.filter(
     (exception) => exception.ruleId === violationId && exception.selector !== '*'
   );
   const verdicts = await Promise.all(
-    applicable.map((exception) => matches(target, exception.selector))
+    applicable.map((exception) => matches(address, exception.selector))
   );
   return verdicts.some(Boolean);
 };

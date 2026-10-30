@@ -23,8 +23,7 @@
 import { execFileSync } from 'node:child_process';
 
 const LOGIC_TS = 'src/services/https-client/fetch-https-client.ts'; // non-hook logic .ts
-const COMPONENT_TSX =
-  'src/modules/user/features/auth/components/form-section/components/form-field.tsx';
+const COMPONENT_TSX = 'src/modules/user/features/auth/components/auth-switcher/index.tsx';
 const TYPE_ONLY_TS = 'src/modules/user/types/api-errors/validation-error.ts';
 const HOOK_TS = 'src/modules/user/features/auth/stores/use-auth-token.ts';
 const PLAYWRIGHT_SPEC = 'tests/e2e/modules/back-to-main.spec.ts';
@@ -33,6 +32,7 @@ const CONTAINER_SEAM_TSX = 'src/components/ui-container/index.tsx';
 const BREAKPOINTS_SEAM_TS = 'src/components/ui-breakpoints/index.ts';
 const BASE_SRC_JS = 'src/i18n.js';
 const TEXT_LINK_SEAM_TSX = 'src/components/ui-text-link/index.tsx';
+const PIN_INPUT_SEAM_TSX = 'src/components/ui-pin-input/index.tsx';
 const LOCAL_LINK_TSX = 'src/components/ui-link/index.tsx';
 const UI_TOOLKIT = '@vilnacrm/ui-toolkit';
 const UI_TOOLKIT_SUBPATHS = `${UI_TOOLKIT}/*`;
@@ -70,6 +70,7 @@ const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
     BREAKPOINTS_SEAM_TS,
     BASE_SRC_JS,
     TEXT_LINK_SEAM_TSX,
+    PIN_INPUT_SEAM_TSX,
     LOCAL_LINK_TSX,
   ].map((file) => [
     file,
@@ -165,6 +166,7 @@ const SRC_PROBES = [
   CONTAINER_SEAM_TSX,
   BREAKPOINTS_SEAM_TS,
   TEXT_LINK_SEAM_TSX,
+  PIN_INPUT_SEAM_TSX,
   LOCAL_LINK_TSX,
 ];
 const NON_SEAM_SRC_PROBES = [LOGIC_TS, COMPONENT_TSX, TYPE_ONLY_TS, HOOK_TS, ROUTE_SHELL_TSX];
@@ -388,6 +390,19 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
       expect.objectContaining({ name: `${UI_TOOLKIT}/ui-link`, allowImportNames: ['default'] })
     );
     expect(toolkitGroupFor(LOCAL_LINK_TSX)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
+  });
+
+  it('lets only the pin-input seam through ui-pin-input, as its default export (#331)', () => {
+    expect(toolkitGroupFor(PIN_INPUT_SEAM_TSX)).toEqual([
+      ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
+      `!${UI_TOOLKIT}/ui-pin-input`,
+    ]);
+    expect(restrictedImportsFor(PIN_INPUT_SEAM_TSX).paths).toContainEqual(
+      expect.objectContaining({ name: `${UI_TOOLKIT}/ui-pin-input`, allowImportNames: ['default'] })
+    );
+    NON_SEAM_SRC_PROBES.forEach((file) => {
+      expect(toolkitGroupFor(file)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
+    });
   });
 
   it('limits a ui-toolkit component seam to its subpath default export (#250)', () => {

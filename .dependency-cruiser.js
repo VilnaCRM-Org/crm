@@ -447,9 +447,10 @@ module.exports = {
       name: 'components-no-direct-injectable-import',
       comment:
         'React components must obtain behavioral collaborators (services, repositories, ' +
-        'module store, factories, mappers, error handlers) through the DI bridge ' +
-        'useService(TOKENS.X) from @/providers/di — never by value-importing the class and ' +
-        'calling it directly, which binds the collaborator at the call site and cannot be ' +
+        'data providers, transformers, module store, factories, mappers, error handlers) ' +
+        'through the DI bridge useService(TOKENS.X) from @/providers/di — never by ' +
+        'value-importing the class and calling it directly, which binds the collaborator ' +
+        'at the call site and cannot be ' +
         'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
         'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
         'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
@@ -472,8 +473,8 @@ module.exports = {
       to: {
         path: [
           '^src/services/',
-          '^src/modules/[^/]+/features/[^/]+/repositories/',
-          '^src/modules/[^/]+/store/',
+          '^src/modules/[^/]+/features/[^/]+/(?:data-providers|repositories|transformers)/',
+          '^src/modules/[^/]+/(?:store|transformers)/',
           '(?:-factory|-mapper)[.]tsx?$',
           'error-handler',
         ],

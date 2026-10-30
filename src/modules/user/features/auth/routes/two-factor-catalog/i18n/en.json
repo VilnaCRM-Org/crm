@@ -1,0 +1,29 @@
+{
+  "two_factor": {
+    "title": "Two-factor authentication",
+    "subtitle": "Enter the six-digit code from the Google Authenticator app.",
+    "note": "You can enter the code within 5 minutes of signing in.",
+    "code_label": "Verification code",
+    "cell_label": "Digit {{position}} of {{total}}",
+    "submit_button": "Confirm",
+    "submitting": "Verifying…",
+    "recovery": {
+      "label": "Recovery code",
+      "helper": "Format: XXXX-XXXX",
+      "subtitle": "Enter one of the recovery codes you saved during setup.",
+      "use_recovery": "Use a recovery code",
+      "use_authenticator": "Use a code from the app"
+    },
+    "errors": {
+      "recovery_format": "Enter the recovery code in the format XXXX-XXXX",
+      "recovery_invalid": "Invalid recovery code. Try again.",
+      "incomplete": "Enter all 6 digits of the code",
+      "format": "The code must be exactly six digits",
+      "invalid_code": "Invalid code. Check that the time on your phone is set correctly and try again."
+    },
+    "banner": {
+      "rate_limited": "Too many attempts. Wait a minute and try again.",
+      "transient": "The request could not be sent. Check your connection and try again."
+    }
+  }
+}

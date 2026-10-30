@@ -1,16 +1,19 @@
 import { GraphQLError } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
 
-import { CreateUserInput, User } from './types';
-
-const EMAIL_LOCAL = String.raw`[a-zA-Z0-9.!#$%&'*+/=?^_\`{|}~-]+`;
-const EMAIL_LABEL = String.raw`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?`;
-const EMAIL_REGEX = new RegExp(`^${EMAIL_LOCAL}@${EMAIL_LABEL}(?:\\.${EMAIL_LABEL})*$`);
+import { profileResolvers } from './profile-resolvers';
+import {
+  ConfirmPasswordResetInput,
+  CreateUserInput,
+  PasswordResetPayload,
+  RequestPasswordResetInput,
+  User,
+} from './types';
+import { twoFactorResolvers } from './two-factor-resolvers';
+import { EMAIL_REGEX, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
-  const emailRegex = EMAIL_REGEX;
-
-  if (!input.email || !emailRegex.test(input.email)) {
+  if (!input.email || !EMAIL_REGEX.test(input.email)) {
     throw new GraphQLError('Invalid email format', {
       extensions: {
         code: 'BAD_REQUEST',
@@ -28,6 +31,14 @@ const validateCreateUserInput = (input: CreateUserInput): void => {
     });
   }
 };
+
+const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
+const MAX_TOKEN_LENGTH = 255;
+
+const passwordResetPayload = (clientMutationId?: string | null): PasswordResetPayload => ({
+  user: null,
+  clientMutationId: clientMutationId ?? null,
+});
 
 function rejectIfExists<K, V>(
   collection: Map<K, V>,
@@ -53,6 +64,7 @@ export function clearUsers(): void {
 }
 
 export const resolvers = {
+  Query: { ...profileResolvers.Query },
   Mutation: {
     createUser: async (
       _: unknown,
@@ -80,6 +92,32 @@ export const resolvers = {
         });
       }
     },
+    requestPasswordResetUser: async (
+      _: unknown,
+      { input }: { input: RequestPasswordResetInput }
+    ): Promise<PasswordResetPayload> => {
+      if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
+        rejectViolation('email', 'This value is not a valid email address.');
+      }
+      return passwordResetPayload(input.clientMutationId);
+    },
+    confirmPasswordResetUser: async (
+      _: unknown,
+      { input }: { input: ConfirmPasswordResetInput }
+    ): Promise<PasswordResetPayload> => {
+      if (input.token.trim().length === 0 || input.token.length > MAX_TOKEN_LENGTH) {
+        rejectViolation('token', 'This value should not be blank or longer than 255 characters.');
+      }
+      if (!PASSWORD_REGEX.test(input.newPassword)) {
+        rejectViolation(
+          'newPassword',
+          'Password must be 8 to 64 characters long and contain a number and an uppercase letter.'
+        );
+      }
+      return passwordResetPayload(input.clientMutationId);
+    },
+    ...profileResolvers.Mutation,
+    ...twoFactorResolvers.Mutation,
   },
 };
 

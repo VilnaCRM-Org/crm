@@ -226,8 +226,9 @@ runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL 
 `RegistrationAPI`) — data is parsed, never cast.
 
 - **Which transport?** GraphQL (Apollo) for user/account **domain-graph** reads and mutations;
-  REST (`HttpsClient`) for non-graph endpoints (login/token, health, files). When both expose
-  the same resource, the write goes through GraphQL and the token/session concern through REST.
+  REST (`HttpsClient`) for non-graph endpoints (health, files). Sign-in and the two-factor
+  operations are GraphQL mutations; no REST login exists. When both expose the same resource,
+  GraphQL wins.
 - **Generated files are build output** — never hand-edit `src/api/generated/**`; change the
   spec/operation and rerun `make codegen`. They are excluded from every source gate via the gate
   configs, never with suppressions. CI (`static testing`) runs `make codegen-check` and fails on
@@ -241,12 +242,19 @@ backend-touching feature.
 
 Every user-facing string is a translated key, and every key exists in **both** locales. The
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
-`src/i18n/localization.json` is their merge, produced by `scripts/localization-generator.js`
-and refreshed with `make i18n-generate`. The build never regenerates it.
+`src/i18n/localization.json` is the merge of every **eager** catalog, produced by
+`scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
+regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+(password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
+`coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
+`auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
+`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+key in one of them resolves only in the files its `owners` list names.
 
-- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`,
-  run `make i18n-generate`, and commit the regenerated merged catalog together with the catalog
-  edit. Never hand-edit `src/i18n/localization.json`.
+- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
+  `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a
+  lazy catalog leaves the merged file unchanged; a new lazy catalog or owner is a reviewed edit to
+  `config/i18n-catalog-policy.json`). Never hand-edit `src/i18n/localization.json`.
 - **Gate** — `make lint-i18n` (in `make lint` and in the CI lint phase, so it gates every pull
   request) fails on a missing or stray locale file in a `src/**/i18n/` catalog, an `en`/`uk`
   key-set mismatch inside a catalog, a stale `src/i18n/localization.json`, or a `t()` key —
@@ -315,11 +323,11 @@ Import factories from the `@tests/builders` alias (resolves in Jest and Playwrig
 builder returns domain-VALID data by construction (passing the app's email, password, and
 name validators) and accepts an `overrides` object to pin specific fields:
 
-- `buildUser(overrides?)` → `{ fullName, email, password }` (`RegisterUserDto`).
-- `buildCredentials(overrides?)` → `{ email, password }` (`LoginUserDto`).
+- `buildUser(overrides?)` → `{ fullName, email, password }` (`SignUpDto` from `@/modules/user`).
+- `buildCredentials(overrides?)` → `{ email, password }` (`SignInDto` from `@/modules/user`).
 - `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
 - `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
-- `buildLoginResponse(overrides?)` → `{ token }`.
+- `buildResetToken()` → a 32-character alphanumeric password-reset token.
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
 - `buildGraphqlUser(overrides?)` → `{ id, confirmed, email, initials }`.
@@ -354,7 +362,7 @@ FAKER_SEED=12345 make test-unit-client
 
 Determinism keeps visual snapshots stable. The shared integration mock server
 (`tests/integration/mocks/server.ts`) exposes its generated defaults
-(`defaultLoginResponse`, `defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
+(`defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
 against those exports rather than literals.
 
 ### When NOT to use a builder
@@ -804,7 +812,7 @@ class Service {}
 class ApiErrorFactory {}
 class EmailValidator {}
 class ApiErrorGuard {}
-class LoginResponseMapper {}
+class RegistrationResponseMapper {}
 class FetchHttpsClient {}
 ```
 
@@ -929,9 +937,15 @@ Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are regi
 render-path pattern (issue #115).
 
 Components read a flag through `useFeatureFlag(name)` (`@/hooks/use-feature-flag`), the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
-flag is declared today: `forgotPassword`, the last one, was removed in #309, and an environment
-that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. Two
+flags are declared today: `userSettings` (issue #330), shipped off in the committed block and
+switched on in the test stack through `APP_CONFIG_FLAG_USER_SETTINGS`, and `twoFactorAuth`
+(issue #331), shipped off in the committed block and in production, switched on in the test stack
+through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH` (default `true`), and gating only the 2FA section of
+`/settings`. Container start fails on two flag shapes (`scripts/render-app-config.js`): an
+`APP_CONFIG_FLAG_*` name that matches no declared flag, and a declared flag whose value is not
+exactly `true` or `false`. `forgotPassword` was removed in #309, so an environment that still sets
+`APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value must unset it.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -988,23 +1002,25 @@ routing through the formatter — never with `eslint-disable`.
 ### Collaborators arrive through DI, never through a value import (issue #130)
 
 Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
-`src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`), the only
+`src/modules/*/store/**`, `src/modules/*/transformers/**`,
+`src/modules/*/features/*/{data-providers,repositories,stores,transformers,utils}/**`), the only
 behavioral collaborators a method may invoke are those received through DI. Never
 `import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`,
 register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is
 only an annotation, make it `import type` (issue #88).
 
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
-`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`reflect-metadata`, token modules, config data (`@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
-`error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
-public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+`error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
+module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
 
 Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
 `reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
-behind an adapter — Apollo through `ApolloLinkFactory` / `AUTH_TOKENS.ApolloClient`, Sentry and
-`web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
-contract module and passed to collaborators as data.
+behind an adapter: Apollo through `ApolloLinkFactory` (the link chain) and `SessionLinkFactory`
+(the Bearer token and the 401 sign-out link), behind `AUTH_TOKENS.ApolloClient` — the two files
+`RESTRICTED_LIBRARY_ADAPTERS` lists; Sentry and `web-vitals` through the observability boundary;
+zod schemas declared in a `response-schemas` contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
@@ -1018,8 +1034,9 @@ core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) 
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
-load-bearing, so do not delete it. The form-section `validations/*` singletons live under
-`components/`, which no scope glob matches, so they alone need no policy entry.
+load-bearing, so do not delete it. The validator singletons live in
+`src/modules/user/lib/validations/`, which no `LOGIC_SOURCE_GLOBS` entry matches, so they need no
+policy entry.
 
 Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
 the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus
@@ -1404,10 +1421,15 @@ and [tests/console-gate/README.md](tests/console-gate/README.md).
    binaries. For a static page, follow the `notFound` / submit-loader precedent and use a small
    local screens array instead; regenerate with a spec-scoped `--update-snapshots`, never the
    repo-wide `make test-visual-update`, then re-run **without** the flag and require green.
-5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
-   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
-   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
-   `setViewportSize` call would discard the device viewport.
+5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated baselines for `/sign-in`,
+   `/sign-up`, `/password-recovery` and `/password-reset` (`auth.spec.ts`), the three error pages
+   (`error-pages.spec.ts`), `/settings` (`settings.spec.ts`) and the eight coming-soon sections
+   inside the app shell — `/boards`, `/products`, `/orders`, `/contacts`, `/analytics`,
+   `/settings/integrations`, `/settings/webhooks`, `/settings/billing` (`coming-soon.spec.ts`, issue
+   #362) and the app shell states — home with the closed header, the drawer open on `/settings` and
+   the user menu open (`app-shell.spec.ts`, issue #362) — recorded per mobile project with
+   `scale: 'device'` so the real 2.625×/3× DPR raster is gated. Never reuse
+   `take-visual-snapshot.ts` there — its `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 

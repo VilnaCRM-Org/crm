@@ -1,14 +1,14 @@
 import { Box, Typography } from '@mui/material';
-import type { JSX } from 'react';
+import { type JSX, type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/ui-button';
+import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
-import { paletteColors } from '@/styles/colors';
-import useFocusOnMount from '@/utils/use-focus-on-mount';
 import type {
   ErrorActionButtonProps,
+  ErrorAlertProps,
   ErrorButtonsProps,
   ErrorLabelProps,
   ErrorMessageProps,
@@ -16,14 +16,6 @@ import type {
 } from '@auth/types/auth-forms/registration-error-view';
 
 import styles from './registration-notification.error-styles';
-
-const headingFocusStyles = {
-  outline: 'none',
-  '&:focus-visible': {
-    outline: `2px solid ${paletteColors.error.main}`,
-    outlineOffset: '2px',
-  },
-};
 
 const buttonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 
@@ -38,12 +30,20 @@ function ErrorImageBlock({ label }: ErrorLabelProps): JSX.Element {
 function ErrorActionButton({
   sx,
   variant,
-  disabled,
+  busy,
   onClick,
   label,
 }: ErrorActionButtonProps): JSX.Element {
   return (
-    <UIButton sx={sx} variant={variant} type="button" disabled={disabled} onClick={onClick}>
+    <UIButton
+      sx={sx}
+      variant={variant}
+      type="button"
+      aria-disabled={busy || undefined}
+      onClick={(): void => {
+        if (!busy) onClick();
+      }}
+    >
       <Typography component="span" sx={buttonTextStyles}>
         {label}
       </Typography>
@@ -65,7 +65,7 @@ function ErrorButtons({
         <ErrorActionButton
           sx={styles.errorButton}
           variant="contained"
-          disabled={isSubmitting || isClosing}
+          busy={isSubmitting || isClosing}
           onClick={onRetry}
           label={retryLabel}
         />
@@ -73,7 +73,7 @@ function ErrorButtons({
       <ErrorActionButton
         sx={[styles.errorButton, styles.errorButtonSecondary]}
         variant="outlined"
-        disabled={isClosing}
+        busy={isClosing}
         onClick={onBack}
         label={backLabel}
       />
@@ -81,38 +81,69 @@ function ErrorButtons({
   );
 }
 
+function ErrorAlert({ text }: ErrorAlertProps): JSX.Element {
+  const [announced, setAnnounced] = useState('');
+
+  useEffect(() => {
+    setAnnounced(text);
+  }, [text]);
+
+  return (
+    <UITypography component="span" role="alert" sx={styles.messageDescription}>
+      {announced}
+    </UITypography>
+  );
+}
+
+function useHeadingFocus(text: string): RefObject<HTMLHeadingElement | null> {
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const focusedOnce = useRef(false);
+
+  useEffect(() => {
+    if (!focusedOnce.current || document.activeElement === document.body) {
+      headingRef.current?.focus();
+    }
+    focusedOnce.current = true;
+  }, [text]);
+
+  return headingRef;
+}
+
 function ErrorMessage({ title, text }: ErrorMessageProps): JSX.Element {
+  const headingRef = useHeadingFocus(text);
   return (
     <>
-      <UITypography component="h2" sx={styles.messageTitle}>
+      <UITypography
+        component="h2"
+        ref={headingRef}
+        tabIndex={-1}
+        sx={[styles.messageTitle, styles.headingFocus]}
+      >
         {title}
       </UITypography>
-      <UITypography component="span" role="alert" sx={styles.messageDescription}>
-        {text}
-      </UITypography>
+      <ErrorAlert text={text} />
     </>
   );
 }
 
 export default function RegistrationErrorView({
   resolvedErrorText,
+  submittingMessage,
   isSubmitting,
   isClosing,
   onRetry,
   onBack,
 }: Props): JSX.Element {
   const { t } = useTranslation();
-  const focusOnMount = useFocusOnMount<HTMLDivElement>();
   return (
     <Box sx={styles.notificationSection}>
       <Box sx={styles.contentBoxError}>
         <ErrorImageBlock label={t('notifications.error.images.error')} />
-        <Box
-          ref={focusOnMount}
-          tabIndex={-1}
-          sx={[styles.messageContainerError, headingFocusStyles]}
-        >
-          <ErrorMessage title={t('notifications.error.title')} text={resolvedErrorText} />
+        <Box sx={styles.messageContainerError}>
+          <ErrorMessage
+            title={t('notifications.error.title')}
+            text={isSubmitting ? '' : resolvedErrorText}
+          />
           <ErrorButtons
             isSubmitting={isSubmitting}
             isClosing={isClosing}
@@ -121,6 +152,7 @@ export default function RegistrationErrorView({
             retryLabel={t('notifications.error.retry_button')}
             backLabel={t('notifications.error.button')}
           />
+          <UILiveStatus message={isSubmitting ? submittingMessage : ''} />
         </Box>
       </Box>
     </Box>

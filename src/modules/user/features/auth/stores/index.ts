@@ -1,9 +1,11 @@
+import type { DependencyContainer, InjectionToken } from 'tsyringe';
+
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthActions, AuthStateWriter } from '@auth/types/auth-store';
-import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
 
 import type AuthStoreActions from './auth-store-actions';
 import useAuthState from './use-auth-state';
@@ -27,15 +29,7 @@ class DeferredAuthActions implements AuthActions {
     retryable: true,
   };
 
-  public async loginUser(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
-    this.state.setState({ loginLoading: true, loginError: null });
-    const actions = await this.resolveSafely((error) =>
-      this.state.setState({ loginLoading: false, loginError: error })
-    );
-    if (actions) await actions.login(credentials, signal);
-  }
-
-  public async registerUser(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
+  public async registerUser(credentials: SignUpDto, signal?: AbortSignal): Promise<void> {
     this.state.setState({ registerLoading: true, registerError: null, user: null });
     const actions = await this.resolveSafely((error) =>
       this.state.setState({ registerLoading: false, registerError: error })
@@ -80,6 +74,32 @@ class DeferredAuthActions implements AuthActions {
     const { default: container } = await import('@/config/dependency-injection-config');
     const { default: ActionsClass } = await import('./auth-store-actions');
     return container.resolve(ActionsClass);
+  }
+}
+
+export class AuthProviderLoader {
+  private readonly container = new ChunkRetryLoader(
+    () => import('@/config/dependency-injection-config')
+  );
+
+  public async resolve<T>(token: InjectionToken<T>): Promise<T> {
+    const container = await this.loadContainer();
+    try {
+      return container.resolve<T>(token);
+    } catch (error) {
+      observabilityCore.captureError(error, { source: 'auth:provider-resolve' });
+      throw error;
+    }
+  }
+
+  private async loadContainer(): Promise<DependencyContainer> {
+    try {
+      const { default: container } = await this.container.load();
+      return container;
+    } catch (error) {
+      observabilityCore.captureError(error, { source: 'auth:provider-load' });
+      throw error;
+    }
   }
 }
 

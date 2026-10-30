@@ -22,6 +22,8 @@ interface BaseTypographyProps {
   children: React.ReactNode;
   id?: string;
   role?: React.AriaRole;
+  ref?: React.Ref<HTMLElement> | undefined;
+  tabIndex?: number | undefined;
 }
 
 interface LabelTypographyProps {

@@ -14,7 +14,11 @@ import type { ProtectedOutletContext } from '../src/routes/types/protected-outle
 
 import { noop } from './story-callbacks';
 
-export const storySignOut: ProtectedOutletContext = { signOut: noop };
+export const storySignOut: ProtectedOutletContext = {
+  signOut: noop,
+  twoFactorStatus: 'unknown',
+  setTwoFactorStatus: noop,
+};
 
 export function withMemoryRouter(initialPath = '/'): Decorator {
   return function MemoryRouterDecorator(Story): JSX.Element {

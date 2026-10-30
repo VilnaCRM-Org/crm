@@ -40,11 +40,7 @@ describe('LocalizationGenerator', () => {
 
     Object.assign(fs, mockFs);
 
-    generator = new LocalizationGenerator(
-      defaultConfig.i18nFolderName,
-      defaultConfig.modulesPath,
-      defaultConfig.localizationFile
-    );
+    generator = new LocalizationGenerator(defaultConfig);
   });
 
   describe('constructor', () => {
@@ -58,15 +54,21 @@ describe('LocalizationGenerator', () => {
     });
 
     it('should initialize with custom values', () => {
-      const customGenerator = new LocalizationGenerator(
-        'custom-i18n',
-        'custom/modules',
-        'custom.json'
-      );
+      const customGenerator = new LocalizationGenerator({
+        i18nFolderName: 'custom-i18n',
+        modulesPath: 'custom/modules',
+        localizationFile: 'custom.json',
+        outputPath: 'custom/out',
+        requiredLocales: ['de'],
+        lazyCatalogs: [],
+      });
 
       expect(customGenerator.i18nFolderName).toBe('custom-i18n');
       expect(customGenerator.modulesPath).toBe('custom/modules');
       expect(customGenerator.localizationFile).toBe('custom.json');
+      expect(customGenerator.pathToWriteLocalization).toBe('custom/out');
+      expect(customGenerator.requiredLocales).toEqual(['de']);
+      expect([...customGenerator.lazyCatalogDirs]).toEqual([]);
     });
   });
 
@@ -148,6 +150,46 @@ describe('LocalizationGenerator', () => {
       const result = generator.getFeaturePaths();
 
       expect(result).toEqual([path.join('src', 'modules', 'feature', 'i18n')]);
+    });
+
+    it('should skip a catalog folder declared lazy so it never joins the merged catalog', () => {
+      fs.existsSync.mockReturnValue(true);
+      const lazyGenerator = new LocalizationGenerator({
+        outputPath: 'src/i18n',
+        requiredLocales: ['en', 'uk'],
+        lazyCatalogs: ['modules/recovery/i18n'],
+      });
+      mockReaddirWithStructure({
+        src: [directoryEntry('modules', true)],
+        'src/modules': [directoryEntry('feature', true), directoryEntry('recovery', true)],
+        'src/modules/feature': [directoryEntry('i18n', true)],
+        'src/modules/recovery': [directoryEntry('i18n', true)],
+      });
+
+      const result = lazyGenerator.getFeaturePaths();
+
+      expect(result).toEqual([path.join('src', 'modules', 'feature', 'i18n')]);
+    });
+
+    it('should read the lazy catalog folders from the repository policy by default', () => {
+      const policy = jest.requireActual('../../../config/i18n-catalog-policy.json');
+
+      const defaultGenerator = new LocalizationGenerator();
+
+      expect([...defaultGenerator.lazyCatalogDirs]).toEqual(
+        policy.lazyCatalogs.map((entry) => path.resolve('src', entry.catalog))
+      );
+      expect(policy.lazyCatalogs.map((entry) => entry.catalog)).toEqual([
+        'modules/user/features/auth/routes/recovery-catalog/i18n',
+        'components/ui-password-policy-rules/i18n',
+        'modules/user/features/settings/i18n',
+        'components/ui-toast/i18n',
+        'components/ui-app-shell/i18n',
+        'components/coming-soon/i18n',
+        'modules/user/features/settings/components/user-menu/i18n',
+        'modules/user/features/auth/routes/two-factor-catalog/i18n',
+        'modules/user/features/auth/components/recovery-codes-notice/i18n',
+      ]);
     });
   });
 

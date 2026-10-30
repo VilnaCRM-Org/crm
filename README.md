@@ -162,13 +162,19 @@ dependencies.
 
 ### Localization
 
-Translations live in per-feature catalogs that are merged into one committed file.
+Translations live in per-feature catalogs. Eager catalogs are merged into one committed file; the
+lazy catalogs listed in `config/i18n-catalog-policy.json` (password recovery, password policy,
+settings, toast, app shell, coming soon, the user menu, the two-factor challenge and the low
+recovery codes notice) stay out of it and are registered by the route or component chunk that owns
+them.
 
 - Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
-- Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are
-  mandatory and their key sets must match
-- Merged catalog: `src/i18n/localization.json` is committed, not built; regenerate it with
-  `make i18n-generate` whenever a catalog key is added, renamed, or removed
+- Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are mandatory and
+  their key sets must match
+- Merged catalog: `src/i18n/localization.json` (eager catalogs only) is committed, not built;
+  regenerate it with `make i18n-generate` whenever an eager catalog key is added, renamed, or
+  removed; a lazy catalog change needs no regeneration, and `make lint-i18n` checks it against the
+  owners in `config/i18n-catalog-policy.json`
 - Gate: `make lint-i18n` runs inside `make lint` and the CI lint phase, and fails on a missing
   locale file, a stray extra locale, an en/uk key mismatch, a stale merged catalog, or a `t()`
   key that is undefined in either locale
@@ -358,8 +364,12 @@ rebuild:
 
 The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
 not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
-deployment never starts serving. No feature flag is declared today, so any non-empty
-`APP_CONFIG_FLAG_*` variable fails the start — an environment that still sets
+deployment never starts serving. Two flags are declared today: `userSettings` (issue #330) ships
+off in the committed block and the test stack turns it on through
+`APP_CONFIG_FLAG_USER_SETTINGS`; `twoFactorAuth` (issue #331) hides the 2FA section of
+`/settings`, ships off in the committed block and in production, and the test stack turns it on
+the same way through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH` (default `true`).
+Any other `APP_CONFIG_FLAG_*` name fails the start — an environment that still sets
 `APP_CONFIG_FLAG_FORGOT_PASSWORD` from the removed `forgotPassword` flag must unset it.
 Build-time `REACT_APP_*` values remain as defaults.
 See [runtime configuration](src/config/runtime/README.md) and

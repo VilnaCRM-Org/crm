@@ -59,6 +59,7 @@ const TB_TYPE_FILE = typedBoundaryPolicy
 const UI_TOOLKIT_SEAMS = {
   container: 'src/components/ui-container/index.tsx',
   breakpoints: 'src/components/ui-breakpoints/index.ts',
+  pinInput: 'src/components/ui-pin-input/index.tsx',
 };
 
 // Exact selector strings, copied verbatim from the resolved config. The rot-guard compares the
@@ -678,6 +679,33 @@ const FIXTURES = [
   {
     id: 'ui-toolkit-subpath-in-feature-hook',
     file: PROBES.hook,
+    code: "import UiTypography from '@vilnacrm/ui-toolkit/ui-typography';\nexport default UiTypography;",
+    covers: [],
+    expect: 'fail',
+    rule: 'no-restricted-imports',
+    tag: 'docs/ui-toolkit.md',
+  },
+  {
+    id: 'ui-toolkit-pin-input-outside-seam',
+    file: PROBES.component,
+    code: "import UiPinInput from '@vilnacrm/ui-toolkit/ui-pin-input';\nconst A = () => <UiPinInput />;",
+    covers: [],
+    expect: 'fail',
+    rule: 'no-restricted-imports',
+    tag: 'docs/ui-toolkit.md',
+  },
+  {
+    id: 'ui-toolkit-pin-input-seam-own-subpath',
+    file: UI_TOOLKIT_SEAMS.pinInput,
+    code: "import UiPinInput from '@vilnacrm/ui-toolkit/ui-pin-input';\nexport default UiPinInput;",
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-imports',
+    tag: '',
+  },
+  {
+    id: 'ui-toolkit-pin-input-seam-foreign-subpath',
+    file: UI_TOOLKIT_SEAMS.pinInput,
     code: "import UiTypography from '@vilnacrm/ui-toolkit/ui-typography';\nexport default UiTypography;",
     covers: [],
     expect: 'fail',

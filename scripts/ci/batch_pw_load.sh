@@ -100,6 +100,10 @@ run_load_tests_dind() {
             k6_script="/loadTests/error-pages.js"
             k6_results_file="/loadTests/results/error-pages.html"
             ;;
+        password-recovery)
+            k6_script="/loadTests/password-recovery.js"
+            k6_results_file="/loadTests/results/password-recovery.html"
+            ;;
         *)
             echo "Unknown load suite: $load_suite" >&2
             exit 1
@@ -140,6 +144,7 @@ main() {
     run_load_tests_dind "$crm_dir" "homepage"
     run_load_tests_dind "$crm_dir" "signup"
     run_load_tests_dind "$crm_dir" "error-pages"
+    run_load_tests_dind "$crm_dir" "password-recovery"
 }
 
 case "${1:-all}" in
@@ -157,6 +162,9 @@ case "${1:-all}" in
         ;;
     test-load-error-pages)
         run_load_tests_dind "." "error-pages"
+        ;;
+    test-load-password-recovery)
+        run_load_tests_dind "." "password-recovery"
         ;;
     *)
         main "$@"

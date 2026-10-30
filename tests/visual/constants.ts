@@ -96,6 +96,9 @@ export const PAGES = {
   NOT_FOUND: '/definitely-not-a-route',
   FORBIDDEN: '/forbidden',
   SERVER_ERROR: '/server-error',
+  PASSWORD_RECOVERY: '/password-recovery',
+  PASSWORD_RESET: '/password-reset',
+  SETTINGS: '/settings',
 } as const;
 
 // The catch-all route renders the 404 error page, so its three Figma frames (desktop, tablet,

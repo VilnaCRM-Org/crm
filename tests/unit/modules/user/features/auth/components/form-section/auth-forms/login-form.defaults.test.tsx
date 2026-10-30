@@ -13,13 +13,19 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({ t: (key: string): string => key }),
 }));
 
-jest.mock('@auth/assets/eye.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/eye-off.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/eye-off.svg', () => ({ ReactComponent: 'svg' }));
+
+jest.mock('@auth/hooks/use-sign-in-submit', () => ({
+  __esModule: true,
+  default: (): jest.Mock => jest.fn(),
+}));
 
 jest.mock('@auth/stores', () => ({
   __esModule: true,
   useAuthState: (): typeof authStoreState => authStoreState,
-  authActions: { loginUser: jest.fn(), clearLoginError: jest.fn() },
+  AuthProviderLoader: class {},
+  authActions: { clearLoginError: jest.fn() },
   AuthStoreSelectors: {
     loginError: (state: typeof authStoreState): AuthErrorShape | null => state.loginError,
     loginLoading: (state: typeof authStoreState): boolean => state.loginLoading,
@@ -36,7 +42,7 @@ describe('LoginForm default values', () => {
     const { default: LoginForm } =
       await import('@auth/components/form-section/auth-forms/login-form');
 
-    render(<LoginForm />);
+    render(<LoginForm postLogin={{ signedIn: false, proceed: jest.fn() }} />);
 
     expect(screen.getByPlaceholderText('sign_in.form.email_input.placeholder')).toHaveValue('');
     expect(screen.getByPlaceholderText('sign_in.form.password_input.placeholder')).toHaveValue('');

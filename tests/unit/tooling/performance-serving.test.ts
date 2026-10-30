@@ -3,6 +3,15 @@
 import fs from 'fs';
 import path from 'path';
 
+import {
+  AUTH_FORM_CHUNKS,
+  authFormsCacheGroup,
+  authFormsVendorsCacheGroup,
+  RECOVERY_FORM_CHUNKS,
+  SETTINGS_CHUNKS,
+  TWO_FACTOR_FORM_CHUNKS,
+} from '@scripts/auth-forms-chunk-group';
+
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 const readFile = (relativePath: string): string =>
@@ -34,6 +43,40 @@ const resolveLocalModule = (importer: string, specifier: string): string | null 
   if (!found) throw new Error(`Unresolved eager import ${specifier} in ${importer}`);
   return found;
 };
+
+interface EagerGraph {
+  readonly files: ReadonlySet<string>;
+  readonly muiEdges: readonly string[];
+}
+
+const eagerGraphOf = (entry: string, read: (file: string) => string = readFile): EagerGraph => {
+  const files = new Set<string>();
+  const muiEdges: string[] = [];
+  const pending = [entry];
+
+  while (pending.length > 0) {
+    const file = pending.pop() ?? '';
+    if (!files.has(file)) {
+      files.add(file);
+      for (const specifier of staticImportsOf(read(file))) {
+        const local = resolveLocalModule(file, specifier);
+        if (local) pending.push(local);
+        else if (specifier.startsWith('@mui/')) muiEdges.push(`${file} -> ${specifier}`);
+      }
+    }
+  }
+
+  return { files, muiEdges };
+};
+
+const SHELL_ONLY_FOLDERS = [
+  'src/components/ui-app-shell/',
+  'src/components/ui-app-header/',
+  'src/components/ui-sidebar/',
+  'src/components/ui-navigation-list/',
+  'src/components/ui-navigation-drawer/',
+  'src/modules/user/features/settings/components/user-menu/',
+];
 
 describe('performance serving config', () => {
   it('ships immutable cache headers for built static assets', () => {
@@ -73,7 +116,8 @@ describe('performance serving config', () => {
     // The serve command itself must stay byte-identical: the entrypoint wraps it, never
     // replaces it, so the production image keeps serving `dist` with the explicit serve config.
     expect(dockerfile).toContain(
-      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]'
+      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json", ' +
+        '"--no-request-logging"]'
     );
   });
 
@@ -119,6 +163,7 @@ describe('performance serving config', () => {
     const mapperSource = readFile('src/routes/route-mapper.tsx');
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const authRoutesSource = readFile('src/modules/user/features/auth/routes/index.ts');
+    const settingsRoutesSource = readFile('src/modules/user/features/settings/routes/index.ts');
     const routesSource = readFile('src/routes/routes.tsx');
     const rootLayoutSource = readFile('src/components/layouts/root-layout.tsx');
 
@@ -148,6 +193,20 @@ describe('performance serving config', () => {
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-in'\)/
     );
 
+    expect(settingsRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "settings" \*\/\s*'\.\/user-profile'\)/
+    );
+    const comingSoonLoader =
+      /import\(\s*\/\* webpackChunkName: "coming-soon" \*\/\s*'@\/components\/coming-soon'\)/g;
+    expect(appRoutesSource.match(comingSoonLoader)).toHaveLength(5);
+    expect(settingsRoutesSource.match(comingSoonLoader)).toHaveLength(3);
+    expect(staticImportsOf(appRoutesSource)).not.toContain('@/components/coming-soon');
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('@/components/coming-soon');
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('./user-profile');
+    expect(staticImportsOf(readFile('src/routes/registry.ts'))).toContain(
+      '@/modules/user/features/settings/routes'
+    );
+
     // Pages are never statically imported (which would defeat code splitting).
     expect(routesSource).not.toContain('import SignUp');
     expect(routesSource).not.toContain('import SignIn');
@@ -156,6 +215,16 @@ describe('performance serving config', () => {
     expect(appRoutesSource).not.toContain('import ServerError');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
+    expect(staticImportsOf("import ResetPassword from './reset-password';\n")).toEqual([
+      './reset-password',
+    ]);
+    ['reset-password', 'create-new-password'].forEach((page) => {
+      expect(authRoutesSource).toMatch(
+        new RegExp(String.raw`import\(\s*/\* webpackChunkName: "${page}" \*/\s*'\./${page}'\)`)
+      );
+      expect(staticImportsOf(authRoutesSource)).not.toContain(`./${page}`);
+      expect(staticImportsOf(routesSource).filter((source) => source.includes(page))).toEqual([]);
+    });
 
     // The route-level Suspense boundary ships a non-null deferred fallback (RouteFallback),
     // never `fallback={null}` (issue #117). This pins the RootLayout boundary specifically; the
@@ -167,25 +236,9 @@ describe('performance serving config', () => {
   });
 
   it('keeps the MUI theme engine off the eager path', () => {
-    const eagerMuiImports = new Set<string>();
-    const visited = new Set<string>();
-    const pending = ['src/index.tsx'];
+    const { muiEdges } = eagerGraphOf('src/index.tsx');
 
-    while (pending.length > 0) {
-      const file = pending.pop() ?? '';
-      if (!visited.has(file)) {
-        visited.add(file);
-        for (const specifier of staticImportsOf(readFile(file))) {
-          const local = resolveLocalModule(file, specifier);
-          if (local) pending.push(local);
-          else if (specifier.startsWith('@mui/')) eagerMuiImports.add(`${file} -> ${specifier}`);
-        }
-      }
-    }
-
-    expect([...eagerMuiImports]).toEqual([
-      'src/providers/app-providers.tsx -> @mui/material/styles',
-    ]);
+    expect(muiEdges).toEqual(['src/providers/app-providers.tsx -> @mui/material/styles']);
     expect(readFile('src/providers/app-providers.tsx')).toContain(
       "import { StyledEngineProvider } from '@mui/material/styles';"
     );
@@ -204,6 +257,72 @@ describe('performance serving config', () => {
     );
   });
 
+  it('keeps the shell, the user menu and the current-user read off the eager path (NFR-5)', () => {
+    const { files, muiEdges } = eagerGraphOf('src/index.tsx');
+    const eagerShell = [...files].filter((file) =>
+      SHELL_ONLY_FOLDERS.some((folder) => file.startsWith(folder))
+    );
+    const settingsHooks = [...files].filter((file) => file.includes('hooks/use-current-user'));
+
+    expect(files.has('src/components/layouts/app-layout.tsx')).toBe(true);
+    expect(files.has('src/components/layouts/app-layout.styles.ts')).toBe(true);
+    expect(eagerShell).toEqual([]);
+    expect(settingsHooks).toEqual([]);
+    expect(muiEdges).toEqual(['src/providers/app-providers.tsx -> @mui/material/styles']);
+  });
+
+  it('fails the eager-path check when AppLayout imports a shell file (must-fail)', () => {
+    const appLayout = 'src/components/layouts/app-layout.tsx';
+    const tainted = (file: string): string =>
+      file === appLayout
+        ? `${readFile(file)}\nimport UIAppShell from '@/components/ui-app-shell';\n`
+        : readFile(file);
+
+    const { files, muiEdges } = eagerGraphOf('src/index.tsx', tainted);
+
+    expect(files.has('src/components/ui-app-shell/index.tsx')).toBe(true);
+    expect(muiEdges.length).toBeGreaterThan(1);
+  });
+
+  it('loads the shell through a ThemedChunkLoader named ui-app-shell (AD-1)', () => {
+    const loaderSource = readFile('src/components/layouts/app-shell-loader.ts');
+
+    expect(loaderSource).toContain('new ThemedChunkLoader<UIAppShellProps>(');
+    expect(loaderSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "ui-app-shell" \*\/\s*'@\/components\/ui-app-shell'\s*\)/
+    );
+    expect(staticImportsOf(readFile('src/components/layouts/app-layout.tsx'))).toEqual(
+      expect.arrayContaining(['./app-shell-loader'])
+    );
+  });
+
+  it('imports the user-menu and current-user chunks only through import() (AD-1)', () => {
+    const settingsContract = readFile('src/modules/user/features/settings/routes/index.ts');
+    const slot = readFile(
+      'src/modules/user/features/settings/components/user-menu/user-menu-slot.tsx'
+    );
+    const currentUserLoader = readFile(
+      'src/modules/user/features/settings/components/user-menu/current-user-menu-loader.ts'
+    );
+
+    expect(settingsContract).toMatch(
+      new RegExp(
+        String.raw`userMenu: \(\) =>\s*import\(\s*/\* webpackChunkName: "user-menu" \*/\s*` +
+          String.raw`'\.\./components/user-menu/user-menu-slot'\s*\)`
+      )
+    );
+    expect(staticImportsOf(settingsContract)).not.toContain(
+      '../components/user-menu/user-menu-slot'
+    );
+    expect(currentUserLoader).toMatch(/import\(\s*\/\* webpackChunkName: "current-user" \*\//);
+    expect(
+      staticImportsOf(slot).some((specifier) => specifier.includes('current-user-menu.'))
+    ).toBe(false);
+    expect(
+      staticImportsOf(slot).filter((specifier) => specifier.endsWith('current-user-menu'))
+    ).toEqual([]);
+  });
+
   it('warms the shared error-page chunk and its font faces after load (issue #309)', () => {
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const errorPageLoaderSource = readFile('src/components/error-boundary/error-page-loader.ts');
@@ -213,7 +332,7 @@ describe('performance serving config', () => {
     );
 
     expect(errorRouteChunks).toHaveLength(3);
-    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(4);
+    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(9);
     expect(errorPageLoaderSource).toContain('webpackChunkName: "error-page"');
 
     const renderAt = entrySource.lastIndexOf('root.render(');
@@ -254,5 +373,225 @@ describe('performance serving config', () => {
       'import RegistrationNotification from ' +
         "'@auth/components/form-section/auth-forms/registration-notification';"
     );
+  });
+
+  it('keeps the sign-in notification out of the initial auth form chunk', () => {
+    const loginFormSource = readFile(
+      'src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx'
+    );
+
+    expect(loginFormSource).toContain(
+      'import registrationNotificationLoader, {\n' +
+        '  registrationNotificationPrefetcher,\n' +
+        "} from '@auth/utils/load-registration-notification';"
+    );
+    expect(loginFormSource).toContain(
+      'const RegistrationNotification = lazy(() => registrationNotificationLoader.load());'
+    );
+    expect(loginFormSource).toContain('registrationNotificationPrefetcher.prefetch();');
+    expect(loginFormSource).not.toContain(
+      "from '@auth/components/form-section/auth-forms/registration-notification';"
+    );
+  });
+
+  it('keeps the password-recovery copy out of the eager merged catalog', () => {
+    const merged = readJson<Record<string, { translation: Record<string, unknown> }>>(
+      'src/i18n/localization.json'
+    );
+    const policy = readJson<{ lazyCatalogs: { catalog: string; owners: string[] }[] }>(
+      'config/i18n-catalog-policy.json'
+    );
+    const recoveryRoutes = ['reset-password', 'create-new-password'].map((route) =>
+      readFile(`src/modules/user/features/auth/routes/${route}/index.tsx`)
+    );
+    const recoveryOwners =
+      policy.lazyCatalogs.find(
+        (entry) => entry.catalog === 'modules/user/features/auth/routes/recovery-catalog/i18n'
+      )?.owners ?? [];
+    const eagerSurfaces = [
+      'modules/user/features/auth/routes/sign-in/index.tsx',
+      'modules/user/features/auth/routes/sign-up/index.tsx',
+      'modules/user/features/auth/components/form-section/auth-forms/login-form.tsx',
+      'modules/user/features/auth/components/sign-in-notice/index.tsx',
+      'components/ui-form/index.tsx',
+    ];
+
+    expect(recoveryOwners).toEqual(
+      expect.arrayContaining([
+        'modules/user/features/auth/routes/reset-password',
+        'modules/user/features/auth/routes/create-new-password',
+      ])
+    );
+    eagerSurfaces.forEach((surface) => {
+      const owner = recoveryOwners.find(
+        (candidate) => surface === candidate || surface.startsWith(`${candidate}/`)
+      );
+      expect({ surface, owner }).toEqual({ surface, owner: undefined });
+    });
+    ['en', 'uk'].forEach((locale) => {
+      const namespaces = Object.keys(merged[locale]?.translation ?? {});
+      expect(namespaces).toContain('sign_in');
+      expect(namespaces).not.toContain('password_recovery');
+      expect(namespaces).not.toContain('password_reset');
+      expect(namespaces).not.toContain('password_policy');
+      expect(namespaces).not.toContain('settings');
+      expect(namespaces).not.toContain('ui_toast');
+    });
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
+    recoveryRoutes.forEach((routeSource) => {
+      expect(routeSource).toContain(
+        "import RecoveryPageLayout from '@auth/components/recovery-page-layout';"
+      );
+    });
+  });
+
+  it('keeps the two-factor challenge and recovery-codes notice copy off the eager path', () => {
+    const merged = readJson<Record<string, { translation: Record<string, unknown> }>>(
+      'src/i18n/localization.json'
+    );
+    const policy = readJson<{ lazyCatalogs: { catalog: string; owners: string[] }[] }>(
+      'config/i18n-catalog-policy.json'
+    );
+    const ownersOf = (catalog: string): string[] =>
+      policy.lazyCatalogs.find((entry) => entry.catalog === catalog)?.owners ?? [];
+    const challengeOwners = ownersOf('modules/user/features/auth/routes/two-factor-catalog/i18n');
+    const noticeOwners = ownersOf(
+      'modules/user/features/auth/components/recovery-codes-notice/i18n'
+    );
+    const { files } = eagerGraphOf('src/index.tsx');
+    const eagerSurfaces = [
+      'modules/user/features/auth/routes/sign-in/index.tsx',
+      'modules/user/features/auth/components/sign-in-notice/index.tsx',
+      'modules/user/features/auth/components/protected-route/index.tsx',
+      'modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
+      'modules/user/features/auth/hooks/use-two-factor-redirect.ts',
+      'components/ui-form/index.tsx',
+    ];
+    const lazyOnly = [
+      'src/modules/user/features/auth/routes/two-factor/',
+      'src/modules/user/features/auth/components/two-factor/',
+      'src/modules/user/features/auth/components/recovery-codes-notice/',
+    ];
+    const catalogEdges = [...files].flatMap((file) =>
+      staticImportsOf(readFile(file))
+        .filter((specifier) => /two-factor-catalog|recovery-codes-notice/.test(specifier))
+        .map((specifier) => `${file} -> ${specifier}`)
+    );
+
+    expect(challengeOwners).toEqual([
+      'modules/user/features/auth/routes/index.ts',
+      'modules/user/features/auth/routes/two-factor',
+      'modules/user/features/auth/components/two-factor',
+      'modules/user/features/auth/hooks/use-challenge-banner.ts',
+      'modules/user/features/auth/hooks/use-challenge-copy.ts',
+    ]);
+    expect(noticeOwners).toEqual([
+      'modules/user/features/auth/components/recovery-codes-notice',
+      'modules/user/features/auth/hooks/use-recovery-notice-message.ts',
+    ]);
+    eagerSurfaces.forEach((surface) => {
+      const owner = [...challengeOwners, ...noticeOwners].find(
+        (candidate) => surface === candidate || surface.startsWith(`${candidate}/`)
+      );
+      expect({ surface, owner }).toEqual({ surface, owner: undefined });
+    });
+    ['en', 'uk'].forEach((locale) => {
+      const translation = merged[locale]?.translation ?? {};
+      expect(Object.keys(translation)).not.toContain('two_factor');
+      expect(Object.keys(translation)).not.toContain('recovery_codes_notice');
+      expect(Object.keys(translation.sign_in ?? {})).toContain('notices');
+    });
+    expect(
+      (merged.en?.translation.sign_in as { notices: Record<string, string> }).notices
+        .two_factor_expired
+    ).toBe('The time to confirm your sign-in has run out. Please sign in again.');
+    expect(files.has('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toBe(
+      true
+    );
+    expect([...files].filter((file) => lazyOnly.some((folder) => file.startsWith(folder)))).toEqual(
+      []
+    );
+    expect(catalogEdges).toEqual([]);
+    expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
+      "import en from '@auth/routes/two-factor-catalog/i18n/en.json';"
+    );
+    expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
+      'lazyCatalogLoader.register(i18n, { en, uk });'
+    );
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-codes-notice/index.tsx')
+    ).toContain("import en from './i18n/en.json';");
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-codes-notice/index.tsx')
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
+  });
+
+  it.each([
+    'sign-in/sign-in-form-section.tsx',
+    'reset-password/reset-password-form-section.tsx',
+    'create-new-password/create-new-password-form-section.tsx',
+  ])('loads the auth tokens and the sign-in handler on submit, not with %s', (entry) => {
+    const { files } = eagerGraphOf(`src/modules/user/features/auth/routes/${entry}`);
+    const submitOnly = [
+      'src/modules/user/config/tokens.ts',
+      'src/modules/user/features/auth/utils/sign-in-submit-handler.ts',
+      'src/modules/user/features/auth/data-providers/graphql-sign-in-provider.ts',
+      'src/modules/user/features/auth/data-providers/password-recovery-provider.ts',
+    ];
+
+    expect(submitOnly.filter((file) => files.has(file))).toEqual([]);
+    expect(files.has('src/modules/user/features/auth/stores/index.ts')).toBe(true);
+  });
+
+  it('imports the sign-in handler and the auth tokens only through a chunk-retry loader', () => {
+    const signInSubmit = readFile('src/modules/user/features/auth/hooks/use-sign-in-submit.ts');
+    const recoveryRun = readFile('src/modules/user/features/auth/hooks/use-recovery-run.ts');
+
+    expect(signInSubmit).toContain(
+      "new ChunkRetryLoader(\n  () => import('@auth/utils/sign-in-submit-handler')\n);"
+    );
+    expect(recoveryRun).toContain(
+      "new ChunkRetryLoader(() => import('@/modules/user/config/tokens'));"
+    );
+    expect(staticImportsOf(signInSubmit)).not.toContain('@/modules/user/config/tokens');
+    expect(staticImportsOf(recoveryRun)).not.toContain('@/modules/user/config/tokens');
+  });
+
+  it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {
+    const rsbuildConfigSource = readFile('rsbuild.config.ts');
+    const loaderChunkName = (route: string): string | undefined =>
+      /webpackChunkName: "([^"]+)"/.exec(
+        readFile(`src/modules/user/features/auth/routes/${route}/form-section-loader.ts`)
+      )?.[1];
+    const settingsChunkName = /webpackChunkName: "([^"]+)" \*\/\s*'\.\/user-profile'/.exec(
+      readFile('src/modules/user/features/settings/routes/index.ts')
+    )?.[1];
+
+    expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
+      'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
+        'authForms: authFormsCacheGroup(), },'
+    );
+    expect([authFormsVendorsCacheGroup().name, authFormsCacheGroup().name]).toEqual([
+      'auth-forms-vendors',
+      'auth-forms',
+    ]);
+    [authFormsVendorsCacheGroup(), authFormsCacheGroup()].forEach((group) => {
+      const selects = group.chunks as (chunk: { name: string | undefined }) => boolean;
+      expect(
+        ['sign-in', 'sign-up', 'reset-password', 'create-new-password'].map((route) =>
+          selects({ name: loaderChunkName(route) })
+        )
+      ).toEqual([true, true, true, true]);
+      expect(selects({ name: settingsChunkName })).toBe(true);
+      expect(selects({ name: loaderChunkName('two-factor') })).toBe(true);
+    });
+    expect(AUTH_FORM_CHUNKS).toEqual(['sign-in', 'sign-up'].map(loaderChunkName));
+    expect(RECOVERY_FORM_CHUNKS).toEqual(
+      ['reset-password', 'create-new-password'].map(loaderChunkName)
+    );
+    expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
+    expect(TWO_FACTOR_FORM_CHUNKS).toEqual([loaderChunkName('two-factor')]);
   });
 });

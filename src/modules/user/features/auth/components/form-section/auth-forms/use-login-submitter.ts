@@ -1,29 +1,25 @@
 import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
+import useAuthProviderLoader from '@auth/hooks/use-auth-provider-loader';
+import useSignInSubmit from '@auth/hooks/use-sign-in-submit';
 import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
-import type { LoginActions, LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
-import type { LoginUserDto } from '@auth/types/credentials';
+import type { AuthError } from '@auth/types/auth-error';
+import type { LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
+import type { SignInRun } from '@auth/types/sign-in/sign-in-run';
+import type { SignInFailureReason } from '@auth/types/two-factor/sign-in-failure';
 
-import LoginErrorMessageNormalizer, { UNKNOWN_KEY } from './login-error-message';
+const MESSAGE_KEY_BY_REASON: Record<SignInFailureReason, string> = {
+  invalid_credentials: 'sign_in.errors.invalid_credentials',
+  locked: 'sign_in.errors.locked',
+  rate_limited: 'sign_in.errors.rate_limited',
+  transient: 'sign_in.errors.transient',
+};
 
-const I18N_KEY_SEGMENT_RE = /^[a-z0-9_]+$/i;
-const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
-
-function isI18nKey(value: string): boolean {
-  const segments = value.split('.');
-  return segments.length > 1 && segments.every((segment) => I18N_KEY_SEGMENT_RE.test(segment));
-}
-
-function resolveLoginReason(normalized: string, t: TFunction): string {
-  if (!isI18nKey(normalized)) return t(UNKNOWN_KEY);
-  return t(normalized, { defaultValue: '' }) || t(UNKNOWN_KEY);
-}
-
-function formatLoginError(raw: string | null, t: TFunction): string {
-  if (!raw) return '';
-  const normalized = loginErrorMessageNormalizer.normalize(raw);
-  return t('sign_in.errors.login', { reason: resolveLoginReason(normalized, t) });
+function loginErrorMessage(error: AuthError | null, t: TFunction): string {
+  if (error === null) return '';
+  return t(MESSAGE_KEY_BY_REASON[error.reason ?? 'transient']);
 }
 
 function clearLoginError(controllers: Set<AbortController>): void {
@@ -48,34 +44,51 @@ function useLoginControllers(): MutableRefObject<Set<AbortController>> {
   return loginControllersRef;
 }
 
-function useAbortableLogin(actions: LoginActions): LoginSubmitter['handleLogin'] {
-  const loginControllersRef = useLoginControllers();
-
+function useAbortableLogin(
+  run: SignInRun,
+  loginControllersRef: MutableRefObject<Set<AbortController>>
+): LoginSubmitter['handleLogin'] {
   return useCallback(
-    async (data: LoginUserDto): Promise<void> => {
+    async (data: SignInDto): Promise<void> => {
       const controller = new AbortController();
       loginControllersRef.current.add(controller);
 
       try {
-        await actions.loginUser(data, controller.signal);
+        await run(data, controller.signal);
       } finally {
         loginControllersRef.current.delete(controller);
       }
     },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-    [actions, loginControllersRef]
+    [run, loginControllersRef]
   );
 }
 
 export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
   const state = useAuthState();
-  const isSubmitting = AuthStoreSelectors.loginLoading(state);
-  const rawError = AuthStoreSelectors.loginError(state);
-  const handleLogin = useAbortableLogin(authActions);
+  const loginControllersRef = useLoginControllers();
+  const login = useAbortableLogin(useSignInSubmit(useAuthProviderLoader()), loginControllersRef);
+  const lastSubmitted = useRef<SignInDto | null>(null);
+
+  const handleLogin = useCallback(
+    (data: SignInDto): Promise<void> => {
+      lastSubmitted.current = data;
+      return login(data);
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, login is a stable useCallback
+    [login]
+  );
+
+  const loginError = AuthStoreSelectors.loginError(state);
 
   return {
-    error: formatLoginError(rawError?.displayMessage ?? null, t),
-    isSubmitting,
+    error: loginErrorMessage(loginError, t),
+    retryable: loginError?.retryable === true,
+    isSubmitting: AuthStoreSelectors.loginLoading(state),
     handleLogin,
+    handleRetry: (): void => {
+      if (lastSubmitted.current !== null) void login(lastSubmitted.current);
+    },
+    handleBack: (): void => clearLoginError(loginControllersRef.current),
   };
 }

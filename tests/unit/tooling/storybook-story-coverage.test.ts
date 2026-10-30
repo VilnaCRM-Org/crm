@@ -18,11 +18,15 @@ const EXEMPT: Readonly<Record<string, string>> = {
   'src/routes/routes.tsx': 'router construction; the pages it routes to have stories',
   'src/routes/route-composer.tsx': 'route tree builder; renders no UI of its own',
   'src/routes/route-mapper.tsx': 'maps route contracts to lazy elements; renders no UI',
+  'src/routes/route-flag-gate.tsx':
+    'renders no UI of its own: it shows the composer not-found element or its Outlet',
   'src/components/render-with-theme.tsx': 'helper function, not a component',
   'src/components/ui-form/form-provider-bridge.tsx':
     'react-hook-form context pass-through, shown through the UIForm stories',
   [`${authRoot}/components/protected-route/index.tsx`]:
     'redirect-only guard; renders its outlet or a Navigate, nothing of its own',
+  'src/components/ui-server-field-error/index.tsx':
+    'renders no DOM: it only sets a server error and focus on a field of the enclosing form',
   [`${authRoot}/components/auth-skeleton/index.tsx`]:
     're-export of src/components/skeletons/auth-skeleton, which has its own story',
 };

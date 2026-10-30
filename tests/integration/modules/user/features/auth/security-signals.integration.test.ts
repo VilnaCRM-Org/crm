@@ -2,8 +2,19 @@ import 'reflect-metadata';
 
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import observabilityCore from '@/services/observability/observability-core';
+import securityEventConfig from '@/services/security-events/security-event-config';
 import securityEventCore from '@/services/security-events/security-event-core';
+import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
+import { buildEmail, buildPendingSessionId, buildRegistrationResponse } from '@tests/builders';
+
+let clock = Date.now();
+
+const leaveEveryEarlierWindow = (): void => {
+  clock += securityEventConfig.windowMs() + 1;
+  jest.spyOn(Date, 'now').mockReturnValue(clock);
+};
 
 const resolveSignals = (): AuthSecuritySignals =>
   container.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals);
@@ -21,12 +32,13 @@ describe('auth security signals (integration)', () => {
     ['an undefined rejection', undefined, 'unknown'],
     ['a rate-limited rejection', { status: 429, kind: 'server' }, 'rate_limited'],
     ['a non-numeric status', { status: '429', kind: 'network' }, 'network'],
+    ['a locked rejection', { status: 423, kind: 'authentication' }, 'locked'],
   ])('classifies %s as %s', (_label, error, reason) => {
     const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
 
-    resolveSignals().loginFailed(error);
+    resolveSignals().registerFailed(error);
 
-    expect(authFailure).toHaveBeenCalledWith('login', reason);
+    expect(authFailure).toHaveBeenCalledWith('registration', reason);
   });
 
   it('classifies a registration rejection under the registration category', () => {
@@ -37,17 +49,106 @@ describe('auth security signals (integration)', () => {
     expect(authFailure).toHaveBeenCalledWith('registration', 'conflict');
   });
 
-  it('tags an opaque identity on a successful login without leaking an address', async () => {
-    const observabilityCore = (await import('@/services/observability/observability-core')).default;
+  it('records a locked sign-in under the login category through the container', () => {
+    leaveEveryEarlierWindow();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+
+    resolveSignals().loginSettled({
+      ok: false,
+      error: {
+        kind: 'authentication',
+        displayMessage: 'sign_in.errors.locked',
+        retryable: false,
+        status: 423,
+        reason: 'locked',
+      },
+    });
+
+    expect(report).toHaveBeenCalledTimes(1);
+    const [signal, payload] = report.mock.calls[0] ?? [];
+    expect(signal).toBeInstanceOf(SecurityEventSignal);
+    expect(payload).toEqual({
+      event: 'auth_failure',
+      category: 'login',
+      reason: 'locked',
+      severity: 'warning',
+      failureCount: 1,
+      windowMs: securityEventConfig.windowMs(),
+      threshold: securityEventConfig.threshold(),
+      thresholdCrossed: false,
+    });
+  });
+
+  it('tags an opaque identity on a successful login without leaking an address', () => {
     const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
 
     resolveSignals().loginSettled({
       ok: true,
-      value: { email: 'user@example.com', token: 'session-token' },
+      value: { kind: 'session', email: 'user@example.com', token: 'session-token' },
     });
 
     const identity = setUser.mock.calls[0]?.[0] as { id: string };
     expect(identity.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(Object.keys(identity)).toEqual(['id']);
+  });
+
+  it('tags no identity and records nothing when the sign-in asks for a challenge', () => {
+    const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+
+    resolveSignals().loginSettled({
+      ok: true,
+      value: {
+        kind: 'challenge',
+        email: buildEmail(),
+        pendingSessionId: buildPendingSessionId(),
+      },
+    });
+
+    expect(setUser).not.toHaveBeenCalled();
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('records nothing for an aborted sign-in', () => {
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+
+    resolveSignals().loginSettled({
+      ok: false,
+      error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
+    });
+
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('records a failed registration and nothing for a successful or aborted one', () => {
+    leaveEveryEarlierWindow();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+    const signals = resolveSignals();
+
+    signals.registerSettled({ ok: true, value: buildRegistrationResponse() });
+    signals.registerSettled({
+      ok: false,
+      error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
+    });
+    expect(report).not.toHaveBeenCalled();
+
+    signals.registerSettled({
+      ok: false,
+      error: { kind: 'server', displayMessage: 'errors.server', retryable: true },
+    });
+    expect(report).toHaveBeenCalledTimes(1);
+    const [signal, payload] = report.mock.calls[0] ?? [];
+    expect(signal).toBeInstanceOf(SecurityEventSignal);
+    expect(signal).toHaveProperty('event', 'auth_failure');
+    expect(payload).toEqual({
+      event: 'auth_failure',
+      category: 'registration',
+      reason: 'server',
+      severity: 'warning',
+      failureCount: 1,
+      windowMs: securityEventConfig.windowMs(),
+      threshold: securityEventConfig.threshold(),
+      thresholdCrossed: false,
+    });
   });
 });

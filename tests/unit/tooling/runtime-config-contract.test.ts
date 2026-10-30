@@ -94,12 +94,49 @@ const urlSettings = (): Array<{ envVar: string; key: string }> => {
 const ROUTE_CONTRACTS = [
   'src/routes/app-routes.ts',
   'src/modules/user/features/auth/routes/index.ts',
+  'src/modules/user/features/settings/routes/index.ts',
 ];
 
+const isRegisteredIn = (sources: string[], routePathKey: string): boolean =>
+  sources.some((source) => new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source));
+
 const isRouteRegistered = (routePathKey: string): boolean =>
-  ROUTE_CONTRACTS.map(readFile).some((source) =>
-    new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source)
-  );
+  isRegisteredIn(ROUTE_CONTRACTS.map(readFile), routePathKey);
+
+const COMPOSE_FILES = ['docker-compose.yml', 'docker-compose.test.yml'];
+const USER_SETTINGS_ENV_VAR = `${FLAG_ENV_PREFIX}USER_SETTINGS`;
+const TWO_FACTOR_AUTH_ENV_VAR = `${FLAG_ENV_PREFIX}TWO_FACTOR_AUTH`;
+const AUTH_FEATURE = 'src/modules/user/features/auth';
+
+const filesNamingTheFlag = (contents: Record<string, string>): string[] =>
+  Object.entries(contents)
+    .filter(([, text]) => text.includes('twoFactorAuth'))
+    .map(([file]) => file);
+
+const sourceFiles = (relativeDir: string): string[] =>
+  fs.readdirSync(path.join(projectRoot, relativeDir), { withFileTypes: true }).flatMap((entry) => {
+    const child = path.posix.join(relativeDir, entry.name);
+
+    if (entry.isDirectory()) {
+      return sourceFiles(child);
+    }
+
+    return /\.(ts|tsx)$/u.test(entry.name) ? [child] : [];
+  });
+
+// Against user-service v2.8.0 a shipped `true` would read and update an arbitrary user, so a
+// default of `true` is a violation whether it sits in the service or in the committed block.
+const shippedTrueFlags = (defaults: Record<string, boolean>): string[] =>
+  Object.entries(defaults)
+    .filter(([, value]) => value)
+    .map(([name]) => name)
+    .sort();
+
+// A compose file may only switch the flag on by default once a route contract registers the
+// page the flag gates, otherwise the stack serves a flag with nothing behind it.
+const composeEnablesUnguardedSettings = (composeText: string, contractSources: string[]): boolean =>
+  new RegExp(`${USER_SETTINGS_ENV_VAR}[^\\n]*:-true`).test(composeText) &&
+  !isRegisteredIn(contractSources, 'settings');
 
 const routeCoverageRows = (routePathKey: string): string[][] =>
   readFile(ROUTE_COVERAGE)
@@ -160,6 +197,105 @@ describe('runtime configuration contract', () => {
     expect(settings.map((setting) => setting.key).sort()).toEqual(schemaKeys);
   });
 
+  it('ships every feature flag off in FEATURE_FLAG_DEFAULTS and in the committed block', () => {
+    const committed = parseConfigBlock(readFile(SHELL)).flags as Record<string, boolean>;
+
+    expect(shippedTrueFlags(featureFlagService.snapshot())).toEqual([]);
+    expect(shippedTrueFlags(committed)).toEqual([]);
+    expect(committed).toEqual({ userSettings: false, twoFactorAuth: false });
+  });
+
+  it('fails the shipped-default check on a flag that ships true (must-fail)', () => {
+    expect(shippedTrueFlags({ userSettings: true, other: false })).toEqual(['userSettings']);
+    expect(shippedTrueFlags({ userSettings: false })).toEqual([]);
+  });
+
+  it('keeps every compose file from enabling userSettings before its route exists', () => {
+    const contracts = ROUTE_CONTRACTS.map(readFile);
+
+    for (const file of COMPOSE_FILES) {
+      expect({ file, enabled: composeEnablesUnguardedSettings(readFile(file), contracts) }).toEqual(
+        { file, enabled: false }
+      );
+    }
+  });
+
+  it('fails a compose default of true with no settings route registered (must-fail)', () => {
+    const compose = `      - ${USER_SETTINGS_ENV_VAR}=\${${USER_SETTINGS_ENV_VAR}:-true}`;
+    const registered = ['{ path: ROUTE_PATHS.settings, load }'];
+
+    expect(composeEnablesUnguardedSettings(compose, ['{ path: ROUTE_PATHS.signIn }'])).toBe(true);
+    expect(composeEnablesUnguardedSettings(compose, registered)).toBe(false);
+    expect(
+      composeEnablesUnguardedSettings(`      - ${USER_SETTINGS_ENV_VAR}=\${X:-false}`, [])
+    ).toBe(false);
+    expect(composeEnablesUnguardedSettings('image: node', [])).toBe(false);
+  });
+
+  it('declares an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH right after USER_SETTINGS', () => {
+    const lines = readFile('.env.example').split('\n');
+    const userSettings = lines.indexOf(`${USER_SETTINGS_ENV_VAR}=`);
+
+    expect(userSettings).toBeGreaterThan(-1);
+    expect(lines[userSettings + 1]).toBe(`${TWO_FACTOR_AUTH_ENV_VAR}=`);
+  });
+
+  it('turns an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH into true beside userSettings', () => {
+    const lines = readFile('docker-compose.test.yml').split('\n');
+    const userSettings = lines.findIndex((line) => line.includes(`${USER_SETTINGS_ENV_VAR}=`));
+
+    expect(userSettings).toBeGreaterThan(-1);
+    expect(
+      lines
+        .filter((line) => line.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`))
+        .map((line) => line.trim())
+    ).toEqual([`- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`]);
+    expect(lines[userSettings + 1]?.trim()).toBe(
+      `- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`
+    );
+    expect(readFile('docker-compose.yml')).not.toContain(TWO_FACTOR_AUTH_ENV_VAR);
+  });
+
+  it.each([
+    ['empty in .env', '', 'true'],
+    ['unset', undefined, 'true'],
+    ['an explicit true', 'true', 'true'],
+    ['an explicit false', 'false', 'false'],
+  ] as const)('resolves the test stack value for %s to %s', (_name, value, expected) => {
+    const line = readFile('docker-compose.test.yml')
+      .split('\n')
+      .find((candidate) => candidate.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`));
+    const fallback = /\$\{[A-Z_]+:-([^}]*)\}/.exec(line ?? '')?.[1] ?? '';
+
+    expect(value === undefined || value === '' ? fallback : value).toBe(expected);
+  });
+
+  it('keeps the shipped default false in the committed block and in the code defaults', () => {
+    expect(readFile('public/index.html')).toMatch(/"twoFactorAuth":\s*false/);
+    expect(readFile('src/config/runtime/feature-flag-service.ts')).toMatch(
+      /twoFactorAuth:\s*false/
+    );
+  });
+
+  it('keeps twoFactorAuth out of every route contract and out of the sign-in feature', () => {
+    const files = [...ROUTE_CONTRACTS, ...sourceFiles(AUTH_FEATURE)];
+
+    expect(files.length).toBeGreaterThan(50);
+    expect(
+      filesNamingTheFlag(Object.fromEntries(files.map((file) => [file, readFile(file)])))
+    ).toEqual([]);
+  });
+
+  it('flags a file that names twoFactorAuth, and only that file (must-fail)', () => {
+    expect(
+      filesNamingTheFlag({
+        'a.ts': "useFeatureFlag('twoFactorAuth')",
+        'b.ts': 'flag: "userSettings"',
+        'c.ts': 'const twoFactorAuth = 1;',
+      })
+    ).toEqual(['a.ts', 'c.ts']);
+  });
+
   it('documents every registered feature flag in the feature-flag guide', () => {
     const guide = readFile(DOCS);
 
@@ -199,16 +335,40 @@ describe('runtime configuration contract', () => {
     });
   });
 
-  it('links the unregistered password-recovery route from sign-in while #315 is open', () => {
+  it('registers the settings route behind its flag and covers it in the e2e suite (#330)', () => {
+    expect(ROUTE_CONTRACTS).toContain('src/modules/user/features/settings/routes/index.ts');
+    expect(isRouteRegistered('settings')).toBe(true);
+
+    const rows = routeCoverageRows('settings');
+
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e', 'visual']));
+    expect(rows.map(([, , spec]) => spec)).toEqual(
+      expect.arrayContaining([
+        'tests/visual/visual-comparison.settings.spec.ts',
+        'tests/visual/mobile/settings.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-save.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-failures.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-session.spec.ts',
+      ])
+    );
+  });
+
+  it('links the registered password-recovery route from sign-in (#315)', () => {
     expect(isRouteRegistered('signIn')).toBe(true);
     expect(isRouteRegistered('notARealRouteKey')).toBe(false);
 
     expect(readFile(USER_OPTIONS)).toContain('href={ROUTE_PATHS.passwordRecovery}');
-    expect(isRouteRegistered('passwordRecovery')).toBe(false);
+    expect(isRouteRegistered('passwordRecovery')).toBe(true);
 
     const rows = routeCoverageRows('passwordRecovery');
 
-    expect(rows.map(([, suite]) => suite)).toEqual(['allowlisted']);
-    expect(rows[0]?.[3]).toContain('#315');
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e', 'visual']));
+    expect(rows.map(([, , spec]) => spec)).toEqual(
+      expect.arrayContaining([
+        'tests/e2e/modules/user/features/auth/password-recovery.spec.ts',
+        'tests/visual/visual-comparison.password-recovery.spec.ts',
+      ])
+    );
   });
 });

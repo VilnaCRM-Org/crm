@@ -16,15 +16,16 @@ surface and the remaining under-sized controls are tracked as design work.
 | Keyboard       | Playwright               | `make test-a11y-e2e`               |
 | Category score | Lighthouse               | `performance testing`, second line |
 
-The component lane calls [`expectNoA11yViolations`][component-helper] over the `UI*` components
-and pages listed in [`tests/unit/a11y/`][unit] and also runs inside `make test-unit-all`. The
-route lane calls [`expectNoAxeViolations`][route-helper] on every route in
-`src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane uses
-[`expectTabOrder`][keyboard-helper] to assert tab order, `:focus-visible`, a visible focus change
-and Space/Enter activation. Both Playwright lanes ride the `accessibility testing` check.
-Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
-`/sign-up`, `/forbidden`, `/server-error` and the catch-all 404 (`/definitely-not-a-route`) as a
-second signal, not the primary gate.
+The component lane calls [`expectNoA11yViolations`][component-helper] over the `UI*` components and
+pages listed in [`tests/unit/a11y/`][unit] and also runs inside `make test-unit-all`. The route lane
+calls [`expectNoAxeViolations`][route-helper] on every route in `src/routes/route-paths.ts` in
+Chromium, Firefox and WebKit, and the keyboard lane uses [`expectTabOrder`][keyboard-helper] to
+assert tab order, `:focus-visible`, a visible focus change and Space/Enter activation, and
+`expectArrowKeyWalk` from the same helper to walk a roving-focus menu with ArrowDown/ArrowUp
+(wrapping), Home and End, each stop focused, `:focus-visible` and visibly changed. Both Playwright
+lanes ride the `accessibility testing` check. Lighthouse keeps its 0.95 desktop / 0.90 mobile
+accessibility scores on `/`, `/sign-in`, `/sign-up`, `/forbidden`, `/server-error` and the catch-all
+404 (`/definitely-not-a-route`) as a second signal, not the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are
@@ -93,7 +94,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Seven `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Ten `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -104,7 +105,23 @@ colour and therefore every visual baseline, which is why they are design-owned w
 part of the gate's own pull request. One more covers the sign-in "Забули пароль?" link
 (`form a.MuiLink-root[href="/password-recovery"]`), the toolkit brand text link at `#1EAEFF` on
 white (2.45:1). The colour is the product owner's decision (ui-toolkit DEV-67); the accessible
-alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1).
+alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1). The eighth covers the
+password-recovery in-card link buttons (issue #315), "До входу" on the "check your e-mail" view
+of `/password-recovery` and "Запросити нове посилання" on the invalid-link view of
+`/password-reset`
+(`#auth-form-card > a.MuiButton-contained[href="/sign-in"]` and
+`#auth-form-card > a.MuiButton-contained[href="/password-recovery"]`):
+contained links that reuse the submit-button styling, white on `#1EAEFF` at 2.45:1, so they carry
+the same design-owned debt as the submit button. The ninth covers the settings greeting
+"Вітаємо!" on `/settings` (`#settings-greeting`, issue #330), plain text in the Figma grey
+`#969B9D` on white at 2.81:1: the product owner kept the Figma token over the `#57595B` (7.03:1)
+the plan proposed, so it carries the same token debt as the back-to-main label and the auth
+switcher, while the name beside it stays `#1A1C1E`. The tenth covers the current navigation
+entry of the app shell (issue #362): the active row, group-header label and sub-item in the
+sidebar and in the mobile drawer (`nav a[aria-current="page"]`,
+`nav a[aria-current="page"] > span` and the same two selectors under `[role="dialog"]`), which
+render the Figma active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner
+accepted (OQ-14).
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
@@ -120,6 +137,14 @@ by the product owner's decision
 (ui-toolkit DEV-67). axe's `color-contrast` rule does not evaluate non-text contrast, so no
 exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
 3:1.
+
+The third is in the app shell (issue #362): three active controls whose only visible identifier at
+rest is a `grey[50]` `#969B9D` glyph on white, 2.81:1 under the 3:1 of SC 1.4.11. They are the
+Settings disclosure chevron in the sidebar and the mobile drawer, the icon-only sidebar collapse
+handle, and the default rows of the collapsed rail, whose labels are visually hidden. The product
+owner kept the Figma token on 2026-10-27. Hover (`#404142`) and focus indicators are outside the
+gap, and no axe rule tests non-text contrast, so no exception entry exists for it; it is resolved
+when #276 closes.
 
 ## Adding coverage
 

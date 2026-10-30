@@ -42,6 +42,20 @@ describe('load test wiring', () => {
     expect(ciTestLoad).toContain('$(LOAD_TESTS_RUN_ERROR_PAGES)');
   });
 
+  it('runs the password-recovery suite in the batch script, PR matrix and CI load phase', () => {
+    const batchScript = readFile('scripts/ci/batch_pw_load.sh');
+    const workflow = readFile('.github/workflows/load-testing.yml');
+    const makefile = readFile('Makefile');
+    const ciTestLoad = makefile.match(/^ci-test-load:.*?\n((?:\t.*\n)+)/m)?.[1];
+
+    expect(batchScript).toContain('run_load_tests_dind "$crm_dir" "password-recovery"');
+    expect(batchScript).toContain('run_load_tests_dind "." "password-recovery"');
+    expect(batchScript).toContain('test-load-password-recovery)');
+    expect(workflow).toContain('make_cmd: test-load-password-recovery');
+    expect(makefile).toContain('K6_PASSWORD_RECOVERY_SCRIPT ?= /loadTests/password-recovery.js');
+    expect(ciTestLoad).toContain('$(LOAD_TESTS_RUN_PASSWORD_RECOVERY)');
+  });
+
   it('uses maxVUs consistently across the signup load config and scenario builder', () => {
     const config = readFile('tests/load/config.json.dist');
     const scenariosBuilder = readFile('tests/load/utils/scenarios-builder.js');

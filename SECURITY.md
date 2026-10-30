@@ -214,7 +214,7 @@ server emits the same headers from the same file, so local and production cannot
 | `Cross-Origin-Resource-Policy` | response | `same-origin`                             |
 | `Content-Security-Policy`      | document | the directive set below                   |
 | `X-Frame-Options`              | document | `DENY`                                    |
-| `Referrer-Policy`              | document | `strict-origin-when-cross-origin`         |
+| `Referrer-Policy`              | document | `strict-origin`                           |
 | `Permissions-Policy`           | document | camera, microphone, geolocation, payment, |
 |                                |          | usb — all `()`                            |
 
@@ -223,6 +223,12 @@ document and ride the HTML shell only — every SPA route resolves to `/index.ht
 so every page gets them — because a CSP, a frame policy, a referrer policy or a permissions
 policy on a `.woff2` or a hashed chunk changes nothing in the browser and only adds bytes to
 each request on the mobile critical path, where the Lighthouse budget has no headroom.
+
+`Referrer-Policy` is `strict-origin`, not the browser default `strict-origin-when-cross-origin`:
+the password-reset link carries its token in the query string, and every same-origin request the
+page makes before it strips the token (the entry chunks, the fonts) would otherwise send the whole
+URL in `Referer`, straight into the static server's access log (issue #315). With `strict-origin`
+a request only ever names the origin.
 
 The Content-Security-Policy:
 
@@ -312,6 +318,11 @@ the app reads) rather than a hard-coded host. The floors are deliberate: relaxin
 decision that changes the loader and its tests in the same reviewed change, never a lone edit to
 `serve.json`, which the drift gate rejects.
 
+**Access logs.** The password-reset link carries a single-use credential in its query string
+(`/password-reset?token=…`, issue #315). The deployable image therefore starts `serve` with
+`--no-request-logging`, so no request URL reaches the container log. A reverse proxy or CDN placed
+in front of the container must not log query strings either.
+
 ## Client security events (issue #159)
 
 The frontend emits structured security signals so authentication abuse and client-side
@@ -323,12 +334,12 @@ path is a verified no-op.
 
 ### Emitted events
 
-| Event                   | Category                 | Raised by                            |
-| ----------------------- | ------------------------ | ------------------------------------ |
-| `auth_failure`          | `login` / `registration` | a rejected login or registration     |
-| `auth_failure_burst`    | `login` / `registration` | a failure past the threshold         |
-| `unauthorized_response` | `transport`              | a `401` or `403` REST response       |
-| `error_boundary_catch`  | `render`                 | a boundary or route catching a crash |
+| Event                   | Category                 | Raised by                                  |
+| ----------------------- | ------------------------ | ------------------------------------------ |
+| `auth_failure`          | `login` / `registration` | a rejected login, registration or 2FA code |
+| `auth_failure_burst`    | `login` / `registration` | a failure past the threshold               |
+| `unauthorized_response` | `transport`              | a `401` or `403` REST response             |
+| `error_boundary_catch`  | `render`                 | a boundary or route catching a crash       |
 
 Each event reaches Sentry as a `SecurityEventSignal` exception named `security.<event>`, with
 the structured payload in `extra`:
@@ -353,7 +364,15 @@ the structured payload in `extra`:
 The payload is credential-free by construction, not by filtering. `reason` is a bounded code in
 every case, but the set it is drawn from depends on the event: `auth_failure` and
 `auth_failure_burst` use `authentication`, `validation`, `conflict`, `server`, `network`,
-`rate_limited` or `unknown`, derived from the auth error kind or the HTTP status;
+`rate_limited`, `locked`, `invalid_code`, `expired_session` or `unknown`, derived from the auth
+error kind or the HTTP status (a sign-in refused with HTTP 423 records `locked`, and a pending
+two-factor challenge records nothing: it is not a sign-in). The second step, completing that
+challenge, is emitted by `AuthSecuritySignals.challengeSettled` under the `login` category with
+the challenge's own reason — `invalid_code`, `expired_session`, `locked`, `rate_limited`,
+`network` or `server` — so five wrong codes inside the window raise the same
+`auth_failure_burst` as five wrong passwords; a completed challenge records no failure and only
+tags the opaque session identity, and the submitted code and the pending session id never reach
+the reporter;
 `unauthorized_response` uses `http_401` or `http_403`; and `error_boundary_catch` uses the
 boundary surface — `app` for the shell's root `UIErrorBoundary`, `auth` for the auth feature's
 boundary, and `route` for a route error reported through the router's `onError` seam behind each
@@ -362,6 +381,43 @@ route's `RouteError` (issue #116); all three go through the container-free
 address, and the user id are never passed to the reporter. `piiScrubber` remains the
 second line of defence in Sentry's `beforeSend`. Aborted attempts (navigation away, cancelled
 requests) emit nothing, so user-initiated cancellation is not mistaken for abuse.
+
+### Two-factor authentication (issue #331)
+
+Two-factor adds one emitter, `AuthSecuritySignals.challengeSettled`, and no event. The sign-in
+challenge is the only place a failed code becomes a signal:
+
+- **Call site:** `AuthSecuritySignals.challengeSettled`, under the `login` category.
+- **Events:** `auth_failure`, and `auth_failure_burst` past the threshold.
+- **Reasons:** `invalid_code`, `expired_session`, `locked`, `rate_limited`, `network` or `server`.
+
+A completed challenge records no failure and only tags the opaque session identity. The settings
+operations (set up, confirm, disable, regenerate) emit no security event: their failures are
+shown to the person who is signed in, a wrong code there is not a sign-in attempt, and a `401`
+ends the session through the Apollo session link as for every other protected operation. A route
+or boundary crash on the challenge or the settings page is `error_boundary_catch` with the usual
+surface.
+
+`piiScrubber` redacts a record key containing any of `password`, `token`, `authorization`,
+`cookie`, `secret`, `apikey`, `email`, `initials`, `pendingsession`, `twofactorcode`,
+`recoverycode` or `otpauth` (matched case-insensitively), and rewrites any `otpauth://` URI, e-mail
+address, bearer token, JWT or `token=` value found inside a string, the value of a serialized JSON
+member whose name ends in `token`, `password` or `secret`, and the value after a
+`pendingSessionId`, `twoFactorCode`, `recoveryCode` or `recoveryCodes` label followed by `=` or
+`:` in free text or JSON (an unlabelled six-digit number is left alone). The label and the value
+may each sit in double quotes, single quotes or the backslash-escaped quotes of JSON serialized
+inside a string (`{\"twoFactorCode\":\"123456\"}`). After a `recoveryCodes` label it also
+replaces a bracketed array whole, quoted or not, and every code of a comma-separated list with or
+without spaces around the commas, each code bare or in any of those quotes. The list match runs
+over letters, digits, `_`, `-`, spaces, commas, quotes and backslashes and stops at a word followed
+by `=` or `:`, so the next member of a JSON object survives; it can still redact prose that follows
+the list, because a scrubber errs towards removing more. The code list of a setup or regenerate
+response is redacted in any of these forms.
+Two-factor relies on `secret`, `pendingsession`, `twofactorcode`, `recoverycode` and `otpauth`:
+the setup secret, the pending session id, the submitted code, a recovery code and the `otpauth`
+URI never reach Sentry.
+The end-to-end specs also assert that none of them is left in the URL, the title, the history
+state, `localStorage`, `sessionStorage` or IndexedDB (`expectNoSecrets`).
 
 ### Correlation
 

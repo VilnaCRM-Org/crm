@@ -8,8 +8,16 @@ import ReloadOnceGuard from '@/lib/reliability/reload-once-guard';
 import ReloadingChunkLoader from '@/lib/reliability/reloading-chunk-loader';
 import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
+import observabilityCore from '@/services/observability/observability-core';
 
-import type { AppRouteObject, PageLoader, PageModule } from './types/app-route';
+import ShellSlotFactory from './shell-slot-factory';
+import type { AppRouteObject, PageLoader, PageModule, RouteHandle } from './types/app-route';
+import type {
+  ShellChunkSource,
+  ShellFailureHandler,
+  ShellSlotLoad,
+  UserMenuSlot,
+} from './types/shell-slot';
 
 class RouteMapper {
   private readonly reloadGuard = new ReloadOnceGuard();
@@ -19,10 +27,27 @@ class RouteMapper {
     const Page = lazy(() => loader.load());
     const element = <Page />;
     const errorElement = <RouteError landmark={landmark} />;
+    const handle = this.handle(route);
     if (route.index) {
-      return { index: true, element, errorElement };
+      return { index: true, element, errorElement, ...handle };
     }
-    return { path: route.path, element, errorElement, ...this.nested(route, landmark) };
+    return { path: route.path, element, errorElement, ...handle, ...this.nested(route, landmark) };
+  }
+
+  public shellSlot(load: ShellSlotLoad): UserMenuSlot {
+    return new ShellSlotFactory(this.capture.bind(this)).create(load);
+  }
+
+  public chunkFailureReporter(source: ShellChunkSource): ShellFailureHandler {
+    return (error) => this.capture(source, error);
+  }
+
+  private capture(source: ShellChunkSource, error: unknown): void {
+    observabilityCore.captureError(error, { source });
+  }
+
+  private handle(route: AppRouteObject): { handle?: RouteHandle } {
+    return route.flag === undefined ? {} : { handle: { flag: route.flag } };
   }
 
   // Every page chunk is retried once. A public page may then reload the document to pick up a
