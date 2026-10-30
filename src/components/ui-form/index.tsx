@@ -21,6 +21,7 @@ import UITypography from '@/components/ui-typography';
 
 import ErrorBanner from './error-banner';
 import SubmitSpinner from './submit-spinner';
+import useFocusReturn from './use-focus-return';
 import useFormSubmission from './use-form-submission';
 import useUIForm from './use-ui-form';
 
@@ -93,6 +94,8 @@ function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
 }
 
 function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element {
+  const focusReturn = useFocusReturn(Boolean(lead.error), offline.submitRef);
+
   return (
     <>
       <FormHeader header={header} bannerShown={Boolean(lead.error)} />
@@ -101,7 +104,7 @@ function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element 
         key={lead.errorOccurrence}
         error={lead.error}
         action={lead.errorAction}
-        returnFocusRef={offline.submitRef}
+        focusReturn={focusReturn}
         unavailableReasonId={offline.online ? undefined : offline.noticeId}
       />
       <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />

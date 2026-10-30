@@ -7,6 +7,7 @@ import type { RenderFieldArgs } from '@/components/types/ui-form-input-field';
 import type {
   PinFieldProps,
   PinFocusTarget,
+  PinRequiredRule,
   UIPinInputProps,
 } from '@/components/types/ui-pin-input';
 import pinInputSx, { PIN_GROUP_WRAPPER_SX } from '@/components/ui-pin-input/styles';
@@ -17,6 +18,9 @@ const focusTargetOf = (group: HTMLElement): PinFocusTarget => ({
     (cells.find((cell) => cell.value === '') ?? cells[0])?.focus();
   },
 });
+
+const isRequired = (rule: PinRequiredRule): boolean =>
+  typeof rule === 'object' ? rule.value : Boolean(rule);
 
 const leftGroup = (event: FocusEvent<HTMLElement>): boolean => {
   const next = event.relatedTarget;
@@ -33,6 +37,7 @@ function PinField<T extends FieldValues>({
   error,
   disabled,
   id,
+  required,
 }: PinFieldProps<T>): ReactElement {
   const registerGroup = (group: HTMLElement | null): void => {
     field.ref(group === null ? null : focusTargetOf(group));
@@ -47,12 +52,13 @@ function PinField<T extends FieldValues>({
         ref={registerGroup}
         id={id}
         label={label}
-        value={String(field.value ?? '')}
+        value={String(field.value)}
         onChange={field.onChange}
         cellLabel={cellLabel}
         error={error === true || fieldState.invalid}
         helperText={fieldState.error?.message ?? helperText}
         disabled={disabled}
+        required={required}
         sx={pinInputSx}
       />
     </Box>
@@ -71,6 +77,7 @@ export default function UIPinInput<T extends FieldValues>(props: UIPinInputProps
       error={error}
       disabled={disabled}
       id={id}
+      required={isRequired(rules.required)}
     />
   );
 

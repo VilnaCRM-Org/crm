@@ -3,11 +3,14 @@ import type {
   Control,
   ControllerFieldState,
   ControllerRenderProps,
+  FieldPathByValue,
   FieldValues,
   Path,
 } from 'react-hook-form';
 
 import type { FieldRules } from '@/components/types/ui-form-input-field';
+
+export type PinRequiredRule = FieldRules<FieldValues>['required'];
 
 export type PinCellLabel = (cell: number) => string;
 
@@ -17,7 +20,7 @@ export interface PinFocusTarget {
 
 export interface UIPinInputProps<T extends FieldValues> {
   control: Control<T>;
-  name: Path<T>;
+  name: FieldPathByValue<T, string>;
   rules: FieldRules<T>;
   label: string;
   cellLabel: PinCellLabel;
@@ -33,4 +36,5 @@ export interface PinFieldProps<T extends FieldValues> extends Omit<
 > {
   field: ControllerRenderProps<T, Path<T>>;
   fieldState: ControllerFieldState;
+  required: boolean;
 }
