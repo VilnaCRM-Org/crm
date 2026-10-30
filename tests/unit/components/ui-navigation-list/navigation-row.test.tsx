@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactElement } from 'react';
+import type { JSX, ReactElement, SVGProps } from 'react';
 import { Route, Routes } from 'react-router';
 
 import type { NavigationIcon } from '@/components/types/ui-app-shell/navigation-item';
@@ -11,6 +11,10 @@ import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
 
 const icon = 'svg' as unknown as NavigationIcon;
+
+function RoleIcon({ className, 'aria-hidden': hidden }: SVGProps<SVGSVGElement>): JSX.Element {
+  return <svg role="img" aria-label="icon" aria-hidden={hidden} className={className} />;
+}
 
 const renderRow = (ui: ReactElement, path = '/'): ReturnType<typeof renderShell> =>
   renderShell(
@@ -271,4 +275,86 @@ describe('NavigationRow', () => {
 
     expect(container).not.toContainHTML('MuiTouchRipple');
   });
+
+  it('draws the tablet sign out icon at the 24 px action size', () => {
+    renderRow(
+      <NavigationRow
+        layout="tablet"
+        variant="item"
+        id="signOut"
+        label="Sign out"
+        icon={RoleIcon}
+        onActivate={jest.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Sign out' })).toContainElement(
+      screen.getByRole('img', { hidden: true })
+    );
+    expect(screen.getByRole('img', { hidden: true })).toHaveStyle({
+      width: '24px',
+      height: '24px',
+    });
+  });
+
+  it('draws a tablet product icon at the 28 px tablet size', () => {
+    renderRow(
+      <NavigationRow
+        layout="tablet"
+        variant="item"
+        id="boards"
+        label="Boards"
+        icon={RoleIcon}
+        href="/boards"
+      />
+    );
+
+    expect(screen.getByRole('link', { name: 'Boards' })).toContainElement(
+      screen.getByRole('img', { hidden: true })
+    );
+    expect(screen.getByRole('img', { hidden: true })).toHaveStyle({
+      width: '28px',
+      height: '28px',
+    });
+  });
+
+  it('separates the drawer sign out row with a top rule and a 3 px bottom inset', () => {
+    renderRow(
+      <NavigationRow
+        layout="drawer"
+        variant="item"
+        id="signOut"
+        label="Sign out"
+        icon={icon}
+        onActivate={jest.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({
+      borderTopWidth: '1px',
+      borderTopColor: '#E1E7EA',
+      paddingBottom: '3px',
+    });
+  });
+
+  it.each(['desktop', 'tablet'] as const)(
+    'draws the %s sign out row with no top rule and a 2 px bottom inset',
+    (layout) => {
+      renderRow(
+        <NavigationRow
+          layout={layout}
+          variant="item"
+          id="signOut"
+          label="Sign out"
+          icon={icon}
+          onActivate={jest.fn()}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({
+        borderTopWidth: '0px',
+        paddingBottom: '2px',
+      });
+    }
+  );
 });
