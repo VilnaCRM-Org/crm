@@ -394,7 +394,8 @@ module `.tsx` surface — not just `src/components/**/*.tsx`. The mutated set is
 truth in [`scripts/ci/mutation-scope.mjs`](scripts/ci/mutation-scope.mjs), whose exclusions mirror
 `jest.config.ts` `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n);
 `stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (via `shardMutateFiles`) both consume
-it, so the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
+it, so the shards partition the files that hold a runnable mutant and `unsharded` lists the rest,
+which no shard runs because there is nothing in them to score. Stryker runs a dedicated Jest config
 ([`jest.mutation.config.ts`](jest.mutation.config.ts)) that unions the unit **and** integration
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
