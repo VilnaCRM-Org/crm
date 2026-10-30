@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import CodesView from './codes-view';
-import DisableView from './disable-view';
-import OnView from './on-view';
-import ReauthView from './reauth-view';
-import RegenerateView from './regenerate-view';
 import {
   CALLBACKS,
   CODES,
@@ -14,7 +9,13 @@ import {
   ON,
   REAUTH,
   REGENERATE,
-} from './story-fixtures';
+} from '@stories/two-factor-story-fixtures';
+
+import CodesView from './codes-view';
+import DisableView from './disable-view';
+import OnView from './on-view';
+import ReauthView from './reauth-view';
+import RegenerateView from './regenerate-view';
 
 const meta: Meta<typeof OnView> = {
   title: 'Settings/TwoFactorSettings/Result views',

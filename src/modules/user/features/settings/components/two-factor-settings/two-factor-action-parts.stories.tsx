@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
 import { noop } from '@stories/story-callbacks';
+import { CODES_SETTINGS } from '@stories/two-factor-story-fixtures';
 
 import CancelButton from './cancel-button';
 import CodesBlock from './codes-block';
@@ -8,7 +9,6 @@ import ConfirmationForm from './confirmation-form';
 import OnActions from './on-actions';
 import SavedCheckbox from './saved-checkbox';
 import StatusHeading from './status-heading';
-import { CODES_SETTINGS } from './story-fixtures';
 
 const meta: Meta<typeof StatusHeading> = {
   title: 'Settings/TwoFactorSettings/Action parts',

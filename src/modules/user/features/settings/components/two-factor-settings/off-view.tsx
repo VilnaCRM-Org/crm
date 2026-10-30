@@ -35,7 +35,6 @@ export default function OffView({
       errorOccurrence={view.bannerOccurrence}
       submitRef={submitRef}
       title=""
-      showTitle={false}
       submitLabel={t('settings.two_factor.start')}
       submittingLabel={t('settings.two_factor.preparing')}
       submitSx={styles.submit}

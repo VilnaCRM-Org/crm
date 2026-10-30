@@ -151,18 +151,7 @@ export default {
     gap: '0.75rem',
     marginTop: '1.25rem',
   },
-  footerButton: {
-    '&&': {
-      ...SETTINGS_PILL,
-      height: '2.5rem',
-      marginTop: '0.75rem',
-      border: `1px solid ${paletteColors.border.strong}`,
-      backgroundColor: paletteColors.background.default,
-      color: customColors.brand.darkPrimary,
-      '&:hover': { backgroundColor: paletteColors.background.paper },
-      '&:focus-visible': SETTINGS_FOCUS_RING,
-    },
-  },
+  footerButton: { '&&': { ...OUTLINED_BUTTON, marginTop: '0.75rem' } },
   reauthMessage: {
     margin: '0 0 1rem',
     fontFamily: 'Inter',
