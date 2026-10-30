@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 
+import UIShellContent from '@/components/ui-shell-content';
 import i18n from '@/i18n';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
@@ -62,6 +63,24 @@ describe('UserProfile', () => {
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
+
+  it('lays its content out in the shared shell content container (NFR-22)', () => {
+    const view = render(<UIShellContent>probe</UIShellContent>);
+    const shellContent = screen.getByText('probe').className;
+    view.unmount();
+    render(
+      <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
+        <UserProfile />
+      </I18nextProvider>
+    );
+
+    const holders = screen
+      .getAllByRole('generic')
+      .filter((box) => box.className === shellContent)
+      .filter((box) => within(box).queryByRole('heading', { level: 1 }) !== null);
+
+    expect(holders).toHaveLength(1);
   });
 
   it('puts the subtitle after the heading, as the subtitle', () => {

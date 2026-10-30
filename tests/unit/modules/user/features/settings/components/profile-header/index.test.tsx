@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import 'reflect-metadata';
 import { render, screen } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -6,6 +7,12 @@ import { I18nextProvider } from 'react-i18next';
 import ProfileHeader from '@/modules/user/features/settings/components/profile-header';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+
+jest.mock('@/providers/di', () => ({
+  __esModule: true,
+  useService: (): unknown =>
+    new (jest.requireActual('@/modules/user/store/user-display-name-mapper').default)(),
+}));
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>
