@@ -9,6 +9,18 @@ import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 type DrawerProps = Parameters<typeof UINavigationDrawer>[0];
 
+const DRAWER_ROLES = [
+  'generic',
+  'presentation',
+  'img',
+  'button',
+  'link',
+  'navigation',
+  'list',
+  'listitem',
+  'heading',
+] as const;
+
 const renderDrawer = (props: Partial<DrawerProps> = {}): ReturnType<typeof renderShell> =>
   renderShell(
     <UINavigationDrawer
@@ -56,6 +68,18 @@ describe('UINavigationDrawer', () => {
     expect(panels[0]).toContainElement(nav);
     expect(panels[0]).not.toHaveAttribute('role');
     expect(panels[0]).not.toHaveAttribute('aria-label');
+  });
+
+  it('keeps the dialog out of the Tab order and gives nothing a positive tabindex', async () => {
+    renderDrawer();
+
+    const dialog = await screen.findByRole('dialog', { name: 'Main navigation' });
+    const positive = DRAWER_ROLES.flatMap((role) =>
+      within(dialog).queryAllByRole(role, { hidden: true })
+    ).filter((element) => Number(element.getAttribute('tabindex')) > 0);
+
+    expect(dialog).toHaveAttribute('tabindex', '-1');
+    expect(positive).toEqual([]);
   });
 
   it('renders nothing while closed', () => {
