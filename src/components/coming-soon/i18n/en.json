@@ -1,0 +1,16 @@
+{
+  "coming_soon": {
+    "message": "This section is coming soon. We will let you know when it is ready.",
+    "home_link": "Back to the home page",
+    "sections": {
+      "boards": "Boards",
+      "products": "Products",
+      "orders": "Orders",
+      "contacts": "Contacts",
+      "analytics": "Analytics",
+      "integrations": "Integrations",
+      "webhooks": "Webhooks",
+      "billing": "Billing"
+    }
+  }
+}

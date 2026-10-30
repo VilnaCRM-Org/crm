@@ -1,4 +1,5 @@
 import { buildEmail, buildPassword } from '@tests/builders';
+import { sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
@@ -8,7 +9,7 @@ import {
   replyWithProfile,
   replyWithResent,
   replyWithSaved,
-  signInWithFlag,
+  signInToSettings,
   stubProfile,
   watchContactedOrigins,
   type StubbedProfile,
@@ -40,7 +41,7 @@ test.describe('Settings save journeys (issue #330)', () => {
 
   test.beforeEach(async ({ page }) => {
     contacted = watchContactedOrigins(page);
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
   });
 
   test.afterEach(({ page }) => {
@@ -48,7 +49,9 @@ test.describe('Settings save journeys (issue #330)', () => {
     expectNoPersonalDataInUrls(contacted(), [password, newPassword, newEmail, NEW_NAME]);
   });
 
-  test('opens through the home link: skeleton first, then the card, one read', async ({ page }) => {
+  test('opens through the sidebar Settings link: skeleton first, then the card, one read', async ({
+    page,
+  }) => {
     const gate = holdReply(replyWithProfile());
     stub = await stubProfile(page, { CurrentUser: [gate.reply] });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -57,7 +60,7 @@ test.describe('Settings save journeys (issue #330)', () => {
       if (request.resourceType() === 'document') documents.push(request.url());
     });
 
-    await page.getByRole('link', { name: text.homeLink, exact: true }).click();
+    await sidebarSettingsOf(page).click();
 
     await expect(page).toHaveTitle(text.title);
     await expect(page.getByRole('main')).toBeFocused();
@@ -71,6 +74,7 @@ test.describe('Settings save journeys (issue #330)', () => {
     await expect(page.locator('#profile-skeleton-save')).toHaveCount(0);
     expect(documents).toEqual([]);
     expect(stub.count('CurrentUser')).toBe(1);
+    expect(stub.shellCalls).toHaveLength(1);
     expect(stub.calls[0]?.authorization).toMatch(/^Bearer \S+/);
   });
 

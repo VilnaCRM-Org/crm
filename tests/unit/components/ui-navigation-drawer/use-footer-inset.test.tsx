@@ -1,0 +1,206 @@
+import '@testing-library/jest-dom';
+import { act, renderHook } from '@testing-library/react';
+
+import useFooterInset from '@/components/ui-navigation-drawer/use-footer-inset';
+
+const VIEWPORT = 718;
+
+const mountFooter = (top: number, parent: HTMLElement = document.body): HTMLElement => {
+  const footer = document.createElement('footer');
+  footer.getBoundingClientRect = (): DOMRect => ({ top }) as DOMRect;
+  parent.append(footer);
+
+  return footer;
+};
+
+const resize = (): void =>
+  act(() => {
+    window.dispatchEvent(new Event('resize'));
+  });
+
+const frames: FrameRequestCallback[] = [];
+
+const flushFrames = (): void =>
+  act(() => {
+    frames.splice(0).forEach((callback) => callback(0));
+  });
+
+const mutate = async (change: () => void): Promise<void> =>
+  act(async () => {
+    change();
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  });
+
+const cleanups: (() => void)[] = [];
+
+const attach = (scrim: HTMLElement | null): (() => void) | undefined => {
+  const cleanup = renderHook(() => useFooterInset()).result.current(scrim);
+  if (cleanup !== undefined) cleanups.push(cleanup);
+
+  return cleanup;
+};
+
+const insetOf = (): string => {
+  const scrim = document.createElement('div');
+  attach(scrim);
+
+  return scrim.style.bottom;
+};
+
+describe('useFooterInset', () => {
+  const original = window.innerHeight;
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: VIEWPORT });
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+
+      return frames.length;
+    });
+    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+    frames.splice(0);
+    jest.restoreAllMocks();
+    document.body.replaceChildren();
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: original });
+  });
+
+  it('leaves the scrim on the whole viewport when the page has no footer', () => {
+    expect(insetOf()).toBe('0px');
+  });
+
+  it('stops the scrim at the top of a footer in view', () => {
+    mountFooter(678);
+
+    expect(insetOf()).toBe('40px');
+  });
+
+  it('leaves the scrim on the whole viewport while the footer is below it', () => {
+    mountFooter(900);
+
+    expect(insetOf()).toBe('0px');
+  });
+
+  it('never insets the scrim by more than the viewport', () => {
+    mountFooter(-20);
+
+    expect(insetOf()).toBe(`${VIEWPORT}px`);
+  });
+
+  it('ignores a footer that belongs to the page content inside main', () => {
+    mountFooter(600, document.body.appendChild(document.createElement('main')));
+
+    expect(insetOf()).toBe('0px');
+  });
+
+  it('measures the page footer even when a footer inside main comes first', () => {
+    mountFooter(600, document.body.appendChild(document.createElement('main')));
+    mountFooter(678);
+
+    expect(insetOf()).toBe('40px');
+  });
+
+  it('measures again on a viewport resize', () => {
+    const footer = mountFooter(678);
+    const scrim = document.createElement('div');
+    attach(scrim);
+
+    footer.getBoundingClientRect = (): DOMRect => ({ top: 618 }) as DOMRect;
+    resize();
+
+    expect(scrim).toHaveStyle({ bottom: '100px' });
+  });
+
+  it('measures again when the lazy footer mounts deep in the page after the scrim', async () => {
+    const footerArea = document.body.appendChild(document.createElement('div'));
+    const scrim = document.body.appendChild(document.createElement('div'));
+    attach(scrim);
+    expect(scrim).toHaveStyle({ bottom: '0px' });
+
+    await mutate(() => mountFooter(678, footerArea));
+    expect(scrim).toHaveStyle({ bottom: '0px' });
+    flushFrames();
+
+    expect(scrim).toHaveStyle({ bottom: '40px' });
+  });
+
+  it('measures once per frame however many mutation batches arrive before it', async () => {
+    const footer = mountFooter(678);
+    const measure = jest.spyOn(footer, 'getBoundingClientRect');
+    attach(document.createElement('div'));
+    measure.mockClear();
+
+    await mutate(() => document.body.append(document.createElement('div')));
+    await mutate(() => document.body.append(document.createElement('div')));
+    flushFrames();
+
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1);
+    expect(measure).toHaveBeenCalledTimes(1);
+  });
+
+  it('schedules a new frame for mounts after the previous frame ran', async () => {
+    attach(document.createElement('div'));
+
+    await mutate(() => document.body.append(document.createElement('div')));
+    flushFrames();
+    await mutate(() => document.body.append(document.createElement('div')));
+
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels a pending frame when its cleanup runs', async () => {
+    const cleanup = attach(document.createElement('div'));
+
+    await mutate(() => document.body.append(document.createElement('div')));
+    act(() => cleanup?.());
+
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(1);
+  });
+
+  it('stops watching the page for a footer once its cleanup runs', async () => {
+    const scrim = document.createElement('div');
+    const cleanup = attach(scrim);
+
+    act(() => cleanup?.());
+    await mutate(() => mountFooter(678));
+    flushFrames();
+
+    expect(scrim).toHaveStyle({ bottom: '0px' });
+    expect(window.requestAnimationFrame).not.toHaveBeenCalled();
+  });
+
+  it('hands every render the same ref, so the scrim subscribes once', () => {
+    const { result, rerender } = renderHook(() => useFooterInset());
+    const first = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(first);
+  });
+
+  it('stops listening for resizes when its cleanup runs', () => {
+    const add = jest.spyOn(window, 'addEventListener');
+    const remove = jest.spyOn(window, 'removeEventListener');
+    const cleanup = attach(document.createElement('div'));
+    const added = add.mock.calls.find(([type]) => type === 'resize');
+
+    act(() => cleanup?.());
+
+    expect(added).toBeDefined();
+    expect(remove).toHaveBeenCalledWith('resize', added?.[1]);
+  });
+
+  it('subscribes nothing when React detaches the ref', () => {
+    const add = jest.spyOn(window, 'addEventListener');
+
+    const cleanup = attach(null);
+
+    expect(cleanup).toBeUndefined();
+    expect(add.mock.calls.filter(([type]) => type === 'resize')).toHaveLength(0);
+  });
+});

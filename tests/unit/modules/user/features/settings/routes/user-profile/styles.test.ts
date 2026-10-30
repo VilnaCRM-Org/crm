@@ -24,9 +24,6 @@ describe('user profile page styles', () => {
         '@media (min-width:1025px)': {
           gap: '0.75rem',
           paddingTop: '1.75rem',
-          width: 'fit-content',
-          maxWidth: '100%',
-          marginInline: 'auto',
         },
       },
       header: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
@@ -59,5 +56,15 @@ describe('user profile page styles', () => {
         color: '#404142',
       },
     });
+  });
+
+  it('left-aligns the content from the breakpoint, keeping gap and paddingTop', async () => {
+    const styles = await loadStyles();
+    const wide = styles.content['@media (min-width:1025px)'];
+
+    expect(wide).toEqual({ gap: '0.75rem', paddingTop: '1.75rem' });
+    expect(wide).not.toHaveProperty('width');
+    expect(wide).not.toHaveProperty('maxWidth');
+    expect(wide).not.toHaveProperty('marginInline');
   });
 });

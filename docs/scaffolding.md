@@ -114,10 +114,15 @@ variable is unset rather than falling back to a second copy, and it refuses to r
 the list names a target the Makefile does not define — otherwise a typo would silently drop a
 gate, since the Makefile marks every command-line goal phony.
 
-The generated route path is `/<module>/<feature>` (or just `/<module>` when the feature name
-matches the module). Feature names are only unique within a module and `RouteValidator` checks
-only for duplicate module ids, so an unqualified `/<feature>` would let one module's page
-shadow another's.
+The generated route path is `/<module>/<feature>` (or just `/<module>` when the feature name matches
+the module). Feature names are only unique within a module and `RouteValidator` does not check for
+duplicate paths, so an unqualified `/<feature>` would let one module's page shadow another's. The
+app shell already owns five top-level paths, `/boards`, `/products`, `/orders`, `/contacts` and
+`/analytics`, as coming-soon placeholders in `src/routes/app-routes.ts` (issue #362), so
+`make new-module name=orders` generates a second `/orders` route that nothing rejects. A module that
+implements one of those sections deletes the placeholder entry in the same change and points its
+contract at the existing `ROUTE_PATHS` key, as [`src/routes/README.md`](../src/routes/README.md)
+describes under "Coming-soon routes".
 
 ## Changing the templates
 

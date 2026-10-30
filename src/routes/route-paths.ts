@@ -7,6 +7,14 @@ const ROUTE_PATHS = {
   settings: '/settings',
   forbidden: '/forbidden',
   serverError: '/server-error',
+  boards: '/boards',
+  products: '/products',
+  orders: '/orders',
+  contacts: '/contacts',
+  analytics: '/analytics',
+  settingsIntegrations: '/settings/integrations',
+  settingsWebhooks: '/settings/webhooks',
+  settingsBilling: '/settings/billing',
   notFound: '*',
 } as const;
 

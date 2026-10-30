@@ -165,16 +165,23 @@ more project names.
   `/password-reset`) completed the same way with their own touch-target, overflow and
   keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
-  overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
+  overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
+  same for the app shell: the drawer, the avatar menu, a 44 px tap area on every shell control and no
+  overflow at device width and 320 px. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
-  two password recovery pages (`/password-recovery`, `/password-reset`) and the three error pages
-  (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so the baselines are true
-  2.625× / 3× rasters and catch the asset and raster regressions that CSS-scaled desktop snapshots
-  average away. Baselines live in
-  `tests/visual/mobile/auth.spec.ts-snapshots/` and
-  `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
+  two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
+  (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
+  shell (`/boards`, `/products`, `/orders`, `/contacts`, `/analytics`, `/settings/integrations`,
+  `/settings/webhooks`, `/settings/billing`, issue #362) and the app shell states (home with the
+  closed header, the drawer open on `/settings` and the user menu open, issue #362) captured with
+  `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the asset and raster
+  regressions that CSS-scaled desktop snapshots average away. Baselines live in `tests/visual/mobile/auth.spec.ts-snapshots/`,
+  `tests/visual/mobile/error-pages.spec.ts-snapshots/`,
+  `tests/visual/mobile/settings.spec.ts-snapshots/`,
+  `tests/visual/mobile/coming-soon.spec.ts-snapshots/` and
+  `tests/visual/mobile/app-shell.spec.ts-snapshots/`, one per page or shell state per mobile project.
 
 Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
 `e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in
@@ -432,7 +439,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 347 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 443 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -558,13 +565,15 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries nine `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries ten `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
 text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the password-recovery
 in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
 issue #315, and the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product owner's
-call on issue #330), tracked in issue #276 and deleted when it closes.
+call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED` on the
+10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
+issue #276 and deleted when it closes.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
 
@@ -1794,14 +1803,25 @@ key on `/sign-up`. The owners are the two recovery route folders, the recovery c
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
 through `usePageTitle` after its module has registered the catalog). The settings catalog
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
-the settings `components/` and `hooks/` folders that page renders, and the settings route contract
-`routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
-`transformers/` load in the container chunk and own no settings key. The toast catalog
+the six settings `components/` folders that page renders (`change-password`, `profile-form`,
+`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the nine
+`hooks/` files those components call (`use-blur-hold`, `use-display-name`, `use-email-resend`,
+`use-email-row`, `use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`,
+`use-profile-save` and `use-settled-focus`), and the settings route contract `routes/index.ts` for
+its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
+`use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
+protected page, before the settings catalog is registered, so they own no settings key; the
+feature's `data-providers/`, `repositories/` and `transformers/` load in the container chunk and
+own no settings key. The toast catalog
 (`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
-label stays off `/sign-in`. Adding an owner is a reviewed
-policy edit and must name a file only the registering routes import. A policy entry that names no
-discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
-unreadable or malformed policy fails the run before any check.
+label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are owned the same
+way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
+`ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
+copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
+`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. Adding an owner is a
+reviewed policy edit and must name a file only the registering routes import. A policy entry that
+names no discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`),
+and an unreadable or malformed policy fails the run before any check.
 
 **What the gate enforces:**
 
@@ -1903,23 +1923,24 @@ breached; the size diff itself is informational. The job can also fail earlier, 
 step, when an Rspack **raw** budget is exceeded (that gate fails every production build, not
 just this workflow).
 
-**Route-level splitting:** page-level routes are code-split by the module-owned route registry
-(see "Route Registry (issue #105)" below). Each route contract declares a dynamic `import()`
-loader — named via `webpackChunkName` so the bundle-size report can track its chunk per route —
-and the composer wraps every loader in `React.lazy` and attaches a per-route `errorElement`
-(`<RouteError landmark=… />`, issue #116) so a page that throws is caught by its own route, not
-by the root boundary. The route-level `Suspense` boundary lives in
-[`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx)
-and ships a **non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)):
-it paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the
-layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
-announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
-`message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
-it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either:
-`RouteMapper` and the footer loader wrap each lazy surface in a `ThemedChunkLoader` that fetches
-the `mui-theme` chunk in parallel with it, and the paint-path components style themselves with
-`@emotion/styled`, never `Box` or another `@mui/material` import. To add a page, follow the
-registry ("Adding a page" below); never eagerly import a page. Three checks fail CI on a regression:
+**Route-level splitting:** page-level routes are code-split by the module-owned route registry (see
+"Route Registry (issue #105)" below). Each route contract declares a dynamic `import()` loader —
+named via `webpackChunkName` so the bundle-size report can track its chunk per route — and the
+composer wraps every loader in `React.lazy` and attaches a per-route `errorElement`
+(`<RouteError landmark=… />`, issue #116) so a page that throws is caught by its own route, not by
+the root boundary. The route-level `Suspense` boundary lives in
+[`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx) and ships a
+**non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)): it
+paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the layout
+shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and announces loading
+via a polite live region. `RouteFallback` takes optional `minHeight` and `message` props, so an
+in-page Suspense boundary (the registration form's result chunk) reuses it instead of shipping
+`fallback={null}`. The MUI theme engine is not on the eager path either: `RouteMapper`, the footer
+loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
+surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
+paint-path components style themselves with `@emotion/styled`, never `Box` or another
+`@mui/material` import. To add a page, follow the registry ("Adding a page" below); never eagerly
+import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
   ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
@@ -2589,13 +2610,20 @@ its own `routes/` folder; a central registry collects the contracts and a
 composer builds the `createBrowserRouter` tree. `src/routes/routes.tsx` is pure
 wiring — it contains no route-array literal and no feature/module page imports.
 
-- **Contract types** — `src/routes/types/{app-route,route-module}.ts`
-  (`AppRouteObject`: `path`/`index`, lazy `load`, declarative `guard`, `meta`;
-  `RouteModule`: `id` + `routes`). Type-only files (issue #88).
-- **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a
-  `RouteModule` whose routes lazy-`load` the feature's pages (per-route code
-  splitting preserved). The auth feature: `@auth/routes`. The app shell's own
-  routes (home, 404, 403 and 5xx) live in `src/routes/app-routes.ts`.
+- **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
+  `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
+  optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
+  one declared `shell.userMenu` (`routeValidator` rejects a second) to `routeMapper.shellSlot`,
+  which wraps it through `ShellSlotFactory`, and passes the slot plus a chunk-failure reporter to
+  `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar, mobile drawer) around the page outlet
+  (issue #362).
+- **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a `RouteModule` whose
+  routes lazy-`load` the feature's pages (per-route code splitting preserved). The auth feature:
+  `@auth/routes`. The app shell's own routes (home, the five protected coming-soon sections
+  `/boards`, `/products`, `/orders`, `/contacts` and `/analytics`, and 404, 403 and 5xx) live in
+  `src/routes/app-routes.ts`; the settings contract adds the three flagged coming-soon sub-pages
+  (`/settings/integrations`, `/settings/webhooks`, `/settings/billing`), and all eight load the
+  shared `ComingSoonPage` from `@/components/coming-soon` in one `coming-soon` chunk.
 - **Registry** — `src/routes/registry.ts` collects the contracts (one-line
   append per new module).
 - **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
@@ -2674,29 +2702,35 @@ verified in CI.
   locales synchronously when the route module evaluates — before the page's `usePageTitle` runs —
   through the one container-free `lazyCatalogLoader` singleton
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
-  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls
-  `addResourceBundle` for both locales; the owner keeps the JSON import, so the chunk split does
-  not move, and a new lazy catalog adds no loader class. Four lazy catalogs exist today: the
-  password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
+  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
+  for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
+  lazy catalog adds no loader class. Seven lazy catalogs exist today: the password-recovery copy
+  (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
   copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
   when that component module evaluates; the settings copy (`settings.*`), owned by
   `src/modules/user/features/settings/` and registered when the `UserProfile` route module
-  evaluates; and the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered
-  when `UIToast` evaluates. The recovery keys were 3,742 B of the minified merged
-  catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and
-  still about 0.95 KB above the #333 base (46,946 B), so the move alone does not restore the
-  `/sign-in` headroom (that base already scored a median of about 0.8375 against the 0.84 mobile
-  floor). Keep a key eager when a page outside those routes renders it
+  evaluates; the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered when
+  `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
+  `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
+  `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
+  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; and the user-menu
+  copy (`user_menu.*`), owned by `src/modules/user/features/settings/components/user-menu/` and
+  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates. The recovery keys were
+  3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
+  raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
+  does not restore the `/sign-in` headroom (that base already scored a median of about 0.8375
+  against the 0.84 mobile floor). Keep a key eager when a page outside those routes renders it
   (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
   Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
   use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
-  `createToastLocaleI18n`), so a lazy key leaking into an eager page renders raw in that
-  page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which reads the
-  policy and registers every lazy catalog from its JSON files) keep the copy available for every
-  story and spec.
+  `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
+  user-menu catalog, and coming-soon tests `createComingSoonLocaleI18n`), so a lazy key leaking into
+  an eager page renders raw in that page's tests too. Storybook's preview and the e2e
+  `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
+  JSON files) keep the copy available for every story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.
@@ -3076,20 +3110,20 @@ replaces.
 2. **Form Validation**: Centralized in the user module (`src/modules/user/lib/validations/`),
    shared by every feature
 
-3. **Routing**: Module-owned route contracts collected by a registry and
-   assembled by a composer into `createBrowserRouter` (see "Route Registry"
-   above). Add a page in the owning module's `routes/` folder — never in the
-   app shell. `ProtectedRoute` preserves the intended destination in its
-   redirect state (`state.from`), and the sign-in page redirects back to it
-   after a successful login (issue #150). The redirect fires only on a
-   null→token transition — never on mount — so the Lighthouse seeded-token
-   audit of `/sign-in` is unaffected; the target must be an internal path and
-   `AppLayout` moves focus to `<main>` when it lands. Sign-out reaches a protected page
-   through the outlet context `ProtectedRoute` provides and `AppLayout` forwards
-   (`ProtectedOutletContext`, `{ signOut }`, issue #106); the redirect it causes
-   carries `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in`
-   through the same `useArrivalFocus` hook, which then clears the marker from the
-   history entry so Back never moves focus again.
+3. **Routing**: Module-owned route contracts collected by a registry and assembled by a composer
+   into `createBrowserRouter` (see "Route Registry" above). Add a page in the owning module's
+   `routes/` folder — never in the app shell. `ProtectedRoute` preserves the intended destination in
+   its redirect state (`state.from`), and the sign-in page redirects back to it after a successful
+   login (issue #150). The redirect fires only on a null→token transition — never on mount — so the
+   Lighthouse seeded-token audit of `/sign-in` is unaffected; the target must be an internal path
+   and `AppLayout` moves focus to `<main>` when it lands. Sign-out lives in the app shell (issue
+   #362): `AppLayout` reads `signOut` from the outlet context `ProtectedRoute` provides
+   (`ProtectedOutletContext`, `{ signOut }`, issue #106) and passes it to `UIAppShell`, which
+   renders it in the sidebar, the mobile navigation drawer and the user menu; `AppLayout` still
+   forwards the same context to the page outlet. The sign-out redirect carries
+   `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
+   `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
+   focus again.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities
@@ -3321,15 +3355,19 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
 
     Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
     forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
-    every page loader in `RouteMapper`, the footer loader, the `mui-theme` shell loader, the
-    registration-notification loader, and `DeferredAuthActions.load()`. `ReloadingChunkLoader` —
-    **public routes only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag,
-    refusing when storage throws) and calls `pageReloadNavigator.reload()` once, leaving React
-    suspended on the fallback; a second miss in the session, and every miss on a protected route,
-    is rethrown to the route `errorElement` (strategy `reload`, user-initiated).
-    `tests/unit/routes/route-mapper.test.tsx` pins the guard-dependent choice,
-    `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
-    `route.load` through `React.lazy`.
+    every page loader in `RouteMapper`, the footer loader, the app-shell loader
+    (`app-shell-loader.ts`), the user-menu shell slot (`ShellSlotFactory`) and its current-user
+    loader, the `mui-theme` shell loader, the registration-notification loader, and
+    `DeferredAuthActions.load()`. A shell chunk that still fails is never rethrown to a route
+    `errorElement`: it renders the shell placeholders, an empty user-menu slot or the identity-less
+    menu, and is captured through `observabilityCore.captureError` with source `app-shell:load`,
+    `app-shell:user-menu` or `app-shell:current-user`. `ReloadingChunkLoader` — **public routes
+    only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage
+    throws) and calls `pageReloadNavigator.reload()` once, leaving React suspended on the fallback;
+    a second miss in the session, and every miss on a protected route, is rethrown to the route
+    `errorElement` (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx`
+    pins the guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
+    mapper still wraps `route.load` through `React.lazy`.
 
     Post-load warm-up (issue #309): `PostLoadPrefetcher` (`src/lib/reliability/`),
     attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the

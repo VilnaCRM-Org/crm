@@ -7,7 +7,9 @@
 # browser scope, must state the reason in details, and must not also carry a suite row.
 route	suite	spec	details
 home	e2e	tests/e2e/modules/back-to-main.spec.ts	Navigates to the home route through the back-to-main control and asserts the resulting URL.
-home	visual	tests/visual/visual-comparison.spec.ts	Full-viewport-matrix screenshots of the authenticated home page.
+home	visual	tests/visual/visual-comparison.spec.ts	Full-viewport-matrix screenshots of the authenticated home page, with the userSettings flag on and a stubbed CurrentUser.
+home	visual	tests/visual/visual-comparison.app-shell.spec.ts	1440 and 1024 screenshots of home with the user menu open, and 1024 screenshots of the expanded tablet panel with its handle and the Settings group open.
+home	visual	tests/visual/mobile/app-shell.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of home with the closed mobile header and with the user menu open.
 signUp	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/registration-form.spec.ts	Drives the registration form on /sign-up end to end.
 signUp	visual	tests/visual/visual-comparison.sign-up.spec.ts	Full-viewport-matrix screenshots of /sign-up.
 signIn	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-form.spec.ts	Drives the login form on /sign-in end to end.
@@ -22,10 +24,10 @@ notFound	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the catch-all route with a
 signIn	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-retry.spec.ts	Drives the sign-in form through dropped, 5xx and permanent login responses to pin the retry policy (issue #147).
 signIn	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /sign-in and asserts the in-form offline notice and disabled submit.
 signUp	e2e	tests/e2e/modules/user/features/auth/offline-notice.spec.ts	Toggles the browser offline on /sign-up and asserts the in-form offline notice and disabled submit.
-home	e2e	tests/e2e/modules/home.spec.ts	Renders the authenticated home page (heading, description, sign out, shell footer) and signs out to /sign-in.
+home	e2e	tests/e2e/modules/home.spec.ts	Renders the authenticated home page (heading, description, the shell banner and sidebar, footer) and signs out through the sidebar to /sign-in.
 signIn	e2e	tests/e2e/modules/home.spec.ts	Lands on /sign-in after signing out from home and asserts its heading and the focused main landmark.
-home	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Drives the home page with the keyboard only: tab order through sign out and the footer links, visible focus, Enter and Space sign-out.
-signIn	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Lands on /sign-in after a keyboard sign-out from home and asserts the focused main landmark.
+home	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Drives the home page with the keyboard only: the sidebar sign out into the footer links, visible focus, Enter and Space sign-out.
+signIn	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Lands on /sign-in after a keyboard sign-out through the sidebar and asserts the focused main landmark.
 forbidden	e2e	tests/e2e/modules/error-pages.spec.ts	Renders /forbidden with and without a seeded token, follows its home link and proves the request-access button is inert.
 forbidden	visual	tests/visual/visual-comparison.error-pages.spec.ts	1440 x 940 and 1024 x 1366 screenshots of /forbidden.
 forbidden	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /forbidden with axe against the WCAG 2.1 AA tag set.
@@ -52,7 +54,7 @@ passwordReset	e2e	tests/e2e/mobile/password-recovery-touch.spec.ts	Completes the
 passwordRecovery	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the request form, the sent step at three sizes, and the card width against /sign-in.
 passwordReset	visual	tests/visual/visual-comparison.password-recovery.spec.ts	Full-matrix screenshots of the new-password form, the invalid-link state and the /sign-in notice at three sizes.
 settings	e2e	tests/e2e/modules/user/features/settings/settings.spec.ts	Opens /settings with the userSettings flag forced on and off, with and without a token: the sign-in redirect, the not-found page with no chunk request, and the page shell.
-settings	e2e	tests/e2e/modules/user/features/settings/settings-save.spec.ts	Opens /settings through the home link and saves a name, an e-mail (with the resend) and all three aspects, sends nothing for a password-only edit, and checks the exact UpdateUser input keys.
+settings	e2e	tests/e2e/modules/user/features/settings/settings-save.spec.ts	Opens /settings through the sidebar Settings link and saves a name, an e-mail (with the resend) and all three aspects, sends nothing for a password-only edit, and checks the exact UpdateUser input keys.
 settings	e2e	tests/e2e/modules/user/features/settings/settings-failures.spec.ts	Drives the wrong-password, taken-e-mail, 429 and 503 retry outcomes and the offline-disabled Save on /settings.
 settings	e2e	tests/e2e/modules/user/features/settings/settings-session.spec.ts	Ends the session with a transport 401 on UpdateUser, lands on /sign-in with the notice and focus, and returns to /settings after login.
 settings	e2e	tests/e2e/mobile/settings-touch.spec.ts	Completes name, e-mail, password and resend changes with taps only on the mobile projects, with touch-target, overflow (390, 412, 320 px), keyboard-height and toast-clearance checks.
@@ -61,3 +63,44 @@ settings	e2e	tests/e2e/a11y/settings-states.a11y.spec.ts	Scans the unconfirmed r
 settings	e2e	tests/e2e/a11y/settings-keyboard.a11y.spec.ts	Drives /settings with the keyboard only: tab order, eye toggle Space, Enter submit and the focus rules after save, errors, Clear, toast close and session end.
 settings	visual	tests/visual/visual-comparison.settings.spec.ts	Full-matrix screenshots of the resting /settings page and desktop, tablet and mobile screenshots of the unconfirmed row, field errors, success toasts, transient toast, skeleton and load failure.
 settings	visual	tests/visual/mobile/settings.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the resting /settings page.
+settings	visual	tests/visual/mobile/app-shell.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the navigation drawer open on /settings with its current row.
+boards	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /boards directly with a seeded session: the section heading, message and document title inside the shell; follows its home link to / with no document load and main focused; and bounces a signed-out visit to /sign-in with state.from /boards, returning there after login.
+products	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /products directly with a seeded session: the section heading, message and document title inside the shell; follows its home link to / with no document load and main focused; and bounces a signed-out visit to /sign-in with state.from /products, returning there after login.
+orders	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /orders directly with a seeded session: the section heading, message and document title inside the shell; follows its home link to / with no document load and main focused; and bounces a signed-out visit to /sign-in with state.from /orders, returning there after login.
+contacts	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /contacts directly with a seeded session: the section heading, message and document title inside the shell; follows its home link to / with no document load and main focused; and bounces a signed-out visit to /sign-in with state.from /contacts, returning there after login.
+analytics	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /analytics directly with a seeded session: the section heading, message and document title inside the shell; follows its home link to / with no document load and main focused; and bounces a signed-out visit to /sign-in with state.from /analytics, returning there after login.
+settingsIntegrations	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /settings/integrations with the userSettings flag on and off: the section page, and the not-found page with no coming-soon chunk request while the flag is off; with the flag on, follows its home link to / with no document load and main focused, and bounces a signed-out visit to /sign-in with state.from /settings/integrations, returning there after login.
+settingsWebhooks	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /settings/webhooks with the userSettings flag on and off: the section page, and the not-found page with no coming-soon chunk request while the flag is off; with the flag on, follows its home link to / with no document load and main focused, and bounces a signed-out visit to /sign-in with state.from /settings/webhooks, returning there after login.
+settingsBilling	e2e	tests/e2e/modules/coming-soon.spec.ts	Opens /settings/billing with the userSettings flag on and off: the section page, and the not-found page with no coming-soon chunk request while the flag is off; with the flag on, follows its home link to / with no document load and main focused, and bounces a signed-out visit to /sign-in with state.from /settings/billing, returning there after login.
+boards	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /boards with a seeded token with axe against the WCAG 2.1 AA tag set.
+products	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /products with a seeded token with axe against the WCAG 2.1 AA tag set.
+orders	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /orders with a seeded token with axe against the WCAG 2.1 AA tag set.
+contacts	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /contacts with a seeded token with axe against the WCAG 2.1 AA tag set.
+analytics	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /analytics with a seeded token with axe against the WCAG 2.1 AA tag set.
+settingsIntegrations	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/integrations with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
+settingsWebhooks	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/webhooks with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
+settingsBilling	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /settings/billing with the userSettings flag on and a seeded token with axe against the WCAG 2.1 AA tag set.
+home	e2e	tests/e2e/modules/app-shell.spec.ts	Proves the shell on home at 1440: Settings, Sign out and every row from the sidebar and the chip menu, the disabled controls, no badge, the CurrentUser request counts and no shell chunk on the public pages.
+settings	e2e	tests/e2e/modules/app-shell.spec.ts	Opens /settings from the sidebar and the chip menu at 1440 and 1024 with main focused, signs out from it, and reads CurrentUser twice on a cold load.
+home	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Walks the shell with the keyboard at 1440, 1024 and 375: tab order, the handle, the chip menu arrow keys, Escape and Tab, and the drawer focus and exposure.
+settings	e2e	tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts	Tabs through the sidebar on /settings with the three sub-items after the Settings chevron.
+home	e2e	tests/e2e/a11y/app-shell-text-spacing.a11y.spec.ts	Applies the WCAG 1.4.12 text-spacing overrides to the closed shell, the open chip menu and the open drawer at 1440, 1024 and 375.
+home	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Opens and closes the drawer by tap on both mobile projects, uses Settings and Sign out from it and from the avatar menu, and measures the touch targets and overflow.
+settings	e2e	tests/e2e/mobile/app-shell-touch.spec.ts	Reaches /settings by tap from the drawer and from the avatar menu with main focused.
+boards	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /boards coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+boards	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /boards coming-soon page inside the shell.
+boards	visual	tests/visual/visual-comparison.app-shell.spec.ts	1440 and 1024 screenshots of /boards with the sidebar collapsed to the rail and the Boards item current.
+products	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /products coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+products	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /products coming-soon page inside the shell.
+orders	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /orders coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+orders	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /orders coming-soon page inside the shell.
+contacts	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /contacts coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+contacts	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /contacts coming-soon page inside the shell.
+analytics	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /analytics coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+analytics	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /analytics coming-soon page inside the shell.
+settingsIntegrations	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /settings/integrations coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+settingsIntegrations	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /settings/integrations coming-soon page inside the shell.
+settingsWebhooks	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /settings/webhooks coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+settingsWebhooks	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /settings/webhooks coming-soon page inside the shell.
+settingsBilling	visual	tests/visual/visual-comparison.coming-soon.spec.ts	Desktop, tablet and mobile screenshots of the /settings/billing coming-soon page inside the shell, with a seeded session and the userSettings flag on.
+settingsBilling	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhone 14 device-scale screenshots of the /settings/billing coming-soon page inside the shell.

@@ -8,6 +8,11 @@ import testI18n from '@tests/i18n/test-i18n';
 
 const mockFooterLoad = jest.fn();
 
+jest.mock('@/components/layouts/app-shell-loader', () => ({
+  __esModule: true,
+  default: { load: (): Promise<unknown> => new Promise(() => undefined) },
+}));
+
 jest.mock('@/components/layouts/footer-loader', () => ({
   __esModule: true,
   default: { load: (): Promise<unknown> => mockFooterLoad() },

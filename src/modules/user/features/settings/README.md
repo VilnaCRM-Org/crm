@@ -11,10 +11,21 @@ error. The decisions are recorded in `## User Settings decisions` of the
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
-- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
-  (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`.
+- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form` (`ClearButton`,
+  `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`, `user-menu` (the
+  app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
+- `components/user-menu/user-menu-slot.tsx` — `UserMenuSlot`, the `user-menu` chunk entry. It
+  mounts one `UserMenu` for its whole life and owns the identity it shows. While `userSettings` is
+  on it lazy-loads only the identity source, `CurrentUserMenu` (chunk `current-user`), which
+  renders nothing, calls `useCurrentUser()` and reports the identity through `onIdentity`. The
+  Suspense fallback around it renders nothing too, because the loading UI is the name-less chip
+  outside the boundary. So the chip, its focus, an open menu with its focused item, the menu id and
+  the once-only Sign out survive the chunk arriving: only the chip's name and monogram change. A
+  failed chunk is reported once as `app-shell:current-user` and the chip stays name-less; with the
+  flag off nothing is loaded or read.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
-  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`.
+  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`, `useDisplayName`,
+  `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
 - `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and the three GraphQL document seams.
@@ -54,7 +65,7 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 
 ```text
 UserProfile [component]<route>          title, toast queue, useProfileLoad
-└ UIContainer
+└ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column is the 2FA slot
   │ ├ UserProfileSettings               loading | failed | ready
@@ -91,13 +102,13 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | Repository → API edge | the container's Apollo client with the `SessionLinkFactory` link |
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
-No file names a controller, a service or a handler: the board has none. Gaps that remain gaps:
-the board's social-network component is presentational only — `SocialNetworks` draws the Figma
-card as a list rather than buttons, each tile telling a screen reader that linking is not
-available yet, because user-service has no link, list or unlink — the header menu with the
-"Log-out" edge is app-shell work and the home link stands in for it, the two-factor card
-belongs to #331, and the session link reads and resets `useAuthStore` without a Repository →
-State edge on the board.
+No file names a controller, a service or a handler: the board has none. Gaps that remain gaps: the
+board's social-network component is presentational only — `SocialNetworks` draws the Figma card as a
+list rather than buttons, each tile telling a screen reader that linking is not available yet,
+because user-service has no link, list or unlink — the header menu with the "Log-out" edge is now
+drawn (the app-shell user menu in `components/user-menu/`, declared as `shell.userMenu` in
+`routes/index.ts`, issue #362) and is no longer one of them, the two-factor card belongs to #331,
+and the session link reads and resets `useAuthStore` without a Repository → State edge on the board.
 
 ## Data provider outcomes
 
@@ -147,10 +158,17 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
-- **Desktop content is centred.** Figma left-aligns the columns beside a 238 px sidebar the
-  app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
-  columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
-  lands, and the heading stays aligned with the card's left edge.
+- **Desktop content is left-aligned beside the sidebar.** The app shell (issue #362) now draws the
+  238 px sidebar Figma shows, so above 1024 px the content no longer centres: the heading and the
+  grid start at the content column's own left edge, 12 px from the sidebar (x 262 at 1440, x 263 at
+  1024 with the sidebar expanded; collapsed to the rail, x 137 at 1440 and x 101 at 1024, the latter
+  not yet measured against Figma — see P-51 and P-62 in the shell README). The toolkit `UIContainer`
+  pads 32 px at 1024 and 124 px at 1440 (AV-7 measured it and found it does not yield the Figma
+  start), so the page renders inside the shared `UIShellContent` (15 / 26 / 12 px insets; see
+  [frame and settings alignment](../../../../components/ui-app-shell/README.md#measured-against-figma-frame-and-settings-alignment-issue-362)
+  in the shell README). The page keeps its `gap` and `paddingTop`;
+  `width: fit-content`, `maxWidth` and `marginInline: auto` are gone. The 2FA column, when it lands,
+  widens the grid to the right.
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
   header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.

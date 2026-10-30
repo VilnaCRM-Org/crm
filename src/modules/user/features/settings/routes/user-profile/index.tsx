@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import { type JSX, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import UIContainer from '@/components/ui-container';
+import UIShellContent from '@/components/ui-shell-content';
 import UIToastStack from '@/components/ui-toast';
 import UITypography from '@/components/ui-typography';
 import usePageTitle from '@/hooks/use-page-title';
@@ -56,7 +56,7 @@ export default function UserProfile(): JSX.Element {
   const headingRef = useRef<HTMLElement>(null);
 
   return (
-    <UIContainer>
+    <UIShellContent>
       <Box sx={styles.content}>
         <SettingsHeading headingRef={headingRef} />
         <SettingsGrid>
@@ -76,6 +76,6 @@ export default function UserProfile(): JSX.Element {
         </SettingsGrid>
       </Box>
       <SettingsToasts queue={toasts} saveRef={saveRef} headingRef={headingRef} />
-    </UIContainer>
+    </UIShellContent>
   );
 }

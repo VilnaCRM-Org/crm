@@ -4,7 +4,7 @@ import {
   replyWithProfile,
   replyWithSaved,
   replyWithStatus,
-  signInWithFlag,
+  signInToSettings,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
@@ -29,7 +29,7 @@ const tryAgain: string = t('auth.error.tryAgain');
 
 test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
   });
 
   test('the unconfirmed e-mail row has no axe violations', async ({ page }) => {
