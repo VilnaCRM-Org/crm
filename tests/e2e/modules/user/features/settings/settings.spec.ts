@@ -1,6 +1,7 @@
 import type { Page, Request } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
+import { chipOf, sidebarOf, sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 import {
@@ -17,6 +18,7 @@ import {
   PROFILE_NODE,
   replyWithGraphQLError,
   replyWithProfile,
+  signInToSettings,
   signInWithFlag,
   stubProfile,
   type StubbedProfile,
@@ -28,7 +30,6 @@ const SETTINGS_CHUNK = /\/settings(?:\.[\w-]+)?\.js$/;
 
 const settingsTitle: string = `${t('settings.title')} - VilnaCRM`;
 const settingsHeading: string = t('settings.heading');
-const homeLinkLabel: string = t('home.settings_link');
 const homeHeading: string = t('home.heading');
 const settingsSubtitle: string = t('settings.subtitle');
 const notFoundTitle: string = t('error_page.not_found.title');
@@ -69,7 +70,7 @@ async function expectNotFoundWithoutChunk(page: Page, signedIn: boolean): Promis
 
 test.describe('Settings route', () => {
   test('renders the page shell for a signed-in user while the flag is on', async ({ page }) => {
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
     await stubProfile(page);
 
     await page.goto(SETTINGS_URL);
@@ -83,18 +84,20 @@ test.describe('Settings route', () => {
   });
 
   test('greets the signed-in user by name once the profile loads', async ({ page }) => {
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
     const stub = await stubProfile(page);
 
     await page.goto(SETTINGS_URL);
 
     await expect(page.getByText(greeting)).toBeVisible();
-    await expect(page.getByText(PROFILE_NODE.initials)).toBeVisible();
+    await expect(page.getByRole('main').getByText(PROFILE_NODE.initials)).toBeVisible();
+    await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
     expect(reads(stub)).toBe(1);
+    expect(stub.shellCalls).toHaveLength(1);
   });
 
   test('shows the load failure and one new read per retry', async ({ page }) => {
-    await signInWithFlag(page, true);
+    await signInToSettings(page);
     const stub = await stubProfile(page, {
       CurrentUser: [replyWithGraphQLError('Something odd'), replyWithProfile()],
     });
@@ -106,8 +109,9 @@ test.describe('Settings route', () => {
 
     await page.getByRole('button', { name: tryAgain }).click();
 
-    await expect(page.getByText(PROFILE_NODE.initials)).toBeVisible();
+    await expect(page.getByRole('main').getByText(PROFILE_NODE.initials)).toBeVisible();
     expect(reads(stub)).toBe(2);
+    expect(stub.shellCalls).toHaveLength(1);
   });
 
   test('sends a signed-out visitor to sign-in and back to settings after login', async ({
@@ -154,12 +158,15 @@ test.describe('Settings route', () => {
     await expectNotFoundWithoutChunk(page, false);
   });
 
-  test('shows the home page with no settings link while the flag is off', async ({ page }) => {
+  test('shows the home page with no settings link in the shell while the flag is off', async ({
+    page,
+  }) => {
     await signInWithFlag(page, false);
 
     await page.goto('/');
 
     await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
-    await expect(page.getByRole('link', { name: homeLinkLabel })).toHaveCount(0);
+    await expect(sidebarOf(page)).toBeVisible();
+    await expect(sidebarSettingsOf(page)).toHaveCount(0);
   });
 });
