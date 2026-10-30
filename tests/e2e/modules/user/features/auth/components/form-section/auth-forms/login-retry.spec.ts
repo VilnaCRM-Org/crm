@@ -11,6 +11,7 @@ import {
   retryButtonOf,
   signInErrorMessages,
 } from '@tests/e2e/utils/sign-in-result-card';
+import { signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import { stubSignIn, type SignInOutcome } from '@tests/e2e/utils/two-factor-responses';
 
 import fillInput from '../../../../../../../utils/fill-input';
@@ -24,11 +25,15 @@ const submitLabel: string = t('sign_in.form.submit_button');
 
 const validCredentials = buildCredentials();
 
-async function submitValidLogin(page: Page): Promise<void> {
-  await page.goto(LOGIN_URL);
+async function submitCredentials(page: Page): Promise<void> {
   await fillInput(page.getByPlaceholder(emailPlaceholder), validCredentials.email);
   await fillInput(page.getByPlaceholder(passwordPlaceholder), validCredentials.password);
   await page.locator('button', { hasText: submitLabel }).click();
+}
+
+async function submitValidLogin(page: Page): Promise<void> {
+  await page.goto(LOGIN_URL);
+  await submitCredentials(page);
 }
 
 const TRANSIENT_FAILURES: readonly (readonly [string, SignInOutcome])[] = [
@@ -56,7 +61,8 @@ test.describe('Sign-in request is not retried automatically', () => {
 
     test(`Спробувати ще раз after ${name} sends exactly one more request`, async ({ page }) => {
       const signIn = await stubSignIn(page, [outcome, 'session']);
-      await submitValidLogin(page);
+      await signOutToSignIn(page);
+      await submitCredentials(page);
       await expectSignInErrorCard(page, signInErrorMessages.transient);
 
       await retryButtonOf(page).click();
