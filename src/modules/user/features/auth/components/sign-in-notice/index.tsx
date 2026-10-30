@@ -22,6 +22,16 @@ const NOTICE_ROWS: SignInNoticeMessageTable = {
     tone: 'neutral',
     Icon: InfoOutlinedIcon,
   },
+  two_factor_expired: {
+    messageKey: 'sign_in.notices.two_factor_expired',
+    tone: 'neutral',
+    Icon: InfoOutlinedIcon,
+  },
+  account_locked: {
+    messageKey: 'sign_in.notices.account_locked',
+    tone: 'neutral',
+    Icon: InfoOutlinedIcon,
+  },
 };
 
 export default function SignInNotice({ notice }: SignInNoticeProps): JSX.Element | null {

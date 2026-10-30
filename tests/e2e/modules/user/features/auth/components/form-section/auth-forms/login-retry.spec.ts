@@ -1,18 +1,23 @@
-import { type Page, type Route } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import {
+  backButtonOf,
   errorCardHeading,
   expectSignInErrorCard,
+  expectSignInErrorCardWithoutRetry,
+  expectSignInSuccessCard,
+  retryButtonOf,
   signInErrorMessages,
 } from '@tests/e2e/utils/sign-in-result-card';
+import { signOutToSignIn } from '@tests/e2e/utils/sign-out';
+import { stubSignIn, type SignInOutcome } from '@tests/e2e/utils/two-factor-responses';
 
 import fillInput from '../../../../../../../utils/fill-input';
 import { t } from '../../../../../../../utils/initialize-localization';
 
 const LOGIN_URL = '/sign-in';
-const LOGIN_API_URL = '**/api/users';
 
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const passwordPlaceholder: string = t('sign_in.form.password_input.placeholder');
@@ -20,113 +25,77 @@ const submitLabel: string = t('sign_in.form.submit_button');
 
 const validCredentials = buildCredentials();
 
-async function submitValidLogin(page: Page): Promise<void> {
-  await page.goto(LOGIN_URL);
+async function submitCredentials(page: Page): Promise<void> {
   await fillInput(page.getByPlaceholder(emailPlaceholder), validCredentials.email);
   await fillInput(page.getByPlaceholder(passwordPlaceholder), validCredentials.password);
   await page.locator('button', { hasText: submitLabel }).click();
 }
 
-function isPostLogin(route: Route): boolean {
-  return route.request().method() === 'POST';
+async function submitValidLogin(page: Page): Promise<void> {
+  await page.goto(LOGIN_URL);
+  await submitCredentials(page);
 }
 
-const loginToken = (): { status: number; contentType: string; body: string } => ({
-  status: 200,
-  contentType: 'application/json',
-  body: JSON.stringify({ token: 'e2e-login-token' }),
-});
+const TRANSIENT_FAILURES: readonly (readonly [string, SignInOutcome])[] = [
+  ['a dropped connection', 'network'],
+  ['a 503', 'unavailable'],
+];
 
-const unavailable = (): { status: number; contentType: string; body: string } => ({
-  status: 503,
-  contentType: 'application/json',
-  body: JSON.stringify({ message: 'Service unavailable' }),
-});
+// Sign-in is a GraphQL mutation that is requested once (issue #331, superseding the REST retry
+// opt-in of issue #147): nothing is re-sent behind the user's back, and only a transient failure
+// offers the result card's own "Спробувати ще раз".
+test.describe('Sign-in request is not retried automatically', () => {
+  // Firefox reports an aborted cross-origin request as a CORS console error; the single request is
+  // the behaviour under test.
+  test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
-// The login POST opts in to the retry policy (issue #147): a transport failure or a 5xx is
-// retried with backoff before the error card replaces the form, and a permanent failure is not.
-test.describe('Login request retry (issue #147)', () => {
-  test.describe('dropped connection', () => {
-    // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
-    // behaviour under test and the second POST proves the first one never reached the backend.
-    test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
-
-    test('recovers from a dropped connection on the first attempt', async ({ page }) => {
-      let posts = 0;
-      await page.route(LOGIN_API_URL, async (route: Route) => {
-        if (!isPostLogin(route)) return route.fallback();
-        posts += 1;
-        return posts === 1 ? route.abort('failed') : route.fulfill(loginToken());
-      });
+  for (const [name, outcome] of TRANSIENT_FAILURES) {
+    test(`${name} sends one request and shows the transient card`, async ({ page }) => {
+      const signIn = await stubSignIn(page, [outcome]);
 
       await submitValidLogin(page);
 
-      await expect.poll(() => posts).toBe(2);
-      await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
-      await expect(page.getByRole('alert')).toHaveCount(0);
-      await expect(errorCardHeading(page)).toHaveCount(0);
+      await expectSignInErrorCard(page, signInErrorMessages.transient);
+      expect(signIn.count()).toBe(1);
     });
 
-    test('shows the network error card after the third dropped connection', async ({ page }) => {
-      let posts = 0;
-      await page.route(LOGIN_API_URL, async (route: Route) => {
-        if (!isPostLogin(route)) return route.fallback();
-        posts += 1;
-        return route.abort('failed');
+    test(`Спробувати ще раз after ${name} sends exactly one more request`, async ({ page }) => {
+      const signIn = await stubSignIn(page, [outcome, 'session']);
+      await signOutToSignIn(page);
+      await submitCredentials(page);
+      await expectSignInErrorCard(page, signInErrorMessages.transient);
+
+      await retryButtonOf(page).click();
+
+      await expectSignInSuccessCard(page);
+      expect(signIn.count()).toBe(2);
+      expect(signIn.calls[1]?.variables['input']).toMatchObject({
+        email: validCredentials.email,
+        password: validCredentials.password,
       });
-
-      await submitValidLogin(page);
-
-      await expectSignInErrorCard(page, signInErrorMessages.network);
-      expect(posts).toBe(3);
     });
-  });
+  }
 
-  test('retries a 503 twice and settles on the third answer', async ({ page }) => {
-    let posts = 0;
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (!isPostLogin(route)) return route.fallback();
-      posts += 1;
-      return route.fulfill(posts < 3 ? unavailable() : loginToken());
-    });
+  test('does not retry a permanent 401 and offers no Retry', async ({ page }) => {
+    const signIn = await stubSignIn(page, ['unauthenticated']);
 
     await submitValidLogin(page);
 
-    await expect.poll(() => posts).toBe(3);
-    await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expectSignInErrorCardWithoutRetry(page, signInErrorMessages.invalidCredentials);
+    expect(signIn.count()).toBe(1);
+  });
+
+  test('Назад from the transient card returns to the form without a second request', async ({
+    page,
+  }) => {
+    const signIn = await stubSignIn(page, ['unavailable']);
+    await submitValidLogin(page);
+    await expectSignInErrorCard(page, signInErrorMessages.transient);
+
+    await backButtonOf(page).click();
+
     await expect(errorCardHeading(page)).toHaveCount(0);
-  });
-
-  test('shows the server error card after the third transient failure', async ({ page }) => {
-    let posts = 0;
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (!isPostLogin(route)) return route.fallback();
-      posts += 1;
-      return route.fulfill(unavailable());
-    });
-
-    await submitValidLogin(page);
-
-    await expectSignInErrorCard(page, signInErrorMessages.server);
-    expect(posts).toBe(3);
-  });
-
-  test('does not retry a permanent 401', async ({ page }) => {
-    let posts = 0;
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (!isPostLogin(route)) return route.fallback();
-      posts += 1;
-      return route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Invalid credentials' }),
-      });
-    });
-
-    await submitValidLogin(page);
-
-    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
-    expect(posts).toBe(1);
+    await expect(page.getByPlaceholder(emailPlaceholder)).toHaveValue(validCredentials.email);
+    expect(signIn.count()).toBe(1);
   });
 });
