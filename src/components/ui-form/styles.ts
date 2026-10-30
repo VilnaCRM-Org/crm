@@ -17,7 +17,7 @@ export default {
     fontSize: '1rem',
     lineHeight: '1.625rem',
     letterSpacing: 0,
-    color: paletteColors.error.main,
+    color: paletteColors.error.text,
   },
 
   formTitle: {
@@ -113,6 +113,16 @@ export default {
       fontSize: '1.125rem',
       lineHeight: 1,
     },
+  },
+
+  blockedReason: {
+    marginTop: '0.5rem',
+    fontFamily: 'Golos',
+    fontWeight: 400,
+    fontSize: '0.875rem',
+    lineHeight: '1.25rem',
+    letterSpacing: 0,
+    color: customColors.text.primary,
   },
 
   submitButtonTight: {

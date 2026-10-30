@@ -42,6 +42,7 @@ export default function AppLayoutFrame({
         <AppShell signOut={outletContext.signOut} userMenu={userMenu} />
       </Suspense>
       <Main ref={focusOnArrival} tabIndex={-1}>
+        {outletContext.banner}
         <Outlet context={outletContext} />
       </Main>
       <FooterArea>

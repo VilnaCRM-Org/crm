@@ -52,7 +52,7 @@ describe('UIForm error banner', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(ERROR_TEXT);
-    expect(alert).toHaveStyle({ color: 'rgb(220, 57, 57)' });
+    expect(alert).toHaveStyle({ color: 'rgb(198, 40, 40)' });
     expect(getComputedStyle(alert).marginBottom).toBe('1rem');
   });
 

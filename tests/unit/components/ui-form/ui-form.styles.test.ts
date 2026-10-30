@@ -23,7 +23,7 @@ describe('ui-form styles', () => {
         fontSize: '1rem',
         lineHeight: '1.625rem',
         letterSpacing: 0,
-        color: '#DC3939',
+        color: '#C62828',
       },
       errorBannerFocus: {
         outline: 'none',
@@ -112,6 +112,15 @@ describe('ui-form styles', () => {
           fontSize: '1.125rem',
           lineHeight: 1,
         },
+      },
+      blockedReason: {
+        marginTop: '0.5rem',
+        fontFamily: 'Golos',
+        fontWeight: 400,
+        fontSize: '0.875rem',
+        lineHeight: '1.25rem',
+        letterSpacing: 0,
+        color: '#404142',
       },
       submitButtonTight: {
         marginTop: '1.0625rem',
