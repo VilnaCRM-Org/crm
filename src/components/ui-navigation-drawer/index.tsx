@@ -43,7 +43,7 @@ export default function UINavigationDrawer({
         <DrawerScrim duration={duration} />
         <DrawerHeader onDismiss={onClose} avatar={avatar} />
         <Slide in appear direction="left" timeout={duration}>
-          <Box sx={styles.panel}>
+          <Box tabIndex={-1} sx={styles.panel}>
             <DrawerPanel items={items} signOut={signOut} onNavigate={onNavigate} />
           </Box>
         </Slide>

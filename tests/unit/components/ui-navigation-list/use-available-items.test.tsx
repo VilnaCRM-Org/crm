@@ -60,8 +60,7 @@ describe('useAvailableNavigationItems', () => {
 
     renderHook(() => useAvailableNavigationItems(set));
 
-    expect(isEnabled).toHaveBeenCalledWith('userSettings');
-    expect(isEnabled).toHaveBeenCalledTimes(2);
+    expect(isEnabled.mock.calls).toEqual([['userSettings'], ['userSettings']]);
   });
 
   it('filters a sub-item on its own flag inside an available group', () => {
@@ -90,6 +89,35 @@ describe('useAvailableNavigationItems', () => {
     expect(idsOf(result.current)).toEqual(['settings', 'billing']);
   });
 
+  it('turns an available group whose sub-items are all unavailable into a plain leaf', () => {
+    jest
+      .spyOn(featureFlagService, 'isEnabled')
+      .mockImplementation((flag) => flag !== 'userSettings');
+    const emptiedGroup: NavigationItemSet = {
+      items: [
+        {
+          id: 'settings',
+          href: '/settings',
+          labelKey: 'b',
+          icon,
+          children: {
+            items: [
+              { id: 'integrations', href: '/x', labelKey: 'c', icon, flag: 'userSettings' },
+              { id: 'billing', href: '/y', labelKey: 'd', icon, flag: 'userSettings' },
+            ],
+          },
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useAvailableNavigationItems(emptiedGroup));
+
+    expect(result.current).toEqual({
+      items: [{ id: 'settings', href: '/settings', labelKey: 'b', icon, flag: undefined }],
+    });
+    expect(result.current.items[0]).not.toHaveProperty('children');
+  });
+
   it('returns the same set while the input is the same', () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     const { result, rerender } = renderHook(() => useAvailableNavigationItems(set));
@@ -98,5 +126,19 @@ describe('useAvailableNavigationItems', () => {
     rerender();
 
     expect(result.current).toBe(first);
+  });
+
+  it('recomputes when it is handed a different set', () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const ordersOnly: NavigationItemSet = {
+      items: [{ id: 'orders', href: '/o', labelKey: 'e', icon }],
+    };
+    const { result, rerender } = renderHook(({ items }) => useAvailableNavigationItems(items), {
+      initialProps: { items: set },
+    });
+
+    rerender({ items: ordersOnly });
+
+    expect(idsOf(result.current)).toEqual(['orders']);
   });
 });

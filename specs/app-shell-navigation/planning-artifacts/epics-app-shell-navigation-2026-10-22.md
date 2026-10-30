@@ -3,7 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-22
-iteration: 1
+revised: 2026-10-29
+iteration: 3
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -14,7 +15,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'pm (John), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md
@@ -26,7 +27,9 @@ inputDocuments:
 
 # Epics and stories: app shell navigation (header, sidebar, drawer, user menu)
 
-**Author:** pm (John), autonomous run **Date:** 2026-10-22 **Feature:** `app-shell-navigation`
+**Author:** pm (John), autonomous run **Date:** 2026-10-22, revised 2026-10-28 and 2026-10-29 (the
+sign-out latch amendment and the failed chip re-read; each change is marked in place as a dated
+amendment or owner decision) **Feature:** `app-shell-navigation`
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md),
 [brief](./brief-app-shell-navigation-2026-10-22.md), [PRD](./prd-app-shell-navigation-2026-10-22.md)
@@ -187,7 +190,7 @@ Every UI story runs `figma-design-check` and `figma-ui-parity` against file
   `MenuList`, `MenuItem`, `ClickAwayListener`, no portal.
 - AD-8: two-stage user-aware slot (`user-menu` container-free, `current-user` only while
   `userSettings` is on); AD-9: `UserDisplayNameMapper`; AD-10: FR-15 and FR-16 edits; AD-11:
-  `useOnceCallback`; AD-12: shell chunk failure keeps the placeholders (OQ-26).
+  the sign-out latch in `useSignOut` (amended 2026-10-28; the planned `useOnceCallback` was removed); AD-12: shell chunk failure keeps the placeholders (OQ-26).
 - Architecture §7: both catalogs lazy, with policy entries and a test helper.
 
 ## Definition of done shared by every story
@@ -427,14 +430,15 @@ drawer), `src/components/ui-navigation-list/navigation-row.tsx` (NEW: link and a
 `src/components/types/ui-navigation-list/index.ts` (NEW), `src/components/ui-sidebar/index.tsx` (NEW:
 `UISidebar`, the labelled `<nav>`, the rail state), `src/components/ui-sidebar/collapse-handle.tsx`
 (NEW), `src/components/ui-sidebar/styles.ts` (NEW), its colocated
-stories, `src/components/types/ui-sidebar/index.ts` (NEW), `config/i18n-catalog-policy.json` (CHANGED: appends `components/ui-sidebar` and `components/ui-navigation-list` as shell-catalog owners), `src/hooks/use-once-callback.ts` (NEW:
-AD-11), `src/hooks/types/use-once-callback.ts` (NEW).
+stories, `src/components/types/ui-sidebar/index.ts` (NEW), `config/i18n-catalog-policy.json` (CHANGED: appends `components/ui-sidebar` and `components/ui-navigation-list` as shell-catalog owners), `src/modules/user/features/auth/stores/use-sign-out.ts` (CHANGED: AD-11, the pending sign-out
+latch released on chunk failure; amended 2026-10-28, replacing the planned `useOnceCallback`).
 
 **Tests:** `tests/unit/components/ui-app-shell/navigation-items.test.ts` (item set loaded in the test
 body), `tests/unit/components/ui-navigation-list/{index,navigation-row}.test.tsx`,
 `tests/unit/components/ui-navigation-list/use-current-navigation-item.test.tsx` (memory router),
 `tests/unit/components/ui-navigation-list/styles.test.ts`, `tests/unit/components/ui-sidebar/{index,collapse-handle}.test.tsx`,
-`tests/unit/components/ui-sidebar/styles.test.ts`, `tests/unit/hooks/use-once-callback.test.ts` (all NEW).
+`tests/unit/components/ui-sidebar/styles.test.ts` (all NEW),
+`tests/unit/modules/user/features/auth/stores/use-sign-out.test.ts` (CHANGED).
 
 **Gates:** DoD local gates; `make lint-dup` (one list renderer, NFR-17).
 
@@ -536,7 +540,7 @@ As a signed-in user,
 I want my name on a chip that opens a menu with Settings and Sign out,
 So that I can see whose session this is and reach my settings or leave from the header.
 
-**Dispatch:** Depends on Stories 1.1 and 2.2 (`useOnceCallback`).
+**Dispatch:** Depends on Stories 1.1 and 2.2 (the `useSignOut` latch, AD-11 as amended 2026-10-28).
 
 **Serves:** US-2, US-4, US-7, US-9.
 
@@ -592,8 +596,9 @@ what they import) at 100 %;
 - Given the settings header after the refactor, when its existing tests run, then they pass unchanged in intent and jscpd finds no copy of the rule (FR-17 N, NFR-17).
 - Given `userSettings` off under OQ-11's resolution, when the slot renders, then the `current-user` chunk is never requested, no `currentUser` request is made, and the chip shows the person glyph with no name and a menu with Sign out only (FR-5.3 N, FR-6.3 N, SM-16, R-1).
 - Given `userSettings` on, when the slot renders, then the name-less pending chip with My profile, Settings and Sign out is operable at once, exactly one `currentUser` read is made through `ProfileProvider` resolved with `useService`, and on `ok` the chip shows the monogram and the display name (FR-5.3 P, NFR-7).
-- Given a failed read other than `session_ended`, when the chip renders, then it stays name-less and operable with no error text, toast, retry or `console.error` (FR-5.3 N, NFR-14).
-- Given a `session_ended` read, when it settles, then the existing session link ends the session and the menu adds nothing of its own (FR-5.3).
+- Given a failed first read other than `session_ended`, when the chip renders, then it stays name-less and operable with no error text, toast, retry or `console.error` (FR-5.3 N, NFR-14).
+- Given a `ready` chip, when a pathname change re-reads and the re-read fails with `rate_limited`, `transient` or `rejected`, then the chip keeps the last good display name and monogram with no error text, toast, retry or `console.error`; given a failed first read, a failed re-read keeps it name-less (FR-5.3 N; owner decision 2026-10-28, which amends the earlier "name-less after any failed read" wording). Tests: `use-current-user.test.tsx` "keeps the last good name when a later re-read fails with %s" and "stays name-less when a re-read after a failed first read fails again"; integration `use-current-user.integration.test.tsx` "keeps the last good identity when a later read fails for another reason".
+- Given a `session_ended` read, first read or re-read, when it settles, then the existing session link ends the session, the identity resets to the name-less pending state, and the menu adds nothing of its own (FR-5.3; owner decision 2026-10-28). Tests: `use-current-user.test.tsx` "leaves a session_ended read to the session link and stays pending" and "clears the shown name when a later re-read reports the session ended"; integration "clears the previous identity when a later read ends the session".
 - Given a sign out followed by a sign in as another user in the same tab, when the chip renders, then the previous user's name never appears, even for one frame (FR-5.3 E, NFR-7).
 - Given the read count on `/settings` and after a pathname change, when the integration test counts `CurrentUser` operations, then the count equals the table OQ-25's resolution fixes (one per pathname change on `/`, two on a cold `/settings`) (FR-5.3 E, R-9).
 - Given the tablet or desktop chip, when inspected, then it is a button with `aria-haspopup="menu"`, `aria-expanded="false"`, an accessible name that starts with the visible display name followed by "User menu", a down-pointing caret that is `aria-hidden` and does not rotate when open (FR-5.1 P, N).
@@ -997,12 +1002,12 @@ Stories 2.5 and 3.4.
 | FR-5.3                 | 2.1, 2.4, 3.1, 3.3                | `…/user-menu/user-menu-slot`, `…/current-user-menu`, `…/current-user-menu-loader`, `…/hooks/use-current-user`, `components/ui-app-header/user-slot-frame`, `routes/route-mapper.shell-slot`; integ. `modules/user/features/settings/use-current-user` | `a11y/user-menu`                       | `modules/app-shell` (request count on and off)                       | home                                                                        |
 | FR-6.1                 | 2.4, 3.2, 3.3                     | `…/hooks/use-user-menu`, `…/user-menu/index`                                                                                                                                                                                                          | `a11y/user-menu`, `a11y/app-shell`     | `a11y/app-shell-keyboard`                                            | `visual-comparison.app-shell`                                               |
 | FR-6.2                 | 2.4                               | `…/user-menu/index`                                                                                                                                                                                                                                   | `a11y/user-menu`                       | `modules/app-shell` ("My profile" destination)                       | `visual-comparison.app-shell`                                               |
-| FR-6.3, FR-6.4         | 2.4, 3.3                          | `…/user-menu/index`, `hooks/use-once-callback`                                                                                                                                                                                                        | `a11y/user-menu`                       | `modules/app-shell`                                                  | none                                                                        |
+| FR-6.3, FR-6.4         | 2.4, 3.3                          | `…/user-menu/index`, `auth/stores/use-sign-out`                                                                                                                                                                                                       | `a11y/user-menu`                       | `modules/app-shell`                                                  | none                                                                        |
 | FR-7, FR-7.1 to FR-7.5 | 2.2, 2.5, 3.2, 3.3                | `components/ui-app-shell/navigation-items`, `components/ui-navigation-list/navigation-row`, `components/ui-sidebar/index`                                                                                                                             | `a11y/ui-components`, `a11y/app-shell` | `modules/app-shell` (rows navigate), `modules/coming-soon`           | home, settings, coming-soon                                                 |
 | FR-8                   | 2.2, 3.3                          | `components/ui-navigation-list/index`, `…/navigation-row`                                                                                                                                                                                             | `a11y/app-shell`                       | `modules/app-shell`                                                  | settings                                                                    |
 | FR-8.1                 | 2.2, 2.3, 3.3                     | `components/ui-navigation-list/use-group-disclosure`, `…/navigation-group-toggle`                                                                                                                                                                     | `a11y/app-shell`                       | `a11y/app-shell-keyboard` (toggle), `modules/app-shell`              | home (collapsed), settings (expanded)                                       |
 | FR-9, FR-9.1 to FR-9.3 | 2.2, 2.5, 3.3                     | `components/ui-app-shell/navigation-items`, `…/navigation-row`                                                                                                                                                                                        | `a11y/app-shell`                       | `modules/app-shell` (sub-items navigate), `modules/coming-soon`      | home, settings, coming-soon                                                 |
-| FR-10                  | 2.2, 3.3                          | `…/navigation-row`, `hooks/use-once-callback`                                                                                                                                                                                                         | `a11y/app-shell`                       | `modules/app-shell`, `a11y/app-shell-keyboard`                       | none                                                                        |
+| FR-10                  | 2.2, 3.3                          | `…/navigation-row`, `auth/stores/use-sign-out`                                                                                                                                                                                                        | `a11y/app-shell`                       | `modules/app-shell`, `a11y/app-shell-keyboard`                       | none                                                                        |
 | FR-11                  | 2.2, 3.2, 3.3                     | `components/ui-navigation-list/use-current-navigation-item`                                                                                                                                                                                           | `a11y/app-shell`                       | `modules/app-shell`                                                  | settings                                                                    |
 | FR-12                  | 2.2, 3.3, 3.4                     | `components/ui-sidebar/index`, `…/collapse-handle`, `…/styles`                                                                                                                                                                                        | `a11y/app-shell` (rail)                | `a11y/app-shell-keyboard`                                            | `visual-comparison.app-shell` (rail)                                        |
 | FR-13.1, FR-13.3       | 2.3, 3.3                          | `components/ui-app-header/menu-toggle-button`                                                                                                                                                                                                         | `a11y/app-shell`                       | `a11y/app-shell-keyboard`, `mobile/app-shell-touch`                  | `mobile/app-shell`                                                          |

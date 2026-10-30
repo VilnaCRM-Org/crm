@@ -26,12 +26,16 @@ function useBoth(): {
 }
 
 describe('useGroupDisclosure', () => {
-  it.each(['/settings', '/settings/', '/settings/webhooks', '/settings/billing'])(
-    'is expanded on %s',
-    (path) => {
-      expect(setup(path).result.current.disclosure.expanded).toBe(true);
-    }
-  );
+  it.each([
+    '/settings',
+    '/settings/',
+    '/settings/webhooks',
+    '/settings/billing',
+    '/Settings/billing',
+    '/SETTINGS',
+  ])('is expanded on %s', (path) => {
+    expect(setup(path).result.current.disclosure.expanded).toBe(true);
+  });
 
   it.each(['/', '/boards', '/settingsx', '/set'])('is collapsed on %s', (path) => {
     expect(setup(path).result.current.disclosure.expanded).toBe(false);

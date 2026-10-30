@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import MenuList from '@mui/material/MenuList';
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { JSX } from 'react';
 import { Route, Routes } from 'react-router';
 
 import UserMenuLink from '@/modules/user/features/settings/components/user-menu/user-menu-link';
@@ -89,5 +90,23 @@ describe('UserMenuLink', () => {
       paddingLeft: '20px',
       color: '#1A1C1E',
     });
+  });
+
+  it('closes through the latest onClose after it changes', async () => {
+    const user = userEvent.setup();
+    const first = jest.fn();
+    const second = jest.fn();
+    const link = (onClose: () => void): JSX.Element => (
+      <MenuList>
+        <UserMenuLink layout="desktop" label="Settings" onClose={onClose} />
+      </MenuList>
+    );
+    const view = renderShell(link(first), { path: '/boards' });
+
+    view.rerender(link(second));
+    await user.click(screen.getByRole('menuitem', { name: 'Settings' }));
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
   });
 });

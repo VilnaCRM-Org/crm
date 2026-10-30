@@ -102,15 +102,16 @@ react-router **outlet context**: `ProtectedRoute` renders
 one piece of this module that appears in it. They are not exported through the barrel: the
 settings route contract declares them as `shell.userMenu` (a lazy `user-menu` chunk), and the
 route composer hands `AppLayout` the loaded component as a prop (see "Shell slots" in
-`src/routes/README.md`). The `user` module stays out of every public page's chunks.
+`src/routes/README.md`). The shell user-menu code stays out of every public page's chunks.
 
 `signOut` comes from the `useSignOut` hook (`stores/use-sign-out.ts`). It loads `@auth/stores` with
 a **dynamic** `import()` through a `ChunkRetryLoader`, so the eager entrypoint does not grow, and
 calls `authActions.logout()` on the singleton. A final load failure is reported through
-`observabilityCore` with `source: 'auth:sign-out'` and leaves the user on the protected page. Each
-shell sign-out control (the sidebar or drawer row and the chip-menu item) runs `signOut` through
-`useOnceCallback`, so the control that was used stays inert until it remounts; the other one can
-still be used. This failure is deliberately silent (accepted in the approved design: no live region
+`observabilityCore` with `source: 'auth:sign-out'` and leaves the user on the protected page.
+`useSignOut` holds one re-entry latch for every shell sign-out control (the sidebar or drawer row
+and the chip-menu item): a second activation while a sign-out is pending does nothing, and the
+failure path clears the latch, so any control can retry. This failure is deliberately silent
+(accepted in the approved design: no live region
 on the page), and there is no busy state while the chunk loads; surfacing either is a design-owner
 follow-up. Once the token is cleared, the guard redirects to `/sign-in` with `state.focusMain: true`
 — set only after a sign-out, never for an unauthenticated visit — and `AuthPageLayout` moves focus
@@ -413,7 +414,8 @@ A name of three or more words reads as `<first> <last>` from the first two words
 monogram is the upper-cased first letter of each word of the display name; an empty name yields an
 empty monogram, which both consumers draw as the person glyph. `useDisplayName` serves the
 settings header and `useCurrentUser` the chip, which reads `ProfileProvider` once per pathname
-change and keeps the previous identity when a read ends the session.
+change, keeps the last good identity when a later read fails for any reason but `session_ended`,
+and resets the identity to the name-less pending state when a read reports `session_ended`.
 
 **Rejected.** A copy of the rule in the chip (it would drift from the header); resolving the user
 from the JWT (see the previous record).
@@ -490,7 +492,12 @@ context and ends the session only while the store still holds that token, so a l
 request sent with an earlier token, or with none, leaves a session begun since, or a sign-out
 already done, alone. Whether a network error is a 401 is asked of #315's
 `UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
-hooks, which do nothing on `session_ended` and rely on the link, read the status in one place.
+hooks read the status in one place. The settings page hooks do nothing on `session_ended` and rely
+on the link to end a session whose request came back as a transport 401; the chip's
+`useCurrentUser` only clears its shown identity and leaves ending the session to the link. The
+settings Transformer also maps a GraphQL `Access Denied.` error (`access_denied`) to
+`session_ended`, and that error does not reach the link, so for it the shown identity is cleared
+while the token stays and the session is not ended.
 The link receives its five collaborators as one `SessionLinkDeps` value
 (`AUTH_TOKENS.SessionLinkDeps`): the store, `CLEARED_AUTH_STATE` itself rather than a copy, the
 sandbox demo session, `ObservabilityService` and the error transformer, because a constructor may
