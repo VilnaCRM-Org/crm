@@ -318,23 +318,27 @@ test.describe('Two-factor settings section (issue #331)', () => {
       expect(setup.count()).toBe(2);
     });
 
-    test('keeps the typed values and sends one more confirm on Retry', async ({ page }) => {
-      await stubSetup(page);
-      const confirm = await stubConfirm(page, ['network', 'confirmed']);
-      await page.goto(SETTINGS_URL);
-      await openSetup(page);
-      await typeCode(page, '123456');
-      await confirmOf(page).click();
-      await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
-      await expect(qrOf(page)).toBeVisible();
+    test.describe('after a dropped connection', () => {
+      test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
-      await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
+      test('keeps the typed values and sends one more confirm on Retry', async ({ page }) => {
+        await stubSetup(page);
+        const confirm = await stubConfirm(page, ['network', 'confirmed']);
+        await page.goto(SETTINGS_URL);
+        await openSetup(page);
+        await typeCode(page, '123456');
+        await confirmOf(page).click();
+        await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
+        await expect(qrOf(page)).toBeVisible();
 
-      await expect(codesHeadingOf(page)).toBeFocused();
-      expect(confirm.count()).toBe(2);
-      const [first, second] = confirm.calls.map((call) => call.variables['input'] as object);
-      expect(first).toMatchObject({ twoFactorCode: '123456' });
-      expect({ ...second, clientMutationId: 0 }).toEqual({ ...first, clientMutationId: 0 });
+        await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
+
+        await expect(codesHeadingOf(page)).toBeFocused();
+        expect(confirm.count()).toBe(2);
+        const [first, second] = confirm.calls.map((call) => call.variables['input'] as object);
+        expect(first).toMatchObject({ twoFactorCode: '123456' });
+        expect({ ...second, clientMutationId: 0 }).toEqual({ ...first, clientMutationId: 0 });
+      });
     });
   });
 

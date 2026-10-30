@@ -308,18 +308,24 @@ describe('readClientState', () => {
     expect(state.unreadable).toEqual(['bad']);
   });
 
-  it('keeps going when a database fails to open or its transaction fails', async () => {
+  it('settles a database whose transaction fails as unreadable', async () => {
     installIndexedDb([
       { name: 'broken', stores: [{ name: 's', rows: [] }], failTransaction: true },
+      { name: 'good', stores: [{ name: 's', rows: ['y'] }] },
     ]);
 
     expect(await readClientState()).toMatchObject({
-      indexedDB: '[["broken"],[""]]',
-      unreadable: [],
+      indexedDB: '[["broken","good"],[null,"[[\\"y\\"],[]]"]]',
+      unreadable: ['broken'],
     });
+  });
 
+  it('settles a database that fails to open as unreadable', async () => {
     installIndexedDb([{ name: 'gone', stores: [] }], true);
 
-    expect(await readClientState()).toMatchObject({ indexedDB: '[["gone"],[""]]', unreadable: [] });
+    expect(await readClientState()).toMatchObject({
+      indexedDB: '[["gone"],[null]]',
+      unreadable: ['gone'],
+    });
   });
 });
