@@ -2,9 +2,11 @@
 
 CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`. Since v0.6.0 it
 reads the breakpoints theme from it and renders seven toolkit components, each behind the CRM
-seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Since
-v0.8.0 it also renders the toolkit checkbox and the toolkit text link, each behind its own seam
-(see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
+seam it replaces: the container, typography, the four skeleton leaves and back-to-main. The
+v0.8.0 bump added the toolkit checkbox and the toolkit text link, and the two-factor change
+([#331](https://github.com/VilnaCRM-Org/crm/issues/331)) later adopted the toolkit pin input
+(`UiPinInput`, behind `src/components/ui-pin-input`) from the same release, each behind its own
+seam (see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
 reason recorded below. The installation was scoped by issue
 [#250](https://github.com/VilnaCRM-Org/crm/issues/250); why it is a release tarball is under
 [What is installed](#what-is-installed), and why each remaining primitive stays local is in the
@@ -60,6 +62,7 @@ import {
   | `ui-back-to-main`                  | `src/components/ui-back-to-main/index.tsx`     |
   | `ui-checkbox`                      | `src/components/ui-checkbox/index.tsx`         |
   | `ui-link` (`appearance="text"`)    | `src/components/ui-text-link/index.tsx`        |
+  | `ui-pin-input`                     | `src/components/ui-pin-input/index.tsx`        |
 
   The four leaves are `text`, `block`, `button` and `input`; each seam is its folder's
   `index.tsx`. The `ui-link` subpath is adopted for the standalone text link only: its seam is
@@ -216,8 +219,9 @@ This is the one register of the CRM primitives and themes, adopted or local, wit
 each local one stays local. The reason codes belong to this register only, and each holds for
 v0.6.0. A code keeps its number while its reason is true, and a retired code is never reused.
 v0.7.0 closed the upstream issues behind several codes (ui-toolkit #186 closes #191 to #199);
-the v0.8.0 bump adopted only the checkbox and the text link, and each local row stays local
-until a design-checked swap re-measures its reason against the pinned release.
+the v0.8.0 bump adopted only the checkbox and the text link, the two-factor change (#331) adopted
+the pin input from the same release, and each local row stays local until a design-checked swap
+re-measures its reason against the pinned release.
 
 - **R2** website-theme fallback: CRM's app theme fails the toolkit's `isUiTheme` guard, so a
   component that styles from the toolkit theme without `inheritTheme` falls back to the
@@ -273,6 +277,7 @@ rule.
 | `ui-back-to-main`                                       | 2          | adopted | -             |
 | `ui-checkbox`                                           | 1          | adopted | -             |
 | `ui-text-link` (toolkit `ui-link`, `appearance="text"`) | 1          | adopted | -             |
+| `ui-pin-input` (toolkit `ui-pin-input`)                 | 2          | adopted | overrides     |
 | `ui-button`                                             | 7          | local   | R2 R3 R13 R14 |
 | `ui-form`                                               | 2          | local   | R3 R14 R15    |
 | `ui-footer`                                             | 3          | local   | R16           |
@@ -430,6 +435,34 @@ CRM-side delta sits on the seam: `src/index.css` paints every `a:visited` with
 `--mui-palette-deep-blue`, which outranks the toolkit's class-only colour, so the seam passes
 `sx` that keeps `#1EAEFF` on `:visited:not(:hover):not(:active)` (the toolkit hover and active
 colours still apply), as the error-page home link already does.
+
+**The pin input.** `ui-pin-input` is the Figma "2FA item" (set 72:5171): six 64 × 86 cells with a
+1 px border and radius 12, the form's one-time code. It ships in v0.8.0 but was adopted by the
+two-factor change (#331), not by the bump, behind `src/components/ui-pin-input`
+(`UIPinInput`), which takes `control`, `name` and `rules` like `UIFormInputField` and renders the
+toolkit component through react-hook-form's `Controller`. The group is named by the caller's
+`label` and each cell by the caller's `cellLabel` ("Цифра N з 6" / "Digit N of 6"), so the seam
+holds no copy; the toolkit adds no live region, and neither does the seam. The seam owns these
+overrides, merged through the root `sx` because the toolkit merges `sx` there only:
+
+- **Focus ring.** The compiled `:focus-visible` rule is `outline: none` plus a 15 % shadow. The
+  seam paints `focusVisibleRing` (`src/styles/focus-ring.ts`: `2px solid #404142`, offset 2 px,
+  10.23:1 on white) under `&& .ui-pin-input__cell:focus-visible:not([aria-disabled="true"])`,
+  which outranks the compiled selector.
+- **Border.** The toolkit's `#E1E7EA` rest border is 1.25:1 on white. The seam uses
+  `paletteColors.border.strong` (`#80878A`, 3.65:1 on white, 3.53:1 on `#FBFBFB`), hover
+  `#57595B` (7.03:1), error `#DC3939` and digit `#1A1C1E` (17.09:1).
+- **Gap and cell size.** Below crm `md` (a media query on `breakpointsTheme.breakpoints.values.md`,
+  never an `sx` breakpoint key, which would resolve against MUI's 600 px) the cells are
+  `flex: 1 1 0`, `min-width: 0`, at most 49 px wide and 64 px tall with a 4 px gap, as the mobile
+  frame 72:4918 draws. From `md` they are 64 px wide, 86 px tall and shrinkable with an 8 px gap
+  (frame 72:4846; the toolkit's 12 px gap is replaced). The tablet frame draws about 86 × 130
+  cells; the seam keeps 64 × 86, a deviation recorded for Follow-up 5.4.
+- **Hidden placeholder.** The compiled cell sets `placeholder="0"` from a constant and the props
+  have no placeholder, so the seam hides the digit with a `transparent` `::placeholder` colour.
+  The attribute stays; removing it is a toolkit change recorded for Follow-up 5.7.
+- **Focus helper.** The toolkit's forwarded ref lands on the group, so the seam hands
+  react-hook-form a target whose `focus()` focuses the first `input` inside the group.
 
 **Accepted accessibility conflict.** The brand tone is 2.45:1 on white, and its toolkit hover
 `#297FFF` 3.77:1, both under the 4.5:1 of SC 1.4.3; the checked checkbox fill against white, and

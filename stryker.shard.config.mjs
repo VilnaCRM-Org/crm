@@ -8,7 +8,7 @@ if (index >= total) {
   throw new Error(`MUTATION_SHARD_INDEX (${index}) must be < MUTATION_SHARD_TOTAL (${total}).`);
 }
 
-const sliced = shardMutateFiles(total, index);
+const sliced = await shardMutateFiles(total, index);
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 const config = {

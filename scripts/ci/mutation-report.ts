@@ -51,9 +51,9 @@ export interface OwnedShardReports {
  * Drop every file a shard does not own.
  *
  * A shard restores its incremental cache by key prefix, and Stryker's incremental report keeps
- * entries for files that shard mutated in an earlier run. Shard membership is packed by file size,
- * so editing a file can move it to a different shard while its previous owner still carries a copy
- * of the old result. `mergeReportFiles` keeps the first occurrence, so without this filter a status
+ * entries for files that shard mutated in an earlier run. Shard membership is packed by mutant
+ * count, so editing a file can move it to a different shard while its previous owner still carries
+ * a copy of the old result. `mergeReportFiles` keeps the first occurrence, so without this filter a status
  * decided against different source can outrank the shard that actually re-ran the file.
  */
 export function ownedShardReports(
@@ -77,6 +77,27 @@ export function ownedShardReports(
   });
 
   return { reports, discarded };
+}
+
+/**
+ * Every file the packing gave mutants to whose owning shard's report does not list it, sorted.
+ *
+ * Stryker reports every mutated file that has mutants, so a non-empty result means the merge packed
+ * the scope differently from the shards that ran it. `ownedShardReports` would then drop those
+ * files from every shard and the score would silently cover fewer files than the scope holds.
+ */
+export function unreportedOwnedFiles(
+  shards: readonly IndexedShardReport[],
+  expectedOwners: ReadonlyMap<string, number>
+): string[] {
+  const reported = new Map(
+    shards.map(({ index, report }) => [index, new Set(Object.keys(report.files ?? {}))])
+  );
+
+  return [...expectedOwners]
+    .filter(([path, index]) => !(reported.get(index)?.has(path) ?? false))
+    .map(([path]) => path)
+    .sort();
 }
 
 /** Union the `files` maps of every shard report, keyed by source path (first occurrence wins). */

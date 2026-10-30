@@ -8,10 +8,10 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
-const LOGIN_API_URL = '**/api/users';
 const COMING_SOON_CHUNK = /\/coming-soon(?:\.[\w-]+)?\.js$/;
 const BASE_TITLE = 'VilnaCRM';
 
@@ -125,14 +125,7 @@ test.describe('Coming-soon routes (issue #362)', () => {
     }) => {
       await setFlag(page, true);
       await stubProfile(page);
-      await page.route(LOGIN_API_URL, async (route) => {
-        if (route.request().method() !== 'POST') return route.fallback();
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ token: 'e2e-session-token' }),
-        });
-      });
+      await stubSignIn(page, ['session']);
 
       await signOutToSignIn(page);
       await bounceFromProtectedDestination(page, section.path);

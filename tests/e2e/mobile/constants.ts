@@ -6,7 +6,6 @@ seedFaker();
 export const SIGN_IN_URL = '/sign-in';
 export const SIGN_UP_URL = '/sign-up';
 
-export const LOGIN_API_URL = '**/api/users';
 export const REGISTRATION_API_URL = '**/graphql';
 
 export const MIN_TOUCH_TARGET_PX = 44;
