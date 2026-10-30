@@ -1,6 +1,14 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import useRailTooltip from '@/components/ui-navigation-list/use-rail-tooltip';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+
+const loadFreshRailTooltip = (): Promise<typeof useRailTooltip> =>
+  loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    return (await import('@/components/ui-navigation-list/use-rail-tooltip')).default;
+  });
 
 const enter = (handler: ((event: never) => void) | undefined): void =>
   act(() => handler?.({} as never));
@@ -20,6 +28,26 @@ describe('useRailTooltip', () => {
 
   it('starts hidden', () => {
     expect(renderHook(() => useRailTooltip()).result.current.visible).toBe(false);
+  });
+
+  it('starts hidden when the module loads inside the test', async () => {
+    const useFreshRailTooltip = await loadFreshRailTooltip();
+
+    expect(renderHook(() => useFreshRailTooltip()).result.current.visible).toBe(false);
+  });
+
+  it('shows on a fresh hover after a dismissed hover is left, loaded in the test', async () => {
+    const useFreshRailTooltip = await loadFreshRailTooltip();
+    const { result } = renderHook(() => useFreshRailTooltip());
+
+    enter(result.current.handlers.onMouseEnter);
+    expect(result.current.visible).toBe(true);
+    press('Escape');
+    expect(result.current.visible).toBe(false);
+    enter(result.current.handlers.onMouseLeave);
+    enter(result.current.handlers.onMouseEnter);
+
+    expect(result.current.visible).toBe(true);
   });
 
   it('shows on hover and hides when the pointer leaves', () => {
