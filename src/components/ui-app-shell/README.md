@@ -7,11 +7,15 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 ## App shell decisions (issue #362)
 
 - **The frame is eager, everything visible is lazy.** `AppLayout` (`src/components/layouts/`)
-  owns a CSS grid and two `aria-hidden`, non-null placeholders: a 64 px sticky header slot and,
+  hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid and renders
+  `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky header slot and,
   from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where the loaded
-  sidebar's inset is 13 px). `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader`
-  around a `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and
-  no public page requests the shell. The sidebar breakpoint is a number in
+  sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the frame
+  receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
+  `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
+  public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
+  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
+  1440 px. The sidebar breakpoint is a number in
   `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the eager path
   cannot import `@/components/ui-breakpoints`.
 - **The grid places items by line, not by area name.** A sticky element is limited to its grid
@@ -23,12 +27,14 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   `AppLayout` the result of `routeMapper.shellSlot(load)`, so `AppLayout` receives only a
   component that takes `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
   publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
-  `HeaderNavigation`). See "Shell slots" in `src/routes/README.md`.
+  `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
+  the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
+  `src/routes/README.md`.
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
-  `AppLayout` calls its `onShellFailure` prop once (the composer binds it to
-  `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
+  `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
+  it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
   frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
-  the document. `app-layout.tsx` imports nothing from `src/services/`.
+  the document. Nothing under `src/components/layouts/` imports from `src/services/`.
 - **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
   supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
   optional `userMenu` slot and an `onShellFailure` callback, typed in
@@ -48,7 +54,9 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 `UIAppHeader` (`src/components/ui-app-header/`) is the 64 px banner. Search, bell and list are
 natively `disabled` and described by the visually hidden status "Not available yet"; the mobile
 header has no search. The bell and list take an optional badge count that only stories pass: the
-header stories feed exactly 1 and 8, and no page, hook or route passes a count. The badge is
+header stories feed exactly 1 and 8, and no page, hook or route passes a count. One guard
+(`badge-count-guard.ts`) decides both the badge and the hidden count description: only a whole count
+of at least 1 shows, so zero, a fraction, `NaN` and `Infinity` show neither. The badge is
 painted in the disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
 The user slot reserves the chip's box with an `aria-hidden` placeholder until the chip arrives.
 
@@ -111,10 +119,14 @@ expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron to
 next route change; any pathname change clears it, so returning to the path it was set on (a link or
 browser Back) shows the route rule again. The handle collapses the panel to the rail (72 px desktop,
 76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
-While a tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
+Hover and focus are tracked apart, so the tooltip stays while either holds: the pointer leaving a
+row that keeps focus, or focus leaving a row the pointer still covers, does not hide it. While a
+tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
 a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
-is persisted. Sign out runs through `useOnceCallback`, so a second activation before navigation does
-nothing.
+is persisted. Sign out runs through the `useSignOut` latch the protected route provides: while a
+sign-out is pending, a second activation of any sign-out control (sidebar, drawer or user menu)
+does nothing, and a sign-out whose auth-store chunk fails to load releases the latch, so the
+control can be activated again.
 
 ### Measured against Figma (sidebar)
 
@@ -191,6 +203,19 @@ What Figma leaves open, and how it was built:
   `app-shell.spec.ts` checks the rail at 1280×720: the list and Sign out stay inside the card, the
   last row is reached by scrolling and by Tab above the sticky Sign out, and a scrolled row's
   tooltip paints in full outside the card.
+- The list carries `tabindex="-1"` in the sidebar layouts (not in the drawer, whose list never
+  scrolls). Firefox otherwise makes an overflowing scroll container a Tab stop of its own, an
+  unnamed list between the handle and the first row; every item is a control, so the list needs
+  no stop to be scrolled by keyboard, and its role is unchanged.
+- The sticky card is limited to the navigation grid row, so once the footer scrolls in it moves up
+  under the 64 px header. Chromium and WebKit scroll a focused sidebar control fully into view,
+  honouring the list's `scroll-padding-bottom` and the root `scroll-padding-top`. Firefox scrolls
+  only a control that is entirely out of view, so a partly visible one stays clipped by the list or
+  under the header (the collapse handle entirely, at 1440×400). One frame after a sidebar control
+  takes focus, `useStickyFocusClearance` scrolls it into view within its list
+  (`block: 'nearest'`) and, only when the header still covers it, scrolls the page up by the
+  covered height rounded up to a whole pixel, checking once more in the next frame. Focus then
+  lands clear of the header and of the sticky Sign out in every engine (WCAG 2.4.11).
 - The tablet Settings header content sits 3 px lower than a 66 px row centres it (Figma draws it at
   y 22), and the Products row is 67 px; both are reproduced.
 - The item set reads every FR-18 destination from its `ROUTE_PATHS` key (`boards`,
@@ -252,7 +277,9 @@ one `CurrentUser` request in all. Before the user resolves the copy is the 24 px
 At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
 stay 44×44 there: both share `edgeButtonStyles.target`, which below 375 px trims the right extension
 to the 8 px inset and gives the 2 px to the left (12 px), so the glyph does not move, the page does
-not scroll sideways and the burger stays clear of the avatar target. The Sign out row is 314 px wide
+not scroll sideways and the burger stays clear of the avatar target. Below 375 px their focus ring is
+drawn inside the button (`outline-offset: -2px`), so the 8 px inset never clips it at the viewport's
+right edge. The Sign out row is 314 px wide
 in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
 
 What Figma leaves open, and how it was built:
@@ -323,7 +350,9 @@ when `userSettings` is off, and only the desktop and tablet cards draw it, as th
 items are 2 px apart; at 320 px the popover sits at x 92 to 317 and the
 document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
 focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
-closes it. One `CurrentUser` read is made on `/`; with `userSettings` off none is made.
+closes it and returns focus to the chip. On mobile the avatar sits above the click-outside layer,
+so tapping it again closes the menu through the chip as it does at the wider layouts. One
+`CurrentUser` read is made on `/`; with `userSettings` off none is made.
 
 A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
 stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how
@@ -376,13 +405,17 @@ sidebar at top 74.
   sub-item focused at 200 % kept clear of the sticky Sign out.
 - `tests/e2e/mobile/app-shell-touch.spec.ts` (both mobile projects): the drawer opened and closed by
   tap, Settings and Sign out from the drawer and the avatar menu, a 44 px tap area on every control
-  and no horizontal overflow at device width and 320 px.
+  but the 42 px drawer sub-items (see "Known gaps"), and no horizontal overflow at device width and
+  320 px.
 - `tests/e2e/a11y/routes.a11y.spec.ts` (desktop engines): axe over `/`, `/settings` and the eight
   coming-soon routes with the shell loaded, `/` with `userSettings` off and `/` with the menu open.
 
-The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) abort the
-`current-user` chunk, so the chip never issues the second read OQ-25 introduced and their ordered
-replies stay deterministic; `app-shell.spec.ts` is the one spec that lets the chip read.
+The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) run the
+shell as in production, chip read included. To keep their ordered replies deterministic, the stub
+holds the `current-user` chunk until the page has sent its first read, takes the next read as the
+chip's and answers it with the default profile (recorded in `shellCalls`, not in `calls`), and only
+then answers the page's first read; every later read is the page's. A remount of the shell later in
+the same test (sign out and back in) is not split again, so those reads count as the page's.
 
 Run here against the 3004 dev server with the host Chromium (`chromium-dev` and `mobile-chrome-dev`,
 `--workers=1`): every spec above passes. Firefox, WebKit and `mobile-safari` need the pinned
@@ -392,6 +425,22 @@ Playwright container and run in CI only.
 
 - **The disabled bell and list** keep Figma's 40 px pitch and are not measured by the tap-area
   check (OQ-15).
+- **The drawer sub-items** Integrations, Webhooks and Billing keep Figma's 42 px PROP-18 pitch, under
+  the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
+  instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
+  sub-items do not overlap.
+- **Three grey glyphs under 3:1** (WCAG 1.4.11, owner decision, 2026-10-27, issue #276). Three
+  active controls are identified at rest only by a `#969B9D` glyph on white, 2.81:1 against the
+  3:1 of SC 1.4.11 Non-text Contrast: the Settings disclosure chevron in the sidebar and the drawer
+  (`ui-navigation-list/group-styles.ts`, its state exposed through `aria-expanded`), the icon-only
+  sidebar collapse handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
+  (`ui-navigation-list/styles.ts` through `rail-styles.ts`, label visually hidden). The product
+  owner keeps Figma's `#969B9D` and accepts a scoped exception for exactly these three controls in
+  their resting state, tracked in issue #276 with the other palette exceptions. Hover (`#404142`)
+  passes, the current rail row falls under the existing current-row entry (PRD NFR-4 X-1), and
+  focus indicators still reach
+  3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
+  `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
 
 ### DV-11: the Settings label keeps clear of its chevron (owner decision, 2026-10-26)
 

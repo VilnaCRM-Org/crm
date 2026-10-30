@@ -70,13 +70,14 @@ describe('navigation items', () => {
     expect(leaves.map(({ id }) => id)).not.toContain('signOut');
   });
 
-  it('holds only data: no function-valued property', async () => {
+  it('holds only data besides the icon component: no handler or other function', async () => {
     const { items } = await loadItems();
 
     const functions = items
       .flatMap((item) => ('children' in item ? [item, ...item.children.items] : [item]))
-      .flatMap((leaf) => Object.values(leaf))
-      .filter((value) => typeof value === 'function');
+      .flatMap((leaf) => Object.entries(leaf))
+      .filter(([key, value]) => key !== 'icon' && typeof value === 'function')
+      .map(([key]) => key);
 
     expect(functions).toEqual([]);
   });

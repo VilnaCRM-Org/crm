@@ -1,4 +1,4 @@
-import { createElement, lazy } from 'react';
+import { createElement, lazy, Suspense, useState } from 'react';
 
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
@@ -27,16 +27,21 @@ export default class ShellSlotFactory {
       return null;
     }
 
-    const Slot = lazy(() =>
+    const loadSlot = (): Promise<ShellSlotModule> =>
       loader.load().catch((error: unknown) => {
         report('app-shell:user-menu', error);
 
         return { default: EmptySlot };
-      })
-    );
+      });
 
     return function BoundUserMenuSlot({ signOut, onAvatar }: ShellSlotHostProps) {
-      return createElement(Slot, { signOut, onAvatar, onChunkFailure: report });
+      const [Slot] = useState(() => lazy(loadSlot));
+
+      return createElement(
+        Suspense,
+        { fallback: createElement('span', { 'aria-hidden': 'true' }) },
+        createElement(Slot, { signOut, onAvatar, onChunkFailure: report })
+      );
     };
   }
 }
