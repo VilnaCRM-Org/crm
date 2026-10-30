@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { isInaccessible, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axe } from 'jest-axe';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import UINavigationDrawer from '@/components/ui-navigation-drawer';
@@ -8,20 +9,6 @@ import renderShell from '@tests/unit/utils/render-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 type DrawerProps = Parameters<typeof UINavigationDrawer>[0];
-
-const DRAWER_ROLES = [
-  'generic',
-  'presentation',
-  'img',
-  'button',
-  'link',
-  'searchbox',
-  'textbox',
-  'navigation',
-  'list',
-  'listitem',
-  'heading',
-] as const;
 
 const renderDrawer = (props: Partial<DrawerProps> = {}): ReturnType<typeof renderShell> =>
   renderShell(
@@ -76,12 +63,11 @@ describe('UINavigationDrawer', () => {
     renderDrawer();
 
     const dialog = await screen.findByRole('dialog', { name: 'Main navigation' });
-    const positive = DRAWER_ROLES.flatMap((role) =>
-      within(dialog).queryAllByRole(role, { hidden: true })
-    ).filter((element) => Number(element.getAttribute('tabindex')) > 0);
+    const results = await axe(dialog, { runOnly: { type: 'rule', values: ['tabindex'] } });
 
     expect(dialog).toHaveAttribute('tabindex', '-1');
-    expect(positive).toEqual([]);
+    expect(results.passes.map((rule) => rule.id)).toContain('tabindex');
+    expect(results).toHaveNoViolations();
   });
 
   it('renders nothing while closed', () => {
