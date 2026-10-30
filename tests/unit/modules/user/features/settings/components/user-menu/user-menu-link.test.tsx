@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import MenuList from '@mui/material/MenuList';
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { Route, Routes } from 'react-router';
@@ -65,6 +65,34 @@ describe('UserMenuLink', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('location')).toHaveTextContent('/settings|{"focusMain":true}');
+  });
+
+  it('cancels the default action of Space, which would scroll the page', () => {
+    renderShell(
+      <MenuList>
+        <UserMenuLink layout="desktop" label="Settings" onClose={jest.fn()} />
+      </MenuList>,
+      { path: '/boards' }
+    );
+
+    const link = screen.getByRole('menuitem', { name: 'Settings' });
+
+    expect(fireEvent.keyDown(link, { key: ' ' })).toBe(false);
+  });
+
+  it('keeps the default action of Enter, which follows the link', () => {
+    const onClose = jest.fn();
+    renderShell(
+      <MenuList>
+        <UserMenuLink layout="desktop" label="Settings" onClose={onClose} />
+      </MenuList>,
+      { path: '/boards' }
+    );
+
+    const link = screen.getByRole('menuitem', { name: 'Settings' });
+
+    expect(fireEvent.keyDown(link, { key: 'Enter' })).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('leaves other keys to the menu', async () => {
