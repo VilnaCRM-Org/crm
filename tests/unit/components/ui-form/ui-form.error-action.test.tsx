@@ -3,7 +3,7 @@ import { screen } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { type JSX, useState } from 'react';
 
-import type { UIFormErrorAction } from '@/components/types/ui-form';
+import type { FocusReturnHandlers, UIFormErrorAction } from '@/components/types/ui-form';
 import UIForm from '@/components/ui-form';
 import ErrorBanner from '@/components/ui-form/error-banner';
 import render from '@tests/unit/utils/render-with-i18n';
@@ -14,6 +14,7 @@ type Values = { name: string };
 const DEFAULTS: Values = { name: '' };
 const ERROR_TEXT = 'Request failed';
 const ACTION_LABEL = 'Try again';
+const NO_FOCUS_RETURN: FocusReturnHandlers = { onFocus: jest.fn(), onBlur: jest.fn() };
 
 interface FormProps {
   error?: string | null;
@@ -146,21 +147,17 @@ describe('UIForm errorAction', () => {
 
 describe('ErrorBanner action', () => {
   it('renders the action only when it is given', () => {
-    const { rerender } = render(
-      <ErrorBanner error={ERROR_TEXT} returnFocusRef={{ current: null }} />
-    );
+    const { rerender } = render(<ErrorBanner error={ERROR_TEXT} focusReturn={NO_FOCUS_RETURN} />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
 
-    rerender(
-      <ErrorBanner error={ERROR_TEXT} action={retry()} returnFocusRef={{ current: null }} />
-    );
+    rerender(<ErrorBanner error={ERROR_TEXT} action={retry()} focusReturn={NO_FOCUS_RETURN} />);
 
     expect(screen.getByRole('button', { name: ACTION_LABEL })).toBeInTheDocument();
   });
 
   it('renders no action when there is no error', () => {
     const { container } = render(
-      <ErrorBanner error={null} action={retry()} returnFocusRef={{ current: null }} />
+      <ErrorBanner error={null} action={retry()} focusReturn={NO_FOCUS_RETURN} />
     );
 
     expect(container).toBeEmptyDOMElement();

@@ -54,7 +54,7 @@ export async function readClientState(): Promise<ClientStateDump> {
   const dumpDatabase = (name: string): Promise<string | null> =>
     new Promise((resolve) => {
       const opened = indexedDB.open(name);
-      opened.onerror = (): void => resolve('');
+      opened.onerror = (): void => resolve(null);
       opened.onsuccess = (): void => {
         const database = opened.result;
         const stores = Array.from(database.objectStoreNames);
@@ -83,7 +83,7 @@ export async function readClientState(): Promise<ClientStateDump> {
         };
         transaction.onerror = (): void => {
           database.close();
-          resolve('');
+          resolve(null);
         };
       };
     });

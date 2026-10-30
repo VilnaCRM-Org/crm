@@ -7,16 +7,13 @@ import UILinkButton from '@/components/ui-link-button';
 import UITypography from '@/components/ui-typography';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
-import useFocusReturn from './use-focus-return';
-
 export default function ErrorBanner({
   error,
   action,
-  returnFocusRef,
+  focusReturn,
   unavailableReasonId,
 }: ErrorBannerProps): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLElement>();
-  const focusReturn = useFocusReturn(Boolean(error), returnFocusRef);
 
   if (!error) return null;
   return (

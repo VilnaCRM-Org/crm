@@ -78,7 +78,7 @@ export interface FocusReturnHandlers {
 export interface ErrorBannerProps {
   error?: string | null;
   action?: UIFormErrorAction | undefined;
-  returnFocusRef: FocusReturnTarget;
+  focusReturn: FocusReturnHandlers;
   unavailableReasonId?: string | undefined;
 }
 
