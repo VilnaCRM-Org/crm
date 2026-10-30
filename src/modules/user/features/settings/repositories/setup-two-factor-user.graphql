@@ -1,0 +1,8 @@
+mutation SetupTwoFactorUser($input: setupTwoFactorUserInput!) {
+  setupTwoFactorUser(input: $input) {
+    user {
+      otpauthUri
+      secret
+    }
+  }
+}

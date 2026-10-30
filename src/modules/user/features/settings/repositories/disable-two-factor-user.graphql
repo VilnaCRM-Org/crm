@@ -1,0 +1,7 @@
+mutation DisableTwoFactorUser($input: disableTwoFactorUserInput!) {
+  disableTwoFactorUser(input: $input) {
+    user {
+      success
+    }
+  }
+}
