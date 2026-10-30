@@ -221,4 +221,48 @@ describe('GraphQLSignInTransformer.toSignInFailure', () => {
     });
     expect(GraphQLSignInTransformer.length).toBe(0);
   });
+
+  it.each<[UserServiceFailureReason, number | null, object]>([
+    ['aborted', null, { kind: 'network', displayMessage: '', retryable: false, aborted: true }],
+    ['refused', 401, INVALID_CREDENTIALS.error],
+    [
+      'locked',
+      423,
+      {
+        kind: 'authentication',
+        displayMessage: 'sign_in.errors.locked',
+        retryable: false,
+        status: 423,
+        reason: 'locked',
+      },
+    ],
+    [
+      'rate_limited',
+      429,
+      {
+        kind: 'server',
+        displayMessage: 'sign_in.errors.rate_limited',
+        retryable: false,
+        status: 429,
+        reason: 'rate_limited',
+      },
+    ],
+    [
+      'network',
+      null,
+      {
+        kind: 'network',
+        displayMessage: 'sign_in.errors.transient',
+        retryable: true,
+        reason: 'transient',
+      },
+    ],
+  ])(
+    'builds the %s failure from tables evaluated inside the test',
+    async (reason, status, error) => {
+      const loaded = await loadTransformer();
+
+      expect(loaded.toSignInFailure(failure(reason, status))).toEqual({ ok: false, error });
+    }
+  );
 });

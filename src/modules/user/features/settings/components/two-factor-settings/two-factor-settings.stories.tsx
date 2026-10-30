@@ -19,7 +19,8 @@ import {
   SETUP_SETTINGS,
   SETUP_TRANSIENT,
   SETUP_WRONG,
-} from './story-fixtures';
+} from '@stories/two-factor-story-fixtures';
+
 import Panel from './two-factor-panel';
 
 const meta: Meta<typeof Panel> = {

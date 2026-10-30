@@ -65,7 +65,7 @@ describe('useChallengeBack', () => {
     act(() => back());
 
     expect(location().pathname).toBe(ROUTE_PATHS.signIn);
-    expect(location().state).toEqual({ focusMain: true });
+    expect(location().state).toStrictEqual({ focusMain: true });
   });
 
   it('pushes a history entry rather than replacing the challenge', () => {

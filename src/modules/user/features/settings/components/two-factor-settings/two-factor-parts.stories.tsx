@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { createRef } from 'react';
 
+import { OTPAUTH_URI, SECRET } from '@stories/two-factor-story-fixtures';
+
 import CopyButton from './copy-button';
 import KeyBlock from './key-block';
 import KeyChip from './key-chip';
 import OffGuide from './off-guide';
 import SetupGuide from './setup-guide';
 import StepItem from './step-item';
-import { OTPAUTH_URI, SECRET } from './story-fixtures';
 
 const meta: Meta<typeof StepItem> = {
   title: 'Settings/TwoFactorSettings/Parts',

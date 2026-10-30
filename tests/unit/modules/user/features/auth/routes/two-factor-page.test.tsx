@@ -3,7 +3,14 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+  useLocation,
+} from 'react-router';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ROUTE_PATHS from '@/routes/route-paths';
@@ -118,6 +125,40 @@ describe('TwoFactorChallenge page', () => {
     act(() => useAuthStore.setState({ pendingSessionId: null, token: buildToken() }));
 
     expect(await screen.findByText(`${ROUTE_PATHS.home}|{"focusMain":true}`)).toBeInTheDocument();
+  });
+
+  it('goes straight to the from target without passing through sign-in on completion', async () => {
+    useAuthStore.setState({ pendingSessionId: buildPendingSessionId() });
+    const router = createMemoryRouter(
+      [
+        { path: ROUTE_PATHS.twoFactorChallenge, element: <TwoFactorChallenge /> },
+        { path: '*', element: <Probe /> },
+      ],
+      {
+        initialEntries: [
+          { pathname: ROUTE_PATHS.twoFactorChallenge, state: { from: { pathname: '/deals' } } },
+        ],
+      }
+    );
+    const visited: string[] = [];
+    router.subscribe((routerState) => visited.push(routerState.location.pathname));
+    render(<RouterProvider router={router} />);
+    await screen.findByText('challenge section');
+
+    act(() => useAuthStore.setState({ pendingSessionId: null, token: buildToken() }));
+
+    expect(await screen.findByText('/deals|{"focusMain":true}')).toBeInTheDocument();
+    expect(visited).toEqual(['/deals']);
+  });
+
+  it('sends the visitor to sign-in when the pending session ends without a token', async () => {
+    useAuthStore.setState({ pendingSessionId: buildPendingSessionId() });
+    mount();
+    await screen.findByText('challenge section');
+
+    act(() => useAuthStore.setState({ pendingSessionId: null }));
+
+    expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null`)).toBeInTheDocument();
   });
 
   it('proceeds to the home route when the challenge arrived without a from target', async () => {
