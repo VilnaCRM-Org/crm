@@ -1,6 +1,6 @@
 import { act, renderHook, type RenderHookResult } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
-import { type Location, MemoryRouter, useLocation } from 'react-router';
+import { type Location, MemoryRouter, useLocation, useNavigate } from 'react-router';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import useTwoFactorRedirect from '@auth/hooks/use-two-factor-redirect';
@@ -78,7 +78,23 @@ describe('useTwoFactorRedirect', () => {
     act(() => useAuthStore.setState({ pendingSessionId }));
 
     expect(result.current.pathname).toBe(ROUTE_PATHS.twoFactorChallenge);
-    expect(result.current.state).toEqual({});
+    expect(result.current.state).toStrictEqual({});
+  });
+
+  it('stays put when the page moves on while no session is pending', () => {
+    const { result } = renderHook(
+      () => {
+        useTwoFactorRedirect();
+        return { location: useLocation(), navigate: useNavigate() };
+      },
+      { wrapper: wrapperFor(null) }
+    );
+
+    act(() => {
+      void result.current.navigate(ROUTE_PATHS.signUp);
+    });
+
+    expect(result.current.location.pathname).toBe(ROUTE_PATHS.signUp);
   });
 
   it('navigates only on the false-to-true edge', () => {

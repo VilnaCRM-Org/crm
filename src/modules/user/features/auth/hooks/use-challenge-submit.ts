@@ -58,7 +58,7 @@ async function resolveResult(
 async function recordResult(loader: AuthProviderLoader, result: ChallengeResult): Promise<void> {
   const signals = await loader
     .resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals)
-    .catch(() => null);
+    .catch(() => undefined);
   signals?.challengeSettled(result);
 }
 

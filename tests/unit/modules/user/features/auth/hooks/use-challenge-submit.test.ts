@@ -217,6 +217,26 @@ describe('useChallengeSubmit', () => {
     });
   });
 
+  it('submits with the deps of the latest render', async () => {
+    const initial = harness();
+    const latest = harness({ pathname: '/deals', search: '', hash: '' });
+    latest.completeChallenge.mockResolvedValue(failed('locked'));
+    const { result, rerender } = renderHook(({ deps }) => useChallengeSubmit(deps), {
+      initialProps: { deps: initial.deps },
+    });
+
+    rerender({ deps: latest.deps });
+    await act(async () => {
+      await result.current.submit(dto);
+    });
+
+    expect(initial.resolve).not.toHaveBeenCalled();
+    expect(latest.navigate).toHaveBeenCalledWith(ROUTE_PATHS.signIn, {
+      replace: true,
+      state: { from: latest.deps.from, focusMain: true, notice: 'account_locked' },
+    });
+  });
+
   it('leaves the from key out when the challenge arrived without one', async () => {
     const h = harness();
     h.completeChallenge.mockResolvedValue(failed('locked'));

@@ -46,6 +46,25 @@ describe('useShellLayout', () => {
     expect(renders).toEqual([expected]);
   });
 
+  it.each([
+    [1200, 'tablet'],
+    [1440, 'desktop'],
+  ])('reports the %i px layout on the first render of a hydrating root too', (width, expected) => {
+    stubWidth(width);
+    const renders: string[] = [];
+
+    renderHook(
+      () => {
+        const layout = useShellLayout();
+        renders.push(layout);
+        return layout;
+      },
+      { hydrate: true }
+    );
+
+    expect(renders).toEqual([expected]);
+  });
+
   it('reads the sidebar breakpoint 1024 and the desktop breakpoint 1440 from the crm scale', () => {
     const matchMedia = stubWidth(1200);
 
