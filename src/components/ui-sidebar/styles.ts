@@ -1,3 +1,4 @@
+import layoutStyles from '@/components/layouts/app-layout.styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
 const REDUCED_MOTION = '@media (prefers-reduced-motion: reduce)';
@@ -51,14 +52,12 @@ export default {
   panel: {
     desktop: {
       ...panel,
-      height: '791px',
-      maxHeight: 'calc(100vh - 86px)',
+      ...layoutStyles.navPanel.desktop,
       padding: '20px 0 21px',
     },
     tablet: {
       ...panel,
-      height: '1142px',
-      maxHeight: 'calc(100vh - 86px)',
+      ...layoutStyles.navPanel.tablet,
       padding: '23px 0 29px',
     },
   },

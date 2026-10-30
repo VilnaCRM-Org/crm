@@ -52,6 +52,7 @@ describe('UISidebar', () => {
 
     expect(screen.getAllByRole('navigation')).toHaveLength(1);
     expect(within(nav).getAllByRole('list')).toHaveLength(1);
+    expect(within(nav).getByRole('list').tagName).toBe('OL');
     expect(within(nav).getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
   });
 
@@ -153,14 +154,31 @@ describe('UISidebar', () => {
     ).toBe('0s');
   });
 
-  it('keeps every row working on the rail: a row navigates, Sign out signs out', async () => {
+  it.each([
+    ['Boards', '/boards'],
+    ['Products', '/products'],
+    ['Orders', '/orders'],
+    ['Contacts', '/contacts'],
+    ['Analytics', '/analytics'],
+    ['Settings', '/settings'],
+    ['Integrations', '/settings/integrations'],
+    ['Webhooks', '/settings/webhooks'],
+    ['Billing', '/settings/billing'],
+  ])('keeps the %s row working on the rail: it navigates to %s', async (name, path) => {
+    const user = userEvent.setup();
+    renderSidebar();
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+
+    await user.click(screen.getByRole('link', { name }));
+
+    expect(screen.getByLabelText('location')).toHaveTextContent(`${path}|{"focusMain":true}`);
+  });
+
+  it('keeps Sign out working on the rail: it signs out', async () => {
     const user = userEvent.setup();
     const signOut = jest.fn();
     renderSidebar({ signOut });
     await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
-
-    await user.click(screen.getByRole('link', { name: 'Contacts' }));
-    expect(screen.getByLabelText('location')).toHaveTextContent('/contacts|{"focusMain":true}');
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(signOut).toHaveBeenCalledTimes(1);

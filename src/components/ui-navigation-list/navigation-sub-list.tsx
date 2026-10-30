@@ -17,7 +17,7 @@ export default function NavigationSubList({
   const { t } = useTranslation();
 
   return (
-    <Box component="ol" id={id} sx={groupStyles.subList}>
+    <Box component="ol" role="list" id={id} sx={groupStyles.subList}>
       {leaves.items.map((leaf) => (
         <Box component="li" key={leaf.id} sx={styles.item}>
           <NavigationRow

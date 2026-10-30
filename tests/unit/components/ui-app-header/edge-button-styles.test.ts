@@ -25,6 +25,7 @@ describe('edge button styles', () => {
       background: 'transparent',
       cursor: 'pointer',
       [NARROWEST]: {
+        '&:focus-visible': { outlineOffset: '-2px' },
         margin: '-10px -8px -10px -12px',
         padding: '10px 8px 10px 12px',
       },
@@ -43,5 +44,13 @@ describe('edge button styles', () => {
     expect(leftMargin + leftPadding).toBe(0);
     expect(rightMargin + rightPadding).toBe(0);
     expect(leftPadding + 24 + rightPadding).toBe(44);
+  });
+
+  it('draws the ring inside the button at 320 px so the viewport edge never clips it', async () => {
+    const { target } = await loadStyles();
+    const ringWidth = parseFloat(target['&:focus-visible'].outline);
+
+    expect(target[NARROWEST]['&:focus-visible'].outlineOffset).toBe(`-${ringWidth}px`);
+    expect(target['&:focus-visible'].outlineOffset).toBe('2px');
   });
 });
