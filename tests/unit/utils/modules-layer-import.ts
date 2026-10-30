@@ -1,4 +1,4 @@
-const COMMENT = String.raw`(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*)`;
+const COMMENT = String.raw`(?:\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/|\/\/[^\n]*(?:\n|$))`;
 const GAP = String.raw`\s*(?:${COMMENT}\s*)*`;
 
 const modulesLayerImport = new RegExp(
