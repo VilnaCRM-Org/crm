@@ -1,4 +1,4 @@
-import type { HTMLAttributes, RefCallback } from 'react';
+import type { Dispatch, HTMLAttributes, RefCallback } from 'react';
 
 import type {
   NavigationGroup,
@@ -75,12 +75,25 @@ export interface GroupDisclosureState {
   readonly toggle: ActivateHandler;
 }
 
-export type RailTooltipState = 'idle' | 'shown' | 'dismissed';
+export interface RailTooltipState {
+  readonly hovered: boolean;
+  readonly focused: boolean;
+  readonly dismissed: boolean;
+}
+
+export type RailTooltipChange = Partial<RailTooltipState>;
+
+export type RailTooltipUpdate = Dispatch<RailTooltipChange>;
 
 export type RailTooltipHandlers = Pick<
   HTMLAttributes<HTMLDivElement>,
   'onMouseEnter' | 'onMouseLeave' | 'onFocus' | 'onBlur'
 >;
+
+export interface RailTooltipControls {
+  readonly handlers: RailTooltipHandlers;
+  readonly dismiss: ActivateHandler;
+}
 
 export interface RailTooltipBehavior {
   readonly visible: boolean;

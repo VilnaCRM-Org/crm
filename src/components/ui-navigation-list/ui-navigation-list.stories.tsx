@@ -15,7 +15,6 @@ const meta: Meta<typeof UINavigationList> = {
     layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
     variant: { control: 'select', options: ['expanded', 'rail'] },
   },
-  decorators: [withMemoryRouter('/')],
   parameters: {
     docs: {
       description: {
@@ -34,16 +33,18 @@ export default meta;
 
 type Story = StoryObj<typeof UINavigationList>;
 
-export const OnHome: Story = {};
+const atHome = withMemoryRouter('/');
+
+export const OnHome: Story = { decorators: [atHome] };
 
 export const OnProducts: Story = { decorators: [withMemoryRouter('/products')] };
 
 export const OnSettings: Story = { decorators: [withMemoryRouter('/settings/webhooks')] };
 
-export const Tablet: Story = { args: { layout: 'tablet' } };
+export const Tablet: Story = { args: { layout: 'tablet' }, decorators: [atHome] };
 
-export const Drawer: Story = { args: { layout: 'drawer' } };
+export const Drawer: Story = { args: { layout: 'drawer' }, decorators: [atHome] };
 
-export const Rail: Story = { args: { variant: 'rail' } };
+export const Rail: Story = { args: { variant: 'rail' }, decorators: [atHome] };
 
-export const WithoutSettings: Story = { args: { items: storyProducts } };
+export const WithoutSettings: Story = { args: { items: storyProducts }, decorators: [atHome] };

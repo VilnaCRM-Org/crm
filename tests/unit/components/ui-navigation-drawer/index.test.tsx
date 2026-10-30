@@ -23,12 +23,16 @@ const renderDrawer = (props: Partial<DrawerProps> = {}): ReturnType<typeof rende
   );
 
 describe('UINavigationDrawer', () => {
+  const viewport = window.innerHeight;
+
   beforeEach(() => {
     stubMotionPreference(true);
   });
 
   afterEach(() => {
     Reflect.deleteProperty(window, 'matchMedia');
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewport });
+    screen.queryByRole('contentinfo', { hidden: true })?.remove();
   });
 
   it('paints the supplied avatar in the aria-hidden header copy', async () => {
@@ -37,6 +41,21 @@ describe('UINavigationDrawer', () => {
     await screen.findByRole('dialog', { name: 'Main navigation' });
 
     expect(isInaccessible(screen.getByText('ОП'))).toBe(true);
+  });
+
+  it('keeps the scrolling panel out of the Tab order so Firefox adds no unnamed stop', async () => {
+    renderDrawer();
+
+    const dialog = await screen.findByRole('dialog', { name: 'Main navigation' });
+    const nav = within(dialog).getByRole('navigation', { name: 'Main navigation' });
+    const panels = within(dialog)
+      .getAllByRole('generic')
+      .filter((element) => element.getAttribute('tabindex') === '-1');
+
+    expect(panels).toHaveLength(1);
+    expect(panels[0]).toContainElement(nav);
+    expect(panels[0]).not.toHaveAttribute('role');
+    expect(panels[0]).not.toHaveAttribute('aria-label');
   });
 
   it('renders nothing while closed', () => {
@@ -107,7 +126,6 @@ describe('UINavigationDrawer', () => {
   });
 
   it('paints the 5 % scrim behind the header and the panel, ending at the footer top', async () => {
-    const viewport = window.innerHeight;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 718 });
     const footer = document.body.appendChild(document.createElement('footer'));
     footer.getBoundingClientRect = (): DOMRect => ({ top: 678 }) as DOMRect;
@@ -124,9 +142,6 @@ describe('UINavigationDrawer', () => {
       backgroundColor: 'rgba(54, 79, 93, 0.05)',
     });
     expect(within(dialog).getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
-
-    footer.remove();
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewport });
   });
 
   it('keeps the scrim on the whole viewport when no footer is in view', async () => {
@@ -138,14 +153,13 @@ describe('UINavigationDrawer', () => {
     });
   });
 
-  it('closes for navigation and signs out once when Sign out is activated', async () => {
+  it('closes for navigation and signs out when Sign out is activated', async () => {
     const onNavigate = jest.fn();
     const onClose = jest.fn();
     const signOut = jest.fn();
     renderDrawer({ onNavigate, onClose, signOut });
     const dialog = await screen.findByRole('dialog');
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Sign out' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));

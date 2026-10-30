@@ -18,6 +18,7 @@ export interface RecordedCall {
 
 export interface StubbedProfile {
   readonly calls: RecordedCall[];
+  readonly shellCalls: RecordedCall[];
   readonly count: (operation: ProfileOperation) => number;
 }
 
@@ -86,23 +87,73 @@ const recordOf = (request: Request): RecordedCall => {
 const isProfileOperation = (name: string | undefined): name is ProfileOperation =>
   name === 'CurrentUser' || name === 'UpdateUser' || name === 'ResendEmailToUser';
 
+const CURRENT_USER_CHUNK = /current-user[^/]*\.js(?:\?.*)?$/;
+
+const CHIP_REPLY: Reply = replyWithProfile();
+
+const settingsPages = new WeakSet<Page>();
+
+type CurrentUserCaller = 'first-page-read' | 'chip' | 'page';
+
+interface ChipReadSplit {
+  readonly callerOfNextRead: () => CurrentUserCaller;
+  readonly chipRead: Promise<void>;
+}
+
+async function splitChipRead(page: Page): Promise<ChipReadSplit> {
+  let reads = 0;
+  let releaseChunk: () => void = () => undefined;
+  let chipArrived: () => void = () => undefined;
+  const chunkReleased = new Promise<void>((resolve) => {
+    releaseChunk = resolve;
+  });
+  const chipRead = new Promise<void>((resolve) => {
+    chipArrived = resolve;
+  });
+  await page.route(CURRENT_USER_CHUNK, async (route) => {
+    await chunkReleased;
+    await route.fallback();
+  });
+  const callerOfNextRead = (): CurrentUserCaller => {
+    reads += 1;
+    if (reads === 1) {
+      releaseChunk();
+      return 'first-page-read';
+    }
+    if (reads === 2) {
+      chipArrived();
+      return 'chip';
+    }
+    return 'page';
+  };
+  return { callerOfNextRead, chipRead };
+}
+
 export async function stubProfile(
   page: Page,
   replies: ProfileReplies = {}
 ): Promise<StubbedProfile> {
   const calls: RecordedCall[] = [];
+  const shellCalls: RecordedCall[] = [];
   const count = (operation: ProfileOperation): number =>
     calls.filter((call) => call.operation === operation).length;
+  const split = settingsPages.has(page) ? await splitChipRead(page) : null;
 
   await page.route(GRAPHQL_URL, async (route: Route) => {
     const name = (route.request().postDataJSON() as { operationName?: string }).operationName;
     if (!isProfileOperation(name)) return route.fallback();
+    const caller = name === 'CurrentUser' && split ? split.callerOfNextRead() : 'page';
+    if (caller === 'chip') {
+      shellCalls.push(recordOf(route.request()));
+      return CHIP_REPLY(route);
+    }
     calls.push(recordOf(route.request()));
     const queue = replies[name] ?? [];
     const reply = queue[Math.min(count(name), queue.length) - 1] ?? DEFAULT_REPLIES[name];
+    if (caller === 'first-page-read' && split) await split.chipRead;
     return reply(route);
   });
-  return { calls, count };
+  return { calls, shellCalls, count };
 }
 
 export async function signInWithFlag(page: Page, userSettings: boolean): Promise<void> {
@@ -110,11 +161,9 @@ export async function signInWithFlag(page: Page, userSettings: boolean): Promise
   await overrideRuntimeConfig(page, { flags: { userSettings } });
 }
 
-const CURRENT_USER_CHUNK = /current-user[^/]*\.js(?:\?.*)?$/;
-
 export async function signInToSettings(page: Page): Promise<void> {
   await signInWithFlag(page, true);
-  await page.route(CURRENT_USER_CHUNK, (route) => route.abort());
+  settingsPages.add(page);
 }
 
 export function watchContactedOrigins(page: Page): () => string[] {

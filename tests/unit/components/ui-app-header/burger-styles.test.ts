@@ -29,11 +29,12 @@ describe('burger styles', () => {
     expect(glyph).toEqual({ display: 'block', width: '24px', height: '24px' });
   });
 
-  it('keeps the 44 px target at 320 px by moving the trimmed right edge to the left', async () => {
+  it('keeps the 44 px target and a whole ring at 320 px, the trimmed edge moved left', async () => {
     const { burger } = await loadStyles();
 
     expect(burger.width).toBe('44px');
     expect(burger['@media (max-width:374px)']).toEqual({
+      '&:focus-visible': { outlineOffset: '-2px' },
       margin: '-10px -8px -10px -12px',
       padding: '10px 8px 10px 12px',
     });

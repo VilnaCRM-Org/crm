@@ -67,6 +67,21 @@ const slidingPanel = (): HTMLElement =>
 
 type FocusStep = readonly ['link' | 'button', string];
 
+const OPEN_GROUP_CYCLE: readonly FocusStep[] = [
+  ['link', 'Boards'],
+  ['link', 'Products'],
+  ['link', 'Orders'],
+  ['link', 'Contacts'],
+  ['link', 'Analytics'],
+  ['link', 'Settings'],
+  ['button', 'Collapse Settings'],
+  ['link', 'Integrations'],
+  ['link', 'Webhooks'],
+  ['link', 'Billing'],
+  ['button', 'Sign out'],
+  ['button', 'Close menu'],
+];
+
 const expectFocusSequence = async (steps: readonly FocusStep[], shift = false): Promise<void> => {
   const [step, ...rest] = steps;
   if (step === undefined) return;
@@ -153,21 +168,7 @@ describe('MobileNavigation', () => {
     renderNavigation('/settings');
     await open();
 
-    await expectFocusSequence([
-      ['link', 'Boards'],
-      ['link', 'Products'],
-      ['link', 'Orders'],
-      ['link', 'Contacts'],
-      ['link', 'Analytics'],
-      ['link', 'Settings'],
-      ['button', 'Collapse Settings'],
-      ['link', 'Integrations'],
-      ['link', 'Webhooks'],
-      ['link', 'Billing'],
-      ['button', 'Sign out'],
-      ['button', 'Close menu'],
-      ['link', 'Boards'],
-    ]);
+    await expectFocusSequence([...OPEN_GROUP_CYCLE, ['link', 'Boards']]);
   });
 
   it('cycles Shift+Tab back from close through Sign out, sub-items, chevron and rows', async () => {
@@ -176,17 +177,7 @@ describe('MobileNavigation', () => {
 
     await expectFocusSequence(
       [
-        ['button', 'Sign out'],
-        ['link', 'Billing'],
-        ['link', 'Webhooks'],
-        ['link', 'Integrations'],
-        ['button', 'Collapse Settings'],
-        ['link', 'Settings'],
-        ['link', 'Analytics'],
-        ['link', 'Contacts'],
-        ['link', 'Orders'],
-        ['link', 'Products'],
-        ['link', 'Boards'],
+        ...OPEN_GROUP_CYCLE.slice(0, -1).reverse(),
         ['button', 'Close menu'],
         ['button', 'Sign out'],
       ],

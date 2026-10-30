@@ -10,7 +10,6 @@ const meta: Meta<typeof UINavigationDrawer> = {
   title: 'Shell/UINavigationDrawer',
   component: UINavigationDrawer,
   tags: ['autodocs'],
-  decorators: [withMemoryRouter('/settings')],
   args: {
     open: true,
     id: 'navigation-drawer',
@@ -39,6 +38,6 @@ export default meta;
 
 type Story = StoryObj<typeof UINavigationDrawer>;
 
-export const Open: Story = {};
+export const Open: Story = { decorators: [withMemoryRouter('/settings')] };
 
 export const OpenOnHome: Story = { decorators: [withMemoryRouter('/')] };

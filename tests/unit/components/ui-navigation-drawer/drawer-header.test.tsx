@@ -20,11 +20,19 @@ describe('DrawerHeader', () => {
   });
 
   it('keeps the logo, bell, list and avatar as aria-hidden copies, not links or buttons', () => {
-    const { container } = renderShell(<DrawerHeader onDismiss={jest.fn()} />);
+    renderShell(<DrawerHeader onDismiss={jest.fn()} />);
+    const [header, logo] = screen.getAllByRole('presentation', { hidden: true });
+    const avatar = screen.getAllByRole('generic', { hidden: true }).at(-1) as HTMLElement;
+    const hiddenGlyphs = header?.innerHTML.match(/<svg\b[^>]*\baria-hidden="true"/gu);
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
-    expect(container).toContainHTML('aria-hidden="true"');
+    expect(logo).toHaveAttribute('src', 'shell-logo-mobile.svg');
+    expect(logo).toHaveAttribute('aria-hidden', 'true');
+    expect(isInaccessible(logo as HTMLElement)).toBe(true);
+    expect(avatar).toHaveAttribute('aria-hidden', 'true');
+    expect(isInaccessible(avatar)).toBe(true);
+    expect(hiddenGlyphs).toHaveLength(4);
     expect(screen.queryByText(/\S/u)).not.toBeInTheDocument();
   });
 
