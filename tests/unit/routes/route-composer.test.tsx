@@ -62,6 +62,10 @@ const routeErrorInfo = (overrides: Partial<ErrorInfoArg> = {}): ErrorInfoArg => 
 });
 
 describe('route composer', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('wraps every route in a single RootLayout under one flag gate (invariant A)', () => {
     const tree = routeComposer.compose(registry).items;
     const root = rootOf(tree);
@@ -82,6 +86,56 @@ describe('route composer', () => {
     expect(typeOf(guard)).toBe(ProtectedRoute);
     expect(typeOf(layout)).toBe(AppLayout);
     expect(layout.children?.some((route) => route.index)).toBe(true);
+  });
+
+  it('hands AppLayout the mapper slot and the app-shell:load reporter (OQ-17)', () => {
+    const slot = (): null => null;
+    const reporter = jest.fn();
+    const shellSlot = jest.spyOn(routeMapper, 'shellSlot').mockReturnValue(slot);
+    const reporterFor = jest.spyOn(routeMapper, 'chunkFailureReporter').mockReturnValue(reporter);
+
+    const tree = routeComposer.compose(registry).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<{
+      userMenu: unknown;
+      onShellFailure: unknown;
+    }>;
+
+    expect(shellSlot).toHaveBeenCalledTimes(1);
+    expect(shellSlot).toHaveBeenCalledWith(
+      registry.items.find((module) => module.id === 'user.settings')?.shell?.userMenu
+    );
+    expect(reporterFor).toHaveBeenCalledWith('app-shell:load');
+    expect(props.userMenu).toBe(slot);
+    expect(props.onShellFailure).toBe(reporter);
+  });
+
+  it('passes AppLayout only the shell slot and failure reporter, so no badge count (FR-19)', () => {
+    const tree = routeComposer.compose(registry).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<Record<string, unknown>>;
+
+    expect(Object.keys(props).sort()).toEqual(['onShellFailure', 'userMenu']);
+  });
+
+  it('gives AppLayout no slot when no module declares shell.userMenu', () => {
+    const modules: RouteModule[] = [
+      ...registry.items.filter((module) => module.id !== 'user.settings'),
+    ];
+    const shellSlot = jest.spyOn(routeMapper, 'shellSlot');
+
+    const tree = routeComposer.compose({ items: modules }).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<{ userMenu: unknown }>;
+
+    expect(shellSlot).not.toHaveBeenCalled();
+    expect(props.userMenu).toBeUndefined();
+  });
+
+  it('renders no AppLayout anywhere on the public branch', () => {
+    const tree = routeComposer.compose(registry).items;
+
+    expect(walk(publicLevelOf(tree)).some((route) => typeOf(route) === AppLayout)).toBe(false);
   });
 
   it('keeps public routes directly under the gate route, itself directly under RootLayout', () => {
@@ -320,16 +374,29 @@ describe('route composer flag gate (Story 1.5)', () => {
     expect(notFound).toBe(page?.element);
   });
 
-  it('emits exactly one gate for the real registry and flags only the settings page', () => {
+  it('emits exactly one gate for the real registry and flags only the settings routes', () => {
     const tree = routeComposer.compose(registry).items;
 
     expect(walk(tree).filter((route) => isGate(route))).toHaveLength(1);
-    expect(walk(tree).filter((route) => route.handle !== undefined)).toEqual([
-      expect.objectContaining({ path: ROUTE_PATHS.settings, handle: { flag: 'userSettings' } }),
-    ]);
+    expect(walk(tree).filter((route) => route.handle !== undefined)).toEqual(
+      [
+        ROUTE_PATHS.settings,
+        ROUTE_PATHS.settingsIntegrations,
+        ROUTE_PATHS.settingsWebhooks,
+        ROUTE_PATHS.settingsBilling,
+      ].map((path) => expect.objectContaining({ path, handle: { flag: 'userSettings' } }))
+    );
     expect(protectedBranchOf(tree).layout.children?.map((route) => route.path)).toEqual([
       undefined,
+      ROUTE_PATHS.boards,
+      ROUTE_PATHS.products,
+      ROUTE_PATHS.orders,
+      ROUTE_PATHS.contacts,
+      ROUTE_PATHS.analytics,
       ROUTE_PATHS.settings,
+      ROUTE_PATHS.settingsIntegrations,
+      ROUTE_PATHS.settingsWebhooks,
+      ROUTE_PATHS.settingsBilling,
     ]);
   });
 
