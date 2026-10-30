@@ -15,6 +15,8 @@ const DRAWER_ROLES = [
   'img',
   'button',
   'link',
+  'searchbox',
+  'textbox',
   'navigation',
   'list',
   'listitem',
