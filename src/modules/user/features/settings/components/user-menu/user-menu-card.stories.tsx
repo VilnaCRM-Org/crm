@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+
+import { withUserMenuFrame, withUserMenuPadding } from '@stories/user-menu-story-frame';
 
 import UserMenuCard from './user-menu-card';
 
@@ -11,16 +12,20 @@ const meta: Meta<typeof UserMenuCard> = {
     layout: 'desktop',
     open: true,
     chip: <button type="button">Чип</button>,
-    items: <div role="menu">Пункти меню</div>,
+    items: (
+      <ul
+        role="menu"
+        aria-label="Меню користувача"
+        style={{ margin: 0, padding: 0, listStyle: 'none' }}
+      >
+        <li role="menuitem" tabIndex={-1}>
+          Вийти
+        </li>
+      </ul>
+    ),
   },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'mobile'] } },
-  decorators: [
-    (Story): JSX.Element => (
-      <div style={{ position: 'relative', width: 253, height: 240, margin: 24 }}>
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [withUserMenuFrame, withUserMenuPadding],
   parameters: {
     docs: {
       description: {

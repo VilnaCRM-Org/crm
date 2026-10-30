@@ -17,6 +17,7 @@ const meta: Meta<typeof ComingSoonPage> = {
           'names it in the `h1` and the document title, and links back home. No design for it ' +
           'exists in Figma: it is a proposal built from the error page tokens.',
       },
+      story: { inline: false },
     },
     layout: 'fullscreen',
   },

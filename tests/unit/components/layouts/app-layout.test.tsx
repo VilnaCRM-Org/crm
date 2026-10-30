@@ -271,6 +271,8 @@ describe('AppLayout', () => {
     expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('banner'));
     expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('navigation'));
     expect(screen.getByRole('contentinfo')).not.toContainElement(screen.getByRole('banner'));
+    expect(screen.getByRole('banner')).not.toContainElement(screen.getByRole('contentinfo'));
+    expect(screen.getByRole('navigation')).not.toContainElement(screen.getByRole('contentinfo'));
   });
 
   it('reserves the header and navigation column with two empty hidden placeholders', async () => {

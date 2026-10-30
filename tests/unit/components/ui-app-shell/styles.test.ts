@@ -35,17 +35,25 @@ describe('app shell styles', () => {
     });
   });
 
-  it('sticks the sidebar 74px from the top, under the 64px header', async () => {
+  it('insets both sidebars by the layout inset the placeholder height includes', async () => {
     const styles = await loadStyles();
 
-    expect(styles.sticky).toEqual({ position: 'sticky', top: '74px' });
+    expect(styles.nav.desktop.paddingTop).toBe(layoutStyles.navInsetTop);
+    expect(styles.nav.tablet.paddingTop).toBe(layoutStyles.navInsetTop);
+  });
+
+  it('sticks the sidebar 74px from the top: the 64px header plus the 10px nav inset', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.sticky).toEqual({ position: 'sticky', top: 'calc(64px + 10px)' });
+    expect(layoutStyles.headerHeight).toBe('64px');
+    expect(layoutStyles.navInsetTop).toBe('10px');
   });
 
   it('builds a placeholder as wide as the loaded sidebar column it stands in for', async () => {
     const styles = await loadStyles();
 
     expect(layoutStyles.navPlaceholder.width).toBe('250px');
-    expect(250).toBe(12 + 238);
     expect(
       layoutStyles.navPlaceholder['@media (min-width:1024px) and (max-width:1439.95px)'].width
     ).toBe(`${13 + 238}px`);

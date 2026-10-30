@@ -14,7 +14,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'ux-designer (Sally), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md
@@ -707,11 +707,22 @@ Allowed differences (PRD NFR-22), and only these:
   entry (`axe-config.ts:62`), which PRD NFR-4 enumerates for the eight coming-soon routes. The badge digits
   (white on `#1EAEFF`, 2.46:1) need no entry: badges render only in stories, never on a scanned
   page (FR-19). No other new exception is allowed. `#969B9D` icons on white (2.81:1) and on `#FBFBFB`
-  (≈ 2.7:1) appear only on decorative or natively disabled elements; the Settings and Sign out
-  icons are decorative next to a text label, so 1.4.11 is met by the label. The natively `disabled`
+  (≈ 2.7:1) are decorative or natively disabled everywhere except the three active controls below;
+  the Settings and Sign out row icons are decorative next to a visible text label, so 1.4.11 is
+  met by the label. The natively `disabled`
   search, bell and list are inactive user-interface components and are exempt. The former
   unavailable-row failure is gone with OQ-1's resolution; every row is a link in Figma's default
   style (`#404142` on white).
+- Owner decision, 2026-10-27 (WCAG 1.4.11 exception, PRD NFR-4): the claim above that `#969B9D`
+  appears only on decorative or disabled elements was wrong for three active controls whose
+  resting glyph is their only visual identifier, `#969B9D` on white at 2.81:1 against the 3:1 of
+  SC 1.4.11: the Settings disclosure chevron in the sidebar and the drawer (its expanded state is
+  exposed through `aria-expanded`), the icon-only sidebar collapse handle, and the default rows of
+  the collapsed rail, whose label is visually hidden. The owner keeps Figma's `#969B9D` and accepts
+  a scoped exception for exactly these three controls in their resting state, tracked in issue
+  #276 with the other palette exceptions. Hover (`#404142`) passes, the current rail row is X-1,
+  and focus indicators stay at 3:1 or more. axe's `color-contrast` rule evaluates text only and no
+  axe rule tests 1.4.11, so no `A11Y_EXCEPTIONS` entry exists or is added.
 - Targets (NFR-3): §3.3 and §5.2; drawer rows 60 tall, drawer Sign out 54 tall; the mobile user-menu
   items 225×44 (My profile, Settings, Sign out); sidebar rows are not touch surfaces (≥ 1024); the
   disabled bell and list are not targets, and their 40 px pitch is a recorded sizing gap if they

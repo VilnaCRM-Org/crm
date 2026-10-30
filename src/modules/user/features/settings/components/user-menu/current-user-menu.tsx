@@ -1,12 +1,14 @@
-import type { JSX } from 'react';
+import { useEffect } from 'react';
 
 import useCurrentUser from '../../hooks/use-current-user';
 import type { CurrentUserMenuProps } from '../../types/components/user-menu';
 
-import UserMenu from '.';
-
-export default function CurrentUserMenu({ signOut, onAvatar }: CurrentUserMenuProps): JSX.Element {
+export default function CurrentUserMenu({ onIdentity }: CurrentUserMenuProps): null {
   const { identity } = useCurrentUser();
 
-  return <UserMenu identity={identity} settingsAvailable signOut={signOut} onAvatar={onAvatar} />;
+  useEffect(() => {
+    onIdentity(identity);
+  }, [identity, onIdentity]);
+
+  return null;
 }

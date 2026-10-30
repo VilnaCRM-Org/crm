@@ -21,6 +21,8 @@ import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 import { MIN_TOUCH_TARGET_PX } from './constants';
 
 const HALF_TARGET = MIN_TOUCH_TARGET_PX / 2;
+const SUB_ITEM_PITCH_PX = 42;
+const SUB_ITEM_IDS = ['integrations', 'webhooks', 'billing'] as const;
 const SCRIM_POINT = { x: 20, y: 500 };
 
 const closeOf = (page: Page): Locator =>
@@ -71,6 +73,52 @@ async function expectTapArea(control: Locator, name: string): Promise<void> {
 
   expect(reachable, `${name} must answer a tap across a ${MIN_TOUCH_TARGET_PX} px square`).toBe(
     true
+  );
+}
+
+async function expectRecordedSubItemArea(
+  control: Locator,
+  row: Locator,
+  name: string
+): Promise<void> {
+  await expect(control, `${name} must be visible`).toBeVisible();
+  await control.page().evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+  const rowWidth = (await row.boundingBox())?.width ?? 0;
+  const answered = await control.evaluate((element): boolean => {
+    const box = element.getBoundingClientRect();
+    const middleX = box.left + box.width / 2;
+    const middleY = box.top + box.height / 2;
+    const probes = [
+      [middleX, box.top + 1],
+      [middleX, box.bottom - 1],
+      [box.left + 1, middleY],
+      [box.right - 1, middleY],
+    ];
+
+    return probes.every(([x, y]) => {
+      const hit = document.elementFromPoint(x ?? 0, y ?? 0);
+
+      return hit !== null && element.contains(hit);
+    });
+  });
+  const box = await control.boundingBox();
+
+  expect(box?.height ?? 0, `${name} keeps the recorded ${SUB_ITEM_PITCH_PX} px pitch`).toBeCloseTo(
+    SUB_ITEM_PITCH_PX,
+    0
+  );
+  expect(box?.width ?? 0, `${name} spans the drawer row width`).toBeCloseTo(rowWidth, 0);
+  expect(answered, `${name} must answer a tap across its whole box`).toBe(true);
+}
+
+async function subItemBottomsAndTops(page: Page): Promise<number[][]> {
+  return Promise.all(
+    SUB_ITEM_IDS.map(async (id) => {
+      const box = await drawerLinkOf(page, id).boundingBox();
+      const top = box?.y ?? 0;
+
+      return [top, top + (box?.height ?? 0)];
+    })
   );
 }
 
@@ -160,6 +208,33 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect(page.getByRole('main')).toBeFocused();
   });
 
+  test('closes the avatar menu when the avatar is tapped again and keeps focus on it', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await chipOf(page).tap();
+    await expect(userMenuOf(page)).toBeVisible();
+
+    await chipOf(page).tap();
+
+    await expect(userMenuOf(page)).toBeHidden();
+    await expect(chipOf(page)).toBeFocused();
+  });
+
+  test('closes the avatar menu on a tap outside and returns focus to the avatar', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await chipOf(page).tap();
+    await expect(userMenuOf(page)).toBeVisible();
+
+    await page.touchscreen.tap(SCRIM_POINT.x, SCRIM_POINT.y);
+
+    await expect(userMenuOf(page)).toBeHidden();
+    await expect(chipOf(page)).toBeFocused();
+    await expect(page).toHaveURL(ROUTE_PATHS.home);
+  });
+
   test('signs out from the avatar menu', async ({ page }) => {
     await openAt(page, ROUTE_PATHS.home);
 
@@ -192,6 +267,32 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expectTapArea(drawerSignOutOf(page), 'drawer sign out');
   });
 
+  test('keeps the drawer sub-items at the recorded 42 px pitch, whole and not overlapping', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.settings);
+    await burgerOf(page).tap();
+    await expect(drawerOf(page)).toBeVisible();
+
+    for (const id of SUB_ITEM_IDS) {
+      await expectRecordedSubItemArea(
+        drawerLinkOf(page, id),
+        drawerLinkOf(page, 'boards'),
+        `drawer ${id}`
+      );
+    }
+    const spans = await subItemBottomsAndTops(page);
+
+    for (const [index, [top]] of spans.slice(1).entries()) {
+      const previousBottom = spans[index]?.[1] ?? 0;
+
+      expect(
+        Math.round((top ?? 0) - previousBottom),
+        'adjacent sub-items must not overlap'
+      ).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   test('keeps the burger and the drawer close control at 44 px at 320 px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     await openAt(page, ROUTE_PATHS.home);
@@ -210,6 +311,16 @@ test.describe('App shell on touch devices (issue #362)', () => {
 
     await burgerOf(page).tap();
     await expect(drawerOf(page)).toBeVisible();
+
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('has no horizontal overflow at 320 px, with the avatar menu open', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await openAt(page, ROUTE_PATHS.home);
+
+    await chipOf(page).tap();
+    await expect(userMenuOf(page)).toBeVisible();
 
     await expectNoHorizontalOverflow(page);
   });

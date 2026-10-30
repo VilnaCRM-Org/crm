@@ -49,7 +49,9 @@ test.describe('Settings save journeys (issue #330)', () => {
     expectNoPersonalDataInUrls(contacted(), [password, newPassword, newEmail, NEW_NAME]);
   });
 
-  test('opens through the home link: skeleton first, then the card, one read', async ({ page }) => {
+  test('opens through the sidebar Settings link: skeleton first, then the card, one read', async ({
+    page,
+  }) => {
     const gate = holdReply(replyWithProfile());
     stub = await stubProfile(page, { CurrentUser: [gate.reply] });
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -72,6 +74,7 @@ test.describe('Settings save journeys (issue #330)', () => {
     await expect(page.locator('#profile-skeleton-save')).toHaveCount(0);
     expect(documents).toEqual([]);
     expect(stub.count('CurrentUser')).toBe(1);
+    expect(stub.shellCalls).toHaveLength(1);
     expect(stub.calls[0]?.authorization).toMatch(/^Bearer \S+/);
   });
 

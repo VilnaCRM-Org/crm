@@ -138,6 +138,14 @@ by the product owner's decision
 exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
 3:1.
 
+The third is in the app shell (issue #362): three active controls whose only visible identifier at
+rest is a `grey[50]` `#969B9D` glyph on white, 2.81:1 under the 3:1 of SC 1.4.11. They are the
+Settings disclosure chevron in the sidebar and the mobile drawer, the icon-only sidebar collapse
+handle, and the default rows of the collapsed rail, whose labels are visually hidden. The product
+owner kept the Figma token on 2026-10-27. Hover (`#404142`) and focus indicators are outside the
+gap, and no axe rule tests non-text contrast, so no exception entry exists for it; it is resolved
+when #276 closes.
+
 ## Adding coverage
 
 - **A new `UI*` component**: add a row to `componentCases` in

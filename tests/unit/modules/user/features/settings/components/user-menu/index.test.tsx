@@ -1,11 +1,12 @@
 import '@testing-library/jest-dom';
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 
 import UserMenu from '@/modules/user/features/settings/components/user-menu';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
+import stubLiveViewportWidth from '@tests/unit/utils/stub-live-viewport-width';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 const identity = { displayName: 'Євгенія Маслова', monogram: 'ЄМ' };
@@ -151,7 +152,7 @@ describe('UserMenu', () => {
     expect(screen.getByRole('button', { name: 'after' })).toHaveFocus();
   });
 
-  it('closes on a click outside without moving focus to the clicked control', async () => {
+  it('closes on a click outside and refocuses the chip, not the clicked control', async () => {
     const user = userEvent.setup();
     renderMenu();
     await user.click(chip());
@@ -165,6 +166,7 @@ describe('UserMenu', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'after' })).not.toHaveFocus();
+    expect(chip()).toHaveFocus();
   });
 
   it('toggles closed when the chip is activated again', async () => {
@@ -218,18 +220,19 @@ describe('UserMenu', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('closes and calls signOut exactly once, however often Sign out is activated', async () => {
+  it('closes and hands each Sign out to signOut, which owns the re-entry latch', async () => {
     const user = userEvent.setup();
     const signOut = jest.fn();
     renderMenu({ signOut });
     await user.click(chip());
-    const signOutItem = screen.getByRole('menuitem', { name: 'Вийти' });
 
-    await user.click(signOutItem);
+    await user.click(screen.getByRole('menuitem', { name: 'Вийти' }));
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     await user.click(chip());
     await user.click(screen.getByRole('menuitem', { name: 'Вийти' }));
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
@@ -306,5 +309,63 @@ describe('UserMenu', () => {
     expect(screen.getByRole('button', { name: /Меню користувача/u })).not.toContainElement(
       copies[1] ?? null
     );
+  });
+
+  it.each([
+    [1440, 375],
+    [375, 1440],
+  ])('keeps the focused chip button across a %i to %i px layout change', (from, to) => {
+    const viewport = stubLiveViewportWidth(from);
+    renderMenu();
+    const button = chip();
+    act(() => button.focus());
+
+    viewport.resize(to);
+
+    expect(chip()).toBe(button);
+    expect(button).toHaveFocus();
+  });
+
+  it.each([
+    [1440, 375],
+    [375, 1440],
+  ])(
+    'closes the menu and returns focus to the chip when a %i to %i px change drops it',
+    async (from, to) => {
+      const viewport = stubLiveViewportWidth(from);
+      const user = userEvent.setup();
+      renderMenu();
+      await user.click(chip());
+      expect(screen.getAllByRole('menuitem')[0]).toHaveFocus();
+
+      viewport.resize(to);
+
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+      expect(chip()).toHaveAttribute('aria-expanded', 'false');
+      expect(chip()).toHaveFocus();
+    }
+  );
+
+  it('leaves focus alone when a layout change closes a menu that no longer holds it', async () => {
+    const viewport = stubLiveViewportWidth(1440);
+    const user = userEvent.setup();
+    renderMenu();
+    await user.click(chip());
+    const after = screen.getByRole('button', { name: 'after', hidden: true });
+    act(() => after.focus());
+
+    viewport.resize(375);
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(after).toHaveFocus();
+  });
+
+  it('does not move focus to the closed chip on a layout change', () => {
+    const viewport = stubLiveViewportWidth(1440);
+    renderMenu();
+
+    viewport.resize(375);
+
+    expect(document.body).toHaveFocus();
   });
 });

@@ -4,6 +4,9 @@ import type { JSX, ReactNode } from 'react';
 import { MemoryRouter, useNavigate } from 'react-router';
 
 import '../../../../setup';
+import container from '@/config/dependency-injection-config';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
 import useCurrentUser from '@/modules/user/features/settings/hooks/use-current-user';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken, buildUserNode } from '@tests/builders';
@@ -39,6 +42,7 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     server.resetHandlers();
   });
 
@@ -67,7 +71,7 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   it('drops the answer of a read that a pathname change replaced', async () => {
-    answerProfileOperation('CurrentUser', {
+    const delayed = answerProfileOperation('CurrentUser', {
       respond: () =>
         HttpResponse.json({
           data: { users: { edges: [{ node: buildUserNode({ initials: 'Old Name' }) }] } },
@@ -75,12 +79,15 @@ describe('useCurrentUser over the container (integration)', () => {
       delayMs: 150,
     });
     const hook = mountCurrentUser();
-    answerWith('Anna Koval');
+    await waitFor(() => expect(delayed).toHaveLength(1));
+    const replacement = answerWith('Anna Koval');
 
     act(() => hook.current.go('/settings'));
     await waitFor(() => expect(hook.current.identity?.displayName).toBe('Anna Koval'));
     await act(() => new Promise((resolve) => setTimeout(resolve, 250)));
 
+    expect(replacement).toHaveLength(1);
+    expect(delayed).toHaveLength(1);
     expect(hook.current.identity?.displayName).toBe('Anna Koval');
   });
 
@@ -107,7 +114,30 @@ describe('useCurrentUser over the container (integration)', () => {
     expect(hook.current.identity).toBeNull();
   });
 
-  it('keeps the previous identity when a later read ends the session', async () => {
+  it('keeps the last good identity when a later read fails for another reason', async () => {
+    const read = jest.spyOn(
+      container.resolve<ProfileProvider>(AUTH_TOKENS.ProfileProvider),
+      'read'
+    );
+    answerWith('Anna Koval');
+    const hook = mountCurrentUser();
+    await waitFor(() => expect(hook.current.status).toBe('ready'));
+
+    const failed = answerProfileOperation('CurrentUser', {
+      respond: () => new HttpResponse(null, { status: 400 }),
+    });
+    act(() => hook.current.go('/settings'));
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+    await act(() =>
+      expect(read.mock.results[1]?.value).resolves.toEqual({ kind: 'failed', reason: 'rejected' })
+    );
+
+    expect(failed).toHaveLength(1);
+    expect(hook.current.status).toBe('ready');
+    expect(hook.current.identity).toEqual({ displayName: 'Anna Koval', monogram: 'AK' });
+  });
+
+  it('clears the previous identity when a later read ends the session', async () => {
     answerWith('Anna Koval');
     const hook = mountCurrentUser();
     await waitFor(() => expect(hook.current.status).toBe('ready'));
@@ -119,7 +149,7 @@ describe('useCurrentUser over the container (integration)', () => {
     await waitFor(() => expect(ended).toHaveLength(1));
     await waitFor(() => expect(useAuthStore.getState().token).toBeNull());
 
-    expect(hook.current.status).toBe('ready');
-    expect(hook.current.identity).toEqual({ displayName: 'Anna Koval', monogram: 'AK' });
+    await waitFor(() => expect(hook.current.status).toBe('pending'));
+    expect(hook.current.identity).toBeNull();
   });
 });

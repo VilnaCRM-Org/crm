@@ -1,8 +1,17 @@
-import { type ComponentType, type JSX, lazy, Suspense, useRef, useState } from 'react';
+import {
+  type ComponentType,
+  type JSX,
+  lazy,
+  Suspense,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import useFeatureFlag from '@/hooks/use-feature-flag';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
+import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
 
 import type { CurrentUserMenuProps, UserMenuSlotProps } from '../../types/components/user-menu';
 
@@ -14,8 +23,8 @@ import UserMenu from '.';
 
 lazyCatalogLoader.register(i18n, { en, uk });
 
-function PendingMenu({ signOut, onAvatar }: CurrentUserMenuProps): JSX.Element {
-  return <UserMenu identity={null} settingsAvailable signOut={signOut} onAvatar={onAvatar} />;
+function NoCurrentUser(): null {
+  return null;
 }
 
 export default function UserMenuSlot({
@@ -24,26 +33,34 @@ export default function UserMenuSlot({
   onAvatar,
 }: UserMenuSlotProps): JSX.Element {
   const settingsAvailable = useFeatureFlag('userSettings');
+  const [identity, setIdentity] = useState<UserDisplayName | null>(null);
   const report = useRef(onChunkFailure);
-  report.current = onChunkFailure;
+  useLayoutEffect(() => {
+    report.current = onChunkFailure;
+  });
   const [CurrentUserMenu] = useState<ComponentType<CurrentUserMenuProps>>(() =>
     lazy(() =>
       currentUserMenuLoader.load().catch((error: unknown) => {
         report.current('app-shell:current-user', error);
 
-        return { default: PendingMenu };
+        return { default: NoCurrentUser };
       })
     )
   );
 
-  if (!settingsAvailable)
-    return (
-      <UserMenu identity={null} settingsAvailable={false} signOut={signOut} onAvatar={onAvatar} />
-    );
-
   return (
-    <Suspense fallback={<PendingMenu signOut={signOut} onAvatar={onAvatar} />}>
-      <CurrentUserMenu signOut={signOut} onAvatar={onAvatar} />
-    </Suspense>
+    <>
+      <UserMenu
+        identity={identity}
+        settingsAvailable={settingsAvailable}
+        signOut={signOut}
+        onAvatar={onAvatar}
+      />
+      {settingsAvailable && (
+        <Suspense fallback={<NoCurrentUser />}>
+          <CurrentUserMenu onIdentity={setIdentity} />
+        </Suspense>
+      )}
+    </>
   );
 }

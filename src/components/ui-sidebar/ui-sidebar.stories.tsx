@@ -12,7 +12,6 @@ const meta: Meta<typeof UISidebar> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', items: storyItems, signOut: noop },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
-  decorators: [withMemoryRouter('/')],
   parameters: {
     layout: 'fullscreen',
     docs: {
@@ -34,11 +33,13 @@ export default meta;
 
 type Story = StoryObj<typeof UISidebar>;
 
-export const Desktop: Story = {};
+const atHome = withMemoryRouter('/');
+
+export const Desktop: Story = { decorators: [atHome] };
 
 export const DesktopOnSettings: Story = { decorators: [withMemoryRouter('/settings')] };
 
-export const Tablet: Story = { args: { layout: 'tablet' } };
+export const Tablet: Story = { args: { layout: 'tablet' }, decorators: [atHome] };
 
 export const TabletOnSettings: Story = {
   args: { layout: 'tablet' },
@@ -49,6 +50,10 @@ const collapseOnLoad: Story['play'] = ({ canvasElement }) => {
   canvasElement.querySelector<HTMLButtonElement>('button[aria-expanded="true"]')?.click();
 };
 
-export const DesktopRail: Story = { play: collapseOnLoad };
+export const DesktopRail: Story = { decorators: [atHome], play: collapseOnLoad };
 
-export const TabletRail: Story = { args: { layout: 'tablet' }, play: collapseOnLoad };
+export const TabletRail: Story = {
+  args: { layout: 'tablet' },
+  decorators: [atHome],
+  play: collapseOnLoad,
+};

@@ -12,6 +12,28 @@ import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 const mockRead = jest.fn();
 
+const READ_USER = {
+  kind: 'ok',
+  user: { id: 'u', fullName: 'Петренко Олена Іванівна', email: 'o@example.com', confirmed: true },
+};
+
+type LoadedModule = Awaited<ReturnType<typeof loader.load>>;
+
+function holdCurrentUserChunk(): () => Promise<void> {
+  let release: (module: LoadedModule) => void = () => undefined;
+  const held = new Promise<LoadedModule>((resolve) => {
+    release = resolve;
+  });
+  jest.spyOn(loader, 'load').mockReturnValue(held);
+
+  return async () => {
+    const actual: LoadedModule = jest.requireActual(
+      '@/modules/user/features/settings/components/user-menu/current-user-menu'
+    );
+    await act(async () => release(actual));
+  };
+}
+
 jest.mock('@/providers/di', () => {
   const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
   const tokens = jest.requireActual('@/modules/user/config/tokens').default;
@@ -70,6 +92,67 @@ describe('UserMenuSlot', () => {
     expect(screen.getAllByRole('menuitem')).toHaveLength(3);
   });
 
+  it('keeps the open menu and its focused item when the current-user chunk resolves', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    mockRead.mockResolvedValue(READ_USER);
+    const resolveChunk = holdCurrentUserChunk();
+    const user = userEvent.setup();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
+    );
+    const chip = screen.getByRole('button', { name: 'User menu' });
+
+    await user.click(chip);
+    await user.keyboard('{ArrowDown}');
+    const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
+    expect(settingsItem).toHaveFocus();
+    await resolveChunk();
+    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+
+    expect(screen.getByRole('button', { name: 'Олена Петренко, User menu' })).toBe(chip);
+    expect(chip).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menuitem', { name: 'Settings' })).toBe(settingsItem);
+    expect(settingsItem).toHaveFocus();
+    expect(mockRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps focus on the same chip node when the chunk resolves with the menu closed', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    mockRead.mockResolvedValue(READ_USER);
+    const resolveChunk = holdCurrentUserChunk();
+    const onAvatar = jest.fn();
+    renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
+    );
+    const chip = screen.getByRole('button', { name: 'User menu' });
+    act(() => chip.focus());
+
+    await resolveChunk();
+    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+
+    expect(chip).toHaveFocus();
+    const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
+    expect(container).toHaveTextContent('ОП');
+  });
+
+  it('keeps the same chip mounted across the chunk resolving and signs out from it', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const resolveChunk = holdCurrentUserChunk();
+    const signOut = jest.fn();
+    const user = userEvent.setup();
+    renderShell(<UserMenuSlot signOut={signOut} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />);
+    const pendingChip = screen.getByRole('button', { name: 'User menu' });
+
+    await user.click(pendingChip);
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    await resolveChunk();
+    expect(screen.getByRole('button', { name: /User menu/u })).toBe(pendingChip);
+    await user.click(pendingChip);
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+
+    expect(signOut).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps the pending chip operable and reports the chunk failure exactly once', async () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     const failure = new Error('chunk failed');
@@ -90,6 +173,28 @@ describe('UserMenuSlot', () => {
     expect(onChunkFailure).toHaveBeenCalledTimes(1);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(mockRead).not.toHaveBeenCalled();
+  });
+
+  it('reports a chunk failure to the handler of the latest render', async () => {
+    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    const failure = new Error('chunk failed');
+    let fail: (error: Error) => void = () => undefined;
+    jest.spyOn(loader, 'load').mockReturnValue(
+      new Promise<LoadedModule>((_resolve, reject) => {
+        fail = reject;
+      })
+    );
+    const first = jest.fn();
+    const latest = jest.fn();
+    const { rerender } = renderShell(
+      <UserMenuSlot signOut={jest.fn()} onChunkFailure={first} onAvatar={jest.fn()} />
+    );
+
+    rerender(<UserMenuSlot signOut={jest.fn()} onChunkFailure={latest} onAvatar={jest.fn()} />);
+    await act(async () => fail(failure));
+
+    await waitFor(() => expect(latest).toHaveBeenCalledWith('app-shell:current-user', failure));
+    expect(first).not.toHaveBeenCalled();
   });
 
   it('publishes the no-data avatar copy while the flag is off, reading nothing', () => {

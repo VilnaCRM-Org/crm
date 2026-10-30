@@ -240,7 +240,8 @@ re-measures its reason against the pinned release.
 - **R13** `UiButton`'s variant rules are `sx`, which beats the `MuiButton` `styleOverrides` in
   `src/styles/theme.ts`: the outlined pill radius and `#969B9D` border replace CRM's 12 px radius
   and `#E1E7EA` border, and the text variant loses MUI's `0.02857em` letter-spacing, so the
-  not-found and auth-provider buttons and the coming-soon home link change.
+  not-found and auth-provider buttons and the outlined home action of the forbidden error page
+  change.
 - **R14** `loadingMode="native"` never forwards `loading` to MUI, so the `MuiButton-loading`
   class that the login and registration e2e specs and the unit tests select is gone.
 - **R15** `UiForm`'s submit differs: CRM's primary has no `contrastText`, so MUI gives the label

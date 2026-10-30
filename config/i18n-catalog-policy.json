@@ -20,8 +20,26 @@
       "owners": [
         "modules/user/features/settings/routes/index.ts",
         "modules/user/features/settings/routes/user-profile",
-        "modules/user/features/settings/components",
-        "modules/user/features/settings/hooks"
+        "modules/user/features/settings/components/change-password",
+        "modules/user/features/settings/components/profile-form",
+        "modules/user/features/settings/components/profile-header",
+        "modules/user/features/settings/components/settings-grid",
+        "modules/user/features/settings/components/social-networks",
+        "modules/user/features/settings/components/two-factor-settings",
+        "modules/user/features/settings/components/user-profile-settings",
+        "modules/user/features/settings/hooks/use-blur-hold.ts",
+        "modules/user/features/settings/hooks/use-codes-form-props.ts",
+        "modules/user/features/settings/hooks/use-disable-form-props.ts",
+        "modules/user/features/settings/hooks/use-display-name.ts",
+        "modules/user/features/settings/hooks/use-email-resend.ts",
+        "modules/user/features/settings/hooks/use-email-row.ts",
+        "modules/user/features/settings/hooks/use-profile-form-model.ts",
+        "modules/user/features/settings/hooks/use-profile-form-rules.ts",
+        "modules/user/features/settings/hooks/use-profile-load.ts",
+        "modules/user/features/settings/hooks/use-profile-save.ts",
+        "modules/user/features/settings/hooks/use-regenerate-form-props.ts",
+        "modules/user/features/settings/hooks/use-settled-focus.ts",
+        "modules/user/features/settings/hooks/use-setup-form-props.ts"
       ]
     },
     {

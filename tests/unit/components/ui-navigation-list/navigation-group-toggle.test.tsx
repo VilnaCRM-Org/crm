@@ -35,7 +35,7 @@ describe('NavigationGroupToggle', () => {
     expect(toggle).toHaveAttribute('aria-controls', 'settings-list');
   });
 
-  it('reports a collapsed group and offers to expand it', () => {
+  it('reports a collapsed group, offers to expand it and controls no unmounted list', () => {
     renderShell(
       <NavigationGroupToggle
         layout="desktop"
@@ -48,7 +48,7 @@ describe('NavigationGroupToggle', () => {
     const toggle = screen.getByRole('button', { name: 'Expand Settings' });
 
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).toHaveAttribute('aria-controls', 'settings-list');
+    expect(toggle).not.toHaveAttribute('aria-controls');
   });
 
   it('speaks uk names', () => {

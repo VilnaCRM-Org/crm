@@ -116,15 +116,21 @@ two modules declare `shell.userMenu`.
 
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
   failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
-  are untouched and nothing reloads.
-- **The current-user chunk** reports through the `onChunkFailure` callback the mapper binds
-  (`source: 'app-shell:current-user'`); `AppLayout` reports the shell chunk with
-  `routeMapper.chunkFailureReporter('app-shell:load')`.
+  are untouched and nothing reloads. Each mount of the slot creates its own lazy component and
+  holds its own `Suspense` boundary (an aria-hidden placeholder while the chunk loads), so a host
+  that mounts again after a twice-failed load imports the chunk again instead of keeping the empty
+  slot for the rest of the document.
+- **The current-user chunk** carries only the identity source: the slot keeps one menu mounted
+  and the chunk reports the identity it reads, so the chip keeps focus and an open menu when it
+  arrives (see `src/modules/user/features/settings/README.md`). Its failure is reported through
+  the `onChunkFailure` callback the mapper binds (`source: 'app-shell:current-user'`); the shell
+  chunk's reporter, `routeMapper.chunkFailureReporter('app-shell:load')`, is passed by
+  `RouteComposer` to `AppLayout` as `onShellFailure`, and `AppLayout` only forwards it.
 - **Why the mapper captures:** a component under `src/components/` must not import
   `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
   route layer is the only place that reaches the observability boundary.
-- **ADR drift:** `route-composer.tsx` changed, so the pull request carries the `adr:not-required`
-  label; the decision lives here and in the shell README.
+- **No ADR:** the composer change is recorded here and in the shell README rather than in
+  `docs/adr/` (OQ-10).
 
 ## The contract
 
@@ -153,9 +159,10 @@ applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
-`AppLayout` is the shell chrome of every protected page (issues #106, #362). It is a CSS grid frame
-that renders, in order, the lazy `UIAppShell` (header, sidebar from 1024 px or mobile drawer below
-it, loaded through `appShellLoader` behind a `<Suspense>` whose fallback is two `aria-hidden`
+`AppLayout` is the shell chrome of every protected page (issues #106, #362). It hands
+`appShellLoader` to `AppLayoutFrame`, a CSS grid frame that renders, in order, the lazy
+`UIAppShell` (header, sidebar from 1024 px or mobile drawer below it, built by `useAppShell` from
+that loader behind a `<Suspense>` whose fallback is `AppShellPlaceholders`, two `aria-hidden`
 size-holding placeholders, a header slot and a navigation column), the page's `<main>` and, after it
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders

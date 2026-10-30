@@ -283,3 +283,41 @@ test.describe('App shell keyboard contract at 375 px (issue #362)', () => {
     await expect(page.getByRole('contentinfo')).toHaveCount(1);
   });
 });
+
+test.describe('App shell drawer keyboard contract at 375x600 (issue #362)', () => {
+  test.use({ viewport: { width: 375, height: 600 } });
+
+  const panelOf = (page: Page): Locator =>
+    drawerOf(page).getByRole('navigation').locator('xpath=..');
+
+  test('cycles Tab with no unnamed stop while the drawer panel overflows', async ({ page }) => {
+    await openAs(page, ROUTE_PATHS.settings);
+    await burgerOf(page).focus();
+
+    await page.keyboard.press('Enter');
+    const close = { locator: drawerCloseOf(page), visibleFocus: true };
+    await expect(close.locator).toBeFocused();
+    expect(
+      await panelOf(page).evaluate((element) => element.scrollHeight > element.clientHeight)
+    ).toBe(true);
+    const stops = drawerStops(page, true);
+
+    await expectTabOrder(page, [...stops, close]);
+    await expectTabOrder(page, [...stops.toReversed(), close], 'Shift+Tab');
+  });
+
+  test('scrolls the overflowing drawer panel to Sign out when it takes focus', async ({ page }) => {
+    await openAs(page, ROUTE_PATHS.settings);
+    await burgerOf(page).click();
+    const signOut = drawerOf(page).getByRole('button', { name: shellText.signOut, exact: true });
+    await expect(drawerCloseOf(page)).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
+
+    await expect(signOut).toBeFocused();
+    await expect(signOut).toBeInViewport();
+    await expect
+      .poll(() => panelOf(page).evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+  });
+});

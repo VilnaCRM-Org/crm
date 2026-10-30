@@ -96,6 +96,30 @@ describe('UINavigationList', () => {
     expect(screen.getAllByRole('list')).toHaveLength(1);
   });
 
+  it.each([
+    ['desktop', 'expanded'],
+    ['desktop', 'rail'],
+    ['tablet', 'expanded'],
+    ['tablet', 'rail'],
+  ] as const)(
+    'keeps the scrolling %s %s list out of the Tab order and keeps its list role',
+    (layout, variant) => {
+      renderList({ layout, variant });
+
+      const list = screen.getByRole('list');
+      expect(list).toHaveAttribute('tabindex', '-1');
+      expect(list).toHaveAttribute('role', 'list');
+      expect(list).not.toHaveAttribute('aria-label');
+    }
+  );
+
+  it('leaves the non-scrolling drawer list without a tabindex and keeps its list role', () => {
+    renderList({ layout: 'drawer' });
+
+    expect(screen.getByRole('list')).not.toHaveAttribute('tabindex');
+    expect(screen.getByRole('list')).toHaveAttribute('role', 'list');
+  });
+
   it('renders no Settings group and no sub-item while the userSettings flag is off', () => {
     isEnabled.mockReturnValue(false);
 
@@ -191,20 +215,18 @@ describe('UINavigationList', () => {
     expect(screen.queryByRole('link', { name: 'Billing' })).not.toBeInTheDocument();
   });
 
-  it('calls signOut exactly once, however often Sign out is activated', async () => {
+  it('hands every click, Enter and Space on Sign out to signOut, the latch owner', async () => {
     const user = userEvent.setup();
     const signOut = jest.fn();
     renderList({ signOut });
 
     const signOutButton = screen.getByRole('button', { name: 'Sign out' });
     await user.click(signOutButton);
-    await user.click(signOutButton);
-    await user.dblClick(signOutButton);
     signOutButton.focus();
     await user.keyboard('{Enter}');
     await user.keyboard(' ');
 
-    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(3);
   });
 
   it('keeps the rest in order and leaves no gap when an item is filtered out of the set', () => {
@@ -232,12 +254,11 @@ describe('UINavigationList', () => {
     expect(currentLinks()).toEqual(['Settings']);
   });
 
-  it('calls signOut once from the rail as well', async () => {
+  it('calls signOut from the rail as well', async () => {
     const user = userEvent.setup();
     const signOut = jest.fn();
     renderList({ variant: 'rail', layout: 'tablet', signOut });
 
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
 
     expect(signOut).toHaveBeenCalledTimes(1);
@@ -291,7 +312,7 @@ describe('UINavigationList in the drawer', () => {
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ minHeight: '60px' });
   });
 
-  it('calls signOut once and keeps working the Settings chevron like the sidebar', async () => {
+  it('calls signOut and keeps working the Settings chevron like the sidebar', async () => {
     const user = userEvent.setup();
     const signOut = jest.fn();
     renderList({ layout: 'drawer', signOut }, '/boards');
@@ -299,7 +320,6 @@ describe('UINavigationList in the drawer', () => {
     await user.click(screen.getByRole('button', { name: 'Expand Settings' }));
     expect(screen.getByRole('link', { name: 'Billing' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
 
     expect(signOut).toHaveBeenCalledTimes(1);

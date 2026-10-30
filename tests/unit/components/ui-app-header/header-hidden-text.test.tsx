@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { isInaccessible, render, screen } from '@testing-library/react';
 
 import HeaderHiddenText from '@/components/ui-app-header/header-hidden-text';
 
@@ -12,6 +12,14 @@ describe('HeaderHiddenText', () => {
     expect(text).toHaveAttribute('id', 'status-1');
     expect(text.tagName).toBe('SPAN');
     expect(text).not.toHaveAttribute('role');
-    expect(text).toHaveStyle({ position: 'absolute', width: '1px', height: '1px' });
+    expect(text).toHaveStyle({
+      position: 'absolute',
+      width: '1px',
+      height: '1px',
+      margin: '-1px',
+      overflow: 'hidden',
+      whiteSpace: 'nowrap',
+    });
+    expect(isInaccessible(text)).toBe(false);
   });
 });

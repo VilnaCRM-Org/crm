@@ -9,6 +9,45 @@ const loadStyles = (): Promise<Styles> =>
       (await import('@/modules/user/features/settings/components/user-menu/styles')).default
   );
 
+const CHIP_BASE = {
+  '&:focus-visible': { outline: '2px solid #1A1C1E', outlineOffset: '2px' },
+  '&:focus:not(:focus-visible)': { outline: 'none' },
+  position: 'relative',
+  display: 'block',
+  boxSizing: 'border-box',
+  width: '100%',
+  margin: 0,
+  padding: 0,
+  border: 0,
+  background: 'transparent',
+  textAlign: 'left',
+  cursor: 'pointer',
+  borderRadius: '7px',
+  fontFamily: 'Inter, sans-serif',
+};
+
+const ITEM_BASE = {
+  boxSizing: 'border-box',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  width: '100%',
+  minHeight: 0,
+  padding: '0 0 0 20px',
+  fontFamily: 'Inter, sans-serif',
+  fontWeight: 500,
+  color: '#1A1C1E',
+  textDecoration: 'none',
+  '&:visited': { color: '#1A1C1E' },
+  '&:hover, &:focus-visible, &.Mui-focusVisible': { backgroundColor: '#F4F5F6' },
+  '&:focus-visible, &.Mui-focusVisible': { outline: '2px solid #1A1C1E', outlineOffset: '-2px' },
+};
+
+const CARD_ITEM_EDGES = {
+  '&[href]:first-of-type, &:only-child': { borderTop: '1px solid #E1E7EA' },
+  '&:last-child': { borderRadius: '0 0 7px 7px' },
+};
+
 describe('user menu styles', () => {
   it('pins root', async () => {
     const styles = await loadStyles();
@@ -71,6 +110,7 @@ describe('user menu styles', () => {
         minWidth: '253px',
         minHeight: '52px',
       },
+      mobile: { display: 'contents' },
       open: {
         boxShadow: '0 8px 27px rgba(49, 59, 67, 0.05)',
       },
@@ -81,74 +121,25 @@ describe('user menu styles', () => {
     const styles = await loadStyles();
 
     expect(styles.chip).toEqual({
-      desktop: {
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
-        position: 'relative',
-        display: 'block',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        padding: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        cursor: 'pointer',
-        borderRadius: '7px',
-        fontFamily: 'Inter, sans-serif',
-        height: '46px',
-      },
-      tablet: {
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
-        position: 'relative',
-        display: 'block',
-        boxSizing: 'border-box',
-        width: '100%',
-        margin: 0,
-        padding: 0,
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        cursor: 'pointer',
-        borderRadius: '7px',
-        fontFamily: 'Inter, sans-serif',
-        height: '50px',
-      },
+      desktop: { ...CHIP_BASE, height: '46px' },
+      tablet: { ...CHIP_BASE, height: '50px' },
       mobile: {
-        '&:focus-visible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '2px',
-        },
-        '&:focus:not(:focus-visible)': {
-          outline: 'none',
-        },
+        ...CHIP_BASE,
         position: 'absolute',
-        display: 'block',
-        boxSizing: 'border-box',
-        width: '44px',
-        margin: 0,
-        padding: '2px',
-        border: 0,
-        background: 'transparent',
-        textAlign: 'left',
-        cursor: 'pointer',
-        borderRadius: '50%',
-        fontFamily: 'Inter, sans-serif',
+        zIndex: 2,
         inset: '-2px',
+        width: '44px',
         height: '44px',
+        padding: '2px',
+        borderRadius: '50%',
       },
     });
+  });
+
+  it('lifts the mobile chip above the backdrop the open menu draws', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.chip.mobile.zIndex).toBeGreaterThan(styles.backdrop.zIndex);
   });
 
   it('pins avatar', async () => {
@@ -263,89 +254,20 @@ describe('user menu styles', () => {
 
     expect(styles.item).toEqual({
       desktop: {
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        width: '100%',
-        minHeight: 0,
-        padding: '0 0 0 20px',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        color: '#1A1C1E',
-        textDecoration: 'none',
-        '&:visited': { color: '#1A1C1E' },
-        '&:hover, &:focus-visible, &.Mui-focusVisible': {
-          backgroundColor: '#F4F5F6',
-        },
-        '&:focus-visible, &.Mui-focusVisible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&[href]:first-of-type, &:only-child': {
-          borderTop: '1px solid #E1E7EA',
-        },
-        '&:last-child': {
-          borderRadius: '0 0 7px 7px',
-        },
+        ...ITEM_BASE,
+        ...CARD_ITEM_EDGES,
         height: '44px',
         fontSize: '14px',
         lineHeight: '18px',
       },
       tablet: {
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        width: '100%',
-        minHeight: 0,
-        padding: '0 0 0 20px',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        color: '#1A1C1E',
-        textDecoration: 'none',
-        '&:visited': { color: '#1A1C1E' },
-        '&:hover, &:focus-visible, &.Mui-focusVisible': {
-          backgroundColor: '#F4F5F6',
-        },
-        '&:focus-visible, &.Mui-focusVisible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        '&[href]:first-of-type, &:only-child': {
-          borderTop: '1px solid #E1E7EA',
-        },
-        '&:last-child': {
-          borderRadius: '0 0 7px 7px',
-        },
+        ...ITEM_BASE,
+        ...CARD_ITEM_EDGES,
         height: '60px',
         fontSize: '16px',
         lineHeight: '18px',
       },
-      mobile: {
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        width: '100%',
-        minHeight: 0,
-        padding: '0 0 0 20px',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        color: '#1A1C1E',
-        textDecoration: 'none',
-        '&:visited': { color: '#1A1C1E' },
-        '&:hover, &:focus-visible, &.Mui-focusVisible': {
-          backgroundColor: '#F4F5F6',
-        },
-        '&:focus-visible, &.Mui-focusVisible': {
-          outline: '2px solid #1A1C1E',
-          outlineOffset: '-2px',
-        },
-        height: '44px',
-        fontSize: '14px',
-        lineHeight: '18px',
-      },
+      mobile: { ...ITEM_BASE, height: '44px', fontSize: '14px', lineHeight: '18px' },
     });
   });
 
@@ -384,6 +306,7 @@ describe('user menu styles', () => {
       overflow: 'hidden',
     });
   });
+
   it.each(['desktop', 'tablet', 'mobile'] as const)(
     'keeps a visited %s menu item in its label colour, ahead of hover',
     async (layout) => {

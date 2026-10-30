@@ -14,7 +14,8 @@ const meta: Meta<typeof Home> = {
         component:
           'The authenticated landing page (issue #106): a welcome heading and a short ' +
           'description. In the app it renders inside AppLayout, whose shell carries the ' +
-          'navigation, the Settings link and the sign-out control.',
+          'navigation, the sign-out control and, while the userSettings flag is on, the ' +
+          'Settings link.',
       },
     },
     layout: 'fullscreen',

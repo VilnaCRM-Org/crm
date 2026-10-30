@@ -18,9 +18,10 @@ export interface UserMenuSlotProps {
   readonly onAvatar: UserAvatarCopyHandler;
 }
 
+export type UserIdentityHandler = (identity: UserDisplayName | null) => void;
+
 export interface CurrentUserMenuProps {
-  readonly signOut: SignOutHandler;
-  readonly onAvatar: UserAvatarCopyHandler;
+  readonly onIdentity: UserIdentityHandler;
 }
 
 export interface UserMenuProps {

@@ -14,7 +14,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'analyst (Mary), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/enterprise-app-shell/planning-artifacts/prd-enterprise-app-shell-2026-06-26.md
   - specs/user-settings/planning-artifacts/brief-user-settings-2026-10-06.md
@@ -118,7 +118,7 @@ research §7): user-agnostic parts (header frame, logo, the inert search, bell a
 sidebar, drawer, current-route logic) live in `src/components/` with the `UI*` prefix; the
 user-aware part (chip, its menu, name and monogram from `currentUser`) lives in the `user`
 module and reaches `AppLayout` lazily as a prop from `route-composer.tsx`, so the DI container
-stays off the eager path. Where exactly the user-aware slot lives is OQ-17.
+stays off the eager path. The user-aware slot is exported from the settings route contract (OQ-17).
 
 ### Controls (one FR seed per control)
 
@@ -135,7 +135,7 @@ stays off the eager path. Where exactly the user-aware slot lives is OQ-17.
 | FR-9  | Settings sub-items                 | Integrations, Webhooks, Billing: links to `/settings/integrations` … (OQ-1, resolved); no sub-item state is designed (OQ-16)                                                       |
 | FR-10 | Sidebar sign out                   | Calls `ProtectedOutletContext.signOut`; identical outcome to home's button today                                                                                                   |
 | FR-11 | Current-route semantics            | `aria-current="page"` on the row of the current route, designed active style (OQ-16)                                                                                               |
-| FR-12 | Collapse handle and rail           | Only if adopted (OQ-4); the rail and tooltip are designed (research §4.2)                                                                                                          |
+| FR-12 | Collapse handle and rail           | OQ-4 resolved: the rail is built; the rail and tooltip are designed (research §4.2)                                                                                                |
 | FR-13 | Mobile burger and drawer           | Below the sidebar breakpoint (OQ-5): modal dialog, focus trap, Escape, focus return                                                                                                |
 | FR-14 | `AppLayout` wiring                 | Banner, nav, main, footer on protected routes only; `main[tabindex="-1"]` stays unique                                                                                             |
 | FR-15 | Settings content alignment         | Remove only the three centring declarations; keep `gap` and `paddingTop` (research §6.4)                                                                                           |
@@ -160,9 +160,9 @@ hover and active (the unavailable variant is not used since OQ-1 resolved); the 
 the open drawer; the round-button and search states on the Ui kit page. Every NOT FOUND state follows the owner's
 OQ-13 and OQ-16 answers, never an inferred design.
 
-### Copy (proposed `uk` / `en`, wording is OQ-9)
+### Copy (`uk` / `en`, approved under OQ-9)
 
-| Key purpose                  | `uk` (proposed)              | `en` (proposed)             |
+| Key purpose                  | `uk`                         | `en`                        |
 | ---------------------------- | ---------------------------- | --------------------------- |
 | Boards                       | Дошки                        | Boards                      |
 | Products                     | Продукти                     | Products                    |
@@ -184,7 +184,7 @@ OQ-13 and OQ-16 answers, never an inferred design.
 | User menu button             | Меню користувача             | User menu                   |
 
 The `uk` search placeholder is drawn in Figma; every other `uk` string is a translation of the
-Figma label or a new accessible name, and none ships until OQ-9 is answered. "Sign out" reuses
+Figma label or a new accessible name, and the copy table is approved under OQ-9. "Sign out" reuses
 the existing `home.sign_out` wording ("Вийти" / "Sign out") so the two surfaces never disagree.
 
 ## 5. Goals and Success Metrics
@@ -250,7 +250,7 @@ the existing `home.sign_out` wording ("Вийти" / "Sign out") so the two surf
 - **NFR-6 Architecture.** dependency-cruiser layers hold without new exemptions; the auth paint
   path never reaches `@/providers/di`; classes, type-only files and class-naming policy apply.
 - **NFR-7 Data honesty.** The chip reads `currentUser` through the existing `ProfileProvider`
-  shape, never a second query; no read while the session cannot be authenticated (OQ-11).
+  shape, never a third query; on `/settings` the chip and the page each read once (two independent reads, OQ-25); no read while the session cannot be authenticated (OQ-11).
 - **NFR-8 Quality gates.** 100 % coverage and mutation, zero ESLint, tsc, jscpd, markdownlint and
   depcruise findings, metrics within policy, every new `src` file with its own direct test and
   every new `.tsx` with a colocated story.
@@ -335,7 +335,7 @@ the existing `home.sign_out` wording ("Вийти" / "Sign out") so the two surf
 | R-6  | Stacked PR gets no gating CI; a retarget after the squash shows #354 again                                                                                 | Medium | Cherry-pick onto a `main`-based branch (C-6)                                               |
 | R-7  | Active-row text `#0399ED` on its tint fails 4.5:1; grey icons are at 2.7-2.8:1                                                                             | Medium | OQ-14 resolved: exact Figma colour with a scoped, tracked exception (#276), never silently |
 | R-8  | Lazy shell catalog missing on `/` fails the console gate (`missingKey`)                                                                                    | Medium | The chunk registers its catalog; unit test with a locale helper                            |
-| R-9  | Duplicate `currentUser` request on `/settings` (`no-cache`, no deduplication)                                                                              | Low    | Shared current-user state, cleared on unmount (research §7.3.4)                            |
+| R-9  | Duplicate `currentUser` request on `/settings` (`no-cache`, no deduplication)                                                                              | Low    | Accepted per OQ-25: two independent reads, one by the chip and one by the page             |
 | R-10 | Design gaps tempt invented states (focus, sub-items, chip hover, collapsed group)                                                                          | Medium | C-5; OQ-13, OQ-16                                                                          |
 | R-11 | Breakpoint switch at 1024 conflicts with the repo's `lg + 1` convention; 1280/1366 baselines land in whichever layout wins                                 | Low    | OQ-5                                                                                       |
 | R-12 | Figma components have no variants or variables, so later design edits will not propagate                                                                   | Low    | Parity table pins measured values; re-measure on design change                             |

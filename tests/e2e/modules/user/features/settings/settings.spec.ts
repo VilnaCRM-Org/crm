@@ -1,7 +1,7 @@
 import type { Page, Request } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
-import { sidebarOf, sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
+import { chipOf, sidebarOf, sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 import {
@@ -90,8 +90,10 @@ test.describe('Settings route', () => {
     await page.goto(SETTINGS_URL);
 
     await expect(page.getByText(greeting)).toBeVisible();
-    await expect(page.getByText(PROFILE_NODE.initials)).toBeVisible();
+    await expect(page.getByRole('main').getByText(PROFILE_NODE.initials)).toBeVisible();
+    await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
     expect(reads(stub)).toBe(1);
+    expect(stub.shellCalls).toHaveLength(1);
   });
 
   test('shows the load failure and one new read per retry', async ({ page }) => {
@@ -107,8 +109,9 @@ test.describe('Settings route', () => {
 
     await page.getByRole('button', { name: tryAgain }).click();
 
-    await expect(page.getByText(PROFILE_NODE.initials)).toBeVisible();
+    await expect(page.getByRole('main').getByText(PROFILE_NODE.initials)).toBeVisible();
     expect(reads(stub)).toBe(2);
+    expect(stub.shellCalls).toHaveLength(1);
   });
 
   test('sends a signed-out visitor to sign-in and back to settings after login', async ({

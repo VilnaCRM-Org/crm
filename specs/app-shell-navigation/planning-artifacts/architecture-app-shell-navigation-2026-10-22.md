@@ -4,7 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-22
-iteration: 1
+revised: 2026-10-29
+iteration: 4
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -15,7 +16,7 @@ stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 author: 'architect (Winston), autonomous run'
 ownerDecisions: resolved-2026-10-23
 inputDocuments:
-  - /home/dima/Desktop/crm-worktrees/instructions/app-shell-navigation-agent-brief.md
+  - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'
   - specs/app-shell-navigation/planning-artifacts/research-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/brief-app-shell-navigation-2026-10-22.md
   - specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md
@@ -33,8 +34,10 @@ inputDocuments:
 
 # Architecture: app shell navigation (header, sidebar, drawer, user menu)
 
-**Author:** architect (Winston), autonomous run **Date:** 2026-10-22 **Feature:**
-`app-shell-navigation`
+**Author:** architect (Winston), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28
+and 2026-10-29 (shipped-design amendments: the user-menu slot, the AD-11 sign-out latch and the
+failed chip re-read; each change is marked in place as a dated amendment or owner decision)
+**Feature:** `app-shell-navigation`
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"),
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N"), the authoritative
@@ -229,7 +232,8 @@ src/routes/route-composer.tsx ──static──> src/components/layouts/app-lay
    │     ├─ UIAppHeader  (banner: logo, search, bell, list, slot frame, burger)
    │     │     ├─ slot frame ─> Suspense(slot placeholder) ─> userMenu({ signOut })   [user-menu]
    │     │     │        UserMenuSlot ─ flag off ─> UserMenu(identity: null)
-   │     │     │                     └ flag on  ─> Suspense(UserMenu pending) ─> CurrentUserMenu
+   │     │     │                     └ flag on  ─> UserMenu(identity state) + Suspense(nothing)
+   │     │     │                                      ─> CurrentUserMenu (renders null, onIdentity)
    │     │     │                                      useCurrentUser → useService(ProfileProvider)
    │     │     │                                                                      [current-user]
    │     │     └─ UINavigationDrawer (below the sidebar breakpoint, while open)
@@ -279,10 +283,25 @@ ProtectedRoute → AppLayout renders frame: header placeholder, nav placeholder,
   ▼                             ▼
 UIAppShell mounts: registers the shell catalog, renders header + sidebar in the reserved areas
 UIAppHeader renders slot frame → user-menu chunk requested (ThemedChunkLoader + ChunkRetryLoader)
-UserMenuSlot: registers the chip catalog; flag on → renders Suspense(UserMenu identity=null)
-  → current-user chunk (+ DI async chunk) → CurrentUserMenu → useCurrentUser: one read
+UserMenuSlot: registers the chip catalog; flag on → renders UserMenu(identity=null) beside an
+  empty Suspense → current-user chunk (+ DI async chunk) → CurrentUserMenu (renders null)
+  → useCurrentUser: one read → onIdentity → the same UserMenu re-renders
   → ok: UserMenu(identity) | failed: UserMenu(identity=null) | session_ended: link signs out
+pathname change → useCurrentUser re-reads (the read in flight is aborted)
+  → ok: the new identity | failed: the last ready identity is kept, else identity=null
+  → session_ended: identity=null (pending) and the link signs out
 ```
+
+**Amendment, 2026-10-28 (owner decision: a failed re-read keeps the name).** The `failed` branch of
+the first read still renders the name-less chip. A `rate_limited`, `transient` or `rejected` re-read
+after a `ready` read keeps the last good display name and monogram, and a `session_ended` re-read
+resets the identity to pending while the existing session link ends the session (PRD FR-5.3).
+Tests: `tests/unit/modules/user/features/settings/hooks/use-current-user.test.tsx` ("keeps the last
+good name when a later re-read fails with %s", "clears the shown name when a later re-read reports
+the session ended", "stays name-less when a re-read after a failed first read fails again") and
+`tests/integration/modules/user/features/settings/use-current-user.integration.test.tsx` ("keeps the
+last good identity when a later read fails for another reason", "clears the previous identity when a
+later read ends the session").
 
 ### 4.2 Flag off (production today)
 
@@ -294,14 +313,16 @@ only (FR-6.3 N).
 ### 4.3 Sign out (sidebar, drawer or menu)
 
 ```text
-row / menu item activation → useOnceCallback(signOut)   (second activation is a no-op, FR-10 N)
-  → ProtectedOutletContext.signOut → useSignOut (lazy @auth/stores) → authActions.logout()
+row / menu item activation → ProtectedOutletContext.signOut
+  → useSignOut: pending latch set   (a second activation while pending is a no-op, FR-10 N)
+  → lazy @auth/stores → authActions.logout()   (a chunk failure releases the latch)
   → token cleared → ProtectedRoute redirects to /sign-in with state.focusMain
   → AppLayout unmounts: shell, slot and the chip's per-mount state are discarded (FR-5.3 E)
 ```
 
-`useSignOut` is not idempotent on its own (`src/modules/user/features/auth/stores/use-sign-out.ts:12-21`
-calls `logout()` on every call), which is why the shell latches it (AD-11).
+`useSignOut` (`src/modules/user/features/auth/stores/use-sign-out.ts`) carries the latch itself
+(AD-11, amended 2026-10-28): one pending flag ignores every activation after the first until the
+lazy auth store settles, and releases it when that chunk fails so the user can sign out again.
 
 ### 4.4 Drawer (below the sidebar breakpoint)
 
@@ -458,9 +479,13 @@ focus trap the APG menu button does not want (FR-6.1 N "no focus is trapped"). _
 
 **AD-8. Two-stage user-aware slot.** `UserMenuSlot` (chunk `user-menu`) is container-free: it reads
 `useFeatureFlag('userSettings')` and, while off, renders `UserMenu` without any read. While on, it
+keeps one `UserMenu` mounted outside any Suspense boundary, name-less until an identity arrives (the
+FR-5.3 "read pending" row: person glyph; My profile, Settings and Sign out operable), and beside it
 renders `CurrentUserMenu` (chunk `current-user`, loaded through a `ChunkRetryLoader` instance in
-`current-user-menu-loader.ts`, NEW) inside a Suspense whose fallback is the name-less `UserMenu` (the
-FR-5.3 "read pending" row: person glyph; My profile, Settings and Sign out operable). `useCurrentUser()` resolves
+`current-user-menu-loader.ts`, NEW) inside a Suspense with an empty fallback. `CurrentUserMenu`
+renders nothing and reports the identity through `onIdentity`, so the chip, an open menu and its
+focus survive the chunk resolving (amended 2026-10-27, gate iteration 5: the earlier design used the
+name-less `UserMenu` as the Suspense fallback and remounted it, dropping focus). `useCurrentUser()` resolves
 `ProfileProvider` with `useService(AUTH_TOKENS.ProfileProvider)` and calls `read(signal)` once per
 mount, aborting on unmount, exactly as `use-profile-load.ts:74-87` does; it returns a named
 `CurrentUserState`. The display name and monogram come from `UserDisplayNameMapper` (§5.8).
@@ -530,10 +555,19 @@ provider decorator. jscpd sees no copy.
 
 ### 5.10 Sign-out latch (AD-11)
 
-`useOnceCallback(callback)` (`src/hooks/use-once-callback.ts`, NEW) returns a callback that runs at
-most once per mount. The sidebar or drawer Sign out row and the menu's Sign out item wrap
-`signOut` with it (FR-6.4 N, FR-10 N). A shared `src/hooks/` file, because both a component in
-`src/components/` and one in the user module need it and modules may import shared hooks.
+**Amendment, 2026-10-28 (shipped design).** The planned `useOnceCallback` hook was removed before
+merge. A once-per-mount callback wrapped at each call site could not be released, so a sign-out
+whose auth-store chunk failed to load left every Sign out control dead for the rest of the mount.
+The latch now lives in one place, `useSignOut`
+(`src/modules/user/features/auth/stores/use-sign-out.ts`, CHANGED), which every shell control
+reaches through `ProtectedOutletContext.signOut`: a single pending ref ignores a second activation
+while the first is in flight (FR-6.4 N, FR-10 N), and the chunk-failure path releases it after
+capturing the error, so the next activation retries. The sidebar and drawer Sign out row and the
+menu's Sign out item call `signOut` directly.
+
+_Superseded plan:_ `useOnceCallback(callback)` in `src/hooks/use-once-callback.ts`, returning a
+callback that runs at most once per mount, wrapped around `signOut` by the Sign out row and the
+menu item.
 
 ### 5.11 Shell chunk failure (AD-12, OQ-26)
 
@@ -654,7 +688,6 @@ Every value that crosses a component, hook or chunk boundary has a named type in
 | `src/components/types/ui-sidebar/index.ts`                           | `UISidebarProps`, `CollapseHandleProps` (OQ-4)                                                                                                                                                                                                                                                                                                                                                                                                                        | **NEW** |
 | `src/components/types/ui-navigation-list/index.ts`                   | `UINavigationListProps`, `NavigationRowProps`, `NavigationGroupToggleProps`, `GroupDisclosureState` (the return of `useGroupDisclosure`, TB-1)                                                                                                                                                                                                                                                                                                                        | **NEW** |
 | `src/components/types/ui-navigation-drawer/index.ts`                 | `UINavigationDrawerProps`                                                                                                                                                                                                                                                                                                                                                                                                                                             | **NEW** |
-| `src/hooks/types/use-once-callback.ts`                               | `OnceCallback`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **NEW** |
 | `src/modules/user/types/lib/user-display-name.ts`                    | `UserDisplayName { readonly displayName: string; readonly monogram: string }`                                                                                                                                                                                                                                                                                                                                                                                         | **NEW** |
 | `src/modules/user/features/settings/types/components/user-menu.ts`   | `UserMenuProps { identity: UserDisplayName \| null; settingsAvailable; signOut }`                                                                                                                                                                                                                                                                                                                                                                                     | **NEW** |
 | `src/modules/user/features/settings/types/hooks/use-current-user.ts` | `CurrentUserStatus`, `CurrentUserState`                                                                                                                                                                                                                                                                                                                                                                                                                               | **NEW** |
@@ -825,20 +858,19 @@ renders stroke icons with `SvgIcon` and `sx={{ fill: 'none' }}` (research §5, t
 
 ### F. Shared hooks, config, tooling and test infrastructure
 
-| File                                                                                           | Status  | Why                                                                                                                                                                                 |
-| ---------------------------------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/hooks/use-once-callback.ts`                                                               | **NEW** | AD-11; test `tests/unit/hooks/use-once-callback.test.ts` (**NEW**)                                                                                                                  |
-| `src/hooks/types/use-once-callback.ts`                                                         | **NEW** | type-only                                                                                                                                                                           |
-| `config/i18n-catalog-policy.json`                                                              | CHANGED | two lazy entries (§7); the coming-soon entry is in §8 G                                                                                                                             |
-| `.storybook/preview.tsx`                                                                       | CHANGED | registers both lazy catalogs                                                                                                                                                        |
-| `tests/unit/utils/create-app-shell-locale-i18n.ts`                                             | **NEW** | §7 step 6                                                                                                                                                                           |
-| `tests/unit/tooling/performance-serving.test.ts`                                               | CHANGED | pins `app-shell-loader.ts` (`new ThemedChunkLoader(`, `"ui-app-shell"`), the `"user-menu"` and `"current-user"` dynamic imports with no static import; the eager MUI walk unchanged |
-| `tests/unit/a11y/ui-components.a11y.test.tsx`                                                  | CHANGED | `componentCases` rows for each `UI*` above; Home inside the shell (`:65-70`, `:140`)                                                                                                |
-| `tests/unit/a11y/settings-shell.a11y.test.tsx`                                                 | CHANGED | settings inside the new shell                                                                                                                                                       |
-| `tests/unit/components/layouts/app-layout.footer-failure.test.tsx`                             | CHANGED | footer path beside the shell                                                                                                                                                        |
-| `tests/unit/components/error-boundary/route-error.router.test.tsx`                             | CHANGED | real `AppLayout` with the 404 region (`:116-122`, `:304-327`)                                                                                                                       |
-| `tests/unit/routes/routes.test.tsx`, `tests/unit/app.test.tsx`, `tests/unit/app-root.test.tsx` | CHANGED | `AppLayout` mock shape and the slot prop                                                                                                                                            |
-| `tests/unit/modules/user/features/settings/routes/user-profile/index.test.tsx`                 | CHANGED | renders inside the new `AppLayout`                                                                                                                                                  |
+| File                                                                                           | Status      | Why                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/modules/user/features/auth/stores/use-sign-out.ts`                                        | **CHANGED** | AD-11 (amended 2026-10-28): the pending sign-out latch, released on chunk failure; test `tests/unit/modules/user/features/auth/stores/use-sign-out.test.ts`                         |
+| `config/i18n-catalog-policy.json`                                                              | CHANGED     | two lazy entries (§7); the coming-soon entry is in §8 G                                                                                                                             |
+| `.storybook/preview.tsx`                                                                       | CHANGED     | registers both lazy catalogs                                                                                                                                                        |
+| `tests/unit/utils/create-app-shell-locale-i18n.ts`                                             | **NEW**     | §7 step 6                                                                                                                                                                           |
+| `tests/unit/tooling/performance-serving.test.ts`                                               | CHANGED     | pins `app-shell-loader.ts` (`new ThemedChunkLoader(`, `"ui-app-shell"`), the `"user-menu"` and `"current-user"` dynamic imports with no static import; the eager MUI walk unchanged |
+| `tests/unit/a11y/ui-components.a11y.test.tsx`                                                  | CHANGED     | `componentCases` rows for each `UI*` above; Home inside the shell (`:65-70`, `:140`)                                                                                                |
+| `tests/unit/a11y/settings-shell.a11y.test.tsx`                                                 | CHANGED     | settings inside the new shell                                                                                                                                                       |
+| `tests/unit/components/layouts/app-layout.footer-failure.test.tsx`                             | CHANGED     | footer path beside the shell                                                                                                                                                        |
+| `tests/unit/components/error-boundary/route-error.router.test.tsx`                             | CHANGED     | real `AppLayout` with the 404 region (`:116-122`, `:304-327`)                                                                                                                       |
+| `tests/unit/routes/routes.test.tsx`, `tests/unit/app.test.tsx`, `tests/unit/app-root.test.tsx` | CHANGED     | `AppLayout` mock shape and the slot prop                                                                                                                                            |
+| `tests/unit/modules/user/features/settings/routes/user-profile/index.test.tsx`                 | CHANGED     | renders inside the new `AppLayout`                                                                                                                                                  |
 
 ### G. Coming-soon routes and page (AD-13, chunk `coming-soon`)
 
@@ -993,7 +1025,7 @@ preview and attached to the PR before any baseline is recorded.
 | FR-6.1 to FR-6.4      | `use-user-menu`, `user-menu/index`                                                    | menu open              | Settings and Sign out from the chip; keyboard                            | menu open (1440)               |
 | FR-7, FR-9            | `navigation-row`, `navigation-items`                                                  | rows                   | every row and sub-item reaches its coming-soon route and becomes current | home, settings, coming-soon    |
 | FR-8, FR-11           | `use-current-navigation-item`, `ui-navigation-list`                                   | rows                   | Settings from the sidebar; `aria-current`                                | settings                       |
-| FR-10                 | `navigation-row`, `use-once-callback`                                                 |                        | Sign out from the sidebar                                                |                                |
+| FR-10                 | `navigation-row`, `use-sign-out`                                                      |                        | Sign out from the sidebar                                                |                                |
 | FR-12                 | `ui-sidebar`, `collapse-handle` (OQ-4)                                                | rail                   | handle by keyboard (OQ-4)                                                | rail (OQ-4)                    |
 | FR-13.1 to FR-13.5    | `menu-toggle-button`, `ui-navigation-drawer`                                          | drawer open            | drawer by keyboard at 375; touch on both mobile projects                 | drawer open (mobile)           |
 | FR-14                 | `app-layout`, `app-layout.shell-failure`, `route-composer`, `route-mapper.shell-slot` | `app-shell.a11y`       | public-route leak guard                                                  | all protected                  |
@@ -1021,10 +1053,12 @@ preview and attached to the PR before any baseline is recorded.
   and the 100 % `coverageThreshold.global` to `TEST_ENV=integration` too (only `server` differs), so
   every `src` file an integration test imports must reach 100 % from integration tests alone;
   rendering `CurrentUserMenu` would pull in `UserMenu`, `useUserMenu`, styles, the catalog consumers,
-  `useOnceCallback` and the mapper, whose keyboard, breakpoint and popover branches no integration
-  test drives. Cases: flag off → zero `CurrentUser` requests; flag on → one; failed reads → the
-  name-less state and no console output; `session_ended` → the existing link signs out; sign out
-  then a second user → no stale name.
+  the mapper, whose keyboard, breakpoint and popover branches no integration
+  test drives. Cases: flag off → zero `CurrentUser` requests; flag on → one; a failed first read →
+  the name-less state and no console output; a failed re-read after a `ready` read → the last good
+  identity kept (owner decision 2026-10-28, §4.1); `session_ended`, first read or re-read → the
+  existing link signs out and the identity resets to pending; sign out then a second user → no
+  stale name.
 - **E2E (desktop projects).** NEW `tests/e2e/modules/app-shell.spec.ts`: Settings from the sidebar
   and from the chip, sign out from both, `aria-current` on `/settings` and none on `/`, every product
   row and sub-item navigating to its coming-soon route with that row current, no badge on any
@@ -1105,7 +1139,7 @@ the settings resting state have no 1024 baseline (brief follow-up 4).
 | a badge count passed anywhere in `src` outside stories      | `header-badge.test.tsx`, review                                   |
 | a coming-soon route with its own chunk name                 | `performance-serving.test.ts`                                     |
 | a public route requesting a shell chunk                     | `app-shell.spec.ts` leak guard                                    |
-| `signOut` called twice on a double activation               | `use-once-callback.test.ts`, row and menu tests                   |
+| `signOut` called twice on a double activation               | `use-sign-out.test.ts`, row and menu tests                        |
 
 ### 12.5 Route coverage rows
 

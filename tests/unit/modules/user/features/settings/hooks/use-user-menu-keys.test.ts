@@ -59,4 +59,21 @@ describe('useUserMenuKeys', () => {
     expect(result.current.chipKeyDown).toBe(chipKeyDown);
     expect(result.current.menuKeyDown).toBe(menuKeyDown);
   });
+
+  it('calls the latest show and dismiss after they change', () => {
+    const first = { show: jest.fn(), dismiss: jest.fn() };
+    const second = { show: jest.fn(), dismiss: jest.fn() };
+    const { result, rerender } = renderHook((options) => useUserMenuKeys(options), {
+      initialProps: first,
+    });
+
+    rerender(second);
+    result.current.chipKeyDown(keyEvent('ArrowDown'));
+    result.current.menuKeyDown(keyEvent('Escape'));
+
+    expect(first.show).not.toHaveBeenCalled();
+    expect(first.dismiss).not.toHaveBeenCalled();
+    expect(second.show).toHaveBeenCalledTimes(1);
+    expect(second.dismiss).toHaveBeenCalledTimes(1);
+  });
 });

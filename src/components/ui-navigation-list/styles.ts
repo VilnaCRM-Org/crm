@@ -69,6 +69,7 @@ const scrollingList = {
   listStyle: 'none',
   overflowY: 'auto',
   scrollPaddingBottom: '76px',
+  '&:focus:not(:focus-visible)': { outline: 'none' },
 };
 
 export default {

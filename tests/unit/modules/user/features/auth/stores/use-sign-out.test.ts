@@ -65,4 +65,42 @@ describe('useSignOut', () => {
     expect(logout).not.toHaveBeenCalled();
     expect(useAuthStore.getState().token).toBe(token);
   });
+
+  it('logs out once for activations repeated while the sign-out is pending', async () => {
+    useAuthStore.setState({ token: buildToken() });
+    const logout = jest.spyOn(authActions, 'logout');
+    const { result } = renderHook(() => useSignOut());
+    const { signOut } = result.current;
+
+    await act(async () => {
+      signOut();
+      signOut();
+      result.current.signOut();
+      await settlePendingPromises();
+    });
+    act(() => result.current.signOut());
+    await act(settlePendingPromises);
+
+    expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts a new sign-out once a failed chunk load has cleared the pending one', async () => {
+    useAuthStore.setState({ token: buildToken() });
+    jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(new Error(buildToken()));
+    jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => undefined);
+    const logout = jest.spyOn(authActions, 'logout');
+    const { result } = renderHook(() => useSignOut());
+
+    await act(async () => {
+      result.current.signOut();
+      await settlePendingPromises();
+    });
+    expect(logout).not.toHaveBeenCalled();
+
+    act(() => result.current.signOut());
+
+    expect(result.current.signedOut).toBe(true);
+    await waitFor(() => expect(logout).toHaveBeenCalledTimes(1));
+    expect(useAuthStore.getState().token).toBeNull();
+  });
 });

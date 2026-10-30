@@ -49,12 +49,15 @@ describe('useDrawerOpen', () => {
     expect(result.current.restore).toBe(false);
   });
 
-  it('keeps its handlers stable across renders', () => {
+  it('keeps its handlers stable across renders and state changes', () => {
     const { result, rerender } = renderHook(() => useDrawerOpen());
     const { show, dismiss, leave } = result.current;
 
     rerender();
+    act(() => result.current.show());
+    act(() => result.current.dismiss());
 
+    expect(result.current.restore).toBe(true);
     expect(result.current.show).toBe(show);
     expect(result.current.dismiss).toBe(dismiss);
     expect(result.current.leave).toBe(leave);

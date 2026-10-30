@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
+import { withStoryList } from '@stories/list-decorators';
 import { storyGroup } from '@stories/navigation-story-items';
 import { withMemoryRouter } from '@stories/router-decorators';
 
@@ -12,13 +12,7 @@ const meta: Meta<typeof NavigationGroup> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', group: storyGroup, currentId: null },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
-  decorators: [
-    (Story): JSX.Element => (
-      <ul style={{ width: 238, margin: 24, padding: 0, listStyle: 'none' }}>
-        <Story />
-      </ul>
-    ),
-  ],
+  decorators: [withStoryList(238)],
   parameters: {
     docs: {
       description: {
