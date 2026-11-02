@@ -10,6 +10,8 @@ on:
       - 'rsbuild.config.ts'
       # Build inputs rsbuild.config.ts imports: the chunk groups and the SPA fallback document
       # decide what is emitted, so editing them alone must re-run the gate.
+      - 'config/browser-support.json'
+      - 'config/browser-support.schema.json'
       - 'scripts/auth-forms-chunk-group.ts'
       - 'scripts/spa-fallback-document-plugin.ts'
       - 'package.json'
