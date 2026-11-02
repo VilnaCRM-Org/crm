@@ -20,7 +20,7 @@ const focusTargetOf = (group: HTMLElement): PinFocusTarget => ({
 });
 
 const isRequired = (rule: PinRequiredRule): boolean =>
-  typeof rule === 'object' ? rule.value : Boolean(rule);
+  typeof rule === 'object' ? rule.value === true : Boolean(rule);
 
 const leftGroup = (event: FocusEvent<HTMLElement>): boolean => {
   const next = event.relatedTarget;
