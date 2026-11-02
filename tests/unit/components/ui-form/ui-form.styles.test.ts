@@ -23,7 +23,7 @@ describe('ui-form styles', () => {
         fontSize: '1rem',
         lineHeight: '1.625rem',
         letterSpacing: 0,
-        color: '#C62828',
+        color: '#D63333',
       },
       errorBannerFocus: {
         outline: 'none',

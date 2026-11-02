@@ -18,6 +18,7 @@ const meta: Meta<typeof AuthCard> = {
     children: { control: false },
     after: { control: false },
     page: { control: 'select', options: [undefined, 'signIn', 'signUp'] },
+    variant: { control: 'select', options: [undefined, 'recovery'] },
   },
   parameters: {
     docs: {

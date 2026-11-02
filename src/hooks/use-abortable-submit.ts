@@ -6,6 +6,19 @@ import type {
   AbortableSubmit,
 } from '@/hooks/types/use-abortable-submit';
 
+async function unlessAborted<TOutcome>(
+  pending: Promise<TOutcome>,
+  signal: AbortSignal
+): Promise<TOutcome | null> {
+  try {
+    const outcome = await pending;
+    return signal.aborted ? null : outcome;
+  } catch (error) {
+    if (signal.aborted) return null;
+    throw error;
+  }
+}
+
 async function runOnce<TInput, TOutcome>(
   attempt: AbortableAttempt<TInput, TOutcome>
 ): Promise<TOutcome | null> {
@@ -14,8 +27,7 @@ async function runOnce<TInput, TOutcome>(
   inFlight.current = controller;
   setSubmitting(true);
   try {
-    const outcome = await attempt.run(attempt.input, controller.signal);
-    return controller.signal.aborted ? null : outcome;
+    return await unlessAborted(attempt.run(attempt.input, controller.signal), controller.signal);
   } finally {
     inFlight.current = null;
     setSubmitting(false);
