@@ -106,7 +106,12 @@ cycle and break barrel purity), and code outside the module may not import
 `@auth/stores`. The sign-out action therefore reaches protected pages through
 react-router **outlet context**: `ProtectedRoute` renders
 `<Outlet context={…} />` typed as `ProtectedOutletContext`
-(`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it.
+(`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it. The context
+`ProtectedRoute` builds is a `ProtectedSessionContext`: beside `signOut` and the two-factor state
+it carries `session`, the container-free `authSessionProvider`
+(`@auth/stores/auth-session-provider.ts`), whose `token()` reads the in-memory token and whose
+`end(token)` ends the session the way `logout()` does, but only while the store still holds that
+token. The shell's current-user read uses it (issue #362).
 
 The outlet context is the **only seam** through which a non-auth feature reads or writes auth
 state. Besides `signOut` it carries the known two-factor status (`twoFactorStatus`, a
@@ -433,9 +438,10 @@ the header chip in the app shell shows the same two values.
 A name of three or more words reads as `<first> <last>` from the first two words reversed, and the
 monogram is the upper-cased first letter of each word of the display name; an empty name yields an
 empty monogram, which both consumers draw as the person glyph. `useDisplayName` serves the
-settings header and `useCurrentUser` the chip, which reads `ProfileProvider` once per pathname
-change, keeps the last good identity when a later read fails for any reason but `session_ended`,
-and resets the identity to the name-less pending state when a read reports `session_ended`.
+settings header and `useCurrentUser` the chip, which reads the user through the container-free
+`currentUserSource` (it constructs the dependency-free mapper itself) once per pathname change,
+keeps the last good identity when a later read fails for any reason but `session_ended`, and
+resets the identity to the name-less pending state when a read reports `session_ended`.
 
 **Rejected.** A copy of the rule in the chip (it would drift from the header); resolving the user
 from the JWT (see the previous record).
@@ -514,7 +520,8 @@ already done, alone. Whether a network error is a 401 is asked of #315's
 `UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
 hooks read the status in one place. The settings page hooks do nothing on `session_ended` and rely
 on the link to end a session whose request came back as a transport 401; the chip's
-`useCurrentUser` only clears its shown identity and leaves ending the session to the link. The
+`useCurrentUser` reads without Apollo, so its `currentUserSource` ends the session itself on a
+transport 401 through the outlet `session.end(token)`, with the same current-token check. The
 settings Transformer also maps a GraphQL `Access Denied.` error (`access_denied`) to
 `session_ended`, and that error does not reach the link, so for it the shown identity is cleared
 while the token stays and the session is not ended.

@@ -1,52 +1,66 @@
-import 'reflect-metadata';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
-import { MemoryRouter, useNavigate } from 'react-router';
+import { MemoryRouter, Outlet, Route, Routes, useNavigate } from 'react-router';
 
 import useCurrentUser from '@/modules/user/features/settings/hooks/use-current-user';
-import type { ProfileReadOutcome } from '@/modules/user/features/settings/types/user-profile';
-import { buildUserEntity } from '@tests/builders';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
+import type {
+  ProtectedSession,
+  ProtectedSessionContext,
+} from '@/routes/types/protected-outlet-context';
 
-const mockRead = jest.fn();
+type CurrentUserReadOutcome = Awaited<ReturnType<typeof currentUserSource.read>>;
 
-jest.mock('@/providers/di', () => {
-  const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
-  const tokens = jest.requireActual('@/modules/user/config/tokens').default;
-  const mapper = new Mapper();
-  const provider = { read: (signal: AbortSignal): unknown => mockRead(signal) };
+const mockRead = jest.fn<Promise<CurrentUserReadOutcome>, [ProtectedSession, AbortSignal]>();
 
-  return {
-    __esModule: true,
-    useService: (token: symbol): unknown => (token === tokens.ProfileProvider ? provider : mapper),
-  };
-});
+const session: ProtectedSession = { token: () => null, end: () => undefined };
+
+const context: ProtectedSessionContext = { signOut: () => undefined, session };
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
-  <MemoryRouter initialEntries={['/']}>{children}</MemoryRouter>
+  <MemoryRouter initialEntries={['/']}>
+    <Routes>
+      <Route element={<Outlet context={context} />}>
+        <Route path="*" element={children} />
+      </Route>
+    </Routes>
+  </MemoryRouter>
 );
 
-const settle = (outcome: ProfileReadOutcome): void => {
+const named = (displayName: string, monogram: string): CurrentUserReadOutcome => ({
+  kind: 'ok',
+  identity: { displayName, monogram },
+});
+
+const settle = (outcome: CurrentUserReadOutcome): void => {
   mockRead.mockResolvedValue(outcome);
 };
 
 describe('useCurrentUser', () => {
   beforeEach(() => {
     mockRead.mockReset();
+    jest.spyOn(currentUserSource, 'read').mockImplementation(mockRead);
   });
 
-  it('starts name-less and pending, and makes one read through the provider', async () => {
-    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('starts name-less and pending, and makes one read with the outlet session', async () => {
+    settle(named('Олена Петренко', 'ОП'));
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
     expect(result.current).toEqual({ status: 'pending', identity: null });
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(mockRead).toHaveBeenCalledTimes(1);
-    expect(mockRead.mock.calls[0]?.[0]).toBeInstanceOf(AbortSignal);
+    expect(mockRead.mock.calls[0]?.[0]).toBe(session);
+    expect(mockRead.mock.calls[0]?.[1]).toBeInstanceOf(AbortSignal);
+    expect(mockRead.mock.contexts[0]).toBe(currentUserSource);
   });
 
   it('shows the display name and monogram once the read is ok', async () => {
-    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Петренко Олена Іванівна' }) });
+    settle(named('Олена Петренко', 'ОП'));
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -58,18 +72,15 @@ describe('useCurrentUser', () => {
     );
   });
 
-  it.each(['transient', 'rate_limited', 'rejected'] as const)(
-    'stays name-less when the read fails with %s',
-    async (reason) => {
-      settle({ kind: 'failed', reason });
+  it('stays name-less when the read is unavailable', async () => {
+    settle({ kind: 'failed', reason: 'unavailable' });
 
-      const { result } = renderHook(() => useCurrentUser(), { wrapper });
+    const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
-      await waitFor(() => expect(result.current).toEqual({ status: 'failed', identity: null }));
-    }
-  );
+    await waitFor(() => expect(result.current).toEqual({ status: 'failed', identity: null }));
+  });
 
-  it('leaves a session_ended read to the session link and stays pending', async () => {
+  it('leaves a session_ended read to the ended session and stays pending', async () => {
     settle({ kind: 'failed', reason: 'session_ended' });
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
@@ -79,20 +90,18 @@ describe('useCurrentUser', () => {
   });
 
   it('aborts the read and ignores its outcome when it unmounts', async () => {
-    let resolve: (outcome: ProfileReadOutcome) => void = () => undefined;
+    let resolve: (outcome: CurrentUserReadOutcome) => void = () => undefined;
     mockRead.mockImplementation(
       () =>
-        new Promise<ProfileReadOutcome>((done) => {
+        new Promise<CurrentUserReadOutcome>((done) => {
           resolve = done;
         })
     );
     const { result, unmount } = renderHook(() => useCurrentUser(), { wrapper });
-    const signal = mockRead.mock.calls[0]?.[0] as AbortSignal;
+    const signal = mockRead.mock.calls[0]?.[1] as AbortSignal;
 
     unmount();
-    await act(async () =>
-      resolve({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) })
-    );
+    await act(async () => resolve(named('Анна Коваль', 'АК')));
 
     expect(signal.aborted).toBe(true);
     expect(result.current).toEqual({ status: 'pending', identity: null });
@@ -116,24 +125,20 @@ describe('useCurrentUser', () => {
   } as const;
 
   it('re-reads on a pathname change and drops the late answer of the read in flight', async () => {
-    const answers: Array<(outcome: ProfileReadOutcome) => void> = [];
+    const answers: Array<(outcome: CurrentUserReadOutcome) => void> = [];
     mockRead.mockImplementation(
       () =>
-        new Promise<ProfileReadOutcome>((done) => {
+        new Promise<CurrentUserReadOutcome>((done) => {
           answers.push(done);
         })
     );
     const { result } = renderNavigable();
-    const first = mockRead.mock.calls[0]?.[0] as AbortSignal;
+    const first = mockRead.mock.calls[0]?.[1] as AbortSignal;
 
     act(() => result.current.go('/boards'));
     await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
-    await act(async () =>
-      answers[1]?.({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) })
-    );
-    await act(async () =>
-      answers[0]?.({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) })
-    );
+    await act(async () => answers[1]?.(named('Анна Коваль', 'АК')));
+    await act(async () => answers[0]?.(named('Олена Петренко', 'ОП')));
 
     expect(first.aborted).toBe(true);
     expect(result.current.state).toEqual({
@@ -142,24 +147,21 @@ describe('useCurrentUser', () => {
     });
   });
 
-  it.each(['transient', 'rate_limited', 'rejected'] as const)(
-    'keeps the last good name when a later re-read fails with %s',
-    async (reason) => {
-      settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
-      const { result } = renderNavigable();
-      await waitFor(() => expect(result.current.state).toEqual(NAMED));
-      settle({ kind: 'failed', reason });
+  it('keeps the last good name when a later re-read is unavailable', async () => {
+    settle(named('Олена Петренко', 'ОП'));
+    const { result } = renderNavigable();
+    await waitFor(() => expect(result.current.state).toEqual(NAMED));
+    settle({ kind: 'failed', reason: 'unavailable' });
 
-      act(() => result.current.go('/boards'));
+    act(() => result.current.go('/boards'));
 
-      await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
-      await act(async () => undefined);
-      expect(result.current.state).toEqual(NAMED);
-    }
-  );
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+    await act(async () => undefined);
+    expect(result.current.state).toEqual(NAMED);
+  });
 
   it('clears the shown name when a later re-read reports the session ended', async () => {
-    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Олена Петренко' }) });
+    settle(named('Олена Петренко', 'ОП'));
     const { result } = renderNavigable();
     await waitFor(() => expect(result.current.state).toEqual(NAMED));
     settle({ kind: 'failed', reason: 'session_ended' });
@@ -172,7 +174,7 @@ describe('useCurrentUser', () => {
   });
 
   it('stays name-less when a re-read after a failed first read fails again', async () => {
-    settle({ kind: 'failed', reason: 'transient' });
+    settle({ kind: 'failed', reason: 'unavailable' });
     const { result } = renderNavigable();
     await waitFor(() => expect(result.current.state.status).toBe('failed'));
 
@@ -184,7 +186,7 @@ describe('useCurrentUser', () => {
   });
 
   it('never shows the previous user on a fresh mount, not even for one render', async () => {
-    settle({ kind: 'ok', user: buildUserEntity({ fullName: 'Анна Коваль' }) });
+    settle(named('Анна Коваль', 'АК'));
     const { result: before, unmount } = renderHook(() => useCurrentUser(), { wrapper });
     await waitFor(() => expect(before.current.status).toBe('ready'));
     unmount();
