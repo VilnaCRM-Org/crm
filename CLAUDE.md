@@ -323,7 +323,7 @@ whose mutants are all static weighs 1, its dry run. The packing then puts the he
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
 same commit; no weight file is committed, so none can go stale. At 354 files the scope holds
-6,626 runnable mutants, 4,984 of them scored, in 311 sharded files; 43 files run in no shard, and
+6,600 runnable mutants, 4,967 of them scored, in 311 sharded files; 43 files run in no shard, and
 the 40 shards hold 125 to 139 scored mutants (the heaviest is one 139-mutant file on its own) and
 1 to 9 files each. File size was a poor proxy for that load: under the 30-shard size packing a
 cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished, while the
@@ -459,8 +459,9 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 347 files; not all of them produce scored mutants — the rest are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`.
+mutate scope is 354 files; not all of them produce scored mutants — the 43 unsharded ones hold no
+runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
+mutants are static is skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by mutant count, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
