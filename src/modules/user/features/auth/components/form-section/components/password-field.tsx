@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import formValidators from '@auth/components/form-section/validations';
 import type {
   PasswordFieldProps,
+  PasswordPath,
   PasswordVisibilityButtonProps,
 } from '@auth/types/components/password-field';
 
@@ -42,7 +43,7 @@ export default function PasswordField<T extends FieldValues>({
   placeholder,
   label,
   autoComplete,
-  name = 'password' as Path<T>,
+  name = 'password' as PasswordPath<T>,
   rules,
   describedBy,
 }: PasswordFieldProps<T>): JSX.Element {
