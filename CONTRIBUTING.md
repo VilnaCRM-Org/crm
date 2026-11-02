@@ -366,8 +366,10 @@ behaviour, so the whole flow runs locally:
 3. Open "Скинути пароль" in the e-mail. It points at
    `http://localhost:3000/password-reset?token=…`; set `PASSWORD_RESET_LINK_BASE_URL` before
    `make start` when the frontend runs elsewhere.
-4. Set a new password. The page lands on `/sign-in` with the password-changed notice. The same
-   link a second time, or any token the mock never mailed, shows the invalid-link view.
+4. Set a new password. The page lands on `/sign-in` with the password-changed notice. Open the
+   same link a second time, or use any token the mock never mailed, and submit a new password:
+   the page checks the token only when the form is submitted, so the confirm then shows the
+   invalid-link view.
 
 The dev container starts Mailpit too and forwards port 8025. The test stack
 (`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
