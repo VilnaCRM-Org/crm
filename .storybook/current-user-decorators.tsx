@@ -1,5 +1,5 @@
 import type { Decorator } from '@storybook/react-webpack5';
-import { type JSX, useEffect, useState } from 'react';
+import { type JSX, useLayoutEffect } from 'react';
 
 import type { ProtectedSessionContext } from '../src/routes/types/protected-outlet-context';
 
@@ -23,17 +23,14 @@ function currentUserAnswer(fullName: string): Response {
 
 export function withCurrentUserAnswer(fullName: string = STORY_USER.fullName): Decorator {
   return function CurrentUserAnswerDecorator(Story): JSX.Element {
-    const [original] = useState(() => {
+    useLayoutEffect(() => {
       const realFetch = globalThis.fetch;
       globalThis.fetch = async (): Promise<Response> => currentUserAnswer(fullName);
-      return realFetch;
-    });
-    useEffect(
-      () => (): void => {
-        globalThis.fetch = original;
-      },
-      [original]
-    );
+
+      return (): void => {
+        globalThis.fetch = realFetch;
+      };
+    }, []);
     return <Story />;
   };
 }

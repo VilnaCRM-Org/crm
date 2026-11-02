@@ -102,14 +102,34 @@ describe('currentUserSource over msw (integration)', () => {
     expect(useAuthStore.getState().token).toBe(token);
   });
 
-  it('reports a read its caller aborted as unavailable', async () => {
-    answerJson({ data: null });
+  it('reports an aborted read as unavailable though the user arrives later', async () => {
+    answerProfileOperation('CurrentUser', {
+      delayMs: 50,
+      respond: () =>
+        HttpResponse.json({
+          data: { users: { edges: [{ node: buildUserNode({ initials: 'Koval Anna' }) }] } },
+        }),
+    });
     const controller = new AbortController();
 
     const reading = currentUserSource.read(authSessionProvider, controller.signal);
     controller.abort();
 
     await expect(reading).resolves.toEqual({ kind: 'failed', reason: 'unavailable' });
+    expect(useAuthStore.getState().token).toBe(token);
+  });
+
+  it('keeps the session when a 401 arrives for a read its caller already aborted', async () => {
+    const controller = new AbortController();
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      controller.abort();
+      return new Response(null, { status: 401 });
+    });
+
+    await expect(currentUserSource.read(authSessionProvider, controller.signal)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'unavailable',
+    });
     expect(useAuthStore.getState().token).toBe(token);
   });
 });

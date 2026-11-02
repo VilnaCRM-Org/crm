@@ -7,7 +7,7 @@ const HEADER_CLEARANCE = parseFloat(layoutStyles.headerHeight);
 const FOLLOW_UPS = 1;
 
 function revealFocus(target: Element, followUps: number): void {
-  if (target.getBoundingClientRect().height === 0) return;
+  if (target !== document.activeElement || target.getBoundingClientRect().height === 0) return;
   target.scrollIntoView({ block: 'nearest' });
   const overlap = HEADER_CLEARANCE - target.getBoundingClientRect().top;
 

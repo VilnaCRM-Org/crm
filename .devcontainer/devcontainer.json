@@ -2,18 +2,34 @@
   "name": "crm dev container",
   "dockerComposeFile": ["../docker-compose.yml"],
   "service": "dev",
-  "runServices": ["dev", "mockoon", "apollo"],
+  "runServices": ["dev", "mockoon", "apollo", "mailpit"],
   "workspaceFolder": "/app",
   "overrideCommand": false,
   "shutdownAction": "stopCompose",
   "initializeCommand": "sh -c '[ -f .env ] || cp .env.example .env; docker network inspect crm-network >/dev/null 2>&1 || docker network create crm-network'",
   "remoteUser": "root",
-  "forwardPorts": [3000, 4000, 6006, 8080],
+  "forwardPorts": [3000, 4000, 6006, 8025, 8080],
   "portsAttributes": {
-    "3000": { "label": "RSBuild dev server", "onAutoForward": "notify" },
-    "4000": { "label": "Apollo GraphQL mock", "onAutoForward": "silent" },
-    "6006": { "label": "Storybook", "onAutoForward": "silent" },
-    "8080": { "label": "Mockoon REST mock", "onAutoForward": "silent" }
+    "3000": {
+      "label": "RSBuild dev server",
+      "onAutoForward": "notify"
+    },
+    "4000": {
+      "label": "Apollo GraphQL mock",
+      "onAutoForward": "silent"
+    },
+    "6006": {
+      "label": "Storybook",
+      "onAutoForward": "silent"
+    },
+    "8025": {
+      "label": "Mailpit inbox",
+      "onAutoForward": "silent"
+    },
+    "8080": {
+      "label": "Mockoon REST mock",
+      "onAutoForward": "silent"
+    }
   },
   "customizations": {
     "vscode": {

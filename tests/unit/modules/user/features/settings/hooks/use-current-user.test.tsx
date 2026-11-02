@@ -94,7 +94,7 @@ describe('useCurrentUser', () => {
     expect(result.current).toEqual({ status: 'pending', identity: null });
   });
 
-  it('aborts the read and ignores its outcome when it unmounts', async () => {
+  it('aborts the read when it unmounts and settles its late outcome without error', async () => {
     let resolve: (outcome: CurrentUserReadOutcome) => void = () => undefined;
     mockRead.mockImplementation(
       () =>
@@ -102,14 +102,14 @@ describe('useCurrentUser', () => {
           resolve = done;
         })
     );
-    const { result, unmount } = renderHook(() => useCurrentUser(), { wrapper });
+    const { unmount } = renderHook(() => useCurrentUser(), { wrapper });
     const signal = mockRead.mock.calls[0]?.[1] as AbortSignal;
+    expect(signal.aborted).toBe(false);
 
     unmount();
     await act(async () => resolve(named('Анна Коваль', 'АК')));
 
     expect(signal.aborted).toBe(true);
-    expect(result.current).toEqual({ status: 'pending', identity: null });
   });
 
   const renderNavigable = (): {

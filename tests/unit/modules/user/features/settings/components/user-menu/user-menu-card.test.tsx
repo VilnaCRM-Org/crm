@@ -26,9 +26,9 @@ describe('UserMenuCard', () => {
     render(<UserMenuCard layout="desktop" open={false} chip={chip} items={items} />);
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('generic', { hidden: true })[1]).not.toHaveStyle({
-      boxShadow: '0 8px 27px rgba(49, 59, 67, 0.05)',
-    });
+    const card = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
+
+    expect(getComputedStyle(card).boxShadow).toBe('');
   });
 
   it('draws the card shadow while open', () => {

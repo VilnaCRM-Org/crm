@@ -12,14 +12,18 @@ function claimants(catalogs, locales, leafKeys) {
  * directory walk, so two folders claiming one key resolve by filesystem order.
  */
 function checkKeyOwnership(catalogs, violations, { locales, leafKeys, relative }) {
-  for (const [key, dirs] of claimants(catalogs, locales, leafKeys)) {
-    if (dirs.length < 2) continue;
-    violations.push(
-      `[key-ownership] "${key}" is defined by ${dirs.length} catalogs ` +
-        `(${dirs.map(relative).join(', ')}) — ` +
-        'the merge order is filesystem-dependent, so exactly one catalog must own a key'
-    );
+  const found = new Set();
+  for (const locale of locales) {
+    for (const [key, dirs] of claimants(catalogs, [locale], leafKeys)) {
+      if (dirs.length < 2) continue;
+      found.add(
+        `[key-ownership] "${key}" is defined by ${dirs.length} catalogs ` +
+          `(${dirs.map(relative).join(', ')}) — ` +
+          'the merge order is filesystem-dependent, so exactly one catalog must own a key'
+      );
+    }
   }
+  violations.push(...found);
 }
 
 function prefixesOf(key) {

@@ -23,7 +23,7 @@ const credentials = buildCredentials();
 const BRAND_LINK = 'rgb(0, 116, 181)';
 const SHARED_RING = 'rgb(64, 65, 66)';
 const CELL_BORDER = 'rgb(128, 135, 138)';
-const ERROR_TEXT = 'rgb(198, 40, 40)';
+const ERROR_TEXT = 'rgb(214, 51, 51)';
 
 const backToMainOf = (page: Page): Locator =>
   page.getByRole('link', { name: t('buttons.back_to_main') });

@@ -32,7 +32,7 @@ The project uses Docker for all development and testing. Commands are managed vi
 ### Starting Development
 
 ```bash
-make start          # Start dev server (port 3000)
+make start          # Start dev server (port 3000), Mockoon, Apollo and Mailpit (inbox :8025)
 make start-prod     # Start the prod-parity stack (port 3001; test-harness image, see #158)
 make sh             # Open shell in dev container
 ```
@@ -605,14 +605,15 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries ten `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries eleven `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
-text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the password-recovery
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
 in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
-issue #315, and the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product owner's
-call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED` on the
-10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
+issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
+decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
+owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
+on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
 issue #276 and deleted when it closes.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
@@ -1988,7 +1989,9 @@ in-page Suspense boundary (the registration form's result chunk) reuses it inste
 loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
 surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
 paint-path components style themselves with `@emotion/styled`, never `Box` or another
-`@mui/material` import. To add a page, follow the registry ("Adding a page" below); never eagerly
+`@mui/material` import. The protected branch is off the eager path as well: `ProtectedRoute` and
+`AppLayout` load together from one `protected-layout` chunk, so the public auth and error pages
+never download them. To add a page, follow the registry ("Adding a page" below); never eagerly
 import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
@@ -2667,10 +2670,13 @@ wiring — it contains no route-array literal and no feature/module page imports
 - **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
   `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
   optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
-  one declared `shell.userMenu` (`routeValidator` rejects a second) to `routeMapper.shellSlot`,
-  which wraps it through `ShellSlotFactory`, and passes the slot plus a chunk-failure reporter to
-  `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar, mobile drawer) around the page outlet
-  (issue #362).
+  one declared `shell.userMenu` (`routeValidator` rejects a second) to
+  `protectedLayoutLoader.create`, which wraps it through `ShellSlotFactory`, and passes the slot
+  plus a chunk-failure reporter to `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar,
+  mobile drawer) around the page outlet (issue #362). `ProtectedRoute`, `AppLayout` and
+  `ShellSlotFactory` are not in the eager entrypoint: they arrive together in one
+  `protected-layout` chunk (`src/routes/protected-layout-loader.ts`, one `ChunkRetryLoader`, no
+  reload), so a public page never downloads them.
 - **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a `RouteModule` whose
   routes lazy-`load` the feature's pages (per-route code splitting preserved). The auth feature:
   `@auth/routes`. The app shell's own routes (home, the five protected coming-soon sections

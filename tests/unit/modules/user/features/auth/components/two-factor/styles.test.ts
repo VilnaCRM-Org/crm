@@ -56,7 +56,7 @@ describe('two-factor challenge styles', () => {
         '& .MuiOutlinedInput-notchedOutline': { borderColor: '#80878A' },
         '& .MuiFormHelperText-root': { marginLeft: 0, color: '#57595B' },
         '& .Mui-error ~ .MuiFormHelperText-root, & .MuiFormHelperText-root.Mui-error': {
-          color: '#C62828',
+          color: '#D63333',
         },
       },
     });

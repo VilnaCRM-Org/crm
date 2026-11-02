@@ -50,12 +50,14 @@ describe('currentUserSource', () => {
   it('sends the session token and a fresh request id', async () => {
     const token = buildToken();
     const fetchSpy = answer(userBody('Anna Koval'));
+    const previousId = correlationIdProvider.next();
 
     await currentUserSource.read(sessionWith(token), signal());
 
     const init = fetchSpy.mock.calls[0]?.[1] as RequestInit;
     expect((init.headers as Record<string, string>).authorization).toBe(`Bearer ${token}`);
     expect(sentRequestId(fetchSpy)).toBe(correlationIdProvider.currentId);
+    expect(sentRequestId(fetchSpy)).not.toBe(previousId);
     expect(correlationIdProvider.currentId).not.toBe('');
   });
 
@@ -139,6 +141,28 @@ describe('currentUserSource', () => {
       'X-Request-Id': correlationIdProvider.currentId,
     });
   });
+
+  it.each([
+    ['a 401', 401, { errors: [] }],
+    ['a server error', 503, userBody('Anna Koval')],
+  ])(
+    'neither ends the session nor captures %s answered after the caller aborted',
+    async (_name, status, body) => {
+      const controller = new AbortController();
+      jest.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        controller.abort();
+        return new Response(JSON.stringify(body), { status });
+      });
+      const session = sessionWith(buildToken());
+
+      await expect(currentUserSource.read(session, controller.signal)).resolves.toEqual({
+        kind: 'failed',
+        reason: 'unavailable',
+      });
+      expect(session.end).not.toHaveBeenCalled();
+      expect(capture).not.toHaveBeenCalled();
+    }
+  );
 
   it('captures nothing for a read its caller aborted', async () => {
     const controller = new AbortController();
