@@ -48,6 +48,23 @@ const abortedSignal = (): AbortSignal => {
 const optionsOf = (client: FakeClient, call = 0): MutateOptions =>
   client.mutate.mock.calls[call]?.[0] as MutateOptions;
 
+const expectSentOnceUncached = (
+  client: FakeClient,
+  mutation: unknown,
+  signal: AbortSignal,
+  input: Record<string, string>
+): void => {
+  expect(client.mutate).toHaveBeenCalledTimes(1);
+  const options = optionsOf(client);
+  expect(options.mutation).toBe(mutation);
+  expect(options.fetchPolicy).toBe('no-cache');
+  expect(options.context).toEqual({ fetchOptions: { signal } });
+  expect(options.variables.input).toEqual({
+    ...input,
+    clientMutationId: expect.stringMatching(UUID_V4),
+  });
+};
+
 describe('GraphQLTwoFactorSettingsRepository', () => {
   it('sends setup once with only a fresh clientMutationId, uncached', async () => {
     const { repository, client } = build();
@@ -55,12 +72,7 @@ describe('GraphQLTwoFactorSettingsRepository', () => {
 
     await expect(repository.setup(signal)).resolves.toEqual({ marker: true });
 
-    expect(client.mutate).toHaveBeenCalledTimes(1);
-    const options = optionsOf(client);
-    expect(options.mutation).toBe(SETUP);
-    expect(options.fetchPolicy).toBe('no-cache');
-    expect(options.context).toEqual({ fetchOptions: { signal } });
-    expect(options.variables.input).toEqual({ clientMutationId: expect.stringMatching(UUID_V4) });
+    expectSentOnceUncached(client, SETUP, signal, {});
   });
 
   it('sends confirm once with the dto code and a fresh clientMutationId, uncached', async () => {
@@ -70,15 +82,7 @@ describe('GraphQLTwoFactorSettingsRepository', () => {
 
     await expect(repository.confirm({ twoFactorCode }, signal)).resolves.toEqual({ marker: true });
 
-    expect(client.mutate).toHaveBeenCalledTimes(1);
-    const options = optionsOf(client);
-    expect(options.mutation).toBe(CONFIRM);
-    expect(options.fetchPolicy).toBe('no-cache');
-    expect(options.context).toEqual({ fetchOptions: { signal } });
-    expect(options.variables.input).toEqual({
-      twoFactorCode,
-      clientMutationId: expect.stringMatching(UUID_V4),
-    });
+    expectSentOnceUncached(client, CONFIRM, signal, { twoFactorCode });
   });
 
   it('sends disable once with the dto code and a fresh clientMutationId, uncached', async () => {
@@ -88,15 +92,7 @@ describe('GraphQLTwoFactorSettingsRepository', () => {
 
     await expect(repository.disable({ twoFactorCode }, signal)).resolves.toEqual({ marker: true });
 
-    expect(client.mutate).toHaveBeenCalledTimes(1);
-    const options = optionsOf(client);
-    expect(options.mutation).toBe(DISABLE);
-    expect(options.fetchPolicy).toBe('no-cache');
-    expect(options.context).toEqual({ fetchOptions: { signal } });
-    expect(options.variables.input).toEqual({
-      twoFactorCode,
-      clientMutationId: expect.stringMatching(UUID_V4),
-    });
+    expectSentOnceUncached(client, DISABLE, signal, { twoFactorCode });
   });
 
   it('sends regenerate once with only a fresh clientMutationId, uncached', async () => {
@@ -105,12 +101,7 @@ describe('GraphQLTwoFactorSettingsRepository', () => {
 
     await expect(repository.regenerate(signal)).resolves.toEqual({ marker: true });
 
-    expect(client.mutate).toHaveBeenCalledTimes(1);
-    const options = optionsOf(client);
-    expect(options.mutation).toBe(REGENERATE);
-    expect(options.fetchPolicy).toBe('no-cache');
-    expect(options.context).toEqual({ fetchOptions: { signal } });
-    expect(options.variables.input).toEqual({ clientMutationId: expect.stringMatching(UUID_V4) });
+    expectSentOnceUncached(client, REGENERATE, signal, {});
   });
 
   it('generates a different clientMutationId for every call', async () => {
