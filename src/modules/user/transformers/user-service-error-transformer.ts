@@ -23,7 +23,16 @@ export default class UserServiceErrorTransformer {
       return this.failure('aborted', null);
     }
     if (networkError) return this.fromStatus(this.statusOf(networkError));
-    return this.fromGraphQLError(graphQLErrors?.[0]);
+    return this.fromGraphQLError(this.primaryError(graphQLErrors ?? []));
+  }
+
+  private primaryError(
+    graphQLErrors: readonly GraphQLFormattedError[]
+  ): GraphQLFormattedError | undefined {
+    const tokenError = graphQLErrors.find(
+      (graphQLError) => this.violatedProperty(graphQLError.message) === 'token'
+    );
+    return tokenError ?? graphQLErrors[0];
   }
 
   private fromGraphQLError(graphQLError: GraphQLFormattedError | undefined): UserServiceFailure {
@@ -46,7 +55,12 @@ export default class UserServiceErrorTransformer {
   }
 
   private violatedProperty(message: string): string | null {
-    return VIOLATION_PROPERTIES.find((property) => message.startsWith(`${property}:`)) ?? null;
+    const violated = message
+      .split('\n')
+      .flatMap((line) =>
+        VIOLATION_PROPERTIES.filter((property) => line.startsWith(`${property}:`))
+      );
+    return violated.includes('token') ? 'token' : (violated[0] ?? null);
   }
 
   private extensionStatus(graphQLError: GraphQLFormattedError): number | null {
