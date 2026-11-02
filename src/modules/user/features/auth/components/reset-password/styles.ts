@@ -89,6 +89,7 @@ export default {
     color: customColors.text.dark,
     marginBottom: '1rem',
     overflowWrap: 'anywhere',
+    whiteSpace: 'pre-wrap',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',

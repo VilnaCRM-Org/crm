@@ -94,6 +94,7 @@ describe('reset password styles', () => {
       color: TEXT_DARK,
       marginBottom: '1rem',
       overflowWrap: 'anywhere',
+      whiteSpace: 'pre-wrap',
       '@media (min-width:480px)': {
         fontSize: '1rem',
         lineHeight: '1.625rem',
