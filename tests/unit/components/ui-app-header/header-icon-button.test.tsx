@@ -51,7 +51,7 @@ describe('HeaderIconButton', () => {
     expect(container).not.toHaveTextContent(/\d/u);
   });
 
-  it.each([null, 0, 0.5, Number.NaN, Number.POSITIVE_INFINITY])(
+  it.each([null, 0, -1, 0.5, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
     'shows no badge and no count text for %s',
     (count) => {
       const { container } = renderShell(

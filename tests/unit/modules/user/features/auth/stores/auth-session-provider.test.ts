@@ -50,4 +50,27 @@ describe('authSessionProvider', () => {
     expect(clearUser).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
   });
+
+  it('signs out unconditionally, the teardown logout shares with a rejected session', () => {
+    useAuthStore.setState({ token: buildToken(), email: buildEmail() });
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    const signOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
+
+    authSessionProvider.signOut();
+
+    expect(useAuthStore.getState()).toEqual(CLEARED_AUTH_STATE);
+    expect(clearUser).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends the session through the same sign out', () => {
+    const token = buildToken();
+    useAuthStore.setState({ token });
+    const signOut = jest.spyOn(authSessionProvider, 'signOut');
+
+    authSessionProvider.end(token);
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(signOut.mock.contexts[0]).toBe(authSessionProvider);
+  });
 });

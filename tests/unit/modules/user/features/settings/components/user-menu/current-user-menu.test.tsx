@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { waitFor } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import CurrentMenu from '@/modules/user/features/settings/components/user-menu/current-user-menu';
@@ -60,6 +60,9 @@ describe('CurrentMenu', () => {
     renderMenu(<CurrentMenu onIdentity={onIdentity} />);
 
     await waitFor(() => expect(mockRead).toHaveBeenCalled());
+    await act(async () => {
+      await mockRead.mock.results[0]?.value;
+    });
 
     expect(onIdentity).not.toHaveBeenCalledWith(expect.objectContaining({ monogram: 'ОП' }));
     expect(onIdentity).toHaveBeenLastCalledWith(null);

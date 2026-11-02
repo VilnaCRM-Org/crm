@@ -1025,8 +1025,10 @@ container-resolved class. Those inside a gated directory (`auth-store-selectors`
 `registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
 issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
-`auth-failure-monitor` leaf, and the observability
-core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) are exempt by
+`auth-failure-monitor` leaf, the observability
+core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, and the app-shell
+chip's current-user read (`auth-session-provider`, `current-user-client`, `current-user-source`,
+issue #362)) are exempt by
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is

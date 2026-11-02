@@ -36,7 +36,7 @@ describe('sidebar styles', () => {
         expanded: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, margin-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
@@ -45,7 +45,7 @@ describe('sidebar styles', () => {
         rail: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, margin-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
@@ -57,7 +57,7 @@ describe('sidebar styles', () => {
         expanded: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, margin-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
@@ -66,7 +66,7 @@ describe('sidebar styles', () => {
         rail: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, margin-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },

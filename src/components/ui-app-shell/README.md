@@ -239,7 +239,11 @@ panel (the scrim, the untinted footer, or the header outside the close button) c
 return focus to the burger. A navigation row, a sub-item, Settings, Sign out or any route change
 close it without restoring the burger, so the destination's `<main>` keeps the focus
 `useArrivalFocus` gave it; widening the viewport unmounts the drawer and focuses
-`main[tabindex="-1"]`. Sign out closes the drawer and runs `signOut` once.
+`main[tabindex="-1"]`. MUI enforces the trap while the drawer is open, so focus moved to the page
+behind it by script returns to the dialog. `MobileNavigation` renders the drawer before the burger
+for that reason: on unmount React detaches the drawer's trap root first, so the burger's detach can
+move focus to `main` without the trap pulling it back into a dialog that is being removed. Sign out
+closes the drawer and runs `signOut` once.
 
 ### Measured against Figma (drawer, 375 wide)
 

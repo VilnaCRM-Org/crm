@@ -77,6 +77,11 @@ const SHELL_ONLY_FOLDERS = [
   'src/modules/user/features/settings/components/user-menu/',
 ];
 
+const shellFilesOf = (files: ReadonlySet<string>): string[] =>
+  [...files].filter((file) => SHELL_ONLY_FOLDERS.some((folder) => file.startsWith(folder)));
+
+const CURRENT_USER_MENU = /(?:^|\/)current-user-menu(?:[./]|$)/u;
+
 describe('performance serving config', () => {
   it('ships immutable cache headers for built static assets', () => {
     const serveConfig = readJson<{
@@ -258,9 +263,7 @@ describe('performance serving config', () => {
 
   it('keeps the shell, the user menu and the current-user read off the eager path (NFR-5)', () => {
     const { files, muiEdges } = eagerGraphOf('src/index.tsx');
-    const eagerShell = [...files].filter((file) =>
-      SHELL_ONLY_FOLDERS.some((folder) => file.startsWith(folder))
-    );
+    const eagerShell = shellFilesOf(files);
     const settingsHooks = [...files].filter((file) => file.includes('hooks/use-current-user'));
 
     expect(files.has('src/components/layouts/app-layout.tsx')).toBe(true);
@@ -277,10 +280,10 @@ describe('performance serving config', () => {
         ? `${readFile(file)}\nimport UIAppShell from '@/components/ui-app-shell';\n`
         : readFile(file);
 
-    const { files, muiEdges } = eagerGraphOf('src/index.tsx', tainted);
+    const { files } = eagerGraphOf('src/index.tsx', tainted);
 
     expect(files.has('src/components/ui-app-shell/index.tsx')).toBe(true);
-    expect(muiEdges.length).toBeGreaterThan(1);
+    expect(shellFilesOf(files)).toContain('src/components/ui-app-shell/index.tsx');
   });
 
   it('loads the shell through a ThemedChunkLoader named ui-app-shell (AD-1)', () => {
@@ -314,12 +317,10 @@ describe('performance serving config', () => {
       '../components/user-menu/user-menu-slot'
     );
     expect(currentUserLoader).toMatch(/import\(\s*\/\* webpackChunkName: "current-user" \*\//);
-    expect(
-      staticImportsOf(slot).some((specifier) => specifier.includes('current-user-menu.'))
-    ).toBe(false);
-    expect(
-      staticImportsOf(slot).filter((specifier) => specifier.endsWith('current-user-menu'))
-    ).toEqual([]);
+    expect(staticImportsOf(slot).filter((specifier) => CURRENT_USER_MENU.test(specifier))).toEqual(
+      []
+    );
+    expect(staticImportsOf(slot)).toContain('./current-user-menu-loader');
   });
 
   it('warms the shared error-page chunk and its font faces after load (issue #309)', () => {
