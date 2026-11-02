@@ -222,7 +222,8 @@ Stages 5 and 6 and all correction passes ran on Opus.
   colour, pill vs plain link, the resend countdown.
 - Product owner: the 60 % completion hypothesis, keeping the lowercase rule, Lighthouse mobile 85
   in the profile vs the 0.84 CI assertion.
-- Coordinate merge order with PR #311 (ADR index, a11y allowlist prose).
+- Coordinate merge order with PR #311 (ADR index, a11y allowlist prose). Resolved: #311 merged
+  on 2026-10-12 and this branch carries `main` after it.
 - Ralph dispatches stories in file order and ignores `Depends on`; the epics keep every dependency
   pointing backwards in file order.
 - Mock drift: the extension mirrors user-service `main` as of `f82bbef5`; the pin bump
