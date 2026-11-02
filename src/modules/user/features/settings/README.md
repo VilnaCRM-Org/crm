@@ -41,7 +41,9 @@ Imported from #315 (password recovery), not copied:
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
 - `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
   name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
-- `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session.
+- `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session. No
+  settings file imports it: the user module's composition root (`src/modules/user/config/di.ts`)
+  puts its link on the Apollo client the settings repositories receive by injection.
 
 Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
 
@@ -202,8 +204,9 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 Where the frames contradict each other or the copy, the page follows one reading:
 
 - **Card top (F-02).** Desktop follows `313:10242`: 12 px between the subtitle and the card.
-- **Tablet pills.** The frame draws 339 + 8 + 339 px in a 685 px content box; the pills are
-  339 and 338 px so both edges sit on whole pixels.
+- **Tablet pills.** The frame draws two 339 px pills and an 8 px gap, 686 px, in a 685 px content
+  box; the pills are 339 and 338 px, so 339 + 8 + 338 fills the 685 px box and both edges sit on
+  whole pixels.
 - **Labels.** The Ukrainian labels can wrap in the label column, so a label is as tall as its
   input and centres its text on it, also when a field error grows the row.
 - **Toasts (T13, T15).** One layout from the desktop and phone frames, bottom-right 12 px from
