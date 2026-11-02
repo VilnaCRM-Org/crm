@@ -15,7 +15,11 @@ function useTokenParamStrip(): void {
   const stripped = useRef(false);
 
   useLayoutEffect(() => {
-    if (stripped.current || !new URLSearchParams(search).has(TOKEN_PARAM)) return;
+    if (!new URLSearchParams(search).has(TOKEN_PARAM)) {
+      stripped.current = false;
+      return;
+    }
+    if (stripped.current) return;
     stripped.current = true;
     navigate(pathname, { replace: true });
   }, [navigate, pathname, search]);
