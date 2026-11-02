@@ -129,7 +129,7 @@ and the session link reads and resets `useAuthStore` without a Repository → St
 ## Data provider outcomes
 
 `ProfileProvider` never throws and never leaks a status, a server message or a generated type.
-Its collaborators are the Repository, the Transformer and `ObservabilityService`: a failure that
+Its collaborators are the Repository, the Transformer and `UnseenFailureReporter`: a failure that
 never reached the link (a programming error) is captured once, as #315's recovery flow does,
 before it becomes `failed: rejected`.
 
