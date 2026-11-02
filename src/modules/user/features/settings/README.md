@@ -31,8 +31,8 @@ error. The decisions are recorded in `## User Settings decisions` of the
   before `usePageTitle('settings.title')` runs. The catalog is listed in
   `config/i18n-catalog-policy.json`, so the merged `localization.json` holds no `settings.*` key.
 - The page imports nothing from the auth feature: shared form pieces live in `src/components` and
-  `src/modules/user/lib`. `tests/unit/tooling/settings-layer-edges.test.ts` pins the layer edges
-  below.
+  `src/modules/user/lib`. `tests/unit/tooling/settings-layer-edges.test.ts` pins that no settings
+  source file imports `@auth` or `src/modules/user/features/auth`, and the layer edges below.
 
 ## Shared pieces
 
