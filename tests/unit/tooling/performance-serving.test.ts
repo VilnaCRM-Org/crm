@@ -583,8 +583,9 @@ describe('performance serving config', () => {
       (merged.en?.translation.sign_in as { notices: Record<string, string> }).notices
         .two_factor_expired
     ).toBe('The time to confirm your sign-in has run out. Please sign in again.');
+    expect(files.has('src/routes/protected-layout-loader.ts')).toBe(true);
     expect(files.has('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toBe(
-      true
+      false
     );
     expect([...files].filter((file) => lazyOnly.some((folder) => file.startsWith(folder)))).toEqual(
       []
