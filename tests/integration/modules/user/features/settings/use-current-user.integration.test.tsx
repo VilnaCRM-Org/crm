@@ -17,6 +17,8 @@ import server from '../../../../mocks/server';
 const context: ProtectedSessionContext = {
   signOut: () => undefined,
   session: authSessionProvider,
+  twoFactorStatus: 'unknown',
+  setTwoFactorStatus: () => undefined,
 };
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
