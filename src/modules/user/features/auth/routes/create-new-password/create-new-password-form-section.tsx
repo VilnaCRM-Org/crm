@@ -16,17 +16,19 @@ export default function CreateNewPasswordFormSection(): JSX.Element {
   const token = useResetToken(state.view !== 'invalid');
 
   return (
-    <AuthCard>
-      <CardBackControl to={ROUTE_PATHS.signIn} />
+    <AuthCard variant="recovery">
       {token === null || state.view === 'invalid' ? (
-        <RecoveryResultView
-          title={t('password_reset.invalid.title')}
-          body={t('password_reset.invalid.body')}
-          action={{
-            label: t('password_reset.invalid.request_new'),
-            to: ROUTE_PATHS.passwordRecovery,
-          }}
-        />
+        <>
+          <CardBackControl to={ROUTE_PATHS.signIn} />
+          <RecoveryResultView
+            title={t('password_reset.invalid.title')}
+            body={t('password_reset.invalid.body')}
+            action={{
+              label: t('password_reset.invalid.request_new'),
+              to: ROUTE_PATHS.passwordRecovery,
+            }}
+          />
+        </>
       ) : (
         <CreateNewPasswordForm
           token={token}

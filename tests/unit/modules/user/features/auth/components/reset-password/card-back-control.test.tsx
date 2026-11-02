@@ -33,7 +33,7 @@ describe('CardBackControl', () => {
 
     const link = screen.getByRole('link', { name: 'Назад' });
     expect(link).toHaveAttribute('href', '/sign-in');
-    expect(link).toHaveStyle({ minHeight: '1.5rem', color: 'rgb(64, 65, 66)' });
+    expect(link).toHaveStyle({ minHeight: '1.5rem', color: 'rgb(150, 155, 157)' });
     expect(link).toHaveStyle({ fontSize: '0.9375rem', fontWeight: '500', lineHeight: '1.125rem' });
     expect(screen.getByRole('link', { name: 'Назад' })).toContainHTML('aria-hidden="true"');
   });
@@ -43,7 +43,7 @@ describe('CardBackControl', () => {
 
     const visited = styleRuleFor(screen.getByRole('link', { name: 'Назад' }), ':visited');
 
-    expect(visited?.getPropertyValue('color')).toBe('#404142');
+    expect(visited?.getPropertyValue('color')).toBe('#969B9D');
   });
 
   it('renders a native button in button mode and calls onClick on Enter and Space', async () => {
@@ -52,7 +52,7 @@ describe('CardBackControl', () => {
     const button = screen.getByRole('button', { name: 'Назад' });
 
     expect(button).toHaveAttribute('type', 'button');
-    expect(button).toHaveStyle({ minHeight: '1.5rem', color: 'rgb(64, 65, 66)' });
+    expect(button).toHaveStyle({ minHeight: '1.5rem', color: 'rgb(150, 155, 157)' });
     await userEvent.tab();
     await userEvent.keyboard('{Enter}');
     await userEvent.keyboard(' ');

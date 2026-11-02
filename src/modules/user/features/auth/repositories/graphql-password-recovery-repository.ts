@@ -14,7 +14,6 @@ import type {
   RequestPasswordResetMutation,
   RequestPasswordResetMutationVariables,
 } from '@/api/generated/graphql';
-import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { CreateNewPasswordDto } from '@/modules/user/types/user/create-new-password-dto';
 import type { RestorePasswordDto } from '@/modules/user/types/user/restore-password-dto';
@@ -30,14 +29,11 @@ export default class GraphQLPasswordRecoveryRepository {
   constructor(
     @inject(AUTH_TOKENS.ApolloClient)
     private readonly apolloClient: ApolloClient<NormalizedCacheObject>,
-    @inject(AUTH_TOKENS.SandboxDemoSessionProvider)
-    private readonly sandboxDemo: SandboxDemoSessionProvider,
     @inject(OBSERVABILITY_TOKENS.ObservabilityService)
     private readonly observability: ObservabilityService
   ) {}
 
   public async requestReset(dto: RestorePasswordDto, signal: AbortSignal): Promise<void> {
-    if (!signal.aborted && this.sandboxDemo.resetTokenFor(dto.email) !== null) return;
     const variables: RequestPasswordResetMutationVariables = {
       input: { email: dto.email, clientMutationId: uuidv4() },
     };
@@ -53,7 +49,6 @@ export default class GraphQLPasswordRecoveryRepository {
   }
 
   public async confirmReset(dto: CreateNewPasswordDto, signal: AbortSignal): Promise<void> {
-    if (!signal.aborted && this.sandboxDemo.acceptsResetToken(dto.token)) return;
     const variables: ConfirmPasswordResetMutationVariables = {
       input: { token: dto.token, newPassword: dto.newPassword, clientMutationId: uuidv4() },
     };

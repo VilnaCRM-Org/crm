@@ -212,6 +212,18 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     expect(jsonOf(rulesFor(HOOK_TS)['no-restricted-syntax'])).not.toContain('AppService');
   });
 
+  it.each([LOCALE_FORMATTER_TS, ENV_TS, RESTRICTED_ADAPTER_TS])(
+    'keeps the class-naming gate (issue #129) on %s, whose block re-lists the #100 gate',
+    (file) => {
+      const nrs = anyRulesFor(file)['no-restricted-syntax'];
+      expect(severityOf(nrs)).toBe(2);
+      expect(jsonOf(nrs)).toContain('ClassDeclaration:not([id.name])');
+      expect(jsonOf(nrs)).toContain(
+        'ClassDeclaration[id.name=/^(?:Service|AppService|MyService)$/]'
+      );
+    }
+  );
+
   it('keeps the type-only-file purity gate (issue #88) at error on files under types/', () => {
     const nrs = rulesFor(TYPE_ONLY_TS)['no-restricted-syntax'];
     expect(severityOf(nrs)).toBe(2);

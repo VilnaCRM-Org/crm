@@ -3,6 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { profileResolvers } from './profile-resolvers';
 import {
+  issueResetToken,
+  redeemResetToken,
+  resetMailConfig,
+  revokeResetToken,
+  sendResetMail,
+} from './password-reset-mail';
+import {
   ConfirmPasswordResetInput,
   CreateUserInput,
   PasswordResetPayload,
@@ -58,6 +65,24 @@ function rejectIfExists<K, V>(
 
 const users = new Map<string, User>();
 
+const DEMO_EMAIL = 'demo@vilnacrm.com';
+
+const mailResetLink = async (email: string): Promise<void> => {
+  const config = resetMailConfig();
+  if (config === null) return;
+  if (email !== DEMO_EMAIL && !users.has(email)) {
+    console.info('No user for the requested address; no password reset e-mail sent.');
+    return;
+  }
+  const token = issueResetToken(email);
+  try {
+    await sendResetMail(config, email, token);
+  } catch (error) {
+    revokeResetToken(token);
+    console.error('Failed to send the password reset e-mail:', error);
+  }
+};
+
 export function clearUsers(): void {
   users.clear();
 }
@@ -98,6 +123,7 @@ export const resolvers = {
       if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
+      await mailResetLink(input.email);
       return passwordResetPayload(input.clientMutationId);
     },
     confirmPasswordResetUser: async (
@@ -113,6 +139,7 @@ export const resolvers = {
           'Password must be 8 to 64 characters long and contain a number and an uppercase letter.'
         );
       }
+      if (resetMailConfig() !== null) redeemResetToken(input.token);
       return passwordResetPayload(input.clientMutationId);
     },
     ...profileResolvers.Mutation,

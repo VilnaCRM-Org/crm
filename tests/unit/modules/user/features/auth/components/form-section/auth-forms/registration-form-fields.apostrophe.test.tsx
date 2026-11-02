@@ -40,11 +40,10 @@ describe('RegistrationFormFields with a typographic apostrophe in the name', () 
         screen.getByRole('textbox', { name: 'sign_up.form.name_input.label' }),
         fullName
       );
-      await userEvent.type(screen.getByLabelText('sign_up.form.email_input.label'), email);
-      await userEvent.type(
-        screen.getByLabelText('sign_up.form.password_input.label'),
-        'Password123'
-      );
+      await userEvent.click(screen.getByLabelText('sign_up.form.email_input.label'));
+      await userEvent.paste(email);
+      await userEvent.click(screen.getByLabelText('sign_up.form.password_input.label'));
+      await userEvent.paste('Password123');
       await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
 
       await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
