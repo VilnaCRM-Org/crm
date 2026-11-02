@@ -248,9 +248,11 @@ and typed classes/interfaces and update the architecture diagrams, check that yo
 strictly follows the Miro board architecture. Because we haven't mentioned any services and
 controllers in architecture as I remember".
 
-**Evidence.** The board was re-captured on 2026-10-08 with a local headless Chrome (the browser
-MCP servers were locked by another session); screenshots and the extraction live in
-`crm-worktrees/_planning-shared/` (`miro-layer-contract.md`, `miro/*.png`). Findings:
+**Evidence.** The board was re-read on 2026-10-08 with a local headless Chrome (the browser MCP
+servers were locked by another session). The source of record is the board itself,
+<https://miro.com/app/board/uXjVMG64hTs=/>, which anyone with team access can re-check against
+the findings below; the captures and extraction made that day were working notes and are not
+committed, because the board covers internal architecture beyond this feature. Findings:
 
 - The frontend frames use only `[React component]` / `[component]<route>`, React hook,
   `[Data provider]`, `[Transformer]`, `[Repository]`, `Mutation [GraphQL]`, `State`,
