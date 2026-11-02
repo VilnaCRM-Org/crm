@@ -16,6 +16,9 @@ async function runOnce<TInput, TOutcome>(
   try {
     const outcome = await attempt.run(attempt.input, controller.signal);
     return controller.signal.aborted ? null : outcome;
+  } catch (error) {
+    if (controller.signal.aborted) return null;
+    throw error;
   } finally {
     inFlight.current = null;
     setSubmitting(false);
