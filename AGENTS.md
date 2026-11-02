@@ -1756,7 +1756,9 @@ build goes red. Know them before you touch a config file:
   archive. Alpine has no snapshot archive, so its `apk` pins are re-pinned when they break.
 - **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
   land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
-  bidirectional and has no exemption list, so a new rule cannot ship untested.
+  bidirectional and has no exemption list, so a new rule cannot ship untested. A fixture may also
+  carry `variants`, one extra must-fail tree per path alternative a rule adds; each variant must
+  fire its rule and nothing else, so dropping that alternative from the regex fails the guard.
 
 ## Security Considerations
 
