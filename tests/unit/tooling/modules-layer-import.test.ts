@@ -13,6 +13,10 @@ describe('modulesLayerImport (issue #362)', () => {
         "     webpackPrefetch: true */\n  '@auth/stores'\n)",
     ],
     ["import(\n  // the user menu\n  '@/modules/user'\n)"],
+    ["import /* side effect */ '@/modules/user/features/settings/i18n';"],
+    ["import UserMenu from /* the menu */ '@/modules/user';"],
+    ["export { default } from // the menu\n  '@auth';"],
+    ["import /* lazy */ ('@/modules/user')"],
   ])('catches %s', (source) => {
     expect(source).toMatch(modulesLayerImport);
   });
@@ -24,4 +28,15 @@ describe('modulesLayerImport (issue #362)', () => {
   ])('leaves %s alone', (source) => {
     expect(source).not.toMatch(modulesLayerImport);
   });
+
+  it.each([['//x '], ['/*x*/ '], ['/* x */\n']])(
+    'rejects a long run of %j comments with no specifier in linear time',
+    (comment) => {
+      const source = `import ${comment.repeat(40)}`;
+      const start = performance.now();
+
+      expect(source).not.toMatch(modulesLayerImport);
+      expect(performance.now() - start).toBeLessThan(250);
+    }
+  );
 });
