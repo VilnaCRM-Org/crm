@@ -10,7 +10,10 @@ class AuthSessionProvider implements ProtectedSession {
   }
 
   public end(token: string): void {
-    if (token !== this.token()) return;
+    if (token === this.token()) this.signOut();
+  }
+
+  public signOut(): void {
     observabilityCore.clearUser();
     sandboxDemoSessionProvider.signOut();
     useAuthStore.setState(CLEARED_AUTH_STATE);

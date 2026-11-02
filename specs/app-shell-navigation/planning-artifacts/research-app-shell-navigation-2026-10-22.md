@@ -63,7 +63,7 @@ every control without one says so.
   the mobile drawer, current-route semantics, `AppLayout` wiring, removing the settings page's
   "centre the lone card" rule, and cleaning up home's duplicate controls (B4.7).
 - **Not in scope:** any backend for search, notifications or tasks; the notification, task and
-  search-result popovers (designed, see §3.6, but no data exists); RBAC filtering of menu items
+  search-result popovers (designed, see §4.5, but no data exists); RBAC filtering of menu items
   (issue #114); avatar photos (issue #361, user-service #519).
 - **Reuse, do not contradict:** `specs/enterprise-app-shell/` (issue #104 left navigation out of
   scope on purpose) and `specs/user-settings/` (whose D3 named this work as the follow-up).
@@ -649,8 +649,10 @@ p.MuiTypography-root` would also match any MUI link the shell puts in a `<footer
 | `error-pages*.spec.ts`, `not-found.spec.ts`, `a11y/error-pages-*`                                            | public routes; must **not** show the shell (leak guard)                                                                   |
 | new specs                                                                                                    | sidebar and chip navigation to Settings, sign out from both, drawer open/close by keyboard at 375, current-item semantics |
 
-`tests/e2e/route-coverage.tsv`: no route key changes; the `details` text of the `home`,
-`settings` (`settings-save`) and `home-keyboard` rows goes stale if home's controls are removed.
+`tests/e2e/route-coverage.tsv`: no route key changes as researched; OQ-1, resolved afterwards to
+coming-soon routes (PRD FR-18), adds eight route keys, each needing its manifest rows. The
+`details` text of the `home`, `settings` (`settings-save`) and `home-keyboard` rows goes stale if
+home's controls are removed.
 
 ### 10.4 Visual baselines (`tests/visual`)
 

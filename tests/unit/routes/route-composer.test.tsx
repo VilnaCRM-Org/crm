@@ -2,21 +2,45 @@ import { type ComponentType, isValidElement, type ReactElement } from 'react';
 import type { ClientOnErrorFunction, RouteObject } from 'react-router';
 
 import RouteError from '@/components/error-boundary/route-error';
-import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
 import featureFlagService from '@/config/runtime/feature-flag-service';
+import protectedLayoutLoader from '@/routes/protected-layout-loader';
 import registry from '@/routes/registry';
 import routeComposer from '@/routes/route-composer';
 import RouteFlagGate from '@/routes/route-flag-gate';
 import routeMapper from '@/routes/route-mapper';
 import ROUTE_PATHS from '@/routes/route-paths';
+import type { ProtectedLayout, ProtectedShell } from '@/routes/types/protected-layout';
 import type { RouteModule } from '@/routes/types/route-module';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
-import ProtectedRoute from '@auth/components/protected-route';
 import { buildToken } from '@tests/builders';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 type ErrorInfoArg = Parameters<ClientOnErrorFunction>[1];
+
+function ProtectedRoute(): null {
+  return null;
+}
+
+function AppLayout(): null {
+  return null;
+}
+
+function UserMenuSlot(): null {
+  return null;
+}
+
+const stubLayout = ({ userMenu }: ProtectedShell): ProtectedLayout => ({
+  ProtectedRoute,
+  AppLayout,
+  ...(userMenu === undefined ? {} : { userMenu: UserMenuSlot }),
+});
+
+let createLayout: jest.SpyInstance<ProtectedLayout, [ProtectedShell]>;
+
+beforeEach(() => {
+  createLayout = jest.spyOn(protectedLayoutLoader, 'create').mockImplementation(stubLayout);
+});
 
 const page = (): Promise<{ default: ComponentType }> =>
   Promise.resolve({ default: (): null => null });
@@ -88,11 +112,35 @@ describe('route composer', () => {
     expect(layout.children?.some((route) => route.index)).toBe(true);
   });
 
-  it('hands AppLayout the mapper slot and the app-shell:load reporter (OQ-17)', () => {
-    const slot = (): null => null;
+  it('takes the guard and the layout from one protected-layout loader call', () => {
+    routeComposer.compose(registry);
+
+    expect(createLayout).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds the guard and the layout lazily, never as the components themselves', () => {
+    createLayout.mockRestore();
+    const create = jest.spyOn(protectedLayoutLoader, 'create');
+    const lazyType = Symbol.for('react.lazy');
+
+    const level = levelOf(routeComposer.compose(registry).items);
+    const built = create.mock.results[0]?.value as ProtectedLayout;
+    const guard = level.find((route) => typeOf(route) === built.ProtectedRoute);
+    const layout = guard?.children?.[0];
+    const guardType = (guard && typeOf(guard)) as { $$typeof?: symbol };
+    const layoutType = (layout && typeOf(layout)) as { $$typeof?: symbol };
+
+    expect(layoutType).toBe(built.AppLayout);
+    expect(guardType.$$typeof).toBe(lazyType);
+    expect(layoutType.$$typeof).toBe(lazyType);
+    expect(guardType).not.toBe(layoutType);
+  });
+
+  it('hands AppLayout the loader-built slot and the app-shell:load reporter (OQ-17)', () => {
     const reporter = jest.fn();
-    const shellSlot = jest.spyOn(routeMapper, 'shellSlot').mockReturnValue(slot);
+    const slotReporter = jest.fn();
     const reporterFor = jest.spyOn(routeMapper, 'chunkFailureReporter').mockReturnValue(reporter);
+    jest.spyOn(routeMapper, 'slotFailureReporter').mockReturnValue(slotReporter);
 
     const tree = routeComposer.compose(registry).items;
     const { layout } = protectedBranchOf(tree);
@@ -101,12 +149,12 @@ describe('route composer', () => {
       onShellFailure: unknown;
     }>;
 
-    expect(shellSlot).toHaveBeenCalledTimes(1);
-    expect(shellSlot).toHaveBeenCalledWith(
-      registry.items.find((module) => module.id === 'user.settings')?.shell?.userMenu
-    );
+    expect(createLayout).toHaveBeenCalledWith({
+      userMenu: registry.items.find((module) => module.id === 'user.settings')?.shell?.userMenu,
+      report: slotReporter,
+    });
     expect(reporterFor).toHaveBeenCalledWith('app-shell:load');
-    expect(props.userMenu).toBe(slot);
+    expect(props.userMenu).toBe(UserMenuSlot);
     expect(props.onShellFailure).toBe(reporter);
   });
 
@@ -122,13 +170,15 @@ describe('route composer', () => {
     const modules: RouteModule[] = [
       ...registry.items.filter((module) => module.id !== 'user.settings'),
     ];
-    const shellSlot = jest.spyOn(routeMapper, 'shellSlot');
 
     const tree = routeComposer.compose({ items: modules }).items;
     const { layout } = protectedBranchOf(tree);
     const { props } = layout.element as ReactElement<{ userMenu: unknown }>;
 
-    expect(shellSlot).not.toHaveBeenCalled();
+    expect(createLayout).toHaveBeenCalledWith({
+      userMenu: undefined,
+      report: expect.any(Function) as unknown,
+    });
     expect(props.userMenu).toBeUndefined();
   });
 
@@ -211,6 +261,7 @@ describe('route composer', () => {
     const tree = routeComposer.compose({ items: modules }).items;
 
     expect(levelOf(tree).some(isGuard)).toBe(false);
+    expect(createLayout).not.toHaveBeenCalled();
   });
 
   it('composes a module that declares no routes into a childless root (edge: empty module)', () => {

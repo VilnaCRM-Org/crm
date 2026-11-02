@@ -102,7 +102,7 @@ describe('RecoveryCodeField', () => {
 
     const error = await screen.findByText('Введіть резервний код у форматі XXXX-XXXX');
 
-    expect(error).toHaveStyle({ color: 'rgb(198, 40, 40)' });
+    expect(error).toHaveStyle({ color: 'rgb(214, 51, 51)' });
   });
 
   it('clears the error text when the hook error goes away', async () => {

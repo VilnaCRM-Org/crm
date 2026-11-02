@@ -42,6 +42,7 @@ class CurrentUserSource {
     if (parsed.kind === 'ok') {
       return { kind: 'ok', identity: this.displayNames.fromFullName(parsed.fullName) };
     }
+    if (attempt.signal.aborted) return UNAVAILABLE;
     this.capture(parsed.error, attempt.requestId);
     if (parsed.reason === 'unauthorized') attempt.session.end(attempt.token);
 

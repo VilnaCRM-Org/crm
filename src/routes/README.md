@@ -96,10 +96,12 @@ A module may put one piece of its UI into the app shell without the shell import
 `RouteModule.shell` is an optional `RouteModuleShell`; today it carries `userMenu`, a loader of a
 component that takes `signOut`, an `onChunkFailure` callback and an `onAvatar` callback
 (`ShellSlotProps`). The settings contract declares it
-(`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and hands
-`AppLayout` `routeMapper.shellSlot(load)`, a lazy component wrapped like a page chunk (one
-re-import, the MUI theme shell loaded in parallel). `RouteValidator` rejects a registry in which
-two modules declare `shell.userMenu`.
+(`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and passes
+the loader to `protectedLayoutLoader.create`, which hands `AppLayout` a slot built by the
+`ShellSlotFactory` in the `protected-layout` chunk: a lazy component wrapped like a page chunk (one
+re-import, the MUI theme shell loaded in parallel), reporting through
+`routeMapper.slotFailureReporter()`. `RouteValidator` rejects a registry in which two modules
+declare `shell.userMenu`.
 
 - **The avatar copy (`onAvatar`):** the host (`UIAppShell`) renders the slot with
   `ShellSlotHostProps` — `signOut` plus `onAvatar`, its own state setter — and the factory passes
@@ -123,7 +125,8 @@ two modules declare `shell.userMenu`.
 - **The current-user chunk** carries only the identity source: the slot keeps one menu mounted
   and the chunk reports the identity it reads, so the chip keeps focus and an open menu when it
   arrives (see `src/modules/user/features/settings/README.md`). Its failure is reported through
-  the `onChunkFailure` callback the mapper binds (`source: 'app-shell:current-user'`); the shell
+  the `onChunkFailure` callback from `routeMapper.slotFailureReporter()`
+  (`source: 'app-shell:current-user'`); the shell
   chunk's reporter, `routeMapper.chunkFailureReporter('app-shell:load')`, is passed by
   `RouteComposer` to `AppLayout` as `onShellFailure`, and `AppLayout` only forwards it.
 - **Why the mapper captures:** a component under `src/components/` must not import
@@ -159,6 +162,17 @@ applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
+Neither `ProtectedRoute` nor `AppLayout` is in the eager entrypoint, so a public page downloads
+neither. `protectedLayoutLoader` (`src/routes/protected-layout-loader.ts`) gives the composer two
+`React.lazy` components, one per element, that share one `ChunkRetryLoader` around a single
+`import(/* webpackChunkName: "protected-layout" */ './protected-layout')`; that module re-exports
+the guard, the layout and `ShellSlotFactory`, so a protected page waits for one request, not a
+guard-then-layout waterfall. While it loads, `RootLayout`'s deferred `RouteFallback` shows, and a
+signed-out visit redirects to `/sign-in` once the guard has arrived. Like a protected page chunk,
+the chunk is retried once and never reloads the document: a second failure reaches the guard
+route's `errorElement` and is reported through `onRouteError`. `performance-serving.test.ts`
+fails when the eager graph reaches either component or a file only they import.
+
 `AppLayout` is the shell chrome of every protected page (issues #106, #362). It hands
 `appShellLoader` to `AppLayoutFrame`, a CSS grid frame that renders, in order, the lazy
 `UIAppShell` (header, sidebar from 1024 px or mobile drawer below it, built by `useAppShell` from
@@ -172,8 +186,8 @@ and is reported through the `onShellFailure` callback the composer passes beside
 control that receives keyboard focus is never scrolled under the header (WCAG 2.4.11), the top
 counterpart of the toast stack's `scroll-padding-bottom`. The footer is loaded lazily behind its
 own `<Suspense>`,
-because `AppLayout` is in the eager entrypoint and a static footer import would spend the remaining
-raw entrypoint budget. Its fallback is an empty, `aria-hidden` box that only holds the footer's
+so the footer and its theme stay out of the `protected-layout` chunk the page waits for. Its
+fallback is an empty, `aria-hidden` box that only holds the footer's
 height: the page is already usable, so the chrome shows no loader and announces nothing while its
 chunk loads. The chunk comes through a `ChunkRetryLoader`
 (`src/components/layouts/footer-loader.ts`, issue #147), and a load that still fails resolves to an
