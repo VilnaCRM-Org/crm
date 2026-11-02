@@ -177,8 +177,12 @@ generated documents, `RequestPasswordReset` and `ConfirmPasswordReset`, each sel
 request sends an e-mail and a confirm consumes a token, so a retry is user-initiated only. Both
 methods resolve `void` whatever the payload. No failure is silenced: the link's error link reports
 every network and GraphQL error it sees, and the repository reports a rejection that never reached
-the link (a client-side bug, not an abort) through the injected `ObservabilityService` with the
-source `auth:password-recovery`, then rethrows it for the Data provider to classify.
+the link (a client-side bug, not an abort) through the injected `UnseenFailureReporter` with the
+source `auth:password-recovery`, then rethrows it for the Data provider to classify. That reporter
+(`OBSERVABILITY_TOKENS.UnseenFailureReporter`) owns the one "never reached the link" check both
+this repository and `ProfileProvider` use: an `Error` carrying a network error or a non-empty
+GraphQL error list was already reported by the link; anything else, including a non-`Error`
+rejection, is captured once.
 
 **Rejected.** REST transport (the user-service contract for these steps is GraphQL); the
 default cache policy (it writes the token and password under `ROOT_MUTATION`); a transport retry
@@ -415,7 +419,7 @@ belong to the recovery flow above. The settings page is the board's
 **Decision.** A `UserProfile` route renders the `UserProfileSettings` and `ChangePassword`
 components, which run React hooks over `useAbortableSubmit`. The `ProfileProvider` Data provider
 is the translation boundary: it takes three injected collaborators (the Repository, the
-Transformer and `ObservabilityService`), hands every result and every rejection to
+Transformer and `UnseenFailureReporter`), hands every result and every rejection to
 `GraphQLProfileTransformer`, which composes #315's `UserServiceErrorTransformer`, calls
 `GraphQLProfileRepository`, and captures a failure that never reached the link, as #315's
 recovery flow does. Every value that crosses a layer carries a named type (TB-1), and the

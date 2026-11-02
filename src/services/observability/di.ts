@@ -11,6 +11,7 @@ import observabilityCore from './observability-core';
 import ObservabilityService from './observability-service';
 import sessionCorrelation from './session-correlation';
 import OBSERVABILITY_TOKENS from './tokens';
+import UnseenFailureReporter from './unseen-failure-reporter';
 
 class ObservabilityRegistrar implements ModuleRegistrar {
   public register(container: DependencyContainer): void {
@@ -24,6 +25,7 @@ class ObservabilityRegistrar implements ModuleRegistrar {
       }),
     });
     container.registerSingleton(OBSERVABILITY_TOKENS.ApolloLinkFactory, ApolloLinkFactory);
+    container.registerSingleton(OBSERVABILITY_TOKENS.UnseenFailureReporter, UnseenFailureReporter);
     this.registerRenderPathSingletons(container);
   }
 

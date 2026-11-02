@@ -132,6 +132,17 @@ const toolkitGroupFor = (file: string): string[] => {
 const groupsFor = (file: string): string[] =>
   restrictedImportsFor(file).patterns.flatMap(({ group }) => group);
 
+const classNamingPolicy = require('../../../config/class-naming-policy.js') as {
+  classNamingSelectors: () => { selector: string; message: string }[];
+};
+
+const CLASS_NAMING_MESSAGES = [
+  'Unnamed class',
+  'Vague class name',
+  'Domain-less Service',
+  'Class name lacks an approved pattern suffix',
+];
+
 const ROUTE_COMPOSER_TSX = 'src/routes/route-composer.tsx';
 const LOCALE_FORMATTER_TS = 'src/services/locale-formatter/locale-formatter-core.ts';
 const ENV_TS = 'src/config/env/raw-env.ts';
@@ -213,14 +224,16 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
   });
 
   it.each([LOCALE_FORMATTER_TS, ENV_TS, RESTRICTED_ADAPTER_TS])(
-    'keeps the class-naming gate (issue #129) on %s, whose block re-lists the #100 gate',
+    'keeps all four class-naming selectors (issue #129) on %s, whose block re-lists the #100 gate',
     (file) => {
       const nrs = anyRulesFor(file)['no-restricted-syntax'];
+      const entries = Array.isArray(nrs) ? nrs.slice(1) : [];
+      const policyEntries = classNamingPolicy.classNamingSelectors();
       expect(severityOf(nrs)).toBe(2);
-      expect(jsonOf(nrs)).toContain('ClassDeclaration:not([id.name])');
-      expect(jsonOf(nrs)).toContain(
-        'ClassDeclaration[id.name=/^(?:Service|AppService|MyService)$/]'
+      expect(policyEntries.map(({ message }) => message.split(' — ')[0])).toEqual(
+        CLASS_NAMING_MESSAGES
       );
+      expect(entries).toEqual(expect.arrayContaining(policyEntries));
     }
   );
 
