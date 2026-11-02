@@ -279,7 +279,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-30-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+40-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -307,16 +307,43 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 30-way shard count rather than
-Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
-weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
-invalidates, and those cluster by area. A diff touching one area can therefore land most of its
-re-run cost in a single shard; 30 shards keep that hot shard inside the `timeout-minutes` kill
-switch. Raise the count if a shard starts approaching it — never the kill switch. The count went
-from 16 to 24 when Stryker 10's `CallExpression` mutator added 164 mutants and a cold run pushed
-shards 5 and 14 into the 15-minute kill switch, and from 24 to 30 when the password-recovery
-files repacked the split so a cold shard 6 drew 443 mutants (the next heaviest drew 291) and hit
-the kill switch at 250 tested; the same packing at 30 caps the heaviest shard at 240.
+These keep the run affordable — parallelism comes from the 40-way shard count rather than
+Stryker's in-process concurrency.
+
+**Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
+mutants with the instrumenter the pinned `@stryker-mutator/core` resolves, under the options Stryker
+uses when the config sets no `mutator` or `ignorers` (the config test pins that), and leaves out the
+mutants a `Stryker disable` directive already reports `Ignored`. A file with no mutant left goes
+to **no shard**: the barrels, token modules and route maps hold nothing to score, yet each one
+handed its shard a `findRelatedTests` set of the whole suite (one cold shard drew 57 of them, a
+3,779-test dry run, and timed out). Every other file is weighed by its **scored** mutants: a mutant
+outside every function body and instance property initializer runs on import, which
+`ignoreStatic` reports `Ignored` without running, so it costs nothing and does not count; a file
+whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
+onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
+4 s, so every shard job and the merge job count at run time and derive the same packing from the
+same commit; no weight file is committed, so none can go stale. At 354 files the scope holds
+6,626 runnable mutants, 4,984 of them scored, in 311 sharded files; 43 files run in no shard, and
+the 40 shards hold 125 to 139 scored mutants (the heaviest is one 139-mutant file on its own) and
+1 to 9 files each. File size was a poor proxy for that load: under the 30-shard size packing a
+cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished, while the
+same scope packed by counted mutants holds 167 to 168 per shard at 30.
+`tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
+workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
+kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
+cache-key segments disagree.
+
+The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
+incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
+touching one area can therefore land most of its re-run cost in a single shard; 40 shards keep that
+hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
+it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
+added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
+to 30 when the password-recovery files repacked the split so a cold shard 6 drew 443 mutants (the
+next heaviest drew 291) and hit the kill switch at 250 tested; the same size packing at 30 capped
+the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when that
+cold shard 11 kept meeting the kill switch; 40 is also the count the two-factor branch (#331)
+runs, so the two stay in lock-step.
 
 ### Honest mutant classification (issue #171)
 
@@ -435,14 +462,20 @@ The enforced floor is **100%**: `break = 100`, so a single surviving mutant fail
 mutate scope is 347 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
-**The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
+**The merge is ownership-authoritative.** Shard membership is packed by mutant count, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
 the incremental report it restored by key prefix. Merging on "first occurrence wins" then lets a
 status decided against different source outrank the shard that actually re-ran the file, which is
 how a run once reported three survivors that every owning shard had already scored as `Ignored`.
-`merge-mutation-reports.ts` therefore rebuilds the same packing and keeps each file only from the
-shard that owns it, reporting how many stale results it dropped. Do not "fix" a disagreement
-between shards by re-running until the ordering favours the answer you want.
+`merge-mutation-reports.ts` therefore rebuilds the same packing through the same
+`packMutateShards` the shard config slices, keeps each file only from the shard that owns it, and
+reports how many stale results it dropped. It also fails when a sharded file is missing from its
+owner's report: that means the merge packed the scope differently from the shards, and keeping
+only owned files would then silently score fewer files than the scope holds. The files the packing
+leaves to no shard stay in its view as `unsharded`: they have no owner, so a result a stale
+incremental report still carries for one is discarded, and the merge prints how many there are.
+Do not "fix" a disagreement between shards by re-running until the ordering favours the answer
+you want.
 
 **How this number was reached, and why the earlier one was not comparable.** The previously
 recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
@@ -1077,7 +1110,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 30-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 40-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
