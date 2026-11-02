@@ -30,6 +30,12 @@ describe('UnseenFailureReporter', () => {
         graphQLErrors: [{ message: 'Boom' }],
       }),
     ],
+    ['a plain object with a network error', { networkError: new Error('offline') }],
+    ['a plain object with GraphQL errors', { graphQLErrors: [{ message: 'Boom' }] }],
+    [
+      'an Error whose GraphQL errors only carry a length',
+      Object.assign(new Error('odd'), { graphQLErrors: { length: 1 } }),
+    ],
   ])('leaves %s to the Apollo link, which already reported it', (_label, caught) => {
     const { reporter, captureError } = setUp();
 
@@ -41,12 +47,6 @@ describe('UnseenFailureReporter', () => {
   it.each([
     ['an Apollo error carrying neither', new ApolloError({ graphQLErrors: [] })],
     ['a programming error', new TypeError('Cannot read properties of undefined')],
-    [
-      'an Error whose GraphQL errors are not an array',
-      Object.assign(new Error('odd'), { graphQLErrors: { length: 1 } }),
-    ],
-    ['a plain object with a network error', { networkError: new Error('offline') }],
-    ['a plain object with GraphQL errors', { graphQLErrors: [{ message: 'Boom' }] }],
     ['a string', 'boom'],
     ['null', null],
     ['undefined', undefined],

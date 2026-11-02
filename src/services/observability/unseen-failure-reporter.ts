@@ -22,8 +22,7 @@ export default class UnseenFailureReporter {
   }
 
   private reachedTheLink(caught: unknown): boolean {
-    if (!(caught instanceof Error)) return false;
-    const { networkError, graphQLErrors } = caught as Partial<ApolloError>;
-    return Boolean(networkError) || (Array.isArray(graphQLErrors) && graphQLErrors.length > 0);
+    const { networkError, graphQLErrors } = (caught ?? {}) as Partial<ApolloError>;
+    return Boolean(networkError) || (graphQLErrors?.length ?? 0) > 0;
   }
 }
