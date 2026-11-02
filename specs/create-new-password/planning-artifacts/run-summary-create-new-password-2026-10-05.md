@@ -202,8 +202,10 @@ Stages 5 and 6 and all correction passes ran on Opus.
 
 ## Open questions, warnings, blockers
 
-- Blockers for implementation: none. Implementation can start now against the pending
-  extension and the local Apollo mock.
+- Blockers for implementation: the prerequisite chores `typed-boundaries-gate` (#332) and
+  `zustand-client-state` (#334) had to land first (see "Recommended next step"); both closed on
+  2026-10-13, so none remain. No user-service release is needed: implementation runs against the
+  pending extension and the local Apollo mock.
 - Waiting on user-service, not blocking: the pin bump that deletes the extension (Follow-up 5.3)
   waits for a release tag carrying both mutations, and production enablement of the flag
   (Follow-up 5.6) waits for that release to be deployed with the link-host fix. Superseded
