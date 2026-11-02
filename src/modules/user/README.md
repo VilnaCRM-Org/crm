@@ -535,7 +535,8 @@ per catalog (three byte-identical copies, and #331 would add a fourth).
 4.48:1 on white at 14 px, below WCAG 1.4.3.
 
 **Decision.** A new token, `paletteColors.error.text` (`#C62828`, about 5.62:1), colours the
-field-error text app-wide; borders keep `error.main`. The resend control uses a token that already
+field-error text and the `UIForm` error banner app-wide; borders and the banner's focus outline
+keep `error.main`. The resend control uses a token that already
 passes (`linkText` `#0074B5`, 5.04:1); the greeting keeps the Figma grey under its own entry, below.
 
 **Rejected.** A new contrast exception for the field errors (the defect is fixable at the token);
