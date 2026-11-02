@@ -107,8 +107,9 @@ The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswor
 answer every valid input with the same payload, so domain refusals, `429`, `503` and aborts are
 exercised in the browser lanes (`page.route`) and the integration suite (msw) instead. The dev
 compose alone sets `MAILPIT_API_URL`, which turns on the mail flow: a request for a known address
-mails a single-use, one-hour token through Mailpit, and a confirm rejects a token it never mailed,
-or one already used or expired, as a `token` violation (`password-reset-mail.ts`; see
+mails a single-use, one-hour token through Mailpit, and a confirm rejects a token it never mailed
+(a token whose e-mail Mailpit refused or never received is revoked on the spot), or one already
+used or expired, as a `token` violation (`password-reset-mail.ts`; see
 `CONTRIBUTING.md`, "Password reset e-mails in development"). The test compose and the unit
 suites never set it, so they keep the stateless answers. Deleting one extension
 means removing its file; the two resolvers stay. Deleting the last one removes the folder, so it

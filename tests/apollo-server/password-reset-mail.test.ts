@@ -244,6 +244,28 @@ describe('password reset resolvers in mail mode', () => {
     ).resolves.toEqual({ user: null, clientMutationId: null });
 
     expect(consoleError).toHaveBeenCalledWith('Failed to send the password reset e-mail:', failure);
+    await expect(
+      confirmPasswordResetUser(undefined, {
+        input: { token: tokenFrom(sentMail(fetchSpy)), newPassword: buildPassword() },
+      })
+    ).rejects.toThrow('token: Password reset token not found');
+  });
+
+  it('revokes the token when Mailpit refuses the e-mail', async () => {
+    fetchSpy.mockResolvedValue(new Response('no', { status: 500 }));
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await requestPasswordResetUser(undefined, { input: { email: 'demo@vilnacrm.com' } });
+
+    expect(consoleError).toHaveBeenCalledWith(
+      'Failed to send the password reset e-mail:',
+      new Error('Mailpit refused the reset e-mail: HTTP 500')
+    );
+    await expect(
+      confirmPasswordResetUser(undefined, {
+        input: { token: tokenFrom(sentMail(fetchSpy)), newPassword: buildPassword() },
+      })
+    ).rejects.toThrow('token: Password reset token not found');
   });
 
   it('rejects a confirm with a token it never mailed', async () => {
