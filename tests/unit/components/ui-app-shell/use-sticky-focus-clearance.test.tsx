@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import type { JSX } from 'react';
 
 import useStickyFocusClearance from '@/components/ui-app-shell/use-sticky-focus-clearance';
@@ -9,6 +9,7 @@ function StickyBox(): JSX.Element {
   return (
     <div role="group" aria-label="Sidebar" onFocus={onFocus}>
       <a href="/boards">Boards</a>
+      <a href="/products">Products</a>
     </div>
   );
 }
@@ -48,7 +49,7 @@ describe('useStickyFocusClearance', () => {
     render(<StickyBox />);
     const link = screen.getByRole('link', { name: 'Boards' });
     placeAt(link, top);
-    fireEvent.focus(link);
+    link.focus();
   };
 
   it('measures only in the next frame, after the browser has scrolled the focus into view', () => {
@@ -83,7 +84,7 @@ describe('useStickyFocusClearance', () => {
       .mockReturnValueOnce(new DOMRect(0, 63, 100, 54))
       .mockReturnValueOnce(new DOMRect(0, 63, 100, 54))
       .mockReturnValue(new DOMRect(0, 64, 100, 54));
-    fireEvent.focus(link);
+    link.focus();
 
     (frames[0] as FrameRequestCallback)(0);
     (frames[1] as FrameRequestCallback)(0);
@@ -113,7 +114,7 @@ describe('useStickyFocusClearance', () => {
     render(<StickyBox />);
     const link = screen.getByRole('link', { name: 'Boards' });
     placeAt(link, 10, 0);
-    fireEvent.focus(link);
+    link.focus();
     frames.forEach((frame) => frame(0));
 
     expect(scrollBy).not.toHaveBeenCalled();
@@ -135,7 +136,7 @@ describe('useStickyFocusClearance', () => {
     const link = screen.getByRole('link', { name: 'Boards' });
     placeAt(link, 10);
     scrollIntoView.mockImplementation(() => placeAt(link, 80));
-    fireEvent.focus(link);
+    link.focus();
     frames.forEach((frame) => frame(0));
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
@@ -147,10 +148,45 @@ describe('useStickyFocusClearance', () => {
     const link = screen.getByRole('link', { name: 'Boards' });
     placeAt(link, 10);
     placeAt(screen.getByRole('group', { name: 'Sidebar' }), 200);
-    fireEvent.focus(link);
+    link.focus();
     frames.forEach((frame) => frame(0));
 
     expect(scrollBy).toHaveBeenCalledWith({ top: -54 });
+  });
+
+  it('leaves a control alone once focus has moved on before its frame runs', () => {
+    render(<StickyBox />);
+    const boards = screen.getByRole('link', { name: 'Boards' });
+    const products = screen.getByRole('link', { name: 'Products' });
+    placeAt(boards, 10);
+    placeAt(products, 10);
+    boards.focus();
+    products.focus();
+
+    frames.forEach((frame) => frame(0));
+
+    expect(frames).toHaveLength(3);
+    expect(scrollIntoView.mock.contexts).toEqual([products]);
+    expect(scrollBy.mock.calls).toEqual([[{ top: -54 }]]);
+  });
+
+  it('skips the follow-up frame once focus has moved to a control outside the box', () => {
+    render(
+      <>
+        <StickyBox />
+        <button type="button">Elsewhere</button>
+      </>
+    );
+    const boards = screen.getByRole('link', { name: 'Boards' });
+    placeAt(boards, 10);
+    boards.focus();
+    (frames[0] as FrameRequestCallback)(0);
+
+    screen.getByRole('button', { name: 'Elsewhere' }).focus();
+    (frames[1] as FrameRequestCallback)(0);
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollBy).toHaveBeenCalledTimes(1);
   });
 
   it('hands every render the same focus handler', () => {

@@ -67,9 +67,14 @@ describe('DrawerPanel', () => {
       'Analytics',
       'Settings',
     ]);
-    expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ minHeight: '60px' });
+    const links = screen.getAllByRole('link');
+    links.forEach((link) => expect(link).toHaveStyle({ minHeight: '60px' }));
     expect(screen.getAllByRole('listitem')[0]).toHaveStyle({ width: '233px' });
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    expect(
+      (links.at(-1) as HTMLElement).compareDocumentPosition(
+        screen.getByRole('button', { name: 'Sign out' })
+      ) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('asks to close when the route changes, and not before', async () => {

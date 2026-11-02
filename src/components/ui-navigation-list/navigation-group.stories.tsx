@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import { withStoryList } from '@stories/list-decorators';
+import { withRoutedStoryList } from '@stories/list-decorators';
 import { storyGroup } from '@stories/navigation-story-items';
-import { withMemoryRouter } from '@stories/router-decorators';
 
 import NavigationGroup from './navigation-group';
 
@@ -12,7 +11,6 @@ const meta: Meta<typeof NavigationGroup> = {
   tags: ['autodocs'],
   args: { layout: 'desktop', group: storyGroup, currentId: null },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
-  decorators: [withStoryList(238)],
   parameters: {
     docs: {
       description: {
@@ -32,12 +30,12 @@ type Story = StoryObj<typeof NavigationGroup>;
 
 export const Expanded: Story = {
   args: { currentId: 'settings' },
-  decorators: [withMemoryRouter('/settings')],
+  decorators: withRoutedStoryList('/settings', 238),
 };
 
-export const Collapsed: Story = { decorators: [withMemoryRouter('/boards')] };
+export const Collapsed: Story = { decorators: withRoutedStoryList('/boards', 238) };
 
 export const TabletExpanded: Story = {
   args: { layout: 'tablet', currentId: 'settings' },
-  decorators: [withMemoryRouter('/settings')],
+  decorators: withRoutedStoryList('/settings', 238),
 };

@@ -146,7 +146,9 @@ describe('UISidebar', () => {
 
     const wrapper = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
 
-    expect(styleRuleFor(wrapper)?.getPropertyValue('transition')).toBe('width 200ms ease-out');
+    expect(styleRuleFor(wrapper)?.getPropertyValue('transition')).toBe(
+      'width 200ms ease-out,margin-right 200ms ease-out'
+    );
     expect(
       mediaStyleRuleFor(wrapper, 'prefers-reduced-motion: reduce')?.getPropertyValue(
         'transition-duration'

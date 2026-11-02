@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { isInaccessible, screen, waitFor, within } from '@testing-library/react';
+import { act, isInaccessible, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 
@@ -68,6 +68,19 @@ describe('UINavigationDrawer', () => {
     expect(dialog).toHaveAttribute('tabindex', '-1');
     expect(results.passes.map((rule) => rule.id)).toContain('tabindex');
     expect(results).toHaveNoViolations();
+  });
+
+  it('pulls focus that moves to the page behind it back into the dialog', async () => {
+    const behind = document.body.appendChild(document.createElement('button'));
+    renderDrawer();
+    const dialog = await screen.findByRole('dialog', { name: 'Main navigation' });
+    expect(within(dialog).getByRole('button', { name: 'Close menu' })).toHaveFocus();
+
+    act(() => behind.focus());
+
+    expect(behind).not.toHaveFocus();
+    expect(dialog).toHaveFocus();
+    behind.remove();
   });
 
   it('renders nothing while closed', () => {

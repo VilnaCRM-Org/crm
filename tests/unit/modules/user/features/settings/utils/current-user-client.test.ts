@@ -29,9 +29,10 @@ const hold = (): jest.SpyInstance =>
   jest.spyOn(globalThis, 'fetch').mockImplementation(
     (_input, init) =>
       new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () =>
-          reject(new DOMException('The operation was aborted.', 'AbortError'))
-        );
+        const abort = (): void =>
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        if (init?.signal?.aborted) abort();
+        init?.signal?.addEventListener('abort', abort);
       })
   );
 
@@ -145,6 +146,22 @@ describe('CurrentUserClient', () => {
     controller.abort();
 
     await expect(sending).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('hands fetch an aborted signal for a caller that aborted before the send', async () => {
+    jest.useFakeTimers();
+    const fetchSpy = hold();
+    const controller = new AbortController();
+    controller.abort();
+
+    const outcome = new CurrentUserClient()
+      .send(request(controller.signal))
+      .catch((caught: unknown) => caught);
+    await jest.advanceTimersByTimeAsync(10_000);
+
+    expect(sentInit(fetchSpy).signal?.aborted).toBe(true);
+    await expect(outcome).resolves.toMatchObject({ name: 'AbortError' });
+    await expect(outcome).resolves.not.toBeInstanceOf(ApiError);
   });
 
   it('turns an expired default deadline into the retryable timeout error', async () => {

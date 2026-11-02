@@ -29,4 +29,4 @@ type Story = StoryObj<typeof MenuToggleButton>;
 
 export const Closed: Story = {};
 
-export const Open: Story = { args: { open: true, controls: 'navigation-drawer' } };
+export const Open: Story = { args: { open: true } };
