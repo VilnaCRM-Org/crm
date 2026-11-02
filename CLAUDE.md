@@ -2461,8 +2461,10 @@ Three different things are outside the gate, and the distinction matters when yo
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
-  `security-event-core` and its `auth-failure-monitor` leaf, and the observability core /
-  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves.
+  `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
+  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, and the
+  app-shell chip's current-user read (`auth-session-provider`, `current-user-client`,
+  `current-user-source`, issue #362).
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
@@ -3118,9 +3120,12 @@ replaces.
    Lighthouse seeded-token audit of `/sign-in` is unaffected; the target must be an internal path
    and `AppLayout` moves focus to `<main>` when it lands. Sign-out lives in the app shell (issue
    #362): `AppLayout` reads `signOut` from the outlet context `ProtectedRoute` provides
-   (`ProtectedOutletContext`, `{ signOut }`, issue #106) and passes it to `UIAppShell`, which
-   renders it in the sidebar, the mobile navigation drawer and the user menu; `AppLayout` still
-   forwards the same context to the page outlet. The sign-out redirect carries
+   (`ProtectedSessionContext`, `{ signOut, session }`, issues #106 and #362) and passes it to
+   `UIAppShell`, which renders it in the sidebar, the mobile navigation drawer and the user menu;
+   `AppLayout` still forwards the same context to the page outlet. `session` is the container-free
+   `authSessionProvider`: the header chip's current-user read takes the token from it and ends
+   a session the API rejects through it, so no protected page loads the DI container for the
+   chip. The sign-out redirect carries
    `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
    `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
    focus again.
