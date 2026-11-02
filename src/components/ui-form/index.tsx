@@ -1,12 +1,10 @@
-import { type JSX, useState } from 'react';
+import type { JSX } from 'react';
 import { SubmitHandler, FieldValues } from 'react-hook-form';
 
 import type {
   BlockedReasonProps,
   FormBodyProps,
   FormHeaderProps,
-  FormHeaderSectionProps,
-  FormLeadSectionProps,
   FormSubmitProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
@@ -16,37 +14,14 @@ import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
 import UILiveStatus from '@/components/ui-live-status';
-import UIOfflineNotice from '@/components/ui-offline-notice';
 import UITypography from '@/components/ui-typography';
 
-import ErrorBanner from './error-banner';
+import FormLead from './form-lead';
 import SubmitSpinner from './submit-spinner';
-import useFocusReturn from './use-focus-return';
 import useFormSubmission from './use-form-submission';
 import useUIForm from './use-ui-form';
 
 const NO_STYLES = {};
-
-function FormHeader({ header, bannerShown }: FormHeaderSectionProps): JSX.Element {
-  const { title, subtitle, showTitle, showSubtitle, titleComponent, titleRef } = header;
-  const [bannerAtMount] = useState(bannerShown);
-  return (
-    <>
-      {showTitle && title && (
-        <UITypography
-          variant="h4"
-          component={titleComponent}
-          sx={styles.formTitle}
-          ref={bannerAtMount ? undefined : titleRef}
-          tabIndex={titleRef ? -1 : undefined}
-        >
-          {title}
-        </UITypography>
-      )}
-      {showSubtitle && subtitle && <UITypography sx={styles.formSubtitle}>{subtitle}</UITypography>}
-    </>
-  );
-}
 
 function buildSubmitHandler<T extends FieldValues>(
   options: SubmitHandlerOptions<T>
@@ -91,25 +66,6 @@ function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
       {block.reason}
     </UITypography>
   ) : null;
-}
-
-function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element {
-  const focusReturn = useFocusReturn(Boolean(lead.error), offline.submitRef);
-
-  return (
-    <>
-      <FormHeader header={header} bannerShown={Boolean(lead.error)} />
-      {lead.notice}
-      <ErrorBanner
-        key={lead.errorOccurrence}
-        error={lead.error}
-        action={lead.errorAction}
-        focusReturn={focusReturn}
-        unavailableReasonId={offline.online ? undefined : offline.noticeId}
-      />
-      <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
-    </>
-  );
 }
 
 function FormBody<T extends FieldValues>({
