@@ -6,25 +6,26 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 
 ## App shell decisions (issue #362)
 
-- **The frame is eager, everything visible is lazy.** `AppLayout` (`src/components/layouts/`)
-  hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid and renders
-  `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky header slot and,
-  from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where the loaded
-  sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the frame
-  receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
+- **The frame arrives first, everything visible after it.** `AppLayout` (`src/components/layouts/`)
+  loads with `ProtectedRoute` in the `protected-layout` chunk, never on a public page (see
+  `src/routes/README.md`), and hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid
+  and renders `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky
+  header slot and, from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where
+  the loaded sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the
+  frame receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
   `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
   public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
   failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
   1440 px. The sidebar breakpoint is a number in
-  `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the eager path
-  cannot import `@/components/ui-breakpoints`.
+  `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the frame cannot
+  import `@/components/ui-breakpoints` without pulling the toolkit into `protected-layout`.
 - **The grid places items by line, not by area name.** A sticky element is limited to its grid
   area, so the header slot spans every row (`grid-row: 1 / -1`, `align-self: start`, 64 px tall)
   and sticks for the whole page. The navigation slot and `<main>` share row 2; the loaded sidebar
   sticks 74 px from the top inside its stretched cell.
 - **The user slot is a prop.** Nothing under `src/components/` imports `src/modules/`. The settings
   route contract declares `shell.userMenu`, a loader for `UserMenuSlot`; the composer hands
-  `AppLayout` the result of `routeMapper.shellSlot(load)`, so `AppLayout` receives only a
+  `AppLayout` the slot `protectedLayoutLoader.create` builds from it, so `AppLayout` receives only a
   component that takes `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
   publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
   `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
