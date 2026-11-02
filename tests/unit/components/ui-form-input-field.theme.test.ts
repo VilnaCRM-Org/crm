@@ -26,7 +26,7 @@ describe('ui-form-input-field theme', () => {
     const theme = await loadTheme();
 
     expect(theme.components?.MuiFormHelperText?.styleOverrides?.root).toMatchObject({
-      '&.Mui-error': { color: '#C62828' },
+      '&.Mui-error': { color: '#D63333' },
     });
   });
 

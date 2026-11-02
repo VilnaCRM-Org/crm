@@ -177,9 +177,9 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   for FR-1, since the link already renders unconditionally.
 - NFR-7: Lighthouse desktop and mobile floors; audited URL list unchanged.
 - NFR-8: bundle and paint-path budgets; eager entrypoint grows by under 1 kB gzip.
-- NFR-9: WCAG 2.1 AA, axe in three engines, 24 px / 44 px targets, and at most one new scoped
-  exception (the #276 `color-contrast` entry for the result views' primary-pill links); the
-  in-card "Назад" renders in `Font/200 #404142`, an accessibility override of the Figma `#969B9D`.
+- NFR-9: WCAG 2.1 AA, axe in three engines, 24 px / 44 px targets, and two new scoped #276
+  `color-contrast` entries: the result views' primary-pill links, and the in-card "Назад", which
+  renders in the Figma `#969B9D` by the user's decision of 2026-10-21 (focus ring `#404142`).
 - NFR-10: keyboard contract for both forms and both result states, plus the "Забули пароль?"
   stop in the existing sign-in keyboard spec.
 - NFR-11: mobile touch lane on Pixel 7 and iPhone 14.
@@ -241,7 +241,7 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   `72:5596` / `72:5617` / `72:5638`, sent `360:11925` / `360:11937` / `360:11949`; card widths
   502 / 632 / 363 in code (the existing `formWrapper` `39.5rem` is authoritative, PRD §4), tokens
   `Font/100 #1A1C1E`, `Font/200 #404142`, `Primary #1EAEFF`; the "Назад" row (`72:5605`, "15
-  (medium)" Golos Medium 15/18) keeps its size and weight but takes `Font/200 #404142` (NFR-9).
+  (medium)" Golos Medium 15/18) keeps its size, weight and `#969B9D` colour (NFR-9).
 - UX-DR-2: the new-password form and the invalid-link state have no frame; their composition
   from the existing card and form primitives is the design of record for v1 (PRD §3).
 - UX-DR-3: Russian Figma copy is replaced by the PRD FR-27 `uk`/`en` strings.
@@ -309,8 +309,8 @@ opening with "every …" lets the qualifier stand for the stories it names gener
 Each story's own criteria add to these; a story is not done until all of them hold.
 
 - **Quality floors.** No threshold, budget, allowlist, scope, baseline or ratchet value is
-  edited to make a run pass (the PRD's reviewed deviation — the one scoped #276 entry of
-  Story 2.2 — is an intended change, not a pass); no
+  edited to make a run pass (the PRD's reviewed deviation — the two scoped #276 entries, Story
+  2.2's pill links and the 2026-10-21 "Назад" row — is an intended change, not a pass); no
   `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`,
   `.fixme`, `waitForTimeout` or `expect` inside a conditional; no `data-testid` in `src`; no
   added inline code comments beyond a `// Stryker disable next-line <Mutator>: <proof>` the
@@ -961,15 +961,15 @@ So that I always know where I am and how to go back.
 **Files:** `@auth/components/reset-password/in-card-link.tsx` (NEW: `UIButton to` plus
 `useLinkClickHandler<HTMLButtonElement>` with the named `FOCUS_ON_ARRIVAL` state, architecture
 §7.2), `@auth/components/reset-password/card-back-control.tsx` (NEW: `InCardLink` when `to`,
-`UIButton type="button"` when `onClick`; "Назад" in `paletteColors.text.primary` `#404142`),
+`UIButton type="button"` when `onClick`; "Назад" in `customColors.text.secondary` `#969B9D`),
 `@auth/components/reset-password/recovery-result-view.tsx` (NEW: `title`, `body`, `action`
 rendered through `InCardLink`), `@auth/types/password-recovery/components.ts` (NEW:
 `InCardLinkProps`, `InCardLinkVariant`, `CardBackControlProps`, `RecoveryResultViewProps`,
 `RecoveryResultAction`), `@auth/i18n/{uk,en}.json` (MODIFY: `password_recovery.back` "Назад" /
 "Back" and the shared `password_recovery.submit_button` "Підтвердити" / "Confirm"),
-`src/i18n/localization.json` (REGEN), `tests/utils/a11y/axe-config.ts` (MODIFY: one scoped
-`color-contrast` entry), `CLAUDE.md` and `docs/accessibility/acceptance-standard.md` (MODIFY:
-the `color-contrast` entry count grows by exactly one from the count on `main` at merge time),
+`src/i18n/localization.json` (REGEN), `tests/utils/a11y/axe-config.ts` (MODIFY: two scoped
+`color-contrast` entries), `CLAUDE.md` and `docs/accessibility/acceptance-standard.md` (MODIFY:
+the `color-contrast` entry count grows by exactly two from the count on `main` at merge time),
 unit and jest-axe tests.
 
 **Gates:** DoD local gates; `make lint-i18n`, `make lint-docs`.
@@ -989,9 +989,9 @@ unit and jest-axe tests.
   with `type="button"`, the same name and size, activated by Enter and Space, and no router
   navigation happens.
 - **Given** the "Назад" text and chevron, **when** their computed style is read, **then** the
-  colour is `rgb(64, 65, 66)` (`#404142`) with the Golos Medium 15/18 size and weight of Figma
-  `72:5605`; the contrast verdict is proven by the Story 4.2 browser scans, and
-  `figma-design-check` records the colour as a reviewed accessibility override (PRD §10).
+  colour is `rgb(150, 155, 157)` (`#969B9D`) with the Golos Medium 15/18 size and weight of Figma
+  `72:5605`, and the focus ring stays `#404142`; the Story 4.2 browser scans pass with the scoped
+  #276 entry the user's 2026-10-21 decision added (PRD §10).
 - **Given** any other new text in this story, **when** its token is below 4.5:1 on its
   background, **then** the story stops and reports; it never adds a second exception.
 - **Given** `RecoveryResultView`, **when** it mounts, **then** its `h1` has `tabIndex={-1}` and
@@ -1675,8 +1675,9 @@ keyboard rows).
 - **Given** the invalid-link state, **then** the order is back-to-main → "Назад" → "Запросити
   нове посилання" → footer.
 - **Given** the primary links "До входу" and "Запросити нове посилання", **when** axe checks
-  `color-contrast`, **then** the only finding it drops is through the one scoped #276 entry
-  Story 2.2 adds; if a finding is not covered by that entry, the story stops and reports.
+  `color-contrast`, **then** the only findings it drops are through the two scoped #276 entries
+  (the pill links and the "Назад" row); if a finding is not covered by them, the story stops and
+  reports.
 - **Given** the manifest, **then** each key gains e2e rows for the route scan and its keyboard
   spec.
 
@@ -2066,7 +2067,8 @@ merge re-runs `make i18n-generate` rather than hand-merging the generated catalo
    link unconditional before this feature, so they already contain it.
 2. **NFR-9 vs the Figma primary pill on links — resolved.** One scoped `color-contrast` entry for
    the result views' primary-pill links, with the existing #276 reason and tracking (Story 2.2,
-   proven by Story 4.2). The plain link style remains an open question for the design owner.
+   proven by Story 4.2). The plain link style remains an open question for the design owner. The
+   in-card "Назад" row takes a second scoped entry since the user's 2026-10-21 decision.
 3. **Sign-in keyboard contract — resolved.** NFR-10 includes the "Забули пароль?" stop; Story
    4.1 verifies the spec.
 4. **Integration coverage — resolved by AR-8.** Stories 1.3, 1.4 and 1.5 carry integration tests.

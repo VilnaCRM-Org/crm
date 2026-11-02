@@ -184,6 +184,20 @@ describe('useResetToken', () => {
     expect(lastToken()).toBeNull();
   });
 
+  it('strips every token-bearing navigation, not only the first', async () => {
+    const router = mountAt(`/password-reset?token=${buildResetToken()}`);
+    await screen.findByText('search=');
+    const navigate = jest.spyOn(router, 'navigate');
+
+    await act(() => router.navigate(`/password-reset?token=${buildResetToken()}`));
+
+    expect(router.state.location.search).toBe('');
+    expect(navigate).toHaveBeenLastCalledWith(
+      '/password-reset',
+      expect.objectContaining({ replace: true })
+    );
+  });
+
   it('leaves the token out of the document, the title and web storage', async () => {
     const token = buildResetToken();
     mountAt(`/password-reset?token=${token}`);

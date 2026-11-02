@@ -21,6 +21,7 @@ const meta: Meta<typeof ErrorBanner> = {
           'button so keyboard users can resubmit. This story renders the banner on its own ' +
           'with an unattached ref, so it shows the message only.',
       },
+      story: { inline: false },
     },
   },
 };
