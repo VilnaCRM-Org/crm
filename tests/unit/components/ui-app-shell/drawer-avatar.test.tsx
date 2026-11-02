@@ -1,26 +1,14 @@
-import 'reflect-metadata';
 import '@testing-library/jest-dom';
 import { isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import featureFlagService from '@/config/runtime/feature-flag-service';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const mockRead = jest.fn();
-
-jest.mock('@/providers/di', () => {
-  const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
-  const tokens = jest.requireActual('@/modules/user/config/tokens').default;
-  const mapper = new Mapper();
-  const provider = { read: (signal: AbortSignal): unknown => mockRead(signal) };
-
-  return {
-    __esModule: true,
-    useService: (token: symbol): unknown => (token === tokens.ProfileProvider ? provider : mapper),
-  };
-});
 
 const MOBILE = 375;
 const PAGE = <h1>Головна</h1>;
@@ -35,6 +23,9 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
   beforeEach(() => {
     stubMotionPreference(false);
     mockRead.mockReset();
+    jest
+      .spyOn(currentUserSource, 'read')
+      .mockImplementation((_session, signal) => mockRead(signal));
   });
 
   afterEach(() => {
@@ -46,12 +37,7 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     mockRead.mockResolvedValue({
       kind: 'ok',
-      user: {
-        id: 'u',
-        fullName: 'Петренко Олена Іванівна',
-        email: 'o@example.com',
-        confirmed: true,
-      },
+      identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
     });
     await renderAppShell({ path: '/', width: MOBILE, page: PAGE });
     await screen.findByRole('button', { name: 'Олена Петренко, Меню користувача' });
