@@ -8,9 +8,11 @@ import comingSoonUk from '@/components/coming-soon/i18n/uk.json';
 import AppLayout from '@/components/layouts/app-layout';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/user-menu-slot';
+import type { ProtectedSessionContext } from '@/routes/types/protected-outlet-context';
 import type { ShellSlotHostProps } from '@/routes/types/shell-slot';
 
 import createAppShellLocaleI18n from './create-app-shell-locale-i18n';
+import { inertSession } from './session-outlet';
 import stubViewportWidth from './stub-viewport-width';
 
 interface AppShellRenderOptions {
@@ -35,11 +37,12 @@ const renderAppShell = async ({
   stubViewportWidth(width);
   const i18n = createAppShellLocaleI18n('uk', ['en', 'uk']);
   lazyCatalogLoader.register(i18n, { en: comingSoonEn, uk: comingSoonUk });
+  const context: ProtectedSessionContext = { signOut, session: inertSession };
   const view = render(
     <I18nextProvider i18n={i18n}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route element={<Outlet context={{ signOut }} />}>
+          <Route element={<Outlet context={context} />}>
             <Route element={<AppLayout userMenu={BoundUserMenu} />}>
               <Route path="*" element={page} />
             </Route>

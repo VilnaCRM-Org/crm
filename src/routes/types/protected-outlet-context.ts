@@ -10,3 +10,12 @@ export interface ProtectedOutletContext {
 }
 
 export type SignOutContext = Pick<ProtectedOutletContext, 'signOut'>;
+
+export interface ProtectedSession {
+  token(): string | null;
+  end(token: string): void;
+}
+
+export interface ProtectedSessionContext extends ProtectedOutletContext {
+  readonly session: ProtectedSession;
+}

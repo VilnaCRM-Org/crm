@@ -7,8 +7,9 @@ import type {
 } from '@/components/types/ui-app-shell/navigation-item';
 import featureFlagService from '@/config/runtime/feature-flag-service';
 
-const isAvailable = (leaf: NavigationLeaf): boolean =>
-  leaf.flag === undefined || featureFlagService.isEnabled(leaf.flag);
+function isAvailable(leaf: NavigationLeaf): boolean {
+  return leaf.flag === undefined || featureFlagService.isEnabled(leaf.flag);
+}
 
 const asLeaf = ({ id, href, labelKey, icon, flag }: NavigationLeaf): NavigationLeaf => ({
   id,

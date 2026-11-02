@@ -2,11 +2,12 @@ import type { JSX } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 
 import type {
-  ProtectedOutletContext,
+  ProtectedSessionContext,
   TwoFactorStatus,
 } from '@/routes/types/protected-outlet-context';
 import useRecoveryCodesBanner from '@auth/hooks/use-recovery-codes-banner';
 import useSessionRedirectState from '@auth/hooks/use-session-redirect-state';
+import authSessionProvider from '@auth/stores/auth-session-provider';
 import useAuthStore from '@auth/stores/use-auth-store';
 import useAuthToken from '@auth/stores/use-auth-token';
 import useSignOut from '@auth/stores/use-sign-out';
@@ -24,11 +25,12 @@ export default function ProtectedRoute(): JSX.Element {
   const { signedOut, signOut } = useSignOut();
   const redirectState = useSessionRedirectState(token, signedOut);
   const banner = useRecoveryCodesBanner();
-  const outletContext: ProtectedOutletContext = {
+  const outletContext: ProtectedSessionContext = {
     signOut,
     twoFactorStatus,
     setTwoFactorStatus,
     banner,
+    session: authSessionProvider,
   };
 
   return token ? (
