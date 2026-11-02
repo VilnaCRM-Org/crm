@@ -1,6 +1,6 @@
 ---
 status: complete
-workflowType: autonomous-planning
+workflowType: run-summary
 project_name: crm
 date: 2026-10-05
 revised: 2026-11-02
