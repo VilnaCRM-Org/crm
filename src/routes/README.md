@@ -179,7 +179,8 @@ chunk loads. The chunk comes through a `ChunkRetryLoader`
 (`src/components/layouts/footer-loader.ts`, issue #147), and a load that still fails resolves to an
 empty component: a missing footer never reaches the `AppLayout` `errorElement` and never replaces
 the page. `AppLayout` also forwards `ProtectedRoute`'s outlet context (`ProtectedOutletContext`,
-`{ signOut }`, from `src/routes/types/protected-outlet-context.ts`) to the page with
+`{ signOut, session }` as a `ProtectedSessionContext`, from
+`src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
 react-router 7 — and hands the same `signOut` to the lazy app shell
 (`<AppShell signOut={outletContext.signOut} userMenu={userMenu} />`), whose sidebar, drawer and user

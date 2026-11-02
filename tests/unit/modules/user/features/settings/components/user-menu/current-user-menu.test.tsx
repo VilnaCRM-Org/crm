@@ -1,38 +1,38 @@
-import 'reflect-metadata';
 import '@testing-library/jest-dom';
 import { waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 
 import CurrentMenu from '@/modules/user/features/settings/components/user-menu/current-user-menu';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderShell from '@tests/unit/utils/render-shell';
+import { inertSession } from '@tests/unit/utils/session-outlet';
 
 const mockRead = jest.fn();
 
-jest.mock('@/providers/di', () => {
-  const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
-  const tokens = jest.requireActual('@/modules/user/config/tokens').default;
-  const mapper = new Mapper();
-  const provider = { read: (signal: AbortSignal): unknown => mockRead(signal) };
-
-  return {
-    __esModule: true,
-    useService: (token: symbol): unknown => (token === tokens.ProfileProvider ? provider : mapper),
-  };
-});
-
 const READ_USER = {
   kind: 'ok',
-  user: { id: 'u', fullName: 'Петренко Олена Іванівна', email: 'o@example.com', confirmed: true },
+  identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
 };
+
+const renderMenu = (ui: ReactElement): ReturnType<typeof renderShell> =>
+  renderShell(ui, { session: inertSession });
 
 describe('CurrentMenu', () => {
   beforeEach(() => {
     mockRead.mockReset();
+    jest
+      .spyOn(currentUserSource, 'read')
+      .mockImplementation((_session, signal) => mockRead(signal));
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('renders nothing and reports no identity while the read is pending', async () => {
     mockRead.mockReturnValue(new Promise(() => undefined));
     const onIdentity = jest.fn();
-    const { container } = renderShell(<CurrentMenu onIdentity={onIdentity} />);
+    const { container } = renderMenu(<CurrentMenu onIdentity={onIdentity} />);
 
     await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(1));
 
@@ -43,7 +43,7 @@ describe('CurrentMenu', () => {
   it('reports the read identity once it arrives, reading once', async () => {
     mockRead.mockResolvedValue(READ_USER);
     const onIdentity = jest.fn();
-    renderShell(<CurrentMenu onIdentity={onIdentity} />);
+    renderMenu(<CurrentMenu onIdentity={onIdentity} />);
 
     await waitFor(() =>
       expect(onIdentity).toHaveBeenLastCalledWith({
@@ -55,9 +55,9 @@ describe('CurrentMenu', () => {
   });
 
   it('keeps reporting no identity when the read fails', async () => {
-    mockRead.mockResolvedValue({ kind: 'failed', reason: 'transient' });
+    mockRead.mockResolvedValue({ kind: 'failed', reason: 'unavailable' });
     const onIdentity = jest.fn();
-    renderShell(<CurrentMenu onIdentity={onIdentity} />);
+    renderMenu(<CurrentMenu onIdentity={onIdentity} />);
 
     await waitFor(() => expect(mockRead).toHaveBeenCalled());
 
