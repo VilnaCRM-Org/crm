@@ -343,8 +343,8 @@ mutants per shard at 30 shards, first fell under 240 at 69 shards (225), and ros
 mutant of the mean: 307 to 308 at 30, 237 at 39, 230 to 231 at 40.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 units of packing weight, so scope growth reddens a unit test before a
-shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
-cache-key segments disagree.
+shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and
+the `-of<N>-` cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
