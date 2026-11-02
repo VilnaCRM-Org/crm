@@ -73,7 +73,7 @@ jobs:
       # Non-login shell (sh -c, not sh -lc): a login shell re-sources /etc/profile, which
       # overwrites PATH and drops /root/.bun/bin, so `bun` would not be found.
       - name: Build PR bundle
-        run: docker compose exec -T dev sh -c 'bun x rsbuild build && rm -rf dist-head && mv dist dist-head'
+        run: docker compose exec -T -e ANALYZE=true dev sh -c 'bun x rsbuild build && rm -rf dist-head && mv dist dist-head'
 
       # Install the BASE lockfile's dependencies before building it, so a PR that changes
       # dependencies still produces an honest base-vs-head diff. If this fails for any
@@ -115,6 +115,15 @@ jobs:
           name: bundle-size-report
           path: bundle-size-report.md
           retention-days: 14
+
+      - name: Upload bundle stats
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: bundle-stats-head
+          path: dist-head/bundle-stats.json
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Fail when the size report errors or a gzip budget is breached
         if: steps.report.outcome == 'failure'
