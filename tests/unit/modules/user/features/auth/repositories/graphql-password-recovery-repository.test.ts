@@ -164,7 +164,6 @@ describe('GraphQLPasswordRecoveryRepository', () => {
   it.each([
     ['null', null],
     ['an Apollo error without GraphQL errors', new ApolloError({ graphQLErrors: [] })],
-    ['a plain object shaped like an Apollo error', { networkError: { statusCode: 503 } }],
   ])('reports %s as an unseen failure', async (_label, caught) => {
     const { repository, mutate, captureError } = setUp();
     mutate.mockRejectedValue(caught);
@@ -193,6 +192,7 @@ describe('GraphQLPasswordRecoveryRepository', () => {
       new ApolloError({ networkError: Object.assign(new Error('x'), { statusCode: 503 }) }),
     ],
     ['a violation', new ApolloError({ graphQLErrors: [{ message: 'email: taken' }] })],
+    ['a plain object shaped like an Apollo error', { networkError: { statusCode: 503 } }],
     ['an abort', Object.assign(new Error('aborted'), { name: 'AbortError' })],
   ])('leaves %s to the Apollo link, which already reported it', async (_label, caught) => {
     const { repository, mutate, captureError } = setUp();
