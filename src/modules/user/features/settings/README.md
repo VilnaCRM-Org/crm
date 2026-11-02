@@ -23,13 +23,28 @@ error. The decisions are recorded in `## User Settings decisions` of the
   the once-only Sign out survive the chunk arriving: only the chip's name and monogram change. A
   failed chunk is reported once as `app-shell:current-user` and the chip stays name-less; with the
   flag off nothing is loaded or read.
+- The chip's read is container-free, so a protected page never downloads tsyringe, the
+  composition root, Apollo or zod for it (mobile Lighthouse script budget on `/`).
+  `useCurrentUser` takes the `session` from `ProtectedRoute`'s outlet context
+  (`ProtectedSessionContext`) and calls `currentUserSource.read(session, signal)`
+  (`utils/current-user-source.ts`). `CurrentUserClient` posts the same `CurrentUser` document the
+  profile repository sends (a unit test pins it to the generated `CurrentUserDocument`) to the
+  runtime GraphQL URL, falling back to the build-time one, with the Bearer token, `X-Request-Id`,
+  `X-Correlation-Id` and the request deadline. `CurrentUserResponseParser` narrows the answer by
+  hand and reads only `initials` (the full name). A transport 401 ends the session through
+  `session.end(token)`, which, like `SessionLinkFactory`, only ends it while the store still holds
+  the token the request carried; a GraphQL `Access Denied.` (or extension status 401) only resets
+  the chip to pending. Every other failure keeps the last good name or shows the name-less chip,
+  and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
+  caller aborted the read. The settings page itself still reads through `ProfileProvider`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
 - `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and the three GraphQL document seams.
-- `utils/` — `ProfileChangeDetector` and the zod `response-schemas`.
+- `utils/` — `ProfileChangeDetector`, the zod `response-schemas`, and the container-free chip read:
+  `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
 - `types/` — type-only files, grouped by source area (TB-1).
 - `i18n/{en,uk}.json` — the lazy settings catalog.
 
@@ -52,7 +67,8 @@ Imported from #315 (password recovery), not copied:
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
 - `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
   name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
-- `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session.
+- `SessionLinkFactory` (`@auth/repositories`), where a transport 401 on an Apollo operation ends
+  a session; the chip's container-free read ends it through the outlet `session` instead.
 
 Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
 
