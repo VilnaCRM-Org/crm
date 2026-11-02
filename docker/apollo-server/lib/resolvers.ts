@@ -17,10 +17,10 @@ import {
   User,
 } from './types';
 import { twoFactorResolvers } from './two-factor-resolvers';
-import { EMAIL_REGEX, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
+import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
-  if (!input.email || !EMAIL_REGEX.test(input.email)) {
+  if (!input.email || !isValidEmail(input.email)) {
     throw new GraphQLError('Invalid email format', {
       extensions: {
         code: 'BAD_REQUEST',
@@ -121,7 +121,7 @@ export const resolvers = {
       _: unknown,
       { input }: { input: RequestPasswordResetInput }
     ): Promise<PasswordResetPayload> => {
-      if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
+      if (input.email.length > MAX_EMAIL_LENGTH || !isValidEmail(input.email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
       await mailResetLink(input.email);
