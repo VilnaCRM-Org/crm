@@ -649,11 +649,20 @@ on `token` renders the invalid-link state: "Назад", the `h1`
 `/password-recovery`. The token is discarded from memory. The copy does not say whether an
 earlier link is still valid. Focus moves to the heading and the body is a polite status region.
 
+A `token` violation takes precedence wherever it appears: the confirm path scans every GraphQL
+error in the response and every `property: message` line of each error message (API Platform
+joins several violations with a newline), and a `token` violation anywhere renders this state
+before any other error is classified. Without one, the first error decides the outcome as before.
+
 - Given a message-only GraphQL error, when the response settles, then the state renders, the
   form is gone, and the primary link has `href="/password-recovery"`.
 - Given a second message-only error with a different (translated) text, when the response
   settles, then the same state renders (same DOM and text): the client never reads the message.
 - Given a violation on `token`, when the response settles, then the same state renders.
+- Given an unknown (coded) GraphQL error followed by a second error carrying a `token`
+  violation, when the response settles, then the same state renders, not the transient banner.
+- Given one error whose message holds a `newPassword` violation line followed by a `token`
+  violation line, when the response settles, then the same state renders, not the policy error.
 - Given the state, when "Запросити нове посилання" is activated, then `/password-recovery`
   renders its request form.
 
