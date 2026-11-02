@@ -39,6 +39,10 @@ export function issueResetToken(email: string, now: number = Date.now()): string
   return token;
 }
 
+export function revokeResetToken(token: string): void {
+  tokens.delete(token);
+}
+
 export function redeemResetToken(token: string, now: number = Date.now()): void {
   const issued = tokens.get(token);
   if (!issued) return rejectToken('Password reset token not found');

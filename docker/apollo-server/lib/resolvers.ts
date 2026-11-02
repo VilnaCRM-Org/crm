@@ -5,6 +5,7 @@ import {
   issueResetToken,
   redeemResetToken,
   resetMailConfig,
+  revokeResetToken,
   sendResetMail,
 } from './password-reset-mail';
 import {
@@ -84,9 +85,11 @@ const mailResetLink = async (email: string): Promise<void> => {
     console.info('No user for the requested address; no password reset e-mail sent.');
     return;
   }
+  const token = issueResetToken(email);
   try {
-    await sendResetMail(config, email, issueResetToken(email));
+    await sendResetMail(config, email, token);
   } catch (error) {
+    revokeResetToken(token);
     console.error('Failed to send the password reset e-mail:', error);
   }
 };
