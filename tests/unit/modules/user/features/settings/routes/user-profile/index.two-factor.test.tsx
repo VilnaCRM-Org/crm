@@ -20,21 +20,9 @@ jest.mock('@/modules/user/features/settings/hooks/use-two-factor-settings', () =
   default: (): unknown => mockTwoFactorHook(),
 }));
 
-jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () => ({
-  __esModule: true,
-  default: (): object => ({
-    status: 'loading',
-    user: null,
-    version: 0,
-    refocus: false,
-    retry: (): undefined => undefined,
-    adoption: {
-      adopt: (): undefined => undefined,
-      confirm: (): undefined => undefined,
-      isCurrent: (): boolean => true,
-    },
-  }),
-}));
+jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
+  jest.requireActual('@tests/unit/utils/loading-profile-load-stub')
+);
 
 const renderPage = (): void => {
   render(

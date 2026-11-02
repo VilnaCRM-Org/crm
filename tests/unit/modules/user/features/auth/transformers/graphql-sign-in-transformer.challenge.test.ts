@@ -27,25 +27,27 @@ const completion = (
   },
 });
 
-const FAILURE_ROWS: readonly (readonly [UserServiceFailureReason, ChallengeFailureReason])[] = [
-  ['invalid_code', 'invalid_code'],
-  ['violation', 'invalid_code'],
-  ['expired_session', 'expired_session'],
-  ['unauthenticated', 'expired_session'],
-  ['refused', 'expired_session'],
-  ['locked', 'locked'],
-  ['rate_limited', 'rate_limited'],
-  ['network', 'network'],
-  ['aborted', 'network'],
-  ['server', 'server'],
-  ['unknown', 'server'],
-  ['access_denied', 'server'],
-  ['invalid_password', 'server'],
-  ['setup_not_initiated', 'server'],
-  ['already_enabled', 'server'],
-  ['not_enabled', 'server'],
-  ['reauth_required', 'server'],
-];
+const REASONS_BY_OUTCOME: Record<ChallengeFailureReason, readonly UserServiceFailureReason[]> = {
+  invalid_code: ['invalid_code', 'violation'],
+  expired_session: ['expired_session', 'unauthenticated', 'refused'],
+  locked: ['locked'],
+  rate_limited: ['rate_limited'],
+  network: ['network', 'aborted'],
+  server: [
+    'server',
+    'unknown',
+    'access_denied',
+    'invalid_password',
+    'setup_not_initiated',
+    'already_enabled',
+    'not_enabled',
+    'reauth_required',
+  ],
+};
+
+const FAILURE_ROWS = (Object.keys(REASONS_BY_OUTCOME) as ChallengeFailureReason[]).flatMap(
+  (expected) => REASONS_BY_OUTCOME[expected].map((reason) => [reason, expected] as const)
+);
 
 describe('GraphQLSignInTransformer.toChallengeResult', () => {
   const transformer = new GraphQLSignInTransformer();

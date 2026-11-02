@@ -33,6 +33,28 @@ function isPost(route: Route): boolean {
   return route.request().method() === 'POST';
 }
 
+async function expectSwitcherTapKeepsPage(
+  page: Page,
+  fromUrl: string,
+  toUrl: string,
+  label: string
+): Promise<void> {
+  await page.goto(fromUrl);
+  await page.evaluate(() => {
+    (window as ReloadMarkedWindow).__noReloadMarker = true;
+  });
+
+  const link = page.locator(`a[href="${toUrl}"]`).filter({ hasText: label });
+  await expect(link).toHaveCount(1);
+  await link.tap();
+
+  await expect(page).toHaveURL(new RegExp(`${toUrl}$`));
+  const survivedNavigation = await page.evaluate(
+    () => (window as ReloadMarkedWindow).__noReloadMarker === true
+  );
+  expect(survivedNavigation).toBe(true);
+}
+
 test.describe('Auth flow driven by touch', () => {
   test('signs in with taps only and reports the in-flight busy state', async ({ page }) => {
     let release: () => void = () => {};
@@ -116,40 +138,10 @@ test.describe('Auth flow driven by touch', () => {
   });
 
   test('taps the switcher from /sign-in to /sign-up without a full reload', async ({ page }) => {
-    await page.goto(SIGN_IN_URL);
-    await page.evaluate(() => {
-      (window as ReloadMarkedWindow).__noReloadMarker = true;
-    });
-
-    const link = page
-      .locator(`a[href="${SIGN_UP_URL}"]`)
-      .filter({ hasText: switcherToSignUpLabel });
-    await expect(link).toHaveCount(1);
-    await link.tap();
-
-    await expect(page).toHaveURL(new RegExp(`${SIGN_UP_URL}$`));
-    const survivedNavigation = await page.evaluate(
-      () => (window as ReloadMarkedWindow).__noReloadMarker === true
-    );
-    expect(survivedNavigation).toBe(true);
+    await expectSwitcherTapKeepsPage(page, SIGN_IN_URL, SIGN_UP_URL, switcherToSignUpLabel);
   });
 
   test('taps the switcher from /sign-up to /sign-in without a full reload', async ({ page }) => {
-    await page.goto(SIGN_UP_URL);
-    await page.evaluate(() => {
-      (window as ReloadMarkedWindow).__noReloadMarker = true;
-    });
-
-    const link = page
-      .locator(`a[href="${SIGN_IN_URL}"]`)
-      .filter({ hasText: switcherToSignInLabel });
-    await expect(link).toHaveCount(1);
-    await link.tap();
-
-    await expect(page).toHaveURL(new RegExp(`${SIGN_IN_URL}$`));
-    const survivedNavigation = await page.evaluate(
-      () => (window as ReloadMarkedWindow).__noReloadMarker === true
-    );
-    expect(survivedNavigation).toBe(true);
+    await expectSwitcherTapKeepsPage(page, SIGN_UP_URL, SIGN_IN_URL, switcherToSignInLabel);
   });
 });

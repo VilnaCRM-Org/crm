@@ -53,6 +53,21 @@ const execute = async (
   return response.body.singleResult;
 };
 
+const expectCodeViolation = async (
+  server: ApolloServer,
+  query: string,
+  input: Record<string, string>
+): Promise<void> => {
+  const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+  const result = await execute(server, query, input);
+
+  expect(result.errors).toHaveLength(1);
+  expect(result.errors?.[0]?.message).toBe(CODE_VIOLATION);
+  expect(result.errors?.[0]?.extensions).toMatchObject({ code: 'BAD_USER_INPUT', status: 422 });
+  expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+};
+
 describe('2FA pending contract', () => {
   it('opens with the pending-against header the checker requires', () => {
     expect(TWO_FACTOR_PENDING_SDL.split('\n')[0]).toBe('# pending-against: v2.8.0');
@@ -309,17 +324,7 @@ describe('2FA operations on the stateless mock', () => {
     it.each(['12345', '1234567', 'abcdef', 'ABCD2345', 'abc-123', '123 456'])(
       'rejects the malformed code %p with a coded twoFactorCode violation at 422',
       async (twoFactorCode) => {
-        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-
-        const result = await execute(server, COMPLETE, { pendingSessionId, twoFactorCode });
-
-        expect(result.errors).toHaveLength(1);
-        expect(result.errors?.[0]?.message).toBe(CODE_VIOLATION);
-        expect(result.errors?.[0]?.extensions).toMatchObject({
-          code: 'BAD_USER_INPUT',
-          status: 422,
-        });
-        expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+        await expectCodeViolation(server, COMPLETE, { pendingSessionId, twoFactorCode });
       }
     );
 
@@ -383,16 +388,7 @@ describe('2FA operations on the stateless mock', () => {
     it.each(['12345', 'abcdef', 'ABCD-2345'])(
       'rejects %p, because confirm takes a TOTP code only',
       async (twoFactorCode) => {
-        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-
-        const result = await execute(server, CONFIRM, { twoFactorCode });
-
-        expect(result.errors?.[0]?.message).toBe(CODE_VIOLATION);
-        expect(result.errors?.[0]?.extensions).toMatchObject({
-          code: 'BAD_USER_INPUT',
-          status: 422,
-        });
-        expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+        await expectCodeViolation(server, CONFIRM, { twoFactorCode });
       }
     );
   });
@@ -415,16 +411,7 @@ describe('2FA operations on the stateless mock', () => {
     it.each(['12345', 'abcdef', 'ABCD2345'])(
       'rejects the malformed code %p with a coded twoFactorCode violation at 422',
       async (twoFactorCode) => {
-        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-
-        const result = await execute(server, DISABLE, { twoFactorCode });
-
-        expect(result.errors?.[0]?.message).toBe(CODE_VIOLATION);
-        expect(result.errors?.[0]?.extensions).toMatchObject({
-          code: 'BAD_USER_INPUT',
-          status: 422,
-        });
-        expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
+        await expectCodeViolation(server, DISABLE, { twoFactorCode });
       }
     );
   });
