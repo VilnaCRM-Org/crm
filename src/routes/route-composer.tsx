@@ -1,12 +1,11 @@
 import { type ClientOnErrorFunction, isRouteErrorResponse, type RouteObject } from 'react-router';
 
 import RouteError from '@/components/error-boundary/route-error';
-import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
 import type { FallbackLandmark } from '@/components/types/error-boundary';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
-import ProtectedRoute from '@auth/components/protected-route';
 
+import protectedLayoutLoader from './protected-layout-loader';
 import RouteFlagGate from './route-flag-gate';
 import routeMapper from './route-mapper';
 import ROUTE_PATHS from './route-paths';
@@ -14,7 +13,7 @@ import routeValidator from './route-validator';
 import type { AppRouteObject } from './types/app-route';
 import type { ComposedRoutes } from './types/composed-routes';
 import type { RouteModuleRegistry } from './types/route-module';
-import type { UserMenuSlot } from './types/shell-slot';
+import type { ShellSlotLoad } from './types/shell-slot';
 
 class RouteComposer {
   public compose(registry: RouteModuleRegistry): ComposedRoutes {
@@ -26,7 +25,7 @@ class RouteComposer {
           path: ROUTE_PATHS.home,
           element: <RootLayout />,
           errorElement: <RouteError landmark="main" />,
-          children: this.children(routes, this.userMenuSlot(registry)),
+          children: this.children(routes, this.userMenuLoad(registry)),
         },
       ],
     };
@@ -56,14 +55,14 @@ class RouteComposer {
     return new Error(String(error));
   }
 
-  private userMenuSlot(registry: RouteModuleRegistry): UserMenuSlot | undefined {
+  private userMenuLoad(registry: RouteModuleRegistry): ShellSlotLoad | undefined {
     for (const { shell } of registry.items) {
-      if (shell?.userMenu !== undefined) return routeMapper.shellSlot(shell.userMenu);
+      if (shell?.userMenu !== undefined) return shell.userMenu;
     }
     return undefined;
   }
 
-  private children(routes: readonly AppRouteObject[], userMenu?: UserMenuSlot): RouteObject[] {
+  private children(routes: readonly AppRouteObject[], userMenu?: ShellSlotLoad): RouteObject[] {
     const secured: AppRouteObject[] = [];
     const open: AppRouteObject[] = [];
     for (const route of routes) {
@@ -95,12 +94,17 @@ class RouteComposer {
 
   private protectedBranch(
     routes: readonly AppRouteObject[],
-    userMenu?: UserMenuSlot
+    userMenu?: ShellSlotLoad
   ): RouteObject[] {
     if (routes.length === 0) {
       return [];
     }
     const errorElement = <RouteError landmark="main" />;
+    const layout = protectedLayoutLoader.create({
+      userMenu,
+      report: routeMapper.slotFailureReporter(),
+    });
+    const { ProtectedRoute, AppLayout } = layout;
     return [
       {
         element: <ProtectedRoute />,
@@ -109,7 +113,7 @@ class RouteComposer {
           {
             element: (
               <AppLayout
-                userMenu={userMenu}
+                userMenu={layout.userMenu}
                 onShellFailure={routeMapper.chunkFailureReporter('app-shell:load')}
               />
             ),

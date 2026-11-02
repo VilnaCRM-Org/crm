@@ -1939,7 +1939,9 @@ in-page Suspense boundary (the registration form's result chunk) reuses it inste
 loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
 surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
 paint-path components style themselves with `@emotion/styled`, never `Box` or another
-`@mui/material` import. To add a page, follow the registry ("Adding a page" below); never eagerly
+`@mui/material` import. The protected branch is off the eager path as well: `ProtectedRoute` and
+`AppLayout` load together from one `protected-layout` chunk, so the public auth and error pages
+never download them. To add a page, follow the registry ("Adding a page" below); never eagerly
 import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
@@ -2615,10 +2617,13 @@ wiring — it contains no route-array literal and no feature/module page imports
 - **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
   `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
   optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
-  one declared `shell.userMenu` (`routeValidator` rejects a second) to `routeMapper.shellSlot`,
-  which wraps it through `ShellSlotFactory`, and passes the slot plus a chunk-failure reporter to
-  `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar, mobile drawer) around the page outlet
-  (issue #362).
+  one declared `shell.userMenu` (`routeValidator` rejects a second) to
+  `protectedLayoutLoader.create`, which wraps it through `ShellSlotFactory`, and passes the slot
+  plus a chunk-failure reporter to `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar,
+  mobile drawer) around the page outlet (issue #362). `ProtectedRoute`, `AppLayout` and
+  `ShellSlotFactory` are not in the eager entrypoint: they arrive together in one
+  `protected-layout` chunk (`src/routes/protected-layout-loader.ts`, one `ChunkRetryLoader`, no
+  reload), so a public page never downloads them.
 - **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a `RouteModule` whose
   routes lazy-`load` the feature's pages (per-route code splitting preserved). The auth feature:
   `@auth/routes`. The app shell's own routes (home, the five protected coming-soon sections
