@@ -175,8 +175,8 @@ Eight decisions shape everything below:
    `useResetPassword`, `useCreateNewPassword` and `useResetToken`; the two flow hooks share one
    submit skeleton, `useAbortableSubmit`. There is no controller class, no new Zustand store and
    no new module-level singleton that holds state; the only shipped singletons are stateless
-   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12; #330 replaced
-   the latter with the shared `lazyCatalogLoader` in `src/lib/locale-catalog/`).
+   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12). Superseded
+   2026-10-19 for `RecoveryCatalogLoader` only: §12 records its replacement by #330.
 5. **One password policy, never weaker than the API** (FR-24): `PasswordValidator` narrows its
    uppercase rule to ASCII `[A-Z]`, keeps the lowercase rule, and exposes per-rule evaluation as
    a named `PasswordRuleResultSet`.
@@ -1761,10 +1761,7 @@ Recovery-page strings under `password_recovery`, `password_reset` and `password_
 the lazy recovery catalog `@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key
 sets, registered for both locales by the stateless `RecoveryCatalogLoader` singleton, which
 `RecoveryPageLayout` calls when the route module evaluates (an accepted AR-2 exception, §12;
-#330 replaced it on 2026-10-19 with the shared `lazyCatalogLoader`
-(`src/lib/locale-catalog/`), whose `register(i18n, { en, uk })` takes the owner's JSON, and
-`RecoveryPageLayout` now calls that with the recovery catalog), and
-kept out of
+the loader is superseded 2026-10-19, and §12 records its replacement), and kept out of
 `src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
 "Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
 
@@ -1802,9 +1799,12 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
   `CreateNewPasswordFormSectionLoader` (item 1, §5.2), each holding one named `import()`, and
   `RecoveryCatalogLoader` (item 4, §11), whose one method adds both locale bundles through
   `addResourceBundle` when the route module evaluates. None of them has a field; the only state
-  any of them touches is what the module loader or i18next already holds. Amendment 2026-10-19:
-  #330 replaced `RecoveryCatalogLoader` and its own two copies with one shared
-  `lazyCatalogLoader` (`src/lib/locale-catalog/`), the same exception for every lazy catalog.
+  any of them touches is what the module loader or i18next already holds. Superseded
+  2026-10-19 for `RecoveryCatalogLoader` (the one replacement note for item 4 and §11): #330
+  replaced it and its own two copies with one shared `lazyCatalogLoader`
+  (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, { en, uk })` takes the
+  owner's JSON; `RecoveryPageLayout` now calls it with the recovery catalog, and the reasoning
+  above holds for it unchanged as the same exception for every lazy catalog.
 - **Type-only files (#88).** Every interface and alias is in `types/`; logic files declare none.
 - **DI collaborators (#130).** The repository value-imports only `tsyringe`, `uuid`, token
   modules and the two document seams; the provider `tsyringe` and token modules;
