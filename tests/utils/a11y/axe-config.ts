@@ -87,4 +87,12 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
       'Settings greeting: Figma grey #969B9D on white is 2.81:1; product-owner call, issue #330.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
+  {
+    ruleId: 'color-contrast',
+    selector:
+      '#auth-form-card > a.MuiButton-text[href="/sign-in"], ' +
+      '#auth-form-card > button.MuiButton-text',
+    reason: 'Recovery back link: Figma grey[50] #969B9D on white is 2.81:1; user decision on #315.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
 ];

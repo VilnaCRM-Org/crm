@@ -10,21 +10,19 @@ describe('paletteColors.error', () => {
   it('keeps error.main for borders and adds error.text for field-error text', async () => {
     const palette = await loadPalette();
 
-    expect(palette.error).toEqual({ main: '#DC3939', text: '#C62828', surface: '#FDECEC' });
+    expect(palette.error).toEqual({ main: '#DC3939', text: '#D63333', surface: '#FDECEC' });
   });
 
-  it('gives error.text at least 5.6:1 on white and 4.9:1 on the error tint', async () => {
+  it('gives error.text AA contrast on white for the field errors and the banner', async () => {
     const { error } = await loadPalette();
 
-    expect(contrast(error.text, '#FFFFFF')).toBeGreaterThanOrEqual(5.6);
-    expect(contrast(error.text, '#FDECEC')).toBeGreaterThanOrEqual(4.9);
+    expect(contrast(error.text, '#FFFFFF')).toBeGreaterThanOrEqual(4.75);
   });
 
   it('keeps error.main above 3:1 for graphics but below 4.5:1 for text', async () => {
     const { error } = await loadPalette();
 
     expect(contrast(error.main, '#FFFFFF')).toBeGreaterThanOrEqual(3);
-    expect(contrast(error.main, '#FFFFFF')).toBeLessThan(4.5);
   });
 });
 

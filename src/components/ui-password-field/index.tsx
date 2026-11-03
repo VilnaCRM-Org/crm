@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import type {
   PasswordFieldProps,
+  PasswordPath,
   PasswordVisibilityButtonProps,
 } from '@/components/types/ui-password-field';
 import UIFormField from '@/components/ui-form-field';
@@ -41,7 +42,7 @@ export default function UIPasswordField<T extends FieldValues>({
   placeholder,
   label,
   autoComplete,
-  name = 'password' as Path<T>,
+  name = 'password' as PasswordPath<T>,
   rules,
   describedBy,
   readOnly,
