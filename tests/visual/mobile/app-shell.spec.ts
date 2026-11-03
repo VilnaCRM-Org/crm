@@ -3,7 +3,6 @@ import { expect, test, type Page } from '@playwright/test';
 import ROUTE_PATHS from '@/routes/route-paths';
 import {
   PROFILE_NODE,
-  signInWithFlag,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
@@ -15,13 +14,14 @@ import {
   userMenuOf,
 } from '@tests/e2e/utils/app-shell';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 import stabilizePage from '@tests/visual/stabilize-page';
 import waitForStableDom from '@tests/visual/wait-for-stable-dom';
 
 import { MOBILE_SNAPSHOT_OPTIONS, mobileSnapshotName } from './take-mobile-snapshot';
 
 async function openShell(page: Page, path: string): Promise<void> {
-  await signInWithFlag(page, true);
+  await seedPreloadedAuthToken(page);
   await stubProfile(page);
   await stabilizePage(page, path);
   await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));

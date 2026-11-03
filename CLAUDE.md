@@ -2630,7 +2630,9 @@ flag is declared today: the last one, `forgotPassword`, was removed in #309 when
 "Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
 block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
 to a non-empty value fails container start with `Known flags: (none).` and must unset it. The
-settings page (issue #330) ships without a flag: `/settings` is registered in every environment.
+settings page (issue #330), its three coming-soon sub-pages and their app-shell entry points
+(issue #362) ship without a flag: the four routes are registered in every environment, and the
+sidebar, drawer and user menu always link to them.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2664,7 +2666,7 @@ wiring — it contains no route-array literal and no feature/module page imports
   routes lazy-`load` the feature's pages (per-route code splitting preserved). The auth feature:
   `@auth/routes`. The app shell's own routes (home, the five protected coming-soon sections
   `/boards`, `/products`, `/orders`, `/contacts` and `/analytics`, and 404, 403 and 5xx) live in
-  `src/routes/app-routes.ts`; the settings contract adds the three flagged coming-soon sub-pages
+  `src/routes/app-routes.ts`; the settings contract adds the three coming-soon sub-pages
   (`/settings/integrations`, `/settings/webhooks`, `/settings/billing`), and all eight load the
   shared `ComingSoonPage` from `@/components/coming-soon` in one `coming-soon` chunk.
 - **Registry** — `src/routes/registry.ts` collects the contracts (one-line

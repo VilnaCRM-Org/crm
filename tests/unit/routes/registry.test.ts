@@ -68,24 +68,21 @@ describe('route registry', () => {
     expect(settings?.meta?.titleKey).toBe('settings.title');
   });
 
-  it('declares the eight coming-soon routes, the settings three behind the flag', () => {
+  it('declares the eight coming-soon routes as protected routes', () => {
     const routes = registry.items.flatMap((module) => module.routes);
     const comingSoon = [
-      [ROUTE_PATHS.boards, undefined],
-      [ROUTE_PATHS.products, undefined],
-      [ROUTE_PATHS.orders, undefined],
-      [ROUTE_PATHS.contacts, undefined],
-      [ROUTE_PATHS.analytics, undefined],
-      [ROUTE_PATHS.settingsIntegrations, 'userSettings'],
-      [ROUTE_PATHS.settingsWebhooks, 'userSettings'],
-      [ROUTE_PATHS.settingsBilling, 'userSettings'],
-    ] as const;
+      ROUTE_PATHS.boards,
+      ROUTE_PATHS.products,
+      ROUTE_PATHS.orders,
+      ROUTE_PATHS.contacts,
+      ROUTE_PATHS.analytics,
+      ROUTE_PATHS.settingsIntegrations,
+      ROUTE_PATHS.settingsWebhooks,
+      ROUTE_PATHS.settingsBilling,
+    ];
 
-    for (const [path, flag] of comingSoon) {
-      const route = routes.find((candidate) => candidate.path === path);
-
-      expect(route?.guard).toBe('protected');
-      expect(route?.flag).toBe(flag);
+    for (const path of comingSoon) {
+      expect(routes.find((candidate) => candidate.path === path)?.guard).toBe('protected');
     }
   });
 

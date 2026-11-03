@@ -48,6 +48,7 @@ describe('stories that stub a Data provider or the current-user answer in shared
     expect(stories).toEqual([
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-menu/current-user-menu.stories.tsx`,
+      `${SETTINGS_ROOT}/components/user-menu/user-menu-slot.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-profile-settings/user-profile-settings.stories.tsx`,
       `${SETTINGS_ROOT}/routes/user-profile/user-profile.stories.tsx`,
     ]);

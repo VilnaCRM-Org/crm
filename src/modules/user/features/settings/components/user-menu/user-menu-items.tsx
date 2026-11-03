@@ -11,7 +11,6 @@ import UserMenuLink from './user-menu-link';
 export default function UserMenuItems({
   layout,
   menuId,
-  settingsAvailable,
   menu,
   signOut,
 }: UserMenuItemsProps): JSX.Element {
@@ -30,12 +29,8 @@ export default function UserMenuItems({
       onKeyDown={menu.menuKeyDown}
       sx={styles.list[layout]}
     >
-      {settingsAvailable && (
-        <UserMenuLink layout={layout} label={t('user_menu.my_profile')} onClose={menu.close} />
-      )}
-      {settingsAvailable && (
-        <UserMenuLink layout={layout} label={t('user_menu.settings')} onClose={menu.close} />
-      )}
+      <UserMenuLink layout={layout} label={t('user_menu.my_profile')} onClose={menu.close} />
+      <UserMenuLink layout={layout} label={t('user_menu.settings')} onClose={menu.close} />
       <MenuItem disableRipple disableGutters onClick={leave} sx={styles.item[layout]}>
         {t('user_menu.sign_out')}
       </MenuItem>
