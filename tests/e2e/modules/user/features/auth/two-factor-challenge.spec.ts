@@ -56,7 +56,10 @@ const TOGGLE_ROWS: readonly ToggleRow[] = [
   },
   {
     mode: 'recovery',
-    enter: (page) => recoveryToggleOf(page).click(),
+    enter: async (page): Promise<void> => {
+      await recoveryToggleOf(page).click();
+      await expect(recoveryFieldOf(page)).toBeFocused();
+    },
     toggle: authenticatorToggleOf,
   },
 ];
