@@ -10,6 +10,8 @@ import styles from './styles';
 
 export default function CardBackControl(props: CardBackControlProps): JSX.Element {
   const { t } = useTranslation();
+  const sx =
+    props.tone === 'primary' ? [styles.backControl, styles.backControlPrimary] : styles.backControl;
   const content = (
     <>
       <ChevronLeft aria-hidden="true" focusable="false" />
@@ -19,19 +21,13 @@ export default function CardBackControl(props: CardBackControlProps): JSX.Elemen
 
   if (props.to !== undefined) {
     return (
-      <InCardLink to={props.to} variant="text" sx={styles.backControl}>
+      <InCardLink to={props.to} variant="text" sx={sx}>
         {content}
       </InCardLink>
     );
   }
   return (
-    <UIButton
-      type="button"
-      variant="text"
-      onClick={props.onClick}
-      disableRipple
-      sx={styles.backControl}
-    >
+    <UIButton type="button" variant="text" onClick={props.onClick} disableRipple sx={sx}>
       {content}
     </UIButton>
   );
