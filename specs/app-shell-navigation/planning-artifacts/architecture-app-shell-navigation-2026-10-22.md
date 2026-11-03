@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-22
-revised: 2026-10-29
-iteration: 4
+revised: 2026-11-03
+iteration: 5
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -36,8 +36,17 @@ inputDocuments:
 
 **Author:** architect (Winston), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28
 and 2026-10-29 (shipped-design amendments: the user-menu slot, the AD-11 sign-out latch and the
-failed chip re-read; each change is marked in place as a dated amendment or owner decision)
+failed chip re-read; each change is marked in place as a dated amendment or owner decision;
+2026-11-03: the lazy protected-layout chunk of 663151bc and the userSettings flag removal)
 **Feature:** `app-shell-navigation`
+
+> **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
+> together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
+> drawer Settings group and the user menu's profile and Settings links now ship in every environment
+> (`docs/feature-flags.md`, "`/settings` ships without a flag"). Every condition below that reads
+> "while `userSettings` is on" now always holds, and every "`userSettings` off" row, scenario or
+> acceptance criterion describes a state no build reaches any more; they are kept unchanged as the
+> record of the plan as approved.
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"),
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N"), the authoritative
@@ -224,12 +233,17 @@ the barrel carry a UI loader, which the same README keeps out of the barrel for 
 
 ### 3.1 Component view (Option A shown; Option B differs only on the dashed edge)
 
+Amended after 663151bc: the composer reaches `AppLayout` and `ProtectedRoute` through
+`protectedLayoutLoader`, one dynamic `import()` of the `protected-layout` chunk, so the frame, its
+placeholders and the guard leave the entry; only the loader wiring stays in `index`.
+
 ```text
-src/routes/route-composer.tsx ──static──> src/components/layouts/app-layout.tsx   [entry]
+src/routes/route-composer.tsx ──static──> src/routes/protected-layout-loader.ts       [entry]
+        │  import() ──> src/routes/protected-layout.ts ──> app-layout.tsx, protected-route
         │  reads registry.items[].shell.userMenu (A)  /  imports @/modules/user (B)  - - - -
         │  routeMapper.shellSlot(load) ──> UserMenuSlot (lazy component)
         ▼
-<AppLayout userMenu={UserMenuSlot}>                        frame + placeholders      [entry]
+<AppLayout userMenu={UserMenuSlot}>                        frame + placeholders      [protected-layout]
    ├─ Suspense(ShellPlaceholder) ─> UIAppShell             appShellLoader            [ui-app-shell]
    │     ├─ UIAppHeader  (banner: logo, search, bell, list, slot frame, burger)
    │     │     ├─ slot frame ─> Suspense(slot placeholder) ─> userMenu({ signOut })   [user-menu]
@@ -241,7 +255,7 @@ src/routes/route-composer.tsx ──static──> src/components/layouts/app-lay
    │     │     └─ UINavigationDrawer (below the sidebar breakpoint, while open)
    │     │           └─ UINavigationList
    │     └─ UISidebar (at or above the sidebar breakpoint) ─> UINavigationList
-   ├─ <main tabIndex=-1> <Outlet context /> </main>        unchanged                 [entry]
+   ├─ <main tabIndex=-1> <Outlet context /> </main>        frame markup              [protected-layout]
    └─ Suspense(FooterSlot) ─> UIFooter                     unchanged                 [ui-footer]
 ```
 
@@ -249,7 +263,8 @@ src/routes/route-composer.tsx ──static──> src/components/layouts/app-lay
 
 | Chunk                  | Contents                                                                                                                        | Requested by                        | Public routes          |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------- |
-| `index` (entry)        | frame grid, two placeholders, `appShellLoader` wiring, composer slot wiring                                                     | every page                          | yes (bytes only, AD-2) |
+| `index` (entry)        | `protectedLayoutLoader` and composer slot wiring (amended after 663151bc)                                                       | every page                          | yes (bytes only, AD-2) |
+| `protected-layout`     | `ProtectedRoute`, the `AppLayout` frame grid, two placeholders, `appShellLoader` wiring, `shell-slot-factory` (663151bc)        | first protected route               | never                  |
 | `ui-app-shell` **NEW** | `UIAppShell`, header, sidebar, list, drawer (MUI `Drawer`), icons, shell catalog                                                | `AppLayout` render                  | never                  |
 | `mui-theme`            | unchanged                                                                                                                       | in parallel with every themed chunk | unchanged              |
 | `user-menu` **NEW**    | `UserMenuSlot`, `UserMenu`, `useUserMenu`, chip catalog                                                                         | `UIAppHeader` render                | never                  |
@@ -947,7 +962,8 @@ raised):
 
 | Chunk                                             | Expected direction                                              | Budget that binds                                                |
 | ------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `index` (entry)                                   | small growth: frame, placeholders, wiring                       | target under 1 kB gzip (NFR-5); 165 000 gzip / 470 000 raw entry |
+| `index` (entry)                                   | loader wiring only since 663151bc                               | target under 1 kB gzip (NFR-5); 165 000 gzip / 470 000 raw entry |
+| `protected-layout`                                | new since 663151bc: guard, frame, placeholders                  | 130 000 gzip / 400 000 raw per asset                             |
 | `ui-app-shell`                                    | new                                                             | 130 000 gzip / 400 000 raw per asset                             |
 | `user-menu`                                       | new                                                             | same                                                             |
 | `current-user`                                    | new, small                                                      | same                                                             |
