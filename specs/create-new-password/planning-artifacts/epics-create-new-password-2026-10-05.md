@@ -51,8 +51,8 @@ inputDocuments:
 
 ## Overview
 
-This document decomposes the [PRD](./prd-create-new-password-2026-10-05.md) (28 FRs, FR-25
-withdrawn, 18 NFRs, the authoritative _what_) and the reviewed
+This document decomposes the [PRD](./prd-create-new-password-2026-10-05.md) (29 FRs, FR-25
+withdrawn and FR-29 added after planning, 18 NFRs, the authoritative _what_) and the reviewed
 [architecture](./architecture-create-new-password-2026-10-05.md) (the authoritative _how_) into five
 epics (Epic 0 to Epic 4), 23 stories and six follow-ups. Both operations run over GraphQL only, the
 user's decision of 2026-10-05, and against mocked GraphQL until user-service releases them, the
@@ -165,6 +165,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - FR-26: token and PII scrubbing in telemetry (`token=` string pattern, `variables` keys).
 - FR-27: every string in `uk` and `en`; merged catalog regenerated.
 - FR-28: route-coverage manifest rows for both keys; route scan and visual lists gain both.
+- FR-29: sign-in result card in the shared notification (added after planning; no story,
+  "Implementation drift" item 16).
 
 ### NonFunctional Requirements
 
@@ -281,6 +283,7 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 | FR-26       | 1.3, 2.5, 3.1, 3.6                                                   |
 | FR-27       | 1.2, 2.2, 2.3, 2.4, 2.5, 3.2, 3.3, 3.5, 3.6                          |
 | FR-28       | 2.5, 3.6, 4.2, 4.3, 4.4, 4.5                                         |
+| FR-29       | none: shipped outside the story plan (drift item 16, `09fded0e`)     |
 | NFR-1       | every Ready code story; 4.5 sweep                                    |
 | NFR-2       | every Ready code story; 1.4, 4.5                                     |
 | NFR-3       | 2.1, 2.2, 2.3, 3.4, 3.5, 4.5                                         |
@@ -301,8 +304,10 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 | NFR-18      | 0.1, 0.2, 1.3, 1.4, 1.5, 2.3, 2.5, 3.4, 3.6, 4.5                     |
 
 Every FR-1 to FR-28 except the withdrawn FR-25, and every NFR-1 to NFR-18, is covered by at least
-one Ready story. The FR rows equal the union of the per-story **Requirements** lines; an NFR row
-opening with "every …" lets the qualifier stand for the stories it names generically.
+one Ready story. FR-29 was added after planning for a change that shipped outside the stories; it
+is traced to "Implementation drift" item 16 and its specs instead. The FR rows equal the union of
+the per-story **Requirements** lines; an NFR row opening with "every …" lets the qualifier stand
+for the stories it names generically.
 
 ## Definition of done shared by every Ready story
 
