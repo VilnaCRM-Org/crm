@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import { type JSX, type RefCallback, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import UIForm from '@/components/ui-form';
@@ -28,6 +28,25 @@ function EmailField(): JSX.Element {
   );
 }
 
+function DemoNotice(): JSX.Element {
+  const [text, setText] = useState('');
+
+  useEffect(() => {
+    setText('Пароль змінено. Увійдіть з новим паролем.');
+  }, []);
+
+  return (
+    <p role="status">
+      <span aria-hidden="true">✓ </span>
+      <span>{text}</span>
+    </p>
+  );
+}
+
+const focusTitleOnMount: RefCallback<HTMLElement> = (node) => {
+  node?.focus();
+};
+
 const meta: Meta<typeof UIForm<DemoValues>> = {
   title: 'Components/Inputs/UIForm',
   component: UIForm<DemoValues>,
@@ -47,6 +66,9 @@ const meta: Meta<typeof UIForm<DemoValues>> = {
     defaultValues: { control: false },
     formOptions: { control: false },
     onSubmit: { control: false },
+    notice: { control: false },
+    titleRef: { control: false },
+    submitSpacing: { control: 'inline-radio', options: ['default', 'tight'] },
   },
   parameters: {
     docs: {
@@ -91,6 +113,50 @@ export const Offline: Story = {
         story:
           'While the browser reports no network the submit is disabled and described by the ' +
           'offline notice under the heading (issue #147).',
+      },
+    },
+  },
+};
+
+export const WithNotice: Story = {
+  args: { notice: <DemoNotice /> },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The `notice` slot renders after the heading and subtitle and before the error banner ' +
+          'and the offline notice, the way `/sign-in` shows its password-changed notice. The ' +
+          'notice is a polite `role="status"` region that mounts empty and fills its text in an ' +
+          'effect: a region created already filled would not be announced.',
+      },
+    },
+  },
+};
+
+export const TightSubmitSpacing: Story = {
+  args: { submitSpacing: 'tight' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`submitSpacing: "tight"` reduces only the gap above the submit button, as the ' +
+          'password recovery forms use it; the button size, label and focus behaviour are ' +
+          'unchanged.',
+      },
+    },
+  },
+};
+
+export const FocusedTitle: Story = {
+  args: { titleComponent: 'h1', titleRef: focusTitleOnMount },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`titleRef` receives the heading, which the recovery forms focus on mount so a screen ' +
+          'reader starts on the new step. The heading gets `tabIndex=-1`: focusable by script, ' +
+          'not a Tab stop. An error banner present at mount takes focus instead, so this story ' +
+          'sets no `error`.',
       },
     },
   },
