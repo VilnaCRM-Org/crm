@@ -130,7 +130,9 @@ lazy-loading boundary that keeps every shell byte off the eager entry and off pu
    (`profile-header/index.tsx:15-24`) move into the `@injectable()` `UserDisplayNameMapper` in
    `src/modules/user/store/` (beside the module's other injectable mappers), registered by class under the new `AUTH_TOKENS.UserDisplayNameMapper` and
    resolved with `useService` inside hooks (AD-9), because a `.tsx` value-importing a `-mapper` file
-   fails `components-no-direct-injectable-import`. Navigation items are typed data, current-route
+   fails `components-no-direct-injectable-import`. Amended after 0addef83: the chip's read no
+   longer resolves it; the container-free `currentUserSource` builds its own `UserDisplayNameMapper`,
+   and only `use-display-name.ts` still resolves the mapper through `useService`. Navigation items are typed data, current-route
    logic is a hook, chunk loading reuses `ThemedChunkLoader` and `ChunkRetryLoader`. No new GoF
    pattern.
 6. **ADR drift.** Only `src/routes/route-composer.tsx` among the guarded paths changes. OQ-10 is
@@ -171,7 +173,11 @@ chip, user-aware slot, drawer). This stage adds:
 
 Also binding: `tests/unit/tooling/settings-layer-edges.test.ts` (settings `components`, `hooks` and
 `routes` import no Repository or Transformer and a Data provider only as a hook type, `:56-68`).
-`use-current-user.ts` follows `use-profile-load.ts:7` exactly (`import type ProfileProvider`).
+`use-current-user.ts` followed `use-profile-load.ts:7` exactly (`import type ProfileProvider`) until
+0addef83. Since then it imports no Data provider and no `useService`: it calls the container-free
+`currentUserSource`, which builds its own `CurrentUserClient`, `CurrentUserResponseParser` and
+`UserDisplayNameMapper`. The `components-no-direct-injectable-import` row above records the plan as
+approved; `use-display-name.ts` is now the only hook that resolves the mapper through `useService`.
 
 ### 2.3 The user-aware slot export point (OQ-17, RESOLVED by owner 2026-10-23: Option A)
 
@@ -563,7 +569,10 @@ consumers already sit behind the DI chunk (the settings page and the `current-us
 adds no eager or flag-off cost. `no-store-to-feature-ui` holds and `injectable-classes-no-value-imports`
 applies; the mapper value-imports nothing (it is in `LOGIC_SOURCE_PATHS`,
 `config/di-collaborator-policy.js:46-51`, so the DI-collaborator gate covers it). Cost: `ProfileHeader` gains a hook with container access, and its stories need the
-provider decorator. jscpd sees no copy.
+provider decorator. jscpd sees no copy. Amended after 0addef83: only `use-display-name.ts` still
+resolves the mapper through `useService`; the chip's read in `use-current-user.ts` goes through the
+container-free `currentUserSource`, which constructs its own `UserDisplayNameMapper`, so the
+`current-user` chunk no longer sits behind the DI chunk.
 
 ### 5.9 Settings alignment and home cleanup (AD-10)
 
@@ -1184,7 +1193,7 @@ updated, because their sign-out now runs through the shell.
 | OQ-2a | How tests get the badge counts 1 and 8                       | stories only (AD-14); no seed, no source, no lane feed                                                                                                                                                                                     |
 | OQ-25 | `currentUser` request count and chip freshness               | independent reads: two on `/settings`, the chip re-reads on pathname change. Amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md:1710` and the five e2e assertions of §5.7; the stubs route replies by caller |
 | OQ-26 | Shell chunk fails twice                                      | keep the placeholders and capture the error (AD-12)                                                                                                                                                                                        |
-| OQ-27 | How `UserDisplayNameMapper` reaches its two `.tsx` consumers | registered under `AUTH_TOKENS.UserDisplayNameMapper`, read through `useService` in `use-current-user.ts` and `use-display-name.ts` (AD-9)                                                                                                  |
+| OQ-27 | How `UserDisplayNameMapper` reaches its two `.tsx` consumers | registered under `AUTH_TOKENS.UserDisplayNameMapper`, read through `useService` in `use-display-name.ts`; `use-current-user.ts` reads through the container-free `currentUserSource` and its own instance since 0addef83 (AD-9)            |
 | OQ-28 | The coming-soon page design                                  | existing tokens and the error-page layout (UX §15), marked for designer confirmation                                                                                                                                                       |
 
 ## 14. Verification items
