@@ -1,7 +1,6 @@
-import type UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
 
-import type { ProfileReadOutcome } from '../user-profile';
+import type { CurrentUserReadOutcome } from '../current-user/current-user-read';
 
 export type CurrentUserStatus = 'pending' | 'ready' | 'failed';
 
@@ -11,7 +10,6 @@ export interface CurrentUserState {
 }
 
 export interface CurrentUserSettlement {
-  readonly outcome: ProfileReadOutcome;
-  readonly mapper: UserDisplayNameMapper;
+  readonly outcome: CurrentUserReadOutcome;
   readonly previous: CurrentUserState;
 }

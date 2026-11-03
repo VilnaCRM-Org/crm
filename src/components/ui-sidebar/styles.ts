@@ -6,7 +6,7 @@ const REDUCED_MOTION = '@media (prefers-reduced-motion: reduce)';
 const wrapper = {
   position: 'relative',
   flexShrink: 0,
-  transition: 'width 200ms ease-out',
+  transition: 'width 200ms ease-out, margin-right 200ms ease-out',
   [REDUCED_MOTION]: { transitionDuration: '0s' },
 };
 

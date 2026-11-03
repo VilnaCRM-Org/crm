@@ -28,11 +28,12 @@ function showToasts(state: ToastQueueState, drafts: ToastDraftSet): ToastQueueSt
     ...draft,
     id: state.nextId + index,
   }));
+  const shown: ToastDraftSet = { items: added.slice(-MAX_TOASTS) };
   const marked = !state.marked;
   return {
     toasts: { items: [...state.toasts.items, ...added].slice(-MAX_TOASTS) },
-    announcement: spokenText(drafts, 'success', marked),
-    alert: spokenText(drafts, 'error', marked),
+    announcement: spokenText(shown, 'success', marked),
+    alert: spokenText(shown, 'error', marked),
     nextId: state.nextId + added.length,
     marked,
   };

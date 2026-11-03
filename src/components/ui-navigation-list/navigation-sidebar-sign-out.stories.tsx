@@ -24,3 +24,5 @@ export default meta;
 export const Expanded = navigationListStories.desktop;
 
 export const Rail = navigationListStories.rail;
+
+export const TabletRail = navigationListStories.tabletRail;

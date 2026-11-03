@@ -23,6 +23,7 @@ const meta: Meta<typeof ErrorBanner> = {
           'resubmit. This story renders the banner on its own with no-op handlers, so it shows ' +
           'the message only.',
       },
+      story: { inline: false },
     },
   },
 };
