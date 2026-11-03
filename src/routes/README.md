@@ -56,6 +56,7 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 | `signIn`               | `/sign-in`               | `@auth/routes` (user.auth) | public    |
 | `passwordRecovery`     | `/password-recovery`     | `@auth/routes` (user.auth) | public    |
 | `passwordReset`        | `/password-reset`        | `@auth/routes` (user.auth) | public    |
+| `twoFactorChallenge`   | `/sign-in/two-factor`    | `@auth/routes` (user.auth) | public    |
 | `settings`             | `/settings`              | settings routes            | protected |
 | `forbidden`            | `/forbidden`             | `app-routes.ts`            | public    |
 | `serverError`          | `/server-error`          | `app-routes.ts`            | public    |
