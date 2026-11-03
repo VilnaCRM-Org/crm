@@ -183,5 +183,21 @@ describe('the exception allowlist', () => {
 
       expect(filtered.violations).toEqual([{ id: 'color-contrast', nodes: [node] }]);
     });
+
+    it('resolves the xpath inside a Document root, not the global document', async () => {
+      const scanned = document.implementation.createHTMLDocument('scanned');
+      const button = scanned.createElement('button');
+      button.id = 'contained';
+      button.className = 'shared MuiButton-contained';
+      scanned.body.append(button);
+
+      const filtered = await applyA11yExceptions(
+        { violations: [{ id: 'color-contrast', nodes: [sharedNode('contained')] }] },
+        domElementMatcher(scanned),
+        contained
+      );
+
+      expect(filtered.violations).toEqual([]);
+    });
   });
 });
