@@ -7,7 +7,6 @@ import {
   replyWithResent,
   replyWithSaved,
   replyWithStatus,
-  signInWithFlag,
   stubProfile,
   type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -24,6 +23,7 @@ import {
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { showPasswordLabel } from './constants';
 import expectTouchTarget from './utils/touch-target';
@@ -70,7 +70,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
   let stub: StubbedProfile;
 
   test.beforeEach(async ({ page }) => {
-    await signInWithFlag(page, true);
+    await seedPreloadedAuthToken(page);
   });
 
   test('changes a name with taps only', async ({ page }) => {
