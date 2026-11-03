@@ -1787,8 +1787,9 @@ built in Story 3.6 (renumbered from 3.1).
   (`security-event-core.ts:13-22`). `TwoFactorSettingsProvider` therefore needs no recorder.
 - `PiiScrubber.deniedFragments` (`pii-scrubber.ts:4-12`) gains `pendingsession`,
   `twofactorcode`, `recoverycode`, `otpauth`; `patterns` (`:14-18`) gains
-  `/otpauth:\/\/[^\s"']+/gi` as its first entry, before the e-mail pattern (`:15`), so a URI is
-  redacted whole up to whitespace or a quote even when its label carries a raw `@` (FR-39).
+  `/otpauth:[^\s"']+/gi` as its first entry, before the e-mail pattern (`:15`), so a URI is
+  redacted whole up to whitespace or a quote even when its label carries a raw `@` (FR-39), and
+  also in its JSON-escaped form (`otpauth:\/\/…`), which a plain `otpauth:\/\/` prefix would miss.
   user-service percent-encodes the label (`rawurlencode($email)`), so a real URI carries `%40`;
   the test vectors and `buildOtpauthUri` do the same.
 

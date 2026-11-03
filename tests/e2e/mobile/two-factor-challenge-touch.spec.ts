@@ -98,6 +98,7 @@ test.describe('The sign-in challenge on touch devices (issue #331)', () => {
     await expect.poll(() => challenge.count()).toBe(1);
     expect(challenge.calls[0]?.variables['input']).toMatchObject({ twoFactorCode: 'ABCD-0001' });
     await expect(page).not.toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
+    await expectNoSecrets(page, { ...secrets, code: 'ABCD-0001', typed: RECOVERY_CODE });
   });
 
   test('switches back to the cells with a tap', async ({ page }) => {

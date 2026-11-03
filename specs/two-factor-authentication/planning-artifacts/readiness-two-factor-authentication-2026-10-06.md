@@ -3,7 +3,7 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-08
+revised: 2026-10-27
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 iteration: 4
