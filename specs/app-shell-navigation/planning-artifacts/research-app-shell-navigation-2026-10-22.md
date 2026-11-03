@@ -29,13 +29,14 @@ inputDocuments:
 
 # Research: app shell navigation
 
-This artifact is self-contained: the brief, PRD, UX spec, architecture and epics read only this
-file. It consolidates seven read-only evidence reports (three Figma breakpoint audits, one Figma
-variant search, and three crm code audits) gathered on 2026-10-22 against branch
-`feat/362-app-shell-navigation` at `7668ad23`, which stacks on PR #354
-(`feat/330-user-settings`). Owner decisions from the brief are referenced as `B4.n` (brief §4,
-item n). Nothing in this research changed a repository file other than this one, and no test,
-build or bundler ran.
+The brief, PRD, UX spec, architecture and epics take their evidence from this file rather than
+from the raw reports. It consolidates seven read-only evidence reports (three Figma breakpoint
+audits, one Figma variant search, and three crm code audits) gathered on 2026-10-22 against branch
+`feat/362-app-shell-navigation` at `7668ad23`, which stacks on PR #354 (`feat/330-user-settings`).
+Owner decisions are referenced as `B4.n`: item n of §4 of the task brief that opened the work. That
+task brief is not stored in the repository; PRD §9 restates each decision as `OQ-1` to `OQ-10`
+with the owner's verbatim answer, so the citations are checked there. Nothing in this research
+changed a repository file other than this one, and no test, build or bundler ran.
 
 > **Owner decisions of 2026-10-23, recorded after this research was written.** Full Figma colour and
 > pixel parity ("we need full figma color and pixel parity", PRD NFR-22); OQ-1 resolved to
@@ -582,7 +583,8 @@ APIs only, not CSS. Outside the floor (from general compatibility knowledge, not
 - Definition of done: accessible names match visible labels; full keyboard operation in reading
   order with visible focus at every stop (a ripple-only cue is a 2.4.7 finding); **the modal
   drawer traps focus and returns it; the menu-button menu does not trap (Tab closes it) and returns
-  focus on Escape**; icon-only controls named, decorative icons hidden; one live region for dynamic
+  focus on Escape**, which is the dialog and menu-button split the acceptance standard draws;
+  icon-only controls named, decorative icons hidden; one live region for dynamic
   changes; no `data-testid`.
 - Landmarks: `<header>` banner, `<nav>` with a localized `aria-label` and `aria-current="page"`;
   `<main>` keeps `useArrivalFocus` and stays the only `main[tabindex="-1"]`; route errors under

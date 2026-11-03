@@ -2515,9 +2515,9 @@ Three different things are outside the gate, and the distinction matters when yo
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
-  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, and the
-  app-shell chip's current-user read (`auth-session-provider`, `current-user-client`,
-  `current-user-source`, issue #362).
+  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, the
+  app-shell session (`auth-session-provider`) and the chip's current-user read
+  (`current-user-client`, `current-user-source`, issue #362).
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
