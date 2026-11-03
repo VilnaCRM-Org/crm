@@ -2,10 +2,7 @@ import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildResetToken } from '@tests/builders';
-import {
-  signInWithFlag,
-  stubProfile,
-} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
@@ -23,7 +20,7 @@ interface RouteScan {
 }
 
 async function prepareSettings(page: Page): Promise<void> {
-  await signInWithFlag(page, true);
+  await seedPreloadedAuthToken(page);
   await stubProfile(page);
 }
 

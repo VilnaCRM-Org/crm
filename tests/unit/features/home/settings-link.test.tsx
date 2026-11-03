@@ -10,7 +10,6 @@ import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 import { styleRuleFor, styleRulesFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 function Arrival(): ReactElement {
   const location = useLocation();
@@ -34,32 +33,8 @@ const renderHome = (): ReturnType<typeof render> =>
     </I18nextProvider>
   );
 
-const flag = (on: boolean): void => {
-  writeConfigBlock(JSON.stringify({ flags: { userSettings: on } }));
-};
-
 describe('Home settings link', () => {
-  afterEach(() => {
-    clearConfigBlock();
-  });
-
-  it('renders no link while the config block carries no flag', () => {
-    renderHome();
-
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Вийти' })).toBeInTheDocument();
-  });
-
-  it('renders no link while the flag is explicitly off', () => {
-    flag(false);
-    renderHome();
-
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Вийти' })).toBeInTheDocument();
-  });
-
-  it('renders one /settings link between the description and sign out while the flag is on', () => {
-    flag(true);
+  it('renders one /settings link between the description and sign out', () => {
     renderHome();
 
     const link = screen.getByRole('link', { name: 'Налаштування' });
@@ -73,7 +48,6 @@ describe('Home settings link', () => {
   });
 
   it('navigates client-side on a plain click with focusMain in the state', () => {
-    flag(true);
     renderHome();
 
     const prevented = !fireEvent.click(screen.getByRole('link', { name: 'Налаштування' }), {
@@ -92,7 +66,6 @@ describe('Home settings link', () => {
     ['shift', { shiftKey: true }],
     ['alt', { altKey: true }],
   ])('leaves a %s-click to the browser', (_name, modifier) => {
-    flag(true);
     renderHome();
     const seen: boolean[] = [];
     document.addEventListener(
@@ -111,7 +84,6 @@ describe('Home settings link', () => {
   });
 
   it('shows the link-coloured focus ring on keyboard focus, like the settings resend link', () => {
-    flag(true);
     renderHome();
 
     const ring = styleRuleFor(screen.getByRole('link', { name: 'Налаштування' }), ':focus-visible');
@@ -121,7 +93,6 @@ describe('Home settings link', () => {
   });
 
   it('darkens and underlines the link on hover', () => {
-    flag(true);
     renderHome();
 
     const hover = styleRulesFor(screen.getByRole('link', { name: 'Налаштування' }), ':hover');
@@ -131,14 +102,12 @@ describe('Home settings link', () => {
   });
 
   it('draws the link text in the 5.04:1 link colour, not the MUI default blue', () => {
-    flag(true);
     renderHome();
 
     expect(screen.getByRole('link', { name: 'Налаштування' })).toHaveStyle({ color: '#0074B5' });
   });
 
   it('is reached by Tab right before sign out', async () => {
-    flag(true);
     renderHome();
 
     await userEvent.tab();
@@ -149,7 +118,6 @@ describe('Home settings link', () => {
   });
 
   it('has no axe violations with the link', async () => {
-    flag(true);
     const view = renderHome();
 
     await expectNoA11yViolations(view.container);
