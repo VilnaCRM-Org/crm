@@ -2,14 +2,12 @@ import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildResetToken } from '@tests/builders';
-import {
-  signInWithFlag,
-  stubProfile,
-} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { chipOf, openChipMenu, sidebarOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const UNKNOWN_PATH = '/definitely-not-a-route';
 const POSITIVE_TABINDEX = '[tabindex]:not([tabindex="0"]):not([tabindex="-1"])';
@@ -24,7 +22,7 @@ interface RouteScan {
 }
 
 async function prepareShell(page: Page): Promise<void> {
-  await signInWithFlag(page, true);
+  await seedPreloadedAuthToken(page);
   await stubProfile(page);
 }
 
@@ -143,16 +141,6 @@ test.describe('WCAG 2.1 AA route scans (issue #118)', () => {
       await expect(page.locator(POSITIVE_TABINDEX)).toHaveCount(0);
     });
   }
-
-  test('home with userSettings off has no axe violations outside the allowlist', async ({
-    page,
-  }) => {
-    await signInWithFlag(page, false);
-    await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
-    await expectShellRendered(page);
-
-    await expectNoAxeViolations(page);
-  });
 
   test('home with the user menu open has no axe violations outside the allowlist', async ({
     page,

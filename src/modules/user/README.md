@@ -414,20 +414,25 @@ What [Password recovery decisions](#password-recovery-decisions) already record 
 layers and folders, `UserServiceErrorTransformer`, the lazy-catalog mechanism and the shared
 password policy — is referenced below, not repeated.
 
-### One flag, read when the route renders
+### No feature flag for the settings page
 
-**Context.** user-service v2.8.0 authenticates nobody, so the page ships off in production and on
-in the test stack. The router is built at module evaluation, before the guarded runtime-config
-load, and the mobile Lighthouse floor has no headroom for another eager read.
+**Context.** user-service v2.8.0 authenticates nobody, and an earlier revision of this work
+shipped the page behind a `userSettings` runtime flag, off in production and on in the test
+stack. The product owner decided not to wait for the backend.
 
-**Decision.** A route contract declares one `flag`. `RouteMapper` copies it into the route's
-`handle`, and an eager `RouteFlagGate` above `ProtectedRoute` reads the flag when the route
-renders and shows the not-found page while it is off, so neither the redirect nor the page chunk
-is reached.
+**Decision.** `/settings` and its three coming-soon sub-pages (issue #362) are ordinary protected
+routes, registered in every environment, and the app shell's sidebar, drawer and user menu always
+link to them. No flag is declared and the route registry has no flag gate, so the router tree is
+the one `ProtectedRoute` and `AppLayout` already build.
 
-**Rejected.** Filtering the contracts by flag while the router is built (it would read the block
-before the guarded load); gating inside the page chunk (`ProtectedRoute` redirects first and the
-chunk is requested).
+**Consequence, accepted.** Until user-service ships its authentication surface (G1), every
+environment that deploys this page reads and updates whichever user the unauthenticated API
+returns, not the signed-in one. The product owner accepted that exposure in production.
+
+**Rejected.** A `flag` field on route contracts with a gate that renders the not-found page while
+the flag is off, and a matching `flag` on shell navigation items that the shell filtered out
+(machinery kept for routes that no longer need it); gating inside the page chunk
+(`ProtectedRoute` redirects first and the chunk is requested).
 
 ### The current user is the first edge of `users(first: 1)`
 
@@ -814,22 +819,26 @@ through which a non-auth feature reads or writes auth state; `SignOutContext` st
 dependency-cruiser forbids); a status query (user-service has no 2FA query, and `User` exposes no
 2FA field); a second store for the status (two sources for one fact).
 
-### The flag gates only the 2FA section
+### No feature flag for the two-factor section
 
-**Context.** The operations are mocked until a release carries them, so production must keep the
-management UI hidden, while the challenge must keep working wherever a sign-in returns one.
+**Context.** The 2FA operations are mocked until a user-service release carries `signInUser` and
+the 2FA mutations, and an earlier revision of this work hid the section behind a `twoFactorAuth`
+runtime flag, off in production and on in the test stack. The product owner decided not to wait
+for the backend, as for the settings page itself.
 
-**Decision.** `twoFactorAuth` is a runtime flag shipped `false`, declared in the `FeatureFlag`
-union, `FEATURE_FLAG_DEFAULTS`, the strict schema, the committed block and `.env.example`. The
-`UserProfile` page reads it with `useFeatureFlag('twoFactorAuth')` when it renders and shows the
-section only while it is on. No route contract lists it and no sign-in code reads it. The test
-stack passes `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, so every
-browser lane renders the section by default (an explicit `false` runs without it), and production
-enables it in Follow-up 5.1; the flag is deleted once production has run with it on.
+**Decision.** `UserProfile` always renders `TwoFactorSettings` as the second child of
+`SettingsGrid`. No flag is declared, so every environment, the browser lanes included, renders the
+section, and the challenge at `/sign-in/two-factor` stays registered everywhere as before.
 
-**Rejected.** A flag that selects the sign-in transport (the decision above removed the choice); a
-route-level flag on the challenge (see the previous records); no flag at all (production would
-show management screens against a backend that cannot answer them).
+**Consequence, accepted.** Until that user-service release ships, every environment that deploys
+this page offers turning 2FA on, turning it off and regenerating the codes against a backend that
+cannot answer them, so those operations end in the section's error banner rather than succeeding.
+The product owner accepted that in production.
+
+**Rejected.** A `twoFactorAuth` flag that hides the section (a second page variant to keep
+tested, for a section the product owner chose to ship); a flag that selects the sign-in transport
+(the decision above removed the choice); a route-level flag on the challenge (see the previous
+records).
 
 ### 2FA failures are classified by rows appended to the shared transformer
 
@@ -947,7 +956,7 @@ the card is a named region, and the `h3` carries the view title and takes focus 
 Ukrainian from the story; the frames' Russian text is not used. Live measurement on port 3005 could
 not run here, so the sizes above are pinned in unit tests and the CI visual lane is the measurement.
 
-### The codes view, the status headings and the flag gate
+### The codes view and the status headings
 
 The codes view is a `UIForm` whose submit is "Готово". It shows the eight codes as an ordered list
 (`#1A1C1E` on `#EAECEE`), an outlined "Скопіювати коди" button that copies them newline-separated
@@ -957,10 +966,8 @@ box is unticked the form passes `submitBlockedReason`, so "Готово" stays f
 and the view that replaces it holds no code. The on view and any off view with a status code show one
 focused level-3 status heading, the only announcement: "Двофакторну автентифікацію ввімкнено" with a
 decorative icon, "вже ввімкнено", "Налаштування застаріло. Почніть знову.", "вимкнено" and "вже
-вимкнено". `/settings` mounts the card as the second child of `SettingsGrid` through a small
-`TwoFactorSection` that reads the `twoFactorAuth` flag, so with the flag off no 2FA hook is called
-and the grid renders as before. The views for disable, regenerate and re-authentication belong to the
-next story.
+вимкнено". `/settings` mounts the card as the second child of `SettingsGrid`. The views for
+disable, regenerate and re-authentication belong to the next story.
 
 ### Turning 2FA off and regenerating the codes
 
@@ -1030,11 +1037,11 @@ public route, so either owner would pull the other's keys into its chunk).
 ### The 2FA card in the browser lane
 
 `tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts` drives the card with a seeded
-token and both flags forced on through `overrideRuntimeConfig`, with the setup and confirm answers
-stubbed by `two-factor-settings-responses.ts` (each with a unit test) and the profile by
-`stubProfile`. It covers the flag gate, the Authorization header, the busy status, focus on each new
-heading, the QR image, the key in groups of four, both clipboard paths, the three confirm outcomes,
-the recovery codes and the acknowledgement, Retry that sends exactly one more request, the shared
+token, with the setup and confirm answers stubbed by `two-factor-settings-responses.ts` (each with a
+unit test) and the profile by `stubProfile`. It covers the section's place beside the profile
+column, the Authorization header, the busy status, focus on each new heading, the QR image, the
+key in groups of four, both clipboard paths, the three confirm outcomes, the recovery codes and
+the acknowledgement, Retry that sends exactly one more request, the shared
 `2px #1A1C1E` focus ring and the pin cells inside the card at 320, 360, 600, 767, 768 and 1024 px.
 `expectNoSecrets` runs after the steps that hold a secret. Playwright and the production stack are
 CI-only, so this spec ran nowhere in the local loop. `two-factor-manage.spec.ts` does the same for

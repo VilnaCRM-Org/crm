@@ -32,30 +32,16 @@ describe('navigation items', () => {
     ]);
   });
 
-  it('flags only the Settings group and its three sub-items with userSettings', async () => {
-    const { items } = await loadItems();
-    const settings = items.at(-1);
-
-    expect(items.slice(0, 5).map(({ flag }) => flag)).toEqual([
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-    ]);
-    expect(settings?.flag).toBe('userSettings');
-  });
-
-  it('nests Integrations, Webhooks and Billing in the Settings group, each flagged', async () => {
+  it('nests Integrations, Webhooks and Billing in the Settings group', async () => {
     const { items } = await loadItems();
     const settings = items.at(-1);
 
     expect(settings && 'children' in settings).toBe(true);
     const children = settings && 'children' in settings ? settings.children.items : [];
-    expect(children.map(({ id, href, labelKey, flag }) => [id, href, labelKey, flag])).toEqual([
-      ['integrations', '/settings/integrations', 'app_shell.items.integrations', 'userSettings'],
-      ['webhooks', '/settings/webhooks', 'app_shell.items.webhooks', 'userSettings'],
-      ['billing', '/settings/billing', 'app_shell.items.billing', 'userSettings'],
+    expect(children.map(({ id, href, labelKey }) => [id, href, labelKey])).toEqual([
+      ['integrations', '/settings/integrations', 'app_shell.items.integrations'],
+      ['webhooks', '/settings/webhooks', 'app_shell.items.webhooks'],
+      ['billing', '/settings/billing', 'app_shell.items.billing'],
     ]);
   });
 

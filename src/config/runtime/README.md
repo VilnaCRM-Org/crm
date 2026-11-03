@@ -13,19 +13,11 @@ values remain as defaults; runtime values win.
 The configuration is an inline JSON block in the HTML shell, `public/index.html`:
 
 ```json
-{ "flags": { "userSettings": false, "twoFactorAuth": false } }
+{ "flags": {} }
 ```
 
-Two feature flags are declared today, `userSettings` and `twoFactorAuth`, both shipped off (see
-`docs/feature-flags.md`, "Current flags"). The test stack enables both through
-`docker-compose.test.yml`; production enables `twoFactorAuth` in Follow-up 5.1.
-
-Only `userSettings` gates a route: the `/settings` route contract names it with `flag`, and the
-`RouteFlagGate` reads it when the route renders, never while the router is built: the router is
-constructed before the guarded `appConfigSource.load()`, so a flag read there would throw on a
-malformed block before the bootstrap fallback could show (see `src/routes/README.md`, "Flagged
-routes"). `twoFactorAuth` gates no route: it hides only the 2FA section of `/settings`, which
-`UserProfile` reads through `useFeatureFlag('twoFactorAuth')`.
+No feature flag is declared today, so the committed `flags` object is empty (see
+`docs/feature-flags.md`, "Current flags").
 
 It is carried by a `script` element with `id="app-runtime-config"` and
 `type="application/json"` — a data block, not executable code, so it stays valid under a strict
