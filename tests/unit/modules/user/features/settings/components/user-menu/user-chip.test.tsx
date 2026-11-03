@@ -113,6 +113,7 @@ describe('UserChip', () => {
 
     expect(screen.getByRole('button')).toHaveAccessibleName('User menu');
     expect(screen.getByRole('button')).toHaveStyle({ width: '44px', height: '44px' });
+    expect(screen.getByRole('button')).toHaveTextContent(/^$/);
   });
 
   it('keeps the caret decorative whether the menu is open or not', () => {

@@ -76,6 +76,16 @@ describe('useToastQueue', () => {
     expect(result.current.toasts.items.map((toast) => toast.message)).toEqual(['b', 'c', 'd']);
   });
 
+  it('announces only the drafts of a set larger than the limit that stay shown', () => {
+    const { result } = renderHook(() => useToastQueue());
+
+    act(() => result.current.show(set(failure('a'), success('b'), failure('c'), success('d'))));
+
+    expect(result.current.toasts.items.map((toast) => toast.message)).toEqual(['b', 'c', 'd']);
+    expect(result.current.announcement).toBe('b d​');
+    expect(result.current.alert).toBe('c​');
+  });
+
   it('removes a toast by id and keeps the others', () => {
     const { result } = renderHook(() => useToastQueue());
     act(() => result.current.show(set(success('one'), success('two'))));

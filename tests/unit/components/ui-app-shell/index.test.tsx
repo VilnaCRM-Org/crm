@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, fireEvent, isInaccessible, screen, within } from '@testing-library/react';
+import { act, isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 
@@ -167,7 +167,7 @@ describe('UIAppShell', () => {
     const handle = screen.getByRole('button', { name: 'Collapse sidebar' });
     jest.spyOn(handle, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 36, 24, 24));
 
-    fireEvent.focus(handle);
+    act(() => handle.focus());
 
     expect(scrollBy).toHaveBeenCalledWith({ top: -28 });
     Reflect.deleteProperty(window, 'scrollBy');

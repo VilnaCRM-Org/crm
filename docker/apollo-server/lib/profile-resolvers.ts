@@ -7,7 +7,7 @@ import type {
   UserConnection,
   UserPayload,
 } from './types';
-import { EMAIL_REGEX, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
+import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const SEEDED_USER: User = {
   id: '/api/users/0193a9e2-7c1d-7d8e-9f3a-5b6c7d8e9f01',
@@ -43,7 +43,7 @@ export const profileResolvers = {
     updateUser: async (_: unknown, { input }: { input: UpdateUserInput }): Promise<UserPayload> => {
       rejectForeignUser(input.id);
       const email = input.email ?? SEEDED_USER.email;
-      if (email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(email)) {
+      if (email.length > MAX_EMAIL_LENGTH || !isValidEmail(email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
       return {

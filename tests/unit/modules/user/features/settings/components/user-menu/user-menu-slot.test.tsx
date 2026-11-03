@@ -1,21 +1,26 @@
-import 'reflect-metadata';
 import '@testing-library/jest-dom';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
 
 import featureFlagService from '@/config/runtime/feature-flag-service';
 import i18n from '@/i18n';
 import loader from '@/modules/user/features/settings/components/user-menu/current-user-menu-loader';
 import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/user-menu-slot';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderShell from '@tests/unit/utils/render-shell';
+import { inertSession } from '@tests/unit/utils/session-outlet';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 const mockRead = jest.fn();
 
 const READ_USER = {
   kind: 'ok',
-  user: { id: 'u', fullName: 'Петренко Олена Іванівна', email: 'o@example.com', confirmed: true },
+  identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
 };
+
+const renderSlot = (ui: ReactElement): ReturnType<typeof renderShell> =>
+  renderShell(ui, { session: inertSession });
 
 type LoadedModule = Awaited<ReturnType<typeof loader.load>>;
 
@@ -34,23 +39,14 @@ function holdCurrentUserChunk(): () => Promise<void> {
   };
 }
 
-jest.mock('@/providers/di', () => {
-  const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
-  const tokens = jest.requireActual('@/modules/user/config/tokens').default;
-  const mapper = new Mapper();
-  const provider = { read: (signal: AbortSignal): unknown => mockRead(signal) };
-
-  return {
-    __esModule: true,
-    useService: (token: symbol): unknown => (token === tokens.ProfileProvider ? provider : mapper),
-  };
-});
-
 describe('UserMenuSlot', () => {
   beforeEach(() => {
     stubViewportWidth(1440);
     mockRead.mockReset();
     mockRead.mockReturnValue(new Promise(() => undefined));
+    jest
+      .spyOn(currentUserSource, 'read')
+      .mockImplementation((_session, signal) => mockRead(signal));
   });
 
   afterEach(() => {
@@ -67,7 +63,7 @@ describe('UserMenuSlot', () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
     const load = jest.spyOn(loader, 'load');
     const user = userEvent.setup();
-    renderShell(
+    renderSlot(
       <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
     );
 
@@ -81,7 +77,7 @@ describe('UserMenuSlot', () => {
   it('shows the operable name-less chip while the flag is on, then reads once', async () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     const user = userEvent.setup();
-    renderShell(
+    renderSlot(
       <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
     );
 
@@ -97,7 +93,7 @@ describe('UserMenuSlot', () => {
     mockRead.mockResolvedValue(READ_USER);
     const resolveChunk = holdCurrentUserChunk();
     const user = userEvent.setup();
-    renderShell(
+    renderSlot(
       <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
     );
     const chip = screen.getByRole('button', { name: 'User menu' });
@@ -121,9 +117,7 @@ describe('UserMenuSlot', () => {
     mockRead.mockResolvedValue(READ_USER);
     const resolveChunk = holdCurrentUserChunk();
     const onAvatar = jest.fn();
-    renderShell(
-      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
-    );
+    renderSlot(<UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />);
     const chip = screen.getByRole('button', { name: 'User menu' });
     act(() => chip.focus());
 
@@ -140,7 +134,7 @@ describe('UserMenuSlot', () => {
     const resolveChunk = holdCurrentUserChunk();
     const signOut = jest.fn();
     const user = userEvent.setup();
-    renderShell(<UserMenuSlot signOut={signOut} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />);
+    renderSlot(<UserMenuSlot signOut={signOut} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />);
     const pendingChip = screen.getByRole('button', { name: 'User menu' });
 
     await user.click(pendingChip);
@@ -160,7 +154,7 @@ describe('UserMenuSlot', () => {
     const onChunkFailure = jest.fn();
     const user = userEvent.setup();
     const signOut = jest.fn();
-    renderShell(
+    renderSlot(
       <UserMenuSlot signOut={signOut} onChunkFailure={onChunkFailure} onAvatar={jest.fn()} />
     );
 
@@ -186,7 +180,7 @@ describe('UserMenuSlot', () => {
     );
     const first = jest.fn();
     const latest = jest.fn();
-    const { rerender } = renderShell(
+    const { rerender } = renderSlot(
       <UserMenuSlot signOut={jest.fn()} onChunkFailure={first} onAvatar={jest.fn()} />
     );
 
@@ -200,9 +194,7 @@ describe('UserMenuSlot', () => {
   it('publishes the no-data avatar copy while the flag is off, reading nothing', () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
     const onAvatar = jest.fn();
-    renderShell(
-      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
-    );
+    renderSlot(<UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />);
 
     expect(onAvatar).toHaveBeenCalledTimes(1);
     const { container } = renderShell(<>{onAvatar.mock.calls[0]?.[0]}</>);
@@ -213,9 +205,7 @@ describe('UserMenuSlot', () => {
   it('publishes the no-data avatar copy while the current user is pending', async () => {
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     const onAvatar = jest.fn();
-    renderShell(
-      <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />
-    );
+    renderSlot(<UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={onAvatar} />);
 
     await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(1));
     const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
@@ -227,7 +217,7 @@ describe('UserMenuSlot', () => {
     jest.spyOn(loader, 'load').mockRejectedValue(new Error('chunk failed'));
     const onAvatar = jest.fn();
     const onChunkFailure = jest.fn();
-    renderShell(
+    renderSlot(
       <UserMenuSlot signOut={jest.fn()} onChunkFailure={onChunkFailure} onAvatar={onAvatar} />
     );
 

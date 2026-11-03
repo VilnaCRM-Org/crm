@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import NavigationRailItems from '@/components/ui-navigation-list/navigation-rail-items';
@@ -13,7 +13,11 @@ describe('NavigationRailItems', () => {
       </ol>
     );
 
-    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual([
+    const list = screen.getByRole('list');
+    const rows = within(list).getAllByRole('listitem');
+
+    expect(screen.getAllByRole('list')).toHaveLength(1);
+    expect(rows.map((row) => within(row).getByRole('link').textContent)).toEqual([
       'Boards',
       'Products',
       'Orders',

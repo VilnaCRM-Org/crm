@@ -49,8 +49,12 @@ const firedRules = async (baseDir, entries) => {
   ].sort();
 };
 
+const variantsOf = ([name, fixture]) =>
+  Object.entries(fixture.variants ?? {}).map(([variant, files]) => [`${name}/${variant}`, files]);
+const variants = Object.entries(FIXTURES).flatMap(variantsOf);
+
 const root = mkdtempSync(path.join(os.tmpdir(), 'depcruise-rule-fixtures-'));
-const report = { rules: {}, fired: {} };
+const report = { rules: {}, fired: {}, variantFired: {} };
 try {
   for (const [name, fixture] of Object.entries(FIXTURES)) {
     materialize(root, name, fixture.files);
@@ -58,6 +62,11 @@ try {
   for (const [name, fixture] of Object.entries(FIXTURES)) {
     const baseDir = path.join(root, name);
     report.fired[name] = await firedRules(baseDir, fixture.entries ?? entryDirectories(baseDir));
+  }
+  for (const [name, files] of variants) {
+    const baseDir = path.join(root, 'variants', name);
+    materialize(path.join(root, 'variants'), name, files);
+    report.variantFired[name] = await firedRules(baseDir, entryDirectories(baseDir));
   }
 } finally {
   rmSync(root, { recursive: true, force: true });
@@ -70,6 +79,9 @@ report.expected = Object.fromEntries(
     name,
     [qualify(name), ...(fixture.alsoFires ?? []).map(qualify)].sort(),
   ])
+);
+report.variantExpected = Object.fromEntries(
+  variants.map(([name]) => [name, [qualify(name.slice(0, name.indexOf('/')))]])
 );
 report.alsoFires = Object.fromEntries(
   Object.entries(FIXTURES)

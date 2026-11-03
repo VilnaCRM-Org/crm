@@ -684,7 +684,9 @@ in over REST today).
   and no toast shows.
 - Given "Access Denied." with HTTP 200 on any of the three operations, with no `extensions` or
   with `extensions.status` 403, when it settles, then no toast or field error shows and nothing is
-  sent again.
+  sent again. (Superseded 2026-11-02: it settles as `rejected`, so a Save shows "Не вдалося
+  зберегти зміни. Спробуйте пізніше.", a read the load-failure state and a resend its error
+  toast, and the token is kept; see the amended assumption below.)
 - Given a GraphQL error, a 429 or a 5xx on a non-anonymous operation, when it settles, then the
   link keeps the token (must-fail: ending the session on a GraphQL error fails this case).
 - Given the redirect, when `/sign-in` renders, then the notice is in a polite `role="status"`
@@ -703,7 +705,12 @@ in over REST today).
 > Assumption: the owner refusal needs no action of its own. Upstream answers "Access Denied." on
 > `/api/graphql` only when no token reached it, because a present but unusable token gets the
 > transport 401 first (research §4.5), so on a protected page the token is already gone and the
-> protected route's redirect is under way. This feature appends the notice to #315's
+> protected route's redirect is under way. Amended 2026-11-02 (PR #354 review): the refusal also
+> answers a live token whose user does not own the `id` sent, which v2.8.0's arbitrary
+> `users(first: 1)` read can hand the page, and the link keeps that session, so a silent
+> `session_ended` left a Save with no feedback. "Access Denied." is now `rejected`; when the token
+> is really gone the redirect has already unmounted the page, so nothing shows either way.
+> This feature appends the notice to #315's
 > `SignInNotice`; the 2FA bundle (2FA PRD FR-34) uses the same notice.
 
 ### 5.5 Toasts

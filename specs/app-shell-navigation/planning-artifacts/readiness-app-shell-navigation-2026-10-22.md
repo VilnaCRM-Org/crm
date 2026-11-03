@@ -9,6 +9,8 @@ issue: https://github.com/VilnaCRM-Org/crm/issues/362
 stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
 iteration: 3
 verdict: READY
+verdictScope: pre-amendment
+verdictVerified: 2026-10-23
 author: 'implementation-readiness checker (independent reviewer), autonomous run'
 inputDocuments:
   - 'task brief app-shell-navigation-agent-brief.md (kept outside the repository)'

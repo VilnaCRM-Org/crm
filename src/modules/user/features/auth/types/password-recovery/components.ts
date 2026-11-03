@@ -14,20 +14,25 @@ export interface InCardLinkProps {
   children: ReactNode;
 }
 
+export type CardBackTone = 'secondary' | 'primary';
+
 export interface CardBackLinkProps {
   to: string;
   onClick?: never;
+  tone?: CardBackTone | undefined;
 }
 
 export interface CardBackButtonProps {
   to?: never;
   onClick: () => void;
+  tone?: CardBackTone | undefined;
 }
 
 export type CardBackControlProps = CardBackLinkProps | CardBackButtonProps;
 
-export interface SandboxDemoResetLinkProps {
-  email: string;
+export interface RecoverySentStepProps {
+  maskedEmail: string | null;
+  onBack: () => void;
 }
 
 export interface RecoveryResultAction {

@@ -175,8 +175,8 @@ Eight decisions shape everything below:
    `useResetPassword`, `useCreateNewPassword` and `useResetToken`; the two flow hooks share one
    submit skeleton, `useAbortableSubmit`. There is no controller class, no new Zustand store and
    no new module-level singleton that holds state; the only shipped singletons are stateless
-   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12; #330 replaced
-   the latter with the shared `lazyCatalogLoader` in `src/lib/locale-catalog/`).
+   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12). Superseded
+   2026-10-19 for `RecoveryCatalogLoader` only: §12 records its replacement by #330.
 5. **One password policy, never weaker than the API** (FR-24): `PasswordValidator` narrows its
    uppercase rule to ASCII `[A-Z]`, keeps the lowercase rule, and exposes per-rule evaluation as
    a named `PasswordRuleResultSet`.
@@ -1588,16 +1588,18 @@ sites use it: `CardBackControl` link mode, the sent step's "До входу" and
 state's "Запросити нове посилання"; each arrives on a page whose `AuthPageLayout` runs
 `useArrivalFocus`.
 
-**"Назад" colour: an accessibility override of the Figma token.** Figma `72:5605` styles the row
-with `Font/300 (Placeholder) #969B9D`, about 2.8:1 on white, below WCAG 1.4.3. The text and
-chevron render in `Font/200 #404142` (`paletteColors.text.primary`, about 10:1) with the Golos
-Medium 15/18 size and weight, and `minHeight: '1.5rem'`. `figma-design-check` records this as a
-reviewed deviation, and the design owner is asked to confirm (PRD §10).
+**"Назад" colour: the Figma token under a scoped exception.** Figma `72:5605` styles the row
+with `Font/300 (Placeholder) #969B9D`, about 2.81:1 on white, below WCAG 1.4.3. The text and
+chevron render in it (`customColors.text.secondary`) with the Golos Medium 15/18 size and
+weight, and `minHeight: '1.5rem'`, by the user's decision of 2026-10-21 that replaced the earlier
+`Font/200 #404142` override. The axe scans carry a scoped #276 `color-contrast` entry for it, and
+the focus ring stays `#404142` (10.2:1) (PRD §10).
 
 The two primary links of `RecoveryResultView` take the Figma primary pill, white on `#1EAEFF`
-(2.45:1), the palette debt issue #276 tracks. This feature adds exactly one scoped
-`color-contrast` entry to `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts`), a selector
-matching only those two links, the existing reason and `trackingUrl: PALETTE_CONTRAST_ISSUE`.
+(2.45:1), the palette debt issue #276 tracks. This feature adds two scoped `color-contrast`
+entries to `A11Y_EXCEPTIONS` (`tests/utils/a11y/axe-config.ts`): one with a selector matching only
+those two links, the existing reason and `trackingUrl: PALETTE_CONTRAST_ISSUE`, and one matching
+only the in-card "Назад" row (below).
 
 ### 7.3 Hooks
 
@@ -1723,7 +1725,7 @@ would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").
 | `tests/e2e/a11y/routes.a11y.spec.ts` (+2 scans)                                                              | MODIFY |
 | `tests/e2e/a11y/password-recovery-{keyboard,states}.a11y.spec.ts`                                            | NEW    |
 | `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` (password-toggle focus ring)                                  | MODIFY |
-| `tests/utils/a11y/axe-config.ts` (one scoped `color-contrast` entry, #276)                                   | MODIFY |
+| `tests/utils/a11y/axe-config.ts` (two scoped `color-contrast` entries, #276)                                 | MODIFY |
 | `tests/e2e/mobile/password-recovery-touch.spec.ts`, `constants.ts`                                           | NEW    |
 | `tests/visual/visual-comparison.password-recovery.spec.ts` (both recovery routes)                            | NEW    |
 | `tests/visual/mobile/auth.spec.ts`, `tests/visual/constants.ts`                                              | MODIFY |
@@ -1759,10 +1761,7 @@ Recovery-page strings under `password_recovery`, `password_reset` and `password_
 the lazy recovery catalog `@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key
 sets, registered for both locales by the stateless `RecoveryCatalogLoader` singleton, which
 `RecoveryPageLayout` calls when the route module evaluates (an accepted AR-2 exception, §12;
-#330 replaced it on 2026-10-19 with the shared `lazyCatalogLoader`
-(`src/lib/locale-catalog/`), whose `register(i18n, { en, uk })` takes the owner's JSON, and
-`RecoveryPageLayout` now calls that with the recovery catalog), and
-kept out of
+the loader is superseded 2026-10-19, and §12 records its replacement), and kept out of
 `src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
 "Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
 
@@ -1800,9 +1799,12 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
   `CreateNewPasswordFormSectionLoader` (item 1, §5.2), each holding one named `import()`, and
   `RecoveryCatalogLoader` (item 4, §11), whose one method adds both locale bundles through
   `addResourceBundle` when the route module evaluates. None of them has a field; the only state
-  any of them touches is what the module loader or i18next already holds. Amendment 2026-10-19:
-  #330 replaced `RecoveryCatalogLoader` and its own two copies with one shared
-  `lazyCatalogLoader` (`src/lib/locale-catalog/`), the same exception for every lazy catalog.
+  any of them touches is what the module loader or i18next already holds. Superseded
+  2026-10-19 for `RecoveryCatalogLoader` (the one replacement note for item 4 and §11): #330
+  replaced it and its own two copies with one shared `lazyCatalogLoader`
+  (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, { en, uk })` takes the
+  owner's JSON; `RecoveryPageLayout` now calls it with the recovery catalog, and the reasoning
+  above holds for it unchanged as the same exception for every lazy catalog.
 - **Type-only files (#88).** Every interface and alias is in `types/`; logic files declare none.
 - **DI collaborators (#130).** The repository value-imports only `tsyringe`, `uuid`, token
   modules and the two document seams; the provider `tsyringe` and token modules;
@@ -1826,7 +1828,7 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
 - **Route coverage (#169).** The `passwordRecovery` allowlist row is replaced by e2e, visual, axe,
   keyboard and mobile rows; `passwordReset` gets the same five.
 - **a11y (#118).** Both routes join `routeScans`; jest-axe runs over every new component and page;
-  `A11Y_EXCEPTIONS` gains only the one scoped #276 entry (§7.2).
+  `A11Y_EXCEPTIONS` gains only the two scoped #276 entries (§7.2).
 - **Visual (NFR-6).** Full matrix for the two resting forms, desktop/mobile pairs for the sent
   step, the invalid-link state and `/sign-in` with the notice; the existing `/sign-in`
   baselines do not change, since the link already renders unconditionally.
@@ -2041,7 +2043,7 @@ breaking change; fix the call sites those changes reach. The client is unchanged
 | NFR-6  | §12 visual note; CI-artifact baselines; existing `/sign-in` baselines unchanged   |
 | NFR-7  | Lighthouse list unchanged; `/sign-in` gains only a conditional notice             |
 | NFR-8  | §10 bundle breakdown                                                              |
-| NFR-9  | §7.2 contracts and the one scoped #276 entry, jest-axe, route scans, 24 / 44 px   |
+| NFR-9  | §7.2 contracts and the two scoped #276 entries, jest-axe, route scans, 24 / 44 px |
 | NFR-10 | keyboard specs per state with `expectTabOrder`; sign-in link stop already present |
 | NFR-11 | mobile touch spec on both device projects                                         |
 | NFR-12 | §5.5, §5.6, §5.13; CSP unchanged, referrer `strict-origin`; no new origin         |

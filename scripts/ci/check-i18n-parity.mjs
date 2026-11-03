@@ -185,6 +185,16 @@ function readCatalogs(scanRoot, generatedDirs, violations) {
   });
 }
 
+function isInsideScanRoot(scanRoot, entry) {
+  const fromRoot = path.relative(scanRoot, path.resolve(scanRoot, entry));
+  return (
+    fromRoot !== '' &&
+    fromRoot !== '..' &&
+    !fromRoot.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(fromRoot)
+  );
+}
+
 function checkPolicyPaths(policy, catalogs, scanRoot, violations) {
   const found = new Set(catalogs.map((catalog) => path.resolve(catalog.dir)));
   const policyFile = relative(policy.file);
@@ -195,7 +205,16 @@ function checkPolicyPaths(policy, catalogs, scanRoot, violations) {
           `${CATALOG_DIR}/ catalog folder exists there under ${relative(scanRoot)}`
       );
     }
-    for (const owner of owners.filter((entry) => !fs.existsSync(path.resolve(scanRoot, entry)))) {
+    for (const owner of owners.filter((entry) => !isInsideScanRoot(scanRoot, entry))) {
+      violations.push(
+        `[lazy-catalog] ${policyFile} lists "${owner}" as an owner of "${catalog}", but an ` +
+          `owner must be a file or folder inside ${relative(scanRoot)}`
+      );
+    }
+    const contained = owners.filter((entry) => isInsideScanRoot(scanRoot, entry));
+    for (const owner of contained.filter(
+      (entry) => !fs.existsSync(path.resolve(scanRoot, entry))
+    )) {
       violations.push(
         `[lazy-catalog] ${policyFile} lists "${owner}" as an owner of "${catalog}", but no ` +
           `file or folder exists there under ${relative(scanRoot)}`
@@ -209,7 +228,9 @@ function markLazyCatalogs(catalogs, policy, scanRoot, violations) {
   const owners = new Map(
     policy.lazyCatalogs.map((entry) => [
       path.resolve(scanRoot, entry.catalog),
-      entry.owners.map((owner) => path.resolve(scanRoot, owner)),
+      entry.owners
+        .filter((owner) => isInsideScanRoot(scanRoot, owner))
+        .map((owner) => path.resolve(scanRoot, owner)),
     ])
   );
   return catalogs.map((catalog) => {
