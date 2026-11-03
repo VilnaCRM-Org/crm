@@ -1,7 +1,12 @@
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import type { TFunction } from 'i18next';
-import type { FieldValues, Path, RegisterOptions } from 'react-hook-form';
+import type { FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
+
+export type PasswordPath<T extends FieldValues> = Extract<
+  { [K in Path<T>]: PathValue<T, K> extends string ? K : never }[Path<T>],
+  Path<T>
+>;
 
 interface PasswordFieldBaseProps<T extends FieldValues> {
   placeholder: string;
@@ -16,15 +21,17 @@ interface PasswordFieldBaseProps<T extends FieldValues> {
 export interface PasswordFieldDefaultNameProps<
   T extends FieldValues,
 > extends PasswordFieldBaseProps<T> {
-  name?: Path<T> | undefined;
+  name?: PasswordPath<T> | undefined;
 }
 
 export interface PasswordFieldNamedProps<T extends FieldValues> extends PasswordFieldBaseProps<T> {
-  name: Path<T>;
+  name: PasswordPath<T>;
 }
 
 export type PasswordFieldProps<T extends FieldValues = FieldValues> =
-  'password' extends Path<T> ? PasswordFieldDefaultNameProps<T> : PasswordFieldNamedProps<T>;
+  'password' extends PasswordPath<T>
+    ? PasswordFieldDefaultNameProps<T>
+    : PasswordFieldNamedProps<T>;
 
 export interface PasswordVisibilityButtonProps {
   show: boolean;
