@@ -59,7 +59,8 @@ revisions:
 
 # Architecture: two-factor authentication for the user module
 
-**Author:** BMad (Architect) **Date:** 2026-10-06 **Feature:** `two-factor-authentication`
+**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-11-03 (owner decision: the
+`twoFactorAuth` flag removed) **Feature:** `two-factor-authentication`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor

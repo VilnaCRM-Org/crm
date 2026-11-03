@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
@@ -42,6 +42,12 @@ import {
 const SETTINGS_URL = '/settings';
 const socialTitle: string = t('settings.social.heading');
 const SECRETS = { secret: SETUP_SECRET, uri: SETUP_URI, code: RECOVERY_CODES[0] ?? '' };
+async function boxOf(locator: Locator): Promise<{ x: number; y: number }> {
+  const box = await locator.boundingBox();
+  if (box === null) throw new Error(`${locator.toString()} has no bounding box`);
+  return box;
+}
+
 const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } as const;
 const WIDTHS = [320, 360, 600, 767, 768, 1024] as const;
 
@@ -77,9 +83,9 @@ test.describe('Two-factor settings section (issue #331)', () => {
         twoFactorText.title
       );
       await expect(startOf(page)).toBeVisible();
-      const section = await sectionOf(page).boundingBox();
-      const profile = await page.getByRole('heading', { level: 1 }).boundingBox();
-      expect(section?.x).toBeGreaterThan((profile?.x ?? 0) + 400);
+      const section = await boxOf(sectionOf(page));
+      const profile = await boxOf(page.getByRole('heading', { level: 1 }));
+      expect(section.x).toBeGreaterThan(profile.x + 400);
       expect(setup.count()).toBe(0);
     });
 
@@ -88,11 +94,11 @@ test.describe('Two-factor settings section (issue #331)', () => {
 
       await page.goto(SETTINGS_URL);
 
-      const section = await sectionOf(page).boundingBox();
-      const social = await page
-        .getByRole('heading', { level: 2, name: socialTitle, exact: true })
-        .boundingBox();
-      expect(section?.y).toBeGreaterThan(social?.y ?? 0);
+      const section = await boxOf(sectionOf(page));
+      const social = await boxOf(
+        page.getByRole('heading', { level: 2, name: socialTitle, exact: true })
+      );
+      expect(section.y).toBeGreaterThan(social.y);
     });
   });
 
