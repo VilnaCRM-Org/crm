@@ -308,7 +308,9 @@ test.describe('Create new password (issue #315)', () => {
     await page.route(GRAPHQL_URL, () => undefined);
     await openWithToken(page);
 
+    const sent = page.waitForRequest((request) => request.url().includes('graphql'));
     await submitPasswords(page);
+    await sent;
     await page.evaluate(() => {
       window.history.pushState({}, '', '/sign-in');
       window.dispatchEvent(new PopStateEvent('popstate'));
