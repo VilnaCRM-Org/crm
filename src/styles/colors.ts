@@ -14,7 +14,7 @@ export const paletteColors = {
   },
   error: {
     main: '#DC3939',
-    text: '#C62828',
+    text: '#D63333',
     surface: '#FDECEC',
   },
   success: {
