@@ -84,11 +84,15 @@ const shellFilesOf = (files: ReadonlySet<string>): string[] =>
 const PROTECTED_LAYOUT_ROOT = 'src/routes/protected-layout.ts';
 
 const SHARED_WITH_EAGER_PATH = [
+  'src/components/route-fallback/index.tsx',
+  'src/components/route-fallback/styles.ts',
+  'src/components/ui-live-status/index.tsx',
   'src/config/env/raw-env.ts',
   'src/lib/reliability/chunk-load-error-detector.ts',
   'src/lib/reliability/chunk-retry-loader.ts',
   'src/providers/mui-theme/mui-theme-shell-loader.ts',
   'src/providers/mui-theme/themed-chunk-loader.ts',
+  'src/routes/route-paths.ts',
   'src/services/observability/correlation-id-provider.ts',
   'src/services/observability/observability-core.ts',
   'src/services/observability/pii-scrubber.ts',
@@ -96,6 +100,7 @@ const SHARED_WITH_EAGER_PATH = [
   'src/services/observability/sentry-config.ts',
   'src/services/observability/session-correlation.ts',
   'src/services/observability/web-vitals-reporter.ts',
+  'src/styles/colors.ts',
 ];
 
 const protectedGraphIn = (files: ReadonlySet<string>): string[] => {
@@ -359,6 +364,8 @@ describe('performance serving config', () => {
       'src/config/env/preloaded-auth-token.ts',
       'src/config/env/sandbox-demo-session-provider.ts',
       'src/modules/user/features/auth/components/protected-route/index.tsx',
+      'src/modules/user/features/auth/components/protected-route/recovery-notice-loader.ts',
+      'src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
       'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
       'src/modules/user/features/auth/stores/auth-session-provider.ts',
       'src/modules/user/features/auth/stores/auth-store-selectors.ts',
