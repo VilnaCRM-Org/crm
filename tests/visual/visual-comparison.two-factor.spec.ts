@@ -30,7 +30,6 @@ import {
 } from '@tests/e2e/utils/reach-challenge';
 import { replyWithRemainingCodes, stubChallenge } from '@tests/e2e/utils/two-factor-responses';
 import { stubRegenerate } from '@tests/e2e/utils/two-factor-settings-responses';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 import { currentLanguage, notFoundScreens, type ScreenSize, screenSizes } from './constants';
 import { openChallenge, openTwoFactorSettings } from './open-two-factor';
@@ -108,7 +107,6 @@ test.describe.parallel('Two-factor visual tests (issue #331)', () => {
 
     test(`[two-factor] low recovery codes notice ${screen.name}`, async ({ page }) => {
       await resize(page, screen);
-      await overrideRuntimeConfig(page, { flags: { userSettings: true } });
       await stubProfile(page);
       await stubChallenge(page, [replyWithRemainingCodes(1)]);
       await openChallenge(page);

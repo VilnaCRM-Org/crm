@@ -24,38 +24,21 @@ describe('featureFlagService', () => {
     clearConfigBlock();
   });
 
-  it('declares userSettings and twoFactorAuth shipped off, named and snapshotted', async () => {
+  it('declares twoFactorAuth shipped off, named and snapshotted', async () => {
     const { default: featureFlagService, FeatureFlagService } = await loadFeatureFlagService();
 
     expect(featureFlagService).toBeInstanceOf(FeatureFlagService);
-    expect(featureFlagService.names()).toEqual({
-      items: [{ name: 'userSettings' }, { name: 'twoFactorAuth' }],
-    });
-    expect(featureFlagService.isEnabled('userSettings')).toBe(false);
+    expect(featureFlagService.names()).toEqual({ items: [{ name: 'twoFactorAuth' }] });
     expect(featureFlagService.isEnabled('twoFactorAuth')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ userSettings: false, twoFactorAuth: false });
+    expect(featureFlagService.snapshot()).toEqual({ twoFactorAuth: false });
   });
 
-  it('snapshots both flags as false for a block that sets no flag', async () => {
+  it('snapshots twoFactorAuth as false for a block that sets no flag', async () => {
     writeConfigBlock(buildFeatureFlagConfig({}));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.snapshot()).toEqual({ userSettings: false, twoFactorAuth: false });
-  });
-
-  it('reads twoFactorAuth from the block, or false when the block omits it', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ userSettings: true }));
-    const omitted = (await loadFeatureFlagService()).default;
-
-    expect(omitted.isEnabled('twoFactorAuth')).toBe(false);
-
-    clearConfigBlock();
-    writeConfigBlock(buildFeatureFlagConfig({ twoFactorAuth: true }));
-    const enabled = (await loadFeatureFlagService()).default;
-
-    expect(enabled.isEnabled('twoFactorAuth')).toBe(true);
-    expect(enabled.isEnabled('userSettings')).toBe(false);
+    expect(featureFlagService.snapshot()).toEqual({ twoFactorAuth: false });
   });
 
   it('returns false for twoFactorAuth when the block sets it to false', async () => {
@@ -66,13 +49,13 @@ describe('featureFlagService', () => {
     expect(featureFlagService.isEnabled('twoFactorAuth')).toBe(false);
   });
 
-  it('enables userSettings when the runtime configuration turns it on', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ userSettings: true }));
+  it('enables twoFactorAuth when the runtime configuration turns it on', async () => {
+    writeConfigBlock(buildFeatureFlagConfig({ twoFactorAuth: true }));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.isEnabled('userSettings')).toBe(true);
-    expect(featureFlagService.snapshot()).toEqual({ userSettings: true, twoFactorAuth: false });
+    expect(featureFlagService.isEnabled('twoFactorAuth')).toBe(true);
+    expect(featureFlagService.snapshot()).toEqual({ twoFactorAuth: true });
   });
 
   it('names each declared flag as a FeatureFlagName', async () => {

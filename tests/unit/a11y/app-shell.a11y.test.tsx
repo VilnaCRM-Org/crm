@@ -2,7 +2,6 @@ import '@testing-library/jest-dom';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
@@ -17,7 +16,6 @@ const UNAVAILABLE = 'Ще недоступно';
 describe('the assembled app shell accessibility (issue #362)', () => {
   beforeEach(() => {
     stubMotionPreference(false);
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     jest.spyOn(currentUserSource, 'read').mockReturnValue(new Promise(() => undefined));
   });
 

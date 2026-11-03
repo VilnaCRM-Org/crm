@@ -26,7 +26,6 @@ export interface CurrentUserMenuProps {
 
 export interface UserMenuProps {
   readonly identity: UserDisplayName | null;
-  readonly settingsAvailable: boolean;
   readonly signOut: SignOutHandler;
   readonly onAvatar?: UserAvatarCopyHandler | undefined;
 }
@@ -63,7 +62,6 @@ export interface UserChipNameProps {
 export interface UserMenuItemsProps {
   readonly layout: ShellLayout;
   readonly menuId: string;
-  readonly settingsAvailable: boolean;
   readonly menu: UserMenuState;
   readonly signOut: SignOutHandler;
 }

@@ -4,6 +4,7 @@ import { expectInsideContentBox } from '@tests/e2e/mobile/utils/layout';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { RECOVERY_CODES } from '@tests/e2e/utils/two-factor-settings-responses';
+import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 import { signInToSettings } from './profile-stub';
 
@@ -57,7 +58,8 @@ export async function signInToTwoFactorSettings(
   page: Page,
   twoFactorAuth: boolean = true
 ): Promise<void> {
-  await signInToSettings(page, { userSettings: true, twoFactorAuth });
+  await signInToSettings(page);
+  await overrideRuntimeConfig(page, { flags: { twoFactorAuth } });
 }
 
 export const sectionOf = (page: Page): Locator =>

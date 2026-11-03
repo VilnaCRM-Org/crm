@@ -25,6 +25,6 @@ describe('runtime configuration source without a document global', () => {
     expect(() => appConfigSource.load()).not.toThrow();
     expect(appConfigSource.text('apiBaseUrl')).toBeUndefined();
     expect(appConfigSource.url('graphqlUrl')).toBeUndefined();
-    expect(appConfigSource.flag('userSettings')).toBeUndefined();
+    expect(appConfigSource.flag('twoFactorAuth')).toBeUndefined();
   });
 });

@@ -1,7 +1,5 @@
 import type { Page, Request, Route } from '@playwright/test';
 
-import type { FeatureFlagValues } from '@/config/runtime/types/feature-flag';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const GRAPHQL_URL = '**/graphql';
@@ -157,22 +155,8 @@ export async function stubProfile(
   return { calls, shellCalls, count };
 }
 
-const SETTINGS_FLAGS: FeatureFlagValues = { userSettings: true };
-
-export async function signInWithFlags(page: Page, flags: FeatureFlagValues): Promise<void> {
+export async function signInToSettings(page: Page): Promise<void> {
   await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags });
-}
-
-export async function signInWithFlag(page: Page, userSettings: boolean): Promise<void> {
-  await signInWithFlags(page, { userSettings });
-}
-
-export async function signInToSettings(
-  page: Page,
-  flags: FeatureFlagValues = SETTINGS_FLAGS
-): Promise<void> {
-  await signInWithFlags(page, flags);
   settingsPages.add(page);
 }
 

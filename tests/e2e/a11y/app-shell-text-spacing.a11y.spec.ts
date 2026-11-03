@@ -18,7 +18,6 @@ import {
 } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 interface SpacingReport {
@@ -76,7 +75,6 @@ async function openShell(
 ): Promise<void> {
   await page.setViewportSize(viewport);
   await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings: true } });
   await stubProfile(page, replies);
   await page.goto(ROUTE_PATHS.settings, { waitUntil: 'domcontentloaded' });
   await expectShellReady(page);

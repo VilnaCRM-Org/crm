@@ -1,7 +1,5 @@
 import type { ComponentType, SVGProps } from 'react';
 
-import type { FeatureFlag } from '@/config/runtime/types/feature-flag';
-
 export type NavigationItemId =
   | 'boards'
   | 'products'
@@ -20,7 +18,6 @@ export interface NavigationLeaf {
   readonly href: string;
   readonly labelKey: string;
   readonly icon: NavigationIcon;
-  readonly flag?: FeatureFlag | undefined;
 }
 
 export interface NavigationLeafSet {
