@@ -11,7 +11,6 @@ import {
   stubConfirm,
   stubSetup,
 } from '@tests/e2e/utils/two-factor-settings-responses';
-import waitForSettledScroll from '@tests/e2e/utils/wait-for-settled-scroll';
 
 import { holdReply, signInToSettings, stubProfile } from './utils/profile-stub';
 import {
@@ -332,12 +331,9 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await stubConfirm(page);
       await page.goto(SETTINGS_URL);
       await openSetup(page);
-      await copyKeyOf(page).focus();
-      await waitForSettledScroll(page);
-      await page.keyboard.press('Shift+Tab');
-      await waitForSettledScroll(page);
       await page.keyboard.press('Tab');
 
+      await expect(copyKeyOf(page)).toBeFocused();
       await expect(copyKeyOf(page)).toHaveCSS('outline-style', SHARED_RING.style);
       await expect(copyKeyOf(page)).toHaveCSS('outline-width', SHARED_RING.width);
       await expect(copyKeyOf(page)).toHaveCSS('outline-color', SHARED_RING.color);
