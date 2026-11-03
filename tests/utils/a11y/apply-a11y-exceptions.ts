@@ -29,7 +29,7 @@ export type ElementMatcher = (node: AddressedNode, selector: string) => Promise<
 
 const elementAt = (root: ParentNode, node: AddressedNode): Element | null => {
   if (node.xpath === undefined) return root.querySelector(node.target);
-  const owner = root.ownerDocument ?? document;
+  const owner = root instanceof Document ? root : (root.ownerDocument ?? document);
   const found = owner.evaluate(node.xpath, owner, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
   return found.singleNodeValue instanceof Element ? found.singleNodeValue : null;
 };
