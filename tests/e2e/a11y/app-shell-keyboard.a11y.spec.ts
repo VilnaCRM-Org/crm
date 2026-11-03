@@ -136,6 +136,7 @@ for (const width of [1440, 1024]) {
       await expect(userMenuOf(page)).toHaveCount(0);
       await expect(page.locator('body')).not.toBeFocused();
       await expect(page.locator(':focus')).toHaveCount(1);
+      await expect(handleOf(page)).toBeFocused();
     });
   });
 }

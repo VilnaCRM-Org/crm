@@ -80,24 +80,30 @@ const SHELL_ONLY_FOLDERS = [
 const shellFilesOf = (files: ReadonlySet<string>): string[] =>
   [...files].filter((file) => SHELL_ONLY_FOLDERS.some((folder) => file.startsWith(folder)));
 
-const PROTECTED_LAYOUT_FILES = [
-  'src/routes/protected-layout.ts',
-  'src/routes/shell-slot-factory.ts',
-  'src/components/layouts/app-layout.tsx',
-  'src/components/layouts/app-layout-frame.tsx',
-  'src/components/layouts/app-layout.styles.ts',
-  'src/components/layouts/app-shell-loader.ts',
-  'src/components/layouts/app-shell-placeholders.tsx',
-  'src/components/layouts/footer-loader.ts',
-  'src/components/layouts/use-app-shell.ts',
-  'src/components/layouts/use-frame-focus.ts',
-  'src/components/layouts/use-header-clearance.ts',
-  'src/modules/user/features/auth/components/protected-route/index.tsx',
-  'src/modules/user/features/auth/stores/auth-session-provider.ts',
+const PROTECTED_LAYOUT_ROOT = 'src/routes/protected-layout.ts';
+
+const SHARED_WITH_EAGER_PATH = [
+  'src/config/env/raw-env.ts',
+  'src/lib/reliability/chunk-load-error-detector.ts',
+  'src/lib/reliability/chunk-retry-loader.ts',
+  'src/providers/mui-theme/mui-theme-shell-loader.ts',
+  'src/providers/mui-theme/themed-chunk-loader.ts',
+  'src/services/observability/correlation-id-provider.ts',
+  'src/services/observability/observability-core.ts',
+  'src/services/observability/pii-scrubber.ts',
+  'src/services/observability/sentry-client.ts',
+  'src/services/observability/sentry-config.ts',
+  'src/services/observability/session-correlation.ts',
+  'src/services/observability/web-vitals-reporter.ts',
 ];
 
+const protectedGraphIn = (files: ReadonlySet<string>): string[] => {
+  const protectedGraph = eagerGraphOf(PROTECTED_LAYOUT_ROOT).files;
+  return [...files].filter((file) => protectedGraph.has(file)).sort();
+};
+
 const protectedLayoutFilesOf = (files: ReadonlySet<string>): string[] =>
-  PROTECTED_LAYOUT_FILES.filter((file) => files.has(file));
+  protectedGraphIn(files).filter((file) => !SHARED_WITH_EAGER_PATH.includes(file));
 
 const CURRENT_USER_MENU = /(?:^|\/)current-user-menu(?:[./]|$)/u;
 
@@ -310,6 +316,12 @@ describe('performance serving config', () => {
     expect(protectedLayoutFilesOf(files)).toEqual([]);
   });
 
+  it('shares only the listed infrastructure modules between the eager and protected graphs', () => {
+    const { files } = eagerGraphOf('src/index.tsx');
+
+    expect(protectedGraphIn(files)).toEqual(SHARED_WITH_EAGER_PATH);
+  });
+
   it('fails the protected-layout check when the composer imports AppLayout (must-fail)', () => {
     const composer = 'src/routes/route-composer.tsx';
     const tainted = (file: string): string =>
@@ -319,13 +331,18 @@ describe('performance serving config', () => {
 
     const { files } = eagerGraphOf('src/index.tsx', tainted);
 
-    expect(protectedLayoutFilesOf(files)).toEqual(
-      expect.arrayContaining([
-        'src/components/layouts/app-layout.tsx',
-        'src/components/layouts/app-layout-frame.tsx',
-        'src/components/layouts/app-layout.styles.ts',
-      ])
-    );
+    expect(protectedLayoutFilesOf(files)).toEqual([
+      'src/components/layouts/app-layout-frame.tsx',
+      'src/components/layouts/app-layout.styles.ts',
+      'src/components/layouts/app-layout.tsx',
+      'src/components/layouts/app-shell-loader.ts',
+      'src/components/layouts/app-shell-placeholders.tsx',
+      'src/components/layouts/footer-loader.ts',
+      'src/components/layouts/use-app-shell.ts',
+      'src/components/layouts/use-frame-focus.ts',
+      'src/components/layouts/use-header-clearance.ts',
+      'src/hooks/use-arrival-focus.ts',
+    ]);
   });
 
   it('fails the protected-layout check when the composer imports the guard (must-fail)', () => {
@@ -338,8 +355,15 @@ describe('performance serving config', () => {
     const { files } = eagerGraphOf('src/index.tsx', tainted);
 
     expect(protectedLayoutFilesOf(files)).toEqual([
+      'src/config/env/preloaded-auth-token.ts',
+      'src/config/env/sandbox-demo-session-provider.ts',
       'src/modules/user/features/auth/components/protected-route/index.tsx',
+      'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
       'src/modules/user/features/auth/stores/auth-session-provider.ts',
+      'src/modules/user/features/auth/stores/auth-store-selectors.ts',
+      'src/modules/user/features/auth/stores/use-auth-store.ts',
+      'src/modules/user/features/auth/stores/use-auth-token.ts',
+      'src/modules/user/features/auth/stores/use-sign-out.ts',
     ]);
   });
 
