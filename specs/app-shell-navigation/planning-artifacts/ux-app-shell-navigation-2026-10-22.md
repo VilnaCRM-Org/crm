@@ -3,7 +3,8 @@ status: complete
 workflowType: ux-design
 project_name: crm
 date: 2026-10-22
-iteration: 1
+revised: 2026-11-03
+iteration: 2
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -30,8 +31,16 @@ inputDocuments:
 
 # UX spec: app shell navigation (header, sidebar, drawer, user menu)
 
-**Author:** ux-designer (Sally), autonomous run **Date:** 2026-10-22 **Feature:**
-`app-shell-navigation`
+**Author:** ux-designer (Sally), autonomous run **Date:** 2026-10-22 (revised 2026-11-03: the
+userSettings flag removal) **Feature:** `app-shell-navigation`
+
+> **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
+> together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
+> drawer Settings group and the user menu's profile and Settings links now ship in every environment
+> (`docs/feature-flags.md`, "`/settings` ships without a flag"). Every condition below that reads
+> "while `userSettings` is on" now always holds, and every "`userSettings` off" row, scenario or
+> acceptance criterion describes a state no build reaches any more; they are kept unchanged as the
+> record of the plan as approved.
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"), the
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N") and the
