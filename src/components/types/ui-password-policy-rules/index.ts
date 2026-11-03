@@ -13,9 +13,9 @@ export interface PasswordRuleViewSet {
 export type PasswordRuleEvaluator = (value: string) => PasswordRuleViewSet;
 
 export interface UIPasswordPolicyRulesProps {
-  id: string;
-  name: string;
-  evaluate: PasswordRuleEvaluator;
+  readonly id: string;
+  readonly name: string;
+  readonly evaluate: PasswordRuleEvaluator;
 }
 
 export interface PasswordRuleItemProps {
@@ -24,8 +24,8 @@ export interface PasswordRuleItemProps {
 }
 
 export interface PasswordRuleLabels {
-  invalidLength: string;
-  numberRequired: string;
-  uppercaseRequired: string;
-  lowercaseRequired: string;
+  readonly invalidLength: string;
+  readonly numberRequired: string;
+  readonly uppercaseRequired: string;
+  readonly lowercaseRequired: string;
 }

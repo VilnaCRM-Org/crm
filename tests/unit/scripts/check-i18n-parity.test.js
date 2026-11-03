@@ -362,7 +362,28 @@ describe('check-i18n-parity gate', () => {
 
     expect(result.stderr).toContain('[key-ownership]');
     expect(result.stderr).toContain('"greeting.hello" is defined by 2 catalogs');
+    expect(result.stderr.split('[key-ownership] "greeting.hello"')).toHaveLength(2);
     expect(result.status).toBe(1);
+  });
+
+  it('checks key ownership per locale, so split plural categories never clash', () => {
+    const fixture = cleanFixture();
+    seedCatalog(
+      fixture,
+      'other-feature',
+      { farewell: { bye_other: 'Bye' } },
+      { farewell: { bye_few: 'Бувайте' } }
+    );
+    seedCatalog(
+      fixture,
+      'third-feature',
+      { farewell: { bye_few: 'Bye all' } },
+      { farewell: { bye_other: 'Бувай' } }
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).not.toContain('[key-ownership]');
   });
 
   it('reports two eager catalogs that disagree on whether a key is an object', () => {
@@ -1171,6 +1192,22 @@ describe('check-i18n-parity gate', () => {
       expect(result.stderr).toContain(
         `[lazy-catalog] ${fixture.policyPath} lists "gone-route/page.tsx" as an owner of ` +
           `"${LAZY_FOLDER}", but no file or folder exists there under ${fixture.scanRoot}`
+      );
+      expect(result.status).toBe(1);
+    });
+
+    it.each([
+      ['the scan root itself', '.'],
+      ['a path that escapes the scan root', '..'],
+      ['an absolute path', path.resolve('/')],
+    ])('fails when the policy names %s as an owner', (_name, owner) => {
+      const { fixture } = lazyFixture({ catalog: LAZY_FOLDER, owners: ['recovery-route', owner] });
+
+      const result = runGate(fixture);
+
+      expect(result.stderr).toContain(
+        `[lazy-catalog] ${fixture.policyPath} lists "${owner}" as an owner of ` +
+          `"${LAZY_FOLDER}", but an owner must be a file or folder inside ${fixture.scanRoot}`
       );
       expect(result.status).toBe(1);
     });

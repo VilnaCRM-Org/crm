@@ -5,6 +5,6 @@ export default function useSettledFocus(
   saveRef: RefObject<HTMLButtonElement | null>
 ): void {
   useLayoutEffect(() => {
-    if (settled > 0) saveRef.current?.focus();
+    if (settled > 0 && document.activeElement === document.body) saveRef.current?.focus();
   }, [settled, saveRef]);
 }
