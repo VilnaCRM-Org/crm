@@ -1,24 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import type { PasswordRuleViewSet } from '@/components/types/ui-password-policy-rules';
 import { withFormProvider } from '@stories/form-decorators';
+import { evaluateStoryPassword } from '@stories/password-rules-story';
 
 import UIPasswordPolicyRules from './index';
-
-const evaluatePassword = (value: string): PasswordRuleViewSet => ({
-  items: [
-    { key: 'invalidLength', met: value.length >= 8 && value.length <= 64 },
-    { key: 'numberRequired', met: /[0-9]/.test(value) },
-    { key: 'uppercaseRequired', met: /[A-Z]/.test(value) },
-    { key: 'lowercaseRequired', met: /\p{Ll}/u.test(value) },
-  ],
-});
 
 const meta: Meta<typeof UIPasswordPolicyRules> = {
   title: 'Components/Feedback/UIPasswordPolicyRules',
   component: UIPasswordPolicyRules,
   tags: ['autodocs'],
-  args: { id: 'password-policy-rules', name: 'password', evaluate: evaluatePassword },
+  args: { id: 'password-policy-rules', name: 'password', evaluate: evaluateStoryPassword },
   parameters: {
     docs: {
       description: {
