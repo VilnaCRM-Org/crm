@@ -1,4 +1,4 @@
-import type { ChangeEvent, ReactNode, RefObject } from 'react';
+import type { ChangeEvent, ReactNode, Ref, RefObject } from 'react';
 import type { FieldValues } from 'react-hook-form';
 
 import type { UIFormProps } from '@/components/types/ui-form';
@@ -85,6 +85,7 @@ export interface OnActionsProps {
 export interface CancelButtonProps {
   readonly onCancel: () => void;
   readonly disabled: boolean;
+  readonly buttonRef: Ref<HTMLButtonElement>;
 }
 
 export interface DisableCodeFieldProps {
