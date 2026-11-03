@@ -153,6 +153,13 @@ owner kept the Figma token on 2026-10-27. Hover (`#404142`) and focus indicators
 gap, and no axe rule tests non-text contrast, so no exception entry exists for it; it is resolved
 when #276 closes.
 
+The fourth is the password-visibility toggle of `UIPasswordField`: its eye and eye-off glyphs
+(`src/assets/icons/eye.svg`, `eye-off.svg`) are stroked in `grey[50]` `#969B9D`, 2.81:1 on white
+under the 3:1 of SC 1.4.11, and are the toggle's only visible identifier. Its accessible name is
+the localized show or hide `aria-label`, and its focus indicator is outside the gap. It keeps the Figma token on the same
+terms as the shell glyphs above, was recorded on 2026-11-03, and no axe rule tests non-text
+contrast, so no exception entry exists for it; it is resolved when #276 closes.
+
 ## Adding coverage
 
 - **A new `UI*` component**: add a row to `componentCases` in
