@@ -46,8 +46,10 @@ const meta: Meta<typeof UIForm<DemoValues>> = {
   argTypes: {
     children: { control: false },
     defaultValues: { control: false },
+    footer: { control: false },
     formOptions: { control: false },
     onSubmit: { control: false },
+    submitRef: { control: false },
   },
   parameters: {
     docs: {
