@@ -36,6 +36,10 @@ const pressOn = (target: EventTarget, key: string): void => {
 const insideView = (): HTMLElement => screen.getByRole('textbox', { name: 'Code' });
 
 describe('useEscapeCancel', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('calls cancel once for Escape pressed inside the view form', () => {
     const cancel = jest.fn();
     render(<EscapeView cancel={cancel} disabled={false} />);
@@ -88,15 +92,16 @@ describe('useEscapeCancel', () => {
     expect(cancel).not.toHaveBeenCalled();
   });
 
-  it('stops listening after unmount', () => {
-    const cancel = jest.fn();
-    const { unmount } = render(<EscapeView cancel={cancel} disabled={false} />);
-    const input = insideView();
+  it('removes the keydown listener it added when it unmounts', () => {
+    const added = jest.spyOn(document, 'addEventListener');
+    const removed = jest.spyOn(document, 'removeEventListener');
+    const { unmount } = render(<EscapeView cancel={jest.fn()} disabled={false} />);
+    const listener = added.mock.calls.find(([type]) => type === 'keydown')?.[1];
 
     unmount();
-    pressOn(input, 'Escape');
 
-    expect(cancel).not.toHaveBeenCalled();
+    expect(listener).toBeInstanceOf(Function);
+    expect(removed).toHaveBeenCalledWith('keydown', listener);
   });
 
   it('calls the latest cancel after a re-render, never the old one', () => {
