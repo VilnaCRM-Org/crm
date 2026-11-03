@@ -2216,8 +2216,9 @@ acceptance criteria it touches; only the planned shape or file name changed.
     new-password tab order has no "Назад" stop, and the unit and keyboard specs assert its
     absence.
 12. **Lighthouse audits both recovery routes (NFR-7, architecture §8.2, Story 4.5).** The plan
-    left `lighthouse/constants.js` unchanged. Both routes were added, the reset route with a fixed
-    dummy `?token=` so it renders the form rather than the invalid-link state, so the same
+    left `lighthouse/constants.js` unchanged. Both routes were added, the reset route with a fixed,
+    non-empty dummy `token` value so it renders the form rather than the invalid-link state, so the
+    same
     desktop and mobile floors and resource budgets now gate them too. This is stricter than
     planned and matches `docs/accessibility/acceptance-standard.md`, which asks for every route
     to be audited.
