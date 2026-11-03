@@ -20,7 +20,7 @@ const openDrawer = async (): Promise<HTMLElement> => {
 
 describe('the drawer header avatar copy in the assembled shell (issue #362, F4)', () => {
   beforeEach(() => {
-    stubMotionPreference(false);
+    stubMotionPreference(true);
     mockRead.mockReset();
     jest
       .spyOn(currentUserSource, 'read')
