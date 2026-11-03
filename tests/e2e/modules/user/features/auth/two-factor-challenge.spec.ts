@@ -321,6 +321,7 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
       await signInToChallenge(page, credentials);
       await row.enter(page);
       const toggle = row.toggle(page);
+      await confirmButtonOf(page).scrollIntoViewIfNeeded();
       await confirmButtonOf(page).focus();
 
       await page.keyboard.press('Tab');
