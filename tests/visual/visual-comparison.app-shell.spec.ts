@@ -3,10 +3,10 @@ import { expect, test, type Page } from '@playwright/test';
 import ROUTE_PATHS from '@/routes/route-paths';
 import {
   PROFILE_NODE,
-  signInWithFlag,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { chipOf, menuItemOf, shellText, sidebarOf, userMenuOf } from '@tests/e2e/utils/app-shell';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { currentLanguage, notFoundScreens, type ScreenSize } from './constants';
 import stabilizePage from './stabilize-page';
@@ -24,7 +24,7 @@ const RESTING_POINTER = { x: 2, y: 500 };
 
 async function openShell(page: Page, screen: ScreenSize, path: string): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
-  await signInWithFlag(page, true);
+  await seedPreloadedAuthToken(page);
   await stubProfile(page);
   await stabilizePage(page, path);
   await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));

@@ -6,7 +6,6 @@ import { Route, Routes, useNavigate } from 'react-router';
 
 import MobileNavigation from '@/components/ui-app-header/mobile-navigation';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import useArrivalFocus from '@/hooks/use-arrival-focus';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
@@ -93,11 +92,9 @@ const expectFocusSequence = async (steps: readonly FocusStep[], shift = false): 
 describe('MobileNavigation', () => {
   beforeEach(() => {
     stubMotionPreference(true);
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
     Reflect.deleteProperty(window, 'matchMedia');
   });
 
