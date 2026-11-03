@@ -16,7 +16,6 @@ import {
 } from '@tests/e2e/utils/reach-challenge';
 import { replyWithRemainingCodes, stubChallenge } from '@tests/e2e/utils/two-factor-responses';
 import expectCleanScan from '@tests/utils/a11y/expect-clean-scan';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 const CODE = '123456';
 const RECOVERY_CODE = 'ABCD-2345';
@@ -126,7 +125,6 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
   });
 
   test('a protected page with the low-codes notice has no axe violations', async ({ page }) => {
-    await overrideRuntimeConfig(page, { flags: { userSettings: true } });
     await stubProfile(page);
     await stubChallenge(page, [replyWithRemainingCodes(1)]);
     await signInToChallenge(page, credentials);

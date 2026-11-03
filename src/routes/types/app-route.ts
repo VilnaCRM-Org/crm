@@ -1,7 +1,5 @@
 import type { ComponentType } from 'react';
 
-import type { FeatureFlag } from '@/config/runtime/types/feature-flag';
-
 export type RouteGuard = 'protected' | 'public';
 
 export interface PageModule {
@@ -17,14 +15,9 @@ export interface RouteMeta {
   readonly permission?: string;
 }
 
-export interface RouteHandle {
-  readonly flag?: FeatureFlag | undefined;
-}
-
 interface RouteCommon {
   readonly load: () => Promise<PageModule>;
   readonly guard?: RouteGuard;
-  readonly flag?: FeatureFlag | undefined;
   readonly meta?: RouteMeta;
 }
 

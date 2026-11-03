@@ -21,10 +21,9 @@ describe('runtime configuration source without a document global', () => {
     expect(parse).toHaveBeenCalledWith({});
   });
 
-  it('reports every url and flag as absent', () => {
+  it('reports every url as absent', () => {
     expect(() => appConfigSource.load()).not.toThrow();
     expect(appConfigSource.text('apiBaseUrl')).toBeUndefined();
     expect(appConfigSource.url('graphqlUrl')).toBeUndefined();
-    expect(appConfigSource.flag('userSettings')).toBeUndefined();
   });
 });

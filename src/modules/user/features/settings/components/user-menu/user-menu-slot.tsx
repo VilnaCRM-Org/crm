@@ -8,7 +8,6 @@ import {
   useState,
 } from 'react';
 
-import useFeatureFlag from '@/hooks/use-feature-flag';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
@@ -32,7 +31,6 @@ export default function UserMenuSlot({
   onChunkFailure,
   onAvatar,
 }: UserMenuSlotProps): JSX.Element {
-  const settingsAvailable = useFeatureFlag('userSettings');
   const [identity, setIdentity] = useState<UserDisplayName | null>(null);
   const report = useRef(onChunkFailure);
   useLayoutEffect(() => {
@@ -50,17 +48,10 @@ export default function UserMenuSlot({
 
   return (
     <>
-      <UserMenu
-        identity={identity}
-        settingsAvailable={settingsAvailable}
-        signOut={signOut}
-        onAvatar={onAvatar}
-      />
-      {settingsAvailable && (
-        <Suspense fallback={<NoCurrentUser />}>
-          <CurrentUserMenu onIdentity={setIdentity} />
-        </Suspense>
-      )}
+      <UserMenu identity={identity} signOut={signOut} onAvatar={onAvatar} />
+      <Suspense fallback={<NoCurrentUser />}>
+        <CurrentUserMenu onIdentity={setIdentity} />
+      </Suspense>
     </>
   );
 }

@@ -1,4 +1,7 @@
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  signInToSettings,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   codeListOf,
   codesHeadingOf,
@@ -18,7 +21,6 @@ import {
   regenerateHeadingOf,
   regenerateSubmitOf,
   sectionOf,
-  signInToTwoFactorSettings,
   startOf,
   statusHeadingOf,
   stubClipboard,
@@ -38,7 +40,7 @@ const SETTINGS_URL = '/settings';
 
 test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInToTwoFactorSettings(page);
+    await signInToSettings(page);
     await stubProfile(page);
     await stubSetup(page);
     await stubConfirm(page);
