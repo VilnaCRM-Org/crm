@@ -48,6 +48,12 @@ export const WithError: Story = {
       error: 'Не вдалося надіслати запит. Перевірте з’єднання та спробуйте ще раз.',
       errorOccurrence: 1,
     },
+    offline: {
+      online: true,
+      noticeId: 'form-lead-offline-notice-with-error',
+      noticeRef: createRef(),
+      submitRef: createRef(),
+    },
   },
 };
 
@@ -55,7 +61,7 @@ export const Offline: Story = {
   args: {
     offline: {
       online: false,
-      noticeId: 'form-lead-offline-notice',
+      noticeId: 'form-lead-offline-notice-offline',
       noticeRef: createRef(),
       submitRef: createRef(),
     },
