@@ -29,6 +29,36 @@ describe('useSettledFocus', () => {
     expect(focus).toHaveBeenCalledTimes(2);
   });
 
+  it('focuses the save button when focus fell to the page body during the save', () => {
+    const focus = jest.fn();
+    const saveRef = buttonRef(focus);
+    const { rerender } = renderHook(({ settled }) => useSettledFocus(settled, saveRef), {
+      initialProps: { settled: 0 },
+    });
+
+    expect(document.body).toHaveFocus();
+    rerender({ settled: 1 });
+
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves focus on a control the user moved to while the save was in flight', () => {
+    const focus = jest.fn();
+    const saveRef = buttonRef(focus);
+    const field = document.createElement('input');
+    document.body.append(field);
+    const { rerender } = renderHook(({ settled }) => useSettledFocus(settled, saveRef), {
+      initialProps: { settled: 0 },
+    });
+
+    field.focus();
+    rerender({ settled: 1 });
+
+    expect(focus).not.toHaveBeenCalled();
+    expect(field).toHaveFocus();
+    field.remove();
+  });
+
   it('does nothing when the save button is not mounted', () => {
     const saveRef = { current: null };
     const { rerender } = renderHook(({ settled }) => useSettledFocus(settled, saveRef), {

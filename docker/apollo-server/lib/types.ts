@@ -87,8 +87,8 @@ export interface UserEdge {
 }
 
 export interface UserPageInfo {
-  startCursor: string;
-  endCursor: string;
+  startCursor: string | null;
+  endCursor: string | null;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
