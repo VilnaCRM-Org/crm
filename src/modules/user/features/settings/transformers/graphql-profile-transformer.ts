@@ -34,7 +34,6 @@ import {
 
 const FAILURE_REASONS = new Map<UserServiceFailureReason, ProfileFailureReason>([
   ['unauthenticated', 'session_ended'],
-  ['access_denied', 'session_ended'],
   ['rate_limited', 'rate_limited'],
   ['network', 'transient'],
   ['server', 'transient'],

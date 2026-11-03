@@ -47,7 +47,7 @@ const SETTINGS_URL = '/settings';
 const SETTINGS_RING = 'rgb(26, 28, 30)';
 const CELL_RING = 'rgb(64, 65, 66)';
 const CELL_BORDER = 'rgb(128, 135, 138)';
-const ERROR_TEXT = 'rgb(198, 40, 40)';
+const ERROR_TEXT = 'rgb(214, 51, 51)';
 const CELL_INDEXES = [0, 1, 2, 3, 4, 5] as const;
 
 async function expectRing(target: Locator, color: string): Promise<void> {

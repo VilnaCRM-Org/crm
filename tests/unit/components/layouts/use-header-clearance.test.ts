@@ -1,4 +1,5 @@
-import { renderHook } from '@testing-library/react';
+import { render, renderHook } from '@testing-library/react';
+import { createElement, type ReactElement } from 'react';
 
 import useHeaderClearance from '@/components/layouts/use-header-clearance';
 
@@ -15,6 +16,23 @@ describe('useHeaderClearance', () => {
     renderHook(() => useHeaderClearance('64px'));
 
     expect(padding('scroll-padding-top')).toBe('64px');
+  });
+
+  it('reserves the padding before the frame hands its main to an arrival ref', () => {
+    const seen: string[] = [];
+    function Frame(): ReactElement {
+      useHeaderClearance('64px');
+
+      return createElement('main', {
+        ref: (node: HTMLElement | null) => {
+          if (node) seen.push(padding('scroll-padding-top'));
+        },
+      });
+    }
+
+    render(createElement(Frame));
+
+    expect(seen).toEqual(['64px']);
   });
 
   it('removes the top scroll padding on unmount', () => {

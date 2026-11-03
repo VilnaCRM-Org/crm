@@ -44,6 +44,8 @@ describe('UISidebar a11y', () => {
 
     await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
 
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Collapse sidebar' })).not.toBeInTheDocument();
     await expectNoA11yViolations(container);
   });
 
@@ -55,8 +57,10 @@ describe('UISidebar a11y', () => {
       </main>
     );
     await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    expect(screen.getAllByText('Contacts')).toHaveLength(1);
     await user.hover(screen.getByRole('link', { name: 'Contacts' }));
 
+    expect(await screen.findAllByText('Contacts')).toHaveLength(2);
     await expectNoA11yViolations(container);
   });
 });

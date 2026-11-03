@@ -32,7 +32,7 @@ The project uses Docker for all development and testing. Commands are managed vi
 ### Starting Development
 
 ```bash
-make start          # Start dev server (port 3000)
+make start          # Start dev server (port 3000), Mockoon, Apollo and Mailpit (inbox :8025)
 make start-prod     # Start the prod-parity stack (port 3001; test-harness image, see #158)
 make sh             # Open shell in dev container
 ```
@@ -333,18 +333,18 @@ outside every function body and instance property initializer runs on import, wh
 whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 528 files the scope holds 8,943
-runnable mutants, 6,471 of them scored, in 472 sharded files; 56 files run in no shard, and the 40
-shards hold 163 to 164 units of packing weight (a file's scored mutants, or 1 for a file whose
-mutants are all static) and 7 to 13 files each. File size was a poor proxy for that load: at the
+same commit; no weight file is committed, so none can go stale. At 541 files the scope holds 9,474
+runnable mutants, 7,041 of them scored, in 484 sharded files; 57 files run in no shard, and the 40
+shards hold 177 to 178 units of packing weight (a file's scored mutants, or 1 for a file whose
+mutants are all static) and 8 to 13 files each. File size was a poor proxy for that load: at the
 two-factor scope (528 files, 9,232 runnable mutants) a size packing held 149 to 485 runnable
 mutants per shard at 30 shards, first fell under 240 at 69 shards (225), and rose again to 270 at
 70 and 293 at 73. Weighing each file by its runnable mutants instead held every shard within one
 mutant of the mean: 307 to 308 at 30, 237 at 39, 230 to 231 at 40.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 units of packing weight, so scope growth reddens a unit test before a
-shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
-cache-key segments disagree.
+shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and
+the `-of<N>-` cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
@@ -473,8 +473,9 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a seventeen
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 528 files; not all of them produce scored mutants — the rest are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`.
+mutate scope is 541 files; not all of them produce scored mutants — the 57 unsharded ones hold no
+runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
+mutants are static is skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by mutant count, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
@@ -605,14 +606,15 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries ten `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries eleven `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
-text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, and the password-recovery
+text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
 in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
-issue #315, and the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product owner's
-call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED` on the
-10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
+issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
+decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
+owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
+on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
 issue #276 and deleted when it closes.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
@@ -1988,7 +1990,9 @@ in-page Suspense boundary (the registration form's result chunk) reuses it inste
 loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
 surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
 paint-path components style themselves with `@emotion/styled`, never `Box` or another
-`@mui/material` import. To add a page, follow the registry ("Adding a page" below); never eagerly
+`@mui/material` import. The protected branch is off the eager path as well: `ProtectedRoute` and
+`AppLayout` load together from one `protected-layout` chunk, so the public auth and error pages
+never download them. To add a page, follow the registry ("Adding a page" below); never eagerly
 import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
@@ -2510,8 +2514,10 @@ Three different things are outside the gate, and the distinction matters when yo
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
-  `security-event-core` and its `auth-failure-monitor` leaf, and the observability core /
-  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves.
+  `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
+  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, and the
+  app-shell chip's current-user read (`auth-session-provider`, `current-user-client`,
+  `current-user-source`, issue #362).
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
@@ -2665,10 +2671,13 @@ wiring — it contains no route-array literal and no feature/module page imports
 - **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
   `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
   optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
-  one declared `shell.userMenu` (`routeValidator` rejects a second) to `routeMapper.shellSlot`,
-  which wraps it through `ShellSlotFactory`, and passes the slot plus a chunk-failure reporter to
-  `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar, mobile drawer) around the page outlet
-  (issue #362).
+  one declared `shell.userMenu` (`routeValidator` rejects a second) to
+  `protectedLayoutLoader.create`, which wraps it through `ShellSlotFactory`, and passes the slot
+  plus a chunk-failure reporter to `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar,
+  mobile drawer) around the page outlet (issue #362). `ProtectedRoute`, `AppLayout` and
+  `ShellSlotFactory` are not in the eager entrypoint: they arrive together in one
+  `protected-layout` chunk (`src/routes/protected-layout-loader.ts`, one `ChunkRetryLoader`, no
+  reload), so a public page never downloads them.
 - **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a `RouteModule` whose
   routes lazy-`load` the feature's pages (per-route code splitting preserved). The auth feature:
   `@auth/routes`. The app shell's own routes (home, the five protected coming-soon sections
@@ -3179,9 +3188,12 @@ replaces.
    Lighthouse seeded-token audit of `/sign-in` is unaffected; the target must be an internal path
    and `AppLayout` moves focus to `<main>` when it lands. Sign-out lives in the app shell (issue
    #362): `AppLayout` reads `signOut` from the outlet context `ProtectedRoute` provides
-   (`ProtectedOutletContext`, `{ signOut }`, issue #106) and passes it to `UIAppShell`, which
-   renders it in the sidebar, the mobile navigation drawer and the user menu; `AppLayout` still
-   forwards the same context to the page outlet. The sign-out redirect carries
+   (`ProtectedSessionContext`, `{ signOut, session }`, issues #106 and #362) and passes it to
+   `UIAppShell`, which renders it in the sidebar, the mobile navigation drawer and the user menu;
+   `AppLayout` still forwards the same context to the page outlet. `session` is the container-free
+   `authSessionProvider`: the header chip's current-user read takes the token from it and ends
+   a session the API rejects through it, so no protected page loads the DI container for the
+   chip. The sign-out redirect carries
    `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
    `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
    focus again.

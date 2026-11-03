@@ -21,7 +21,7 @@ const meta: Meta<typeof NavigationRow> = {
     href: '/boards',
   },
   argTypes: {
-    layout: { control: 'select', options: ['desktop', 'tablet'] },
+    layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
     variant: { control: 'select', options: ['item', 'sub', 'rail'] },
   },
   parameters: {
@@ -47,6 +47,8 @@ export const Default: Story = {};
 export const Current: Story = { args: { current: true } };
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
+
+export const Drawer: Story = { args: { layout: 'drawer' } };
 
 export const SubItem: Story = {
   args: {

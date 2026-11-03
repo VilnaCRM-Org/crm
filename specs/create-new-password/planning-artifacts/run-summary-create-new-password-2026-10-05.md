@@ -1,9 +1,9 @@
 ---
 status: complete
-workflowType: autonomous-planning
+workflowType: run-summary
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-08
+revised: 2026-11-02
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 ---
 
@@ -190,7 +190,7 @@ Stages 5 and 6 and all correction passes ran on Opus.
 - Enabling the flag in the test stack intentionally re-baselines `/sign-in`; it lands after both
   routes are registered, and the shipped default stays `false`.
 - The pill-styled recovery links take one scoped `color-contrast` entry under issue #276; "Назад"
-  renders in `#404142` instead of the failing Figma grey.
+  later took a second one when it moved to the Figma `#969B9D` (user decision, 2026-10-21).
 - The six follow-ups are kept outside the bmalph story grammar so Ralph never dispatches them.
 - The ADR is ADR-019 because open PR #311 claims ADR-018.
 
@@ -202,8 +202,10 @@ Stages 5 and 6 and all correction passes ran on Opus.
 
 ## Open questions, warnings, blockers
 
-- Blockers for implementation: none. Implementation can start now against the pending
-  extension and the local Apollo mock.
+- Blockers for implementation: the prerequisite chores `typed-boundaries-gate` (#332) and
+  `zustand-client-state` (#334) had to land first (see "Recommended next step"); both closed on
+  2026-10-13, so none remain. No user-service release is needed: implementation runs against the
+  pending extension and the local Apollo mock.
 - Waiting on user-service, not blocking: the pin bump that deletes the extension (Follow-up 5.3)
   waits for a release tag carrying both mutations, and production enablement of the flag
   (Follow-up 5.6) waits for that release to be deployed with the link-host fix. Superseded
@@ -220,7 +222,8 @@ Stages 5 and 6 and all correction passes ran on Opus.
   colour, pill vs plain link, the resend countdown.
 - Product owner: the 60 % completion hypothesis, keeping the lowercase rule, Lighthouse mobile 85
   in the profile vs the 0.84 CI assertion.
-- Coordinate merge order with PR #311 (ADR index, a11y allowlist prose).
+- Coordinate merge order with PR #311 (ADR index, a11y allowlist prose). Resolved: #311 merged
+  on 2026-10-12 and this branch carries `main` after it.
 - Ralph dispatches stories in file order and ignores `Depends on`; the epics keep every dependency
   pointing backwards in file order.
 - Mock drift: the extension mirrors user-service `main` as of `f82bbef5`; the pin bump
@@ -248,9 +251,11 @@ and typed classes/interfaces and update the architecture diagrams, check that yo
 strictly follows the Miro board architecture. Because we haven't mentioned any services and
 controllers in architecture as I remember".
 
-**Evidence.** The board was re-captured on 2026-10-08 with a local headless Chrome (the browser
-MCP servers were locked by another session); screenshots and the extraction live in
-`crm-worktrees/_planning-shared/` (`miro-layer-contract.md`, `miro/*.png`). Findings:
+**Evidence.** The board was re-read on 2026-10-08 with a local headless Chrome (the browser MCP
+servers were locked by another session). The source of record is the board itself,
+<https://miro.com/app/board/uXjVMG64hTs=/>, which anyone with team access can re-check against
+the findings below; the captures and extraction made that day were working notes and are not
+committed, because the board covers internal architecture beyond this feature. Findings:
 
 - The frontend frames use only `[React component]` / `[component]<route>`, React hook,
   `[Data provider]`, `[Transformer]`, `[Repository]`, `Mutation [GraphQL]`, `State`,

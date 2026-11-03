@@ -1,7 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  PROFILE_NODE,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   disableHeadingOf,
   enableTwoFactor,
@@ -15,6 +18,7 @@ import {
   statusHeadingOf,
   twoFactorText,
 } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
+import { chipOf } from '@tests/e2e/utils/app-shell';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import {
   challengeText,
@@ -112,6 +116,7 @@ test.describe.parallel('Two-factor visual tests (issue #331)', () => {
       await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.home}$`));
       await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
       await expect(page.getByRole('status').filter({ hasText: lowCodesNotice })).toBeVisible();
+      await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
 
       await takeTwoFactorSnapshot(page, screen, 'low-codes-notice');
     });

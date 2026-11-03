@@ -14,6 +14,8 @@ const report = JSON.parse(
   rules: { name: string; severity: string }[];
   fired: Record<string, string[]>;
   expected: Record<string, string[]>;
+  variantFired: Record<string, string[]>;
+  variantExpected: Record<string, string[]>;
   alsoFires: Record<string, string[]>;
 };
 
@@ -33,10 +35,23 @@ const DOCUMENTED_SUBSET_OVERLAPS: Record<string, string[]> = {
 };
 
 const fixtureNames = Object.keys(report.expected).sort();
+const variantNames = Object.keys(report.variantExpected).sort();
 
 describe('dependency-cruiser rule-rot guard', () => {
   it.each(fixtureNames)('%s fires on its violating fixture and nothing else fires', (name) => {
     expect(report.fired[name]).toEqual(report.expected[name]);
+  });
+
+  it.each(variantNames)('%s fires its rule alone on the path alternative it pins', (name) => {
+    expect(report.variantFired[name]).toEqual(report.variantExpected[name]);
+  });
+
+  it('pins every components-no-direct-injectable-import path alternative #330 added', () => {
+    expect(variantNames).toEqual([
+      'components-no-direct-injectable-import/feature-data-providers',
+      'components-no-direct-injectable-import/feature-transformers',
+      'components-no-direct-injectable-import/module-transformers',
+    ]);
   });
 
   it('every rule in .dependency-cruiser.js has a fixture', () => {

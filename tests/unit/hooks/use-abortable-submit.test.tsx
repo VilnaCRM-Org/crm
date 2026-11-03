@@ -126,6 +126,26 @@ describe('useAbortableSubmit', () => {
     await expect(settled).resolves.toBeNull();
   });
 
+  it('resolves null when the run rejects after the unmount abort', async () => {
+    let rejectRun: (reason: Error) => void = () => undefined;
+    const run = jest.fn<Promise<string>, [string, AbortSignal]>(
+      () =>
+        new Promise<string>((_resolve, reject) => {
+          rejectRun = reject;
+        })
+    );
+    const { result, unmount } = renderHook(() => useAbortableSubmit(run));
+
+    let settled: Promise<string | null> = Promise.resolve('unset');
+    act(() => {
+      settled = result.current.submit('input');
+    });
+    unmount();
+    rejectRun(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+
+    await expect(settled).resolves.toBeNull();
+  });
+
   it('starts exactly one run when a StrictMode component submits after mounting', async () => {
     const run = jest.fn<Promise<string>, [string, AbortSignal]>(async () => 'outcome');
 
