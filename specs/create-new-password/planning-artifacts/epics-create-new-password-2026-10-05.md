@@ -132,8 +132,9 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - FR-3: a distinct `document.title` per route from `titleKey`, never carrying token or e-mail.
 - FR-4: signed-in users may use both routes; a reset changes no client session state.
 - FR-5: request form content and chrome (back control, one `h1`, body, e-mail field, submit; no
-  OAuth row, no switcher); card widths per breakpoint from the existing `formWrapper` (502 / 632
-  / 363 px; the code's 632 px tablet card is authoritative over the 636 px Figma reading).
+  OAuth row, no switcher); card widths per breakpoint 502 / 636 / 363 px: the existing
+  `formWrapper` on desktop and mobile, and the Figma 636 px recovery card from 768 to 1439 px
+  (owner decision 2026-10-21, "Implementation drift" item 15).
 - FR-6: e-mail validation reusing the existing rules; no request while invalid.
 - FR-7: one `RequestPasswordReset` GraphQL mutation per submit; busy state, `aria-busy`, polite
   status text.
@@ -238,7 +239,7 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 
 - UX-DR-1: Figma file `xZ7ccrH6d4QyqLQsayFSEX`, section "Восстановление пароля": request
   `72:5596` / `72:5617` / `72:5638`, sent `360:11925` / `360:11937` / `360:11949`; card widths
-  502 / 632 / 363 in code (the existing `formWrapper` `39.5rem` is authoritative, PRD §4), tokens
+  502 / 636 / 363, the tablet card following the Figma 636 px frame (`39.75rem`, PRD §4), tokens
   `Font/100 #1A1C1E`, `Font/200 #404142`, `Primary #1EAEFF`; the "Назад" row (`72:5605`, "15
   (medium)" Golos Medium 15/18) keeps its size, weight and `#969B9D` colour (NFR-9).
 - UX-DR-2: the new-password form and the invalid-link state have no frame; their composition
@@ -1747,8 +1748,9 @@ new `*-snapshots/` folders (from CI artifacts), `tests/e2e/route-coverage.tsv` (
 - **Given** the 13 screen sizes × 3 desktop engines, **then** the resting request form and the
   resting new-password form have baselines.
 - **Given** the 1440, 1024 and 375 px viewports, **when** the request card's `boundingBox()` is
-  read before the snapshot, **then** its width is 502, 632 and 363 px, equal to the `/sign-in`
-  card at the same viewport.
+  read before the snapshot, **then** its width is 502, 636 and 363 px: equal to the `/sign-in`
+  card on desktop and mobile, and the Figma 636 px recovery card against `/sign-in`'s 632 px from
+  768 to 1439 px ("Implementation drift" item 15).
 - **Given** the `notFoundScreens`-shaped desktop and mobile pair, **then** the sent step, the
   invalid-link state and `/sign-in` with the success notice have baselines.
 - **Given** the mobile visual lane (Pixel 7, iPhone 14, `scale: 'device'`), **then** both resting
@@ -2232,3 +2234,9 @@ acceptance criteria it touches; only the planned shape or file name changed.
     `OBSERVABILITY_TOKENS.ObservabilityService` and reports a rejection the Apollo link never saw
     (the link reports the ones it did), with neither the token nor the password in the event.
     Classification is unchanged: the provider still normalizes every rejection.
+15. **The tablet recovery card follows Figma (FR-5, NFR-6, UX-DR-1, Story 4.4).** The plan reused
+    `formWrapper`'s 632 px tablet width and called the code value authoritative over the 636 px
+    Figma reading. The owner decided on 2026-10-21 that the recovery cards match the Figma tablet
+    frames: from 768 to 1439 px `AuthCard variant="recovery"` sets `maxWidth: '39.75rem'` (636 px)
+    with the Figma padding, while `/sign-in` and `/sign-up` keep 632 px and desktop and mobile
+    keep the shared widths. The visual spec's `CARD_WIDTHS` pins 636 against `/sign-in`'s 632.
