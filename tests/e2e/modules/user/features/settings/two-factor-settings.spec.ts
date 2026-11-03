@@ -331,6 +331,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await stubConfirm(page);
       await page.goto(SETTINGS_URL);
       await openSetup(page);
+      await copyKeyOf(page).scrollIntoViewIfNeeded();
       await copyKeyOf(page).focus();
       await page.keyboard.press('Shift+Tab');
       await page.keyboard.press('Tab');
