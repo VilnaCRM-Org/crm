@@ -1,6 +1,7 @@
 import { buildEmail, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import {
   PROFILE_NODE,
@@ -8,7 +9,6 @@ import {
   replyWithProfile,
   replyWithResent,
   replyWithSaved,
-  signInWithFlag,
   stubProfile,
   watchContactedOrigins,
   type StubbedProfile,
@@ -40,7 +40,7 @@ test.describe('Settings save journeys (issue #330)', () => {
 
   test.beforeEach(async ({ page }) => {
     contacted = watchContactedOrigins(page);
-    await signInWithFlag(page, true);
+    await seedPreloadedAuthToken(page);
   });
 
   test.afterEach(({ page }) => {
