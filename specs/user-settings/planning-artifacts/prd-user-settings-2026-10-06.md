@@ -16,14 +16,17 @@ inputDocuments:
 # PRD: user settings for the `user` module
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
-2026-10-20 and 2026-10-21 (twice) **Feature:** `user-settings`
+2026-10-20, 2026-10-21 (twice) and 2026-11-03 (owner decision: the `userSettings` and
+`twoFactorAuth` flags removed) **Feature:** `user-settings`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
 > section, in every environment (`src/modules/user/README.md`, "No feature flag for the two-factor
-> section"). Every condition below that reads "while `twoFactorAuth` is on" now always holds, and
-> every "`twoFactorAuth` off" row, scenario or acceptance criterion describes a state no build
-> reaches any more; they are kept unchanged as the record of the plan as approved.
+> section"); #330's `/settings` likewise ships without `userSettings` since e39b60a3. Every
+> condition below that reads "while `userSettings` is on" or "while `twoFactorAuth` is on" now
+> always holds, and every "`userSettings` off" or "`twoFactorAuth` off" row, scenario or acceptance
+> criterion describes a state no build reaches any more; they are kept unchanged as the record of
+> the plan as approved and are superseded by this decision.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and
