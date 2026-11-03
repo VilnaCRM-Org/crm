@@ -47,7 +47,7 @@ describe('settings route contract', () => {
   });
 
   it.each(['/settings/integrations', '/settings/webhooks', '/settings/billing'])(
-    'declares %s as a protected route behind the userSettings flag',
+    'declares %s as an always-registered protected route',
     async (path) => {
       const { settingsRoutes } = await loadContract();
       const route = settingsRoutes.routes.find((candidate) => candidate.path === path);
@@ -55,7 +55,6 @@ describe('settings route contract', () => {
       expect(route).toEqual({
         path,
         guard: 'protected',
-        flag: 'userSettings',
         load: expect.any(Function),
       });
     }

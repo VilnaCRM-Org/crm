@@ -940,7 +940,8 @@ flag is declared today: `forgotPassword`, the last one, was removed in #309, and
 that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
 Container start fails on two flag shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*`
 name that matches no declared flag, and a declared flag whose value is not exactly `true` or
-`false`. The user settings page (issue #330) ships without a flag.
+`false`. The user settings page (issue #330), its three coming-soon sub-pages and their app-shell
+entry points (issue #362) ship without a flag.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`

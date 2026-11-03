@@ -2,7 +2,6 @@ import '@testing-library/jest-dom';
 import { isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
@@ -34,7 +33,6 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
   });
 
   it('paints the monogram the header avatar shows, aria-hidden, with no second read', async () => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     mockRead.mockResolvedValue({
       kind: 'ok',
       identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
@@ -57,7 +55,6 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
   });
 
   it('paints the no-data glyph copy while the current user is pending', async () => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
     mockRead.mockReturnValue(new Promise(() => undefined));
     await renderAppShell({ path: '/', width: MOBILE, page: PAGE });
 
@@ -65,15 +62,5 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
 
     expect(dialog).toContainHTML('PersonOutlinedIcon');
     expect(within(dialog).queryByText('ОП')).not.toBeInTheDocument();
-  });
-
-  it('paints the no-data glyph copy and reads nothing while the settings flag is off', async () => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(false);
-    await renderAppShell({ path: '/', width: MOBILE, page: PAGE });
-
-    const dialog = await openDrawer();
-
-    expect(dialog).toContainHTML('PersonOutlinedIcon');
-    expect(mockRead).not.toHaveBeenCalled();
   });
 });

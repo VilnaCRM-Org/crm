@@ -142,16 +142,6 @@ test.describe('WCAG 2.1 AA route scans (issue #118)', () => {
     });
   }
 
-  test('home with userSettings off has no axe violations outside the allowlist', async ({
-    page,
-  }) => {
-    await signInWithFlag(page, false);
-    await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
-    await expectShellRendered(page);
-
-    await expectNoAxeViolations(page);
-  });
-
   test('home with the user menu open has no axe violations outside the allowlist', async ({
     page,
   }) => {

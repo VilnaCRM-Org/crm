@@ -17,19 +17,16 @@ const settingsRoutes: RouteModule = {
     {
       path: ROUTE_PATHS.settingsIntegrations,
       guard: 'protected',
-      flag: 'userSettings',
       load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
     },
     {
       path: ROUTE_PATHS.settingsWebhooks,
       guard: 'protected',
-      flag: 'userSettings',
       load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
     },
     {
       path: ROUTE_PATHS.settingsBilling,
       guard: 'protected',
-      flag: 'userSettings',
       load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
     },
   ],

@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 
 import UIAppHeader from '@/components/ui-app-header';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
@@ -11,11 +10,9 @@ import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations'
 describe('UINavigationDrawer a11y', () => {
   beforeEach(() => {
     stubMotionPreference(true);
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
     Reflect.deleteProperty(window, 'matchMedia');
   });
 

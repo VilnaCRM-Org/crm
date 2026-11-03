@@ -399,17 +399,19 @@ password policy — is referenced below, not repeated.
 shipped the page behind a `userSettings` runtime flag, off in production and on in the test
 stack. The product owner decided not to wait for the backend.
 
-**Decision.** `/settings` is an ordinary protected route, registered in every environment, and
-the home page always renders its link to it. No flag is declared and the route registry has no
-flag gate, so the router tree is the one `ProtectedRoute` and `AppLayout` already build.
+**Decision.** `/settings` and its three coming-soon sub-pages (issue #362) are ordinary protected
+routes, registered in every environment, and the app shell's sidebar, drawer and user menu always
+link to them. No flag is declared and the route registry has no flag gate, so the router tree is
+the one `ProtectedRoute` and `AppLayout` already build.
 
 **Consequence, accepted.** Until user-service ships its authentication surface (G1), every
 environment that deploys this page reads and updates whichever user the unauthenticated API
 returns, not the signed-in one. The product owner accepted that exposure in production.
 
 **Rejected.** A `flag` field on route contracts with a gate that renders the not-found page while
-the flag is off (machinery kept for one route that no longer needs it); gating inside the page
-chunk (`ProtectedRoute` redirects first and the chunk is requested).
+the flag is off, and a matching `flag` on shell navigation items that the shell filtered out
+(machinery kept for routes that no longer need it); gating inside the page chunk
+(`ProtectedRoute` redirects first and the chunk is requested).
 
 ### The current user is the first edge of `users(first: 1)`
 
