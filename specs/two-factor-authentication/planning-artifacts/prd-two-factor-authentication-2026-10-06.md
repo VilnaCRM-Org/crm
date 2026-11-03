@@ -4,6 +4,7 @@ workflowType: prd
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 project_name: crm
 date: 2026-10-06
+revised: 2026-11-03
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -78,6 +79,13 @@ revisions:
 # PRD: two-factor authentication for the user module
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06 **Feature:** `two-factor-authentication`
+
+> **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
+> flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
+> section, in every environment (`src/modules/user/README.md`, "No feature flag for the two-factor
+> section"). Every condition below that reads "while `twoFactorAuth` is on" now always holds, and
+> every "`twoFactorAuth` off" row, scenario or acceptance criterion describes a state no build
+> reaches any more; they are kept unchanged as the record of the plan as approved.
 
 **Reconciliation 2026-10-27.** The requirements are unchanged. Code paths and names this PRD
 cites were checked against `feat/331-two-factor-authentication` at `77f59152`; where they differ,
