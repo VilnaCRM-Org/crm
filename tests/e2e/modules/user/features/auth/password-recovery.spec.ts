@@ -214,7 +214,9 @@ test.describe('Password recovery request step (issue #315)', () => {
     await page.route(GRAPHQL_URL, () => undefined);
     await page.goto(RECOVERY_URL);
 
+    const sent = page.waitForRequest((request) => request.url().includes('graphql'));
     await submitEmail(page);
+    await sent;
     await page.getByRole('link', { name: backLabel }).click();
 
     await expect(page).toHaveURL('/sign-in');

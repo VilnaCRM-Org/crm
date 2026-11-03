@@ -60,7 +60,7 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
     expect(copy).not.toHaveAttribute('tabindex');
     expect(copy).toHaveStyle({ width: '40px', height: '40px', fontSize: '15px' });
     expect(mockRead).toHaveBeenCalledTimes(1);
-    await expectNoA11yViolations(document.body);
+    await act(() => expectNoA11yViolations(document.body));
   });
 
   it('paints the no-data glyph copy while the current user is pending', async () => {
