@@ -55,6 +55,7 @@ export const WithError: Story = {
       submitRef: createRef(),
     },
   },
+  parameters: { docs: { story: { inline: false } } },
 };
 
 export const Offline: Story = {

@@ -17,7 +17,7 @@ export class PiiScrubber {
   ];
 
   private readonly patterns: readonly RegExp[] = [
-    /otpauth:\/\/[^\s"']+/gi,
+    /otpauth:[^\s"']+/gi,
     /[^\s@]+@[^\s@]+\.[^\s@]+/g,
     /bearer\s+[\w.\-~+/]+=*/gi,
     /eyJ[\w-]+\.[\w-]+\.[\w-]+/g,

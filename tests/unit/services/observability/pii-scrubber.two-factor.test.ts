@@ -86,6 +86,12 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
       ['a prefix', `scan ${vector}`, 'scan [redacted]'],
       ['an upper-case scheme', vector.replace('otpauth', 'OTPAUTH'), '[redacted]'],
       ['a mixed-case scheme', vector.replace('otpauth', 'OtpAuth'), '[redacted]'],
+      ['the end of JSON-escaped slashes', vector.replaceAll('/', String.raw`\/`), '[redacted]'],
+      [
+        'a space after JSON-escaped slashes',
+        `${vector.replaceAll('/', String.raw`\/`)} next`,
+        '[redacted] next',
+      ],
     ])('redacts the @-free URI up to %s and keeps the text after it', (_name, input, expected) => {
       expect(scrubMessage(input)).toEqual({ message: expected });
     });
@@ -344,14 +350,14 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
       const patterns = patternsOf();
 
       expect(patterns).toHaveLength(10);
-      expect(patterns[0]?.source).toBe(String.raw`otpauth:\/\/[^\s"']+`);
+      expect(patterns[0]?.source).toBe(String.raw`otpauth:[^\s"']+`);
       expect(patterns[0]?.flags).toBe('gi');
       expect(patterns[1]?.source).toBe(String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`);
     });
 
     it('pins every pattern and its flags, in the order the scrubber applies them', () => {
       expect(patternsOf().map((pattern) => [pattern.source, pattern.flags])).toEqual([
-        [String.raw`otpauth:\/\/[^\s"']+`, 'gi'],
+        [String.raw`otpauth:[^\s"']+`, 'gi'],
         [String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`, 'g'],
         [String.raw`bearer\s+[\w.\-~+/]+=*`, 'gi'],
         [String.raw`eyJ[\w-]+\.[\w-]+\.[\w-]+`, 'g'],

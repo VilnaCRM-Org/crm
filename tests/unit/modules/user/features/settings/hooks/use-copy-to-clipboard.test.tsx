@@ -22,6 +22,7 @@ const mountTarget = (text: string): HTMLElement => {
 
 describe('useCopyToClipboard', () => {
   afterEach(() => {
+    jest.restoreAllMocks();
     window.getSelection()?.removeAllRanges();
     Reflect.deleteProperty(navigator, 'clipboard');
   });
@@ -99,13 +100,12 @@ describe('useCopyToClipboard', () => {
   it('reports failed without throwing when the document offers no selection', async () => {
     installClipboard(undefined);
     const target = mountTarget(buildTotpSecret());
-    const getSelection = jest.spyOn(window, 'getSelection').mockReturnValue(null);
+    jest.spyOn(window, 'getSelection').mockReturnValue(null);
     const { result } = renderHook(() => useCopyToClipboard());
 
     await act(() => result.current.copy({ text: 'x', fallbackTarget: target }));
 
     expect(result.current.status).toBe('failed');
-    getSelection.mockRestore();
   });
 
   it('reports copied again after a failure once the write succeeds', async () => {
@@ -121,6 +121,36 @@ describe('useCopyToClipboard', () => {
     expect(result.current.status).toBe('failed');
     await act(() => result.current.copy({ text: 'k', fallbackTarget: target }));
 
+    expect(result.current.status).toBe('copied');
+  });
+
+  it('returns to idle while a repeat write is still pending', async () => {
+    let release: (value: void) => void = () => undefined;
+    const writeText = jest
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            release = resolve;
+          })
+      );
+    installClipboard(writeText);
+    const target = mountTarget('k');
+    const { result } = renderHook(() => useCopyToClipboard());
+    await act(() => result.current.copy({ text: 'k', fallbackTarget: target }));
+    expect(result.current.status).toBe('copied');
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.copy({ text: 'k', fallbackTarget: target });
+    });
+
+    expect(result.current.status).toBe('idle');
+    await act(async () => {
+      release();
+      await pending;
+    });
     expect(result.current.status).toBe('copied');
   });
 

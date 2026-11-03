@@ -9,6 +9,7 @@ describe('auth repositories barrel', () => {
     expect(typeof repositories.AuthErrorFactory).toBe('function');
     expect(typeof repositories.BaseAPI).toBe('function');
     expect(typeof repositories.GraphQLPasswordRecoveryRepository).toBe('function');
+    expect(typeof repositories.GraphQLSignInRepository).toBe('function');
     expect(typeof repositories.RegistrationAPI).toBe('function');
   });
 

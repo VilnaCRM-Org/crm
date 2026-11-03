@@ -51,7 +51,7 @@ export const twoFactorText = {
   sessionEnded: t('sign_in.notices.session_ended'),
 } as const;
 
-export const KEY_IN_GROUPS = 'JBSW Y3DP EHPK 3PXP';
+export const KEY_IN_GROUPS = 'JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP';
 
 export async function signInToTwoFactorSettings(
   page: Page,

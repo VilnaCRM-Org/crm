@@ -84,8 +84,10 @@ export interface OnActionsProps {
 
 export interface CancelButtonProps {
   readonly onCancel: () => void;
+  readonly disabled: boolean;
 }
 
 export interface DisableCodeFieldProps {
   readonly view: TwoFactorSettingsViewState;
+  readonly busy: boolean;
 }
