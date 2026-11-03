@@ -1,7 +1,7 @@
-import { useLayoutEffect } from 'react';
+import { useInsertionEffect } from 'react';
 
 export default function useHeaderClearance(height: string): void {
-  useLayoutEffect(() => {
+  useInsertionEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('scroll-padding-top', height);
 

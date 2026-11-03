@@ -141,12 +141,26 @@ describe('NavigationRailItem', () => {
     ['tablet', 'boards', '66px', '44px'],
     ['tablet', 'products', '67px', '44px'],
     ['tablet', 'integrations', '66px', '40px'],
-    ['tablet', 'signOut', '54px', '40px'],
   ] as const)('sizes the %s %s item: wrapper %s, pill %s', (layout, id, wrapper, pill) => {
     renderShell(<NavigationRailItem layout={layout} id={id} label="Row" icon={icon} href="/row" />);
 
     expect(screen.getByRole('link', { name: 'Row' })).toHaveStyle({ height: pill });
     expect(screen.getAllByRole('generic', { hidden: true })[1]).toHaveStyle({ height: wrapper });
+  });
+
+  it('sizes the tablet sign out action: wrapper 54px, pill 40px', () => {
+    renderShell(
+      <NavigationRailItem
+        layout="tablet"
+        id="signOut"
+        label="Sign out"
+        icon={icon}
+        onActivate={jest.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Sign out' })).toHaveStyle({ height: '40px' });
+    expect(screen.getAllByRole('generic', { hidden: true })[1]).toHaveStyle({ height: '54px' });
   });
 
   it('marks the current rail row', () => {

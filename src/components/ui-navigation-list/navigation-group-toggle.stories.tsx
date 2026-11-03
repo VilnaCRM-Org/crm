@@ -15,6 +15,7 @@ const meta: Meta<typeof NavigationGroupToggle> = {
     (Story): JSX.Element => (
       <div style={{ position: 'relative', width: 238, height: 60 }}>
         <Story />
+        <ol id="settings-sub-items" hidden />
       </div>
     ),
   ],

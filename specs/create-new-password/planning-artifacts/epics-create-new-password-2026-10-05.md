@@ -177,9 +177,9 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   for FR-1, since the link already renders unconditionally.
 - NFR-7: Lighthouse desktop and mobile floors; audited URL list unchanged.
 - NFR-8: bundle and paint-path budgets; eager entrypoint grows by under 1 kB gzip.
-- NFR-9: WCAG 2.1 AA, axe in three engines, 24 px / 44 px targets, and at most one new scoped
-  exception (the #276 `color-contrast` entry for the result views' primary-pill links); the
-  in-card "Назад" renders in `Font/200 #404142`, an accessibility override of the Figma `#969B9D`.
+- NFR-9: WCAG 2.1 AA, axe in three engines, 24 px / 44 px targets, and two new scoped #276
+  `color-contrast` entries: the result views' primary-pill links, and the in-card "Назад", which
+  renders in the Figma `#969B9D` by the user's decision of 2026-10-21 (focus ring `#404142`).
 - NFR-10: keyboard contract for both forms and both result states, plus the "Забули пароль?"
   stop in the existing sign-in keyboard spec.
 - NFR-11: mobile touch lane on Pixel 7 and iPhone 14.
@@ -204,8 +204,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - AR-2 (§12): no new module-level singleton (`export default new X()`); the loader is built per
   mount by `useAuthProviderLoader`, and there is no controller class. The two stateless import
   seams that shipped as module singletons are recorded as accepted exceptions in
-  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`, which
-  #330 replaced with the shared `lazyCatalogLoader` in `src/lib/locale-catalog/`).
+  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`,
+  superseded 2026-10-19 by #330; architecture §12 records its replacement).
 - AR-3 (§5.3): `useAbortableSubmit` has side-effect-free initializers and its unmount cleanup
   aborts only the request in flight, so a StrictMode double mount still sends the first submit.
 - AR-4 (§6.5): every interface and alias lives in a type-only file under `types/`.
@@ -241,7 +241,7 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   `72:5596` / `72:5617` / `72:5638`, sent `360:11925` / `360:11937` / `360:11949`; card widths
   502 / 632 / 363 in code (the existing `formWrapper` `39.5rem` is authoritative, PRD §4), tokens
   `Font/100 #1A1C1E`, `Font/200 #404142`, `Primary #1EAEFF`; the "Назад" row (`72:5605`, "15
-  (medium)" Golos Medium 15/18) keeps its size and weight but takes `Font/200 #404142` (NFR-9).
+  (medium)" Golos Medium 15/18) keeps its size, weight and `#969B9D` colour (NFR-9).
 - UX-DR-2: the new-password form and the invalid-link state have no frame; their composition
   from the existing card and form primitives is the design of record for v1 (PRD §3).
 - UX-DR-3: Russian Figma copy is replaced by the PRD FR-27 `uk`/`en` strings.
@@ -309,8 +309,8 @@ opening with "every …" lets the qualifier stand for the stories it names gener
 Each story's own criteria add to these; a story is not done until all of them hold.
 
 - **Quality floors.** No threshold, budget, allowlist, scope, baseline or ratchet value is
-  edited to make a run pass (the PRD's reviewed deviation — the one scoped #276 entry of
-  Story 2.2 — is an intended change, not a pass); no
+  edited to make a run pass (the PRD's reviewed deviation — the two scoped #276 entries, Story
+  2.2's pill links and the 2026-10-21 "Назад" row — is an intended change, not a pass); no
   `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`,
   `.fixme`, `waitForTimeout` or `expect` inside a conditional; no `data-testid` in `src`; no
   added inline code comments beyond a `// Stryker disable next-line <Mutator>: <proof>` the
@@ -961,15 +961,15 @@ So that I always know where I am and how to go back.
 **Files:** `@auth/components/reset-password/in-card-link.tsx` (NEW: `UIButton to` plus
 `useLinkClickHandler<HTMLButtonElement>` with the named `FOCUS_ON_ARRIVAL` state, architecture
 §7.2), `@auth/components/reset-password/card-back-control.tsx` (NEW: `InCardLink` when `to`,
-`UIButton type="button"` when `onClick`; "Назад" in `paletteColors.text.primary` `#404142`),
+`UIButton type="button"` when `onClick`; "Назад" in `customColors.text.secondary` `#969B9D`),
 `@auth/components/reset-password/recovery-result-view.tsx` (NEW: `title`, `body`, `action`
 rendered through `InCardLink`), `@auth/types/password-recovery/components.ts` (NEW:
 `InCardLinkProps`, `InCardLinkVariant`, `CardBackControlProps`, `RecoveryResultViewProps`,
 `RecoveryResultAction`), `@auth/i18n/{uk,en}.json` (MODIFY: `password_recovery.back` "Назад" /
 "Back" and the shared `password_recovery.submit_button` "Підтвердити" / "Confirm"),
-`src/i18n/localization.json` (REGEN), `tests/utils/a11y/axe-config.ts` (MODIFY: one scoped
-`color-contrast` entry), `CLAUDE.md` and `docs/accessibility/acceptance-standard.md` (MODIFY:
-the `color-contrast` entry count grows by exactly one from the count on `main` at merge time),
+`src/i18n/localization.json` (REGEN), `tests/utils/a11y/axe-config.ts` (MODIFY: two scoped
+`color-contrast` entries), `CLAUDE.md` and `docs/accessibility/acceptance-standard.md` (MODIFY:
+the `color-contrast` entry count grows by exactly two from the count on `main` at merge time),
 unit and jest-axe tests.
 
 **Gates:** DoD local gates; `make lint-i18n`, `make lint-docs`.
@@ -989,9 +989,9 @@ unit and jest-axe tests.
   with `type="button"`, the same name and size, activated by Enter and Space, and no router
   navigation happens.
 - **Given** the "Назад" text and chevron, **when** their computed style is read, **then** the
-  colour is `rgb(64, 65, 66)` (`#404142`) with the Golos Medium 15/18 size and weight of Figma
-  `72:5605`; the contrast verdict is proven by the Story 4.2 browser scans, and
-  `figma-design-check` records the colour as a reviewed accessibility override (PRD §10).
+  colour is `rgb(150, 155, 157)` (`#969B9D`) with the Golos Medium 15/18 size and weight of Figma
+  `72:5605`, and the focus ring stays `#404142`; the Story 4.2 browser scans pass with the scoped
+  #276 entry the user's 2026-10-21 decision added (PRD §10).
 - **Given** any other new text in this story, **when** its token is below 4.5:1 on its
   background, **then** the story stops and reports; it never adds a second exception.
 - **Given** `RecoveryResultView`, **when** it mounts, **then** its `h1` has `tabIndex={-1}` and
@@ -1675,8 +1675,9 @@ keyboard rows).
 - **Given** the invalid-link state, **then** the order is back-to-main → "Назад" → "Запросити
   нове посилання" → footer.
 - **Given** the primary links "До входу" and "Запросити нове посилання", **when** axe checks
-  `color-contrast`, **then** the only finding it drops is through the one scoped #276 entry
-  Story 2.2 adds; if a finding is not covered by that entry, the story stops and reports.
+  `color-contrast`, **then** the only findings it drops are through the two scoped #276 entries
+  (the pill links and the "Назад" row); if a finding is not covered by them, the story stops and
+  reports.
 - **Given** the manifest, **then** each key gains e2e rows for the route scan and its keyboard
   spec.
 
@@ -2066,7 +2067,8 @@ merge re-runs `make i18n-generate` rather than hand-merging the generated catalo
    link unconditional before this feature, so they already contain it.
 2. **NFR-9 vs the Figma primary pill on links — resolved.** One scoped `color-contrast` entry for
    the result views' primary-pill links, with the existing #276 reason and tracking (Story 2.2,
-   proven by Story 4.2). The plain link style remains an open question for the design owner.
+   proven by Story 4.2). The plain link style remains an open question for the design owner. The
+   in-card "Назад" row takes a second scoped entry since the user's 2026-10-21 decision.
 3. **Sign-in keyboard contract — resolved.** NFR-10 includes the "Забули пароль?" stop; Story
    4.1 verifies the spec.
 4. **Integration coverage — resolved by AR-8.** Stories 1.3, 1.4 and 1.5 carry integration tests.
@@ -2129,9 +2131,9 @@ acceptance criteria it touches; only the planned shape or file name changed.
    in the eager `@auth/i18n/{en,uk}.json`, merged into `src/i18n/localization.json` by
    `make i18n-generate`. The `password_recovery.*`, `password_reset.*` and `password_policy.*`
    keys instead live in `src/modules/user/features/auth/routes/recovery-catalog/i18n/{en,uk}.json`,
-   which `RecoveryCatalogLoader` registers for both locales through `addResourceBundle` when
-   `RecoveryPageLayout` — imported by both recovery route modules — evaluates, before the page's
-   `usePageTitle` runs. `config/i18n-catalog-policy.json` lists the folder under `lazyCatalogs`,
+   which `RecoveryCatalogLoader` registered for both locales through `addResourceBundle` when
+   `RecoveryPageLayout` — imported by both recovery route modules — evaluated, before the page's
+   `usePageTitle` ran. `config/i18n-catalog-policy.json` lists the folder under `lazyCatalogs`,
    so the generator leaves it out of the merged catalog and `make lint-i18n` still enforces
    locale parity on it, reports a leaked key as stale, and fails any call site outside the listed
    owners with `[lazy-key-scope]`. The reason is the mobile Lighthouse floor on `/sign-in`: the
@@ -2139,18 +2141,17 @@ acceptance criteria it touches; only the planned shape or file name changed.
    keys were 3,742 B of it. Keys a page outside the recovery routes renders, such as
    `sign_in.notices.password_reset`, stay in the eager auth catalog. FR-27's acceptance criteria
    are unchanged: every string ships in `uk` and `en` with identical key sets.
-   Amendment 2026-10-19: #330 replaced the loader below with the shared `lazyCatalogLoader`
-   (`src/lib/locale-catalog/lazy-catalog-loader.ts`); `RecoveryPageLayout` now calls
-   `lazyCatalogLoader.register(i18n, { en, uk })` with the recovery JSON it imports, and the
-   reasoning below holds for it unchanged.
-   `RecoveryCatalogLoader` (`routes/recovery-catalog/recovery-catalog-loader.ts`) is exported as
-   a module singleton, and `RecoveryPageLayout` calls its `register(i18n)` once at module
-   evaluation. It is the second accepted exception to AR-2's "no new module-level singleton", on
-   the same ground as the form-section loaders of item 1: it is a stateless seam, not a state
-   holder. Its one method adds both locale bundles through `addResourceBundle`; the class holds
-   no field, and the only state it touches is the i18next instance it is handed, which already
-   owns every catalog. The registration has to run when the route module evaluates, before the
-   page's `usePageTitle` reads a key, where no component or per-mount instance exists yet.
+   Superseded 2026-10-19 by #330: the loader described below no longer exists; architecture §12
+   records its replacement, the shared `lazyCatalogLoader`. The paragraph is kept as the record
+   of the original decision, and its reasoning holds for the replacement unchanged.
+   `RecoveryCatalogLoader` (`routes/recovery-catalog/recovery-catalog-loader.ts`) was exported as
+   a module singleton, and `RecoveryPageLayout` called its `register(i18n)` once at module
+   evaluation. It was the second accepted exception to AR-2's "no new module-level singleton", on
+   the same ground as the form-section loaders of item 1: a stateless seam, not a state holder.
+   Its one method added both locale bundles through `addResourceBundle`; the class held no field,
+   and the only state it touched was the i18next instance it was handed, which already owns every
+   catalog. The registration has to run when the route module evaluates, before the page's
+   `usePageTitle` reads a key, where no component or per-mount instance exists yet.
 5. **No feature flag (FR-1, Story 4.1, Follow-ups 5.5 and 5.6, architecture §5.14).** The plan
    kept the `forgotPassword` runtime flag `false` in production, enabled it in the test stack
    after the route registration, re-baselined `/sign-in` for the newly visible link, and left

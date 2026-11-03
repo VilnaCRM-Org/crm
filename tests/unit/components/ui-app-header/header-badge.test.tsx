@@ -19,8 +19,12 @@ describe('HeaderBadge', () => {
   it.each([100, 150, 1000])('caps the count %i at 99+, as MUI Badge max does', (count) => {
     const { container } = render(<HeaderBadge count={count} />);
 
-    expect(screen.getByText('99+')).toHaveAttribute('aria-hidden', 'true');
+    const badge = screen.getByText('99+');
+
+    expect(badge).toHaveAttribute('aria-hidden', 'true');
     expect(container).toHaveTextContent(/^99\+$/u);
+    expect(badge).toHaveStyle({ minWidth: '18px', padding: '0 1px', whiteSpace: 'nowrap' });
+    expect(getComputedStyle(badge).width).toBe('');
   });
 
   it.each([0, -1, 0.5, 1.5, Number.NaN, Number.POSITIVE_INFINITY, null, undefined])(

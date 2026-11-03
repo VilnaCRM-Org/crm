@@ -4,8 +4,7 @@ import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name
 
 export default function useChipLabel(identity: UserDisplayName | null): string {
   const { t } = useTranslation();
-  const label = t('user_menu.button');
   const name = identity?.displayName.trim() ?? '';
 
-  return name === '' ? label : `${name}, ${label}`;
+  return name === '' ? t('user_menu.button') : t('user_menu.button_named', { name });
 }

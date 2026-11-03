@@ -1,4 +1,4 @@
-import type { Meta } from '@storybook/react-webpack5';
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
 import { withRoutedStoryList } from '@stories/list-decorators';
 import navigationListStories from '@stories/navigation-list-story';
@@ -11,7 +11,10 @@ const meta: Meta<typeof NavigationSignOut> = {
   component: NavigationSignOut,
   tags: ['autodocs'],
   args: { layout: 'desktop', variant: 'expanded', onSignOut: noop },
-  argTypes: navigationListStories.layoutAndVariantArgTypes,
+  argTypes: {
+    ...navigationListStories.layoutAndVariantArgTypes,
+    layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
+  },
   decorators: withRoutedStoryList('/', 238),
   parameters: navigationListStories.parameters(
     'The last item of the list: a decorative `#E1E7EA` divider, then the Sign out button. ' +
@@ -26,3 +29,5 @@ export const Expanded = navigationListStories.desktop;
 export const Rail = navigationListStories.rail;
 
 export const TabletRail = navigationListStories.tabletRail;
+
+export const Drawer: StoryObj<typeof NavigationSignOut> = { args: { layout: 'drawer' } };

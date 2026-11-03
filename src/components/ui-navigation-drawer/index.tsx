@@ -29,7 +29,6 @@ export default function UINavigationDrawer({
       open={open}
       onClose={onClose}
       disableRestoreFocus
-      disableEnforceFocus
       slotProps={{ backdrop: { invisible: true, transitionDuration: duration } }}
     >
       <Box

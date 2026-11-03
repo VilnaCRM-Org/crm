@@ -34,6 +34,12 @@ const violation = (
   violations: { items: [{ path, reason }], complete: true },
 });
 
+const violationsAt = (paths: readonly string[], status: number | null): UserServiceFailure => ({
+  reason: 'violation',
+  status,
+  violations: { items: paths.map((path) => ({ path, reason: 'other' as const })), complete: true },
+});
+
 const failed = (reason: UserServiceFailureReason, status: number | null): UserServiceFailure => ({
   reason,
   status,
@@ -147,6 +153,56 @@ describe('UserServiceErrorTransformer', () => {
       );
     }
   );
+
+  it('keeps a token violation that follows another violation line', () => {
+    const message = `newPassword: ${faker.lorem.sentence()}\ntoken: ${faker.lorem.sentence()}`;
+
+    expect(transformer.normalize(graphQLError(message, { status: 422 }))).toEqual(
+      violationsAt(['newPassword', 'token'], 422)
+    );
+  });
+
+  it('reads every violated field, a later line included, when no token line exists', () => {
+    const message = `initials: ${faker.lorem.sentence()}\nemail: ${faker.lorem.sentence()}`;
+
+    expect(transformer.normalize(graphQLError(message, { status: 422 }))).toEqual(
+      violationsAt(['initials', 'email'], 422)
+    );
+  });
+
+  it('lists the violated fields in line order when no token line exists', () => {
+    const message = `email: ${faker.lorem.sentence()}\nnewPassword: ${faker.lorem.sentence()}`;
+
+    expect(transformer.normalize(graphQLError(message))).toEqual(
+      violationsAt(['email', 'newPassword'], null)
+    );
+  });
+
+  it('prefers a token violation in a later GraphQL error over an earlier unknown error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        { message: faker.lorem.sentence(), extensions: { code: 'INTERNAL_SERVER_ERROR' } },
+        { message: `token: ${faker.lorem.sentence()}`, extensions: { status: 422 } },
+      ],
+    });
+
+    expect(transformer.normalize(error)).toEqual(violation('token', 422));
+  });
+
+  it('classifies the first GraphQL error when none carries a token violation', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        { message: faker.lorem.sentence() },
+        { message: `email: ${faker.lorem.sentence()}`, extensions: { status: 422 } },
+      ],
+    });
+
+    expect(transformer.normalize(error)).toEqual({
+      reason: 'refused',
+      status: null,
+      violations: none,
+    });
+  });
 
   it('classifies a 422 without a property prefix as a violation with an empty set', () => {
     expect(transformer.normalize(graphQLError('Validation failed', { status: 422 }))).toEqual({

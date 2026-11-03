@@ -1,24 +1,12 @@
-import 'reflect-metadata';
 import '@testing-library/jest-dom';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import featureFlagService from '@/config/runtime/feature-flag-service';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
-
-jest.mock('@/providers/di', () => {
-  const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
-  const tokens = jest.requireActual('@/modules/user/config/tokens').default;
-  const mapper = new Mapper();
-  const provider = { read: (): Promise<never> => new Promise(() => undefined) };
-
-  return {
-    __esModule: true,
-    useService: (token: symbol): unknown => (token === tokens.ProfileProvider ? provider : mapper),
-  };
-});
 
 const DESKTOP = 1440;
 const MOBILE = 375;
@@ -30,6 +18,7 @@ describe('the assembled app shell accessibility (issue #362)', () => {
   beforeEach(() => {
     stubMotionPreference(false);
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    jest.spyOn(currentUserSource, 'read').mockReturnValue(new Promise(() => undefined));
   });
 
   afterEach(() => {
