@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { isInaccessible, screen, within } from '@testing-library/react';
+import { act, isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
@@ -12,10 +12,19 @@ const mockRead = jest.fn();
 const MOBILE = 375;
 const PAGE = <h1>Головна</h1>;
 
+const settleTransitions = (): Promise<void> =>
+  act(async () => {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  });
+
 const openDrawer = async (): Promise<HTMLElement> => {
   await userEvent.setup().click(screen.getByRole('button', { name: 'Відкрити меню' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Основна навігація' });
+  await settleTransitions();
 
-  return screen.findByRole('dialog', { name: 'Основна навігація' });
+  return dialog;
 };
 
 describe('the drawer header avatar copy in the assembled shell (issue #362, F4)', () => {
