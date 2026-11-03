@@ -393,20 +393,25 @@ What [Password recovery decisions](#password-recovery-decisions) already record 
 layers and folders, `UserServiceErrorTransformer`, the lazy-catalog mechanism and the shared
 password policy — is referenced below, not repeated.
 
-### One flag, read when the route renders
+### No feature flag for the settings page
 
-**Context.** user-service v2.8.0 authenticates nobody, so the page ships off in production and on
-in the test stack. The router is built at module evaluation, before the guarded runtime-config
-load, and the mobile Lighthouse floor has no headroom for another eager read.
+**Context.** user-service v2.8.0 authenticates nobody, and an earlier revision of this work
+shipped the page behind a `userSettings` runtime flag, off in production and on in the test
+stack. The product owner decided not to wait for the backend.
 
-**Decision.** A route contract declares one `flag`. `RouteMapper` copies it into the route's
-`handle`, and an eager `RouteFlagGate` above `ProtectedRoute` reads the flag when the route
-renders and shows the not-found page while it is off, so neither the redirect nor the page chunk
-is reached.
+**Decision.** `/settings` and its three coming-soon sub-pages (issue #362) are ordinary protected
+routes, registered in every environment, and the app shell's sidebar, drawer and user menu always
+link to them. No flag is declared and the route registry has no flag gate, so the router tree is
+the one `ProtectedRoute` and `AppLayout` already build.
 
-**Rejected.** Filtering the contracts by flag while the router is built (it would read the block
-before the guarded load); gating inside the page chunk (`ProtectedRoute` redirects first and the
-chunk is requested).
+**Consequence, accepted.** Until user-service ships its authentication surface (G1), every
+environment that deploys this page reads and updates whichever user the unauthenticated API
+returns, not the signed-in one. The product owner accepted that exposure in production.
+
+**Rejected.** A `flag` field on route contracts with a gate that renders the not-found page while
+the flag is off, and a matching `flag` on shell navigation items that the shell filtered out
+(machinery kept for routes that no longer need it); gating inside the page chunk
+(`ProtectedRoute` redirects first and the chunk is requested).
 
 ### The current user is the first edge of `users(first: 1)`
 

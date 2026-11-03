@@ -117,8 +117,7 @@ Two choices record what Figma leaves open:
 `UISidebar` (`src/components/ui-sidebar/`) is one `<nav>` named "Main navigation" holding one
 ordered list (`UINavigationList`): the five product rows, the Settings group and, last, Sign out
 after a decorative divider. The rows come from the typed item set in `navigation-items.ts` (data, no
-function-valued property), so an RBAC filter can drop a row without leaving a gap. Items flagged
-`userSettings` (the Settings group and its three sub-items) are filtered while the flag is off.
+function-valued property), so an RBAC filter can drop a row without leaving a gap.
 `useCurrentNavigationItem` marks the current page with `aria-current="page"`; the Settings group is
 expanded on `/settings` and `/settings/*`, collapsed elsewhere, and a chevron toggle lasts until the
 next route change; any pathname change clears it, so returning to the path it was set on (a link or
@@ -188,8 +187,7 @@ from `getComputedStyle()`: the panel border is 1 px `#E1E7EA`, radius 12, shadow
 `#969B9D` icons; hover is `#F4F5F6` with label `#1A1C1E` and icon `#404142` (rail pill icon
 `#1A1C1E`); the current row is `rgba(30,174,255,.1)` with `#0399ED` label and icon; the tooltip is
 `#191B1E` on white with the `0 6px 17px rgba(37,42,49,.07)` shadow. The panel was mounted in a
-temporary local `AppLayout` with the `userSettings` flag on; that mount and the flag were reverted
-before the commit (`AppLayout` is Story 3.1).
+temporary local `AppLayout`; that mount was reverted before the commit (`AppLayout` is Story 3.1).
 
 What Figma leaves open, and how it was built:
 
@@ -281,7 +279,7 @@ viewport when no footer is in view), so the footer paints untinted and unblurred
 nothing and stays the full-viewport hit target, so a tap on the footer closes the drawer instead of
 following a footer link. Measured at 375×812 on `/boards`: the footer starts at y 604.4, the scrim
 box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`. With the user resolved
-(`userSettings` on, one stubbed `CurrentUser` reply) the avatar copy and the header avatar it covers
+(one stubbed `CurrentUser` reply) the avatar copy and the header avatar it covers
 both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15 px Golos 700
 `rgb(26, 28, 30)`; the copy sits under `aria-hidden`, holds no focusable element, and the page made
 one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
@@ -298,8 +296,8 @@ What Figma leaves open, and how it was built:
 
 - The drawer avatar copy is the header avatar itself: the user menu slot publishes an aria-hidden
   copy of its 40 px `UserAvatar` through the shell slot's `onAvatar` callback, so it shows the same
-  monogram (`ОП` for the demo user), the same no-data person glyph while the user is pending, while
-  `userSettings` is off or after a failed read, and costs no second `currentUser` read. Figma fills
+  monogram (`ОП` for the demo user), the same no-data person glyph while the user is pending or
+  after a failed read, and costs no second `currentUser` read. Figma fills
   it with a photo; user-service has no avatar field (G5 in `src/modules/user/README.md`), so the
   monogram stands in for it exactly as it does in the header. Until the slot chunk loads, or when
   it fails, the drawer keeps its own 40 px `#E1E7EA` circle with the 24 px person glyph in
@@ -312,7 +310,7 @@ What Figma leaves open, and how it was built:
 
 The chip and its menu live in the `user` module (`settings/components/user-menu/`), not here; the
 rows are recorded beside the other surfaces. Measured in Chromium on the 3004 preview with the shell
-header mounted temporarily in `AppLayout`, `userSettings` on for the three-item rows, the
+header mounted temporarily in `AppLayout`, the
 `CurrentUser` reply stubbed to a two-word name, device scale factor 1, `scrollY` 0.
 
 | Row                     | Width | Figma               | Measured               | Verdict |
@@ -357,14 +355,14 @@ name box is a minimum rather than a fixed width: two hidden copies of the name, 
 spacing and one held at normal spacing, are measured with a `ResizeObserver`, and the name box and
 the chip widen by the difference, capped at the free header space (425 px at 1440, 116 px at 1024),
 so the chip keeps its right edge and grows leftward, pushing the search and the two icon buttons into
-that space, before the ellipsis applies; the divider sits on the first item drawn, which is Sign out
-when `userSettings` is off, and only the desktop and tablet cards draw it, as the mobile popover's
+that space, before the ellipsis applies; the divider sits on the first item drawn, and only the
+desktop and tablet cards draw it, as the mobile popover's
 items are 2 px apart; at 320 px the popover sits at x 92 to 317 and the
 document does not overflow. ArrowDown, ArrowUp, Home and End wrap per the APG pattern, Escape returns
 focus to the chip, Tab closes the menu and leaves the focus in reading order, and a click outside
 closes it and returns focus to the chip. On mobile the avatar sits above the click-outside layer,
 so tapping it again closes the menu through the chip as it does at the wider layouts. One
-`CurrentUser` read is made on `/`; with `userSettings` off none is made.
+`CurrentUser` read is made on `/`.
 
 A first measurement found the card 1 px taller than Figma (93 / 181 / 233) because the last item
 stopped above the card's bottom border; the item list now overlaps that border by 1 px, which is how
@@ -373,7 +371,7 @@ Figma's 92 / 180 / 232 stack the items.
 ### Measured against Figma (frame and settings alignment, issue #362)
 
 Measured in Chromium on the 3004 dev server with `getBoundingClientRect()`, session restored from the
-sandbox demo marker and the `userSettings` flag forced on.
+sandbox demo marker.
 
 | Row                         | Width           | Figma          | Measured            | Result |
 | --------------------------- | --------------- | -------------- | ------------------- | ------ |
@@ -405,7 +403,7 @@ sidebar at top 74.
 
 - `tests/e2e/modules/app-shell.spec.ts` (desktop engines): Settings and Sign out from the sidebar
   and the chip menu (1440 and 1024), every row and sub-item, the disabled controls, no badge, the
-  `CurrentUser` request counts, the flag-off menu and no shell chunk on the public pages.
+  `CurrentUser` request counts and no shell chunk on the public pages.
 - `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` (desktop engines): Tab order at 1440, 1024 and
   375, the handle, the chip menu arrow-key walk, Escape and Tab, the drawer's full Tab order on `/`
   and `/settings` (close, the rows, Settings and its chevron, the sub-items on `/settings`, Sign out,
@@ -420,7 +418,7 @@ sidebar at top 74.
   but the 42 px drawer sub-items (see "Known gaps"), and no horizontal overflow at device width and
   320 px.
 - `tests/e2e/a11y/routes.a11y.spec.ts` (desktop engines): axe over `/`, `/settings` and the eight
-  coming-soon routes with the shell loaded, `/` with `userSettings` off and `/` with the menu open.
+  coming-soon routes with the shell loaded and `/` with the menu open.
 
 The settings specs that count `CurrentUser` reads (`signInToSettings` in `profile-stub.ts`) run the
 shell as in production, chip read included. To keep their ordered replies deterministic, the stub
@@ -512,8 +510,8 @@ The baselines were recorded in the pinned Playwright container against a freshly
   with its current row (viewport only, since the drawer is an overlay) and the menu open, on both
   mobile projects (15 and 6 baselines). Every interaction goes through a role or a label.
 - **Allowed difference (d):** content that has no data is absent: no baseline shows a badge. Every
-  protected-page spec (home, settings, coming-soon and the shell states) runs with the
-  `userSettings` flag on and one stubbed `CurrentUser` reply, so the chip always shows the same
+  protected-page spec (home, settings, coming-soon and the shell states) runs with one stubbed
+  `CurrentUser` reply, so the chip always shows the same
   name and monogram and never depends on the backend.
 - **Visited links:** the global `a:visited` colour in `src/index.css` no longer reaches the shell:
   the navigation rows, sub-items, rail items and user menu links set their own `:visited` colour

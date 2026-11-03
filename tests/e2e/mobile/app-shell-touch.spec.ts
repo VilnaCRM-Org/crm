@@ -15,7 +15,6 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { expectSignInPage } from '@tests/e2e/utils/sign-out';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { MIN_TOUCH_TARGET_PX } from './constants';
@@ -36,7 +35,6 @@ const logoOf = (page: Page): Locator =>
 
 async function openAt(page: Page, path: string): Promise<void> {
   await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings: true } });
   await stubProfile(page);
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await expectShellReady(page);

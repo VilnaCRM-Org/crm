@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
@@ -14,7 +16,11 @@ describe('settings page shell accessibility', () => {
     const view = render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
         <main>
-          <UserProfile />
+          <MemoryRouter>
+            <SessionOutlet>
+              <UserProfile />
+            </SessionOutlet>
+          </MemoryRouter>
         </main>
       </I18nextProvider>
     );

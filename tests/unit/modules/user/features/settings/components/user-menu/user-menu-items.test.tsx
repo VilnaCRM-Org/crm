@@ -17,7 +17,6 @@ const renderItems = (props: Partial<Props> = {}, locale: 'en' | 'uk' = 'en'): vo
     <UserMenuItems
       layout={props.layout ?? 'desktop'}
       menuId="user-menu"
-      settingsAvailable={props.settingsAvailable ?? true}
       menu={props.menu ?? buildUserMenuState({ open: true })}
       signOut={props.signOut ?? jest.fn()}
     />,
@@ -35,12 +34,6 @@ describe('UserMenuItems', () => {
       'Settings',
       'Sign out',
     ]);
-  });
-
-  it('holds Sign out alone while settings are unavailable', () => {
-    renderItems({ settingsAvailable: false });
-
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Sign out']);
   });
 
   it('speaks uk', () => {
@@ -106,18 +99,6 @@ describe('UserMenuItems', () => {
     }
   );
 
-  it.each(['desktop', 'tablet'] as const)(
-    'gives the lone %s Sign out both the divider and the rounded corners',
-    (layout) => {
-      renderItems({ layout, settingsAvailable: false });
-
-      expect(screen.getByRole('menuitem', { name: 'Sign out' })).toHaveStyle({
-        ...DIVIDER,
-        ...ROUNDED,
-      });
-    }
-  );
-
   it('draws no divider and no rounded item in the mobile popover', () => {
     renderItems({ layout: 'mobile' });
 
@@ -132,13 +113,7 @@ describe('UserMenuItems', () => {
     const first = { menu: buildUserMenuState({ open: true }), signOut: jest.fn() };
     const second = { menu: buildUserMenuState({ open: true }), signOut: jest.fn() };
     const items = ({ menu, signOut }: typeof first): JSX.Element => (
-      <UserMenuItems
-        layout="desktop"
-        menuId="user-menu"
-        settingsAvailable
-        menu={menu}
-        signOut={signOut}
-      />
+      <UserMenuItems layout="desktop" menuId="user-menu" menu={menu} signOut={signOut} />
     );
     const view = renderShell(items(first));
 
