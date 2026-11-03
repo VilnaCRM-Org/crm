@@ -47,12 +47,12 @@ describe('UIForm error banner', () => {
     expect(document.body).toHaveFocus();
   });
 
-  it('renders the error in the alert colour with the spacing the design pins', () => {
+  it('renders the error in the error.text token with the spacing the design pins', () => {
     renderForm(ERROR_TEXT);
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(ERROR_TEXT);
-    expect(alert).toHaveStyle({ color: 'rgb(220, 57, 57)' });
+    expect(alert).toHaveStyle({ color: 'rgb(214, 51, 51)' });
     expect(getComputedStyle(alert).marginBottom).toBe('1rem');
   });
 
