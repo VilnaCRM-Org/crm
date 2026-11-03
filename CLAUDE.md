@@ -2647,9 +2647,10 @@ flag is declared today: the last one, `forgotPassword`, was removed in #309 when
 block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
 to a non-empty value fails container start with `Known flags: (none).` and must unset it. The
 settings page (issue #330), its three coming-soon sub-pages and their app-shell entry points
-(issue #362) ship without a flag: the four routes are registered in every environment, and the
-sidebar, drawer and user menu always link to them. The two-factor section of `/settings`
-(issue #331) is not flagged either: the page always renders it.
+(issue #362) ship without a flag: the four routes are registered in every environment, the
+sidebar and the drawer always link to all four, and the user menu always links to `/settings`.
+The two-factor section of `/settings` (issue #331) is not flagged either: the page always renders
+it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
