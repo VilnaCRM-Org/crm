@@ -40,8 +40,9 @@ and `implementation_artifacts` at this bundle.
   with a client-rendered QR code, confirm, recovery codes once, disable, regenerate).
 - Backend: every operation exists only on user-service `main`; the frontend mocks them through a
   stateless pending schema extension shared with crm #315, which Follow-up 5.1 deletes by hand on
-  the contract-pin bump (the 2026-10-08 revision withdrew the expiry checker). The `twoFactorAuth` runtime flag
-  (off in production, on in the test stack) gates only the 2FA section of `/settings`;
+  the contract-pin bump (the 2026-10-08 revision withdrew the expiry checker). The
+  `twoFactorAuth` runtime flag (off in production, on in the test stack) gates only the 2FA
+  section of `/settings`;
   `/sign-in/two-factor` is reachable in every environment (`docs/feature-flags.md`,
   "`twoFactorAuth`").
 - Stories: 32 in four epics (386 acceptance criteria) at this run, plus nine follow-ups; bmalph
