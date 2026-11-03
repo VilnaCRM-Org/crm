@@ -281,13 +281,13 @@ describe('performance serving config', () => {
 
     expect(loginFormSource).toContain(
       'import registrationNotificationLoader, {\n' +
-        '  registrationNotificationPrefetcher,\n' +
+        '  RegistrationNotificationPrefetcher,\n' +
         "} from '@auth/utils/load-registration-notification';"
     );
     expect(loginFormSource).toContain(
       'const RegistrationNotification = lazy(() => registrationNotificationLoader.load());'
     );
-    expect(loginFormSource).toContain('registrationNotificationPrefetcher.prefetch();');
+    expect(loginFormSource).toContain('prefetcher.prefetch();');
     expect(loginFormSource).not.toContain(
       "from '@auth/components/form-section/auth-forms/registration-notification';"
     );
