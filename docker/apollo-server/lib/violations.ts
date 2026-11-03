@@ -1,11 +1,21 @@
 import { GraphQLError } from 'graphql';
 
-const EMAIL_LOCAL = String.raw`[a-zA-Z0-9.!#$%&'*+/=?^_\`{|}~-]+`;
-const EMAIL_LABEL = String.raw`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?`;
-
-export const EMAIL_REGEX = new RegExp(`^${EMAIL_LOCAL}@${EMAIL_LABEL}(?:\\.${EMAIL_LABEL})*$`);
+const LOCAL_PART = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+const DOMAIN_LABEL = /^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9])$/;
 
 export const MAX_EMAIL_LENGTH = 254;
+
+const everySegmentMatches = (value: string, segment: RegExp): boolean =>
+  value.split('.').every((part) => segment.test(part));
+
+export const isValidEmail = (email: string): boolean => {
+  const at = email.lastIndexOf('@');
+  return (
+    at !== -1 &&
+    LOCAL_PART.test(email.slice(0, at)) &&
+    everySegmentMatches(email.slice(at + 1), DOMAIN_LABEL)
+  );
+};
 
 export const rejectViolation = (property: string, reason: string): never => {
   throw new GraphQLError(`${property}: ${reason}`, {

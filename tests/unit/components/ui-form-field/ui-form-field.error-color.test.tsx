@@ -33,6 +33,6 @@ describe('UIFormField error message colour', () => {
       captured.form?.setError('email', { type: 'server', message: 'Taken' });
     });
 
-    expect(screen.getByText('Taken')).toHaveStyle({ color: 'rgb(198, 40, 40)' });
+    expect(screen.getByText('Taken')).toHaveStyle({ color: 'rgb(214, 51, 51)' });
   });
 });

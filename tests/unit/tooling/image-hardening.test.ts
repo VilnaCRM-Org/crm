@@ -17,6 +17,7 @@ const DOCKERFILES = [
   'Apollo.Dockerfile',
   'MemoryLeak.Dockerfile',
   'Mockoon.Dockerfile',
+  'Mailpit.Dockerfile',
   'Playwright.Dockerfile',
   'tests/load/dockerfile',
 ];
@@ -26,6 +27,7 @@ const SERVICE_IMAGES = [
   'Apollo.Dockerfile',
   'MemoryLeak.Dockerfile',
   'Mockoon.Dockerfile',
+  'Mailpit.Dockerfile',
 ];
 const ONE_SHOT_IMAGES = ['Playwright.Dockerfile', 'tests/load/dockerfile'];
 const BUN_IMAGES = [

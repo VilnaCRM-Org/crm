@@ -129,7 +129,7 @@ describe('GraphQLProfileTransformer outcomes', () => {
 describe('GraphQLProfileTransformer.failed', () => {
   it.each([
     ['unauthenticated', 'session_ended'],
-    ['access_denied', 'session_ended'],
+    ['access_denied', 'rejected'],
     ['rate_limited', 'rate_limited'],
     ['network', 'transient'],
     ['server', 'transient'],
