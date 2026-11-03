@@ -190,6 +190,20 @@ describe('UserServiceErrorTransformer', () => {
     expect(transformer.normalize(error)).toEqual(violation('token', 422));
   });
 
+  it('prefers a later GraphQL error with a token line beside another violation line', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        { message: `newPassword: ${faker.lorem.sentence()}`, extensions: { status: 422 } },
+        {
+          message: `email: ${faker.lorem.sentence()}\ntoken: ${faker.lorem.sentence()}`,
+          extensions: { status: 422 },
+        },
+      ],
+    });
+
+    expect(transformer.normalize(error)).toEqual(violationsAt(['email', 'token'], 422));
+  });
+
   it('classifies the first GraphQL error when none carries a token violation', () => {
     const error = new ApolloError({
       graphQLErrors: [
