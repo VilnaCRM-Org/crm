@@ -97,7 +97,7 @@ export const DisableFieldOnly: Story = {
       submitLabel="Вимкнути"
       submittingLabel="Вимикаємо…"
     >
-      <DisableCodeField view={args.view} />
+      <DisableCodeField view={args.view} busy={args.isSubmitting} />
     </UIForm>
   ),
 };

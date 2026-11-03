@@ -15,7 +15,7 @@ const FIELD_ERROR_KEYS = new Map([
   ['invalid_code', 'settings.two_factor.errors.invalid_code'],
 ]);
 
-export default function DisableCodeField({ view }: DisableCodeFieldProps): JSX.Element {
+export default function DisableCodeField({ view, busy }: DisableCodeFieldProps): JSX.Element {
   const { t } = useTranslation();
   useConfirmFieldFocus(view);
   const key = view.fieldError === null ? undefined : FIELD_ERROR_KEYS.get(view.fieldError);
@@ -29,6 +29,7 @@ export default function DisableCodeField({ view }: DisableCodeFieldProps): JSX.E
         type="text"
         autoComplete="one-time-code"
         rules={NO_RULES}
+        inputProps={{ readOnly: busy }}
       />
       <UIServerFieldError
         name={CONFIRM_FIELD_NAME}

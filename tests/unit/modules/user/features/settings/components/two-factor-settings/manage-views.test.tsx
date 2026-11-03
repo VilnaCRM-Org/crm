@@ -163,6 +163,24 @@ describe('the disable view', () => {
     expect(props.callbacks.cancel).toHaveBeenCalledTimes(2);
   });
 
+  it('leaves the code field editable at rest and makes it read-only while submitting', () => {
+    const props = withView(viewState('disable'));
+    const utils = renderPanel(props);
+    const field = screen.getByRole('textbox', { name: 'Код підтвердження' });
+    expect(field).not.toHaveAttribute('readonly');
+
+    utils.rerender(
+      <TwoFactorPanel
+        settings={ENABLED}
+        view={viewState('disable')}
+        callbacks={props.callbacks}
+        isSubmitting
+      />
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Код підтвердження' })).toHaveAttribute('readonly');
+  });
+
   it('ignores other keys', async () => {
     const props = withView(viewState('disable'));
     renderPanel(props);
@@ -244,6 +262,40 @@ describe('the regenerate view', () => {
 
     await expectNoA11yViolations(utils.container);
   });
+});
+
+describe('cancelling while a confirmation is in flight', () => {
+  it.each(['disable', 'regenerate'] as const)(
+    'keeps Скасувати enabled at rest and disables it while %s is submitting',
+    (view) => {
+      const props = withView(viewState(view));
+      const utils = renderPanel(props);
+      expect(screen.getByRole('button', { name: 'Скасувати' })).toBeEnabled();
+
+      utils.rerender(
+        <TwoFactorPanel
+          settings={ENABLED}
+          view={viewState(view)}
+          callbacks={props.callbacks}
+          isSubmitting
+        />
+      );
+
+      expect(screen.getByRole('button', { name: 'Скасувати' })).toBeDisabled();
+    }
+  );
+
+  it.each(['disable', 'regenerate'] as const)(
+    'ignores Escape while %s is submitting',
+    async (view) => {
+      const props = withView(viewState(view), true);
+      renderPanel(props);
+
+      await userEvent.keyboard('{Escape}');
+
+      expect(props.callbacks.cancel).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe('the reauth view', () => {

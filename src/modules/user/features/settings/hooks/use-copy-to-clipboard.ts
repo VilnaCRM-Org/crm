@@ -20,6 +20,7 @@ export default function useCopyToClipboard(): ClipboardCopy {
 
   const copy = useCallback(
     async ({ text, fallbackTarget }: ClipboardCopyRequest) => {
+      setStatus('idle');
       try {
         await navigator.clipboard.writeText(text);
         setStatus('copied');

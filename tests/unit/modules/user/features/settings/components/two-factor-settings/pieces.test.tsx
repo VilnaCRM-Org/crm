@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -60,6 +60,21 @@ describe('KeyChip', () => {
     expect(screen.getByText((_, node) => node?.tagName === 'CODE')).toHaveTextContent(expected, {
       normalizeWhitespace: false,
     });
+  });
+
+  it('puts the raw secret, without the group spaces, on the clipboard when copied by hand', () => {
+    const secret = buildTotpSecret();
+    render(<KeyChip secret={secret} chipRef={createRef<HTMLElement>()} />);
+    const setData = jest.fn();
+
+    const notCancelled = fireEvent.copy(
+      screen.getByText((_, node) => node?.tagName === 'CODE'),
+      { clipboardData: { setData } }
+    );
+
+    expect(setData).toHaveBeenCalledTimes(1);
+    expect(setData).toHaveBeenCalledWith('text/plain', secret);
+    expect(notCancelled).toBe(false);
   });
 
   it('hands the code element to the ref', () => {
@@ -141,5 +156,30 @@ describe('CopyButton', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/^Done\u200b$/);
     await userEvent.click(button);
     expect(screen.getByRole('status')).toHaveTextContent(/^Done$/);
+  });
+
+  it('says nothing about the previous copy until a repeat copy settles', async () => {
+    let release: (value: void) => void = () => undefined;
+    installClipboard(
+      jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              release = resolve;
+            })
+        )
+    );
+    mount();
+    const button = screen.getByRole('button', { name: 'Copy' });
+    await userEvent.click(button);
+    expect(screen.getByRole('status')).toHaveTextContent(/^Done$/);
+
+    await userEvent.click(button);
+
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    await act(async () => release());
+    expect(screen.getByRole('status')).toHaveTextContent(/^Done\u200b$/);
   });
 });
