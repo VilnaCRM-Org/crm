@@ -66,6 +66,11 @@ export default {
     },
   },
 
+  backControlPrimary: {
+    color: customColors.text.primary,
+    '& svg': { color: customColors.text.primary },
+    '&:visited': { color: customColors.text.primary },
+  },
   resultTitle: {
     marginTop: 0,
     marginBottom: '0.5rem',

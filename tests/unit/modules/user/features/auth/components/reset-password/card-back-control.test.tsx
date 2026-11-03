@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router';
 
 import CardBackControl from '@auth/components/reset-password/card-back-control';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { styleRuleFor, styleRulesFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 jest.mock('@auth/assets/chevron-left.svg', () => ({
@@ -58,6 +58,34 @@ describe('CardBackControl', () => {
     await userEvent.keyboard(' ');
 
     await waitFor(() => expect(onClick).toHaveBeenCalledTimes(2));
+  });
+
+  it.each([
+    ['link' as const, <CardBackControl key="link" to="/sign-in" tone="primary" />],
+    ['button' as const, <CardBackControl key="button" onClick={jest.fn()} tone="primary" />],
+  ])('inks the primary tone in #404142, chevron included, in %s mode', (role, element) => {
+    renderControl(element);
+
+    const control = screen.getByRole(role, { name: 'Назад' });
+    expect(control).toHaveStyle({ color: 'rgb(64, 65, 66)' });
+    expect(styleRulesFor(control, ' svg').at(-1)?.getPropertyValue('color')).toBe('#404142');
+  });
+
+  it('keeps the primary ink once the link target is visited', () => {
+    renderControl(<CardBackControl to="/sign-in" tone="primary" />);
+
+    const visited = styleRulesFor(screen.getByRole('link', { name: 'Назад' }), ':visited');
+
+    expect(visited.at(-1)?.getPropertyValue('color')).toBe('#404142');
+  });
+
+  it('keeps the secondary Figma ink when the tone is left out', () => {
+    renderControl(<CardBackControl onClick={jest.fn()} />);
+
+    const control = screen.getByRole('button', { name: 'Назад' });
+    expect(styleRulesFor(control, ' svg').map((rule) => rule.getPropertyValue('color'))).toEqual([
+      '#969B9D',
+    ]);
   });
 
   it.each([

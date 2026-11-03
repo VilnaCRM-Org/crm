@@ -87,7 +87,9 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
 
     await page.keyboard.press('Enter');
     await expect(page.getByText(challengeText.invalidCode)).toBeVisible();
+    await expect(codeCellsOf(page).first()).toBeFocused();
     await page.keyboard.type(CODE);
+    await expect(codeCellsOf(page).last()).toHaveValue(CODE.slice(-1));
     await confirmButtonOf(page).focus();
     await page.keyboard.press('Space');
 

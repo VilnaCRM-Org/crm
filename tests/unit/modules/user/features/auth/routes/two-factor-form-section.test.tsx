@@ -90,6 +90,14 @@ describe('TwoFactorFormSection', () => {
     await expectNoA11yViolations(container);
   });
 
+  it("inks Назад in the compliant #404142, not the recovery cards' Figma grey", () => {
+    mount();
+
+    expect(screen.getByRole('button', { name: 'Назад' })).toHaveStyle({
+      color: 'rgb(64, 65, 66)',
+    });
+  });
+
   it('goes back to sign-in with the from target and the focus marker', async () => {
     mount();
 
