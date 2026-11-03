@@ -10,20 +10,6 @@ const TEXT_SECONDARY = '#969B9D';
 const TEXT_DARK = '#1A1C1E';
 
 describe('reset password styles', () => {
-  it('matches the Figma tablet card between 768 and 1439 px only', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.recoveryCard).toEqual({
-      '@media (min-width:768px) and (max-width:1439.95px)': {
-        maxWidth: '39.75rem',
-        padding: '1.9375rem 2.4375rem',
-        '& form > h1 + p': { marginBottom: '1.25rem' },
-        '& label': { fontSize: '1rem', lineHeight: 1.125, marginBottom: '0.5625rem' },
-        '& form > button[type="submit"]': { marginBottom: '0.0625rem' },
-      },
-    });
-  });
-
   it('pins every backControl token', async () => {
     const styles = await loadStyles();
 
@@ -149,7 +135,6 @@ describe('reset password styles', () => {
     const styles = await loadStyles();
 
     expect(Object.keys(styles)).toEqual([
-      'recoveryCard',
       'backControl',
       'backControlPrimary',
       'resultTitle',
