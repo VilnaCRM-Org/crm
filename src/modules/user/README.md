@@ -332,6 +332,32 @@ cannot take an exception); an accessible `#0074B5` fill or a dark label on the t
 which would leave them unlike the Figma frames and every other brand-colour control before #276
 decides.
 
+### The recovery cards follow the Figma tablet frames
+
+**Context.** Figma draws the recovery cards 636 px wide at tablet width (`72:5617`, `360:11937`);
+the shared `formWrapper` that `/sign-in` and `/sign-up` use is 632 px there.
+
+**Decision.** From 768 to 1439 px `AuthCard variant="recovery"` sets `maxWidth: '39.75rem'`
+(636 px) with the Figma padding, by the user's decision of 2026-10-21; desktop and mobile keep the
+shared widths, and `/sign-in` and `/sign-up` keep 632 px and their baselines. The recovery visual
+spec pins 636 against `/sign-in`'s 632.
+
+**Rejected.** Reusing the 632 px `formWrapper` (it would leave the recovery cards unlike the
+frames the pixel-parity tests compare against); widening `formWrapper` for every auth page (it
+would re-baseline `/sign-in` and `/sign-up`).
+
+### The new-password form has no "Назад"
+
+**Context.** The plan drew the in-card back control on both recovery forms; the `/password-reset`
+form has no Figma frame.
+
+**Decision.** By the user's decision of 2026-10-21 the "Створіть новий пароль" form renders no
+"Назад"; the invalid-link state keeps it, linking to `/sign-in`. Leaving the page by any in-app
+navigation still aborts a confirm in flight. The keyboard spec asserts the form's tab order without
+a "Назад" stop.
+
+**Rejected.** A back control on the form, which the owner removed.
+
 ### No feature flag
 
 **Context.** The planning bundle kept a `forgotPassword` flag `false` by default and enabled it

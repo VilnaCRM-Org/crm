@@ -249,12 +249,11 @@ Same content and order as desktop; the Figma card is 636 wide at x 194 (`72:5617
 `360:11937` sent) and the new-password form follows the same reading. Fields and the button
 stretch to the card's inner width.
 
-> Assumption: the card width in code is authoritative. `formWrapper` in
-> `src/components/skeletons/base/auth-form-shared-styles.ts` sets `maxWidth: '39.5rem'` (632 px)
-> from the `md` breakpoint, which the recorded `/sign-in` and `/sign-up` tablet baselines already
-> carry; the 4 px gap to the Figma reading is inherited, not new, and the recovery pages reuse the
-> same `formWrapper` rather than introducing a 636 px variant. Only the CI visual gate could
-> overrule this, and it compares against baselines rendered from the code value.
+> Decision (owner, 2026-10-21): the recovery cards follow the Figma tablet frames. From 768 to
+> 1439 px `AuthCard variant="recovery"` sets `maxWidth: '39.75rem'` (636 px) with the Figma
+> padding, while `/sign-in` and `/sign-up` keep `formWrapper`'s `39.5rem` (632 px) and their
+> recorded baselines. This supersedes the earlier assumption that the 632 px code value was
+> authoritative; the visual spec pins 636 against `/sign-in`'s 632.
 
 ### Mobile 375
 
@@ -354,10 +353,9 @@ and no sign-up/sign-in switcher are rendered.
   named "Підтвердити".
 - Given the page, when queried for the provider buttons or the switcher link, then none exist.
 - Given the 1440, 1024 and 375 viewports, when the page renders, then the card's maximum width
-  is the existing `formWrapper` value for that breakpoint — 502 / 632 / 363 px (`31.375rem` /
-  `39.5rem` / `22.6875rem`), the same card as `/sign-in` — and the button stretches to the
-  card's inner width; the 632 px tablet card is the code value, authoritative over the 636 px
-  Figma reading (§4).
+  is 502 / 636 / 363 px (`31.375rem` / `39.75rem` / `22.6875rem`): the `/sign-in` card on desktop
+  and mobile, and the Figma 636 px recovery card from 768 to 1439 px (§4, owner decision
+  2026-10-21) — and the button stretches to the card's inner width.
 
 ### FR-6 — E-mail validation on the request form
 
