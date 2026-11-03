@@ -121,7 +121,11 @@ lazy-loading boundary that keeps every shell byte off the eager entry and off pu
    two chunks: `user-menu` (container-free chip and menu) and `current-user` (the read through
    `useService`). The second is requested only while `userSettings` is on, so production (flag
    off, `public/index.html:28`) never downloads tsyringe, Apollo or the composition root for the
-   shell (AD-8).
+   shell (AD-8). Amended after 0addef83 (owner decision of 2026-11-02): the read no longer goes
+   through `useService`. `useCurrentUser` calls the container-free `currentUserSource`
+   (`CurrentUserClient`'s plain `fetch`, `CurrentUserResponseParser`, `UserDisplayNameMapper`), so
+   the `current-user` chunk requests no DI chunk at all, and `/` stays inside its script budget
+   with the flag gone.
 5. **One new class, one new token.** `displayNameOf` and `monogramOf`
    (`profile-header/index.tsx:15-24`) move into the `@injectable()` `UserDisplayNameMapper` in
    `src/modules/user/store/` (beside the module's other injectable mappers), registered by class under the new `AUTH_TOKENS.UserDisplayNameMapper` and
@@ -200,7 +204,7 @@ traced by reading imports (not yet by `make lint-deps`, AV-1), every hop verifie
 ```text
 src/modules/user/index.ts                        (barrel → shell-slots → dynamic user-menu-slot
   …/user-menu/current-user-menu.tsx               → dynamic current-user-menu)
-  …/hooks/use-current-user.ts                     → @/providers/di
+  …/hooks/use-current-user.ts                     → @/providers/di   (removed by 0addef83)
 src/providers/di/use-service.ts:4                 → @/config/dependency-injection-config
 src/config/dependency-injection-config.ts:15      → @/utils/error/di
 src/utils/error/di.ts:6                           → ./error-parser
@@ -250,7 +254,7 @@ src/routes/route-composer.tsx ──static──> src/routes/protected-layout-lo
    │     │     │        UserMenuSlot ─ flag off ─> UserMenu(identity: null)
    │     │     │                     └ flag on  ─> UserMenu(identity state) + Suspense(nothing)
    │     │     │                                      ─> CurrentUserMenu (renders null, onIdentity)
-   │     │     │                                      useCurrentUser → useService(ProfileProvider)
+   │     │     │                                      useCurrentUser → currentUserSource (0addef83)
    │     │     │                                                                      [current-user]
    │     │     └─ UINavigationDrawer (below the sidebar breakpoint, while open)
    │     │           └─ UINavigationList
@@ -261,16 +265,16 @@ src/routes/route-composer.tsx ──static──> src/routes/protected-layout-lo
 
 ### 3.2 Chunk map
 
-| Chunk                  | Contents                                                                                                                        | Requested by                        | Public routes          |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------- |
-| `index` (entry)        | `protectedLayoutLoader` and composer slot wiring (amended after 663151bc)                                                       | every page                          | yes (bytes only, AD-2) |
-| `protected-layout`     | `ProtectedRoute`, the `AppLayout` frame grid, two placeholders, `appShellLoader` wiring, `shell-slot-factory` (663151bc)        | first protected route               | never                  |
-| `ui-app-shell` **NEW** | `UIAppShell`, header, sidebar, list, drawer (MUI `Drawer`), icons, shell catalog                                                | `AppLayout` render                  | never                  |
-| `mui-theme`            | unchanged                                                                                                                       | in parallel with every themed chunk | unchanged              |
-| `user-menu` **NEW**    | `UserMenuSlot`, `UserMenu`, `useUserMenu`, chip catalog                                                                         | `UIAppHeader` render                | never                  |
-| `current-user` **NEW** | `CurrentUserMenu`, `useCurrentUser`; `UserDisplayNameMapper` arrives through the DI chunk (`AUTH_TOKENS.UserDisplayNameMapper`) | `UserMenuSlot`, flag on only        | never                  |
-| DI async chunk(s)      | composition root, tsyringe, Apollo, zod (already split for `settings`)                                                          | `current-user`                      | never                  |
-| `home`, `settings`     | changed by FR-16 and FR-15/FR-17                                                                                                | their routes                        | never                  |
+| Chunk                  | Contents                                                                                                                                     | Requested by                        | Public routes          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------- |
+| `index` (entry)        | `protectedLayoutLoader` and composer slot wiring (amended after 663151bc)                                                                    | every page                          | yes (bytes only, AD-2) |
+| `protected-layout`     | `ProtectedRoute`, the `AppLayout` frame grid, two placeholders, `appShellLoader` wiring, `shell-slot-factory` (663151bc)                     | first protected route               | never                  |
+| `ui-app-shell` **NEW** | `UIAppShell`, header, sidebar, list, drawer (MUI `Drawer`), icons, shell catalog                                                             | `AppLayout` render                  | never                  |
+| `mui-theme`            | unchanged                                                                                                                                    | in parallel with every themed chunk | unchanged              |
+| `user-menu` **NEW**    | `UserMenuSlot`, `UserMenu`, `useUserMenu`, chip catalog                                                                                      | `UIAppHeader` render                | never                  |
+| `current-user` **NEW** | `CurrentUserMenu`, `useCurrentUser`, the container-free `currentUserSource` (`fetch` client, parser, `UserDisplayNameMapper`) since 0addef83 | `UserMenuSlot`                      | never                  |
+| DI async chunk(s)      | composition root, tsyringe, Apollo, zod (already split for `settings`)                                                                       | `settings` only since 0addef83      | never                  |
+| `home`, `settings`     | changed by FR-16 and FR-15/FR-17                                                                                                             | their routes                        | never                  |
 
 The chunk names come from `webpackChunkName` comments, the convention
 `tests/unit/tooling/performance-serving.test.ts` pins for every loader (`:141-160`). The DI async
@@ -301,7 +305,7 @@ ProtectedRoute → AppLayout renders frame: header placeholder, nav placeholder,
 UIAppShell mounts: registers the shell catalog, renders header + sidebar in the reserved areas
 UIAppHeader renders slot frame → user-menu chunk requested (ThemedChunkLoader + ChunkRetryLoader)
 UserMenuSlot: registers the chip catalog; flag on → renders UserMenu(identity=null) beside an
-  empty Suspense → current-user chunk (+ DI async chunk) → CurrentUserMenu (renders null)
+  empty Suspense → current-user chunk (no DI chunk since 0addef83) → CurrentUserMenu (renders null)
   → useCurrentUser: one read → onIdentity → the same UserMenu re-renders
   → ok: UserMenu(identity) | failed: UserMenu(identity=null) | session_ended: link signs out
 pathname change → useCurrentUser re-reads (the read in flight is aborted)
