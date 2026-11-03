@@ -17,7 +17,6 @@ import {
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { expectArrowKeyWalk, expectTabOrder, type TabStop } from '@tests/utils/a11y/keyboard';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const PRODUCT_IDS = ['boards', 'products', 'orders', 'contacts', 'analytics'] as const;
@@ -41,7 +40,6 @@ const signOutOf = (page: Page): Locator =>
 
 async function openAs(page: Page, path: string): Promise<void> {
   await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings: true } });
   await stubProfile(page);
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await expectShellReady(page);

@@ -1,10 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import {
-  signInWithFlag,
-  stubProfile,
-} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { COMING_SOON_SECTIONS, type ComingSoonSection } from './coming-soon-sections';
 import { currentLanguage, notFoundScreens, type ScreenSize } from './constants';
@@ -17,7 +15,7 @@ async function openSection(
   section: ComingSoonSection
 ): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
-  await signInWithFlag(page, true);
+  await seedPreloadedAuthToken(page);
   await stubProfile(page);
   await stabilizePage(page, section.path);
   await expect(page.getByRole('heading', { level: 1, name: t(section.headingKey) })).toBeVisible();

@@ -23,7 +23,6 @@ import {
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { expectSignInPage } from '@tests/e2e/utils/sign-out';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 interface NavigationTarget {
@@ -127,13 +126,8 @@ async function expectAboveSignOut(page: Page, id: string): Promise<void> {
   expect(row.bottom).toBeLessThanOrEqual(signOut.top + 0.5);
 }
 
-async function openProtected(
-  page: Page,
-  path: string,
-  userSettings = true
-): Promise<StubbedProfile> {
+async function openProtected(page: Page, path: string): Promise<StubbedProfile> {
   await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings } });
   const stub = await stubProfile(page);
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await expectShellReady(page);
@@ -363,9 +357,7 @@ test.describe('App shell on desktop (issue #362)', () => {
     );
   });
 
-  test('lists My profile, Settings and Sign out in the menu while userSettings is on', async ({
-    page,
-  }) => {
+  test('lists My profile, Settings and Sign out in the menu', async ({ page }) => {
     await openProtected(page, ROUTE_PATHS.home);
     await openChipMenu(page);
 
@@ -398,30 +390,6 @@ test.describe('App shell on desktop (issue #362)', () => {
       page.getByRole('heading', { level: 1, name: t('settings.heading') })
     ).toBeVisible();
     await expect.poll(() => stub.count('CurrentUser')).toBe(2);
-  });
-
-  test('requests no CurrentUser and no current-user chunk while userSettings is off', async ({
-    page,
-  }) => {
-    const chunks: string[] = [];
-    page.on('request', (request: Request) => {
-      if (/current-user/.test(new URL(request.url()).pathname)) chunks.push(request.url());
-    });
-
-    const stub = await openProtected(page, ROUTE_PATHS.home, false);
-    await openChipMenu(page);
-
-    await expect(userMenuOf(page).getByRole('menuitem')).toHaveText([shellText.signOutItem]);
-    expect(stub.count('CurrentUser')).toBe(0);
-    expect(chunks).toEqual([]);
-  });
-
-  test('hides the Settings group and its sub-items while userSettings is off', async ({ page }) => {
-    await openProtected(page, ROUTE_PATHS.home, false);
-
-    await expect(sidebarSettingsOf(page)).toHaveCount(0);
-    await expect(linkOf(page, 'integrations')).toHaveCount(0);
-    await expect(linkOf(page, 'boards')).toBeVisible();
   });
 
   for (const path of PUBLIC_PATHS) {

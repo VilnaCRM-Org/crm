@@ -6,7 +6,6 @@ import { Route, Routes, useNavigate } from 'react-router';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import UINavigationList from '@/components/ui-navigation-list';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
 
@@ -64,16 +63,6 @@ const currentLinks = (): (string | null)[] =>
     .map((link) => link.textContent);
 
 describe('UINavigationList', () => {
-  let isEnabled: jest.SpyInstance;
-
-  beforeEach(() => {
-    isEnabled = jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it('lists the products, then Settings, and ends with Sign out after a divider', () => {
     renderList();
 
@@ -118,15 +107,6 @@ describe('UINavigationList', () => {
 
     expect(screen.getByRole('list')).not.toHaveAttribute('tabindex');
     expect(screen.getByRole('list')).toHaveAttribute('role', 'list');
-  });
-
-  it('renders no Settings group and no sub-item while the userSettings flag is off', () => {
-    isEnabled.mockReturnValue(false);
-
-    renderList({}, '/settings');
-
-    expect(linkTexts()).toEqual(['Boards', 'Products', 'Orders', 'Contacts', 'Analytics']);
-    expect(screen.queryByRole('button', { name: /Settings/u })).not.toBeInTheDocument();
   });
 
   it.each(['/', '/boards', '/orders'])(
@@ -273,14 +253,6 @@ describe('UINavigationList', () => {
 });
 
 describe('UINavigationList in the drawer', () => {
-  beforeEach(() => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it('lists the same rows without a divider: Sign out carries its own top border', () => {
     renderList({ layout: 'drawer' }, '/');
 

@@ -3,19 +3,10 @@ import userEvent from '@testing-library/user-event';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import UISidebar from '@/components/ui-sidebar';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import renderShell from '@tests/unit/utils/render-shell';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 describe('UISidebar a11y', () => {
-  beforeEach(() => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it.each([
     ['desktop', '/'],
     ['desktop', '/settings'],
