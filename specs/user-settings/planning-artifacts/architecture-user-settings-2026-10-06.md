@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-21
-iteration: 7
+revised: 2026-11-03
+iteration: 8
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -21,6 +21,13 @@ inputDocuments:
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
 2026-10-20 and 2026-10-21 **Feature:** `user-settings`
+
+> **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
+> flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
+> section, in every environment (`src/modules/user/README.md`, "No feature flag for the two-factor
+> section"). Every condition below that reads "while `twoFactorAuth` is on" now always holds, and
+> every "`twoFactorAuth` off" row, scenario or acceptance criterion describes a state no build
+> reaches any more; they are kept unchanged as the record of the plan as approved.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md) (cited "research §N"),
 [brief](./brief-user-settings-2026-10-06.md) ("brief §N") and the authoritative
