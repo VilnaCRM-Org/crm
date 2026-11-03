@@ -27,6 +27,7 @@ import ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import observabilityRegistrar from '@/services/observability/di';
 import ObservabilityService from '@/services/observability/observability-service';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
+import UnseenFailureReporter from '@/services/observability/unseen-failure-reporter';
 import resilienceRegistrar from '@/services/resilience/di';
 import securityEventRegistrar from '@/services/security-events/di';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
@@ -120,6 +121,7 @@ describe('observability composition root', () => {
     OBSERVABILITY_TOKENS.ObservabilityService,
     OBSERVABILITY_TOKENS.ApolloLinkFactoryDeps,
     OBSERVABILITY_TOKENS.ApolloLinkFactory,
+    OBSERVABILITY_TOKENS.UnseenFailureReporter,
   ];
 
   it('binds the observability service and the apollo link factory', () => {
@@ -129,6 +131,29 @@ describe('observability composition root', () => {
 
     expect(child.isRegistered(OBSERVABILITY_TOKENS.ObservabilityService)).toBe(true);
     expect(child.isRegistered(OBSERVABILITY_TOKENS.ApolloLinkFactory)).toBe(true);
+  });
+
+  it('resolves one unseen-failure reporter over the observability singleton', () => {
+    const child = unboundContainer(tokens);
+
+    observabilityRegistrar.register(child);
+
+    const service = child.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService);
+    const reporter = child.resolve<UnseenFailureReporter>(
+      OBSERVABILITY_TOKENS.UnseenFailureReporter
+    );
+    expect(reporter).toBeInstanceOf(UnseenFailureReporter);
+    expect(child.resolve(OBSERVABILITY_TOKENS.UnseenFailureReporter)).toBe(reporter);
+
+    const captureError = jest.spyOn(service, 'captureError').mockImplementation(() => undefined);
+    const bug = new TypeError('client bug');
+    try {
+      reporter.report(bug, { source: 'settings:profile', stage: 'read' });
+
+      expect(captureError).toHaveBeenCalledWith(bug, { source: 'settings:profile', stage: 'read' });
+    } finally {
+      captureError.mockRestore();
+    }
   });
 
   it('resolves an apollo link factory wired to the same observability singleton', async () => {

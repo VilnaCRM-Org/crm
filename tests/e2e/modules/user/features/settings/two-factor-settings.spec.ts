@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -43,6 +45,19 @@ const socialTitle: string = t('settings.social.heading');
 const SECRETS = { secret: SETUP_SECRET, uri: SETUP_URI, code: RECOVERY_CODES[0] ?? '' };
 const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } as const;
 const WIDTHS = [320, 360, 600, 767, 768, 1024] as const;
+
+async function clickCopyKey(page: Page, clipboard: 'works' | 'missing'): Promise<void> {
+  await stubClipboard(page, clipboard);
+  await stubSetup(page);
+  await page.goto(SETTINGS_URL);
+  await openSetup(page);
+  await copyKeyOf(page).click();
+}
+
+async function expectCopyAnnounced(page: Page, text: string): Promise<void> {
+  await expect(page.getByRole('status').filter({ hasText: text })).toBeAttached();
+  await expect(copyKeyOf(page)).toBeFocused();
+}
 
 test.describe('Two-factor settings section (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
@@ -146,35 +161,19 @@ test.describe('Two-factor settings section (issue #331)', () => {
     test('copies the key without spaces and announces it, keeping focus on the button', async ({
       page,
     }) => {
-      await stubClipboard(page, 'works');
-      await stubSetup(page);
-      await page.goto(SETTINGS_URL);
-      await openSetup(page);
-
-      await copyKeyOf(page).click();
+      await clickCopyKey(page, 'works');
 
       expect(await copiedText(page)).toBe(SETUP_SECRET);
-      await expect(
-        page.getByRole('status').filter({ hasText: twoFactorText.keyCopied })
-      ).toBeAttached();
-      await expect(copyKeyOf(page)).toBeFocused();
+      await expectCopyAnnounced(page, twoFactorText.keyCopied);
     });
 
     test('selects the key and announces the manual fallback without a clipboard', async ({
       page,
     }) => {
-      await stubClipboard(page, 'missing');
-      await stubSetup(page);
-      await page.goto(SETTINGS_URL);
-      await openSetup(page);
-
-      await copyKeyOf(page).click();
+      await clickCopyKey(page, 'missing');
 
       expect(await selectedText(page)).toBe(KEY_IN_GROUPS);
-      await expect(
-        page.getByRole('status').filter({ hasText: twoFactorText.copyFailed })
-      ).toBeAttached();
-      await expect(copyKeyOf(page)).toBeFocused();
+      await expectCopyAnnounced(page, twoFactorText.copyFailed);
     });
 
     test('refuses fewer than six digits and sends nothing', async ({ page }) => {

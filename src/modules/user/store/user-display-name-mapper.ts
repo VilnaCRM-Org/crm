@@ -1,10 +1,7 @@
-import { injectable } from 'tsyringe';
-
 import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
 
 const FULL_PIB_WORDS = 3;
 
-@injectable()
 export default class UserDisplayNameMapper {
   public fromFullName(fullName: string): UserDisplayName {
     const displayName = this.displayNameOf(fullName);

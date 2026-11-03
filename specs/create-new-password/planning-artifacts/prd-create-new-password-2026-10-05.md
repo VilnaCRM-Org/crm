@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-15
+revised: 2026-11-02
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -649,11 +649,20 @@ on `token` renders the invalid-link state: "Назад", the `h1`
 `/password-recovery`. The token is discarded from memory. The copy does not say whether an
 earlier link is still valid. Focus moves to the heading and the body is a polite status region.
 
+A `token` violation takes precedence wherever it appears: the confirm path scans every GraphQL
+error in the response and every `property: message` line of each error message (API Platform
+joins several violations with a newline), and a `token` violation anywhere renders this state
+before any other error is classified. Without one, the first error decides the outcome as before.
+
 - Given a message-only GraphQL error, when the response settles, then the state renders, the
   form is gone, and the primary link has `href="/password-recovery"`.
 - Given a second message-only error with a different (translated) text, when the response
   settles, then the same state renders (same DOM and text): the client never reads the message.
 - Given a violation on `token`, when the response settles, then the same state renders.
+- Given an unknown (coded) GraphQL error followed by a second error carrying a `token`
+  violation, when the response settles, then the same state renders, not the transient banner.
+- Given one error whose message holds a `newPassword` violation line followed by a `token`
+  violation line, when the response settles, then the same state renders, not the policy error.
 - Given the state, when "Запросити нове посилання" is activated, then `/password-recovery`
   renders its request form.
 
@@ -828,8 +837,8 @@ Every value below is read from the profile (`.claude/react-sdlc.yml`, `quality.*
 file the gate enforces, and is a raise-only floor or a zero ceiling: this feature changes none of
 them (NFR-17 and NFR-18 add gates; none is relaxed), and no story may satisfy a gate by editing a
 threshold, adding a suppression, narrowing a scope or re-baselining to force a pass. The only
-deliberate, reviewed deviations are the intended `/sign-in` re-baseline of NFR-6 and the one scoped
-a11y exception of NFR-9.
+deliberate, reviewed deviations are the intended `/sign-in` re-baseline of NFR-6 and the two scoped
+a11y exceptions of NFR-9.
 
 ### NFR-1 — Coverage
 
@@ -908,20 +917,21 @@ measures it; this feature adds no store.
 
 WCAG 2.1 Level AA is binding (`docs/accessibility/acceptance-standard.md`): jest-axe over the new
 components and pages in jsdom, `@axe-core/playwright` on both routes in chromium, firefox and
-webkit, no positive `tabindex`, and at most one new entry in the scoped exception list
+webkit, no positive `tabindex`, and at most two new entries in the scoped exception list
 (`A11Y_EXCEPTIONS` in `tests/utils/a11y/axe-config.ts`): a `color-contrast` entry for the
 primary-pill links of the recovery result views ("До входу", "Запросити нове посилання"), which are
 white on the Figma primary `#1EAEFF` (2.45:1) — the same palette-token debt the existing
 submit-button entry carries. It uses the same reason and `PALETTE_CONTRAST_ISSUE` tracking
 (issue #276), a selector that matches only those links (never `*`, never rule-wide), and is deleted
-when issue #276 closes; no other new entry is allowed. The WCAG 2.2 target-size ratchet applies
+when issue #276 closes. The second entry covers the in-card "Назад" row below; no other new
+entry is allowed. The WCAG 2.2 target-size ratchet applies
 ahead of the standard: the in-card "Назад", "До входу" and "Запросити нове посилання" controls are ≥
 24 CSS px tall, and the primary controls (text inputs, submit) meet the mobile lane's 44 px floor.
-The in-card "Назад" text and its chevron render in `Font/200 #404142`, not the Figma `72:5605` style
-(`Font/300 (Placeholder) #969B9D`, "15 (medium)" Golos Medium 15/18), because that grey is about
-2.8:1 on white and fails WCAG 1.4.3; the size and weight of the Figma style are kept. This is a
-reviewed accessibility override of the design token, recorded through `figma-design-check`
-(accessibility may override the visual design) and raised with the design owner (§10). If any other
+The in-card "Назад" text and its chevron render in the Figma `72:5605` style
+(`Font/300 (Placeholder) #969B9D`, "15 (medium)" Golos Medium 15/18), about 2.81:1 on white,
+under WCAG 1.4.3. The user decided on 2026-10-21 to follow Figma rather than the earlier
+`Font/200 #404142` accessibility override, so the row takes a second scoped #276
+`color-contrast` entry; its focus ring stays `#404142` (10.2:1) so focus visibility still passes. If any other
 new text would render a token below 4.5:1, the implementing story stops and reports; it never adds a
 second exception. Step changes move focus to the new heading; results are announced once through a
 polite status region; errors through the focused alert banner; field errors keep `aria-invalid` and
@@ -1275,8 +1285,8 @@ For the design owner:
    instead of the primary pill? Not blocking: until answered they ship as the pill under the one
    scoped exception of NFR-9.
 6. Accept the in-card "Назад" in `Font/200 #404142` instead of the `72:5605` placeholder grey
-   `#969B9D` (about 2.8:1 on white)? Not blocking: the accessibility override of NFR-9 ships
-   until a token at or above 4.5:1 is chosen.
+   `#969B9D` (about 2.8:1 on white)? Answered 2026-10-21: no, the row follows Figma `#969B9D`
+   under a scoped #276 exception until a token at or above 4.5:1 is chosen.
 
 For the architecture owner (@kravalg):
 

@@ -11,7 +11,9 @@ describe('burger styles', () => {
   it('draws the 44 px transparent target around the #57595B glyph', async () => {
     const { burger, glyph } = await loadStyles();
 
-    expect(burger).toMatchObject({
+    expect(burger).toEqual({
+      '&:focus-visible': RING,
+      '&:focus:not(:focus-visible)': { outline: 'none' },
       display: 'block',
       flexShrink: 0,
       boxSizing: 'border-box',
@@ -22,10 +24,13 @@ describe('burger styles', () => {
       border: 0,
       background: 'transparent',
       cursor: 'pointer',
+      '@media (max-width:374px)': {
+        '&:focus-visible': { outlineOffset: '-2px' },
+        margin: '-10px -8px -10px -12px',
+        padding: '10px 8px 10px 12px',
+      },
       color: '#57595B',
     });
-    expect(burger['&:focus-visible']).toEqual(RING);
-    expect(burger['&:focus:not(:focus-visible)']).toEqual({ outline: 'none' });
     expect(glyph).toEqual({ display: 'block', width: '24px', height: '24px' });
   });
 

@@ -178,6 +178,31 @@ export const FIXTURES = {
       'src/components/ui-button/index.tsx': reexport('../../services/error'),
       'src/services/error/index.ts': leaf('error'),
     },
+    variants: {
+      'feature-data-providers': {
+        'src/modules/user/features/settings/components/profile-form/index.tsx': reexport(
+          '../../data-providers/profile-provider'
+        ),
+        'src/modules/user/features/settings/data-providers/profile-provider.ts':
+          leaf('profile-provider'),
+      },
+      'feature-transformers': {
+        'src/modules/user/features/settings/components/profile-form/index.tsx': reexport(
+          '../../transformers/graphql-profile-transformer'
+        ),
+        'src/modules/user/features/settings/transformers/graphql-profile-transformer.ts': leaf(
+          'graphql-profile-transformer'
+        ),
+      },
+      'module-transformers': {
+        'src/modules/user/features/settings/components/profile-form/index.tsx': reexport(
+          '../../../../transformers/user-service-error-transformer'
+        ),
+        'src/modules/user/transformers/user-service-error-transformer.ts': leaf(
+          'user-service-error-transformer'
+        ),
+      },
+    },
   },
   'no-paint-path-import-di-bridge': {
     files: {
