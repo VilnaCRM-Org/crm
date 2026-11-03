@@ -125,15 +125,12 @@ describe('ProfileProvider over the container client (integration)', () => {
     it.each([
       ['no extensions', { message: 'Access Denied.' }],
       ['extensions.status 403', { message: 'Access Denied.', extensions: { status: 403 } }],
-    ])(
-      'ends the session without touching the token on "Access Denied." with %s',
-      async (_n, error) => {
-        answerProfileOperation(operation, { respond: (): Response => graphQLError(error) });
+    ])('rejects "Access Denied." with %s and keeps the live session', async (_n, error) => {
+      answerProfileOperation(operation, { respond: (): Response => graphQLError(error) });
 
-        await expect(run(operation)).resolves.toEqual(failed('session_ended'));
-        expect(useAuthStore.getState().token).toBe(token);
-      }
-    );
+      await expect(run(operation)).resolves.toEqual(failed('rejected'));
+      expect(useAuthStore.getState().token).toBe(token);
+    });
 
     it.each([
       ['HTTP 429', (): Response => problem(429), 'rate_limited'],

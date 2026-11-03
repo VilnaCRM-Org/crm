@@ -182,11 +182,13 @@ describe('class-naming policy (issue #129) — wiring and documentation', () => 
   const claude = readRepoFile('CLAUDE.md');
   const section = claude.slice(claude.indexOf('### Class naming convention'));
 
-  it('is spread into both non-React override blocks of eslint.config.mjs', () => {
+  it('is spread into every override block of eslint.config.mjs that carries the #100 gate', () => {
     const config = readRepoFile('eslint.config.mjs');
+    const staticGateBlocks = config.match(/\.\.\.noStaticOrFreeFunctionSelectors,/g) ?? [];
 
     expect(config).toContain("import classNamingPolicy from './config/class-naming-policy.js';");
-    expect(config.match(/\.\.\.classNamingSelectors,/g)).toHaveLength(2);
+    expect(staticGateBlocks).toHaveLength(5);
+    expect(config.match(/\.\.\.classNamingSelectors,/g)).toHaveLength(staticGateBlocks.length);
   });
 
   it('documents every approved suffix with its role in the CLAUDE.md table', () => {

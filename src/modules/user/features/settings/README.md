@@ -31,8 +31,8 @@ error. The decisions are recorded in `## User Settings decisions` of the
   before `usePageTitle('settings.title')` runs. The catalog is listed in
   `config/i18n-catalog-policy.json`, so the merged `localization.json` holds no `settings.*` key.
 - The page imports nothing from the auth feature: shared form pieces live in `src/components` and
-  `src/modules/user/lib`. `tests/unit/tooling/settings-layer-edges.test.ts` pins the layer edges
-  below.
+  `src/modules/user/lib`. `tests/unit/tooling/settings-layer-edges.test.ts` pins that no settings
+  source file imports `@auth` or `src/modules/user/features/auth`, and the layer edges below.
 
 ## Shared pieces
 
@@ -41,7 +41,9 @@ Imported from #315 (password recovery), not copied:
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
 - `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
   name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
-- `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session.
+- `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session. No
+  settings file imports it: the user module's composition root (`src/modules/user/config/di.ts`)
+  puts its link on the Apollo client the settings repositories receive by injection.
 
 Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
 
@@ -102,7 +104,7 @@ State edge on the board.
 ## Data provider outcomes
 
 `ProfileProvider` never throws and never leaks a status, a server message or a generated type.
-Its collaborators are the Repository, the Transformer and `ObservabilityService`: a failure that
+Its collaborators are the Repository, the Transformer and `UnseenFailureReporter`: a failure that
 never reached the link (a programming error) is captured once, as #315's recovery flow does,
 before it becomes `failed: rejected`.
 
@@ -111,16 +113,23 @@ before it becomes `failed: rejected`.
 | `read`, `update` | `ok` with a `UserEntity`    | the profile as stored                          |
 | `update`         | `invalid` with field errors | name, e-mail, current or new password rejected |
 | `resend`         | `sent`                      | the link was sent; carries the stored flag     |
-| any              | `failed: session_ended`     | HTTP 401 or "Access Denied."                   |
+| any              | `failed: session_ended`     | HTTP 401                                       |
 | any              | `failed: rate_limited`      | HTTP 429                                       |
 | any              | `failed: transient`         | network, 5xx, time-out or abort                |
-| any              | `failed: rejected`          | any other answer, including an unreadable one  |
+| any              | `failed: rejected`          | any other answer, including "Access Denied."   |
+
+`session_ended` is the one outcome the page answers with nothing, because the link has already
+cleared the token and `ProtectedRoute` redirects. "Access Denied." clears no token, so a page that
+receives it is still signed in; it is `rejected` and gets the same error toast as any refused
+Save, read or resend (amended 2026-11-02, superseding the earlier `session_ended` mapping).
 
 Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `password_wrong`,
 `password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an
 i18n key; a field error reason is copy that `ProfileForm` looks up in its module-private
 `ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
-field, in field order, that has one.
+field, in field order, that has one. A Save that settles with a toast moves focus to Save only
+when focus has fallen to the page body (`useSettledFocus`, the rule `useFocusReturn` follows), so
+a control the user moved to while the request ran keeps focus.
 
 `ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
 `useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned
@@ -188,12 +197,16 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   10 / 9 px under the input and 15 / 17 / 24 px above the next divider, as each frame draws it.
 - **Page top.** The heading starts 24 px below the top of the content on a phone and tablet and
   28 px on desktop, the offsets each frame draws under its top bar.
+- **Heading size.** The 1024 px tablet frame draws "Налаштування" at 28 px (`313:10484`, 34 px
+  tall) and the 1440 and 375 px frames at 22 px (`313:10257`, `313:10628`, 26 px tall), so the
+  28 px rule starts at 1024 px, not above it, and 1440 px returns to 22 px.
 
 Where the frames contradict each other or the copy, the page follows one reading:
 
 - **Card top (F-02).** Desktop follows `313:10242`: 12 px between the subtitle and the card.
-- **Tablet pills.** The frame draws 339 + 8 + 339 px in a 685 px content box; the pills are
-  339 and 338 px so both edges sit on whole pixels.
+- **Tablet pills.** The frame draws two 339 px pills and an 8 px gap, 686 px, in a 685 px content
+  box; the pills are 339 and 338 px, so 339 + 8 + 338 fills the 685 px box and both edges sit on
+  whole pixels.
 - **Labels.** The Ukrainian labels can wrap in the label column, so a label is as tall as its
   input and centres its text on it, also when a field error grows the row.
 - **Toasts (T13, T15).** One layout from the desktop and phone frames, bottom-right 12 px from

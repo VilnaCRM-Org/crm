@@ -755,9 +755,11 @@ cited by id only because that bundle is still being edited:
    #331 imports; a change to #340 before it merges blocks passwords.
 3. **Scaffolder mismatch:** `USER_TOKENS` against `AUTH_TOKENS` (§5.7); budget the manual fix.
 4. **Composition-root cap:** settings wiring and the Bearer link fold into the existing
-   `UserModuleRegistrar` steps (R11), so `src/modules/user/config/di.ts` keeps nine functions and
-   three closures; a new method there would fail `make lint-metrics` (§5.7). Amended
-   2026-10-20: one method fits (ten is the cap), and the link takes it (architecture §6).
+   `UserModuleRegistrar` steps (R11), plus one `registerSessionLink` step for the link
+   (architecture §6), so `src/modules/user/config/di.ts` holds ten functions, the
+   rust-code-analysis per-file cap, and four closures; any further method there fails
+   `make lint-metrics` (§5.7). Superseded 2026-10-20: the earlier estimate of nine functions and
+   three closures, which left no room for that step.
 5. **Flag read at module evaluation:** a route filter at router build parses the config before
    the guarded `load()` (§5.4); read flags lazily or inside the guarded path.
 6. **Password for every save (G4):** a name-only edit needs the current password; OAuth-created

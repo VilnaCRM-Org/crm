@@ -17,7 +17,7 @@ export default {
     fontSize: '1rem',
     lineHeight: '1.625rem',
     letterSpacing: 0,
-    color: paletteColors.error.main,
+    color: paletteColors.error.text,
   },
 
   formTitle: {

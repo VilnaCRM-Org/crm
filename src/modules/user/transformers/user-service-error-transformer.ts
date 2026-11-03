@@ -46,12 +46,22 @@ export default class UserServiceErrorTransformer {
       return this.failure('aborted', null, NO_VIOLATIONS);
     }
     if (networkError) return this.fromStatus(this.statusOf(networkError));
-    return this.fromGraphQLError(graphQLErrors?.[0]);
+    return this.fromGraphQLError(this.primaryError(graphQLErrors ?? []));
+  }
+
+  private primaryError(
+    graphQLErrors: readonly GraphQLFormattedError[]
+  ): GraphQLFormattedError | undefined {
+    const tokenError = graphQLErrors.find((graphQLError) =>
+      this.violationsOf(graphQLError.message)?.items.some((violation) => violation.path === 'token')
+    );
+    return tokenError ?? graphQLErrors[0];
   }
 
   private fromGraphQLError(graphQLError: GraphQLFormattedError | undefined): UserServiceFailure {
     if (!graphQLError) return this.failure('unknown', null, NO_VIOLATIONS);
-    const status = this.extensionStatus(graphQLError);
+    const extensionStatus = graphQLError.extensions?.status;
+    const status = typeof extensionStatus === 'number' ? extensionStatus : null;
     const violations = this.violationsOf(graphQLError.message);
     if (violations) return this.failure('violation', status, violations);
     return this.fromCode(graphQLError, status);
@@ -91,11 +101,6 @@ export default class UserServiceErrorTransformer {
     if (path === undefined) return null;
     const text = message.slice(path.length + 1).trim();
     return { path, reason: TAKEN_MESSAGES.has(text) ? 'taken' : 'other' };
-  }
-
-  private extensionStatus(graphQLError: GraphQLFormattedError): number | null {
-    const status = graphQLError.extensions?.status;
-    return typeof status === 'number' ? status : null;
   }
 
   private statusOf(networkError: NonNullable<NetworkError>): number | null {
