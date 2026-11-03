@@ -166,10 +166,10 @@ more project names.
   keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
   overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
-  same for the app shell: the drawer, the avatar menu, a 44 px tap area on every shell control
-  except the drawer sub-items (held at their recorded 42 px Figma pitch) and the disabled bell and
-  list (40 px, unmeasured), as "Known gaps" in `src/components/ui-app-shell/README.md` records, and
-  no overflow at device width and 320 px. Playwright cannot open a native
+  same for the app shell: the drawer, the avatar menu, and no overflow at device width and 320 px.
+  Its 44 px tap-area floor applies to every shell control except two recorded gaps: the drawer
+  sub-items (42 px Figma pitch) and the disabled bell and list (40 px Figma pitch), both listed
+  under "Known gaps" in `src/components/ui-app-shell/README.md`. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
@@ -331,12 +331,13 @@ outside every function body and instance property initializer runs on import, wh
 whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 449 files the scope holds
-7,973 runnable mutants, 5,972 of them scored, in 401 sharded files; 48 files run in no shard, and
-the 40 shards hold 150 to 151 scored mutants and 5 to 11 files each. File size was a poor proxy
-for that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the
-15-minute kill switch before it finished, while this scope packed by counted mutants holds 201 to
-202 per shard at 30.
+same commit; no weight file is committed, so none can go stale. At 447 files the scope holds
+7,871 runnable mutants, 5,882 of them scored, in 399 sharded files; 48 files run in no shard. Their
+packing weight is 5,943, the scored mutants plus the floor of 1 that each all-static file adds, so
+the 40 shards carry 148 to 149 weight units and 5 to 11 files each. File size was a poor proxy for
+that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
+kill switch before it finished, while this scope packed by counted mutants carries 198 to 199
+units per shard at 30.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
 kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
@@ -468,7 +469,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 449 files; not all of them produce scored mutants — the 48 unsharded ones hold no
+mutate scope is 447 files; not all of them produce scored mutants — the 48 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
