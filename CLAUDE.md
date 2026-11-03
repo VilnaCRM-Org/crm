@@ -2641,17 +2641,15 @@ tooling without a TypeScript loader, so that is an i18n boot-path restructuring,
 change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
-container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. One
-flag is declared today, `twoFactorAuth` (issue #331), shipped off in the committed block
-`{ "flags": { "twoFactorAuth": false } }`: it hides only the 2FA section of `/settings`, and the
-test stack's `docker-compose.test.yml` switches it on through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH`,
-default `true`, an explicit `false` turning it off. The earlier `forgotPassword` flag was removed
-in #309 when the sign-in "Забули пароль?" link started rendering unconditionally; an environment
-that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
-`Known flags: twoFactorAuth.` and must unset it. The settings page (issue #330), its three
-coming-soon sub-pages and their app-shell entry points (issue #362) ship without a flag: the four
-routes are registered in every environment, and the sidebar, drawer and user menu always link to
-them.
+container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
+flag is declared today: the last one, `forgotPassword`, was removed in #309 when the sign-in
+"Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
+block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
+to a non-empty value fails container start with `Known flags: (none).` and must unset it. The
+settings page (issue #330), its three coming-soon sub-pages and their app-shell entry points
+(issue #362) ship without a flag: the four routes are registered in every environment, and the
+sidebar, drawer and user menu always link to them. The two-factor section of `/settings`
+(issue #331) is not flagged either: the page always renders it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is

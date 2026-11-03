@@ -1,6 +1,9 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  signInToSettings,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   cancelOf,
   codeCellsOf,
@@ -19,7 +22,6 @@ import {
   regenerateSubmitOf,
   savedBoxOf,
   sectionOf,
-  signInToTwoFactorSettings,
   startOf,
   statusHeadingOf,
   stubClipboard,
@@ -93,7 +95,7 @@ async function expectTouchTargets(
 
 test.describe('Two-factor settings on touch devices (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInToTwoFactorSettings(page);
+    await signInToSettings(page);
     await stubProfile(page);
     await stubSetup(page);
     await stubConfirm(page);

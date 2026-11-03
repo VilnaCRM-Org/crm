@@ -2,6 +2,7 @@ import type { Locator } from '@playwright/test';
 
 import {
   PROFILE_NODE,
+  signInToSettings,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { nameField } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
@@ -27,7 +28,6 @@ import {
   regenerateSubmitOf,
   savedBoxOf,
   sectionOf,
-  signInToTwoFactorSettings,
   startOf,
   statusHeadingOf,
   stubClipboard,
@@ -59,7 +59,7 @@ async function expectRing(target: Locator, color: string): Promise<void> {
 
 test.describe('Two-factor settings keyboard contract (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInToTwoFactorSettings(page);
+    await signInToSettings(page);
     await stubProfile(page);
     await stubSetup(page);
     await stubConfirm(page);

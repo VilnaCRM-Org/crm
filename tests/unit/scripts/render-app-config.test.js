@@ -17,7 +17,6 @@ const GRAPHQL_URL_VAR = 'APP_CONFIG_GRAPHQL_URL';
 const DEMO_FLAG_VAR = `${FLAG_ENV_PREFIX}DEMO_FLAG`;
 const RETIRED_FLAG_VAR = `${FLAG_ENV_PREFIX}FORGOT_PASSWORD`;
 const UNKNOWN_FLAG_VAR = `${FLAG_ENV_PREFIX}DARK_MODE`;
-const TWO_FACTOR_AUTH_FLAG_VAR = `${FLAG_ENV_PREFIX}TWO_FACTOR_AUTH`;
 
 const blockPattern = () =>
   new RegExp(`(<script[^>]*\\bid="${CONFIG_ELEMENT_ID}"[^>]*>)([\\s\\S]*?)(</script>)`);
@@ -301,46 +300,17 @@ describe('scripts/render-app-config.js', () => {
 
       const rendered = renderAppConfig(html, { [GRAPHQL_URL_VAR]: graphqlUrl });
 
-      expect(readBlockConfig(rendered)).toEqual({ flags: { twoFactorAuth: false }, graphqlUrl });
+      expect(readBlockConfig(rendered)).toEqual({ flags: {}, graphqlUrl });
       expect(stripBlockBody(rendered)).toBe(stripBlockBody(html));
     });
 
-    it('ships twoFactorAuth switched off as the committed default', () => {
-      expect(readBlockConfig(committedShell())).toEqual({ flags: { twoFactorAuth: false } });
+    it('ships an empty flags object as the committed default', () => {
+      expect(readBlockConfig(committedShell())).toEqual({ flags: {} });
     });
 
-    it.each([
-      ['true', true],
-      ['false', false],
-    ])('renders twoFactorAuth %s from APP_CONFIG_FLAG_TWO_FACTOR_AUTH', (raw, expected) => {
-      const rendered = renderAppConfig(committedShell(), { [TWO_FACTOR_AUTH_FLAG_VAR]: raw });
-
-      expect(readBlockConfig(rendered)).toEqual({ flags: { twoFactorAuth: expected } });
-    });
-
-    it.each([[''], ['   ']])('keeps twoFactorAuth off for the empty value %p', (raw) => {
-      const rendered = renderAppConfig(committedShell(), { [TWO_FACTOR_AUTH_FLAG_VAR]: raw });
-
-      expect(readBlockConfig(rendered)).toEqual({ flags: { twoFactorAuth: false } });
-    });
-
-    it.each([['yes'], ['TRUE'], ['1']])('aborts when twoFactorAuth is %p', (raw) => {
-      expect(() => renderAppConfig(committedShell(), { [TWO_FACTOR_AUTH_FLAG_VAR]: raw })).toThrow(
-        new RegExp(
-          `APP_CONFIG_FLAG_TWO_FACTOR_AUTH must be exactly "true" or "false", got "${raw}"`
-        )
-      );
-    });
-
-    it('rejects the retired APP_CONFIG_FLAG_FORGOT_PASSWORD, listing the known flags', () => {
+    it('rejects the retired APP_CONFIG_FLAG_FORGOT_PASSWORD, listing no known flags', () => {
       expect(() => renderAppConfig(committedShell(), { [RETIRED_FLAG_VAR]: 'false' })).toThrow(
-        /names unknown feature flag "forgotPassword"\. Known flags: twoFactorAuth\./
-      );
-    });
-
-    it('rejects an unknown flag against the committed shell, listing the known flags', () => {
-      expect(() => renderAppConfig(committedShell(), { [UNKNOWN_FLAG_VAR]: 'true' })).toThrow(
-        /names unknown feature flag "darkMode"\. Known flags: twoFactorAuth\./
+        /names unknown feature flag "forgotPassword"\. Known flags: \(none\)\./
       );
     });
   });

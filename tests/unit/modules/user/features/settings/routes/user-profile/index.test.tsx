@@ -1,11 +1,13 @@
 import '@testing-library/jest-dom';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import UIShellContent from '@/components/ui-shell-content';
 import i18n from '@/i18n';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
   jest.requireActual('@tests/unit/utils/loading-profile-load-stub')
@@ -15,7 +17,11 @@ describe('UserProfile', () => {
   it('renders one level-1 heading, the social card heading and the subtitle', () => {
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 
@@ -30,7 +36,11 @@ describe('UserProfile', () => {
   it('renders the English copy for an English session', () => {
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('en')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 
@@ -40,15 +50,19 @@ describe('UserProfile', () => {
     ).toBeInTheDocument();
   });
 
-  it('adds no landmark of its own, leaving the main landmark to AppLayout', () => {
+  it('leaves the main landmark to AppLayout, with the two-factor section its only region', () => {
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 
     expect(screen.queryByRole('main')).not.toBeInTheDocument();
-    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+    expect(screen.getByRole('region')).toHaveAccessibleName('Двофакторна автентифікація');
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
   });
@@ -59,7 +73,11 @@ describe('UserProfile', () => {
     view.unmount();
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 
@@ -74,7 +92,11 @@ describe('UserProfile', () => {
   it('puts the subtitle after the heading, as the subtitle', () => {
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 
@@ -87,7 +109,11 @@ describe('UserProfile', () => {
   it('sets the document title from the settings catalog', async () => {
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 
