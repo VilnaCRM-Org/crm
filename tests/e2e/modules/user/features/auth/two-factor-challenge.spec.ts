@@ -27,6 +27,7 @@ import {
   stubChallenge,
   stubSignIn,
 } from '@tests/e2e/utils/two-factor-responses';
+import waitForSettledScroll from '@tests/e2e/utils/wait-for-settled-scroll';
 
 const PRESERVED_DESTINATION = '/?tab=deals#pipeline';
 const CODE = '123456';
@@ -321,8 +322,8 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
       await signInToChallenge(page, credentials);
       await row.enter(page);
       const toggle = row.toggle(page);
-      await confirmButtonOf(page).scrollIntoViewIfNeeded();
       await confirmButtonOf(page).focus();
+      await waitForSettledScroll(page);
 
       await page.keyboard.press('Tab');
 
