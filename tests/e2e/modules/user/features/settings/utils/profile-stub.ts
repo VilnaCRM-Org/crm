@@ -1,8 +1,5 @@
 import type { Page, Request, Route } from '@playwright/test';
 
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
-
 const GRAPHQL_URL = '**/graphql';
 
 export type ProfileOperation = 'CurrentUser' | 'UpdateUser' | 'ResendEmailToUser';
@@ -103,11 +100,6 @@ export async function stubProfile(
     return reply(route);
   });
   return { calls, count };
-}
-
-export async function signInWithFlag(page: Page, userSettings: boolean): Promise<void> {
-  await seedPreloadedAuthToken(page);
-  await overrideRuntimeConfig(page, { flags: { userSettings } });
 }
 
 export function watchContactedOrigins(page: Page): () => string[] {

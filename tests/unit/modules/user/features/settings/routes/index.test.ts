@@ -27,7 +27,7 @@ describe('settings route contract', () => {
     expect(settingsRoutes.routes).toHaveLength(1);
   });
 
-  it('declares /settings as a protected route behind the userSettings flag', async () => {
+  it('declares /settings as an always-registered protected route', async () => {
     const { settingsRoutes, settingsPath } = await loadContract();
     const [route] = settingsRoutes.routes;
 
@@ -35,7 +35,6 @@ describe('settings route contract', () => {
     expect(route).toEqual({
       path: '/settings',
       guard: 'protected',
-      flag: 'userSettings',
       load: expect.any(Function),
       meta: { titleKey: 'settings.title' },
     });

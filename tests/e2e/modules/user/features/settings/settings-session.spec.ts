@@ -5,10 +5,10 @@ import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import {
   replyWithEndedSession,
-  signInWithFlag,
   stubProfile,
   watchContactedOrigins,
   type StubbedProfile,
@@ -38,7 +38,7 @@ test.describe('Settings session end (issue #330)', () => {
 
   test.beforeEach(async ({ page }) => {
     contacted = watchContactedOrigins(page);
-    await signInWithFlag(page, true);
+    await seedPreloadedAuthToken(page);
     await page.route(LOGIN_API_URL, async (route) => {
       const request: Request = route.request();
       if (request.method() !== 'POST') return route.fallback();
