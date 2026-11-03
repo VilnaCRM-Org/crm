@@ -1,6 +1,5 @@
-import type { TextFieldProps } from '@mui/material/TextField';
-import { render } from '@testing-library/react';
-import type { JSX, PropsWithChildren, ReactNode } from 'react';
+import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import type { Control, FieldValues } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
@@ -23,15 +22,6 @@ type ControllerRenderParams = {
 };
 
 const controllerPropsMock = jest.fn();
-const textFieldMock = jest.fn((props: TextFieldProps) => (
-  <input
-    data-testid="mui-text-field"
-    name={props.name}
-    onBlur={props.onBlur}
-    onChange={props.onChange}
-    value={typeof props.value === 'string' ? props.value : ''}
-  />
-));
 
 let controllerRenderParams: ControllerRenderParams = {
   field: {
@@ -44,25 +34,6 @@ let controllerRenderParams: ControllerRenderParams = {
     invalid: false,
   },
 };
-
-jest.mock('@/components/ui-form-input-field/theme', () => ({
-  __esModule: true,
-  default: {},
-}));
-
-jest.mock('@mui/material/TextField', () => ({
-  __esModule: true,
-  default: (props: TextFieldProps): JSX.Element => textFieldMock(props),
-}));
-
-jest.mock('@mui/material/styles', () => {
-  const actual = jest.requireActual('@mui/material/styles');
-
-  return {
-    ...actual,
-    ThemeProvider: ({ children }: PropsWithChildren): ReactNode => children ?? null,
-  };
-});
 
 jest.mock('react-hook-form', () => {
   const actual = jest.requireActual('react-hook-form');
@@ -85,13 +56,13 @@ jest.mock('react-hook-form', () => {
 describe('UIFormInputField controller branches', () => {
   beforeEach(() => {
     controllerPropsMock.mockClear();
-    textFieldMock.mockClear();
     controllerRenderParams = {
       field: {
         name: 'email',
         onBlur: jest.fn(),
         onChange: jest.fn(),
         ref: jest.fn(),
+        value: '',
       },
       fieldState: {
         invalid: false,
@@ -99,12 +70,13 @@ describe('UIFormInputField controller branches', () => {
     };
   });
 
-  it('omits defaultValue from Controller and forwards helperText to TextField', () => {
+  it('omits defaultValue from Controller and renders the helper text', () => {
     render(
       <UIFormInputField
         autoComplete="email"
         control={{} as Control<FieldValues>}
         helperText="Helper text"
+        id="email"
         name="email"
         placeholder="Email"
         rules={{}}
@@ -121,10 +93,12 @@ describe('UIFormInputField controller branches', () => {
     );
     expect(controllerProps).not.toHaveProperty('defaultValue');
 
-    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
+    const input = screen.getByRole('textbox');
 
-    expect(textFieldProps.helperText).toBe('Helper text');
-    expect(textFieldProps.error).toBe(false);
+    expect(input).toHaveAccessibleDescription('Helper text');
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+    expect(input).toHaveAttribute('autocomplete', 'email');
+    expect(input).toHaveAttribute('placeholder', 'Email');
   });
 
   it('forwards defaultValue to Controller when provided', () => {
@@ -150,5 +124,13 @@ describe('UIFormInputField controller branches', () => {
         name: 'email',
       })
     );
+  });
+
+  it('hands the field ref to the native input', () => {
+    render(
+      <UIFormInputField control={{} as Control<FieldValues>} id="email" name="email" rules={{}} />
+    );
+
+    expect(controllerRenderParams.field.ref).toHaveBeenCalledWith(screen.getByRole('textbox'));
   });
 });

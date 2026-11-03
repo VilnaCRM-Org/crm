@@ -1,9 +1,9 @@
 import { Grid } from '@mui/material';
-import type { InputProps } from '@mui/material/Input';
 import type { JSX } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import type { FormFieldProps, FormFieldSlotProps } from '@/components/types/ui-form-field';
+import type { FormTextFieldInputSlotProps } from '@/components/types/ui-form-input-field';
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
 
@@ -11,7 +11,7 @@ import styles from './styles';
 
 function useFieldSlotProps<T extends FieldValues>(
   name: Path<T>,
-  inputProps: InputProps,
+  inputProps: FormTextFieldInputSlotProps,
   describedBy: string | undefined
 ): FormFieldSlotProps {
   const { getFieldState, formState } = useFormContext<T>();
