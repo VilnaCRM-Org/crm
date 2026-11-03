@@ -815,6 +815,28 @@ a mobile row (the touch lane). The route scan list and the visual page list gain
   `form button[type="submit"]`) and `/password-reset` (ready on `main h1`) are scanned in all
   three desktop engines with zero violations outside the scoped allowlist.
 
+### FR-29 — Sign-in result card
+
+Added after planning (`09fded0e`, 2026-10-19; module README "Sign-in and sign-up results use one
+notification", epics "Implementation drift" item 16). `/sign-in` shows its settled result in the
+lazily loaded `RegistrationNotification` that sign-up already uses, with `flow="signIn"`, instead
+of red text under the form and a silent redirect. A settled failure shows the error card: a
+focused `h2` "Трапилась помилка", the message in an alert filled after mount (mapped from the
+`AuthError` kind and HTTP 429, never the backend text), "Спробувати ще раз", which resubmits the
+last values, and "Назад", which aborts any running request and returns to the form with the values
+kept and the e-mail field focused. A successful sign-in shows the success card: a focused `h2`
+"Вітаємо!", "Ви успішно увійшли" in a status region and "Продовжити", which performs the existing
+redirect to the preserved destination (FR-21's notice flow is unchanged) with focus on `main`;
+nothing redirects on a timer. While a card shows, the form, its submit and the OAuth row are inert.
+
+- Given a rejected sign-in, when it settles, then the error card renders with focus on its `h2`
+  and both actions; "Назад" returns to the form with the values kept.
+- Given a successful sign-in, when it settles, then the success card renders and "Продовжити"
+  navigates to the preserved destination; a page that mounts with a token already present never
+  shows the card.
+- Given the resting `/sign-in` page, then no card renders and the resting baselines (NFR-6) and
+  the sign-in tab order (NFR-10) are unchanged.
+
 ## 6. Traceability
 
 | Source | Element                                             | Requirements              |
