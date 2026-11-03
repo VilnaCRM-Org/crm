@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -26,6 +26,9 @@ jest.mock('@/providers/di', () => ({
   __esModule: true,
   useService: (): object => mockProvider,
 }));
+
+const waitForFocusRipple = (): Promise<void> =>
+  waitFor(() => expect(document.body).toContainHTML('MuiTouchRipple-ripplePulsate'));
 
 const page = (): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
@@ -72,6 +75,7 @@ describe('settings page states accessibility', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
     await screen.findByRole('button', { name: 'Спробувати ще раз' });
+    await waitForFocusRipple();
 
     await expectNoA11yViolations(document.body);
   });
