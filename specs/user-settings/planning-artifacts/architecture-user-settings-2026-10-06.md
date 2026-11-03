@@ -153,8 +153,9 @@ Twelve decisions shape everything below:
    errors (`invalid`) or any operation its failure reason (`failed`) from one table (§5.4).
 5. **One rule ends a session, in the link only** (D10, R11, R28). `SessionLinkFactory` adds
    `Authorization: Bearer <token>` per request and clears the session on a transport 401;
-   `ProtectedRoute` then redirects with the session-ended notice. The Transformer maps a 401 and
-   "Access Denied." to a `session_ended` outcome on which the page does nothing (§5.5).
+   `ProtectedRoute` then redirects with the session-ended notice. The Transformer maps a 401 to a
+   `session_ended` outcome on which the page does nothing (§5.5); "Access Denied." is `rejected`
+   (superseded 2026-11-02, §5.4).
 6. **Routes are gated by one flag read lazily** (D13, R6, R17). A route contract may declare
    `flag`, one `FeatureFlag`; `RouteMapper` copies it into the route `handle`, and an eager
    `RouteFlagGate` above `ProtectedRoute` renders the not-found page at render time while it is
@@ -796,7 +797,7 @@ sequenceDiagram
   H->>H: nothing: no toast, no field error, no retry
   PR->>ST: useAuthToken() is null without a sign-out click, after a token
   PR->>PR: Navigate /sign-in, RedirectNavigationState notice session_ended, focusMain
-  Note over P,H: "Access Denied." arrives only when no token was sent: session_ended, no action
+  Note over P,H: "Access Denied." is rejected, not session_ended (superseded 2026-11-02, §5.4)
 ```
 
 ## 5. Design decisions
@@ -1016,12 +1017,17 @@ table. On an update, `invalid(failure)` comes first: `invalid_password` gives a
 are all known gives one with a field error per path, and anything else gives `null`. Every other
 case of every operation is `failed(failure)`, a `ProfileFailedOutcome` whose `reason` is:
 
-| `UserServiceFailure` `reason`      | `ProfileFailedOutcome` `reason` |
-| ---------------------------------- | ------------------------------- |
-| `unauthenticated`, `access_denied` | `session_ended`                 |
-| `rate_limited`                     | `rate_limited`                  |
-| `network`, `server`, `aborted`     | `transient`                     |
-| any other, the default             | `rejected`                      |
+| `UserServiceFailure` `reason`  | `ProfileFailedOutcome` `reason` |
+| ------------------------------ | ------------------------------- |
+| `unauthenticated`              | `session_ended`                 |
+| `rate_limited`                 | `rate_limited`                  |
+| `network`, `server`, `aborted` | `transient`                     |
+| any other, the default         | `rejected`                      |
+
+Superseded 2026-11-02 (PR #354 review): `access_denied` shared the first row. It now falls to the
+default, `rejected`, because "Access Denied." also answers a live token that does not own the
+`id` sent (v2.8.0's `users(first: 1)` can return another user), and the link keeps that session,
+so `session_ended` left a Save, a read or a resend with no feedback. §5.5 is amended to match.
 
 The last row is the default, so `invalid_password` and `violation` outside an update, a
 violation with an unknown path, and any reason #331 appends later map to `rejected`. `aborted`
@@ -1130,16 +1136,18 @@ infrastructure drawn inside the board's Repository → API edge (contract §2), 
 > `logout()` and keeps a rejected demo token from being restored on the next reload. It is one of
 > the five `SessionLinkDeps` members.
 
-**The page's part** (R14, R16, R17). `GraphQLProfileTransformer` maps `unauthenticated` and
-`access_denied` to `session_ended`, and the hooks do nothing on it: no toast, no field error, no
-retry, no call into auth. After the link's signed-out write, `ProtectedRoute`'s
+**The page's part** (R14, R16, R17). `GraphQLProfileTransformer` maps `unauthenticated` to
+`session_ended`, and the hooks do nothing on it: no toast, no field error, no retry, no call into
+auth. After the link's signed-out write, `ProtectedRoute`'s
 `useAuthToken()` selector (over `useAuthStore`) sees the token lost without a sign-out click, after
 the route had mounted with one, and
 navigates with a `RedirectNavigationState` carrying `from`, `focusMain: true`
 and `notice: 'session_ended'`, which unmounts the page and aborts anything in flight.
 "Access Denied." needs no action of its own: upstream sends it only when no token reached the
 server, which on a protected page means the token is already gone and the same redirect is
-under way.
+under way. Superseded 2026-11-02: upstream also sends it to a live token that does not own the
+`id`, so it is `rejected` (§5.4) and shows the operation's error; when the token is gone the
+redirect has already unmounted the page, so nothing shows either way.
 
 The route remembers whether it has seen a token: a `useRef` set while `useAuthToken()` returns
 one, so a cold, tokenless visit keeps today's `{ from, focusMain: false }` and only a token lost

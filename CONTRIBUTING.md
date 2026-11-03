@@ -347,16 +347,33 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
   protected page. The session is client-only and never calls the API, and it survives a reload
   until you sign out. The demo code ships in every production bundle but only activates on a
   `sandbox-crm-*` S3 website host; anywhere else those credentials go to the API like any others.
-- **A demo password reset.** On a sandbox (and in any non-production build), request a reset on
-  `/password-recovery` for `demo@vilnacrm.com`. The "check your e-mail" card then shows
-  "Відкрити посилання з листа (демо)", which stands in for the e-mail and opens
-  `/password-reset` with the demo reset token. Set any new password that meets the rules; the
-  confirmation lands on `/sign-in` with the password-changed notice. Neither step calls the API,
-  and the demo login password stays `Demo1234`. Any other address or token goes to the API as
-  usual.
 - **Deep links.** Every build emits `404.html` as a copy of `index.html`, so S3 answers
   `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
   still reports HTTP status 404 for those responses; the page itself renders normally.
+
+### Password reset e-mails in development
+
+`make start` also runs [Mailpit](https://mailpit.axllent.org/), a local mail catcher, next to
+the Apollo mock; its inbox is at <http://localhost:8025>. The dev compose hands the mock
+`MAILPIT_API_URL`, which switches the reset mutations from stateless answers to the user-service
+behaviour, so the whole flow runs locally:
+
+1. Sign up on `/sign-up` (the mock remembers accounts until it restarts), or use
+   `demo@vilnacrm.com`, which the mock always knows.
+2. Request a reset on `/password-recovery` for that address. The reset e-mail — the
+   user-service template, with a token valid for one hour — arrives in the Mailpit inbox. Any
+   other address gets the same answer and no e-mail, as in user-service.
+3. Open "Скинути пароль" in the e-mail. It points at
+   `http://localhost:3000/password-reset?token=…`; set `PASSWORD_RESET_LINK_BASE_URL` before
+   `make start` when the frontend runs elsewhere.
+4. Set a new password. The page lands on `/sign-in` with the password-changed notice. Open the
+   same link a second time, or use any token the mock never mailed, and submit a new password:
+   the page checks the token only when the form is submitted, so the confirm then shows the
+   invalid-link view.
+
+The dev container starts Mailpit too and forwards port 8025. The test stack
+(`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
+stateless mock and stub GraphQL where they need a specific answer.
 
 ### The browser security-header gate
 
@@ -403,7 +420,7 @@ off the test path so the unit fetch-stub and the integration MSW server never co
 excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
 text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
 type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
-CI runners are 2-core, so parallelism comes from the shard count (currently 16), not from Stryker's
+CI runners are 2-core, so parallelism comes from the shard count (currently 40), not from Stryker's
 in-process concurrency.
 
 **Every mutant is classified on its merits.** A score is only worth enforcing when each status was
@@ -421,10 +438,18 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 30-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 40-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
-file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
-whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
+**scored-mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed
+by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
+carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 253 mutants
+against a mean of 166. A static mutant (outside every function and instance property initializer,
+which `ignoreStatic` never runs) does not count, a file whose mutants are all static weighs 1, and
+a file with no runnable mutant (a barrel, a token module) goes to no shard, so its whole-suite
+related-test set no longer lands on one shard. Every shard job and the merge job count each file's
+mutants at run time with the instrumenter the pinned Stryker core resolves (about 4 s for the whole
+scope), so they all derive the same packing from the same commit; the merge fails if a sharded file
+is missing from its owner's report.
 On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
@@ -441,7 +466,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 30-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 40-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -465,15 +490,18 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=30  # repeat for 1..29
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=40  # repeat for 1..39
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=30 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=30
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=40 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=40
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and
 `mutation-testing-full.yml` and the merge job's `MUTATION_SHARD_TOTAL` in lock-step (`index` must be
-`[0 .. TOTAL-1]`); a mismatch fails closed at the merge gate rather than passing silently.
+`[0 .. TOTAL-1]`), together with every `-of<N>-` cache-key segment so no shard restores a cache
+scoped to another split; `tests/unit/tooling/mutation-checker-config.test.ts` fails when they
+disagree or when the heaviest cold shard at that count passes 240 mutants, and a mismatch that
+reached CI would still fail closed at the merge gate rather than passing silently.
 
 **Lighthouse runs as a matrix.** `performance-testing.yml` runs the desktop and mobile audits as two
 parallel matrix cells (`lighthouse desktop` / `lighthouse mobile`) instead of sequentially in one
