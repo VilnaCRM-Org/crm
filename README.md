@@ -364,10 +364,8 @@ rebuild:
 
 The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
 not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
-deployment never starts serving. One flag is declared today, `twoFactorAuth` (issue #331): it
-hides the 2FA section of `/settings`, ships off in the committed block and in production, and the
-test stack turns it on through `APP_CONFIG_FLAG_TWO_FACTOR_AUTH` (default `true`).
-Any other `APP_CONFIG_FLAG_*` name fails the start — an environment that still sets
+deployment never starts serving. No feature flag is declared today, so any non-empty
+`APP_CONFIG_FLAG_*` variable fails the start — an environment that still sets
 `APP_CONFIG_FLAG_FORGOT_PASSWORD` from the removed `forgotPassword` flag must unset it.
 Build-time `REACT_APP_*` values remain as defaults.
 See [runtime configuration](src/config/runtime/README.md) and

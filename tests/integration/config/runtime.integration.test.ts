@@ -91,10 +91,9 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual({ items: [{ name: 'twoFactorAuth' }] });
-    expect(flags.isEnabled('twoFactorAuth')).toBe(false);
+    expect(flags.names()).toEqual({ items: [] });
     expect(flags.isEnabled(PROBE_FLAG as never)).toBeUndefined();
-    expect(flags.snapshot()).toEqual({ twoFactorAuth: false });
+    expect(flags.snapshot()).toEqual({});
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
   });
 
@@ -122,9 +121,7 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual({ apiBaseUrl, graphqlUrl, flags: {} });
     expect(appConfig.apiBaseUrl()).toBe(apiBaseUrl);
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(graphqlUrl);
-    expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({
-      twoFactorAuth: false,
-    });
+    expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({});
     expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });
 
@@ -156,19 +153,6 @@ describe('runtime configuration Integration', () => {
     const { container, tokens } = await loadRuntimeGraph();
 
     expect(container.resolve<AppConfig>(tokens.appConfig).get()).toEqual({ flags: {} });
-  });
-
-  it('turns twoFactorAuth on when the rendered block sets it', async () => {
-    renderRuntimeConfig(buildFeatureFlagConfig({ twoFactorAuth: true }));
-
-    const { container, tokens } = await loadRuntimeGraph();
-    const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
-
-    expect(container.resolve<AppConfig>(tokens.appConfig).get().flags).toEqual({
-      twoFactorAuth: true,
-    });
-    expect(flags.isEnabled('twoFactorAuth')).toBe(true);
-    expect(flags.snapshot()).toEqual({ twoFactorAuth: true });
   });
 
   it('names each declared flag through the container-resolved service', async () => {

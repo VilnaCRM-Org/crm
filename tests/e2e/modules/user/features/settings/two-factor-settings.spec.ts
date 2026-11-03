@@ -12,7 +12,7 @@ import {
   stubSetup,
 } from '@tests/e2e/utils/two-factor-settings-responses';
 
-import { holdReply, stubProfile } from './utils/profile-stub';
+import { holdReply, signInToSettings, stubProfile } from './utils/profile-stub';
 import {
   codeCellsOf,
   codeListOf,
@@ -32,7 +32,6 @@ import {
   sectionOf,
   selectedText,
   setupHeadingOf,
-  signInToTwoFactorSettings,
   startOf,
   statusHeadingOf,
   stubClipboard,
@@ -61,11 +60,11 @@ async function expectCopyAnnounced(page: Page, text: string): Promise<void> {
 
 test.describe('Two-factor settings section (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInToTwoFactorSettings(page);
+    await signInToSettings(page);
     await stubProfile(page);
   });
 
-  test.describe('the section and its flag', () => {
+  test.describe('the section', () => {
     test('shows the off view beside the profile column above 1024 px and sends nothing', async ({
       page,
     }) => {
@@ -106,23 +105,6 @@ test.describe('Two-factor settings section (issue #331)', () => {
     await page.goto(SETTINGS_URL);
 
     await expectEveryStateInsideCard(page, (control) => control.click());
-  });
-
-  test('leaves the section out and runs no 2FA operation while the flag is off', async ({
-    browser,
-  }) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    await signInToTwoFactorSettings(page, false);
-    await stubProfile(page);
-    const setup = await stubSetup(page);
-
-    await page.goto(SETTINGS_URL);
-
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(sectionOf(page)).toHaveCount(0);
-    expect(setup.count()).toBe(0);
-    await context.close();
   });
 
   test.describe('turning two-factor on', () => {

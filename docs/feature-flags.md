@@ -101,31 +101,9 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 ## Current flags
 
-### `twoFactorAuth`
-
-Hides the two-factor authentication section of `/settings` (issue #331): the `UserProfile` page
-renders `TwoFactorSettings` only while `useFeatureFlag('twoFactorAuth')` is on. It gates nothing
-else. No route contract lists it, because `/sign-in/two-factor` must stay reachable in every
-environment (a sign-in can return a challenge anywhere), and no sign-in code reads it.
-
-- **Default:** `false` in `FEATURE_FLAG_DEFAULTS` and in the committed block.
-- **Declared in:** the `FeatureFlag` union and `FeatureFlagValues`, `FEATURE_FLAG_DEFAULTS`, the
-  strict schema, the committed block in `public/index.html`, and `.env.example`
-  (`APP_CONFIG_FLAG_TWO_FACTOR_AUTH=`, empty).
-- **Test stack:** `docker-compose.test.yml` passes
-  `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, so the stack enables
-  the flag. The `:-` form also turns the empty value `.env` carries (the template declares the key
-  empty) into `true`, and an explicit `false` runs the stack without the section. The committed
-  block and `FEATURE_FLAG_DEFAULTS` still say `false`, so production and every other environment
-  keep it off.
-- **Roll out:** the test stack enables it (Story 4.1); production enables it in Follow-up 5.1,
-  after a user-service release carries `signInUser` and the 2FA mutations. A browser spec that
-  replaces the runtime block with `overrideRuntimeConfig` replaces the whole block, so it sees the
-  flag off unless it names it; the 2FA specs name it, and the settings specs, which do not, render
-  `/settings` exactly as before.
-- **Owner:** the two-factor authentication feature (issue #331).
-- **Removal trigger:** delete the flag once production has run with it on; step 3 of the
-  lifecycle above applies.
+None. The mechanism stays in place for the next rollout: the `FeatureFlag` union is `never`,
+`FEATURE_FLAG_DEFAULTS` is empty, the committed block ships `{ "flags": {} }`, and the schema's
+`flags` object is strict, so a block or an environment that still names a removed flag fails fast.
 
 ### `forgotPassword` (removed)
 
@@ -139,7 +117,7 @@ retryable transient error rather than a missing page.
 `tests/unit/tooling/runtime-config-contract.test.ts` pins that the link is rendered and the
 route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any environment that still
 sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
-`Known flags: twoFactorAuth.` and must unset it.
+`Known flags: (none).` and must unset it.
 
 ### `/settings` ships without a flag
 
@@ -147,6 +125,8 @@ The user settings page (issue #330) and the three coming-soon settings pages
 `/settings/integrations`, `/settings/webhooks` and `/settings/billing` (issue #362) are not
 flagged: all four are registered in every environment, and the app shell always renders their
 entry points, the sidebar and drawer Settings group and the user menu's profile and Settings links.
+The page's two-factor section (issue #331) is not flagged either: `UserProfile` always renders
+it, and the sign-in challenge at `/sign-in/two-factor` is registered in every environment.
 
 ## Rules
 

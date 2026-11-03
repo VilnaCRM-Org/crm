@@ -111,23 +111,6 @@ describe('appConfig', () => {
     );
   });
 
-  it('accepts twoFactorAuth as an optional boolean and keeps it in the frozen values', async () => {
-    writeConfigBlock(JSON.stringify({ flags: { twoFactorAuth: true } }));
-
-    const { default: appConfig } = await loadAppConfig();
-
-    expect(appConfig.get().flags).toEqual({ twoFactorAuth: true });
-    expect(Object.isFrozen(appConfig.get().flags)).toBe(true);
-  });
-
-  it('fails fast when twoFactorAuth is not a boolean', async () => {
-    writeConfigBlock(JSON.stringify({ flags: { twoFactorAuth: 'true' } }));
-
-    await expect(loadAppConfig()).rejects.toThrow(
-      /Invalid runtime configuration[\s\S]*twoFactorAuth/
-    );
-  });
-
   it('aggregates every offending field into a single error', async () => {
     writeConfigBlock(
       JSON.stringify({ apiBaseUrl: 'not-a-url', graphqlUrl: 'also-not-a-url', unknownKey: 1 })

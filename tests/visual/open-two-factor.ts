@@ -1,10 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
 import { buildCredentials, seedFaker } from '@tests/builders';
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  signInToSettings,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   sectionOf,
-  signInToTwoFactorSettings,
   startOf,
 } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -37,7 +39,7 @@ export async function openChallenge(page: Page): Promise<void> {
 }
 
 export async function openTwoFactorSettings(page: Page): Promise<void> {
-  await signInToTwoFactorSettings(page);
+  await signInToSettings(page);
   await stubProfile(page);
   await stubSetup(page);
   await stubConfirm(page);
