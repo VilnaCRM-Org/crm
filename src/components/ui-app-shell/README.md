@@ -48,7 +48,11 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 
 `useShellLayout()` returns `'mobile'` below 1024 px, `'tablet'` from 1024 to 1439 px and
 `'desktop'` from 1440 px. It reads the two breakpoints from the crm scale (`lg`, `xl`) through
-`useMediaQuery` with `noSsr`, so the first render is already the right layout.
+`useMediaQuery` with `noSsr`, so the first render is already the right layout. The Figma values
+are pinned by test rather than duplicated as constants: `use-shell-layout.test.ts` asserts the
+layout at 1023, 1024, 1439 and 1440 px, and `app-layout.styles.tokens.test.ts` holds the frame's
+numeric 1024 and 1440 equal to the same `lg` and `xl`. A toolkit change to either value therefore
+fails both tests instead of moving the shell or splitting it from the frame.
 
 ## Header
 

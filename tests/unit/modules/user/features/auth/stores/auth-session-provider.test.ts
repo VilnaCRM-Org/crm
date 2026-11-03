@@ -52,7 +52,7 @@ describe('authSessionProvider', () => {
   });
 
   it('signs out unconditionally, the teardown logout shares with a rejected session', () => {
-    useAuthStore.setState({ token: buildToken(), email: buildEmail() });
+    useAuthStore.setState(CLEARED_AUTH_STATE);
     const clearUser = jest.spyOn(observabilityCore, 'clearUser');
     const signOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
 
