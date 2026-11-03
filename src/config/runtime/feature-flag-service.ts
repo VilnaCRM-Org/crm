@@ -2,7 +2,6 @@ import appConfigSource from './app-config-source';
 import type { FeatureFlag, FeatureFlagNames, FeatureFlagSnapshot } from './types/feature-flag';
 
 const FEATURE_FLAG_DEFAULTS: FeatureFlagSnapshot = Object.freeze({
-  userSettings: false,
   twoFactorAuth: false,
 });
 

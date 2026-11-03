@@ -97,14 +97,11 @@ const ROUTE_CONTRACTS = [
   'src/modules/user/features/settings/routes/index.ts',
 ];
 
-const isRegisteredIn = (sources: string[], routePathKey: string): boolean =>
-  sources.some((source) => new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source));
-
 const isRouteRegistered = (routePathKey: string): boolean =>
-  isRegisteredIn(ROUTE_CONTRACTS.map(readFile), routePathKey);
+  ROUTE_CONTRACTS.map(readFile).some((source) =>
+    new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source)
+  );
 
-const COMPOSE_FILES = ['docker-compose.yml', 'docker-compose.test.yml'];
-const USER_SETTINGS_ENV_VAR = `${FLAG_ENV_PREFIX}USER_SETTINGS`;
 const TWO_FACTOR_AUTH_ENV_VAR = `${FLAG_ENV_PREFIX}TWO_FACTOR_AUTH`;
 const AUTH_FEATURE = 'src/modules/user/features/auth';
 
@@ -131,12 +128,6 @@ const shippedTrueFlags = (defaults: Record<string, boolean>): string[] =>
     .filter(([, value]) => value)
     .map(([name]) => name)
     .sort();
-
-// A compose file may only switch the flag on by default once a route contract registers the
-// page the flag gates, otherwise the stack serves a flag with nothing behind it.
-const composeEnablesUnguardedSettings = (composeText: string, contractSources: string[]): boolean =>
-  new RegExp(`${USER_SETTINGS_ENV_VAR}[^\\n]*:-true`).test(composeText) &&
-  !isRegisteredIn(contractSources, 'settings');
 
 const routeCoverageRows = (routePathKey: string): string[][] =>
   readFile(ROUTE_COVERAGE)
@@ -202,57 +193,26 @@ describe('runtime configuration contract', () => {
 
     expect(shippedTrueFlags(featureFlagService.snapshot())).toEqual([]);
     expect(shippedTrueFlags(committed)).toEqual([]);
-    expect(committed).toEqual({ userSettings: false, twoFactorAuth: false });
+    expect(committed).toEqual({ twoFactorAuth: false });
   });
 
   it('fails the shipped-default check on a flag that ships true (must-fail)', () => {
-    expect(shippedTrueFlags({ userSettings: true, other: false })).toEqual(['userSettings']);
-    expect(shippedTrueFlags({ userSettings: false })).toEqual([]);
+    expect(shippedTrueFlags({ twoFactorAuth: true, other: false })).toEqual(['twoFactorAuth']);
+    expect(shippedTrueFlags({ twoFactorAuth: false })).toEqual([]);
   });
 
-  it('keeps every compose file from enabling userSettings before its route exists', () => {
-    const contracts = ROUTE_CONTRACTS.map(readFile);
-
-    for (const file of COMPOSE_FILES) {
-      expect({ file, enabled: composeEnablesUnguardedSettings(readFile(file), contracts) }).toEqual(
-        { file, enabled: false }
-      );
-    }
+  it('declares an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH in the environment template', () => {
+    expect(readFile('.env.example').split('\n')).toContain(`${TWO_FACTOR_AUTH_ENV_VAR}=`);
   });
 
-  it('fails a compose default of true with no settings route registered (must-fail)', () => {
-    const compose = `      - ${USER_SETTINGS_ENV_VAR}=\${${USER_SETTINGS_ENV_VAR}:-true}`;
-    const registered = ['{ path: ROUTE_PATHS.settings, load }'];
-
-    expect(composeEnablesUnguardedSettings(compose, ['{ path: ROUTE_PATHS.signIn }'])).toBe(true);
-    expect(composeEnablesUnguardedSettings(compose, registered)).toBe(false);
-    expect(
-      composeEnablesUnguardedSettings(`      - ${USER_SETTINGS_ENV_VAR}=\${X:-false}`, [])
-    ).toBe(false);
-    expect(composeEnablesUnguardedSettings('image: node', [])).toBe(false);
-  });
-
-  it('declares an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH right after USER_SETTINGS', () => {
-    const lines = readFile('.env.example').split('\n');
-    const userSettings = lines.indexOf(`${USER_SETTINGS_ENV_VAR}=`);
-
-    expect(userSettings).toBeGreaterThan(-1);
-    expect(lines[userSettings + 1]).toBe(`${TWO_FACTOR_AUTH_ENV_VAR}=`);
-  });
-
-  it('turns an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH into true beside userSettings', () => {
+  it('turns an empty APP_CONFIG_FLAG_TWO_FACTOR_AUTH into true in the test stack only', () => {
     const lines = readFile('docker-compose.test.yml').split('\n');
-    const userSettings = lines.findIndex((line) => line.includes(`${USER_SETTINGS_ENV_VAR}=`));
 
-    expect(userSettings).toBeGreaterThan(-1);
     expect(
       lines
         .filter((line) => line.includes(`${TWO_FACTOR_AUTH_ENV_VAR}=`))
         .map((line) => line.trim())
     ).toEqual([`- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`]);
-    expect(lines[userSettings + 1]?.trim()).toBe(
-      `- ${TWO_FACTOR_AUTH_ENV_VAR}=\${${TWO_FACTOR_AUTH_ENV_VAR}:-true}`
-    );
     expect(readFile('docker-compose.yml')).not.toContain(TWO_FACTOR_AUTH_ENV_VAR);
   });
 
@@ -290,7 +250,7 @@ describe('runtime configuration contract', () => {
     expect(
       filesNamingTheFlag({
         'a.ts': "useFeatureFlag('twoFactorAuth')",
-        'b.ts': 'flag: "userSettings"',
+        'b.ts': 'flag: "otherFlag"',
         'c.ts': 'const twoFactorAuth = 1;',
       })
     ).toEqual(['a.ts', 'c.ts']);
@@ -335,7 +295,7 @@ describe('runtime configuration contract', () => {
     });
   });
 
-  it('registers the settings route behind its flag and covers it in the e2e suite (#330)', () => {
+  it('registers the settings route and covers it in the e2e and visual suites (#330)', () => {
     expect(ROUTE_CONTRACTS).toContain('src/modules/user/features/settings/routes/index.ts');
     expect(isRouteRegistered('settings')).toBe(true);
 

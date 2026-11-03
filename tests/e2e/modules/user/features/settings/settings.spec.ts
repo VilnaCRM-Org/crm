@@ -1,16 +1,9 @@
-import type { Page, Request } from '@playwright/test';
-
 import { buildCredentials } from '@tests/builders';
-import { chipOf, sidebarOf, sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
+import { chipOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
-import {
-  bounceFromProtectedDestination,
-  navigateClientSide,
-  signOutToSignIn,
-} from '@tests/e2e/utils/sign-out';
+import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 import fillInput from '../../../../utils/fill-input';
 import { t } from '../../../../utils/initialize-localization';
@@ -20,19 +13,15 @@ import {
   replyWithGraphQLError,
   replyWithProfile,
   signInToSettings,
-  signInWithFlag,
   stubProfile,
   type StubbedProfile,
 } from './utils/profile-stub';
 
 const SETTINGS_URL = '/settings';
-const SETTINGS_CHUNK = /\/settings(?:\.[\w-]+)?\.js$/;
 
 const settingsTitle: string = `${t('settings.title')} - VilnaCRM`;
 const settingsHeading: string = t('settings.heading');
-const homeHeading: string = t('home.heading');
 const settingsSubtitle: string = t('settings.subtitle');
-const notFoundTitle: string = t('error_page.not_found.title');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const passwordPlaceholder: string = t('sign_in.form.password_input.placeholder');
 const submitLabel: string = t('sign_in.form.submit_button');
@@ -43,33 +32,10 @@ const tryAgain: string = t('auth.error.tryAgain');
 
 const credentials = buildCredentials();
 
-const setFlag = (page: Page, userSettings: boolean): Promise<void> =>
-  overrideRuntimeConfig(page, { flags: { userSettings } });
-
 const reads = (stub: StubbedProfile): number => stub.count('CurrentUser');
 
-async function expectNotFoundWithoutChunk(page: Page, signedIn: boolean): Promise<void> {
-  const chunkRequests: string[] = [];
-  page.on('request', (request: Request) => {
-    if (SETTINGS_CHUNK.test(new URL(request.url()).pathname)) chunkRequests.push(request.url());
-  });
-  if (signedIn) {
-    await signInWithFlag(page, false);
-    await page.goto(SETTINGS_URL);
-  } else {
-    await setFlag(page, false);
-    await signOutToSignIn(page);
-    await navigateClientSide(page, SETTINGS_URL);
-  }
-
-  await expect(page).toHaveURL(SETTINGS_URL);
-  await expect(page.getByRole('heading', { level: 1, name: notFoundTitle })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1, name: settingsHeading })).toHaveCount(0);
-  expect(chunkRequests).toEqual([]);
-}
-
 test.describe('Settings route', () => {
-  test('renders the page shell for a signed-in user while the flag is on', async ({ page }) => {
+  test('renders the page shell for a signed-in user', async ({ page }) => {
     await signInToSettings(page);
     await stubProfile(page);
 
@@ -117,7 +83,6 @@ test.describe('Settings route', () => {
   test('sends a signed-out visitor to sign-in and back to settings after login', async ({
     page,
   }) => {
-    await setFlag(page, true);
     await stubProfile(page);
     await stubSignIn(page, ['session']);
 
@@ -137,29 +102,5 @@ test.describe('Settings route', () => {
 
     await expect(page).toHaveURL(SETTINGS_URL);
     await expect(page.getByRole('heading', { level: 1, name: settingsHeading })).toBeVisible();
-  });
-
-  test('shows the not-found page and requests no settings chunk for a signed-in user', async ({
-    page,
-  }) => {
-    await expectNotFoundWithoutChunk(page, true);
-  });
-
-  test('shows the not-found page and requests no settings chunk after signing out', async ({
-    page,
-  }) => {
-    await expectNotFoundWithoutChunk(page, false);
-  });
-
-  test('shows the home page with no settings link in the shell while the flag is off', async ({
-    page,
-  }) => {
-    await signInWithFlag(page, false);
-
-    await page.goto('/');
-
-    await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
-    await expect(sidebarOf(page)).toBeVisible();
-    await expect(sidebarSettingsOf(page)).toHaveCount(0);
   });
 });

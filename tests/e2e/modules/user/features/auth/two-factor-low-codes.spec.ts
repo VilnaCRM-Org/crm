@@ -16,7 +16,6 @@ import {
   replyWithRemainingCodes,
   stubChallenge,
 } from '@tests/e2e/utils/two-factor-responses';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 import { stubProfile } from '../settings/utils/profile-stub';
 
@@ -41,7 +40,6 @@ const noticeRegionOf = (page: Page, text: string): ReturnType<Page['getByRole']>
   page.getByRole('status').filter({ hasText: text });
 
 async function landWith(page: Page, remaining: number | null): Promise<void> {
-  await overrideRuntimeConfig(page, { flags: { userSettings: true } });
   await stubProfile(page);
   await stubChallenge(page, [
     remaining === null ? 'completed' : replyWithRemainingCodes(remaining),

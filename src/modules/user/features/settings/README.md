@@ -1,9 +1,9 @@
 # Settings feature
 
-The user settings page (issue #330): `/settings`, a protected route behind the `userSettings`
-runtime flag. A signed-in user reads their profile, changes the name, the e-mail and the
-password in one form, resends the confirmation link and sees every outcome as a toast or a field
-error. The decisions are recorded in `## User Settings decisions` of the
+The user settings page (issue #330): `/settings`, a protected route registered in every
+environment, with no feature flag. A signed-in user reads their profile, changes the name, the
+e-mail and the password in one form, resends the confirmation link and sees every outcome as a
+toast or a field error. The decisions are recorded in `## User Settings decisions` of the
 [user module README](../../README.md).
 
 ## What is here
@@ -15,14 +15,13 @@ error. The decisions are recorded in `## User Settings decisions` of the
   `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`, `user-menu` (the
   app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
 - `components/user-menu/user-menu-slot.tsx` — `UserMenuSlot`, the `user-menu` chunk entry. It
-  mounts one `UserMenu` for its whole life and owns the identity it shows. While `userSettings` is
-  on it lazy-loads only the identity source, `CurrentUserMenu` (chunk `current-user`), which
+  mounts one `UserMenu` for its whole life and owns the identity it shows. It lazy-loads only the
+  identity source, `CurrentUserMenu` (chunk `current-user`), which
   renders nothing, calls `useCurrentUser()` and reports the identity through `onIdentity`. The
   Suspense fallback around it renders nothing too, because the loading UI is the name-less chip
   outside the boundary. So the chip, its focus, an open menu with its focused item, the menu id and
   the once-only Sign out survive the chunk arriving: only the chip's name and monogram change. A
-  failed chunk is reported once as `app-shell:current-user` and the chip stays name-less; with the
-  flag off nothing is loaded or read.
+  failed chunk is reported once as `app-shell:current-user` and the chip stays name-less.
 - The chip's read is container-free, so a protected page never downloads tsyringe, the
   composition root, Apollo or zod for it (mobile Lighthouse script budget on `/`).
   `useCurrentUser` takes the `session` from `ProtectedRoute`'s outlet context
@@ -50,8 +49,8 @@ error. The decisions are recorded in `## User Settings decisions` of the
 
 ## Contract
 
-- The route is always registered; the `RouteFlagGate` shows the not-found page while
-  `userSettings` is off, so the page chunk is never requested (see `src/routes/README.md`).
+- The route is always registered and guarded by `ProtectedRoute`; the home page links to it
+  (see `src/routes/README.md`).
 - The page registers its catalog through the shared `lazyCatalogLoader`
   (`src/lib/locale-catalog`) when the route module evaluates,
   before `usePageTitle('settings.title')` runs. The catalog is listed in
@@ -77,8 +76,7 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 
 - `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
   an assertive one for error texts, both always mounted, at most three on screen.
-- The `RouteFlagGate` and the route `flag` field, and the `SettingsGrid` whose second slot is
-  reserved for the two-factor card.
+- The `SettingsGrid`, whose second slot is reserved for the two-factor card.
 
 ## Page tree
 

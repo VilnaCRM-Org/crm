@@ -22,7 +22,6 @@ const renderMenu = (props: Partial<MenuProps> = {}, path = '/'): ReturnType<type
           <>
             <UserMenu
               identity={props.identity === undefined ? identity : props.identity}
-              settingsAvailable={props.settingsAvailable ?? true}
               signOut={props.signOut ?? jest.fn()}
             />
             <button type="button">after</button>
@@ -98,15 +97,6 @@ describe('UserMenu', () => {
         .map((item) => item.textContent)
     ).toEqual(['Мій профіль', 'Налаштування', 'Вийти']);
     expect(within(menu).getAllByRole('menuitem')[0]).toHaveFocus();
-  });
-
-  it('holds only Sign out while settings are unavailable', async () => {
-    const user = userEvent.setup();
-    renderMenu({ settingsAvailable: false });
-
-    await user.click(chip());
-
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Вийти']);
   });
 
   it('moves focus with ArrowDown, ArrowUp, Home and End, wrapping at both ends', async () => {
@@ -296,10 +286,9 @@ describe('UserMenu', () => {
   it('publishes an aria-hidden copy of its own avatar through onAvatar', () => {
     const onAvatar = jest.fn();
     stubViewportWidth(375);
-    renderShell(
-      <UserMenu identity={identity} settingsAvailable signOut={jest.fn()} onAvatar={onAvatar} />,
-      { locale: 'uk' }
-    );
+    renderShell(<UserMenu identity={identity} signOut={jest.fn()} onAvatar={onAvatar} />, {
+      locale: 'uk',
+    });
 
     expect(onAvatar).toHaveBeenCalledTimes(1);
     renderShell(<>{onAvatar.mock.calls[0]?.[0]}</>);
