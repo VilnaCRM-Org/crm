@@ -191,8 +191,11 @@ default cache policy (it writes the token and password under `ROOT_MUTATION`); a
 endpoint limiter with HTTP 429.
 
 **Decision.** `UserServiceErrorTransformer.normalize` classifies by shape first — abort, network
-status, a violated input property prefix, a numeric `extensions.status`, any other message as a
-refusal, otherwise unknown — and `PasswordRecoveryTransformer.fromFailure` then maps that failure
+status, a violated input property prefix on any line of the message (a `token` violation in any
+line or any GraphQL error takes precedence, FR-22), a numeric `extensions.status`, then, for an
+error with neither, a message with no `extensions.code` as a refusal and a coded one
+(`INTERNAL_SERVER_ERROR`, `GRAPHQL_VALIDATION_FAILED`, `BAD_REQUEST`, …) as unknown; no GraphQL
+error at all is unknown too — and `PasswordRecoveryTransformer.fromFailure` then maps that failure
 by step (`request` or `confirm`) to one recovery outcome through a data table. No step reads a
 translated message for meaning.
 
