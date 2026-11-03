@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 
 import UIAppShell from '@/components/ui-app-shell';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import type { UserMenuSlot } from '@/routes/types/shell-slot';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
@@ -37,10 +36,6 @@ const renderAt = (width: number, userMenu?: UserMenuSlot, signOut = jest.fn()): 
 };
 
 describe('UIAppShell', () => {
-  beforeEach(() => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
-  });
-
   afterEach(() => {
     jest.restoreAllMocks();
     Reflect.deleteProperty(window, 'matchMedia');

@@ -24,7 +24,7 @@ function ReadingMenu({ onIdentity }: CurrentUserMenuProps): JSX.Element {
 
   return (
     <>
-      <UserMenu identity={identity} settingsAvailable signOut={noop} />
+      <UserMenu identity={identity} signOut={noop} />
       <CurrentUserMenu onIdentity={report} />
     </>
   );

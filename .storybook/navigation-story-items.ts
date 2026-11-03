@@ -2,21 +2,10 @@ import type {
   NavigationGroup,
   NavigationItem,
   NavigationItemSet,
-  NavigationLeaf,
 } from '../src/components/types/ui-app-shell/navigation-item';
 import navigationItems from '../src/components/ui-app-shell/navigation-items';
 
-const unflagged = (leaf: NavigationLeaf): NavigationLeaf => ({ ...leaf, flag: undefined });
-
-const unflaggedItem = (item: NavigationItem): NavigationItem =>
-  'children' in item
-    ? ({
-        ...unflagged(item),
-        children: { items: item.children.items.map(unflagged) },
-      } satisfies NavigationGroup)
-    : unflagged(item);
-
-export const storyItems: NavigationItemSet = { items: navigationItems.items.map(unflaggedItem) };
+export const storyItems: NavigationItemSet = navigationItems;
 
 const isGroup = (item: NavigationItem): item is NavigationGroup => 'children' in item;
 
