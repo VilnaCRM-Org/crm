@@ -279,12 +279,15 @@ describe('resolvers Mutation createUser', () => {
       expect(result.user.email).toBe('user123@example456.com');
     });
 
-    it('should accept email with consecutive dots (current regex allows this)', async () => {
-      const input: CreateUserInput = buildCreateUserInput({ email: 'user..name@example.com' });
+    it.each(['user..name@example.com', '.user@example.com', 'user.@example.com'])(
+      "should accept %s, as user-service's html5 email mode does",
+      async (email) => {
+        const input: CreateUserInput = buildCreateUserInput({ email });
 
-      const result = await resolvers.Mutation.createUser(undefined, { input });
-      expect(result.user.email).toBe('user..name@example.com');
-    });
+        const result = await resolvers.Mutation.createUser(undefined, { input });
+        expect(result.user.email).toBe(email);
+      }
+    );
 
     it('should accept initials with only spaces if length >= 2 (current validation)', async () => {
       const input: CreateUserInput = buildCreateUserInput({ initials: '   ' });

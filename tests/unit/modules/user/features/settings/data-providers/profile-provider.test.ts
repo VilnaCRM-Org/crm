@@ -6,6 +6,7 @@ import ProfileProvider from '@/modules/user/features/settings/data-providers/pro
 import type GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import UnseenFailureReporter from '@/services/observability/unseen-failure-reporter';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import { buildProfileChange, buildUserIri, buildUserNode } from '@tests/builders';
 
@@ -33,7 +34,7 @@ const build = (): {
   const provider = new ProfileProvider(
     repository as unknown as GraphQLProfileRepository,
     transformer,
-    { captureError } as unknown as ObservabilityService
+    new UnseenFailureReporter({ captureError } as unknown as ObservabilityService)
   );
   return { provider, repository, transformer, errors, captureError };
 };
