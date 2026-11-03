@@ -5,7 +5,6 @@ import { Route, Routes } from 'react-router';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import UISidebar from '@/components/ui-sidebar';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
@@ -37,14 +36,6 @@ const renderSidebar = (
   );
 
 describe('UISidebar', () => {
-  beforeEach(() => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it('is one navigation landmark named Main navigation holding one ordered list', () => {
     renderSidebar();
 

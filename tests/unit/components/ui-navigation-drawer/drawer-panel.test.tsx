@@ -6,7 +6,6 @@ import { Route, Routes, useNavigate } from 'react-router';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import DrawerPanel from '@/components/ui-navigation-drawer/drawer-panel';
-import featureFlagService from '@/config/runtime/feature-flag-service';
 import renderShell from '@tests/unit/utils/render-shell';
 
 function Probe({ onNavigate }: { onNavigate: () => void }): ReactElement {
@@ -32,14 +31,6 @@ const renderPanel = (onNavigate = jest.fn(), path = '/'): ReturnType<typeof rend
   );
 
 describe('DrawerPanel', () => {
-  beforeEach(() => {
-    jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it('shows the disabled search above one navigation named Main navigation', () => {
     renderPanel();
 

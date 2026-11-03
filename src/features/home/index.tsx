@@ -7,7 +7,6 @@ import UIButton from '@/components/ui-button';
 import UIContainer from '@/components/ui-container';
 import UILink from '@/components/ui-link';
 import UITypography from '@/components/ui-typography';
-import useFeatureFlag from '@/hooks/use-feature-flag';
 import usePageTitle from '@/hooks/use-page-title';
 import ROUTE_PATHS from '@/routes/route-paths';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
@@ -34,7 +33,6 @@ export default function Home(): JSX.Element {
   usePageTitle('home.title');
   const { t } = useTranslation();
   const { signOut } = useOutletContext<ProtectedOutletContext>();
-  const settingsEnabled = useFeatureFlag('userSettings');
 
   return (
     <UIContainer>
@@ -43,7 +41,7 @@ export default function Home(): JSX.Element {
           {t('home.heading')}
         </UITypography>
         <UITypography sx={styles.description}>{t('home.description')}</UITypography>
-        {settingsEnabled && <SettingsLink />}
+        <SettingsLink />
         <UIButton variant="outlined" onClick={signOut} sx={styles.signOut}>
           {t('home.sign_out')}
         </UIButton>

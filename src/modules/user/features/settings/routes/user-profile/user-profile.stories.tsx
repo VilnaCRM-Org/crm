@@ -23,7 +23,7 @@ const meta: Meta<typeof UserProfile> = {
           'and echoes a Save back as saved, `LoadFailed` answers every request as a transient ' +
           'failure. The token is shared by every story in one frame, so the docs page renders ' +
           'each story in its own frame. In the app it renders inside AppLayout, behind ' +
-          'ProtectedRoute and the userSettings flag.',
+          'ProtectedRoute.',
       },
       story: { inline: false },
     },
