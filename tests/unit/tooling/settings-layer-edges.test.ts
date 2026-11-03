@@ -73,12 +73,61 @@ const realFiles = (): SourceFile[] =>
     .filter((file) => /\.(ts|tsx)$/.test(file) && !/\.(test|stories)\.tsx?$/.test(file))
     .map((file) => ({ file, source: fs.readFileSync(path.join(repoRoot, file), 'utf-8') }));
 
+const AUTH_FEATURE = 'src/modules/user/features/auth';
+
+const reachesAuth = (target: string): boolean =>
+  target === '@auth' ||
+  target.startsWith('@auth/') ||
+  target === AUTH_FEATURE ||
+  target.startsWith(`${AUTH_FEATURE}/`);
+
+const authEdgesOf = (files: SourceFile[]): string[] =>
+  files.flatMap((sourceFile) =>
+    edgesOf(sourceFile)
+      .filter(({ target }) => reachesAuth(target))
+      .map(({ target }) => `${sourceFile.file}: imports the auth feature (${target})`)
+  );
+
+const allSettingsFiles = (): SourceFile[] =>
+  walk(path.join(repoRoot, settingsRoot))
+    .filter((file) => /\.(ts|tsx)$/.test(file) && !/\.(test|stories)\.tsx?$/.test(file))
+    .map((file) => ({ file, source: fs.readFileSync(path.join(repoRoot, file), 'utf-8') }));
+
 const fixture = (file: string, source: string): SourceFile => ({
   file: `${settingsRoot}/${file}`,
   source,
 });
 
 describe('settings layer edges (AR-8)', () => {
+  it('keeps every settings source file off the auth feature', () => {
+    const files = allSettingsFiles();
+
+    expect(files.length).toBeGreaterThan(realFiles().length);
+    expect(authEdgesOf(files)).toEqual([]);
+  });
+
+  it.each([
+    ['the @auth barrel', "import { LoginForm } from '@auth';\n", '@auth'],
+    [
+      'a deep @auth path',
+      "import useAuthStore from '@auth/stores/use-auth-store';\n",
+      '@auth/stores/use-auth-store',
+    ],
+    [
+      'a relative path into the feature',
+      "import x from '../../auth/hooks/use-thing';\n",
+      'src/modules/user/features/auth/hooks/use-thing',
+    ],
+    [
+      'a type-only import',
+      "import type { AuthError } from '@auth/types/auth-error';\n",
+      '@auth/types/auth-error',
+    ],
+  ])('rejects %s from a settings file', (_label, source, target) => {
+    const file = fixture('hooks/use-thing.ts', source);
+
+    expect(authEdgesOf([file])).toEqual([`${file.file}: imports the auth feature (${target})`]);
+  });
   it('finds the guarded files', () => {
     expect(realFiles().length).toBeGreaterThan(0);
   });
