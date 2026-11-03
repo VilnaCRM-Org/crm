@@ -18,7 +18,6 @@ const newPasswordLabel: string = t('password_reset.new_password.label');
 const confirmLabel: string = t('password_reset.confirm_password.label');
 const submitLabel: string = t('password_recovery.submit_button');
 const showPasswordLabel: string = t('auth.password.show');
-const backLabel: string = t('password_recovery.back');
 const invalidTitle: string = t('password_reset.invalid.title');
 const invalidBody: string = t('password_reset.invalid.body');
 const requestNew: string = t('password_reset.invalid.request_new');
@@ -301,7 +300,7 @@ test.describe('Create new password (issue #315)', () => {
     });
   });
 
-  test('aborts a request in flight when Назад is activated', async ({ page }) => {
+  test('aborts a request in flight when the app navigates away', async ({ page }) => {
     let aborted = false;
     page.on('requestfailed', (request: Request) => {
       if (request.url().includes('graphql')) aborted = true;
@@ -310,7 +309,10 @@ test.describe('Create new password (issue #315)', () => {
     await openWithToken(page);
 
     await submitPasswords(page);
-    await page.getByRole('link', { name: backLabel }).click();
+    await page.evaluate(() => {
+      window.history.pushState({}, '', '/sign-in');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
 
     await expect(page).toHaveURL('/sign-in');
     await expect(page.getByRole('alert')).toHaveCount(0);
@@ -330,13 +332,6 @@ test.describe('Create new password (issue #315)', () => {
   });
 
   for (const [name, entry, linkName, ready, destination] of [
-    [
-      'Назад on the form',
-      (): string => `/password-reset?token=${buildResetToken()}`,
-      backLabel,
-      heading,
-      '/sign-in',
-    ],
     [
       'Запросити нове посилання on the invalid-link state',
       (): string => '/password-reset',

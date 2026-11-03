@@ -42,9 +42,12 @@ describe('DrawerHeader', () => {
     renderShell(<DrawerHeader onDismiss={onDismiss} />);
 
     await user.click(screen.getByRole('button', { name: 'Close menu' }));
-    await user.keyboard('{Enter}');
-    await user.keyboard(' ');
+    expect(onDismiss).toHaveBeenCalledTimes(1);
 
+    await user.keyboard('{Enter}');
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+
+    await user.keyboard(' ');
     expect(onDismiss).toHaveBeenCalledTimes(3);
   });
 
