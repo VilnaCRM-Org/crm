@@ -46,7 +46,7 @@ describe('route registry', () => {
     ]);
   });
 
-  it('declares the settings page as a protected route behind the userSettings flag', () => {
+  it('declares the settings page as a protected route', () => {
     const settings = registry.items
       .flatMap((module) => module.routes)
       .find((route) => route.path === ROUTE_PATHS.settings);
@@ -55,7 +55,6 @@ describe('route registry', () => {
       settings,
     ]);
     expect(settings?.guard).toBe('protected');
-    expect(settings?.flag).toBe('userSettings');
     expect(settings?.meta?.titleKey).toBe('settings.title');
   });
 

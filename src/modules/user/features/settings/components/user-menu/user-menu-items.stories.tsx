@@ -14,7 +14,6 @@ const meta: Meta<typeof UserMenuItems> = {
   args: {
     layout: 'desktop',
     menuId: 'user-menu',
-    settingsAvailable: true,
     menu: openMenu,
     signOut: noop,
   },
@@ -32,8 +31,8 @@ const meta: Meta<typeof UserMenuItems> = {
       description: {
         component:
           'The menu: "My profile", "Settings" and "Sign out" as `menuitem`s, arrow keys, Home ' +
-          'and End moving focus with wrap. While `userSettings` is off only "Sign out" remains. ' +
-          'No item shows a ripple; the focused item takes the hover background.',
+          'and End moving focus with wrap. No item shows a ripple; the focused item takes the ' +
+          'hover background.',
       },
       story: { inline: false },
     },
@@ -45,7 +44,5 @@ export default meta;
 type Story = StoryObj<typeof UserMenuItems>;
 
 export const ThreeItems: Story = {};
-
-export const SignOutOnly: Story = { args: { settingsAvailable: false } };
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
