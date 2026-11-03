@@ -888,7 +888,10 @@ result view, one container-free provider loader) instead of copying the sign-in 
 ### NFR-4 — Lint, types and architecture
 
 ESLint 0 errors and 0 warnings, `tsc` 0 errors under the strict flags, dependency-cruiser 0
-violations, no `eslint-disable`, `@ts-ignore`, `depcruise-ignore` or inline suppression of any kind.
+violations, no `eslint-disable`, `@ts-ignore`, `depcruise-ignore` or other inline suppression. The
+one exception is NFR-2's: a `// Stryker disable next-line <Mutator>: <proof>` annotation on a
+provably equivalent mutant (CLAUDE.md "Honest mutant classification"). The feature carries one,
+on the `useWatch` `ObjectLiteral` in `create-new-password-form.tsx`, with its proof inline.
 The feature keeps every convention the gates encode, including the typed-boundary gate (NFR-17) and
 the board's layer vocabulary (NFR-18): classes only outside React components, no static members or
 free functions, type-only files, approved class-name suffixes, collaborators through DI tokens, the
