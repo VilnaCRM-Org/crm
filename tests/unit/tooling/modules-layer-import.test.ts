@@ -25,6 +25,9 @@ describe('modulesLayerImport (issue #362)', () => {
     ["import UIButton from '@/components/ui-button';"],
     ["import('@/components/coming-soon')"],
     ["const label = 'see @/modules/user in the docs';"],
+    ["import authors from '@authors/list';"],
+    ["import modulesFoo from '@/modulesFoo';"],
+    ["import('@/modules-catalog')"],
   ])('leaves %s alone', (source) => {
     expect(source).not.toMatch(modulesLayerImport);
   });

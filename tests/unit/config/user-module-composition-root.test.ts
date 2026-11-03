@@ -133,7 +133,7 @@ describe('user module composition root', () => {
 
     expectAllRegistered(child, PASSWORD_RECOVERY_TOKENS);
     child.register(AUTH_TOKENS.ApolloClient, { useValue: {} });
-    child.register(OBSERVABILITY_TOKENS.ObservabilityService, { useValue: {} });
+    child.register(OBSERVABILITY_TOKENS.UnseenFailureReporter, { useValue: {} });
     const provider = child.resolve(AUTH_TOKENS.PasswordRecoveryProvider);
     expect(provider).toBeInstanceOf(PasswordRecoveryProvider);
     expect(child.resolve(AUTH_TOKENS.PasswordRecoveryProvider)).toBe(provider);
@@ -153,7 +153,7 @@ describe('user module composition root', () => {
 
     expectAllRegistered(child, SETTINGS_TOKENS);
     child.register(AUTH_TOKENS.ApolloClient, { useValue: {} });
-    child.register(OBSERVABILITY_TOKENS.ObservabilityService, { useValue: {} });
+    child.register(OBSERVABILITY_TOKENS.UnseenFailureReporter, { useValue: {} });
     const provider = child.resolve(AUTH_TOKENS.ProfileProvider);
     expect(provider).toBeInstanceOf(ProfileProvider);
     expect(child.resolve(AUTH_TOKENS.ProfileProvider)).toBe(provider);
