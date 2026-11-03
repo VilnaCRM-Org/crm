@@ -287,7 +287,12 @@ describe('performance serving config', () => {
     expect(loginFormSource).toContain(
       'const RegistrationNotification = lazy(() => registrationNotificationLoader.load());'
     );
-    expect(loginFormSource).toContain('prefetcher.prefetch();');
+    expect(loginFormSource).toContain(
+      'const [prefetcher] = useState(() => new RegistrationNotificationPrefetcher());'
+    );
+    expect(loginFormSource).toContain(
+      '    prefetcher.prefetch();\n    return submitter.handleLogin(data);'
+    );
     expect(loginFormSource).not.toContain(
       "from '@auth/components/form-section/auth-forms/registration-notification';"
     );

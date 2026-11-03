@@ -96,8 +96,9 @@ stage.
 A VilnaCRM user who forgot the password gets a self-service way back in. The flow has two
 screens, matching the two components on the Miro User/Auth diagram:
 
-- **Reset Password** (`/password-recovery`): the user enters an e-mail and is told, in every
-  case, to check the inbox.
+- **Reset Password** (`/password-recovery`): the user enters an e-mail and, once the request
+  resolves, is told to check the inbox whatever the address (FR-9); a validation error,
+  the rate limit or a transport failure keeps the form with its message (FR-12 to FR-14).
 - **Create new password** (`/password-reset`): the user opens the e-mailed link, sets and
   confirms a new password, and is sent to `/sign-in` with a one-time success notice.
 
