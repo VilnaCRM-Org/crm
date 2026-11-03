@@ -7,11 +7,16 @@ import type { CancelButtonProps } from '../../types/components/two-factor-settin
 
 import styles from './styles';
 
-export default function CancelButton({ onCancel, disabled }: CancelButtonProps): JSX.Element {
+export default function CancelButton({
+  onCancel,
+  disabled,
+  buttonRef,
+}: CancelButtonProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
     <UIButton
+      ref={buttonRef}
       type="button"
       variant="outlined"
       onClick={onCancel}
