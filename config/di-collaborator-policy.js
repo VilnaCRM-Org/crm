@@ -195,6 +195,25 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free handlers factory consumed by the registration hook.',
   },
   {
+    path: 'src/modules/user/features/auth/stores/auth-session-provider.ts',
+    reason:
+      'Container-free session the protected outlet context hands the shell: it reads the ' +
+      'in-memory token and ends a session the API rejected, off the container (issue #362).',
+  },
+  {
+    path: 'src/modules/user/features/settings/utils/current-user-client.ts',
+    reason:
+      'Container-free GraphQL transport for the app-shell chip: runtime URL, Bearer token, ' +
+      'correlation headers and the request deadline without Apollo or tsyringe (issue #362).',
+  },
+  {
+    path: 'src/modules/user/features/settings/utils/current-user-source.ts',
+    reason:
+      'Container-free current-user read behind the app-shell chip; composes the client, the ' +
+      'response parser and the display-name mapper and reports through observabilityCore ' +
+      '(issue #362).',
+  },
+  {
     path: 'src/modules/user/features/auth/utils/auth-error-reporter.ts',
     reason: 'Container-free reporter used by the auth error boundary before DI is loaded.',
   },

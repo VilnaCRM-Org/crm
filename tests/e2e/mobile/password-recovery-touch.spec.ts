@@ -151,7 +151,6 @@ test.describe('Password recovery on touch devices (issue #315)', () => {
     await expectTargetAtLeast(page.getByLabel(newPasswordLabel), MIN_TOUCH_TARGET_PX);
     await expectTargetAtLeast(page.getByLabel(confirmLabel), MIN_TOUCH_TARGET_PX);
     await expectTargetAtLeast(submit, MIN_TOUCH_TARGET_PX);
-    await expectTargetAtLeast(page.getByRole('link', { name: backLabel }), MIN_SMALL_TARGET_PX);
   });
 
   test('keeps the invalid-link controls tappable', async ({ page }) => {

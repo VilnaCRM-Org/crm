@@ -240,6 +240,22 @@ describe('settings page save outcomes (page)', () => {
     expect(await screen.findByText(GENERIC)).toBeVisible();
   });
 
+  it('shows the generic toast for "Access Denied." and keeps the session', async () => {
+    await mount();
+    await editName();
+    const { token } = useAuthStore.getState();
+
+    await submitWith(() =>
+      graphQLError({ message: 'Access Denied.', extensions: { code: 'FORBIDDEN', status: 403 } })
+    );
+
+    expect(await screen.findByText(GENERIC)).toBeVisible();
+    expect(screen.queryByRole('button', { name: RETRY })).not.toBeInTheDocument();
+    await waitFor(() => expect(saveButton()).toHaveFocus());
+    expect(field(NAME)).toHaveValue('Іван Коваль');
+    expect(useAuthStore.getState().token).toBe(token);
+  });
+
   it('shows the rate-limit toast without an action for an HTTP 429', async () => {
     await mount();
     await editName();

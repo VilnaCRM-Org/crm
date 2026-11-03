@@ -27,18 +27,43 @@ export async function readClientState(): Promise<ClientStateDump> {
       .map((key) => `${key}=${storage.getItem(key)}`)
       .join('\n');
 
-  const passThroughTags = new Set(['Object', 'Array', 'Number', 'String', 'Boolean']);
+  const tagOf = (item: object): string => Object.prototype.toString.call(item).slice(8, -1);
 
-  const readable = (item: object): unknown => {
-    const tag = Object.prototype.toString.call(item).slice(8, -1);
-    if (tag === 'Map') return Array.from(item as Map<unknown, unknown>);
-    if (tag === 'Set') return Array.from(item as Set<unknown>);
-    if (tag === 'ArrayBuffer' || ArrayBuffer.isView(item)) {
-      return new TextDecoder().decode(item as ArrayBuffer);
-    }
-    if (passThroughTags.has(tag)) return item;
-    throw new Error(`Cannot serialise a ${tag}`);
+  const keep = (item: object): unknown => item;
+
+  const decode = (item: object): unknown => new TextDecoder().decode(item as ArrayBuffer);
+
+  const refuse = (item: object): never => {
+    throw new Error(`Cannot serialise a ${tagOf(item)}`);
   };
+
+  const byteTags = [
+    'ArrayBuffer',
+    'DataView',
+    'Int8Array',
+    'Uint8Array',
+    'Uint8ClampedArray',
+    'Int16Array',
+    'Uint16Array',
+    'Int32Array',
+    'Uint32Array',
+    'Float16Array',
+    'Float32Array',
+    'Float64Array',
+    'BigInt64Array',
+    'BigUint64Array',
+  ];
+
+  const readers = new Map<string, (item: object) => unknown>([
+    ['Map', (item): unknown => Array.from(item as Map<unknown, unknown>)],
+    ['Set', (item): unknown => Array.from(item as Set<unknown>)],
+    ...byteTags.map((tag): [string, (item: object) => unknown] => [tag, decode]),
+    ...['Object', 'Array', 'Number', 'String', 'Boolean'].map(
+      (tag): [string, (item: object) => unknown] => [tag, keep]
+    ),
+  ]);
+
+  const readable = (item: object): unknown => (readers.get(tagOf(item)) ?? refuse)(item);
 
   const serialise = (value: unknown): string => {
     const seen = new WeakSet<object>();
@@ -51,45 +76,46 @@ export async function readClientState(): Promise<ClientStateDump> {
     });
   };
 
+  const serialiseOrNull = (value: unknown): Promise<string | null> =>
+    new Promise<string>((resolve) => resolve(serialise(value))).catch(() => null);
+
+  const collectRows = (transaction: IDBTransaction, stores: string[], rows: unknown[]): void => {
+    const collect = (event: Event): void => {
+      rows.push((event.target as IDBRequest).result);
+    };
+    stores.forEach((store) => {
+      const objectStore = transaction.objectStore(store);
+      objectStore.getAll().onsuccess = collect;
+      objectStore.getAllKeys().onsuccess = collect;
+    });
+  };
+
+  const readStores = (database: IDBDatabase, stores: string[]): Promise<string | null> => {
+    const rows: unknown[] = [];
+    const transaction = database.transaction(stores, 'readonly');
+    collectRows(transaction, stores, rows);
+    return new Promise((resolve) => {
+      transaction.oncomplete = (): void => resolve(serialiseOrNull(rows));
+      transaction.onerror = (): void => resolve(null);
+    });
+  };
+
+  const dumpStores = async (database: IDBDatabase): Promise<string | null> => {
+    const stores = Array.from(database.objectStoreNames);
+    const dump = stores.length === 0 ? '' : await readStores(database, stores);
+    database.close();
+    return dump;
+  };
+
   const dumpDatabase = (name: string): Promise<string | null> =>
     new Promise((resolve) => {
       const opened = indexedDB.open(name);
       opened.onerror = (): void => resolve(null);
-      opened.onsuccess = (): void => {
-        const database = opened.result;
-        const stores = Array.from(database.objectStoreNames);
-        if (stores.length === 0) {
-          database.close();
-          resolve('');
-          return;
-        }
-        const transaction = database.transaction(stores, 'readonly');
-        const rows: unknown[] = [];
-        const collect = (event: Event): void => {
-          rows.push((event.target as IDBRequest).result);
-        };
-        stores.forEach((store) => {
-          const objectStore = transaction.objectStore(store);
-          objectStore.getAll().onsuccess = collect;
-          objectStore.getAllKeys().onsuccess = collect;
-        });
-        transaction.oncomplete = (): void => {
-          database.close();
-          try {
-            resolve(serialise(rows));
-          } catch {
-            resolve(null);
-          }
-        };
-        transaction.onerror = (): void => {
-          database.close();
-          resolve(null);
-        };
-      };
+      opened.onsuccess = (): void => resolve(dumpStores(opened.result));
     });
 
   const databases = await indexedDB.databases();
-  const names = databases.flatMap((database) => (database.name ? [database.name] : []));
+  const names = databases.flatMap((database) => database.name || []);
   const dumps = await Promise.all(names.map(dumpDatabase));
 
   return {

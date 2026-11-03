@@ -106,7 +106,12 @@ cycle and break barrel purity), and code outside the module may not import
 `@auth/stores`. The sign-out action therefore reaches protected pages through
 react-router **outlet context**: `ProtectedRoute` renders
 `<Outlet context={…} />` typed as `ProtectedOutletContext`
-(`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it.
+(`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it. The context
+`ProtectedRoute` builds is a `ProtectedSessionContext`: beside `signOut` and the two-factor state
+it carries `session`, the container-free `authSessionProvider`
+(`@auth/stores/auth-session-provider.ts`), whose `token()` reads the in-memory token and whose
+`end(token)` ends the session the way `logout()` does, but only while the store still holds that
+token. The shell's current-user read uses it (issue #362).
 
 The outlet context is the **only seam** through which a non-auth feature reads or writes auth
 state. Besides `signOut` it carries the known two-factor status (`twoFactorStatus`, a
@@ -203,8 +208,12 @@ generated documents, `RequestPasswordReset` and `ConfirmPasswordReset`, each sel
 request sends an e-mail and a confirm consumes a token, so a retry is user-initiated only. Both
 methods resolve `void` whatever the payload. No failure is silenced: the link's error link reports
 every network and GraphQL error it sees, and the repository reports a rejection that never reached
-the link (a client-side bug, not an abort) through the injected `ObservabilityService` with the
-source `auth:password-recovery`, then rethrows it for the Data provider to classify.
+the link (a client-side bug, not an abort) through the injected `UnseenFailureReporter` with the
+source `auth:password-recovery`, then rethrows it for the Data provider to classify. That reporter
+(`OBSERVABILITY_TOKENS.UnseenFailureReporter`) owns the one "never reached the link" check both
+this repository and `ProfileProvider` use: an `Error` carrying a network error or a non-empty
+GraphQL error list was already reported by the link; anything else, including a non-`Error`
+rejection, is captured once.
 
 **Rejected.** REST transport (the user-service contract for these steps is GraphQL); the
 default cache policy (it writes the token and password under `ROOT_MUTATION`); a transport retry
@@ -307,21 +316,27 @@ mounts with a token already present never shows the card.
 **Rejected.** The red banner (no heading, no recovery action, easy to miss); a notice on the
 destination page (still a silent swap to `/`); a timed auto-redirect (WCAG 2.2.1).
 
-### The sandbox demo walks the whole flow
+### The local stack mails the reset link to Mailpit
 
-**Context.** A pull-request sandbox is a static site with no backend, and no environment
-delivers the reset e-mail before user-service releases the mutations.
+**Context.** user-service delivers the reset link only by e-mail, with SMTP pointed at a mail
+catcher in development, and its released contract does not carry the reset mutations yet. A
+reviewer has to be able to walk the whole flow, from the request to the e-mail to the new
+password, on a local stack.
 
-**Decision.** Like the demo login (issue #309), `SandboxDemoSessionProvider` issues a fixed demo
-reset token for exactly `demo@vilnacrm.com` and accepts only that token, and only while the demo
-is active (a non-production build or a sandbox host). `GraphQLPasswordRecoveryRepository`
-resolves both steps for those inputs without calling the API, standing in for it the way the
-pending contract and the local mock do. On the sent step, `SandboxDemoResetLink` replaces the
-e-mail with a link to `/password-reset` carrying the token. Outside an approved sandbox host,
-production deployments render nothing new.
+**Decision.** `make start` also runs Mailpit (`Mailpit.Dockerfile`, inbox at
+`http://localhost:8025`), and the dev compose gives the Apollo mock `MAILPIT_API_URL`. In that
+mode a request for an address signed up in the session, or for `demo@vilnacrm.com`, issues a
+random single-use token valid for one hour and posts the user-service reset e-mail (subject,
+template copy and token) through Mailpit's send API, with the link built from
+`PASSWORD_RESET_LINK_BASE_URL` (default `http://localhost:3000`), the frontend base URL
+user-service#512 asks for. A confirm with a token the mock never mailed, a used one or an
+expired one is rejected as a `token` violation, which the page shows as the invalid link. Without
+`MAILPIT_API_URL` (the test compose, the unit suites) the mock stays stateless. The frontend has
+no demo path for the reset: it always calls the API.
 
-**Rejected.** Reading the link from mock-server logs (unusable on a sandbox); a demo path for
-every address (it would bypass the browser specs that stub GraphQL).
+**Rejected.** A demo reset token and a "open the link from the e-mail" button on the sent step
+(it skipped the API, so the mail was never exercised); SMTP from the mock (it would add a mail
+client dependency for what Mailpit's HTTP send API already does).
 
 ### Both routes are public
 
@@ -332,22 +347,25 @@ touches `useAuthStore`.
 
 **Rejected.** Redirecting signed-in users away (breaks a link opened in a signed-in browser).
 
-### The "Назад" colour overrides the Figma token
+### The "Назад" colour follows the Figma token
 
 **Context.** Figma `72:5605` draws the "Назад" row of the recovery cards in `Font/300`
-`#969B9D`, about 2.8:1 on white, below WCAG 1.4.3.
+`#969B9D`, about 2.81:1 on white, below WCAG 1.4.3.
 
-**Decision.** `CardBackControl` renders the text and chevron in `Font/200` `#404142`
-(`customColors.text.primary`, about 10:1), keeping the Golos Medium 15/18 type of the frame. The
-design owner is asked to confirm the token. The primary result links ("До входу", "Запросити
-нове посилання") keep the Figma pill, white on `#1EAEFF` (2.45:1); one scoped `color-contrast`
-entry in `A11Y_EXCEPTIONS` covers exactly those two links under issue #276. The owner confirmed
-that choice on 2026-10-14, following the DEV-67 decision for the sign-in "Забули пароль?" link:
-the brand fill stays until #276 resolves the palette for every exempted control at once.
+**Decision.** `CardBackControl` renders the text and chevron in the Figma `#969B9D`
+(`customColors.text.secondary`) with the Golos Medium 15/18 type of the frame, by the user's
+decision of 2026-10-21; its focus ring stays `#404142` (10.2:1), so focus visibility still passes
+WCAG 2.4.7 and 1.4.11. The primary result links ("До входу", "Запросити нове посилання") keep the
+Figma pill, white on `#1EAEFF` (2.45:1). Two scoped `color-contrast` entries in `A11Y_EXCEPTIONS`
+cover exactly those links and the back row under issue #276. The owner confirmed the pill on
+2026-10-14, following the DEV-67 decision for the sign-in "Забули пароль?" link: the brand
+colours stay until #276 resolves the palette for every exempted control at once.
 
-**Rejected.** Shipping the Figma grey (fails WCAG 1.4.3); a second contrast exception for the
-back row; an accessible `#0074B5` fill or a dark label on the two links alone, which would leave
-them unlike the Figma frames and every other brand-colour control before #276 decides.
+**Rejected.** `Font/200` `#404142` for the back row (about 10:1, but unlike the Figma frame the
+pixel-parity tests compare against); a grey focus ring (2.81:1 fails the 3:1 of WCAG 1.4.11 and
+cannot take an exception); an accessible `#0074B5` fill or a dark label on the two links alone,
+which would leave them unlike the Figma frames and every other brand-colour control before #276
+decides.
 
 ### No feature flag
 
@@ -433,9 +451,10 @@ the header chip in the app shell shows the same two values.
 A name of three or more words reads as `<first> <last>` from the first two words reversed, and the
 monogram is the upper-cased first letter of each word of the display name; an empty name yields an
 empty monogram, which both consumers draw as the person glyph. `useDisplayName` serves the
-settings header and `useCurrentUser` the chip, which reads `ProfileProvider` once per pathname
-change, keeps the last good identity when a later read fails for any reason but `session_ended`,
-and resets the identity to the name-less pending state when a read reports `session_ended`.
+settings header and `useCurrentUser` the chip, which reads the user through the container-free
+`currentUserSource` (it constructs the dependency-free mapper itself) once per pathname change,
+keeps the last good identity when a later read fails for any reason but `session_ended`, and
+resets the identity to the name-less pending state when a read reports `session_ended`.
 
 **Rejected.** A copy of the rule in the chip (it would drift from the header); resolving the user
 from the JWT (see the previous record).
@@ -449,7 +468,7 @@ belong to the recovery flow above. The settings page is the board's
 **Decision.** A `UserProfile` route renders the `UserProfileSettings` and `ChangePassword`
 components, which run React hooks over `useAbortableSubmit`. The `ProfileProvider` Data provider
 is the translation boundary: it takes three injected collaborators (the Repository, the
-Transformer and `ObservabilityService`), hands every result and every rejection to
+Transformer and `UnseenFailureReporter`), hands every result and every rejection to
 `GraphQLProfileTransformer`, which composes #315's `UserServiceErrorTransformer`, calls
 `GraphQLProfileRepository`, and captures a failure that never reached the link, as #315's
 recovery flow does. Every value that crosses a layer carries a named type (TB-1), and the
@@ -514,7 +533,8 @@ already done, alone. Whether a network error is a 401 is asked of #315's
 `UserServiceErrorTransformer` (`reason === 'unauthenticated'`), so the link and the settings
 hooks read the status in one place. The settings page hooks do nothing on `session_ended` and rely
 on the link to end a session whose request came back as a transport 401; the chip's
-`useCurrentUser` only clears its shown identity and leaves ending the session to the link. The
+`useCurrentUser` reads without Apollo, so its `currentUserSource` ends the session itself on a
+transport 401 through the outlet `session.end(token)`, with the same current-token check. The
 settings Transformer also maps a GraphQL `Access Denied.` error (`access_denied`) to
 `session_ended`, and that error does not reach the link, so for it the shown identity is cleared
 while the token stays and the session is not ended.
@@ -582,8 +602,11 @@ per catalog (three byte-identical copies, and #331 would add a fourth).
 **Context.** `MuiFormHelperText` error text uses `paletteColors.error.main` (`#DC3939`), about
 4.48:1 on white at 14 px, below WCAG 1.4.3.
 
-**Decision.** A new token, `paletteColors.error.text` (`#C62828`, about 5.62:1), colours the
-field-error text app-wide; borders keep `error.main`. The resend control uses a token that already
+**Decision.** A new token, `paletteColors.error.text`, colours the field-error text and the
+`UIForm` error banner app-wide. It is `#D63333` (about 4.79:1), the value #315 chose for the banner
+to stay close to the Figma red; it was `#C62828` (5.62:1) until the product owner unified the two
+on 2026-11-02; borders and the banner's focus outline
+keep `error.main`. The resend control uses a token that already
 passes (`linkText` `#0074B5`, 5.04:1); the greeting keeps the Figma grey under its own entry, below.
 
 **Rejected.** A new contrast exception for the field errors (the defect is fixable at the token);

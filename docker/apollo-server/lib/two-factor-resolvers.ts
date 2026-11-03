@@ -8,7 +8,7 @@ import type {
   TwoFactorPayload,
   TwoFactorPayloadData,
 } from './types';
-import { EMAIL_REGEX, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
+import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const TOTP_CODE_REGEX = /^\d{6}$/u;
 const RECOVERY_CODE_REGEX = /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/u;
@@ -83,7 +83,7 @@ export const twoFactorResolvers = {
       _: unknown,
       { input }: { input: SignInUserInput }
     ): Promise<TwoFactorPayload> => {
-      if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
+      if (input.email.length > MAX_EMAIL_LENGTH || !isValidEmail(input.email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
       rejectBlank('password', input.password);

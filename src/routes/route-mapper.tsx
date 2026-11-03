@@ -10,13 +10,11 @@ import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 import observabilityCore from '@/services/observability/observability-core';
 
-import ShellSlotFactory from './shell-slot-factory';
 import type { AppRouteObject, PageLoader, PageModule, RouteHandle } from './types/app-route';
 import type {
+  ShellChunkFailureHandler,
   ShellChunkSource,
   ShellFailureHandler,
-  ShellSlotLoad,
-  UserMenuSlot,
 } from './types/shell-slot';
 
 class RouteMapper {
@@ -34,8 +32,8 @@ class RouteMapper {
     return { path: route.path, element, errorElement, ...handle, ...this.nested(route, landmark) };
   }
 
-  public shellSlot(load: ShellSlotLoad): UserMenuSlot {
-    return new ShellSlotFactory(this.capture.bind(this)).create(load);
+  public slotFailureReporter(): ShellChunkFailureHandler {
+    return (source, error) => this.capture(source, error);
   }
 
   public chunkFailureReporter(source: ShellChunkSource): ShellFailureHandler {

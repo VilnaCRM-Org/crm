@@ -45,12 +45,14 @@ describe('useCurrentNavigationItem', () => {
     expect(currentAt(path)).toBe(id);
   });
 
-  it.each(['/settings/', '/settings?tab=x', '/boards/', '/boards?x=1#top'])(
-    'keeps a trailing slash or a query string current: %s',
-    (path) => {
-      expect(currentAt(path)).not.toBeNull();
-    }
-  );
+  it.each([
+    ['/settings/', 'settings'],
+    ['/settings?tab=x', 'settings'],
+    ['/boards/', 'boards'],
+    ['/boards?x=1#top', 'boards'],
+  ])('keeps a trailing slash or a query string current: %s is %s', (path, id) => {
+    expect(currentAt(path)).toBe(id);
+  });
 
   it('does not make the group current for a sub-route', () => {
     expect(currentAt('/settings/webhooks')).toBeNull();

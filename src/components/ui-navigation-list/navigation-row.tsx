@@ -11,7 +11,9 @@ import NavigationRowLabel from './navigation-row-label';
 import railStyles from './rail-styles';
 import styles from './styles';
 
-const FOCUS_ON_ARRIVAL: RedirectNavigationState = { focusMain: true };
+function focusOnArrival(): RedirectNavigationState {
+  return { focusMain: true };
+}
 
 const iconStyleOf = ({ layout, variant, id, shape }: NavigationRowProps): SxProps<Theme> =>
   ({
@@ -40,7 +42,7 @@ const sxOf = ({ layout, variant, id, shape, open }: NavigationRowProps): SxProps
 export default function NavigationRow(props: NavigationRowProps): JSX.Element {
   const { variant, label, icon: Icon, href, current, onActivate, grouped, layout } = props;
   const handleLink = useLinkClickHandler<HTMLAnchorElement>(href ?? ROUTE_PATHS.home, {
-    state: FOCUS_ON_ARRIVAL,
+    state: focusOnArrival(),
   });
   const content = (
     <>

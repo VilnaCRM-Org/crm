@@ -1,21 +1,32 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { HttpResponse } from 'msw';
 import type { JSX, ReactNode } from 'react';
-import { MemoryRouter, useNavigate } from 'react-router';
+import { MemoryRouter, Outlet, Route, Routes, useNavigate } from 'react-router';
 
 import '../../../../setup';
-import container from '@/config/dependency-injection-config';
-import AUTH_TOKENS from '@/modules/user/config/tokens';
-import type ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
 import useCurrentUser from '@/modules/user/features/settings/hooks/use-current-user';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
+import type { ProtectedSessionContext } from '@/routes/types/protected-outlet-context';
+import authSessionProvider from '@auth/stores/auth-session-provider';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken, buildUserNode } from '@tests/builders';
 
 import { answerProfileOperation } from '../../../../mocks/profile-operations';
 import server from '../../../../mocks/server';
 
+const context: ProtectedSessionContext = {
+  signOut: () => undefined,
+  session: authSessionProvider,
+};
+
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
-  <MemoryRouter initialEntries={['/']}>{children}</MemoryRouter>
+  <MemoryRouter initialEntries={['/']}>
+    <Routes>
+      <Route element={<Outlet context={context} />}>
+        <Route path="*" element={children} />
+      </Route>
+    </Routes>
+  </MemoryRouter>
 );
 
 const mountCurrentUser = (): { current: ReturnType<typeof useCurrentUserWithNavigation> } =>
@@ -36,7 +47,7 @@ const answerWith = (fullName: string): ReturnType<typeof answerProfileOperation>
       }),
   });
 
-describe('useCurrentUser over the container (integration)', () => {
+describe('useCurrentUser over the container-free read (integration)', () => {
   beforeEach(() => {
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
   });
@@ -51,7 +62,7 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   it('starts name-less and pending, then shows the monogram and display name', async () => {
-    answerWith('Anna Koval');
+    const answered = answerWith('Anna Koval');
 
     const hook = mountCurrentUser();
 
@@ -59,6 +70,7 @@ describe('useCurrentUser over the container (integration)', () => {
     expect(hook.current.identity).toBeNull();
     await waitFor(() => expect(hook.current.status).toBe('ready'));
     expect(hook.current.identity).toEqual({ displayName: 'Anna Koval', monogram: 'AK' });
+    expect(answered[0]?.authorization).toBe(`Bearer ${useAuthStore.getState().token}`);
   });
 
   it('turns a three-word full name into first name, last name and their initials', async () => {
@@ -115,10 +127,7 @@ describe('useCurrentUser over the container (integration)', () => {
   });
 
   it('keeps the last good identity when a later read fails for another reason', async () => {
-    const read = jest.spyOn(
-      container.resolve<ProfileProvider>(AUTH_TOKENS.ProfileProvider),
-      'read'
-    );
+    const read = jest.spyOn(currentUserSource, 'read');
     answerWith('Anna Koval');
     const hook = mountCurrentUser();
     await waitFor(() => expect(hook.current.status).toBe('ready'));
@@ -129,7 +138,10 @@ describe('useCurrentUser over the container (integration)', () => {
     act(() => hook.current.go('/settings'));
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     await act(() =>
-      expect(read.mock.results[1]?.value).resolves.toEqual({ kind: 'failed', reason: 'rejected' })
+      expect(read.mock.results[1]?.value).resolves.toEqual({
+        kind: 'failed',
+        reason: 'unavailable',
+      })
     );
 
     expect(failed).toHaveLength(1);

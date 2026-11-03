@@ -18,7 +18,6 @@ export default function MobileNavigation({
 
   return (
     <>
-      <MenuToggleButton open={open} controls={dialogId} onToggle={show} ref={attachBurger} />
       <UINavigationDrawer
         open={open}
         id={dialogId}
@@ -28,6 +27,7 @@ export default function MobileNavigation({
         onNavigate={leave}
         avatar={avatar}
       />
+      <MenuToggleButton open={open} controls={dialogId} onToggle={show} ref={attachBurger} />
     </>
   );
 }
