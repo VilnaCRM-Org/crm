@@ -6,7 +6,6 @@ import {
   replyWithProfile,
   replyWithSaved,
   replyWithStatus,
-  signInWithFlag,
   stubProfile,
   PROFILE_NODE,
   type ProfileReplies,
@@ -22,6 +21,7 @@ import {
   text,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { currentLanguage, notFoundScreens, PAGES, type ScreenSize, screenSizes } from './constants';
 import stabilizePage from './stabilize-page';
@@ -41,7 +41,7 @@ async function openSettings(
   replies: ProfileReplies
 ): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
-  await signInWithFlag(page, true);
+  await seedPreloadedAuthToken(page);
   await stubProfile(page, replies);
   await stabilizePage(page, PAGES.SETTINGS);
 }

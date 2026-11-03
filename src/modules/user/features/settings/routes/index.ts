@@ -7,7 +7,6 @@ const settingsRoutes: RouteModule = {
     {
       path: ROUTE_PATHS.settings,
       guard: 'protected',
-      flag: 'userSettings',
       load: () => import(/* webpackChunkName: "settings" */ './user-profile'),
       meta: { titleKey: 'settings.title' },
     },
