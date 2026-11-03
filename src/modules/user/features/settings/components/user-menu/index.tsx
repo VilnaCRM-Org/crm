@@ -12,12 +12,7 @@ import UserChip from './user-chip';
 import UserMenuCard from './user-menu-card';
 import UserMenuItems from './user-menu-items';
 
-export default function UserMenu({
-  identity,
-  settingsAvailable,
-  signOut,
-  onAvatar,
-}: UserMenuProps): JSX.Element {
+export default function UserMenu({ identity, signOut, onAvatar }: UserMenuProps): JSX.Element {
   useAvatarCopy({ identity, onAvatar });
   const layout = useShellLayout();
   const menu = useUserMenu({ layout });
@@ -30,15 +25,7 @@ export default function UserMenu({
         layout={layout}
         open={menu.open}
         chip={<UserChip layout={layout} identity={identity} menu={menu} menuId={menuId} />}
-        items={
-          <UserMenuItems
-            layout={layout}
-            menuId={menuId}
-            settingsAvailable={settingsAvailable}
-            menu={menu}
-            signOut={signOut}
-          />
-        }
+        items={<UserMenuItems layout={layout} menuId={menuId} menu={menu} signOut={signOut} />}
       />
     </Box>
   );

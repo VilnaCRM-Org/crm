@@ -5,8 +5,6 @@ import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { RECOVERY_CODES } from '@tests/e2e/utils/two-factor-settings-responses';
 
-import { signInToSettings } from './profile-stub';
-
 export const twoFactorText = {
   title: t('settings.two_factor.title'),
   start: t('settings.two_factor.start'),
@@ -52,13 +50,6 @@ export const twoFactorText = {
 } as const;
 
 export const KEY_IN_GROUPS = 'JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP';
-
-export async function signInToTwoFactorSettings(
-  page: Page,
-  twoFactorAuth: boolean = true
-): Promise<void> {
-  await signInToSettings(page, { userSettings: true, twoFactorAuth });
-}
 
 export const sectionOf = (page: Page): Locator =>
   page.getByRole('region', { name: twoFactorText.title, exact: true });

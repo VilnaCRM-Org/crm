@@ -14,7 +14,7 @@ import {
   stubSetup,
 } from '@tests/e2e/utils/two-factor-settings-responses';
 
-import { replyWithEndedSession, stubProfile } from './utils/profile-stub';
+import { replyWithEndedSession, signInToSettings, stubProfile } from './utils/profile-stub';
 import {
   cancelOf,
   codeListOf,
@@ -30,7 +30,6 @@ import {
   regenerateHeadingOf,
   regenerateSubmitOf,
   sectionOf,
-  signInToTwoFactorSettings,
   startOf,
   statusHeadingOf,
   twoFactorText,
@@ -48,7 +47,7 @@ const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } a
 
 test.describe('Turning two-factor off and regenerating codes (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
-    await signInToTwoFactorSettings(page);
+    await signInToSettings(page);
     await stubProfile(page);
     await stubSetup(page);
     await stubConfirm(page);

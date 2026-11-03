@@ -47,7 +47,6 @@ const navigationItems: NavigationItemSet = {
       href: ROUTE_PATHS.settings,
       labelKey: 'app_shell.items.settings',
       icon: SettingsIcon,
-      flag: 'userSettings',
       children: {
         items: [
           {
@@ -55,21 +54,18 @@ const navigationItems: NavigationItemSet = {
             href: ROUTE_PATHS.settingsIntegrations,
             labelKey: 'app_shell.items.integrations',
             icon: IntegrationsIcon,
-            flag: 'userSettings',
           },
           {
             id: 'webhooks',
             href: ROUTE_PATHS.settingsWebhooks,
             labelKey: 'app_shell.items.webhooks',
             icon: WebhooksIcon,
-            flag: 'userSettings',
           },
           {
             id: 'billing',
             href: ROUTE_PATHS.settingsBilling,
             labelKey: 'app_shell.items.billing',
             icon: BillingIcon,
-            flag: 'userSettings',
           },
         ],
       },

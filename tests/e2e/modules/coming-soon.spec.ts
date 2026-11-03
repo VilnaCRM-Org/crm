@@ -1,4 +1,4 @@
-import type { Page, Request } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
@@ -8,11 +8,9 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
-import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const LOGIN_API_URL = '**/api/users';
-const COMING_SOON_CHUNK = /\/coming-soon(?:\.[\w-]+)?\.js$/;
 const BASE_TITLE = 'VilnaCRM';
 
 interface Section {
@@ -39,19 +37,14 @@ const ALL_SECTIONS: readonly Section[] = [...PRODUCT_SECTIONS, ...SETTINGS_SECTI
 const message: string = t('coming_soon.message');
 const homeLinkLabel: string = t('coming_soon.home_link');
 const homeHeading: string = t('home.heading');
-const notFoundTitle: string = t('error_page.not_found.title');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const passwordPlaceholder: string = t('sign_in.form.password_input.placeholder');
 const submitLabel: string = t('sign_in.form.submit_button');
 
 const credentials = buildCredentials();
 
-const setFlag = (page: Page, userSettings: boolean): Promise<void> =>
-  overrideRuntimeConfig(page, { flags: { userSettings } });
-
-async function openSection(page: Page, section: Section, userSettings = true): Promise<void> {
+async function openSection(page: Page, section: Section): Promise<void> {
   await seedPreloadedAuthToken(page);
-  await setFlag(page, userSettings);
   await page.goto(section.path, { waitUntil: 'domcontentloaded' });
 }
 
@@ -99,31 +92,10 @@ test.describe('Coming-soon routes (issue #362)', () => {
     });
   }
 
-  for (const section of SETTINGS_SECTIONS) {
-    test(`shows not-found and no chunk request on ${section.path} with the flag off`, async ({
-      page,
-    }) => {
-      const chunkRequests: string[] = [];
-      page.on('request', (request: Request) => {
-        if (COMING_SOON_CHUNK.test(new URL(request.url()).pathname)) {
-          chunkRequests.push(request.url());
-        }
-      });
-
-      await openSection(page, section, false);
-
-      await expect(page).toHaveURL(section.path);
-      await expect(page.getByRole('heading', { level: 1, name: notFoundTitle })).toBeVisible();
-      await expect(page.getByRole('link', { name: homeLinkLabel })).toHaveCount(0);
-      expect(chunkRequests).toEqual([]);
-    });
-  }
-
   for (const section of ALL_SECTIONS) {
     test(`sends a signed-out visitor from ${section.path} to sign-in and back after login`, async ({
       page,
     }) => {
-      await setFlag(page, true);
       await stubProfile(page);
       await page.route(LOGIN_API_URL, async (route) => {
         if (route.request().method() !== 'POST') return route.fallback();
