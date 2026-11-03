@@ -52,7 +52,9 @@ export const SavedAcknowledgement: Story = {
   render: () => <SavedCheckbox checked={false} onChange={noop} />,
 };
 
-export const Cancel: Story = { render: () => <CancelButton onCancel={noop} disabled={false} /> };
+export const Cancel: Story = {
+  render: () => <CancelButton onCancel={noop} disabled={false} buttonRef={null} />,
+};
 
 export const OnButtons: Story = {
   render: () => <OnActions onDisable={noop} onRegenerate={noop} returnTo={null} />,
@@ -70,7 +72,7 @@ export const ConfirmationShell: Story = {
         submittingLabel: 'Створюємо…',
       }}
       isSubmitting={false}
-      footer={<CancelButton onCancel={noop} disabled={false} />}
+      footer={<CancelButton onCancel={noop} disabled={false} buttonRef={null} />}
     >
       {null}
     </ConfirmationForm>

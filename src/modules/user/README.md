@@ -790,7 +790,7 @@ actions class on the store (the board draws the hook writing State directly).
 ### The challenge is a page-guarded public route
 
 **Context.** A sign-in can return a challenge in every environment, so the route must be reachable
-whether or not the settings flag is on, yet it must not render without a pending session.
+wherever sign-in is, yet it must not render without a pending session.
 
 **Decision.** `/sign-in/two-factor` is registered with `guard: 'public'` and no flag. The page
 renders only while a pending session id exists in the store; without one — a typed URL, a reload,
@@ -830,10 +830,12 @@ for the backend, as for the settings page itself.
 `SettingsGrid`. No flag is declared, so every environment, the browser lanes included, renders the
 section, and the challenge at `/sign-in/two-factor` stays registered everywhere as before.
 
-**Consequence, accepted.** Until that user-service release ships, every environment that deploys
-this page offers turning 2FA on, turning it off and regenerating the codes against a backend that
-cannot answer them, so those operations end in the section's error banner rather than succeeding.
-The product owner accepted that in production.
+**Consequence, accepted.** Until that user-service release ships, a deployment that talks to the
+real user-service offers turning 2FA on, turning it off and regenerating the codes against a
+backend that cannot answer them, so those operations end in the section's error banner rather than
+succeeding. The product owner accepted that in production. The local dev and test stacks are not
+affected: their Apollo mock implements the 2FA mutations, so setup, disable and regeneration
+succeed there.
 
 **Rejected.** A `twoFactorAuth` flag that hides the section (a second page variant to keep
 tested, for a section the product owner chose to ship); a flag that selects the sign-in transport
