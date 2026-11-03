@@ -37,6 +37,7 @@ describe('UINavigationDrawer a11y', () => {
       </main>
     );
 
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await expectNoA11yViolations(container);
   });
 });
