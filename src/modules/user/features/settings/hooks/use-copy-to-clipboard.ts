@@ -15,19 +15,26 @@ function selectContents(target: HTMLElement | null): void {
   selection?.addRange(range);
 }
 
+async function writeOrSelect({
+  text,
+  fallbackTarget,
+}: ClipboardCopyRequest): Promise<ClipboardCopyStatus> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return 'copied';
+  } catch {
+    selectContents(fallbackTarget);
+    return 'failed';
+  }
+}
+
 export default function useCopyToClipboard(): ClipboardCopy {
   const [status, setStatus] = useState<ClipboardCopyStatus>('idle');
 
   const copy = useCallback(
-    async ({ text, fallbackTarget }: ClipboardCopyRequest) => {
+    async (request: ClipboardCopyRequest) => {
       setStatus('idle');
-      try {
-        await navigator.clipboard.writeText(text);
-        setStatus('copied');
-      } catch {
-        selectContents(fallbackTarget);
-        setStatus('failed');
-      }
+      setStatus(await writeOrSelect(request));
     },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
     []

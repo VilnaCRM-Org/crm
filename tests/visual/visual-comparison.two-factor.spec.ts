@@ -41,8 +41,10 @@ const RECOVERY_CODE = 'ABCD-2345';
 const homeHeading: string = t('home.heading');
 const lowCodesNotice: string = t('recovery_codes_notice.remaining', { count: 1 });
 
-const takeTwoFactorSnapshot = (page: Page, screen: ScreenSize, name: string): Promise<void> =>
-  takeStableSnapshot(page, `${currentLanguage}_two-factor-${name}_${screen.name}.png`);
+async function takeTwoFactorSnapshot(page: Page, screen: ScreenSize, name: string): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await takeStableSnapshot(page, `${currentLanguage}_two-factor-${name}_${screen.name}.png`);
+}
 
 async function resize(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
