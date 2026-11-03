@@ -166,8 +166,10 @@ more project names.
   keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
   overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
-  same for the app shell: the drawer, the avatar menu, a 44 px tap area on every shell control and no
-  overflow at device width and 320 px. Playwright cannot open a native
+  same for the app shell: the drawer, the avatar menu, a 44 px tap area on every shell control
+  except the drawer sub-items (held at their recorded 42 px Figma pitch) and the disabled bell and
+  list (40 px, unmeasured), as "Known gaps" in `src/components/ui-app-shell/README.md` records, and
+  no overflow at device width and 320 px. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
   `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
