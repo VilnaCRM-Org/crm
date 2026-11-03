@@ -1,9 +1,9 @@
 # Settings feature
 
-The user settings page (issue #330): `/settings`, a protected route behind the `userSettings`
-runtime flag. A signed-in user reads their profile, changes the name, the e-mail and the
-password in one form, resends the confirmation link and sees every outcome as a toast or a field
-error. The decisions are recorded in `## User Settings decisions` of the
+The user settings page (issue #330): `/settings`, a protected route registered in every
+environment, with no feature flag. A signed-in user reads their profile, changes the name, the
+e-mail and the password in one form, resends the confirmation link and sees every outcome as a
+toast or a field error. The decisions are recorded in `## User Settings decisions` of the
 [user module README](../../README.md).
 
 ## What is here
@@ -24,8 +24,8 @@ error. The decisions are recorded in `## User Settings decisions` of the
 
 ## Contract
 
-- The route is always registered; the `RouteFlagGate` shows the not-found page while
-  `userSettings` is off, so the page chunk is never requested (see `src/routes/README.md`).
+- The route is always registered and guarded by `ProtectedRoute`; the home page links to it
+  (see `src/routes/README.md`).
 - The page registers its catalog through the shared `lazyCatalogLoader`
   (`src/lib/locale-catalog`) when the route module evaluates,
   before `usePageTitle('settings.title')` runs. The catalog is listed in
@@ -49,8 +49,7 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 
 - `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
   an assertive one for error texts, both always mounted, at most three on screen.
-- The `RouteFlagGate` and the route `flag` field, and the `SettingsGrid` whose second slot is
-  reserved for the two-factor card.
+- The `SettingsGrid`, whose second slot is reserved for the two-factor card.
 
 ## Page tree
 
