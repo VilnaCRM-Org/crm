@@ -239,6 +239,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await disableFieldOf(page).fill('123456');
     await disableSubmitOf(page).click();
     await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
+    await expect(cancelOf(page)).toBeEnabled();
 
     await page.keyboard.press('Escape');
 
