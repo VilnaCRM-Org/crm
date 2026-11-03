@@ -96,8 +96,13 @@ describe('the exception allowlist against the assembled shell (issue #362)', () 
           </a>
         </nav>
         <div role="dialog">
-          <a href="/settings" aria-current="page">
-            <span>Drawer group</span>
+          <nav>
+            <a href="/settings" aria-current="page">
+              <span>Drawer group</span>
+            </a>
+          </nav>
+          <a href="/terms" aria-current="page">
+            <span>Dialog link outside the navigation</span>
           </a>
         </div>
         <footer>
@@ -107,12 +112,21 @@ describe('the exception allowlist against the assembled shell (issue #362)', () 
         </footer>
       </div>
     );
-    const labelled = ['Current group', 'Other group', 'Drawer group', 'Outside the navigation'];
+    const labelled = [
+      'Current group',
+      'Other group',
+      'Drawer group',
+      'Dialog link outside the navigation',
+      'Outside the navigation',
+    ];
 
     expect(labelled.filter((text) => screen.getByText(text).matches(CURRENT))).toEqual([
       'Current group',
       'Drawer group',
     ]);
+    expect(
+      screen.getByRole('link', { name: 'Dialog link outside the navigation' }).matches(CURRENT)
+    ).toBe(false);
   });
 
   it('matches the current row inside the open drawer too', async () => {

@@ -50,7 +50,9 @@ A change is accessibility-done when all of the following hold, in addition to th
   `aria-describedby` and the field carries `aria-invalid` (3.3.1).
 - Everything reachable with a pointer is reachable and operable with the keyboard alone, in an
   order that follows the reading order (2.1.1, 2.4.3), with a focus indicator visible on every
-  stop (2.4.7). Dialogs and menus trap focus while open and return it on close.
+  stop (2.4.7). A modal dialog traps focus while open and returns it on close. A menu-button
+  menu (the WAI-ARIA APG menu-button pattern) does not trap: Tab closes it and moves on in the
+  page order, and Escape closes it and returns focus to its button.
 - Icon-only controls have a text alternative; decorative images have `alt=""` and are hidden from
   the accessibility tree (1.1.1).
 - Text contrast is at least 4.5:1, large text and UI component boundaries at least 3:1 (1.4.3,
@@ -124,10 +126,9 @@ The tenth covers the settings greeting
 the plan proposed, so it carries the same token debt as the back-to-main label and the auth
 switcher, while the name beside it stays `#1A1C1E`. The eleventh covers the current navigation
 entry of the app shell (issue #362): the active row, group-header label and sub-item in the
-sidebar and in the mobile drawer (`nav a[aria-current="page"]`,
-`nav a[aria-current="page"] > span` and the same two selectors under `[role="dialog"]`), which
-render the Figma active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner
-accepted (OQ-14).
+sidebar and in the mobile drawer, whose list sits in its own `<nav>`
+(`nav a[aria-current="page"]` and `nav a[aria-current="page"] > span`), which render the Figma
+active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),

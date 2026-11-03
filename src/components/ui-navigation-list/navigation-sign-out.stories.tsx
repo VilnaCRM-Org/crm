@@ -30,4 +30,7 @@ export const Rail = navigationListStories.rail;
 
 export const TabletRail = navigationListStories.tabletRail;
 
-export const Drawer: StoryObj<typeof NavigationSignOut> = { args: { layout: 'drawer' } };
+export const Drawer: StoryObj<typeof NavigationSignOut> = {
+  args: { layout: 'drawer' },
+  parameters: { listWidth: 313 },
+};
