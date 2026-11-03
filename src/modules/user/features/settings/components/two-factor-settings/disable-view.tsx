@@ -13,13 +13,15 @@ import DisableCodeField from './disable-code-field';
 export default function DisableView(props: TwoFactorSettingsProps): JSX.Element {
   const form = useDisableFormProps(props);
   const { isSubmitting, callbacks, view } = props;
-  useEscapeCancel(callbacks.cancel, isSubmitting);
+  const cancelRef = useEscapeCancel(callbacks.cancel, isSubmitting);
 
   return (
     <ConfirmationForm<TwoFactorDto>
       form={form}
       isSubmitting={isSubmitting}
-      footer={<CancelButton onCancel={callbacks.cancel} disabled={isSubmitting} />}
+      footer={
+        <CancelButton onCancel={callbacks.cancel} disabled={isSubmitting} buttonRef={cancelRef} />
+      }
     >
       <DisableCodeField view={view} busy={isSubmitting} />
     </ConfirmationForm>

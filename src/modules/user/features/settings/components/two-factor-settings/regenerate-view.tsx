@@ -11,13 +11,15 @@ import ConfirmationForm from './confirmation-form';
 export default function RegenerateView(props: TwoFactorSettingsProps): JSX.Element {
   const form = useRegenerateFormProps(props);
   const { isSubmitting, callbacks } = props;
-  useEscapeCancel(callbacks.cancel, isSubmitting);
+  const cancelRef = useEscapeCancel(callbacks.cancel, isSubmitting);
 
   return (
     <ConfirmationForm<FieldValues>
       form={form}
       isSubmitting={isSubmitting}
-      footer={<CancelButton onCancel={callbacks.cancel} disabled={isSubmitting} />}
+      footer={
+        <CancelButton onCancel={callbacks.cancel} disabled={isSubmitting} buttonRef={cancelRef} />
+      }
     >
       {null}
     </ConfirmationForm>
