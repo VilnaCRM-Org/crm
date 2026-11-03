@@ -74,8 +74,10 @@ labels; shipped copy is the PRD §11 table (wording OQ-9).
 The shell is split along the dependency-cruiser layers exactly as B5 lays them out, and along a
 lazy-loading boundary that keeps every shell byte off the eager entry and off public routes.
 
-1. **Eager frame, lazy content.** `AppLayout` (`src/components/layouts/app-layout.tsx`, already in
-   the entry because `src/routes/route-composer.tsx:4` imports it statically) becomes a CSS grid
+1. **Eager frame, lazy content.** `AppLayout` (`src/components/layouts/app-layout.tsx`, in the
+   entry when this was written because `src/routes/route-composer.tsx:4` imported it statically;
+   since 663151bc it loads with `ProtectedRoute` from the lazy `protected-layout` chunk, so
+   "eager" below means eager relative to the `ui-app-shell` content chunk) becomes a CSS grid
    frame that paints immediately with two `aria-hidden`, size-stable placeholders (header 64 px;
    sidebar column at or above the sidebar breakpoint). The header, sidebar, drawer, icons and shell
    catalog arrive in one lazy chunk, `ui-app-shell`, loaded by a NEW `app-shell-loader.ts` that
@@ -360,7 +362,10 @@ captures; the shell and the slot only invoke the callbacks it hands them. `Route
 
 ### 5.1 The lazy boundary (AD-1, AD-2)
 
-**AD-1. Everything visible in the shell is lazy; the frame is eager.** `AppLayout` keeps its eager
+**AD-1. Everything visible in the shell is lazy; the frame is eager.** Amended after 663151bc:
+`AppLayout` and `ProtectedRoute` now load together from the lazy `protected-layout` chunk, so the
+frame is eager relative to the `ui-app-shell` content chunk, not to the entry, and no public page
+loads it. `AppLayout` keeps its frame
 role and gains only a grid, two styled placeholders, a `lazy()` over `appShellLoader` and the
 `userMenu` prop. The MUI theme engine stays off the eager path: the frame and placeholders use
 `@emotion/styled` only, so `tests/unit/tooling/performance-serving.test.ts:196-229` still finds the
