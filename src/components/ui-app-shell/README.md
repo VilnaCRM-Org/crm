@@ -252,23 +252,26 @@ closes the drawer and runs `signOut` once.
 
 ### Measured against Figma (drawer, 375 wide)
 
-| Row                 | Figma                             | Measured                                 | Verdict   |
-| ------------------- | --------------------------------- | ---------------------------------------- | --------- |
-| P-33 burger glyph   | 336,16, 24×24                     | 336,16, 24×24                            | pass      |
-| P-38 burger target  | 326,6, 44×44                      | 326,6, 44×44                             | pass      |
-| P-43 drawer header  | 0,0, 375×56                       | 0,0, 375×56                              | pass      |
-| drawer logo         | 15,7, 125×42.067                  | 15,7, 125×42.06                          | pass      |
-| drawer bell, list   | 200,16 and 240,16                 | 200,16 and 240,16                        | pass      |
-| drawer close glyph  | 336,16, 24×24                     | 336,16, 24×24                            | pass      |
-| P-34 drawer panel   | 62,56, 313×622                    | 62,56, 313×622                           | pass      |
-| P-35 drawer search  | 72,69, 293×48                     | 72,69, 293×48                            | pass      |
-| P-36 first row      | 62,125, 233×60                    | 62,125, 233×60                           | pass      |
-| Settings group      | 233×188, header at 425            | 425 to 613 (188)                         | pass      |
-| Settings chevron    | right 24, 24 px                   | 247,437, 24×24                           | pass      |
-| first sub-item text | x 56, y 60 in group               | x 56, y 60 in group                      | pass      |
-| P-44 Sign out row   | 62,613, 314×54                    | 62,613, 313×54                           | pass      |
-| drawer avatar copy  | 280,8, 40×40, photo               | 280,8, 40×40, ОП                         | see below |
-| scrim bottom        | footer top, y 772 (375×812 frame) | footer top, y 604.4 (`/boards`, 375×812) | pass      |
+| Row                 | Figma                  | Measured            | Verdict   |
+| ------------------- | ---------------------- | ------------------- | --------- |
+| P-33 burger glyph   | 336,16, 24×24          | 336,16, 24×24       | pass      |
+| P-38 burger target  | 326,6, 44×44           | 326,6, 44×44        | pass      |
+| P-43 drawer header  | 0,0, 375×56            | 0,0, 375×56         | pass      |
+| drawer logo         | 15,7, 125×42.067       | 15,7, 125×42.06     | pass      |
+| drawer bell, list   | 200,16 and 240,16      | 200,16 and 240,16   | pass      |
+| drawer close glyph  | 336,16, 24×24          | 336,16, 24×24       | pass      |
+| P-34 drawer panel   | 62,56, 313×622         | 62,56, 313×622      | pass      |
+| P-35 drawer search  | 72,69, 293×48          | 72,69, 293×48       | pass      |
+| P-36 first row      | 62,125, 233×60         | 62,125, 233×60      | pass      |
+| Settings group      | 233×188, header at 425 | 425 to 613 (188)    | pass      |
+| Settings chevron    | right 24, 24 px        | 247,437, 24×24      | pass      |
+| first sub-item text | x 56, y 60 in group    | x 56, y 60 in group | pass      |
+| P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass      |
+| drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
+| scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
+
+The scrim row compares the rule, not a y value: Figma's 375×812 drawer frame puts the footer top
+at y 772, and `/boards` at 375×812 puts it at 604.4, and in both the scrim ends there.
 
 The scrim (`DrawerScrim`) is `rgba(54,79,93,.05)` with a 4 px backdrop blur, painted as an
 aria-hidden layer that takes no pointer events and ends at the top of the page footer
