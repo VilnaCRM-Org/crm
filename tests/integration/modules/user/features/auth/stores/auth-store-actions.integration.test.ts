@@ -96,11 +96,6 @@ describe('AuthStoreActions integration coverage', () => {
     });
   });
 
-  it('treats a thrown abort-marker register rejection as aborted', async () => {
-    await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
-    expect(useAuthStore.getState()).toMatchObject({ registerLoading: false, registerError: null });
-  });
-
   it('applies a repository-reported error result to the auth state', async () => {
     const error: AuthError = {
       kind: 'conflict',

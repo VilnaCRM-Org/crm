@@ -6,6 +6,7 @@ import type {
   TwoFactorSetup,
 } from '@/modules/user/features/settings/types/hooks/two-factor-operations';
 import type {
+  TwoFactorSettingsFailedOutcome,
   TwoFactorSettingsFailureReason,
   TwoFactorSettingsOutcome,
 } from '@/modules/user/features/settings/types/two-factor/outcome';
@@ -96,5 +97,6 @@ export const mountWith = <T>(
   return { ...fake, utils: renderHook(() => useHook(fake.deps)) };
 };
 
-export const failedOutcome = (reason: string): TwoFactorSettingsOutcome =>
-  ({ kind: 'failed', reason }) as TwoFactorSettingsOutcome;
+export const failedOutcome = (
+  reason: TwoFactorSettingsFailureReason
+): TwoFactorSettingsFailedOutcome => ({ kind: 'failed', reason });

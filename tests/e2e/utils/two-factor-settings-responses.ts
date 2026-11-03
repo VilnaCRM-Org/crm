@@ -8,7 +8,7 @@ import {
   type StubbedSignIn,
 } from './two-factor-responses';
 
-export const SETUP_SECRET = 'JBSWY3DPEHPK3PXP';
+export const SETUP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 const SETUP_LABEL = 'VilnaCRM%3Aolena.petrenko%40example.com';
 
 export const SETUP_URI = `otpauth://totp/${SETUP_LABEL}?secret=${SETUP_SECRET}&issuer=VilnaCRM`;

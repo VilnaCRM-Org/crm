@@ -9,7 +9,7 @@ const press = (key: string): void => {
 describe('useEscapeCancel', () => {
   it('calls cancel once for Escape', () => {
     const cancel = jest.fn();
-    renderHook(() => useEscapeCancel(cancel));
+    renderHook(() => useEscapeCancel(cancel, false));
 
     press('Escape');
 
@@ -18,7 +18,7 @@ describe('useEscapeCancel', () => {
 
   it.each(['Enter', 'Esc', 'a', ' '])('ignores %s', (key) => {
     const cancel = jest.fn();
-    renderHook(() => useEscapeCancel(cancel));
+    renderHook(() => useEscapeCancel(cancel, false));
 
     press(key);
 
@@ -27,7 +27,7 @@ describe('useEscapeCancel', () => {
 
   it('stops listening after unmount', () => {
     const cancel = jest.fn();
-    const { unmount } = renderHook(() => useEscapeCancel(cancel));
+    const { unmount } = renderHook(() => useEscapeCancel(cancel, false));
 
     unmount();
     press('Escape');
@@ -38,7 +38,7 @@ describe('useEscapeCancel', () => {
   it('calls the latest cancel after a re-render, never the old one', () => {
     const first = jest.fn();
     const second = jest.fn();
-    const { rerender } = renderHook(({ cancel }) => useEscapeCancel(cancel), {
+    const { rerender } = renderHook(({ cancel }) => useEscapeCancel(cancel, false), {
       initialProps: { cancel: first },
     });
 
@@ -47,5 +47,27 @@ describe('useEscapeCancel', () => {
 
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores Escape while disabled', () => {
+    const cancel = jest.fn();
+    renderHook(() => useEscapeCancel(cancel, true));
+
+    press('Escape');
+
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it('cancels on Escape again once it is no longer disabled', () => {
+    const cancel = jest.fn();
+    const { rerender } = renderHook(({ disabled }) => useEscapeCancel(cancel, disabled), {
+      initialProps: { disabled: true },
+    });
+    press('Escape');
+
+    rerender({ disabled: false });
+    press('Escape');
+
+    expect(cancel).toHaveBeenCalledTimes(1);
   });
 });

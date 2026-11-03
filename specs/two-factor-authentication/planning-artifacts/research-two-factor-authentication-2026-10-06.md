@@ -586,7 +586,10 @@ All of these deviations go to one designer follow-up (D13), and the Figma gate
   (`${APP_CONFIG_FLAG_FORGOT_PASSWORD-}`), `.env.example:66`.
 - `tests/unit/tooling/runtime-config-contract.test.ts:195-204` is the precedent for "a flag never
   ships enabled while its route is unregistered".
-- D-rules: `twoFactorAuth` defaults `false` in production and `true` in the dev and test stacks.
+- D-rules: `twoFactorAuth` defaults `false` in production and on the dev server, which both read
+  the committed block; only the test stack enables it, through
+  `${APP_CONFIG_FLAG_TWO_FACTOR_AUTH:-true}`, and an explicit `APP_CONFIG_FLAG_TWO_FACTOR_AUTH=false`
+  runs that stack without the section.
 
 ### 5.5 Routes
 

@@ -33,6 +33,15 @@ function Harness({ state }: { state: TwoFactorChallengeState }): JSX.Element {
   );
 }
 
+const FIELD_ERROR_TEXTS: readonly [TwoFactorFieldError, string][] = [
+  ['incomplete', 'Введіть усі 6 цифр коду'],
+  ['format', 'Код має складатися лише з шести цифр'],
+  [
+    'invalid_code',
+    'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.',
+  ],
+];
+
 const cells = (): HTMLInputElement[] => screen.getAllByRole('textbox');
 const stored = (): string => screen.getByLabelText('value').textContent ?? '';
 
@@ -51,23 +60,22 @@ describe('ChallengeCodeField', () => {
     ]);
   });
 
-  it.each<[TwoFactorFieldError, string]>([
-    ['incomplete', 'Введіть усі 6 цифр коду'],
-    ['format', 'Код має складатися лише з шести цифр'],
-    [
-      'invalid_code',
-      'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.',
-    ],
-  ])('shows the %s text and marks every cell invalid', (fieldError, text) => {
-    render(<Harness state={{ ...RESTING, fieldError }} />);
+  it.each(FIELD_ERROR_TEXTS)(
+    'shows the %s text and marks every cell invalid',
+    (fieldError, text) => {
+      render(<Harness state={{ ...RESTING, fieldError }} />);
 
-    expect(screen.getByText(text)).toBeInTheDocument();
-    cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
-  });
+      expect(screen.getByText(text)).toBeInTheDocument();
+      cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
+    }
+  );
 
   it('shows no error text and no invalid mark without a field error', () => {
     render(<Harness state={RESTING} />);
 
+    FIELD_ERROR_TEXTS.forEach(([, text]) =>
+      expect(screen.queryByText(text)).not.toBeInTheDocument()
+    );
     cells().forEach((cell) => expect(cell).not.toHaveAttribute('aria-invalid', 'true'));
   });
 

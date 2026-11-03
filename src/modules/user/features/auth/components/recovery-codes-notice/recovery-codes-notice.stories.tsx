@@ -11,7 +11,7 @@ const meta: Meta<typeof RecoveryCodesNotice> = {
   decorators: [withMemoryRouter()],
   args: { count: 1, onDismiss: noop },
   argTypes: {
-    count: { control: { type: 'number', min: 0, max: 8 } },
+    count: { control: { type: 'number', min: 0, max: 2 } },
     onDismiss: { control: false },
   },
   parameters: {

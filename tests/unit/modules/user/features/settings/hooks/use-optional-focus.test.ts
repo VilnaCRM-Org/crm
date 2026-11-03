@@ -36,12 +36,15 @@ describe('useOptionalFocus', () => {
     }).not.toThrow();
   });
 
-  it('returns the same callback for the same setting across renders', () => {
-    const { result, rerender } = renderHook(() => useOptionalFocus<HTMLButtonElement>(false));
-    const first = result.current;
+  it.each([true, false])(
+    'returns the same callback for the setting %s across renders',
+    (enabled) => {
+      const { result, rerender } = renderHook(() => useOptionalFocus<HTMLButtonElement>(enabled));
+      const first = result.current;
 
-    rerender();
+      rerender();
 
-    expect(result.current).toBe(first);
-  });
+      expect(result.current).toBe(first);
+    }
+  );
 });

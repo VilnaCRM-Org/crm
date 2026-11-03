@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import type { JSX } from 'react';
+import type { ClipboardEvent, JSX } from 'react';
 
 import type { KeyChipProps } from '../../types/components/two-factor-settings';
 
@@ -16,8 +16,13 @@ function groupsOf(secret: string): string {
 }
 
 export default function KeyChip({ secret, chipRef }: KeyChipProps): JSX.Element {
+  const onCopy = (event: ClipboardEvent<HTMLElement>): void => {
+    event.clipboardData.setData('text/plain', secret);
+    event.preventDefault();
+  };
+
   return (
-    <Box component="code" ref={chipRef} sx={styles.keyChip}>
+    <Box component="code" ref={chipRef} onCopy={onCopy} sx={styles.keyChip}>
       {groupsOf(secret)}
     </Box>
   );

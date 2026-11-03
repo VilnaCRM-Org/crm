@@ -39,7 +39,8 @@ and `implementation_artifacts` at this bundle.
   GraphQL `signInUser`, and a 2FA card as one section of the protected `/settings` page (enrol
   with a client-rendered QR code, confirm, recovery codes once, disable, regenerate).
 - Backend: every operation exists only on user-service `main`; the frontend mocks them through a
-  self-expiring pending schema extension shared with crm #315. The `twoFactorAuth` runtime flag
+  stateless pending schema extension shared with crm #315, which Follow-up 5.1 deletes by hand on
+  the contract-pin bump (the 2026-10-08 revision withdrew the expiry checker). The `twoFactorAuth` runtime flag
   (off in production, on in the test stack) gates only the 2FA section of `/settings`;
   `/sign-in/two-factor` is reachable in every environment (`docs/feature-flags.md`,
   "`twoFactorAuth`").
