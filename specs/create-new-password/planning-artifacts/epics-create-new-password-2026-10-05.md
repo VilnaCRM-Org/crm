@@ -2240,3 +2240,14 @@ acceptance criteria it touches; only the planned shape or file name changed.
     frames: from 768 to 1439 px `AuthCard variant="recovery"` sets `maxWidth: '39.75rem'` (636 px)
     with the Figma padding, while `/sign-in` and `/sign-up` keep 632 px and desktop and mobile
     keep the shared widths. The visual spec's `CARD_WIDTHS` pins 636 against `/sign-in`'s 632.
+16. **Sign-in shows its result in the shared notification (new FR-29).** Not planned: `/sign-in`
+    showed failures as red text under the form, always "unknown error", and redirected silently
+    on success. Shipped in `09fded0e` (2026-10-19) and recorded in the module README ("Sign-in
+    and sign-up results use one notification"): sign-in renders the lazily loaded
+    `RegistrationNotification` with `flow="signIn"` — an error card with "Спробувати ще раз" and
+    "Назад", and a success card "Вітаємо!" whose "Продовжити" performs the existing redirect, with
+    no timer. FR-29 traces it. FR-21's notice flow is unchanged; the resting `/sign-in` page and
+    its baselines (NFR-6) and tab order (NFR-10) are unchanged, while the sign-in e2e, a11y and
+    mobile specs (`login-retry.spec.ts`, `sign-in-keyboard.a11y.spec.ts`,
+    `auth-touch-flow.spec.ts`, `tests/e2e/utils/sign-in-result-card.ts`) were updated for the
+    cards.
