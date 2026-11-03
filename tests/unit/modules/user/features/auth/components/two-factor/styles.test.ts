@@ -2,11 +2,16 @@ import loadIsolated from '@tests/unit/utils/isolated-module';
 
 describe('two-factor challenge styles', () => {
   it('pins every token, with the error helper in the accessible error text colour', async () => {
-    const { default: styles } = await loadIsolated(
-      () => import('@auth/components/two-factor/styles')
+    const [{ default: styles }, { default: fieldStyles }] = await loadIsolated(() =>
+      Promise.all([
+        import('@auth/components/two-factor/styles'),
+        import('@/components/ui-form-field/styles'),
+      ])
     );
+    const { recoveryLabel, ...ownStyles } = styles;
 
-    expect(styles).toEqual({
+    expect(recoveryLabel).toBe(fieldStyles.formFieldLabel);
+    expect(ownStyles).toEqual({
       note: {
         fontFamily: 'Golos',
         fontWeight: 400,
@@ -30,33 +35,11 @@ describe('two-factor challenge styles', () => {
         '&&:focus-visible': { outline: '2px solid #0074B5', outlineOffset: '2px' },
       },
       recoveryField: { flexDirection: 'column', marginBottom: '1rem' },
-      recoveryLabel: {
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 500,
-        fontSize: '0.875rem',
-        lineHeight: 1.29,
-        letterSpacing: 0,
-        marginBottom: '0.25rem',
-        color: '#404142',
-        '@media (min-width:480px)': { fontSize: '1rem', lineHeight: 1.125, letterSpacing: 0 },
-        '@media (min-width:768px)': { fontSize: '0.875rem' },
-        '@media (min-width:1024px)': {
-          fontSize: '1rem',
-          lineHeight: 1.125,
-          marginBottom: '0.5625rem',
-        },
-        '@media (min-width:1440px)': {
-          fontFamily: 'Inter, sans-serif',
-          fontWeight: 500,
-          fontSize: '0.875rem',
-          lineHeight: 1.2857,
-        },
-      },
       recoveryInput: {
         '& .MuiOutlinedInput-notchedOutline': { borderColor: '#80878A' },
         '& .MuiFormHelperText-root': { marginLeft: 0, color: '#57595B' },
         '& .Mui-error ~ .MuiFormHelperText-root, & .MuiFormHelperText-root.Mui-error': {
-          color: '#C62828',
+          color: '#D63333',
         },
       },
     });

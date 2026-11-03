@@ -6,6 +6,7 @@ const loadStyles = (): Promise<ResetPasswordStyles> =>
   loadIsolated(async () => (await import('@auth/components/reset-password/styles')).default);
 
 const TEXT_PRIMARY = '#404142';
+const TEXT_SECONDARY = '#969B9D';
 const TEXT_DARK = '#1A1C1E';
 
 describe('reset password styles', () => {
@@ -26,10 +27,10 @@ describe('reset password styles', () => {
       fontSize: '0.9375rem',
       lineHeight: '1.125rem',
       letterSpacing: 0,
-      color: TEXT_PRIMARY,
+      color: TEXT_SECONDARY,
       textTransform: 'none',
-      '& svg': { flexShrink: 0, color: TEXT_PRIMARY },
-      '&:visited': { color: TEXT_PRIMARY },
+      '& svg': { flexShrink: 0, color: TEXT_SECONDARY },
+      '&:visited': { color: TEXT_SECONDARY },
       '&:hover': { backgroundColor: 'transparent' },
       '&::before': {
         content: '""',
@@ -46,34 +47,6 @@ describe('reset password styles', () => {
       },
       '@media (min-width:1440px)': {
         marginTop: '-0.1875rem',
-      },
-    });
-  });
-
-  it('pins every demoResetLink token', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.demoResetLink).toEqual({
-      display: 'flex',
-      alignItems: 'center',
-      width: 'fit-content',
-      minHeight: '2.75rem',
-      marginTop: '1rem',
-      marginInline: 'auto',
-      padding: '0 0.5rem',
-      fontFamily: 'Golos',
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: '1.125rem',
-      color: TEXT_PRIMARY,
-      textDecoration: 'underline',
-      textTransform: 'none',
-      '&:visited': { color: TEXT_PRIMARY },
-      '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
-      '&:focus-visible, &.Mui-focusVisible': {
-        outline: `2px solid ${TEXT_PRIMARY}`,
-        outlineOffset: '2px',
-        borderRadius: '0.25rem',
       },
     });
   });
@@ -107,6 +80,7 @@ describe('reset password styles', () => {
       color: TEXT_DARK,
       marginBottom: '1rem',
       overflowWrap: 'anywhere',
+      whiteSpace: 'pre-wrap',
       '@media (min-width:480px)': {
         fontSize: '1rem',
         lineHeight: '1.625rem',
@@ -147,12 +121,22 @@ describe('reset password styles', () => {
     });
   });
 
+  it('pins the primary tone override of the back control', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.backControlPrimary).toEqual({
+      color: '#404142',
+      '& svg': { color: '#404142' },
+      '&:visited': { color: '#404142' },
+    });
+  });
+
   it('declares no other style block', async () => {
     const styles = await loadStyles();
 
     expect(Object.keys(styles)).toEqual([
       'backControl',
-      'demoResetLink',
+      'backControlPrimary',
       'resultTitle',
       'resultBody',
       'resultAction',

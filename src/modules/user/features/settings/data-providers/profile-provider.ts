@@ -3,7 +3,7 @@ import { inject, injectable } from 'tsyringe';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { UserServiceFailure } from '@/modules/user/types/user-service/user-service-failure';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { ObservabilityService } from '@/services/types/observability/observability';
+import type UnseenFailureReporter from '@/services/observability/unseen-failure-reporter';
 
 import type GraphQLProfileRepository from '../repositories';
 import type GraphQLProfileTransformer from '../transformers';
@@ -21,8 +21,8 @@ export default class ProfileProvider {
     private readonly repository: GraphQLProfileRepository,
     @inject(AUTH_TOKENS.GraphQLProfileTransformer)
     private readonly transformer: GraphQLProfileTransformer,
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
-    private readonly observability: ObservabilityService
+    @inject(OBSERVABILITY_TOKENS.UnseenFailureReporter)
+    private readonly unseenFailures: UnseenFailureReporter
   ) {}
 
   public async read(signal: AbortSignal): Promise<ProfileReadOutcome> {
@@ -53,19 +53,9 @@ export default class ProfileProvider {
 
   private failure(caught: unknown, signal: AbortSignal, stage: string): UserServiceFailure {
     const failure = this.transformer.failure(caught, signal);
-    if (failure.reason === 'unknown' && !this.reachedTheLink(caught)) {
-      this.observability.captureError(caught, { source: 'settings:profile', stage });
+    if (failure.reason === 'unknown') {
+      this.unseenFailures.report(caught, { source: 'settings:profile', stage });
     }
     return failure;
-  }
-
-  private reachedTheLink(caught: unknown): boolean {
-    if (!(caught instanceof Error)) return false;
-    const networkError = 'networkError' in caught && Boolean(caught.networkError);
-    const graphQLErrors =
-      'graphQLErrors' in caught &&
-      Array.isArray(caught.graphQLErrors) &&
-      caught.graphQLErrors.length > 0;
-    return networkError || graphQLErrors;
   }
 }

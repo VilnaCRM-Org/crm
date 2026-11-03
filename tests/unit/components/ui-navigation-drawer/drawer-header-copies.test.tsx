@@ -10,8 +10,8 @@ describe('DrawerHeaderCopies', () => {
   it('renders the bell, the list and the avatar as aria-hidden, non-interactive copies', () => {
     const { container } = render(<DrawerHeaderCopies />);
 
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { hidden: true })).not.toBeInTheDocument();
     expect(screen.queryAllByRole('generic')).toHaveLength(1);
     expect(container).toContainHTML('aria-hidden="true"');
   });

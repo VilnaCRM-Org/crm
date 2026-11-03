@@ -13,7 +13,7 @@ export default function TwoFactorFormSection(): JSX.Element {
 
   return (
     <AuthCard>
-      <CardBackControl onClick={back} />
+      <CardBackControl onClick={back} tone="primary" />
       <TwoFactorChallengeForm state={challenge.state} callbacks={challenge.callbacks} />
     </AuthCard>
   );

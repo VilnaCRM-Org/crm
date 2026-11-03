@@ -1,25 +1,13 @@
-import 'reflect-metadata';
 import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import ComingSoonPage from '@/components/coming-soon';
 import featureFlagService from '@/config/runtime/feature-flag-service';
+import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 import { A11Y_EXCEPTIONS } from '@tests/utils/a11y/axe-config';
-
-jest.mock('@/providers/di', () => {
-  const Mapper = jest.requireActual('@/modules/user/store/user-display-name-mapper').default;
-  const tokens = jest.requireActual('@/modules/user/config/tokens').default;
-  const mapper = new Mapper();
-  const provider = { read: (): Promise<never> => new Promise(() => undefined) };
-
-  return {
-    __esModule: true,
-    useService: (token: symbol): unknown => (token === tokens.ProfileProvider ? provider : mapper),
-  };
-});
 
 const selectorOf = (fragment: string): string => {
   const entry = A11Y_EXCEPTIONS.find(({ selector }) => selector.includes(fragment));
@@ -43,6 +31,7 @@ describe('the exception allowlist against the assembled shell (issue #362)', () 
   beforeEach(() => {
     stubMotionPreference(false);
     jest.spyOn(featureFlagService, 'isEnabled').mockReturnValue(true);
+    jest.spyOn(currentUserSource, 'read').mockReturnValue(new Promise(() => undefined));
   });
 
   afterEach(() => {

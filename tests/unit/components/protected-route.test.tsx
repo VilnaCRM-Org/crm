@@ -4,10 +4,11 @@ import { MemoryRouter, Route, Routes, useLocation, useOutletContext } from 'reac
 
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
-import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
+import type { ProtectedSessionContext } from '@/routes/types/protected-outlet-context';
 import observabilityCore from '@/services/observability/observability-core';
 import ProtectedRoute from '@auth/components/protected-route';
 import { useAuthStore, authActions } from '@auth/stores';
+import authSessionProvider from '@auth/stores/auth-session-provider';
 import { buildToken } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -32,12 +33,15 @@ function SignInProbe(): JSX.Element {
   );
 }
 
+let lastContext: ProtectedSessionContext | null = null;
+
 function DashboardProbe(): JSX.Element {
-  const { signOut } = useOutletContext<ProtectedOutletContext>();
+  const context = useOutletContext<ProtectedSessionContext>();
+  lastContext = context;
   return (
     <div>
       <p>dashboard</p>
-      <button type="button" onClick={signOut}>
+      <button type="button" onClick={context.signOut}>
         sign out
       </button>
     </div>
@@ -71,6 +75,7 @@ describe('ProtectedRoute', () => {
     act(() => {
       resetClientStores();
     });
+    lastContext = null;
     jest.restoreAllMocks();
   });
 
@@ -99,6 +104,27 @@ describe('ProtectedRoute', () => {
 
     expect(screen.getByText('dashboard')).toBeInTheDocument();
     expect(screen.queryByText(/sign in page/)).not.toBeInTheDocument();
+  });
+
+  it('hands the protected page the container-free session of the auth store', () => {
+    const token = buildToken();
+    renderWithRouter(token);
+
+    expect(lastContext?.session).toBe(authSessionProvider);
+    expect(lastContext?.session.token()).toBe(token);
+  });
+
+  it('explains an ended session when the outlet session ends the current token', () => {
+    const token = buildToken();
+    renderWithRouter(token);
+
+    act(() => {
+      lastContext?.session.end(token);
+    });
+
+    expect(screen.getByText('sign in page from:/')).toBeInTheDocument();
+    expect(screen.getByText('focus main:true')).toBeInTheDocument();
+    expect(screen.getByText('notice:session_ended')).toBeInTheDocument();
   });
 
   it('signs out through the auth store singleton and hands focus to /sign-in', async () => {

@@ -310,8 +310,14 @@ test.describe('App shell on desktop (issue #362)', () => {
   }
 
   test('does nothing when the disabled search, bell and list are clicked', async ({ page }) => {
-    await openProtected(page, ROUTE_PATHS.home);
-    await page.waitForLoadState('networkidle');
+    const stub = await openProtected(page, ROUTE_PATHS.home);
+    await expect.poll(() => stub.count('CurrentUser')).toBe(1);
+    await expect(chipOf(page)).toHaveAccessibleName(
+      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+    );
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
     const requests: string[] = [];
     page.on('request', (request: Request) => requests.push(request.url()));
     const controls = [

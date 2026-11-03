@@ -7,21 +7,9 @@ import i18n from '@/i18n';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 
-jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () => ({
-  __esModule: true,
-  default: (): object => ({
-    status: 'loading',
-    user: null,
-    version: 0,
-    refocus: false,
-    retry: (): undefined => undefined,
-    adoption: {
-      adopt: (): undefined => undefined,
-      confirm: (): undefined => undefined,
-      isCurrent: (): boolean => true,
-    },
-  }),
-}));
+jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
+  jest.requireActual('@tests/unit/utils/loading-profile-load-stub')
+);
 
 describe('UserProfile', () => {
   it('renders one level-1 heading, the social card heading and the subtitle', () => {

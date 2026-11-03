@@ -1,6 +1,7 @@
 {
   "user_menu": {
     "button": "Меню користувача",
+    "button_named": "{{name}}, Меню користувача",
     "my_profile": "Мій профіль",
     "settings": "Налаштування",
     "sign_out": "Вийти"

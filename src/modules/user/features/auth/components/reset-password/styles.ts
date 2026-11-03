@@ -17,15 +17,15 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: '1.125rem',
     letterSpacing: 0,
-    color: customColors.text.primary,
+    color: customColors.text.secondary,
     textTransform: 'none',
 
     '& svg': {
       flexShrink: 0,
-      color: customColors.text.primary,
+      color: customColors.text.secondary,
     },
 
-    '&:visited': { color: customColors.text.primary },
+    '&:visited': { color: customColors.text.secondary },
     '&:hover': { backgroundColor: 'transparent' },
 
     '&::before': {
@@ -48,33 +48,11 @@ export default {
     },
   },
 
-  demoResetLink: {
-    display: 'flex',
-    alignItems: 'center',
-    width: 'fit-content',
-    minHeight: '2.75rem',
-    marginTop: '1rem',
-    marginInline: 'auto',
-    padding: '0 0.5rem',
-
-    fontFamily: 'Golos',
-    fontWeight: 500,
-    fontSize: '0.9375rem',
-    lineHeight: '1.125rem',
+  backControlPrimary: {
     color: customColors.text.primary,
-    textDecoration: 'underline',
-    textTransform: 'none',
-
+    '& svg': { color: customColors.text.primary },
     '&:visited': { color: customColors.text.primary },
-    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
-
-    '&:focus-visible, &.Mui-focusVisible': {
-      outline: `2px solid ${customColors.text.primary}`,
-      outlineOffset: '2px',
-      borderRadius: '0.25rem',
-    },
   },
-
   resultTitle: {
     marginTop: 0,
     marginBottom: '0.5rem',
@@ -98,6 +76,7 @@ export default {
     color: customColors.text.dark,
     marginBottom: '1rem',
     overflowWrap: 'anywhere',
+    whiteSpace: 'pre-wrap',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',
