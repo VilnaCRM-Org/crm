@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-15
+revised: 2026-11-03
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -93,7 +93,7 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
   factory and provider interface; the Data provider is the plain `PasswordRecoveryProvider`.
 - The invented `password_reset` security signal (FR-25) is withdrawn.
 - The mock is the extension, codegen and a stateless happy path with one violation per mutation.
-- `ResetTokenSource` became the `useResetToken` hook (it returns a `ResetTokenHandle`, see
+- `ResetTokenSource` became the `useResetToken(active)` hook (it returns `string | null`, see
   "Implementation drift" item 7); `SentView` and
   `InvalidLinkView` became plain uses of `RecoveryResultView`; the aborted and interrupted outcome
   variants, the rule-table types and the deps types are gone.
@@ -157,7 +157,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - FR-21: a resolved confirm redirects to `/sign-in` with a one-time notice; no session created;
   no cache write of the arguments.
 - FR-22: a domain refusal or a `token` violation on confirm renders the invalid-link state.
-- FR-23: navigation on the reset route; in-flight request aborted on "Назад".
+- FR-23: navigation on the reset route; in-flight request aborted when the page is left; "Назад"
+  only on the invalid-link state (owner decision 2026-10-21, "Implementation drift" item 11).
 - FR-24: one shared password policy never weaker than the API (ASCII uppercase).
 - FR-25: withdrawn 2026-10-08 (the `password_reset` security signal was planner-invented).
 - FR-26: token and PII scrubbing in telemetry (`token=` string pattern, `variables` keys).
@@ -173,7 +174,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - NFR-5: `make lint-metrics` hard-fail policy, including the per-file function caps.
 - NFR-6: zero visual diffs; new baselines from CI artifacts only; `/sign-in` baselines unchanged
   for FR-1, since the link already renders unconditionally.
-- NFR-7: Lighthouse desktop and mobile floors; audited URL list unchanged.
+- NFR-7: Lighthouse desktop and mobile floors; the audited URL list adds both recovery routes
+  ("Implementation drift" item 12).
 - NFR-8: bundle and paint-path budgets; eager entrypoint grows by under 1 kB gzip.
 - NFR-9: WCAG 2.1 AA, axe in three engines, 24 px / 44 px targets, and two new scoped #276
   `color-contrast` entries: the result views' primary-pill links, and the in-card "Назад", which
@@ -696,7 +698,9 @@ operations, ahead of the existing catch-all `createUser` handler), `tests/builde
   without `fetchPolicy: 'no-cache'` the spy records one write).
 - **Given** the class, **when** inspected, **then** both methods share one private generic
   `mutate` of three parameters, the class has two public methods, extends no base class, its
-  only injected collaborator is `AUTH_TOKENS.ApolloClient`, and it value-imports only
+  injected collaborators are `AUTH_TOKENS.ApolloClient` and
+  `OBSERVABILITY_TOKENS.ObservabilityService` (the latter only reports a rejection the Apollo
+  link never saw, "Implementation drift" item 14), and it value-imports only
   `tsyringe`, `uuid`, token modules and the two document seams.
 - **Given** the DTO interfaces, **when** `tsc` checks the repository's typed variables
   assignment, **then** a field the generated input renames or newly requires fails compilation.
@@ -1288,7 +1292,7 @@ So that the credential cannot leak through history, a screenshot, a referrer or 
   `detect-unsafe-regex` passes without suppression (star height 1).
 - **Given** AR-8, **when** the integration suite runs, **then** the observability chain stays at
   100%.
-- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint` runs, **then** `useResetToken` returns the named `ResetTokenHandle` (`token: string | null` plus `discard()`, which drops the in-memory token so FR-22's `invalid_link` failure renders the invalid-link state), and ESLint reports no TB-1 violation.
+- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint` runs, **then** `useResetToken(active: boolean)` returns the scalar `string | null`, and passing `active = false` drops the in-memory token for good (FR-22: the section passes `state.view !== 'invalid'`, so an `invalid_link` failure renders the invalid-link state and the token leaves memory), and ESLint reports no TB-1 violation.
 
 ### Story 3.2: Generalise PasswordField and list the live policy rules
 
@@ -1440,7 +1444,7 @@ NFR-13, NFR-17, NFR-18.
 - **Given** jscpd, **when** `make lint-dup` compares this hook with `useResetPassword`, **then**
   it reports 0 clones, because the submit, abort and retry skeleton lives once in
   `useAbortableSubmit`.
-- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint` runs, **then** the hook takes `AuthProviderLoader` and the `ResetTokenHandle` from `useResetToken` and returns `CreateNewPasswordState`, an `invalid_link` failure calls the handle's `discard()` (FR-22) so the token leaves memory, its callbacks take `CreateNewPasswordDto`, the navigation state is a named `RedirectNavigationState`, and ESLint reports no TB-1 violation.
+- **Given** every value this story passes across a layer boundary, **when** `make lint-eslint` runs, **then** the hook takes only `AuthProviderLoader` and returns `CreateNewPasswordState`, an `invalid_link` failure sets `view` to `invalid` (FR-22), which makes the section call `useResetToken(false)` so the token leaves memory, its callbacks take `CreateNewPasswordDto`, the navigation state is a named `RedirectNavigationState`, and ESLint reports no TB-1 violation.
 - **Given** form values with `confirmPassword`, **when** submitted, **then** the DTO sent omits it.
 - **Given** `CreateNewPasswordFormValues`, **when** read, **then** it only `extends` the DTO (TB-2).
 
@@ -1518,7 +1522,7 @@ NFR-8, NFR-12, NFR-13, NFR-15, NFR-16, NFR-17, NFR-18.
 `@auth/routes/index.ts` (MODIFY: `passwordReset` entry, chunk `create-new-password`,
 `titleKey: 'password_reset.title'`), `@auth/routes/create-new-password/index.tsx` (NEW page
 `CreateNewPassword`), `@auth/routes/create-new-password/create-new-password-form-section.tsx`
-(NEW: the card, the back control, the form or the invalid-link state through
+(NEW: the card, the form or the invalid-link state with its back control, through
 `RecoveryResultView`), `@auth/i18n/{uk,en}.json` (MODIFY: `password_reset.invalid.title`,
 `.invalid.body`, `.invalid.request_new`), `src/i18n/localization.json` (REGEN),
 `tests/unit/.../routes/create-new-password/*.test.tsx`,
@@ -1563,12 +1567,13 @@ NFR-8, NFR-12, NFR-13, NFR-15, NFR-16, NFR-17, NFR-18.
 - **Given** an HTTP `429`, **then** the banner shows without Retry.
 - **Given** an HTTP `503` or an aborted network request, **then** the Retry banner shows and
   Retry sends exactly one more request.
-- **Given** a request in flight, **when** "Назад" is activated, **then** the URL is `/sign-in`,
-  the request is aborted and no banner or notice appears.
+- **Given** a request in flight, **when** the page is left by an in-app navigation, **then** the
+  request is aborted and no banner or notice appears (the new-password form carries no "Назад",
+  "Implementation drift" item 11).
 - **Given** a seeded session token, **when** the route opens, **then** it renders without a
   redirect, and a successful confirm leaves the session token unchanged.
 - **Given** a seeded session and a `window` sentinel written after the first load, **when**
-  "Назад" on the form and, in a second test, "Запросити нове посилання" on the invalid-link state
+  "Назад" and, in a second test, "Запросити нове посилання" on the invalid-link state
   are activated, **then** after arrival the sentinel is still present (no document load), `main`
   has focus, and a client-side navigation to `/` renders the protected home page.
 - **Given** the network log, **then** only the document origin and the API origins were
@@ -1667,8 +1672,9 @@ keyboard rows).
 - **Given** the sent step, **then** the `h1` is focused on arrival and the order is
   back-to-main → "Назад" → "До входу" → footer; **when** "До входу" is activated with Enter,
   **then** `/sign-in` opens without a document load and `main` is focused.
-- **Given** the new-password form, **then** the order is back-to-main → "Назад" → new password →
-  its toggle → confirmation → its toggle → "Підтвердити" → footer; Space toggles visibility.
+- **Given** the new-password form, **then** the order is back-to-main → new password → its
+  toggle → confirmation → its toggle → "Підтвердити" → footer, with no "Назад" stop
+  ("Implementation drift" item 11); Space toggles visibility.
 - **Given** the invalid-link state, **then** the order is back-to-main → "Назад" → "Запросити
   нове посилання" → footer.
 - **Given** the primary links "До входу" and "Запросити нове посилання", **when** axe checks
@@ -1779,7 +1785,8 @@ DoD gates on the files the sweep changes.
   and dependency-cruiser zero findings.
 - **Given** the bundle-size report, **then** the entrypoint grows by < 1 kB gzip, no chunk
   breaches its budget, and no `@mui/material` import landed on eager code.
-- **Given** Lighthouse CI, **then** desktop and mobile floors hold on the unchanged URL list and
+- **Given** Lighthouse CI, **then** desktop and mobile floors hold on the URL list, which now also
+  audits `/password-recovery` and `/password-reset?token=…` ("Implementation drift" item 12), and
   `/sign-in` loses no point against `main`.
 - **Given** `make check-adr-drift` and `make lint-docs`, **then** both pass; the README's password-recovery decisions,
   `docs/feature-flags.md`, `src/api/contracts/README.md`, `src/modules/user/README.md` and
@@ -2160,21 +2167,24 @@ acceptance criteria it touches; only the planned shape or file name changed.
 6. **One keyboard spec for both routes (Story 4.2).** The story planned a separate
    `tests/e2e/a11y/password-reset-keyboard.a11y.spec.ts`. Both routes share
    `tests/e2e/a11y/password-recovery-keyboard.a11y.spec.ts` instead, which drives the request
-   form, the sent step, the new-password form and the invalid-link state, and asserts the
-   in-card "Назад" colour `rgb(64, 65, 66)` on both forms. The `route-coverage.tsv` row for
+   form, the sent step, the new-password form and the invalid-link state. On the request form it
+   asserts the in-card "Назад" text in `rgb(150, 155, 157)` (`#969B9D`, the 2026-10-21 decision)
+   with its focus ring in `rgb(64, 65, 66)`; on the new-password form it asserts that no "Назад"
+   renders (item 11). The `route-coverage.tsv` row for
    `passwordReset` names that spec, so the route-coverage gate still ties the route to its
    keyboard contract.
-7. **Reset-token handle instead of a scalar (Stories 3.1 and 3.4, architecture §5.3 and §5.6,
+7. **An `active` flag on the token hook (Stories 3.1 and 3.4, architecture §5.3 and §5.6,
    FR-22).** The stories planned `useResetToken(): string | null` and
-   `useCreateNewPassword(loader, token: string | null)`. `useResetToken` instead returns the named
-   `ResetTokenHandle` (`@auth/types/password-recovery/state.ts`: `token: string | null` and
-   `discard(): void`), and `CreateNewPasswordFormSection` passes that handle to
-   `useCreateNewPassword`. The reason is FR-22: the token lives in the hook's `useState`, so the
-   flow hook cannot drop it from a plain string. On an `invalid_link` failure it calls
-   `resetToken.discard()`; the handle's `token` becomes `null`, the hook
-   returns the `invalid` view, and the form and the dead token unmount, which also stops a retry
-   from re-sending a token the API has already refused. The read, trim, length check and
-   layout-effect strip are unchanged, and Stories 3.1 and 3.4 were rewritten to name the handle.
+   `useCreateNewPassword(loader, token: string | null)`. The token lives in the hook's
+   `useState`, so FR-22's "the dead token leaves memory" needs a way to drop it. An intermediate
+   design returned a `ResetTokenHandle` with `discard()`; it was replaced before merge by the
+   simpler shape the module README records ("The reset token stays in memory"):
+   `useResetToken(active: boolean): string | null` and `useCreateNewPassword(loader)`.
+   `CreateNewPasswordFormSection` calls `useResetToken(state.view !== 'invalid')`; an
+   `invalid_link` failure sets `view` to `invalid`, the hook's effect clears its state for good,
+   and the form and the dead token unmount, which also stops a retry from re-sending a token the
+   API has already refused. No `ResetTokenHandle` type exists. The read, trim, length check and
+   layout-effect strip are unchanged, and Stories 3.1 and 3.4 were rewritten to the `active` flag.
 8. **Remaining test file names (Stories 1.1, 2.5, 3.6 and 4.4).** The repository integration test
    planned as `password-recovery-repository.integration.test.ts` shipped as
    `graphql-password-recovery-repository.integration.test.ts` in the same folder, beside
@@ -2192,7 +2202,32 @@ acceptance criteria it touches; only the planned shape or file name changed.
 10. **No Retry button (FR-14, Stories 2.4 and 3.5).** The stories planned a "Спробувати ще раз"
     action in the transient-failure banner that re-sent the last request. Figma draws no error
     state, and the owner chose on 2026-10-15 to show the message alone for five seconds and let
-    the user retry with the form's submit. `useRecoveryFailureBanner` returns the text only and
-    dismisses it after `RECOVERY_BANNER_LIFETIME_MS`; `UIForm` lost its `errorAction` slot and
+    the user retry with the form's submit. While a retryable (`network` or `server`) banner shows,
+    `useRecoveryFailureBanner` reports `retry` and the submit reads "Спробувати ще раз"
+    (`auth.error.tryAgain`) instead of "Підтвердити"; it dismisses the banner after
+    `RECOVERY_BANNER_LIFETIME_MS` and the label returns. `UIForm` lost its `errorAction` slot and
     `useAbortableSubmit` its `retry` and `forget`. `ErrorBanner` hands focus to the submit when it
-    hides while focused.
+    hides while focused (module README "Retry is the form's own submit").
+11. **No "Назад" on the new-password form (FR-18, FR-23, NFR-10, Stories 3.6 and 4.2).** The
+    plan drew the in-card back control on both recovery forms. The owner decided on 2026-10-21 to
+    drop it from the `/password-reset` "Створіть новий пароль" form, which has no Figma frame, and
+    keep it on the invalid-link state, where it returns to `/sign-in`. FR-18 lists no back
+    control on that form, FR-23 keeps the abort-on-leave rule for any in-app navigation, NFR-10's
+    new-password tab order has no "Назад" stop, and the unit and keyboard specs assert its
+    absence.
+12. **Lighthouse audits both recovery routes (NFR-7, architecture §8.2, Story 4.5).** The plan
+    left `lighthouse/constants.js` unchanged. Both routes were added, the reset route with a fixed
+    dummy `?token=` so it renders the form rather than the invalid-link state, so the same
+    desktop and mobile floors and resource budgets now gate them too. This is stricter than
+    planned and matches `docs/accessibility/acceptance-standard.md`, which asks for every route
+    to be audited.
+13. **"аккаунту" spelling kept (FR-27).** FR-27 planned the standard "акаунту" in the two recovery
+    descriptions. Sign-in and sign-up already say "аккаунт", so the owner decided on 2026-11-03 to
+    keep the recovery copy consistent with them and leave the correction to one product-wide copy
+    change that also re-records the affected visual baselines.
+14. **The repository reports unseen rejections (Story 1.3, architecture §5.4).** The plan made
+    `AUTH_TOKENS.ApolloClient` the repository's only collaborator. Under the owner's rule "we do
+    not want to silence any errors", `GraphQLPasswordRecoveryRepository` also injects
+    `OBSERVABILITY_TOKENS.ObservabilityService` and reports a rejection the Apollo link never saw
+    (the link reports the ones it did), with neither the token nor the password in the event.
+    Classification is unchanged: the provider still normalizes every rejection.
