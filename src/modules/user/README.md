@@ -513,10 +513,12 @@ already done, alone. Whether a network error is a 401 is asked of #315's
 hooks read the status in one place. The settings page hooks do nothing on `session_ended` and rely
 on the link to end a session whose request came back as a transport 401; the chip's
 `useCurrentUser` reads without Apollo, so its `currentUserSource` ends the session itself on a
-transport 401 through the outlet `session.end(token)`, with the same current-token check. The
-settings Transformer also maps a GraphQL `Access Denied.` error (`access_denied`) to
-`session_ended`, and that error does not reach the link, so for it the shown identity is cleared
-while the token stays and the session is not ended.
+transport 401 through the outlet `session.end(token)`, with the same current-token check. A
+GraphQL `Access Denied.` error (`access_denied`) does not reach the link, and the two readers treat
+it differently. The settings Transformer has no mapping for it, so the settings page settles it as
+`rejected` and shows its failure state while the token stays. The chip's
+`CurrentUserResponseParser` reads it as `denied`, so `currentUserSource` returns `session_ended`
+and the chip clears the shown identity, again without ending the session.
 The link receives its five collaborators as one `SessionLinkDeps` value
 (`AUTH_TOKENS.SessionLinkDeps`): the store, `CLEARED_AUTH_STATE` itself rather than a copy, the
 sandbox demo session, `ObservabilityService` and the error transformer, because a constructor may
