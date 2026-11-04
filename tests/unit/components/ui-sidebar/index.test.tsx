@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 
@@ -190,6 +190,35 @@ describe('UISidebar', () => {
     const { container } = renderSidebar();
 
     expect(container).not.toContainHTML('MuiTouchRipple');
+  });
+
+  it('reveals the text only when reopened, until the animation ends', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const atRest = nav.className;
+
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    expect(nav).toHaveClass(atRest, { exact: true });
+
+    await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+    expect(nav).not.toHaveClass(atRest, { exact: true });
+
+    fireEvent.animationEnd(nav);
+    expect(nav).toHaveClass(atRest, { exact: true });
+  });
+
+  it('stops revealing when collapsed again before the animation ends', async () => {
+    const user = userEvent.setup();
+    renderSidebar();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    const atRest = nav.className;
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+
+    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+
+    expect(nav).toHaveClass(atRest, { exact: true });
   });
 
   it.each([
