@@ -12,5 +12,7 @@ const COPY: ConfirmationCopy = {
 };
 
 export default function useSetupFormProps(props: TwoFactorSettingsProps): SetupFormProps {
-  return useCodeFormProps(props, props.callbacks.confirm, COPY);
+  const form = useCodeFormProps(props, props.callbacks.confirm, COPY);
+
+  return { ...form, showTitle: false, showSubtitle: false };
 }

@@ -6,6 +6,7 @@ import { OTPAUTH_URI, SECRET } from '@stories/two-factor-story-fixtures';
 import CopyButton from './copy-button';
 import KeyBlock from './key-block';
 import KeyChip from './key-chip';
+import KeyInfoTooltip from './key-info-tooltip';
 import OffGuide from './off-guide';
 import SetupGuide from './setup-guide';
 import StepItem from './step-item';
@@ -14,14 +15,14 @@ const meta: Meta<typeof StepItem> = {
   title: 'Settings/TwoFactorSettings/Parts',
   component: StepItem,
   tags: ['autodocs'],
-  args: { position: 1, text: 'Завантажте й установіть застосунок автентифікації' },
+  args: { position: 1, text: 'Завантажте й установіть застосунок Google Authenticator' },
   argTypes: { position: { control: 'number' }, text: { control: 'text' } },
   parameters: {
     docs: {
       description: {
         component:
           'The small pieces of the setup card: a numbered step (24 px #E1E7EA badge, text ' +
-          '#57595B), the key chip (#EAECEE, text #57595B) with its outlined copy button, and ' +
+          '#404142), the key chip (#EAECEE, text #57595B) with its icon-only copy button, and ' +
           'the guides that group them.',
       },
       story: { inline: false },
@@ -57,8 +58,14 @@ export const Copy: Story = {
   ),
 };
 
-export const KeyWithCopy: Story = { render: () => <KeyBlock secret={SECRET} /> };
+export const KeyWithCopy: Story = {
+  render: () => <KeyBlock secret={SECRET} copyLabel="Скопіювати ключ" />,
+};
 
 export const OffSteps: Story = { render: () => <OffGuide /> };
 
-export const ScanGuide: Story = { render: () => <SetupGuide otpauthUri={OTPAUTH_URI} /> };
+export const ScanGuide: Story = {
+  render: () => <SetupGuide otpauthUri={OTPAUTH_URI} secret={SECRET} />,
+};
+
+export const KeyInfo: Story = { render: () => <KeyInfoTooltip /> };

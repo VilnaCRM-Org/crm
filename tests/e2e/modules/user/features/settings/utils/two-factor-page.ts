@@ -12,6 +12,9 @@ export const twoFactorText = {
   setupTitle: t('settings.two_factor.setup.title'),
   qrLabel: t('settings.two_factor.setup.qr_label'),
   copyKey: t('settings.two_factor.setup.copy_key'),
+  copyBackupKey: t('settings.two_factor.setup.copy_backup_key'),
+  keyInfoLabel: t('settings.two_factor.setup.key_info_label'),
+  keyInfo: t('settings.two_factor.setup.key_info'),
   keyCopied: t('settings.two_factor.setup.key_copied'),
   copyFailed: t('settings.two_factor.setup.copy_failed'),
   codeLabel: t('settings.two_factor.confirm.code_label'),
@@ -63,13 +66,21 @@ export const startOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.start, exact: true });
 
 export const setupHeadingOf = (page: Page): Locator =>
-  sectionOf(page).getByRole('heading', { level: 3, name: twoFactorText.setupTitle, exact: true });
+  sectionOf(page).getByRole('heading', { level: 2, name: twoFactorText.setupTitle, exact: true });
 
 export const qrOf = (page: Page): Locator =>
   sectionOf(page).getByRole('img', { name: twoFactorText.qrLabel, exact: true });
 
 export const copyKeyOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.copyKey, exact: true });
+
+export const copyBackupKeyOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.copyBackupKey, exact: true });
+
+export const keyInfoOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.keyInfoLabel, exact: true });
+
+export const keyInfoTipOf = (page: Page): Locator => page.getByRole('tooltip');
 
 export const codeGroupOf = (page: Page): Locator =>
   sectionOf(page).getByRole('group', { name: twoFactorText.codeLabel, exact: true });
@@ -95,7 +106,7 @@ export const doneOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.done, exact: true });
 
 export const statusHeadingOf = (page: Page, text: string): Locator =>
-  sectionOf(page).getByRole('heading', { level: 3, name: text, exact: true });
+  sectionOf(page).getByRole('heading', { name: text, exact: true });
 
 export async function typeCode(page: Page, code: string): Promise<void> {
   await codeCellsOf(page).first().click();

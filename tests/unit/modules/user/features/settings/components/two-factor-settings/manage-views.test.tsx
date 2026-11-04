@@ -75,9 +75,7 @@ describe('the on view actions', () => {
       await transition(utils, props, viewState('on'));
 
       expect(button()).toHaveFocus();
-      expect(
-        screen.getByRole('heading', { level: 3, name: 'Двофакторну автентифікацію ввімкнено' })
-      ).not.toHaveFocus();
+      expect(screen.getByRole('heading', { level: 2, name: '2FA підключено' })).not.toHaveFocus();
     }
   );
 

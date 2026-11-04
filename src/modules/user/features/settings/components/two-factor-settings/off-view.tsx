@@ -39,7 +39,7 @@ export default function OffView({
       submittingLabel={t('settings.two_factor.preparing')}
       submitSx={styles.submit}
     >
-      <StatusHeading text={status} icon={false} focus />
+      <StatusHeading text={status} focus />
       <OffGuide />
     </UIForm>
   );

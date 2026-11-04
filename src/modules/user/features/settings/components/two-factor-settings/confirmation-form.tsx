@@ -26,6 +26,8 @@ export default function ConfirmationForm<T extends FieldValues>({
       titleComponent="h3"
       titleRef={form.titleRef}
       subtitle={form.subtitle}
+      showTitle={form.showTitle ?? true}
+      showSubtitle={form.showSubtitle ?? true}
       submitLabel={form.submitLabel}
       submittingLabel={form.submittingLabel}
       submitBlockedReason={form.submitBlockedReason}

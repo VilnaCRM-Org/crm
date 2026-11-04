@@ -16,8 +16,6 @@ const textFor = (state: ReturnType<typeof viewState>): string | null =>
 
 describe('useStatusText', () => {
   it.each([
-    ['on', null, 'Двофакторну автентифікацію ввімкнено'],
-    ['on', 'already_on', 'Двофакторну автентифікацію вже ввімкнено.'],
     ['off', 'stale', 'Налаштування застаріло. Почніть знову.'],
     ['off', 'disabled', 'Двофакторну автентифікацію вимкнено.'],
     ['off', 'already_off', 'Двофакторну автентифікацію вже вимкнено.'],
@@ -25,7 +23,7 @@ describe('useStatusText', () => {
     expect(textFor(viewState(view, { statusCode: code }))).toBe(text);
   });
 
-  it.each(['off', 'setup', 'codes', 'disable', 'regenerate', 'reauth'] as const)(
+  it.each(['off', 'setup', 'codes', 'on', 'disable', 'regenerate', 'reauth'] as const)(
     'has no text for the %s view without a status code',
     (view) => {
       expect(textFor(viewState(view))).toBeNull();
@@ -37,8 +35,10 @@ describe('useStatusText', () => {
       <I18nextProvider i18n={createSettingsLocaleI18n('en', [])}>{children}</I18nextProvider>
     );
 
-    const { result } = renderHook(() => useStatusText(viewState('on')), { wrapper: english });
+    const { result } = renderHook(() => useStatusText(viewState('off', { statusCode: 'stale' })), {
+      wrapper: english,
+    });
 
-    expect(result.current).toBe('Two-factor authentication is on');
+    expect(result.current).toBe('The setup has expired. Start again.');
   });
 });

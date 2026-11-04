@@ -10,7 +10,11 @@ import {
   codesHeadingOf,
   confirmOf,
   copyCodesOf,
+  copyBackupKeyOf,
   copyKeyOf,
+  keyInfoOf,
+  keyInfoTipOf,
+  qrOf,
   disableFieldOf,
   disableSubmitOf,
   doneOf,
@@ -158,6 +162,21 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
     await expect(sectionOf(page).getByText(twoFactorText.codesCopied)).toBeVisible();
   });
 
+  test('opens the key info tooltip with a tap and closes it with a tap elsewhere', async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await expect(keyInfoTipOf(page)).toBeHidden();
+
+    await keyInfoOf(page).tap();
+    await expect(keyInfoTipOf(page)).toBeVisible();
+    await keyInfoOf(page).tap();
+    await expect(keyInfoTipOf(page)).toBeVisible();
+
+    await qrOf(page).tap();
+    await expect(keyInfoTipOf(page)).toBeHidden();
+  });
+
   test('keeps the setup controls tappable', async ({ page }) => {
     await openSetup(page);
 
@@ -167,6 +186,8 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
     }
     await expectTouchTarget(confirmOf(page), 'Підтвердити');
     await expectTouchTarget(copyKeyOf(page), 'copy key', MIN_SMALL_TARGET_PX);
+    await expectTouchTarget(copyBackupKeyOf(page), 'copy backup key', MIN_SMALL_TARGET_PX);
+    await expectTouchTarget(keyInfoOf(page), 'key info', MIN_SMALL_TARGET_PX);
   });
 
   test('keeps the codes controls tappable', async ({ page }) => {
@@ -202,6 +223,9 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
       await expectNoHorizontalOverflow(page);
 
       await openSetup(page);
+      await expectNoHorizontalOverflow(page);
+      await keyInfoOf(page).tap();
+      await expect(keyInfoTipOf(page)).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await tapCode(page, CODE);
       await confirmOf(page).tap();

@@ -3,7 +3,7 @@ import type { ClipboardEvent, JSX } from 'react';
 
 import type { KeyChipProps } from '../../types/components/two-factor-settings';
 
-import styles from './styles';
+import styles from './setup-steps-styles';
 
 const GROUP_SIZE = 4;
 
@@ -22,7 +22,7 @@ export default function KeyChip({ secret, chipRef }: KeyChipProps): JSX.Element 
   };
 
   return (
-    <Box component="code" ref={chipRef} onCopy={onCopy} sx={styles.keyChip}>
+    <Box component="code" ref={chipRef} onCopy={onCopy} sx={styles.keyCode}>
       {groupsOf(secret)}
     </Box>
   );

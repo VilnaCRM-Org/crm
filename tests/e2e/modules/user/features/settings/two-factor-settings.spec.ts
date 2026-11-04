@@ -80,7 +80,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await page.goto(SETTINGS_URL);
 
       await expect(sectionOf(page).getByRole('heading', { level: 2 })).toHaveText(
-        twoFactorText.title
+        twoFactorText.setupTitle
       );
       await expect(startOf(page)).toBeVisible();
       const section = await boxOf(sectionOf(page));
@@ -139,7 +139,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await openSetup(page);
 
       await expect(qrOf(page)).toBeVisible();
-      await expect(sectionOf(page).getByText(KEY_IN_GROUPS, { exact: true })).toBeVisible();
+      await expect(sectionOf(page).getByText(KEY_IN_GROUPS, { exact: true })).toHaveCount(2);
       await expect(codeCellsOf(page)).toHaveCount(6);
       await expect(sectionOf(page).getByText(twoFactorText.note)).toBeVisible();
       await expect(confirmOf(page)).toBeEnabled();
@@ -190,7 +190,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(codeCellsOf(page).first()).toHaveAttribute('aria-invalid', 'true');
       await expect(codeCellsOf(page).first()).toBeFocused();
       await expect(qrOf(page)).toBeVisible();
-      await expect(sectionOf(page).getByText(KEY_IN_GROUPS, { exact: true })).toBeVisible();
+      await expect(sectionOf(page).getByText(KEY_IN_GROUPS, { exact: true })).toHaveCount(2);
       await expectNoSecrets(page, SECRETS);
     });
 

@@ -180,17 +180,12 @@ describe('the codes view', () => {
 });
 
 describe('the on view and the status headings', () => {
-  it('shows the on heading with a decorative icon, without stealing focus on first render', () => {
+  it('shows the on heading without stealing focus on first render', () => {
     renderPanel(
       panelProps({ view: viewState('on'), settings: { ...EMPTY_SETTINGS, status: 'enabled' } })
     );
 
-    const heading = screen.getByRole('heading', {
-      level: 3,
-      name: 'Двофакторну автентифікацію ввімкнено',
-    });
-    expect(heading).not.toHaveFocus();
-    expect(heading.innerHTML).toMatch(/<svg[^>]*aria-hidden="true"/);
+    expect(screen.getByRole('heading', { level: 2, name: '2FA підключено' })).not.toHaveFocus();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -218,16 +213,14 @@ describe('the on view and the status headings', () => {
       />
     );
 
-    expect(
-      screen.getByRole('heading', { level: 3, name: 'Двофакторну автентифікацію ввімкнено' })
-    ).toHaveFocus();
+    expect(screen.getByRole('heading', { level: 2, name: '2FA підключено' })).toHaveFocus();
   });
 
   it('shows the already-on heading when 2FA turned out to be enabled', () => {
     renderPanel(panelProps({ view: viewState('on', { statusCode: 'already_on' }) }));
 
     expect(
-      screen.getByRole('heading', { level: 3, name: 'Двофакторну автентифікацію вже ввімкнено.' })
+      screen.getByRole('heading', { level: 2, name: 'Двофакторну автентифікацію вже ввімкнено.' })
     ).toHaveFocus();
   });
 
@@ -235,12 +228,10 @@ describe('the on view and the status headings', () => {
     ['stale', 'Налаштування застаріло. Почніть знову.'],
     ['disabled', 'Двофакторну автентифікацію вимкнено.'],
     ['already_off', 'Двофакторну автентифікацію вже вимкнено.'],
-  ] as const)('shows the %s heading in the off view, focused, with no icon', (code, text) => {
+  ] as const)('shows the %s heading in the off view, focused', (code, text) => {
     renderPanel(panelProps({ view: viewState('off', { statusCode: code }) }));
 
-    const heading = screen.getByRole('heading', { level: 3, name: text });
-    expect(heading).toHaveFocus();
-    expect(heading.innerHTML).not.toContain('<svg');
+    expect(screen.getByRole('heading', { level: 3, name: text })).toHaveFocus();
     expect(screen.getByRole('button', { name: 'Почати налаштування' })).toBeInTheDocument();
   });
 

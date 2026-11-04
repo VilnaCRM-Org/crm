@@ -9,11 +9,11 @@ const loadModule = (): Promise<QrCodeImageStylesModule> =>
   );
 
 describe('QR code image styles', () => {
-  it('renders the image as a block filling its column up to 12.5rem with its ratio', async () => {
+  it('renders the image as a block filling its frame with its ratio', async () => {
     const styles = await loadModule();
 
     expect(styles.default).toEqual({
-      image: { display: 'block', width: '100%', maxWidth: '12.5rem', height: 'auto' },
+      image: { display: 'block', width: '100%', height: 'auto' },
     });
   });
 });

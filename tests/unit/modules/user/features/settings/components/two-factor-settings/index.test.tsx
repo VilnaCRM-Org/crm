@@ -59,9 +59,7 @@ describe('TwoFactorSettings', () => {
 
     render(<TwoFactorSettings />, { wrapper: Wrapper });
 
-    expect(
-      screen.getByRole('heading', { level: 3, name: 'Налаштуйте двофакторну автентифікацію' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Налаштуйте 2FA' })).toBeInTheDocument();
     expect(screen.getByLabelText('Цифра 1 з 6')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByRole('button', { name: 'Почати налаштування' })).not.toBeInTheDocument();
     expect(mockHook).toHaveBeenCalledTimes(1);
