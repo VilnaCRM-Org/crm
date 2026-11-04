@@ -41,8 +41,7 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   optional `userMenu` slot and an `onShellFailure` callback, typed in
   `src/components/types/layouts/app-layout.ts`.
 - **Home and settings lose their stopgaps.** `/` no longer renders its own Sign out button or
-  link to `/settings` (the sidebar, the drawer and the chip menu own both), and `/settings` no
-  longer centres its content (see the settings README).
+  link to `/settings` (the sidebar, the drawer and the chip menu own both).
 
 ## Layouts
 
@@ -452,6 +451,24 @@ Playwright container and run in CI only.
   3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
   `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
 
+### DV-12: the settings page centres beside the sidebar (owner decision, 2026-11-04)
+
+Figma starts the page at x 137 beside the desktop rail, which left 53 px on the rail's side and
+137 px on the screen's. The owner asked for the page to be centred at 1440, so above 1024 px the
+settings heading and grid shrink to the grid's columns and centre in the content column, and the
+desktop rail no longer keeps the 41 px right margin that produced x 137. The content column now
+starts at the rail edge on `/` too, so its title moves from x 137 to x 96, as the tablet rail does.
+
+| Sidebar and width | Gap to sidebar | Gap to screen edge | Cards       |
+| ----------------- | -------------- | ------------------ | ----------- |
+| Expanded, 1440    | 12             | 12                 | 262 to 1428 |
+| Rail, 1440        | 95             | 95                 | 179 to 1345 |
+| Expanded, 1920    | 252            | 252                | 502 to 1668 |
+| Rail, 1920        | 335            | 335                | 419 to 1585 |
+
+Where the two columns need all the room there is nothing to centre, so the frames Figma draws stay
+exact: expanded at 1440 is unchanged, as are x 263 at 1024 and the rail below 1440.
+
 ### DV-11: the Settings label keeps clear of its chevron (owner decision, 2026-10-26)
 
 Figma draws the Settings chevron 192 px (desktop) and 190 px (tablet) into a row whose label already
@@ -476,15 +493,13 @@ label); the rows not listed here are in the tables above.
 | ---------------------------- | ----- | -------------- | -------------- | ------ |
 | P-13 Settings title start    | 1440  | x 262, y 92    | x 262, y 92    | pass   |
 | P-26 Settings title start    | 1024  | x 263, y 88    | x 263, y 88    | pass   |
-| P-51 desktop rail page start | 1440  | 125, title 137 | 125, title 137 | pass   |
+| P-51 desktop rail page start | 1440  | 125, title 137 | 84, title 179  | DV-12  |
 | P-58 first sub-item text     | 1024  | x 73, y 503    | x 73, y 503    | pass   |
 | P-64 current sub-item tint   | 1440  | 12,419, 238×42 | 12,419, 238×42 | pass   |
 | P-65 current sub-item tint   | 1024  | 13,495, 238×46 | 13,495, 238×46 | pass   |
 
-P-51 failed on the first measurement: the page followed the rail edge to x 84 (title x 96). The
-desktop rail wrapper now keeps a 41 px right margin, so the navigation column is 12 + 72 + 41 = 125
-px wide and the page starts where Figma draws it. P-58's text box is 18 px tall in Figma and starts
-at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
+P-51 departs from Figma by owner decision (DV-12 above). P-58's text box is 18 px tall in Figma and
+starts at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
 The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`. P-62, the tablet
 rail content start, has no Figma value yet (UX 10.2, V-9): the tablet page follows the rail edge
 (x 89, title x 101) until it is measured.

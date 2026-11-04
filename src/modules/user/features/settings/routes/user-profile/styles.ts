@@ -17,6 +17,9 @@ export default {
     [`@media (min-width:${lg + 1}px)`]: {
       gap: '0.75rem',
       paddingTop: '1.75rem',
+      width: 'fit-content',
+      maxWidth: '100%',
+      marginInline: 'auto',
     },
   },
   header: {

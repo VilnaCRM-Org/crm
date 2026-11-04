@@ -182,17 +182,17 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
-- **Desktop content is left-aligned beside the sidebar.** The app shell (issue #362) now draws the
-  238 px sidebar Figma shows, so above 1024 px the content no longer centres: the heading and the
-  grid start at the content column's own left edge, 12 px from the sidebar (x 262 at 1440, x 263 at
-  1024 with the sidebar expanded; collapsed to the rail, x 137 at 1440 and x 101 at 1024, the latter
-  not yet measured against Figma — see P-51 and P-62 in the shell README). The toolkit `UIContainer`
-  pads 32 px at 1024 and 124 px at 1440 (AV-7 measured it and found it does not yield the Figma
-  start), so the page renders inside the shared `UIShellContent` (15 / 26 / 12 px insets; see
+- **Desktop content is centred beside the sidebar** (owner decision of 2026-11-04,
+  [DV-12](../../../../components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04)).
+  Above 1024 px the heading and the grid shrink to the grid's columns (`width: fit-content`) and
+  centre in the content column. Where the columns need all the room there is nothing to centre, so
+  the expanded sidebar keeps Figma's x 262 at 1440 and x 263 at 1024; on the rail at 1440 the gaps
+  to the rail and to the screen edge are both 95 px (x 179), where Figma draws x 137. The toolkit
+  `UIContainer` pads 32 px at 1024 and 124 px at 1440 (AV-7 measured it and found it does not yield
+  the Figma start), so the page renders inside the shared `UIShellContent` (15 / 26 / 12 px insets;
+  see
   [frame and settings alignment](../../../../components/ui-app-shell/README.md#measured-against-figma-frame-and-settings-alignment-issue-362)
-  in the shell README). The page keeps its `gap` and `paddingTop`;
-  `width: fit-content`, `maxWidth` and `marginInline: auto` are gone. The 2FA column, when it lands,
-  widens the grid to the right.
+  in the shell README).
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
   header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
