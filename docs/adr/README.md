@@ -4,6 +4,7 @@ This index lists the Architecture Decision Records for this repository.
 
 - [ADR-001: Module Federation vs Single-SPA](./001-module-federation-vs-single-spa.md)
 - [ADR-002: Zustand vs Redux for Client State Management](./002-zustand-over-redux.md)
+- [ADR-003: Move to the fastest Rust toolchain: aube, Bun 1.4 and bun check](./003-rust-javascript-toolchain.md)
 
 ## Writing a new ADR
 
