@@ -51,7 +51,9 @@ export const control = {
 
 const rowBase = { ...control, padding: '2px 0 2px 24px', gap: '8px' };
 
-const drawerBorder = `1px solid ${paletteColors.background.subtle}`;
+const panelEdge = paletteColors.background.subtle;
+
+const drawerBorder = `1px solid ${panelEdge}`;
 
 const subBase = { ...control, display: 'block', fontWeight: 400 };
 
@@ -151,7 +153,7 @@ export default {
     padding: 0,
     listStyle: 'none',
     backgroundColor: paletteColors.background.default,
-    boxShadow: `inset 1px 0 0 ${paletteColors.background.subtle}, inset -1px 0 0 ${paletteColors.background.subtle}`,
+    boxShadow: `inset 1px 0 0 ${panelEdge}, inset -1px 0 0 ${panelEdge}`,
   },
   divider: {
     expanded: { ...dividerBase, width: '100%', backgroundColor: paletteColors.background.subtle },
