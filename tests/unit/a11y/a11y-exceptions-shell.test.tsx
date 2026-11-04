@@ -77,7 +77,7 @@ describe('the exception allowlist against the assembled shell (issue #362)', () 
     const nav = screen.getByRole('navigation', { name: 'Основна навігація' });
     const boards = within(nav).getByRole('link', { name: 'Дошки' });
 
-    expect(matching(nav, CURRENT)).toEqual([boards]);
+    expect(matching(nav, CURRENT)).toEqual([boards, within(boards).getByText('Дошки')]);
     expect(boards).toHaveAttribute('aria-current', 'page');
     expect(matching(screen.getByRole('banner'), CURRENT)).toHaveLength(0);
   });
@@ -133,8 +133,8 @@ describe('the exception allowlist against the assembled shell (issue #362)', () 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Відкрити меню' }));
     const dialog = await screen.findByRole('dialog', { name: 'Основна навігація' });
 
-    expect(matching(dialog, CURRENT)).toEqual([
-      within(dialog).getByRole('link', { name: 'Дошки' }),
-    ]);
+    const currentRow = within(dialog).getByRole('link', { name: 'Дошки' });
+
+    expect(matching(dialog, CURRENT)).toEqual([currentRow, within(currentRow).getByText('Дошки')]);
   });
 });
