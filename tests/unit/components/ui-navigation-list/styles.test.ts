@@ -23,6 +23,7 @@ describe('navigation list styles', () => {
         margin: '0 -1px',
         padding: 0,
         listStyle: 'none',
+        overflowX: 'hidden',
         overflowY: 'auto',
         scrollPaddingBottom: '76px',
         '&:focus:not(:focus-visible)': { outline: 'none' },
