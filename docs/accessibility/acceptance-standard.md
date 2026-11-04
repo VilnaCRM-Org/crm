@@ -23,8 +23,10 @@ route lane calls [`expectNoAxeViolations`][route-helper] on every route in
 [`expectTabOrder`][keyboard-helper] to assert tab order, `:focus-visible`, a visible focus change
 and Space/Enter activation. Both Playwright lanes ride the `accessibility testing` check.
 Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
-`/sign-up`, `/forbidden`, `/server-error` and the catch-all 404 (`/definitely-not-a-route`) as a
-second signal, not the primary gate.
+`/sign-up`, `/forbidden`, `/server-error`, the catch-all 404 (`/definitely-not-a-route`),
+`/password-recovery` and `/password-reset` (with a fixed, non-empty dummy value in its `token`
+query parameter, so the form renders rather than the invalid-link state) as a second signal, not
+the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are
@@ -93,7 +95,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Seven `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Nine `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -104,7 +106,19 @@ colour and therefore every visual baseline, which is why they are design-owned w
 part of the gate's own pull request. One more covers the sign-in "Забули пароль?" link
 (`form a.MuiLink-root[href="/password-recovery"]`), the toolkit brand text link at `#1EAEFF` on
 white (2.45:1). The colour is the product owner's decision (ui-toolkit DEV-67); the accessible
-alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1).
+alternative is the toolkit `tone="accessible"` (`#0074B5`, 5.04:1). The eighth covers the
+password-recovery in-card link buttons (issue #315), "До входу" on the "check your e-mail" view
+of `/password-recovery` and "Запросити нове посилання" on the invalid-link view of
+`/password-reset`
+(`#auth-form-card > a.MuiButton-contained[href="/sign-in"]` and
+`#auth-form-card > a.MuiButton-contained[href="/password-recovery"]`):
+contained links that reuse the submit-button styling, white on `#1EAEFF` at 2.45:1, so they carry
+the same design-owned debt as the submit button. The ninth covers the "Назад" back link at the top
+of the recovery cards (`#auth-form-card > a.MuiButton-text[href="/sign-in"]` and
+`#auth-form-card > button.MuiButton-text`), whose text and chevron use the Figma `grey[50]`
+`#969B9D` on white (2.81:1). The colour follows Figma by the user's decision for issue #315; the
+accessible alternative is `#404142` (10.2:1), which the link's focus ring keeps, so focus
+visibility still clears 3:1.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),

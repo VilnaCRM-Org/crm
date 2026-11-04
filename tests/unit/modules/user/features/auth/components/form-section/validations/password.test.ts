@@ -2,7 +2,7 @@ import { TFunction } from 'i18next';
 
 import formValidators from '@/modules/user/features/auth/components/form-section/validations';
 
-import emptyUser from './constants';
+import emptyUser, { EMPTY_FIELD_VALUES } from './constants';
 
 describe('password validation', () => {
   const tMock = ((key: string) => key) as unknown as TFunction;
@@ -24,27 +24,15 @@ describe('password validation', () => {
       'A1bcdefg',
       'Abcdefgh1',
       'P1ssword',
-      'Пароль1А',
+      'Abcdefg1',
     ])('should return true for valid password: %s', (password) => {
       expect(validators.password(password, emptyUser)).toBe(true);
     });
   });
 
   describe('required validation', () => {
-    it('should return required error for empty string', () => {
-      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.required');
-    });
-
-    it('should return required error for undefined', () => {
-      expect(validators.password(undefined as unknown as string, emptyUser)).toBe(
-        'sign_up.form.password_input.required'
-      );
-    });
-
-    it('should return required error for null', () => {
-      expect(validators.password(null as unknown as string, emptyUser)).toBe(
-        'sign_up.form.password_input.required'
-      );
+    it.each(EMPTY_FIELD_VALUES)('should return required error for %s', (_, password) => {
+      expect(validators.password(password, emptyUser)).toBe('sign_up.form.password_input.required');
     });
   });
 
@@ -181,11 +169,14 @@ describe('password validation', () => {
       );
     });
 
-    it('should handle Unicode uppercase letters', () => {
-      expect(validators.password('Пароль123', emptyUser)).toBe(true); // Cyrillic П
-      expect(validators.password('Übung123', emptyUser)).toBe(true); // German Ü
-      expect(validators.password('École123', emptyUser)).toBe(true); // French É
-    });
+    it.each(['Пароль123', 'Übung123', 'École123', 'Пароль1А'])(
+      'should reject %s, whose only uppercase letters are not Latin A-Z',
+      (password) => {
+        expect(validators.password(password, emptyUser)).toBe(
+          'sign_up.form.password_input.error_uppercase'
+        );
+      }
+    );
 
     it.each(['A', 'B', 'C', 'X', 'Y', 'Z'])(
       'should accept password with uppercase %s',
@@ -213,10 +204,10 @@ describe('password validation', () => {
       expect(validators.password('Password1', emptyUser)).toBe(true);
     });
 
-    it('should handle Unicode lowercase letters', () => {
-      expect(validators.password('ПАРОЛЬ1а', emptyUser)).toBe(true); // Cyrillic а
-      expect(validators.password('ÜBUNG123ü', emptyUser)).toBe(true); // German ü
-      expect(validators.password('ÉCOLE123é', emptyUser)).toBe(true); // French é
+    it('should handle Unicode lowercase letters next to a Latin uppercase letter', () => {
+      expect(validators.password('AПАРОЛЬ1а', emptyUser)).toBe(true);
+      expect(validators.password('AÜBUNG123ü', emptyUser)).toBe(true);
+      expect(validators.password('AÉCOLE123é', emptyUser)).toBe(true);
     });
 
     it.each(['a', 'b', 'c', 'x', 'y', 'z'])(
@@ -292,9 +283,11 @@ describe('password validation', () => {
       );
     });
 
-    it('should handle password with tabs and newlines', () => {
+    it('should accept a tab and reject a line terminator, as the OpenAPI pattern does', () => {
       expect(validators.password('Pass\tword1', emptyUser)).toBe(true);
-      expect(validators.password('Pass\nword1', emptyUser)).toBe(true);
+      expect(validators.password('Pass\nword1', emptyUser)).toBe(
+        'sign_up.form.password_input.error_line_break'
+      );
     });
   });
 

@@ -5,6 +5,7 @@ import {
   ApiStatusErrorFactory,
   AuthErrorFactory,
   BaseAPI,
+  GraphQLPasswordRecoveryRepository,
   LoginAPI,
   RegistrationAPI,
 } from '@auth/repositories';
@@ -15,6 +16,7 @@ describe('auth repositories barrel', () => {
     expect(typeof ApiStatusErrorFactory).toBe('function');
     expect(typeof AuthErrorFactory).toBe('function');
     expect(typeof BaseAPI).toBe('function');
+    expect(typeof GraphQLPasswordRecoveryRepository).toBe('function');
     expect(typeof LoginAPI).toBe('function');
     expect(typeof RegistrationAPI).toBe('function');
   });

@@ -106,13 +106,15 @@ None. The mechanism stays in place for the next rollout: the `FeatureFlag` union
 `flags` object is strict, so a block or an environment that still names a removed flag fails fast.
 
 `forgotPassword`, the first flag, gated the sign-in "Forgot password?" link. Issue #309 removed
-it by a product decision to show the link in the form before the recovery flow (#315) exists, so
-it skipped stage 2. The link points at `ROUTE_PATHS.passwordRecovery` and lands on the
-not-found page until #315 registers the route. The contract test that tied the flag's shipped
-default to that route went with the flag; `tests/unit/tooling/runtime-config-contract.test.ts`
-now pins that the link is rendered, the route is unregistered, and its row in
-`tests/e2e/route-coverage.tsv` stays allowlisted with a reason naming #315. Any environment that
-still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
+it by a product decision to show the link in the form before the recovery flow existed, so it
+skipped stage 2. The link points at `ROUTE_PATHS.passwordRecovery`, which #315 registers
+together with `/password-reset`, so the flow ships with no flag in any environment: the test
+stack, the sandboxes and production all render it. Production depends on its user-service
+serving the reset mutations; until a release carries them, the flow there answers with the
+retryable transient error rather than a missing page.
+`tests/unit/tooling/runtime-config-contract.test.ts` pins that the link is rendered and the
+route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any environment that still
+sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
 `Known flags: (none).` and must unset it.
 
 ## Rules

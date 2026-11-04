@@ -126,6 +126,8 @@ K6_SIGNUP_SCRIPT            ?= /loadTests/signup.js
 K6_SIGNUP_RESULTS_FILE		?= /loadTests/results/signup.html
 K6_ERROR_PAGES_SCRIPT       ?= /loadTests/error-pages.js
 K6_ERROR_PAGES_RESULTS_FILE ?= /loadTests/results/error-pages.html
+K6_PASSWORD_RECOVERY_SCRIPT ?= /loadTests/password-recovery.js
+K6_PASSWORD_RECOVERY_RESULTS_FILE ?= /loadTests/results/password-recovery.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
 K6_RUN_COMMAND              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)"
 LOAD_TESTS_RUN              = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
@@ -134,6 +136,7 @@ LOAD_TESTS_RUN_SIGNUP       = \
 	$(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_SIGNUP_RESULTS_FILE)" $(K6_SIGNUP_SCRIPT) && \
 	echo "✅ All signup tests completed successfully!"
 LOAD_TESTS_RUN_ERROR_PAGES  = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_ERROR_PAGES_RESULTS_FILE)" $(K6_ERROR_PAGES_SCRIPT)
+LOAD_TESTS_RUN_PASSWORD_RECOVERY = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_PASSWORD_RECOVERY_RESULTS_FILE)" $(K6_PASSWORD_RECOVERY_SCRIPT)
 
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
@@ -244,7 +247,7 @@ BUNX                        = $(BUN) x
 BUN_DIND                    = bun
 BUNX_DIND                   = $(BUN_DIND) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev mockoon apollo && make wait-for-dev && make wait-for-mockoon && make wait-for-apollo
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev mockoon apollo mailpit && make wait-for-dev && make wait-for-mockoon && make wait-for-apollo
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 CI_SETUP_SERVICES           = dev mockoon
 CI_SETUP_UP_FLAGS           = -d --no-recreate
@@ -894,6 +897,7 @@ ci-test-memory-leak: ## Run memory leak tests using the dedicated memlab compose
 ci-test-load: prepare-results-dir ## Run K6 load tests assuming ci-prod-setup already started the prod environment
 	$(LOAD_TESTS_RUN)
 	$(LOAD_TESTS_RUN_ERROR_PAGES)
+	$(LOAD_TESTS_RUN_PASSWORD_RECOVERY)
 
 ci-test-lighthouse-desktop: ## Run Lighthouse desktop audit assuming ci-prod-setup already started the prod environment
 	$(LHCI_DESKTOP)
@@ -952,6 +956,9 @@ test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute
 
 test-load-error-pages: start-prod wait-for-prod-health prepare-results-dir ## Execute load tests against the 403, 5xx and catch-all 404 error pages of the prod container.
 	$(LOAD_TESTS_RUN_ERROR_PAGES)
+
+test-load-password-recovery: start-prod wait-for-prod-health prepare-results-dir ## Execute load tests against the password-recovery request and reset pages of the prod container (issue #315).
+	$(LOAD_TESTS_RUN_PASSWORD_RECOVERY)
 
 lighthouse-desktop: lighthouse-setup ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
 	$(LHCI_DESKTOP)

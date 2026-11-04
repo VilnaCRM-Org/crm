@@ -1,10 +1,11 @@
 import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type { AuthError } from '@auth/types/auth-error';
 import type { LoginResult, RegisterResult } from '@auth/types/auth-repository';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
-import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
 
 @injectable()
 export default class AuthStoreActions {
@@ -12,7 +13,7 @@ export default class AuthStoreActions {
     @inject(AUTH_TOKENS.AuthStoreActionsDeps) private readonly deps: AuthStoreActionsDeps
   ) {}
 
-  public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
+  public async login(credentials: SignInDto, signal?: AbortSignal): Promise<void> {
     this.deps.authState.setState({ loginLoading: true, loginError: null });
     try {
       const demoSession = signal?.aborted ? null : this.deps.sandboxDemoSession.signIn(credentials);
@@ -27,7 +28,7 @@ export default class AuthStoreActions {
     }
   }
 
-  public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
+  public async register(credentials: SignUpDto, signal?: AbortSignal): Promise<void> {
     this.deps.authState.setState({ registerLoading: true, registerError: null, user: null });
     try {
       const result = await this.deps.repository.register(credentials, signal);

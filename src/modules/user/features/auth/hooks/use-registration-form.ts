@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type { RegistrationView } from '@auth/components/form-section/types';
 import { AuthStoreSelectors, useAuthState } from '@auth/stores';
-import type { RegisterUserDto } from '@auth/types/credentials';
 import type { UseRegistrationFormResult } from '@auth/types/registration-form-result';
 
 import useRegistrationHandlers from './use-registration-handlers';
@@ -20,7 +20,7 @@ export default function useRegistrationForm(
 
   const [view, setView] = useState<RegistrationView>('form');
   const [formKey, setFormKey] = useState(0);
-  const lastSubmittedDataRef = useRef<RegisterUserDto | null>(null);
+  const lastSubmittedDataRef = useRef<SignUpDto | null>(null);
 
   useEffect(() => {
     onViewChange?.(view);

@@ -1,4 +1,7 @@
-import { render } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { JSX } from 'react';
 import { MemoryRouter } from 'react-router';
 
 import usePostLoginRedirect from '@auth/hooks/use-post-login-redirect';
@@ -18,33 +21,56 @@ jest.mock('@auth/stores/use-auth-token', () => ({
 
 const mockUseAuthToken = useAuthToken as jest.Mock;
 
-function Probe(): null {
-  usePostLoginRedirect();
-  return null;
+function Probe(): JSX.Element {
+  const { signedIn, proceed } = usePostLoginRedirect();
+  return (
+    <button type="button" onClick={proceed}>
+      {`signed in: ${String(signedIn)}`}
+    </button>
+  );
 }
 
 type Entry = NonNullable<Parameters<typeof MemoryRouter>[0]['initialEntries']>;
 
-function renderProbe(entries: Entry = ['/sign-in']): ReturnType<typeof render> {
-  return render(
+function mountProbe(entries: Entry = ['/sign-in']): (token: string | null) => void {
+  const view = render(
     <MemoryRouter initialEntries={entries}>
       <Probe />
     </MemoryRouter>
   );
-}
-
-describe('usePostLoginRedirect', () => {
-  it('redirects home after a null-to-token transition and marks the target for focus', () => {
-    mockUseAuthToken.mockReturnValue(null);
-    const view = renderProbe();
-    expect(mockNavigate).not.toHaveBeenCalled();
-
-    mockUseAuthToken.mockReturnValue('fresh-token');
+  return (token: string | null): void => {
+    mockUseAuthToken.mockReturnValue(token);
     view.rerender(
-      <MemoryRouter initialEntries={['/sign-in']}>
+      <MemoryRouter initialEntries={entries}>
         <Probe />
       </MemoryRouter>
     );
+  };
+}
+
+const button = (signedIn: boolean): HTMLElement =>
+  screen.getByRole('button', { name: `signed in: ${String(signedIn)}` });
+
+describe('usePostLoginRedirect', () => {
+  beforeEach(() => mockNavigate.mockReset());
+
+  it('reports a sign-in after a null-to-token transition without navigating by itself', () => {
+    mockUseAuthToken.mockReturnValue(null);
+    const rerenderWith = mountProbe();
+    expect(button(false)).toBeInTheDocument();
+
+    rerenderWith('fresh-token');
+
+    expect(button(true)).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('proceeds home and marks the target for focus', async () => {
+    mockUseAuthToken.mockReturnValue(null);
+    const rerenderWith = mountProbe();
+    rerenderWith('fresh-token');
+
+    await userEvent.click(button(true));
 
     expect(mockNavigate).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith('/', {
@@ -53,19 +79,15 @@ describe('usePostLoginRedirect', () => {
     });
   });
 
-  it('redirects back to the preserved location from the router state', () => {
+  it('proceeds back to the preserved location from the router state', async () => {
     mockUseAuthToken.mockReturnValue(null);
     const entries = [
       { pathname: '/sign-in', state: { from: { pathname: '/deals', search: '?tab=open' } } },
     ] as Entry;
-    const view = renderProbe(entries);
+    const rerenderWith = mountProbe(entries);
+    rerenderWith('fresh-token');
 
-    mockUseAuthToken.mockReturnValue('fresh-token');
-    view.rerender(
-      <MemoryRouter initialEntries={entries}>
-        <Probe />
-      </MemoryRouter>
-    );
+    await userEvent.click(button(true));
 
     expect(mockNavigate).toHaveBeenCalledWith('/deals?tab=open', {
       replace: true,
@@ -73,51 +95,38 @@ describe('usePostLoginRedirect', () => {
     });
   });
 
-  it('never redirects when the page mounts with a token already present', () => {
+  it('never reports a sign-in when the page mounts with a token already present', () => {
     mockUseAuthToken.mockReturnValue('seeded-token');
-    const view = renderProbe();
+    const rerenderWith = mountProbe();
 
-    view.rerender(
-      <MemoryRouter initialEntries={['/sign-in']}>
-        <Probe />
-      </MemoryRouter>
-    );
+    rerenderWith('seeded-token');
 
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(button(false)).toBeInTheDocument();
   });
 
-  it('never redirects while the token stays null', () => {
+  it('never reports a sign-in while the token stays null', () => {
     mockUseAuthToken.mockReturnValue(null);
-    const view = renderProbe();
-
-    view.rerender(
-      <MemoryRouter initialEntries={['/sign-in']}>
-        <Probe />
-      </MemoryRouter>
-    );
-
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it('re-arms after a logout and redirects only once per fresh login', () => {
-    mockUseAuthToken.mockReturnValue('seeded-token');
-    const view = renderProbe();
-    const rerenderWith = (token: string | null): void => {
-      mockUseAuthToken.mockReturnValue(token);
-      view.rerender(
-        <MemoryRouter initialEntries={['/sign-in']}>
-          <Probe />
-        </MemoryRouter>
-      );
-    };
+    const rerenderWith = mountProbe();
 
     rerenderWith(null);
-    expect(mockNavigate).not.toHaveBeenCalled();
+
+    expect(button(false)).toBeInTheDocument();
+  });
+
+  it('re-arms after a logout and reports each fresh login', () => {
+    mockUseAuthToken.mockReturnValue('seeded-token');
+    const rerenderWith = mountProbe();
+
+    rerenderWith(null);
+    expect(button(false)).toBeInTheDocument();
 
     rerenderWith('relogin-token');
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(button(true)).toBeInTheDocument();
 
     rerenderWith('rotated-token');
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(button(true)).toBeInTheDocument();
+
+    rerenderWith(null);
+    expect(button(false)).toBeInTheDocument();
   });
 });

@@ -22,7 +22,7 @@ describe('FormSection component styles', () => {
   it('keeps the expected static field and button style values', () => {
     expect(formSectionComponentStyles.formFieldWrapper).toEqual(
       expect.objectContaining({
-        '&:nth-of-type(-n+2)': expect.any(Object),
+        '&:nth-of-type(-n+2):not(:last-of-type)': expect.any(Object),
       })
     );
     expect(formSectionComponentStyles.formFieldLabel).toEqual(

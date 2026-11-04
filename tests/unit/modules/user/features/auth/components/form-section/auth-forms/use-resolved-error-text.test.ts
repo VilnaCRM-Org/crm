@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react';
 
 import useResolvedErrorText from '@auth/components/form-section/auth-forms/use-resolved-error-text';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 jest.mock('react-i18next', () => ({
   __esModule: true,
@@ -44,5 +45,14 @@ describe('useResolvedErrorText whitespace normalization', () => {
     { shape: 'whitespace only', raw: '  \t \n ' },
   ])('falls back to the generic client error for $shape input', ({ raw }) => {
     expect(resolve(raw)).toBe(FALLBACK_KEY);
+  });
+
+  it('falls back to the generic client error when the module loads inside the test', async () => {
+    const fresh = await loadIsolated(
+      async () =>
+        (await import('@auth/components/form-section/auth-forms/use-resolved-error-text')).default
+    );
+
+    expect(renderHook(() => fresh(undefined)).result.current).toBe(FALLBACK_KEY);
   });
 });

@@ -1,10 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-webpack5';
+import type { JSX } from 'react';
 
 import { withFormProvider } from '@stories/form-decorators';
 
 import FormField from './form-field';
 
 const REQUIRED_RULES = { required: 'Вкажіть електронну пошту' };
+const HINT_ID = 'email-hint';
+
+const withHint: Decorator = (Story): JSX.Element => (
+  <>
+    <Story />
+    <p id={HINT_ID}>Ми надішлемо посилання на цю адресу</p>
+  </>
+);
 
 const meta: Meta<typeof FormField> = {
   title: 'Auth/Fields/FormField',
@@ -47,4 +56,18 @@ export const Default: Story = {
 
 export const ValidationError: Story = {
   decorators: [withFormProvider({ email: '' }, { validateOnMount: true })],
+};
+
+export const DescribedBy: Story = {
+  args: { describedBy: HINT_ID },
+  decorators: [withHint, withFormProvider({ email: '' })],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With `describedBy` the input points `aria-describedby` at the hint rendered beside ' +
+          'it; once the field is invalid the error helper text is appended to the same list.',
+      },
+    },
+  },
 };

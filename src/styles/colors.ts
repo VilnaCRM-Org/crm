@@ -14,9 +14,11 @@ export const paletteColors = {
   },
   error: {
     main: '#DC3939',
+    text: '#D63333',
   },
   success: {
     main: '#4CAF50',
+    text: '#2E7D32',
   },
   warning: {
     main: '#FF9800',

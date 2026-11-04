@@ -12,6 +12,8 @@ const baseUrl =
 
 const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace(/\/+$/, '');
 
+const RESET_TOKEN = 'LighthouseAuditResetToken0000001';
+
 const pages = [
   normalizedBaseUrl,
   normalizedBaseUrl === '/' ? '/sign-up' : `${normalizedBaseUrl}/sign-up`,
@@ -21,6 +23,10 @@ const pages = [
   normalizedBaseUrl === '/'
     ? '/definitely-not-a-route'
     : `${normalizedBaseUrl}/definitely-not-a-route`,
+  normalizedBaseUrl === '/' ? '/password-recovery' : `${normalizedBaseUrl}/password-recovery`,
+  normalizedBaseUrl === '/'
+    ? `/password-reset?token=${RESET_TOKEN}`
+    : `${normalizedBaseUrl}/password-reset?token=${RESET_TOKEN}`,
 ];
 
 module.exports = {

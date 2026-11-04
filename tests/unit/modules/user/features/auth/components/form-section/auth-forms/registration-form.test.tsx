@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
+import * as React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 
 import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type FormState = {
   view: 'form' | 'success' | 'error';
@@ -110,6 +112,19 @@ describe('RegistrationForm', () => {
         submitLabel: 'sign_up.form.submit_button',
         submittingLabel: 'sign_up.form.submitting',
       })
+    );
+  });
+
+  it('seeds the form with empty values when the module loads inside the test', async () => {
+    const FreshRegistrationForm = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@auth/components/form-section/auth-forms/registration-form')).default;
+    });
+
+    render(<FreshRegistrationForm />);
+
+    expect(mockUIForm).toHaveBeenLastCalledWith(
+      expect.objectContaining({ defaultValues: { fullName: '', email: '', password: '' } })
     );
   });
 

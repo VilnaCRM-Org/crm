@@ -9,7 +9,7 @@ import { fieldGapMargins } from '../styles';
 
 export default {
   formFieldWrapper: {
-    '&:nth-of-type(-n+2)': {
+    '&:nth-of-type(-n+2):not(:last-of-type)': {
       ...fieldGapMargins,
     },
   },
@@ -100,6 +100,11 @@ export default {
 
     '&:hover, &:focus-visible': {
       backgroundColor: 'transparent',
+    },
+
+    '&:focus-visible, &.Mui-focusVisible': {
+      outline: `2px solid ${customColors.text.primary}`,
+      outlineOffset: '2px',
     },
   },
 };

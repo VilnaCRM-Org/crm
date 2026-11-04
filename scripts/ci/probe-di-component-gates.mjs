@@ -98,6 +98,19 @@ const BRIDGE_FILES = {
 const componentImporting = (statement) =>
   `${statement}\n\nexport default function Widget(): JSX.Element {\n  return <span>widget</span>;\n}\n`;
 
+const FEATURE_ROOT = 'src/modules/billing/features/invoices';
+const featureLayerFiles = (folder, statement) => ({
+  [`${FEATURE_ROOT}/${folder}/invoice-thing.ts`]:
+    'export default class Thing {\n  public run(): void {}\n}\n',
+  [`${FEATURE_ROOT}/components/widget.tsx`]: componentImporting(statement),
+});
+
+const moduleTransformerFiles = (statement) => ({
+  'src/modules/billing/transformers/billing-thing.ts':
+    'export default class Thing {\n  public run(): void {}\n}\n',
+  [`${FEATURE_ROOT}/components/widget.tsx`]: componentImporting(statement),
+});
+
 const DEPCRUISE_FIXTURES = {
   valueImport: {
     files: {
@@ -112,6 +125,33 @@ const DEPCRUISE_FIXTURES = {
         "import type Thing from '../services/thing';"
       ),
     },
+  },
+  dataProviderValueImport: {
+    files: featureLayerFiles(
+      'data-providers',
+      "import Thing from '../data-providers/invoice-thing';"
+    ),
+  },
+  dataProviderTypeImport: {
+    files: featureLayerFiles(
+      'data-providers',
+      "import type Thing from '../data-providers/invoice-thing';"
+    ),
+  },
+  transformerValueImport: {
+    files: featureLayerFiles('transformers', "import Thing from '../transformers/invoice-thing';"),
+  },
+  transformerTypeImport: {
+    files: featureLayerFiles(
+      'transformers',
+      "import type Thing from '../transformers/invoice-thing';"
+    ),
+  },
+  moduleTransformerValueImport: {
+    files: moduleTransformerFiles("import Thing from '../../../transformers/billing-thing';"),
+  },
+  moduleTransformerTypeImport: {
+    files: moduleTransformerFiles("import type Thing from '../../../transformers/billing-thing';"),
   },
   authCarveOut: {
     files: {

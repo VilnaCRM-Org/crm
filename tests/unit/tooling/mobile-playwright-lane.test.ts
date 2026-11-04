@@ -104,10 +104,11 @@ describe('mobile visual baselines', () => {
   });
 
   it('records exactly one baseline per page per mobile project, and nothing else', () => {
-    const expected = MOBILE_PROJECTS.flatMap((project) => [
-      `uk-sign-in-${project}-linux.png`,
-      `uk-sign-up-${project}-linux.png`,
-    ]).sort();
+    const expected = MOBILE_PROJECTS.flatMap((project) =>
+      ['sign-in', 'sign-up', 'password-recovery', 'password-reset'].map(
+        (page) => `uk-${page}-${project}-linux.png`
+      )
+    ).sort();
 
     expect(listFiles(snapshotDir).sort()).toEqual(expected);
   });

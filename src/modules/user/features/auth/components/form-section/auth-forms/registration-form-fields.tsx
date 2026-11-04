@@ -1,9 +1,9 @@
 import type { JSX } from 'react';
 
+import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import FormField from '@auth/components/form-section/components/form-field';
 import PasswordField from '@auth/components/form-section/components/password-field';
 import type { RegistrationFormFieldsProps } from '@auth/types/auth-forms/registration-form-fields';
-import type { RegisterUserDto } from '@auth/types/credentials';
 
 export default function RegistrationFormFields({
   t,
@@ -11,7 +11,7 @@ export default function RegistrationFormFields({
 }: RegistrationFormFieldsProps): JSX.Element {
   return (
     <>
-      <FormField<RegisterUserDto>
+      <FormField<SignUpDto>
         name="fullName"
         label={t('sign_up.form.name_input.label')}
         placeholder={t('sign_up.form.name_input.placeholder')}
@@ -22,7 +22,7 @@ export default function RegistrationFormFields({
           validate: validators.fullName,
         }}
       />
-      <FormField<RegisterUserDto>
+      <FormField<SignUpDto>
         name="email"
         label={t('sign_up.form.email_input.label')}
         placeholder={t('sign_up.form.email_input.placeholder')}
@@ -33,7 +33,7 @@ export default function RegistrationFormFields({
           validate: validators.email,
         }}
       />
-      <PasswordField<RegisterUserDto>
+      <PasswordField<SignUpDto>
         placeholder={t('sign_up.form.password_input.placeholder')}
         label={t('sign_up.form.password_input.label')}
         autoComplete="new-password"

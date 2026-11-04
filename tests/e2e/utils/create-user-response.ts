@@ -1,6 +1,6 @@
 import type { Route } from '@playwright/test';
 
-import type { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
+import type { SignUpDto } from '@/modules/user';
 import { buildClientMutationId, buildGraphqlUser } from '@tests/builders';
 
 type CreateUserRequestBody = {
@@ -8,7 +8,7 @@ type CreateUserRequestBody = {
 } | null;
 
 export default function fulfillCreateUserSuccess(
-  user: Pick<RegisterUserDto, 'email' | 'fullName'>
+  user: Pick<SignUpDto, 'email' | 'fullName'>
 ): (route: Route) => Promise<void> {
   return async (route: Route): Promise<void> => {
     const requestBody = route.request().postDataJSON() as CreateUserRequestBody;

@@ -59,13 +59,19 @@ describe('RegistrationNotification back handling', () => {
     const backButton = screen.getByRole('button', { name: BACK_LABEL });
     const retryButton = screen.getByRole('button', { name: RETRY_LABEL });
 
-    expect(backButton).toBeEnabled();
-    expect(retryButton).toBeEnabled();
+    expect(backButton).not.toHaveAttribute('aria-disabled');
+    expect(retryButton).not.toHaveAttribute('aria-disabled');
 
     fireEvent.click(backButton);
 
-    expect(screen.getByRole('button', { name: BACK_LABEL })).toBeDisabled();
-    expect(screen.getByRole('button', { name: RETRY_LABEL })).toBeDisabled();
+    expect(screen.getByRole('button', { name: BACK_LABEL })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
+    expect(screen.getByRole('button', { name: RETRY_LABEL })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
   });
 
   it('calls the latest onBack after the callback prop is replaced', () => {

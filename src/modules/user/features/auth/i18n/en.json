@@ -48,8 +48,9 @@
         "required": "This field is required",
         "error_length": "Please enter a password between 8 and 64 characters",
         "error_numbers": "Please include at least one digit",
-        "error_uppercase": "Please include at least one uppercase letter",
-        "error_lowercase": "Please include at least one lowercase letter"
+        "error_uppercase": "Please add at least one uppercase Latin letter (A–Z)",
+        "error_lowercase": "Please include at least one lowercase letter",
+        "error_line_break": "Please remove line breaks from the password"
       },
       "password_tip": {
         "alt": "Password tip icon",
@@ -79,7 +80,8 @@
     "subtitle": "Sign in to your account in two clicks",
     "errors": {
       "load_failed": "Failed to load sign-in form. Please try again.",
-      "login": "Sign in error: {{reason}}"
+      "invalid_credentials": "Invalid e-mail or password",
+      "rate_limited": "Too many sign-in attempts. Try again later"
     },
     "form": {
       "email_input": {
@@ -94,7 +96,16 @@
       "submit_button": "Sign in",
       "submitting": "Signing in…",
       "remember_me": "Remember me",
-      "forgot_password": "Forgot password?"
+      "forgot_password": "Forgot password?",
+      "loading_result": "Loading the result…"
+    },
+    "notices": {
+      "password_reset": "Your password has been changed. Sign in with your new password."
+    },
+    "success": {
+      "title": "Welcome back!",
+      "description": "You have signed in successfully",
+      "button": "Continue"
     }
   },
   "notifications": {
