@@ -12,7 +12,10 @@ import {
   codesHeadingOf,
   confirmOf,
   copyCodesOf,
+  copyBackupKeyOf,
   copyKeyOf,
+  keyInfoOf,
+  keyInfoTipOf,
   disableFieldOf,
   disableHeadingOf,
   disableSubmitOf,
@@ -78,11 +81,15 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     ]);
   });
 
-  test('setup tabs from the copy button through the cells to Підтвердити', async ({ page }) => {
+  test('setup tabs through both copy buttons and the info button to Підтвердити', async ({
+    page,
+  }) => {
     await openSetup(page);
 
     await expectTabOrder(page, [
       { locator: copyKeyOf(page), visibleFocus: true },
+      { locator: keyInfoOf(page), visibleFocus: true },
+      { locator: copyBackupKeyOf(page), visibleFocus: true },
       ...CELL_INDEXES.map((index) => ({
         locator: codeCellsOf(page).nth(index),
         visibleFocus: true,
@@ -96,6 +103,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await openSetup(page);
     await page.keyboard.press('Tab');
     await expect(copyKeyOf(page)).toBeFocused();
+    await copyBackupKeyOf(page).focus();
     await page.keyboard.press('Tab');
     await expect(codeCellsOf(page).first()).toBeFocused();
 
@@ -104,6 +112,23 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
 
     await expect.poll(() => confirm.count()).toBe(1);
     await expect(codesHeadingOf(page)).toBeFocused();
+  });
+
+  test('the key info tooltip shows on focus, describes the button and hides on Escape', async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await expect(keyInfoTipOf(page)).toBeHidden();
+
+    await keyInfoOf(page).focus();
+
+    await expect(keyInfoTipOf(page)).toBeVisible();
+    await expect(keyInfoOf(page)).toHaveAccessibleDescription(twoFactorText.keyInfo);
+
+    await page.keyboard.press('Escape');
+
+    await expect(keyInfoTipOf(page)).toBeHidden();
+    await expect(keyInfoOf(page)).toBeFocused();
   });
 
   test('copy feedback leaves focus on the copy button', async ({ page }) => {
@@ -122,7 +147,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     for (const cell of await codeCellsOf(page).all()) {
       await expect(cell).toHaveCSS('border-top-color', CELL_BORDER);
     }
-    await page.keyboard.press('Tab');
+    await copyBackupKeyOf(page).focus();
     await page.keyboard.press('Tab');
     await expect(codeCellsOf(page).first()).toBeFocused();
     await expectRing(codeCellsOf(page).first(), CELL_RING);

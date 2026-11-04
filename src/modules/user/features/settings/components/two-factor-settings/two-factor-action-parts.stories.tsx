@@ -14,8 +14,8 @@ const meta: Meta<typeof StatusHeading> = {
   title: 'Settings/TwoFactorSettings/Action parts',
   component: StatusHeading,
   tags: ['autodocs'],
-  args: { text: 'Двофакторну автентифікацію ввімкнено', icon: true, focus: false },
-  argTypes: { text: { control: 'text' }, icon: { control: 'boolean' }, focus: { control: false } },
+  args: { text: 'Двофакторну автентифікацію вимкнено.', focus: false },
+  argTypes: { text: { control: 'text' }, focus: { control: false } },
   parameters: {
     docs: {
       description: {
@@ -33,10 +33,10 @@ export default meta;
 
 type Story = StoryObj<typeof StatusHeading>;
 
-export const StatusWithIcon: Story = {};
+export const Status: Story = {};
 
-export const StatusWithoutIcon: Story = {
-  args: { text: 'Налаштування застаріло. Почніть знову.', icon: false },
+export const StaleStatus: Story = {
+  args: { text: 'Налаштування застаріло. Почніть знову.' },
 };
 
 export const RecoveryCodes: Story = {

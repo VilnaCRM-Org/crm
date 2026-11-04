@@ -1,3 +1,4 @@
+import type { SxProps, Theme } from '@mui/material/styles';
 import type { ChangeEvent, ReactNode, Ref, RefObject } from 'react';
 import type { FieldValues } from 'react-hook-form';
 
@@ -13,6 +14,16 @@ import type {
 export interface StepItemProps {
   readonly position: number;
   readonly text: string;
+  readonly textSx?: SxProps<Theme>;
+  readonly rowSx?: SxProps<Theme>;
+  readonly action?: ReactNode;
+  readonly children?: ReactNode;
+}
+
+export interface CardHeaderProps {
+  readonly title: string;
+  readonly focus: boolean;
+  readonly divided: boolean;
 }
 
 export interface KeyChipProps {
@@ -37,9 +48,28 @@ export type SetupFormProps = ConfirmationFormProps<TwoFactorDto>;
 
 export interface SetupGuideProps {
   readonly otpauthUri: string | null;
+  readonly secret: string | null;
 }
 
 export interface KeyBlockProps {
+  readonly secret: string;
+  readonly copyLabel: string;
+}
+
+export interface KeyCopyButtonProps {
+  readonly label: string;
+  readonly copied: boolean;
+  readonly onCopy: () => void;
+}
+
+export interface KeyInfoBubbleProps {
+  readonly id: string;
+  readonly open: boolean;
+  readonly text: string;
+}
+
+export interface ScanStepBodyProps {
+  readonly otpauthUri: string | null;
   readonly secret: string | null;
 }
 
@@ -51,7 +81,6 @@ export interface CodesBlockProps {
 
 export interface StatusHeadingProps {
   readonly text: string | null;
-  readonly icon: boolean;
   readonly focus: boolean;
 }
 

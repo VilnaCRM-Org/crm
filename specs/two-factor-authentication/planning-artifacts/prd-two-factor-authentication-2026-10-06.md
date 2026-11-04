@@ -4,8 +4,8 @@ workflowType: prd
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-03
-iteration: 7
+revised: 2026-11-04
+iteration: 8
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -76,12 +76,22 @@ revisions:
   - '2026-10-08: client state in the Zustand store useAuthStore; prerequisite chore
     zustand-client-state'
   - '2026-11-03: owner decision; the twoFactorAuth flag removed, the section always renders'
+  - '2026-11-04: owner decision; the card takes the Figma header and steps, Start stays'
 ---
 
 # PRD: two-factor authentication for the user module
 
-**Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08 and 2026-11-03 (owner
-decision: the `twoFactorAuth` flag removed) **Feature:** `two-factor-authentication`
+**Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-11-03 (owner
+decision: the `twoFactorAuth` flag removed) and 2026-11-04 (owner decision: the Figma card)
+**Feature:** `two-factor-authentication`
+
+> **Owner decision of 2026-11-04 (Figma card, Start stays).** The owner kept the start button, so
+> setup still sends no request until it is pressed, and asked for the card to match Figma around it:
+> the authenticator logo, "Налаштуйте 2FA" and the subtitle, the Figma step copy, the QR, key and
+> hint inside step 2, an info tooltip and a second key chip in step 3, and "2FA підключено" with the
+> disable button in the text column. It replaces FR-27's description, FR-28's outlined copy button
+> and the level-3 setup title; those criteria are kept as the record of the plan as approved. The
+> settings README, "The two-factor card", records the measurements and the deviations.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor

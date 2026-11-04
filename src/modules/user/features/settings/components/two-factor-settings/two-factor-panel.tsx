@@ -1,16 +1,16 @@
 import Box from '@mui/material/Box';
-import { type ComponentType, type JSX, useId } from 'react';
+import type { ComponentType, JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import UITypography from '@/components/ui-typography';
-
 import usePreviousView from '../../hooks/use-previous-view';
+import useTwoFactorHeading from '../../hooks/use-two-factor-heading';
 import type {
   TwoFactorSettingsProps,
   TwoFactorSettingsView,
 } from '../../types/two-factor/settings-view';
 
 import ArrivalContext from './arrival-context';
+import CardHeader from './card-header';
 import CodesView from './codes-view';
 import DisableView from './disable-view';
 import OffView from './off-view';
@@ -37,15 +37,23 @@ export default function TwoFactorPanel({
   isSubmitting,
 }: TwoFactorSettingsProps): JSX.Element {
   const { t } = useTranslation();
-  const headingId = useId();
   const View = VIEWS[view.view];
   const from = usePreviousView(view.view);
+  const heading = useTwoFactorHeading(view, from);
+  const connected = view.view === 'on';
 
   return (
-    <Box component="section" aria-labelledby={headingId} sx={styles.card}>
-      <UITypography component="h2" id={headingId} sx={styles.title}>
-        {t('settings.two_factor.title')}
-      </UITypography>
+    <Box
+      component="section"
+      aria-label={t('settings.two_factor.title')}
+      sx={connected ? styles.cardConnected : styles.card}
+    >
+      <CardHeader
+        key={view.view}
+        title={heading.title}
+        focus={heading.focus}
+        divided={!connected}
+      />
       <ArrivalContext.Provider value={from}>
         <View settings={settings} view={view} callbacks={callbacks} isSubmitting={isSubmitting} />
       </ArrivalContext.Provider>

@@ -19,11 +19,12 @@ const setupProps = (
 
 describe('TwoFactorPanel', () => {
   describe('the section', () => {
-    it('is a region named by its level-2 heading', () => {
+    it('is a named region led by the setup heading and subtitle', () => {
       renderPanel(panelProps());
 
-      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
-        'Двофакторна автентифікація'
+      const heading = screen.getByRole('heading', { level: 2, name: 'Налаштуйте 2FA' });
+      expect(heading).toHaveAccessibleDescription(
+        'Випадковий код з обмеженням за часом, який створює застосунок.'
       );
       expect(
         screen.getByRole('region', { name: 'Двофакторна автентифікація' })
@@ -33,26 +34,20 @@ describe('TwoFactorPanel', () => {
     it('speaks English when the language is English', () => {
       renderPanel(panelProps(), 'en');
 
-      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
-        'Two-factor authentication'
-      );
+      expect(screen.getByRole('region', { name: 'Two-factor authentication' })).toBeVisible();
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Set up 2FA');
       expect(screen.getByRole('button', { name: 'Start setup' })).toBeInTheDocument();
     });
   });
 
   describe('the off view', () => {
-    it('shows the description, three numbered steps and the start button', () => {
+    it('shows three numbered steps and the start button', () => {
       renderPanel(panelProps());
 
-      expect(
-        screen.getByText(
-          'Додайте до входу другий крок: одноразовий код із застосунку автентифікації.'
-        )
-      ).toBeInTheDocument();
       const steps = within(screen.getByRole('list')).getAllByRole('listitem');
       expect(steps.map((step) => step.textContent)).toEqual([
-        '1Завантажте й установіть застосунок автентифікації, наприклад Google Authenticator',
-        '2Відскануйте QR-код у застосунку автентифікації',
+        '1Завантажте й установіть застосунок Google Authenticator',
+        '2Відскануйте QR-код у застосунку Authenticator',
         '3Збережіть резервний ключ у надійному місці',
       ]);
       expect(screen.getByRole('button', { name: 'Почати налаштування' })).toBeEnabled();
@@ -128,25 +123,22 @@ describe('TwoFactorPanel', () => {
   });
 
   describe('the setup view', () => {
-    it('moves focus to the level-3 title and names the QR image', () => {
+    it('moves focus to the card heading and names the QR image', () => {
       renderPanel(setupProps());
 
-      const title = screen.getByRole('heading', {
-        level: 3,
-        name: 'Налаштуйте двофакторну автентифікацію',
-      });
-      expect(title).toHaveFocus();
+      expect(screen.getByRole('heading', { level: 2, name: 'Налаштуйте 2FA' })).toHaveFocus();
+      expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument();
       expect(
         screen.getByRole('img', { name: 'QR-код для застосунку автентифікації' })
       ).toBeInTheDocument();
     });
 
-    it('shows the key in groups of four and the two steps', () => {
+    it('shows the key in groups of four, twice, and the three steps', () => {
       renderPanel(setupProps());
 
       const grouped = SECRET.match(/.{4}/g)?.join(' ') ?? '';
-      expect(screen.getByText(grouped)).toBeInTheDocument();
-      expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(2);
+      expect(screen.getAllByText(grouped)).toHaveLength(2);
+      expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(3);
     });
 
     it('shows the confirm group, the sessions note and the confirm button', () => {

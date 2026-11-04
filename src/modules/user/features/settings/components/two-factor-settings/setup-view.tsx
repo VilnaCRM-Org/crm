@@ -9,7 +9,6 @@ import type { TwoFactorSettingsProps } from '../../types/two-factor/settings-vie
 
 import ConfirmCodeField from './confirm-code-field';
 import ConfirmationForm from './confirmation-form';
-import KeyBlock from './key-block';
 import SetupGuide from './setup-guide';
 import styles from './styles';
 
@@ -20,8 +19,7 @@ export default function SetupView(props: TwoFactorSettingsProps): JSX.Element {
 
   return (
     <ConfirmationForm<TwoFactorDto> form={form} isSubmitting={isSubmitting}>
-      <SetupGuide otpauthUri={settings.otpauthUri} />
-      <KeyBlock secret={settings.secret} />
+      <SetupGuide otpauthUri={settings.otpauthUri} secret={settings.secret} />
       <ConfirmCodeField view={view} disabled={isSubmitting} />
       <Box component="p" sx={styles.note}>
         {t('settings.two_factor.confirm.note')}

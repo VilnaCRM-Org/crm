@@ -31,11 +31,44 @@ describe('StepItem', () => {
     expect(screen.getByText('Відскануйте QR-код')).toBeInTheDocument();
     expect(screen.getByText('2')).toHaveAttribute('aria-hidden', 'true');
   });
+
+  it('renders its action beside the text and its children after the row', () => {
+    render(
+      <ol>
+        <StepItem position={3} text="Збережіть" action={<button type="button">Дія</button>}>
+          <span>Вміст</span>
+        </StepItem>
+      </ol>
+    );
+
+    expect(screen.getByRole('listitem')).toHaveTextContent('3ЗбережітьДіяВміст');
+    expect(screen.getByRole('paragraph')).toHaveTextContent(/^Збережіть$/);
+  });
+
+  it('adds a body wrapper only when there are children', () => {
+    const { unmount } = render(
+      <ol>
+        <StepItem position={1} text="Завантажте" />
+      </ol>
+    );
+    const bare = within(screen.getByRole('listitem')).getAllByRole('generic').length;
+    unmount();
+
+    render(
+      <ol>
+        <StepItem position={1} text="Завантажте">
+          <hr />
+        </StepItem>
+      </ol>
+    );
+
+    expect(within(screen.getByRole('listitem')).getAllByRole('generic')).toHaveLength(bare + 1);
+  });
 });
 
 describe('the step guides', () => {
   it.each([
-    ['setup', 'setup', 2],
+    ['setup', 'setup', 3],
     ['off', 'off', 3],
   ] as const)('keeps the list role on the unstyled %s step list', async (_name, view, steps) => {
     const { container } = renderPanel(panelProps({ view: viewState(view) }));

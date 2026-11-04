@@ -21,12 +21,12 @@ describe('useSetupFormProps', () => {
     expect(result.current.defaultValues).toEqual({ twoFactorCode: '' });
   });
 
-  it('carries the translated title, subtitle and submit labels', () => {
+  it('leaves the title and subtitle to the card header and carries the submit labels', () => {
     const { result } = renderHook(() => useSetupFormProps(panelProps()), { wrapper });
 
     expect(result.current).toMatchObject({
-      title: 'Налаштуйте двофакторну автентифікацію',
-      subtitle: 'Випадковий код з обмеженням за часом, який створює застосунок.',
+      showTitle: false,
+      showSubtitle: false,
       submitLabel: 'Підтвердити',
       submittingLabel: 'Перевірка…',
     });
