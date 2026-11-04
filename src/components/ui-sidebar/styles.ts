@@ -23,6 +23,8 @@ const panel = {
 
 const handle = {
   position: 'absolute',
+  top: '15px',
+  right: '-9px',
   zIndex: 1,
   boxSizing: 'border-box',
   display: 'block',
@@ -39,6 +41,11 @@ const handle = {
     outlineOffset: '2px',
   },
   '&:focus:not(:focus-visible)': { outline: 'none' },
+};
+
+const glyphTurn = {
+  transition: 'transform 200ms ease-out',
+  [REDUCED_MOTION]: { transitionDuration: '0s' },
 };
 
 export default {
@@ -63,12 +70,12 @@ export default {
   },
   handle: {
     desktop: {
-      expanded: { ...handle, top: '15px', left: '223px', width: '24px', height: '24px' },
-      rail: { ...handle, top: '15px', left: '57px', width: '24px', height: '24px' },
+      expanded: { ...handle, width: '24px', height: '24px' },
+      rail: { ...handle, width: '24px', height: '24px' },
     },
     tablet: {
-      expanded: { ...handle, top: '15px', left: '222px', width: '32px', height: '32px' },
-      rail: { ...handle, top: '15px', left: '60px', width: '32px', height: '32px' },
+      expanded: { ...handle, width: '32px', height: '32px' },
+      rail: { ...handle, width: '32px', height: '32px' },
     },
   },
   handleGlyph: {
@@ -90,7 +97,7 @@ export default {
     },
   },
   handlePoints: {
-    expanded: { transform: 'none' },
-    rail: { transform: 'rotate(180deg)' },
+    expanded: { ...glyphTurn, transform: 'rotate(0deg)' },
+    rail: { ...glyphTurn, transform: 'rotate(180deg)' },
   },
 } as const;

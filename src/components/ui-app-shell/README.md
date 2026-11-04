@@ -157,9 +157,9 @@ Chromium on the dev server at device scale factor 1, boxes relative to the panel
 | P-24 divider             | 1024  | 0,1036, 238×1          | 0,1036, 238×1         | pass    |
 | P-25 Sign out row        | 1024  | 0,1058, 238×54         | 0,1058, 238×54        | pass    |
 | P-57 chevron             | 1024  | 190,24 in group, 24×24 | 190,379, 24×24        | pass    |
-| P-63 tablet handle       | 1024  | 222,15, 32×32 (DV-10)  | 222,15, 32×32         | pass    |
+| P-63 tablet handle       | 1024  | 222,15, 32×32 (DV-10)  | 215,15, 32×32         | DV-13   |
 | P-52 tablet rail panel   | 1024  | 13,74, 76×1142         | 13,74, 76×1142        | pass    |
-| P-53 tablet rail handle  | 1024  | 60,15, 32×32           | 60,15, 32×32          | pass    |
+| P-53 tablet rail handle  | 1024  | 60,15, 32×32           | 53,15, 32×32          | DV-13   |
 | P-54 tablet rail divider | 1024  | y 1036, 96 wide        | y 1036, 96 wide       | pass    |
 | P-54 rail sign out icon  | 1024  | 24×24 at 24,1073       | 24×24 at 24,1073      | pass    |
 | handle chevron           | 1440  | points left            | points left           | pass    |
@@ -450,6 +450,16 @@ Playwright container and run in CI only.
   focus indicators still reach
   3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
   `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
+
+### DV-13: the handle rides the sidebar edge (owner report, 2026-11-04)
+
+Figma places the 32 px tablet handle 16 px past the panel, so at 1024 it covers the first 4 px of
+the page title, which Figma starts at x 263; the owner reported that collision. The handle also took
+its final `left` on the first frame of the width transition and waited for the panel to catch up.
+All four handles now take `right: -9px`, the overhang the desktop frames already draw, so the handle
+moves with the transition and clears the title by 3 px at every width. Desktop is unchanged (223
+and 57 from the wrapper); tablet moves 7 px left, to 215 and 53. The chevron turns over the same
+200 ms, and neither animates under `prefers-reduced-motion`.
 
 ### DV-12: the settings page centres beside the sidebar (owner decision, 2026-11-04)
 
