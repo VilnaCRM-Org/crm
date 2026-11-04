@@ -222,6 +222,7 @@ describe('navigation list styles', () => {
       padding: 0,
       listStyle: 'none',
       backgroundColor: '#FFFFFF',
+      boxShadow: 'inset 1px 0 0 #E1E7EA, inset -1px 0 0 #E1E7EA',
     });
   });
 
