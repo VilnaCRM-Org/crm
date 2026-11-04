@@ -51,6 +51,8 @@ export const control = {
 
 const rowBase = { ...control, padding: '2px 0 2px 24px', gap: '8px' };
 
+const FINAL_WIDTH = '238px';
+
 const panelEdge = paletteColors.background.subtle;
 
 const drawerBorder = `1px solid ${panelEdge}`;
@@ -95,13 +97,31 @@ export default {
     listStyle: 'none',
   },
   row: {
-    desktop: { ...rowBase, minHeight: '54px', fontSize: '16px', lineHeight: '1.125' },
-    tablet: { ...rowBase, minHeight: '66px', fontSize: '18px', lineHeight: 'calc(22 / 18)' },
+    desktop: {
+      ...rowBase,
+      minWidth: FINAL_WIDTH,
+      minHeight: '54px',
+      fontSize: '16px',
+      lineHeight: '1.125',
+    },
+    tablet: {
+      ...rowBase,
+      minWidth: FINAL_WIDTH,
+      minHeight: '66px',
+      fontSize: '18px',
+      lineHeight: 'calc(22 / 18)',
+    },
     drawer: { ...rowBase, minHeight: '60px', fontSize: '16px', lineHeight: '1.125' },
   },
   rowById: { desktop: noOverrides, tablet: tabletOverrides, drawer: noOverrides },
   rowOpen: { desktop: noOverrides, tablet: noOverrides, drawer: { minHeight: '48px' } },
-  action: { ...rowBase, minHeight: '54px', fontSize: '16px', lineHeight: '1.125' },
+  action: {
+    ...rowBase,
+    minWidth: FINAL_WIDTH,
+    minHeight: '54px',
+    fontSize: '16px',
+    lineHeight: '1.125',
+  },
   actionDrawer: {
     ...rowBase,
     minHeight: '54px',
@@ -119,6 +139,7 @@ export default {
   sub: {
     desktop: {
       ...subBase,
+      minWidth: FINAL_WIDTH,
       minHeight: '42px',
       padding: '9px 0 2px 56px',
       fontSize: '16px',
@@ -126,6 +147,7 @@ export default {
     },
     tablet: {
       ...subBase,
+      minWidth: FINAL_WIDTH,
       minHeight: '46px',
       padding: '8px 0 4px 60px',
       fontSize: '18px',
@@ -156,7 +178,12 @@ export default {
     boxShadow: `inset 1px 0 0 ${panelEdge}, inset -1px 0 0 ${panelEdge}`,
   },
   divider: {
-    expanded: { ...dividerBase, width: '100%', backgroundColor: paletteColors.background.subtle },
+    expanded: {
+      ...dividerBase,
+      width: '100%',
+      minWidth: FINAL_WIDTH,
+      backgroundColor: paletteColors.background.subtle,
+    },
     desktopRail: {
       ...dividerBase,
       width: '74px',

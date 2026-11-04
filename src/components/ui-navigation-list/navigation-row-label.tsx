@@ -24,6 +24,6 @@ export default function NavigationRowLabel({
       {label}
     </Box>
   ) : (
-    <>{label}</>
+    <span>{label}</span>
   );
 }

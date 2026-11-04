@@ -18,14 +18,12 @@ describe('NavigationRowLabel', () => {
     });
   });
 
-  it('renders the bare text of an ungrouped row, with no box of its own', () => {
-    render(
-      <main>
-        <NavigationRowLabel layout="desktop" variant="item" label="Boards" />
-      </main>
-    );
+  it('renders an ungrouped label in a plain unstyled span the sidebar can fade', () => {
+    render(<NavigationRowLabel layout="desktop" variant="item" label="Boards" />);
 
-    expect(screen.getByText('Boards')).toBe(screen.getByRole('main'));
+    const label = screen.getByText('Boards');
+    expect(label.tagName).toBe('SPAN');
+    expect(label).not.toHaveAttribute('class');
   });
 
   it('keeps a rail label as visually hidden text, even when grouped', () => {

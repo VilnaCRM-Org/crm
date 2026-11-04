@@ -1,3 +1,5 @@
+import { keyframes } from '@emotion/react';
+
 import layoutStyles from '@/components/layouts/app-layout.styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
@@ -43,6 +45,16 @@ const handle = {
   '&:focus:not(:focus-visible)': { outline: 'none' },
 };
 
+const textReveal = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const revealing = {
+  animation: `${textReveal} 200ms ease-out`,
+  [REDUCED_MOTION]: { animation: 'none' },
+};
+
 const glyphTurn = {
   transition: 'transform 200ms ease-out',
   [REDUCED_MOTION]: { transitionDuration: '0s' },
@@ -56,6 +68,7 @@ export default {
     },
     tablet: { expanded: { ...wrapper, width: '238px' }, rail: { ...wrapper, width: '76px' } },
   },
+  reveal: { '& li span, & li button[aria-expanded] svg': revealing },
   panel: {
     desktop: {
       ...panel,

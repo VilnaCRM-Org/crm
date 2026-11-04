@@ -107,7 +107,7 @@ describe('NavigationRow', () => {
     expect(label).toHaveStyle({ maxWidth: '131px', overflowWrap: 'anywhere' });
   });
 
-  it('leaves the label of an ungrouped row as plain link text', () => {
+  it('keeps the label of an ungrouped row inside the link', () => {
     renderRow(
       <NavigationRow
         layout="tablet"
@@ -119,7 +119,9 @@ describe('NavigationRow', () => {
       />
     );
 
-    expect(screen.getByText('Boards')).toBe(screen.getByRole('link', { name: 'Boards' }));
+    expect(screen.getByRole('link', { name: 'Boards' })).toContainElement(
+      screen.getByText('Boards')
+    );
   });
 
   it('navigates without a document load and asks the page to focus main, on click', async () => {

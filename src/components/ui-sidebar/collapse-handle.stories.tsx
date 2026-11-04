@@ -24,9 +24,9 @@ const meta: Meta<typeof CollapseHandle> = {
         component:
           'The sidebar collapse handle: a white circle with a `#E1E7EA` stroke and a 16 px ' +
           '(20 px on tablet) chevron. Pointing left while the sidebar is expanded, right on the ' +
-          'rail. Its name and `aria-expanded` follow the state. It is 24 px (32 px on tablet) and ' +
-          'sits 15 px from the top, 9 px past the edge of the panel, so it moves with the width ' +
-          'transition.',
+          'rail. Its name and `aria-expanded` follow the state. It is 24 px (32 px on tablet) ' +
+          'and sits 15 px from the top, 9 px past the edge of the panel, so it moves with the ' +
+          'width transition.',
       },
       story: { inline: false },
     },

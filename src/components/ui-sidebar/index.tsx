@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import { type JSX, useReducer } from 'react';
+import { type JSX, useReducer, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { UISidebarProps } from '@/components/types/ui-sidebar';
@@ -14,13 +14,23 @@ function flip(collapsed: boolean): boolean {
 
 export default function UISidebar({ layout, items, signOut }: UISidebarProps): JSX.Element {
   const { t } = useTranslation();
-  const [collapsed, toggle] = useReducer(flip, false);
+  const [collapsed, flipCollapsed] = useReducer(flip, false);
+  const [revealing, setRevealing] = useState(false);
   const state = collapsed ? 'rail' : 'expanded';
+  const toggle = (): void => {
+    setRevealing(collapsed);
+    flipCollapsed();
+  };
 
   return (
     <Box sx={styles.wrapper[layout][state]}>
       <CollapseHandle layout={layout} collapsed={collapsed} onToggle={toggle} />
-      <Box component="nav" aria-label={t('app_shell.navigation.label')} sx={styles.panel[layout]}>
+      <Box
+        component="nav"
+        aria-label={t('app_shell.navigation.label')}
+        onAnimationEnd={() => setRevealing(false)}
+        sx={revealing ? { ...styles.panel[layout], ...styles.reveal } : styles.panel[layout]}
+      >
         <UINavigationList layout={layout} variant={state} items={items} signOut={signOut} />
       </Box>
     </Box>
