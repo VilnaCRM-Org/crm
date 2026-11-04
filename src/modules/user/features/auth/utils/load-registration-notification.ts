@@ -7,14 +7,12 @@ const registrationNotificationLoader = new ChunkRetryLoader(
   () => import('@auth/components/form-section/auth-forms/registration-notification')
 );
 
-class RegistrationNotificationPrefetcher {
+export class RegistrationNotificationPrefetcher {
   public prefetch(): void {
     registrationNotificationLoader.load().catch((error: unknown) => {
       observabilityCore.captureError(error, { source: 'auth:notification-prefetch' });
     });
   }
 }
-
-export const registrationNotificationPrefetcher = new RegistrationNotificationPrefetcher();
 
 export default registrationNotificationLoader;

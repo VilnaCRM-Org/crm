@@ -2031,8 +2031,9 @@ after the usual `/sign-in` → "Forgot password" → `/password-recovery` path �
 its own copy. They admit the `settings` page chunk too (`SETTINGS_CHUNKS`, issue #330), so
 `/settings` takes the shared form fields and react-hook-form from the same two chunks. The
 trade-off: a cold visit to a recovery page (the e-mailed reset link) downloads both chunks whole,
-including sign-in/sign-up-only shared modules it does not run; no recovery URL is in the
-Lighthouse budget, `/sign-in` is. The chunk names live in that file and
+including sign-in/sign-up-only shared modules it does not run, and both recovery URLs are in the
+Lighthouse audit under the same floors as `/sign-in`, so that cost is measured rather than assumed.
+The chunk names live in that file and
 `tests/unit/scripts/auth-forms-chunk-group.test.ts` pins the per-module rule of both groups,
 including that a vendor module never reaches `auth-forms` and an app module never reaches
 `auth-forms-vendors`; the `performance serving` test pins the wiring of both groups and that
