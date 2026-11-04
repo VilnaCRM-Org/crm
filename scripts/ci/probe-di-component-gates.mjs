@@ -105,6 +105,12 @@ const featureLayerFiles = (folder, statement) => ({
   [`${FEATURE_ROOT}/components/widget.tsx`]: componentImporting(statement),
 });
 
+const moduleTransformerFiles = (statement) => ({
+  'src/modules/billing/transformers/billing-thing.ts':
+    'export default class Thing {\n  public run(): void {}\n}\n',
+  [`${FEATURE_ROOT}/components/widget.tsx`]: componentImporting(statement),
+});
+
 const DEPCRUISE_FIXTURES = {
   valueImport: {
     files: {
@@ -140,6 +146,12 @@ const DEPCRUISE_FIXTURES = {
       'transformers',
       "import type Thing from '../transformers/invoice-thing';"
     ),
+  },
+  moduleTransformerValueImport: {
+    files: moduleTransformerFiles("import Thing from '../../../transformers/billing-thing';"),
+  },
+  moduleTransformerTypeImport: {
+    files: moduleTransformerFiles("import type Thing from '../../../transformers/billing-thing';"),
   },
   authCarveOut: {
     files: {

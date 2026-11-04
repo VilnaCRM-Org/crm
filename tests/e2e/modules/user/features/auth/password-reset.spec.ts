@@ -21,6 +21,7 @@ const showPasswordLabel: string = t('auth.password.show');
 const invalidTitle: string = t('password_reset.invalid.title');
 const invalidBody: string = t('password_reset.invalid.body');
 const requestNew: string = t('password_reset.invalid.request_new');
+const backLabel: string = t('password_recovery.back');
 const notice: string = t('sign_in.notices.password_reset');
 const policyRejected: string = t('password_reset.errors.policy_rejected');
 const rateLimited: string = t('password_recovery.errors.rate_limited');
@@ -334,6 +335,13 @@ test.describe('Create new password (issue #315)', () => {
   });
 
   for (const [name, entry, linkName, ready, destination] of [
+    [
+      'Назад on the invalid-link state',
+      (): string => '/password-reset',
+      backLabel,
+      invalidTitle,
+      '/sign-in',
+    ],
     [
       'Запросити нове посилання on the invalid-link state',
       (): string => '/password-reset',

@@ -72,6 +72,14 @@ describe('browser security-header baseline (issue #113)', () => {
     expect(policy.document.source).toBe('/index.html');
   });
 
+  it('sends Referrer-Policy strict-origin so a reset token never leaves in a Referer', () => {
+    const declared = policy.document.headers.find((header) => header.key === 'Referrer-Policy');
+    const served = documentRule?.headers.find((header) => header.key === 'Referrer-Policy');
+
+    expect(declared?.value).toBe('strict-origin');
+    expect(served?.value).toBe('strict-origin');
+  });
+
   it('leaves Cross-Origin-Opener-Policy out of the baseline', () => {
     const keys = [...policy.response.headers, ...policy.document.headers].map((h) => h.key);
 

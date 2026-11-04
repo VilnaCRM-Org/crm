@@ -100,7 +100,11 @@ function StubNotification(props: StubNotificationProps): ReactElement {
 jest.mock('@auth/utils/load-registration-notification', () => ({
   __esModule: true,
   default: { load: (): unknown => mockLoad() },
-  registrationNotificationPrefetcher: { prefetch: (): unknown => mockPrefetch() },
+  RegistrationNotificationPrefetcher: class {
+    public prefetch(): unknown {
+      return mockPrefetch();
+    }
+  },
 }));
 
 jest.mock('@/components/ui-form-field', () => ({

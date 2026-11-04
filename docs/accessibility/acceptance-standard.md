@@ -24,8 +24,10 @@ assert tab order, `:focus-visible`, a visible focus change and Space/Enter activ
 `expectArrowKeyWalk` from the same helper to walk a roving-focus menu with ArrowDown/ArrowUp
 (wrapping), Home and End, each stop focused, `:focus-visible` and visibly changed. Both Playwright
 lanes ride the `accessibility testing` check. Lighthouse keeps its 0.95 desktop / 0.90 mobile
-accessibility scores on `/`, `/sign-in`, `/sign-up`, `/forbidden`, `/server-error` and the catch-all
-404 (`/definitely-not-a-route`) as a second signal, not the primary gate.
+accessibility scores on `/`, `/sign-in`, `/sign-up`, `/forbidden`, `/server-error`, the catch-all
+404 (`/definitely-not-a-route`), `/password-recovery` and `/password-reset` (with a fixed, non-empty
+dummy value in its `token` query parameter, so the form renders rather than the invalid-link state)
+as a second signal, not the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are

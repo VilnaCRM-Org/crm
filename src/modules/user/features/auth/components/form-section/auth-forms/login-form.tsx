@@ -1,4 +1,4 @@
-import { type JSX, lazy, Suspense, useEffect } from 'react';
+import { type JSX, lazy, Suspense, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -14,7 +14,7 @@ import type {
   LoginNotificationPanelProps,
 } from '@auth/types/auth-forms/login-form';
 import registrationNotificationLoader, {
-  registrationNotificationPrefetcher,
+  RegistrationNotificationPrefetcher,
 } from '@auth/utils/load-registration-notification';
 
 import LoginFormFields from './login-form-fields';
@@ -35,9 +35,15 @@ function FocusEmailOnReturn({ returnCount }: FocusEmailOnReturnProps): null {
   return null;
 }
 
-function LoginFormPanel({ notice, submitter, viewState, t }: LoginFormPanelProps): JSX.Element {
+function LoginFormPanel({
+  notice,
+  prefetcher,
+  submitter,
+  viewState,
+  t,
+}: LoginFormPanelProps): JSX.Element {
   const onSubmit = (data: SignInDto): Promise<void> => {
-    registrationNotificationPrefetcher.prefetch();
+    prefetcher.prefetch();
     return submitter.handleLogin(data);
   };
 
@@ -98,6 +104,7 @@ export default function LoginForm({
   onViewChange,
 }: LoginFormProps): JSX.Element {
   const { t } = useTranslation();
+  const [prefetcher] = useState(() => new RegistrationNotificationPrefetcher());
   const submitter = useLoginSubmitter(t);
   const viewState = useLoginView({
     error: submitter.error,
@@ -111,7 +118,13 @@ export default function LoginForm({
 
   return (
     <>
-      <LoginFormPanel notice={notice} submitter={submitter} viewState={viewState} t={t} />
+      <LoginFormPanel
+        notice={notice}
+        prefetcher={prefetcher}
+        submitter={submitter}
+        viewState={viewState}
+        t={t}
+      />
       <LoginNotificationPanel
         submitter={submitter}
         viewState={viewState}
