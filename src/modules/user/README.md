@@ -617,8 +617,9 @@ untested implementation of the backend).
 
 ### Upstream requests of the settings page
 
-The page depends on user-service for the items below, filed as issues. None of them blocks the
-test stack, and G1 blocks production only. The page is tracked in
+The page depends on user-service for the items below, filed as issues. None of them blocks a
+deployment: until G1 ships, the page runs with the exposure accepted under "No feature flag for the
+settings page" above. The page is tracked in
 [crm #330](https://github.com/VilnaCRM-Org/crm/issues/330).
 
 - **G1** — release `main`'s authentication surface:

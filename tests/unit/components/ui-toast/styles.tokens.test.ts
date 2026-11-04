@@ -70,7 +70,15 @@ describe('toast styles', () => {
       display: 'flex',
       flexDirection: 'column',
       gap: '0.5rem',
-      [SM]: { left: 'auto', right: '1.5rem', bottom: '1.5rem', width: '24.8125rem' },
+      maxHeight: 'calc(100dvh - 1.875rem)',
+      overflowY: 'auto',
+      [SM]: {
+        left: 'auto',
+        right: '1.5rem',
+        bottom: '1.5rem',
+        width: '24.8125rem',
+        maxHeight: 'calc(100dvh - 3rem)',
+      },
       [DESKTOP]: { right: '0.75rem' },
     });
   });

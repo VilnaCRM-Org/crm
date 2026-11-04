@@ -172,6 +172,28 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test('keeps every toast reachable when three stack on a short viewport', async ({ page }) => {
+    stub = await stubProfile(page, {
+      UpdateUser: [replyWithStatus(503), replyWithStatus(503), replyWithStatus(503)],
+    });
+    await openByTap(page);
+    await tapSaveWith(page, `${PROFILE_NODE.initials} А`);
+    await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(1);
+    await saveButton(page).tap();
+    await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(2);
+    await saveButton(page).tap();
+    const closes = page.getByRole('button', { name: closeLabel, exact: true });
+    await expect(closes).toHaveCount(3);
+
+    await page.setViewportSize({ width: 320, height: 256 });
+
+    for (const close of await closes.all()) {
+      await close.scrollIntoViewIfNeeded();
+      await expect(close).toBeInViewport({ ratio: 1 });
+    }
+    await expectNoHorizontalOverflow(page);
+  });
+
   test('keeps Save reachable and tappable at keyboard height', async ({ page }) => {
     stub = await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
     await openByTap(page);
