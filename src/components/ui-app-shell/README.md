@@ -461,6 +461,11 @@ moves with the transition and clears the title by 3 px at every width. Desktop i
 and 57 from the wrapper); tablet moves 7 px left, to 215 and 53. The chevron turns over the same
 200 ms, and neither animates under `prefers-reduced-motion`.
 
+The labels used to wrap inside the narrow panel while it opened, so rows started at up to 184 px
+tall and snapped back to 54. Sidebar rows now hold a 238 px `min-width` and the list clips them, so
+every row keeps its final position from the first frame, and on reopening, never on page load, the
+labels and the group chevron fade in over the same 200 ms. Icons stay put.
+
 ### DV-12: the settings page centres beside the sidebar (owner decision, 2026-11-04)
 
 Figma starts the page at x 137 beside the desktop rail, which left 53 px on the rail's side and

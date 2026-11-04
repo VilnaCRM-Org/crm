@@ -170,4 +170,14 @@ describe('sidebar styles', () => {
       },
     });
   });
+
+  it('reveals only the labels and the group chevron, and not under reduced motion', async () => {
+    const styles = await loadStyles();
+    const { animation, ...rest } = styles.reveal['& li span, & li button[aria-expanded] svg'];
+
+    expect(animation).toContain('opacity: 0');
+    expect(animation).toContain('opacity: 1');
+    expect(animation).toMatch(/200ms ease-out$/);
+    expect(rest).toEqual({ '@media (prefers-reduced-motion: reduce)': { animation: 'none' } });
+  });
 });

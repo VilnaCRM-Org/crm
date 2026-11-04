@@ -80,8 +80,20 @@ describe('navigation list styles', () => {
     const styles = await loadStyles();
 
     expect(styles.row).toEqual({
-      desktop: { ...ROW, minHeight: '54px', fontSize: '16px', lineHeight: '1.125' },
-      tablet: { ...ROW, minHeight: '66px', fontSize: '18px', lineHeight: 'calc(22 / 18)' },
+      desktop: {
+        ...ROW,
+        minWidth: '238px',
+        minHeight: '54px',
+        fontSize: '16px',
+        lineHeight: '1.125',
+      },
+      tablet: {
+        ...ROW,
+        minWidth: '238px',
+        minHeight: '66px',
+        fontSize: '18px',
+        lineHeight: 'calc(22 / 18)',
+      },
       drawer: { ...ROW, minHeight: '60px', fontSize: '16px', lineHeight: '1.125' },
     });
   });
@@ -121,6 +133,7 @@ describe('navigation list styles', () => {
 
     expect(styles.action).toEqual({
       ...ROW,
+      minWidth: '238px',
       minHeight: '54px',
       fontSize: '16px',
       lineHeight: '1.125',
@@ -170,6 +183,7 @@ describe('navigation list styles', () => {
       desktop: {
         ...SUB,
         lineHeight: '1.125',
+        minWidth: '238px',
         minHeight: '42px',
         padding: '9px 0 2px 56px',
         fontSize: '16px',
@@ -177,6 +191,7 @@ describe('navigation list styles', () => {
       tablet: {
         ...SUB,
         lineHeight: '1',
+        minWidth: '238px',
         minHeight: '46px',
         padding: '8px 0 4px 60px',
         fontSize: '18px',
@@ -232,6 +247,7 @@ describe('navigation list styles', () => {
 
     expect(styles.divider).toEqual({
       expanded: {
+        minWidth: '238px',
         height: '1px',
         margin: '0 0 21px',
         border: 0,
