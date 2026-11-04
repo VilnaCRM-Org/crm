@@ -4,7 +4,7 @@ import { buildResetToken } from '@tests/builders';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { PAGES } from '@tests/visual/constants';
 
-import takeMobileSnapshot from './take-mobile-snapshot';
+import takeMobileSnapshot, { takeReadyMobileSnapshot } from './take-mobile-snapshot';
 
 test.describe.parallel('Mobile device visual tests', () => {
   test('[mobile] sign-in', async ({ page }) => {
@@ -20,7 +20,7 @@ test.describe.parallel('Mobile device visual tests', () => {
   });
 
   test('[mobile] password-reset', async ({ page }) => {
-    await takeMobileSnapshot(
+    await takeReadyMobileSnapshot(
       page,
       `${PAGES.PASSWORD_RESET}?token=${buildResetToken()}`,
       'password-reset',

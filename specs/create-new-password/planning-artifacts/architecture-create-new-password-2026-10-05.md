@@ -3,8 +3,8 @@ status: complete
 workflowType: architecture
 project_name: crm
 date: 2026-10-05
-revised: 2026-10-19
-iteration: 3
+revised: 2026-11-03
+iteration: 4
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'architect (Winston), autonomous run'
@@ -1693,11 +1693,15 @@ Every path is inside a folder `config/module-shape.json` allows for a feature on
 | `CLAUDE.md`, `docs/accessibility/acceptance-standard.md`          | MODIFY | contrast count, see below   |
 | `rsbuild.config.ts`, `scripts/auth-forms-chunk-group.ts`          | MODIFY | two auth-form cache groups  |
 
-The `color-contrast` entry count grows by exactly one from the count on `main` at merge time (open
-PR #311 raises it on its own branch). Beyond Story 0.1's policy edits, no change to `package.json`
+The `color-contrast` entry count grows by exactly two from the count on `main` at merge time (the
+recovery result views' pill links, and the in-card "Назад" row since the 2026-10-21 decision;
+NFR-9). Beyond Story 0.1's policy edits, no change to `package.json`
 dependencies, `src/config/**`, `public/index.html`,
-`src/services/observability/apollo-link-factory.ts`, `src/routes/registry.ts`,
-`src/routes/route-composer.tsx` or `lighthouse/constants.js`. `rsbuild.config.ts` gains two
+`src/services/observability/apollo-link-factory.ts`, `src/routes/registry.ts` or
+`src/routes/route-composer.tsx`. `lighthouse/constants.js` adds `/password-recovery` and
+`/password-reset?token=…` (a fixed dummy token, so the form renders), so the existing floors and
+resource budgets gate both recovery routes (amended 2026-11-03; epics "Implementation drift" item
+12). `rsbuild.config.ts` gains two
 `splitChunks.cacheGroups` entries, `authFormsVendors` and `authForms`, so `/sign-in` keeps the
 two shared auth-form chunks (shared dependencies, shared app code) the recovery form sections
 would otherwise split (CLAUDE.md, "Shared auth-form chunk (issue #315)").

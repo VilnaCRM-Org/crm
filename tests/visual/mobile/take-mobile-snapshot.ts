@@ -11,16 +11,24 @@ export const MOBILE_SNAPSHOT_OPTIONS = {
 
 export const mobileSnapshotName = (name: string): string => `${currentLanguage}_${name}.png`;
 
-async function takeMobileSnapshot(
+async function captureMobileSnapshot(page: Page, name: string): Promise<void> {
+  await expect(page).toHaveScreenshot(mobileSnapshotName(name), MOBILE_SNAPSHOT_OPTIONS);
+}
+
+export async function takeReadyMobileSnapshot(
   page: Page,
   url: string,
   name: string,
-  readyLabel?: string
+  readyLabel: string
 ): Promise<void> {
   await stabilizePage(page, url);
-  if (readyLabel !== undefined) await expect(page.getByLabel(readyLabel)).toBeVisible();
+  await expect(page.getByLabel(readyLabel)).toBeVisible();
+  await captureMobileSnapshot(page, name);
+}
 
-  await expect(page).toHaveScreenshot(mobileSnapshotName(name), MOBILE_SNAPSHOT_OPTIONS);
+async function takeMobileSnapshot(page: Page, url: string, name: string): Promise<void> {
+  await stabilizePage(page, url);
+  await captureMobileSnapshot(page, name);
 }
 
 export default takeMobileSnapshot;

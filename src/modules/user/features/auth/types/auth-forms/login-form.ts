@@ -13,8 +13,13 @@ export interface LoginFormProps {
   readonly onViewChange?: LoginViewListener | undefined;
 }
 
+export interface NotificationPrefetcher {
+  prefetch(): void;
+}
+
 export interface LoginFormPanelProps {
   readonly notice?: ReactNode;
+  readonly prefetcher: NotificationPrefetcher;
   readonly submitter: LoginSubmitter;
   readonly viewState: LoginViewState;
   readonly t: TFunction;
