@@ -30,6 +30,14 @@ const control = {
   [fromSm]: controlFromSm,
 };
 
+const stackFromSm = {
+  left: 'auto',
+  right: '1.5rem',
+  bottom: '1.5rem',
+  width: '24.8125rem',
+  maxHeight: 'calc(100dvh - 3rem)',
+};
+
 export default {
   stack: {
     position: 'fixed',
@@ -42,13 +50,7 @@ export default {
     gap: '0.5rem',
     maxHeight: 'calc(100dvh - 1.875rem)',
     overflowY: 'auto',
-    [fromSm]: {
-      left: 'auto',
-      right: '1.5rem',
-      bottom: '1.5rem',
-      width: '24.8125rem',
-      maxHeight: 'calc(100dvh - 3rem)',
-    },
+    [fromSm]: stackFromSm,
     [fromDesktop]: { right: '0.75rem' },
   },
   toast: {

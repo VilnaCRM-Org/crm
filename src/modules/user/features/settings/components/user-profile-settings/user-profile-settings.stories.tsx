@@ -19,7 +19,12 @@ const meta: Meta<typeof UserProfileSettings> = {
     version: 0,
     refocus: false,
     retry: noop,
-    adoption: { adopt: noop, confirm: noop, isCurrent: (): boolean => true },
+    adoption: {
+      adopt: noop,
+      confirm: noop,
+      isCurrent: (): boolean => true,
+      revision: (): number => 0,
+    },
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
   },

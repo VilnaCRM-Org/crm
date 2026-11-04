@@ -125,13 +125,16 @@ attaches to nothing and is silently ignored.
 `scripts/ci/mutation-scope.mjs` is the single source of truth for the mutated file list (its
 exclusions mirror `jest.config.ts` `collectCoverageFrom`). The base config sets `mutate` to that
 list; the shard config takes its slice from `shardMutateFiles(total, index)` in the same module, so
-the union of all shards equals the full set exactly. Never hand-maintain a second file list.
+the scope equals the shards plus the `unsharded` files (those with no runnable mutant), never the
+shards alone. Never hand-maintain a second file list. The rule itself lives in
+[`CLAUDE.md`](../../../CLAUDE.md#mutation-testing-scope-and-baseline); this skill does not copy it.
 
-`shardMutateFiles` bin-packs by file size (longest-processing-time: heaviest file to the lightest
-shard) rather than slicing round-robin, because a sharded run costs whatever its **slowest** shard
-costs. Round-robin left the worst shard carrying 1.54x the mean mutant load — measured 7m47s
-against a 3m14s best — while size packing brings the spread to about 1.15x. It stays deterministic
-(weight desc, path as tiebreak), so re-running one shard mutates exactly the same files.
+`shardMutateFiles` bin-packs by scored-mutant count (longest-processing-time: heaviest file to the
+lightest shard) rather than slicing round-robin, because a sharded run costs whatever its
+**slowest** shard costs. Round-robin left the worst shard carrying 1.54x the mean mutant load —
+measured 7m47s against a 3m14s best — while mutant-count packing brings the spread to about
+1.15x. It stays deterministic (weight desc, path as tiebreak), so re-running one shard mutates
+exactly the same files.
 
 ## Sharded incremental CI
 

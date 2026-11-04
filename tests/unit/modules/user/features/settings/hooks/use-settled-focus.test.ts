@@ -6,6 +6,19 @@ const buttonRef = (focus: jest.Mock): { current: HTMLButtonElement } => ({
   current: { focus } as unknown as HTMLButtonElement,
 });
 
+const saveForm = (): {
+  form: HTMLFormElement;
+  field: HTMLInputElement;
+  save: HTMLButtonElement;
+} => {
+  const form = document.createElement('form');
+  const field = document.createElement('input');
+  const save = document.createElement('button');
+  form.append(field, save);
+  document.body.append(form);
+  return { form, field, save };
+};
+
 describe('useSettledFocus', () => {
   it('leaves focus alone before any save settled', () => {
     const focus = jest.fn();
@@ -60,11 +73,7 @@ describe('useSettledFocus', () => {
   });
 
   it('moves focus to Save from a field of the same form, as after Enter', () => {
-    const form = document.createElement('form');
-    const field = document.createElement('input');
-    const save = document.createElement('button');
-    form.append(field, save);
-    document.body.append(form);
+    const { form, field, save } = saveForm();
     const { rerender } = renderHook(({ settled }) => useSettledFocus(settled, { current: save }), {
       initialProps: { settled: 0 },
     });
@@ -77,11 +86,7 @@ describe('useSettledFocus', () => {
   });
 
   it('stays on a field of the form while no save has settled', () => {
-    const form = document.createElement('form');
-    const field = document.createElement('input');
-    const save = document.createElement('button');
-    form.append(field, save);
-    document.body.append(form);
+    const { form, field, save } = saveForm();
     field.focus();
 
     renderHook(() => useSettledFocus(0, { current: save }));

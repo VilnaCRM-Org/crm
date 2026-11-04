@@ -228,6 +228,24 @@ describe('useProfileLoad', () => {
     expect(result.current.adoption.isCurrent(saved.email)).toBe(true);
   });
 
+  it('moves the revision on each adoption, in the same tick', async () => {
+    const user = buildUserEntity({ confirmed: false });
+    mockRead.mockResolvedValue({ kind: 'ok', user });
+    const { result } = renderHook(() => useProfileLoad());
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    const { adoption } = result.current;
+    const before = adoption.revision();
+    let beforeCommit = before;
+
+    act(() => {
+      adoption.adopt(user);
+      beforeCommit = adoption.revision();
+    });
+
+    expect(beforeCommit).toBe(before + 1);
+    expect(result.current.adoption.revision()).toBe(before + 1);
+  });
+
   it('keeps no entity when a confirmation arrives before one is loaded', () => {
     mockRead.mockReturnValue(new Promise(() => undefined));
     const { result } = renderHook(() => useProfileLoad());

@@ -24,7 +24,12 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
 const form = (): JSX.Element => (
   <ProfileForm
     user={buildUserEntity({ fullName: 'Олена Петренко', email: 'olena@example.com' })}
-    adoption={{ adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true }}
+    adoption={{
+      adopt: jest.fn(),
+      confirm: jest.fn(),
+      isCurrent: (): boolean => true,
+      revision: (): number => 0,
+    }}
     version={0}
     refocus={false}
     toasts={{
