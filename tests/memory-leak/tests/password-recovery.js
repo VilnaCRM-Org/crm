@@ -1,3 +1,6 @@
+const { faker } = require('@faker-js/faker');
+
+const generatePassword = require('../utils/generate-password');
 const verifyPage = require('../utils/verify-page');
 const ScenarioBuilder = require('../utils/scenario-builder');
 const logger = require('../utils/logger');
@@ -5,7 +8,7 @@ const logger = require('../utils/logger');
 const BASELINE_PATH = '/sign-in';
 const REQUEST_PATH = '/password-recovery';
 const RESET_PATH = '/password-reset';
-const RESET_URL = `${RESET_PATH}?token=MemlabResetToken0000000000000001`;
+const RESET_TOKEN_LENGTH = 32;
 const EMAIL_INPUT = 'input#email';
 const NEW_PASSWORD_INPUT = 'input#newPassword';
 const CONFIRM_INPUT = 'input#confirmPassword';
@@ -37,14 +40,15 @@ async function exerciseRequestForm(page) {
   await navigateInApp(page, REQUEST_PATH);
   await waitForSelectors(page, [EMAIL_INPUT, SUBMIT], PAGE_TIMEOUT);
   await verifyPage(page, REQUEST_PATH);
-  await page.type(EMAIL_INPUT, 'memlab@example.com');
+  await page.type(EMAIL_INPUT, faker.internet.email());
 }
 
 async function exerciseResetForm(page) {
-  await navigateInApp(page, RESET_URL);
+  const token = faker.string.alphanumeric(RESET_TOKEN_LENGTH);
+  await navigateInApp(page, `${RESET_PATH}?token=${token}`);
   await waitForSelectors(page, [NEW_PASSWORD_INPUT, CONFIRM_INPUT, RULES_LIST], PAGE_TIMEOUT);
   await verifyPage(page, RESET_PATH);
-  await page.type(NEW_PASSWORD_INPUT, 'Memlab1Password');
+  await page.type(NEW_PASSWORD_INPUT, generatePassword());
   await page.click(SUBMIT);
   await waitForSelectors(page, [`${CONFIRM_INPUT}[aria-invalid="true"]`], PAGE_TIMEOUT);
 }

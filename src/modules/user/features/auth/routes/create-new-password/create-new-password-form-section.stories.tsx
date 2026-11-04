@@ -12,8 +12,8 @@ const meta: Meta<typeof CreateNewPasswordFormSection> = {
     docs: {
       description: {
         component:
-          'The confirm step of password recovery: the card with "Назад" and either the new ' +
-          'password form, when the URL carries a usable token, or the invalid-link state.',
+          'The confirm step of password recovery: the card with either the new password form, ' +
+          'when the URL carries a usable token, or the invalid-link state with its "Назад".',
       },
       story: { inline: false },
     },

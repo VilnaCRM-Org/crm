@@ -1,6 +1,6 @@
 import { GraphQLError } from 'graphql';
 
-import { buildClientMutationId, buildEmail, buildPassword } from '@tests/builders';
+import { buildClientMutationId, buildEmail, buildPassword, buildResetToken } from '@tests/builders';
 
 import {
   clearResetTokens,
@@ -99,7 +99,10 @@ describe('reset tokens', () => {
   });
 
   it('rejects a token it never issued', () => {
-    expectTokenRejection(() => redeemResetToken('unknown'), 'Password reset token not found');
+    expectTokenRejection(
+      () => redeemResetToken(buildResetToken()),
+      'Password reset token not found'
+    );
   });
 
   it('accepts a token until its hour is up and rejects it from then on', () => {
@@ -164,7 +167,11 @@ describe('sendResetMail', () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(new Response('no', { status: 500 }));
 
     await expect(
-      sendResetMail({ mailpitUrl: MAILPIT, linkBaseUrl: LINK_BASE }, buildEmail(), 'token')
+      sendResetMail(
+        { mailpitUrl: MAILPIT, linkBaseUrl: LINK_BASE },
+        buildEmail(),
+        buildResetToken()
+      )
     ).rejects.toThrow('Mailpit refused the reset e-mail: HTTP 500');
   });
 
@@ -271,7 +278,7 @@ describe('password reset resolvers in mail mode', () => {
   it('rejects a confirm with a token it never mailed', async () => {
     await expect(
       confirmPasswordResetUser(undefined, {
-        input: { token: 'made-up', newPassword: buildPassword() },
+        input: { token: buildResetToken(), newPassword: buildPassword() },
       })
     ).rejects.toThrow('token: Password reset token not found');
   });
