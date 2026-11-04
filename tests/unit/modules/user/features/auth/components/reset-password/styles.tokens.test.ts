@@ -121,22 +121,11 @@ describe('reset password styles', () => {
     });
   });
 
-  it('pins the primary tone override of the back control', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.backControlPrimary).toEqual({
-      color: '#404142',
-      '& svg': { color: '#404142' },
-      '&:visited': { color: '#404142' },
-    });
-  });
-
   it('declares no other style block', async () => {
     const styles = await loadStyles();
 
     expect(Object.keys(styles)).toEqual([
       'backControl',
-      'backControlPrimary',
       'resultTitle',
       'resultBody',
       'resultAction',

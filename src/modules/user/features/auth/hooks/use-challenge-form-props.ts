@@ -1,8 +1,6 @@
 import { createElement } from 'react';
 
 import useSubmitRetry from '@/hooks/use-submit-retry';
-import useFocusOnMount from '@/utils/use-focus-on-mount';
-import ChallengeNote from '@auth/components/two-factor/challenge-note';
 import ModeToggle from '@auth/components/two-factor/mode-toggle';
 import useChallengeBanner from '@auth/hooks/use-challenge-banner';
 import useChallengeCopy from '@auth/hooks/use-challenge-copy';
@@ -18,7 +16,6 @@ export default function useChallengeFormProps({
   const copy = useChallengeCopy(state.mode);
   const { submitRef, retry } = useSubmitRetry();
   const banner = useChallengeBanner(state.banner, retry);
-  const focusOnMount = useFocusOnMount<HTMLElement>();
 
   return {
     onSubmit: callbacks.submit,
@@ -27,16 +24,15 @@ export default function useChallengeFormProps({
     errorAction: banner.action,
     errorOccurrence: state.bannerOccurrence,
     submitRef,
+    requestSubmit: retry,
     submitLabel: copy.submitLabel,
     submittingLabel: copy.submittingLabel,
     title: copy.title,
-    titleRef: focusOnMount,
     subtitle: copy.subtitle,
     footer: createElement(ModeToggle, {
       mode: state.mode,
       busy: state.isSubmitting,
       onSwitch: callbacks.switchMode,
     }),
-    notice: createElement(ChallengeNote, { text: copy.note }),
   };
 }

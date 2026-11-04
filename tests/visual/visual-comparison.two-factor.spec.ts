@@ -51,7 +51,6 @@ async function resize(page: Page, screen: ScreenSize): Promise<void> {
 
 async function submitWrongCode(page: Page): Promise<void> {
   await typeCode(page, CODE);
-  await confirmButtonOf(page).click();
 }
 
 test.describe.parallel('Two-factor visual tests (issue #331)', () => {

@@ -1,8 +1,7 @@
 {
   "two_factor": {
     "title": "Двофакторна автентифікація",
-    "subtitle": "Введіть шестизначний код із застосунку Google Authenticator.",
-    "note": "Код можна ввести протягом 5 хвилин після входу.",
+    "subtitle": "Перевірте додаток Google Authenticator",
     "code_label": "Код підтвердження",
     "cell_label": "Цифра {{position}} з {{total}}",
     "submit_button": "Підтвердити",

@@ -48,8 +48,7 @@ import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
 const SETTINGS_URL = '/settings';
 const SETTINGS_RING = 'rgb(26, 28, 30)';
-const CELL_RING = 'rgb(64, 65, 66)';
-const CELL_BORDER = 'rgb(128, 135, 138)';
+const CELL_BORDER = 'rgb(225, 231, 234)';
 const ERROR_TEXT = 'rgb(214, 51, 51)';
 const CELL_INDEXES = [0, 1, 2, 3, 4, 5] as const;
 
@@ -150,7 +149,8 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await copyBackupKeyOf(page).focus();
     await page.keyboard.press('Tab');
     await expect(codeCellsOf(page).first()).toBeFocused();
-    await expectRing(codeCellsOf(page).first(), CELL_RING);
+    await expect(codeCellsOf(page).first()).toHaveCSS('outline-style', 'none');
+    await expect(codeCellsOf(page).first()).not.toHaveCSS('box-shadow', 'none');
 
     await page.keyboard.type('123456');
     await confirmOf(page).click();

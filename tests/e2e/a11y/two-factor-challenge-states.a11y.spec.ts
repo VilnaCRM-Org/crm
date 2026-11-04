@@ -49,7 +49,6 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
     await stubChallenge(page, ['invalid_code']);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
     await expect(page.getByText(challengeText.invalidCode)).toBeVisible();
 
     await expectCleanScan(page);
@@ -88,7 +87,6 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
     await stubChallenge(page, ['rate_limited']);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
 
     await expectBannerScanned(page, challengeText.rateLimited);
   });
@@ -97,7 +95,6 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
     await stubChallenge(page, ['unavailable']);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
     await expect(page.getByRole('button', { name: challengeText.retry })).toBeVisible();
 
     await expectBannerScanned(page, challengeText.transient);
@@ -107,7 +104,6 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
     await stubChallenge(page, ['expired_session']);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
     await expect(page.getByText(challengeText.expiredNotice)).toBeVisible();
 
@@ -118,7 +114,6 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
     await stubChallenge(page, ['locked']);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
     await expect(page.getByText(challengeText.lockedNotice)).toBeVisible();
 
     await expectCleanScan(page);

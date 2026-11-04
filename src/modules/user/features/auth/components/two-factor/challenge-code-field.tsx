@@ -1,10 +1,11 @@
-import type { JSX } from 'react';
+import { type JSX, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import UIPinInput from '@/components/ui-pin-input';
 import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
+import useChallengeAutoSubmit from '@auth/hooks/use-challenge-auto-submit';
 import useChallengeFieldSync, { CODE_FIELD_NAME } from '@auth/hooks/use-challenge-field-sync';
 import type { ChallengeCodeFieldProps } from '@auth/types/two-factor/challenge-components';
 
@@ -17,11 +18,19 @@ const FIELD_ERROR_KEYS: Record<TwoFactorFieldError, string> = {
   invalid_code: 'two_factor.errors.invalid_code',
 };
 
-export default function ChallengeCodeField({ state }: ChallengeCodeFieldProps): JSX.Element {
+export default function ChallengeCodeField({
+  state,
+  onComplete,
+}: ChallengeCodeFieldProps): JSX.Element {
   const { t } = useTranslation();
-  const { control } = useFormContext<TwoFactorDto>();
+  const { control, setFocus } = useFormContext<TwoFactorDto>();
   const { fieldError, isSubmitting } = state;
   useChallengeFieldSync(state);
+  useChallengeAutoSubmit(onComplete);
+
+  useEffect(() => {
+    setFocus(CODE_FIELD_NAME);
+  }, [setFocus]);
 
   return (
     <UIPinInput<TwoFactorDto>

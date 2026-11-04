@@ -1,6 +1,5 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
-import { focusVisibleRing } from '@/styles/focus-ring';
 
 const CELL = '& .ui-pin-input__cell';
 const ACTIVE_CELL = '&& .ui-pin-input__cell';
@@ -16,27 +15,42 @@ export default {
   '& [role="group"]': {
     width: '100%',
     gap: '4px',
+    containerType: 'inline-size',
   },
   [CELL]: {
-    flex: '1 1 0',
-    width: 'auto',
+    '--pin-cell-width': 'min(49px, calc((100cqw - 20px) / 6))',
+    boxSizing: 'border-box',
+    flex: '0 0 auto',
+    width: 'var(--pin-cell-width)',
     minWidth: 0,
-    maxWidth: '49px',
+    maxWidth: 'none',
     minHeight: '64px',
     height: '64px',
-    color: customColors.text.dark,
-    borderColor: paletteColors.border.strong,
+    color: customColors.text.muted,
+    borderColor: paletteColors.background.subtle,
+    caretColor: paletteColors.primary.main,
   },
   [`${CELL}::placeholder`]: {
-    color: 'transparent',
+    color: customColors.checkbox.main,
+    opacity: 1,
   },
   [`${ACTIVE_CELL}:hover${ENABLED}`]: {
-    borderColor: customColors.text.muted,
+    borderColor: customColors.checkbox.main,
   },
   [`${ACTIVE_CELL}[aria-invalid="true"]${ENABLED}`]: {
     borderColor: paletteColors.error.main,
   },
-  [`${ACTIVE_CELL}:focus-visible${ENABLED}`]: focusVisibleRing['&:focus-visible'],
+  [`${ACTIVE_CELL}:focus${ENABLED}`]: {
+    color: customColors.text.dark,
+    outline: 'none',
+  },
+  [`${ACTIVE_CELL}:focus:placeholder-shown${ENABLED}`]: {
+    paddingLeft: 'calc((var(--pin-cell-width) - 2px - 1ch) / 2)',
+    paddingRight: 0,
+  },
+  [`${ACTIVE_CELL}:focus${ENABLED}::placeholder`]: {
+    textIndent: 0,
+  },
   [ERROR_HELPER]: {
     color: paletteColors.error.text,
   },
@@ -45,10 +59,7 @@ export default {
       gap: '8px',
     },
     [CELL]: {
-      flex: '0 1 auto',
-      width: '64px',
-      maxWidth: '64px',
-      minWidth: 0,
+      '--pin-cell-width': 'min(64px, calc((100cqw - 40px) / 6))',
       minHeight: '86px',
       height: '86px',
     },

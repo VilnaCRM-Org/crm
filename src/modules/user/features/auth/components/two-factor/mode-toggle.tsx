@@ -11,7 +11,7 @@ export default function ModeToggle({ mode, busy, onSwitch }: ModeToggleProps): J
   const { t } = useTranslation();
 
   return (
-    <Box sx={styles.toggleRow}>
+    <Box data-challenge-toggle sx={styles.toggleRow}>
       <UILinkButton unavailable={busy} onClick={onSwitch} sx={styles.toggle}>
         {mode === 'totp'
           ? t('two_factor.recovery.use_recovery')

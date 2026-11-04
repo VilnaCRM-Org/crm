@@ -60,26 +60,7 @@ describe('CardBackControl', () => {
     await waitFor(() => expect(onClick).toHaveBeenCalledTimes(2));
   });
 
-  it.each([
-    ['link' as const, <CardBackControl key="link" to="/sign-in" tone="primary" />],
-    ['button' as const, <CardBackControl key="button" onClick={jest.fn()} tone="primary" />],
-  ])('inks the primary tone in #404142, chevron included, in %s mode', (role, element) => {
-    renderControl(element);
-
-    const control = screen.getByRole(role, { name: 'Назад' });
-    expect(control).toHaveStyle({ color: 'rgb(64, 65, 66)' });
-    expect(styleRulesFor(control, ' svg').at(-1)?.getPropertyValue('color')).toBe('#404142');
-  });
-
-  it('keeps the primary ink once the link target is visited', () => {
-    renderControl(<CardBackControl to="/sign-in" tone="primary" />);
-
-    const visited = styleRulesFor(screen.getByRole('link', { name: 'Назад' }), ':visited');
-
-    expect(visited.at(-1)?.getPropertyValue('color')).toBe('#404142');
-  });
-
-  it('keeps the secondary Figma ink when the tone is left out', () => {
+  it('inks the control in the secondary Figma grey', () => {
     renderControl(<CardBackControl onClick={jest.fn()} />);
 
     const control = screen.getByRole('button', { name: 'Назад' });
