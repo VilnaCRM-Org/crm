@@ -151,6 +151,7 @@ export default {
     padding: 0,
     listStyle: 'none',
     backgroundColor: paletteColors.background.default,
+    boxShadow: `inset 1px 0 0 ${paletteColors.background.subtle}, inset -1px 0 0 ${paletteColors.background.subtle}`,
   },
   divider: {
     expanded: { ...dividerBase, width: '100%', backgroundColor: paletteColors.background.subtle },
