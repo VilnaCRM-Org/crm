@@ -136,11 +136,9 @@ focus has fallen to the page body or is still inside the form, as after Enter in
 effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the
 e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
 so even a resend that settles before React commits the adopted entity is dropped. The reducer's
-`confirm` still carries the e-mail as a second guard. The two requests never overlap in the other
-direction either: `useEmailRow` reports `resending`, and `ProfileForm` hands it to `UIForm` as
-`isSubmitDisabled`, so Save is held (without the saving spinner, and with Clear still active) until
-the resend settles. A save for the unchanged address can therefore never be followed by an older
-`confirmed` flag from a resend that was already in flight.
+`confirm` still carries the e-mail as a second guard. Save is never held by a resend. A Save for the
+unchanged address that settles while a resend is in flight moves `adoption.revision()` on, so the
+resend still shows its toast, because the link was sent, but drops its older `confirmed` flag.
 
 ## Figma parity
 

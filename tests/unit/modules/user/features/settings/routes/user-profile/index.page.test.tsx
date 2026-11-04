@@ -10,6 +10,7 @@ import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import {
   buildEmail,
   buildFullName,
+  buildPassword,
   buildToken,
   buildUserIri,
   buildUserNode,
@@ -30,6 +31,8 @@ const RETRY = 'Спробувати ще раз';
 
 const NEW_EMAIL = buildEmail();
 const NEW_NAME = buildFullName();
+const NEW_PASSWORD = buildPassword();
+const TAKEN_EMAIL = buildEmail();
 
 const loaded = buildUserNode({
   id: buildUserIri(),
@@ -145,7 +148,7 @@ describe('settings page save outcomes (page)', () => {
     await editName();
     await userEvent.clear(field('E-mail'));
     await typeInto('E-mail', NEW_EMAIL);
-    await typeInto(NEW, 'Next12345');
+    await typeInto(NEW, NEW_PASSWORD);
     const answered = answerProfileOperation('UpdateUser', {
       delayMs: 30,
       respond: () => saved({ initials: NEW_NAME, email: NEW_EMAIL }),
@@ -179,7 +182,7 @@ describe('settings page save outcomes (page)', () => {
   ])('shows the e-mail taken error on the e-mail field for %s', async (_name, error) => {
     await mount();
     await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', 'taken@example.com');
+    await typeInto('E-mail', TAKEN_EMAIL);
 
     await submitWith(() => graphQLError(error));
 
@@ -191,7 +194,7 @@ describe('settings page save outcomes (page)', () => {
   it('shows the name and new-password errors and focuses the name first', async () => {
     await mount();
     await editName();
-    await typeInto(NEW, 'Next12345');
+    await typeInto(NEW, NEW_PASSWORD);
 
     await submitWith(() =>
       graphQLError({
@@ -228,14 +231,14 @@ describe('settings page save outcomes (page)', () => {
   ])('shows the wrong-password error on the current password for %s', async (_name, message) => {
     await mount();
     await editName();
-    await typeInto(NEW, 'Next12345');
+    await typeInto(NEW, NEW_PASSWORD);
 
     await submitWith(() => graphQLError({ message }));
 
     expect(await screen.findByText('Неправильний поточний пароль')).toBeVisible();
     await waitFor(() => expect(field(CURRENT)).toHaveFocus());
     expect(field(NAME)).toHaveValue(NEW_NAME);
-    expect(field(NEW)).toHaveValue('Next12345');
+    expect(field(NEW)).toHaveValue(NEW_PASSWORD);
   });
 
   it('shows the generic toast for an unknown message that carries FORBIDDEN', async () => {
@@ -334,7 +337,7 @@ describe('settings page save outcomes (page)', () => {
   it('clears a server field error when its field is edited next', async () => {
     await mount();
     await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', 'taken@example.com');
+    await typeInto('E-mail', TAKEN_EMAIL);
     await submitWith(() =>
       graphQLError({ message: 'email: This email address is already registered' })
     );

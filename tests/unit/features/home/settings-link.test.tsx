@@ -107,6 +107,14 @@ describe('Home settings link', () => {
     expect(screen.getByRole('link', { name: 'Налаштування' })).toHaveStyle({ color: '#0074B5' });
   });
 
+  it('keeps the 5.04:1 link colour once /settings is in the browser history', () => {
+    renderHome();
+
+    const visited = styleRuleFor(screen.getByRole('link', { name: 'Налаштування' }), ':visited');
+
+    expect(visited?.getPropertyValue('color')).toBe('#0074B5');
+  });
+
   it('is reached by Tab right before sign out', async () => {
     renderHome();
 

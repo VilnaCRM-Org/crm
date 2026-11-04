@@ -214,7 +214,7 @@ describe('settings page e-mail resend (page)', () => {
     expect(answered).toHaveLength(0);
   });
 
-  it('holds Save while a resend is in flight and saves once it settles', async () => {
+  it('saves during a resend, and the late resend result changes nothing', async () => {
     await mount();
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => (release = resolve));
@@ -234,20 +234,16 @@ describe('settings page e-mail resend (page)', () => {
     await userEvent.clear(email());
     await userEvent.type(email(), NEW_EMAIL);
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
-    const save = (): HTMLElement => screen.getByRole('button', { name: 'Зберегти зміни' });
+    const save = screen.getByRole('button', { name: 'Зберегти зміни' });
 
-    expect(save()).toBeDisabled();
-    fireEvent.click(save());
-    expect(updates).toHaveLength(0);
-
-    await act(async () => release());
-    await screen.findByText(RESENT);
-    await waitFor(() => expect(save()).toBeEnabled());
-    await userEvent.click(save());
-
+    expect(save).toBeEnabled();
+    await userEvent.click(save);
     expect(
       await screen.findAllByText('Ми надіслали посилання для підтвердження на нову адресу')
     ).not.toEqual([]);
+    await act(async () => release());
+
+    expect(screen.queryByText(RESENT)).not.toBeInTheDocument();
     expect(updates).toHaveLength(1);
     expect(screen.getByText(STATUS)).toBeVisible();
     expect(email()).toHaveValue(NEW_EMAIL);

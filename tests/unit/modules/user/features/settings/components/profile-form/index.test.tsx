@@ -37,7 +37,12 @@ const SAVE = 'Зберегти зміни';
 
 const props = (overrides: Partial<Props> = {}): Props => ({
   user,
-  adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
+  adoption: {
+    adopt: jest.fn(),
+    confirm: jest.fn(),
+    isCurrent: (): boolean => true,
+    revision: (): number => 0,
+  },
   version: 0,
   refocus: false,
   toasts: {
@@ -289,14 +294,14 @@ describe('ProfileForm', () => {
     await act(async () => settle(okOutcome));
   });
 
-  it('holds Save, and only Save, while a resend is in flight', async () => {
+  it('leaves Save and the form enabled while a resend is in flight', async () => {
     let settle: (value: unknown) => void = () => undefined;
     mockProvider.resend.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     render(form({ user: buildUserEntity({ confirmed: false }) }), { wrapper });
 
     await userEvent.click(screen.getByRole('button', { name: 'Надіслати повторно' }));
 
-    expect(save()).toBeDisabled();
+    expect(save()).toBeEnabled();
     expect(document.forms[0]).toHaveAttribute('aria-busy', 'false');
     expect(screen.getByRole('button', { name: 'Очистити' })).not.toHaveAttribute('aria-disabled');
     expect(field(NAME)).not.toHaveAttribute('readonly');
@@ -311,9 +316,19 @@ describe('ProfileForm', () => {
     let settle: (value: unknown) => void = () => undefined;
     mockUpdate.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     const adopt = jest.fn();
-    render(form({ adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true } }), {
-      wrapper,
-    });
+    render(
+      form({
+        adoption: {
+          adopt,
+          confirm: jest.fn(),
+          isCurrent: (): boolean => true,
+          revision: (): number => 0,
+        },
+      }),
+      {
+        wrapper,
+      }
+    );
     await userEvent.type(field(NAME), ' Іванівна');
     await userEvent.type(field(CURRENT), 'abc{Enter}');
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
@@ -354,9 +369,19 @@ describe('ProfileForm', () => {
 
   it('adopts the saved entity and focuses the save button once the save settled', async () => {
     const adopt = jest.fn();
-    render(form({ adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true } }), {
-      wrapper,
-    });
+    render(
+      form({
+        adoption: {
+          adopt,
+          confirm: jest.fn(),
+          isCurrent: (): boolean => true,
+          revision: (): number => 0,
+        },
+      }),
+      {
+        wrapper,
+      }
+    );
     await userEvent.type(field(NAME), ' Іванівна');
     await userEvent.type(field(CURRENT), 'abc');
     await userEvent.click(screen.getByRole('heading', { level: 2, name: 'Пароль' }));

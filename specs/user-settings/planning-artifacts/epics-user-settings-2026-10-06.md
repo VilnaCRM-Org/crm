@@ -19,7 +19,8 @@ inputDocuments:
 # Epics and stories: user settings for the user module
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
-2026-10-16, amended 2026-10-19, 2026-10-20 and 2026-10-21 **Feature:** `user-settings`
+2026-10-16, amended 2026-10-19, 2026-10-20, 2026-10-21 and 2026-11-04 (owner decisions and Figma
+correction below) **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -329,7 +330,9 @@ used by settings alone (R16).
 - FR-18: rate-limit, transient and other failures as error toasts; a Retry action only on the
   transient one.
 - FR-19: a transport 401 ends the session through the shared link; redirect with the notice; the
-  owner refusal does nothing.
+  owner refusal does nothing. Amended 2026-11-04 (reconciliation with shipped code): "Access
+  Denied." settles as `rejected` (superseded 2026-11-02 below), and a 401 ends a session only
+  while the store still holds the token the request carried (Story 1.8).
 - FR-20: toast primitive: two tones, a polite region, alert errors (superseded 2026-10-21), no
   timer, at most three, focus rules and placement. Amended 2026-10-21: no toast carries a role;
   errors are announced through a second always-mounted assertive region; the success check uses
@@ -414,7 +417,9 @@ used by settings alone (R16).
   `Loader`, and `Factory` for `SessionLinkFactory`, with `Transformer` added by the chore #332)
   and no policy edit of this plan's own; no new `*Controller`, `*Service`, `*Handler`,
   `*Normalizer`, `*Store` or `*Impl`; at most six public methods and three constructor
-  dependencies per new class.
+  dependencies per new class. Amended 2026-11-04 (accepted exception, reconciliation with
+  shipped code): `GraphQLProfileTransformer` has seven public methods, one over the six-method
+  cap and inside the policy hard cap of 8 (architecture §6); no other class exceeds six.
 - AR-4 (§6, §12): registrations fold into existing `UserModuleRegistrar` steps; the settings
   registrations add no function and no closure. The session link adds one `registerSessionLink`
   step and its one `SessionLinkDeps` closure, so the registrar holds 10 of 10 functions and 4 of
@@ -1095,6 +1100,7 @@ Jest files `tests/unit/tooling/di-collaborator-gate.test.ts` and
 - Given a token in `useAuthStore`, when a non-anonymous operation is sent through the container's Apollo client, then the request carries `Authorization: Bearer <token>` read from `authStore.getState().token` at request time; after a signed-out write the next request carries no `Authorization` header; and when the token changes between two requests, the second carries the new token.
 - Given a token, when `CreateUser`, `RequestPasswordReset` or `ConfirmPasswordReset` is sent (and `SignInUser` or `CompleteTwoFactorUser`, the names reserved for #331), then the request has no `Authorization` header, and a 401 on any of them never clears the token, so a reset link opened while signed in never ends the session.
 - Given a non-anonymous operation answered by a transport 401 with user-service's problem body, when it settles, then the link calls `observability.clearUser()`, then `sandboxDemoSession.signOut()`, then `authStore.setState(signedOut)`, and the error still reaches the caller.
+- Given a non-anonymous operation sent with token A (or with none) and answered by a transport 401 after the store holds token B or no token, when it settles, then the token stays and no `session_ended` notice follows. (Amended 2026-11-04, reconciliation with shipped code: the link records the token it sent as `sessionToken` on the operation context and the 401 ends the session only while the store still holds that token, so the criterion above reads "a 401 for the token the store still holds" and a late 401 leaves a newer session or a finished sign-out alone; architecture §5.5, amendment 2026-10-21.)
 - Given the container's `SessionLinkDeps`, when a unit test reads its `signedOut`, then it is `CLEARED_AUTH_STATE` from `@auth/stores/use-auth-store.ts` itself, so a session end and a sign-out leave the same `AuthState`.
 - Given a non-anonymous operation answered by a GraphQL error with `extensions.status` 401 at HTTP 200, by "Access Denied." with or without `extensions.status` 403, or by a transport 429 or 503, when it settles, then the token is kept (must-fail: ending the session on a GraphQL error fails this test).
 - Given any operation, when it is sent, then `X-Request-Id` and `X-Correlation-Id` still come from `ApolloLinkFactory`, and REST requests are unchanged.
@@ -1299,7 +1305,7 @@ focused integration Jest files with `TEST_ENV=integration`.
 - Given `invalid(failure)`, when it receives `invalid_password`, then it gives a `ProfileInvalidOutcome` with `currentPassword` and `password_wrong`; a `violation` whose paths are all known gives one field error per path (`initials` to `name_rejected`, `email` with `taken` to `email_taken`, other `email` to `email_invalid`, `password` to `password_not_accepted`, `newPassword` to `new_password_rejected`); an unknown path, an empty set or any other reason gives `null` (must-fail: half field errors fail the test).
 - Given a spy on the container client's `cache.write` and a token, when each operation resolves, then the spy records no call and msw sees `Authorization: Bearer <token>` (must-fail: without `no-cache` a write is recorded); a 503 or a network failure reaches msw exactly once.
 - Given a signal already aborted, when any Repository method runs, then it throws an `AbortError` before calling the client, as `GraphQLPasswordRecoveryRepository.mutate` does, and nothing reaches msw.
-- Given the two classes, when they are inspected, then the Repository has three public methods and one injected collaborator (`AUTH_TOKENS.ApolloClient`), extends no base class and value-imports only tokens, `uuid` and the three seams; the Transformer has six public methods, no collaborator and no I/O, value-imports only `response-schemas.ts`, and no hook or component imports either, even as a type.
+- Given the two classes, when they are inspected, then the Repository has three public methods and one injected collaborator (`AUTH_TOKENS.ApolloClient`), extends no base class and value-imports only tokens, `uuid` and the three seams; the Transformer has six public methods, no collaborator and no I/O (amended 2026-11-04, reconciliation with shipped code: it has seven public methods, adding `failure`, and one collaborator, `AUTH_TOKENS.UserServiceErrorTransformer`, which `failure` calls; it still does no I/O, and the seventh method is the accepted exception to AR-3), value-imports only `response-schemas.ts`, and no hook or component imports either, even as a type.
 - Given the types and signatures, when `make lint-eslint` runs the TB-1 selectors, then generated types appear only in these two classes and the seams (TB-1 exception (i)), every outcome variant is a named interface and each union a named alias, `errors` is a `ProfileFieldErrorSet`, and no `Record`, inline object or suppression remains.
 - Given #315's TB-2 naming check and the builders, when they run, then no settings type ends in `Dto` or `Entity`, `ProfileFormValues` extends `PasswordChange`, and each builder returns its named type with domain-valid values under the seeded Faker.
 - Given the container and AR-7, when the integration suite runs with every settings operation answered through `answerProfileOperation`, then both classes are singletons covered 100% by integration tests, the default `CreateUser` handler and the existing `CreateUser` and recovery tests pass unchanged, and the story adds no function and no closure to `UserModuleRegistrar`.
@@ -1333,7 +1339,11 @@ the `password-recovery-provider.integration.test.ts` precedent, answering throug
 > (`source: 'auth:password-recovery'`). Settings follows the same split under NFR-10: the Provider
 > calls `UserServiceErrorTransformer.normalize` itself and captures a failure the link never saw
 > through the injected `ObservabilityService` (`source: 'settings:profile'`); the link captures
-> everything that reached it, so no settings `*Handler` exists.
+> everything that reached it, so no settings `*Handler` exists. Amended 2026-11-04
+> (reconciliation with shipped code): the Provider does not call `UserServiceErrorTransformer`
+> and does not inject `ObservabilityService`; it asks `GraphQLProfileTransformer.failure`, which
+> composes the shared transformer, and reports an `unknown` failure through the injected
+> `UnseenFailureReporter` (`source: 'settings:profile'`, `stage` the operation).
 
 **Gates:** DoD local gates; `make lint-deps`, `make lint-metrics`; the focused integration Jest
 files with `TEST_ENV=integration`.
@@ -1341,11 +1351,11 @@ files with `TEST_ENV=integration`.
 **Acceptance Criteria:**
 
 - Given `update(change, signal)`, when it resolves, then `ProfileProvider` asks `GraphQLProfileTransformer` for the input, awaits `GraphQLProfileRepository.update` itself and returns `toUpdateOutcome`'s outcome; `read` and `resend` follow the same path with their own repository call and outcome method.
-- Given a rejection, when any operation catches it, then the Provider passes the error and the signal to `UserServiceErrorTransformer.normalize`; on an update it returns `GraphQLProfileTransformer.invalid` when that is not `null`, and otherwise, on every operation, `GraphQLProfileTransformer.failed`.
+- Given a rejection, when any operation catches it, then the Provider passes the error and the signal to `UserServiceErrorTransformer.normalize` (amended 2026-11-04: through `GraphQLProfileTransformer.failure`, which calls it); on an update it returns `GraphQLProfileTransformer.invalid` when that is not `null`, and otherwise, on every operation, `GraphQLProfileTransformer.failed`.
 - Given a signal aborted before the call, when any operation runs, then nothing reaches msw, and the outcome is never shown because the hooks drop an aborted run.
 - Given msw, when each operation is sent, then a transport 401 with user-service's problem body clears the token and gives `session_ended`; "Access Denied." at HTTP 200, with no `extensions` and with `extensions.status` 403, gives `rejected` and keeps the token (superseded 2026-11-02: it gave `session_ended`; architecture §5.4); and a GraphQL "Old password is invalid" on `UpdateUser` gives `invalid` with `password_wrong`.
 - Given every row of the PRD §1 outcome table, when msw answers with it (HTTP 429, 5xx, the deadline, code-less errors, violations, an empty connection), then the real Data provider, Transformers, Repository and client return the outcome the architecture §5.4 table names.
-- Given the class, when it is inspected, then its constructor takes exactly three `@inject` parameters (`AUTH_TOKENS.GraphQLProfileRepository`, `AUTH_TOKENS.GraphQLProfileTransformer`, `AUTH_TOKENS.UserServiceErrorTransformer`), it has three public methods, none generic, no interface, no module-level instance, no security call, publishes no State and injects no other Provider.
+- Given the class, when it is inspected, then its constructor takes exactly three `@inject` parameters (`AUTH_TOKENS.GraphQLProfileRepository`, `AUTH_TOKENS.GraphQLProfileTransformer`, `AUTH_TOKENS.UserServiceErrorTransformer`; amended 2026-11-04: the third is `OBSERVABILITY_TOKENS.UnseenFailureReporter`), it has three public methods, none generic, no interface, no module-level instance, no security call, publishes no State and injects no other Provider.
 - Given the public signatures, when `make lint-eslint` runs the TB-1 selectors, then they name only `AbortSignal`, `ProfileChange`, a string id and the named outcome types, generated types reach the file as `import type` only, and no inline object, bare array or suppression remains.
 - Given the board's edges, when the settings import specifiers are read, then only `ProfileProvider` (and the composition root `user/config/di.ts`) imports `GraphQLProfileRepository`, through `type { GraphQLProfileRepository } from` the `settings/repositories` barrel, and `GraphQLProfileTransformer`, so `make lint-deps` (`no-repository-internal-imports`) passes; no settings hook or component exists yet, and Story 3.2's `settings-layer-edges.test.ts` keeps them out of both (AR-8).
 - Given an event with `password`, `newPassword`, `email` and `initials` keys at any depth, `variables.input` included, when `PiiScrubber` scrubs it, then none of the four values remains, and the scrubber's `patterns` are unchanged.
@@ -1546,6 +1556,7 @@ and working with the plain `PasswordChange`),
 - Given `make lint-metrics`, when it runs, then every file stays within the per-file caps of `config/metrics-policy.json` (10 functions, 6 closures, 15 in all), `ui-form/index.tsx` included. The planning estimates (`profile-form/index.tsx` at one function and at most three closures, `change-password/index.tsx` at one and at most two, `use-profile-form-rules.ts` at one and at most six) are superseded 2026-10-21 by the counts measured with rust-code-analysis 0.0.25 at #354 head 10c00282: `profile-form/index.tsx` holds five functions and four closures (`ProfileForm` plus the named `PersonalDetails`, `ProfileFormFields`, `ServerFieldErrors` and `EmailField` sub-components), `change-password/index.tsx` three functions and no closure (`ChangePassword`, `CurrentPassword`, `NewPassword`), and `use-profile-form-rules.ts` five functions and five closures; the split into named sub-components and helpers is what keeps each function inside the function-level LLOC and Halstead limits, so every file stays within the caps.
 - Given the form types, when `make lint-eslint` runs the TB-1 selectors, then `ChangePasswordProps`, `ClearButtonProps` and the `UIForm` props are named interfaces, `evaluate` is a `PasswordRuleEvaluator` that returns `passwordValidator.evaluate(value)` unchanged (#315's `PasswordRuleResultSet` is assignable to `PasswordRuleViewSet`, Story 1.1), `ProfileForm` is a `UIForm<ProfileFormValues>`, no settings file imports #315's `RestorePasswordDto` (TB-2), and no suppression remains.
 - Given the component tree, when `make lint-deps` and Story 3.2's `settings-layer-edges.test.ts` run, then `ProfileForm`, `ChangePassword` and `ClearButton` import no Data provider, Transformer or Repository, even as types (AR-8).
+- Given a Save in flight, when the name, e-mail, current-password and new-password fields are read, then each is read-only rather than disabled: it stays focusable, keeps its value and its tab stop, and accepts no typing, so nothing typed after Save is dropped when the adopted profile remounts the form. (Amended 2026-11-04, reconciliation with shipped code and PRD FR-12; architecture §7.2, `readOnly={busy}`.)
 - Given the change, when the DoD gates run, then ESLint, `tsc`, dependency-cruiser, jscpd and `make lint-metrics` report nothing, every new key exists in `uk` and `en`, unit coverage stays at 100%, Stryker reports zero survivors and no existing visual baseline changes.
 
 ### Story 3.5: Report save outcomes through toasts and field errors

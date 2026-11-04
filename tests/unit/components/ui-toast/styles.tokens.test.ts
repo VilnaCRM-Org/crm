@@ -72,14 +72,20 @@ describe('toast styles', () => {
       gap: '0.5rem',
       maxHeight: 'calc(100dvh - 1.875rem)',
       overflowY: 'auto',
-      [SM]: {
-        left: 'auto',
-        right: '1.5rem',
-        bottom: '1.5rem',
-        width: '24.8125rem',
-        maxHeight: 'calc(100dvh - 3rem)',
-      },
+      [SM]: expect.objectContaining({ width: '24.8125rem', maxHeight: 'calc(100dvh - 3rem)' }),
       [DESKTOP]: { right: '0.75rem' },
+    });
+  });
+
+  it('anchors the stack 1.5 rem from the corner from sm, and no wider than its width', async () => {
+    const { stack } = await loadStyles();
+
+    expect(stack[SM]).toEqual({
+      maxHeight: 'calc(100dvh - 3rem)',
+      width: '24.8125rem',
+      bottom: '1.5rem',
+      right: '1.5rem',
+      left: 'auto',
     });
   });
 

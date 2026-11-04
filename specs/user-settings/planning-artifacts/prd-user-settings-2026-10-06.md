@@ -16,7 +16,8 @@ inputDocuments:
 # PRD: user settings for the `user` module
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
-2026-10-20 and 2026-10-21 (twice) **Feature:** `user-settings`
+2026-10-20, 2026-10-21 (twice) and 2026-11-04 (owner decisions and Figma correction below)
+**Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the

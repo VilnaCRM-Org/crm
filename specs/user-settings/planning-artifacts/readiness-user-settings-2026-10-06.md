@@ -27,6 +27,10 @@ amendments that answer the nine deviations an FR/NFR review gate found between t
 implementation and this bundle, listed in "Amendments 2026-10-21" near the end. The iteration-3
 PASS verdict above covered the bundle before those amendments; iteration 4 adds no new verdict.
 
+**Iteration 5 (2026-11-04).** Records the owner decisions of 2026-11-02 and 2026-11-03 and the
+Figma correction of 2026-11-04, in the block under the heading below. Like iteration 4, it adds no
+new verdict: the iteration-3 PASS covered the bundle before them.
+
 # Implementation readiness: user settings, final review
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They

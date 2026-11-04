@@ -20,7 +20,8 @@ inputDocuments:
 # Architecture: user settings for the user module
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
-2026-10-20 and 2026-10-21 **Feature:** `user-settings`
+2026-10-20, 2026-10-21 and 2026-11-04 (owner decisions and Figma correction below) **Feature:**
+`user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -534,6 +535,7 @@ flowchart BT
   PROV["ProfileProvider<br/>[Data provider]"]:::component
   GTR["GraphQLProfileTransformer<br/>[Transformer]"]:::component
   ETR["UserServiceErrorTransformer<br/>[Transformer], #315"]:::component
+  UFR["UnseenFailureReporter<br/>observability boundary"]:::component
   HLOAD["React hook<br/>useProfileLoad"]:::component
   HSAVE["React hook<br/>useProfileSave<br/>ProfileFormState"]:::component
   HRES["React hook<br/>useEmailResend"]:::component
@@ -544,7 +546,8 @@ flowchart BT
   REPO -->|"TypedDocumentNode (generated)"| DOCS
   PROV -->|"UpdateUserInput, AbortSignal"| REPO
   PROV <-->|"ProfileChange ⇄ UpdateUserInput, UpdateUserMutation → ProfileUpdateOutcome"| GTR
-  PROV <-->|"caught error ⇄ UserServiceFailure"| ETR
+  GTR <-->|"caught error ⇄ UserServiceFailure"| ETR
+  PROV -->|"unknown failure, source and stage"| UFR
   HLOAD <-->|"AbortSignal / ProfileReadOutcome"| PROV
   HSAVE <-->|"ProfileChange / ProfileUpdateOutcome"| PROV
   HRES <-->|"userId / ProfileResendOutcome"| PROV
@@ -567,6 +570,11 @@ flowchart BT
 - The Data provider box is one class, `ProfileProvider`, with three `@inject` collaborators:
   the Repository, `GraphQLProfileTransformer` and #315's `UserServiceErrorTransformer`. No
   Provider calls another Provider, and no Data-provider method is generic (§6).
+  Amended 2026-11-04 (reconciliation with shipped code): the third collaborator is
+  `UnseenFailureReporter` (`OBSERVABILITY_TOKENS.UnseenFailureReporter`,
+  `data-providers/profile-provider.ts:19-26`), and `GraphQLProfileTransformer` composes
+  #315's `UserServiceErrorTransformer`, so the Provider never injects or calls it. The
+  diagrams of §3.3 and §4 are drawn that way.
 - `SessionLinkFactory` is transport infrastructure drawn inside the Repository → API edge
   (contract §2), so the Bearer it adds is part of that edge's label. It reads the token from
   `useAuthStore.getState()` per request; the board draws no edge from Repository → API into
@@ -658,8 +666,10 @@ sequenceDiagram
       else HTTP 429 / no response / 5xx
         API-->>R: error
         R-->>P: rejection
-        P->>N: normalize(error, AbortSignal)
-        N-->>P: UserServiceFailure rate_limited, network or server
+        P->>T: failure(error, AbortSignal)
+        T->>N: normalize(error, AbortSignal)
+        N-->>T: UserServiceFailure rate_limited, network or server
+        T-->>P: UserServiceFailure
         P->>T: failed(UserServiceFailure)
         T-->>P: ProfileFailedOutcome rate_limited or transient
         P-->>H: ProfileReadOutcome failed
@@ -668,8 +678,10 @@ sequenceDiagram
       else dead session: transport 401
         API-->>R: HTTP 401 (SessionLinkFactory: useAuthStore.setState(AuthStatePatch))
         R-->>P: rejection
-        P->>N: normalize(error, AbortSignal)
-        N-->>P: UserServiceFailure unauthenticated, status 401
+        P->>T: failure(error, AbortSignal)
+        T->>N: normalize(error, AbortSignal)
+        N-->>T: UserServiceFailure unauthenticated, status 401
+        T-->>P: UserServiceFailure
         P->>T: failed(UserServiceFailure)
         T-->>P: ProfileFailedOutcome session_ended
         P-->>H: ProfileReadOutcome failed session_ended, nothing shown
@@ -683,7 +695,10 @@ sequenceDiagram
 the repository call itself, hands a rejection to `UserServiceErrorTransformer.normalize` and the
 resulting `UserServiceFailure` to `GraphQLProfileTransformer` (`invalid` first on an update,
 then `failed`). No method of it is generic, so no generated type crosses it as a type argument
-(TB-1 exception (i)).
+(TB-1 exception (i)). Amended 2026-11-04 (reconciliation with shipped code): the Provider hands
+the rejection to `GraphQLProfileTransformer.failure`, which calls
+`UserServiceErrorTransformer.normalize`; the Provider holds no reference to #315's class, and
+the sequence diagrams here and in §4.2 show that path.
 
 ### 4.2 Save with changed fields
 
@@ -723,8 +738,10 @@ sequenceDiagram
     else wrong current password ("Old password is invalid", en or uk)
       API-->>R: errors[0].message
       R-->>P: rejection
-      P->>N: normalize(error, AbortSignal)
-      N-->>P: UserServiceFailure invalid_password
+      P->>T: failure(error, AbortSignal)
+      T->>N: normalize(error, AbortSignal)
+      N-->>T: UserServiceFailure invalid_password
+      T-->>P: UserServiceFailure
       P->>T: invalid(UserServiceFailure)
       T-->>P: ProfileInvalidOutcome (currentPassword, password_wrong)
       P-->>H: ProfileInvalidOutcome
@@ -732,8 +749,10 @@ sequenceDiagram
     else violations
       API-->>R: path-prefixed violation messages
       R-->>P: rejection
-      P->>N: normalize(error, AbortSignal)
-      N-->>P: UserServiceFailure violation, FieldViolationSet
+      P->>T: failure(error, AbortSignal)
+      T->>N: normalize(error, AbortSignal)
+      N-->>T: UserServiceFailure violation, FieldViolationSet
+      T-->>P: UserServiceFailure
       P->>T: invalid(UserServiceFailure)
       T-->>P: ProfileInvalidOutcome (ProfileFieldErrorSet)
       P-->>H: ProfileInvalidOutcome
@@ -741,8 +760,10 @@ sequenceDiagram
     else HTTP 429 / no response / 5xx
       API-->>R: error
       R-->>P: rejection
-      P->>N: normalize(error, AbortSignal)
-      N-->>P: UserServiceFailure rate_limited, network or server
+      P->>T: failure(error, AbortSignal)
+      T->>N: normalize(error, AbortSignal)
+      N-->>T: UserServiceFailure rate_limited, network or server
+      T-->>P: UserServiceFailure
       P->>T: invalid(UserServiceFailure), then failed(UserServiceFailure)
       T-->>P: null, then ProfileFailedOutcome rate_limited or transient
       P-->>H: ProfileFailedOutcome
@@ -851,7 +872,11 @@ GraphQL consumer and mutates without a `fetchPolicy`
   `ObservabilityService` (`source: 'settings:profile'`, `stage` the operation); the link already
   captures everything that did reach it. Three `@inject` collaborators (Repository, Transformer,
   `ObservabilityService`), the metrics cap; no deps bag, no `*Handler` and no security call
-  (amendment 2026-10-19).
+  (amendment 2026-10-19). Amended 2026-11-04 (reconciliation with shipped code): the third
+  collaborator is `UnseenFailureReporter` (`src/services/observability/`), which wraps
+  `ObservabilityService`, skips an error that carries a network or GraphQL error (the link
+  already captured it) and captures the rest; the private helper asks
+  `this.transformer.failure(caught, signal)` and reports only when the reason is `unknown`.
 - **`fetchPolicy: 'no-cache'` on all three** (U6). The default policy writes the result, and for
   a mutation the arguments-keyed root field, into the shared cache; `no-cache` skips the write.
   The integration test spies on `cache.write` and asserts zero calls (the #315 lesson: under
@@ -986,6 +1011,17 @@ through `fromStatus`, no numeric status → `network`; (3) no first GraphQL erro
 `unknown`. The class is `@injectable()` and registered with `registerSingleton` under
 `AUTH_TOKENS.UserServiceErrorTransformer` (#315 drift item 9); its file holds nine methods and one
 closure against the 10-function cap.
+
+Amended 2026-11-04 (reconciliation with shipped code, FR-16;
+`user-service-error-transformer.ts` `violationsOf`, `src/modules/user/README.md` "Settings
+appends rows"): step 4 does not yield one `FieldViolation` per message. API Platform reports
+several constraint violations of one `updateUser` as a multi-line message, so the step reads
+one `FieldViolation` per non-blank line and `violations` is a `FieldViolationSet { items;
+complete }`; a line with an unknown property is not dropped, it sets `complete` to `false`. That
+is what lets `initials` and `newPassword` violations of one answer both mark their fields; an
+incomplete set still gives no field errors and one toast, a rule that lives in
+`GraphQLProfileTransformer`. The step is therefore amended, not only appended to, and the
+sentence below holds for the other rows.
 
 Settings only appends, and never reorders or removes a step (contract §3.4):
 
@@ -1813,13 +1849,15 @@ export default class ProfileProvider {
   constructor(
     @inject(AUTH_TOKENS.GraphQLProfileRepository) repository: GraphQLProfileRepository,
     @inject(AUTH_TOKENS.GraphQLProfileTransformer) transformer: GraphQLProfileTransformer,
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService) observability: ObservabilityService
+    @inject(OBSERVABILITY_TOKENS.UnseenFailureReporter) unseenFailures: UnseenFailureReporter
   );
   public read(signal: AbortSignal): Promise<ProfileReadOutcome>;
   public update(change: ProfileChange, signal: AbortSignal): Promise<ProfileUpdateOutcome>;
   public resend(userId: string, signal: AbortSignal): Promise<ProfileResendOutcome>;
 }
 
+// (Amended 2026-11-04: the third parameter was ObservabilityService; the shipped class takes
+// UnseenFailureReporter, and the Provider asks the Transformer below for failure().)
 // [Transformer], pure: GraphQL payload ⇄ entity and outcome, and failure → outcome (§5.4).
 // Parses with the zod schemas of settings/utils/response-schemas.ts; composes #315's error
 // transformer so the Data provider talks to one Transformer. AUTH_TOKENS.GraphQLProfileTransformer.
@@ -1885,7 +1923,12 @@ export default class UserServiceErrorTransformer {
 }
 ```
 
-- **Public methods:** at most six per class (cap 8). **Constructor deps:** at most three, the
+- **Public methods:** at most six per class (cap 8). Amended 2026-11-04 (accepted exception,
+  reconciliation with shipped code): `GraphQLProfileTransformer` has seven public methods
+  (`toUpdateInput`, `failure`, `toReadOutcome`, `toUpdateOutcome`, `toResendOutcome`, `invalid`
+  and `failed`; `graphql-profile-transformer.ts`), one over this six-method cap and inside
+  the policy hard cap of 8, which holds; no other class exceeds six.
+  **Constructor deps:** at most three, the
   `nargs_function_max` cap (`config/metrics-policy.json`); `ProfileProvider` takes exactly
   three, so it needs no deps bag (contract §2.2).
 - **TB-1 in the signatures.** Every parameter and result above is a named interface, a named
@@ -2531,7 +2574,10 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
   `*Transformer` suffix and the TB-1 gate are PR #333's (P.1, P.2), not repeated here.
 - `config/i18n-catalog-policy.json` MOD (two `lazyCatalogs` entries: settings and the
   password-policy rule list; the recovery entry loses its `password-policy-rules.tsx` owner).
-- `.storybook/preview.tsx` MOD (registers both new lazy catalogs).
+  Amended 2026-11-04: a third entry, `components/ui-toast/i18n` owned by `components/ui-toast`
+  (§5.16, 2026-10-19).
+- `.storybook/preview.tsx` MOD (registers both new lazy catalogs, and the toast catalog as the
+  third, amended 2026-11-04).
 - `public/index.html`, `.env.example`, `docker-compose.test.yml` MOD.
 - `docker/apollo-server/lib/{profile-resolvers,violations}.ts`; `docker/apollo-server/lib/resolvers.ts`
   and `types.ts` MOD (the per-key merge, #315's helpers moved out); `server.ts`,
@@ -2682,13 +2728,12 @@ lazy `password_reset.*` keys. `document.title` is
 | `settings/components/change-password/index.tsx`     | 3         | 0        |
 | `@auth/repositories/session-link-factory`           | 2         | 2        |
 | `user/transformers/user-service-error-transformer`  | ≤ 10      | ≤ 2      |
-| `settings/routes/user-profile/settings-catalog-…`   | 1         | 0        |
-| `src/components/ui-password-policy-rules/…-loader`  | 1         | 0        |
+| `src/lib/locale-catalog/lazy-catalog-loader`        | 1         | 0        |
 | `src/hooks/use-toast-queue`                         | 4         | 6 (cap)  |
 | `src/routes/route-flag-gate.tsx`                    | 1         | ≤ 2      |
 | `src/routes/route-composer.tsx` (MOD)               | 7         | 5        |
 | `src/routes/route-mapper.tsx` (MOD)                 | 5         | 2        |
-| `user/config/di.ts` (MOD)                           | 9         | 3, +0    |
+| `user/config/di.ts` (MOD)                           | 10        | 4        |
 
 Amendment 2026-10-21: the six rows from `use-profile-load` to `change-password` and the
 `use-toast-queue` row hold the counts measured with rust-code-analysis 0.0.25 at #354 head
@@ -2700,8 +2745,12 @@ Amendment 2026-10-21: the six rows from `use-profile-load` to `change-password` 
 Every class constructor takes at most three arguments (`nargs_function_max` 3;
 `ProfileProvider` takes three), and every hook at most three (`useEmailResend` takes three,
 `useProfileSave` one, its form's props). Each public `ProfileProvider` method has two exits
-(the resolved outcome, the caught failure). The `di.ts` row follows the registrar budget of §6:
-settings adds no function and no closure.
+(the resolved outcome, the caught failure). The `di.ts` row follows the registrar budget of §6.
+Amended 2026-11-04 (reconciliation with `user/config/di.ts`): the superseded plan was 9
+functions and 3 closures with settings adding none; the session link's `registerSessionLink`
+step and its `SessionLinkDeps` closure make it 10 of 10 functions and 4 of 6 closures. The two
+catalog-loader rows the superseded plan listed (`settings-catalog-…`, `…-loader`) are the one
+shared loader since 2026-10-19.
 
 The composer holds five closures of six: `flatMap`, the error handler, `map`, the flag-presence
 `some` that decides whether the gate exists, and the not-found `find`. The two `filter`s of
@@ -2768,7 +2817,10 @@ loaded inside the test body for mutation (NFR-1).
   `AUTH_TOKENS.SandboxDemoSessionProvider` rather than value-importing the singleton.
 - **Type-only files.** Every new type sits in a `types/` folder (§6.1) and is imported with
   `import type`; every object shape is an `interface` (TB-1 (a)).
-- **i18n parity.** Two new lazy catalogs (settings, and the moved rule list's
+- **i18n parity.** Amended 2026-11-04: three new lazy catalogs (settings, the moved rule list's
+  `password_policy.*`, and the toast's `ui_toast.*`, §5.16), none eager, so the toast key stays
+  off the `/sign-in` path. The text that follows is the superseded record: two new lazy
+  catalogs (settings, and the moved rule list's
   `password_policy.*`) and one eager component catalog (the toast), both locales; no key is
   declared twice (the toast's close key is new, the auth `notifications.close` stays; the
   settings new-password key shares #315's text, not its key); no `[lazy-key-scope]` finding
@@ -2805,6 +2857,7 @@ type, TB-1 position 8); literals only where the value is the case.
 | FR-5         | read, IRI passthrough         | read, `cache.write` spy | stubbed read         |
 | FR-6         | section states, retry focus   | read failure classes    | failure + retry      |
 | FR-7         | monogram cases                | —                       | visual header        |
+| FR-7a        | social-networks tiles, status | —                       | —                    |
 | FR-8         | labels, autocomplete, toggles | —                       | keyboard spec        |
 | FR-9, FR-10  | dirty-only rules, policy      | —                       | field-error flows    |
 | FR-11        | detector, input keys          | exact input keys        | request bodies       |
@@ -2958,7 +3011,8 @@ Rejected: decoding the token; a pending schema extension for a `me` query.
 Context and the folders are #315's (Password recovery decisions).
 Decision: the UserProfile route, the UserProfileSettings and ChangePassword components, React
 hooks over useAbortableSubmit, the ProfileProvider Data provider with three injected
-collaborators as the translation boundary, GraphQLProfileTransformer beside #315's
+collaborators (the Repository, the Transformer and UnseenFailureReporter, amended 2026-11-04) as
+the translation boundary, GraphQLProfileTransformer composing #315's
 UserServiceErrorTransformer, and GraphQLProfileRepository; named types at every layer boundary
 (TB-1) and #315's UserEntity passed down as itself (TB-2).
 Rejected: controller, service and handler classes; a deps bag; a second Transformer for failures.
@@ -2984,6 +3038,9 @@ shape, so #315's "never reads the message for meaning" case stays green.
 GraphQLProfileTransformer maps the failure to field errors or one of four reasons.
 Rejected: matching extensions.code (upstream drops it); a substring or case-insensitive match;
 half field errors and half toast.
+Amended 2026-11-04: step 4 also reads one violation per line of the message and sets a
+`complete` flag, false when a line names an unknown property, so violations on initials and
+newPassword both mark their fields (FR-16); an incomplete set gives one toast.
 
 ### One rule ends a session, in the link
 Decision: SessionLinkFactory adds the Bearer token to every non-anonymous operation and, on a
@@ -3085,7 +3142,8 @@ import it and only append where a row says so. There is no "build if absent" bra
 Settings appends to #315's pieces exactly what §5.4 and §5.5 list: the `401` status row, its
 input properties and `taken`, the exact-message step with its three rows and the two uniqueness
 texts of step 4, the reason literals, the `session_ended` notice member, the two anonymous
-recovery operation names it honours, and the two lazy-catalog entries of §5.16. If PR #340
+recovery operation names it honours, and the two lazy-catalog entries of §5.16 (amended
+2026-11-04: three, with the toast's). If PR #340
 changes one of these pieces before it merges, a correct-course pass aligns the stories that use
 it before Ralph runs.
 
@@ -3132,6 +3190,7 @@ it before Ralph runs.
 | NFR-6 to 8  | §5.8, §7.2, §13.2     | NFR-9        | §5.1, §5.11        |
 | NFR-10      | §5.1, §5.5            | NFR-11 to 13 | §11, §12, §13, §14 |
 | NFR-14      | §1.2, §2.4, §6.1, §12 | NFR-15       | §1.1, §3, §6, §17  |
+| FR-7a       | §7.2, §17.3           |              |                    |
 
 ## 17. Miro conformance
 
@@ -3140,34 +3199,34 @@ captured 2026-10-08 (contract §1; screenshots in `crm-worktrees/_planning-share
 
 ### 17.1 Board elements and edges → implementation
 
-| Board element or edge (frame; screenshot)        | Implemented by                              |
-| ------------------------------------------------ | ------------------------------------------- |
-| Customer `[Person]` → CRM `[Frontend]` (25)      | the signed-in user; the crm SPA             |
-| UI library `[Frontend]` (25)                     | `src/components` `UI*`: toast, moved fields |
-| User module `[module]` (25)                      | `src/modules/user`, feature `settings`      |
-| "User profile settings" `[React component]` (01) | `UserProfile` page at `/settings`           |
-| → "User settings" `[React component]` (01)       | `UserProfileSettings`                       |
-| → "2FA", → "Social networks" (01)                | #331's slot; `SocialNetworks` UI-only (G-1) |
-| "User settings" → API "1 request to API" (01)    | `GraphQLProfileRepository` → user-service   |
-| "User profile" → BFF "Log-out" (01)              | not on this page (G-2)                      |
-| State `[Redux]` (01)                             | `useAuthStore`, drawn `State [Zustand]`     |
-| `UserProfile [component]<route>` (21)            | `settings/routes/user-profile/index.tsx`    |
-| `UserProfile` → `UserEntity [type]` (21)         | `useProfileLoad` in the page; #315's type   |
-| `UserProfile` → `UserProfileSettings` (21)       | the grid's first child                      |
-| `UserProfile` → `2FASettings` (21)               | the `TwoFactorSettings` slot (#331)         |
-| `UserProfile` → `SocialNetworks` (21)            | UI-only card, no entity (G-1, 2026-10-21)   |
-| `UserProfileSettings` → `UserEntity` (21)        | the `user` prop, the page's `UserEntity`    |
-| `UserProfileSettings` → `RestorePassword` (21)   | `ChangePassword`, renamed (G-5)             |
-| `RestorePassword` → `RestorePasswordDTO` (21)    | #315's flow (Q-1); here `PasswordChange`    |
-| Root page component → React hook (05, 22)        | page → `useProfileLoad`; form → its hooks   |
-| React hook ↔ `[Data provider]` (05, 23)          | hooks → `ProfileProvider` via `useService`  |
-| `[Data provider]` ⇄ `[Transformer]` (05, 23)     | `ProfileProvider` ⇄ the two Transformers    |
-| `[Data provider]` → `[Repository]` (05, 23)      | `ProfileProvider` → the GraphQL repository  |
-| `[Repository]` → API (05, 23)                    | Apollo client + `SessionLinkFactory` link   |
-| `Mutation [GraphQL]` (23)                        | the query seam and the two mutation seams   |
-| React hook → State; root → State (05, 22)        | not drawn: page-local `useState` (C-3)      |
-| `MutationAccessGuard [Decorator]` (05)           | `RouteFlagGate`, `ProtectedRoute`           |
-| `[Routing]` (Core module, 26)                    | `src/routes` registry and composer          |
+| Board element or edge (frame; screenshot)        | Implemented by                                                       |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| Customer `[Person]` → CRM `[Frontend]` (25)      | the signed-in user; the crm SPA                                      |
+| UI library `[Frontend]` (25)                     | `src/components` `UI*`: toast, moved fields                          |
+| User module `[module]` (25)                      | `src/modules/user`, feature `settings`                               |
+| "User profile settings" `[React component]` (01) | `UserProfile` page at `/settings`                                    |
+| → "User settings" `[React component]` (01)       | `UserProfileSettings`                                                |
+| → "2FA", → "Social networks" (01)                | #331's slot; `SocialNetworks` UI-only (G-1)                          |
+| "User settings" → API "1 request to API" (01)    | `GraphQLProfileRepository` → user-service                            |
+| "User profile" → BFF "Log-out" (01)              | not on this page (G-2)                                               |
+| State `[Redux]` (01)                             | `useAuthStore`, drawn `State [Zustand]`                              |
+| `UserProfile [component]<route>` (21)            | `settings/routes/user-profile/index.tsx`                             |
+| `UserProfile` → `UserEntity [type]` (21)         | `useProfileLoad` in the page; #315's type                            |
+| `UserProfile` → `UserProfileSettings` (21)       | the grid's first child                                               |
+| `UserProfile` → `2FASettings` (21)               | the `TwoFactorSettings` slot (#331)                                  |
+| `UserProfile` → `SocialNetworks` (21)            | UI-only card, no entity (G-1, 2026-10-21)                            |
+| `UserProfileSettings` → `UserEntity` (21)        | the `user` prop, the page's `UserEntity`                             |
+| `UserProfileSettings` → `RestorePassword` (21)   | `ChangePassword`, renamed (G-5)                                      |
+| `RestorePassword` → `RestorePasswordDTO` (21)    | #315's flow (Q-1); here `PasswordChange`                             |
+| Root page component → React hook (05, 22)        | page → `useProfileLoad`; form → its hooks                            |
+| React hook ↔ `[Data provider]` (05, 23)          | hooks → `ProfileProvider` via `useService`                           |
+| `[Data provider]` ⇄ `[Transformer]` (05, 23)     | `ProfileProvider` ⇄ `GraphQLProfileTransformer` (it composes #315's) |
+| `[Data provider]` → `[Repository]` (05, 23)      | `ProfileProvider` → the GraphQL repository                           |
+| `[Repository]` → API (05, 23)                    | Apollo client + `SessionLinkFactory` link                            |
+| `Mutation [GraphQL]` (23)                        | the query seam and the two mutation seams                            |
+| React hook → State; root → State (05, 22)        | not drawn: page-local `useState` (C-3)                               |
+| `MutationAccessGuard [Decorator]` (05)           | `RouteFlagGate`, `ProtectedRoute`                                    |
+| `[Routing]` (Core module, 26)                    | `src/routes` registry and composer                                   |
 
 Every node of the §3 diagrams and every class of §6 appears in this table or in §17.2; nothing
 in the plan lacks a board counterpart except the infrastructure the contract places inside a
@@ -3175,16 +3234,17 @@ box (§17.2) and the gaps of §17.3.
 
 ### 17.2 Classes and modules inside a board box (contract §2)
 
-| Class or module                         | Drawn inside                                |
-| --------------------------------------- | ------------------------------------------- |
-| `ProfileChangeDetector`                 | the React hook box (`useProfileSave`)       |
-| `ProfileFormState` (`useState`)         | the React hook box (`useProfileSave`)       |
-| `useToastQueue` and its reducer         | the `UserProfile` `[component]<route>` box  |
-| `SessionLinkFactory`                    | the Repository → API edge                   |
-| `UserModuleRegistrar` (MOD)             | the DI composition root                     |
-| `ChunkRetryLoader` (existing)           | lazy chunk loading of the route             |
-| moved validators, `useProfileFormRules` | form helpers inside the React hook box      |
-| child components (§7.1)                 | the `UserProfileSettings` `[component]` box |
+| Class or module                                 | Drawn inside                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------- |
+| `ProfileChangeDetector`                         | the React hook box (`useProfileSave`)                                     |
+| `ProfileFormState` (`useState`)                 | the React hook box (`useProfileSave`)                                     |
+| `useToastQueue` and its reducer                 | the `UserProfile` `[component]<route>` box                                |
+| `SessionLinkFactory`                            | the Repository → API edge                                                 |
+| `UserModuleRegistrar` (MOD)                     | the DI composition root                                                   |
+| `ChunkRetryLoader` (existing)                   | lazy chunk loading of the route                                           |
+| `LazyCatalogLoader` (`src/lib/locale-catalog/`) | the catalog seam: lazy catalog registration when a route module evaluates |
+| moved validators, `useProfileFormRules`         | form helpers inside the React hook box                                    |
+| child components (§7.1)                         | the `UserProfileSettings` `[component]` box                               |
 
 ### 17.3 Gaps and conformance notes
 
@@ -3226,7 +3286,9 @@ box (§17.2) and the gaps of §17.3.
   as the contract allows.
 - **C-2. One Provider, one Transformer.** The board's "one Provider ⇄ one Transformer" holds:
   `ProfileProvider` works with `GraphQLProfileTransformer` and the module-shared
-  `UserServiceErrorTransformer` helper, injected as three plain `@inject` parameters. The
+  `UserServiceErrorTransformer` helper, injected as three plain `@inject` parameters
+  (amended 2026-11-04: the Provider's parameters are the Repository, `GraphQLProfileTransformer`
+  and `UnseenFailureReporter`; the Transformer composes the shared helper). The
   2026-10-06 and first 2026-10-08 revisions had a separate `ProfileFailureTransformer`, a
   security recorder and a `ProfileProviderDeps` bag built by a `useFactory` closure; the
   simplification removed all three, so the board's edges hold with fewer pieces: hooks reach only
