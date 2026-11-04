@@ -59,6 +59,37 @@ describe('useSettledFocus', () => {
     field.remove();
   });
 
+  it('moves focus to Save from a field of the same form, as after Enter', () => {
+    const form = document.createElement('form');
+    const field = document.createElement('input');
+    const save = document.createElement('button');
+    form.append(field, save);
+    document.body.append(form);
+    const { rerender } = renderHook(({ settled }) => useSettledFocus(settled, { current: save }), {
+      initialProps: { settled: 0 },
+    });
+    field.focus();
+
+    rerender({ settled: 1 });
+
+    expect(save).toHaveFocus();
+    form.remove();
+  });
+
+  it('stays on a field of the form while no save has settled', () => {
+    const form = document.createElement('form');
+    const field = document.createElement('input');
+    const save = document.createElement('button');
+    form.append(field, save);
+    document.body.append(form);
+    field.focus();
+
+    renderHook(() => useSettledFocus(0, { current: save }));
+
+    expect(field).toHaveFocus();
+    form.remove();
+  });
+
   it('does nothing when the save button is not mounted', () => {
     const saveRef = { current: null };
     const { rerender } = renderHook(({ settled }) => useSettledFocus(settled, saveRef), {

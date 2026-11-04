@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-21
-iteration: 6
+revised: 2026-11-04
+iteration: 7
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -20,6 +20,27 @@ inputDocuments:
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
 2026-10-16, amended 2026-10-19, 2026-10-20 and 2026-10-21 **Feature:** `user-settings`
+
+> **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
+> supersede this document's text where the two differ; the earlier text is kept as the record of the
+> plan as approved.
+>
+> - **No flag (owner, 2026-11-03).** `userSettings` and the route flag gate are gone: `/settings` is
+>   an ordinary protected route in every environment and the home page always links to it. Every
+>   condition that reads "while `userSettings` is on" now always holds, and every "`userSettings`
+>   off" row, scenario or criterion (FR-1, FR-2, FR-4, NFR-9) describes a state no build reaches.
+>   Accepted exposure: until user-service ships G1, every environment that deploys this page reads
+>   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
+>   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
+>   page", has the reasoning.
+> - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
+>   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
+>   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,
+>   UX-DR-4, Stories 1.2 and 1.3 and architecture §5.10 are replaced by those values, and the 4.9:1
+>   on `#FDECEC` criterion is dropped (about 4.20:1): nothing paints this token on that surface.
+> - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
+>   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
+>   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md),
 [brief](./brief-user-settings-2026-10-06.md), [PRD](./prd-user-settings-2026-10-06.md) and
