@@ -137,8 +137,9 @@ effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(em
 e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
 so even a resend that settles before React commits the adopted entity is dropped. The reducer's
 `confirm` still carries the e-mail as a second guard. Save is never held by a resend. A Save for the
-unchanged address that settles while a resend is in flight moves `adoption.revision()` on, so the
-resend still shows its toast, because the link was sent, but drops its older `confirmed` flag.
+unchanged address that succeeds while a resend is in flight moves `adoption.revision()` on, so the
+resend still shows its toast, because the link was sent, but drops its older `confirmed` flag. A
+failed Save adopts nothing, so the revision stays and the resend applies its confirmation.
 
 ## Figma parity
 
