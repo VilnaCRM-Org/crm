@@ -121,12 +121,12 @@ describe('sidebar styles', () => {
 
     expect(styles.handle).toEqual({
       desktop: {
-        expanded: { ...HANDLE, top: '15px', left: '223px', width: '24px', height: '24px' },
-        rail: { ...HANDLE, top: '15px', left: '57px', width: '24px', height: '24px' },
+        expanded: { ...HANDLE, top: '15px', right: '-9px', width: '24px', height: '24px' },
+        rail: { ...HANDLE, top: '15px', right: '-9px', width: '24px', height: '24px' },
       },
       tablet: {
-        expanded: { ...HANDLE, top: '15px', left: '222px', width: '32px', height: '32px' },
-        rail: { ...HANDLE, top: '15px', left: '60px', width: '32px', height: '32px' },
+        expanded: { ...HANDLE, top: '15px', right: '-9px', width: '32px', height: '32px' },
+        rail: { ...HANDLE, top: '15px', right: '-9px', width: '32px', height: '32px' },
       },
     });
   });
@@ -159,9 +159,13 @@ describe('sidebar styles', () => {
 
     expect(styles.handlePoints).toEqual({
       expanded: {
-        transform: 'none',
+        transition: 'transform 200ms ease-out',
+        '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
+        transform: 'rotate(0deg)',
       },
       rail: {
+        transition: 'transform 200ms ease-out',
+        '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
         transform: 'rotate(180deg)',
       },
     });

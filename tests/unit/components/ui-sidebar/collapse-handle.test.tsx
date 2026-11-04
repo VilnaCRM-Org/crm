@@ -25,7 +25,7 @@ describe('CollapseHandle', () => {
     const handle = screen.getByRole('button', { name: 'Collapse sidebar' });
 
     expect(handle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('img', { hidden: true })).toHaveStyle({ transform: 'none' });
+    expect(screen.getByRole('img', { hidden: true })).toHaveStyle({ transform: 'rotate(0deg)' });
   });
 
   it('offers to expand the rail, reports it collapsed and points its chevron right', () => {
@@ -58,17 +58,17 @@ describe('CollapseHandle', () => {
   });
 
   it.each([
-    ['desktop', false, '223px', '24px'],
-    ['desktop', true, '57px', '24px'],
-    ['tablet', false, '222px', '32px'],
-    ['tablet', true, '60px', '32px'],
+    ['desktop', false, '24px'],
+    ['desktop', true, '24px'],
+    ['tablet', false, '32px'],
+    ['tablet', true, '32px'],
   ] as const)(
-    'places the %s handle (collapsed %s) at %s, size %s',
-    (layout, collapsed, left, size) => {
+    'anchors the %s handle (collapsed %s) to the sidebar edge, size %s',
+    (layout, collapsed, size) => {
       renderShell(<CollapseHandle layout={layout} collapsed={collapsed} onToggle={jest.fn()} />);
 
       expect(screen.getByRole('button')).toHaveStyle({
-        left,
+        right: '-9px',
         top: '15px',
         width: size,
         height: size,
