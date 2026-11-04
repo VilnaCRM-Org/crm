@@ -23,6 +23,14 @@ function Wrapper({ children }: { children: ReactNode }): JSX.Element {
 
 const NOTICE_TEXT = 'Пароль змінено. Увійдіть з новим паролем.';
 const SESSION_ENDED_TEXT = 'Сеанс завершився. Увійдіть знову.';
+const TWO_FACTOR_EXPIRED_TEXT = 'Час на підтвердження входу минув. Увійдіть знову.';
+const ACCOUNT_LOCKED_TEXT =
+  'Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше.';
+const EN_TEXTS = {
+  two_factor_expired: 'The time to confirm your sign-in has run out. Please sign in again.',
+  account_locked:
+    'Your account is temporarily locked after too many failed attempts. Try again later.',
+} as const;
 
 type SignInNoticeComponent = (props: SignInNoticeProps) => JSX.Element | null;
 
@@ -44,6 +52,8 @@ describe('SignInNotice', () => {
   it.each([
     ['password_reset', NOTICE_TEXT],
     ['session_ended', SESSION_ENDED_TEXT],
+    ['two_factor_expired', TWO_FACTOR_EXPIRED_TEXT],
+    ['account_locked', ACCOUNT_LOCKED_TEXT],
   ] as const)(
     'maps the %s notice to its message when the module loads inside the test',
     async (notice, message) => {
@@ -92,6 +102,40 @@ describe('SignInNotice', () => {
     expect(status.innerHTML).not.toContain('CheckCircleOutlinedIcon');
     await expectNoA11yViolations(view.container);
   });
+
+  it.each([
+    ['two_factor_expired', TWO_FACTOR_EXPIRED_TEXT],
+    ['account_locked', ACCOUNT_LOCKED_TEXT],
+  ] as const)(
+    'renders the %s notice with the info icon, neutral text and no violation',
+    async (notice, message) => {
+      const view = render(<SignInNotice notice={notice} />, { wrapper: Wrapper });
+
+      const status = await screen.findByRole('status');
+
+      expect(status).toHaveTextContent(message);
+      expect(status).toHaveStyle({ color: '#404142' });
+      expect(status.innerHTML).toContain('data-testid="InfoOutlinedIcon"');
+      expect(status.innerHTML).toContain('aria-hidden="true"');
+      expect(status.innerHTML).not.toContain('CheckCircleOutlinedIcon');
+      await expectNoA11yViolations(view.container);
+    }
+  );
+
+  it.each(['two_factor_expired', 'account_locked'] as const)(
+    'renders the %s notice in English',
+    async (notice) => {
+      render(
+        <I18nextProvider i18n={createLocaleI18n('en')}>
+          <main>
+            <SignInNotice notice={notice} />
+          </main>
+        </I18nextProvider>
+      );
+
+      expect(await screen.findByRole('status')).toHaveTextContent(EN_TEXTS[notice]);
+    }
+  );
 
   it('keeps the success icon and colour on the password-reset notice', async () => {
     render(<SignInNotice notice="password_reset" />, { wrapper: Wrapper });

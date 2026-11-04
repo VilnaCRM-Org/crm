@@ -411,7 +411,8 @@ module `.tsx` surface — not just `src/components/**/*.tsx`. The mutated set is
 truth in [`scripts/ci/mutation-scope.mjs`](scripts/ci/mutation-scope.mjs), whose exclusions mirror
 `jest.config.ts` `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n);
 `stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (via `shardMutateFiles`) both consume
-it, so the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
+it, so the shards partition the files that hold a runnable mutant and `unsharded` lists the rest,
+which no shard runs because there is nothing in them to score. Stryker runs a dedicated Jest config
 ([`jest.mutation.config.ts`](jest.mutation.config.ts)) that unions the unit **and** integration
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
@@ -442,8 +443,8 @@ regresses; never relax them to buy wall-clock.
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
 **scored-mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed
 by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
-carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 253 mutants
-against a mean of 166. A static mutant (outside every function and instance property initializer,
+carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 485 mutants
+against a mean of 308. A static mutant (outside every function and instance property initializer,
 which `ignoreStatic` never runs) does not count, a file whose mutants are all static weighs 1, and
 a file with no runnable mutant (a barrel, a token module) goes to no shard, so its whole-suite
 related-test set no longer lands on one shard. Every shard job and the merge job count each file's

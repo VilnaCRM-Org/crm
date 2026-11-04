@@ -247,6 +247,46 @@ Where the frames contradict each other or the copy, the page follows one reading
 - **Phone values (M-20).** Field values are `#1A1C1E` as on desktop and tablet, not the
   placeholder grey the phone frame draws.
 
+### The two-factor card
+
+Frames `313:10242`, `313:10480`, `313:10606` (setup) and `315:11502`, `315:12300`, `318:13133`
+(connected), measured in Firefox and Chromium against the live page, relative to the card. Every
+value below is both the Figma value and the rendered one:
+
+| Property       | 1440            | 1024            | 375        |
+| -------------- | --------------- | --------------- | ---------- |
+| Card width     | 479             | 749             | 359        |
+| Logo           | 32,24 73        | 32,32.5 73      | 18,27 40   |
+| Title start    | x 125           | x 125           | x 70       |
+| Step 1         | 32,147          | 36,150          | 20,99      |
+| Step 2         | 32,206          | 36,223          | 20,152     |
+| QR frame       | 72,275 250      | 84,287 297      | 62,202 210 |
+| First key chip | 72,533          | 84,593          | 62,421     |
+| Info button    | x 312           | x 354           | x 279      |
+| Tooltip        | x 155, 334 wide | x 179, 373 wide | not drawn  |
+
+Deliberate differences, each for a reason a frame cannot show:
+
+- **Start stays** (owner decision of 2026-11-04). Figma opens on the QR; requesting a secret on page
+  load would burn one for every settings visit, so the off view shows the header, the three steps
+  and "Почати налаштування".
+- **The key wraps.** Figma's sample key has 16 characters and its chip is 226 px; a real key has 32,
+  so the chip grows to the column and wraps to two lines where it must. Everything below it moves
+  down by that difference.
+- **Confirmation stays below step 3.** No frame draws the six cells or "Підтвердити", which setup
+  cannot complete without, so the setup card is taller than the frame's 748 px.
+- **The info glyph is `#57595B`, not `#969B9D`** (WCAG 1.4.11: 2.81:1 on white for the only visible
+  sign of the control; 7.03:1 now), the colour of the copy glyph beside it.
+- **The phone "Вимкнути" is 44 px, not 40**, keeping the mobile lane's primary-control floor, and the
+  regenerate button, which no frame draws, stacks under it in the same text column.
+- **Copying gives visible feedback**: the glyph becomes a check on success and the manual instruction
+  appears on failure, because an icon-only button has no label to change.
+
+The tooltip has no frame at 1025 to 1439 px, where the card is narrower than it: there it aligns to
+the step's right edge without an arrow, and on a phone it fills the step, so it can never add
+horizontal scroll. It opens on hover, focus and tap, stays while hovered, and closes on Escape, on
+leaving and on a press elsewhere. Its "at least 7 days" sentence is translated from the frame.
+
 States Figma does not draw follow the card: the skeleton and the load failure render inside the
 card, the skeleton reserves the loaded card's height at each layout, and "Спробувати ще раз" is
 the outlined "Очистити" pill. Buttons and the `h1` share the 2 px `#1A1C1E` ring; text links (the

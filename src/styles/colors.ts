@@ -30,6 +30,7 @@ export const paletteColors = {
   },
   border: {
     default: '#EAECEE',
+    strong: '#80878A',
   },
   background: {
     default: '#FFFFFF',

@@ -133,7 +133,9 @@
         "errors": {
           "load_failed": "Failed to load sign-in form. Please try again.",
           "invalid_credentials": "Invalid e-mail or password",
-          "rate_limited": "Too many sign-in attempts. Try again later"
+          "locked": "Your account is temporarily locked after too many failed attempts. Try again later.",
+          "rate_limited": "Too many sign-in attempts. Try again later",
+          "transient": "The request could not be sent. Check your connection and try again."
         },
         "form": {
           "email_input": {
@@ -153,7 +155,9 @@
         },
         "notices": {
           "password_reset": "Your password has been changed. Sign in with your new password.",
-          "session_ended": "Your session has ended. Please sign in again."
+          "session_ended": "Your session has ended. Please sign in again.",
+          "two_factor_expired": "The time to confirm your sign-in has run out. Please sign in again.",
+          "account_locked": "Your account is temporarily locked after too many failed attempts. Try again later."
         },
         "success": {
           "title": "Welcome back!",
@@ -339,7 +343,9 @@
         "errors": {
           "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
           "invalid_credentials": "Невірна електронна адреса або пароль",
-          "rate_limited": "Забагато спроб входу. Спробуйте пізніше"
+          "locked": "Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше.",
+          "rate_limited": "Забагато спроб входу. Спробуйте пізніше",
+          "transient": "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
         },
         "form": {
           "email_input": {
@@ -359,7 +365,9 @@
         },
         "notices": {
           "password_reset": "Пароль змінено. Увійдіть з новим паролем.",
-          "session_ended": "Сеанс завершився. Увійдіть знову."
+          "session_ended": "Сеанс завершився. Увійдіть знову.",
+          "two_factor_expired": "Час на підтвердження входу минув. Увійдіть знову.",
+          "account_locked": "Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше."
         },
         "success": {
           "title": "Вітаємо!",

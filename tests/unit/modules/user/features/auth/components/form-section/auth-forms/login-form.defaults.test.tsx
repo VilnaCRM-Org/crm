@@ -16,10 +16,16 @@ jest.mock('react-i18next', () => ({
 jest.mock('@/assets/icons/eye.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/icons/eye-off.svg', () => ({ ReactComponent: 'svg' }));
 
+jest.mock('@auth/hooks/use-sign-in-submit', () => ({
+  __esModule: true,
+  default: (): jest.Mock => jest.fn(),
+}));
+
 jest.mock('@auth/stores', () => ({
   __esModule: true,
   useAuthState: (): typeof authStoreState => authStoreState,
-  authActions: { loginUser: jest.fn(), clearLoginError: jest.fn() },
+  AuthProviderLoader: class {},
+  authActions: { clearLoginError: jest.fn() },
   AuthStoreSelectors: {
     loginError: (state: typeof authStoreState): AuthErrorShape | null => state.loginError,
     loginLoading: (state: typeof authStoreState): boolean => state.loginLoading,

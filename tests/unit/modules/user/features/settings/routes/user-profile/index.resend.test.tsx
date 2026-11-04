@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { HttpResponse } from 'msw';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
@@ -11,6 +12,7 @@ import { buildToken, buildUserNode } from '@tests/builders';
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
 import server, { userServiceGraphql } from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 
 const RESENT = 'Посилання для підтвердження надіслано повторно';
 const FAILED = 'Не вдалося надіслати посилання. Спробуйте ще раз.';
@@ -38,7 +40,11 @@ const mount = async (node = unconfirmed): Promise<void> => {
   render(
     <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>
       <main>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </main>
     </I18nextProvider>
   );

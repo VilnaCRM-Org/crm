@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 import AuthCard from '@auth/components/auth-card';
 
-jest.mock('@auth/components/reset-password/styles', () => ({
+jest.mock('@auth/components/auth-card/styles', () => ({
   __esModule: true,
   default: { recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' } },
 }));

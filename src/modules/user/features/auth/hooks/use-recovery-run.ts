@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import type { AbortableRun } from '@/hooks/types/use-abortable-submit';
-import AUTH_TOKENS from '@/modules/user/config/tokens';
+import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { RecoveryFailedOutcome } from '@auth/types/password-recovery/outcome';
@@ -12,6 +12,8 @@ const LOAD_FAILURE: RecoveryFailedOutcome = {
   failure: { reason: 'network', retryable: true },
 };
 
+export const authTokensLoader = new ChunkRetryLoader(() => import('@/modules/user/config/tokens'));
+
 export default function useRecoveryRun<TDto, TOutcome>(
   loader: AuthProviderLoader,
   step: RecoveryProviderStep<TDto, TOutcome>
@@ -20,8 +22,9 @@ export default function useRecoveryRun<TDto, TOutcome>(
     async (dto: TDto, signal: AbortSignal): Promise<TOutcome | RecoveryFailedOutcome> => {
       let provider: PasswordRecoveryProvider;
       try {
+        const tokens = await authTokensLoader.load();
         provider = await loader.resolve<PasswordRecoveryProvider>(
-          AUTH_TOKENS.PasswordRecoveryProvider
+          tokens.default.PasswordRecoveryProvider
         );
       } catch {
         return LOAD_FAILURE;

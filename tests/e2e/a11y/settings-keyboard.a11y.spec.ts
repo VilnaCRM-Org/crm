@@ -23,6 +23,7 @@ import {
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import { startOf } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -30,7 +31,7 @@ import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
 const NEW_NAME = 'Іван Коваль';
 const password = buildPassword();
-const MAIN_CONTROLS_WITH_ONE_TOAST = 10;
+const MAIN_CONTROLS_WITH_ONE_TOAST = 11;
 
 const clearLabel: string = t('settings.profile.clear');
 const closeLabel: string = t('ui_toast.close');
@@ -63,7 +64,9 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await signInToSettings(page);
   });
 
-  test('Tab visits the form, the toast and the footer in reading order', async ({ page }) => {
+  test('Tab visits the form, two-factor, the toast and the footer in reading order', async ({
+    page,
+  }) => {
     await openSettings(
       page,
       stubProfile(page, {
@@ -85,6 +88,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       { locator: toggles(page).nth(1), visibleFocus: true },
       { locator: saveButton(page), visibleFocus: true },
       { locator: clearButton(page), visibleFocus: true },
+      { locator: startOf(page), visibleFocus: true },
       { locator: page.getByRole('button', { name: closeLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: privacyLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: termsLabel }), visibleFocus: true },

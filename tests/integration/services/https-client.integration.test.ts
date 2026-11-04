@@ -11,9 +11,11 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import observabilityCore from '@/services/observability/observability-core';
 import sessionCorrelation from '@/services/observability/session-correlation';
 import type RequestRetryService from '@/services/resilience/request-retry-service';
 import securityEventCore from '@/services/security-events/security-event-core';
+import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type { RetryOperation, RetryOptions } from '@/services/types/resilience/request-retry';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
@@ -435,6 +437,82 @@ describe('FetchHttpsClient Integration', () => {
   });
 
   describe('error handling', () => {
+    it('rejects with an AbortError and sends nothing for a signal already aborted', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const caught = await client
+        .get(TEST_URL, { schema: passthrough, signal: controller.signal })
+        .catch((error: unknown) => error);
+
+      assertInstanceOf(caught, Error);
+      expect(caught.name).toBe('AbortError');
+      expect(caught.message).toBe('The operation was aborted');
+      expect(caught).not.toBeInstanceOf(HttpError);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it.each([401, 403])(
+      'reports an unauthorized %i response as a security event and throws its HttpError',
+      async (status) => {
+        const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+        mockFetch.mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: 'Denied' }), {
+            status,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+
+        await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toMatchObject({
+          status,
+          message: 'Denied',
+        });
+        expect(report).toHaveBeenCalledTimes(1);
+        const [signal, payload] = report.mock.calls[0] ?? [];
+        expect(signal).toBeInstanceOf(SecurityEventSignal);
+        expect(signal).toHaveProperty('event', 'unauthorized_response');
+        expect(payload).toEqual({
+          event: 'unauthorized_response',
+          category: 'transport',
+          reason: `http_${status}`,
+          severity: 'warning',
+        });
+      }
+    );
+
+    it('reports no security event for a 400 response', async () => {
+      const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Bad Request' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(report).not.toHaveBeenCalled();
+    });
+
+    it('throws the invalid-shape HttpError when a 200 body fails the schema', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 1 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      const caught = await client
+        .get(TEST_URL, { schema: z.object({ id: z.string() }) })
+        .catch((error: unknown) => error);
+
+      assertInstanceOf(caught, HttpError);
+      expect(caught.status).toBe(200);
+      expect(caught.message).toBe(ResponseMessages.INVALID_RESPONSE_SHAPE);
+      expect(caught.cause).toBeInstanceOf(z.ZodError);
+    });
+
     it('should throw HttpError on 400 Bad Request', async () => {
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ message: 'Bad Request' }), {

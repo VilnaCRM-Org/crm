@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 import * as React from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import useRecoveryRun from '@auth/hooks/use-recovery-run';
+import useRecoveryRun, { authTokensLoader } from '@auth/hooks/use-recovery-run';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { RecoveryProviderStep } from '@auth/types/password-recovery/state';
 import { buildEmail } from '@tests/builders';
@@ -27,6 +27,10 @@ interface RunProps {
 }
 
 describe('useRecoveryRun', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('resolves the recovery provider and hands it the dto and signal', async () => {
     const provider = { name: 'provider' };
     const loader = providerLoader(provider);
@@ -52,6 +56,20 @@ describe('useRecoveryRun', () => {
       kind: 'failed',
       failure: { reason: 'network', retryable: true },
     });
+    expect(step).not.toHaveBeenCalled();
+  });
+
+  it('maps a token module that fails to load to the same failure, resolving nothing', async () => {
+    jest.spyOn(authTokensLoader, 'load').mockRejectedValueOnce(new Error('chunk failed'));
+    const loader = providerLoader({});
+    const step = echoStep();
+    const { result } = renderHook(() => useRecoveryRun(loader, step));
+
+    await expect(result.current(buildEmail(), new AbortController().signal)).resolves.toEqual({
+      kind: 'failed',
+      failure: { reason: 'network', retryable: true },
+    });
+    expect(loader.resolve).not.toHaveBeenCalled();
     expect(step).not.toHaveBeenCalled();
   });
 

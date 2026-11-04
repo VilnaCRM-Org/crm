@@ -1,7 +1,7 @@
 import type useAuthStoreHook from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
-import type { AuthActions } from '@auth/types/auth-store';
-import { buildEmail, buildFullName, buildToken } from '@tests/builders';
+import type { AuthActions, AuthState } from '@auth/types/auth-store';
+import { buildEmail, buildFullName, buildPendingSessionId, buildToken } from '@tests/builders';
 
 interface Barrel {
   authActions: AuthActions;
@@ -12,7 +12,7 @@ const email = buildEmail();
 const fullName = buildFullName();
 const token = buildToken();
 
-const CLEARED = {
+const CLEARED: AuthState = {
   email: '',
   token: null,
   user: null,
@@ -20,12 +20,15 @@ const CLEARED = {
   loginError: null,
   registerLoading: false,
   registerError: null,
+  twoFactorStatus: 'unknown',
+  pendingSessionId: null,
+  recoveryCodesRemaining: null,
 };
 
 const loginError: AuthError = { kind: 'authentication', displayMessage: 'No', retryable: false };
 const registerError: AuthError = { kind: 'conflict', displayMessage: 'Taken', retryable: false };
 
-const POPULATED = {
+const POPULATED: AuthState = {
   email,
   token,
   user: { email, fullName },
@@ -33,6 +36,9 @@ const POPULATED = {
   loginError,
   registerLoading: true,
   registerError,
+  twoFactorStatus: 'enabled',
+  pendingSessionId: buildPendingSessionId(),
+  recoveryCodesRemaining: 2,
 };
 
 const loadPopulatedBarrel = async (): Promise<Barrel> => {

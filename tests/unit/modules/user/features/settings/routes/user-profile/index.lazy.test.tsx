@@ -1,9 +1,11 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 
 // The page registers its catalog on the shared i18n instance, which owns the merged catalog
 // object createLocaleI18n clones. Replacing the shared instance keeps that registration away from
@@ -18,7 +20,11 @@ describe('UserProfile lazy catalog', () => {
   it('renders the raw settings keys for an instance built from the merged catalog alone', () => {
     render(
       <I18nextProvider i18n={createLocaleI18n('uk')}>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </I18nextProvider>
     );
 

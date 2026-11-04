@@ -9,7 +9,7 @@ describe('dependency-injection-config', () => {
   it('resolves AuthRepository and triggers the AuthRepositoryDeps factory', () => {
     const repo = container.resolve<AuthRepository>(AUTH_TOKENS.AuthRepository);
 
-    expect(typeof repo.login).toBe('function');
+    expect(repo).not.toHaveProperty('login');
     expect(typeof repo.register).toBe('function');
   });
 

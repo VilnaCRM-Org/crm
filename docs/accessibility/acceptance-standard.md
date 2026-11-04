@@ -128,7 +128,8 @@ switcher, while the name beside it stays `#1A1C1E`. The eleventh covers the curr
 entry of the app shell (issue #362): the active row, group-header label and sub-item in the
 sidebar and in the mobile drawer, whose list sits in its own `<nav>`
 (`nav a[aria-current="page"]` and `nav a[aria-current="page"] > span`), which render the Figma
-active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
+active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14). The
+twelfth is the two-factor challenge's "Назад" (`#auth-form-card > button.MuiButton-text`).
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
@@ -152,6 +153,27 @@ handle, and the default rows of the collapsed rail, whose labels are visually hi
 owner kept the Figma token on 2026-10-27. Hover (`#404142`) and focus indicators are outside the
 gap, and no axe rule tests non-text contrast, so no exception entry exists for it; it is resolved
 when #276 closes.
+
+The fourth is the password-visibility toggle of `UIPasswordField`: its eye and eye-off glyphs
+(`src/assets/icons/eye.svg`, `eye-off.svg`) are stroked in `grey[50]` `#969B9D`, 2.81:1 on white
+under the 3:1 of SC 1.4.11, and are the toggle's only visible identifier. Its accessible name is
+the localized show or hide `aria-label`, and its focus indicator is outside the gap. It keeps
+the Figma token on the same terms as the shell glyphs above, was recorded on 2026-11-03, and no
+axe rule tests non-text contrast, so no exception entry exists for it; it is resolved when #276
+closes.
+
+The two-factor code cells take the Figma states on the owner's decision of 2026-11-04: a `#E1E7EA`
+rest border (1.24:1 on white, under the 3:1 of SC 1.4.11), and a focused cell marked only by a soft
+shadow and the caret, with no outline, so its focus indicator also falls short of SC 1.4.11 though
+it stays visible under SC 2.4.7. No axe rule tests either, so no exception entry exists for them.
+The challenge's "Назад" takes the Figma `#969B9D` (2.81:1) under the twelfth allowlist entry.
+
+The sign-in two-factor challenge submits on its sixth digit with no advance notice, which departs
+from WCAG 3.2.2 On Input: entering a value changes context, and a person who has not been told so
+can be surprised by it, most of all on a screen reader. The owner chose it on 2026-11-04 and declined
+an advance sentence to keep the Figma copy. "Підтвердити" stays, the recovery-code field and the
+setup confirmation keep an explicit submit, and no axe rule tests this, so no exception entry exists
+for it; it is resolved by telling the user first or by going back to an explicit submit.
 
 ## Adding coverage
 

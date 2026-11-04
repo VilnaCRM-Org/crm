@@ -1,10 +1,9 @@
-import type { Request } from '@playwright/test';
-
 import { buildCredentials, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 
 import {
   replyWithEndedSession,
@@ -17,14 +16,12 @@ import {
   editName,
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
-  configuredRestOrigin,
   expectOnlyAllowedOrigins,
   openLoadedSettings,
   saveButton,
   text,
 } from './utils/settings-page';
 
-const LOGIN_API_URL = '**/api/users';
 const NEW_NAME = 'Іван Коваль';
 const password = buildPassword();
 const credentials = buildCredentials();
@@ -39,21 +36,11 @@ test.describe('Settings session end (issue #330)', () => {
   test.beforeEach(async ({ page }) => {
     contacted = watchContactedOrigins(page);
     await signInToSettings(page);
-    await page.route(LOGIN_API_URL, async (route) => {
-      const request: Request = route.request();
-      if (request.method() !== 'POST') return route.fallback();
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ token: 'e2e-session-token' }),
-      });
-    });
+    await stubSignIn(page, ['session']);
   });
 
   test.afterEach(({ page }) => {
-    expectOnlyAllowedOrigins(contacted(), page.url(), stub.calls, [
-      configuredRestOrigin(page.url()),
-    ]);
+    expectOnlyAllowedOrigins(contacted(), page.url(), stub.calls);
     expectNoPersonalDataInUrls(contacted(), [password, NEW_NAME, credentials.password]);
   });
 

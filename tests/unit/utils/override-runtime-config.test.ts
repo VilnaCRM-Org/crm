@@ -10,6 +10,7 @@ type FakeRoute = {
   request: () => { resourceType: () => string };
   fetch: () => Promise<{ text: () => Promise<string> }>;
   fulfill: jest.Mock;
+  continue: jest.Mock;
   fallback: jest.Mock;
 };
 
@@ -40,6 +41,7 @@ const documentRoute = (body: string, fulfill: jest.Mock): FakeRoute => ({
     text: async (): Promise<string> => body,
   }),
   fulfill,
+  continue: jest.fn(),
   fallback: jest.fn(),
 });
 
@@ -87,24 +89,29 @@ describe('overrideRuntimeConfig', () => {
     expect(renderedConfig(options.body)).toEqual({ apiBaseUrl: 'http://x/</script><b>' });
   });
 
-  it('hands non-document requests to the next route handler untouched', async () => {
-    const { handler } = await registerHandler({});
-    const fallbackRoute = jest.fn().mockResolvedValue(undefined);
-    const mockRoute = {
-      request: (): { resourceType: () => string } => ({ resourceType: (): string => 'script' }),
-      fetch: jest.fn(),
-      fulfill: jest.fn(),
-      continue: jest.fn(),
-      fallback: fallbackRoute,
-    };
+  it.each(['script', 'fetch', 'xhr'])(
+    'hands a %s request to the next handler so a stub registered earlier still answers',
+    async (resourceType) => {
+      const { handler } = await registerHandler({});
+      const fallback = jest.fn().mockResolvedValue(undefined);
+      const mockRoute = {
+        request: (): { resourceType: () => string } => ({
+          resourceType: (): string => resourceType,
+        }),
+        fetch: jest.fn(),
+        fulfill: jest.fn(),
+        continue: jest.fn(),
+        fallback,
+      };
 
-    await handler(mockRoute);
+      await handler(mockRoute);
 
-    expect(fallbackRoute).toHaveBeenCalledTimes(1);
-    expect(mockRoute.continue).not.toHaveBeenCalled();
-    expect(mockRoute.fetch).not.toHaveBeenCalled();
-    expect(mockRoute.fulfill).not.toHaveBeenCalled();
-  });
+      expect(fallback).toHaveBeenCalledTimes(1);
+      expect(mockRoute.continue).not.toHaveBeenCalled();
+      expect(mockRoute.fetch).not.toHaveBeenCalled();
+      expect(mockRoute.fulfill).not.toHaveBeenCalled();
+    }
+  );
 
   it('fails loudly when the served document ships no configuration block', async () => {
     const fulfill = jest.fn().mockResolvedValue(undefined);

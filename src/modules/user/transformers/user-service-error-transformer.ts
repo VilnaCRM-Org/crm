@@ -14,6 +14,7 @@ const STATUS_REASONS = new Map<number, UserServiceFailureReason>([
   [0, 'network'],
   [401, 'unauthenticated'],
   [422, 'violation'],
+  [423, 'locked'],
   [429, 'rate_limited'],
 ]);
 
@@ -21,6 +22,12 @@ const MESSAGE_REASONS = new Map<string, UserServiceFailureReason>([
   ['Access Denied.', 'access_denied'],
   ['Old password is invalid', 'invalid_password'],
   ['Старий пароль невірний', 'invalid_password'],
+  ['Invalid two-factor code.', 'invalid_code'],
+  ['Invalid or expired two-factor session.', 'expired_session'],
+  ['Two-factor setup not initiated.', 'setup_not_initiated'],
+  ['Two-factor authentication is already enabled.', 'already_enabled'],
+  ['Two-factor authentication is not enabled.', 'not_enabled'],
+  ['Re-authentication required.', 'reauth_required'],
 ]);
 
 const TAKEN_MESSAGES: ReadonlySet<string> = new Set([
@@ -36,6 +43,7 @@ const VIOLATION_PROPERTIES: readonly string[] = [
   'newPassword',
   'initials',
   'password',
+  'twoFactorCode',
 ];
 
 @injectable()

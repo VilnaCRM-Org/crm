@@ -1,3 +1,5 @@
+import type { SignInFailureReason } from '@auth/types/two-factor/sign-in-failure';
+
 export type AuthErrorKind =
   'validation' | 'authentication' | 'conflict' | 'server' | 'network' | 'unknown';
 
@@ -13,6 +15,7 @@ export interface AuthError {
   readonly status?: number;
   readonly issues?: readonly FieldIssue[];
   readonly aborted?: boolean;
+  readonly reason?: SignInFailureReason;
 }
 
 export interface AuthOkResult<T> {

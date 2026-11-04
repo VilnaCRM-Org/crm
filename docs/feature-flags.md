@@ -125,6 +125,8 @@ The user settings page (issue #330) and the three coming-soon settings pages
 `/settings/integrations`, `/settings/webhooks` and `/settings/billing` (issue #362) are not
 flagged: all four are registered in every environment, and the app shell always renders their
 entry points, the sidebar and drawer Settings group and the user menu's profile and Settings links.
+The page's two-factor section (issue #331) is not flagged either: `UserProfile` always renders
+it, and the sign-in challenge at `/sign-in/two-factor` is registered in every environment.
 
 ## Rules
 

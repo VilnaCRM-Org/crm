@@ -17,4 +17,6 @@ export interface SignInNoticeRow {
 export interface SignInNoticeMessageTable {
   readonly password_reset: SignInNoticeRow;
   readonly session_ended: SignInNoticeRow;
+  readonly two_factor_expired: SignInNoticeRow;
+  readonly account_locked: SignInNoticeRow;
 }

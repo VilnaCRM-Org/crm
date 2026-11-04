@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { AuthFormPage } from '@auth/types/auth-form-section';
 
-export type AuthCardVariant = 'recovery';
+export type AuthCardVariant = 'recovery' | 'challenge';
 
 export interface AuthCardProps {
   children: ReactNode;

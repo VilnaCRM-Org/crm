@@ -80,4 +80,118 @@ describe('settings response schemas', () => {
 
     expect(ResendEmailResultSchema.safeParse({ resendEmailToUser: { user } }).success).toBe(false);
   });
+
+  describe('two-factor settings results', () => {
+    const codes = ['ABCD-2345', 'WXYZ-6789'];
+
+    it('accepts the generated setup shape and hands the secret back unchanged', async () => {
+      const { SetupTwoFactorResultSchema } = await loadSchemas();
+      const payload = {
+        setupTwoFactorUser: {
+          user: { otpauthUri: 'otpauth://totp/x?secret=ABCD', secret: 'ABCD' },
+        },
+      };
+
+      expect(SetupTwoFactorResultSchema.safeParse(payload)).toEqual({
+        success: true,
+        data: payload,
+      });
+    });
+
+    it.each([
+      ['an empty URI', { otpauthUri: '', secret: 'ABCD' }],
+      ['an empty secret', { otpauthUri: 'otpauth://totp/x', secret: '' }],
+      ['a missing secret', { otpauthUri: 'otpauth://totp/x' }],
+      ['a null URI', { otpauthUri: null, secret: 'ABCD' }],
+    ])('rejects a setup user with %s', async (_name, user) => {
+      const { SetupTwoFactorResultSchema } = await loadSchemas();
+
+      expect(SetupTwoFactorResultSchema.safeParse({ setupTwoFactorUser: { user } }).success).toBe(
+        false
+      );
+    });
+
+    it('accepts the generated confirm and regenerate shapes', async () => {
+      const { ConfirmTwoFactorResultSchema, RegenerateRecoveryCodesResultSchema } =
+        await loadSchemas();
+      const confirm = { confirmTwoFactorUser: { user: { recoveryCodes: codes } } };
+      const regenerate = { regenerateRecoveryCodesUser: { user: { recoveryCodes: codes } } };
+
+      expect(ConfirmTwoFactorResultSchema.safeParse(confirm)).toEqual({
+        success: true,
+        data: confirm,
+      });
+      expect(RegenerateRecoveryCodesResultSchema.safeParse(regenerate)).toEqual({
+        success: true,
+        data: regenerate,
+      });
+    });
+
+    it('accepts a set of one one-character code', async () => {
+      const { ConfirmTwoFactorResultSchema, RegenerateRecoveryCodesResultSchema } =
+        await loadSchemas();
+      const user = { recoveryCodes: ['A'] };
+
+      expect(
+        ConfirmTwoFactorResultSchema.safeParse({ confirmTwoFactorUser: { user } }).success
+      ).toBe(true);
+      expect(
+        RegenerateRecoveryCodesResultSchema.safeParse({ regenerateRecoveryCodesUser: { user } })
+          .success
+      ).toBe(true);
+    });
+
+    it.each([
+      ['an empty list', []],
+      ['a list holding a blank code', ['ABCD-2345', '']],
+      ['a string', 'ABCD-2345'],
+      ['an object', { 0: 'ABCD-2345' }],
+      ['an array holding a number', ['ABCD-2345', 7]],
+      ['null', null],
+      ['undefined', undefined],
+    ])('rejects recovery codes given as %s', async (_name, recoveryCodes) => {
+      const { ConfirmTwoFactorResultSchema, RegenerateRecoveryCodesResultSchema } =
+        await loadSchemas();
+
+      expect(
+        ConfirmTwoFactorResultSchema.safeParse({
+          confirmTwoFactorUser: { user: { recoveryCodes } },
+        }).success
+      ).toBe(false);
+      expect(
+        RegenerateRecoveryCodesResultSchema.safeParse({
+          regenerateRecoveryCodesUser: { user: { recoveryCodes } },
+        }).success
+      ).toBe(false);
+    });
+
+    it('accepts the generated disable shape and rejects a non-boolean success', async () => {
+      const { DisableTwoFactorResultSchema } = await loadSchemas();
+      const payload = { disableTwoFactorUser: { user: { success: true } } };
+
+      expect(DisableTwoFactorResultSchema.safeParse(payload)).toEqual({
+        success: true,
+        data: payload,
+      });
+      expect(
+        DisableTwoFactorResultSchema.safeParse({
+          disableTwoFactorUser: { user: { success: 'yes' } },
+        }).success
+      ).toBe(false);
+    });
+
+    it.each([
+      ['SetupTwoFactorResultSchema', 'setupTwoFactorUser'],
+      ['ConfirmTwoFactorResultSchema', 'confirmTwoFactorUser'],
+      ['DisableTwoFactorResultSchema', 'disableTwoFactorUser'],
+      ['RegenerateRecoveryCodesResultSchema', 'regenerateRecoveryCodesUser'],
+    ] as const)('accepts a nullish %s envelope', async (schema, field) => {
+      const schemas = await loadSchemas();
+
+      expect(schemas[schema].safeParse(undefined).success).toBe(true);
+      expect(schemas[schema].safeParse(null).success).toBe(true);
+      expect(schemas[schema].safeParse({ [field]: null }).success).toBe(true);
+      expect(schemas[schema].safeParse({ [field]: { user: null } }).success).toBe(true);
+    });
+  });
 });

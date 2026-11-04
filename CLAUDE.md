@@ -172,6 +172,10 @@ more project names.
   under "Known gaps" in `src/components/ui-app-shell/README.md`. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
+  `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
+  the sign-in challenge in both modes and for enrolling, turning two-factor off and regenerating the
+  codes: 44 px cells, fields and submits, 24 px small controls, no overflow at 320, 390 and 412 px,
+  every pin cell inside its card at 320 to 767 px, and the empty submit and reduced-motion checks.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
   two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
   (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
@@ -331,17 +335,18 @@ outside every function body and instance property initializer runs on import, wh
 whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 447 files the scope holds
-7,871 runnable mutants, 5,882 of them scored, in 399 sharded files; 48 files run in no shard. Their
-packing weight is 5,943, the scored mutants plus the floor of 1 that each all-static file adds, so
-the 40 shards carry 148 to 149 weight units and 5 to 11 files each. File size was a poor proxy for
-that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
-kill switch before it finished, while this scope packed by counted mutants carries 198 to 199
-units per shard at 30.
+same commit; no weight file is committed, so none can go stale. At 539 files the scope holds 9,379
+runnable mutants, 6,959 of them scored, in 482 sharded files; 57 files run in no shard, and the 40
+shards hold 175 to 176 units of packing weight (a file's scored mutants, or 1 for a file whose
+mutants are all static) and 8 to 13 files each. File size was a poor proxy for that load: at the
+two-factor scope (528 files, 9,232 runnable mutants) a size packing held 149 to 485 runnable
+mutants per shard at 30 shards, first fell under 240 at 69 shards (225), and rose again to 270 at
+70 and 293 at 73. Weighing each file by its runnable mutants instead held every shard within one
+mutant of the mean: 307 to 308 at 30, 237 at 39, 230 to 231 at 40.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
-workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
-kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
-cache-key segments disagree.
+workflows' count passes 240 units of packing weight, so scope growth reddens a unit test before a
+shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and
+the `-of<N>-` cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
@@ -351,9 +356,10 @@ it — never the kill switch. The count went from 16 to 24 when Stryker 10's `Ca
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
 to 30 when the password-recovery files repacked the split so a cold shard 6 drew 443 mutants (the
 next heaviest drew 291) and hit the kill switch at 250 tested; the same size packing at 30 capped
-the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when that
-cold shard 11 kept meeting the kill switch; 40 is also the count the two-factor branch (#331)
-runs, so the two stay in lock-step.
+the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when the
+two-factor files grew the scope until most cold shards hit the kill switch. 39 shards would
+already hold 237, but 40 leaves room for about 360 more mutants before the heaviest shard reaches
+240, where 39 leaves room for about 120.
 
 ### Honest mutant classification (issue #171)
 
@@ -433,8 +439,8 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Fifteen directives are annotated today, at two mutators. Fourteen are `ArrayDeclaration` on a
-React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Eleven are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
 does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
@@ -456,7 +462,7 @@ Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The fifteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -465,11 +471,11 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 447 files; not all of them produce scored mutants — the 48 unsharded ones hold no
+mutate scope is 539 files; not all of them produce scored mutants — the 57 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
@@ -602,7 +608,7 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries eleven `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries twelve `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
 text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
@@ -1841,11 +1847,13 @@ key on `/sign-up`. The owners are the two recovery route folders, the recovery c
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
 through `usePageTitle` after its module has registered the catalog). The settings catalog
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
-the six settings `components/` folders that page renders (`change-password`, `profile-form`,
-`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the nine
-`hooks/` files those components call (`use-blur-hold`, `use-display-name`, `use-email-resend`,
+the seven settings `components/` folders that page renders (`change-password`, `profile-form`,
+`profile-header`, `settings-grid`, `social-networks`, `two-factor-settings` and
+`user-profile-settings`), the thirteen `hooks/` files those components call (`use-blur-hold`,
+`use-codes-form-props`, `use-disable-form-props`, `use-display-name`, `use-email-resend`,
 `use-email-row`, `use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`,
-`use-profile-save` and `use-settled-focus`), and the settings route contract `routes/index.ts` for
+`use-profile-save`, `use-regenerate-form-props`, `use-settled-focus` and `use-setup-form-props`),
+and the settings route contract `routes/index.ts` for
 its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
 protected page, before the settings catalog is registered, so they own no settings key; the
@@ -1856,7 +1864,14 @@ label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are
 way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
 `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
 copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
-`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. Adding an owner is a
+`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. The two catalogs of
+two-factor sign-in (issue #331) follow suit: the challenge copy (`two_factor.*`) is owned by
+`auth/routes/two-factor`, `auth/components/two-factor`, the challenge hooks that name its keys
+(`use-challenge-banner.ts`, `use-challenge-copy.ts`) and the auth route contract `routes/index.ts`
+for its `meta.titleKey`; the low-codes notice copy (`recovery_codes_notice.*`) by
+`auth/components/recovery-codes-notice` and `auth/hooks/use-recovery-notice-message.ts`. The
+sign-in notices the challenge sends back (`sign_in.notices.two_factor_expired`,
+`sign_in.notices.account_locked`) stay eager, because `/sign-in` renders them. Adding an owner is a
 reviewed policy edit and must name a file only the registering routes import. A policy entry that
 names no discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`),
 and an unreadable or malformed policy fails the run before any check.
@@ -2370,7 +2385,7 @@ class Service {}
 class ApiErrorFactory {} // repositories/api-error-factory.ts
 class EmailValidator {} // user/lib/validations/email.ts
 class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
-class LoginResponseMapper {} // store/login-response-mapper.ts
+class RegistrationResponseMapper {} // store/registration-response-mapper.ts
 class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
 ```
 
@@ -2404,7 +2419,7 @@ given a suffix. Each selector has a must-fail fixture in `scripts/ci/eslint-gate
 `Linter` against banned, bare, unsuffixed, abstract-`Base*`, and approved names.
 
 **Honest limitation.** This is a **naming** gate, not a **role-correctness** gate. It catches
-`AuthManager` and a bare `Service`; it cannot tell whether a class named `LoginResponseMapper`
+`AuthManager` and a bare `Service`; it cannot tell whether a class named `RegistrationResponseMapper`
 also quietly does HTTP, or whether `ThingProcessor` hides a meaningless noun. Role ↔ name
 truthfulness is semantic and stays an agent rule plus a review-gate concern. Classes inside
 `use-*.ts` hook files (`AuthTokenStore`, `AsyncListLoader`) sit outside the `src/**/*.ts` scope
@@ -2425,9 +2440,9 @@ This is the next step after #89/#100: those made every behavioral unit an instan
 class; this governs _how those classes obtain each other_. A hard-wired collaborator resists
 substitution in tests, so the class only _looks_ injectable.
 
-`src/modules/user/features/auth/repositories/login-api.ts` is the exemplar — `HttpsClient` and
-`ApiErrorFactory` arrive via `@inject(TOKENS.X)`, and its remaining value imports are exactly the
-allowed carve-outs.
+`src/modules/user/features/auth/repositories/graphql-sign-in-repository.ts` is the exemplar — the
+Apollo client arrives via `@inject(AUTH_TOKENS.ApolloClient)`, and its remaining value imports are
+exactly the allowed carve-outs.
 
 **Allowed value imports inside a logic class:**
 
@@ -2437,7 +2452,7 @@ allowed carve-outs.
 | `extends` base class | `BaseAPI` — inheritance cannot be injected                           |
 | DI mechanism         | `tsyringe`, `reflect-metadata`                                       |
 | DI tokens            | `**/tokens.ts`                                                       |
-| Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
+| Config data          | `@/config/env`, `@/routes/route-paths`                               |
 | Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
 | Constant maps        | `response-messages`, `error-codes`                                   |
 | Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` / `*-query.ts`       |
@@ -2540,7 +2555,7 @@ import { Button } from '@/components/ui-button';
 import { CommentsList } from './comments-list';
 
 // Within the Auth feature (any depth): use the @auth alias
-import { LoginAPI } from '@auth/repositories';
+import { GraphQLSignInRepository } from '@auth/repositories';
 ```
 
 In addition to the project-wide `@/`, the Auth feature has its own scoped
@@ -2634,6 +2649,8 @@ to a non-empty value fails container start with `Known flags: (none).` and must 
 settings page (issue #330), its three coming-soon sub-pages and their app-shell entry points
 (issue #362) ship without a flag: the four routes are registered in every environment, the
 sidebar and the drawer always link to all four, and the user menu always links to `/settings`.
+The two-factor section of `/settings` (issue #331) is not flagged either: the page always renders
+it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2743,7 +2760,7 @@ verified in CI.
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
   owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
   for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
-  lazy catalog adds no loader class. Seven lazy catalogs exist today: the password-recovery copy
+  lazy catalog adds no loader class. Nine lazy catalogs exist today: the password-recovery copy
   (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
@@ -2754,9 +2771,16 @@ verified in CI.
   `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
   `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
   `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
-  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; and the user-menu
+  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; the user-menu
   copy (`user_menu.*`), owned by `src/modules/user/features/settings/components/user-menu/` and
-  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates. The recovery keys were
+  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates; the two-factor challenge
+  copy (`two_factor.*`, issue #331), owned by
+  `src/modules/user/features/auth/routes/two-factor-catalog/` and registered when the
+  `two-factor-challenge` route module evaluates; and the low-codes notice copy
+  (`recovery_codes_notice.*`), owned by
+  `src/modules/user/features/auth/components/recovery-codes-notice/` and registered when the lazy
+  `RecoveryCodesNotice` chunk evaluates. Those two were 3,749 B of the minified merged catalog
+  (about 0.9 KB gzip) on every page. The recovery keys were
   3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
   raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
   does not restore the `/sign-in` headroom (that base already scored a median of about 0.8375
@@ -2766,7 +2790,9 @@ verified in CI.
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
   use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
   `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
-  user-menu catalog, and coming-soon tests `createComingSoonLocaleI18n`), so a lazy key leaking into
+  user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor challenge tests
+  `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card back control
+  reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key leaking into
   an eager page renders raw in that page's tests too. Storybook's preview and the e2e
   `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
   JSON files) keep the copy available for every story and spec.
@@ -3219,7 +3245,7 @@ replaces.
 
 8. **Test data — Faker builders (issue #101)**: Tests generate arbitrary user/auth domain
    data (emails, names, passwords, ids, tokens) with `@faker-js/faker` via shared builders in
-   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`, `buildLoginResponse`,
+   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`,
    `buildCreateUserInput`, `buildGraphqlUser`, …), imported through the `@tests/*` alias.
    Builders return domain-valid data by construction and take an `overrides` object. Faker is
    seeded deterministically (`seedFaker()` in each runner's setup; default `DEFAULT_FAKER_SEED`,
@@ -3286,7 +3312,7 @@ replaces.
 
     | Call site                                   | Event                                 |
     | ------------------------------------------- | ------------------------------------- |
-    | `AuthSecuritySignals` (login)               | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (login, challenge)    | `auth_failure` / `auth_failure_burst` |
     | `AuthSecuritySignals` (registration)        | `auth_failure` / `auth_failure_burst` |
     | `HttpErrorResponseParser` (401 / 403)       | `unauthorized_response`               |
     | `UIErrorBoundary` (`app` / `auth`)          | `error_boundary_catch`                |
@@ -3381,7 +3407,7 @@ replaces.
     `no-await-in-loop` is an error, each attempt handed the budget that is left, giving up when
     the next wait would leave under 250 ms, and a caller abort mid-wait rejecting at once. The
     client retries `GET`/`PUT`/`DELETE` by default; a `POST`/`PATCH` needs `RequestConfig.retry:
-true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a create in**:
+true` (no caller opts in today; a token issue would be the one safe case). **Never opt a create in**:
     `RegistrationAPI` gets the deadline only, because API Platform merely echoes
     `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
     telemetry; only the final failure reaches the observability boundary.
