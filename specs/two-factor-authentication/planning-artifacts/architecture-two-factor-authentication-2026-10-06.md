@@ -5,6 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
 revised: 2026-11-03
+iteration: 8
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'architect (Winston), autonomous run'
@@ -55,12 +56,13 @@ revisions:
     diagrams redrawn first'
   - '2026-10-27: reconciled to feat/331-two-factor-authentication at 77f59152 (#311, #333 on
     main; #315 PR #340, #330 PR #354 and #362 stacked); see "Reconciliation 2026-10-27"'
+  - '2026-11-03: owner decision; the twoFactorAuth flag removed, the section always renders'
 ---
 
 # Architecture: two-factor authentication for the user module
 
-**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-11-03 (owner decision: the
-`twoFactorAuth` flag removed) **Feature:** `two-factor-authentication`
+**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27 and 2026-11-03
+(owner decision: the `twoFactorAuth` flag removed) **Feature:** `two-factor-authentication`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor

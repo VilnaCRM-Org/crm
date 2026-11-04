@@ -20,8 +20,8 @@ inputDocuments:
 # Architecture: user settings for the user module
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
-2026-10-20, 2026-10-21 and 2026-11-03 (owner decision: the `userSettings` and `twoFactorAuth` flags
-removed) **Feature:** `user-settings`
+2026-10-20, 2026-10-21 (twice) and 2026-11-03 (owner decision: the `userSettings` and
+`twoFactorAuth` flags removed) **Feature:** `user-settings`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
