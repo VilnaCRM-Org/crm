@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-05
-revised: 2026-11-02
+revised: 2026-11-03
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -96,8 +96,9 @@ stage.
 A VilnaCRM user who forgot the password gets a self-service way back in. The flow has two
 screens, matching the two components on the Miro User/Auth diagram:
 
-- **Reset Password** (`/password-recovery`): the user enters an e-mail and is told, in every
-  case, to check the inbox.
+- **Reset Password** (`/password-recovery`): the user enters an e-mail and, once the request
+  resolves, is told to check the inbox whatever the address (FR-9); a validation error,
+  the rate limit or a transport failure keeps the form with its message (FR-12 to FR-14).
 - **Create new password** (`/password-reset`): the user opens the e-mailed link, sets and
   confirms a new password, and is sent to `/sign-in` with a one-time success notice.
 
@@ -191,7 +192,8 @@ the client deadline).
 - The mobile resend row with countdown (Figma `72:5638`).
 - Automatic sign-in after a successful reset; the API issues no session.
 - REST transport for either operation (replaced by GraphQL, §3).
-- Adding the new routes to the Lighthouse URL list.
+- Changing the Lighthouse floors themselves (both recovery routes join the audited URL list,
+  NFR-7).
 - The user-service contract pin bump itself, and the deletion of the pending schema extension it
   forces: a follow-up that waits for a user-service release tag (epics Follow-up 5.3, §8). The
   feature is built against the extension and does not wait for it.
@@ -216,7 +218,7 @@ them as settled:
 | Second reset request    | Backend issues a new token; earlier tokens may stay valid for 1 h    |
 | Upstream issues         | Filed by us at GitHub-issue time; the release tag is requested too   |
 | New-password form frame | Composition accepted as design of record for v1 pending a frame      |
-| "Назад" targets         | request → `/sign-in`; sent → request form; new password → `/sign-in` |
+| "Назад" targets         | request → `/sign-in`; sent → request form; new password → none       |
 
 The copy must therefore never promise that a new request invalidates an earlier link.
 
@@ -237,7 +239,7 @@ the centred white card, the footer. Tokens: `Font/100 #1A1C1E`, `Font/200 #40414
 2. The user submits and the card becomes the sent step (`360:11925`, 502 × 312): `‹ Назад`,
    H4 "Перевірте пошту", the body with the masked address, the primary pill "До входу".
 3. From the e-mail the user opens `/password-reset?token=…` and sees the new-password form in
-   the same 502-wide card: `‹ Назад`, H4 "Створіть новий пароль", body, two labelled password
+   the same 502-wide card, with no `‹ Назад` (FR-18): H4 "Створіть новий пароль", body, two labelled password
    fields with show/hide toggles, the policy rule list under the first field, "Підтвердити".
 4. On success the user lands on `/sign-in` with the success notice announced above the form.
 
@@ -247,12 +249,11 @@ Same content and order as desktop; the Figma card is 636 wide at x 194 (`72:5617
 `360:11937` sent) and the new-password form follows the same reading. Fields and the button
 stretch to the card's inner width.
 
-> Assumption: the card width in code is authoritative. `formWrapper` in
-> `src/components/skeletons/base/auth-form-shared-styles.ts` sets `maxWidth: '39.5rem'` (632 px)
-> from the `md` breakpoint, which the recorded `/sign-in` and `/sign-up` tablet baselines already
-> carry; the 4 px gap to the Figma reading is inherited, not new, and the recovery pages reuse the
-> same `formWrapper` rather than introducing a 636 px variant. Only the CI visual gate could
-> overrule this, and it compares against baselines rendered from the code value.
+> Decision (owner, 2026-10-21): the recovery cards follow the Figma tablet frames. From 768 to
+> 1439 px `AuthCard variant="recovery"` sets `maxWidth: '39.75rem'` (636 px) with the Figma
+> padding, while `/sign-in` and `/sign-up` keep `formWrapper`'s `39.5rem` (632 px) and their
+> recorded baselines. This supersedes the earlier assumption that the 632 px code value was
+> authoritative; the visual spec pins 636 against `/sign-in`'s 632.
 
 ### Mobile 375
 
@@ -343,7 +344,7 @@ leaves the client session state untouched: no sign-out, no sign-in.
 `/password-recovery` renders, inside the existing auth page chrome and card: the "Назад" control
 (chevron icon hidden from assistive technology, accessible name from the visible text), one real
 `h1` "Забули пароль?" styled as the H4, the body "Введіть адресу поштової скриньки вашого
-акаунту", one labelled e-mail text field with `autocomplete="email"` and the existing
+аккаунту", one labelled e-mail text field with `autocomplete="email"` and the existing
 `vilnaCRM@gmail.com` placeholder, and the primary submit "Підтвердити". No OAuth provider row
 and no sign-up/sign-in switcher are rendered.
 
@@ -352,10 +353,9 @@ and no sign-up/sign-in switcher are rendered.
   named "Підтвердити".
 - Given the page, when queried for the provider buttons or the switcher link, then none exist.
 - Given the 1440, 1024 and 375 viewports, when the page renders, then the card's maximum width
-  is the existing `formWrapper` value for that breakpoint — 502 / 632 / 363 px (`31.375rem` /
-  `39.5rem` / `22.6875rem`), the same card as `/sign-in` — and the button stretches to the
-  card's inner width; the 632 px tablet card is the code value, authoritative over the 636 px
-  Figma reading (§4).
+  is 502 / 636 / 363 px (`31.375rem` / `39.75rem` / `22.6875rem`): the `/sign-in` card on desktop
+  and mobile, and the Figma 636 px recovery card from 768 to 1439 px (§4, owner decision
+  2026-10-21) — and the button stretches to the card's inner width.
 
 ### FR-6 — E-mail validation on the request form
 
@@ -571,12 +571,13 @@ API's limit); its characters are not validated because it is opaque.
 
 ### FR-18 — New-password form content
 
-With a usable token the card shows: "Назад", one `h1` "Створіть новий пароль", the body
-"Придумайте новий пароль для вашого акаунту", a labelled "Новий пароль" field and a labelled
+With a usable token the card shows: one `h1` "Створіть новий пароль", the body
+"Придумайте новий пароль для вашого аккаунту", a labelled "Новий пароль" field and a labelled
 "Підтвердьте пароль" field — both `type="password"` with `autocomplete="new-password"` and the
 existing show/hide toggle (`aria-pressed`, Space-activatable, localized names) — the policy rule
 list (FR-19) and the submit "Підтвердити". No e-mail field is shown; the token carries the
-identity.
+identity. The form has no "Назад": the owner dropped it on 2026-10-21, and it stays on the
+invalid-link state (FR-22, FR-23).
 
 - Given the form, when it renders, then both fields are reachable by their labels, each toggle
   is a button named "Показати пароль" with `aria-pressed="false"`, and the submit is named
@@ -668,13 +669,14 @@ before any other error is classified. Without one, the first error decides the o
 
 ### FR-23 — Navigation on the reset route
 
-"Назад" on the new-password form and on the invalid-link state is a link to `/sign-in`, and
+"Назад" on the invalid-link state is a link to `/sign-in` (the new-password form has none,
+FR-18), and
 "Запросити нове посилання" is a link to `/password-recovery`; both navigate client-side with
 `{ focusMain: true }` exactly as FR-11 describes. Every control is at least 24 CSS px tall; the
 chevron is decorative.
 
-- Given the form, when "Назад" is activated, then the URL is `/sign-in` and any in-flight
-  request is aborted.
+- Given the form with a request in flight, when the page is left by an in-app navigation, then
+  the request is aborted and no banner or notice appears.
 - Given the invalid-link state, when Tab is pressed from the top, then the order is the
   back-to-main link, "Назад", "Запросити нове посилання", the footer links.
 - Given a seeded session token, when "Назад" or "Запросити нове посилання" is activated, then no
@@ -743,12 +745,14 @@ registered when a recovery route module evaluates and is kept out of the merged
 `src/i18n/localization.json` by `config/i18n-catalog-policy.json`. Strings a page outside the
 recovery routes renders (the sign-in notice, the shared uppercase rule message) stay in both
 locales of the eager auth catalog under the auth feature's i18n folder. The merged catalog is
-regenerated without the lazy keys; no English or Russian literal is shipped in source. The Russian Figma copy is replaced and "аккаунту" is spelled "акаунту". Reused keys:
+regenerated without the lazy keys; no English or Russian literal is shipped in source. The Russian Figma copy is replaced. The two descriptions keep "аккаунту", the spelling sign-in
+and sign-up already use, by the owner's decision of 2026-11-03; correcting it to "акаунту" is
+one product-wide copy change that also re-records the affected visual baselines. Reused keys:
 the e-mail label and placeholder, the password show/hide names, the required-field message,
 `auth.error.tryAgain`, `buttons.back_to_main`. New strings (key names are suggestions):
 
 - request title and `h1`: uk "Забули пароль?" — en "Forgot your password?"
-- request body: uk "Введіть адресу поштової скриньки вашого акаунту" — en "Enter the e-mail
+- request body: uk "Введіть адресу поштової скриньки вашого аккаунту" — en "Enter the e-mail
   address of your account"
 - submit (both forms): uk "Підтвердити" — en "Confirm"
 - back control: uk "Назад" — en "Back"
@@ -765,7 +769,7 @@ the e-mail label and placeholder, the password show/hide names, the required-fie
 - e-mail rejected (`email` violation): uk "Перевірте адресу електронної пошти та спробуйте ще раз" —
   en "Check the e-mail address and try again"
 - reset title and `h1`: uk "Створіть новий пароль" — en "Create a new password"
-- reset body: uk "Придумайте новий пароль для вашого акаунту" — en "Choose a new password for
+- reset body: uk "Придумайте новий пароль для вашого аккаунту" — en "Choose a new password for
   your account"
 - new password label: uk "Новий пароль" — en "New password"; placeholder: uk "Введіть новий
   пароль" — en "Enter a new password"
@@ -810,6 +814,28 @@ a mobile row (the touch lane). The route scan list and the visual page list gain
 - Given the axe route-scan list, when it runs, then `/password-recovery` (ready on
   `form button[type="submit"]`) and `/password-reset` (ready on `main h1`) are scanned in all
   three desktop engines with zero violations outside the scoped allowlist.
+
+### FR-29 — Sign-in result card
+
+Added after planning (`09fded0e`, 2026-10-19; module README "Sign-in and sign-up results use one
+notification", epics "Implementation drift" item 16). `/sign-in` shows its settled result in the
+lazily loaded `RegistrationNotification` that sign-up already uses, with `flow="signIn"`, instead
+of red text under the form and a silent redirect. A settled failure shows the error card: a
+focused `h2` "Трапилась помилка", the message in an alert filled after mount (mapped from the
+`AuthError` kind and HTTP 429, never the backend text), "Спробувати ще раз", which resubmits the
+last values, and "Назад", which aborts any running request and returns to the form with the values
+kept and the e-mail field focused. A successful sign-in shows the success card: a focused `h2`
+"Вітаємо!", "Ви успішно увійшли" in a status region and "Продовжити", which performs the existing
+redirect to the preserved destination (FR-21's notice flow is unchanged) with focus on `main`;
+nothing redirects on a timer. While a card shows, the form, its submit and the OAuth row are inert.
+
+- Given a rejected sign-in, when it settles, then the error card renders with focus on its `h2`
+  and both actions; "Назад" returns to the form with the values kept.
+- Given a successful sign-in, when it settles, then the success card renders and "Продовжити"
+  navigates to the preserved destination; a page that mounts with a token already present never
+  shows the card.
+- Given the resting `/sign-in` page, then no card renders and the resting baselines (NFR-6) and
+  the sign-in tab order (NFR-10) are unchanged.
 
 ## 6. Traceability
 
@@ -862,7 +888,10 @@ result view, one container-free provider loader) instead of copying the sign-in 
 ### NFR-4 — Lint, types and architecture
 
 ESLint 0 errors and 0 warnings, `tsc` 0 errors under the strict flags, dependency-cruiser 0
-violations, no `eslint-disable`, `@ts-ignore`, `depcruise-ignore` or inline suppression of any kind.
+violations, no `eslint-disable`, `@ts-ignore`, `depcruise-ignore` or other inline suppression. The
+one exception is NFR-2's: a `// Stryker disable next-line <Mutator>: <proof>` annotation on a
+provably equivalent mutant (CLAUDE.md "Honest mutant classification"). The feature carries one,
+on the `useWatch` `ObjectLiteral` in `create-new-password-form.tsx`, with its proof inline.
 The feature keeps every convention the gates encode, including the typed-boundary gate (NFR-17) and
 the board's layer vocabulary (NFR-18): classes only outside React components, no static members or
 free functions, type-only files, approved class-name suffixes, collaborators through DI tokens, the
@@ -898,7 +927,10 @@ Baselines are taken from CI artifacts, never from a local production container.
 runs), accessibility ≥ 0.90, best practices ≥ 0.90, SEO ≥ 0.90. The profile records
 `lighthouse_desktop: 95` and `lighthouse_mobile: 85`; the CI assertion at 0.84 is the binding
 gate and the one-point gap pre-dates this feature (§10). The audited URL list (`/`, `/sign-up`,
-`/sign-in`) is unchanged and `/sign-in` must not lose a point.
+`/sign-in` and the error pages) also gains `/password-recovery` and `/password-reset?token=…`
+(a fixed dummy token, so the form renders), so the same floors and resource budgets gate both
+recovery routes (amended 2026-11-03, stricter than first planned), and `/sign-in` must not
+lose a point.
 
 ### NFR-8 — Bundle and paint-path budgets
 
@@ -942,7 +974,7 @@ only carrier of a state.
 
 Both forms and both result states are completable with the keyboard only, asserted with the shared
 tab-order helper in the a11y lane. Request form: back-to-main → "Назад" → e-mail → "Підтвердити" →
-footer links. New-password form: back-to-main → "Назад" → new password → its toggle → confirmation →
+footer links. New-password form: back-to-main → new password → its toggle → confirmation →
 its toggle → "Підтвердити" → footer links. Sent step: back-to-main → "Назад" → "До входу" → footer.
 Every stop is `:focus-visible` with the existing 2 px dark ring, Space toggles the password
 visibility, Enter submits, and a validation error moves focus to the first invalid field. In-card
@@ -1230,7 +1262,8 @@ Consolidated from the research, the brief and this stage:
     told to re-open the e-mail.
 13. The rule list under the new-password field is not a live region; its state is readable on
     demand and the submit-time error is announced (FR-19).
-14. The Lighthouse URL list is unchanged (research §8.10).
+14. The Lighthouse URL list gains both recovery routes (amended 2026-11-03; research §8.10
+    planned no change).
 15. One container-free provider loader is added beside the existing deferred auth actions, which
     stay untouched; #331 reuses it (architecture §5.4).
 16. A GraphQL domain refusal is classified by the operation (request: the per-address limit;
@@ -1277,10 +1310,12 @@ For the design owner:
 
 1. Is the composed new-password form accepted as the design of record, or will a frame be
    provided?
-2. Confirm the uk/en copy in FR-27, the "акаунту" spelling, and the one-copy invalid-link
+2. Confirm the uk/en copy in FR-27 (the "аккаунту" spelling is kept, 2026-11-03), and the
+   one-copy invalid-link
    state.
 3. Confirm the masking rule of FR-10 against the mobile frame's prefix-and-suffix variant.
-4. Confirm the "Назад" targets in §3 and whether the mobile resend countdown is wanted later.
+4. Confirm the "Назад" targets in §3 (answered 2026-10-21: none on the new-password form) and
+   whether the mobile resend countdown is wanted later.
 5. Should the result views' "До входу" and "Запросити нове посилання" use a plain link style
    instead of the primary pill? Not blocking: until answered they ship as the pill under the one
    scoped exception of NFR-9.
@@ -1316,7 +1351,8 @@ For the product owner:
 - Automatic sign-in after a successful reset, or any change to the client session.
 - Two-factor authentication interplay with a reset; a 2FA-enabled account's reset rules are
   user-service's.
-- Adding the new routes to the Lighthouse URL list.
+- Changing the Lighthouse floors themselves (both recovery routes join the audited URL list,
+  NFR-7).
 - The contract pin bump as part of this feature's stories: it is epics Follow-up 5.3, which
   waits for a user-service release tag and deletes the pending schema extension.
 - Any runtime flag for the flow: issue #309 removed `forgotPassword`; epics Follow-up 5.6 is the

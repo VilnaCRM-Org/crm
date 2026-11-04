@@ -56,6 +56,16 @@ describe('component DI gate (issue #128)', () => {
     expect(report.depcruise.typeImport).toEqual([]);
   });
 
+  it('dependency-cruiser fails a component value-importing a module-level transformer', () => {
+    expect(report.depcruise.moduleTransformerValueImport).toEqual([
+      'components-no-direct-injectable-import',
+    ]);
+  });
+
+  it('dependency-cruiser allows a type-only import of a module-level transformer', () => {
+    expect(report.depcruise.moduleTransformerTypeImport).toEqual([]);
+  });
+
   it.each(['dataProvider', 'transformer'])(
     'dependency-cruiser fails a component value-importing a feature %s',
     (layer) => {

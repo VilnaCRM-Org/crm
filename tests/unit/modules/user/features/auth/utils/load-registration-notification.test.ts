@@ -57,10 +57,10 @@ describe('loadRegistrationNotification', () => {
     const { default: observabilityCore } =
       await import('@/services/observability/observability-core');
     const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
-    const { default: loader, registrationNotificationPrefetcher } =
+    const { default: loader, RegistrationNotificationPrefetcher } =
       await import('@auth/utils/load-registration-notification');
 
-    registrationNotificationPrefetcher.prefetch();
+    new RegistrationNotificationPrefetcher().prefetch();
     await loader.load();
 
     expect(capture).not.toHaveBeenCalled();
@@ -75,10 +75,10 @@ describe('loadRegistrationNotification', () => {
     const { default: observabilityCore } =
       await import('@/services/observability/observability-core');
     const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
-    const { registrationNotificationPrefetcher } =
+    const { RegistrationNotificationPrefetcher } =
       await import('@auth/utils/load-registration-notification');
 
-    registrationNotificationPrefetcher.prefetch();
+    new RegistrationNotificationPrefetcher().prefetch();
 
     await waitFor(() => {
       expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:notification-prefetch' });
