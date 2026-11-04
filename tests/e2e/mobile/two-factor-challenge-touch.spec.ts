@@ -76,7 +76,6 @@ test.describe('The sign-in challenge on touch devices (issue #331)', () => {
     await reachChallengeByTap(page);
 
     await tapCode(page, CODE);
-    await confirmButtonOf(page).tap();
 
     await expect.poll(() => challenge.count()).toBe(1);
     expect(challenge.calls[0]?.variables['input']).toMatchObject({

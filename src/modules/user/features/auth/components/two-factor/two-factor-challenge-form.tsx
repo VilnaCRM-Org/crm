@@ -25,13 +25,11 @@ export default function TwoFactorChallengeForm(props: TwoFactorChallengeProps): 
       submittingLabel={form.submittingLabel}
       title={form.title}
       titleComponent="h1"
-      titleRef={form.titleRef}
       subtitle={form.subtitle}
       footer={form.footer}
-      notice={form.notice}
     >
       {state.mode === 'totp' ? (
-        <ChallengeCodeField state={state} />
+        <ChallengeCodeField state={state} onComplete={form.requestSubmit} />
       ) : (
         <RecoveryCodeField state={state} />
       )}

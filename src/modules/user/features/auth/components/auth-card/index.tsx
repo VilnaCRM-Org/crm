@@ -11,6 +11,7 @@ export default function AuthCard({ children, after, page, variant }: AuthCardPro
     styles.formWrapper,
     page !== undefined && styles.formWrapperBottomPadding[page],
     variant === 'recovery' && cardStyles.recoveryCard,
+    variant === 'challenge' && cardStyles.challengeCard,
   ];
   return (
     <Box component="section" sx={styles.formSection}>

@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 project_name: crm
 date: 2026-10-06
 revised: 2026-11-04
-iteration: 8
+iteration: 10
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -77,6 +77,8 @@ revisions:
     zustand-client-state'
   - '2026-11-03: owner decision; the twoFactorAuth flag removed, the section always renders'
   - '2026-11-04: owner decision; the card takes the Figma header and steps, Start stays'
+  - '2026-11-04: owner decision; the sign-in code submits on its sixth digit, reversing D6'
+  - '2026-11-04: owner decision; the challenge page takes the Figma layout, states and copy'
 ---
 
 # PRD: two-factor authentication for the user module
@@ -84,6 +86,23 @@ revisions:
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-11-03 (owner
 decision: the `twoFactorAuth` flag removed) and 2026-11-04 (owner decision: the Figma card)
 **Feature:** `two-factor-authentication`
+
+> **Owner decision of 2026-11-04 (challenge page as drawn).** The challenge takes frames `72:4846`,
+> `72:4882` and `72:4918`: their spacing, the grey "Назад", the cell states with no focus outline and
+> Figma's desktop subtitle with its spelling corrected ("Перевірте додаток Google Authenticator"); the
+> title stays "Двофакторна автентифікація", because Figma's own is misspelled. The five-minute note is gone. Not taken: the tablet and mobile "Ми
+> надіслали Вам лист" line, because no e-mail is sent, and the resend row, because an authenticator
+> code cannot be re-sent (D1); "Використати резервний код" stays in that row. On load, focus goes to
+> the first cell, not the heading. It replaces FR-14 and FR-15's copy, colours, ring and focus target;
+> those criteria are kept as the record of the plan as approved.
+
+> **Owner decision of 2026-11-04 (auto-submit, D6 reversed).** The sign-in challenge submits when the
+> sixth digit is entered, typed or pasted. "Підтвердити" stays. A wrong code clears the cells, so it
+> cannot resubmit itself. The owner declined an advance sentence, to keep the Figma copy, so this
+> departs from WCAG 3.2.2, which D6 protected; `docs/accessibility/acceptance-standard.md` records
+> the gap. The setup card's confirm step keeps its button, because confirming ends the user's other
+> sessions. FR-16's "never submits by itself" and its "no request" criterion are kept as the record
+> of the plan as approved.
 
 > **Owner decision of 2026-11-04 (Figma card, Start stays).** The owner kept the start button, so
 > setup still sends no request until it is pressed, and asked for the card to match Figma around it:

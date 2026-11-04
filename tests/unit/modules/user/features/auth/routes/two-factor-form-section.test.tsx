@@ -65,7 +65,6 @@ const cells = (): HTMLInputElement[] => screen.getAllByRole('textbox');
 
 const enter = async (digits: string): Promise<void> => {
   await userEvent.type(cells()[0] as HTMLInputElement, digits);
-  await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 };
 
 const failed = (reason: ChallengeFailureReason): ChallengeResult => ({ kind: 'failed', reason });
@@ -90,11 +89,11 @@ describe('TwoFactorFormSection', () => {
     await expectNoA11yViolations(container);
   });
 
-  it("inks Назад in the compliant #404142, not the recovery cards' Figma grey", () => {
+  it('inks Назад in the Figma grey #969B9D', () => {
     mount();
 
     expect(screen.getByRole('button', { name: 'Назад' })).toHaveStyle({
-      color: 'rgb(64, 65, 66)',
+      color: 'rgb(150, 155, 157)',
     });
   });
 
@@ -114,6 +113,7 @@ describe('TwoFactorFormSection', () => {
     mount();
 
     await enter('1234');
+    await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 
     expect(await screen.findByText('Введіть усі 6 цифр коду')).toBeInTheDocument();
     cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));

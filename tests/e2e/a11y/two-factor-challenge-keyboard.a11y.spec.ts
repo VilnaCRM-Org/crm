@@ -7,7 +7,6 @@ import { t } from '@tests/e2e/utils/initialize-localization';
 import {
   authenticatorToggleOf,
   challengeBackOf,
-  challengeHeadingOf,
   challengeText,
   codeCellsOf,
   confirmButtonOf,
@@ -22,7 +21,7 @@ const CODE = '123456';
 const credentials = buildCredentials();
 const BRAND_LINK = 'rgb(0, 116, 181)';
 const SHARED_RING = 'rgb(64, 65, 66)';
-const CELL_BORDER = 'rgb(128, 135, 138)';
+const CELL_BORDER = 'rgb(225, 231, 234)';
 const ERROR_TEXT = 'rgb(214, 51, 51)';
 
 const backToMainOf = (page: Page): Locator =>
@@ -49,7 +48,7 @@ async function expectRing(target: Locator, color: string): Promise<void> {
 test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
   test('authenticator mode is operable in reading order', async ({ page }) => {
     await signInToChallenge(page, credentials);
-    await expect(challengeHeadingOf(page)).toBeFocused();
+    await expect(codeCellsOf(page).first()).toBeFocused();
     await climbToTop(page);
 
     await expectTabOrder(page, [
@@ -64,36 +63,34 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
     ]);
   });
 
-  test('Enter in the last cell submits the six digits', async ({ page }) => {
+  test('the sixth digit submits once, with no key or button pressed', async ({ page }) => {
     const challenge = await stubChallenge(page);
     await signInToChallenge(page, credentials);
-    await page.keyboard.press('Tab');
     await expect(codeCellsOf(page).first()).toBeFocused();
 
     await page.keyboard.type(CODE);
-    await page.keyboard.press('Enter');
 
     await expect.poll(() => challenge.count()).toBe(1);
     expect(challenge.calls[0]?.variables['input']).toMatchObject({ twoFactorCode: CODE });
     await expect(page).not.toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
   });
 
-  test('Enter on Підтвердити submits and Space does too', async ({ page }) => {
-    const challenge = await stubChallenge(page, ['invalid_code', 'completed']);
+  test('Enter on Підтвердити retries a kept code and Space does too', async ({ page }) => {
+    const challenge = await stubChallenge(page, ['unavailable', 'unavailable', 'completed']);
     await signInToChallenge(page, credentials);
-    await page.keyboard.press('Tab');
     await page.keyboard.type(CODE);
-    await confirmButtonOf(page).focus();
+    await expect.poll(() => challenge.count()).toBe(1);
 
+    await expect(confirmButtonOf(page)).toBeEnabled();
+    await confirmButtonOf(page).focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByText(challengeText.invalidCode)).toBeVisible();
-    await expect(codeCellsOf(page).first()).toBeFocused();
-    await page.keyboard.type(CODE);
-    await expect(codeCellsOf(page).last()).toHaveValue(CODE.slice(-1));
+    await expect.poll(() => challenge.count()).toBe(2);
+
+    await expect(confirmButtonOf(page)).toBeEnabled();
     await confirmButtonOf(page).focus();
     await page.keyboard.press('Space');
 
-    await expect.poll(() => challenge.count()).toBe(2);
+    await expect.poll(() => challenge.count()).toBe(3);
   });
 
   test('recovery mode swaps the cells for the field and renames the toggle', async ({ page }) => {
@@ -149,11 +146,10 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
       await expect(cell).toHaveCSS('border-top-color', CELL_BORDER);
     }
 
-    await page.keyboard.press('Tab');
     await expect(codeCellsOf(page).first()).toBeFocused();
-    await expectRing(codeCellsOf(page).first(), SHARED_RING);
+    await expect(codeCellsOf(page).first()).toHaveCSS('outline-style', 'none');
+    await expect(codeCellsOf(page).first()).not.toHaveCSS('box-shadow', 'none');
     await page.keyboard.type(CODE);
-    await confirmButtonOf(page).click();
 
     await expect(page.getByText(challengeText.invalidCode)).toHaveCSS('color', ERROR_TEXT);
   });

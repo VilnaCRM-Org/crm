@@ -62,6 +62,7 @@ describe('useChallengeFormProps', () => {
     expect(result.current.errorOccurrence).toBe(3);
     expect(result.current.errorAction?.label).toBe('Спробувати ще раз');
     expect(result.current.submitRef).toEqual({ current: null });
+    expect(() => result.current.requestSubmit()).not.toThrow();
     expect(() => result.current.errorAction?.onClick()).not.toThrow();
     expect(props.callbacks.submit).not.toHaveBeenCalled();
   });
@@ -85,12 +86,10 @@ describe('useChallengeFormProps', () => {
     );
   });
 
-  it('puts the note in the notice slot and gives a focus ref for the title', () => {
+  it('gives no notice and no focus ref for the title', () => {
     const { result } = renderHook(() => useChallengeFormProps(propsOf()), { wrapper: I18nWrapper });
 
-    render(<>{result.current.notice}</>);
-
-    expect(screen.getByText('Код можна ввести протягом 5 хвилин після входу.')).toBeInTheDocument();
-    expect(typeof result.current.titleRef).toBe('function');
+    expect(result.current.notice).toBeUndefined();
+    expect(result.current.titleRef).toBeUndefined();
   });
 });

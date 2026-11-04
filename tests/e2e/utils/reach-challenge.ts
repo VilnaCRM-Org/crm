@@ -10,7 +10,6 @@ import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 export const challengeText = {
   title: t('two_factor.title'),
   subtitle: t('two_factor.subtitle'),
-  note: t('two_factor.note'),
   codeLabel: t('two_factor.code_label'),
   submit: t('two_factor.submit_button'),
   submitting: t('two_factor.submitting'),

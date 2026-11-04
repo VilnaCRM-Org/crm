@@ -12,8 +12,8 @@ export default function TwoFactorFormSection(): JSX.Element {
   const back = useChallengeBack();
 
   return (
-    <AuthCard>
-      <CardBackControl onClick={back} tone="primary" />
+    <AuthCard variant="challenge">
+      <CardBackControl onClick={back} />
       <TwoFactorChallengeForm state={challenge.state} callbacks={challenge.callbacks} />
     </AuthCard>
   );

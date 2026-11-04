@@ -51,16 +51,14 @@ const mount = (
 const cells = (): HTMLInputElement[] => screen.getAllByRole('textbox');
 
 describe('TwoFactorChallengeForm', () => {
-  it('shows the heading, subtitle, note, six labelled cells and the submit in Ukrainian', () => {
+  it('shows the heading, subtitle, six labelled cells and the submit in Ukrainian', () => {
     mount();
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Двофакторна автентифікація'
     );
-    expect(
-      screen.getByText('Введіть шестизначний код із застосунку Google Authenticator.')
-    ).toBeInTheDocument();
-    expect(screen.getByText('Код можна ввести протягом 5 хвилин після входу.')).toBeInTheDocument();
+    expect(screen.getByText('Перевірте додаток Google Authenticator')).toBeInTheDocument();
+    expect(screen.queryByText(/протягом 5 хвилин/)).not.toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Код підтвердження' })).toBeInTheDocument();
     expect(cells()).toHaveLength(6);
     expect(cells()[0]).toHaveAccessibleName('Цифра 1 з 6');
@@ -79,10 +77,10 @@ describe('TwoFactorChallengeForm', () => {
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument();
   });
 
-  it('puts focus on the h1 and renders only the submit and the mode toggle after it', () => {
+  it('focuses the first cell and renders only the submit and the toggle after it', async () => {
     mount();
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
     expect(screen.queryByRole('textbox', { name: /e-?mail|пошт/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/ще раз/)).not.toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
@@ -92,15 +90,23 @@ describe('TwoFactorChallengeForm', () => {
     ]);
   });
 
-  it('hands the typed six digits to submit once, only when the user submits', async () => {
+  it('hands the code to submit once on the sixth digit, with no button pressed', async () => {
     const { handlers } = mount();
 
-    await userEvent.type(cells()[0] as HTMLInputElement, '123456');
+    await userEvent.type(cells()[0] as HTMLInputElement, '12345');
     expect(handlers.submit).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
+    await userEvent.type(cells()[5] as HTMLInputElement, '6');
 
     await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
     expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: '123456' });
+  });
+
+  it('does not auto-submit in recovery mode', async () => {
+    const { handlers } = mount({ mode: 'recovery' });
+
+    await userEvent.type(screen.getByRole('textbox'), '123456');
+
+    expect(handlers.submit).not.toHaveBeenCalled();
   });
 
   it('hands a short value to submit too, so the hook can show the incomplete error', async () => {
@@ -194,6 +200,7 @@ describe('TwoFactorChallengeForm', () => {
     const transient = { banner: 'transient', bannerOccurrence: 1 } as const;
     const view = mount(transient, handlers);
     await userEvent.type(cells()[0] as HTMLInputElement, '654321');
+    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
@@ -202,8 +209,8 @@ describe('TwoFactorChallengeForm', () => {
     const pending = { ...RESTING, ...transient, value: '654321', isSubmitting: true };
     view.rerender(tree(pending, handlers));
 
-    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
-    expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: '654321' });
+    await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(2));
+    expect(handlers.submit).toHaveBeenLastCalledWith({ twoFactorCode: '654321' });
     expect(screen.getByRole('button', { name: 'Спробувати ще раз' })).toHaveFocus();
   });
 
@@ -252,10 +259,11 @@ describe('TwoFactorChallengeForm', () => {
     await expectNoA11yViolations(container);
   });
 
-  it('ignores a focus request of zero', () => {
+  it('never focuses the heading on load', () => {
     mount({ focusRequest: 0 });
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+    expect(screen.getByRole('heading', { level: 1 })).not.toHaveFocus();
+    expect(screen.getByRole('heading', { level: 1 })).not.toHaveAttribute('tabindex');
   });
 
   describe('recovery mode', () => {
@@ -265,9 +273,7 @@ describe('TwoFactorChallengeForm', () => {
       expect(
         screen.getByText('Введіть один із резервних кодів, які ви зберегли під час налаштування.')
       ).toBeInTheDocument();
-      expect(
-        screen.queryByText('Введіть шестизначний код із застосунку Google Authenticator.')
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Перевірте додаток Google Authenticator')).not.toBeInTheDocument();
       expect(screen.getAllByRole('textbox')).toHaveLength(1);
       expect(screen.getByRole('textbox', { name: 'Резервний код' })).toBeInTheDocument();
       expect(screen.queryByRole('group', { name: 'Код підтвердження' })).not.toBeInTheDocument();
@@ -276,15 +282,12 @@ describe('TwoFactorChallengeForm', () => {
       ).toBeInTheDocument();
     });
 
-    it('keeps the h1 and the note in both modes', () => {
+    it('keeps the h1 in recovery mode', () => {
       mount({ mode: 'recovery' });
 
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
         'Двофакторна автентифікація'
       );
-      expect(
-        screen.getByText('Код можна ввести протягом 5 хвилин після входу.')
-      ).toBeInTheDocument();
     });
 
     it('hands the typed text to submit untouched, so the hook normalises it', async () => {
@@ -330,6 +333,7 @@ describe('TwoFactorChallengeForm', () => {
 
   it('puts the mode toggle straight after the submit in the Tab order', async () => {
     mount();
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
     act(() => screen.getByRole('button', { name: 'Підтвердити' }).focus());
 
     await userEvent.tab();

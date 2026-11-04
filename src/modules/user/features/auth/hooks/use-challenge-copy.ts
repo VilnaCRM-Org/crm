@@ -9,7 +9,6 @@ export default function useChallengeCopy(mode: TwoFactorCodeKind): ChallengeCopy
   return {
     title: t('two_factor.title'),
     subtitle: mode === 'totp' ? t('two_factor.subtitle') : t('two_factor.recovery.subtitle'),
-    note: t('two_factor.note'),
     submitLabel: t('two_factor.submit_button'),
     submittingLabel: t('two_factor.submitting'),
   };

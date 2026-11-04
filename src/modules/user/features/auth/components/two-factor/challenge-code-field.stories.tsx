@@ -19,7 +19,7 @@ const meta: Meta<typeof ChallengeCodeField> = {
   component: ChallengeCodeField,
   tags: ['autodocs'],
   decorators: [withFormProvider({ twoFactorCode: '' })],
-  args: { state: RESTING },
+  args: { state: RESTING, onComplete: () => undefined },
   parameters: {
     docs: {
       description: {
@@ -27,7 +27,7 @@ const meta: Meta<typeof ChallengeCodeField> = {
           'The six-cell code field of the challenge form: it writes the twoFactorCode value, ' +
           'shows ' +
           'the field error under the group, locks the cells while a request is in flight and ' +
-          "follows the hook's focus requests.",
+          "follows the hook's focus requests. The sixth digit calls onComplete, which submits.",
       },
       story: { inline: false },
     },

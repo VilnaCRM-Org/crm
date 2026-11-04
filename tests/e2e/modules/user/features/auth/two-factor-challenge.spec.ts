@@ -99,10 +99,10 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
   }) => {
     await signInToChallenge(page, credentials);
 
-    await expect(challengeHeadingOf(page)).toBeFocused();
+    await expect(codeCellsOf(page).first()).toBeFocused();
+    await expect(challengeHeadingOf(page)).toBeVisible();
     await expect(page).toHaveTitle(`${challengeText.title} - VilnaCRM`);
     await expect(page.getByText(challengeText.subtitle)).toBeVisible();
-    await expect(page.getByText(challengeText.note)).toBeVisible();
     await expect(codeCellsOf(page)).toHaveCount(6);
     await expect(confirmButtonOf(page)).toBeVisible();
     await expect(challengeBackOf(page)).toBeVisible();
@@ -132,7 +132,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await expect(challengeHeadingOf(page)).toBeVisible();
 
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
 
     await expect(page).toHaveURL(PRESERVED_DESTINATION);
     await expect(
@@ -155,7 +154,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await signInToChallenge(page, credentials);
 
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
 
     await expect(page.getByText(challengeText.invalidCode)).toBeVisible();
     for (const cell of await codeCellsOf(page).all()) {
@@ -173,7 +171,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await signInToChallenge(page, credentials);
 
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
 
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
     await expect(page.getByText(challengeText.expiredNotice)).toHaveCount(1);
@@ -190,7 +187,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await signInToChallenge(page, credentials);
 
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
 
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
     await expect(page.getByText(challengeText.lockedNotice)).toHaveCount(1);
@@ -202,7 +198,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await signInToChallenge(page, credentials);
 
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
 
     await expect(page.getByRole('alert')).toHaveText(challengeText.rateLimited);
     await expect(challengeBannerOf(page, challengeText.rateLimited)).toBeFocused();
@@ -213,7 +208,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     const challenge = await stubChallenge(page, ['unavailable', 'completed']);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
     await expect(
       page.getByRole('alert').filter({ hasText: challengeText.transient })
     ).toBeVisible();
@@ -242,7 +236,6 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     ]);
     await signInToChallenge(page, credentials);
     await typeCode(page, CODE);
-    await confirmButtonOf(page).click();
     await expect.poll(() => challenge.count()).toBe(1);
 
     await challengeBackOf(page).click();

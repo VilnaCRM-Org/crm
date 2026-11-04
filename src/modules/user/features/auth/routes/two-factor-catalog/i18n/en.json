@@ -1,8 +1,7 @@
 {
   "two_factor": {
     "title": "Two-factor authentication",
-    "subtitle": "Enter the six-digit code from the Google Authenticator app.",
-    "note": "You can enter the code within 5 minutes of signing in.",
+    "subtitle": "Check the Google Authenticator app",
     "code_label": "Verification code",
     "cell_label": "Digit {{position}} of {{total}}",
     "submit_button": "Confirm",

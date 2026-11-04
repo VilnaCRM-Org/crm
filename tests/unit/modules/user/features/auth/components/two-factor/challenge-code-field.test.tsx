@@ -21,12 +21,18 @@ const RESTING: TwoFactorChallengeState = {
   isSubmitting: false,
 };
 
-function Harness({ state }: { state: TwoFactorChallengeState }): JSX.Element {
+function Harness({
+  state,
+  onComplete = jest.fn(),
+}: {
+  state: TwoFactorChallengeState;
+  onComplete?: () => void;
+}): JSX.Element {
   const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
   return (
     <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>
       <FormProvider {...methods}>
-        <ChallengeCodeField state={state} />
+        <ChallengeCodeField state={state} onComplete={onComplete} />
         <p aria-label="value">{methods.watch('twoFactorCode')}</p>
       </FormProvider>
     </I18nextProvider>

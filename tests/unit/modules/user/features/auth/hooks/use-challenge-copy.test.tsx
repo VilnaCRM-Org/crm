@@ -18,7 +18,7 @@ const wrapperFor = (locale: 'uk' | 'en'): ((props: WrapperProps) => JSX.Element)
 
 describe('useChallengeCopy', () => {
   it.each([
-    ['totp', 'Введіть шестизначний код із застосунку Google Authenticator.'],
+    ['totp', 'Перевірте додаток Google Authenticator'],
     ['recovery', 'Введіть один із резервних кодів, які ви зберегли під час налаштування.'],
   ] as const)('reads the %s subtitle', (mode, subtitle) => {
     const { result } = renderHook(() => useChallengeCopy(mode), { wrapper: wrapperFor('uk') });
@@ -41,15 +41,9 @@ describe('useChallengeCopy', () => {
 
     expect(result.current).toMatchObject({
       title: 'Two-factor authentication',
-      subtitle: 'Enter the six-digit code from the Google Authenticator app.',
+      subtitle: 'Check the Google Authenticator app',
       submitLabel: 'Confirm',
       submittingLabel: 'Verifying…',
     });
-  });
-
-  it('gives the five-minute note text', () => {
-    const { result } = renderHook(() => useChallengeCopy('totp'), { wrapper: wrapperFor('uk') });
-
-    expect(result.current.note).toBe('Код можна ввести протягом 5 хвилин після входу.');
   });
 });

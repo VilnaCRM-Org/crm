@@ -5,6 +5,7 @@ import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-v
 
 export interface ChallengeCodeFieldProps {
   readonly state: TwoFactorChallengeState;
+  readonly onComplete: () => void;
 }
 
 export interface RecoveryCodeFieldProps {
@@ -25,16 +26,15 @@ export interface ChallengeBannerProps {
 export interface ChallengeCopy {
   readonly title: string;
   readonly subtitle: string;
-  readonly note: string;
   readonly submitLabel: string;
   readonly submittingLabel: string;
 }
 
-export type ChallengeFormProps = Omit<
+export type ChallengeFormFields = Omit<
   UIFormProps<TwoFactorDto>,
   'children' | 'isSubmitting' | 'titleComponent'
 >;
 
-export interface ChallengeNoteProps {
-  readonly text: string;
+export interface ChallengeFormProps extends ChallengeFormFields {
+  readonly requestSubmit: () => void;
 }
