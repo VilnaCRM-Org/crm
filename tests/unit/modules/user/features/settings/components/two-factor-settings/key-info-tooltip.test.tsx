@@ -12,9 +12,7 @@ function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>{children}</I18nextProvider>;
 }
 
-const INFO =
-  'Цей ключ дозволить вам відновити Authenticator у разі втрати телефона. ' +
-  'Інакше скидання Google Authenticator займе щонайменше 7 днів.';
+const INFO = 'Цей ключ дозволить вам відновити Authenticator у разі втрати телефона.';
 
 const button = (): HTMLElement => screen.getByRole('button', { name: 'Навіщо зберігати ключ' });
 

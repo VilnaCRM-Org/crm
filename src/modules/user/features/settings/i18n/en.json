@@ -61,7 +61,7 @@
         "copy_failed": "Could not copy. Select the key and copy it by hand.",
         "copy_backup_key": "Copy backup key",
         "key_info_label": "Why save the key",
-        "key_info": "This key lets you restore your Authenticator if you lose your phone. Otherwise, resetting Google Authenticator takes at least 7 days."
+        "key_info": "This key lets you restore your Authenticator if you lose your phone."
       },
       "confirm": {
         "code_label": "Code from the app",

@@ -285,7 +285,8 @@ Deliberate differences, each for a reason a frame cannot show:
 The tooltip has no frame at 1025 to 1439 px, where the card is narrower than it: there it aligns to
 the step's right edge without an arrow, and on a phone it fills the step, so it can never add
 horizontal scroll. It opens on hover, focus and tap, stays while hovered, and closes on Escape, on
-leaving and on a press elsewhere. Its "at least 7 days" sentence is translated from the frame.
+leaving and on a press elsewhere. It drops the frame's second sentence, that a reset takes at
+least 7 days (owner decision of 2026-11-04): nothing confirms that process exists.
 
 States Figma does not draw follow the card: the skeleton and the load failure render inside the
 card, the skeleton reserves the loaded card's height at each layout, and "Спробувати ще раз" is
