@@ -3,8 +3,8 @@ status: complete
 workflowType: ux-design
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-03
-iteration: 2
+revised: 2026-11-04
+iteration: 3
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -32,7 +32,7 @@ inputDocuments:
 # UX spec: app shell navigation (header, sidebar, drawer, user menu)
 
 **Author:** ux-designer (Sally), autonomous run **Date:** 2026-10-22 (revised 2026-11-03: the
-userSettings flag removal) **Feature:** `app-shell-navigation`
+userSettings flag removal; 2026-11-04: the settings page centred) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -41,6 +41,11 @@ userSettings flag removal) **Feature:** `app-shell-navigation`
 > "while `userSettings` is on" now always holds, and every "`userSettings` off" row, scenario or
 > acceptance criterion describes a state no build reaches any more; they are kept unchanged as the
 > record of the plan as approved.
+
+> **Owner decision of 2026-11-04 (settings centred, DV-12).** The owner asked for `/settings` to be
+> centred at 1440, which reverses the rail's "x 125, title x 137, as drawn" (§4.4 and P-51). Above
+> 1024 px the heading and grid centre in the content column, and the desktop rail keeps no right
+> margin. Measurements are in the shell README, DV-12. The rows below are kept as approved.
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"), the
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N") and the

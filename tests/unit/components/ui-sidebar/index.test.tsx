@@ -137,9 +137,7 @@ describe('UISidebar', () => {
 
     const wrapper = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
 
-    expect(styleRuleFor(wrapper)?.getPropertyValue('transition')).toBe(
-      'width 200ms ease-out,margin-right 200ms ease-out'
-    );
+    expect(styleRuleFor(wrapper)?.getPropertyValue('transition')).toBe('width 200ms ease-out');
     expect(
       mediaStyleRuleFor(wrapper, 'prefers-reduced-motion: reduce')?.getPropertyValue(
         'transition-duration'
@@ -194,18 +192,9 @@ describe('UISidebar', () => {
     expect(container).not.toContainHTML('MuiTouchRipple');
   });
 
-  it('keeps the page 41 px clear of the desktop rail, so it starts at x 125 (P-51)', async () => {
-    const user = userEvent.setup();
-    renderSidebar({ layout: 'desktop' });
-    await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
-
-    const wrapper = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
-
-    expect(styleRuleFor(wrapper)?.getPropertyValue('margin-right')).toBe('41px');
-  });
-
   it.each([
     ['desktop', false],
+    ['desktop', true],
     ['tablet', false],
     ['tablet', true],
   ] as const)(
