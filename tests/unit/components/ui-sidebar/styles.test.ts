@@ -138,7 +138,7 @@ describe('sidebar styles', () => {
     expect(styles.handleGlyph).toEqual({
       desktop: {
         position: 'absolute',
-        top: '2px',
+        top: '3px',
         left: '3px',
         width: '16px',
         height: '16px',
