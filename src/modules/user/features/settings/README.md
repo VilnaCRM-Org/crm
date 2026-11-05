@@ -64,7 +64,8 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
 
 ## Shared pieces
 
-Imported from #315 (password recovery), not copied:
+Each shared piece has one owner (architecture §15.2). Imported from #315 (password recovery), not
+copied:
 
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
 - `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
@@ -80,6 +81,10 @@ Owned here for #331 (two-factor authentication), which imports them rather than 
 - `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
   an assertive one for error texts, both always mounted, at most three on screen.
 - The `SettingsGrid`, whose second slot is reserved for the two-factor card.
+
+Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
+`SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
+`error.text` token, the home link and the `session_ended` notice.
 
 ## Page tree
 

@@ -105,6 +105,10 @@ test.describe('Settings save failures (issue #330)', () => {
     await editName(page, NEW_NAME, password);
     await saveNameButton(page).click();
     await expect(saveNameButton(page)).toBeDisabled();
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
+    await expect(page.locator('body')).toBeFocused();
 
     await context.setOffline(true);
     gate.release();
