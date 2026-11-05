@@ -209,6 +209,15 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await expect(closes).toHaveCount(3);
 
     await page.setViewportSize(REFLOW_VIEWPORT);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Number.parseFloat(
+            document.documentElement.style.getPropertyValue('scroll-padding-bottom')
+          )
+        )
+      )
+      .toBeLessThanOrEqual(REFLOW_VIEWPORT.height / 2);
     await page.evaluate(() => window.scrollTo(0, 0));
     await clearButton(page).focus();
     await saveButton(page).focus();
