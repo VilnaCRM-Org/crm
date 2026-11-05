@@ -12,9 +12,12 @@ function revealFocused(stack: HTMLElement, top: number): void {
 
 function reserveClearance(stack: HTMLElement): () => void {
   const root = document.documentElement;
+  const page = document.body;
   const reserve = (): void => {
     const { top } = stack.getBoundingClientRect();
-    root.style.setProperty('scroll-padding-bottom', `${window.innerHeight - top}px`);
+    const clearance = `${window.innerHeight - top}px`;
+    root.style.setProperty('scroll-padding-bottom', clearance);
+    page.style.setProperty('padding-bottom', clearance);
     revealFocused(stack, top);
   };
   reserve();
@@ -22,6 +25,7 @@ function reserveClearance(stack: HTMLElement): () => void {
   return (): void => {
     window.removeEventListener('resize', reserve);
     root.style.removeProperty('scroll-padding-bottom');
+    page.style.removeProperty('padding-bottom');
   };
 }
 

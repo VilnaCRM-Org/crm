@@ -1420,7 +1420,9 @@ export interface ToastQueue {
   px (FR-20). No global stylesheet changes. Amended 2026-11-05 (WCAG 2.4.11): the padding is the
   distance from the stack's top to the viewport bottom, bottom inset included, and the stack's
   `maxHeight` is half of `100dvh` less that inset, scrolling inside. One limit therefore serves
-  both, so the reservation always covers the stack, also at the 320 × 256 reflow size.
+  both, so the reservation always covers the stack, also at the 320 × 256 reflow size. The same
+  value is set as `padding-bottom` on `body`, because scroll padding moves where focus scrolling
+  stops but adds no scrollable space, and the footer links would otherwise stay under the stack.
 - **Motion.** None: toasts appear and leave without animation, so reduced motion needs no
   special case.
 - **Tokens.** `paletteColors.success.surface` `#E8F4EF`, `success.icon` `#38B386`,
