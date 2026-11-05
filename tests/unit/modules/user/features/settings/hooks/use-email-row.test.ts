@@ -20,7 +20,12 @@ type Props = Parameters<typeof useEmailRow>[0];
 
 const props = (confirmed: boolean): Props => ({
   user: buildUserEntity({ confirmed }),
-  adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
+  adoption: {
+    adopt: jest.fn(),
+    confirm: jest.fn(),
+    isCurrent: (): boolean => true,
+    revision: (): number => 0,
+  },
   toasts: {
     toasts: { items: [] },
     announcement: '',
@@ -53,7 +58,6 @@ describe('useEmailRow', () => {
     expect(result.current).toStrictEqual({
       confirmed: true,
       busy: false,
-      resending: false,
       resend,
     });
   });
@@ -68,15 +72,6 @@ describe('useEmailRow', () => {
 
     const { result } = renderHook(() => useEmailRow(props(false), saving));
 
-    expect(result.current).toStrictEqual({ confirmed: false, busy: true, resending, resend });
-  });
-
-  it('reports a running resend on its own, so the form can hold Save until it settles', () => {
-    mockEmailResend.mockReturnValue({ isSubmitting: true, resend });
-
-    const { result } = renderHook(() => useEmailRow(props(false), false));
-
-    expect(result.current.resending).toBe(true);
-    expect(result.current.busy).toBe(true);
+    expect(result.current).toStrictEqual({ confirmed: false, busy: true, resend });
   });
 });

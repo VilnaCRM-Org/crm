@@ -5,9 +5,12 @@ import { createRef, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import ProfileForm from '@/modules/user/features/settings/components/profile-form';
-import { buildUserEntity } from '@tests/builders';
+import { buildEmail, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { doubledClass, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+
+const NEW_EMAIL = buildEmail();
+const NEW_PASSWORD = buildPassword();
 
 const mockUpdate = jest.fn();
 const mockProvider = { update: mockUpdate, resend: jest.fn() };
@@ -37,7 +40,12 @@ const SAVE = 'Зберегти зміни';
 
 const props = (overrides: Partial<Props> = {}): Props => ({
   user,
-  adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
+  adoption: {
+    adopt: jest.fn(),
+    confirm: jest.fn(),
+    isCurrent: (): boolean => true,
+    revision: (): number => 0,
+  },
   version: 0,
   refocus: false,
   toasts: {
@@ -289,14 +297,14 @@ describe('ProfileForm', () => {
     await act(async () => settle(okOutcome));
   });
 
-  it('holds Save, and only Save, while a resend is in flight', async () => {
+  it('leaves Save and the form enabled while a resend is in flight', async () => {
     let settle: (value: unknown) => void = () => undefined;
     mockProvider.resend.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     render(form({ user: buildUserEntity({ confirmed: false }) }), { wrapper });
 
     await userEvent.click(screen.getByRole('button', { name: 'Надіслати повторно' }));
 
-    expect(save()).toBeDisabled();
+    expect(save()).toBeEnabled();
     expect(document.forms[0]).toHaveAttribute('aria-busy', 'false');
     expect(screen.getByRole('button', { name: 'Очистити' })).not.toHaveAttribute('aria-disabled');
     expect(field(NAME)).not.toHaveAttribute('readonly');
@@ -311,16 +319,26 @@ describe('ProfileForm', () => {
     let settle: (value: unknown) => void = () => undefined;
     mockUpdate.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     const adopt = jest.fn();
-    render(form({ adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true } }), {
-      wrapper,
-    });
+    render(
+      form({
+        adoption: {
+          adopt,
+          confirm: jest.fn(),
+          isCurrent: (): boolean => true,
+          revision: (): number => 0,
+        },
+      }),
+      {
+        wrapper,
+      }
+    );
     await userEvent.type(field(NAME), ' Іванівна');
     await userEvent.type(field(CURRENT), 'abc{Enter}');
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
 
     expect(field(CURRENT)).toHaveFocus();
     await userEvent.type(field(CURRENT), 'def{Enter}');
-    await userEvent.type(field(NEW), 'Next12345');
+    await userEvent.type(field(NEW), NEW_PASSWORD);
     expect(field(NEW)).toHaveFocus();
     await userEvent.type(field(NAME), 'x');
     await userEvent.type(field('E-mail'), 'x');
@@ -339,8 +357,8 @@ describe('ProfileForm', () => {
     [NAME, 'E-mail', CURRENT, NEW].forEach((label) => {
       expect(field(label)).not.toHaveAttribute('readonly');
     });
-    await userEvent.type(field(NEW), 'Next12345');
-    expect(field(NEW)).toHaveValue('Next12345');
+    await userEvent.type(field(NEW), NEW_PASSWORD);
+    expect(field(NEW)).toHaveValue(NEW_PASSWORD);
     expect(adopt).not.toHaveBeenCalled();
   });
 
@@ -354,9 +372,19 @@ describe('ProfileForm', () => {
 
   it('adopts the saved entity and focuses the save button once the save settled', async () => {
     const adopt = jest.fn();
-    render(form({ adoption: { adopt, confirm: jest.fn(), isCurrent: (): boolean => true } }), {
-      wrapper,
-    });
+    render(
+      form({
+        adoption: {
+          adopt,
+          confirm: jest.fn(),
+          isCurrent: (): boolean => true,
+          revision: (): number => 0,
+        },
+      }),
+      {
+        wrapper,
+      }
+    );
     await userEvent.type(field(NAME), ' Іванівна');
     await userEvent.type(field(CURRENT), 'abc');
     await userEvent.click(screen.getByRole('heading', { level: 2, name: 'Пароль' }));
@@ -521,12 +549,12 @@ describe('ProfileForm', () => {
   it('reads the new defaults and clears the passwords when the version changes', async () => {
     const view = render(form({ version: 0 }), { wrapper });
     await userEvent.type(field(CURRENT), 'abc');
-    const next = buildUserEntity({ fullName: 'Ірина Коваль', email: 'new@example.com' });
+    const next = buildUserEntity({ fullName: 'Ірина Коваль', email: NEW_EMAIL });
 
     view.rerender(form({ user: next, version: 1 }));
 
     expect(field(NAME)).toHaveValue('Ірина Коваль');
-    expect(field('E-mail')).toHaveValue('new@example.com');
+    expect(field('E-mail')).toHaveValue(NEW_EMAIL);
     expect(field(CURRENT)).toHaveValue('');
     expect(field(NEW)).toHaveValue('');
   });
@@ -548,7 +576,7 @@ describe('ProfileForm', () => {
       await userEvent.clear(field(NAME));
       await userEvent.type(field(NAME), 'Олена');
       await userEvent.type(field(CURRENT), 'abc');
-      await userEvent.type(field(NEW), 'Next12345');
+      await userEvent.type(field(NEW), NEW_PASSWORD);
       await userEvent.click(save());
       await screen.findByText('Будь ласка, введіть повне ім’я у правильному форматі');
       const clear = screen.getByRole('button', { name: 'Очистити' });
@@ -579,7 +607,7 @@ describe('ProfileForm', () => {
     it('masks both passwords again and resets their toggles', async () => {
       render(form(), { wrapper });
       await userEvent.type(field(CURRENT), 'abc');
-      await userEvent.type(field(NEW), 'Next12345');
+      await userEvent.type(field(NEW), NEW_PASSWORD);
       const [currentToggle, newToggle] = screen.getAllByRole('button', { name: 'Показати пароль' });
       await userEvent.click(currentToggle as HTMLElement);
       await userEvent.click(newToggle as HTMLElement);

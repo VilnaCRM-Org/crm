@@ -38,6 +38,7 @@ const setup = (): {
   adopt: jest.Mock;
   confirm: jest.Mock;
   isCurrent: jest.Mock;
+  revision: jest.Mock;
   show: jest.Mock;
   result: { current: ReturnType<typeof useEmailResend> };
   rerender: () => void;
@@ -46,12 +47,16 @@ const setup = (): {
   const adopt = jest.fn();
   const confirm = jest.fn();
   const isCurrent = jest.fn(() => true);
+  const revision = jest.fn(() => 0);
   const show = jest.fn();
   const toasts = { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() };
-  const view = renderHook(() => useEmailResend(user, { adopt, confirm, isCurrent }, toasts), {
-    wrapper,
-  });
-  return { adopt, confirm, isCurrent, show, ...view };
+  const view = renderHook(
+    () => useEmailResend(user, { adopt, confirm, isCurrent, revision }, toasts),
+    {
+      wrapper,
+    }
+  );
+  return { adopt, confirm, isCurrent, revision, show, ...view };
 };
 
 describe('useEmailResend', () => {
@@ -103,6 +108,24 @@ describe('useEmailResend', () => {
       });
     }
   );
+
+  it('keeps the toast but drops the flag when a Save settled while the resend ran', async () => {
+    mockResend.mockResolvedValue({ kind: 'sent', confirmed: true });
+    const { result, confirm, revision, show } = setup();
+    revision.mockReturnValueOnce(0).mockReturnValue(1);
+    const email = document.createElement('input');
+    email.id = 'email';
+    document.body.append(email);
+
+    await act(async () => {
+      result.current.resend();
+    });
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(email).not.toHaveFocus();
+    expect(show).toHaveBeenCalledTimes(1);
+    email.remove();
+  });
 
   it('moves focus to the e-mail field when the payload says the address is confirmed', async () => {
     mockResend.mockResolvedValue({ kind: 'sent', confirmed: true });

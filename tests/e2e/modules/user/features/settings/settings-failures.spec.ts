@@ -1,4 +1,4 @@
-import { buildPassword } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
@@ -24,7 +24,7 @@ import {
   text,
 } from './utils/settings-page';
 
-const NEW_NAME = 'Іван Коваль';
+const NEW_NAME = buildFullName();
 const password = buildPassword();
 
 test.describe('Settings save failures (issue #330)', () => {
@@ -64,7 +64,7 @@ test.describe('Settings save failures (issue #330)', () => {
     });
     await openLoadedSettings(page);
 
-    await fillInput(emailField(page), 'taken@example.com');
+    await fillInput(emailField(page), buildEmail());
     await fillInput(currentPasswordField(page), password);
     await saveButton(page).click();
 

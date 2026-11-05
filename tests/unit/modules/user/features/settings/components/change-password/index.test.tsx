@@ -9,8 +9,11 @@ import type { PasswordRuleEvaluator } from '@/components/types/ui-password-polic
 import ChangePassword from '@/modules/user/features/settings/components/change-password';
 import type { ProfileFormValues } from '@/modules/user/features/settings/types/user-profile';
 import passwordValidator from '@/modules/user/lib/validations/password';
+import { buildPassword } from '@tests/builders';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+
+const NEW_PASSWORD = buildPassword();
 
 const VALUES: ProfileFormValues = {
   fullName: 'Олена Петренко',
@@ -183,7 +186,7 @@ describe('ChangePassword', () => {
 
     expect(screen.getByLabelText('Поточний пароль')).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Новий пароль')).toHaveAttribute('readonly');
-    await userEvent.type(screen.getByLabelText('Новий пароль'), 'Next12345');
+    await userEvent.type(screen.getByLabelText('Новий пароль'), NEW_PASSWORD);
     expect(screen.getByLabelText('Новий пароль')).toHaveValue('');
     expect(screen.getByLabelText('Новий пароль')).toHaveFocus();
 

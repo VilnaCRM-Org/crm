@@ -8,6 +8,12 @@ export interface UserEntityAdoption {
   readonly adopt: AdoptLoadedUser;
   readonly confirm: (email: string, confirmed: boolean) => void;
   readonly isCurrent: (email: string) => boolean;
+  readonly revision: () => number;
+}
+
+export interface AdoptedUser {
+  readonly email: string | null;
+  readonly revision: number;
 }
 
 export interface ProfileLoadState {

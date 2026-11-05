@@ -37,7 +37,12 @@ const props = (overrides: Partial<Props> = {}): Props => ({
   version: 0,
   refocus: false,
   retry: jest.fn(),
-  adoption: { adopt: jest.fn(), confirm: jest.fn(), isCurrent: (): boolean => true },
+  adoption: {
+    adopt: jest.fn(),
+    confirm: jest.fn(),
+    isCurrent: (): boolean => true,
+    revision: (): number => 0,
+  },
   toasts: {
     toasts: { items: [] },
     announcement: '',
