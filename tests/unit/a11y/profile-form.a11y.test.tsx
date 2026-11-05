@@ -32,7 +32,6 @@ const form = (): JSX.Element => (
       isCurrent: (): boolean => true,
       revision: (): number => 0,
     }}
-    version={0}
     refocus={false}
     toasts={{
       toasts: { items: [] },
@@ -41,7 +40,7 @@ const form = (): JSX.Element => (
       show: jest.fn(),
       dismiss: jest.fn(),
     }}
-    saveRef={createRef<HTMLButtonElement>()}
+    saveRef={createRef<HTMLElement>()}
   />
 );
 
@@ -62,7 +61,7 @@ describe('profile form accessibility', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
 
-    expect(document.forms[0]).toHaveAttribute('aria-busy', 'true');
+    expect(document.forms[2]).toHaveAttribute('aria-busy', 'true');
     await expectNoA11yViolations(view.container);
   });
 
@@ -91,5 +90,40 @@ describe('profile form accessibility', () => {
 
     await expectNoA11yViolations(view.container);
     expect(screen.getByRole('button', { name: 'Очистити' })).toBeInTheDocument();
+  });
+
+  it('has no axe violations with the name form revealed', async () => {
+    const view = render(form(), { wrapper });
+
+    await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
+
+    expect(screen.getByLabelText('Пароль для зміни імені')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Зберегти ім’я' })).toBeVisible();
+    await expectNoA11yViolations(view.container);
+  });
+
+  it('has no axe violations with the name and e-mail forms revealed together', async () => {
+    const view = render(form(), { wrapper });
+
+    await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
+    await userEvent.type(screen.getByLabelText('E-mail'), '.ua');
+
+    expect(screen.getAllByRole('button', { name: 'Очистити' })).toHaveLength(3);
+    await expectNoA11yViolations(view.container);
+  });
+
+  it('has no axe violations with a server error on the revealed name password', async () => {
+    mockUpdate.mockResolvedValue({
+      kind: 'invalid',
+      errors: { items: [{ field: 'currentPassword', reason: 'password_wrong' }] },
+    });
+    const view = render(form(), { wrapper });
+    await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), 'abc');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти ім’я' }));
+    await screen.findByText('Неправильний поточний пароль');
+
+    await expectNoA11yViolations(view.container);
   });
 });

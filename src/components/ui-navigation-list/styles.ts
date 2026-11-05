@@ -91,7 +91,6 @@ export default {
   itemDrawer: {
     position: 'relative',
     flexShrink: 0,
-    width: '233px',
     margin: 0,
     padding: 0,
     listStyle: 'none',

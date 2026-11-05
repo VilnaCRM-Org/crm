@@ -1,0 +1,77 @@
+{
+  "uuid": "5f3b8a52-1c0e-4d59-9c0a-7f7a1f2a6b10",
+  "lastMigration": 33,
+  "name": "CRM local stack sign-in",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 8080,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "b2a7c1de-4f60-4a0b-8e21-3d9c5e7f1a22",
+      "type": "http",
+      "documentation": "Answers the demo user's sign-in; every other GraphQL call reaches user-service.",
+      "method": "post",
+      "endpoint": "api/graphql",
+      "responses": [
+        {
+          "uuid": "c9e4f3a1-7b12-4c8d-a6f0-5e2b8d4c9f33",
+          "body": "{\"data\":{\"signInUser\":{\"user\":{\"success\":true,\"twoFactorEnabled\":false,\"accessToken\":\"__ACCESS_TOKEN__\",\"pendingSessionId\":null}}}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Demo user sign-in",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "body",
+              "modifier": "operationName",
+              "value": "SignInUser",
+              "invert": false,
+              "operator": "equals"
+            },
+            {
+              "target": "body",
+              "modifier": "variables.input.email",
+              "value": "__DEMO_EMAIL__",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "AND",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": "FALLBACK",
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [{ "type": "route", "uuid": "b2a7c1de-4f60-4a0b-8e21-3d9c5e7f1a22" }],
+  "proxyMode": true,
+  "proxyHost": "http://host.docker.internal:8081",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": false,
+  "headers": [],
+  "proxyReqHeaders": [],
+  "proxyResHeaders": [],
+  "data": [],
+  "callbacks": []
+}

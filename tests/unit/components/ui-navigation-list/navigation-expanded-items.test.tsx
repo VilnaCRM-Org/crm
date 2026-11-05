@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import NavigationExpandedItems from '@/components/ui-navigation-list/navigation-expanded-items';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 
 describe('NavigationExpandedItems', () => {
@@ -24,7 +25,7 @@ describe('NavigationExpandedItems', () => {
     expect(screen.getByRole('button', { name: 'Expand Settings' })).toBeInTheDocument();
   });
 
-  it('holds a drawer product row item to the drawn 233 px width', () => {
+  it('lets a drawer product row item fill the full-screen drawer', () => {
     renderShell(
       <ol>
         <NavigationExpandedItems layout="drawer" items={navigationItems} currentId={null} />
@@ -34,7 +35,8 @@ describe('NavigationExpandedItems', () => {
     const [boards] = screen.getAllByRole('listitem');
 
     expect(boards).toContainElement(screen.getByRole('link', { name: 'Boards' }));
-    expect(boards).toHaveStyle({ position: 'relative', width: '233px' });
+    expect(boards).toHaveStyle({ position: 'relative' });
+    expect(styleRuleFor(boards as HTMLElement)?.getPropertyValue('width')).toBe('');
   });
 
   it.each(['desktop', 'tablet'] as const)(

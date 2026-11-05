@@ -5,6 +5,7 @@ import { axe } from 'jest-axe';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import UINavigationDrawer from '@/components/ui-navigation-drawer';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
@@ -192,7 +193,7 @@ describe('UINavigationDrawer', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('sizes the panel to the drawn 313 by 622 box under the 56 px header', async () => {
+  it('fills the screen under the 56 px header with a panel of no fixed size', async () => {
     renderDrawer();
     await screen.findByRole('dialog');
 
@@ -200,6 +201,12 @@ describe('UINavigationDrawer', () => {
       .getAllByRole('generic', { hidden: true })
       .find((box) => box.style.transition.includes('transform')) as HTMLElement;
 
-    expect(panel).toHaveStyle({ height: '622px', top: '56px', right: '0px' });
+    expect(panel).toHaveStyle({ position: 'absolute', top: '56px', right: '0px' });
+    expect(panel).toHaveStyle({ bottom: '0px', left: '0px' });
+    const rule = styleRuleFor(panel);
+    expect(rule?.getPropertyValue('width')).toBe('');
+    expect(rule?.getPropertyValue('height')).toBe('');
+    expect(rule?.getPropertyValue('max-height')).toBe('');
+    expect(rule?.getPropertyValue('box-shadow')).toBe('');
   });
 });

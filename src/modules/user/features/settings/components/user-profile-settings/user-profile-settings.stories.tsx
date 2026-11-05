@@ -16,7 +16,6 @@ const meta: Meta<typeof UserProfileSettings> = {
   args: {
     status: 'loading',
     user: null,
-    version: 0,
     refocus: false,
     retry: noop,
     adoption: {

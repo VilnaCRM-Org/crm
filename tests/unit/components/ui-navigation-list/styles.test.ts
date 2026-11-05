@@ -69,7 +69,6 @@ describe('navigation list styles', () => {
     expect(styles.itemDrawer).toEqual({
       position: 'relative',
       flexShrink: 0,
-      width: '233px',
       margin: 0,
       padding: 0,
       listStyle: 'none',

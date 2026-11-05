@@ -55,6 +55,17 @@ EOF
   assert_output_contains 'Dev service is already running.'
 }
 
+@test "local stack targets delegate to the start script and the compose file" {
+  run make -n -C "$MAKEFILE_SANDBOX" start-local-stack
+  [ "$status" -eq 0 ]
+  assert_output_contains './scripts/local-stack/start.sh'
+
+  reset_command_log
+  run_make_target stop-local-stack
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.local-stack.yml down'
+}
+
 @test "build, formatting, lint, and developer convenience targets shell out correctly" {
   reset_command_log
   run_make_target build
@@ -140,6 +151,7 @@ EOF
   assert_log_contains 'docker compose -f docker-compose.test.yml config -q'
   assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q'
   assert_log_contains 'docker compose -f docker-compose.memory-leak.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.local-stack.yml config -q'
 }
 
 @test "commit contract targets lint the header and the range with their own configs" {

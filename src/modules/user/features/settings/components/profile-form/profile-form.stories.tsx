@@ -37,7 +37,6 @@ const meta: Meta<typeof ProfileForm> = {
       isCurrent: (): boolean => true,
       revision: (): number => 0,
     },
-    version: 0,
     refocus: false,
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
@@ -46,13 +45,15 @@ const meta: Meta<typeof ProfileForm> = {
     docs: {
       description: {
         component:
-          'The profile form: the "Ваше ПІБ" row, personal details, the password pair with its ' +
-          'rule list, Save and Очистити. Only what the user changed is validated and sent. ' +
-          'Each story registers a Data provider stub behind `AUTH_TOKENS.ProfileProvider`, so ' +
-          'nothing reaches the network: by default a Save echoes the change back as saved. ' +
-          'Save with nothing changed shows the no-change status in any story; SavePending ' +
-          'keeps a Save running, and WrongCurrentPassword answers it with the field error. ' +
-          'The toast queue is a no-op here; the UserProfile page story shows the toasts.',
+          'The profile card as three forms, so one thing is saved at a time: the "Ваше ПІБ" ' +
+          'row, the e-mail row and the password pair with its rule list. The name and e-mail ' +
+          'forms reveal their own password, Save and Очистити once the value differs from the ' +
+          'saved one. Each story registers a Data provider stub behind ' +
+          '`AUTH_TOKENS.ProfileProvider`, so nothing reaches the network: by default a Save ' +
+          'echoes the change back as saved. The password Save with no new password shows the ' +
+          'no-change status in any story; SavePending keeps a Save running, and ' +
+          'WrongCurrentPassword answers it with the field error. The toast queue is a no-op ' +
+          'here; the UserProfile page story shows the toasts.',
       },
       story: { inline: false },
     },
@@ -75,8 +76,8 @@ export const SavePending: Story = {
     docs: {
       description: {
         story:
-          'Change the name, type any current password and press Save: the update never ' +
-          'settles, so the form stays in its busy state with the spinner and the announcement.',
+          'Change the name, type any password in the field it reveals and press Save: the ' +
+          'update never settles, so that form stays busy with the spinner and the announcement.',
       },
     },
   },
@@ -88,8 +89,8 @@ export const WrongCurrentPassword: Story = {
     docs: {
       description: {
         story:
-          'Change the name, type any current password and press Save: the update answers ' +
-          'that the current password is wrong, so its field shows the error.',
+          'Change the name, type any password in the field it reveals and press Save: the ' +
+          'update answers that the password is wrong, so that field shows the error.',
       },
     },
   },

@@ -132,7 +132,14 @@ export default {
   },
   cluster: {
     desktop: { ...cluster, gap: '10px' },
-    tablet: { ...cluster, gap: '8px', marginTop: '6px' },
+    tablet: {
+      ...cluster,
+      flexShrink: 1,
+      minWidth: 0,
+      gap: '8px',
+      marginTop: '6px',
+      marginLeft: '12px',
+    },
     mobile: {
       ...cluster,
       alignItems: 'center',
@@ -144,8 +151,8 @@ export default {
   },
   search: {
     desktop: { ...searchBox, width: '477px', height: '48px' },
-    tablet: { ...searchBox, width: '360px', height: '52px' },
-    drawer: { ...searchBox, width: '293px', height: '48px', margin: '13px 10px 0' },
+    tablet: { ...searchBox, flexShrink: 1, width: '360px', minWidth: '52px', height: '52px' },
+    drawer: { ...searchBox, height: '48px', margin: '13px 10px 0' },
   },
   searchInput: {
     desktop: { ...searchInput, paddingLeft: '44px', fontSize: '14px' },

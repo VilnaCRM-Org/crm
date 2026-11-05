@@ -13,12 +13,11 @@ import {
   type StubbedProfile,
 } from './utils/profile-stub';
 import {
-  editName,
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
   openLoadedSettings,
-  saveButton,
+  saveEditedName,
   text,
 } from './utils/settings-page';
 
@@ -46,8 +45,7 @@ test.describe('Settings session end (issue #330)', () => {
 
   async function endSession(page: Parameters<typeof openLoadedSettings>[0]): Promise<void> {
     await openLoadedSettings(page);
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
     await expect(page).toHaveURL(/\/sign-in$/);
   }
 

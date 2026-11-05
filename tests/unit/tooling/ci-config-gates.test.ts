@@ -149,7 +149,7 @@ describe('binding YAML format gate (issue #161)', () => {
     ];
 
     configuredFiles.forEach((variable) => expect(composeRecipe).toContain(`$(${variable})`));
-    expect(composeRecipe.match(/config -q/g)).toHaveLength(4);
+    expect(composeRecipe.match(/config -q/g)).toHaveLength(5);
 
     expect(makefile).toMatch(/^lint: .*\blint-compose\b.* ## /m);
     expect(makefile).toMatch(/^CI_LINT_TARGETS\s+=.*\blint-compose\b/m);

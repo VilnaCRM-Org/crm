@@ -9,12 +9,12 @@ export default {
     expanded: {
       desktop: { ...groupBase, padding: '0 0 12px' },
       tablet: { ...groupBase, padding: '0 0 12px' },
-      drawer: { ...groupBase, width: '233px', padding: '0 0 14px' },
+      drawer: { ...groupBase, padding: '0 0 14px' },
     },
     collapsed: {
       desktop: { ...groupBase, padding: 0 },
       tablet: { ...groupBase, padding: 0 },
-      drawer: { ...groupBase, width: '233px', padding: 0 },
+      drawer: { ...groupBase, padding: 0 },
     },
   },
   subList: { margin: 0, padding: 0, listStyle: 'none' },
@@ -51,7 +51,7 @@ export default {
       '&::after': { ...hitArea, inset: '-10px' },
     },
     drawer: {
-      left: '185px',
+      right: '24px',
       top: '12px',
       width: '24px',
       height: '24px',

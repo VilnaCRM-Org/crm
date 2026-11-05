@@ -21,6 +21,8 @@ export interface UIFormErrorAction {
   onClick: () => void;
 }
 
+export type OfflineNoticeMode = 'live' | 'inline' | 'none';
+
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   onInvalid?: SubmitErrorHandler<T> | undefined;
@@ -48,6 +50,7 @@ export interface UIFormProps<T extends FieldValues> {
   submitRef?: FocusReturnTarget | undefined;
   submitSx?: SystemStyleObject<Theme> | undefined;
   footer?: ReactNode;
+  offlineNotice?: OfflineNoticeMode | undefined;
 }
 
 export interface SubmitHandlerOptions<T extends FieldValues> {
@@ -125,6 +128,12 @@ export interface FormLeadSectionProps {
   header: FormHeaderProps;
   lead: FormLeadProps;
   offline: OfflineSubmit;
+  liveOfflineNotice: boolean;
+}
+
+export interface InlineOfflineNoticeProps {
+  offline: OfflineSubmit;
+  mode: OfflineNoticeMode;
 }
 
 export interface FormSubmitProps {
@@ -169,6 +178,14 @@ export interface BlockedReasonProps {
   block: SubmitBlock;
 }
 
+export interface SubmitAreaProps {
+  block: SubmitBlock;
+  submit: FormSubmitProps;
+  submitting: boolean;
+  disabled: boolean;
+  offline: OfflineSubmit;
+}
+
 export interface FormBodyProps<T extends FieldValues> {
   header: FormHeaderProps;
   lead: FormLeadProps;
@@ -179,4 +196,5 @@ export interface FormBodyProps<T extends FieldValues> {
   children: ReactNode;
   submitting: boolean;
   footer?: ReactNode;
+  offlineNotice: OfflineNoticeMode;
 }

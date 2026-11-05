@@ -8,8 +8,13 @@ import fullNameValidator from '@/modules/user/lib/validations/name';
 import passwordValidator from '@/modules/user/lib/validations/password';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
-import type { ProfileFieldRules, ProfileFormRules } from '../types/hooks/use-profile-form-rules';
+import type {
+  ProfileFieldRules,
+  ProfileFormRules,
+  SectionPasswordRuleContext,
+} from '../types/hooks/use-profile-form-rules';
 import type { ProfileFormValues } from '../types/user-profile/profile-form-values';
+import type { ProfileSection } from '../types/user-profile/profile-section';
 import type ProfileChangeDetector from '../utils/profile-change-detector';
 
 function nameRule(
@@ -34,15 +39,15 @@ function emailRule(
   };
 }
 
-function currentPasswordRule(
-  user: UserEntity,
-  changes: ProfileChangeDetector,
+function sectionPasswordRule(
+  section: ProfileSection,
+  { user, changes }: SectionPasswordRuleContext,
   t: TFunction
 ): ProfileFieldRules {
   const required = t('sign_up.form.password_input.required');
   return {
-    validate: (value, values) => value !== '' || changes.detect(user, values) === null || required,
-    deps: ['newPassword'],
+    validate: (value, values) =>
+      value !== '' || !changes.sectionChanged(section, user, values) || required,
   };
 }
 
@@ -63,11 +68,14 @@ export default function useProfileFormRules(
   changes: ProfileChangeDetector
 ): ProfileFormRules {
   const { t } = useTranslation();
+  const context = { user, changes };
 
   return {
     fullName: nameRule(user, changes, t),
     email: emailRule(user, changes, t),
-    currentPassword: currentPasswordRule(user, changes, t),
+    fullNamePassword: sectionPasswordRule('fullName', context, t),
+    emailPassword: sectionPasswordRule('email', context, t),
+    currentPassword: { ...sectionPasswordRule('password', context, t), deps: ['newPassword'] },
     newPassword: newPasswordRule(changes, t),
     evaluate: (value: string): PasswordRuleViewSet => passwordValidator.evaluate(value),
   };

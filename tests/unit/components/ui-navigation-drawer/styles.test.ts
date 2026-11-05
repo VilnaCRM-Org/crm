@@ -169,15 +169,13 @@ describe('navigation drawer styles', () => {
       position: 'absolute',
       top: '56px',
       right: 0,
+      bottom: 0,
+      left: 0,
       boxSizing: 'border-box',
-      width: 'min(313px, calc(100vw - 7px))',
-      height: '622px',
-      maxHeight: 'calc(100vh - 56px)',
       overflowX: 'hidden',
       overflowY: 'auto',
       pointerEvents: 'auto',
       backgroundColor: '#FFFFFF',
-      boxShadow: '-9px 4px 33px rgba(53, 59, 72, 0.07)',
       '&:focus:not(:focus-visible)': { outline: 'none' },
     });
   });

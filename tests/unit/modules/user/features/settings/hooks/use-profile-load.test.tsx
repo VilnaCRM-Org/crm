@@ -45,7 +45,6 @@ describe('useProfileLoad', () => {
     expect(result.current).toMatchObject({
       status: 'loading',
       user: null,
-      version: 0,
       refocus: false,
     });
     expect(mockRead).toHaveBeenCalledTimes(1);
@@ -154,7 +153,7 @@ describe('useProfileLoad', () => {
     expect(firstSignal.aborted).toBe(true);
   });
 
-  it('adopts a new entity, bumps the version, clears refocus and sends no read', async () => {
+  it('adopts a new entity, clears refocus and sends no read', async () => {
     mockRead.mockResolvedValue({ kind: 'ok', user: buildUserEntity() });
     const { result } = renderHook(() => useProfileLoad());
     await waitFor(() => expect(result.current.status).toBe('ready'));
@@ -166,12 +165,11 @@ describe('useProfileLoad', () => {
     act(() => result.current.adoption.adopt(next));
 
     expect(result.current.user).toBe(next);
-    expect(result.current.version).toBe(1);
     expect(result.current.refocus).toBe(false);
     expect(mockRead).toHaveBeenCalledTimes(reads);
   });
 
-  it('confirms only the confirmed flag without bumping the version or reading', async () => {
+  it('confirms only the confirmed flag without reading', async () => {
     const user = buildUserEntity({ confirmed: false });
     mockRead.mockResolvedValue({ kind: 'ok', user });
     const { result } = renderHook(() => useProfileLoad());
@@ -180,7 +178,6 @@ describe('useProfileLoad', () => {
     act(() => result.current.adoption.confirm(user.email, true));
 
     expect(result.current.user).toEqual({ ...user, confirmed: true });
-    expect(result.current.version).toBe(0);
     expect(mockRead).toHaveBeenCalledTimes(1);
   });
 
@@ -197,7 +194,6 @@ describe('useProfileLoad', () => {
     expect(saved.email).not.toBe(user.email);
     expect(result.current.user).toBe(saved);
     expect(result.current.user?.confirmed).toBe(false);
-    expect(result.current.version).toBe(1);
   });
 
   it('treats the loaded e-mail as current until a Save adopts another one', async () => {

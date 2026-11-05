@@ -37,7 +37,6 @@ function ProfileLoadAnnouncements({ status }: ProfileLoadAnnouncementsProps): JS
 export default function UserProfileSettings({
   status,
   user,
-  version,
   refocus,
   retry,
   adoption,
@@ -63,7 +62,6 @@ export default function UserProfileSettings({
           <ProfileForm
             user={user}
             adoption={adoption}
-            version={version}
             refocus={refocus}
             toasts={toasts}
             saveRef={saveRef}

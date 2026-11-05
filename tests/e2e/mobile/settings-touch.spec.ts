@@ -12,13 +12,18 @@ import {
   type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
+  clearButtonOf,
   currentPasswordField,
   emailField,
+  emailPasswordField,
   expectErrorToast,
   expectSuccessToast,
   nameField,
+  namePasswordField,
   newPasswordField,
   saveButton,
+  saveEmailButton,
+  saveNameButton,
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
@@ -39,11 +44,9 @@ const NARROW_VIEWPORT = { width: 320, height: 640 };
 const REFLOW_VIEWPORT = { width: 320, height: 256 };
 const TOAST_EDGE_PX = 16;
 
-const clearLabel: string = t('settings.profile.clear');
 const closeLabel: string = t('ui_toast.close');
 
-const clearButton = (page: Page): Locator =>
-  page.getByRole('button', { name: clearLabel, exact: true });
+const clearButton = (page: Page): Locator => clearButtonOf(currentPasswordField(page));
 
 async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   await expect
@@ -65,8 +68,8 @@ async function openByTap(page: Page): Promise<void> {
 
 async function tapSaveWith(page: Page, fullName: string): Promise<void> {
   await typeByTap(nameField(page), fullName);
-  await typeByTap(currentPasswordField(page), password);
-  await saveButton(page).tap();
+  await typeByTap(namePasswordField(page), password);
+  await saveNameButton(page).tap();
 }
 
 test.describe('Settings on touch devices (issue #330)', () => {
@@ -97,8 +100,8 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await openByTap(page);
 
     await typeByTap(emailField(page), newEmail);
-    await typeByTap(currentPasswordField(page), password);
-    await saveButton(page).tap();
+    await typeByTap(emailPasswordField(page), password);
+    await saveEmailButton(page).tap();
     await expectSuccessToast(page, text.emailSent);
     await page.getByRole('button', { name: text.resend, exact: true }).tap();
 
@@ -158,6 +161,9 @@ test.describe('Settings on touch devices (issue #330)', () => {
 
     await tapSaveWith(page, NEW_NAME);
 
+    await expectTouchTarget(namePasswordField(page), 'name password field');
+    await expectTouchTarget(saveNameButton(page), 'name Save');
+    await expectTouchTarget(clearButtonOf(nameField(page)), 'name Clear');
     await expectTouchTarget(page.getByRole('button', { name: closeLabel }), 'toast close');
     await expectTouchTarget(
       page.getByRole('button', { name: text.tryAgain, exact: true }),
@@ -182,9 +188,9 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await openByTap(page);
     await tapSaveWith(page, `${PROFILE_NODE.initials} А`);
     await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(1);
-    await saveButton(page).tap();
+    await saveNameButton(page).tap();
     await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(2);
-    await saveButton(page).tap();
+    await saveNameButton(page).tap();
     const closes = page.getByRole('button', { name: closeLabel, exact: true });
     await expect(closes).toHaveCount(3);
 
@@ -204,9 +210,9 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await openByTap(page);
     await tapSaveWith(page, `${PROFILE_NODE.initials} А`);
     await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(1);
-    await saveButton(page).tap();
+    await saveNameButton(page).tap();
     await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(2);
-    await saveButton(page).tap();
+    await saveNameButton(page).tap();
     const closes = page.getByRole('button', { name: closeLabel, exact: true });
     await expect(closes).toHaveCount(3);
 
@@ -227,15 +233,15 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await openByTap(page);
     const size = page.viewportSize();
     await typeByTap(nameField(page), NEW_NAME);
-    await typeByTap(currentPasswordField(page), password);
+    await typeByTap(namePasswordField(page), password);
     await page.setViewportSize({
       width: size?.width ?? NARROW_VIEWPORT.width,
       height: Math.round((size?.height ?? NARROW_VIEWPORT.height) * KEYBOARD_VIEWPORT_RATIO),
     });
 
-    await saveButton(page).scrollIntoViewIfNeeded();
-    await expect(saveButton(page)).toBeInViewport();
-    await saveButton(page).tap();
+    await saveNameButton(page).scrollIntoViewIfNeeded();
+    await expect(saveNameButton(page)).toBeInViewport();
+    await saveNameButton(page).tap();
 
     await expectSuccessToast(page, text.saved);
   });

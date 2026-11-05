@@ -36,6 +36,14 @@ const renderSidebar = (
   );
 
 describe('UISidebar', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
   it('is one navigation landmark named Main navigation holding one ordered list', () => {
     renderSidebar();
 
@@ -175,14 +183,27 @@ describe('UISidebar', () => {
     expect(signOut).toHaveBeenCalledTimes(1);
   });
 
-  it('starts expanded on every mount: nothing is persisted', async () => {
+  it('starts expanded when nothing was collapsed before', () => {
+    renderSidebar();
+
+    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument();
+  });
+
+  it('comes back collapsed on the next mount, and expanded once it was reopened', async () => {
     const user = userEvent.setup();
     const { unmount } = renderSidebar();
     await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
     unmount();
 
-    renderSidebar();
+    const { unmount: unmountReopened } = renderSidebar();
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+    unmountReopened();
 
+    renderSidebar();
     expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument();
   });
 
