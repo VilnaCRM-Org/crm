@@ -11,6 +11,7 @@ export default function useLoadingProfileLoadStub(): ReturnType<typeof useProfil
       adopt: (): undefined => undefined,
       confirm: (): undefined => undefined,
       isCurrent: (): boolean => true,
+      revision: (): number => 0,
     },
   };
 }

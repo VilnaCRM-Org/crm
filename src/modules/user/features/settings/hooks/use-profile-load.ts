@@ -1,4 +1,4 @@
-import { type Dispatch, type RefObject, useEffect, useReducer, useRef } from 'react';
+import { type Dispatch, useEffect, useReducer } from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
@@ -6,13 +6,13 @@ import { useService } from '@/providers/di';
 
 import type ProfileProvider from '../data-providers/profile-provider';
 import type {
-  AdoptLoadedUser,
   ConfirmUserAction,
   ProfileLoadAction,
   ProfileLoadReducerState,
   ProfileLoadState,
-  UserEntityAdoption,
 } from '../types/hooks/use-profile-load';
+
+import useUserAdoption from './use-user-adoption';
 
 const INITIAL_STATE: ProfileLoadReducerState = {
   status: 'loading',
@@ -58,27 +58,10 @@ async function loadProfile(
   else if (outcome.reason !== 'session_ended') dispatch({ type: 'failed' });
 }
 
-function createAdoption(
-  adopt: AdoptLoadedUser,
-  dispatch: Dispatch<ProfileLoadAction>,
-  adopted: RefObject<string | null>
-): UserEntityAdoption {
-  return {
-    adopt,
-    confirm: (email: string, confirmed: boolean): void =>
-      dispatch({ type: 'confirm', email, confirmed }),
-    isCurrent: (email: string): boolean => adopted.current === null || adopted.current === email,
-  };
-}
-
 export default function useProfileLoad(): ProfileLoadState {
   const provider = useService<ProfileProvider>(AUTH_TOKENS.ProfileProvider);
   const [state, dispatch] = useReducer(reduceProfileLoad, INITIAL_STATE);
-  const adopted = useRef<string | null>(null);
-  const adopt: AdoptLoadedUser = (user) => {
-    adopted.current = user.email;
-    dispatch({ type: 'adopt', user });
-  };
+  const adoption = useUserAdoption(dispatch);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,6 +75,6 @@ export default function useProfileLoad(): ProfileLoadState {
     version: state.version,
     refocus: state.refocus,
     retry: (): void => dispatch({ type: 'retry' }),
-    adoption: createAdoption(adopt, dispatch, adopted),
+    adoption,
   };
 }

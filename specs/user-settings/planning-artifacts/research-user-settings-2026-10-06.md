@@ -3,7 +3,7 @@ status: complete
 workflowType: research
 project_name: crm
 date: 2026-10-06
-revised: 2026-10-21
+revised: 2026-11-05
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 inputDocuments:
@@ -23,6 +23,27 @@ inputDocuments:
 ---
 
 # Research: user settings
+
+> **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
+> supersede this document's text where the two differ; the earlier text is kept as the record of the
+> plan as approved.
+>
+> - **No flag (owner, 2026-11-03).** `userSettings` and the route flag gate are gone: `/settings` is
+>   an ordinary protected route in every environment and the home page always links to it. Every
+>   condition that reads "while `userSettings` is on" now always holds, and every "`userSettings`
+>   off" row, scenario or criterion (FR-1, FR-2, FR-4, NFR-9) describes a state no build reaches.
+>   Accepted exposure: until user-service ships G1, every environment that deploys this page reads
+>   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
+>   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
+>   page", has the reasoning.
+> - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
+>   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
+>   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,
+>   UX-DR-4, Stories 1.2 and 1.3 and architecture §5.10 are replaced by those values, and the 4.9:1
+>   on `#FDECEC` criterion is dropped (about 4.20:1): nothing paints this token on that surface.
+> - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
+>   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
+>   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
 
 This artifact is self-contained: the brief, PRD, architecture and epics read only this file. Ids
 `U1`-`U11` (user, binding), `D1`-`D18` (main agent) and the `R` amendments refer to the run's
@@ -730,8 +751,11 @@ cited by id only because that bundle is still being edited:
   `state.from` only on a transport HTTP 401 of a non-anonymous operation, the answer
   user-service gives an invalid, expired or revoked token before GraphQL runs (§4.5); never for
   anonymous operations (`signInUser`, `completeTwoFactorUser`). Every GraphQL-level refusal
-  stays with each feature's Data provider; "Access Denied." means the token is already gone, so
-  it maps to session ended with no action (R17).
+  stays with each feature's Data provider. Superseded 2026-11-02 (owner, PRD FR-19): "Access
+  Denied." settles as `rejected` with a visible error and the link keeps the token, because a
+  live token can be refused for an `id` it does not own; only a transport 401 ends a session.
+  The original reading, that it means the token is already gone and maps to session ended with
+  no action (R17), must not be carried into #331.
 - **Mocks are stateless (R28).** Each bundle's mock answers its own operations with a happy
   path; msw and `page.route` stubs answer every error shape, the expired session with §4.5's
   exact problem+json body and headers. FR-4 of the 2FA PRD pins that crm repositories never

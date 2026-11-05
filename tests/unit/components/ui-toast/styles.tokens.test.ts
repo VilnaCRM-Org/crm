@@ -70,8 +70,22 @@ describe('toast styles', () => {
       display: 'flex',
       flexDirection: 'column',
       gap: '0.5rem',
-      [SM]: { left: 'auto', right: '1.5rem', bottom: '1.5rem', width: '24.8125rem' },
+      maxHeight: 'calc(50dvh - 0.9375rem)',
+      overflowY: 'auto',
+      [SM]: expect.objectContaining({ width: '24.8125rem', maxHeight: 'calc(50dvh - 1.5rem)' }),
       [DESKTOP]: { right: '0.75rem' },
+    });
+  });
+
+  it('anchors the stack 1.5 rem from the corner from sm, and no wider than its width', async () => {
+    const { stack } = await loadStyles();
+
+    expect(stack[SM]).toEqual({
+      maxHeight: 'calc(50dvh - 1.5rem)',
+      width: '24.8125rem',
+      bottom: '1.5rem',
+      right: '1.5rem',
+      left: 'auto',
     });
   });
 

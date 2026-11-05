@@ -8,7 +8,13 @@ import { MemoryRouter } from 'react-router';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
-import { buildToken, buildUserNode } from '@tests/builders';
+import {
+  buildEmail,
+  buildFullName,
+  buildToken,
+  buildUserIri,
+  buildUserNode,
+} from '@tests/builders';
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
 import server, { userServiceGraphql } from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
@@ -18,10 +24,12 @@ const RESENT = 'Посилання для підтвердження надіс�
 const FAILED = 'Не вдалося надіслати посилання. Спробуйте ще раз.';
 const STATUS = 'E-mail не підтверджено';
 
+const NEW_EMAIL = buildEmail();
+
 const unconfirmed = buildUserNode({
-  id: '/api/users/1',
-  initials: 'Олена Петренко',
-  email: 'olena@example.com',
+  id: buildUserIri(),
+  initials: buildFullName(),
+  email: buildEmail(),
   confirmed: false,
 });
 
@@ -152,7 +160,7 @@ describe('settings page e-mail resend (page)', () => {
     await userEvent.click(resendLink());
 
     await screen.findByText(RESENT);
-    expect(screen.getByLabelText('Ваше ПІБ')).toHaveValue('Олена Петренко Іванівна');
+    expect(screen.getByLabelText('Ваше ПІБ')).toHaveValue(`${unconfirmed.initials} Іванівна`);
     expect(screen.getByLabelText('Поточний пароль')).toHaveValue('abc');
     expect(resendLink()).toHaveFocus();
   });
@@ -212,7 +220,7 @@ describe('settings page e-mail resend (page)', () => {
     expect(answered).toHaveLength(0);
   });
 
-  it('holds Save while a resend is in flight and saves once it settles', async () => {
+  it('saves during a resend, and the late resend result changes nothing', async () => {
     await mount();
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => (release = resolve));
@@ -225,30 +233,26 @@ describe('settings page e-mail resend (page)', () => {
     const updates = answerProfileOperation('UpdateUser', {
       respond: () =>
         HttpResponse.json({
-          data: { updateUser: { user: { ...unconfirmed, email: 'new@example.com' } } },
+          data: { updateUser: { user: { ...unconfirmed, email: NEW_EMAIL } } },
         }),
     });
     await userEvent.click(resendLink());
     await userEvent.clear(email());
-    await userEvent.type(email(), 'new@example.com');
+    await userEvent.type(email(), NEW_EMAIL);
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
-    const save = (): HTMLElement => screen.getByRole('button', { name: 'Зберегти зміни' });
+    const save = screen.getByRole('button', { name: 'Зберегти зміни' });
 
-    expect(save()).toBeDisabled();
-    fireEvent.click(save());
-    expect(updates).toHaveLength(0);
-
-    await act(async () => release());
-    await screen.findByText(RESENT);
-    await waitFor(() => expect(save()).toBeEnabled());
-    await userEvent.click(save());
-
+    expect(save).toBeEnabled();
+    await userEvent.click(save);
     expect(
       await screen.findAllByText('Ми надіслали посилання для підтвердження на нову адресу')
     ).not.toEqual([]);
+    await act(async () => release());
+
+    expect(screen.queryByText(RESENT)).not.toBeInTheDocument();
     expect(updates).toHaveLength(1);
     expect(screen.getByText(STATUS)).toBeVisible();
-    expect(email()).toHaveValue('new@example.com');
+    expect(email()).toHaveValue(NEW_EMAIL);
   });
 
   it('is aria-disabled and sends nothing while a save is in flight', async () => {

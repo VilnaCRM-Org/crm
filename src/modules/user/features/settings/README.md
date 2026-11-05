@@ -153,9 +153,9 @@ Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `passwo
 `password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an
 i18n key; a field error reason is copy that `ProfileForm` looks up in its module-private
 `ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
-field, in field order, that has one. A Save that settles with a toast moves focus to Save only
-when focus has fallen to the page body (`useSettledFocus`, the rule `useFocusReturn` follows), so
-a control the user moved to while the request ran keeps focus.
+field, in field order, that has one. A Save that settles with a toast moves focus to Save when
+focus has fallen to the page body or is still inside the form, as after Enter in a field
+(`useSettledFocus`), so a control the user moved to outside the form keeps focus.
 
 `ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
 `useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned
@@ -163,11 +163,10 @@ a control the user moved to while the request ran keeps focus.
 effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the
 e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
 so even a resend that settles before React commits the adopted entity is dropped. The reducer's
-`confirm` still carries the e-mail as a second guard. The two requests never overlap in the other
-direction either: `useEmailRow` reports `resending`, and `ProfileForm` hands it to `UIForm` as
-`isSubmitDisabled`, so Save is held (without the saving spinner, and with Clear still active) until
-the resend settles. A save for the unchanged address can therefore never be followed by an older
-`confirmed` flag from a resend that was already in flight.
+`confirm` still carries the e-mail as a second guard. Save is never held by a resend. A Save for the
+unchanged address that succeeds while a resend is in flight moves `adoption.revision()` on, so the
+resend still shows its toast, because the link was sent, but drops its older `confirmed` flag. A
+failed Save adopts nothing, so the revision stays and the resend applies its confirmation.
 
 ## Figma parity
 
