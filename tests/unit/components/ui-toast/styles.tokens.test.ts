@@ -70,9 +70,9 @@ describe('toast styles', () => {
       display: 'flex',
       flexDirection: 'column',
       gap: '0.5rem',
-      maxHeight: 'calc(100dvh - 1.875rem)',
+      maxHeight: 'calc(50dvh - 0.9375rem)',
       overflowY: 'auto',
-      [SM]: expect.objectContaining({ width: '24.8125rem', maxHeight: 'calc(100dvh - 3rem)' }),
+      [SM]: expect.objectContaining({ width: '24.8125rem', maxHeight: 'calc(50dvh - 1.5rem)' }),
       [DESKTOP]: { right: '0.75rem' },
     });
   });
@@ -81,7 +81,7 @@ describe('toast styles', () => {
     const { stack } = await loadStyles();
 
     expect(stack[SM]).toEqual({
-      maxHeight: 'calc(100dvh - 3rem)',
+      maxHeight: 'calc(50dvh - 1.5rem)',
       width: '24.8125rem',
       bottom: '1.5rem',
       right: '1.5rem',

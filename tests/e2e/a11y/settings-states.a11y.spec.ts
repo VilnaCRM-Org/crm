@@ -1,4 +1,4 @@
-import { buildPassword } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import {
   replyWithGraphQLError,
   replyWithProfile,
@@ -22,7 +22,7 @@ import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { expectNextTabStop } from '@tests/utils/a11y/keyboard';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
-const NEW_NAME = 'Іван Коваль';
+const NEW_NAME = buildFullName();
 const password = buildPassword();
 const loadFailed: string = t('settings.profile.load_failed');
 const tryAgain: string = t('auth.error.tryAgain');
@@ -51,7 +51,7 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
       UpdateUser: [replyWithGraphQLError('email: This email address is already registered', 422)],
     });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await fillInput(emailField(page), 'taken@example.com');
+    await fillInput(emailField(page), buildEmail());
     await fillInput(currentPasswordField(page), password);
     await saveButton(page).click();
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();

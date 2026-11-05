@@ -3,7 +3,7 @@ status: complete
 workflowType: research
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-05
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 inputDocuments:
@@ -751,8 +751,11 @@ cited by id only because that bundle is still being edited:
   `state.from` only on a transport HTTP 401 of a non-anonymous operation, the answer
   user-service gives an invalid, expired or revoked token before GraphQL runs (§4.5); never for
   anonymous operations (`signInUser`, `completeTwoFactorUser`). Every GraphQL-level refusal
-  stays with each feature's Data provider; "Access Denied." means the token is already gone, so
-  it maps to session ended with no action (R17).
+  stays with each feature's Data provider. Superseded 2026-11-02 (owner, PRD FR-19): "Access
+  Denied." settles as `rejected` with a visible error and the link keeps the token, because a
+  live token can be refused for an `id` it does not own; only a transport 401 ends a session.
+  The original reading, that it means the token is already gone and maps to session ended with
+  no action (R17), must not be carried into #331.
 - **Mocks are stateless (R28).** Each bundle's mock answers its own operations with a happy
   path; msw and `page.route` stubs answer every error shape, the expired session with §4.5's
   exact problem+json body and headers. FR-4 of the 2FA PRD pins that crm repositories never

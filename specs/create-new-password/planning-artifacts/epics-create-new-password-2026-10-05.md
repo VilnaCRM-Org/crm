@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-05
-revised: 2026-11-03
+revised: 2026-11-05
 iteration: 4
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
@@ -2143,8 +2143,9 @@ acceptance criteria it touches; only the planned shape or file name changed.
    the jest-axe gate covers the same states the planned files would have.
 4. **Lazy recovery catalog (FR-27, architecture §11).** The stories planned every recovery string
    in the eager `@auth/i18n/{en,uk}.json`, merged into `src/i18n/localization.json` by
-   `make i18n-generate`. The `password_recovery.*`, `password_reset.*` and `password_policy.*`
-   keys instead live in `src/modules/user/features/auth/routes/recovery-catalog/i18n/{en,uk}.json`,
+   `make i18n-generate`. The `password_recovery.*` and `password_reset.*` keys (and
+   `password_policy.*`, until #330 moved those to the catalog `UIPasswordPolicyRules` owns, in
+   `src/components/ui-password-policy-rules/i18n/`, on 2026-10-19) instead live in `src/modules/user/features/auth/routes/recovery-catalog/i18n/{en,uk}.json`,
    which `RecoveryCatalogLoader` registered for both locales through `addResourceBundle` when
    `RecoveryPageLayout` — imported by both recovery route modules — evaluated, before the page's
    `usePageTitle` ran. `config/i18n-catalog-policy.json` lists the folder under `lazyCatalogs`,

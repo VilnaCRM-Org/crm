@@ -1,4 +1,4 @@
-import { buildEmail, buildPassword } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
@@ -29,7 +29,7 @@ import {
   nameField,
 } from './utils/settings-page';
 
-const NEW_NAME = 'Іван Коваль';
+const NEW_NAME = buildFullName();
 const password = buildPassword();
 const newPassword = buildPassword();
 const newEmail = buildEmail();
