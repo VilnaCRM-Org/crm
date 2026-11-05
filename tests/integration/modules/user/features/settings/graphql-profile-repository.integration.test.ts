@@ -9,7 +9,13 @@ import GraphQLProfileRepository from '@/modules/user/features/settings/repositor
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
-import { buildPassword, buildToken, buildUserIri, buildUserNode } from '@tests/builders';
+import {
+  buildPassword,
+  buildToken,
+  buildUserIri,
+  buildUserNode,
+  buildFullName,
+} from '@tests/builders';
 
 import { answerProfileOperation } from '../../../../mocks/profile-operations';
 import server from '../../../../mocks/server';
@@ -30,7 +36,7 @@ const freshSignal = (): AbortSignal => new AbortController().signal;
 const updateInput = (): { id: string; password: string; initials: string } => ({
   id: buildUserIri(),
   password: buildPassword(),
-  initials: 'Олена Петренко',
+  initials: buildFullName(),
 });
 
 describe('GraphQLProfileRepository and GraphQLProfileTransformer integration', () => {

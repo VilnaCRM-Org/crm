@@ -172,7 +172,8 @@ describe('profile form styles', () => {
       fontSize: '1.125rem',
       lineHeight: 'normal',
       color: '#1A1C1E',
-      outline: 'none',
+      '&:focus:not(:focus-visible)': { outline: 'none' },
+      '&:focus-visible': RING,
       [TABLET]: {
         marginTop: '1.5rem',
         marginBottom: '0.8125rem',

@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { buildPassword } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import {
   PROFILE_NODE,
   replyWithEndedSession,
@@ -29,7 +29,7 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
-const NEW_NAME = 'Іван Коваль';
+const NEW_NAME = buildFullName();
 const password = buildPassword();
 const MAIN_CONTROLS_WITH_ONE_TOAST = 11;
 
@@ -150,7 +150,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       })
     );
 
-    await fillInput(emailField(page), 'taken@example.com');
+    await fillInput(emailField(page), buildEmail());
     await fillCurrentPassword(page, password);
     await saveButton(page).click();
 

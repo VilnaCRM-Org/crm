@@ -18,13 +18,17 @@ const FAILURE_TOASTS = new Map<ProfileFailureReason, string>([
   ['rejected', 'settings.toasts.resend_failed'],
 ]);
 
+function applyConfirmed(confirmed: boolean, email: string, adoption: UserEntityAdoption): void {
+  adoption.confirm(email, confirmed);
+  if (confirmed) document.getElementById('email')?.focus();
+}
+
 function settleResend(
   outcome: ProfileResendOutcome,
-  { email, adoption, toasts, t }: ResendSettleContext
+  { email, adoption, issued, toasts, t }: ResendSettleContext
 ): void {
   if (outcome.kind === 'sent') {
-    adoption.confirm(email, outcome.confirmed);
-    if (outcome.confirmed) document.getElementById('email')?.focus();
+    if (adoption.revision() === issued) applyConfirmed(outcome.confirmed, email, adoption);
     toasts.show({ items: [{ tone: 'success', message: t('settings.toasts.resent') }] });
     return;
   }
@@ -47,9 +51,10 @@ export default function useEmailResend(
   const { isSubmitting, submit } = useAbortableSubmit(run);
 
   const resend = async (): Promise<void> => {
+    const issued = adoption.revision();
     const outcome = await submit(user.id);
     if (outcome === null || !adoption.isCurrent(user.email)) return;
-    settleResend(outcome, { email: user.email, adoption, toasts, t });
+    settleResend(outcome, { email: user.email, adoption, issued, toasts, t });
   };
 
   return { isSubmitting, resend };

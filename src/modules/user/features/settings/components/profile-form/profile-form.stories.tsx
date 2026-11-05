@@ -31,7 +31,12 @@ const meta: Meta<typeof ProfileForm> = {
   decorators: [withProfileProvider(loadedProfile())],
   args: {
     user: STORY_USER,
-    adoption: { adopt: noop, confirm: noop, isCurrent: (): boolean => true },
+    adoption: {
+      adopt: noop,
+      confirm: noop,
+      isCurrent: (): boolean => true,
+      revision: (): number => 0,
+    },
     version: 0,
     refocus: false,
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
