@@ -50,6 +50,7 @@ const props = (overrides: Partial<Props> = {}): Props => ({
     dismiss: jest.fn(),
   },
   saveRef: { current: null },
+  headingRef: { current: null },
   ...overrides,
 });
 
@@ -64,6 +65,7 @@ const card = (overrides: Partial<Props> = {}): JSX.Element => {
       adoption={state.adoption}
       toasts={state.toasts}
       saveRef={state.saveRef}
+      headingRef={state.headingRef}
     />
   );
 };
@@ -139,7 +141,7 @@ describe('UserProfileSettings', () => {
     expect(screen.getByRole('status')).toHaveTextContent(LOADING);
   });
 
-  it('announces the failure through the mounted alert region with a described retry', () => {
+  it('announces the failure once through the mounted alert region, not on the retry too', () => {
     render(card({ status: 'failed' }), { wrapper });
 
     expect(screen.getAllByRole('alert')).toHaveLength(1);
@@ -147,7 +149,7 @@ describe('UserProfileSettings', () => {
     expect(screen.getByRole('alert')).not.toContainElement(
       screen.getByRole('button', { name: RETRY })
     );
-    expect(screen.getByRole('button', { name: RETRY })).toHaveAccessibleDescription(FAILED);
+    expect(screen.getByRole('button', { name: RETRY })).not.toHaveAttribute('aria-describedby');
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 

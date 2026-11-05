@@ -425,6 +425,7 @@ describe('settings page save outcomes (page)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
     expect(toastTexts()).toHaveLength(1);
+    expect(field(NAME)).toHaveValue(loaded.initials);
 
     await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
 

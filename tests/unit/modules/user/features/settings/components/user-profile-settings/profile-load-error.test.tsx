@@ -33,12 +33,11 @@ const RETRY = 'Спробувати ще раз';
 const retryButton = (): HTMLElement => screen.getByRole('button', { name: RETRY });
 
 describe('ProfileLoadError', () => {
-  it('renders the message under its id and a retry button it describes, with no alert role', () => {
+  it('renders the message and a retry button it does not describe, with no alert role', () => {
     render(<ProfileLoadError onRetry={jest.fn()} focus={false} />, { wrapper });
 
-    expect(screen.getByText(FAILED)).toHaveAttribute('id', 'profile-load-error-message');
-    expect(retryButton()).toHaveAttribute('aria-describedby', 'profile-load-error-message');
-    expect(retryButton()).toHaveAccessibleDescription(FAILED);
+    expect(screen.getByText(FAILED)).toBeVisible();
+    expect(retryButton()).not.toHaveAttribute('aria-describedby');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

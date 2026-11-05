@@ -39,6 +39,7 @@ function SectionFieldsFrame({
     },
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
+    headingRef: { current: null },
   };
   const { save, rules } = useProfileFormModel(context, section);
 

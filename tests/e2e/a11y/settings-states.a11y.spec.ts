@@ -101,7 +101,7 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
     const retry = page.getByRole('button', { name: tryAgain, exact: true });
     await expect(retry).toBeVisible();
-    await expect(retry).toHaveAccessibleDescription(loadFailed);
+    await expect(retry).not.toHaveAttribute('aria-describedby');
     await page.getByRole('main').focus();
 
     await expectNextTabStop(page, { locator: retry, visibleFocus: true });

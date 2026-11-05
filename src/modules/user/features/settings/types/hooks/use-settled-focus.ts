@@ -8,4 +8,5 @@ export interface SettledFocusOptions {
   readonly section: ProfileSection;
   readonly buttonRef: RefObject<HTMLButtonElement | null>;
   readonly saveRef: RefObject<HTMLElement | null>;
+  readonly headingRef: RefObject<HTMLElement | null>;
 }

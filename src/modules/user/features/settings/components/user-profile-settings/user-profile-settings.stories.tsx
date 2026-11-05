@@ -26,6 +26,7 @@ const meta: Meta<typeof UserProfileSettings> = {
     },
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
+    headingRef: { current: null },
   },
   parameters: {
     docs: {

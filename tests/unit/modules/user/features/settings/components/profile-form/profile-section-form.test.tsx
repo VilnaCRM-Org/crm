@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import { type ComponentProps, createRef, type JSX, type ReactNode, useState } from 'react';
+import * as ReactHookForm from 'react-hook-form';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
@@ -10,6 +13,7 @@ import type { ProfileFieldError } from '@/modules/user/features/settings/types/u
 import { buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 type ProfileSectionFormProps = ComponentProps<typeof Form>;
@@ -67,7 +71,20 @@ const contextOf = (entity = user): ProfileSectionFormProps['context'] => ({
     dismiss: jest.fn(),
   },
   saveRef: createRef<HTMLElement>(),
+  headingRef: createRef<HTMLElement>(),
 });
+
+const renderFresh = async (section: ProfileSection, context = contextOf()): Promise<void> => {
+  const Fresh = await loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    jest.doMock('react-hook-form', () => ReactHookForm);
+    jest.doMock('react-i18next', () => ReactI18next);
+    return (
+      await import('@/modules/user/features/settings/components/profile-form/profile-section-form')
+    ).default;
+  });
+  render(<Fresh context={context} section={section} />, { wrapper });
+};
 
 const sectionForm = (section: ProfileSection, context = contextOf()): JSX.Element => (
   <Form context={context} section={section} />
@@ -120,6 +137,17 @@ const revealName = async (): Promise<void> => {
 const revealEmail = async (): Promise<void> => {
   await userEvent.type(field(EMAIL), '.ua');
   await userEvent.type(field(EMAIL_PASSWORD), 'abc');
+};
+
+const revealPassword = async (): Promise<void> => {
+  await userEvent.type(field(CURRENT), 'abc');
+  await userEvent.type(field(NEW), NEW_PASSWORD);
+};
+
+const REVEALS: Record<ProfileSection, () => Promise<void>> = {
+  fullName: revealName,
+  email: revealEmail,
+  password: revealPassword,
 };
 
 describe('ProfileSectionForm', () => {
@@ -438,6 +466,72 @@ describe('ProfileSectionForm', () => {
       await act(async () => undefined);
 
       expect(field(NAME)).not.toHaveAttribute('aria-invalid', 'true');
+    });
+  });
+
+  describe('on a module loaded in the test', () => {
+    it.each([
+      ['fullName', SAVE_NAME],
+      ['email', SAVE_EMAIL],
+      ['password', SAVE],
+    ] as const)('labels the %s Save', async (section, label) => {
+      await renderFresh(section);
+
+      expect(hiddenButton(label)).toBeInTheDocument();
+    });
+
+    it.each([
+      [
+        'name_rejected',
+        'fullName',
+        'fullName',
+        NAME,
+        'Будь ласка, введіть повне ім’я у правильному форматі',
+      ],
+      [
+        'password_wrong',
+        'currentPassword',
+        'fullName',
+        NAME_PASSWORD,
+        'Неправильний поточний пароль',
+      ],
+      ['email_taken', 'email', 'email', EMAIL, 'Електронна адреса вже використовується'],
+      ['email_invalid', 'email', 'email', EMAIL, 'Будь ласка, введіть коректну електронну адресу'],
+      [
+        'password_not_accepted',
+        'currentPassword',
+        'email',
+        EMAIL_PASSWORD,
+        'Поточний пароль не прийнято. Перевірте його та спробуйте ще раз',
+      ],
+      ['password_wrong', 'currentPassword', 'password', CURRENT, 'Неправильний поточний пароль'],
+      [
+        'new_password_rejected',
+        'newPassword',
+        'password',
+        NEW,
+        'Пароль не відповідає вимогам. Перевірте правила нижче',
+      ],
+    ] as const)(
+      'maps %s on %s to its message, under its field, focused, in the %s section',
+      async (reason, name, section, label, message) => {
+        mockUpdate.mockResolvedValue(invalidWith({ field: name, reason }));
+        await renderFresh(section);
+        await REVEALS[section]();
+
+        await userEvent.keyboard('{Enter}');
+
+        await waitFor(() => expect(field(label)).toHaveFocus());
+        expect(field(label)).toHaveAttribute('aria-invalid', 'true');
+        expect(field(label)).toHaveAccessibleDescription(expect.stringContaining(message));
+      }
+    );
+
+    it('links the e-mail to its status row', async () => {
+      await renderFresh('email', contextOf(buildUserEntity({ confirmed: false })));
+
+      expect(screen.getByText('E-mail не підтверджено')).toHaveAttribute('id', 'email-status');
+      expect(field(EMAIL).getAttribute('aria-describedby')?.split(' ')).toContain('email-status');
     });
   });
 

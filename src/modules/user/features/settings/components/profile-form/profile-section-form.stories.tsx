@@ -19,6 +19,7 @@ const CONTEXT = {
   },
   toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
   saveRef: { current: null },
+  headingRef: { current: null },
 };
 
 const meta: Meta<typeof ProfileSectionForm> = {

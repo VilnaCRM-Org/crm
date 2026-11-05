@@ -91,7 +91,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │ ├ UserProfileSettings               loading | failed | ready
   │ │ ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
   │ │ ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
-  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
+  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (message; the alert announces it)
   │ │ └ card: ProfileHeader, ProfileForm
   │ │     ├ ProfileSectionForm fullName     UIForm key=saved, submitRef, onInvalid
   │ │     │ ├ "Ваше ПІБ"; once changed: "Пароль для зміни імені", "Зберегти ім’я", ClearButton
@@ -164,8 +164,10 @@ field, in field order, that has one. A `currentPassword` error goes to the passw
 section that sent it. A Save that settles with a toast moves focus when focus has fallen to the
 page body or is still inside the form, as after Enter in a field (`useSettledFocus`), so a control
 the user moved to outside the form keeps focus: to that form's Save, or to the text input when a
-name or e-mail save succeeded and hid its Save. `useCollapseFocus` does the same for a Clear that
-removes itself.
+name or e-mail save succeeded and hid its Save. When Save is itself disabled as it settles, because
+the connection dropped during the Save, focus that fell to the page body moves to the `h1`, the same
+fallback closing a toast uses, and a field the user is still in keeps focus. `useCollapseFocus`
+does the same for a Clear that removes itself.
 
 Each section sends only its own field and its own password (`ProfileChangeDetector.detect`), and a
 form remounts only on its own successful save (`key=saved`), so a draft in another form survives.

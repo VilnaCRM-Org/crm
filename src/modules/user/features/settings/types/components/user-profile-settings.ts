@@ -7,6 +7,7 @@ import type { ProfileLoadState, ProfileLoadStatus } from '../hooks/use-profile-l
 export interface UserProfileSettingsProps extends ProfileLoadState {
   readonly toasts: ToastQueue;
   readonly saveRef: RefObject<HTMLElement | null>;
+  readonly headingRef: RefObject<HTMLElement | null>;
 }
 
 export interface ProfileLoadErrorProps {

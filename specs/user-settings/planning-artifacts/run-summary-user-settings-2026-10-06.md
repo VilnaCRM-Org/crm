@@ -3,7 +3,7 @@ status: complete
 workflowType: autonomous-planning
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-05
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 ---
@@ -36,10 +36,8 @@ issue: https://github.com/VilnaCRM-Org/crm/issues/330
 `specs/user-settings/` — planning artifacts in `planning-artifacts/`, story records in
 `implementation-artifacts/`. The worktree's local, gitignored `_bmad/config.yaml` points
 `planning_artifacts` and `implementation_artifacts` at this bundle, so `bmalph implement` reads
-it. Worktree `/home/dima/Desktop/crm-worktrees/330-user-settings`, branch
-`feat/330-user-settings`, stacked on PR #340's head `f8ff83c7` (crm #315 implemented, unmerged)
-over PR #333 (`db3db0f6` on `main`). Until the 2026-10-16 reconciliation it lived in the worktree
-`/home/dima/Desktop/crm-worktrees/user-settings-planning`, branch `docs/user-settings-planning`,
+it. Branch `feat/330-user-settings`, stacked on PR #340's head `f8ff83c7` (crm #315 implemented, unmerged)
+over PR #333 (`db3db0f6` on `main`). Until the 2026-10-16 reconciliation it lived on the branch `docs/user-settings-planning`,
 based on `origin/main` `58099168`.
 
 ## Task framing
@@ -373,8 +371,7 @@ Checks: the readiness report's last section.
 **Why.** The bundle was written on 2026-10-06 and revised on 2026-10-08 against `origin/main`
 `58099168` and against the plans of crm #315 and the Zustand chore, not their code. Both now
 exist: PR #333 (the chores #332 and #334) is merged as `db3db0f6`, and #315 is implemented on PR
-#340 (head `f8ff83c7`, unmerged). The bundle now lives in the worktree
-`/home/dima/Desktop/crm-worktrees/330-user-settings`, branch `feat/330-user-settings`, stacked on
+#340 (head `f8ff83c7`, unmerged). The bundle now lives on the branch `feat/330-user-settings`, stacked on
 that head. Three read-only inventories (pieces #315 built, claims about `main`, bmalph structure)
 compared every story, criterion, file list and architecture section with the branch; this pass
 applied them. The user, the same day: ADR content "can be written in a README or nowhere";

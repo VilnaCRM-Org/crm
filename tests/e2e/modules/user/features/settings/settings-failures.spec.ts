@@ -2,6 +2,7 @@ import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import {
+  holdReply,
   replyWithGraphQLError,
   replyWithSaved,
   replyWithStatus,
@@ -95,6 +96,22 @@ test.describe('Settings save failures (issue #330)', () => {
 
     await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(2);
+  });
+
+  test('moves focus to the heading when a Save settles offline', async ({ page, context }) => {
+    const gate = holdReply(replyWithStatus(503));
+    stub = await stubProfile(page, { UpdateUser: [gate.reply] });
+    await openLoadedSettings(page);
+    await editName(page, NEW_NAME, password);
+    await saveNameButton(page).click();
+    await expect(saveNameButton(page)).toBeDisabled();
+
+    await context.setOffline(true);
+    gate.release();
+
+    await expectErrorToast(page, text.transient);
+    await expect(saveNameButton(page)).toBeDisabled();
+    await expect(page.getByRole('heading', { level: 1, name: text.heading })).toBeFocused();
   });
 
   test('disables Save while offline and sends nothing, Enter included', async ({
