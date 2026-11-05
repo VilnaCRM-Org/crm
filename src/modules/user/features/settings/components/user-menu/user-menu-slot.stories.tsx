@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import { storySession, withCurrentUserAnswer } from '@stories/current-user-decorators';
+import {
+  storySession,
+  withCurrentUserAnswer,
+  withCurrentUserFailure,
+} from '@stories/current-user-decorators';
 import { withProtectedOutlet } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
 
@@ -10,7 +14,7 @@ const meta: Meta<typeof UserMenuSlot> = {
   title: 'Settings/UserMenu/UserMenuSlot',
   component: UserMenuSlot,
   tags: ['autodocs'],
-  decorators: [withProtectedOutlet(storySession), withCurrentUserAnswer()],
+  decorators: [withProtectedOutlet(storySession)],
   args: { signOut: noop, onChunkFailure: noop, onAvatar: noop },
   parameters: {
     docs: {
@@ -32,4 +36,6 @@ export default meta;
 
 type Story = StoryObj<typeof UserMenuSlot>;
 
-export const Reading: Story = {};
+export const Reading: Story = { decorators: [withCurrentUserAnswer()] };
+
+export const ReadFailed: Story = { decorators: [withCurrentUserFailure()] };

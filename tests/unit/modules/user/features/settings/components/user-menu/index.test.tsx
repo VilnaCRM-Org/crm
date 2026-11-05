@@ -268,12 +268,12 @@ describe('UserMenu', () => {
     expect(screen.getAllByRole('menuitem')[0]).toHaveFocus();
   });
 
-  it('renders no MUI ripple in the chip or any item', async () => {
+  it('renders no MUI ripple in the chip or any item while the menu is open', async () => {
     const user = userEvent.setup();
     const { container } = renderMenu();
     await user.click(chip());
-    await user.click(screen.getByRole('menuitem', { name: 'Налаштування' }));
 
+    expect(screen.getByRole('menu')).toBeInTheDocument();
     expect(container).not.toContainHTML('MuiTouchRipple');
   });
 

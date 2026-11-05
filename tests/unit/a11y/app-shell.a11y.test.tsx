@@ -30,6 +30,18 @@ describe('the assembled app shell accessibility (issue #362)', () => {
     await expectNoA11yViolations(container);
   });
 
+  it('has no axe violation on the rail inside AppLayout', async () => {
+    const { container } = await renderAppShell({ path: '/', width: DESKTOP, page: HOME });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Згорнути бічну панель' }));
+
+    expect(screen.getByRole('button', { name: 'Розгорнути бічну панель' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it('has no axe violation at the tablet and mobile layouts', async () => {
     const { container, unmount } = await renderAppShell({
       path: '/',

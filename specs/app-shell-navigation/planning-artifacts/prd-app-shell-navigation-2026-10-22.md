@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-04
+revised: 2026-11-05
 iteration: 6
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
@@ -27,7 +27,8 @@ inputDocuments:
 **Author:** pm (John), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28 and
 2026-10-29 (owner decisions on the drawer sub-items, the WCAG 1.4.11 exception and the failed chip
 re-read; each change is marked in place as a dated amendment or owner decision; 2026-11-03: the
-userSettings flag removal; 2026-11-04: the settings page centred) **Feature:** `app-shell-navigation`
+userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
+edge; 2026-11-05: the dated notes for DV-11 and DV-13) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -42,6 +43,25 @@ userSettings flag removal; 2026-11-04: the settings page centred) **Feature:** `
 > rail's x 125 / title x 137: above 1024 px the heading and grid centre in the content column, and
 > the desktop rail keeps no right margin. Measurements are in the shell README, DV-12. The criteria
 > below are kept unchanged as the record of the plan as approved.
+
+> **Owner decision of 2026-11-04 (handle on the sidebar edge, DV-13), noted 2026-11-05.** The owner
+> asked for this directly: from 1024 to 1440 the handle's chevron sat on top of the first letter of
+> the page title. FR-12's 16 px overhang ends the handle at x 267 and FR-15's title starts at x 263,
+> so this PRD's own values collide. All four handles now take `right: -9px`
+> (`src/components/ui-sidebar/styles.ts`), the overhang the desktop frames already draw. Desktop is
+> unchanged; on tablet the handle moves 7 px left, from 222,15 to 215,15 on the expanded panel and from
+> 60,15 to 53,15 on the rail, and clears the title by 3 px. The handle follows the panel's width
+> transition, its chevron turns over the same 200 ms, and on reopening the labels and the group chevron
+> fade in over 200 ms; none of this animates under reduced motion. The FR-12 positions, the NFR-22
+> "one owner-approved visible deviation" and C-9 below are kept as approved, each with a dated note.
+> Details are in the [shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04).
+
+> **Owner decision of 2026-10-26 (Settings label clear of its chevron, DV-11), noted 2026-11-05.**
+> Figma draws the Settings chevron inside the room its label needs once WCAG 1.4.12 text spacing is
+> applied. The group header's label is now a box that stops at the chevron's box (136 px on desktop,
+> 131 px on tablet, 129 px in the drawer). At rest it keeps its Figma position, size and single line;
+> under the override it wraps inside that box and the row keeps its Figma height. Details are in the
+> [shell README, DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26).
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md), the evidence base cited as
 "research §N", and [brief](./brief-app-shell-navigation-2026-10-22.md), cited as "brief §N". The
@@ -749,6 +769,11 @@ approved deviation (F-10, 2026-10-23, "Add handle on tablet"):** the expanded ta
 Figma draws without a handle, shows one, 32×32 at 222,15 in the expanded tablet panel (abs 235,89): the size, glyph (20 px `chevron-left`), style and y of the tablet rail handle `378:21542`, and its 16 px overhang of the panel's right edge (UX §4.2, DV-10). **Resolved:**
 see §9.
 
+**Owner decision, 2026-11-04 (DV-13; noted 2026-11-05).** The tablet positions above are the record
+of the plan as approved. The shipped handles take `right: -9px`, a 9 px overhang: the expanded tablet
+panel's handle sits at 215,15 (abs 228,89) and the tablet rail's at 53,15 (abs 66,89), so the handle
+ends at x 260 and clears the title at x 263. The desktop positions, 223,15 and 57,15, are unchanged.
+
 Under OQ-4's resolution the handle is a `button` that toggles the sidebar between expanded and rail.
 
 - **P** Given the expanded sidebar, when the handle is activated, then the sidebar becomes the rail,
@@ -1365,6 +1390,10 @@ every story with a visible surface.
   visible deviation is DV-10, the handle on the expanded tablet panel (FR-12, UX §10.3, owner
   2026-10-23). Any other visible
   difference is a defect.
+- **Amended 2026-11-05 (owner decisions after 2026-10-23).** DV-10 is no longer the only one. DV-11
+  (owner, 2026-10-26, the Settings label's box), DV-12 (owner, 2026-11-04, the settings page centred)
+  and DV-13 (owner, 2026-11-04, the handle on the sidebar edge) are owner-approved deviations too,
+  recorded in UX §10.3 and the shell README. Any other visible difference is still a defect.
 - **Contrast.** A failure caused by an exact Figma colour is handled only by NFR-4's enumerated
   exceptions.
 
@@ -1436,6 +1465,9 @@ as the recommended or stated option on 2026-10-23. OQ-18 and OQ-24 were not aske
 | OQ-26 | Shell chunk fails twice (arch.)     | keep the placeholders and capture the error                                                                                                               | NFR-18                       |
 | OQ-27 | Mapper reach (arch.)                | `UserDisplayNameMapper` registered under `AUTH_TOKENS`, read through `useService`                                                                         | FR-17                        |
 | OQ-28 | Coming-soon page design             | existing tokens and the error-page layout, marked for designer confirmation                                                                               | FR-18.1                      |
+
+**C-9, amended 2026-11-05.** The owner's parity decision stands, with the later owner decisions
+beside it: DV-10 (2026-10-23), DV-11 (2026-10-26), and DV-12 and DV-13 (2026-11-04). See NFR-22.
 
 OQ-25 amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md:1710` ("exactly
 one `CurrentUser` request") and these five assertions: `tests/e2e/modules/user/features/settings/settings.spec.ts:93`,

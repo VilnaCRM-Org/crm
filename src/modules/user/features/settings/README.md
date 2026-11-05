@@ -32,8 +32,9 @@ toast or a field error. The decisions are recorded in `## User Settings decision
   `X-Correlation-Id` and the request deadline. `CurrentUserResponseParser` narrows the answer by
   hand and reads only `initials` (the full name). A transport 401 ends the session through
   `session.end(token)`, which, like `SessionLinkFactory`, only ends it while the store still holds
-  the token the request carried; a GraphQL `Access Denied.` (or extension status 401) only resets
-  the chip to pending. Every other failure keeps the last good name or shows the name-less chip,
+  the token the request carried; a GraphQL error with extension status 401 only resets the chip to
+  pending. Every other failure, a GraphQL `Access Denied.` included, keeps the last good name or
+  shows the name-less chip,
   and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
   caller aborted the read. The settings page itself still reads through `ProfileProvider`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,

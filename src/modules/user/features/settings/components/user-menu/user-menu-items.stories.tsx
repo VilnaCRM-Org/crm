@@ -46,3 +46,5 @@ type Story = StoryObj<typeof UserMenuItems>;
 export const ThreeItems: Story = {};
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
+
+export const Mobile: Story = { args: { layout: 'mobile' } };

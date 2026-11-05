@@ -32,3 +32,17 @@ export function withCurrentUserAnswer(fullName: string = STORY_USER.fullName): D
     return <Story />;
   };
 }
+
+export function withCurrentUserFailure(): Decorator {
+  return function CurrentUserFailureDecorator(Story): JSX.Element {
+    useLayoutEffect(() => {
+      const realFetch = globalThis.fetch;
+      globalThis.fetch = async (): Promise<Response> => new Response(null, { status: 503 });
+
+      return (): void => {
+        globalThis.fetch = realFetch;
+      };
+    }, []);
+    return <Story />;
+  };
+}

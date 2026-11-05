@@ -19,7 +19,16 @@ const ACTIONS = selectorOf('#error-page-actions > .MuiButton-contained');
 const DIGITS = selectorOf('#error-page-digits');
 const CURRENT = selectorOf('aria-current');
 
-const COMING_SOON = ['/boards', '/products', '/orders', '/contacts', '/analytics'] as const;
+const COMING_SOON = [
+  '/boards',
+  '/products',
+  '/orders',
+  '/contacts',
+  '/analytics',
+  '/settings/integrations',
+  '/settings/webhooks',
+  '/settings/billing',
+] as const;
 
 const matching = (root: HTMLElement, selector: string): HTMLElement[] =>
   ['link', 'generic', 'paragraph', 'button']

@@ -4,6 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-22
+revised: 2026-11-05
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -28,6 +29,38 @@ as "research §N". The task brief's owner decisions are cited as `B4.n` (task br
 Stable ids: user stories `US-n`, functional requirement seeds `FR-n`, non-functional seeds
 `NFR-n`, goals `G-n`, success metrics `SM-n`, constraints `C-n`, risks `R-n` and open questions
 `OQ-n`. The PRD keeps these ids and adds acceptance criteria; it does not renumber them.
+
+Revised 2026-11-05: the banners below were added on that date to carry the owner decisions and
+shipped changes that came after this brief. Each row they name is kept unchanged as the record of
+the plan as approved.
+
+> **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
+> together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
+> drawer Settings group and the user menu's profile and Settings links now ship in every environment
+> (`docs/feature-flags.md`, "`/settings` ships without a flag"). OQ-11's flag-off answer, SM-16, the
+> "Gate the read" mitigation of R-1 and NFR-7's "no read while the session cannot be authenticated"
+> therefore describe a state no build reaches any more.
+
+> **Owner decision of 2026-11-04 (settings centred, DV-12).** The owner asked for `/settings` to be
+> centred at 1440, which reverses FR-15's "Remove only the three centring declarations": the rule
+> stays in `settings/routes/user-profile/styles.ts`, and above 1024 px the heading and grid centre in
+> the content column. Measurements are in the [shell README, DV-12](../../../src/components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04).
+
+> **Owner decisions on the parity list (DV-11, DV-12, DV-13), noted 2026-11-05.** G-1 lists DV-10 as
+> the one owner-approved deviation. Three more now stand beside it, each recorded in the shell
+> README: [DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26) (2026-10-26, the Settings label keeps clear of its chevron), DV-12 above,
+> and [DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04) (2026-11-04, the collapse handle takes the desktop frames' 9 px overhang so
+> its chevron no longer covers the page title from 1024 to 1440). Any other visible difference is
+> still a defect.
+
+> **Amended 2026-11-05 (reconciliation with shipped code).** C-3 no longer holds:
+> `route-composer.tsx` imports `protectedLayoutLoader` statically, and `AppLayout` and
+> `ProtectedRoute` load from the lazy `protected-layout` chunk (663151bc), so neither ships in the
+> entry. NFR-7's "through the existing `ProfileProvider` shape" and OQ-27's "read through
+> `useService`" no longer describe the chip: since 0addef83 (owner decision of 2026-11-02)
+> `useCurrentUser` calls the container-free `currentUserSource`, and only the settings page's
+> `use-display-name.ts` still resolves the mapper through `useService`. Where a banner here overrides
+> an answer in §10, the banner binds.
 
 > **Every `OQ-n` is RESOLVED by owner 2026-10-23** (§10; PRD §9). None is open and none blocks
 > readiness. Decisions this stage took on its own are marked `> Assumption:`; later stages may

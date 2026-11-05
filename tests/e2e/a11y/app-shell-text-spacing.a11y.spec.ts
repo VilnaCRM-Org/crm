@@ -124,14 +124,12 @@ const edgesOf = async (box: Locator): Promise<Edges> => {
 
 function measure(scope: Locator): Promise<SpacingReport> {
   return scope.evaluate(
-    (root, { tolerance, handles }): SpacingReport => {
+    (root, { tolerance }): SpacingReport => {
       const rectOf = (box: Element | Range): DOMRect => box.getBoundingClientRect();
       const labelOf = (element: Element): string =>
         element.getAttribute('aria-label') ?? element.textContent?.trim().slice(0, 40) ?? '';
       const controls = [...root.querySelectorAll('a, button, [role="menuitem"]')].filter(
-        (element) =>
-          rectOf(element).width > tolerance &&
-          !handles.includes(element.getAttribute('aria-label') ?? '')
+        (element) => rectOf(element).width > tolerance
       );
       const clipped = controls.filter((element) => {
         const range = document.createRange();
@@ -176,10 +174,7 @@ function measure(scope: Locator): Promise<SpacingReport> {
 
       return { clipped: clipped.map(labelOf), overlapping };
     },
-    {
-      tolerance: TOLERANCE,
-      handles: [shellText.collapse, shellText.expand],
-    }
+    { tolerance: TOLERANCE }
   );
 }
 

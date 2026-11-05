@@ -167,17 +167,29 @@ test.describe('App shell on desktop (issue #362)', () => {
   });
 
   for (const width of [1440, 1024]) {
-    test(`opens Settings from the chip menu at ${width} px and focuses main`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await openProtected(page, ROUTE_PATHS.home);
-      await openChipMenu(page);
+    for (const item of [shellText.settingsItem, shellText.profileItem]) {
+      test(`opens Settings from "${item}" in the chip menu at ${width} px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await openProtected(page, ROUTE_PATHS.home);
+        await openChipMenu(page);
 
-      await menuItemOf(page, shellText.settingsItem).click();
+        await menuItemOf(page, item).click();
 
-      await expectSettingsPage(page);
-      await expect(userMenuOf(page)).toHaveCount(0);
-    });
+        await expectSettingsPage(page);
+        await expect(userMenuOf(page)).toHaveCount(0);
+      });
+    }
   }
+
+  test('replaces the history entry when the logo is activated on /', async ({ page }) => {
+    await openProtected(page, ROUTE_PATHS.home);
+    const before = await page.evaluate(() => window.history.length);
+
+    await page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true }).click();
+
+    await expect(page.getByRole('main')).toBeFocused();
+    expect(await page.evaluate(() => window.history.length)).toBe(before);
+  });
 
   for (const startPath of [ROUTE_PATHS.home, ROUTE_PATHS.settings]) {
     test(`signs out from the sidebar on ${startPath} and focuses main of sign-in`, async ({

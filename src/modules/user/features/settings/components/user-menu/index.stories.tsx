@@ -39,3 +39,5 @@ export const Ready: Story = {};
 export const Pending: Story = { args: { identity: null } };
 
 export const ReadyMobile: Story = { globals: { viewport: { value: 'xs', isRotated: false } } };
+
+export const ReadyDesktop: Story = { globals: { viewport: { value: 'xl', isRotated: false } } };

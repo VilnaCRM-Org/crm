@@ -7,6 +7,7 @@ import {
   AUTH_FORM_CHUNKS,
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
+  authPageVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
@@ -275,6 +276,9 @@ describe('performance serving config', () => {
     // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
     expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
     expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/routes/shell-slot-factory.ts')).toContain(
+      'new ThemedChunkLoader<ShellSlotProps>('
+    );
     expect(readFile('src/components/error-boundary/error-page-loader.ts')).toContain(
       'new ThemedChunkLoader<ErrorPageProps>('
     );
@@ -563,8 +567,9 @@ describe('performance serving config', () => {
 
     expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
       'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
-        'authForms: authFormsCacheGroup(), },'
+        'authForms: authFormsCacheGroup(), authPageVendors: authPageVendorsCacheGroup(), },'
     );
+    expect(authPageVendorsCacheGroup().name).toBe('auth-page-vendors');
     expect([authFormsVendorsCacheGroup().name, authFormsCacheGroup().name]).toEqual([
       'auth-forms-vendors',
       'auth-forms',
