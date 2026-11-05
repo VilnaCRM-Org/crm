@@ -4,6 +4,7 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import {
+  holdReply,
   replyWithGraphQLError,
   replyWithSaved,
   replyWithStatus,
@@ -98,6 +99,22 @@ test.describe('Settings save failures (issue #330)', () => {
 
     await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(2);
+  });
+
+  test('moves focus to the heading when a Save settles offline', async ({ page, context }) => {
+    const gate = holdReply(replyWithStatus(503));
+    stub = await stubProfile(page, { UpdateUser: [gate.reply] });
+    await openLoadedSettings(page);
+    await editName(page, NEW_NAME, password);
+    await saveButton(page).click();
+    await expect(saveButton(page)).toBeDisabled();
+
+    await context.setOffline(true);
+    gate.release();
+
+    await expectErrorToast(page, text.transient);
+    await expect(saveButton(page)).toBeDisabled();
+    await expect(page.getByRole('heading', { level: 1, name: text.heading })).toBeFocused();
   });
 
   test('disables Save while offline and sends nothing, Enter included', async ({

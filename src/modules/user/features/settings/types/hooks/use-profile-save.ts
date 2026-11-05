@@ -16,6 +16,7 @@ export interface ProfileEditContext {
   readonly adoption: UserEntityAdoption;
   readonly toasts: ToastQueue;
   readonly saveRef: RefObject<HTMLButtonElement | null>;
+  readonly headingRef: RefObject<HTMLElement | null>;
 }
 
 export type SavedAspect = Exclude<ProfileField, 'currentPassword'>;

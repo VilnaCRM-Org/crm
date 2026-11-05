@@ -555,7 +555,10 @@ Save uses `UIForm`'s native busy state (D18): the button is disabled with the sp
 is in flight at a time. Offline, Save is disabled and described by the offline notice. "Очистити"
 and "Надіслати повторно" are inert during a Save, and the four fields are read-only (still
 focusable, values unchanged), so nothing typed after Save is dropped when the adopted profile
-remounts the form. A settled Save never leaves focus on `body`.
+remounts the form. A settled Save never leaves focus on `body`. Amended 2026-11-05 (reconciliation):
+when Save is itself disabled as it settles, because the connection dropped during the Save, focus
+that fell to `body` moves to the `h1`, the fallback closing a toast already uses (FR-20); a field the
+user is still in keeps focus.
 
 - Given Save activated twice quickly, when the network is observed, then one `updateUser` was
   sent.
@@ -1118,7 +1121,8 @@ All three operations run under the request deadline (`REACT_APP_REQUEST_TIMEOUT_
 10 000 ms, through the `DeadlineFetchAdapter`) and forward the abort signal; the chain has no
 retry link; a timeout is a transient failure with a user-initiated retry. The route has the
 composer's error element; its chunk loader retries an import once and never reloads a protected
-page. Errors reach observability only through the existing Apollo error link, once and without
+page. Errors reach observability only through the existing Apollo error link (superseded
+2026-11-05 by the amendment below, which adds the `UnseenFailureReporter` path), once and without
 variables, with both correlation ids; settings adds no direct SDK call and records no security
 signal, an empty `REACT_APP_SENTRY_DSN` stays a no-op, and telemetry never blocks a flow.
 

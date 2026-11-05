@@ -70,6 +70,7 @@ export default function UserProfile(): JSX.Element {
               adoption={load.adoption}
               toasts={toasts}
               saveRef={saveRef}
+              headingRef={headingRef}
             />
             <SocialNetworks />
           </Box>

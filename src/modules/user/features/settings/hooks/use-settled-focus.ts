@@ -1,12 +1,21 @@
 import { type RefObject, useLayoutEffect } from 'react';
 
+function settledTarget(
+  save: HTMLButtonElement | null,
+  heading: HTMLElement | null
+): HTMLElement | null {
+  const active = document.activeElement;
+  const onBody = active === document.body;
+  if (save?.disabled) return onBody ? heading : null;
+  return onBody || save?.form?.contains(active) ? save : null;
+}
+
 export default function useSettledFocus(
   settled: number,
-  saveRef: RefObject<HTMLButtonElement | null>
+  saveRef: RefObject<HTMLButtonElement | null>,
+  headingRef: RefObject<HTMLElement | null>
 ): void {
   useLayoutEffect(() => {
-    const active = document.activeElement;
-    const save = saveRef.current;
-    if (settled > 0 && (active === document.body || save?.form?.contains(active))) save?.focus();
-  }, [settled, saveRef]);
+    if (settled > 0) settledTarget(saveRef.current, headingRef.current)?.focus();
+  }, [settled, saveRef, headingRef]);
 }
