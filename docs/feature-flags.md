@@ -105,6 +105,8 @@ None. The mechanism stays in place for the next rollout: the `FeatureFlag` union
 `FEATURE_FLAG_DEFAULTS` is empty, the committed block ships `{ "flags": {} }`, and the schema's
 `flags` object is strict, so a block or an environment that still names a removed flag fails fast.
 
+### `forgotPassword` (removed)
+
 `forgotPassword`, the first flag, gated the sign-in "Forgot password?" link. Issue #309 removed
 it by a product decision to show the link in the form before the recovery flow existed, so it
 skipped stage 2. The link points at `ROUTE_PATHS.passwordRecovery`, which #315 registers
@@ -116,6 +118,11 @@ retryable transient error rather than a missing page.
 route is registered, with e2e rows in `tests/e2e/route-coverage.tsv`. Any environment that still
 sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start with
 `Known flags: (none).` and must unset it.
+
+### `/settings` ships without a flag
+
+The user settings page (issue #330) is not flagged: `/settings` is registered in every
+environment and the home page always renders its "Налаштування" link to it.
 
 ## Rules
 

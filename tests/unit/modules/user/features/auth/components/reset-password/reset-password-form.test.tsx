@@ -10,15 +10,17 @@ import type { ResetPasswordFormProps } from '@auth/types/password-recovery/compo
 import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
 import { buildEmail } from '@tests/builders';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import fieldGrid from '@tests/unit/utils/field-grid';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
-jest.mock('@auth/assets/eye.svg', () => ({
+jest.mock('@/assets/icons/eye.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
 }));
 
-jest.mock('@auth/assets/eye-off.svg', () => ({
+jest.mock('@/assets/icons/eye-off.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg />,
 }));
@@ -60,8 +62,20 @@ const mountForm = (overrides: Partial<ResetPasswordFormProps> = {}): ResetPasswo
 const emailField = (): HTMLElement => screen.getByRole('textbox', { name: 'E-mail' });
 const submit = (): HTMLElement => screen.getByRole('button', { name: 'Підтвердити' });
 
+const FIELD_GAP_SELECTOR = ':nth-of-type(-n+2):not(:last-of-type)';
+
 describe('ResetPasswordForm', () => {
   beforeEach(() => resetClientStores());
+
+  it('gives the e-mail field grid the auth field spacing', () => {
+    mountForm();
+
+    expect(
+      styleRuleFor(fieldGrid(emailField(), 'E-mail'), FIELD_GAP_SELECTOR)?.getPropertyValue(
+        'margin-bottom'
+      )
+    ).toBe('0.5rem');
+  });
 
   it('renders the heading, body, e-mail field and submit and nothing else', () => {
     mountForm();

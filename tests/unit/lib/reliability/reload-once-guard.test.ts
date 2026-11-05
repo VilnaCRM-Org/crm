@@ -1,5 +1,6 @@
 import ReloadOnceGuard from '@/lib/reliability/reload-once-guard';
 import { buildToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 describe('ReloadOnceGuard', () => {
   afterEach(() => {
@@ -23,10 +24,13 @@ describe('ReloadOnceGuard', () => {
     expect(guard.allow('/sign-in')).toBe(false);
   });
 
-  it('records the reload under a namespaced session-storage key', () => {
+  it('records the reload under a namespaced session-storage key', async () => {
     const key = buildToken();
+    const Guard = await loadIsolated(
+      async () => (await import('@/lib/reliability/reload-once-guard')).default
+    );
 
-    new ReloadOnceGuard().allow(key);
+    new Guard().allow(key);
 
     expect(window.sessionStorage.getItem(`crm:chunk-reload:${key}`)).toBe('1');
     expect(window.sessionStorage.length).toBe(1);

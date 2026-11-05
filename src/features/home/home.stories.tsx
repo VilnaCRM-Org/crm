@@ -13,8 +13,9 @@ const meta: Meta<typeof Home> = {
       description: {
         component:
           'The authenticated landing page (issue #106): a welcome heading, a short ' +
-          'description and the sign-out button, which calls the `signOut` that ProtectedRoute ' +
-          'passes through the outlet context. In the app it renders inside AppLayout.',
+          'description, a Налаштування link and the sign-out button, which calls the `signOut` ' +
+          'that ProtectedRoute passes through the outlet context. In the app it renders inside ' +
+          'AppLayout.',
       },
     },
     layout: 'fullscreen',

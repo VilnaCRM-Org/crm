@@ -34,7 +34,7 @@ jest.mock('@auth/hooks/use-registration-form', () => ({
   default: (): FormState => mockFormState,
 }));
 
-jest.mock('@auth/components/form-section/validations', () => ({
+jest.mock('@/modules/user/lib/validations', () => ({
   __esModule: true,
   default: { create: (): Record<string, never> => ({}) },
 }));

@@ -52,7 +52,15 @@ to buy wall-clock — that trades the gate's honesty for speed:
 - `jest.enableFindRelatedTests: true`. With it off, every mutant run reloads the entire test suite
   and only then filters by `testNamePattern`; runs blow past the timeout window and land as
   `Timeout` — counted as detected, but earned by hanging. Turning it on is also the single biggest
-  runtime lever (the full sharded run went from ~110 min to a few minutes per shard).
+  runtime lever (the full sharded run went from ~110 min to a few minutes per shard). Selection is
+  not transitive: the config roots only `tests/unit` and `tests/integration`, and the runner adds
+  the mutated file's own folder, so a test is selected only when it imports the file directly,
+  through a module in that folder, or through a helper under those test trees. A test that reaches
+  it through a parent component is covered by the dry run but never runs against the mutant, which
+  then survives with `testsCompleted` below `coveredBy`. Keep a unit's behavioural assertions in
+  its own direct test file. Adding `./src` to `roots` makes selection transitive but was measured
+  at 7.6× more test-file loads per mutant (9× for the median file); re-measure shard wall-clock
+  and raise the shard count before taking it.
 
 Two more settings keep the checker affordable, and they must be measured together rather than
 credited individually: `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches
@@ -117,13 +125,16 @@ attaches to nothing and is silently ignored.
 `scripts/ci/mutation-scope.mjs` is the single source of truth for the mutated file list (its
 exclusions mirror `jest.config.ts` `collectCoverageFrom`). The base config sets `mutate` to that
 list; the shard config takes its slice from `shardMutateFiles(total, index)` in the same module, so
-the union of all shards equals the full set exactly. Never hand-maintain a second file list.
+the scope equals the shards plus the `unsharded` files (those with no runnable mutant), never the
+shards alone. Never hand-maintain a second file list. The rule itself lives in
+[`CLAUDE.md`](../../../CLAUDE.md#mutation-testing-scope-and-baseline); this skill does not copy it.
 
-`shardMutateFiles` bin-packs by file size (longest-processing-time: heaviest file to the lightest
-shard) rather than slicing round-robin, because a sharded run costs whatever its **slowest** shard
-costs. Round-robin left the worst shard carrying 1.54x the mean mutant load — measured 7m47s
-against a 3m14s best — while size packing brings the spread to about 1.15x. It stays deterministic
-(weight desc, path as tiebreak), so re-running one shard mutates exactly the same files.
+`shardMutateFiles` bin-packs by scored-mutant count (longest-processing-time: heaviest file to the
+lightest shard) rather than slicing round-robin, because a sharded run costs whatever its
+**slowest** shard costs. Round-robin left the worst shard carrying 1.54x the mean mutant load —
+measured 7m47s against a 3m14s best — while mutant-count packing brings the spread to about
+1.15x. It stays deterministic (weight desc, path as tiebreak), so re-running one shard mutates
+exactly the same files.
 
 ## Sharded incremental CI
 

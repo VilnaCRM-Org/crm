@@ -6,7 +6,7 @@ const meta: Meta<typeof SignInNotice> = {
   title: 'Auth/Components/SignInNotice',
   component: SignInNotice,
   tags: ['autodocs'],
-  argTypes: { notice: { control: 'select', options: [null, 'password_reset'] } },
+  argTypes: { notice: { control: 'select', options: [null, 'password_reset', 'session_ended'] } },
   parameters: {
     docs: {
       description: {
@@ -25,5 +25,7 @@ export default meta;
 type Story = StoryObj<typeof SignInNotice>;
 
 export const PasswordReset: Story = { args: { notice: 'password_reset' } };
+
+export const SessionEnded: Story = { args: { notice: 'session_ended' } };
 
 export const NoNotice: Story = { args: { notice: null } };

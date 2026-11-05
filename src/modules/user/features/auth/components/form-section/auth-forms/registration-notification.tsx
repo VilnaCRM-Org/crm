@@ -17,28 +17,27 @@ import useResolvedErrorText from './use-resolved-error-text';
 
 export const BACK_CLOSE_ANIMATION_MS = 300;
 
-const COPY: AuthNotificationCopyTable = {
-  signUp: {
-    successTitle: 'notifications.success.title',
-    successDescription: 'notifications.success.description',
-    successButton: 'notifications.success.button',
-    submitting: 'sign_up.form.submitting',
-  },
-  signIn: {
-    successTitle: 'sign_in.success.title',
-    successDescription: 'sign_in.success.description',
-    successButton: 'sign_in.success.button',
-    submitting: 'sign_in.form.submitting',
-  },
-};
-
 function useNotificationCopy(
   flow: AuthNotificationFlow,
   errorText: string | undefined
 ): ResolvedNotificationCopy {
   const { t } = useTranslation();
   const registrationErrorText = useResolvedErrorText(errorText);
-  const copy = COPY[flow];
+  const table: AuthNotificationCopyTable = {
+    signUp: {
+      successTitle: 'notifications.success.title',
+      successDescription: 'notifications.success.description',
+      successButton: 'notifications.success.button',
+      submitting: 'sign_up.form.submitting',
+    },
+    signIn: {
+      successTitle: 'sign_in.success.title',
+      successDescription: 'sign_in.success.description',
+      successButton: 'sign_in.success.button',
+      submitting: 'sign_in.form.submitting',
+    },
+  };
+  const copy = table[flow];
   return {
     errorText: flow === 'signIn' ? (errorText ?? '') : registrationErrorText,
     submitting: t(copy.submitting),

@@ -1,4 +1,5 @@
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Box } from '@mui/material';
 import { type JSX, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,10 +11,17 @@ import type {
 
 import styles from './styles';
 
-const PASSWORD_RESET_NOTICE_KEY = 'sign_in.notices.password_reset';
-
-const NOTICE_MESSAGES: SignInNoticeMessageTable = {
-  password_reset: PASSWORD_RESET_NOTICE_KEY,
+const NOTICE_ROWS: SignInNoticeMessageTable = {
+  password_reset: {
+    messageKey: 'sign_in.notices.password_reset',
+    tone: 'success',
+    Icon: CheckCircleOutlinedIcon,
+  },
+  session_ended: {
+    messageKey: 'sign_in.notices.session_ended',
+    tone: 'neutral',
+    Icon: InfoOutlinedIcon,
+  },
 };
 
 export default function SignInNotice({ notice }: SignInNoticeProps): JSX.Element | null {
@@ -21,13 +29,14 @@ export default function SignInNotice({ notice }: SignInNoticeProps): JSX.Element
   const [text, setText] = useState('');
 
   useEffect(() => {
-    if (notice !== null) setText(t(NOTICE_MESSAGES[notice]));
+    if (notice !== null) setText(t(NOTICE_ROWS[notice].messageKey));
   }, [notice, t]);
 
   if (notice === null) return null;
+  const { Icon, tone } = NOTICE_ROWS[notice];
   return (
-    <Box component="p" role="status" sx={styles.notice}>
-      <CheckCircleOutlinedIcon aria-hidden="true" sx={styles.icon} />
+    <Box component="p" role="status" sx={[styles.notice, styles.tones[tone]]}>
+      <Icon aria-hidden="true" sx={styles.icon} />
       <span>{text}</span>
     </Box>
   );

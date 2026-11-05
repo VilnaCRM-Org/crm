@@ -6,12 +6,16 @@ import sandboxDemoSessionProvider, {
   type SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
+import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
+import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
+import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
 import type ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
@@ -25,12 +29,14 @@ import {
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
-import useAuthStore from '@auth/stores/use-auth-store';
+import SessionLinkFactory from '@auth/repositories/session-link-factory';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 import type { AuthState } from '@auth/types/auth-store';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
+import type { SessionLinkDeps } from '@auth/types/session-link-deps';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
@@ -46,6 +52,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
     this.registerApis(container);
     this.registerRepository(container);
     this.registerAuthState(container);
+    this.registerSessionLink(container);
   }
 
   // The auth store stays a container-free module singleton so the auth page paints without
@@ -69,6 +76,21 @@ class UserModuleRegistrar implements ModuleRegistrar {
     });
   }
 
+  private registerSessionLink(container: DependencyContainer): void {
+    container.register<SessionLinkDeps>(AUTH_TOKENS.SessionLinkDeps, {
+      useFactory: (c) => ({
+        authStore: c.resolve<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore),
+        signedOut: CLEARED_AUTH_STATE,
+        sandboxDemoSession: c.resolve<SandboxDemoSessionProvider>(
+          AUTH_TOKENS.SandboxDemoSessionProvider
+        ),
+        observability: c.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService),
+        errors: c.resolve<UserServiceErrorTransformer>(AUTH_TOKENS.UserServiceErrorTransformer),
+      }),
+    });
+    container.registerSingleton(AUTH_TOKENS.SessionLinkFactory, SessionLinkFactory);
+  }
+
   private registerGraphqlClient(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.GraphQLUrl, GraphQLUrl);
     container.register<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient, {
@@ -77,7 +99,11 @@ class UserModuleRegistrar implements ModuleRegistrar {
         const link = c
           .resolve<ApolloLinkFactory>(OBSERVABILITY_TOKENS.ApolloLinkFactory)
           .build(uri);
-        return new ApolloClient<NormalizedCacheObject>({ link, cache: new InMemoryCache() });
+        const session = c.resolve<SessionLinkFactory>(AUTH_TOKENS.SessionLinkFactory).build();
+        return new ApolloClient<NormalizedCacheObject>({
+          link: session.concat(link),
+          cache: new InMemoryCache(),
+        });
       }),
     });
   }
@@ -105,6 +131,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
       AUTH_TOKENS.UserServiceErrorTransformer,
       UserServiceErrorTransformer
     );
+    container.registerSingleton(AUTH_TOKENS.GraphQLProfileTransformer, GraphQLProfileTransformer);
   }
 
   private registerApis(container: DependencyContainer): void {
@@ -122,6 +149,8 @@ class UserModuleRegistrar implements ModuleRegistrar {
       GraphQLPasswordRecoveryRepository
     );
     container.registerSingleton(AUTH_TOKENS.PasswordRecoveryProvider, PasswordRecoveryProvider);
+    container.registerSingleton(AUTH_TOKENS.GraphQLProfileRepository, GraphQLProfileRepository);
+    container.registerSingleton(AUTH_TOKENS.ProfileProvider, ProfileProvider);
   }
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {

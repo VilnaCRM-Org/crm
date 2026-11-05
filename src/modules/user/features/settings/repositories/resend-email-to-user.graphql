@@ -1,0 +1,8 @@
+mutation ResendEmailToUser($input: resendEmailToUserInput!) {
+  resendEmailToUser(input: $input) {
+    user {
+      id
+      confirmed
+    }
+  }
+}

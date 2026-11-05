@@ -3,7 +3,8 @@ status: complete
 workflowType: architecture
 project_name: crm
 date: 2026-10-05
-revised: 2026-11-03
+revised: 2026-11-05
+iteration: 4
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'architect (Winston), autonomous run'
@@ -91,8 +92,8 @@ inputDocuments:
 
 # Architecture: password recovery for the user module (create new password)
 
-**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-14 **Feature:**
-`create-new-password`
+**Author:** BMad (Architect) **Date:** 2026-10-05, revised 2026-10-14 and 2026-10-19
+**Feature:** `create-new-password`
 
 Predecessors: [run summary](./run-summary-create-new-password-2026-10-05.md),
 [research](./research-create-new-password-2026-10-05.md),
@@ -174,7 +175,8 @@ Eight decisions shape everything below:
    `useResetPassword`, `useCreateNewPassword` and `useResetToken`; the two flow hooks share one
    submit skeleton, `useAbortableSubmit`. There is no controller class, no new Zustand store and
    no new module-level singleton that holds state; the only shipped singletons are stateless
-   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12).
+   import seams (the two form-section loaders and `RecoveryCatalogLoader`, §12). Superseded
+   2026-10-19 for `RecoveryCatalogLoader` only: §12 records its replacement by #330.
 5. **One password policy, never weaker than the API** (FR-24): `PasswordValidator` narrows its
    uppercase rule to ASCII `[A-Z]`, keeps the lowercase rule, and exposes per-rule evaluation as
    a named `PasswordRuleResultSet`.
@@ -1759,11 +1761,11 @@ against the same budgets; this feature imports no store and adds nothing to it.
 
 ## 11. Localisation, titles and copy
 
-Recovery-page strings under `password_recovery`, `password_reset` and `password_policy` live in
+Recovery-page strings under `password_recovery` and `password_reset` live in
 the lazy recovery catalog `@auth/routes/recovery-catalog/i18n/{en,uk}.json` with identical key
 sets, registered for both locales by the stateless `RecoveryCatalogLoader` singleton, which
-`RecoveryPageLayout` calls when the route module evaluates (an accepted AR-2 exception, §12), and
-kept out of
+`RecoveryPageLayout` calls when the route module evaluates (an accepted AR-2 exception, §12;
+the loader is superseded 2026-10-19, and §12 records its replacement), and kept out of
 `src/i18n/localization.json` by `config/i18n-catalog-policy.json` (see the epics'
 "Implementation drift"); `make i18n-generate` refreshes the merged catalog without them:
 
@@ -1774,8 +1776,10 @@ kept out of
 - `password_reset.title`, `.body`, `.submitting`, `.new_password.*`, `.confirm_password.*`,
   `.errors.mismatch`, `.errors.policy_rejected` (Story 3.5); `.invalid.title`, `.invalid.body`,
   `.invalid.request_new` (Story 3.6).
-- `password_policy.rules.length`, `.digit`, `.uppercase`, `.lowercase`,
-  `password_policy.state.met`, `.unmet` (Story 3.2).
+- Moved 2026-10-19 by #330 (FR-25 of user settings): `password_policy.rules.length`, `.digit`,
+  `.uppercase`, `.lowercase` and `password_policy.state.met`, `.unmet` (Story 3.2) live in
+  `src/components/ui-password-policy-rules/i18n/{en,uk}.json`, the catalog `UIPasswordPolicyRules`
+  owns, listed separately in `config/i18n-catalog-policy.json`. The recovery catalog has no such key.
 - In the shared auth catalog, which `/sign-in` and `/sign-up` render eagerly:
   `sign_in.notices.password_reset` (Story 3.3), `sign_up.form.password_input.error_line_break`
   (§18 item 7) and `sign_up.form.password_input.error_uppercase`, whose text changed in both
@@ -1801,7 +1805,12 @@ Reused as-is: the e-mail label and placeholder, `auth.password.{show,hide}`,
   `CreateNewPasswordFormSectionLoader` (item 1, §5.2), each holding one named `import()`, and
   `RecoveryCatalogLoader` (item 4, §11), whose one method adds both locale bundles through
   `addResourceBundle` when the route module evaluates. None of them has a field; the only state
-  any of them touches is what the module loader or i18next already holds.
+  any of them touches is what the module loader or i18next already holds. Superseded
+  2026-10-19 for `RecoveryCatalogLoader` (the one replacement note for item 4 and §11, whose key
+  move §11 records): #330 replaced it and its own two copies with one shared `lazyCatalogLoader`
+  (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, { en, uk })` takes the
+  owner's JSON; `RecoveryPageLayout` now calls it with the recovery catalog, and the reasoning
+  above holds for it unchanged as the same exception for every lazy catalog.
 - **Type-only files (#88).** Every interface and alias is in `types/`; logic files declare none.
 - **DI collaborators (#130).** The repository value-imports only `tsyringe`, `uuid`, token
   modules and the two document seams; the provider `tsyringe` and token modules;

@@ -181,6 +181,9 @@ describe('LocalizationGenerator', () => {
       );
       expect(policy.lazyCatalogs.map((entry) => entry.catalog)).toEqual([
         'modules/user/features/auth/routes/recovery-catalog/i18n',
+        'components/ui-password-policy-rules/i18n',
+        'modules/user/features/settings/i18n',
+        'components/ui-toast/i18n',
       ]);
     });
   });

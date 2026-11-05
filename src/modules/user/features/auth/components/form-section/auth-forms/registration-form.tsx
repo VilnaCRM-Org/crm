@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 
 import RouteFallback from '@/components/route-fallback';
 import UIForm from '@/components/ui-form';
+import formValidators from '@/modules/user/lib/validations';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import InertBox from '@auth/components/form-section/inert-box';
-import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
 import type {
   RegistrationFormPanelProps,

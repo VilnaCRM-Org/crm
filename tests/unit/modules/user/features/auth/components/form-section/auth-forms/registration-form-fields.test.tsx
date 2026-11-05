@@ -23,7 +23,7 @@ const mockFormField = jest.fn(
 );
 
 jest.mock(
-  '@auth/components/form-section/components/form-field',
+  '@/components/ui-form-field',
   () =>
     (props: { name: string; label: string; autoComplete: string; type: string }): JSX.Element =>
       mockFormField(props)
@@ -36,7 +36,7 @@ const mockPasswordField = jest.fn((props: { label: string; autoComplete: string 
 });
 
 jest.mock(
-  '@auth/components/form-section/components/password-field',
+  '@/components/ui-password-field',
   () =>
     (props: { label: string; autoComplete: string }): JSX.Element =>
       mockPasswordField(props)

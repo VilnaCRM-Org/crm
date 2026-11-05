@@ -1,0 +1,46 @@
+{
+  "settings": {
+    "title": "Settings",
+    "heading": "Settings",
+    "subtitle": "Manage your personal details and account security.",
+    "profile": {
+      "greeting": "Welcome!",
+      "loading": "Loading your profile…",
+      "load_failed": "Your profile could not be loaded",
+      "sections": {
+        "personal": "Personal details",
+        "password": "Password"
+      },
+      "full_name": "Your full name",
+      "current_password": "Current password",
+      "new_password": "New password",
+      "new_password_hint": "Optional. Leave empty to keep your current password.",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "clear": "Clear",
+      "no_changes": "There are no changes to save",
+      "email_unconfirmed": "E-mail not confirmed",
+      "resend": "Send again"
+    },
+    "social": {
+      "heading": "Social networks",
+      "linking_unavailable": ", linking not available yet"
+    },
+    "toasts": {
+      "saved": "Changes saved",
+      "email_sent": "We sent a confirmation link to the new address",
+      "password_changed": "You have changed your password",
+      "resent": "The confirmation link has been sent again",
+      "save_failed_transient": "The changes could not be saved. Check your connection and try again.",
+      "save_failed": "The changes could not be saved. Please try again later.",
+      "rate_limited": "Too many attempts. Please try again later.",
+      "resend_failed": "The link could not be sent. Try again."
+    },
+    "errors": {
+      "password_wrong": "The current password is incorrect",
+      "password_not_accepted": "The current password was not accepted. Check it and try again.",
+      "new_password_rejected": "The password does not meet the requirements. Check the rules below",
+      "new_password_same": "The new password must differ from the current one"
+    }
+  }
+}

@@ -13,6 +13,8 @@ const DENIED_KEYS = [
   'secret',
   'apiKey',
   'email',
+  'initials',
+  'newPassword',
 ];
 
 describe('PiiScrubber', () => {
@@ -36,6 +38,35 @@ describe('PiiScrubber', () => {
       expect(result.extra).toEqual({ keep: 'ok' });
     }
   );
+
+  it('drops the four profile keys from a request variables.input and keeps the rest', () => {
+    const event: SentryEvent = {
+      extra: {
+        variables: {
+          input: {
+            id: '/api/users/1',
+            password: 'Current1',
+            newPassword: 'Next12345',
+            email: 'new@example.com',
+            initials: 'Олена Петренко',
+            clientMutationId: 'cmid',
+          },
+        },
+      },
+    };
+
+    const result = scrubber.scrub(event);
+
+    expect(result.extra).toEqual({
+      variables: { input: { id: '/api/users/1', clientMutationId: 'cmid' } },
+    });
+  });
+
+  it('keeps the six free-text patterns the settings keys did not touch', () => {
+    const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
+
+    expect(patterns).toHaveLength(6);
+  });
 
   it('redacts PII embedded in an object key', () => {
     const event: SentryEvent = { extra: { 'bob@corp.io': 'context' } };

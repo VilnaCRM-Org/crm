@@ -18,7 +18,15 @@ const failure = (
 ): UserServiceFailure => ({
   reason,
   status: null,
-  violations: { items: paths.map((path) => ({ path, reason: 'other' as const })) },
+  violations: {
+    items: paths.map((path) => ({ path, reason: 'other' as const })),
+    complete: true,
+  },
+});
+
+const incomplete = (paths: readonly string[]): UserServiceFailure['violations'] => ({
+  items: paths.map((path) => ({ path, reason: 'other' as const })),
+  complete: false,
 });
 
 describe('PasswordRecoveryTransformer', () => {
@@ -65,6 +73,24 @@ describe('PasswordRecoveryTransformer', () => {
       'confirm',
       'a newPassword violation',
       failure('violation', ['newPassword']),
+      { reason: 'policy_rejected', retryable: false },
+    ],
+    [
+      'confirm',
+      'a newPassword line before a token line',
+      failure('violation', ['newPassword', 'token']),
+      { reason: 'invalid_link', retryable: false },
+    ],
+    [
+      'confirm',
+      'a token line beside an unrecognised line',
+      { ...failure('violation', ['token']), violations: incomplete(['token']) },
+      { reason: 'invalid_link', retryable: false },
+    ],
+    [
+      'confirm',
+      'a newPassword line beside an unrecognised line',
+      { ...failure('violation', ['newPassword']), violations: incomplete(['newPassword']) },
       { reason: 'policy_rejected', retryable: false },
     ],
     [

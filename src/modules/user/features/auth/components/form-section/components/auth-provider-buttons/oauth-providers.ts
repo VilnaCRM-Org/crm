@@ -1,8 +1,8 @@
+import { ReactComponent as Facebook } from '@/assets/icons/social/facebook-color.svg';
+import { ReactComponent as GitHub } from '@/assets/icons/social/github-color.svg';
+import { ReactComponent as Google } from '@/assets/icons/social/google-color.svg';
+import { ReactComponent as Twitter } from '@/assets/icons/social/twitter-color.svg';
 import urlBuilder from '@/utils/url-builder';
-import { ReactComponent as Facebook } from '@auth/assets/social-links/facebook-color.svg';
-import { ReactComponent as GitHub } from '@auth/assets/social-links/github-color.svg';
-import { ReactComponent as Google } from '@auth/assets/social-links/google-color.svg';
-import { ReactComponent as Twitter } from '@auth/assets/social-links/twitter-color.svg';
 import type { OAuthProviderList } from '@auth/types/auth-provider-buttons/oauth-providers';
 import browserNavigator from '@auth/utils/browser-navigator';
 

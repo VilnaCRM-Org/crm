@@ -94,6 +94,7 @@ const urlSettings = (): Array<{ envVar: string; key: string }> => {
 const ROUTE_CONTRACTS = [
   'src/routes/app-routes.ts',
   'src/modules/user/features/auth/routes/index.ts',
+  'src/modules/user/features/settings/routes/index.ts',
 ];
 
 const isRouteRegistered = (routePathKey: string): boolean =>
@@ -197,6 +198,25 @@ describe('runtime configuration contract', () => {
       schemaAccepts: accepted,
       rendererAccepts: accepted,
     });
+  });
+
+  it('registers the settings route and covers it in the e2e and visual suites (#330)', () => {
+    expect(ROUTE_CONTRACTS).toContain('src/modules/user/features/settings/routes/index.ts');
+    expect(isRouteRegistered('settings')).toBe(true);
+
+    const rows = routeCoverageRows('settings');
+
+    expect(new Set(rows.map(([, suite]) => suite))).toEqual(new Set(['e2e', 'visual']));
+    expect(rows.map(([, , spec]) => spec)).toEqual(
+      expect.arrayContaining([
+        'tests/visual/visual-comparison.settings.spec.ts',
+        'tests/visual/mobile/settings.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-save.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-failures.spec.ts',
+        'tests/e2e/modules/user/features/settings/settings-session.spec.ts',
+      ])
+    );
   });
 
   it('links the registered password-recovery route from sign-in (#315)', () => {

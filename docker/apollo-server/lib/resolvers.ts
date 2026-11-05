@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
 
+import { profileResolvers } from './profile-resolvers';
 import {
   issueResetToken,
   redeemResetToken,
@@ -15,15 +16,10 @@ import {
   RequestPasswordResetInput,
   User,
 } from './types';
-
-const EMAIL_LOCAL = String.raw`[a-zA-Z0-9.!#$%&'*+/=?^_\`{|}~-]+`;
-const EMAIL_LABEL = String.raw`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?`;
-const EMAIL_REGEX = new RegExp(`^${EMAIL_LOCAL}@${EMAIL_LABEL}(?:\\.${EMAIL_LABEL})*$`);
+import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
-  const emailRegex = EMAIL_REGEX;
-
-  if (!input.email || !emailRegex.test(input.email)) {
+  if (!input.email || !isValidEmail(input.email)) {
     throw new GraphQLError('Invalid email format', {
       extensions: {
         code: 'BAD_REQUEST',
@@ -44,13 +40,6 @@ const validateCreateUserInput = (input: CreateUserInput): void => {
 
 const PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[A-Z]).{8,64}$/u;
 const MAX_TOKEN_LENGTH = 255;
-const MAX_EMAIL_LENGTH = 254;
-
-const rejectViolation = (property: string, reason: string): never => {
-  throw new GraphQLError(`${property}: ${reason}`, {
-    extensions: { code: 'BAD_USER_INPUT', status: 422 },
-  });
-};
 
 const passwordResetPayload = (clientMutationId?: string | null): PasswordResetPayload => ({
   user: null,
@@ -99,6 +88,7 @@ export function clearUsers(): void {
 }
 
 export const resolvers = {
+  Query: { ...profileResolvers.Query },
   Mutation: {
     createUser: async (
       _: unknown,
@@ -130,7 +120,7 @@ export const resolvers = {
       _: unknown,
       { input }: { input: RequestPasswordResetInput }
     ): Promise<PasswordResetPayload> => {
-      if (input.email.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(input.email)) {
+      if (input.email.length > MAX_EMAIL_LENGTH || !isValidEmail(input.email)) {
         rejectViolation('email', 'This value is not a valid email address.');
       }
       await mailResetLink(input.email);
@@ -152,6 +142,7 @@ export const resolvers = {
       if (resetMailConfig() !== null) redeemResetToken(input.token);
       return passwordResetPayload(input.clientMutationId);
     },
+    ...profileResolvers.Mutation,
   },
 };
 

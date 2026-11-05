@@ -86,6 +86,15 @@ describe('route composer', () => {
     ]);
   });
 
+  it('nests the settings page beside home under the protected layout (#330)', () => {
+    const tree = routeComposer.compose(registry).items;
+
+    expect(protectedBranchOf(tree).layout.children?.map((route) => route.path)).toEqual([
+      undefined,
+      ROUTE_PATHS.settings,
+    ]);
+  });
+
   it('attaches a RouteError errorElement to every route object in the tree (issue #116)', () => {
     const tree = routeComposer.compose(registry).items;
     const routes = walk(tree);

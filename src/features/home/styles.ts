@@ -25,6 +25,20 @@ export default {
   description: {
     margin: 0,
   },
+  settingsLink: {
+    minHeight: '1.5rem',
+    fontFamily: 'Golos, sans-serif',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    lineHeight: 1.2,
+    color: paletteColors.primary.linkText,
+    '&:visited': { color: paletteColors.primary.linkText },
+    '&:hover': { color: paletteColors.primary.linkTextHover, textDecoration: 'underline' },
+    '&:focus-visible': {
+      outline: `2px solid ${paletteColors.primary.linkText}`,
+      outlineOffset: '2px',
+    },
+  },
   signOut: {
     minHeight: '2.75rem',
     padding: signOutPadding,

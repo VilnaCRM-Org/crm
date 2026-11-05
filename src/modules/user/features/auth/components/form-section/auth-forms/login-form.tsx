@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import RouteFallback from '@/components/route-fallback';
 import UIForm from '@/components/ui-form';
+import formValidators from '@/modules/user/lib/validations';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import InertBox from '@auth/components/form-section/inert-box';
-import formValidators from '@auth/components/form-section/validations';
 import type {
   FocusEmailOnReturnProps,
   LoginFormPanelProps,

@@ -23,8 +23,7 @@
 import { execFileSync } from 'node:child_process';
 
 const LOGIC_TS = 'src/services/https-client/fetch-https-client.ts'; // non-hook logic .ts
-const COMPONENT_TSX =
-  'src/modules/user/features/auth/components/form-section/components/form-field.tsx';
+const COMPONENT_TSX = 'src/modules/user/features/auth/components/auth-switcher/index.tsx';
 const TYPE_ONLY_TS = 'src/modules/user/types/api-errors/validation-error.ts';
 const HOOK_TS = 'src/modules/user/features/auth/stores/use-auth-token.ts';
 const PLAYWRIGHT_SPEC = 'tests/e2e/modules/back-to-main.spec.ts';
@@ -133,6 +132,17 @@ const toolkitGroupFor = (file: string): string[] => {
 const groupsFor = (file: string): string[] =>
   restrictedImportsFor(file).patterns.flatMap(({ group }) => group);
 
+const classNamingPolicy = require('../../../config/class-naming-policy.js') as {
+  classNamingSelectors: () => { selector: string; message: string }[];
+};
+
+const CLASS_NAMING_MESSAGES = [
+  'Unnamed class',
+  'Vague class name',
+  'Domain-less Service',
+  'Class name lacks an approved pattern suffix',
+];
+
 const ROUTE_COMPOSER_TSX = 'src/routes/route-composer.tsx';
 const LOCALE_FORMATTER_TS = 'src/services/locale-formatter/locale-formatter-core.ts';
 const ENV_TS = 'src/config/env/raw-env.ts';
@@ -212,6 +222,20 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     );
     expect(jsonOf(rulesFor(HOOK_TS)['no-restricted-syntax'])).not.toContain('AppService');
   });
+
+  it.each([LOCALE_FORMATTER_TS, ENV_TS, RESTRICTED_ADAPTER_TS])(
+    'keeps all four class-naming selectors (issue #129) on %s, whose block re-lists the #100 gate',
+    (file) => {
+      const nrs = anyRulesFor(file)['no-restricted-syntax'];
+      const entries = Array.isArray(nrs) ? nrs.slice(1) : [];
+      const policyEntries = classNamingPolicy.classNamingSelectors();
+      expect(severityOf(nrs)).toBe(2);
+      expect(policyEntries.map(({ message }) => message.split(' — ')[0])).toEqual(
+        CLASS_NAMING_MESSAGES
+      );
+      expect(entries).toEqual(expect.arrayContaining(policyEntries));
+    }
+  );
 
   it('keeps the type-only-file purity gate (issue #88) at error on files under types/', () => {
     const nrs = rulesFor(TYPE_ONLY_TS)['no-restricted-syntax'];

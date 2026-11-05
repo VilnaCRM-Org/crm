@@ -1,7 +1,15 @@
 import type { Preview } from '@storybook/react-webpack5';
 import type { ViewportMap } from 'storybook/viewport';
 import resources from '../src/i18n/localization.json';
-import recoveryCatalogLoader from '@auth/routes/recovery-catalog/recovery-catalog-loader';
+import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
+import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
+import toastEn from '@/components/ui-toast/i18n/en.json';
+import toastUk from '@/components/ui-toast/i18n/uk.json';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
+import settingsEn from '@/modules/user/features/settings/i18n/en.json';
+import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
+import recoveryEn from '@auth/routes/recovery-catalog/i18n/en.json';
+import recoveryUk from '@auth/routes/recovery-catalog/i18n/uk.json';
 import { initReactI18next } from 'react-i18next';
 import i18next from 'i18next';
 import { ThemeProvider } from '@mui/material/styles';
@@ -27,7 +35,10 @@ export const i18nInitPromise = i18next.isInitialized
         throw error;
       });
 
-recoveryCatalogLoader.register(i18next);
+lazyCatalogLoader.register(i18next, { en: recoveryEn, uk: recoveryUk });
+lazyCatalogLoader.register(i18next, { en: policyEn, uk: policyUk });
+lazyCatalogLoader.register(i18next, { en: settingsEn, uk: settingsUk });
+lazyCatalogLoader.register(i18next, { en: toastEn, uk: toastUk });
 
 const customViewports: ViewportMap = {
   xs: {

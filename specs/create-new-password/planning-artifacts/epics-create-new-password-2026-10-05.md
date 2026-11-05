@@ -3,7 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-05
-revised: 2026-11-03
+revised: 2026-11-05
+iteration: 4
 feature: create-new-password
 issue: https://github.com/VilnaCRM-Org/crm/issues/315
 author: 'pm (John), autonomous run'
@@ -47,7 +48,8 @@ inputDocuments:
 
 # Epics and stories: password recovery for the user module (create new password)
 
-**Author:** BMad (Product Manager) **Date:** 2026-10-05 **Feature:** `create-new-password`
+**Author:** BMad (Product Manager) **Date:** 2026-10-05, revised 2026-10-13 and 2026-10-19
+**Feature:** `create-new-password`
 
 ## Overview
 
@@ -207,7 +209,8 @@ board's User domain is plain data in `src/modules/user/types/user/` (Story 0.2, 
 - AR-2 (§12): no new module-level singleton (`export default new X()`); the loader is built per
   mount by `useAuthProviderLoader`, and there is no controller class. The two stateless import
   seams that shipped as module singletons are recorded as accepted exceptions in
-  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`).
+  "Implementation drift" items 1 (form-section loaders) and 4 (`RecoveryCatalogLoader`,
+  superseded 2026-10-19 by #330; architecture §12 records its replacement).
 - AR-3 (§5.3): `useAbortableSubmit` has side-effect-free initializers and its unmount cleanup
   aborts only the request in flight, so a StrictMode double mount still sends the first submit.
 - AR-4 (§6.5): every interface and alias lives in a type-only file under `types/`.
@@ -2140,11 +2143,12 @@ acceptance criteria it touches; only the planned shape or file name changed.
    the jest-axe gate covers the same states the planned files would have.
 4. **Lazy recovery catalog (FR-27, architecture §11).** The stories planned every recovery string
    in the eager `@auth/i18n/{en,uk}.json`, merged into `src/i18n/localization.json` by
-   `make i18n-generate`. The `password_recovery.*`, `password_reset.*` and `password_policy.*`
-   keys instead live in `src/modules/user/features/auth/routes/recovery-catalog/i18n/{en,uk}.json`,
-   which `RecoveryCatalogLoader` registers for both locales through `addResourceBundle` when
-   `RecoveryPageLayout` — imported by both recovery route modules — evaluates, before the page's
-   `usePageTitle` runs. `config/i18n-catalog-policy.json` lists the folder under `lazyCatalogs`,
+   `make i18n-generate`. The `password_recovery.*` and `password_reset.*` keys (and
+   `password_policy.*`, until #330 moved those to the catalog `UIPasswordPolicyRules` owns, in
+   `src/components/ui-password-policy-rules/i18n/`, on 2026-10-19) instead live in `src/modules/user/features/auth/routes/recovery-catalog/i18n/{en,uk}.json`,
+   which `RecoveryCatalogLoader` registered for both locales through `addResourceBundle` when
+   `RecoveryPageLayout` — imported by both recovery route modules — evaluated, before the page's
+   `usePageTitle` ran. `config/i18n-catalog-policy.json` lists the folder under `lazyCatalogs`,
    so the generator leaves it out of the merged catalog and `make lint-i18n` still enforces
    locale parity on it, reports a leaked key as stale, and fails any call site outside the listed
    owners with `[lazy-key-scope]`. The reason is the mobile Lighthouse floor on `/sign-in`: the
@@ -2152,14 +2156,17 @@ acceptance criteria it touches; only the planned shape or file name changed.
    keys were 3,742 B of it. Keys a page outside the recovery routes renders, such as
    `sign_in.notices.password_reset`, stay in the eager auth catalog. FR-27's acceptance criteria
    are unchanged: every string ships in `uk` and `en` with identical key sets.
-   `RecoveryCatalogLoader` (`routes/recovery-catalog/recovery-catalog-loader.ts`) is exported as
-   a module singleton, and `RecoveryPageLayout` calls its `register(i18n)` once at module
-   evaluation. It is the second accepted exception to AR-2's "no new module-level singleton", on
-   the same ground as the form-section loaders of item 1: it is a stateless seam, not a state
-   holder. Its one method adds both locale bundles through `addResourceBundle`; the class holds
-   no field, and the only state it touches is the i18next instance it is handed, which already
-   owns every catalog. The registration has to run when the route module evaluates, before the
-   page's `usePageTitle` reads a key, where no component or per-mount instance exists yet.
+   Superseded 2026-10-19 by #330: the loader described below no longer exists; architecture §12
+   records its replacement, the shared `lazyCatalogLoader`. The paragraph is kept as the record
+   of the original decision, and its reasoning holds for the replacement unchanged.
+   `RecoveryCatalogLoader` (`routes/recovery-catalog/recovery-catalog-loader.ts`) was exported as
+   a module singleton, and `RecoveryPageLayout` called its `register(i18n)` once at module
+   evaluation. It was the second accepted exception to AR-2's "no new module-level singleton", on
+   the same ground as the form-section loaders of item 1: a stateless seam, not a state holder.
+   Its one method added both locale bundles through `addResourceBundle`; the class held no field,
+   and the only state it touched was the i18next instance it was handed, which already owns every
+   catalog. The registration has to run when the route module evaluates, before the page's
+   `usePageTitle` reads a key, where no component or per-mount instance exists yet.
 5. **No feature flag (FR-1, Story 4.1, Follow-ups 5.5 and 5.6, architecture §5.14).** The plan
    kept the `forgotPassword` runtime flag `false` in production, enabled it in the test stack
    after the route registration, re-baselined `/sign-in` for the newly visible link, and left

@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
 
-jest.mock('@auth/assets/social-links/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/social-links/github-color.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/social-links/google-color.svg', () => ({ ReactComponent: 'svg' }));
-jest.mock('@auth/assets/social-links/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/google-color.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/icons/social/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
 
 // The accessible name is a single interpolated key (`auth.oauth.continue_with`), so a stub that
 // echoed the key alone would give all four buttons the same name and no query could tell them

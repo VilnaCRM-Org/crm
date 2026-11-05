@@ -5,6 +5,7 @@ import {
   ownedShardReports,
   scoreReports,
   tallyMutants,
+  unreportedOwnedFiles,
 } from '../../scripts/ci/mutation-report';
 
 function report(files: Record<string, string[]>): MutationReport {
@@ -104,9 +105,9 @@ describe('mutation-report merge gate', () => {
     });
   });
 
-  // Shard membership is packed by file size, so an edit can move a file to another shard while its
-  // previous owner still carries the old result in its restored incremental report. Merging keeps
-  // the first occurrence, so the stale copy would otherwise decide the gate.
+  // Shard membership is packed by mutant count, so an edit can move a file to another shard while
+  // its previous owner still carries the old result in its restored incremental report. Merging
+  // keeps the first occurrence, so the stale copy would otherwise decide the gate.
   describe('results from a shard that no longer owns a file', () => {
     const OWNER: Record<string, number> = { 'a.tsx': 0, 'b.tsx': 1 };
     const ownerOf = (path: string): number | undefined => OWNER[path];
@@ -157,6 +158,45 @@ describe('mutation-report merge gate', () => {
       expect(discarded).toBe(0);
       expect(scoreReports(reports).fileCount).toBe(2);
       expect(scoreReports(reports).mutationScore).toBe(50);
+    });
+  });
+
+  // The merge packs the scope itself; when its packing disagrees with the shards', each file the
+  // shards mutated is reported by a shard the merge does not consider its owner.
+  describe('a file the packing counted mutants in that its owner never reported', () => {
+    const EXPECTED = new Map([
+      ['a.tsx', 0],
+      ['b.tsx', 1],
+    ]);
+
+    it('finds nothing when every owner reports its own files', () => {
+      expect(
+        unreportedOwnedFiles(
+          [
+            { index: 0, report: report({ 'a.tsx': ['Killed'] }) },
+            { index: 1, report: report({ 'b.tsx': ['Survived'], 'stale.tsx': ['Killed'] }) },
+          ],
+          EXPECTED
+        )
+      ).toEqual([]);
+    });
+
+    it('names a file a different shard reported, which a mismatched packing produces', () => {
+      expect(
+        unreportedOwnedFiles(
+          [
+            { index: 0, report: report({ 'a.tsx': ['Killed'], 'b.tsx': ['Killed'] }) },
+            { index: 1, report: {} },
+          ],
+          EXPECTED
+        )
+      ).toEqual(['b.tsx']);
+    });
+
+    it('names every missing file in path order, including one whose owner sent no report', () => {
+      expect(
+        unreportedOwnedFiles([{ index: 1, report: report({ 'c.tsx': ['Killed'] }) }], EXPECTED)
+      ).toEqual(['a.tsx', 'b.tsx']);
     });
   });
 });

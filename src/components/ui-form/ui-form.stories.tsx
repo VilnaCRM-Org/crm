@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import { type JSX, type RefCallback, useEffect, useState } from 'react';
+import { createRef, type JSX, type RefCallback, useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 
+import UIButton from '@/components/ui-button';
 import UIForm from '@/components/ui-form';
 import UIFormInputField from '@/components/ui-form-input-field';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
@@ -64,11 +65,13 @@ const meta: Meta<typeof UIForm<DemoValues>> = {
   argTypes: {
     children: { control: false },
     defaultValues: { control: false },
+    footer: { control: false },
     formOptions: { control: false },
     onSubmit: { control: false },
     notice: { control: false },
     titleRef: { control: false },
     submitSpacing: { control: 'inline-radio', options: ['default', 'tight'] },
+    submitRef: { control: false },
   },
   parameters: {
     docs: {
@@ -100,6 +103,52 @@ export const Submitting: Story = {
 
 export const SubmitDisabled: Story = {
   args: { isSubmitDisabled: true },
+};
+
+export const WithFooter: Story = {
+  args: {
+    footer: (
+      <UIButton type="button" variant="outlined">
+        Очистити
+      </UIButton>
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A `footer` renders after the submit button inside the form, so a secondary ' +
+          '`type="button"` action such as the settings "Очистити" never submits; the page ' +
+          'that uses it (settings) lays the two side by side.',
+      },
+    },
+  },
+};
+
+export const SubmitSx: Story = {
+  args: { submitSx: { '&&': { width: 'auto', paddingInline: '2rem' } } },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`submitSx` overrides the submit button styles, for a page whose design sizes the ' +
+          'button differently from the auth card (the settings Save button).',
+      },
+    },
+  },
+};
+
+export const SubmitRef: Story = {
+  args: { submitRef: createRef<HTMLButtonElement>() },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`submitRef` hands the submit button to the page, which moves focus back to it once a ' +
+          'save settles; the button renders exactly as in the default story.',
+      },
+    },
+  },
 };
 
 export const Offline: Story = {

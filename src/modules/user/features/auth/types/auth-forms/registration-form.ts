@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 
+import type formValidators from '@/modules/user/lib/validations';
 import type { RegistrationView } from '@auth/components/form-section/types';
-import type formValidators from '@auth/components/form-section/validations';
 import type useRegistrationForm from '@auth/hooks/use-registration-form';
 
 export interface RegistrationFormProps {

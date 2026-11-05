@@ -29,6 +29,59 @@ export const PINNED_SDL_FIXTURE = `#graphql
   }
 `;
 
+export const PROFILE_SDL_FIXTURE = `#graphql
+  type UserPageInfo {
+    endCursor: String
+    startCursor: String
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
+
+  type UserEdge {
+    node: User
+    cursor: String!
+  }
+
+  type UserCursorConnection {
+    edges: [UserEdge]
+    pageInfo: UserPageInfo!
+    totalCount: Int!
+  }
+
+  extend type Query {
+    users(first: Int, last: Int, before: String, after: String): UserCursorConnection
+  }
+
+  input updateUserInput {
+    clientMutationId: String
+    id: ID!
+    newPassword: String
+    password: String!
+    email: String
+    initials: String
+  }
+
+  type updateUserPayload {
+    user: User
+    clientMutationId: String
+  }
+
+  input resendEmailToUserInput {
+    id: ID!
+    clientMutationId: String
+  }
+
+  type resendEmailToUserPayload {
+    user: User
+    clientMutationId: String
+  }
+
+  extend type Mutation {
+    updateUser(input: updateUserInput!): updateUserPayload
+    resendEmailToUser(input: resendEmailToUserInput!): resendEmailToUserPayload
+  }
+`;
+
 export const REQUEST_RESET = `
   mutation RequestPasswordReset($input: requestPasswordResetUserInput!) {
     requestPasswordResetUser(input: $input) {

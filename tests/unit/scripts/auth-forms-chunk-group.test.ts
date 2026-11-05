@@ -10,6 +10,7 @@ import {
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
+  SETTINGS_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
 
 type ChunkFilter = (chunk: Rspack.Chunk) => boolean;
@@ -58,12 +59,13 @@ describe('auth-form cache groups', () => {
     });
   });
 
-  it('declares the two auth and the two recovery form-section chunks', () => {
+  it('declares the two auth and two recovery form-section chunks and the settings chunk', () => {
     expect(AUTH_FORM_CHUNKS).toEqual(BOTH_AUTH_PAGES);
     expect(RECOVERY_FORM_CHUNKS).toEqual([
       'reset-password-form-section',
       'create-new-password-form-section',
     ]);
+    expect(SETTINGS_CHUNKS).toEqual(['settings']);
   });
 
   describe.each(groups)('%s', (_label, factory) => {
@@ -72,6 +74,7 @@ describe('auth-form cache groups', () => {
       ['sign-up-form-section', true],
       ['reset-password-form-section', true],
       ['create-new-password-form-section', true],
+      ['settings', true],
       ['sign-in', false],
       ['reset-password', false],
       ['index', false],
@@ -86,6 +89,8 @@ describe('auth-form cache groups', () => {
       [['sign-in-form-section', 'reset-password-form-section']],
       [['sign-up-form-section', 'create-new-password-form-section']],
       [['reset-password-form-section', 'create-new-password-form-section']],
+      [['sign-in-form-section', 'settings']],
+      [['settings']],
       [['sign-in-form-section']],
       [[]],
     ])('rejects a module held by %j, whatever its resource', (chunks) => {
@@ -105,6 +110,7 @@ describe('auth-form cache groups', () => {
       ['sign-up-form-section', 'reset-password-form-section', 'sign-in-form-section'],
       VENDOR_RESOURCE,
     ],
+    [['sign-in-form-section', 'settings', 'sign-up-form-section'], VENDOR_RESOURCE],
   ])('sends a node_modules module held by %j only to the vendors group', (chunks, resource) => {
     expect(admits(authFormsVendorsCacheGroup, chunks, resource)).toBe(true);
     expect(admits(authFormsCacheGroup, chunks, resource)).toBe(false);
@@ -118,6 +124,7 @@ describe('auth-form cache groups', () => {
       ['sign-up-form-section', 'create-new-password-form-section', 'sign-in-form-section'],
       APP_RESOURCE,
     ],
+    [['settings', 'sign-up-form-section', 'sign-in-form-section'], APP_RESOURCE],
   ])('sends an app module held by %j at %s only to the app group', (chunks, resource) => {
     expect(admits(authFormsCacheGroup, chunks, resource)).toBe(true);
     expect(admits(authFormsVendorsCacheGroup, chunks, resource)).toBe(false);

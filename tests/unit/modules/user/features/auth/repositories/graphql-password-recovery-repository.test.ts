@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
+import { ApolloError, type ApolloClient, type NormalizedCacheObject } from '@apollo/client';
 import { faker } from '@faker-js/faker';
 import type { FieldNode, OperationDefinitionNode } from 'graphql';
 
@@ -8,6 +8,7 @@ import {
   ConfirmPasswordResetDocument,
   RequestPasswordResetDocument,
 } from '@/api/generated/graphql';
+import UnseenFailureReporter from '@/services/observability/unseen-failure-reporter';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import { buildEmail, buildPassword, buildResetToken } from '@tests/builders';
@@ -32,7 +33,10 @@ const setUp = (): {
   const captureError = jest.fn();
   const observability = { captureError } as unknown as ObservabilityService;
   return {
-    repository: new GraphQLPasswordRecoveryRepository(client, observability),
+    repository: new GraphQLPasswordRecoveryRepository(
+      client,
+      new UnseenFailureReporter(observability)
+    ),
     mutate,
     captureError,
   };
@@ -159,7 +163,7 @@ describe('GraphQLPasswordRecoveryRepository', () => {
 
   it.each([
     ['null', null],
-    ['an Apollo error without GraphQL errors', { graphQLErrors: [] }],
+    ['an Apollo error without GraphQL errors', new ApolloError({ graphQLErrors: [] })],
   ])('reports %s as an unseen failure', async (_label, caught) => {
     const { repository, mutate, captureError } = setUp();
     mutate.mockRejectedValue(caught);
@@ -175,10 +179,20 @@ describe('GraphQLPasswordRecoveryRepository', () => {
   });
 
   it.each([
-    ['a coded GraphQL error', { graphQLErrors: [{ message: 'x', extensions: { code: 'X' } }] }],
-    ['an unmapped network status', { networkError: { statusCode: 404 } }],
-    ['a server status', { networkError: { statusCode: 503 } }],
-    ['a violation', { graphQLErrors: [{ message: 'email: taken' }] }],
+    [
+      'a coded GraphQL error',
+      new ApolloError({ graphQLErrors: [{ message: 'x', extensions: { code: 'X' } }] }),
+    ],
+    [
+      'an unmapped network status',
+      new ApolloError({ networkError: Object.assign(new Error('x'), { statusCode: 404 }) }),
+    ],
+    [
+      'a server status',
+      new ApolloError({ networkError: Object.assign(new Error('x'), { statusCode: 503 }) }),
+    ],
+    ['a violation', new ApolloError({ graphQLErrors: [{ message: 'email: taken' }] })],
+    ['a plain object shaped like an Apollo error', { networkError: { statusCode: 503 } }],
     ['an abort', Object.assign(new Error('aborted'), { name: 'AbortError' })],
   ])('leaves %s to the Apollo link, which already reported it', async (_label, caught) => {
     const { repository, mutate, captureError } = setUp();

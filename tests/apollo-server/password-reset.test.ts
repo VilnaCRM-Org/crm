@@ -13,6 +13,7 @@ import { resolvers } from '../../docker/apollo-server/lib/resolvers';
 import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
+  PROFILE_SDL_FIXTURE,
   REQUEST_RESET,
   type SingleBody,
 } from './mock-schema-fixtures';
@@ -37,7 +38,7 @@ const startServer = async (
   serverResolvers: typeof resolvers = resolvers
 ): Promise<ApolloServer> => {
   const server = new ApolloServer({
-    typeDefs: [PINNED_SDL_FIXTURE, PENDING_EXTENSION],
+    typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION],
     resolvers: serverResolvers,
     formatError,
   });
@@ -183,6 +184,7 @@ describe('pending password-reset mutations on the stateless mock', () => {
   it('turns a violation thrown without an extensions.code into the generic message', async () => {
     await server.stop();
     server = await startServer({
+      Query: resolvers.Query,
       Mutation: {
         ...resolvers.Mutation,
         requestPasswordResetUser: async () => {

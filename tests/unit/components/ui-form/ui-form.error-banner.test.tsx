@@ -47,7 +47,7 @@ describe('UIForm error banner', () => {
     expect(document.body).toHaveFocus();
   });
 
-  it('renders the error in the alert colour with the spacing the design pins', () => {
+  it('renders the error in the error.text token with the spacing the design pins', () => {
     renderForm(ERROR_TEXT);
 
     const alert = screen.getByRole('alert');

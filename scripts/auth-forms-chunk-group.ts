@@ -7,8 +7,13 @@ export const RECOVERY_FORM_CHUNKS: readonly string[] = [
   'reset-password-form-section',
   'create-new-password-form-section',
 ];
+export const SETTINGS_CHUNKS: readonly string[] = ['settings'];
 
-const formSectionChunks = new Set([...AUTH_FORM_CHUNKS, ...RECOVERY_FORM_CHUNKS]);
+const formSectionChunks = new Set([
+  ...AUTH_FORM_CHUNKS,
+  ...RECOVERY_FORM_CHUNKS,
+  ...SETTINGS_CHUNKS,
+]);
 const NODE_MODULES = /[\\/]node_modules[\\/]/;
 
 /**
@@ -16,8 +21,9 @@ const NODE_MODULES = /[\\/]node_modules[\\/]/;
  * shared node_modules and `auth-forms` for the shared app code. Membership is decided per module:
  * a module joins only when the sign-in AND the sign-up form-section chunks both contain it, so
  * nothing recovery-only can reach the `/sign-in` critical path. The `chunks` filter also admits
- * the two recovery form-section chunks, so a recovery route that needs one of those shared modules
- * depends on the same chunks — already cached after `/sign-in` — instead of carrying its own copy.
+ * the two recovery form-section chunks and the `settings` page chunk (issue #330), so a recovery
+ * route or the settings page that needs one of those shared modules depends on the same chunks —
+ * already cached after `/sign-in` — instead of carrying its own copy.
  */
 const sharedFormModulesGroup = (
   name: string,
