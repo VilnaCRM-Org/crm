@@ -41,6 +41,7 @@ const meta: Meta<typeof ProfileForm> = {
     refocus: false,
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
+    headingRef: { current: null },
   },
   parameters: {
     docs: {

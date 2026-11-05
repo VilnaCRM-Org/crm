@@ -128,7 +128,10 @@ i18n key; a field error reason is copy that `ProfileForm` looks up in its module
 `ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
 field, in field order, that has one. A Save that settles with a toast moves focus to Save when
 focus has fallen to the page body or is still inside the form, as after Enter in a field
-(`useSettledFocus`), so a control the user moved to outside the form keeps focus.
+(`useSettledFocus`), so a control the user moved to outside the form keeps focus. When Save is
+itself disabled as it settles, because the connection dropped during the Save, focus that fell to
+the page body moves to the `h1`, the same fallback closing a toast uses, and a field the user is
+still in keeps focus.
 
 `ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
 `useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned

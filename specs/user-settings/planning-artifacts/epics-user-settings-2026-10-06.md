@@ -997,9 +997,9 @@ So that no GraphQL shape, status or server message reaches a page or a React hoo
 > Amended 2026-11-05 (reconciliation with shipped code, PRD FR-16 and architecture §5.4): step 4 is
 > amended rather than only appended to, because Story 3.5 needs two fields from one error. It reads
 > one `FieldViolation` per non-blank line of the message and returns a `FieldViolationSet` of
-> `{ items, complete }`, with `complete` true only when every line carried a known prefix. That is
-> the one added member and type, and the set, not `FieldViolation | null`, is the third argument of
-> `failure`. The message prefix alone decides; `extensions.violations[].path` is not read.
+> `{ items, complete }`, with `complete` true only when every line carried a known prefix. #315
+> already defines `FieldViolationSet`; `complete` is the one added member. The set, not
+> `FieldViolation | null`, is the third argument of `failure`. The message prefix alone decides; `extensions.violations[].path` is not read.
 
 **Files:** `src/modules/user/transformers/user-service-error-transformer.ts` (MODIFY: the appends
 above; it keeps its `@injectable()` decorator and its `registerSingleton` registration),
@@ -1030,7 +1030,7 @@ unchanged).
 - Given the class, when it is inspected, then it keeps its one public method `normalize(error: unknown, signal?: AbortSignal): UserServiceFailure`, no collaborator, no static member and its `@injectable()` decorator, and the new rows are module-level data maps with no function values.
 - Given `make lint-metrics`, when it runs on the file, then it stays within 10 functions, 6 closures, 3 arguments and 3 exits per function: #315's file holds 9 methods and 1 closure and `fromGraphQLError` already has 3 exits, so the message lookup is not a fourth `return` there: `fromCode` is widened to take the status and run the lookup before its status-or-code branch, or at most one private method takes that branch over; the three message rows are a module-level `Map<string, UserServiceFailureReason>` and the two uniqueness texts a `ReadonlySet<string>`, `failure` takes a named `FieldViolation | null` as its third argument instead of a property string (a fourth `taken` argument would break the 3-argument cap), `VIOLATION_PROPERTIES` gains `'initials'` and `'password'`, and `STATUS_REASONS` gains `[401, 'unauthenticated']`.
 - Given #315's unit case "never reads the message for meaning", when it runs unchanged, then "Token has expired." and "User not found." still give `refused`, because only the listed texts are matched, as the README amendment of Story 1.2 allows.
-- Given the failure types, when `make lint-eslint` runs the TB-1 selectors and `tsc` runs, then `UserServiceFailure` is still #315's one interface with no added field or variant (the 2026-11-05 amendment above adds `FieldViolationSet`), the reasons are only appended members, and no inline object, bare array or suppression remains.
+- Given the failure types, when `make lint-eslint` runs the TB-1 selectors and `tsc` runs, then `UserServiceFailure` is still #315's one interface with no added field or variant (the 2026-11-05 amendment above adds `complete` to `FieldViolationSet`, not to this interface), the reasons are only appended members, and no inline object, bare array or suppression remains.
 - Given the container and AR-7, when `AUTH_TOKENS.UserServiceErrorTransformer` is resolved in the integration suite, then #315's singleton returns and stays 100% covered, and the story adds no function and no closure to `UserModuleRegistrar`.
 - Given the change, when the DoD gates run, then ESLint, `tsc`, dependency-cruiser, jscpd and `make lint-metrics` report nothing, unit coverage stays at 100% and Stryker reports zero survivors.
 
