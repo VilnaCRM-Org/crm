@@ -34,6 +34,7 @@ const props = (confirmed: boolean): Props => ({
     dismiss: jest.fn(),
   },
   saveRef: { current: null },
+  headingRef: { current: null },
 });
 
 describe('useEmailRow', () => {

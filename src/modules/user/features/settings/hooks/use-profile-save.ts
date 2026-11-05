@@ -117,7 +117,7 @@ export default function useProfileSave(props: ProfileEditContext): ProfileSave {
   const [changes] = useState(() => new ProfileChangeDetector());
   const [state, dispatch] = useReducer(reduceFormState, INITIAL_STATE);
   const { isSubmitting, submit } = useProfileUpdate();
-  useSettledFocus(state.settled, props.saveRef);
+  useSettledFocus(state.settled, props.saveRef, props.headingRef);
 
   const save = async (values: ProfileFormValues): Promise<void> => {
     const change = changes.detect(props.user, values);

@@ -211,6 +211,15 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await expect(closes).toHaveCount(3);
 
     await page.setViewportSize(REFLOW_VIEWPORT);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Number.parseFloat(
+            document.documentElement.style.getPropertyValue('scroll-padding-bottom')
+          )
+        )
+      )
+      .toBeLessThanOrEqual(REFLOW_VIEWPORT.height / 2);
     await page.evaluate(() => window.scrollTo(0, 0));
     await clearButton(page).focus();
     await saveButton(page).focus();
@@ -220,6 +229,33 @@ test.describe('Settings on touch devices (issue #330)', () => {
     const stackBox = await closes.first().locator('../..').boundingBox();
     expect(stackBox?.height ?? Infinity).toBeLessThanOrEqual(REFLOW_VIEWPORT.height / 2);
     expect((saveBox?.y ?? Infinity) + (saveBox?.height ?? 0)).toBeLessThanOrEqual(stackBox?.y ?? 0);
+  });
+
+  test('keeps both footer links clear of three toasts at the end of the page', async ({ page }) => {
+    stub = await stubProfile(page, {
+      UpdateUser: [replyWithStatus(503), replyWithStatus(503), replyWithStatus(503)],
+    });
+    await openByTap(page);
+    await tapSaveWith(page, `${PROFILE_NODE.initials} А`);
+    await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(1);
+    await saveButton(page).tap();
+    await expect(page.getByRole('button', { name: closeLabel, exact: true })).toHaveCount(2);
+    await saveButton(page).tap();
+    const closes = page.getByRole('button', { name: closeLabel, exact: true });
+    await expect(closes).toHaveCount(3);
+    const stackBox = await closes.first().locator('../..').boundingBox();
+    const links = await page.getByRole('contentinfo').getByRole('link').all();
+    expect(links.length).toBeGreaterThan(0);
+
+    for (const link of links) {
+      await link.focus();
+
+      await expect(link).toBeInViewport({ ratio: 1 });
+      const linkBox = await link.boundingBox();
+      expect((linkBox?.y ?? Infinity) + (linkBox?.height ?? 0)).toBeLessThanOrEqual(
+        stackBox?.y ?? 0
+      );
+    }
   });
 
   test('keeps Save reachable and tappable at keyboard height', async ({ page }) => {

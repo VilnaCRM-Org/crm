@@ -218,6 +218,16 @@ describe('useStackClearance', () => {
     });
   });
 
+  it('adds the same distance as real scroll space at the end of the page', () => {
+    const { unmount } = renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+    expect(document.body.style.getPropertyValue('padding-bottom')).toBe('96px');
+
+    unmount();
+
+    expect(document.body.style.getPropertyValue('padding-bottom')).toBe('');
+  });
+
   it('reserves the whole distance from the stack top to the viewport bottom', () => {
     const element = stack(10);
     const ref = { current: element };

@@ -34,16 +34,8 @@ function ProfileLoadAnnouncements({ status }: ProfileLoadAnnouncementsProps): JS
   );
 }
 
-export default function UserProfileSettings({
-  status,
-  user,
-  version,
-  refocus,
-  retry,
-  adoption,
-  toasts,
-  saveRef,
-}: UserProfileSettingsProps): JSX.Element {
+export default function UserProfileSettings(props: UserProfileSettingsProps): JSX.Element {
+  const { status, user, refocus } = props;
   return (
     <>
       <ProfileLoadAnnouncements status={status} />
@@ -54,7 +46,7 @@ export default function UserProfileSettings({
       )}
       {status === 'failed' && (
         <Box sx={styles.card}>
-          <ProfileLoadError onRetry={retry} focus={refocus} />
+          <ProfileLoadError onRetry={props.retry} focus={refocus} />
         </Box>
       )}
       {status === 'ready' && user && (
@@ -62,11 +54,12 @@ export default function UserProfileSettings({
           <ProfileHeader fullName={user.fullName} />
           <ProfileForm
             user={user}
-            adoption={adoption}
-            version={version}
+            adoption={props.adoption}
+            version={props.version}
             refocus={refocus}
-            toasts={toasts}
-            saveRef={saveRef}
+            toasts={props.toasts}
+            saveRef={props.saveRef}
+            headingRef={props.headingRef}
           />
         </Box>
       )}
