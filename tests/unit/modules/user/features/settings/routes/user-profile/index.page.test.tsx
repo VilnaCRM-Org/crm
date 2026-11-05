@@ -170,6 +170,11 @@ describe('settings page save outcomes (page)', () => {
       .find((text) => text.includes(PASSWORD_CHANGED));
     expect(utterance?.replace('\u200b', '')).toBe(`${SAVED} ${EMAIL_SENT} ${PASSWORD_CHANGED}`);
     expect(answered).toHaveLength(1);
+
+    await userEvent.click(saveButton());
+
+    expect(await screen.findByText(/Немає змін для збереження/)).toBeInTheDocument();
+    expect(answered).toHaveLength(1);
   });
 
   it.each([
@@ -358,6 +363,7 @@ describe('settings page save outcomes (page)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
     expect(toastTexts()).toHaveLength(1);
+    expect(field(NAME)).toHaveValue(NEW_NAME);
 
     await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
 

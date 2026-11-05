@@ -172,8 +172,7 @@ describe('useSettledFocus', () => {
 
       renderHook(() => useSettledFocus(1, { current: save }, NO_HEADING));
 
-      expect(heading).not.toHaveFocus();
-      expect(save).not.toHaveFocus();
+      expect(document.body).toHaveFocus();
       form.remove();
       heading.remove();
     });

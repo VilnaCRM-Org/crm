@@ -61,7 +61,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │ ├ UserProfileSettings               loading | failed | ready
   │ │ ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
   │ │ ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
-  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
+  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (message; the alert announces it)
   │ │ └ card: ProfileHeader, ProfileForm
   │ │     └ UIForm key=version, submitRef=saveRef, onInvalid, footer=ClearButton
   │ │       ├ full name "Ваше ПІБ" (read-only while saving)
