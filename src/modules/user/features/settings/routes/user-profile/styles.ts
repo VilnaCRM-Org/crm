@@ -26,6 +26,10 @@ export default {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.25rem',
+
+    [`@media (min-width:${md}px) and (max-width:${xl - 0.05}px)`]: {
+      textAlign: 'center',
+    },
   },
   profileColumn: {
     display: 'flex',

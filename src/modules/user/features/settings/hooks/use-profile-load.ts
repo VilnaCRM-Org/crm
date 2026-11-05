@@ -17,7 +17,6 @@ import useUserAdoption from './use-user-adoption';
 const INITIAL_STATE: ProfileLoadReducerState = {
   status: 'loading',
   user: null,
-  version: 0,
   refocus: false,
   reload: false,
 };
@@ -36,7 +35,7 @@ function reduceProfileLoad(
     return { ...state, status: 'loading', refocus: true, reload: !state.reload };
   }
   if (action.type === 'adopt') {
-    return { ...state, user: action.user, version: state.version + 1, refocus: false };
+    return { ...state, user: action.user, refocus: false };
   }
   const settled: Partial<ProfileLoadReducerState> =
     action.type === 'loaded'
@@ -72,7 +71,6 @@ export default function useProfileLoad(): ProfileLoadState {
   return {
     status: state.status,
     user: state.user,
-    version: state.version,
     refocus: state.refocus,
     retry: (): void => dispatch({ type: 'retry' }),
     adoption,

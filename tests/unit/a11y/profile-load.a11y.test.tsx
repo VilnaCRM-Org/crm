@@ -31,7 +31,6 @@ type Props = ComponentProps<typeof UserProfileSettings>;
 const base: Props = {
   status: 'loading',
   user: null,
-  version: 0,
   refocus: false,
   retry: () => undefined,
   adoption: {
@@ -60,7 +59,6 @@ describe('profile load states accessibility', () => {
       <UserProfileSettings
         status={state.status}
         user={state.user}
-        version={state.version}
         refocus={state.refocus}
         retry={state.retry}
         adoption={state.adoption}

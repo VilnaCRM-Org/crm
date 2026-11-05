@@ -5,6 +5,8 @@ export interface ProfileFormState {
   readonly noChanges: boolean;
   readonly noChangesMarked: boolean;
   readonly settled: number;
+  readonly saved: number;
+  readonly lastSettleSaved: boolean;
   readonly cleared: number;
   readonly attempts: number;
 }

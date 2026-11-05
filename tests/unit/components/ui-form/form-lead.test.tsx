@@ -27,14 +27,21 @@ interface LeadOverrides {
   readonly header?: Partial<FormHeaderProps>;
   readonly lead?: Partial<FormLeadProps>;
   readonly online?: boolean;
+  readonly live?: boolean;
 }
 
-function renderLead({ header = {}, lead = {}, online = true }: LeadOverrides = {}): void {
+function renderLead({
+  header = {},
+  lead = {},
+  online = true,
+  live = true,
+}: LeadOverrides = {}): void {
   render(
     <FormLead
       header={{ ...HEADER, ...header }}
       lead={{ error: null, ...lead }}
       offline={offlineOf(online)}
+      liveOfflineNotice={live}
     />
   );
 }
@@ -114,6 +121,12 @@ describe('FormLead', () => {
     renderLead();
 
     expect(screen.getByRole('status')).toHaveAttribute('id', NOTICE_ID);
+  });
+
+  it('leaves the offline status out when the form renders no live notice', () => {
+    renderLead({ live: false });
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('describes the banner action by the rendered offline status while offline', () => {

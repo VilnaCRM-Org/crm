@@ -12,6 +12,11 @@ export interface UISidebarProps {
   readonly signOut: SignOutHandler;
 }
 
+export interface SidebarCollapse {
+  readonly collapsed: boolean;
+  readonly flip: ActivateHandler;
+}
+
 export interface CollapseHandleProps {
   readonly layout: SidebarLayout;
   readonly collapsed: boolean;

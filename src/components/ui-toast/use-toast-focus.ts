@@ -13,7 +13,11 @@ import type {
 const HOLDS_FOCUS = ':focus, :focus ~ *';
 
 function focusable(element: HTMLElement | null): HTMLElement | null {
-  return element?.isConnected && !element.matches(':disabled') ? element : null;
+  const usable =
+    element?.isConnected &&
+    !element.matches(':disabled') &&
+    window.getComputedStyle(element).display !== 'none';
+  return usable ? element : null;
 }
 
 function closeOf(buttons: CloseButtons, toast: ToastItem | undefined): HTMLElement | undefined {

@@ -1,5 +1,4 @@
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
-import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import {
@@ -12,15 +11,17 @@ import {
   type StubbedProfile,
 } from './utils/profile-stub';
 import {
-  currentPasswordField,
   editName,
   emailField,
   expectErrorToast,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
   expectSuccessToast,
+  namePasswordField,
   openLoadedSettings,
-  saveButton,
+  saveEditedEmail,
+  saveEditedName,
+  saveNameButton,
   text,
 } from './utils/settings-page';
 
@@ -50,11 +51,11 @@ test.describe('Settings save failures (issue #330)', () => {
     });
     await openLoadedSettings(page);
 
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
 
     await expect(page.getByText(text.passwordWrong, { exact: true })).toBeVisible();
-    await expect(currentPasswordField(page)).toHaveAttribute('aria-invalid', 'true');
+    await expect(namePasswordField(page)).toHaveAttribute('aria-invalid', 'true');
+    await expect(namePasswordField(page)).toBeFocused();
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
@@ -64,9 +65,7 @@ test.describe('Settings save failures (issue #330)', () => {
     });
     await openLoadedSettings(page);
 
-    await fillInput(emailField(page), buildEmail());
-    await fillInput(currentPasswordField(page), password);
-    await saveButton(page).click();
+    await saveEditedEmail(page, buildEmail(), password);
 
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
     await expect(emailField(page)).toHaveAttribute('aria-invalid', 'true');
@@ -76,8 +75,7 @@ test.describe('Settings save failures (issue #330)', () => {
     stub = await stubProfile(page, { UpdateUser: [replyWithStatus(429)] });
     await openLoadedSettings(page);
 
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
 
     await expectErrorToast(page, text.rateLimited);
     await expect(page.getByRole('button', { name: text.tryAgain })).toHaveCount(0);
@@ -89,8 +87,7 @@ test.describe('Settings save failures (issue #330)', () => {
     });
     await openLoadedSettings(page);
 
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
     await expectErrorToast(page, text.transient);
     expect(stub.count('UpdateUser')).toBe(1);
 
@@ -110,11 +107,11 @@ test.describe('Settings save failures (issue #330)', () => {
     await editName(page, NEW_NAME, password);
 
     await context.setOffline(true);
-    await expect(saveButton(page)).toBeDisabled();
-    await currentPasswordField(page).press('Enter');
+    await expect(saveNameButton(page)).toBeDisabled();
+    await namePasswordField(page).press('Enter');
 
-    await expect(currentPasswordField(page)).toBeFocused();
-    await expect(saveButton(page)).toBeDisabled();
+    await expect(namePasswordField(page)).toBeFocused();
+    await expect(saveNameButton(page)).toBeDisabled();
     await expect(page.getByRole('status').filter({ hasText: text.saved })).toHaveCount(0);
     expect(stub.count('UpdateUser')).toBe(0);
   });

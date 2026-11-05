@@ -1,0 +1,57 @@
+name: crm-local-stack
+
+services:
+  dev:
+    build:
+      context: .
+      target: base
+    command: ['bun', 'x', 'rsbuild', 'dev']
+    restart: unless-stopped
+    environment:
+      REACT_APP_GRAPHQL_URL: http://vilnacrm.localhost/api/graphql
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000']
+      interval: 15s
+      timeout: 30s
+      retries: 5
+      start_period: 90s
+
+  sign-in-mock:
+    build:
+      context: .
+      dockerfile: Mockoon.Dockerfile
+    command:
+      [
+        'mockoon-cli',
+        'start',
+        '--data',
+        '/data/sign-in.json',
+        '--port',
+        '8080',
+        '--repair',
+        '--disable-admin-api',
+      ]
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./docker/local-stack/generated:/data:ro
+
+  gateway:
+    image: mirror.gcr.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    restart: unless-stopped
+    depends_on:
+      - dev
+      - sign-in-mock
+    ports:
+      - '80:80'
+    volumes:
+      - ./docker/local-stack/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  node_modules:

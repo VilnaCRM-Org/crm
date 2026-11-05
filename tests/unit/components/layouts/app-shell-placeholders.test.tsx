@@ -54,11 +54,11 @@ describe('AppShellPlaceholders', () => {
     expect(winningMediaValueFor(navigation, 'max-width:1439.95px', 'height')).toBe('1152px');
   });
 
-  it('shows the navigation column from 1024 px and widens it to 251 px below 1440 px', () => {
+  it('shows the navigation column from 768 px and widens it to 251 px below 1440 px', () => {
     render(<AppShellPlaceholders />);
     const [, navigation = document.body] = placeholders();
 
-    expect(winningMediaValueFor(navigation, 'min-width:1024px', 'display')).toBe('block');
+    expect(winningMediaValueFor(navigation, 'min-width:768px', 'display')).toBe('block');
     expect(winningMediaValueFor(navigation, 'max-width:1439.95px', 'width')).toBe('251px');
   });
 });

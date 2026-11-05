@@ -154,14 +154,16 @@ describe('settings page e-mail resend (page)', () => {
   it('keeps unsaved edits and typed passwords because the form is not remounted', async () => {
     await mount();
     await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
-    await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), 'abc');
+    await userEvent.type(screen.getByLabelText('Поточний пароль'), 'def');
     answerResend(() => resendPayload(false));
 
     await userEvent.click(resendLink());
 
     await screen.findByText(RESENT);
     expect(screen.getByLabelText('Ваше ПІБ')).toHaveValue(`${unconfirmed.initials} Іванівна`);
-    expect(screen.getByLabelText('Поточний пароль')).toHaveValue('abc');
+    expect(screen.getByLabelText('Пароль для зміни імені')).toHaveValue('abc');
+    expect(screen.getByLabelText('Поточний пароль')).toHaveValue('def');
     expect(resendLink()).toHaveFocus();
   });
 
@@ -239,8 +241,8 @@ describe('settings page e-mail resend (page)', () => {
     await userEvent.click(resendLink());
     await userEvent.clear(email());
     await userEvent.type(email(), NEW_EMAIL);
-    await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
-    const save = screen.getByRole('button', { name: 'Зберегти зміни' });
+    await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
+    const save = screen.getByRole('button', { name: 'Зберегти пошту' });
 
     expect(save).toBeEnabled();
     await userEvent.click(save);
@@ -255,21 +257,37 @@ describe('settings page e-mail resend (page)', () => {
     expect(email()).toHaveValue(NEW_EMAIL);
   });
 
-  it('is aria-disabled and sends nothing while a save is in flight', async () => {
+  it('is aria-disabled and sends nothing while an e-mail save is in flight', async () => {
     await mount();
-    await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
-    await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
+    await userEvent.type(email(), 'x');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
     answerProfileOperation('UpdateUser', {
       delayMs: 60,
       respond: () => HttpResponse.json({ data: { updateUser: { user: unconfirmed } } }),
     });
     const answered = answerResend(() => resendPayload(false));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     fireEvent.click(resendLink());
 
     expect(resendLink()).toHaveAttribute('aria-disabled', 'true');
     expect(answered).toHaveLength(0);
+    await screen.findByText('Ми надіслали посилання для підтвердження на нову адресу');
+  });
+
+  it('stays usable while a name save is in flight, because that save owns no e-mail', async () => {
+    await mount();
+    await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), 'abc');
+    answerProfileOperation('UpdateUser', {
+      delayMs: 60,
+      respond: () => HttpResponse.json({ data: { updateUser: { user: unconfirmed } } }),
+    });
+    answerResend(() => resendPayload(false));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти ім’я' }));
+
+    expect(resendLink()).not.toHaveAttribute('aria-disabled');
     await screen.findByText('Зміни збережено');
   });
 });

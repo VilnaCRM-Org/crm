@@ -19,7 +19,6 @@ export interface AdoptedUser {
 export interface ProfileLoadState {
   readonly status: ProfileLoadStatus;
   readonly user: UserEntity | null;
-  readonly version: number;
   readonly refocus: boolean;
   readonly retry: () => void;
   readonly adoption: UserEntityAdoption;
@@ -28,7 +27,6 @@ export interface ProfileLoadState {
 export interface ProfileLoadReducerState {
   readonly status: ProfileLoadStatus;
   readonly user: UserEntity | null;
-  readonly version: number;
   readonly refocus: boolean;
   readonly reload: boolean;
 }

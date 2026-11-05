@@ -50,7 +50,7 @@ const openAndEdit = async (): Promise<void> => {
   render(page());
   await screen.findByRole('heading', { level: 2, name: 'Особисті дані' });
   await userEvent.type(screen.getByLabelText('E-mail'), '.ua');
-  await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
+  await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
 };
 
 describe('settings page states accessibility', () => {
@@ -63,7 +63,7 @@ describe('settings page states accessibility', () => {
     mockUpdate.mockResolvedValue({ kind: 'ok', user: buildUserEntity() });
     await openAndEdit();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
 
     await expectNoA11yViolations(document.body);
@@ -73,7 +73,7 @@ describe('settings page states accessibility', () => {
     mockUpdate.mockResolvedValue({ kind: 'failed', reason: 'transient' });
     await openAndEdit();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     await screen.findByRole('button', { name: 'Спробувати ще раз' });
     await waitForFocusRipple();
 
@@ -87,7 +87,7 @@ describe('settings page states accessibility', () => {
     });
     await openAndEdit();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     await screen.findByText('Неправильний поточний пароль');
 
     await expectNoA11yViolations(document.body);

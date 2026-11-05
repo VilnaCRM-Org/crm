@@ -6,6 +6,8 @@ import type {
   FormBodyProps,
   FormHeaderProps,
   FormSubmitProps,
+  InlineOfflineNoticeProps,
+  SubmitAreaProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
   UIFormProps,
@@ -14,6 +16,7 @@ import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
 import UILiveStatus from '@/components/ui-live-status';
+import UIOfflineNotice from '@/components/ui-offline-notice';
 import UITypography from '@/components/ui-typography';
 
 import FormLead from './form-lead';
@@ -68,27 +71,26 @@ function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
   ) : null;
 }
 
-function FormBody<T extends FieldValues>({
-  handleSubmit,
-  onInvalid,
-  children,
-  header,
-  lead,
+function InlineOfflineNotice({ offline, mode }: InlineOfflineNoticeProps): JSX.Element | null {
+  return mode === 'inline' ? (
+    <UIOfflineNotice
+      ref={offline.noticeRef}
+      id={offline.noticeId}
+      online={offline.online}
+      live={false}
+    />
+  ) : null;
+}
+
+function SubmitArea({
+  block,
   submit,
   submitting,
-  announceSubmitting,
-  footer,
-}: FormBodyProps<T>): JSX.Element {
-  const { offline, block, disabled } = useFormSubmission({
-    submit,
-    submitting,
-    handleSubmit,
-    onInvalid,
-  });
+  disabled,
+  offline,
+}: SubmitAreaProps): JSX.Element {
   return (
-    <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>
-      <FormLead header={header} lead={lead} offline={offline} />
-      {children}
+    <>
       <SubmitControls
         submitting={submitting}
         isSubmitDisabled={disabled}
@@ -100,6 +102,45 @@ function FormBody<T extends FieldValues>({
         submitSx={submit.submitSx}
       />
       <BlockedReason block={block} />
+    </>
+  );
+}
+
+function FormBody<T extends FieldValues>({
+  handleSubmit,
+  onInvalid,
+  children,
+  header,
+  lead,
+  submit,
+  submitting,
+  announceSubmitting,
+  footer,
+  offlineNotice,
+}: FormBodyProps<T>): JSX.Element {
+  const { offline, block, disabled } = useFormSubmission({
+    submit,
+    submitting,
+    handleSubmit,
+    onInvalid,
+  });
+  return (
+    <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>
+      <FormLead
+        header={header}
+        lead={lead}
+        offline={offline}
+        liveOfflineNotice={offlineNotice === 'live'}
+      />
+      {children}
+      <InlineOfflineNotice offline={offline} mode={offlineNotice} />
+      <SubmitArea
+        block={block}
+        submit={submit}
+        submitting={submitting}
+        disabled={disabled}
+        offline={offline}
+      />
       {footer}
       <UILiveStatus message={announceSubmitting ? submit.submittingLabel : ''} />
     </form>
@@ -147,6 +188,7 @@ export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JS
         submitting={submitting}
         announceSubmitting={props.submittingAnnouncement ?? submitting}
         footer={props.footer}
+        offlineNotice={props.offlineNotice ?? 'live'}
       >
         {props.children}
       </FormBody>

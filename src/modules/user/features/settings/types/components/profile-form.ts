@@ -1,13 +1,91 @@
-import type { EmailRowState } from '../hooks/use-email-row';
+import type { SystemStyleObject, Theme } from '@mui/system';
+
+import type { OfflineNoticeMode } from '@/components/types/ui-form';
+
+import type { ProfileFormModel } from '../hooks/use-profile-form-model';
 import type { ProfileFormRules } from '../hooks/use-profile-form-rules';
-import type { ProfileEditContext } from '../hooks/use-profile-save';
-import type { ProfileFormState } from '../user-profile/form-state';
-import type { ProfileFieldErrorSet } from '../user-profile/outcome';
+import type { ProfileEditContext, ProfileSave } from '../hooks/use-profile-save';
+import type { ProfileField, ProfileFieldErrorSet } from '../user-profile/outcome';
 import type { ProfileFormValues } from '../user-profile/profile-form-values';
+import type { ProfileSection, RevealedProfileSection } from '../user-profile/profile-section';
 
 export interface ProfileFormProps extends ProfileEditContext {
-  readonly version: number;
   readonly refocus: boolean;
+}
+
+export interface ProfileSectionFormProps {
+  readonly context: ProfileEditContext;
+  readonly section: ProfileSection;
+}
+
+export interface SaveHintProps {
+  readonly id: string;
+}
+
+export type ReportSectionChange = (changed: boolean) => void;
+
+export interface ProfileSectionFieldsProps {
+  readonly context: ProfileEditContext;
+  readonly section: ProfileSection;
+  readonly rules: ProfileFormRules;
+  readonly save: ProfileSave;
+  readonly onChange: ReportSectionChange;
+}
+
+export interface RevealedSectionFieldsProps extends Omit<ProfileSectionFieldsProps, 'section'> {
+  readonly section: RevealedProfileSection;
+}
+
+export interface SectionClearProps {
+  readonly model: ProfileFormModel;
+  readonly revealed: boolean;
+}
+
+export interface SectionForm {
+  readonly model: ProfileFormModel;
+  readonly revealed: boolean;
+  readonly onChange: ReportSectionChange;
+  readonly submitLabel: string;
+  readonly submittingLabel: string;
+  readonly submitSx: SystemStyleObject<Theme>;
+  readonly offlineNotice: OfflineNoticeMode;
+}
+
+export interface FullNameFieldProps {
+  readonly rules: ProfileFormRules;
+  readonly busy: boolean;
+}
+
+export interface EmailFieldProps extends FullNameFieldProps {
+  readonly context: ProfileEditContext;
+}
+
+export interface EmailStatusProps {
+  readonly context: ProfileEditContext;
+  readonly busy: boolean;
+}
+
+export interface SectionOfflineNotices {
+  readonly clean: OfflineNoticeMode;
+  readonly revealed: OfflineNoticeMode;
+}
+
+export interface SectionPasswordProps {
+  readonly section: RevealedProfileSection;
+  readonly rules: ProfileFormRules;
+  readonly busy: boolean;
+}
+
+export interface SectionBodyProps {
+  readonly context: ProfileEditContext;
+  readonly section: ProfileSection;
+  readonly model: ProfileFormModel;
+  readonly onChange: ReportSectionChange;
+}
+
+export interface SectionErrorField {
+  readonly error: ProfileField;
+  readonly field: keyof ProfileFormValues;
 }
 
 export interface ClearButtonProps {
@@ -17,32 +95,12 @@ export interface ClearButtonProps {
 }
 
 export interface ServerFieldErrorsProps {
+  readonly section: ProfileSection;
   readonly errors: ProfileFieldErrorSet;
-}
-
-export interface ProfileFormFieldsProps {
-  readonly rules: ProfileFormRules;
-  readonly refocus: boolean;
-  readonly state: ProfileFormState;
-  readonly emailRow: EmailRowState;
-  readonly busy: boolean;
-}
-
-export interface PersonalDetailsProps {
-  readonly rules: ProfileFormRules;
-  readonly refocus: boolean;
-  readonly emailRow: EmailRowState;
-  readonly busy: boolean;
 }
 
 export interface EmailStatusRowProps {
   readonly statusId: string;
   readonly busy: boolean;
   readonly onResend: () => void;
-}
-
-export interface EmailFieldProps {
-  readonly rules: ProfileFormRules;
-  readonly emailRow: EmailRowState;
-  readonly busy: boolean;
 }

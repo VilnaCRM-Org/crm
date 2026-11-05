@@ -2,8 +2,9 @@
 
 The user settings page (issue #330): `/settings`, a protected route registered in every
 environment, with no feature flag. A signed-in user reads their profile, changes the name, the
-e-mail and the password in one form, resends the confirmation link and sees every outcome as a
-toast or a field error. The decisions are recorded in `## User Settings decisions` of the
+e-mail and the password in three forms, one thing saved at a time, resends the confirmation link
+and sees every outcome as a toast or a field error. The decisions are recorded in
+`## User Settings decisions` of the
 [user module README](../../README.md).
 
 ## What is here
@@ -11,8 +12,9 @@ toast or a field error. The decisions are recorded in `## User Settings decision
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
-- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form` (`ClearButton`,
-  `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`, `user-menu` (the
+- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
+  (`ProfileSectionForm`, `SectionFields`, `ClearButton`, `EmailStatusRow`), `change-password`,
+  `settings-grid`, `social-networks`, `user-menu` (the
   app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
 - `components/user-menu/user-menu-slot.tsx` — `UserMenuSlot`, the `user-menu` chunk entry. It
   mounts one `UserMenu` for its whole life and owns the identity it shows. It lazy-loads only the
@@ -37,7 +39,8 @@ toast or a field error. The decisions are recorded in `## User Settings decision
   and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
   caller aborted the read. The settings page itself still reads through `ProfileProvider`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
-  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`, `useDisplayName`,
+  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useSectionReveal`,
+  `useCollapseFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
 - `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
@@ -90,15 +93,19 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │ │ ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
   │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
   │ │ └ card: ProfileHeader, ProfileForm
-  │ │     └ UIForm key=version, submitRef=saveRef, onInvalid, footer=ClearButton
-  │ │       ├ full name "Ваше ПІБ" (read-only while saving)
-  │ │       ├ h2 "Особисті дані": e-mail + EmailStatusRow (read-only while saving)
-  │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords (read-only while saving),
-  │ │       │ policy rules
-  │ │       ├ UIServerFieldError per field, keyed per Save attempt
-  │ │       ├ p role=status (no changes, alternating mark on a repeat)
+  │ │     ├ ProfileSectionForm fullName     UIForm key=saved, submitRef, onInvalid
+  │ │     │ ├ "Ваше ПІБ"; once changed: "Пароль для зміни імені", "Зберегти ім’я", ClearButton
+  │ │     │ └ UIServerFieldError per field, p role=status
+  │ │     ├ h2 "Особисті дані"
+  │ │     ├ ProfileSectionForm email        UIForm key=saved, submitRef, onInvalid
+  │ │     │ ├ e-mail + EmailStatusRow; once changed: "Пароль для зміни пошти", "Зберегти пошту",
+  │ │     │ │ ClearButton
+  │ │     │ └ UIServerFieldError per field, p role=status
+  │ │     └ ProfileSectionForm password     UIForm key=saved, submitRef, onInvalid, ClearButton
+  │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords, policy rules
+  │ │       └ UIServerFieldError per field, p role=status
   │ └ SocialNetworks                    h2 "Соціальні мережі", four presentational tiles
-  └ UIToastStack                        returns focus to Save
+  └ UIToastStack                        returns focus to the Save, or the input if its Save hid
 ```
 
 ## Layer stack
@@ -151,15 +158,20 @@ Save, read or resend (amended 2026-11-02, superseding the earlier `session_ended
 
 Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `password_wrong`,
 `password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an
-i18n key; a field error reason is copy that `ProfileForm` looks up in its module-private
+i18n key; a field error reason is copy that `ProfileSectionForm` looks up in its module-private
 `ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
-field, in field order, that has one. A Save that settles with a toast moves focus to Save when
-focus has fallen to the page body or is still inside the form, as after Enter in a field
-(`useSettledFocus`), so a control the user moved to outside the form keeps focus.
+field, in field order, that has one. A `currentPassword` error goes to the password field of the
+section that sent it. A Save that settles with a toast moves focus when focus has fallen to the
+page body or is still inside the form, as after Enter in a field (`useSettledFocus`), so a control
+the user moved to outside the form keeps focus: to that form's Save, or to the text input when a
+name or e-mail save succeeded and hid its Save. `useCollapseFocus` does the same for a Clear that
+removes itself.
 
-`ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
-`useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned
-`ProfileEditContext`. A resend that settles after a Save changed the address has no visible
+Each section sends only its own field and its own password (`ProfileChangeDetector.detect`), and a
+form remounts only on its own successful save (`key=saved`), so a draft in another form survives.
+`ProfileSectionForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave` and
+`useProfileFormRules`; `EmailFields` calls `useEmailRow` (over `useEmailResend`); all take the
+hook-owned `ProfileEditContext`. A resend that settles after a Save changed the address has no visible
 effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the
 e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
 so even a resend that settles before React commits the adopted entity is dropped. The reducer's
@@ -200,7 +212,7 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   Евгения Олеговна" → "Евгения Маслова"), one or two words show as typed, and the monogram
   follows the greeted name.
 - **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
-  optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules
+  field's hint is visually hidden (still in `aria-describedby`) and the four policy rules
   appear while the field has focus or a value. When an empty field loses focus `useBlurHold` keeps
   them for 200 ms more, so a click on Save that starts the blur lands before Save moves up. A new
   password equal to the current one is refused once the policy passes.

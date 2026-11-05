@@ -375,6 +375,57 @@ The dev container starts Mailpit too and forwards port 8025. The test stack
 (`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
 stateless mock and stub GraphQL where they need a specific answer.
 
+### Local stack with the real user-service
+
+`make start` answers GraphQL from the Apollo mock, which accepts any password. To see a real
+password change, `make start-local-stack` runs the SPA against a real user-service at
+<http://vilnacrm.localhost>:
+
+```bash
+git clone git@github.com:VilnaCRM-Org/user-service.git ../user-service
+make start-local-stack
+make stop-local-stack
+```
+
+Set `USER_SERVICE_DIR` when the clone is elsewhere, which includes running from a worktree. Port 80
+has to be free, because the gateway binds it. `stop-local-stack` leaves user-service running; stop
+it with `docker compose down` from its own directory, using
+`COMPOSE_PROJECT_NAME=user-service-local`.
+
+Three containers from `docker-compose.local-stack.yml` sit in front of user-service, which is why
+the browser sees one origin:
+
+| Path            | Goes to                                |
+| --------------- | -------------------------------------- |
+| `/api/graphql`  | Mockoon, which proxies to user-service |
+| Everything else | The rsbuild dev server, including HMR  |
+
+The one origin avoids CORS: user-service rejects the `X-Request-Id` and `X-Correlation-Id`
+preflight (user-service #514). `.localhost` needs no `/etc/hosts` entry and browsers treat it as a
+secure context, which a `.local` name is not.
+
+**Mockoon provides the sign-in token.** `sign-in.template.json` answers `SignInUser` for the demo
+user with a token, and every other operation reaches user-service. A made-up token would not work,
+because user-service verifies an RS256 signature and a live session. So
+`scripts/local-stack/issue-demo-session.mjs` creates `demo@vilnacrm.com`, signs in for real, and
+writes that token into the gitignored `docker/local-stack/generated/sign-in.json`. It reuses the
+token until an hour before it expires, and the start script raises its lifetime to 30 days through
+the clone's gitignored `.env.local`.
+
+What that means when you test by hand:
+
+- The sign-in page accepts **any** password for the demo user, because Mockoon answers it. Every
+  other address signs in against user-service.
+- Settings is real. Each save sends the current password, and user-service rejects a wrong one.
+  After a password change the old password stops working there and the new one starts.
+- Changing the password keeps this session, because user-service revokes only the other sessions.
+- To issue a new token after changing the demo password, delete the generated file and run
+  `LOCAL_DEMO_PASSWORD=<new password> make start-local-stack`.
+
+The start script builds the user-service image without its DocumentDB CA bundle step. That file
+secures AWS connections, which a local Mongo never makes, and its pinned digest fails whenever AWS
+rotates the bundle (user-service #503). user-service's tracked files are left unchanged.
+
 ### The browser security-header gate
 
 Every production response carries the header baseline — `Content-Security-Policy`,

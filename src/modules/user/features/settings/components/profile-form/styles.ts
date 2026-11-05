@@ -188,6 +188,18 @@ export default {
       [SETTINGS_DESKTOP]: { width: '16.875rem', height: '3.875rem' },
     },
   },
+  saveButtonHidden: { '&&': { display: 'none' } },
+  visuallyHidden: {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    margin: '-1px',
+    padding: 0,
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  },
   clearButton: {
     '&&': {
       ...SETTINGS_OUTLINED_PILL,

@@ -29,7 +29,12 @@ function FormHeader({ header, bannerShown }: FormHeaderSectionProps): JSX.Elemen
   );
 }
 
-export default function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element {
+export default function FormLead({
+  header,
+  lead,
+  offline,
+  liveOfflineNotice,
+}: FormLeadSectionProps): JSX.Element {
   const focusReturn = useFocusReturn(Boolean(lead.error), offline.submitRef);
 
   return (
@@ -43,7 +48,9 @@ export default function FormLead({ header, lead, offline }: FormLeadSectionProps
         focusReturn={focusReturn}
         unavailableReasonId={offline.online ? undefined : offline.noticeId}
       />
-      <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
+      {liveOfflineNotice && (
+        <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
+      )}
     </>
   );
 }

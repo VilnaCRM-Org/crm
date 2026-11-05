@@ -39,6 +39,8 @@ export function buildProfileFormValues(
   return {
     fullName: buildFullName(),
     email: buildEmail(),
+    fullNamePassword: buildPassword(),
+    emailPassword: buildPassword(),
     currentPassword: buildPassword(),
     newPassword: buildPassword(),
     ...overrides,

@@ -2,20 +2,25 @@ import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
 import type { ProfileChange } from '../types/user-profile/profile-change';
 import type { ProfileFormValues } from '../types/user-profile/profile-form-values';
+import type { ProfileSection } from '../types/user-profile/profile-section';
 
 export default class ProfileChangeDetector {
-  public detect(user: UserEntity, values: ProfileFormValues): ProfileChange | null {
-    const name = this.nameChanged(user, values.fullName);
-    const email = this.emailChanged(user, values.email);
-    const password = this.passwordChanged(values.newPassword);
-    if (!name && !email && !password) return null;
-    return {
-      id: user.id,
-      currentPassword: values.currentPassword,
-      ...(name ? { fullName: values.fullName.trim() } : {}),
-      ...(email ? { email: values.email.trim() } : {}),
-      ...(password ? { newPassword: values.newPassword } : {}),
-    };
+  public detect(
+    section: ProfileSection,
+    user: UserEntity,
+    values: ProfileFormValues
+  ): ProfileChange | null {
+    return this.sectionChanged(section, user, values) ? this.build(section, user, values) : null;
+  }
+
+  public sectionChanged(
+    section: ProfileSection,
+    user: UserEntity,
+    values: ProfileFormValues
+  ): boolean {
+    if (section === 'fullName') return this.nameChanged(user, values.fullName);
+    if (section === 'email') return this.emailChanged(user, values.email);
+    return this.passwordChanged(values.newPassword);
   }
 
   public nameChanged(user: UserEntity, fullName: string): boolean {
@@ -28,5 +33,27 @@ export default class ProfileChangeDetector {
 
   public emailChanged(user: UserEntity, email: string): boolean {
     return email.trim().toLowerCase() !== user.email.trim().toLowerCase();
+  }
+
+  private build(
+    section: ProfileSection,
+    user: UserEntity,
+    values: ProfileFormValues
+  ): ProfileChange {
+    if (section === 'fullName') {
+      return {
+        id: user.id,
+        currentPassword: values.fullNamePassword,
+        fullName: values.fullName.trim(),
+      };
+    }
+    if (section === 'email') {
+      return { id: user.id, currentPassword: values.emailPassword, email: values.email.trim() };
+    }
+    return {
+      id: user.id,
+      currentPassword: values.currentPassword,
+      newPassword: values.newPassword,
+    };
   }
 }
