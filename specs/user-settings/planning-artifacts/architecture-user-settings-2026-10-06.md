@@ -1771,6 +1771,11 @@ would lose the memory-only token.
   `useFeatureFlag('userSettings')` is true, labelled `home.settings_link` "Налаштування".
   `AppLayout`'s arrival focus then lands on `main` (`src/hooks/use-arrival-focus.ts:10-23`).
 - The link is built here; the 2FA bundle reuses it and adds no second link (D3).
+- Amended 2026-11-05 (reconciliation with shipped code): the control shipped as a text link,
+  `UILink href={ROUTE_PATHS.settings}` with the same `useLinkClickHandler` and arrival state,
+  styled in `src/features/home/styles.ts` (`settings/README.md`, "text links"), not as
+  `UIButton to`. Client-side navigation, focus, order and copy are unchanged. The app shell (#362)
+  replaces this link with its sidebar entry.
 
 ### 5.16 Localisation namespaces
 

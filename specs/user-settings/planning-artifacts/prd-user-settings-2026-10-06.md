@@ -394,7 +394,9 @@ because the button that held it was replaced by the skeleton.
 The card opens with a decorative monogram derived from the name, the greeting "Вітаємо!" in
 `#57595B` instead of the failing `#969B9D` (D15) and the name in bold. There is no photo, upload
 control or file input (D2); the original "no pencil badge" is superseded by the 2026-10-21
-amendment below. A successful name change updates it from the payload.
+amendment below. A successful name change updates it from the payload. Amended 2026-11-05 (Figma):
+"bold" holds from the tablet layout up, in Golos Bold 22/26; below 768 px the name is Inter Medium
+18/22, which is what the phone frame `313:10606` draws.
 
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП", hidden
   from the accessibility tree, and a one-word "Admin" shows "A".
@@ -1119,6 +1121,11 @@ composer's error element; its chunk loader retries an import once and never relo
 page. Errors reach observability only through the existing Apollo error link, once and without
 variables, with both correlation ids; settings adds no direct SDK call and records no security
 signal, an empty `REACT_APP_SENTRY_DSN` stays a no-op, and telemetry never blocks a flow.
+
+Amended 2026-11-05 (reconciliation with shipped code, architecture §3 and epics Story 2.3): errors
+the link sees go through it as above. A rejection that never reached the link is captured once
+through `UnseenFailureReporter` and the observability boundary, without variables and scrubbed by
+`PiiScrubber`, so it is not lost. No direct SDK call is added.
 
 ### NFR-11 — Localization, console gate and test conventions
 
