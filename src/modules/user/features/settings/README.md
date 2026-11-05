@@ -36,20 +36,27 @@ toast or a field error. The decisions are recorded in `## User Settings decision
 
 ## Shared pieces
 
-Imported from #315 (password recovery), not copied:
+Each shared piece has one owner (architecture §15.2). Imported from #315 (password recovery), not
+copied:
 
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
-- `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
-  name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
+- `UIForm`, the name, e-mail and password validators, and `useAbortableSubmit`.
+
+Built here:
+
 - `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session. No
   settings file imports it: the user module's composition root (`src/modules/user/config/di.ts`)
   puts its link on the Apollo client the settings repositories receive by injection.
-
-Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
-
-- `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
-  an assertive one for error texts, both always mounted, at most three on screen.
+- The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
+  `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
+- `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
+  region for success texts and an assertive one for error texts, both always mounted, at most three
+  on screen. The two-factor card reports inside its own card.
 - The `SettingsGrid`, whose second slot is reserved for the two-factor card.
+
+#331 (two-factor authentication) imports these rather than rebuilding them (architecture §15.3):
+`SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
+`error.text` token, the home link and the `session_ended` notice.
 
 ## Page tree
 
