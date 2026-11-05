@@ -399,7 +399,9 @@ because the button that held it was replaced by the skeleton.
 The card opens with a decorative monogram derived from the name, the greeting "Вітаємо!" in
 `#57595B` instead of the failing `#969B9D` (D15) and the name in bold. There is no photo, upload
 control or file input (D2); the original "no pencil badge" is superseded by the 2026-10-21
-amendment below. A successful name change updates it from the payload.
+amendment below. A successful name change updates it from the payload. Amended 2026-11-05 (Figma):
+"bold" holds from the tablet layout up, in Golos Bold 22/26; below 768 px the name is Inter Medium
+18/22, which is what the phone frame `313:10606` draws.
 
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП", hidden
   from the accessibility tree, and a one-word "Admin" shows "A".
@@ -558,7 +560,10 @@ Save uses `UIForm`'s native busy state (D18): the button is disabled with the sp
 is in flight at a time. Offline, Save is disabled and described by the offline notice. "Очистити"
 and "Надіслати повторно" are inert during a Save, and the four fields are read-only (still
 focusable, values unchanged), so nothing typed after Save is dropped when the adopted profile
-remounts the form. A settled Save never leaves focus on `body`.
+remounts the form. A settled Save never leaves focus on `body`. Amended 2026-11-05 (reconciliation):
+when Save is itself disabled as it settles, because the connection dropped during the Save, focus
+that fell to `body` moves to the `h1`, the fallback closing a toast already uses (FR-20); a field the
+user is still in keeps focus.
 
 - Given Save activated twice quickly, when the network is observed, then one `updateUser` was
   sent.
@@ -1121,9 +1126,15 @@ All three operations run under the request deadline (`REACT_APP_REQUEST_TIMEOUT_
 10 000 ms, through the `DeadlineFetchAdapter`) and forward the abort signal; the chain has no
 retry link; a timeout is a transient failure with a user-initiated retry. The route has the
 composer's error element; its chunk loader retries an import once and never reloads a protected
-page. Errors reach observability only through the existing Apollo error link, once and without
+page. Errors reach observability only through the existing Apollo error link (superseded
+2026-11-05 by the amendment below, which adds the `UnseenFailureReporter` path), once and without
 variables, with both correlation ids; settings adds no direct SDK call and records no security
 signal, an empty `REACT_APP_SENTRY_DSN` stays a no-op, and telemetry never blocks a flow.
+
+Amended 2026-11-05 (reconciliation with shipped code, architecture §3 and epics Story 2.3): errors
+the link sees go through it as above. A rejection that never reached the link is captured once
+through `UnseenFailureReporter` and the observability boundary, without variables and scrubbed by
+`PiiScrubber`, so it is not lost. No direct SDK call is added.
 
 ### NFR-11 — Localization, console gate and test conventions
 

@@ -92,6 +92,7 @@ const contextOf = (entity = user): ProfileSectionFieldsProps['context'] => ({
     dismiss: jest.fn(),
   },
   saveRef: { current: null },
+  headingRef: { current: null },
 });
 
 function Frame({ children }: { children: ReactNode }): JSX.Element {

@@ -36,6 +36,7 @@ describe('useProfileFormModel', () => {
       dismiss: jest.fn(),
     },
     saveRef: { current: null },
+    headingRef: { current: null },
   };
   const save = { isSubmitting: true, changes: { detect: jest.fn() } };
   const rules = { email: {} };

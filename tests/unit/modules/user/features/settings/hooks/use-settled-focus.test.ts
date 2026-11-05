@@ -39,11 +39,13 @@ const stateOf = (settled: number, lastSettleSaved = false): ProfileFormState => 
 
 const optionsOf = (
   section: ProfileSection,
-  button: HTMLButtonElement | null
+  button: HTMLButtonElement | null,
+  heading: HTMLElement | null = null
 ): Omit<SettledFocusOptions, 'state'> => ({
   section,
   buttonRef: { current: button },
   saveRef: { current: null },
+  headingRef: { current: heading },
 });
 
 describe('useSettledFocus', () => {
@@ -176,5 +178,64 @@ describe('useSettledFocus', () => {
 
     expect(document.body).toHaveFocus();
     expect(options.saveRef.current).toBeNull();
+  });
+
+  describe('when Save is disabled as the save settles', () => {
+    const offlineForm = (): Mounted & { readonly heading: HTMLElement } => {
+      const parts = mountForm('fullName');
+      parts.save.disabled = true;
+      const heading = document.createElement('h1');
+      heading.tabIndex = -1;
+      document.body.append(heading);
+      return { ...parts, heading };
+    };
+
+    it('moves focus from the page body to the heading', () => {
+      const { save, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
+
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
+
+      expect(heading).toHaveFocus();
+      expect(options.saveRef.current).toBe(save);
+    });
+
+    it('leaves focus on a field the user is still in', () => {
+      const { save, other, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
+      other.focus();
+
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
+
+      expect(other).toHaveFocus();
+    });
+
+    it('does nothing before any save settled', () => {
+      const { save, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
+
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(0) }));
+
+      expect(heading).not.toHaveFocus();
+    });
+
+    it('stays on the body without a heading to move to', () => {
+      const { save } = offlineForm();
+      const options = optionsOf('fullName', save);
+
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
+
+      expect(document.body).toHaveFocus();
+    });
+
+    it('still prefers the text input after a successful save, which is never disabled', () => {
+      const { save, input, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
+
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1, true) }));
+
+      expect(input).toHaveFocus();
+      expect(heading).not.toHaveFocus();
+    });
   });
 });

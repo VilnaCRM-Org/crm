@@ -67,6 +67,7 @@ const props = (overrides: Partial<Props> = {}): Props => ({
     dismiss: jest.fn(),
   },
   saveRef: createRef<HTMLElement>(),
+  headingRef: createRef<HTMLElement>(),
   ...overrides,
 });
 
@@ -79,6 +80,7 @@ const form = (overrides: Partial<Props> = {}): JSX.Element => {
       refocus={state.refocus}
       toasts={state.toasts}
       saveRef={state.saveRef}
+      headingRef={state.headingRef}
     />
   );
 };
@@ -93,6 +95,7 @@ function AdoptingForm({ initial }: { readonly initial: Props['user'] }): JSX.Ele
       refocus={base.refocus}
       toasts={base.toasts}
       saveRef={base.saveRef}
+      headingRef={base.headingRef}
     />
   );
 }

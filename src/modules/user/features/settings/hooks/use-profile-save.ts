@@ -124,9 +124,9 @@ function useSaveTarget(
   section: ProfileSection,
   state: ProfileFormState
 ): SaveTarget {
-  const { saveRef } = props;
+  const { saveRef, headingRef } = props;
   const buttonRef = useRef<HTMLButtonElement>(null);
-  useSettledFocus({ state, section, buttonRef, saveRef });
+  useSettledFocus({ state, section, buttonRef, saveRef, headingRef });
 
   return {
     buttonRef,

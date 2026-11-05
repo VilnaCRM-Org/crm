@@ -41,6 +41,7 @@ const form = (): JSX.Element => (
       dismiss: jest.fn(),
     }}
     saveRef={createRef<HTMLElement>()}
+    headingRef={createRef<HTMLElement>()}
   />
 );
 
