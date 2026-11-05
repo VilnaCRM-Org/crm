@@ -40,10 +40,11 @@ Each shared piece has one owner (architecture §15.2). Imported from #315 (passw
 copied:
 
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
-- `UIForm`, the name, e-mail and password validators, and `useAbortableSubmit`.
+- `UIForm`, the name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
 
 Built here:
 
+- The `submitRef`, `submitSx` and `footer` props of `UIForm`.
 - `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session. No
   settings file imports it: the user module's composition root (`src/modules/user/config/di.ts`)
   puts its link on the Apollo client the settings repositories receive by injection.
@@ -54,7 +55,7 @@ Built here:
   on screen. The two-factor card reports inside its own card.
 - The `SettingsGrid`, whose second slot is reserved for the two-factor card.
 
-#331 (two-factor authentication) imports these rather than rebuilding them (architecture §15.3):
+Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
 `SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
 `error.text` token, the home link and the `session_ended` notice.
 
