@@ -10,18 +10,27 @@ function revealFocused(stack: HTMLElement, top: number): void {
   }
 }
 
+function setClearance(value: string): void {
+  document.documentElement.style.setProperty('scroll-padding-bottom', value);
+  document.body.style.setProperty('padding-bottom', value);
+}
+
+function clearClearance(): void {
+  document.documentElement.style.removeProperty('scroll-padding-bottom');
+  document.body.style.removeProperty('padding-bottom');
+}
+
 function reserveClearance(stack: HTMLElement): () => void {
-  const root = document.documentElement;
   const reserve = (): void => {
     const { top } = stack.getBoundingClientRect();
-    root.style.setProperty('scroll-padding-bottom', `${window.innerHeight - top}px`);
+    setClearance(`${window.innerHeight - top}px`);
     revealFocused(stack, top);
   };
   reserve();
   window.addEventListener('resize', reserve);
   return (): void => {
     window.removeEventListener('resize', reserve);
-    root.style.removeProperty('scroll-padding-bottom');
+    clearClearance();
   };
 }
 

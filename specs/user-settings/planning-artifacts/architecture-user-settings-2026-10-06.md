@@ -1420,7 +1420,9 @@ export interface ToastQueue {
   px (FR-20). No global stylesheet changes. Amended 2026-11-05 (WCAG 2.4.11): the padding is the
   distance from the stack's top to the viewport bottom, bottom inset included, and the stack's
   `maxHeight` is half of `100dvh` less that inset, scrolling inside. One limit therefore serves
-  both, so the reservation always covers the stack, also at the 320 × 256 reflow size.
+  both, so the reservation always covers the stack, also at the 320 × 256 reflow size. The same
+  value is set as `padding-bottom` on `body`, because scroll padding moves where focus scrolling
+  stops but adds no scrollable space, and the footer links would otherwise stay under the stack.
 - **Motion.** None: toasts appear and leave without animation, so reduced motion needs no
   special case.
 - **Tokens.** `paletteColors.success.surface` `#E8F4EF`, `success.icon` `#38B386`,
@@ -1771,6 +1773,11 @@ would lose the memory-only token.
   `useFeatureFlag('userSettings')` is true, labelled `home.settings_link` "Налаштування".
   `AppLayout`'s arrival focus then lands on `main` (`src/hooks/use-arrival-focus.ts:10-23`).
 - The link is built here; the 2FA bundle reuses it and adds no second link (D3).
+- Amended 2026-11-05 (reconciliation with shipped code): the control shipped as a text link,
+  `UILink href={ROUTE_PATHS.settings}` with the same `useLinkClickHandler` and arrival state,
+  styled in `src/features/home/styles.ts` (`settings/README.md`, "text links"), not as
+  `UIButton to`. Client-side navigation, focus, order and copy are unchanged. The app shell (#362)
+  replaces this link with its sidebar entry.
 
 ### 5.16 Localisation namespaces
 

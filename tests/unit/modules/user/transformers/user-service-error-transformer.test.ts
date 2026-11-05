@@ -189,6 +189,18 @@ describe('UserServiceErrorTransformer', () => {
     expect(transformer.normalize(error)).toEqual(violation('token', 422));
   });
 
+  it('prefers a later GraphQL error when the token is only one of its violation lines', () => {
+    const message = `newPassword: ${faker.lorem.sentence()}\ntoken: ${faker.lorem.sentence()}`;
+    const error = new ApolloError({
+      graphQLErrors: [
+        { message: faker.lorem.sentence(), extensions: { code: 'INTERNAL_SERVER_ERROR' } },
+        { message, extensions: { status: 422 } },
+      ],
+    });
+
+    expect(transformer.normalize(error)).toEqual(violationsAt(['newPassword', 'token'], 422));
+  });
+
   it('classifies the first GraphQL error when none carries a token violation', () => {
     const error = new ApolloError({
       graphQLErrors: [

@@ -4,7 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-05
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'analyst (Mary), autonomous run'
@@ -233,7 +233,8 @@ places first with sign-up's name and e-mail validators (D11); an unedited name i
 - **One page.** `/settings` is one protected lazy route of the settings feature, 2FA card on the
   right. The route is always registered; a render-time gate shows the not-found page unless
   `userSettings` is on, whatever `twoFactorAuth` says (R17); `twoFactorAuth` only decides whether
-  the 2FA card shows inside the page.
+  the 2FA card shows inside the page. Superseded 2026-11-03: the owner removed both flags, so the
+  page and the 2FA card always render.
 - **2FA has its own page** (the user, 2026-10-16, Figma `72:4846`). The 2FA code entry at sign-in
   is a standalone page that the two-factor bundle serves as its own public route; `/settings`
   keeps only the slot for the 2FA settings card.
@@ -285,7 +286,9 @@ The floors in `.claude/react-sdlc.yml:50-65` are raise-only: coverage 100 on all
 mutation MSI 100, zero jscpd clones, ESLint errors and warnings, tsc, markdownlint and
 dependency-cruiser findings, metrics enforced, zero visual diffs, Lighthouse desktop 95 and
 mobile 85; CI asserts performance at 0.95 desktop (`lighthouse/lighthouserc.desktop.js:19`) and
-0.84 mobile (`lighthouse/lighthouserc.mobile.js:35`). Nothing is lowered or suppressed. Intended
+0.84 mobile (`lighthouse/lighthouserc.mobile.js:35`). That is a known gap this feature inherits:
+CI asserts one point under the profile's mobile floor, so a green run alone does not show the
+floor of 85 is met. Nothing is lowered or suppressed. Intended
 new baselines, all from the CI artifact: the `/settings` states and the home page with its link
 (the test stack turns the flag on); the field-error colour fix re-baselines nothing, because no
 existing baseline renders a field error.

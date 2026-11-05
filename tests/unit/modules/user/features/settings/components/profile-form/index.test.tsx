@@ -1,13 +1,17 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import { createRef, type JSX, type ReactNode } from 'react';
+import * as ReactHookForm from 'react-hook-form';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import ProfileForm from '@/modules/user/features/settings/components/profile-form';
 import { buildEmail, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { doubledClass, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const NEW_EMAIL = buildEmail();
 const NEW_PASSWORD = buildPassword();
@@ -56,8 +60,31 @@ const props = (overrides: Partial<Props> = {}): Props => ({
     dismiss: jest.fn(),
   },
   saveRef: createRef<HTMLButtonElement>(),
+  headingRef: createRef<HTMLElement>(),
   ...overrides,
 });
+
+const renderFresh = async (overrides: Partial<Props> = {}): Promise<void> => {
+  const Fresh = await loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    jest.doMock('react-hook-form', () => ReactHookForm);
+    jest.doMock('react-i18next', () => ReactI18next);
+    return (await import('@/modules/user/features/settings/components/profile-form')).default;
+  });
+  const state = props(overrides);
+  render(
+    <Fresh
+      user={state.user}
+      adoption={state.adoption}
+      version={state.version}
+      refocus={state.refocus}
+      toasts={state.toasts}
+      saveRef={state.saveRef}
+      headingRef={state.headingRef}
+    />,
+    { wrapper }
+  );
+};
 
 const form = (overrides: Partial<Props> = {}): JSX.Element => {
   const state = props(overrides);
@@ -69,6 +96,7 @@ const form = (overrides: Partial<Props> = {}): JSX.Element => {
       refocus={state.refocus}
       toasts={state.toasts}
       saveRef={state.saveRef}
+      headingRef={state.headingRef}
     />
   );
 };
@@ -431,6 +459,49 @@ describe('ProfileForm', () => {
     expect(
       await screen.findByText(/вже використовується|вже зареєстрован|зайнят/i)
     ).toBeInTheDocument();
+  });
+
+  it.each([
+    ['name_rejected', 'fullName', NAME, 'Будь ласка, введіть повне ім’я у правильному форматі'],
+    ['email_taken', 'email', 'E-mail', 'Електронна адреса вже використовується'],
+    ['email_invalid', 'email', 'E-mail', 'Будь ласка, введіть коректну електронну адресу'],
+    ['password_wrong', 'currentPassword', CURRENT, 'Неправильний поточний пароль'],
+    [
+      'password_not_accepted',
+      'currentPassword',
+      CURRENT,
+      'Поточний пароль не прийнято. Перевірте його та спробуйте ще раз.',
+    ],
+    [
+      'new_password_rejected',
+      'newPassword',
+      NEW,
+      'Пароль не відповідає вимогам. Перевірте правила нижче',
+    ],
+  ] as const)(
+    'maps %s to its message, under its field, focused, on a form loaded in the test',
+    async (reason, name, label, message) => {
+      mockUpdate.mockResolvedValue({
+        kind: 'invalid',
+        errors: { items: [{ field: name, reason }] },
+      });
+      await renderFresh();
+
+      await userEvent.type(field('E-mail'), '.ua');
+      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.click(save());
+
+      await waitFor(() => expect(field(label)).toHaveFocus());
+      expect(field(label)).toHaveAttribute('aria-invalid', 'true');
+      expect(field(label)).toHaveAccessibleDescription(expect.stringContaining(message));
+    }
+  );
+
+  it('links the e-mail to its status row on a form loaded in the test', async () => {
+    await renderFresh({ user: buildUserEntity({ confirmed: false }) });
+
+    expect(screen.getByText('E-mail не підтверджено')).toHaveAttribute('id', 'email-status');
+    expect(field('E-mail').getAttribute('aria-describedby')?.split(' ')).toContain('email-status');
   });
 
   it.each([

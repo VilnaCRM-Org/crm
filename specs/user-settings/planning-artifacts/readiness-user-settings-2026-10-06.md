@@ -3,7 +3,7 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-05
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 iteration: 5
@@ -219,6 +219,8 @@ mock keeps no token rule.
   only in CI; the deferred DI chunk's headroom rests on a 2026-07-20 baseline
   (`config/performance-budget.json:26-31`) and is measured in the pull request.
 - **Production stays off** until user-service releases `main`'s authentication surface (G1).
+  Superseded 2026-11-03: the owner removed the flag and accepted the exposure in production
+  (`src/modules/user/README.md`, "No feature flag for the settings page").
 
 ## Revision 2026-10-08: Miro layer contract and typed boundaries (TB-1)
 

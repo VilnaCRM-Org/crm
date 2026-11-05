@@ -72,6 +72,7 @@ const harness = (): Harness => {
     },
     toasts: { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() },
     saveRef: { current: { click, focus } as unknown as HTMLButtonElement },
+    headingRef: { current: null },
   };
   return { props, adopt, show, click, focus };
 };

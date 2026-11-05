@@ -61,22 +61,30 @@ toast or a field error. The decisions are recorded in `## User Settings decision
 
 ## Shared pieces
 
-Imported from #315 (password recovery), not copied:
+Each shared piece has one owner (architecture §15.2). Imported from #315 (password recovery), not
+copied:
 
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
-- `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
-  name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
+- `UIForm`, the name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
+
+Built here:
+
+- The `submitRef`, `submitSx` and `footer` props of `UIForm`.
 - `SessionLinkFactory` (`@auth/repositories`), where a transport 401 on an Apollo operation ends
   a session. No settings file imports it: the user module's composition root
   (`src/modules/user/config/di.ts`) puts its link on the Apollo client the settings repositories
   receive by injection. The chip's container-free read ends a session through the outlet `session`
   instead.
-
-Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
-
-- `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
-  an assertive one for error texts, both always mounted, at most three on screen.
+- The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
+  `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
+- `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
+  region for success texts and an assertive one for error texts, both always mounted, at most three
+  on screen. The two-factor card reports inside its own card.
 - The `SettingsGrid`, whose second slot is reserved for the two-factor card.
+
+Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
+`SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
+`error.text` token and the `session_ended` notice.
 
 ## Page tree
 
@@ -88,7 +96,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │ ├ UserProfileSettings               loading | failed | ready
   │ │ ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
   │ │ ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
-  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (retry described by the message)
+  │ │ ├ ProfileSkeleton (aria-hidden) | ProfileLoadError (message; the alert announces it)
   │ │ └ card: ProfileHeader, ProfileForm
   │ │     └ UIForm key=version, submitRef=saveRef, onInvalid, footer=ClearButton
   │ │       ├ full name "Ваше ПІБ" (read-only while saving)
@@ -155,7 +163,10 @@ i18n key; a field error reason is copy that `ProfileForm` looks up in its module
 `ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
 field, in field order, that has one. A Save that settles with a toast moves focus to Save when
 focus has fallen to the page body or is still inside the form, as after Enter in a field
-(`useSettledFocus`), so a control the user moved to outside the form keeps focus.
+(`useSettledFocus`), so a control the user moved to outside the form keeps focus. When Save is
+itself disabled as it settles, because the connection dropped during the Save, focus that fell to
+the page body moves to the `h1`, the same fallback closing a toast uses, and a field the user is
+still in keeps focus.
 
 `ProfileForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave`,
 `useProfileFormRules` and `useEmailRow` (over `useEmailResend`); both take the hook-owned

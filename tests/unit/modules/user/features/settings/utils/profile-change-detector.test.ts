@@ -56,6 +56,16 @@ describe('ProfileChangeDetector.detect', () => {
     expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'fullName', 'id']);
   });
 
+  it('sends the name and no e-mail for a name change with a case-only e-mail edit', () => {
+    const fullName = buildFullName();
+    const values = unchanged({ fullName, email: user.email.toUpperCase() });
+
+    const change = detector.detect(user, values);
+
+    expect(change).toMatchObject({ id: user.id, fullName });
+    expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'fullName', 'id']);
+  });
+
   it('sends only the trimmed e-mail in the typed case for an e-mail change', () => {
     const change = detector.detect(user, unchanged({ email: '  New.Person@Example.com ' }));
 

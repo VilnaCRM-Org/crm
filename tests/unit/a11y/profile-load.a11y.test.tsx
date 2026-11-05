@@ -48,6 +48,7 @@ const base: Props = {
     dismiss: () => undefined,
   },
   saveRef: { current: null },
+  headingRef: { current: null },
 };
 
 describe('profile load states accessibility', () => {
@@ -66,6 +67,7 @@ describe('profile load states accessibility', () => {
         adoption={state.adoption}
         toasts={state.toasts}
         saveRef={state.saveRef}
+        headingRef={state.headingRef}
       />,
       { wrapper }
     );
