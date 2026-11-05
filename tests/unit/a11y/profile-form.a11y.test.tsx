@@ -4,9 +4,11 @@ import { createRef, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import ProfileForm from '@/modules/user/features/settings/components/profile-form';
-import { buildUserEntity } from '@tests/builders';
+import { buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+
+const NEW_PASSWORD = buildPassword();
 
 const mockUpdate = jest.fn();
 
@@ -55,7 +57,7 @@ describe('profile form accessibility', () => {
   it('has no axe violations while a save is running', async () => {
     mockUpdate.mockReturnValue(new Promise(() => undefined));
     const view = render(form(), { wrapper });
-    await userEvent.type(screen.getByLabelText('Новий пароль'), 'Next12345');
+    await userEvent.type(screen.getByLabelText('Новий пароль'), NEW_PASSWORD);
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));

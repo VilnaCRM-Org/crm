@@ -14,8 +14,7 @@ function reserveClearance(stack: HTMLElement): () => void {
   const root = document.documentElement;
   const reserve = (): void => {
     const { top } = stack.getBoundingClientRect();
-    const clearance = Math.min(window.innerHeight - top, window.innerHeight / 2);
-    root.style.setProperty('scroll-padding-bottom', `${clearance}px`);
+    root.style.setProperty('scroll-padding-bottom', `${window.innerHeight - top}px`);
     revealFocused(stack, top);
   };
   reserve();

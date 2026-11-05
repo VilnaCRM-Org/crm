@@ -35,7 +35,7 @@ const stackFromSm = {
   right: '1.5rem',
   bottom: '1.5rem',
   width: '24.8125rem',
-  maxHeight: 'calc(100dvh - 3rem)',
+  maxHeight: 'calc(50dvh - 1.5rem)',
 };
 
 export default {
@@ -48,7 +48,7 @@ export default {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
-    maxHeight: 'calc(100dvh - 1.875rem)',
+    maxHeight: 'calc(50dvh - 0.9375rem)',
     overflowY: 'auto',
     [fromSm]: stackFromSm,
     [fromDesktop]: { right: '0.75rem' },

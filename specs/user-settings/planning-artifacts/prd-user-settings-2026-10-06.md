@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-05
 iteration: 7
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -16,7 +16,8 @@ inputDocuments:
 # PRD: user settings for the `user` module
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
-2026-10-20, 2026-10-21 (twice) and 2026-11-04 (owner decisions and Figma correction below)
+2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below) and
+2026-11-05 (FR/NFR reconciliation)
 **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -115,17 +116,17 @@ feature before settings uses them (D11).
 
 ### Backend outcomes the user can see
 
-| Answer                    | Read               | Save                       | Resend           |
-| ------------------------- | ------------------ | -------------------------- | ---------------- |
-| `data` as expected        | page renders       | a toast per changed aspect | success toast    |
-| Empty or malformed `data` | failure + retry    | generic error toast        | error toast      |
-| Violation, status 422     | does not apply     | field error on named field | error toast      |
-| Wrong current password    | does not apply     | field error                | does not apply   |
-| Session ended (FR-19)     | sign-out, redirect | sign-out, redirect         | same             |
-| HTTP 429                  | failure + retry    | rate-limit toast, no Retry | rate-limit toast |
-| No answer, deadline, 5xx  | failure + retry    | error toast with Retry     | error toast      |
-| Other GraphQL error       | failure + retry    | generic error toast        | error toast      |
-| Caller abort              | nothing            | nothing                    | nothing          |
+| Answer                    | Read               | Save                                   | Resend           |
+| ------------------------- | ------------------ | -------------------------------------- | ---------------- |
+| `data` as expected        | page renders       | a toast per changed aspect             | success toast    |
+| Empty or malformed `data` | failure + retry    | generic error toast                    | error toast      |
+| Violation, status 422     | does not apply     | field error, by message prefix (FR-16) | error toast      |
+| Wrong current password    | does not apply     | field error                            | does not apply   |
+| Session ended (FR-19)     | sign-out, redirect | sign-out, redirect                     | same             |
+| HTTP 429                  | failure + retry    | rate-limit toast, no Retry             | rate-limit toast |
+| No answer, deadline, 5xx  | failure + retry    | error toast with Retry                 | error toast      |
+| Other GraphQL error       | failure + retry    | generic error toast                    | error toast      |
+| Caller abort              | nothing            | nothing                                | nothing          |
 
 ## 2. Goals and non-goals
 
@@ -626,6 +627,12 @@ text in `en` or `uk`, otherwise "Будь ласка, введіть корек�
 `newPassword` gets #315's policy-rejected text. A violation list containing any unknown path
 shows the generic error toast and no field error. A server error clears on the next edit of its
 field.
+
+Amended 2026-11-05 (reconciliation with shipped code, architecture §5.4): the message prefix alone
+decides, one `<path>: <text>` per non-empty line. `extensions.violations[].path` is not read,
+because research §4.6 records that upstream sends the prefix and the array together. A 422 whose
+lines do not all carry a known prefix, including a structured violation with an unprefixed message,
+shows the generic error toast and no field error.
 
 - Given a 422 violation on `email` with the uniqueness message, when it settles, then the e-mail
   field shows "Електронна адреса вже використовується" and takes focus.

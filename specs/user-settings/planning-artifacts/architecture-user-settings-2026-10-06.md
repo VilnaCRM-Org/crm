@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-05
 iteration: 8
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -20,7 +20,8 @@ inputDocuments:
 # Architecture: user settings for the user module
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
-2026-10-20, 2026-10-21 and 2026-11-04 (owner decisions and Figma correction below) **Feature:**
+2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below) and 2026-11-05
+(FR/NFR reconciliation) **Feature:**
 `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -1416,7 +1417,10 @@ export interface ToastQueue {
 - **Not covering focus.** While toasts show, a layout effect of the stack sets the root
   element's `scroll-padding-bottom` to the stack's measured height and clears it when the stack
   empties or unmounts, so focus scrolling keeps the focused control clear of the stack at 375
-  px (FR-20). No global stylesheet changes.
+  px (FR-20). No global stylesheet changes. Amended 2026-11-05 (WCAG 2.4.11): the padding is the
+  distance from the stack's top to the viewport bottom, bottom inset included, and the stack's
+  `maxHeight` is half of `100dvh` less that inset, scrolling inside. One limit therefore serves
+  both, so the reservation always covers the stack, also at the 320 × 256 reflow size.
 - **Motion.** None: toasts appear and leave without animation, so reduced motion needs no
   special case.
 - **Tokens.** `paletteColors.success.surface` `#E8F4EF`, `success.icon` `#38B386`,
@@ -1937,7 +1941,8 @@ export default class UserServiceErrorTransformer {
   appear only in the Repository and `GraphQLProfileTransformer` signatures and, as `import type`,
   in the `ProfileProvider` body; no public `ProfileProvider` method is generic, so no generated
   type reaches its public signature, even as a type argument (TB-1 exception (i)). `unknown`
-  appears only as the parameter of `UserServiceErrorTransformer.normalize`.
+  appears only as the parameter of `UserServiceErrorTransformer.normalize` and of
+  `GraphQLProfileTransformer.failure` (amended 2026-11-04), both allowed by TB-1 (d).
 - **Tokens:** `AUTH_TOKENS` (`user/config/tokens.ts`) gains `ProfileProvider`,
   `GraphQLProfileRepository`, `GraphQLProfileTransformer`, `SessionLinkFactory` and
   `SessionLinkDeps`; `UserServiceErrorTransformer`, `AuthStore` and `SandboxDemoSessionProvider`
@@ -1968,7 +1973,10 @@ registrar file through an ADR (contract §2.2), never a cap change.
 
 ### 6.1 Type-only files (TB-1)
 
-Every type that crosses a layer is below. No member is an inline object literal, tuple, bare or
+Every type that crosses a layer lives in a type-only file, and those files are the source of
+truth: the listing below is the plan, and the shipped members have moved on since it (for example
+`UserEntityAdoption.revision`, `ProfileFormState.noChangesMarked`, and `ProfileEditContext`,
+which it does not list). No member is an inline object literal, tuple, bare or
 primitive array, `Record`, `object`, index signature or inline `Omit` / `Pick` / `Partial` /
 `Required`; every collection is a named `*Set` whose `items` are named interfaces; every result
 union is a named alias of named variant interfaces. Module-private data tables (the toast and
@@ -2199,32 +2207,33 @@ UserProfile [component]<route> (settings/routes/user-profile/index.tsx)
 │                                   useProfileLoad → loading | failed | ready, UserEntity
 └ UIContainer
   ├ h1 "Налаштування", p subtitle
-  ├ grid
-  │ ├ UserProfileSettings [component] (userSettings)   props: ProfileLoadState (UserEntity)
-  │ │ ├ UILiveStatus, always mounted: "Завантаження профілю…" while loading, else empty
-  │ │ ├ loading: ProfileSkeleton (aria-hidden)
-  │ │ ├ failed:  ProfileLoadError (role=alert text, "Спробувати ще раз", focused after a retry)
-  │ │ └ ready:   card
-  │ │    ├ ProfileHeader (monogram aria-hidden + decorative pencil badge, "Вітаємо!",
-  │ │    │               first name and surname taken from the ПІБ)
-  │ │    └ ProfileForm          useProfileFormModel (useProfileSave, useProfileFormRules,
-  │ │       │                   useEmailRow → useEmailResend)
-  │ │       └ UIForm key=version, submitRef=saveRef, footer=ClearButton
-  │ │          ├ UIFormField fullName "Ваше ПІБ" (autocomplete name)
-  │ │          ├ h2 "Особисті дані" (focus target after a retry)
-  │ │          ├ UIFormField email (type email, autocomplete email) + EmailStatusRow
-  │ │          ├ ChangePassword [component]     the PasswordChange fields; rules as props
-  │ │          │ ├ h2 "Пароль"
-  │ │          │ ├ UIPasswordField currentPassword (autocomplete current-password)
-  │ │          │ └ UIPasswordField newPassword (autocomplete new-password) + hidden hint
-  │ │          │     + UIPasswordPolicyRules (only while focused or holding a value)
-  │ │          ├ UIServerFieldError × ProfileFieldErrorSet items
-  │ │          ├ p role=status (no-change text), always mounted
-  │ │          └ Save "Зберегти зміни" + ClearButton "Очистити"
-  │ ├ SocialNetworks [component] (UI only)   h2 "Соціальні мережі"
-  │ │ └ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
-  │ │    each with a visually hidden "linking not available yet" status; no action
-  │ └ TwoFactorSettings (twoFactorAuth; 2FA bundle, board 2FASettings)
+  ├ SettingsGrid (settings/components/settings-grid; on desktop gridAutoFlow column)
+  │ ├ Box.profileColumn (the grid's first child)
+  │ │ ├ UserProfileSettings [component] (userSettings)   props: ProfileLoadState (UserEntity)
+  │ │ │ ├ UILiveStatus, always mounted: "Завантаження профілю…" while loading, else empty
+  │ │ │ ├ loading: ProfileSkeleton (aria-hidden)
+  │ │ │ ├ failed:  ProfileLoadError (role=alert text, "Спробувати ще раз", focused after a retry)
+  │ │ │ └ ready:   card
+  │ │ │    ├ ProfileHeader (monogram aria-hidden + decorative pencil badge, "Вітаємо!",
+  │ │ │    │               first name and surname taken from the ПІБ)
+  │ │ │    └ ProfileForm          useProfileFormModel (useProfileSave, useProfileFormRules,
+  │ │ │       │                   useEmailRow → useEmailResend)
+  │ │ │       └ UIForm key=version, submitRef=saveRef, footer=ClearButton
+  │ │ │          ├ UIFormField fullName "Ваше ПІБ" (autocomplete name)
+  │ │ │          ├ h2 "Особисті дані" (focus target after a retry)
+  │ │ │          ├ UIFormField email (type email, autocomplete email) + EmailStatusRow
+  │ │ │          ├ ChangePassword [component]     the PasswordChange fields; rules as props
+  │ │ │          │ ├ h2 "Пароль"
+  │ │ │          │ ├ UIPasswordField currentPassword (autocomplete current-password)
+  │ │ │          │ └ UIPasswordField newPassword (autocomplete new-password) + hidden hint
+  │ │ │          │     + UIPasswordPolicyRules (only while focused or holding a value)
+  │ │ │          ├ UIServerFieldError × ProfileFieldErrorSet items
+  │ │ │          ├ p role=status (no-change text), always mounted
+  │ │ │          └ Save "Зберегти зміни" + ClearButton "Очистити"
+  │ │ └ SocialNetworks [component] (UI only)   h2 "Соціальні мережі"
+  │ │   └ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
+  │ │      each with a visually hidden "linking not available yet" status; no action
+  │ └ TwoFactorSettings (the grid's second child; twoFactorAuth; 2FA bundle, board 2FASettings)
   └ UIToastStack toasts: ToastItemSet, announcement, returnFocusRef=saveRef
 ```
 
@@ -2237,8 +2246,8 @@ section holds only the e-mail and the name sits at the top under the header; it 
 `EmailStatusRow`. `ProfileSkeleton` follows the same order. (2) `ProfileHeader` greets with the
 first name and surname derived from the ПІБ (§7.2). (3) The new-password hint is visually hidden but
 stays in `aria-describedby`, and `UIPasswordPolicyRules` renders only while the field has focus or a
-value, held 200 ms after an empty field blurs (§7.2). (4) The grid gains a UI-only `SocialNetworks`
-card after `UserProfileSettings` ("Соціальні мережі", Figma `476:46530`, `386:27239`, `386:27457`;
+value, held 200 ms after an empty field blurs (§7.2). (4) The profile column gains a UI-only `SocialNetworks`
+card after `UserProfileSettings`, so the desktop grid's second column stays free for 2FA ("Соціальні мережі", Figma `476:46530`, `386:27239`, `386:27457`;
 §7.2), which closes G-1 for the view (§17.3).
 
 `ProfileSkeleton`, `ProfileLoadError`, `ProfileHeader`, `ProfileForm`, `EmailStatusRow` and
@@ -2251,6 +2260,8 @@ root page component; none of them reaches a hook other than its parent's or a Da
 | Component             | File (`settings/components/…`)     | Board      | Contract              |
 | --------------------- | ---------------------------------- | ---------- | --------------------- |
 | `UserProfile`         | `../routes/user-profile/index`     | route      | FR-3, FR-20, title    |
+| `SettingsGrid`        | `settings-grid/index`              | child      | FR-3 columns          |
+| `UILinkButton`        | `src/components/ui-link-button`    | child      | resend link, NFR-6    |
 | `UserProfileSettings` | `user-profile-settings/index`      | component  | FR-6 states, focus    |
 | `ProfileSkeleton`     | `user-profile-settings/…skeleton`  | child      | `UISkeleton*`, hidden |
 | `ProfileLoadError`    | `user-profile-settings/…error`     | child      | `role="alert"`, retry |
@@ -2539,6 +2550,9 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
 - `src/routes/route-flag-gate.tsx`; `src/routes/route-composer.tsx`, `src/routes/route-mapper.tsx`
   and `src/routes/types/app-route.ts` MOD; `src/routes/README.md` MOD.
 - `src/components/ui-toast/{index,ui-toast}.tsx`, `styles.ts`, two stories, `i18n/{en,uk}.json`.
+- `src/components/ui-link-button/` and `src/components/types/ui-link-button/` with a story and
+  tests: a shared button styled as a link, built before `EmailStatusRow`, its only consumer
+  (Story 3.6). `settings/components/settings-grid/` holds the page grid (Story 1.6).
 - `src/lib/locale-catalog/lazy-catalog-loader.ts` and `src/lib/locale-catalog/types/locale-catalog-pair.ts`
   — the one shared `lazyCatalogLoader` and its `LocaleCatalogPair` (§5.16, amendment
   2026-10-19).
@@ -3212,9 +3226,9 @@ captured 2026-10-08 (contract §1; screenshots in `crm-worktrees/_planning-share
 | State `[Redux]` (01)                             | `useAuthStore`, drawn `State [Zustand]`                              |
 | `UserProfile [component]<route>` (21)            | `settings/routes/user-profile/index.tsx`                             |
 | `UserProfile` → `UserEntity [type]` (21)         | `useProfileLoad` in the page; #315's type                            |
-| `UserProfile` → `UserProfileSettings` (21)       | the grid's first child                                               |
-| `UserProfile` → `2FASettings` (21)               | the `TwoFactorSettings` slot (#331)                                  |
-| `UserProfile` → `SocialNetworks` (21)            | UI-only card, no entity (G-1, 2026-10-21)                            |
+| `UserProfile` → `UserProfileSettings` (21)       | in the grid's first child, `Box.profileColumn`                       |
+| `UserProfile` → `2FASettings` (21)               | the `TwoFactorSettings` slot (#331), the grid's second child         |
+| `UserProfile` → `SocialNetworks` (21)            | UI-only card in `Box.profileColumn`, no entity (G-1, 2026-10-21)     |
 | `UserProfileSettings` → `UserEntity` (21)        | the `user` prop, the page's `UserEntity`                             |
 | `UserProfileSettings` → `RestorePassword` (21)   | `ChangePassword`, renamed (G-5)                                      |
 | `RestorePassword` → `RestorePasswordDTO` (21)    | #315's flow (Q-1); here `PasswordChange`                             |
@@ -3245,6 +3259,8 @@ box (§17.2) and the gaps of §17.3.
 | `LazyCatalogLoader` (`src/lib/locale-catalog/`) | the catalog seam: lazy catalog registration when a route module evaluates |
 | moved validators, `useProfileFormRules`         | form helpers inside the React hook box                                    |
 | child components (§7.1)                         | the `UserProfileSettings` `[component]` box                               |
+| `UnseenFailureReporter` (2026-11-04)            | the Data provider box, as observability infrastructure                    |
+| `Local Apollo mock` (§3)                        | named gap: dev and test stand-in for the API box, never shipped           |
 
 ### 17.3 Gaps and conformance notes
 

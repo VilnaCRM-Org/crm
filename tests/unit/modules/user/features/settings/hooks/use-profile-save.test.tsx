@@ -8,8 +8,18 @@ import type {
   ProfileUpdateOutcome,
 } from '@/modules/user/features/settings/types/user-profile';
 import ProfileChangeDetector from '@/modules/user/features/settings/utils/profile-change-detector';
-import { buildProfileFormValues, buildUserEntity } from '@tests/builders';
+import {
+  buildEmail,
+  buildFullName,
+  buildPassword,
+  buildProfileFormValues,
+  buildUserEntity,
+} from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+
+const NEW_FULL_NAME = buildFullName();
+const NEW_EMAIL = buildEmail();
+const NEW_PASSWORD = buildPassword();
 
 const mockUpdate = jest.fn();
 const mockProvider = { update: mockUpdate };
@@ -67,7 +77,7 @@ const harness = (): Harness => {
 };
 
 const nameChange = (): ReturnType<typeof buildProfileFormValues> =>
-  buildProfileFormValues({ fullName: 'Нове Імʼя', email: user.email, newPassword: '' });
+  buildProfileFormValues({ fullName: NEW_FULL_NAME, email: user.email, newPassword: '' });
 
 const okOutcome = (): ProfileUpdateOutcome => ({ kind: 'ok', user: buildUserEntity() });
 
@@ -260,9 +270,9 @@ describe('useProfileSave', () => {
     await act(async () => {
       result.current.save(
         buildProfileFormValues({
-          fullName: 'Нове Імʼя',
-          email: 'new@example.com',
-          newPassword: 'Next12345',
+          fullName: NEW_FULL_NAME,
+          email: NEW_EMAIL,
+          newPassword: NEW_PASSWORD,
         })
       );
     });
@@ -298,9 +308,9 @@ describe('useProfileSave', () => {
   });
 
   it.each([
-    [{ email: 'new@example.com' }, ['Ми надіслали посилання для підтвердження на нову адресу']],
-    [{ newPassword: 'Next12345' }, ['Ви успішно змінили пароль']],
-    [{ fullName: 'Нове Імʼя' }, ['Зміни збережено']],
+    [{ email: NEW_EMAIL }, ['Ми надіслали посилання для підтвердження на нову адресу']],
+    [{ newPassword: NEW_PASSWORD }, ['Ви успішно змінили пароль']],
+    [{ fullName: NEW_FULL_NAME }, ['Зміни збережено']],
   ])('shows only the drafts of the changed aspects for %j', async (overrides, messages) => {
     const { props, show } = harness();
     mockUpdate.mockResolvedValue(okOutcome());

@@ -1,6 +1,6 @@
 import type { Request } from '@playwright/test';
 
-import { buildCredentials, buildPassword } from '@tests/builders';
+import { buildCredentials, buildFullName, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -25,7 +25,7 @@ import {
 } from './utils/settings-page';
 
 const LOGIN_API_URL = '**/api/users';
-const NEW_NAME = 'Іван Коваль';
+const NEW_NAME = buildFullName();
 const password = buildPassword();
 const credentials = buildCredentials();
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
