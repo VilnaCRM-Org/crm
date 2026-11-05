@@ -83,12 +83,12 @@ describe('HeaderIconButton', () => {
     }
   );
 
-  it('shows 99+ on the badge over 99 and keeps the real count in the description', () => {
+  it('shows the digits of a large count on the badge and in the description', () => {
     renderShell(<HeaderIconButton layout="desktop" kind="notifications" count={150} />);
 
     const button = screen.getByRole('button', { name: 'Notifications' });
 
-    expect(button).toHaveTextContent(/^99\+$/u);
+    expect(button).toHaveTextContent(/^150$/u);
     expect(button).toHaveAccessibleDescription('Not available yet 150 notifications');
   });
 

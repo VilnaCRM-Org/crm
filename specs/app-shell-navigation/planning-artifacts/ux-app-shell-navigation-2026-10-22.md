@@ -3,7 +3,7 @@ status: complete
 workflowType: ux-design
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-04
+revised: 2026-11-05
 iteration: 3
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
@@ -32,7 +32,8 @@ inputDocuments:
 # UX spec: app shell navigation (header, sidebar, drawer, user menu)
 
 **Author:** ux-designer (Sally), autonomous run **Date:** 2026-10-22 (revised 2026-11-03: the
-userSettings flag removal; 2026-11-04: the settings page centred) **Feature:** `app-shell-navigation`
+userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
+edge; 2026-11-05: the dated notes for DV-11 and DV-13) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -46,6 +47,23 @@ userSettings flag removal; 2026-11-04: the settings page centred) **Feature:** `
 > centred at 1440, which reverses the rail's "x 125, title x 137, as drawn" (§4.4 and P-51). Above
 > 1024 px the heading and grid centre in the content column, and the desktop rail keeps no right
 > margin. Measurements are in the shell README, DV-12. The rows below are kept as approved.
+
+> **Owner decision of 2026-11-04 (handle on the sidebar edge, DV-13), noted 2026-11-05.** The owner
+> asked for this directly: from 1024 to 1440 the handle's chevron sat on top of the first letter of
+> the page title. This spec's own values collide, since the handle ends at x 267 and the title starts
+> at x 263 (§4.2). All four handles now take `right: -9px`
+> (`src/components/ui-sidebar/styles.ts`), the overhang the desktop frames already draw. Desktop is
+> unchanged; on tablet the handle moves 7 px left, from 222,15 to 215,15 on the expanded panel and from
+> 60,15 to 53,15 on the rail, and clears the title by 3 px. It supersedes the §4.2 and §4.4 handle
+> rows, P-53, P-63 and the "only one" wording of §10.3, and adds motion to §9. Details are in the
+> [shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04). The rows below are kept as approved.
+
+> **Owner decision of 2026-10-26 (Settings label clear of its chevron, DV-11), noted 2026-11-05.**
+> Under WCAG 1.4.12 text spacing the Settings label ran under its chevron. Its box now stops at the
+> chevron's box (136 px on desktop, 131 px on tablet, 129 px in the drawer). At rest it keeps its
+> Figma position, size and single line, so no parity row changes; under the override it wraps inside
+> that box and the row keeps its Figma height. Details are in the
+> [shell README, DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26).
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"), the
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N") and the
@@ -277,6 +295,10 @@ The same holds for every rotated handle below; read y from the design context, n
 
 Content area: frame `313:10482` from x 251 (773 wide); first element at x 263, right edge 1012.
 
+Amended 2026-11-05 (DV-13, owner decision 2026-11-04): the collapse handle row above is the record of
+the plan. The handle ships at 215,15 (abs 228,89) with a 9 px overhang, so it ends at x 260 and
+clears the title at x 263.
+
 ### 4.3 Vertical behaviour (OQ-21, resolved; **PROP-4**)
 
 Figma ties neither panel height (791, 1142) to the viewport nor to the page (research §12.2
@@ -303,6 +325,9 @@ Figma ties neither panel height (791, 1142) to the viewport nor to the page (res
 | Handle           | 57,15, 24×24, chevron pointing right; overhangs the 72 edge by 9 px (V-1 resolved)                                                                                        | `378:21542` 60,15, 32×32 (metadata's 60,47 is the rotated origin), 20 px chevron; overhangs the 76 edge by 16 px |
 | Tooltip          | `386:26142`: 114×42 at abs 73,423; caret 6×20.78 `#E1E7EA`; body 108×42 white, `#E1E7EA` 1 px, r 8, pad 12/16, Inter 500 16/18 `#191B1E`, `0 6px 17px rgba(37,42,49,.07)` | not drawn (PROP-5: reuse desktop)                                                                                |
 | Content start    | frame `377:20053` at x 125, title x 137, as drawn (DV-5 reverted)                                                                                                         | re-measured before build (V-9)                                                                                   |
+
+Amended 2026-11-05 (DV-13, owner decision 2026-11-04): the tablet rail handle ships at 53,15
+(abs 66,89) with a 9 px overhang of the 76 edge, not at 60,15. The desktop rail handle is unchanged.
 
 ### 4.5 Settings group disclosure (OQ-6, RESOLVED by owner 2026-10-23; PRD FR-8.1)
 
@@ -554,6 +579,13 @@ for these surfaces. OQ-23 is therefore RESOLVED by owner 2026-10-23 to the propo
 | Tooltip              | instant                                                            | instant                                             |
 | MUI ripple           | disabled on every shell control (Figma draws none)                 | disabled                                            |
 
+Amended 2026-11-05 (DV-13, owner decision 2026-11-04): the rail toggle gained motion this table does
+not list. The handle follows the panel's width transition, and its chevron turns over the same 200 ms
+(`transform`, ease-out). On reopening, never on page load, the row labels and the Settings group
+chevron fade in over 200 ms, while the icons stay put and the rows hold a 238 px `min-width`, so no row
+changes height. Under `prefers-reduced-motion: reduce` the width change and the chevron turn have
+duration 0 and the fade does not run.
+
 Binding regardless of OQ-23: no motion conveys information, focus moves only after a surface is
 operable (not at the end of an animation the user may have disabled), nothing animates layout of
 `<main>` content, and the reduced-motion rule is written the repository's way
@@ -587,76 +619,82 @@ rows P-39 to P-42 are measured against the header story in Storybook, which pass
 the parity artifact the owner reviews with the team lead (PRD FR-19); no page renders a badge. A row outside
 tolerance is a defect and is fixed; it is never absorbed by widening the tolerance or recorded as
 a deviation. Only §10.3's allowed differences may differ from Figma. Every row passes before any
-visual baseline is recorded, and the filled table goes into the PR.
+visual baseline is recorded, and the filled table goes into the PR. Amended 2026-11-05: §10.3's
+owner-approved deviations (DV-10 to DV-13) may differ too; nothing else may.
 
 ### 10.2 Table to fill during implementation (Figma column FOUND; measured column pending)
 
-| Id   | Element                                                                                         | Width | Figma (x, y, w × h)                                                                   | Measured | Δ   | Verdict | Ref            |
-| ---- | ----------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------- | -------- | --- | ------- | -------------- |
-| P-1  | Header                                                                                          | 1440  | 0,0, 1440×64                                                                          | —        | —   | —       | FR-1           |
-| P-2  | Logo                                                                                            | 1440  | 32,8, 143×48                                                                          | —        | —   | —       | FR-1.1         |
-| P-3  | Search                                                                                          | 1440  | 600,8, 477×48                                                                         | —        | —   | —       | FR-2.1         |
-| P-4  | Bell                                                                                            | 1440  | 1087,8, 48×48                                                                         | —        | —   | —       | FR-3.1         |
-| P-5  | List                                                                                            | 1440  | 1145,8, 48×48                                                                         | —        | —   | —       | FR-4.1         |
-| P-6  | Chip                                                                                            | 1440  | 1203,8, 225×48                                                                        | —        | —   | —       | FR-5.1         |
-| P-7  | Sidebar panel                                                                                   | 1440  | 12,74, 238×791                                                                        | —        | —   | —       | FR-7           |
-| P-8  | Boards row                                                                                      | 1440  | 12,95, 238×54                                                                         | —        | —   | —       | FR-7.1         |
-| P-9  | Settings group                                                                                  | 1440  | 12,365, 238×192                                                                       | —        | —   | —       | FR-8           |
-| P-10 | First sub-item text start                                                                       | 1440  | x 68, y 428                                                                           | —        | —   | —       | FR-9.1         |
-| P-11 | Divider                                                                                         | 1440  | 12,767, 238×1                                                                         | —        | —   | —       | FR-10          |
-| P-12 | Sign out row                                                                                    | 1440  | 12,789, 238×54                                                                        | —        | —   | —       | FR-10          |
-| P-13 | Settings title start                                                                            | 1440  | x 262, y 92                                                                           | —        | —   | —       | FR-15          |
-| P-14 | User menu card (3 items, as drawn)                                                              | 1440  | 1203,8, 225×180                                                                       | —        | —   | —       | FR-6           |
-| P-15 | Header                                                                                          | 1024  | 0,0, 1024×64                                                                          | —        | —   | —       | FR-1           |
-| P-16 | Logo                                                                                            | 1024  | 12,8, 143×48                                                                          | —        | —   | —       | FR-1.1         |
-| P-17 | Search                                                                                          | 1024  | 271,6, 360×52                                                                         | —        | —   | —       | FR-2.1         |
-| P-18 | Bell                                                                                            | 1024  | 639,6, 52×52                                                                          | —        | —   | —       | FR-3.1         |
-| P-19 | List                                                                                            | 1024  | 699,6, 52×52                                                                          | —        | —   | —       | FR-4.1         |
-| P-20 | Chip                                                                                            | 1024  | 759,6, 253×52                                                                         | —        | —   | —       | FR-5.1         |
-| P-21 | Sidebar panel                                                                                   | 1024  | 13,74, 238×1142                                                                       | —        | —   | —       | FR-7           |
-| P-22 | Boards row                                                                                      | 1024  | 13,98, 238×66                                                                         | —        | —   | —       | FR-7.1         |
-| P-23 | Settings group                                                                                  | 1024  | 13,429, 238×216                                                                       | —        | —   | —       | FR-8           |
-| P-24 | Divider                                                                                         | 1024  | 13,1110, 238×1                                                                        | —        | —   | —       | FR-10          |
-| P-25 | Sign out row                                                                                    | 1024  | 13,1132, 238×54                                                                       | —        | —   | —       | FR-10          |
-| P-26 | Settings title start                                                                            | 1024  | x 263, y 88                                                                           | —        | —   | —       | FR-15          |
-| P-27 | User menu card (3 items, as drawn)                                                              | 1024  | 759,6, 253×232                                                                        | —        | —   | —       | FR-6           |
-| P-28 | Header                                                                                          | 375   | 0,0, 375×64                                                                           | —        | —   | —       | FR-1           |
-| P-29 | Logo                                                                                            | 375   | 15,7, 125×42                                                                          | —        | —   | —       | FR-1.1         |
-| P-30 | Bell glyph                                                                                      | 375   | 200,16, 24×24                                                                         | —        | —   | —       | FR-3.2         |
-| P-31 | List glyph                                                                                      | 375   | 240,16, 24×24                                                                         | —        | —   | —       | FR-4.2         |
-| P-32 | Avatar                                                                                          | 375   | 280,8, 40×40                                                                          | —        | —   | —       | FR-5.2         |
-| P-33 | Burger                                                                                          | 375   | 336,16, 24×24                                                                         | —        | —   | —       | FR-13.1        |
-| P-34 | Drawer panel                                                                                    | 375   | 62,56, 313×622                                                                        | —        | —   | —       | FR-13.2        |
-| P-35 | Drawer search                                                                                   | 375   | 72,69, 293×48                                                                         | —        | —   | —       | FR-13.4        |
-| P-36 | Drawer first row                                                                                | 375   | 62,125, 233×60                                                                        | —        | —   | —       | FR-13.5        |
-| P-37 | User menu popover (3 items, as drawn)                                                           | 375   | 140,53, 225×142                                                                       | —        | —   | —       | FR-6           |
-| P-38 | Hit areas: logo, avatar, burger, close, mobile user-menu items (My profile, Settings, Sign out) | 375   | each ≥ 44×44, transparent, no overlap (§3.3; menu items 225×44, §6.4)                 | —        | —   | —       | NFR-3          |
-| P-39 | Bell badge                                                                                      | 1440  | 34,30 in the bell button, 18×18; digits "1" (header story)                            | —        | —   | —       | FR-3.1, FR-19  |
-| P-40 | List badge                                                                                      | 1440  | in the list button at Figma's position, 18×18; digits "8" (header story)              | —        | —   | —       | FR-4.1, FR-19  |
-| P-41 | Bell badge                                                                                      | 1024  | 34,30 in the bell button, 18×18; digits "1" (header story)                            | —        | —   | —       | FR-3.1, FR-19  |
-| P-42 | List badge                                                                                      | 1024  | Figma's position (V-10), 18×18; digits "8" (header story)                             | —        | —   | —       | FR-4.1, FR-19  |
-| P-43 | Drawer header                                                                                   | 375   | 0,0, 375×56                                                                           | —        | —   | —       | FR-13.3        |
-| P-44 | Drawer Sign out row                                                                             | 375   | 62,613, 314×54                                                                        | —        | —   | —       | FR-13.5        |
-| P-45 | Collapse handle, expanded sidebar                                                               | 1440  | 235,89, 24×24 (223,15 in the panel)                                                   | —        | —   | —       | FR-12          |
-| P-46 | Desktop rail panel `377:21385`                                                                  | 1440  | 12,74, 72×791                                                                         | —        | —   | —       | FR-12          |
-| P-47 | Desktop rail handle                                                                             | 1440  | 69,89, 24×24 (57,15 in the panel)                                                     | —        | —   | —       | FR-12          |
-| P-48 | Desktop rail pill `386:26290`                                                                   | 1440  | x 20 (8 in the panel), 56×40, r 8, first icon y 36                                    | —        | —   | —       | FR-12          |
-| P-49 | Desktop rail divider                                                                            | 1440  | y 767 (693 in the panel), 74 wide                                                     | —        | —   | —       | FR-12          |
-| P-50 | Rail tooltip `386:26142`                                                                        | 1440  | 73,423, 114×42                                                                        | —        | —   | —       | FR-12          |
-| P-51 | Content start beside the desktop rail                                                           | 1440  | frame x 125, title x 137                                                              | —        | —   | —       | FR-12, FR-15   |
-| P-52 | Tablet rail panel `378:21462`                                                                   | 1024  | 13,74, 76×1142                                                                        | —        | —   | —       | FR-12          |
-| P-53 | Tablet rail handle `378:21542`                                                                  | 1024  | 73,89, 32×32 (60,15 in the panel)                                                     | —        | —   | —       | FR-12          |
-| P-54 | Tablet rail divider and Sign out icon                                                           | 1024  | divider y 1110, 96 wide; icon 24×24 at 24,1073                                        | —        | —   | —       | FR-12          |
-| P-55 | Tablet Products row (67 px, DV-3 reverted)                                                      | 1024  | 13,164, 238×67                                                                        | —        | —   | —       | FR-7.2         |
-| P-56 | Settings group chevron                                                                          | 1440  | 204,384, 20×20 (192,19 in the group)                                                  | —        | —   | —       | FR-8.1         |
-| P-57 | Settings group chevron                                                                          | 1024  | 203,453, 24×24 (190,24 in the group)                                                  | —        | —   | —       | FR-8.1         |
-| P-58 | First sub-item text start                                                                       | 1024  | x 73, y 503                                                                           | —        | —   | —       | FR-9.1         |
-| P-59 | User menu card, 1 item (flag off)                                                               | 1440  | 1203,8, 225×92                                                                        | —        | —   | —       | FR-6.2 E       |
-| P-60 | User menu card, 1 item (flag off)                                                               | 1024  | 759,6, 253×112                                                                        | —        | —   | —       | FR-6.2 E       |
-| P-61 | User menu popover, 1 item (flag off)                                                            | 375   | 140,53, 225×50                                                                        | —        | —   | —       | FR-6.2 E       |
-| P-63 | Collapse handle, expanded tablet panel (owner-approved DV-10)                                   | 1024  | 235,89, 32×32 (222,15 in the panel; the rail handle's size, style and 16 px overhang) | —        | —   | —       | FR-12, DV-10   |
-| P-64 | Current sub-item tint (row box)                                                                 | 1440  | 12,419, 238×42 (PROP-18, no Figma node; fill as `386:26373`)                          | —        | —   | —       | FR-11, PROP-16 |
-| P-65 | Current sub-item tint (row box)                                                                 | 1024  | 13,495, 238×46 (PROP-18, no Figma node; fill as `386:26373`)                          | —        | —   | —       | FR-11, PROP-16 |
+| Id   | Element                                                                                         | Width | Figma (x, y, w × h)                                                                   | Measured | Δ   | Verdict | Ref                                                        |
+| ---- | ----------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------- | -------- | --- | ------- | ---------------------------------------------------------- |
+| P-1  | Header                                                                                          | 1440  | 0,0, 1440×64                                                                          | —        | —   | —       | FR-1                                                       |
+| P-2  | Logo                                                                                            | 1440  | 32,8, 143×48                                                                          | —        | —   | —       | FR-1.1                                                     |
+| P-3  | Search                                                                                          | 1440  | 600,8, 477×48                                                                         | —        | —   | —       | FR-2.1                                                     |
+| P-4  | Bell                                                                                            | 1440  | 1087,8, 48×48                                                                         | —        | —   | —       | FR-3.1                                                     |
+| P-5  | List                                                                                            | 1440  | 1145,8, 48×48                                                                         | —        | —   | —       | FR-4.1                                                     |
+| P-6  | Chip                                                                                            | 1440  | 1203,8, 225×48                                                                        | —        | —   | —       | FR-5.1                                                     |
+| P-7  | Sidebar panel                                                                                   | 1440  | 12,74, 238×791                                                                        | —        | —   | —       | FR-7                                                       |
+| P-8  | Boards row                                                                                      | 1440  | 12,95, 238×54                                                                         | —        | —   | —       | FR-7.1                                                     |
+| P-9  | Settings group                                                                                  | 1440  | 12,365, 238×192                                                                       | —        | —   | —       | FR-8                                                       |
+| P-10 | First sub-item text start                                                                       | 1440  | x 68, y 428                                                                           | —        | —   | —       | FR-9.1                                                     |
+| P-11 | Divider                                                                                         | 1440  | 12,767, 238×1                                                                         | —        | —   | —       | FR-10                                                      |
+| P-12 | Sign out row                                                                                    | 1440  | 12,789, 238×54                                                                        | —        | —   | —       | FR-10                                                      |
+| P-13 | Settings title start                                                                            | 1440  | x 262, y 92                                                                           | —        | —   | —       | FR-15                                                      |
+| P-14 | User menu card (3 items, as drawn)                                                              | 1440  | 1203,8, 225×180                                                                       | —        | —   | —       | FR-6                                                       |
+| P-15 | Header                                                                                          | 1024  | 0,0, 1024×64                                                                          | —        | —   | —       | FR-1                                                       |
+| P-16 | Logo                                                                                            | 1024  | 12,8, 143×48                                                                          | —        | —   | —       | FR-1.1                                                     |
+| P-17 | Search                                                                                          | 1024  | 271,6, 360×52                                                                         | —        | —   | —       | FR-2.1                                                     |
+| P-18 | Bell                                                                                            | 1024  | 639,6, 52×52                                                                          | —        | —   | —       | FR-3.1                                                     |
+| P-19 | List                                                                                            | 1024  | 699,6, 52×52                                                                          | —        | —   | —       | FR-4.1                                                     |
+| P-20 | Chip                                                                                            | 1024  | 759,6, 253×52                                                                         | —        | —   | —       | FR-5.1                                                     |
+| P-21 | Sidebar panel                                                                                   | 1024  | 13,74, 238×1142                                                                       | —        | —   | —       | FR-7                                                       |
+| P-22 | Boards row                                                                                      | 1024  | 13,98, 238×66                                                                         | —        | —   | —       | FR-7.1                                                     |
+| P-23 | Settings group                                                                                  | 1024  | 13,429, 238×216                                                                       | —        | —   | —       | FR-8                                                       |
+| P-24 | Divider                                                                                         | 1024  | 13,1110, 238×1                                                                        | —        | —   | —       | FR-10                                                      |
+| P-25 | Sign out row                                                                                    | 1024  | 13,1132, 238×54                                                                       | —        | —   | —       | FR-10                                                      |
+| P-26 | Settings title start                                                                            | 1024  | x 263, y 88                                                                           | —        | —   | —       | FR-15                                                      |
+| P-27 | User menu card (3 items, as drawn)                                                              | 1024  | 759,6, 253×232                                                                        | —        | —   | —       | FR-6                                                       |
+| P-28 | Header                                                                                          | 375   | 0,0, 375×64                                                                           | —        | —   | —       | FR-1                                                       |
+| P-29 | Logo                                                                                            | 375   | 15,7, 125×42                                                                          | —        | —   | —       | FR-1.1                                                     |
+| P-30 | Bell glyph                                                                                      | 375   | 200,16, 24×24                                                                         | —        | —   | —       | FR-3.2                                                     |
+| P-31 | List glyph                                                                                      | 375   | 240,16, 24×24                                                                         | —        | —   | —       | FR-4.2                                                     |
+| P-32 | Avatar                                                                                          | 375   | 280,8, 40×40                                                                          | —        | —   | —       | FR-5.2                                                     |
+| P-33 | Burger                                                                                          | 375   | 336,16, 24×24                                                                         | —        | —   | —       | FR-13.1                                                    |
+| P-34 | Drawer panel                                                                                    | 375   | 62,56, 313×622                                                                        | —        | —   | —       | FR-13.2                                                    |
+| P-35 | Drawer search                                                                                   | 375   | 72,69, 293×48                                                                         | —        | —   | —       | FR-13.4                                                    |
+| P-36 | Drawer first row                                                                                | 375   | 62,125, 233×60                                                                        | —        | —   | —       | FR-13.5                                                    |
+| P-37 | User menu popover (3 items, as drawn)                                                           | 375   | 140,53, 225×142                                                                       | —        | —   | —       | FR-6                                                       |
+| P-38 | Hit areas: logo, avatar, burger, close, mobile user-menu items (My profile, Settings, Sign out) | 375   | each ≥ 44×44, transparent, no overlap (§3.3; menu items 225×44, §6.4)                 | —        | —   | —       | NFR-3                                                      |
+| P-39 | Bell badge                                                                                      | 1440  | 34,30 in the bell button, 18×18; digits "1" (header story)                            | —        | —   | —       | FR-3.1, FR-19                                              |
+| P-40 | List badge                                                                                      | 1440  | in the list button at Figma's position, 18×18; digits "8" (header story)              | —        | —   | —       | FR-4.1, FR-19                                              |
+| P-41 | Bell badge                                                                                      | 1024  | 34,30 in the bell button, 18×18; digits "1" (header story)                            | —        | —   | —       | FR-3.1, FR-19                                              |
+| P-42 | List badge                                                                                      | 1024  | Figma's position (V-10), 18×18; digits "8" (header story)                             | —        | —   | —       | FR-4.1, FR-19                                              |
+| P-43 | Drawer header                                                                                   | 375   | 0,0, 375×56                                                                           | —        | —   | —       | FR-13.3                                                    |
+| P-44 | Drawer Sign out row                                                                             | 375   | 62,613, 314×54                                                                        | —        | —   | —       | FR-13.5                                                    |
+| P-45 | Collapse handle, expanded sidebar                                                               | 1440  | 235,89, 24×24 (223,15 in the panel)                                                   | —        | —   | —       | FR-12                                                      |
+| P-46 | Desktop rail panel `377:21385`                                                                  | 1440  | 12,74, 72×791                                                                         | —        | —   | —       | FR-12                                                      |
+| P-47 | Desktop rail handle                                                                             | 1440  | 69,89, 24×24 (57,15 in the panel)                                                     | —        | —   | —       | FR-12                                                      |
+| P-48 | Desktop rail pill `386:26290`                                                                   | 1440  | x 20 (8 in the panel), 56×40, r 8, first icon y 36                                    | —        | —   | —       | FR-12                                                      |
+| P-49 | Desktop rail divider                                                                            | 1440  | y 767 (693 in the panel), 74 wide                                                     | —        | —   | —       | FR-12                                                      |
+| P-50 | Rail tooltip `386:26142`                                                                        | 1440  | 73,423, 114×42                                                                        | —        | —   | —       | FR-12                                                      |
+| P-51 | Content start beside the desktop rail                                                           | 1440  | frame x 125, title x 137                                                              | —        | —   | —       | FR-12, FR-15                                               |
+| P-52 | Tablet rail panel `378:21462`                                                                   | 1024  | 13,74, 76×1142                                                                        | —        | —   | —       | FR-12                                                      |
+| P-53 | Tablet rail handle `378:21542`                                                                  | 1024  | 73,89, 32×32 (60,15 in the panel)                                                     | —        | —   | —       | FR-12                                                      |
+| P-54 | Tablet rail divider and Sign out icon                                                           | 1024  | divider y 1110, 96 wide; icon 24×24 at 24,1073                                        | —        | —   | —       | FR-12                                                      |
+| P-55 | Tablet Products row (67 px, DV-3 reverted)                                                      | 1024  | 13,164, 238×67                                                                        | —        | —   | —       | FR-7.2                                                     |
+| P-56 | Settings group chevron                                                                          | 1440  | 204,384, 20×20 (192,19 in the group)                                                  | —        | —   | —       | FR-8.1                                                     |
+| P-57 | Settings group chevron                                                                          | 1024  | 203,453, 24×24 (190,24 in the group)                                                  | —        | —   | —       | FR-8.1                                                     |
+| P-58 | First sub-item text start                                                                       | 1024  | x 73, y 503                                                                           | —        | —   | —       | FR-9.1                                                     |
+| P-59 | User menu card, 1 item (flag off)                                                               | 1440  | 1203,8, 225×92                                                                        | —        | —   | —       | FR-6.2 E                                                   |
+| P-60 | User menu card, 1 item (flag off)                                                               | 1024  | 759,6, 253×112                                                                        | —        | —   | —       | FR-6.2 E                                                   |
+| P-61 | User menu popover, 1 item (flag off)                                                            | 375   | 140,53, 225×50                                                                        | —        | —   | —       | FR-6.2 E                                                   |
+| P-62 | Tablet rail page content start (V-9, measured 2026-11-05, `377:20163`)                          | 1024  | content 126,64, 773 wide; title 138,88                                                |          |     |         | shipped at x 89, title x 101: open, owner decision pending |
+| P-63 | Collapse handle, expanded tablet panel (owner-approved DV-10)                                   | 1024  | 235,89, 32×32 (222,15 in the panel; the rail handle's size, style and 16 px overhang) | —        | —   | —       | FR-12, DV-10                                               |
+| P-64 | Current sub-item tint (row box)                                                                 | 1440  | 12,419, 238×42 (PROP-18, no Figma node; fill as `386:26373`)                          | —        | —   | —       | FR-11, PROP-16                                             |
+| P-65 | Current sub-item tint (row box)                                                                 | 1024  | 13,495, 238×46 (PROP-18, no Figma node; fill as `386:26373`)                          | —        | —   | —       | FR-11, PROP-16                                             |
+
+Amended 2026-11-05 (DV-13, owner decision 2026-11-04): P-53 ships at 66,89 (53,15 in the panel) and
+P-63 at 228,89 (215,15 in the panel), both with a 9 px overhang. The Figma values above stay as the
+record; the shell README reports these two rows as DV-13.
 
 P-62, the tablet rail content start, is added once V-9 has measured it. State rows for controls the
 app never renders active (round header buttons rest / hover / open; search rest / hover / active)
@@ -698,6 +736,15 @@ Owner-approved visible deviation (outside classes (a) to (d)), named and the onl
 | Id    | Deviation from the Figma frame                                                                                                                                                                                             | Approved                                         |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | DV-10 | The expanded tablet sidebar `313:10490` draws no collapse handle; the build shows one at 222,15 in the panel (abs 235,89), 32×32, the tablet rail handle `378:21542`'s box and style, so the 1024 rail is reachable (P-63) | owner, 2026-10-23, "Add handle on tablet" (F-10) |
+
+Amended 2026-11-05 (owner decisions after 2026-10-23): "the only one" above is the record of the plan
+as approved. These three now stand beside DV-10, each measured in the shell README.
+
+| Id                                                                                                                                    | Deviation from the Figma frame                                                                                                                                                                                                           | Approved          |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| [DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26) | The Settings group label's box stops at the chevron's box (136 / 131 / 129 px), so under WCAG 1.4.12 text spacing it wraps instead of running under the chevron; at rest it paints as Figma draws it                                     | owner, 2026-10-26 |
+| [DV-12](../../../src/components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04)  | `/settings` centres in the content column above 1024 px, and the desktop rail keeps no right margin, which supersedes P-51                                                                                                               | owner, 2026-11-04 |
+| [DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04)             | All four handles take `right: -9px`: tablet 215,15 and 53,15 instead of 222,15 and 60,15, clearing the title by 3 px, which supersedes P-53 and P-63; the handle rides the width transition and §9 gains its chevron turn and label fade | owner, 2026-11-04 |
 
 Allowed differences (PRD NFR-22), and only these:
 

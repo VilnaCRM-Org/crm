@@ -131,7 +131,10 @@ declare `shell.userMenu`.
   `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
   route layer is the only place that reaches the observability boundary.
 - **No ADR:** the composer change is recorded here and in the shell README rather than in
-  `docs/adr/` (OQ-10).
+  `docs/adr/` (OQ-10), and the pull request carries the `adr:not-required` label (or a `[no-adr]`
+  body line). Issue 362 supersedes enterprise-app-shell's prop-less `AppLayout` contract with an
+  optional `userMenu` slot, an `onShellFailure` callback and the props type file
+  `src/components/types/layouts/app-layout.ts`.
 
 ## The contract
 

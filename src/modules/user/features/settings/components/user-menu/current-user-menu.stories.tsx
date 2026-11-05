@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { type JSX, useCallback, useState } from 'react';
 
 import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
-import { storySession, withCurrentUserAnswer } from '@stories/current-user-decorators';
+import {
+  storySession,
+  withCurrentUserAnswer,
+  withCurrentUserFailure,
+} from '@stories/current-user-decorators';
 import { withProtectedOutlet } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
 
@@ -36,7 +40,7 @@ const meta: Meta<typeof CurrentUserMenu> = {
   tags: ['autodocs'],
   args: { onIdentity: noop },
   render: ({ onIdentity }) => <ReadingMenu onIdentity={onIdentity} />,
-  decorators: [withProtectedOutlet(storySession), withCurrentUserAnswer()],
+  decorators: [withProtectedOutlet(storySession)],
   parameters: {
     docs: {
       description: {
@@ -58,4 +62,6 @@ export default meta;
 
 type Story = StoryObj<typeof CurrentUserMenu>;
 
-export const Reading: Story = {};
+export const Reading: Story = { decorators: [withCurrentUserAnswer()] };
+
+export const ReadFailed: Story = { decorators: [withCurrentUserFailure()] };

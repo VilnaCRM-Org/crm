@@ -117,10 +117,10 @@ describe('UIAppHeader', () => {
 
   it('renders the resolved user menu inside the slot', () => {
     renderShell(
-      <UIAppHeader layout="tablet" userMenu={<button type="button">Евгения Маслова</button>} />
+      <UIAppHeader layout="tablet" userMenu={<button type="button">Євгенія Маслова</button>} />
     );
 
-    expect(screen.getByRole('button', { name: 'Евгения Маслова' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Євгенія Маслова' })).toBeInTheDocument();
   });
 
   it('renders no MUI ripple anywhere in the header', () => {

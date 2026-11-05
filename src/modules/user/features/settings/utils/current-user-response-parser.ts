@@ -8,8 +8,6 @@ import type {
   CurrentUserResponse,
 } from '../types/current-user/current-user-read';
 
-const ACCESS_DENIED = 'Access Denied.';
-
 const UNAUTHENTICATED = 401;
 
 const GRAPHQL_FAILED = 'The CurrentUser query returned GraphQL errors';
@@ -63,10 +61,9 @@ export default class CurrentUserResponseParser {
   }
 
   private reasonOf(error: unknown): CurrentUserFailureCause {
-    const denied = this.field(error, 'message') === ACCESS_DENIED;
     const status = this.field(this.field(error, 'extensions'), 'status');
 
-    return denied || status === UNAUTHENTICATED ? 'denied' : 'unavailable';
+    return status === UNAUTHENTICATED ? 'denied' : 'unavailable';
   }
 
   private unavailable(status: number, message: string): CurrentUserErrorParse {

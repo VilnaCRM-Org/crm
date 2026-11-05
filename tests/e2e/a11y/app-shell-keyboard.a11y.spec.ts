@@ -103,6 +103,29 @@ for (const width of [1440, 1024]) {
       await expect(handle).toHaveAccessibleName(shellText.collapse);
     });
 
+    test('toggles the Settings group with Enter and Space and resets it on a route change', async ({
+      page,
+    }) => {
+      await openAs(page, ROUTE_PATHS.home);
+      const toggle = groupToggleOf(page);
+      await toggle.focus();
+
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await page.keyboard.press('Enter');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      await expect(toggle).toBeFocused();
+      await page.keyboard.press('Space');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await expect(toggle).toBeFocused();
+      await expect(page).toHaveURL(ROUTE_PATHS.home);
+
+      await page.keyboard.press('Enter');
+      await rowOf(page, 'boards').click();
+
+      await expect(page).toHaveURL(ROUTE_PATHS.boards);
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
     test('walks the chip menu with arrows, Home and End, and closes it with Escape', async ({
       page,
     }) => {

@@ -451,10 +451,11 @@ Playwright container and run in CI only.
   3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
   `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
 
-### DV-13: the handle rides the sidebar edge (owner report, 2026-11-04)
+### DV-13: the handle rides the sidebar edge (owner decision, 2026-11-04)
 
 Figma places the 32 px tablet handle 16 px past the panel, so at 1024 it covers the first 4 px of
-the page title, which Figma starts at x 263; the owner reported that collision. The handle also took
+the page title, which Figma starts at x 263. The owner asked for this change directly: from 1024 to
+1440 the chevron sat on top of the first letter of "Налаштування". The handle also took
 its final `left` on the first frame of the width transition and waited for the panel to catch up.
 All four handles now take `right: -9px`, the overhang the desktop frames already draw, so the handle
 moves with the transition and clears the title by 3 px at every width. Desktop is unchanged (223
@@ -516,8 +517,9 @@ label); the rows not listed here are in the tables above.
 P-51 departs from Figma by owner decision (DV-12 above). P-58's text box is 18 px tall in Figma and
 starts at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
 The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`. P-62, the tablet
-rail content start, has no Figma value yet (UX 10.2, V-9): the tablet page follows the rail edge
-(x 89, title x 101) until it is measured.
+rail content start, was measured on 2026-11-05 (UX 10.2, V-9): Figma `377:20163` draws the content at
+x 126 and 773 wide, with the title at x 138. The tablet page ships following the rail edge at x 89,
+title x 101, so this row is an open difference awaiting the owner's decision.
 
 ### Visual baselines (Story 3.4)
 
@@ -527,7 +529,8 @@ The baselines were recorded in the pinned Playwright container against a freshly
 
 - **Changed, 134:** exactly the protected pages. The 39 home snapshots (13 viewports, three engines)
   show the shell without badges and without home's former Settings link and Sign out button
-  (FR-15); the 93 desktop and 2 mobile settings snapshots show the shell and the left-aligned page.
+  (FR-15); the 93 desktop and 2 mobile settings snapshots show the shell and, since DV-12, the
+  centred page.
   No public page (sign-in, sign-up, password recovery, error pages) changed.
 - **Added, 88:** the eight coming-soon routes at the three Figma widths in three engines
   (`visual-comparison.coming-soon.spec.ts`, 72) and on both mobile projects

@@ -92,14 +92,14 @@ describe('currentUserSource', () => {
     expect(capture.mock.calls[0]?.[0]).toMatchObject({ status: 401 });
   });
 
-  it('reports a denied GraphQL answer as an ended session without ending it', async () => {
+  it('reports a denied GraphQL answer as unavailable without ending the session', async () => {
     const session = sessionWith(buildToken());
     const errors = [{ message: 'Access Denied.' }];
     answer({ data: null, errors });
 
     await expect(currentUserSource.read(session, signal())).resolves.toEqual({
       kind: 'failed',
-      reason: 'session_ended',
+      reason: 'unavailable',
     });
     expect(session.end).not.toHaveBeenCalled();
     expect(capture).toHaveBeenCalledTimes(1);

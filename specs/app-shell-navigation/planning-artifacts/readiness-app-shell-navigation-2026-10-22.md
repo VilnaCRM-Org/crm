@@ -3,7 +3,7 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-22
-revised: 2026-10-29
+revised: 2026-11-05
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
@@ -24,12 +24,22 @@ inputDocuments:
 
 **Current verdict: READY as of re-review 2 (2026-10-23), pre-amendment** (0 Blocker, 0 Major,
 3 Minor; see "Re-review 2 (2026-10-23)" below). The bundle was amended afterwards, on 2026-10-27,
-2026-10-28 and 2026-10-29, and readiness was not re-run on the amended text: those amendments
-record product-owner decisions taken during implementation and review (the 42 px drawer
-sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph gap, a failed chip re-read keeping the
-shown name, the single sign-out latch in `useSignOut`) and their dated notes in the PRD,
-architecture and epics. The first pass and re-review 1 that follow are superseded history, kept
-for the record.
+2026-10-28, 2026-10-29, 2026-11-02, 2026-11-03, 2026-11-04 and 2026-11-05, and readiness was not
+re-run on any of the amended text. Those amendments record product-owner decisions taken during
+implementation and review and the shipped design that followed them:
+
+- 2026-10-27 to 2026-10-29: the 42 px drawer sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph
+  gap, a failed chip re-read keeping the shown name, the single sign-out latch in `useSignOut`.
+- 2026-11-02: the chip's read moved off `ProfileProvider` and `useService` onto the container-free
+  `currentUserSource` (0addef83).
+- 2026-11-03: the `userSettings` flag removed, and the lazy `protected-layout` chunk of 663151bc
+  recorded in the architecture.
+- 2026-11-04: the settings page centred (DV-12) and the handle moved to the sidebar edge (DV-13).
+- 2026-11-05: the dated notes for DV-11 and DV-13 and a reconciliation of the bundle with the
+  shipped code, which also gave the brief its first dated banners.
+
+The dated notes are in the PRD, UX spec, architecture and epics, and since 2026-11-05 in the brief.
+The first pass and re-review 1 that follow are superseded history, kept for the record.
 
 **First-pass verdict (superseded): NOT READY** (3 Blocker, 17 Major, 19 Minor). No story may be
 dispatched and no source file may change until every Blocker and Major below is corrected in the

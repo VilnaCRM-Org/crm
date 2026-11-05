@@ -263,7 +263,48 @@ test.describe('App shell on touch devices (issue #362)', () => {
       await expectTapArea(drawerLinkOf(page, id), `drawer ${id}`);
     }
     await expectTapArea(drawerSignOutOf(page), 'drawer sign out');
+    const expand = drawerOf(page).getByRole('button', { name: shellText.groupExpand, exact: true });
+    await expectTapArea(expand, 'drawer chevron, collapsed');
+    await expand.tap();
+    await expectTapArea(
+      drawerOf(page).getByRole('button', { name: shellText.groupCollapse, exact: true }),
+      'drawer chevron, expanded'
+    );
   });
+
+  test('keeps the bell and the list inert on a tap, with their status described', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(request.url()));
+
+    for (const name of [shellText.notifications, shellText.tasks]) {
+      const control = page.getByRole('banner').getByRole('button', { name, exact: true });
+      await expect(control).toBeDisabled();
+      await expect(control).toHaveAccessibleDescription(shellText.unavailable);
+      await control.tap({ force: true });
+    }
+
+    await expect(page).toHaveURL(ROUTE_PATHS.home);
+    expect(requests).toEqual([]);
+  });
+
+  for (const width of [320, 375]) {
+    test(`keeps the drawer search inert and fitting at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 700 });
+      await openAt(page, ROUTE_PATHS.home);
+      await burgerOf(page).tap();
+      const search = drawerOf(page).getByRole('searchbox', { name: shellText.search });
+
+      await expect(search).toBeDisabled();
+      await expect(search).toHaveAccessibleDescription(shellText.unavailable);
+      await search.tap({ force: true });
+
+      await expect(search).toHaveValue('');
+      await expect(search).toBeInViewport({ ratio: 1 });
+    });
+  }
 
   test('keeps the drawer sub-items at the recorded 42 px pitch, whole and not overlapping', async ({
     page,

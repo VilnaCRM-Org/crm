@@ -3,7 +3,9 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import UserMenu from '@/modules/user/features/settings/components/user-menu';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
+import { buildFullName } from '@tests/builders';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
@@ -15,15 +17,13 @@ interface MenuState {
 
 const MENU = 'Меню користувача';
 
+const mapper = new UserDisplayNameMapper();
+const ready = mapper.fromFullName(buildFullName());
+const long = mapper.fromFullName(`${buildFullName()} Дуже-Довгопрізвищенко-Довгопрізвищенко`);
+
 const states: Record<string, MenuState> = {
-  Ready: {
-    identity: { displayName: 'Євгенія Маслова', monogram: 'ЄМ' },
-    chipName: `Євгенія Маслова, ${MENU}`,
-  },
-  LongName: {
-    identity: { displayName: 'Олександр Дуже-Довгопрізвищенко', monogram: 'ОД' },
-    chipName: `Олександр Дуже-Довгопрізвищенко, ${MENU}`,
-  },
+  Ready: { identity: ready, chipName: `${ready.displayName}, ${MENU}` },
+  LongName: { identity: long, chipName: `${long.displayName}, ${MENU}` },
   Pending: { identity: null, chipName: MENU },
 };
 

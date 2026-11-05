@@ -48,7 +48,7 @@ describe('NavigationGroupToggle', () => {
     const toggle = screen.getByRole('button', { name: 'Expand Settings' });
 
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).not.toHaveAttribute('aria-controls');
+    expect(toggle).toHaveAttribute('aria-controls', 'settings-list');
   });
 
   it('speaks uk names', () => {

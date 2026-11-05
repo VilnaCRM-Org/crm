@@ -42,3 +42,5 @@ type Story = StoryObj<typeof UserMenuLink>;
 export const Desktop: Story = {};
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
+
+export const Mobile: Story = { args: { layout: 'mobile' } };

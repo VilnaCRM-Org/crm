@@ -142,7 +142,6 @@ describe('navigation rail styles', () => {
       zIndex: 1,
       display: 'flex',
       alignItems: 'center',
-      filter: 'drop-shadow(0 6px 17px rgba(37, 42, 49, 0.07))',
     });
   });
 
@@ -166,7 +165,7 @@ describe('navigation rail styles', () => {
       padding: '12px 16px',
       borderRadius: '8px',
       backgroundColor: '#FFFFFF',
-      boxShadow: 'inset 0 0 0 1px #E1E7EA',
+      boxShadow: '0 6px 17px rgba(37, 42, 49, 0.07), inset 0 0 0 1px #E1E7EA',
       fontFamily: 'Inter, sans-serif',
       fontWeight: 500,
       fontSize: '16px',

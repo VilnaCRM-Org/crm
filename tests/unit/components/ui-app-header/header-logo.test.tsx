@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import { type JSX, useRef } from 'react';
 import * as ReactRouter from 'react-router';
-import { Route, Routes, useLocation } from 'react-router';
+import { Route, Routes, useLocation, useNavigationType } from 'react-router';
 
 import HeaderLogo from '@/components/ui-app-header/header-logo';
 import useArrivalFocus from '@/hooks/use-arrival-focus';
@@ -25,6 +25,7 @@ function Probe(): JSX.Element {
       <main ref={focusOnArrival} tabIndex={-1}>
         <span data-location={location.pathname}>{location.pathname}</span>
       </main>
+      <p>{`navigation ${useNavigationType()}`}</p>
     </>
   );
 }
@@ -119,14 +120,14 @@ describe('HeaderLogo', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
-  it('keeps the history length when already on / and still focuses main', async () => {
+  it('replaces the entry when already on / and still focuses main', async () => {
     const user = userEvent.setup();
-    const before = window.history.length;
     renderOn('/');
+    expect(screen.getByText('navigation POP')).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'VilnaCRM' }));
 
-    expect(window.history.length).toBe(before);
+    expect(screen.getByText('navigation REPLACE')).toBeInTheDocument();
     expect(screen.getByRole('main')).toHaveFocus();
   });
 

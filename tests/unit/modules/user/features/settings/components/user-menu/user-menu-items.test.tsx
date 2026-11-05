@@ -6,6 +6,7 @@ import type { JSX } from 'react';
 import UserMenuItems from '@/modules/user/features/settings/components/user-menu/user-menu-items';
 import buildUserMenuState from '@tests/unit/utils/build-user-menu-state';
 import renderShell from '@tests/unit/utils/render-shell';
+import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 type Props = Parameters<typeof UserMenuItems>[0];
 
@@ -25,6 +26,14 @@ const renderItems = (props: Partial<Props> = {}, locale: 'en' | 'uk' = 'en'): vo
 };
 
 describe('UserMenuItems', () => {
+  it('renders no MUI ripple in an open menu under reduced motion', () => {
+    stubMotionPreference(true);
+    renderItems();
+
+    expect(screen.getByRole('menu')).not.toContainHTML('MuiTouchRipple');
+    Reflect.deleteProperty(window, 'matchMedia');
+  });
+
   it('is a menu named User menu with My profile, Settings and Sign out', () => {
     renderItems();
 
