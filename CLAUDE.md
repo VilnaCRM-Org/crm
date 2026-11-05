@@ -323,11 +323,12 @@ whose mutants are all static weighs 1, its dry run. The packing then puts the he
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
 same commit; no weight file is committed, so none can go stale. At 354 files the scope holds
-6,600 runnable mutants, 4,967 of them scored, in 311 sharded files; 43 files run in no shard, and
-the 40 shards hold 125 to 139 scored mutants (the heaviest is one 139-mutant file on its own) and
-1 to 9 files each. File size was a poor proxy for that load: under the 30-shard size packing a
-cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished, while the
-same scope packed by counted mutants holds 167 to 168 per shard at 30.
+6,555 runnable mutants, 4,920 of them scored, in 311 sharded files, 48 of which are all static, so
+the total packing weight is 4,968; 43 files run in no shard, and the 40 shards carry a weight of
+123 to 139 (the heaviest is one 139-mutant file on its own) and 1 to 9 files each. File size was a
+poor proxy for that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met
+the 15-minute kill switch before it finished, while the same scope packed by counted mutants
+carries a weight of 165 to 166 per shard at 30.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
 kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`

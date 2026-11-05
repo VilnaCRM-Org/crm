@@ -111,9 +111,9 @@ user-service answers into crm outcomes and i18n keys (U8).
 
 ## 2. Sources and method
 
-- **crm:** worktree `/home/dima/Desktop/crm-worktrees/user-settings-planning`, branch
+- **crm:** a planning worktree on branch
   `docs/user-settings-planning` from `origin/main` `58099168`. Every `path:line` here was
-  re-opened in this worktree on 2026-10-06; wrong ranges in the evidence reports were corrected.
+  re-opened in that worktree on 2026-10-06; wrong ranges in the evidence reports were corrected.
 - **user-service**, two SHA-pinned trees:
   - `M` = `main` at `a95c1e854bf21770b7fc630611a8257b0f9c600b` (2026-09-28):
     <https://github.com/VilnaCRM-Org/user-service/blob/a95c1e854bf21770b7fc630611a8257b0f9c600b>
@@ -125,12 +125,13 @@ user-service answers into crm outcomes and i18n keys (U8).
   `security.yaml` files, and the PHP ranges cited in §4.4-§4.7.
 - **Design:** Figma file `xZ7ccrH6d4QyqLQsayFSEX`, page "Design CRM" `0:1`, group `6242:41691`;
   Miro board "Frontend C4 Architecture VilnaCRM" (`uXjVMG64hTs=`), read from screenshots.
-- **Sibling bundles:** crm #315 create-new-password in
-  `/home/dima/Desktop/crm/specs/create-new-password/planning-artifacts/` (readiness `complete`,
-  uncommitted); two-factor authentication (research, brief, PRD) in
-  `/home/dima/Desktop/crm-worktrees/2fa-planning/specs/two-factor-authentication/`.
-- **Evidence reports** (job scratch, outside the repository): `figma-report.md`,
-  `miro-report.md`, `backend-report.md`, `crm-current-state.md`.
+- **Sibling bundles:** crm #315 create-new-password, now in the repository at
+  `specs/create-new-password/planning-artifacts/` (readiness `complete`); two-factor
+  authentication (research, brief, PRD), now on the #331 branch at
+  `specs/two-factor-authentication/`.
+- **Evidence reports:** `figma-report.md`, `miro-report.md`, `backend-report.md` and
+  `crm-current-state.md` were job scratch and are not available; their findings are restated with
+  citations in this document.
 
 > Assumption: upstream evidence is cited as `M:` or `T:` plus path and line anchor instead of a
 > full permalink, because a permalink runs to 110-170 characters against the 100-character line
