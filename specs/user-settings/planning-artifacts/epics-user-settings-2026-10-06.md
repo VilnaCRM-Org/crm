@@ -325,6 +325,8 @@ used by settings alone (R16).
 - FR-11: change detection (trimmed name, trimmed lower-cased e-mail, filled new password); a
   no-change status; an input carrying only the changed fields.
 - FR-12: native busy state, single flight, Save disabled offline, focus never left on `body`.
+  Amended 2026-11-05: if Save is disabled as it settles, focus on `body` moves to the `h1`, and a
+  field the user is still in keeps focus.
 - FR-13: Clear restores the last loaded values, empties both password fields, sends nothing.
 - FR-14: one success toast per changed aspect in the order name, e-mail, password; payload
   adopted, form pristine.
@@ -387,7 +389,9 @@ used by settings alone (R16).
 - NFR-9: secrets never in a URL, storage, the cache, logs or telemetry; passwords emptied; no new
   origin; the flag shipped off.
 - NFR-10: request deadline, abort, no retry link, route error element and chunk retry; errors
-  reach observability only through the Apollo error link.
+  reach observability only through the Apollo error link. Amended 2026-11-05: a rejection that never
+  reached the link is captured once through `UnseenFailureReporter`, without variables and scrubbed
+  by `PiiScrubber`.
 - NFR-11: i18n parity, the console gate, Faker builders, semantic locators and test liveness.
 - NFR-12: test lanes: unit, integration with msw, apollo-server, e2e desktop, mobile, axe and
   keyboard.
@@ -539,7 +543,8 @@ Each story's own criteria add to these; a story is not done until all of them ho
   reviewed DI-policy edits are the three of
   architecture §12 (the adapter entry in Story 1.8, the `graphql-documents` widening and the
   `response-schemas` carve-out in Story 2.2), and the only reviewed edits of
-  `config/i18n-catalog-policy.json` are its two new lazy entries (Stories 1.1 and 1.6) and the
+  `config/i18n-catalog-policy.json` are its three new lazy entries (Stories 1.1, 1.6 and 1.9;
+  amended 2026-11-05, the toast catalog of Story 1.9 is the third) and the
   one owner Story 1.1 removes from the recovery entry. No `eslint-disable`, `@ts-ignore`,
   `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`, `.fixme`, `waitForTimeout`,
   conditional `expect` or `data-testid` in `src`; no inline comments beyond a
@@ -932,7 +937,9 @@ the page module registering its catalog through the shared `lazyCatalogLoader`
 (`src/lib/locale-catalog/`, AR-2), `settings/i18n/{uk,en}.json` (NEW from the generator, trimmed
 to `settings.title`, `settings.heading`, `settings.subtitle`), `config/i18n-catalog-policy.json`
 (MODIFY: a `lazyCatalogs` entry for `modules/user/features/settings/i18n` owned by
-`modules/user/features/settings`), `tests/unit/scripts/localization-generator.test.js` (MODIFY:
+`modules/user/features/settings`; amended 2026-11-05: it shipped with four narrower owners, the
+feature's `routes/index.ts`, `routes/user-profile`, `components` and `hooks`, and Story 1.9's toast
+catalog follows it as the last entry), `tests/unit/scripts/localization-generator.test.js` (MODIFY:
 the pinned catalog list gains the settings catalog after the entries already there),
 `tests/unit/utils/create-settings-locale-i18n.ts` (NEW: the `create-recovery-locale-i18n.ts`
 precedent), `.storybook/preview.tsx` (MODIFY: registers the settings catalog), `settings/README.md`
@@ -961,7 +968,7 @@ catalog must not contain),
 - Given the contract, when it is read, then `/settings` is `ROUTE_PATHS.settings`, `guard: 'protected'`, `flag: 'userSettings'`, `meta.titleKey: 'settings.title'`, and `load` is `import(/* webpackChunkName: "settings" */ './user-profile')`; the performance-serving golden test reads `settings/routes/index.ts` beside the app and auth contracts and pins that import; and `routeModules.items` in `src/routes/registry.ts` gains `settingsRoutes` after `authRoutes`.
 - Given `tests/unit/routes/route-composer.test.tsx` on the real registry, when it runs, then `RootLayout` has exactly one child, the pathless `RouteFlagGate` route, the `ProtectedRoute` branch and the seven public routes sit directly under it, and invariant B's case is titled "keeps public routes directly under the gate route, itself directly under RootLayout" and still pins the seven public paths in order.
 - Given `tests/unit/routes/registry.test.ts`, when it runs, then the module ids are `['app.shell', 'user.auth', 'user.settings']`, still unique, and a case finds the `user.settings` route by `ROUTE_PATHS.settings` and asserts its `guard` `protected`, `flag` `userSettings` and `meta.titleKey` `settings.title`.
-- Given `config/i18n-catalog-policy.json`, when `make lint-i18n` runs, then `modules/user/features/settings/i18n` is a lazy catalog owned by `modules/user/features/settings`, `src/i18n/localization.json` holds no `settings.*` key (pinned by the performance-serving namespace case as well), both locales hold the three keys, no `[lazy-key-scope]` finding is reported, and the localization-generator unit test pins the policy's lazy catalogs in order, the settings catalog last (three once Story 1.1 has landed).
+- Given `config/i18n-catalog-policy.json`, when `make lint-i18n` runs, then `modules/user/features/settings/i18n` is a lazy catalog owned by `modules/user/features/settings` (amended 2026-11-05: by the four owners listed under Files), `src/i18n/localization.json` holds no `settings.*` key (pinned by the performance-serving namespace case as well), both locales hold the three keys, no `[lazy-key-scope]` finding is reported, and the localization-generator unit test pins the policy's lazy catalogs in order, the settings catalog last (three once Story 1.1 has landed; amended 2026-11-05: Story 1.9's toast catalog is pinned last, with settings immediately before it).
 - Given the `UserProfile` route module, when it evaluates, then `lazyCatalogLoader.register(i18n, { en, uk })` adds both locale bundles of the settings JSON through `addResourceBundle` before the page's `usePageTitle('settings.title')` runs; the loader is a stateless module singleton with one public method and no field, the accepted exception of AR-2.
 - Given `tests/unit/utils/create-settings-locale-i18n.ts` and `.storybook/preview.tsx`, when a settings test or story renders, then the settings keys resolve, and a test built with `createLocaleI18n` alone renders the raw `settings.title` key (must-fail proof that the catalog is lazy).
 - Given the page component, when it is read, then it is named `UserProfile` after the board's `UserProfile [component]<route>`, its grid takes its sections as `children` (`ReactNode`), and the settings folder holds no class or file named for a controller, service or handler.
@@ -1182,7 +1189,7 @@ jest-axe.
 - Given `useToastQueue`, when `show` receives a `ToastDraftSet` of three drafts in one call, then they appear in one commit in that order with ids from the reducer's counter; when a fourth arrives, the oldest toast of either tone is removed; and with fake timers advanced 60 seconds every toast is still shown.
 - Given `UIToastStack` with no toasts, when it renders, then one visually hidden polite `role="status"` region (`UILiveStatus`) is present from the first render; three success toasts that arrive together are one update of its text, an identical repeat changes the text through the alternating zero-width mark, and an error toast's text never enters the region; amended 2026-10-21: a second always-mounted assertive region (`role="alert"`) is present from the first render and carries the error texts with the same alternating mark.
 - Given a toast closed by its button, when it leaves, then focus moves to the next toast's close button, or to `returnFocusRef` when it was the last, and no toast takes focus when it mounts (amended 2026-10-21: then the previous close button, `returnFocusRef` only while it is connected and enabled, then `fallbackFocusRef`; a toast evicted by the cap while focused hands focus to the newest close button).
-- Given toasts on screen, when the layout effect runs with a stubbed `getBoundingClientRect`, then the root element's `scroll-padding-bottom` equals the stack's height; it is measured again whenever the toast set changes (a capped queue that swaps one toast for a taller one keeps its count) and on every window resize, and it is cleared when the stack empties or unmounts. (Amended 2026-11-05, WCAG 2.4.11: the padding is the distance from the stack's top to the viewport bottom, so it includes the bottom inset, and the stack's `maxHeight` is half of `100dvh` less that inset, scrolling inside, so the reservation always covers the stack and a focused Save stays clear of three toasts at 320 × 256.)
+- Given toasts on screen, when the layout effect runs with a stubbed `getBoundingClientRect`, then the root element's `scroll-padding-bottom` equals the stack's height; it is measured again whenever the toast set changes (a capped queue that swaps one toast for a taller one keeps its count) and on every window resize, and it is cleared when the stack empties or unmounts. (Amended 2026-11-05, WCAG 2.4.11: the padding is the distance from the stack's top to the viewport bottom, so it includes the bottom inset, and the stack's `maxHeight` is half of `100dvh` less that inset, scrolling inside, so the reservation always covers the stack and a focused Save stays clear of three toasts at 320 × 256; `body` gets the same value as `padding-bottom`, so the footer links can also scroll clear.)
 - Given the style objects loaded in the test body, when they are read, then the colours come from the palette tokens, the stack is fixed bottom-right from the `sm` breakpoint and spans the bottom below it, the buttons have a 44 CSS px minimum height below `sm` (measured in Story 4.3), and no transition or keyframes exist.
 - Given both tones with and without an action, and one, three and mixed-tone stacks, when jest-axe runs, then there is no violation, and the two story files show each case.
 - Given the toast types, when `make lint-eslint` runs the TB-1 selectors, then `ToastItem` extends `ToastDraft` instead of an inline `Omit`, `show` takes a `ToastDraftSet`, `toasts` is a `ToastItemSet`, `ToastQueue` is a named interface, and no file carries a suppression.
@@ -1561,7 +1568,7 @@ and working with the plain `PasswordChange`),
 - Given a change and an empty current password, when Save runs, then that field shows "Це поле обов'язкове", takes focus, and nothing is sent; with only the current password typed, nothing is sent, no field error shows and a polite status in the form says "Немає змін для збереження"; the current password `abc` with a change raises no client error.
 - Given an empty new password and a changed name, when Save runs, then the input has no `newPassword` and no rule error shows; with `Pa1` typed, only the length rule of `UIPasswordPolicyRules` is unmet; with `Пароль123`, Save shows the shared uppercase message, focuses the field and sends nothing, because `useProfileFormRules` wraps `passwordValidator.create(t)` so that an empty or whitespace-only value passes (the field is optional) and any other value gets the per-rule message, not #315's `createChecklistGate`; the field's `aria-describedby` names the hint "Необов’язково. Залиште порожнім, щоб не змінювати пароль." and the rule list. Amended 2026-10-21 (product owner, matching Figma): the hint is visually hidden but stays in `aria-describedby`; the rule list renders only while the field has focus or a value, and after an empty field blurs it stays 200 ms more (`useBlurHold`, `RULES_COLLAPSE_DELAY_MS`) so a click on Save that starts the blur lands before Save moves; a new password equal to the current one is refused once the policy passes (`settings.errors.new_password_same`), and the new-password rule re-validates when the current password changes. The optional state is announced but not shown visually, the owner's recorded trade-off.
 - Given Save, when it runs, then the button is disabled with the spinner and keeps the name "Зберегти зміни", the form has `aria-busy`, "Збереження…" is announced, Enter in any field submits, and offline the button is disabled and described by the offline notice.
-- Given a settled Save that adopts or ends in a toast, when it settles, then focus is on "Зберегти зміни"; a Save that ends in field errors focuses the first field in error in DOM order with `aria-invalid="true"`; a successful retry of a failed read focuses `h2` "Особисті дані", which has `tabIndex={-1}` (when that heading is the `UIForm` title, #315's `titleRef` `RefCallback<HTMLElement>` focuses it instead of a second hand-rolled ref).
+- Given a settled Save that adopts or ends in a toast, when it settles, then focus is on "Зберегти зміни" (amended 2026-11-05, FR-12: unless Save is disabled as it settles, when focus on `body` moves to the `h1` and a field the user is still in keeps focus); a Save that ends in field errors focuses the first field in error in DOM order with `aria-invalid="true"`; a successful retry of a failed read focuses `h2` "Особисті дані", which has `tabIndex={-1}` (when that heading is the `UIForm` title, #315's `titleRef` `RefCallback<HTMLElement>` focuses it instead of a second hand-rolled ref).
 - Given a Save adoption, when the form's `key` changes, then the form reads the new defaults, both password fields are empty and the form is pristine; a resend's `confirm` never changes the `key`.
 - Given edited fields, typed passwords and field errors, when "Очистити" is activated, then the fields hold the last loaded values, both password fields are empty and masked, no field has `aria-invalid`, the no-change status is cleared, nothing is sent and focus stays on it; during a Save it is `aria-disabled="true"` and does nothing.
 - Given the Save and "Очистити" pills, when their styles and axe are read, then Save stays under the existing exception of issue #276, "Очистити" is outlined with label `#1A1C1E` (17.09:1) and border `#969B9D`, `A11Y_EXCEPTIONS` gains nothing (superseded 2026-10-21 for the page: it gains the one scoped `#settings-greeting` entry; the two pills still add none), and both have a 44 CSS px minimum height on mobile (measured in Story 4.3).
@@ -1762,6 +1769,7 @@ of #315's per-spec helpers, which stay where they are),
 - Given the flag forced off through `overrideRuntimeConfig`, when `/settings` opens with and without a token, then the not-found page renders, no `settings` chunk is requested and the home page shows no link.
 - Given the network log of every spec, when it is read, then only the document origin and the configured GraphQL origin, plus the REST API origin during the sign-in step of the session-end spec, were contacted, and no password, e-mail or name appears in a URL.
 - Given the specs, when they run with `retries: 0`, then they pass deterministically with semantic locators, no `waitForTimeout` and no conditional `expect`, and `make check-e2e-route-coverage` passes.
+- Given the connection dropping during a held Save (amended 2026-11-05, FR-12), when the Save settles with Save still disabled, then the transient error toast shows and focus is on the `h1`, not on `body`.
 
 ### Story 4.3: Complete the settings changes on touch devices
 
