@@ -64,6 +64,28 @@ const props = (overrides: Partial<Props> = {}): Props => ({
   ...overrides,
 });
 
+const renderFresh = async (overrides: Partial<Props> = {}): Promise<void> => {
+  const Fresh = await loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    jest.doMock('react-hook-form', () => ReactHookForm);
+    jest.doMock('react-i18next', () => ReactI18next);
+    return (await import('@/modules/user/features/settings/components/profile-form')).default;
+  });
+  const state = props(overrides);
+  render(
+    <Fresh
+      user={state.user}
+      adoption={state.adoption}
+      version={state.version}
+      refocus={state.refocus}
+      toasts={state.toasts}
+      saveRef={state.saveRef}
+      headingRef={state.headingRef}
+    />,
+    { wrapper }
+  );
+};
+
 const form = (overrides: Partial<Props> = {}): JSX.Element => {
   const state = props(overrides);
   return (
@@ -459,29 +481,11 @@ describe('ProfileForm', () => {
   ] as const)(
     'maps %s to its message, under its field, focused, on a form loaded in the test',
     async (reason, name, label, message) => {
-      const Fresh = await loadIsolated(async () => {
-        jest.doMock('react', () => React);
-        jest.doMock('react-hook-form', () => ReactHookForm);
-        jest.doMock('react-i18next', () => ReactI18next);
-        return (await import('@/modules/user/features/settings/components/profile-form')).default;
-      });
       mockUpdate.mockResolvedValue({
         kind: 'invalid',
         errors: { items: [{ field: name, reason }] },
       });
-      const state = props();
-      render(
-        <Fresh
-          user={state.user}
-          adoption={state.adoption}
-          version={state.version}
-          refocus={state.refocus}
-          toasts={state.toasts}
-          saveRef={state.saveRef}
-          headingRef={state.headingRef}
-        />,
-        { wrapper }
-      );
+      await renderFresh();
 
       await userEvent.type(field('E-mail'), '.ua');
       await userEvent.type(field(CURRENT), 'abc');
@@ -492,6 +496,13 @@ describe('ProfileForm', () => {
       expect(field(label)).toHaveAccessibleDescription(expect.stringContaining(message));
     }
   );
+
+  it('links the e-mail to its status row on a form loaded in the test', async () => {
+    await renderFresh({ user: buildUserEntity({ confirmed: false }) });
+
+    expect(screen.getByText('E-mail не підтверджено')).toHaveAttribute('id', 'email-status');
+    expect(field('E-mail').getAttribute('aria-describedby')?.split(' ')).toContain('email-status');
+  });
 
   it.each([
     ['email_taken', 'email', 'E-mail', 'Електронна адреса вже використовується'],

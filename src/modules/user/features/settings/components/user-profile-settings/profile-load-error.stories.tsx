@@ -14,7 +14,7 @@ const meta: Meta<typeof ProfileLoadError> = {
       description: {
         component:
           'The failure state of the profile read: "Не вдалося завантажити профіль" and a ' +
-          '"Спробувати ще раз" button that the message describes; the page announces the ' +
+          '"Спробувати ще раз" button; the page announces the ' +
           'failure through its always-mounted alert region. After a retry that fails ' +
           'again the button takes focus, because the one that held it was replaced by the ' +
           'skeleton.',

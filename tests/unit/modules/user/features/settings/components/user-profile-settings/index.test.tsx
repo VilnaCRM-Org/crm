@@ -135,7 +135,7 @@ describe('UserProfileSettings', () => {
     expect(screen.getByRole('status')).toHaveTextContent(LOADING);
   });
 
-  it('announces the failure through the mounted alert region with a described retry', () => {
+  it('announces the failure once through the mounted alert region, not on the retry too', () => {
     render(card({ status: 'failed' }), { wrapper });
 
     expect(screen.getAllByRole('alert')).toHaveLength(1);
