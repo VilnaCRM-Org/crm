@@ -13,7 +13,6 @@ export default function useEmailRow(context: ProfileEditContext, saving: boolean
   return {
     confirmed: user.confirmed,
     busy: saving || isSubmitting || !online,
-    resending: isSubmitting,
     resend,
   };
 }

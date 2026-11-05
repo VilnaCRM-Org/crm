@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { createRef, type JSX } from 'react';
 
 import UIForm from '@/components/ui-form';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
@@ -10,10 +11,11 @@ type Values = { name: string };
 const DEFAULTS: Values = { name: '' };
 const OFFLINE = 'You are offline. Submitting is unavailable until your connection is restored.';
 
-const mountForm = (onSubmit = jest.fn()): jest.Mock => {
+const mountForm = (onSubmit = jest.fn(), submitRef = createRef<HTMLButtonElement>()): jest.Mock => {
   renderWithI18n(
     <UIForm<Values>
       defaultValues={DEFAULTS}
+      submitRef={submitRef}
       onSubmit={onSubmit}
       submitLabel="Submit"
       submittingLabel="Submitting…"
@@ -85,6 +87,45 @@ describe('UIForm offline behaviour', () => {
     const notice = screen.getByText(OFFLINE);
     const region = screen.getAllByRole('status').find((candidate) => candidate.contains(notice));
     expect(region).toHaveFocus();
+  });
+
+  it('parks focus on the notice for a form holding an external submit ref too', () => {
+    const submitRef = createRef<HTMLButtonElement>();
+    mountForm(jest.fn(), submitRef);
+    act(() => submitRef.current?.focus());
+    expect(submitRef.current).toHaveFocus();
+
+    act(() => useConnectivityStore.setState({ online: false }));
+
+    const notice = screen.getByText(OFFLINE);
+    const region = screen.getAllByRole('status').find((candidate) => candidate.contains(notice));
+    expect(region).toHaveFocus();
+  });
+
+  it('returns focus from a cleared banner to the external submit ref', async () => {
+    const submitRef = createRef<HTMLButtonElement>();
+    const tree = (error: string | null): JSX.Element => (
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        error={error}
+        submitRef={submitRef}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="My Title"
+      >
+        <input name="name" aria-label="name" />
+      </UIForm>
+    );
+    const { rerender } = renderWithI18n(tree(null));
+    rerender(tree('Failed'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Failed');
+    await waitFor(() => expect(submitRef.current).not.toHaveFocus());
+
+    rerender(tree(null));
+
+    expect(submitRef.current).toHaveFocus();
+    await waitFor(() => expect(submitRef.current).toContainHTML('MuiTouchRipple-ripplePulsate'));
   });
 
   it('leaves focus alone when the submit did not hold it', () => {

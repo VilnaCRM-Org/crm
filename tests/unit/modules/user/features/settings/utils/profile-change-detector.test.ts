@@ -1,5 +1,15 @@
 import ProfileChangeDetector from '@/modules/user/features/settings/utils/profile-change-detector';
-import { buildProfileFormValues, buildUserEntity } from '@tests/builders';
+import {
+  buildEmail,
+  buildFullName,
+  buildPassword,
+  buildProfileFormValues,
+  buildUserEntity,
+} from '@tests/builders';
+
+const NEW_FULL_NAME = buildFullName();
+const NEW_EMAIL = buildEmail();
+const NEW_PASSWORD = buildPassword();
 
 const detector = new ProfileChangeDetector();
 
@@ -77,7 +87,7 @@ describe('ProfileChangeDetector.detect', () => {
   it('sends all three aspects with the entity IRI unchanged', () => {
     const change = detector.detect(
       user,
-      unchanged({ fullName: 'Нове Імʼя', email: 'new@example.com', newPassword: 'Next12345' })
+      unchanged({ fullName: NEW_FULL_NAME, email: NEW_EMAIL, newPassword: NEW_PASSWORD })
     );
 
     expect(Object.keys(change ?? {}).sort()).toEqual([
@@ -91,7 +101,7 @@ describe('ProfileChangeDetector.detect', () => {
   });
 
   it('never carries an undefined value', () => {
-    const change = detector.detect(user, unchanged({ fullName: 'Нове Імʼя' }));
+    const change = detector.detect(user, unchanged({ fullName: NEW_FULL_NAME }));
 
     expect(Object.values(change ?? {})).not.toContain(undefined);
   });

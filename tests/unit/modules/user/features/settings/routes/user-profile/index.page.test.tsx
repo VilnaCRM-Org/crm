@@ -7,7 +7,14 @@ import { I18nextProvider } from 'react-i18next';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
-import { buildToken, buildUserNode } from '@tests/builders';
+import {
+  buildEmail,
+  buildFullName,
+  buildPassword,
+  buildToken,
+  buildUserIri,
+  buildUserNode,
+} from '@tests/builders';
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
 import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
@@ -22,10 +29,15 @@ const GENERIC = 'Не вдалося зберегти зміни. Спробуй
 const TRANSIENT = 'Не вдалося зберегти зміни. Перевірте з’єднання та спробуйте ще раз.';
 const RETRY = 'Спробувати ще раз';
 
+const NEW_EMAIL = buildEmail();
+const NEW_NAME = buildFullName();
+const NEW_PASSWORD = buildPassword();
+const TAKEN_EMAIL = buildEmail();
+
 const loaded = buildUserNode({
-  id: '/api/users/1',
-  initials: 'Олена Петренко',
-  email: 'olena@example.com',
+  id: buildUserIri(),
+  initials: buildFullName(),
+  email: buildEmail(),
   confirmed: true,
 });
 
@@ -59,7 +71,7 @@ const typeInto = async (label: string, text: string): Promise<void> => {
 
 const editName = async (): Promise<void> => {
   await userEvent.clear(field(NAME));
-  await typeInto(NAME, 'Іван Коваль');
+  await typeInto(NAME, NEW_NAME);
 };
 
 const submitWith = async (
@@ -102,7 +114,7 @@ describe('settings page save outcomes (page)', () => {
   it('saves a name: one toast announced once, focus on Save, payload shown', async () => {
     await mount();
     await editName();
-    answerProfileOperation('UpdateUser', { respond: () => saved({ initials: 'Іван Коваль' }) });
+    answerProfileOperation('UpdateUser', { respond: () => saved({ initials: NEW_NAME }) });
     await typeInto(CURRENT, 'abc');
 
     await userEvent.click(saveButton());
@@ -114,8 +126,8 @@ describe('settings page save outcomes (page)', () => {
       .filter((node) => node.textContent?.includes(SAVED));
     expect(regions).toHaveLength(1);
     await waitFor(() => expect(saveButton()).toHaveFocus());
-    expect(screen.getByText('Іван Коваль')).toBeVisible();
-    expect(field(NAME)).toHaveValue('Іван Коваль');
+    expect(screen.getByText(NEW_NAME)).toBeVisible();
+    expect(field(NAME)).toHaveValue(NEW_NAME);
     expect(field(CURRENT)).toHaveValue('');
     expect(field(NEW)).toHaveValue('');
   });
@@ -123,23 +135,23 @@ describe('settings page save outcomes (page)', () => {
   it('saves an e-mail and shows the confirmation-link toast', async () => {
     await mount();
     await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', 'new@example.com');
+    await typeInto('E-mail', NEW_EMAIL);
 
-    await submitWith(() => saved({ email: 'new@example.com', confirmed: false }));
+    await submitWith(() => saved({ email: NEW_EMAIL, confirmed: false }));
 
     expect(await screen.findByText(EMAIL_SENT)).toBeVisible();
-    expect(field('E-mail')).toHaveValue('new@example.com');
+    expect(field('E-mail')).toHaveValue(NEW_EMAIL);
   });
 
   it('shows three toasts in order as one utterance and sends one request', async () => {
     await mount();
     await editName();
     await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', 'new@example.com');
-    await typeInto(NEW, 'Next12345');
+    await typeInto('E-mail', NEW_EMAIL);
+    await typeInto(NEW, NEW_PASSWORD);
     const answered = answerProfileOperation('UpdateUser', {
       delayMs: 30,
-      respond: () => saved({ initials: 'Іван Коваль', email: 'new@example.com' }),
+      respond: () => saved({ initials: NEW_NAME, email: NEW_EMAIL }),
     });
     await typeInto(CURRENT, 'abc');
 
@@ -170,7 +182,7 @@ describe('settings page save outcomes (page)', () => {
   ])('shows the e-mail taken error on the e-mail field for %s', async (_name, error) => {
     await mount();
     await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', 'taken@example.com');
+    await typeInto('E-mail', TAKEN_EMAIL);
 
     await submitWith(() => graphQLError(error));
 
@@ -182,7 +194,7 @@ describe('settings page save outcomes (page)', () => {
   it('shows the name and new-password errors and focuses the name first', async () => {
     await mount();
     await editName();
-    await typeInto(NEW, 'Next12345');
+    await typeInto(NEW, NEW_PASSWORD);
 
     await submitWith(() =>
       graphQLError({
@@ -219,14 +231,14 @@ describe('settings page save outcomes (page)', () => {
   ])('shows the wrong-password error on the current password for %s', async (_name, message) => {
     await mount();
     await editName();
-    await typeInto(NEW, 'Next12345');
+    await typeInto(NEW, NEW_PASSWORD);
 
     await submitWith(() => graphQLError({ message }));
 
     expect(await screen.findByText('Неправильний поточний пароль')).toBeVisible();
     await waitFor(() => expect(field(CURRENT)).toHaveFocus());
-    expect(field(NAME)).toHaveValue('Іван Коваль');
-    expect(field(NEW)).toHaveValue('Next12345');
+    expect(field(NAME)).toHaveValue(NEW_NAME);
+    expect(field(NEW)).toHaveValue(NEW_PASSWORD);
   });
 
   it('shows the generic toast for an unknown message that carries FORBIDDEN', async () => {
@@ -252,7 +264,7 @@ describe('settings page save outcomes (page)', () => {
     expect(await screen.findByText(GENERIC)).toBeVisible();
     expect(screen.queryByRole('button', { name: RETRY })).not.toBeInTheDocument();
     await waitFor(() => expect(saveButton()).toHaveFocus());
-    expect(field(NAME)).toHaveValue('Іван Коваль');
+    expect(field(NAME)).toHaveValue(NEW_NAME);
     expect(useAuthStore.getState().token).toBe(token);
   });
 
@@ -276,7 +288,7 @@ describe('settings page save outcomes (page)', () => {
     const answered = answerProfileOperation('UpdateUser', {
       respond: () => {
         sent += 1;
-        return sent === 1 ? fail() : saved({ initials: 'Іван Коваль' });
+        return sent === 1 ? fail() : saved({ initials: NEW_NAME });
       },
     });
     await typeInto(CURRENT, 'abc');
@@ -325,7 +337,7 @@ describe('settings page save outcomes (page)', () => {
   it('clears a server field error when its field is edited next', async () => {
     await mount();
     await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', 'taken@example.com');
+    await typeInto('E-mail', TAKEN_EMAIL);
     await submitWith(() =>
       graphQLError({ message: 'email: This email address is already registered' })
     );
@@ -341,7 +353,7 @@ describe('settings page save outcomes (page)', () => {
   it('keeps toasts through Clear and returns focus to Save on the last close', async () => {
     await mount();
     await editName();
-    await submitWith(() => saved({ initials: 'Іван Коваль' }));
+    await submitWith(() => saved({ initials: NEW_NAME }));
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));

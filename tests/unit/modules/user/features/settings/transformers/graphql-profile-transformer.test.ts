@@ -5,7 +5,13 @@ import type {
   UserServiceFailure,
   UserServiceFailureReason,
 } from '@/modules/user/types/user-service/user-service-failure';
-import { buildProfileChange, buildUserNode } from '@tests/builders';
+import {
+  buildEmail,
+  buildFullName,
+  buildPassword,
+  buildProfileChange,
+  buildUserNode,
+} from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const errors = new UserServiceErrorTransformer();
@@ -45,11 +51,11 @@ describe('GraphQLProfileTransformer.toUpdateInput', () => {
   });
 
   it.each([
-    ['e-mail only', { email: 'new@example.com' }, ['email', 'id', 'password']],
-    ['password only', { newPassword: 'Newpass123' }, ['id', 'newPassword', 'password']],
+    ['e-mail only', { email: buildEmail() }, ['email', 'id', 'password']],
+    ['password only', { newPassword: buildPassword() }, ['id', 'newPassword', 'password']],
     [
       'all three',
-      { fullName: 'A B', email: 'a@b.co', newPassword: 'Newpass123' },
+      { fullName: buildFullName(), email: buildEmail(), newPassword: buildPassword() },
       ['email', 'id', 'initials', 'newPassword', 'password'],
     ],
   ])('sends exactly the %s keys with no undefined value', (_name, fields, keys) => {

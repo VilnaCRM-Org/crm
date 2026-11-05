@@ -62,7 +62,8 @@ export default {
     fontSize: '1.125rem',
     lineHeight: 'normal',
     color: customColors.text.dark,
-    outline: 'none',
+    '&:focus:not(:focus-visible)': { outline: 'none' },
+    '&:focus-visible': SETTINGS_FOCUS_RING,
     [SETTINGS_TABLET]: {
       marginTop: '1.5rem',
       marginBottom: '0.8125rem',

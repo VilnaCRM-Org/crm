@@ -217,4 +217,13 @@ describe('useStackClearance', () => {
       expect(scrollIntoView).not.toHaveBeenCalled();
     });
   });
+
+  it('reserves the whole distance from the stack top to the viewport bottom', () => {
+    const element = stack(10);
+    const ref = { current: element };
+
+    renderHook(() => useStackClearance(ref, toastSet(1)));
+
+    expect(padding()).toBe(`${VIEWPORT_HEIGHT - 10}px`);
+  });
 });

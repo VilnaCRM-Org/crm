@@ -1,4 +1,4 @@
-import { buildPassword } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import {
   replyWithGraphQLError,
   replyWithProfile,
@@ -22,10 +22,11 @@ import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { expectNextTabStop } from '@tests/utils/a11y/keyboard';
 
-const NEW_NAME = 'Іван Коваль';
+const NEW_NAME = buildFullName();
 const password = buildPassword();
 const loadFailed: string = t('settings.profile.load_failed');
 const tryAgain: string = t('auth.error.tryAgain');
+const personalHeading: string = t('settings.profile.sections.personal');
 
 test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
   test.beforeEach(async ({ page }) => {
@@ -50,7 +51,7 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
       UpdateUser: [replyWithGraphQLError('email: This email address is already registered', 422)],
     });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await fillInput(emailField(page), 'taken@example.com');
+    await fillInput(emailField(page), buildEmail());
     await fillInput(currentPasswordField(page), password);
     await saveButton(page).click();
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
@@ -103,5 +104,22 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
     await expect.poll(() => stub.count('CurrentUser')).toBe(2);
     await expect(retry).toBeFocused();
     await expect(page.getByRole('alert').filter({ hasText: loadFailed })).toHaveText(loadFailed);
+  });
+
+  test('a successful keyboard retry lands on a section heading with a visible ring', async ({
+    page,
+  }) => {
+    await stubProfile(page, { CurrentUser: [replyWithStatus(503), replyWithProfile()] });
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    const retry = page.getByRole('button', { name: tryAgain, exact: true });
+    await expect(retry).toBeVisible();
+    await page.getByRole('main').focus();
+    await expectNextTabStop(page, { locator: retry, visibleFocus: true });
+
+    await page.keyboard.press('Enter');
+
+    const heading = page.getByRole('heading', { level: 2, name: personalHeading, exact: true });
+    await expect(heading).toBeFocused();
+    await expect(heading).toHaveCSS('outline-style', 'solid');
   });
 });

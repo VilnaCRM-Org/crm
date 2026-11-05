@@ -6,7 +6,7 @@ import GraphQLProfileRepository from '@/modules/user/features/settings/repositor
 import CURRENT from '@/modules/user/features/settings/repositories/current-user-query';
 import RESEND from '@/modules/user/features/settings/repositories/resend-email-to-user-mutation';
 import UPDATE from '@/modules/user/features/settings/repositories/update-user-mutation';
-import { buildUserIri, buildPassword } from '@tests/builders';
+import { buildFullName, buildPassword, buildUserIri } from '@tests/builders';
 
 interface FakeClient {
   readonly query: jest.Mock;
@@ -50,7 +50,7 @@ describe('GraphQLProfileRepository', () => {
   it('sends UpdateUser with the input and a fresh clientMutationId, uncached', async () => {
     const { repository, client } = build();
     const { signal } = new AbortController();
-    const input = { id: buildUserIri(), password: buildPassword(), initials: 'А Б' };
+    const input = { id: buildUserIri(), password: buildPassword(), initials: buildFullName() };
 
     await expect(repository.update(input, signal)).resolves.toEqual({ updateUser: null });
     await repository.update(input, signal);
@@ -106,12 +106,12 @@ describe('GraphQLProfileRepository', () => {
     [
       'update',
       (repository: GraphQLProfileRepository, signal: AbortSignal): Promise<unknown> =>
-        repository.update({ id: 'x', password: 'y' }, signal),
+        repository.update({ id: buildUserIri(), password: buildPassword() }, signal),
     ],
     [
       'resend',
       (repository: GraphQLProfileRepository, signal: AbortSignal): Promise<unknown> =>
-        repository.resend('x', signal),
+        repository.resend(buildUserIri(), signal),
     ],
   ])(
     'throws an AbortError from %s before calling the client when already aborted',
@@ -136,7 +136,9 @@ describe('GraphQLProfileRepository', () => {
     const { signal } = new AbortController();
 
     await expect(repository.read(signal)).rejects.toBe(failure);
-    await expect(repository.update({ id: 'x', password: 'y' }, signal)).rejects.toBe(failure);
-    await expect(repository.resend('x', signal)).rejects.toBe(failure);
+    await expect(
+      repository.update({ id: buildUserIri(), password: buildPassword() }, signal)
+    ).rejects.toBe(failure);
+    await expect(repository.resend(buildUserIri(), signal)).rejects.toBe(failure);
   });
 });
