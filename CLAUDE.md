@@ -1843,7 +1843,7 @@ through `usePageTitle` after its module has registered the catalog). The setting
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
 the six settings `components/` folders that page renders (`change-password`, `profile-form`,
 `profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the eight
-`hooks/` files those components call (`use-blur-hold`, `use-email-resend`, `use-email-row`,
+`hooks/` files that own settings translations (`use-blur-hold`, `use-email-resend`, `use-email-row`,
 `use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`, `use-profile-save` and
 `use-settled-focus`), and the settings route contract `routes/index.ts` for
 its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,

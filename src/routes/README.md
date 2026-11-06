@@ -182,9 +182,11 @@ as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role 
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
 and is reported through the `onShellFailure` callback the composer passes beside the optional
 `userMenu` slot (see "Shell slots"). The frame reserves the 64 px sticky header as
-`scroll-margin-top` on the sidebar, `<main>` and
-footer slots, so a control that receives keyboard focus is never scrolled under the header (WCAG
-2.4.11). The header stays out of it: as `scroll-padding-top` on the document, the clearance made
+`scroll-margin-top` on the sidebar, `<main>` and footer slots. With the shell's
+browser-specific focus clearance (`useStickyFocusClearance`), that keeps a control that receives
+keyboard focus from sitting under the header (WCAG 2.4.11); the shell README lists the Firefox
+cases where a partly visible control stays under it until that follow-up runs.
+The header stays out of it: as `scroll-padding-top` on the document, the clearance made
 Chromium scroll the page whenever focus reached a header control. The footer is loaded lazily behind
 its
 own `<Suspense>`,

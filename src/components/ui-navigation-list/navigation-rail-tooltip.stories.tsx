@@ -55,3 +55,9 @@ type Story = StoryObj<RailTooltipStoryArgs>;
 export const Desktop: Story = {};
 
 export const Tablet: Story = { args: { shape: 'tablet' } };
+
+export const TabletProducts: Story = { args: { shape: 'tabletProducts' } };
+
+export const TabletCompact: Story = { args: { shape: 'tabletCompact' } };
+
+export const Action: Story = { args: { shape: 'action' } };

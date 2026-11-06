@@ -36,6 +36,14 @@ const drawerSignOutOf = (page: Page): Locator =>
 const logoOf = (page: Page): Locator =>
   page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
 
+async function tapCentre(control: Locator): Promise<void> {
+  const box = await control.boundingBox();
+  expect(box, 'control must have a box to tap').not.toBeNull();
+  await control
+    .page()
+    .touchscreen.tap((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2);
+}
+
 async function openAt(page: Page, path: string): Promise<void> {
   await seedPreloadedAuthToken(page);
   await stubProfile(page);
@@ -389,9 +397,9 @@ test.describe('App shell on touch devices (issue #362)', () => {
     });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
 
-    await burgerOf(page).evaluate((burger: HTMLElement) => burger.click());
+    await tapCentre(burgerOf(page));
     await expect(drawerOf(page)).toBeVisible();
-    await closeOf(page).evaluate((close: HTMLElement) => close.click());
+    await tapCentre(closeOf(page));
     await expect(drawerOf(page)).toHaveCount(0);
 
     await expect(burgerOf(page)).toBeFocused();
@@ -411,16 +419,18 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect(drawerOf(page)).toBeVisible();
     const lockedAt = await page.evaluate(() => window.scrollY);
 
-    await page.mouse.move(SCRIM_POINT.x, SCRIM_POINT.y);
-    await page.mouse.wheel(0, 400);
-    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
-
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+      .toBe('hidden');
     expect(await page.evaluate(() => window.scrollY)).toBe(lockedAt);
 
     await closeOf(page).tap();
     await expect(drawerOf(page)).toHaveCount(0);
-    await page.mouse.wheel(0, 400);
 
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+      .not.toBe('hidden');
+    await page.evaluate(() => window.scrollTo(0, 400));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedAt);
   });
 

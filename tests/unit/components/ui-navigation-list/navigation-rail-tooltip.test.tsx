@@ -14,6 +14,8 @@ const tooltipOf = (): HTMLElement =>
   screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
 
 describe('NavigationRailTooltip', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('shows the label inside a body that is hidden from assistive technology', () => {
     render(<NavigationRailTooltip label="Integrations" shape="desktop" anchor={anchorAt(0, 0)} />);
 
@@ -38,9 +40,17 @@ describe('NavigationRailTooltip', () => {
     render(<NavigationRailTooltip label="Row" shape={shape} anchor={anchorAt(12, 100)} />);
 
     expect(tooltipOf()).toHaveStyle({ left, top, position: 'fixed' });
+    expect(tooltipOf().style).toMatchObject({ left, top });
   });
 
   it('follows its row when the rail list scrolls and when the window resizes', () => {
+    const queue: FrameRequestCallback[] = [];
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queue.push(callback);
+
+      return queue.length;
+    });
+    const flush = (): void => act(() => queue.splice(0).forEach((callback) => callback(0)));
     let top = 100;
     const anchor = document.createElement('div');
     anchor.getBoundingClientRect = (): DOMRect => new DOMRect(12, top, 72, 54);
@@ -49,15 +59,13 @@ describe('NavigationRailTooltip', () => {
     render(<NavigationRailTooltip label="Row" shape="desktop" anchor={anchor} />);
 
     top = 40;
-    act(() => {
-      list.dispatchEvent(new Event('scroll'));
-    });
+    list.dispatchEvent(new Event('scroll'));
+    flush();
     expect(tooltipOf()).toHaveStyle({ left: '73px', top: '44px' });
 
     top = 10;
-    act(() => {
-      window.dispatchEvent(new Event('resize'));
-    });
+    window.dispatchEvent(new Event('resize'));
+    flush();
     expect(tooltipOf()).toHaveStyle({ top: '14px' });
     list.remove();
   });
