@@ -9,7 +9,6 @@ import UserMenuLink from '@/modules/user/features/settings/components/user-menu/
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
-import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 const renderLink = (onClose = jest.fn(), layout: 'desktop' | 'tablet' = 'desktop'): void => {
   renderShell(
@@ -31,12 +30,10 @@ const renderLink = (onClose = jest.fn(), layout: 'desktop' | 'tablet' = 'desktop
 };
 
 describe('UserMenuLink', () => {
-  it('renders no MUI ripple under reduced motion', () => {
-    stubMotionPreference(true);
+  it('never renders a MUI ripple', () => {
     renderLink();
 
     expect(screen.getByRole('menuitem', { name: 'Settings' })).not.toContainHTML('MuiTouchRipple');
-    Reflect.deleteProperty(window, 'matchMedia');
   });
 
   it('is a menu item link to /settings', () => {

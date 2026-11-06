@@ -299,10 +299,10 @@ test.describe('App shell on touch devices (issue #362)', () => {
 
       await expect(search).toBeDisabled();
       await expect(search).toHaveAccessibleDescription(shellText.unavailable);
+      await expect(search).toBeInViewport({ ratio: 1 });
       await search.tap({ force: true });
 
       await expect(search).toHaveValue('');
-      await expect(search).toBeInViewport({ ratio: 1 });
     });
   }
 

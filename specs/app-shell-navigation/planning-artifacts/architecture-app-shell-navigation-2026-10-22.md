@@ -122,7 +122,7 @@ lazy-loading boundary that keeps every shell byte off the eager entry and off pu
    `@/routes/route-paths`, i18n, the `signOut` that `ProtectedOutletContext` already hands
    `AppLayout`, the router location (current-route logic) and the container-free
    `useFeatureFlag('userSettings')` (`src/hooks/use-feature-flag.ts`), which FR-8 and OQ-11 make
-   necessary. They never import a module (`no-components-import-modules`, `.dependency-cruiser.js:280`).
+   necessary. Superseded 2026-11-03: the owner removed the flag, so nothing in the shell reads it. They never import a module (`no-components-import-modules`, `.dependency-cruiser.js:280`).
 3. **User-aware parts in the `user` module**: the chip, its menu, the display name and monogram
    from `currentUser`. They live in `src/modules/user/features/settings/` because `ProfileProvider`
    is a settings data provider and the sibling-feature ban covers type-only edges
@@ -134,8 +134,8 @@ lazy-loading boundary that keeps every shell byte off the eager entry and off pu
    both; nothing else in this document depends on the answer.
 4. **The container stays off the eager path and off the flag-off path.** The user-aware slot is
    two chunks: `user-menu` (container-free chip and menu) and `current-user` (the read through
-   `useService`). The second is requested only while `userSettings` is on, so production (flag
-   off, `public/index.html:28`) never downloads tsyringe, Apollo or the composition root for the
+   `useService`). Superseded 2026-11-03, the flag is gone: the second was requested only while `userSettings` was on, so production (flag
+   off, `public/index.html:28`) never downloaded tsyringe, Apollo or the composition root for the
    shell (AD-8). Amended after 0addef83 (owner decision of 2026-11-02): the read no longer goes
    through `useService`. `useCurrentUser` calls the container-free `currentUserSource`
    (`CurrentUserClient`'s plain `fetch`, `CurrentUserResponseParser`, `UserDisplayNameMapper`), so

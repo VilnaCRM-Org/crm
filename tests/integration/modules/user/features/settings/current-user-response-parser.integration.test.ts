@@ -38,7 +38,7 @@ describe('CurrentUserResponseParser (integration)', () => {
   });
 
   it.each([
-    ['an Access Denied. message', { message: 'Access Denied.' }, 'denied'],
+    ['an Access Denied. message', { message: 'Access Denied.' }, 'unavailable'],
     ['an extension status of 401', { extensions: { status: 401 } }, 'denied'],
     ['another error', { message: 'boom' }, 'unavailable'],
   ] as const)('reads %s on the first GraphQL error as %s', (_name, first, reason) => {

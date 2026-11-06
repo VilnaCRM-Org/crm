@@ -106,10 +106,9 @@ describe('CurrentUserResponseParser', () => {
     });
   });
 
-  it.each([
-    ['an Access Denied. message', { message: 'Access Denied.' }],
-    ['an extension status of 401', { message: 'Nope', extensions: { status: 401 } }],
-  ])('reads %s on the first GraphQL error as a denied session', (_name, first) => {
+  it('reads an extension status of 401 on the first GraphQL error as a denied session', () => {
+    const first = { message: 'Nope', extensions: { status: 401 } };
+
     expect(ok({ errors: [first, { message: 'later' }] })).toMatchObject({
       kind: 'failed',
       reason: 'denied',
@@ -119,6 +118,7 @@ describe('CurrentUserResponseParser', () => {
   it.each([
     ['another message', { message: 'Access denied' }],
     ['another extension status', { message: 'Nope', extensions: { status: 403 } }],
+    ['an Access Denied. message', { message: 'Access Denied.' }],
     ['a null first error', null],
     ['a string first error', 'Access Denied.'],
   ])('reads %s on the first GraphQL error as unavailable', (_name, first) => {

@@ -1,3 +1,4 @@
+import layoutStyles from '@/components/layouts/app-layout.styles';
 import type { NavigationRowId } from '@/components/types/ui-navigation-list';
 import { customColors, paletteColors } from '@/styles/colors';
 
@@ -51,8 +52,6 @@ export const control = {
 
 const rowBase = { ...control, padding: '2px 0 2px 24px', gap: '8px' };
 
-const FINAL_WIDTH = '238px';
-
 const panelEdge = paletteColors.background.subtle;
 
 const drawerBorder = `1px solid ${panelEdge}`;
@@ -99,14 +98,14 @@ export default {
   row: {
     desktop: {
       ...rowBase,
-      minWidth: FINAL_WIDTH,
+      minWidth: layoutStyles.sidebarExpandedWidth,
       minHeight: '54px',
       fontSize: '16px',
       lineHeight: '1.125',
     },
     tablet: {
       ...rowBase,
-      minWidth: FINAL_WIDTH,
+      minWidth: layoutStyles.sidebarExpandedWidth,
       minHeight: '66px',
       fontSize: '18px',
       lineHeight: 'calc(22 / 18)',
@@ -117,7 +116,7 @@ export default {
   rowOpen: { desktop: noOverrides, tablet: noOverrides, drawer: { minHeight: '48px' } },
   action: {
     ...rowBase,
-    minWidth: FINAL_WIDTH,
+    minWidth: layoutStyles.sidebarExpandedWidth,
     minHeight: '54px',
     fontSize: '16px',
     lineHeight: '1.125',
@@ -139,7 +138,7 @@ export default {
   sub: {
     desktop: {
       ...subBase,
-      minWidth: FINAL_WIDTH,
+      minWidth: layoutStyles.sidebarExpandedWidth,
       minHeight: '42px',
       padding: '9px 0 2px 56px',
       fontSize: '16px',
@@ -147,7 +146,7 @@ export default {
     },
     tablet: {
       ...subBase,
-      minWidth: FINAL_WIDTH,
+      minWidth: layoutStyles.sidebarExpandedWidth,
       minHeight: '46px',
       padding: '8px 0 4px 60px',
       fontSize: '18px',
@@ -175,13 +174,19 @@ export default {
     padding: 0,
     listStyle: 'none',
     backgroundColor: paletteColors.background.default,
-    boxShadow: `inset 1px 0 0 ${panelEdge}, inset -1px 0 0 ${panelEdge}`,
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      pointerEvents: 'none',
+      boxShadow: `inset 1px 0 0 ${panelEdge}, inset -1px 0 0 ${panelEdge}`,
+    },
   },
   divider: {
     expanded: {
       ...dividerBase,
       width: '100%',
-      minWidth: FINAL_WIDTH,
+      minWidth: layoutStyles.sidebarExpandedWidth,
       backgroundColor: paletteColors.background.subtle,
     },
     desktopRail: {
