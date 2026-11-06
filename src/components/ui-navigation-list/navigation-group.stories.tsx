@@ -10,7 +10,7 @@ const meta: Meta<typeof NavigationGroup> = {
   component: NavigationGroup,
   tags: ['autodocs'],
   args: { layout: 'desktop', group: storyGroup, currentId: null },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] } },
   parameters: {
     docs: {
       description: {
@@ -38,4 +38,14 @@ export const Collapsed: Story = { decorators: withRoutedStoryList('/boards', 238
 export const TabletExpanded: Story = {
   args: { layout: 'tablet', currentId: 'settings' },
   decorators: withRoutedStoryList('/settings', 238),
+};
+
+export const DrawerExpanded: Story = {
+  args: { layout: 'drawer', currentId: 'settings' },
+  decorators: withRoutedStoryList('/settings', 238),
+};
+
+export const DrawerCollapsed: Story = {
+  args: { layout: 'drawer' },
+  decorators: withRoutedStoryList('/boards', 238),
 };

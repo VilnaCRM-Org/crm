@@ -345,7 +345,6 @@ describe('performance serving config', () => {
       'src/components/layouts/footer-loader.ts',
       'src/components/layouts/use-app-shell.ts',
       'src/components/layouts/use-frame-focus.ts',
-      'src/components/layouts/use-header-clearance.ts',
       'src/hooks/use-arrival-focus.ts',
     ]);
   });
@@ -394,6 +393,8 @@ describe('performance serving config', () => {
     const loaderSource = readFile('src/components/layouts/app-shell-loader.ts');
 
     expect(loaderSource).toContain('new ThemedChunkLoader<UIAppShellProps>(');
+    expect(loaderSource).toContain('new ChunkRetryLoader(');
+    expect(loaderSource).not.toContain('ReloadingChunkLoader');
     expect(loaderSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "ui-app-shell" \*\/\s*'@\/components\/ui-app-shell'\s*\)/
     );

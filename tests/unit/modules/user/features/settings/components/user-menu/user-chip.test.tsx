@@ -3,10 +3,12 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import UserChip from '@/modules/user/features/settings/components/user-menu/user-chip';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
+import { buildFullName } from '@tests/builders';
 import buildUserMenuState from '@tests/unit/utils/build-user-menu-state';
 import renderShell from '@tests/unit/utils/render-shell';
 
-const identity = { displayName: 'Anna Koval', monogram: 'AK' };
+const identity = new UserDisplayNameMapper().fromFullName(buildFullName());
 
 describe('UserChip', () => {
   it.each([
@@ -19,7 +21,7 @@ describe('UserChip', () => {
         <UserChip layout={layout} identity={identity} menu={buildUserMenuState()} menuId="m" />
       );
 
-      expect(screen.getByText('Anna Koval')).toHaveStyle({
+      expect(screen.getByText(identity.displayName)).toHaveStyle({
         fontSize,
         minWidth,
         lineHeight: '18px',
@@ -53,7 +55,7 @@ describe('UserChip', () => {
     const { rerender } = renderShell(
       <UserChip layout="desktop" identity={identity} menu={buildUserMenuState()} menuId="m" />
     );
-    expect(screen.getByRole('button')).toHaveAccessibleName('Anna Koval, User menu');
+    expect(screen.getByRole('button')).toHaveAccessibleName(`${identity.displayName}, User menu`);
 
     rerender(<UserChip layout="desktop" identity={null} menu={buildUserMenuState()} menuId="m" />);
     expect(screen.getByRole('button')).toHaveAccessibleName('User menu');
@@ -100,10 +102,10 @@ describe('UserChip', () => {
       <UserChip layout="mobile" identity={identity} menu={buildUserMenuState()} menuId="m" />
     );
 
-    expect(screen.queryByText('Anna Koval')).not.toBeInTheDocument();
+    expect(screen.queryByText(identity.displayName)).not.toBeInTheDocument();
     expect(container).not.toContainHTML('focusable="false"');
     expect(screen.getByRole('button')).toHaveStyle({ width: '44px', height: '44px' });
-    expect(screen.getByText('AK')).toHaveStyle({ width: '40px', height: '40px' });
+    expect(screen.getByText(identity.monogram)).toHaveStyle({ width: '40px', height: '40px' });
   });
 
   it('draws an empty avatar on mobile when the identity is unknown', () => {

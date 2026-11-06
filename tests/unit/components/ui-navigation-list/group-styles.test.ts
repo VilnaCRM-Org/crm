@@ -114,7 +114,7 @@ describe('navigation group styles', () => {
         '&::after': {
           content: '""',
           position: 'absolute',
-          inset: '-12px',
+          inset: '-12px -12px -12px 0',
         },
       },
       tablet: {
@@ -125,7 +125,7 @@ describe('navigation group styles', () => {
         '&::after': {
           content: '""',
           position: 'absolute',
-          inset: '-10px',
+          inset: '-10px -10px -10px 0',
         },
       },
       drawer: {

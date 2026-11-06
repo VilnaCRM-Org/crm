@@ -2,9 +2,11 @@ import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 
 import UserChipName from '@/modules/user/features/settings/components/user-menu/user-chip-name';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
+import { buildFullName } from '@tests/builders';
 import stubResizeObserver, { removeResizeObserver } from '@tests/unit/utils/stub-resize-observer';
 
-const NAME = 'Anna Koval';
+const NAME = new UserDisplayNameMapper().fromFullName(buildFullName()).displayName;
 
 const boxes = (): HTMLElement[] => screen.getAllByRole('generic', { hidden: true });
 

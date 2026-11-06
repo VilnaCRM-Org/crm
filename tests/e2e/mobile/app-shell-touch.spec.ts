@@ -75,9 +75,10 @@ async function expectTapArea(control: Locator, name: string): Promise<void> {
     ];
 
     return probes.every(([dx, dy]) => {
-      const x = Math.min(centreX + (dx ?? 0), window.innerWidth - 1);
-      const y = Math.min(centreY + (dy ?? 0), window.innerHeight - 1);
-      const hit = document.elementFromPoint(x, y);
+      const x = centreX + (dx ?? 0);
+      const y = centreY + (dy ?? 0);
+      if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) return false;
+      const hit = document.elementFromPoint(Math.floor(x), Math.floor(y));
 
       return hit !== null && element.contains(hit);
     });
@@ -208,6 +209,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await drawerSignOutOf(page).tap();
 
     await expectSignInPage(page);
+    await expect(page.getByRole('main')).toBeFocused();
   });
 
   test('opens Settings from the avatar menu and focuses main', async ({ page }) => {
@@ -375,6 +377,51 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await drawerSignOutOf(page).scrollIntoViewIfNeeded();
 
     await expect(drawerSignOutOf(page)).toBeInViewport({ ratio: 1 });
+  });
+
+  test('keeps the page where it was when the drawer closes and focus returns', async ({ page }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await page.evaluate(() => {
+      const filler = document.createElement('div');
+      filler.style.height = '3000px';
+      document.body.append(filler);
+      window.scrollTo(0, 400);
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
+
+    await burgerOf(page).evaluate((burger: HTMLElement) => burger.click());
+    await expect(drawerOf(page)).toBeVisible();
+    await closeOf(page).evaluate((close: HTMLElement) => close.click());
+    await expect(drawerOf(page)).toHaveCount(0);
+
+    await expect(burgerOf(page)).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(400);
+  });
+
+  test('locks the page scroll behind the open drawer and frees it after close', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await page.evaluate(() => {
+      const filler = document.createElement('div');
+      filler.style.height = '3000px';
+      document.body.append(filler);
+    });
+    await burgerOf(page).tap();
+    await expect(drawerOf(page)).toBeVisible();
+    const lockedAt = await page.evaluate(() => window.scrollY);
+
+    await page.mouse.move(SCRIM_POINT.x, SCRIM_POINT.y);
+    await page.mouse.wheel(0, 400);
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+
+    expect(await page.evaluate(() => window.scrollY)).toBe(lockedAt);
+
+    await closeOf(page).tap();
+    await expect(drawerOf(page)).toHaveCount(0);
+    await page.mouse.wheel(0, 400);
+
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedAt);
   });
 
   test('has no horizontal overflow at device width, with the drawer open', async ({ page }) => {

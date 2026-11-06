@@ -39,7 +39,8 @@ and 2026-10-29 (shipped-design amendments: the user-menu slot, the AD-11 sign-ou
 failed chip re-read; each change is marked in place as a dated amendment or owner decision;
 2026-11-03: the lazy protected-layout chunk of 663151bc and the userSettings flag removal;
 2026-11-04: the settings page centred, DV-12; 2026-11-05: reconciliation with shipped code;
-2026-11-06: the drawer and menu primitives, §8 A and the chip's `session_ended` causes)
+2026-11-06: the drawer and menu primitives, §8 A and the chip's `session_ended` causes, and the
+owner-approved `auth-page-vendors` cache group)
 **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
@@ -69,6 +70,13 @@ failed chip re-read; each change is marked in place as a dated amendment or owne
 > and §12.2. The drawer is MUI `Modal` plus `Slide`, with `useDrawerFocus` returning focus. An outside
 > click on the menu lands on a backdrop `Box`, not `ClickAwayListener`. `ShellFailureHandler` lives in
 > `src/routes/types/shell-slot.ts`. On the chip's read, only a transport 401 ends the session.
+
+> **Owner decision of 2026-11-06 (`auth-page-vendors` cache group approved).** The owner approved
+> `authPageVendorsCacheGroup` (`scripts/auth-forms-chunk-group.ts`, wired in `rsbuild.config.ts`). It
+> groups the `node_modules` that both the `sign-in` and `sign-up` page chunks contain, because the
+> shell's lazy chunks had split that code into pieces that compress worse. `/sign-in` was 265,997 bytes
+> against the 265,000 `lighthouse.scriptSizeBytes` budget and now passes in CI; no budget was raised.
+> §3.2, §9 and §10 carry dated notes.
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"),
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N"), the authoritative
@@ -309,6 +317,7 @@ src/routes/route-composer.tsx ──static──> src/routes/protected-layout-lo
 | `protected-layout`     | `ProtectedRoute`, the `AppLayout` frame grid, two placeholders, `appShellLoader` wiring, `shell-slot-factory` (663151bc)                     | first protected route               | never                  |
 | `ui-app-shell` **NEW** | `UIAppShell`, header, sidebar, list, drawer (MUI `Modal` and `Slide`, amended 2026-11-06), icons, shell catalog                              | `AppLayout` render                  | never                  |
 | `mui-theme`            | unchanged                                                                                                                                    | in parallel with every themed chunk | unchanged              |
+| `auth-page-vendors`    | the `node_modules` both the `sign-in` and `sign-up` page chunks contain; no shell code (owner decision 2026-11-06, §10)                      | `sign-in`, `sign-up`                | yes, those two         |
 | `user-menu` **NEW**    | `UserMenuSlot`, `UserMenu`, `useUserMenu`, chip catalog                                                                                      | `UIAppHeader` render                | never                  |
 | `current-user` **NEW** | `CurrentUserMenu`, `useCurrentUser`, the container-free `currentUserSource` (`fetch` client, parser, `UserDisplayNameMapper`) since 0addef83 | `UserMenuSlot`                      | never                  |
 | DI async chunk(s)      | composition root, tsyringe, Apollo, zod (already split for `settings`)                                                                       | `settings` only since 0addef83      | never                  |
@@ -1052,14 +1061,14 @@ renders stroke icons with `SvgIcon` and `sx={{ fill: 'none' }}` (research §5, t
 
 ADR-drift surfaces (`config/docs-policy.json`, `architectureDrift.significantPaths`) and this change:
 
-| Guarded path                                                                 | Touched?                                                                                                                                                       |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/routes/route-composer.tsx`                                              | **yes** (the slot, OQ-17 Option A)                                                                                                                             |
-| `src/routes/registry.ts`                                                     | no: the coming-soon routes go into the already registered `app-routes.ts` and settings contract                                                                |
-| `src/config/**`                                                              | no (the shell is unflagged, OQ-8; the badge has no data path, OQ-2a)                                                                                           |
-| `package.json` `dependencies`                                                | no: `Modal`, `Slide`, `MenuList`, `MenuItem` and `useMediaQuery` ship in `@mui/material` (amended 2026-11-06; the plan named `Drawer` and `ClickAwayListener`) |
-| `.dependency-cruiser.js`, `rsbuild.config.ts`, `config/browser-support.json` | no (a §10 split group in `rsbuild.config.ts` is a contingency only)                                                                                            |
-| `src/routes/route-paths.ts`, `src/routes/app-routes.ts`, settings contract   | changed (AD-13), not ADR-drift surfaces                                                                                                                        |
+| Guarded path                                                                 | Touched?                                                                                                                                                           |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/routes/route-composer.tsx`                                              | **yes** (the slot, OQ-17 Option A)                                                                                                                                 |
+| `src/routes/registry.ts`                                                     | no: the coming-soon routes go into the already registered `app-routes.ts` and settings contract                                                                    |
+| `src/config/**`                                                              | no (the shell is unflagged, OQ-8; the badge has no data path, OQ-2a)                                                                                               |
+| `package.json` `dependencies`                                                | no: `Modal`, `Slide`, `MenuList`, `MenuItem` and `useMediaQuery` ship in `@mui/material` (amended 2026-11-06; the plan named `Drawer` and `ClickAwayListener`)     |
+| `.dependency-cruiser.js`, `rsbuild.config.ts`, `config/browser-support.json` | no (a §10 split group in `rsbuild.config.ts` is a contingency only). Amended 2026-11-06 (owner decision): **`rsbuild.config.ts` yes**, the `authPageVendors` group |
+| `src/routes/route-paths.ts`, `src/routes/app-routes.ts`, settings contract   | changed (AD-13), not ADR-drift surfaces                                                                                                                            |
 
 The gate fires once, on `route-composer.tsx`. OQ-10 is resolved: **no ADR is written** and
 `docs/adr/` is not touched. The pull request carries the `adr:not-required` label (or a `[no-adr]`
@@ -1073,6 +1082,10 @@ line in its body). The decision is recorded instead:
   the shell-owned coming-soon routes;
 - with a pointer from `src/modules/user/README.md`, the user-settings precedent ("They live here
   rather than in an ADR by the maintainer's decision").
+
+Amended 2026-11-06 (owner decision): the gate now fires on two paths, `route-composer.tsx` and
+`rsbuild.config.ts`. It is one check per pull request, so the same label answers both. The approval
+of the cache group did not separately address an ADR; §10 and the shell README record the group.
 
 ## 10. Performance measurement plan (NFR-5, NFR-13)
 
@@ -1092,12 +1105,20 @@ raised):
 | `index` (entry)                                   | loader wiring only since 663151bc                                                                | target under 1 kB gzip (NFR-5); 165 000 gzip / 470 000 raw entry |
 | `protected-layout`                                | new since 663151bc: guard, frame, placeholders                                                   | 130 000 gzip / 400 000 raw per asset                             |
 | `ui-app-shell`                                    | new                                                                                              | 130 000 gzip / 400 000 raw per asset                             |
+| `auth-page-vendors`                               | new (owner decision 2026-11-06): the `node_modules` both `sign-in` and `sign-up` contain         | same; counts toward both pages' `script:size` (265 000)          |
 | `user-menu`                                       | new                                                                                              | same                                                             |
 | `current-user`                                    | new, small                                                                                       | same                                                             |
 | DI async chunk (AV-5)                             | unchanged size, requested by `settings` only, **not on `/`** since 0addef83 (amended 2026-11-05) | does not count toward `/` script transfer                        |
 | `home`                                            | shrinks (FR-16)                                                                                  | per asset                                                        |
 | `settings`                                        | about neutral (mapper import; the centring rule stays, DV-12)                                    | per asset                                                        |
 | `sign-in`, `sign-up`, `auth-forms*`, `error-page` | unchanged                                                                                        | any growth beyond the entry delta is a leak (SM-9)               |
+
+Amended 2026-11-06 (owner decision): the `auth-page-vendors` row was added and is not part of the
+plan as approved. The "unchanged" for `sign-in` and `sign-up` is also the plan: the group moves their
+shared vendor code into the new chunk. The shell's lazy chunks had split that code into pieces that
+compress worse, so `/sign-in` measured 265,997 bytes against the 265,000 budget. It now passes in CI
+and no budget was raised. The group is `authPageVendorsCacheGroup`
+(`scripts/auth-forms-chunk-group.ts`), wired in `rsbuild.config.ts`.
 
 **Lighthouse (CI authoritative).** `/` is the one protected URL audited (`lighthouse/constants.js:17-30`).
 Amended 2026-11-05 (reconciliation with shipped code): the flag this paragraph cited is gone and
@@ -1116,6 +1137,9 @@ only for Lighthouse):
 2. Move the drawer to an on-demand chunk (AD-6 contingency).
 3. Return to the owner with the measured numbers (an `rsbuild.config.ts` cache group, for example,
    is an ADR-drift change).
+
+Amended 2026-11-06 (owner decision): step 3 is what happened, for `/sign-in` rather than `/`. The
+owner saw the 265,997-byte reading and approved the `auth-page-vendors` group.
 
 ## 11. Gate-compliance notes
 

@@ -36,6 +36,12 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
   frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
   the document. Nothing under `src/components/layouts/` imports from `src/services/`.
+- **The auth pages share one more vendor chunk (owner decision, 2026-11-06).** The shell's lazy
+  chunks had split the `node_modules` code that both the `sign-in` and `sign-up` page chunks contain
+  into pieces that compress worse, and `/sign-in` reached 265,997 bytes against the 265,000
+  `lighthouse.scriptSizeBytes` budget. `authPageVendorsCacheGroup`
+  (`scripts/auth-forms-chunk-group.ts`, wired in `rsbuild.config.ts`) puts that code in one
+  `auth-page-vendors` chunk. `/sign-in` now passes in CI and no budget was raised.
 - **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
   supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
   optional `userMenu` slot and an `onShellFailure` callback, typed in
@@ -211,7 +217,7 @@ What Figma leaves open, and how it was built:
   no stop to be scrolled by keyboard, and its role is unchanged.
 - The sticky card is limited to the navigation grid row, so once the footer scrolls in it moves up
   under the 64 px header. Chromium and WebKit scroll a focused sidebar control fully into view,
-  honouring the list's `scroll-padding-bottom` and the root `scroll-padding-top`. Firefox scrolls
+  honouring the list's `scroll-padding-bottom` and the slot's `scroll-margin-top`. Firefox scrolls
   only a control that is entirely out of view, so a partly visible one stays clipped by the list or
   under the header (the collapse handle entirely, at 1440×400). One frame after a sidebar control
   takes focus, `useStickyFocusClearance` scrolls it into view within its list
@@ -457,14 +463,19 @@ Figma places the 32 px tablet handle 16 px past the panel, so at 1024 it covers 
 the page title, which Figma starts at x 263. The owner asked for this change directly: from 1024 to
 1440 the chevron sat on top of the first letter of "Налаштування". The handle also took
 its final `left` on the first frame of the width transition and waited for the panel to catch up.
-All four handles now take `right: -9px`, the overhang the desktop frames already draw, so the handle
-moves with the transition and clears the title by 3 px at every width. Desktop is unchanged (223
-and 57 from the wrapper); tablet moves 7 px left, to 215 and 53. The chevron turns over the same
-200 ms, and neither animates under `prefers-reduced-motion`.
+Three handles now take `right: -9px`, the overhang the desktop frames already draw, and the tablet
+rail takes `right: 28px`, the same 9 px past its 76 px panel, because its wrapper is 113 px wide
+with a 37 px right padding (113 − 28 − 32 = 53). So the handle moves with the transition and clears
+the title by 3 px at every width. Desktop is unchanged (223 and 57 from the wrapper); tablet moves
+7 px left, to 215 and 53 from the wrapper. The navigation adds 13 px at 1024, so those two render
+at x 228 and x 66 on the page. The chevron turns over the same 200 ms, and neither animates under
+`prefers-reduced-motion`.
 
-Amended 2026-11-06 (reconciliation with shipped code): three handles take `right: -9px`. The tablet
-rail's keeps its 9 px overhang past the 76 px panel as `right: 28px`, because its wrapper is 113 px
-wide with a 37 px right padding (113 − 28 − 32 = 53), so it still lands at 53,15.
+**Owner decision, 2026-11-06 (the page content follows the rail).** The wrapper animates its `width`
+(and its `padding-right` on tablet), and `app-layout.styles.ts` sizes that grid column as `auto`, so
+`<main>` and the page content inside it follow the same 200 ms transition on every toggle. The owner
+kept this, which amends UX §9's "nothing animates layout of `<main>` content". Under
+`prefers-reduced-motion: reduce` the transition has duration 0, so the content moves at once.
 
 The labels used to wrap inside the narrow panel while it opened, so rows started at up to 184 px
 tall and snapped back to 54. Sidebar rows now hold a 238 px `min-width` and the list clips them, so
@@ -525,8 +536,11 @@ The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`.
 rail content start, was measured on 2026-11-05 (UX 10.2, V-9): Figma `377:20163` draws the content
 at x 126 and 773 wide, with the title at x 138. The tablet rail carries the 37 px gap in its own
 width, a 113 px wrapper with a 37 px right padding, so the panel and handle animate together and
-the page starts as drawn. P-62 was read in a browser at 1024 px, with the navigation at x 13 and
-76 wide and the handle at x 66; that reading did not record the content width.
+the page starts as drawn. P-62 was read in a browser at 1024 px, with the rail collapsed, the
+navigation at x 13 and 76 wide and the handle at x 66. `main` measures x 126 and 898 wide, and the
+`h1` x 138 and 874 wide. The row passes: 898 and 874 are `main` and its heading,
+while the settings card measures 749 px wide, which is Figma's 773 px content frame less its 12 px
+insets on each side.
 
 ### Visual baselines (Story 3.4)
 
