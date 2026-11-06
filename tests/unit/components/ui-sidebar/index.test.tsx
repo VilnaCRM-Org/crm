@@ -111,6 +111,29 @@ describe('UISidebar', () => {
   );
 
   it.each([
+    ['/', 'Expand Settings', 'Collapse Settings'],
+    ['/settings', 'Collapse Settings', 'Expand Settings'],
+  ])(
+    'holds a Settings toggle on %s across the rail until the route changes',
+    async (path, from, to) => {
+      const user = userEvent.setup();
+      renderSidebar({}, path);
+
+      await user.click(screen.getByRole('button', { name: from }));
+      await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+      await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+
+      expect(screen.getByRole('button', { name: to })).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+      await user.click(screen.getByRole('link', { name: 'Boards' }));
+      await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+
+      expect(screen.getByRole('button', { name: 'Expand Settings' })).toBeInTheDocument();
+    }
+  );
+
+  it.each([
     ['desktop', false, '238px'],
     ['desktop', true, '72px'],
     ['tablet', false, '238px'],

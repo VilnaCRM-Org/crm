@@ -4,7 +4,7 @@ workflowType: ux-design
 project_name: crm
 date: 2026-10-22
 revised: 2026-11-06
-iteration: 3
+iteration: 5
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
