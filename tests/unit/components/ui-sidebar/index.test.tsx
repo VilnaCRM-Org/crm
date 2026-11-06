@@ -206,6 +206,7 @@ describe('UISidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
     expect(nav).not.toHaveClass(atRest, { exact: true });
 
+    expect(nav).toHaveStyle({ width: '100%' });
     fireEvent.animationEnd(nav);
     expect(nav).toHaveClass(atRest, { exact: true });
   });

@@ -1,8 +1,22 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import useSidebarCollapse from '@/components/ui-sidebar/use-sidebar-collapse';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 describe('useSidebarCollapse', () => {
+  it('starts expanded with nothing revealing on a hook loaded in the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/components/ui-sidebar/use-sidebar-collapse')).default;
+    });
+
+    const { result } = renderHook(() => fresh());
+
+    expect(result.current.collapsed).toBe(false);
+    expect(result.current.revealing).toBe(false);
+  });
+
   it('starts expanded with nothing revealing', () => {
     const { result } = renderHook(() => useSidebarCollapse());
 
