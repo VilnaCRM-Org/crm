@@ -43,6 +43,8 @@ export const Collapsed: Story = { args: { expanded: false } };
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
 
+export const TabletCollapsed: Story = { args: { layout: 'tablet', expanded: false } };
+
 export const DrawerExpanded: Story = { args: { layout: 'drawer' } };
 
 export const DrawerCollapsed: Story = { args: { layout: 'drawer', expanded: false } };

@@ -30,3 +30,9 @@ export default meta;
 type Story = StoryObj<typeof MobileNavigation>;
 
 export const Closed: Story = {};
+
+const openDrawer: Story['play'] = ({ canvasElement }) => {
+  canvasElement.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')?.click();
+};
+
+export const Open: Story = { play: openDrawer };

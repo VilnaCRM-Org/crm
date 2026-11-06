@@ -246,7 +246,10 @@ Each story's own criteria add to these; a story is not done until all of them ho
   is the enumerated parity entry of PRD NFR-4 (X-1 only; Story 3.2), because NFR-22 forbids changing a Figma colour to pass contrast. No `eslint-disable`, `@ts-ignore`, `@ts-expect-error`,
   `depcruise-ignore`, `!` in `src`, `.skip`, `.only`, `.fixme`, `waitForTimeout`, conditional
   `expect` or `data-testid`; no added code comments; a Stryker directive only with the proof
-  CLAUDE.md accepts (NFR-15).
+  CLAUDE.md accepts (NFR-15). Pending, awaiting the owner (2026-11-06): the shipped tree adds three
+  `EXEMPT_RENDER_PATH_FILES` entries in `config/di-collaborator-policy.js` (`auth-session-provider.ts`,
+  `current-user-client.ts`, `current-user-source.ts`), which this list does not permit; the approval
+  is not recorded and no decision is made here (Story 2.4, PRD NFR-6 and NFR-15).
 - **Conventions.** Classes only in non-React `.ts` (no statics, no free functions, no
   function-valued properties of top-level object literals); types in type-only `types/` files
   imported with `import type`; approved class suffixes; components reach the container only through
@@ -672,6 +675,21 @@ what they import; amended 2026-11-05, the plan named `ProfileProvider`) at 100 %
 > e2e count assertions listed in architecture §5.7 are rewritten with stubs that route replies by
 > caller (Story 3.3).
 
+> **OPEN as of 2026-11-06: R-1 (the chip's read can sign users out).** The flag-off criterion above
+> cites SM-16 and R-1, but the brief voids that mitigation ("Gate the read") and SM-16, and no build
+> reaches the flag-off state. The chip's read runs on every pathname change (`use-current-user.ts`)
+> and a transport 401 ends the session (`current-user-source.ts`), so a production 401 on that read
+> would sign users out after login. The owner has not answered what production returns for this read,
+> so this story records neither a mitigation nor an acceptance. See the brief's R-1 banner, PRD §8
+> and the readiness summary.
+
+> **Pending, awaiting the owner (2026-11-06): three allowlist entries.** `config/di-collaborator-policy.js`
+> adds `auth-session-provider.ts`, `current-user-client.ts` and `current-user-source.ts` to
+> `EXEMPT_RENDER_PATH_FILES`. This story's Files list does not name the policy file or
+> `auth-session-provider.ts`, and the Definition of Done forbids allowlist edits. Whether the owner
+> approves the three entries or the singletons move out of the gated directories is not decided; no
+> approval is recorded here (PRD NFR-6 and NFR-15, readiness summary).
+
 ### Story 2.5: Route every planned section to a shared coming-soon page
 
 As a signed-in user,
@@ -820,7 +838,7 @@ OQ-7's resolution; `make lint-docs`; CI-only: bundle-size report, Lighthouse, `m
 - Given the pull request, when the ADR-drift gate runs on `route-composer.tsx`, then the PR carries the `adr:not-required` label or a `[no-adr]` body line, and the decision is in the shell README and `src/routes/README.md` (OQ-10 resolved).
 - Given OQ-7's resolution, when `/` renders, then `<main>` holds no "Sign out" control and no link to `/settings`, `home.sign_out` and `home.settings_link` are removed or reused as the i18n gate allows, and `make i18n-generate` is fresh (FR-16 P, N).
 - Given the shell README, the routes README, the user README and the settings README, when `make lint-docs` runs, then they describe the slot, the lazy boundary, the mapper and the FR-15 change, and the `adr:not-required` record exists in the shell README and `src/routes/README.md` and records that #362 supersedes enterprise-app-shell's prop-less `AppLayout` contract (an optional `userMenu` slot, `onShellFailure` and a props type file) (NFR-19).
-- Given the first `main`-targeted CI run, when the bundle report is read, then the entry grows by under 1 kB gzip, the four new chunks (`protected-layout`, with its own budget row in architecture §10, since 663151bc; `ui-app-shell`, `user-menu`, `current-user`) exist with the declared names, no budget in `config/performance-budget.json` is exceeded or raised, and the per-chunk table of architecture §10 is filled in the pull request (NFR-5, AV-2, AV-5, SM-10, SM-11). Amended 2026-11-06 (owner decision, architecture §9 and §10): the count is now five new chunks. The fifth is `auth-page-vendors`, from `authPageVendorsCacheGroup` in `rsbuild.config.ts`, which holds the `node_modules` both the `sign-in` and `sign-up` page chunks contain and carries no shell code; no budget was raised.
+- Given the first `main`-targeted CI run, when the bundle report is read, then the entry grows by under 1 kB gzip, the four new chunks (`protected-layout`, with its own budget row in architecture §10, since 663151bc; `ui-app-shell`, `user-menu`, `current-user`) exist with the declared names, no budget in `config/performance-budget.json` is exceeded or raised, and the per-chunk table of architecture §10 is filled in the pull request (NFR-5, AV-2, AV-5, SM-10, SM-11). Amended 2026-11-06 (owner decision, architecture §9 and §10): the count is now five new chunks. The fifth is `auth-page-vendors`, from `authPageVendorsCacheGroup` in `rsbuild.config.ts`, which holds the `node_modules` both the `sign-in` and `sign-up` page chunks contain and carries no shell code; no budget was raised. Amended 2026-11-06 (gate finding): `coming-soon` (Story 2.5, eight loaders in `src/routes/app-routes.ts`) is also a new chunk, so the count is six, and architecture §3.2, §10 and AV-2 now carry its row.
 - Given the same run, when CI Lighthouse audits `/`, then mobile performance is at least 0.84 and desktop at least 0.95 with every other assertion unchanged, or the contingency ladder of architecture §10 is followed and never a budget raise (NFR-13, SM-12).
 - Given this surface at 1440, 1024 and 375 in the 3004 preview, when every measured-versus-Figma row of UX §10 for it (boxes, paint, type and every FOUND state) is filled, then all of them pass within the NFR-22 tolerance (0 px on integer Figma values, at most 0.5 px sub-pixel rounding on fractional ones; exact hex, alpha and type), and the only differences are the allowed ones of UX §10.3 (NFR-22, SM-1).
 - Given the change, when the DoD gates run, then coverage is 100 %, Stryker reports zero survivors and no `act()` warning escapes the lazy tests (NFR-8, NFR-14).
@@ -1132,7 +1150,10 @@ so the second rebases onto the first.
 ## Points for the owners
 
 1. Nothing blocks readiness: every question was RESOLVED by owner 2026-10-23 (PRD §9). Stories
-   are dispatched once the readiness check passes.
+   are dispatched once the readiness check passes. Amended 2026-11-06: this covers the `OQ-n`
+   questions only. R-1 (the chip's read can sign users out) is OPEN and awaits the owner, as are the
+   badge colour, the undrawn header states and the three `EXEMPT_RENDER_PATH_FILES` entries; nothing
+   here records a decision on them (brief R-1 banner, readiness summary).
 2. Brief §6 item 7 is split: each surface story lands its own unit tests and stories (the story
    coverage gate and TDD require it), and Story 3.2 keeps the cross-surface a11y suites and the
    coverage and mutation sweep.

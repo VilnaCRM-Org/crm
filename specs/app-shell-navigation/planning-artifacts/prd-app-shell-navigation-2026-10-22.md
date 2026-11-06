@@ -1147,8 +1147,8 @@ targets with its own `expectTapArea`, not `expectTouchTarget`. `expectTouchTarge
 bounding box, so it cannot see a transparent tap extension. `expectTapArea` calls
 `document.elementFromPoint` at the control's centre and at points half the 44 px target minus 0.5 px
 from it: the four edge midpoints and, unless the control is circular (a corner radius of at least half
-the target), the four corners. A probe past the viewport is clamped to its last pixel, and each probe
-must land on the control or a descendant. `expectTouchTarget` stays in
+the target), the four corners. A probe past the viewport fails the assertion (it is not clamped), and each
+probe otherwise must land on the control or a descendant. `expectTouchTarget` stays in
 `tests/e2e/mobile/settings-touch.spec.ts`.
 
 **Owner decision, 2026-10-27 (drawer sub-items).** The drawer's Settings sub-items Integrations,
@@ -1576,6 +1576,9 @@ caller (architecture §5.7).
 | NFR-22                 | all visible | OQ-28                         | UX §10 parity table, visual                                            |
 
 Success metrics SM-1 to SM-16 (brief §5) bind unchanged; SM-11 is tightened by NFR-5.
+
+Amended 2026-11-06: SM-16 is void. The brief's 2026-11-03 banner voids "Gate the read" and SM-16, so "bind
+unchanged" holds for SM-1 to SM-15 only; the R-1 row in §8 stays OPEN until the owner answers.
 
 ## 11. Copy (approved by the owner 2026-10-23, OQ-9)
 

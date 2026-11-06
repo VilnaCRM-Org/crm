@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactElement } from 'react';
+import { type JSX, type ReactElement, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 
 import i18n from '@/i18n';
 import loader from '@/modules/user/features/settings/components/user-menu/current-user-menu-loader';
@@ -37,6 +38,17 @@ function holdCurrentUserChunk(): () => Promise<void> {
     );
     await act(async () => release(actual));
   };
+}
+
+function GoToSettings(): JSX.Element {
+  const navigate = useNavigate();
+  const goToSettings = useCallback(() => void navigate('/settings'), [navigate]);
+
+  return (
+    <button type="button" onClick={goToSettings}>
+      Go to settings
+    </button>
+  );
 }
 
 describe('UserMenuSlot', () => {
@@ -191,5 +203,29 @@ describe('UserMenuSlot', () => {
     await waitFor(() => expect(onAvatar).toHaveBeenLastCalledWith(expect.anything()));
     const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
     expect(container).toContainHTML('PersonOutlinedIcon');
+  });
+
+  it('drops the previous identity from the chip when the next read ends the session', async () => {
+    mockRead.mockResolvedValueOnce(READ_USER);
+    const resolveChunk = holdCurrentUserChunk();
+    const user = userEvent.setup();
+    renderSlot(
+      <>
+        <UserMenuSlot signOut={jest.fn()} onChunkFailure={jest.fn()} onAvatar={jest.fn()} />
+        <GoToSettings />
+      </>
+    );
+    await resolveChunk();
+    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+
+    mockRead.mockResolvedValueOnce({ kind: 'failed', reason: 'session_ended' });
+    await user.click(screen.getByRole('button', { name: 'Go to settings' }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: `${identity.displayName}, User menu` })
+      ).not.toBeInTheDocument()
+    );
+    expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();
   });
 });

@@ -40,6 +40,11 @@ export const TabletExpanded: Story = {
   decorators: withRoutedStoryList('/settings', 238),
 };
 
+export const TabletCollapsed: Story = {
+  args: { layout: 'tablet' },
+  decorators: withRoutedStoryList('/boards', 238),
+};
+
 export const DrawerExpanded: Story = {
   args: { layout: 'drawer', currentId: 'settings' },
   decorators: withRoutedStoryList('/settings', 238),

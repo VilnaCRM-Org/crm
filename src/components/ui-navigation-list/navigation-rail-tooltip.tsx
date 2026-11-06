@@ -14,7 +14,7 @@ export default function NavigationRailTooltip({
   const position = useRailTooltipPosition(anchor, railStyles.tooltip[shape]);
 
   return (
-    <Box aria-hidden="true" sx={{ ...railStyles.tooltipBase, ...position }}>
+    <Box aria-hidden="true" sx={railStyles.tooltipBase} style={position}>
       <Box sx={railStyles.tooltipCaret} />
       <Box sx={railStyles.tooltipBody}>{label}</Box>
     </Box>

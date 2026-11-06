@@ -41,7 +41,10 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   into pieces that compress worse, and `/sign-in` reached 265,997 bytes against the 265,000
   `lighthouse.scriptSizeBytes` budget. `authPageVendorsCacheGroup`
   (`scripts/auth-forms-chunk-group.ts`, wired in `rsbuild.config.ts`) puts that code in one
-  `auth-page-vendors` chunk. `/sign-in` now passes in CI and no budget was raised.
+  `auth-page-vendors` chunk. `/sign-in` now passes in CI (Lighthouse desktop and mobile
+  both passed in
+  [run 42199290356](https://github.com/VilnaCRM-Org/crm/actions/runs/42199290356), at commit
+  007c533d) and no budget was raised.
 - **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
   supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
   optional `userMenu` slot and an `onShellFailure` callback, typed in
