@@ -1,6 +1,7 @@
 import ResponseParser from '@/modules/user/features/settings/utils/current-user-response-parser';
 import ApiError from '@/modules/user/lib/api-errors/api-error';
 import { buildFullName, buildUserNode } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const parser = new ResponseParser();
 
@@ -12,6 +13,26 @@ const userBody = (initials: string): unknown => ({
 });
 
 describe('CurrentUserResponseParser', () => {
+  it.each([
+    ['unparseable text', 'not json', 'Failed to parse JSON response'],
+    [
+      'GraphQL errors',
+      JSON.stringify({ errors: [{ message: 'x' }] }),
+      'The CurrentUser query returned GraphQL errors',
+    ],
+    ['a body with no user', JSON.stringify({}), 'Response did not match the expected schema'],
+  ])('names the failure for %s on a parser loaded in the test', async (_name, text, message) => {
+    const Fresh = await loadIsolated(
+      async () =>
+        (await import('@/modules/user/features/settings/utils/current-user-response-parser'))
+          .default
+    );
+
+    const parsed = new Fresh().parse({ status: 200, text });
+
+    expect(parsed.kind === 'failed' && parsed.error).toMatchObject({ message });
+  });
+
   it('reads the full name of the first user node', () => {
     const fullName = buildFullName();
 
