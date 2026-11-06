@@ -86,6 +86,23 @@ const groupLabelFitOf = (scope: Locator): Promise<GroupLabelFit> =>
     };
   }, labelOf('settings'));
 
+interface LabelEdge {
+  readonly x: number;
+  readonly y: number;
+}
+
+const settingsLabelEdgeOf = (scope: Locator): Promise<LabelEdge> =>
+  scope.evaluate((root, name): LabelEdge => {
+    const link = [...root.querySelectorAll('a')].find((anchor) => anchor.textContent === name);
+    const label = link?.querySelector('span');
+    if (!label) throw new Error('The Settings label is not rendered');
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    const text = range.getBoundingClientRect();
+
+    return { x: text.right - 2, y: text.top + text.height / 2 };
+  }, labelOf('settings'));
+
 interface ViewportRect {
   readonly top: number;
   readonly bottom: number;
@@ -271,6 +288,24 @@ test.describe('App shell on desktop (issue #362)', () => {
 
       expect(fit.lines).toBe(1);
       expect(fit.overshoot).toBeLessThanOrEqual(1);
+    });
+  }
+
+  for (const width of [1440, 1024]) {
+    test(`opens Settings from the end of its label at ${width} px, group untouched`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await openProtected(page, ROUTE_PATHS.home);
+      const edge = await settingsLabelEdgeOf(sidebarOf(page));
+
+      await page.mouse.click(edge.x, edge.y);
+
+      await expectSettingsPage(page);
+      await expect(sidebarSettingsOf(page)).toHaveAttribute('aria-current', 'page');
+      await expect(
+        sidebarOf(page).getByRole('button', { name: shellText.groupCollapse, exact: true })
+      ).toHaveAttribute('aria-expanded', 'true');
     });
   }
 

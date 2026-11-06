@@ -26,10 +26,12 @@ inputDocuments:
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-22, revised 2026-10-27, 2026-10-28 and
 2026-10-29 (owner decisions on the drawer sub-items, the WCAG 1.4.11 exception and the failed chip
-re-read; each change is marked in place as a dated amendment or owner decision; 2026-11-03: the
+re-read; each change is marked in place as a dated amendment or owner decision; 2026-11-02: the
+chip's read moved off the container, 0addef83, noted 2026-11-06; 2026-11-03: the
 userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
 edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet rail handle's `right`,
-`expectTapArea` in NFR-3 and the exemptions in NFR-6 and NFR-15) **Feature:** `app-shell-navigation`
+`expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
+journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -57,7 +59,7 @@ edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet ra
 > "one owner-approved visible deviation" and C-9 below are kept as approved, each with a dated note.
 > Details are in the [shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04).
 > Amended 2026-11-06 (reconciliation with shipped code): three handles take `right: -9px`. The tablet rail's
-> keeps its 9 px overhang past the 76 px panel as `right: 28px`, against a 113 px wrapper with a 37 px
+> handle keeps its 9 px overhang past the 76 px panel as `right: 28px`, against a 113 px wrapper with a 37 px
 > right padding (113 − 28 − 32 = 53), so it still lands at 53,15.
 
 > **Owner decision of 2026-10-26 (Settings label clear of its chevron, DV-11), noted 2026-11-05.**
@@ -166,13 +168,18 @@ These bind regardless of how the open questions resolve (brief §7, task brief �
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | C-1 | Repository conventions unchanged: classes outside React, type-only `types/` files, approved class suffixes, DI through tokens and `useService`, no `data-testid`, no added code comments, no suppression of any gate                                                                                           |
 | C-2 | `src/components/**` cannot import modules (dynamic imports included); `ProfileProvider` cannot be deep-imported from outside the settings feature (research §7.1)                                                                                                                                              |
-| C-3 | `route-composer.tsx` imports `AppLayout` statically, so everything `AppLayout` imports statically ships in the eager entry; the MUI theme engine and the toolkit stay off it                                                                                                                                   |
+| C-3 | `route-composer.tsx` imports `AppLayout` statically, so everything `AppLayout` imports statically ships in the eager entry; the MUI theme engine and the toolkit stay off it. Amended 2026-11-06: see the note below this table                                                                                |
 | C-4 | The product ships `uk` and `en`; no Russian text in the repository                                                                                                                                                                                                                                             |
 | C-5 | Only FOUND Figma states are built as drawn; every NOT FOUND state goes to the owner                                                                                                                                                                                                                            |
 | C-6 | Stacked draft PR on `feat/330-user-settings`; after #354 squash-merges, shell commits are cherry-picked onto a fresh branch from `main`; no force-push; no commit or push without the owner's approval                                                                                                         |
 | C-7 | Stryker, full suites, production builds and Lighthouse run in CI only; CI Lighthouse decides the floors                                                                                                                                                                                                        |
 | C-8 | Editing `route-composer.tsx`, `src/routes/registry.ts` or `src/config/**` trips the ADR drift gate. OQ-10 is resolved: no ADR; the PR carries the `adr:not-required` label (or a `[no-adr]` body line), the decision is recorded in the shell README and `src/routes/README.md`, and `docs/adr/` is not edited |
 | C-9 | Full Figma colour and pixel parity (owner, 2026-10-23; NFR-22): only undrawn states, undrawn widths and non-painting accessibility additions, and the owner-approved deviation DV-10, may differ from Figma, and a Figma colour is never changed to pass a gate                                                |
+
+Amended 2026-11-06 (reconciliation with shipped code, 663151bc): C-3's premise no longer holds.
+`route-composer.tsx` statically imports `protectedLayoutLoader`, and `AppLayout` and `ProtectedRoute`
+load from the lazy `protected-layout` chunk, so neither ships in the entry. The MUI theme engine and
+the toolkit still stay off the eager path.
 
 ## 4. User journeys per breakpoint
 
@@ -226,6 +233,12 @@ dismisses it and returns focus to the burger.
   on `/sign-in` (FR-5.3).
 - `userSettings` is off (production today): no `currentUser` request is made, and no control
   leads to `/settings` (OQ-11, FR-5.3, FR-6.3, FR-8).
+
+Amended 2026-11-06 (reconciliation with shipped code): the chip's read uses no link, and
+`session_ended` does not always end the session. It has three causes: a transport 401 ends the session
+and the user lands on `/sign-in`; a missing token sends nothing and ends nothing; a GraphQL error whose
+`extensions.status` is 401 (`denied`) leaves the session open. All three reset the chip to pending. See
+the note at FR-5.3.
 
 ## 5. Functional requirements
 
@@ -396,6 +409,11 @@ reaches `AppLayout` as a lazily loaded slot (the slot's location is OQ-17; resea
 reads through the settings feature's `ProfileProvider` resolved with `useService`, never a second
 query shape (NFR-7). The avatar is a monogram; no photo field exists (research §7.3.5).
 
+**Amended 2026-11-06 (owner decision of 2026-11-02, 0addef83).** The chip no longer reads through
+`ProfileProvider` or `useService`. `useCurrentUser` calls the container-free `currentUserSource`, which
+sends the `CurrentUser` query through `CurrentUserClient`, a plain `fetch`. The query text matches the
+settings feature's `repositories/current-user.graphql`, so the shape is still one.
+
 #### FR-5.1 — Chip, desktop and tablet
 
 A button showing a 32 px monogram avatar, the display name (FR-17) and a 20 px `chevron-left`
@@ -453,6 +471,20 @@ first read of a mount. The chip re-reads on every pathname change, so a later `r
 `transient` or `rejected` re-read after a successful read keeps the last good display name and
 monogram instead of reverting to the name-less chip; a later `session_ended` re-read still clears
 the identity, and the existing session link ends the session.
+
+**Amended 2026-11-06 (reconciliation with shipped code; architecture §12.2).** The chip's read uses no
+link, and its only failures are `unavailable` and `session_ended` (`CurrentUserFailureReason`), so
+`rate_limited`, `transient` and `rejected` in the table and criteria of this section read as
+`unavailable`. `session_ended` has three causes, and only the first ends the session:
+
+| Cause                                                 | `CurrentUserSource`        | Session   |
+| ----------------------------------------------------- | -------------------------- | --------- |
+| Transport 401 (`unauthorized`)                        | calls `session.end(token)` | ended     |
+| No token in the session                               | sends nothing              | not ended |
+| GraphQL error with `extensions.status` 401 (`denied`) | captures the error         | not ended |
+
+All three reset the chip to pending (`use-current-user.ts`), so "user lands on `/sign-in`" in the table
+and "the existing session link ends the session" apply only to the first.
 
 > Assumption: the pending and failed states reuse the name-less chip with the person glyph that
 > the settings header already uses for an empty monogram (research §7.3.1,
@@ -1198,6 +1230,8 @@ issue #188):
   size-stable fallbacks; shell components, icons, the shell catalog, MUI parts and the user-aware
   slot load in lazy chunks requested only when `AppLayout` renders. Target eager growth under
   1 kB gzip, measured and reported in the PR (baseline 2026-07-20: 387 749 raw / 124 700 gzip).
+  Amended 2026-11-06 (663151bc): the eager entry gains only `protectedLayoutLoader` and the composer's
+  slot wiring; `AppLayout` and its fallbacks load in the lazy `protected-layout` chunk.
 - **Public routes download zero shell bytes.** An e2e leak guard asserts no shell chunk request on
   the seven public Lighthouse URLs, and their Lighthouse script transfer does not grow beyond the
   entry change above.
@@ -1207,7 +1241,9 @@ issue #188):
   (research §8.1).
 - **Container off the eager path.** The user-aware slot that calls `useService` loads through the
   `footer-loader.ts` pattern (`ThemedChunkLoader` wrapping `ChunkRetryLoader` around a named
-  dynamic `import()`); the auth feature never reaches `@/providers/di`.
+  dynamic `import()`); the auth feature never reaches `@/providers/di`. Amended 2026-11-06 (owner
+  decision of 2026-11-02, 0addef83): the slot calls no `useService`. `ShellSlotFactory` builds the same
+  loader pair, the chip reads through `currentUserSource`, and `/` requests no DI chunk.
 
 > Assumption: this tightens the brief's SM-11 assumption ("measured and reported") into "no shell
 > component in the entry", because the task requires that the shell not inflate the eager entry or
@@ -1229,7 +1265,8 @@ entries: `src/modules/user/features/auth/stores/auth-session-provider.ts`,
 `src/modules/user/features/settings/utils/current-user-source.ts`. They follow from the owner decision
 of 2026-11-02 that moved the chip's read off the container (0addef83), because a container-free
 singleton in a gated directory has to be listed in that policy. That decision did not name these
-entries, and no separate approval of them is on record.
+entries, and no separate approval of them is on record: explicit owner approval of this allowlist
+change is still pending.
 
 ### NFR-7 — Data honesty
 
@@ -1239,6 +1276,11 @@ badge renders only a count passed to it as a prop, which only stories and tests 
 supplies one (FR-19, OQ-2a). No control without a destination
 is activatable (SM-3). Shell-held user data is cleared when
 `AppLayout` unmounts.
+
+**Amended 2026-11-06 (owner decision of 2026-11-02, 0addef83).** "Only through `ProfileProvider`
+resolved with `useService`" no longer describes the chip: it reads through the container-free
+`currentUserSource`. "No second query shape" still holds (FR-5's note). "No read while `userSettings`
+is off" describes a state no build reaches since the owner decision of 2026-11-03.
 
 ### NFR-8 — Coverage and mutation
 
@@ -1336,7 +1378,7 @@ comments.
 **Amended 2026-11-06 (reconciliation with shipped code).** The three `EXEMPT_RENDER_PATH_FILES` entries NFR-6's
 note names are an allowlist change in `config/di-collaborator-policy.js`. They follow from the owner
 decision of 2026-11-02 that moved the chip's read off the container; no other approval of them is on
-record.
+record, and explicit owner approval of this allowlist change is still pending.
 
 ### NFR-16 — Test lanes
 
@@ -1457,6 +1499,9 @@ every story with a visible surface.
 | R-12 | Figma components have no variants or variables                                         | parity table pins measured values                                       |
 | R-13 | With home cleaned up (OQ-7) and the shell chunk failing twice, sign out is unreachable | NFR-18; a failure test of the shell chunk; OQ-7 consequence             |
 
+Amended 2026-11-06: R-1 is OPEN. Its flag-off verification describes a state no build reaches, and the
+owner has not answered. See the brief's R-1 banner and the readiness summary.
+
 ## 9. Owner decisions (every question RESOLVED by owner 2026-10-23)
 
 No question is open and none blocks readiness. Verbatim answers are quoted; the others were given
@@ -1493,7 +1538,7 @@ as the recommended or stated option on 2026-10-23. OQ-18 and OQ-24 were not aske
 | OQ-24 | 320 to 374 px (UX)                  | RESOLVED to default (owner did not object): header insets 8 px; drawer panel `min(313px, 100vw - 7px)`                                                    | FR-1, FR-13                  |
 | OQ-25 | `currentUser` request count (arch.) | independent reads: two on `/settings`; amends the user-settings criterion and five e2e count assertions (architecture §5.7)                               | FR-5.3                       |
 | OQ-26 | Shell chunk fails twice (arch.)     | keep the placeholders and capture the error                                                                                                               | NFR-18                       |
-| OQ-27 | Mapper reach (arch.)                | `UserDisplayNameMapper` registered under `AUTH_TOKENS`, read through `useService`                                                                         | FR-17                        |
+| OQ-27 | Mapper reach (arch.)                | `UserDisplayNameMapper` registered under `AUTH_TOKENS`, read through `useService` (chip amended 2026-11-06, see below)                                    | FR-17                        |
 | OQ-28 | Coming-soon page design             | existing tokens and the error-page layout, marked for designer confirmation                                                                               | FR-18.1                      |
 
 **C-9, amended 2026-11-05.** The owner's parity decision stands, with the later owner decisions

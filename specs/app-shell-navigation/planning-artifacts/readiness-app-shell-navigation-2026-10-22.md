@@ -39,7 +39,22 @@ implementation and review and the shipped design that followed them:
   shipped code, which also gave the brief its first dated banners.
 - 2026-11-06: a further reconciliation with the shipped code: V-9 closed and P-62 filled, the drawer
   and menu primitives, the tablet rail handle's `right: 28px`, `expectTapArea` and the three
-  `EXEMPT_RENDER_PATH_FILES` entries.
+  `EXEMPT_RENDER_PATH_FILES` entries. Owner decisions the same day: the `auth-page-vendors` cache group
+  approved (architecture §9, §10, Story 3.1) and the page content kept moving with the rail's width
+  transition (UX §9). P-62 passes on position only; its width readings are in UX §10.2.
+
+**Open as of 2026-11-06.** Readiness was not re-run, so these are not findings of this check. They are
+listed so that the `READY` above is not read as covering them:
+
+- **Brief risk R-1 is OPEN** (not the `R-1` finding of re-review 2 below, which is about P-64 and
+  P-65). The 2026-11-03 banner voids its "Gate the read" mitigation and SM-16, and the chip's read now
+  runs on every pathname change, where a transport 401 ends the session. **Deciding check:** what
+  production returns for the chip's read. The owner has not answered; no mitigation or acceptance is
+  recorded.
+- **The three `EXEMPT_RENDER_PATH_FILES` entries** follow from the owner decision of 2026-11-02;
+  explicit owner approval of the allowlist change is still pending (PRD NFR-6, NFR-15).
+- **The badge colour.** `ui-app-header/styles.ts` ships `#D0D4D8` where FR-3 and NFR-4 say `#1EAEFF`.
+  The owner has been asked; both requirements stay as written until then.
 
 The dated notes are in the PRD, UX spec, architecture and epics, and since 2026-11-05 in the brief.
 The first pass and re-review 1 that follow are superseded history, kept for the record.

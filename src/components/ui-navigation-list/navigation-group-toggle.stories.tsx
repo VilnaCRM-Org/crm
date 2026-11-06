@@ -10,7 +10,7 @@ const meta: Meta<typeof NavigationGroupToggle> = {
   component: NavigationGroupToggle,
   tags: ['autodocs'],
   args: { layout: 'desktop', expanded: true, controls: 'settings-sub-items', onToggle: noop },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] } },
   decorators: [
     (Story): JSX.Element => (
       <div style={{ position: 'relative', width: 238, height: 60 }}>
@@ -42,3 +42,7 @@ export const Expanded: Story = {};
 export const Collapsed: Story = { args: { expanded: false } };
 
 export const Tablet: Story = { args: { layout: 'tablet' } };
+
+export const DrawerExpanded: Story = { args: { layout: 'drawer' } };
+
+export const DrawerCollapsed: Story = { args: { layout: 'drawer', expanded: false } };

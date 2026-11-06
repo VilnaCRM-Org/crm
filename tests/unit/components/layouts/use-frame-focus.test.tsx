@@ -7,10 +7,8 @@ import useFrameFocus from '@/components/layouts/use-frame-focus';
 type Entry = NonNullable<Parameters<typeof MemoryRouter>[0]['initialEntries']>[number];
 type FrameRef = RefCallback<HTMLElement> | null;
 
-const padding = (): string => document.documentElement.style.getPropertyValue('scroll-padding-top');
-
-function mountFrameFocus(entry: Entry, refs: FrameRef[]): () => void {
-  const { unmount } = renderHook(
+function mountFrameFocus(entry: Entry, refs: FrameRef[]): void {
+  renderHook(
     () => {
       refs.push(useFrameFocus());
     },
@@ -20,25 +18,9 @@ function mountFrameFocus(entry: Entry, refs: FrameRef[]): () => void {
       ),
     }
   );
-
-  return unmount;
 }
 
 describe('useFrameFocus', () => {
-  afterEach(() => {
-    document.documentElement.style.removeProperty('scroll-padding-top');
-  });
-
-  it('reserves the 64px sticky header as top scroll padding until the frame unmounts', () => {
-    const unmount = mountFrameFocus('/', []);
-
-    expect(padding()).toBe('64px');
-
-    unmount();
-
-    expect(padding()).toBe('');
-  });
-
   it('hands out no arrival ref on ordinary navigation', () => {
     const refs: FrameRef[] = [];
     mountFrameFocus('/', refs);

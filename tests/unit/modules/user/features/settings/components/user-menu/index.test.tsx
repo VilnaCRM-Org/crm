@@ -4,12 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router';
 
 import UserMenu from '@/modules/user/features/settings/components/user-menu';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
+import { buildFullName } from '@tests/builders';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
 import stubLiveViewportWidth from '@tests/unit/utils/stub-live-viewport-width';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
-const identity = { displayName: 'Євгенія Маслова', monogram: 'ЄМ' };
+const identity = new UserDisplayNameMapper().fromFullName(buildFullName());
 
 type MenuProps = Parameters<typeof UserMenu>[0];
 
@@ -49,8 +51,8 @@ describe('UserMenu', () => {
 
     expect(chip()).toHaveAttribute('aria-haspopup', 'menu');
     expect(chip()).toHaveAttribute('aria-expanded', 'false');
-    expect(chip()).toHaveAccessibleName('Євгенія Маслова, Меню користувача');
-    expect(chip()).toHaveTextContent('ЄМЄвгенія Маслова');
+    expect(chip()).toHaveAccessibleName(`${identity.displayName}, Меню користувача`);
+    expect(chip()).toHaveTextContent(`${identity.monogram}${identity.displayName}`);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
@@ -251,10 +253,10 @@ describe('UserMenu', () => {
     stubViewportWidth(375);
     renderMenu();
 
-    expect(chip()).toHaveAccessibleName('Євгенія Маслова, Меню користувача');
+    expect(chip()).toHaveAccessibleName(`${identity.displayName}, Меню користувача`);
     expect(chip()).toHaveStyle({ width: '44px', height: '44px' });
-    expect(screen.queryByText('Євгенія Маслова')).not.toBeInTheDocument();
-    expect(screen.getByText('ЄМ')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByText(identity.displayName)).not.toBeInTheDocument();
+    expect(screen.getByText(identity.monogram)).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('opens a detached popover on mobile with the same three items', async () => {
@@ -303,7 +305,7 @@ describe('UserMenu', () => {
 
     expect(onAvatar).toHaveBeenCalledTimes(1);
     renderShell(<>{onAvatar.mock.calls[0]?.[0]}</>);
-    const copies = screen.getAllByText('ЄМ');
+    const copies = screen.getAllByText(identity.monogram);
     expect(copies).toHaveLength(2);
     expect(copies[1]).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('button', { name: /Меню користувача/u })).not.toContainElement(

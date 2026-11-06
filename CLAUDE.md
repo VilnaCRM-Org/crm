@@ -469,7 +469,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 447 files; not all of them produce scored mutants — the 48 unsharded ones hold no
+mutate scope is 448 files; not all of them produce scored mutants — the 48 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
@@ -1842,10 +1842,10 @@ key on `/sign-up`. The owners are the two recovery route folders, the recovery c
 through `usePageTitle` after its module has registered the catalog). The settings catalog
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
 the six settings `components/` folders that page renders (`change-password`, `profile-form`,
-`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the nine
-`hooks/` files those components call (`use-blur-hold`, `use-display-name`, `use-email-resend`,
-`use-email-row`, `use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`,
-`use-profile-save` and `use-settled-focus`), and the settings route contract `routes/index.ts` for
+`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the eight
+`hooks/` files those components call (`use-blur-hold`, `use-email-resend`, `use-email-row`,
+`use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`, `use-profile-save` and
+`use-settled-focus`), and the settings route contract `routes/index.ts` for
 its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
 protected page, before the settings catalog is registered, so they own no settings key; the
@@ -1999,10 +1999,11 @@ import a page. Three checks fail CI on a regression:
 **Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
 subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
 two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
-instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds two
-top-level `splitChunks.cacheGroups` entries, `authFormsVendors` (chunk `auth-forms-vendors`)
-and `authForms` (chunk `auth-forms`), built by
-[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` holds three top-level
+`splitChunks.cacheGroups` entries, all built by
+[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Two answer that failure,
+`authFormsVendors` (chunk `auth-forms-vendors`) and `authForms` (chunk `auth-forms`), and the
+third is described below. For those two, membership is decided
 per module: each `test` admits a module only when both the `sign-in-form-section` and the
 `sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`, and
 then by resource: a module under `node_modules` goes to `auth-forms-vendors`, anything else to
@@ -2026,6 +2027,13 @@ each selects the chunk names the loaders' `webpackChunkName` values emit, so ren
 chunk cannot silently disable either group. Chunk
 sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
 clears the mobile floor is decided by CI Lighthouse, not by a local build.
+
+**Shared auth-page vendors (issue #362, owner decision 2026-11-06).** The third entry,
+`authPageVendors` (chunk `auth-page-vendors`), takes the `node_modules` modules that both the
+`sign-in` and the `sign-up` page chunks contain. The app shell's lazy chunks had split that code
+into pieces that compress worse, which put `/sign-in` at 265,997 bytes against the 265,000
+`lighthouse.scriptSizeBytes` budget. With the group it passes in CI, and no budget was raised. The
+same two tests pin its rule and its wiring.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same

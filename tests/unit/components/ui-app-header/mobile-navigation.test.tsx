@@ -60,9 +60,12 @@ function Wide({ mobile }: { mobile: boolean }): JSX.Element {
 }
 
 const fadingScrim = (): HTMLElement =>
-  screen
+  within(screen.getByRole('dialog'))
     .getAllByRole('generic', { hidden: true })
-    .find((box) => box.style.transition.includes('opacity')) as HTMLElement;
+    .find(
+      (box) =>
+        box.getAttribute('aria-hidden') === 'true' && box.style.transition.includes('opacity')
+    ) as HTMLElement;
 
 const slidingPanel = (): HTMLElement =>
   screen

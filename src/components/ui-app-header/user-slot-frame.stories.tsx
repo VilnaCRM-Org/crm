@@ -3,6 +3,20 @@ import type { JSX } from 'react';
 
 import UserSlotFrame from './user-slot-frame';
 
+function StubChip({ width }: { readonly width: number }): JSX.Element {
+  return (
+    <div
+      style={{
+        boxSizing: 'border-box',
+        width,
+        height: '100%',
+        background: '#E1E7EA',
+        borderRadius: 8,
+      }}
+    />
+  );
+}
+
 const meta: Meta<typeof UserSlotFrame> = {
   title: 'Shell/Header/UserSlotFrame',
   component: UserSlotFrame,
@@ -40,3 +54,55 @@ export const DesktopPlaceholder: Story = {};
 export const TabletPlaceholder: Story = { args: { layout: 'tablet' } };
 
 export const MobilePlaceholder: Story = { args: { layout: 'mobile' } };
+
+export const DesktopMinimumChip: Story = {
+  render: ({ layout }) => (
+    <UserSlotFrame layout={layout}>
+      <StubChip width={225} />
+    </UserSlotFrame>
+  ),
+};
+
+export const DesktopWiderChip: Story = {
+  render: ({ layout }) => (
+    <UserSlotFrame layout={layout}>
+      <StubChip width={300} />
+    </UserSlotFrame>
+  ),
+};
+
+export const TabletMinimumChip: Story = {
+  args: { layout: 'tablet' },
+  render: ({ layout }) => (
+    <UserSlotFrame layout={layout}>
+      <StubChip width={253} />
+    </UserSlotFrame>
+  ),
+};
+
+export const TabletWiderChip: Story = {
+  args: { layout: 'tablet' },
+  render: ({ layout }) => (
+    <UserSlotFrame layout={layout}>
+      <StubChip width={340} />
+    </UserSlotFrame>
+  ),
+};
+
+export const MobileMinimumChip: Story = {
+  args: { layout: 'mobile' },
+  render: ({ layout }) => (
+    <UserSlotFrame layout={layout}>
+      <StubChip width={40} />
+    </UserSlotFrame>
+  ),
+};
+
+export const MobileWiderChip: Story = {
+  args: { layout: 'mobile' },
+  render: ({ layout }) => (
+    <UserSlotFrame layout={layout}>
+      <StubChip width={120} />
+    </UserSlotFrame>
+  ),
+};

@@ -7,16 +7,17 @@ import i18n from '@/i18n';
 import loader from '@/modules/user/features/settings/components/user-menu/current-user-menu-loader';
 import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/user-menu-slot';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
+import { buildFullName } from '@tests/builders';
 import renderShell from '@tests/unit/utils/render-shell';
 import { inertSession } from '@tests/unit/utils/session-outlet';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 const mockRead = jest.fn();
 
-const READ_USER = {
-  kind: 'ok',
-  identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
-};
+const identity = new UserDisplayNameMapper().fromFullName(buildFullName());
+
+const READ_USER = { kind: 'ok', identity };
 
 const renderSlot = (ui: ReactElement): ReturnType<typeof renderShell> =>
   renderShell(ui, { session: inertSession });
@@ -85,9 +86,9 @@ describe('UserMenuSlot', () => {
     const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
     expect(settingsItem).toHaveFocus();
     await resolveChunk();
-    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
 
-    expect(screen.getByRole('button', { name: 'Олена Петренко, User menu' })).toBe(chip);
+    expect(screen.getByRole('button', { name: `${identity.displayName}, User menu` })).toBe(chip);
     expect(chip).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toBe(settingsItem);
     expect(settingsItem).toHaveFocus();
@@ -103,11 +104,11 @@ describe('UserMenuSlot', () => {
     act(() => chip.focus());
 
     await resolveChunk();
-    await screen.findByRole('button', { name: 'Олена Петренко, User menu' });
+    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
 
     expect(chip).toHaveFocus();
     const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
-    expect(container).toHaveTextContent('ОП');
+    expect(container).toHaveTextContent(identity.monogram);
   });
 
   it('keeps the same chip mounted across the chunk resolving and signs out from it', async () => {
