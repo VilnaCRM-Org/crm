@@ -11,14 +11,40 @@ toast or a field error. The decisions are recorded in `## User Settings decision
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
-- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
-  (`ClearButton`, `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`.
+- `components/` — `user-profile-settings` (states), `profile-header`, `profile-form` (`ClearButton`,
+  `EmailStatusRow`), `change-password`, `settings-grid`, `social-networks`, `user-menu` (the
+  app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
+- `components/user-menu/user-menu-slot.tsx` — `UserMenuSlot`, the `user-menu` chunk entry. It
+  mounts one `UserMenu` for its whole life and owns the identity it shows. It lazy-loads only the
+  identity source, `CurrentUserMenu` (chunk `current-user`), which
+  renders nothing, calls `useCurrentUser()` and reports the identity through `onIdentity`. The
+  Suspense fallback around it renders nothing too, because the loading UI is the name-less chip
+  outside the boundary. So the chip, its focus, an open menu with its focused item, the menu id and
+  the once-only Sign out survive the chunk arriving: only the chip's name and monogram change. A
+  failed chunk is reported once as `app-shell:current-user` and the chip stays name-less.
+- The chip's read is container-free, so a protected page never downloads tsyringe, the
+  composition root, Apollo or zod for it (mobile Lighthouse script budget on `/`).
+  `useCurrentUser` takes the `session` from `ProtectedRoute`'s outlet context
+  (`ProtectedSessionContext`) and calls `currentUserSource.read(session, signal)`
+  (`utils/current-user-source.ts`). `CurrentUserClient` posts the same `CurrentUser` document the
+  profile repository sends (a unit test pins it to the generated `CurrentUserDocument`) to the
+  runtime GraphQL URL, falling back to the build-time one, with the Bearer token, `X-Request-Id`,
+  `X-Correlation-Id` and the request deadline. `CurrentUserResponseParser` narrows the answer by
+  hand and reads only `initials` (the full name). A transport 401 ends the session through
+  `session.end(token)`, which, like `SessionLinkFactory`, only ends it while the store still holds
+  the token the request carried; a GraphQL error with extension status 401 only resets the chip to
+  pending. Every other failure, a GraphQL `Access Denied.` included, keeps the last good name or
+  shows the name-less chip,
+  and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
+  caller aborted the read. The settings page itself still reads through `ProfileProvider`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
-  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`.
+  `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useBlurHold`, `useDisplayName`,
+  `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
 - `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
 - `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and the three GraphQL document seams.
-- `utils/` — `ProfileChangeDetector` and the zod `response-schemas`.
+- `utils/` — `ProfileChangeDetector`, the zod `response-schemas`, and the container-free chip read:
+  `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
 - `types/` — type-only files, grouped by source area (TB-1).
 - `i18n/{en,uk}.json` — the lazy settings catalog.
 
@@ -45,9 +71,11 @@ copied:
 Built here:
 
 - The `submitRef`, `submitSx` and `footer` props of `UIForm`.
-- `SessionLinkFactory` (`@auth/repositories`), the one place a transport 401 ends a session. No
-  settings file imports it: the user module's composition root (`src/modules/user/config/di.ts`)
-  puts its link on the Apollo client the settings repositories receive by injection.
+- `SessionLinkFactory` (`@auth/repositories`), where a transport 401 on an Apollo operation ends
+  a session. No settings file imports it: the user module's composition root
+  (`src/modules/user/config/di.ts`) puts its link on the Apollo client the settings repositories
+  receive by injection. The chip's container-free read ends a session through the outlet `session`
+  instead.
 - The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
   `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
 - `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
@@ -57,13 +85,13 @@ Built here:
 
 Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
 `SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
-`error.text` token, the home link and the `session_ended` notice.
+`error.text` token and the `session_ended` notice.
 
 ## Page tree
 
 ```text
 UserProfile [component]<route>          title, toast queue, useProfileLoad
-└ UIContainer
+└ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column is the 2FA slot
   │ ├ UserProfileSettings               loading | failed | ready
@@ -100,13 +128,13 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | Repository → API edge | the container's Apollo client with the `SessionLinkFactory` link |
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
-No file names a controller, a service or a handler: the board has none. Gaps that remain gaps:
-the board's social-network component is presentational only — `SocialNetworks` draws the Figma
-card as a list rather than buttons, each tile telling a screen reader that linking is not
-available yet, because user-service has no link, list or unlink — the header menu with the
-"Log-out" edge is app-shell work and the home link stands in for it, the two-factor card
-belongs to #331, and the session link reads and resets `useAuthStore` without a Repository →
-State edge on the board.
+No file names a controller, a service or a handler: the board has none. Gaps that remain gaps: the
+board's social-network component is presentational only — `SocialNetworks` draws the Figma card as a
+list rather than buttons, each tile telling a screen reader that linking is not available yet,
+because user-service has no link, list or unlink — the header menu with the "Log-out" edge is now
+drawn (the app-shell user menu in `components/user-menu/`, declared as `shell.userMenu` in
+`routes/index.ts`, issue #362) and is no longer one of them, the two-factor card belongs to #331,
+and the session link reads and resets `useAuthStore` without a Repository → State edge on the board.
 
 ## Data provider outcomes
 
@@ -165,16 +193,23 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
   2FA slot is an implicit grid column: with one section there is no empty column.
-- **Desktop content is centred.** Figma left-aligns the columns beside a 238 px sidebar the
-  app does not have yet, so above 1024 px the heading and the grid shrink to the grid's
-  columns (`width: fit-content`) and centre together; the 2FA column widens the block when it
-  lands, and the heading stays aligned with the card's left edge.
+- **Desktop content is centred beside the sidebar** (owner decision of 2026-11-04,
+  [DV-12](../../../../components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04)).
+  Above 1024 px the heading and the grid shrink to the grid's columns (`width: fit-content`) and
+  centre in the content column. Where the columns need all the room there is nothing to centre, so
+  the expanded sidebar keeps Figma's x 262 at 1440 and x 263 at 1024; on the rail at 1440 the gaps
+  to the rail and to the screen edge are both 95 px (x 179), where Figma draws x 137. The toolkit
+  `UIContainer` pads 32 px at 1024 and 124 px at 1440 (AV-7 measured it and found it does not yield
+  the Figma start), so the page renders inside the shared `UIShellContent` (15 / 26 / 12 px insets;
+  see
+  [frame and settings alignment](../../../../components/ui-app-shell/README.md#measured-against-figma-frame-and-settings-alignment-issue-362)
+  in the shell README).
 - **The name row sits under the header, above "Особисті дані"**, as `315:11316` draws it: the
   header leaves 20 / 25 / 28 px to it, its label is "Ваше ПІБ" (Figma "Ваше ФИО"), and the
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
   The field holds the full ПІБ (surname, first name, patronymic), while the header greets by
   first name and surname: three or more words show as the second then the first ("Маслова
-  Евгения Олеговна" → "Евгения Маслова"), one or two words show as typed, and the monogram
+  Євгенія Олегівна" → "Євгенія Маслова"), one or two words show as typed, and the monogram
   follows the greeted name.
 - **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
   optional-field hint is visually hidden (still in `aria-describedby`) and the four policy rules

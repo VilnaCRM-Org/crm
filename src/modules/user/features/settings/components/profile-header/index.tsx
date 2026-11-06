@@ -6,27 +6,14 @@ import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as EditIcon } from '@/assets/icons/edit-02.svg';
 
+import useDisplayName from '../../hooks/use-display-name';
 import type { ProfileHeaderProps } from '../../types/components/profile-header';
 
 import styles from './styles';
 
-const FULL_PIB_WORDS = 3;
-
-function displayNameOf(fullName: string): string {
-  const words = fullName.trim().split(/\s+/u);
-  return words.length < FULL_PIB_WORDS ? fullName : words.slice(0, 2).reverse().join(' ');
-}
-
-function monogramOf(fullName: string): string {
-  return Array.from(fullName.matchAll(/(?<!\S)\S/gu), ([initial]) => initial)
-    .join('')
-    .toUpperCase();
-}
-
 export default function ProfileHeader({ fullName }: ProfileHeaderProps): JSX.Element {
   const { t } = useTranslation();
-  const displayName = displayNameOf(fullName);
-  const monogram = monogramOf(displayName);
+  const { displayName, monogram } = useDisplayName(fullName);
 
   return (
     <Box sx={styles.header}>

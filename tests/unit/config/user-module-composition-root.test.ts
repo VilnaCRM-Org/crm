@@ -10,6 +10,7 @@ import GraphQLProfileRepository from '@/modules/user/features/settings/repositor
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
@@ -45,6 +46,7 @@ const SETTINGS_TOKENS = [
   AUTH_TOKENS.GraphQLProfileTransformer,
   AUTH_TOKENS.GraphQLProfileRepository,
   AUTH_TOKENS.ProfileProvider,
+  AUTH_TOKENS.UserDisplayNameMapper,
 ];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
@@ -146,7 +148,7 @@ describe('user module composition root', () => {
     );
   });
 
-  it('binds the settings transformer, repository and provider as singletons', () => {
+  it('binds the settings collaborators and the display-name mapper as singletons', () => {
     const child = registeredContainer();
 
     expectAllRegistered(child, SETTINGS_TOKENS);
@@ -161,6 +163,9 @@ describe('user module composition root', () => {
     const transformer = child.resolve(AUTH_TOKENS.GraphQLProfileTransformer);
     expect(transformer).toBeInstanceOf(GraphQLProfileTransformer);
     expect(child.resolve(AUTH_TOKENS.GraphQLProfileTransformer)).toBe(transformer);
+    const displayNameMapper = child.resolve(AUTH_TOKENS.UserDisplayNameMapper);
+    expect(displayNameMapper).toBeInstanceOf(UserDisplayNameMapper);
+    expect(child.resolve(AUTH_TOKENS.UserDisplayNameMapper)).toBe(displayNameMapper);
   });
 
   it('binds the session link factory as a singleton over the session link bundle', () => {

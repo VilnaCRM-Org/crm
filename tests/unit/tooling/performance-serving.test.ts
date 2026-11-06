@@ -5,8 +5,10 @@ import path from 'path';
 
 import {
   AUTH_FORM_CHUNKS,
+  AUTH_PAGE_CHUNKS,
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
+  authPageVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
@@ -42,6 +44,70 @@ const resolveLocalModule = (importer: string, specifier: string): string | null 
   if (!found) throw new Error(`Unresolved eager import ${specifier} in ${importer}`);
   return found;
 };
+
+interface EagerGraph {
+  readonly files: ReadonlySet<string>;
+  readonly muiEdges: readonly string[];
+}
+
+const eagerGraphOf = (entry: string, read: (file: string) => string = readFile): EagerGraph => {
+  const files = new Set<string>();
+  const muiEdges: string[] = [];
+  const pending = [entry];
+
+  while (pending.length > 0) {
+    const file = pending.pop() ?? '';
+    if (!files.has(file)) {
+      files.add(file);
+      for (const specifier of staticImportsOf(read(file))) {
+        const local = resolveLocalModule(file, specifier);
+        if (local) pending.push(local);
+        else if (specifier.startsWith('@mui/')) muiEdges.push(`${file} -> ${specifier}`);
+      }
+    }
+  }
+
+  return { files, muiEdges };
+};
+
+const SHELL_ONLY_FOLDERS = [
+  'src/components/ui-app-shell/',
+  'src/components/ui-app-header/',
+  'src/components/ui-sidebar/',
+  'src/components/ui-navigation-list/',
+  'src/components/ui-navigation-drawer/',
+  'src/modules/user/features/settings/components/user-menu/',
+];
+
+const shellFilesOf = (files: ReadonlySet<string>): string[] =>
+  [...files].filter((file) => SHELL_ONLY_FOLDERS.some((folder) => file.startsWith(folder)));
+
+const PROTECTED_LAYOUT_ROOT = 'src/routes/protected-layout.ts';
+
+const SHARED_WITH_EAGER_PATH = [
+  'src/config/env/raw-env.ts',
+  'src/lib/reliability/chunk-load-error-detector.ts',
+  'src/lib/reliability/chunk-retry-loader.ts',
+  'src/providers/mui-theme/mui-theme-shell-loader.ts',
+  'src/providers/mui-theme/themed-chunk-loader.ts',
+  'src/services/observability/correlation-id-provider.ts',
+  'src/services/observability/observability-core.ts',
+  'src/services/observability/pii-scrubber.ts',
+  'src/services/observability/sentry-client.ts',
+  'src/services/observability/sentry-config.ts',
+  'src/services/observability/session-correlation.ts',
+  'src/services/observability/web-vitals-reporter.ts',
+];
+
+const protectedGraphIn = (files: ReadonlySet<string>): string[] => {
+  const protectedGraph = eagerGraphOf(PROTECTED_LAYOUT_ROOT).files;
+  return [...files].filter((file) => protectedGraph.has(file)).sort();
+};
+
+const protectedLayoutFilesOf = (files: ReadonlySet<string>): string[] =>
+  protectedGraphIn(files).filter((file) => !SHARED_WITH_EAGER_PATH.includes(file));
+
+const CURRENT_USER_MENU = /(?:^|\/)current-user-menu(?:[./]|$)/u;
 
 describe('performance serving config', () => {
   it('ships immutable cache headers for built static assets', () => {
@@ -161,6 +227,12 @@ describe('performance serving config', () => {
     expect(settingsRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "settings" \*\/\s*'\.\/user-profile'\)/
     );
+    const comingSoonLoader =
+      /import\(\s*\/\* webpackChunkName: "coming-soon" \*\/\s*'@\/components\/coming-soon'\)/g;
+    expect(appRoutesSource.match(comingSoonLoader)).toHaveLength(5);
+    expect(settingsRoutesSource.match(comingSoonLoader)).toHaveLength(3);
+    expect(staticImportsOf(appRoutesSource)).not.toContain('@/components/coming-soon');
+    expect(staticImportsOf(settingsRoutesSource)).not.toContain('@/components/coming-soon');
     expect(staticImportsOf(settingsRoutesSource)).not.toContain('./user-profile');
     expect(staticImportsOf(readFile('src/routes/registry.ts'))).toContain(
       '@/modules/user/features/settings/routes'
@@ -195,25 +267,9 @@ describe('performance serving config', () => {
   });
 
   it('keeps the MUI theme engine off the eager path', () => {
-    const eagerMuiImports = new Set<string>();
-    const visited = new Set<string>();
-    const pending = ['src/index.tsx'];
+    const { muiEdges } = eagerGraphOf('src/index.tsx');
 
-    while (pending.length > 0) {
-      const file = pending.pop() ?? '';
-      if (!visited.has(file)) {
-        visited.add(file);
-        for (const specifier of staticImportsOf(readFile(file))) {
-          const local = resolveLocalModule(file, specifier);
-          if (local) pending.push(local);
-          else if (specifier.startsWith('@mui/')) eagerMuiImports.add(`${file} -> ${specifier}`);
-        }
-      }
-    }
-
-    expect([...eagerMuiImports]).toEqual([
-      'src/providers/app-providers.tsx -> @mui/material/styles',
-    ]);
+    expect(muiEdges).toEqual(['src/providers/app-providers.tsx -> @mui/material/styles']);
     expect(readFile('src/providers/app-providers.tsx')).toContain(
       "import { StyledEngineProvider } from '@mui/material/styles';"
     );
@@ -221,6 +277,9 @@ describe('performance serving config', () => {
     // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
     expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
     expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/routes/shell-slot-factory.ts')).toContain(
+      'new ThemedChunkLoader<ShellSlotProps>('
+    );
     expect(readFile('src/components/error-boundary/error-page-loader.ts')).toContain(
       'new ThemedChunkLoader<ErrorPageProps>('
     );
@@ -232,6 +291,143 @@ describe('performance serving config', () => {
     );
   });
 
+  it('keeps the shell, the user menu and the current-user read off the eager path (NFR-5)', () => {
+    const { files, muiEdges } = eagerGraphOf('src/index.tsx');
+    const eagerShell = shellFilesOf(files);
+    const settingsHooks = [...files].filter((file) => file.includes('hooks/use-current-user'));
+
+    expect(eagerShell).toEqual([]);
+    expect(settingsHooks).toEqual([]);
+    expect(muiEdges).toEqual(['src/providers/app-providers.tsx -> @mui/material/styles']);
+  });
+
+  it('fails the eager-path check when the composer imports a shell file (must-fail)', () => {
+    const composer = 'src/routes/route-composer.tsx';
+    const tainted = (file: string): string =>
+      file === composer
+        ? `${readFile(file)}\nimport UIAppShell from '@/components/ui-app-shell';\n`
+        : readFile(file);
+
+    const { files } = eagerGraphOf('src/index.tsx', tainted);
+
+    expect(shellFilesOf(files)).toContain('src/components/ui-app-shell/index.tsx');
+  });
+
+  it('keeps ProtectedRoute, AppLayout and their own imports off the eager path', () => {
+    const { files } = eagerGraphOf('src/index.tsx');
+
+    expect(files.has('src/routes/route-composer.tsx')).toBe(true);
+    expect(files.has('src/routes/protected-layout-loader.ts')).toBe(true);
+    expect(protectedLayoutFilesOf(files)).toEqual([]);
+  });
+
+  it('shares only the listed infrastructure modules between the eager and protected graphs', () => {
+    const { files } = eagerGraphOf('src/index.tsx');
+
+    expect(protectedGraphIn(files)).toEqual(SHARED_WITH_EAGER_PATH);
+  });
+
+  it('fails the protected-layout check when the composer imports AppLayout (must-fail)', () => {
+    const composer = 'src/routes/route-composer.tsx';
+    const tainted = (file: string): string =>
+      file === composer
+        ? `${readFile(file)}\nimport AppLayout from '@/components/layouts/app-layout';\n`
+        : readFile(file);
+
+    const { files } = eagerGraphOf('src/index.tsx', tainted);
+
+    expect(protectedLayoutFilesOf(files)).toEqual([
+      'src/components/layouts/app-layout-frame.tsx',
+      'src/components/layouts/app-layout.styles.ts',
+      'src/components/layouts/app-layout.tsx',
+      'src/components/layouts/app-shell-loader.ts',
+      'src/components/layouts/app-shell-placeholders.tsx',
+      'src/components/layouts/footer-loader.ts',
+      'src/components/layouts/use-app-shell.ts',
+      'src/components/layouts/use-frame-focus.ts',
+      'src/hooks/use-arrival-focus.ts',
+    ]);
+  });
+
+  it('fails the protected-layout check when the composer imports the guard (must-fail)', () => {
+    const composer = 'src/routes/route-composer.tsx';
+    const tainted = (file: string): string =>
+      file === composer
+        ? `${readFile(file)}\nimport ProtectedRoute from '@auth/components/protected-route';\n`
+        : readFile(file);
+
+    const { files } = eagerGraphOf('src/index.tsx', tainted);
+
+    expect(protectedLayoutFilesOf(files)).toEqual([
+      'src/config/env/preloaded-auth-token.ts',
+      'src/config/env/sandbox-demo-session-provider.ts',
+      'src/modules/user/features/auth/components/protected-route/index.tsx',
+      'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
+      'src/modules/user/features/auth/stores/auth-session-provider.ts',
+      'src/modules/user/features/auth/stores/auth-store-selectors.ts',
+      'src/modules/user/features/auth/stores/use-auth-store.ts',
+      'src/modules/user/features/auth/stores/use-auth-token.ts',
+      'src/modules/user/features/auth/stores/use-sign-out.ts',
+    ]);
+  });
+
+  it('loads the guard, the layout and the slot factory from one protected-layout chunk', () => {
+    const loaderSource = readFile('src/routes/protected-layout-loader.ts');
+    const chunkSource = readFile('src/routes/protected-layout.ts');
+
+    expect(loaderSource.match(/import\(/g)).toHaveLength(1);
+    expect(loaderSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "protected-layout" \*\/\s*'\.\/protected-layout'\s*\)/
+    );
+    expect(loaderSource).toContain('new ChunkRetryLoader<ProtectedLayoutModule>(');
+    expect(loaderSource).not.toContain('ReloadingChunkLoader');
+    expect(staticImportsOf(loaderSource)).not.toContain('./protected-layout');
+    expect(staticImportsOf(chunkSource)).toEqual([
+      '@/components/layouts/app-layout',
+      '@auth/components/protected-route',
+      './shell-slot-factory',
+    ]);
+  });
+
+  it('loads the shell through a ThemedChunkLoader named ui-app-shell (AD-1)', () => {
+    const loaderSource = readFile('src/components/layouts/app-shell-loader.ts');
+
+    expect(loaderSource).toContain('new ThemedChunkLoader<UIAppShellProps>(');
+    expect(loaderSource).toContain('new ChunkRetryLoader(');
+    expect(loaderSource).not.toContain('ReloadingChunkLoader');
+    expect(loaderSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "ui-app-shell" \*\/\s*'@\/components\/ui-app-shell'\s*\)/
+    );
+    expect(staticImportsOf(readFile('src/components/layouts/app-layout.tsx'))).toEqual(
+      expect.arrayContaining(['./app-shell-loader'])
+    );
+  });
+
+  it('imports the user-menu and current-user chunks only through import() (AD-1)', () => {
+    const settingsContract = readFile('src/modules/user/features/settings/routes/index.ts');
+    const slot = readFile(
+      'src/modules/user/features/settings/components/user-menu/user-menu-slot.tsx'
+    );
+    const currentUserLoader = readFile(
+      'src/modules/user/features/settings/components/user-menu/current-user-menu-loader.ts'
+    );
+
+    expect(settingsContract).toMatch(
+      new RegExp(
+        String.raw`userMenu: \(\) =>\s*import\(\s*/\* webpackChunkName: "user-menu" \*/\s*` +
+          String.raw`'\.\./components/user-menu/user-menu-slot'\s*\)`
+      )
+    );
+    expect(staticImportsOf(settingsContract)).not.toContain(
+      '../components/user-menu/user-menu-slot'
+    );
+    expect(currentUserLoader).toMatch(/import\(\s*\/\* webpackChunkName: "current-user" \*\//);
+    expect(staticImportsOf(slot).filter((specifier) => CURRENT_USER_MENU.test(specifier))).toEqual(
+      []
+    );
+    expect(staticImportsOf(slot)).toContain('./current-user-menu-loader');
+  });
+
   it('warms the shared error-page chunk and its font faces after load (issue #309)', () => {
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const errorPageLoaderSource = readFile('src/components/error-boundary/error-page-loader.ts');
@@ -241,7 +437,7 @@ describe('performance serving config', () => {
     );
 
     expect(errorRouteChunks).toHaveLength(3);
-    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(4);
+    expect(appRoutesSource.match(/webpackChunkName: "/g)).toHaveLength(9);
     expect(errorPageLoaderSource).toContain('webpackChunkName: "error-page"');
 
     const renderAt = entrySource.lastIndexOf('root.render(');
@@ -367,14 +563,22 @@ describe('performance serving config', () => {
       /webpackChunkName: "([^"]+)"/.exec(
         readFile(`src/modules/user/features/auth/routes/${route}/form-section-loader.ts`)
       )?.[1];
-    const settingsChunkName = /webpackChunkName: "([^"]+)"/.exec(
+    const settingsChunkName = /webpackChunkName: "([^"]+)" \*\/\s*'\.\/user-profile'/.exec(
       readFile('src/modules/user/features/settings/routes/index.ts')
     )?.[1];
 
     expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
       'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
-        'authForms: authFormsCacheGroup(), },'
+        'authForms: authFormsCacheGroup(), authPageVendors: authPageVendorsCacheGroup(), },'
     );
+    expect(authPageVendorsCacheGroup().name).toBe('auth-page-vendors');
+    expect(
+      AUTH_PAGE_CHUNKS.map((chunk) =>
+        readFile('src/modules/user/features/auth/routes/index.ts').includes(
+          `webpackChunkName: "${chunk}"`
+        )
+      )
+    ).toEqual([true, true]);
     expect([authFormsVendorsCacheGroup().name, authFormsCacheGroup().name]).toEqual([
       'auth-forms-vendors',
       'auth-forms',

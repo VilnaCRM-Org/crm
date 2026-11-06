@@ -4,7 +4,11 @@ import path from 'path';
 
 const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const SETTINGS_ROOT = 'src/modules/user/features/settings';
-const PROVIDER_STUB_CALL = 'withProfileProvider(';
+const SHARED_STATE_STUB_CALLS = [
+  'withProfileProvider(',
+  'withCurrentUserAnswer(',
+  'withCurrentUserFailure(',
+];
 
 interface DocsStoryParameters {
   readonly inline?: boolean;
@@ -35,15 +39,20 @@ const walk = (dir: string): string[] =>
 const storiesRegisteringTheProviderStub = (): string[] =>
   walk(path.join(repoRoot, 'src'))
     .filter((file) => file.endsWith('.stories.tsx'))
-    .filter((file) => fs.readFileSync(file, 'utf-8').includes(PROVIDER_STUB_CALL))
+    .filter((file) => {
+      const source = fs.readFileSync(file, 'utf-8');
+      return SHARED_STATE_STUB_CALLS.some((call) => source.includes(call));
+    })
     .map((file) => path.relative(repoRoot, file).split(path.sep).join('/'));
 
-describe('stories that register a Data provider stub against the shared container', () => {
+describe('stories that stub a Data provider or the current-user answer in shared state', () => {
   const stories = storiesRegisteringTheProviderStub();
 
-  it('finds the settings stories that stub the provider', () => {
+  it('finds the settings stories that stub the provider or the current-user answer', () => {
     expect(stories).toEqual([
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
+      `${SETTINGS_ROOT}/components/user-menu/current-user-menu.stories.tsx`,
+      `${SETTINGS_ROOT}/components/user-menu/user-menu-slot.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-profile-settings/user-profile-settings.stories.tsx`,
       `${SETTINGS_ROOT}/routes/user-profile/user-profile.stories.tsx`,
     ]);

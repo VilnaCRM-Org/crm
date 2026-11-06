@@ -8,8 +8,14 @@ import ReloadOnceGuard from '@/lib/reliability/reload-once-guard';
 import ReloadingChunkLoader from '@/lib/reliability/reloading-chunk-loader';
 import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
+import observabilityCore from '@/services/observability/observability-core';
 
 import type { AppRouteObject, PageLoader, PageModule } from './types/app-route';
+import type {
+  ShellChunkFailureHandler,
+  ShellChunkSource,
+  ShellFailureHandler,
+} from './types/shell-slot';
 
 class RouteMapper {
   private readonly reloadGuard = new ReloadOnceGuard();
@@ -23,6 +29,18 @@ class RouteMapper {
       return { index: true, element, errorElement };
     }
     return { path: route.path, element, errorElement, ...this.nested(route, landmark) };
+  }
+
+  public slotFailureReporter(): ShellChunkFailureHandler {
+    return (source, error) => this.capture(source, error);
+  }
+
+  public chunkFailureReporter(source: ShellChunkSource): ShellFailureHandler {
+    return (error) => this.capture(source, error);
+  }
+
+  private capture(source: ShellChunkSource, error: unknown): void {
+    observabilityCore.captureError(error, { source });
   }
 
   // Every page chunk is retried once. A public page may then reload the document to pick up a

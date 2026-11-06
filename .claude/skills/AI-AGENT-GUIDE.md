@@ -302,8 +302,10 @@ When writing or editing a class in a logic directory (`src/services/**`,
   `registration-handlers-factory`, `auth-error-reporter`,
   `boundary-error-reporter` (the reporter the paint-path error boundaries
   receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
-  `security-event-core` and its `auth-failure-monitor` leaf, and the observability
-  core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves)
+  `security-event-core` and its `auth-failure-monitor` leaf, the observability
+  core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves,
+  the app-shell session (`auth-session-provider`) and the chip's current-user read
+  (`current-user-client`, `current-user-source`, issue #362))
   are exempt by explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks in a gated directory
   (`use-auth-token`, `use-auth-state`, `use-focus-on-mount`) are in scope and are
   carved out by the structural `react-hooks` entry in `EXEMPT_PATTERNS`

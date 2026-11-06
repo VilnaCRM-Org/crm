@@ -43,6 +43,7 @@ if (isIntegration) {
 const config: Config = {
   preset: 'ts-jest',
   clearMocks: true,
+  workerIdleMemoryLimit: '1500MB',
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'babel',
@@ -98,6 +99,7 @@ const config: Config = {
     '^@auth$': '<rootDir>/src/modules/user/features/auth',
     '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
+    '/icons/shell/logo-(desktop|mobile)\\.svg$': '<rootDir>/tests/__mocks__/shell-logo-$1.ts',
     '\\.svg$': '<rootDir>/tests/__mocks__/svg-stub.ts',
     '^@scripts/(.*)$': '<rootDir>/scripts/$1',
     '^@stories/(.*)$': '<rootDir>/.storybook/$1',

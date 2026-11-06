@@ -11,6 +11,31 @@ const appRoutes: RouteModule = {
       meta: { permission: 'app.home' },
     },
     {
+      path: ROUTE_PATHS.boards,
+      guard: 'protected',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
+      path: ROUTE_PATHS.products,
+      guard: 'protected',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
+      path: ROUTE_PATHS.orders,
+      guard: 'protected',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
+      path: ROUTE_PATHS.contacts,
+      guard: 'protected',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
+      path: ROUTE_PATHS.analytics,
+      guard: 'protected',
+      load: () => import(/* webpackChunkName: "coming-soon" */ '@/components/coming-soon'),
+    },
+    {
       path: ROUTE_PATHS.forbidden,
       guard: 'public',
       load: () => import(/* webpackChunkName: "error-page" */ '@/components/forbidden/forbidden'),

@@ -60,4 +60,16 @@ describe('user profile page styles', () => {
       },
     });
   });
+
+  it('centres the content from the breakpoint, keeping gap and paddingTop', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.content['@media (min-width:1025px)']).toEqual({
+      gap: '0.75rem',
+      paddingTop: '1.75rem',
+      width: 'fit-content',
+      maxWidth: '100%',
+      marginInline: 'auto',
+    });
+  });
 });

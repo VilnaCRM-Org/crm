@@ -1,12 +1,12 @@
 import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { sidebarSignOutOf } from '@tests/e2e/utils/app-shell';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const signInTitle: string = t('sign_in.title');
-const signOutLabel: string = t('home.sign_out');
 
 export async function expectSignInPage(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/sign-in$/);
@@ -16,7 +16,7 @@ export async function expectSignInPage(page: Page): Promise<void> {
 export async function signOutToSignIn(page: Page): Promise<void> {
   await seedPreloadedAuthToken(page);
   await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: signOutLabel, exact: true }).click();
+  await sidebarSignOutOf(page).click();
   await expectSignInPage(page);
 }
 

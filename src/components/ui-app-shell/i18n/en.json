@@ -1,0 +1,46 @@
+{
+  "app_shell": {
+    "navigation": {
+      "label": "Main navigation"
+    },
+    "items": {
+      "boards": "Boards",
+      "products": "Products",
+      "orders": "Orders",
+      "contacts": "Contacts",
+      "analytics": "Analytics",
+      "settings": "Settings",
+      "integrations": "Integrations",
+      "webhooks": "Webhooks",
+      "billing": "Billing"
+    },
+    "sign_out": "Sign out",
+    "search": {
+      "label": "Search",
+      "placeholder": "Looking for something?"
+    },
+    "unavailable": "Not available yet",
+    "notifications": {
+      "label": "Notifications",
+      "count_one": "{{count}} notification",
+      "count_other": "{{count}} notifications"
+    },
+    "tasks": {
+      "label": "Tasks",
+      "count_one": "{{count}} task",
+      "count_other": "{{count}} tasks"
+    },
+    "drawer": {
+      "open": "Open menu",
+      "close": "Close menu"
+    },
+    "sidebar": {
+      "collapse": "Collapse sidebar",
+      "expand": "Expand sidebar"
+    },
+    "settings_group": {
+      "collapse": "Collapse Settings",
+      "expand": "Expand Settings"
+    }
+  }
+}

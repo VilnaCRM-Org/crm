@@ -1,0 +1,67 @@
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import { type JSX, useCallback, useState } from 'react';
+
+import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
+import {
+  storySession,
+  withCurrentUserAnswer,
+  withCurrentUserFailure,
+} from '@stories/current-user-decorators';
+import { withProtectedOutlet } from '@stories/router-decorators';
+import { noop } from '@stories/story-callbacks';
+
+import type { CurrentUserMenuProps } from '../../types/components/user-menu';
+
+import CurrentUserMenu from './current-user-menu';
+
+import UserMenu from '.';
+
+function ReadingMenu({ onIdentity }: CurrentUserMenuProps): JSX.Element {
+  const [identity, setIdentity] = useState<UserDisplayName | null>(null);
+  const report = useCallback(
+    (next: UserDisplayName | null): void => {
+      setIdentity(next);
+      onIdentity(next);
+    },
+    [onIdentity]
+  );
+
+  return (
+    <>
+      <UserMenu identity={identity} signOut={noop} />
+      <CurrentUserMenu onIdentity={report} />
+    </>
+  );
+}
+
+const meta: Meta<typeof CurrentUserMenu> = {
+  title: 'Settings/UserMenu/CurrentUserMenu',
+  component: CurrentUserMenu,
+  tags: ['autodocs'],
+  args: { onIdentity: noop },
+  render: ({ onIdentity }) => <ReadingMenu onIdentity={onIdentity} />,
+  decorators: [withProtectedOutlet(storySession)],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'The identity source the `current-user` chunk carries. It renders nothing: it reads ' +
+          'the signed-in user once through the container-free current-user read, with the ' +
+          'session the protected outlet hands it, and reports the display name ' +
+          'and monogram through `onIdentity`, so the one mounted user menu keeps its chip, focus ' +
+          'and open state when the chunk arrives. The story feeds a user menu with it: the chip ' +
+          'is name-less while the read is pending and shows the name once it succeeds; a failed ' +
+          'read reports no identity and leaves the chip name-less and operable.',
+      },
+      story: { inline: false },
+    },
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof CurrentUserMenu>;
+
+export const Reading: Story = { decorators: [withCurrentUserAnswer()] };
+
+export const ReadFailed: Story = { decorators: [withCurrentUserFailure()] };

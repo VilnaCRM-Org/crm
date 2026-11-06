@@ -1,0 +1,64 @@
+import { render, type RenderResult, screen } from '@testing-library/react';
+import type { i18n as I18nType } from 'i18next';
+import type { JSX, ReactElement } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter, Outlet, Route, Routes } from 'react-router';
+
+import comingSoonEn from '@/components/coming-soon/i18n/en.json';
+import comingSoonUk from '@/components/coming-soon/i18n/uk.json';
+import AppLayout from '@/components/layouts/app-layout';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
+import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/user-menu-slot';
+import type { ProtectedSessionContext } from '@/routes/types/protected-outlet-context';
+import type { ShellSlotHostProps } from '@/routes/types/shell-slot';
+
+import createAppShellLocaleI18n from './create-app-shell-locale-i18n';
+import { inertSession } from './session-outlet';
+import stubViewportWidth from './stub-viewport-width';
+
+interface AppShellRenderOptions {
+  readonly path: string;
+  readonly width: number;
+  readonly page: ReactElement;
+  readonly signOut?: (() => void) | undefined;
+}
+
+type AppShellRenderResult = RenderResult & { readonly i18n: I18nType };
+
+const ignoreChunkFailure = (): undefined => undefined;
+
+function BoundUserMenu({ signOut, onAvatar }: ShellSlotHostProps): JSX.Element {
+  return <UserMenuSlot signOut={signOut} onChunkFailure={ignoreChunkFailure} onAvatar={onAvatar} />;
+}
+
+const renderAppShell = async ({
+  path,
+  width,
+  page,
+  signOut = jest.fn(),
+}: AppShellRenderOptions): Promise<AppShellRenderResult> => {
+  stubViewportWidth(width);
+  const i18n = createAppShellLocaleI18n('uk', ['en', 'uk']);
+  lazyCatalogLoader.register(i18n, { en: comingSoonEn, uk: comingSoonUk });
+  const context: ProtectedSessionContext = { signOut, session: inertSession };
+  const view = render(
+    <I18nextProvider i18n={i18n}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route element={<Outlet context={context} />}>
+            <Route element={<AppLayout userMenu={BoundUserMenu} />}>
+              <Route path="*" element={page} />
+            </Route>
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </I18nextProvider>
+  );
+
+  await screen.findByRole('banner');
+  await screen.findByRole('contentinfo');
+
+  return { ...view, i18n };
+};
+
+export default renderAppShell;

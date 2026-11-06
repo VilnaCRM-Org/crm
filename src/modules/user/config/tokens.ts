@@ -25,6 +25,7 @@ const AUTH_TOKENS = Object.freeze({
   GraphQLProfileTransformer: Symbol('GraphQLProfileTransformer'),
   ProfileProvider: Symbol('ProfileProvider'),
   PasswordRecoveryProvider: Symbol('PasswordRecoveryProvider'),
+  UserDisplayNameMapper: Symbol('UserDisplayNameMapper'),
 } as const);
 
 export default AUTH_TOKENS;

@@ -26,7 +26,7 @@ export async function overrideRuntimeConfig(
 
   await page.route('**/*', async (route) => {
     if (route.request().resourceType() !== 'document') {
-      await route.continue();
+      await route.fallback();
       return;
     }
 

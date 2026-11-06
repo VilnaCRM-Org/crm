@@ -241,12 +241,17 @@ backend-touching feature.
 
 Every user-facing string is a translated key, and every key exists in **both** locales. The
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
-`src/i18n/localization.json` is their merge, produced by `scripts/localization-generator.js`
-and refreshed with `make i18n-generate`. The build never regenerates it.
+`src/i18n/localization.json` is the merge of every **eager** catalog, produced by
+`scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
+regenerates it. The seven catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+(password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
+`coming_soon.*` and the user menu `user_menu.*`) are left out of it and registered by their owning
+chunk; a key in one of them resolves only in the files its `owners` list names.
 
-- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`,
-  run `make i18n-generate`, and commit the regenerated merged catalog together with the catalog
-  edit. Never hand-edit `src/i18n/localization.json`.
+- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
+  `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a
+  lazy catalog leaves the merged file unchanged; a new lazy catalog or owner is a reviewed edit to
+  `config/i18n-catalog-policy.json`). Never hand-edit `src/i18n/localization.json`.
 - **Gate** — `make lint-i18n` (in `make lint` and in the CI lint phase, so it gates every pull
   request) fails on a missing or stray locale file in a `src/**/i18n/` catalog, an `en`/`uk`
   key-set mismatch inside a catalog, a stale `src/i18n/localization.json`, or a `t()` key —
@@ -935,7 +940,8 @@ flag is declared today: `forgotPassword`, the last one, was removed in #309, and
 that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container start.
 Container start fails on two flag shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*`
 name that matches no declared flag, and a declared flag whose value is not exactly `true` or
-`false`. The user settings page (issue #330) ships without a flag.
+`false`. The user settings page (issue #330), its three coming-soon sub-pages and their app-shell
+entry points (issue #362) ship without a flag.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -1019,8 +1025,10 @@ container-resolved class. Those inside a gated directory (`auth-store-selectors`
 `registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
 issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
-`auth-failure-monitor` leaf, and the observability
-core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves) are exempt by
+`auth-failure-monitor` leaf, the observability
+core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, the app-shell
+session (`auth-session-provider`) and the chip's current-user read (`current-user-client`,
+`current-user-source`, issue #362)) are exempt by
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
@@ -1411,10 +1419,15 @@ and [tests/console-gate/README.md](tests/console-gate/README.md).
    binaries. For a static page, follow the `notFound` / submit-loader precedent and use a small
    local screens array instead; regenerate with a spec-scoped `--update-snapshots`, never the
    repo-wide `make test-visual-update`, then re-run **without** the flag and require green.
-5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
-   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
-   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
-   `setViewportSize` call would discard the device viewport.
+5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated baselines for `/sign-in`,
+   `/sign-up`, `/password-recovery` and `/password-reset` (`auth.spec.ts`), the three error pages
+   (`error-pages.spec.ts`), `/settings` (`settings.spec.ts`) and the eight coming-soon sections
+   inside the app shell — `/boards`, `/products`, `/orders`, `/contacts`, `/analytics`,
+   `/settings/integrations`, `/settings/webhooks`, `/settings/billing` (`coming-soon.spec.ts`, issue
+   #362) and the app shell states — home with the closed header, the drawer open on `/settings` and
+   the user menu open (`app-shell.spec.ts`, issue #362) — recorded per mobile project with
+   `scale: 'device'` so the real 2.625×/3× DPR raster is gated. Never reuse
+   `take-visual-snapshot.ts` there — its `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 

@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -10,7 +11,6 @@ import { PROFILE_NODE, type RecordedCall, configuredOrigin, originsOf } from './
 export const text = {
   title: `${t('settings.title')} - VilnaCRM`,
   heading: t('settings.heading'),
-  homeLink: t('home.settings_link'),
   loading: t('settings.profile.loading'),
   name: t('settings.profile.full_name'),
   email: t('sign_up.form.email_input.label'),
@@ -64,7 +64,7 @@ export async function expectErrorToast(page: Page, message: string): Promise<voi
 
 export async function openSettingsFromHome(page: Page): Promise<void> {
   await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('link', { name: text.homeLink, exact: true }).click();
+  await sidebarSettingsOf(page).click();
 }
 
 export async function openLoadedSettings(page: Page): Promise<void> {
