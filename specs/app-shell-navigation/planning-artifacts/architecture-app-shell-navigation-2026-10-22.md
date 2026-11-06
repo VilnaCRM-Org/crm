@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-05
+revised: 2026-11-06
 iteration: 5
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
@@ -38,7 +38,8 @@ inputDocuments:
 and 2026-10-29 (shipped-design amendments: the user-menu slot, the AD-11 sign-out latch and the
 failed chip re-read; each change is marked in place as a dated amendment or owner decision;
 2026-11-03: the lazy protected-layout chunk of 663151bc and the userSettings flag removal;
-2026-11-04: the settings page centred, DV-12; 2026-11-05: reconciliation with shipped code)
+2026-11-04: the settings page centred, DV-12; 2026-11-05: reconciliation with shipped code;
+2026-11-06: the drawer and menu primitives, §8 A and the chip's `session_ended` causes)
 **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
@@ -62,6 +63,12 @@ failed chip re-read; each change is marked in place as a dated amendment or owne
 > AV-5. The chip reads through `currentUserSource`; the slot comes from
 > `protectedLayoutLoader.create` and `ShellSlotFactory`; `routeMapper.shellSlot` does not exist; `/`
 > requests no DI chunk.
+
+> **Amended 2026-11-06 (reconciliation with shipped code).** The 2026-11-05 note missed the drawer and menu
+> primitives, §8 A and one §12.2 case. Dated notes now correct §3.2, §4.4, §5.5, §5.6, §8 A, §9, §11
+> and §12.2. The drawer is MUI `Modal` plus `Slide`, with `useDrawerFocus` returning focus. An outside
+> click on the menu lands on a backdrop `Box`, not `ClickAwayListener`. `ShellFailureHandler` lives in
+> `src/routes/types/shell-slot.ts`. On the chip's read, only a transport 401 ends the session.
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md) ("research §N"),
 [brief](./brief-app-shell-navigation-2026-10-22.md) ("brief §N"), the authoritative
@@ -300,7 +307,7 @@ src/routes/route-composer.tsx ──static──> src/routes/protected-layout-lo
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------- |
 | `index` (entry)        | `protectedLayoutLoader` and composer slot wiring (amended after 663151bc)                                                                    | every page                          | yes (bytes only, AD-2) |
 | `protected-layout`     | `ProtectedRoute`, the `AppLayout` frame grid, two placeholders, `appShellLoader` wiring, `shell-slot-factory` (663151bc)                     | first protected route               | never                  |
-| `ui-app-shell` **NEW** | `UIAppShell`, header, sidebar, list, drawer (MUI `Drawer`), icons, shell catalog                                                             | `AppLayout` render                  | never                  |
+| `ui-app-shell` **NEW** | `UIAppShell`, header, sidebar, list, drawer (MUI `Modal` and `Slide`, amended 2026-11-06), icons, shell catalog                              | `AppLayout` render                  | never                  |
 | `mui-theme`            | unchanged                                                                                                                                    | in parallel with every themed chunk | unchanged              |
 | `user-menu` **NEW**    | `UserMenuSlot`, `UserMenu`, `useUserMenu`, chip catalog                                                                                      | `UIAppHeader` render                | never                  |
 | `current-user` **NEW** | `CurrentUserMenu`, `useCurrentUser`, the container-free `currentUserSource` (`fetch` client, parser, `UserDisplayNameMapper`) since 0addef83 | `UserMenuSlot`                      | never                  |
@@ -396,6 +403,14 @@ skipped (`disableRestoreFocus` for that close), so `useArrivalFocus` keeps `<mai
 restore runs in a passive effect cleanup (`FocusTrap.js:143-149`) after the arrival ref callback
 and would otherwise steal focus back → crossing the sidebar breakpoint unmounts the drawer and
 focuses `main[tabindex="-1"]` with the query `route-error-fallback.tsx:22-25` already uses.
+
+**Amended 2026-11-06 (reconciliation with shipped code), AD-6.** The shipped drawer is MUI `Modal` plus `Slide`, not
+`Drawer`, and `disableRestoreFocus` is always on, so MUI never restores focus.
+`useDrawerFocus` (`src/components/ui-app-header/use-drawer-focus.ts`) does that instead, from the
+flags `useDrawerOpen` sets: a dismiss (`onClose`: Escape, the close button, a tap outside the panel)
+focuses the burger, and a navigation close (`leave`) focuses `main[tabindex="-1"]`. When a breakpoint
+crossing unmounts the burger while the drawer is open, the burger's ref cleanup focuses `main`. The
+`FocusTrap.js:143-149` reasoning above is the record of the plan.
 
 ### 4.5 Chunk failure
 
@@ -521,6 +536,20 @@ implement `showModal`, so the dialog lane would need a stub and focus return wou
 _Contingency:_ if the `ui-app-shell` gzip size or `/` mobile Lighthouse needs it (§10), the drawer
 moves to its own chunk loaded on the first burger activation; the API does not change.
 
+**Amended 2026-11-06 (reconciliation with shipped code).** AD-6 shipped differently (c8d88478, Story 2.3).
+`UINavigationDrawer` (`src/components/ui-navigation-drawer/index.tsx`) is MUI `Modal` plus `Slide`, and
+nothing in `src` imports `Drawer`. There is no Paper: a `Box` inside the modal carries `role="dialog"`,
+`aria-modal`, `tabIndex -1` and the name, and holds `DrawerScrim`, `DrawerHeader` and the panel that
+`Slide` moves in from the right. `Modal`'s default leaves the drawer unmounted while closed, so
+`ModalProps.keepMounted` is not set. The focus trap, the `aria-hidden` siblings, the scroll lock and
+Escape are still MUI's, through `Modal`. The close button takes initial focus through
+`useFocusOnMount`. `disableRestoreFocus` is always on and `useDrawerFocus` returns focus by hand
+(§4.4). `useDrawerMotion` gives the duration, 200 ms and 0 under reduced motion. The temporary `Drawer`
+wording and the `Drawer/Drawer.js:268-280` citation above are the record of the plan. The two-button
+split still holds for the reason given. The `<dialog>` rejection's "focus return would be
+hand-written" now applies to the shipped code too; its jsdom argument stands. The contingency was not
+taken: the drawer ships in `ui-app-shell`.
+
 ### 5.6 User menu (AD-7)
 
 **AD-7. The designed menu (OQ-3, resolved) built from MUI `MenuList`, `MenuItem` and
@@ -535,6 +564,13 @@ _Rejected (OQ-3 RESOLVED by owner 2026-10-23: the Figma menu as an APG menu butt
 focus trap the APG menu button does not want (FR-6.1 N "no focus is trapped"). _Rejected
 (engineering):_ toolkit `ui-profile-select-card`
 (requires a photo, research §8.2).
+
+**Amended 2026-11-06 (reconciliation with shipped code).** `ClickAwayListener` did not ship, and nothing in `src`
+imports it. While the menu is open, `UserMenu` (`settings/components/user-menu/index.tsx`) renders an
+`aria-hidden` backdrop `Box` (`styles.backdrop`: `position: fixed`, `inset: 0`, `zIndex: 1`) whose
+click calls `menu.dismiss`. An outside click lands on the backdrop, so it closes the menu and returns
+focus to the chip without activating the control underneath (FR-6.1 N). `MenuList` and `MenuItem`
+shipped as planned.
 
 ### 5.7 Current-user read and request count (AD-8, OQ-25)
 
@@ -851,13 +887,27 @@ Every new `.tsx` has a colocated story with a unique `title:`
 
 ### A. Eager frame (`src/components/layouts/`)
 
-| File                                            | Status                                                                                                                                                                                                                                                              | Change                                                                                                                                                                                                          | Direct test                                                                                                                                | Opt.  |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
-| `src/components/layouts/app-layout.tsx`         | CHANGED                                                                                                                                                                                                                                                             | grid frame; `lazy(appShellLoader)` in Suspense with the placeholders; forwards `signOut` and `userMenu`; on the second shell failure calls the injected `onShellFailure` prop (no `src/services/` import, §4.5) | `tests/unit/components/layouts/app-layout.test.tsx` (CHANGED); `tests/unit/components/layouts/app-layout.shell-failure.test.tsx` (**NEW**) | OQ-26 |
-| `src/components/layouts/app-layout.styles.ts`   | CHANGED                                                                                                                                                                                                                                                             | frame areas, `headerSlot`, `navSlot`, sidebar-breakpoint media query                                                                                                                                            | `tests/unit/components/layouts/app-layout.styles.test.tsx`, `…/app-layout.styles.tokens.test.ts` (CHANGED; pin the breakpoint to the seam) | OQ-5  |
-| `src/components/layouts/app-shell-loader.ts`    | **NEW**                                                                                                                                                                                                                                                             | `ThemedChunkLoader(ChunkRetryLoader(import "ui-app-shell"))`                                                                                                                                                    | `tests/unit/components/layouts/app-shell-loader.test.tsx` (**NEW**, modelled on `footer-loader.test.tsx`)                                  |       |
-| `src/components/layouts/app-layout.stories.tsx` | CHANGED                                                                                                                                                                                                                                                             | shell loaded, slot stubbed                                                                                                                                                                                      | story coverage                                                                                                                             |       |
-| `src/components/types/layouts/app-layout.ts`    | `ShellFailureHandler` (`(error: unknown) => void`, a named callback alias, exempt under `config/typed-boundary-policy.js:66-68`) and `AppLayoutProps { readonly userMenu?: UserMenuSlot \| undefined; readonly onShellFailure?: ShellFailureHandler \| undefined }` | **NEW**                                                                                                                                                                                                         |
+| File                                                                   | Status                       | Change                                                                                                                                                                                                                                                                               | Direct test                                                                                                                                | Opt.  |
+| ---------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| `src/components/layouts/app-layout.tsx`                                | CHANGED                      | grid frame; `lazy(appShellLoader)` in Suspense with the placeholders; forwards `signOut` and `userMenu`; on the second shell failure calls the injected `onShellFailure` prop (no `src/services/` import, §4.5). Amended 2026-11-06: it now only renders `AppLayoutFrame`, see below | `tests/unit/components/layouts/app-layout.test.tsx` (CHANGED); `tests/unit/components/layouts/app-layout.shell-failure.test.tsx` (**NEW**) | OQ-26 |
+| `src/components/layouts/app-layout.styles.ts`                          | CHANGED                      | frame areas, `headerSlot`, `navSlot`, sidebar-breakpoint media query                                                                                                                                                                                                                 | `tests/unit/components/layouts/app-layout.styles.test.tsx`, `…/app-layout.styles.tokens.test.ts` (CHANGED; pin the breakpoint to the seam) | OQ-5  |
+| `src/components/layouts/app-shell-loader.ts`                           | **NEW**                      | `ThemedChunkLoader(ChunkRetryLoader(import "ui-app-shell"))`                                                                                                                                                                                                                         | `tests/unit/components/layouts/app-shell-loader.test.tsx` (**NEW**, modelled on `footer-loader.test.tsx`)                                  |       |
+| `src/components/layouts/app-layout.stories.tsx`                        | CHANGED                      | shell loaded, slot stubbed                                                                                                                                                                                                                                                           | story coverage                                                                                                                             |       |
+| `src/components/types/layouts/app-layout.ts`                           | **NEW**                      | `AppLayoutProps { readonly userMenu?: UserMenuSlot \| undefined; readonly onShellFailure?: ShellFailureHandler \| undefined }`; the alias is imported (amended 2026-11-06)                                                                                                           | none (type-only)                                                                                                                           |       |
+| `src/components/types/layouts/app-layout-frame.ts`                     | **NEW** (amended 2026-11-06) | `AppLayoutFrameProps`, `AppShellModuleLoader`                                                                                                                                                                                                                                        | none (type-only)                                                                                                                           |       |
+| `src/components/layouts/app-layout-frame.tsx`                          | **NEW** (amended 2026-11-06) | the grid, `Suspense` with the placeholders, `<main>` and the footer; forwards `signOut` and `userMenu`                                                                                                                                                                               | `tests/unit/components/layouts/app-layout-frame.test.tsx`                                                                                  | OQ-5  |
+| `src/components/layouts/use-app-shell.ts`                              | **NEW** (amended 2026-11-06) | `lazy(shellLoader.load())`; a failed load calls `onShellFailure` and renders the placeholders                                                                                                                                                                                        | `tests/unit/components/layouts/use-app-shell.test.tsx`                                                                                     | OQ-26 |
+| `src/components/layouts/app-shell-placeholders.tsx`                    | **NEW** (amended 2026-11-06) | the two `aria-hidden` placeholders                                                                                                                                                                                                                                                   | `tests/unit/components/layouts/app-shell-placeholders.test.tsx`                                                                            |       |
+| `src/components/layouts/use-frame-focus.ts`, `use-header-clearance.ts` | **NEW** (amended 2026-11-06) | arrival focus on `<main>`; `scroll-padding-top` for the header                                                                                                                                                                                                                       | `tests/unit/components/layouts/use-frame-focus.test.tsx`, `use-header-clearance.test.ts`                                                   |       |
+
+**Amended 2026-11-06 (reconciliation with shipped code).** §6.2's amendment and the shipped file put `ShellFailureHandler`
+in `src/routes/types/shell-slot.ts`; `src/components/types/layouts/app-layout.ts` holds only
+`AppLayoutProps` and imports the alias. The plan's row for that file carried the alias with its columns
+shifted, the type text under Status and **NEW** under Change, and it is repaired above. `app-layout.tsx`
+only renders `AppLayoutFrame` with `appShellLoader`, so the rows added above hold what its row credits to
+it: the grid is in `app-layout-frame.tsx`, the lazy shell and the failure call in `use-app-shell.ts`, the
+placeholders in `app-shell-placeholders.tsx`. Since 663151bc all of them load in the `protected-layout`
+chunk, so this section's "eager" means eager relative to `ui-app-shell`, not to the entry.
 
 ### B. Route wiring (`src/routes/`)
 
@@ -1002,14 +1052,14 @@ renders stroke icons with `SvgIcon` and `sx={{ fill: 'none' }}` (research §5, t
 
 ADR-drift surfaces (`config/docs-policy.json`, `architectureDrift.significantPaths`) and this change:
 
-| Guarded path                                                                 | Touched?                                                                                              |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `src/routes/route-composer.tsx`                                              | **yes** (the slot, OQ-17 Option A)                                                                    |
-| `src/routes/registry.ts`                                                     | no: the coming-soon routes go into the already registered `app-routes.ts` and settings contract       |
-| `src/config/**`                                                              | no (the shell is unflagged, OQ-8; the badge has no data path, OQ-2a)                                  |
-| `package.json` `dependencies`                                                | no: `Drawer`, `MenuList`, `MenuItem`, `ClickAwayListener` and `useMediaQuery` ship in `@mui/material` |
-| `.dependency-cruiser.js`, `rsbuild.config.ts`, `config/browser-support.json` | no (a §10 split group in `rsbuild.config.ts` is a contingency only)                                   |
-| `src/routes/route-paths.ts`, `src/routes/app-routes.ts`, settings contract   | changed (AD-13), not ADR-drift surfaces                                                               |
+| Guarded path                                                                 | Touched?                                                                                                                                                       |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/routes/route-composer.tsx`                                              | **yes** (the slot, OQ-17 Option A)                                                                                                                             |
+| `src/routes/registry.ts`                                                     | no: the coming-soon routes go into the already registered `app-routes.ts` and settings contract                                                                |
+| `src/config/**`                                                              | no (the shell is unflagged, OQ-8; the badge has no data path, OQ-2a)                                                                                           |
+| `package.json` `dependencies`                                                | no: `Modal`, `Slide`, `MenuList`, `MenuItem` and `useMediaQuery` ship in `@mui/material` (amended 2026-11-06; the plan named `Drawer` and `ClickAwayListener`) |
+| `.dependency-cruiser.js`, `rsbuild.config.ts`, `config/browser-support.json` | no (a §10 split group in `rsbuild.config.ts` is a contingency only)                                                                                            |
+| `src/routes/route-paths.ts`, `src/routes/app-routes.ts`, settings contract   | changed (AD-13), not ADR-drift surfaces                                                                                                                        |
 
 The gate fires once, on `route-composer.tsx`. OQ-10 is resolved: **no ADR is written** and
 `docs/adr/` is not touched. The pull request carries the `adr:not-required` label (or a `[no-adr]`
@@ -1104,7 +1154,8 @@ only for Lighthouse):
 - **Coverage and mutation.** 100 / 100; every new `src/components/**` and `src/modules/user/**` file
   is in `scripts/ci/mutation-scope.mjs` scope, including `styles.ts`.
 - **Console gate.** Lazy shell and slot tests await `findBy…` for the loaded state; MUI `Drawer`
-  transitions run with reduced motion in tests so no `act()` warning escapes.
+  transitions run with reduced motion in tests so no `act()` warning escapes. Amended 2026-11-06: the
+  drawer is `Modal` plus `Slide` (AD-6), so these are the `Slide` and backdrop transitions.
 - **Gate ratchet.** No file in `config/gate-thresholds.manifest.json` changes.
 
 ## 12. Test strategy
@@ -1163,13 +1214,25 @@ preview and attached to the PR before any baseline is recorded.
   identity kept (owner decision 2026-10-28, §4.1); `session_ended`, first read or re-read → the
   existing link signs out and the identity resets to pending; sign out then a second user → no
   stale name.
+  Amended 2026-11-06 (reconciliation with shipped code): no link is involved, because the chip's read bypasses
+  Apollo (§4.1), and `session_ended` has three causes, of which one ends the session. A transport 401
+  ends it through `session.end(token)` (`current-user-source.ts`). A missing token sends nothing and
+  ends nothing. A GraphQL error whose `extensions.status` is 401 (`denied` in
+  `CurrentUserResponseParser`) leaves the session open. All three reset the chip to pending
+  (`use-current-user.ts`). `current-user-source.integration.test.ts` covers the three against the store
+  ("ends the session the 401 answered and reports it ended", "reports a session without a token as
+  ended and sends nothing", the `an extension status of 401` row of "reads %s on the first GraphQL
+  error"). The hook-level case in `use-current-user.integration.test.tsx` ("clears the previous identity
+  when a later read ends the session") drives the transport 401 only.
 - **E2E (desktop projects).** NEW `tests/e2e/modules/app-shell.spec.ts`: Settings from the sidebar
   and from the chip, sign out from both, `aria-current` on `/settings` and none on `/`, every product
   row and sub-item navigating to its coming-soon route with that row current, no badge on any
   page, a direct load of each of the eight routes (NEW
   `tests/e2e/modules/coming-soon.spec.ts`: heading, title, home link, unauthenticated redirect and
   return, and not-found for the settings children while `userSettings` is off), and the public-route leak guard (no request for `ui-app-shell`, `user-menu` or
-  `current-user` on the seven Lighthouse public URLs). NEW `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`:
+  `current-user` on the seven Lighthouse public URLs; amended 2026-11-06 for 663151bc: nor for
+  `protected-layout`, which §3.2 marks "never" on public routes and `SHELL_CHUNK` in
+  `tests/e2e/modules/app-shell.spec.ts` now names). NEW `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`:
   `expectTabOrder` with `visibleFocus: true` at 1440 (logo, chip, handle, the five product rows,
   Settings, the Settings chevron, Sign out; on `/settings` the three sub-items follow the chevron),
   at 1024 the same (the tablet panel carries the owner-approved handle, F-10) and at 375 (logo,
@@ -1182,7 +1245,8 @@ preview and attached to the PR before any baseline is recorded.
   (lands on `/settings` with `<main>` focused) and tap the avatar then Sign out (lands on
   `/sign-in`), `expectTouchTarget` on logo, avatar, burger, close, drawer rows, drawer Sign out, the
   mobile menu items (not bell and list: disabled, their 40 px pitch is a recorded sizing gap, OQ-15
-  resolved), no horizontal overflow at device width and at 320 (OQ-24).
+  resolved), no horizontal overflow at device width and at 320 (OQ-24). Amended 2026-11-06: this spec
+  measures with its own `expectTapArea`, not `expectTouchTarget`; see PRD NFR-3.
 - **Existing e2e that change.** `tests/e2e/modules/home.spec.ts`, `tests/e2e/a11y/home-keyboard.a11y.spec.ts`,
   `tests/e2e/utils/sign-out.ts` (signs out through the shell), `tests/e2e/modules/user/features/settings/utils/settings-page.ts`,
   `tests/e2e/modules/user/features/settings/settings.spec.ts`, `…/settings-save.spec.ts`,

@@ -18,5 +18,5 @@ export default {
       paddingLeft: '13px',
     },
   },
-  sticky: { position: 'sticky', top: STICKY_TOP },
+  sticky: { position: 'sticky', top: STICKY_TOP, zIndex: 2 },
 } as const;

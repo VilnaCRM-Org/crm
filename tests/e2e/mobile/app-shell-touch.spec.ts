@@ -1,7 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  PROFILE_NODE,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   burgerOf,
   chipOf,
@@ -53,17 +56,28 @@ async function expectTapArea(control: Locator, name: string): Promise<void> {
     const box = element.getBoundingClientRect();
     const centreX = box.left + box.width / 2;
     const centreY = box.top + box.height / 2;
-    const reach = half - 1;
+    const reach = half - 0.5;
+    const circular = Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) >= half;
     const probes = [
       [0, 0],
       [-reach, 0],
       [reach, 0],
       [0, -reach],
       [0, reach],
+      ...(circular
+        ? []
+        : [
+            [-reach, -reach],
+            [reach, -reach],
+            [-reach, reach],
+            [reach, reach],
+          ]),
     ];
 
     return probes.every(([dx, dy]) => {
-      const hit = document.elementFromPoint(centreX + (dx ?? 0), centreY + (dy ?? 0));
+      const x = Math.min(centreX + (dx ?? 0), window.innerWidth - 1);
+      const y = Math.min(centreY + (dy ?? 0), window.innerHeight - 1);
+      const hit = document.elementFromPoint(x, y);
 
       return hit !== null && element.contains(hit);
     });
@@ -276,6 +290,12 @@ test.describe('App shell on touch devices (issue #362)', () => {
     page,
   }) => {
     await openAt(page, ROUTE_PATHS.home);
+    await expect(chipOf(page)).toHaveAccessibleName(
+      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+    );
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
     const requests: string[] = [];
     page.on('request', (request) => requests.push(request.url()));
 
@@ -342,6 +362,19 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect(drawerOf(page)).toBeVisible();
 
     await expectTapArea(closeOf(page), 'close');
+    await expectTapArea(drawerLinkOf(page, 'boards'), 'drawer boards at 320 px');
+    await expectTapArea(drawerSignOutOf(page), 'drawer sign out at 320 px');
+  });
+
+  test('scrolls the drawer to a reachable Sign out on a short viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 480 });
+    await openAt(page, ROUTE_PATHS.settings);
+    await burgerOf(page).tap();
+    await expect(drawerOf(page)).toBeVisible();
+
+    await drawerSignOutOf(page).scrollIntoViewIfNeeded();
+
+    await expect(drawerSignOutOf(page)).toBeInViewport({ ratio: 1 });
   });
 
   test('has no horizontal overflow at device width, with the drawer open', async ({ page }) => {

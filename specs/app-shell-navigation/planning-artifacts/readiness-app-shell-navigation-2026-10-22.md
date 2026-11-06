@@ -3,7 +3,7 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-05
+revised: 2026-11-06
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
@@ -24,8 +24,8 @@ inputDocuments:
 
 **Current verdict: READY as of re-review 2 (2026-10-23), pre-amendment** (0 Blocker, 0 Major,
 3 Minor; see "Re-review 2 (2026-10-23)" below). The bundle was amended afterwards, on 2026-10-27,
-2026-10-28, 2026-10-29, 2026-11-02, 2026-11-03, 2026-11-04 and 2026-11-05, and readiness was not
-re-run on any of the amended text. Those amendments record product-owner decisions taken during
+2026-10-28, 2026-10-29, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05 and 2026-11-06, and readiness
+was not re-run on any of the amended text. Those amendments record product-owner decisions taken during
 implementation and review and the shipped design that followed them:
 
 - 2026-10-27 to 2026-10-29: the 42 px drawer sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph
@@ -37,6 +37,9 @@ implementation and review and the shipped design that followed them:
 - 2026-11-04: the settings page centred (DV-12) and the handle moved to the sidebar edge (DV-13).
 - 2026-11-05: the dated notes for DV-11 and DV-13 and a reconciliation of the bundle with the
   shipped code, which also gave the brief its first dated banners.
+- 2026-11-06: a further reconciliation with the shipped code: V-9 closed and P-62 filled, the drawer
+  and menu primitives, the tablet rail handle's `right: 28px`, `expectTapArea` and the three
+  `EXEMPT_RENDER_PATH_FILES` entries.
 
 The dated notes are in the PRD, UX spec, architecture and epics, and since 2026-11-05 in the brief.
 The first pass and re-review 1 that follow are superseded history, kept for the record.

@@ -462,6 +462,10 @@ moves with the transition and clears the title by 3 px at every width. Desktop i
 and 57 from the wrapper); tablet moves 7 px left, to 215 and 53. The chevron turns over the same
 200 ms, and neither animates under `prefers-reduced-motion`.
 
+Amended 2026-11-06 (reconciliation with shipped code): three handles take `right: -9px`. The tablet
+rail's keeps its 9 px overhang past the 76 px panel as `right: 28px`, because its wrapper is 113 px
+wide with a 37 px right padding (113 − 28 − 32 = 53), so it still lands at 53,15.
+
 The labels used to wrap inside the narrow panel while it opened, so rows started at up to 184 px
 tall and snapped back to 54. Sidebar rows now hold a 238 px `min-width` and the list clips them, so
 every row keeps its final position from the first frame, and on reopening, never on page load, the
@@ -505,14 +509,15 @@ text against every other control's box, and a chevron, which holds no text, is c
 Measured on the 3004 dev server with `getBoundingClientRect()` (text rows with a `Range` over the
 label); the rows not listed here are in the tables above.
 
-| Row                          | Width | Figma          | Measured       | Result |
-| ---------------------------- | ----- | -------------- | -------------- | ------ |
-| P-13 Settings title start    | 1440  | x 262, y 92    | x 262, y 92    | pass   |
-| P-26 Settings title start    | 1024  | x 263, y 88    | x 263, y 88    | pass   |
-| P-51 desktop rail page start | 1440  | 125, title 137 | 84, title 179  | DV-12  |
-| P-58 first sub-item text     | 1024  | x 73, y 503    | x 73, y 503    | pass   |
-| P-64 current sub-item tint   | 1440  | 12,419, 238×42 | 12,419, 238×42 | pass   |
-| P-65 current sub-item tint   | 1024  | 13,495, 238×46 | 13,495, 238×46 | pass   |
+| Row                          | Width | Figma                | Measured             | Result |
+| ---------------------------- | ----- | -------------------- | -------------------- | ------ |
+| P-13 Settings title start    | 1440  | x 262, y 92          | x 262, y 92          | pass   |
+| P-26 Settings title start    | 1024  | x 263, y 88          | x 263, y 88          | pass   |
+| P-51 desktop rail page start | 1440  | 125, title 137       | 84, title 179        | DV-12  |
+| P-58 first sub-item text     | 1024  | x 73, y 503          | x 73, y 503          | pass   |
+| P-62 tablet rail page start  | 1024  | 126,64, title 138,88 | 126,64, title 138,88 | pass   |
+| P-64 current sub-item tint   | 1440  | 12,419, 238×42       | 12,419, 238×42       | pass   |
+| P-65 current sub-item tint   | 1024  | 13,495, 238×46       | 13,495, 238×46       | pass   |
 
 P-51 departs from Figma by owner decision (DV-12 above). P-58's text box is 18 px tall in Figma and
 starts at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
@@ -520,7 +525,8 @@ The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`.
 rail content start, was measured on 2026-11-05 (UX 10.2, V-9): Figma `377:20163` draws the content
 at x 126 and 773 wide, with the title at x 138. The tablet rail carries the 37 px gap in its own
 width, a 113 px wrapper with a 37 px right padding, so the panel and handle animate together and
-the page starts as drawn.
+the page starts as drawn. P-62 was read in a browser at 1024 px, with the navigation at x 13 and
+76 wide and the handle at x 66; that reading did not record the content width.
 
 ### Visual baselines (Story 3.4)
 

@@ -16,7 +16,7 @@ export default function UserMenuItems({
 }: UserMenuItemsProps): JSX.Element {
   const { t } = useTranslation();
   const leave = useCallback(() => {
-    menu.close();
+    menu.dismiss();
     signOut();
   }, [menu, signOut]);
 

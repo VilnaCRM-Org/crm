@@ -277,6 +277,17 @@ describe('UserMenu', () => {
     expect(container).not.toContainHTML('MuiTouchRipple');
   });
 
+  it('keeps focus on the chip when Sign out does not leave the page', async () => {
+    const user = userEvent.setup();
+    renderMenu();
+    await user.click(chip());
+
+    await user.click(screen.getByRole('menuitem', { name: 'Вийти' }));
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(chip()).toHaveFocus();
+  });
+
   it('shows the person glyph instead of letters for an empty monogram', () => {
     renderMenu({ identity: { displayName: '', monogram: '' } });
 
