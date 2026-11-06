@@ -529,6 +529,12 @@ sub-items leave the Tab order and the accessibility tree. The sidebar and the dr
 hook and the toggle through `UINavigationList`; the rail renders no group and no toggle (its former
 sub-items are top-level pills). The change is instant; no transition is drawn.
 
+Amended 2026-11-06 (gate finding, FR-8.1): the rail swap unmounted the group, so a toggle was lost
+when the sidebar collapsed and reopened. `UINavigationList` now calls the hook above that swap and
+passes `GroupDisclosure` down to `NavigationGroup`, whose `stateOf(group)` returns that group's
+`GroupDisclosureState`. The hook takes no argument and keys overrides by group id. An override
+still drops on the next pathname change.
+
 _Rejected:_ a disclosure on the Settings link itself (one control both navigating and toggling
 breaks FR-8.1 N), and persisting the state per viewer (not asked; OQ-4's "not persisted" applies
 to the shell's toggles alike).

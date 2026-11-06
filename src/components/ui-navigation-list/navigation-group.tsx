@@ -8,15 +8,15 @@ import groupStyles from './group-styles';
 import NavigationGroupToggle from './navigation-group-toggle';
 import NavigationRow from './navigation-row';
 import NavigationSubList from './navigation-sub-list';
-import useGroupDisclosure from './use-group-disclosure';
 
 export default function NavigationGroup({
   layout,
   group,
   currentId,
+  disclosure,
 }: NavigationGroupProps): JSX.Element {
   const { t } = useTranslation();
-  const { expanded, toggle } = useGroupDisclosure(group.href);
+  const { expanded, toggle } = disclosure.stateOf(group);
   const listId = useId();
 
   return (

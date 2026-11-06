@@ -8,6 +8,7 @@ import NavigationRailItems from './navigation-rail-items';
 import NavigationSignOut from './navigation-sign-out';
 import styles from './styles';
 import useCurrentNavigationItem from './use-current-navigation-item';
+import useGroupDisclosure from './use-group-disclosure';
 
 export default function UINavigationList({
   layout,
@@ -16,6 +17,7 @@ export default function UINavigationList({
   signOut,
 }: UINavigationListProps): JSX.Element {
   const currentId = useCurrentNavigationItem(items);
+  const disclosure = useGroupDisclosure();
   const scrolls = layout !== 'drawer';
 
   return (
@@ -28,7 +30,12 @@ export default function UINavigationList({
       {variant === 'rail' && layout !== 'drawer' ? (
         <NavigationRailItems layout={layout} items={items} currentId={currentId} />
       ) : (
-        <NavigationExpandedItems layout={layout} items={items} currentId={currentId} />
+        <NavigationExpandedItems
+          layout={layout}
+          items={items}
+          currentId={currentId}
+          disclosure={disclosure}
+        />
       )}
       <NavigationSignOut layout={layout} variant={variant} onSignOut={signOut} />
     </Box>

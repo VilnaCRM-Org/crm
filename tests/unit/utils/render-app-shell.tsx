@@ -1,4 +1,5 @@
 import { render, type RenderResult, screen } from '@testing-library/react';
+import type { i18n as I18nType } from 'i18next';
 import type { JSX, ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router';
@@ -22,6 +23,8 @@ interface AppShellRenderOptions {
   readonly signOut?: (() => void) | undefined;
 }
 
+type AppShellRenderResult = RenderResult & { readonly i18n: I18nType };
+
 const ignoreChunkFailure = (): undefined => undefined;
 
 function BoundUserMenu({ signOut, onAvatar }: ShellSlotHostProps): JSX.Element {
@@ -33,7 +36,7 @@ const renderAppShell = async ({
   width,
   page,
   signOut = jest.fn(),
-}: AppShellRenderOptions): Promise<RenderResult> => {
+}: AppShellRenderOptions): Promise<AppShellRenderResult> => {
   stubViewportWidth(width);
   const i18n = createAppShellLocaleI18n('uk', ['en', 'uk']);
   lazyCatalogLoader.register(i18n, { en: comingSoonEn, uk: comingSoonUk });
@@ -55,7 +58,7 @@ const renderAppShell = async ({
   await screen.findByRole('banner');
   await screen.findByRole('contentinfo');
 
-  return view;
+  return { ...view, i18n };
 };
 
 export default renderAppShell;

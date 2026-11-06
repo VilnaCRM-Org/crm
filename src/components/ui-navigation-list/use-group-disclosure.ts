@@ -1,21 +1,27 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { matchPath, useLocation } from 'react-router';
 
-import type { GroupDisclosureState } from '@/components/types/ui-navigation-list';
+import type {
+  DisclosureGroup,
+  GroupDisclosure,
+  GroupDisclosureState,
+} from '@/components/types/ui-navigation-list';
 
-export default function useGroupDisclosure(href: string): GroupDisclosureState {
+export default function useGroupDisclosure(): GroupDisclosure {
   const { pathname } = useLocation();
-  const routeExpanded = matchPath({ path: href, end: false }, pathname) !== null;
-  const [override, setOverride] = useState<boolean | null>(null);
+  const [overrides, setOverrides] = useState<Readonly<Record<string, boolean>>>({});
   const [overridePath, setOverridePath] = useState(pathname);
 
   if (overridePath !== pathname) {
     setOverridePath(pathname);
-    setOverride(null);
+    setOverrides({});
   }
 
-  const expanded = override ?? routeExpanded;
-  const toggle = useCallback(() => setOverride(!expanded), [expanded]);
+  const stateOf = ({ id, href }: DisclosureGroup): GroupDisclosureState => {
+    const expanded = overrides[id] ?? matchPath({ path: href, end: false }, pathname) !== null;
 
-  return { expanded, toggle };
+    return { expanded, toggle: () => setOverrides({ ...overrides, [id]: !expanded }) };
+  };
+
+  return { stateOf };
 }
