@@ -25,6 +25,14 @@ function Probe(): JSX.Element {
       <main ref={focusOnArrival} tabIndex={-1}>
         <span data-location={location.pathname}>{location.pathname}</span>
       </main>
+    </>
+  );
+}
+
+function NavigationProbe(): JSX.Element {
+  return (
+    <>
+      <HeaderLogo layout="desktop" />
       <p>{`navigation ${useNavigationType()}`}</p>
     </>
   );
@@ -120,14 +128,27 @@ describe('HeaderLogo', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
-  it('replaces the entry when already on / and still focuses main', async () => {
+  it('replaces the entry when already on /, with no arrival effect in the way', async () => {
     const user = userEvent.setup();
-    renderOn('/');
+    renderShell(
+      <Routes>
+        <Route path="*" element={<NavigationProbe />} />
+      </Routes>,
+      { path: '/' }
+    );
     expect(screen.getByText('navigation POP')).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'VilnaCRM' }));
 
     expect(screen.getByText('navigation REPLACE')).toBeInTheDocument();
+  });
+
+  it('still focuses main when already on /', async () => {
+    const user = userEvent.setup();
+    renderOn('/');
+
+    await user.click(screen.getByRole('link', { name: 'VilnaCRM' }));
+
     expect(screen.getByRole('main')).toHaveFocus();
   });
 

@@ -68,7 +68,7 @@ describe('CollapseHandle', () => {
       renderShell(<CollapseHandle layout={layout} collapsed={collapsed} onToggle={jest.fn()} />);
 
       expect(screen.getByRole('button')).toHaveStyle({
-        right: '-9px',
+        right: layout === 'tablet' && collapsed ? '28px' : '-9px',
         top: '15px',
         width: size,
         height: size,

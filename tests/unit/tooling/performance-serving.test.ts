@@ -5,6 +5,7 @@ import path from 'path';
 
 import {
   AUTH_FORM_CHUNKS,
+  AUTH_PAGE_CHUNKS,
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
   authPageVendorsCacheGroup,
@@ -570,6 +571,13 @@ describe('performance serving config', () => {
         'authForms: authFormsCacheGroup(), authPageVendors: authPageVendorsCacheGroup(), },'
     );
     expect(authPageVendorsCacheGroup().name).toBe('auth-page-vendors');
+    expect(
+      AUTH_PAGE_CHUNKS.map((chunk) =>
+        readFile('src/modules/user/features/auth/routes/index.ts').includes(
+          `webpackChunkName: "${chunk}"`
+        )
+      )
+    ).toEqual([true, true]);
     expect([authFormsVendorsCacheGroup().name, authFormsCacheGroup().name]).toEqual([
       'auth-forms-vendors',
       'auth-forms',

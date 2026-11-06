@@ -19,7 +19,7 @@ const MENU = 'Меню користувача';
 
 const mapper = new UserDisplayNameMapper();
 const ready = mapper.fromFullName(buildFullName());
-const long = mapper.fromFullName(`${buildFullName()} Дуже-Довгопрізвищенко-Довгопрізвищенко`);
+const long = mapper.fromFullName('Олександр Дуже-Довгопрізвищенко-Довгопрізвищенко');
 
 const states: Record<string, MenuState> = {
   Ready: { identity: ready, chipName: `${ready.displayName}, ${MENU}` },

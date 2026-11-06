@@ -26,12 +26,15 @@ const renderItems = (props: Partial<Props> = {}, locale: 'en' | 'uk' = 'en'): vo
 };
 
 describe('UserMenuItems', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'matchMedia');
+  });
+
   it('renders no MUI ripple in an open menu under reduced motion', () => {
     stubMotionPreference(true);
     renderItems();
 
     expect(screen.getByRole('menu')).not.toContainHTML('MuiTouchRipple');
-    Reflect.deleteProperty(window, 'matchMedia');
   });
 
   it('is a menu named User menu with My profile, Settings and Sign out', () => {

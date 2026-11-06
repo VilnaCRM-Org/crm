@@ -43,6 +43,7 @@ if (isIntegration) {
 const config: Config = {
   preset: 'ts-jest',
   clearMocks: true,
+  workerIdleMemoryLimit: '1500MB',
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'babel',

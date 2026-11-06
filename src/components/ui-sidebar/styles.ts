@@ -8,9 +8,11 @@ const REDUCED_MOTION = '@media (prefers-reduced-motion: reduce)';
 const wrapper = {
   position: 'relative',
   flexShrink: 0,
-  transition: 'width 200ms ease-out',
+  transition: 'width 200ms ease-out, padding-right 200ms ease-out',
   [REDUCED_MOTION]: { transitionDuration: '0s' },
 };
+
+const tabletWrapper = { ...wrapper, boxSizing: 'border-box' };
 
 const panel = {
   boxSizing: 'border-box',
@@ -38,6 +40,8 @@ const handle = {
   boxShadow: customColors.shell.handleShadow,
   color: customColors.text.secondary,
   cursor: 'pointer',
+  transition: 'right 200ms ease-out',
+  [REDUCED_MOTION]: { transitionDuration: '0s' },
   '&:focus-visible': {
     outline: `2px solid ${customColors.text.dark}`,
     outlineOffset: '2px',
@@ -63,10 +67,13 @@ const glyphTurn = {
 export default {
   wrapper: {
     desktop: {
-      expanded: { ...wrapper, width: '238px' },
+      expanded: { ...wrapper, width: layoutStyles.sidebarExpandedWidth },
       rail: { ...wrapper, width: '72px' },
     },
-    tablet: { expanded: { ...wrapper, width: '238px' }, rail: { ...wrapper, width: '76px' } },
+    tablet: {
+      expanded: { ...tabletWrapper, width: layoutStyles.sidebarExpandedWidth, paddingRight: 0 },
+      rail: { ...tabletWrapper, width: '113px', paddingRight: '37px' },
+    },
   },
   reveal: { '& li span, & li button[aria-expanded] svg': revealing },
   panel: {
@@ -88,7 +95,7 @@ export default {
     },
     tablet: {
       expanded: { ...handle, width: '32px', height: '32px' },
-      rail: { ...handle, width: '32px', height: '32px' },
+      rail: { ...handle, right: '28px', width: '32px', height: '32px' },
     },
   },
   handleGlyph: {

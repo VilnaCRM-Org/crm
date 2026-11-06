@@ -517,9 +517,10 @@ label); the rows not listed here are in the tables above.
 P-51 departs from Figma by owner decision (DV-12 above). P-58's text box is 18 px tall in Figma and
 starts at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
 The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`. P-62, the tablet
-rail content start, was measured on 2026-11-05 (UX 10.2, V-9): Figma `377:20163` draws the content at
-x 126 and 773 wide, with the title at x 138. The tablet page ships following the rail edge at x 89,
-title x 101, so this row is an open difference awaiting the owner's decision.
+rail content start, was measured on 2026-11-05 (UX 10.2, V-9): Figma `377:20163` draws the content
+at x 126 and 773 wide, with the title at x 138. The tablet rail carries the 37 px gap in its own
+width, a 113 px wrapper with a 37 px right padding, so the panel and handle animate together and
+the page starts as drawn.
 
 ### Visual baselines (Story 3.4)
 

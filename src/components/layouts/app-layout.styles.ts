@@ -13,6 +13,7 @@ const NAV_PANEL_MAX_HEIGHT = `calc(100vh - ${NAV_VIEWPORT_GAP}px)`;
 
 export default {
   sidebarBreakpoint: SIDEBAR_BREAKPOINT,
+  sidebarExpandedWidth: '238px',
   headerHeight: HEADER_HEIGHT,
   frame: {
     flexGrow: 1,
