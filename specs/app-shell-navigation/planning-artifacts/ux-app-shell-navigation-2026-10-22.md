@@ -34,8 +34,9 @@ inputDocuments:
 **Author:** ux-designer (Sally), autonomous run **Date:** 2026-10-22 (revised 2026-11-03: the
 userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
 edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: V-9 closed and P-62 filled, the
-tablet rail handle's `right`, the drawer primitive, the page content following the rail and the P-62
-width readings) **Feature:** `app-shell-navigation`
+tablet rail handle's `right`, the drawer primitive, the page content following the rail, the P-62
+width readings, and the owner decisions DV-14 (the badge colour) and the dropped undrawn header
+state rows, §10.2) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -164,23 +165,23 @@ All boxes are x, y, w × h in CSS px, relative to the header box. Source: resear
 
 ### 3.1 Desktop 1440 (`313:10479`)
 
-| Element        | Node                   | Box                   | Style                                                                                                  |
-| -------------- | ---------------------- | --------------------- | ------------------------------------------------------------------------------------------------------ |
-| Header         | `313:10479`            | 0,0, 1440×64          | **no fill** (page `#FBFBFB` shows), 1 px `#E1E7EA` inside, all 4 sides (OQ-20)                         |
-| Logo           | `I313:10479;282:14403` | 32,8, 143×48.12       | artwork of `vilna-logo.svg`, which is 143×50 (viewBox `0 0 143 50`), not 143×48.12: see §3.4           |
-| Right cluster  | `…;282:14456`          | 600,8, 828×48, gap 10 | right edge 1428                                                                                        |
-| Search         | `…;282:14415`          | 600,8, 477×48         | rest: white, `#D0D4D8` 1 px, r 8; disabled `439:19485`: `#EAECEE`, no border                           |
-| Magnifier      | `…;282:14418`          | 14,14 in search, 20   | filled vector `#969B9D` (V-7)                                                                          |
-| Placeholder    | `…;282:14416`          | x 44 in search        | "Щось шукаєте?", Inter 500 14/18                                                                       |
-| Bell button    | `…;282:14426`          | 1087,8, 48×48, r 42   | rest `#FBFBFB`, `#D0D4D8` 1 px; glyph `bell-01` 20 px stroke 1.667                                     |
-| Bell badge     | `…;282:14434`          | 34,30 in button, 18   | `#1EAEFF` r 45; digits from the `count` prop (PRD FR-19); its story passes "1"; no page passes a count |
-| List button    | `…;282:14436`          | 1145,8, 48×48         | as bell; glyph `dotpoints-01` 20 px                                                                    |
-| List badge     | `…;282:14438`          | 18                    | as the bell badge; its story passes "8"                                                                |
-| User chip      | `…;282:14445`          | 1203,8, 225×48, r 8   | white, `#D0D4D8` 1 px                                                                                  |
-| Chip inner row | —                      | 8,7, gap 10, centred  | avatar → name → caret                                                                                  |
-| Avatar         | `…;282:14453`          | 32 circle             | monogram (no photo field; research §7.3.5)                                                             |
-| Name           | `…;282:14451`          | text box 121 w        | Inter 500 14/18 `#1A1C1E`, ellipsis past 121 (FR-5.1)                                                  |
-| Caret          | `…;282:14454`          | 192,14 in chip, 20    | `chevron-left` rotated to point down, `#969B9D`, 13 px right gap                                       |
+| Element        | Node                   | Box                   | Style                                                                                                                                                                                                         |
+| -------------- | ---------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header         | `313:10479`            | 0,0, 1440×64          | **no fill** (page `#FBFBFB` shows), 1 px `#E1E7EA` inside, all 4 sides (OQ-20)                                                                                                                                |
+| Logo           | `I313:10479;282:14403` | 32,8, 143×48.12       | artwork of `vilna-logo.svg`, which is 143×50 (viewBox `0 0 143 50`), not 143×48.12: see §3.4                                                                                                                  |
+| Right cluster  | `…;282:14456`          | 600,8, 828×48, gap 10 | right edge 1428                                                                                                                                                                                               |
+| Search         | `…;282:14415`          | 600,8, 477×48         | rest: white, `#D0D4D8` 1 px, r 8; disabled `439:19485`: `#EAECEE`, no border                                                                                                                                  |
+| Magnifier      | `…;282:14418`          | 14,14 in search, 20   | filled vector `#969B9D` (V-7)                                                                                                                                                                                 |
+| Placeholder    | `…;282:14416`          | x 44 in search        | "Щось шукаєте?", Inter 500 14/18                                                                                                                                                                              |
+| Bell button    | `…;282:14426`          | 1087,8, 48×48, r 42   | rest `#FBFBFB`, `#D0D4D8` 1 px; glyph `bell-01` 20 px stroke 1.667                                                                                                                                            |
+| Bell badge     | `…;282:14434`          | 34,30 in button, 18   | `#1EAEFF` r 45; digits from the `count` prop (PRD FR-19); its story passes "1"; no page passes a count. Amended 2026-11-06 (owner decision, DV-14): `#D0D4D8`, white digits, the disabled variant `451:26214` |
+| List button    | `…;282:14436`          | 1145,8, 48×48         | as bell; glyph `dotpoints-01` 20 px                                                                                                                                                                           |
+| List badge     | `…;282:14438`          | 18                    | as the bell badge; its story passes "8"                                                                                                                                                                       |
+| User chip      | `…;282:14445`          | 1203,8, 225×48, r 8   | white, `#D0D4D8` 1 px                                                                                                                                                                                         |
+| Chip inner row | —                      | 8,7, gap 10, centred  | avatar → name → caret                                                                                                                                                                                         |
+| Avatar         | `…;282:14453`          | 32 circle             | monogram (no photo field; research §7.3.5)                                                                                                                                                                    |
+| Name           | `…;282:14451`          | text box 121 w        | Inter 500 14/18 `#1A1C1E`, ellipsis past 121 (FR-5.1)                                                                                                                                                         |
+| Caret          | `…;282:14454`          | 192,14 in chip, 20    | `chevron-left` rotated to point down, `#969B9D`, 13 px right gap                                                                                                                                              |
 
 Cluster x positions above are derived from the FOUND cluster box and gap (600 + 477 + 10 = 1087,
 and so on); the sum 477 + 10 + 48 + 10 + 48 + 10 + 225 = 828 matches the FOUND cluster width.
@@ -639,7 +640,8 @@ the parity artifact the owner reviews with the team lead (PRD FR-19); no page re
 tolerance is a defect and is fixed; it is never absorbed by widening the tolerance or recorded as
 a deviation. Only §10.3's allowed differences may differ from Figma. Every row passes before any
 visual baseline is recorded, and the filled table goes into the PR. Amended 2026-11-05: §10.3's
-owner-approved deviations (DV-10 to DV-13) may differ too; nothing else may.
+owner-approved deviations (DV-10 to DV-13) may differ too; nothing else may. Amended 2026-11-06: DV-14 is
+listed with them (§10.3).
 
 ### 10.2 Table to fill during implementation (Figma column FOUND; measured column pending)
 
@@ -743,6 +745,15 @@ search rest / hover / active / disabled (§1); the user menu open and its hovere
 drawer with its scrim (`rgba(54,79,93,.05)`, 4 px backdrop blur); the rail and its tooltip (OQ-4 resolved).
 A state row passes only when every painted value equals Figma.
 
+**Amended 2026-11-06 (owner decision): the undrawn header states are dropped until those controls are
+enabled.** The round buttons' rest, hover and open states and the search field's rest, hover and active
+states are no longer required as Storybook state rows (this section's two paragraphs above and the
+matching "rest / hover / open, search rest / hover / active" state rows) while the controls ship
+disabled; the disabled variants (`451:26214`, `439:19485`) are what the app renders and remain measured.
+The requirement returns when those controls are enabled. `customColors.shell.searchHoverShadow`, which
+only the dropped search hover row used, is deleted from code in the same change, and the hover shadow
+cell of §6.2 stays as a record of Figma, not as a build requirement.
+
 ### 10.3 Deviations register (owner decision 2026-10-23: full Figma parity)
 
 Reverted to Figma (each former deviation is now built as drawn):
@@ -771,13 +782,18 @@ Owner-approved visible deviation (outside classes (a) to (d)), named and the onl
 | DV-10 | The expanded tablet sidebar `313:10490` draws no collapse handle; the build shows one at 222,15 in the panel (abs 235,89), 32×32, the tablet rail handle `378:21542`'s box and style, so the 1024 rail is reachable (P-63) | owner, 2026-10-23, "Add handle on tablet" (F-10) |
 
 Amended 2026-11-05 (owner decisions after 2026-10-23): "the only one" above is the record of the plan
-as approved. These three now stand beside DV-10, each measured in the shell README.
+as approved. These three now stand beside DV-10, each measured in the shell README. Amended 2026-11-06:
+DV-14 stands beside them (table below the three).
 
 | Id                                                                                                                                    | Deviation from the Figma frame                                                                                                                                                                                                                                                                                                                       | Approved          |
 | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | [DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26) | The Settings group label's box stops at the chevron's box (136 / 131 / 129 px), so under WCAG 1.4.12 text spacing it wraps instead of running under the chevron; at rest it paints as Figma draws it                                                                                                                                                 | owner, 2026-10-26 |
 | [DV-12](../../../src/components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04)  | `/settings` centres in the content column above 1024 px, and the desktop rail keeps no right margin, which supersedes P-51                                                                                                                                                                                                                           | owner, 2026-11-04 |
 | [DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04)             | All four handles take `right: -9px`: tablet 215,15 and 53,15 instead of 222,15 and 60,15, clearing the title by 3 px, which supersedes P-53 and P-63; the handle rides the width transition and §9 gains its chevron turn and label fade. Amended 2026-11-06: the tablet rail handle keeps that 9 px overhang as `right: 28px` in its 113 px wrapper | owner, 2026-11-04 |
+
+| Id                                                                                                                                          | Deviation from the plan                                                                                                                                                                                                                                                                                         | Approved          |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| [DV-14](../../../src/components/ui-app-shell/README.md#dv-14-the-header-badge-takes-the-disabled-variants-colour-owner-decision-2026-11-06) | The header badge paints `#D0D4D8` with white digits, as Figma's disabled variant `451:26214` draws it (read directly on 2026-11-06: a 48×48 button in `#e1e7ea`, an 18×18 badge in `#d0d4d8`), instead of the `#1EAEFF` of the plan (P-39 to P-42, FR-3, FR-4, FR-19, NFR-4). White on `#D0D4D8` is about 1.5:1 | owner, 2026-11-06 |
 
 Allowed differences (PRD NFR-22), and only these:
 
@@ -800,7 +816,9 @@ Allowed differences (PRD NFR-22), and only these:
   `ComingSoonHomeLink` in the error-page actions row and falls under the existing `#error-page-actions > .MuiButton-contained`
   entry (`axe-config.ts:62`), which PRD NFR-4 enumerates for the eight coming-soon routes. The badge digits
   (white on `#1EAEFF`, 2.46:1) need no entry: badges render only in stories, never on a scanned
-  page (FR-19). No other new exception is allowed. `#969B9D` icons on white (2.81:1) and on `#FBFBFB`
+  page (FR-19). Amended 2026-11-06 (DV-14): the badge is `#D0D4D8`, so the pair is white on `#D0D4D8`,
+  about 1.5:1; it still needs no entry, because the badge sits on a natively disabled control and is
+  `aria-hidden`, the count is carried by the button's description, and production passes no count. No other new exception is allowed. `#969B9D` icons on white (2.81:1) and on `#FBFBFB`
   (≈ 2.7:1) are decorative or natively disabled everywhere except the three active controls below;
   the Settings and Sign out row icons are decorative next to a visible text label, so 1.4.11 is
   met by the label. The natively `disabled`

@@ -789,6 +789,8 @@ null | undefined`, and `HeaderBadgeProps { readonly count?: number | null | unde
   route or composer wiring, no `rsbuild.config.ts`, Dockerfile, `.env.example` or seed-gate change.
   `AppLayout` passes no `badgeCounts`, so production renders no badge (allowed difference NFR-22
   (d)).
+- **Amended 2026-11-06 (owner decision, DV-14).** The badge paints `#D0D4D8` with white digits, the
+  colour of Figma's disabled variant `451:26214`, not `#1EAEFF`; see the shell README, DV-14.
 - **Stories.** `header-icon-button.stories.tsx` and the `UIAppHeader` stories pass exactly
   `{ notifications: 1, tasks: 8 }`; that story is the parity artifact the owner reviews with the
   team lead, and UX §10's badge rows are measured against it. Unit tests cover 0, 1, 2, 5, 8, 21 and

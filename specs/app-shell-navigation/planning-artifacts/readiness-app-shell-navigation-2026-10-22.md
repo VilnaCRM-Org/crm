@@ -41,20 +41,32 @@ implementation and review and the shipped design that followed them:
   and menu primitives, the tablet rail handle's `right: 28px`, `expectTapArea` and the three
   `EXEMPT_RENDER_PATH_FILES` entries. Owner decisions the same day: the `auth-page-vendors` cache group
   approved (architecture §9, §10, Story 3.1) and the page content kept moving with the rail's width
-  transition (UX §9). P-62 passes on position only; its width readings are in UX §10.2.
+  transition (UX §9). P-62 passes on position only; its width readings are in UX §10.2. Owner
+  decisions of 2026-11-06 on the four items below: R-1 closed, the three exemptions approved, the
+  badge colour (DV-14) and the dropped undrawn header states.
 
-**Open as of 2026-11-06.** Readiness was not re-run, so these are not findings of this check. They are
-listed so that the `READY` above is not read as covering them:
+**Open as of 2026-11-06: none.** Readiness was not re-run, so the items below are not findings of this
+check. Four items were listed here as open; the owner decided all of them on 2026-11-06:
 
-- **Brief risk R-1 is OPEN** (not the `R-1` finding of re-review 2 below, which is about P-64 and
-  P-65). The 2026-11-03 banner voids its "Gate the read" mitigation and SM-16, and the chip's read now
-  runs on every pathname change, where a transport 401 ends the session. **Deciding check:** what
-  production returns for the chip's read. The owner has not answered; no mitigation or acceptance is
-  recorded.
-- **The three `EXEMPT_RENDER_PATH_FILES` entries** follow from the owner decision of 2026-11-02;
-  explicit owner approval of the allowlist change is still pending (PRD NFR-6, NFR-15).
-- **The badge colour.** `ui-app-header/styles.ts` ships `#D0D4D8` where FR-3 and NFR-4 say `#1EAEFF`.
-  The owner has been asked; both requirements stay as written until then.
+- **Brief risk R-1** (not the `R-1` finding of re-review 2 below, which is about P-64 and P-65) is
+  **closed** by evidence read from the user-service source, no guard needed. At `v2.8.0` (commit
+  56656f90, the version crm pins) `firewalls.main.security: false` means the chip's read never gets a 401. At `main` (commit a95c1e85) `/api/graphql` is absent from the `PublicAccessResolver` `$rules`,
+  so a valid token answers 200, an invalid, expired or revoked token gets a 401 that correctly ends
+  the session, and no token gets a GraphQL authorization error at 200. The research's sign-out claim
+  (research §7.3 item 1) is superseded and SM-16 stays void. Limits: read from source, not observed on
+  a deployed environment; a gateway in front of the service was not examined. Residual, not fixed: the
+  sandbox's fixed `sandbox-demo-session-token` is not a real token, so a sandbox pointed at a real
+  `main` user-service would end the demo session on the first read.
+- **The three `EXEMPT_RENDER_PATH_FILES` entries** (`auth-session-provider.ts`,
+  `current-user-client.ts`, `current-user-source.ts`) are **approved by the owner**, 2026-11-06 (PRD
+  NFR-6, NFR-15).
+- **The badge colour** is decided: `ui-app-header/styles.ts` ships Figma's `#D0D4D8` (disabled variant
+  `451:26214`, read directly on 2026-11-06) where FR-3 and NFR-4 say `#1EAEFF`. Recorded as DV-14 with
+  dated amendments to FR-3, FR-3.1, FR-4.1, FR-19, NFR-4, NFR-22 and the UX spec. White on `#D0D4D8`
+  is about 1.5:1, on a disabled control whose badge is `aria-hidden`, and production passes no count.
+- **The undrawn header states** (round buttons rest, hover and open; search rest, hover and active)
+  are **dropped** as Storybook state rows until those controls are enabled (UX §10.2); the
+  requirement returns then. `customColors.shell.searchHoverShadow` is deleted from code.
 
 The dated notes are in the PRD, UX spec, architecture and epics, and since 2026-11-05 in the brief.
 The first pass and re-review 1 that follow are superseded history, kept for the record.
@@ -149,7 +161,9 @@ U §4.1 and §4.4 (Figma values FOUND), and add the other drawn boxes the table 
 
 The tablet rail content start stays a V-9 re-measure and is added as P-62 once measured. State rows
 for controls the app never renders active (round header buttons rest / hover / open, search rest /
-hover / active) are measured in Storybook, which U §10.1 must say beside the badge rows.
+hover / active) are measured in Storybook, which U §10.1 must say beside the badge rows. Amended
+2026-11-06 (owner decision): these state rows are dropped while the controls ship disabled; see UX
+§10.2.
 
 ### Majors
 

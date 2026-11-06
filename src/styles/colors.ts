@@ -90,7 +90,6 @@ export const customColors = {
   },
   shell: {
     currentTint: 'rgba(30, 174, 255, 0.1)',
-    searchHoverShadow: '0 4px 9px rgba(74, 78, 95, 0.1)',
     cardShadow: '0 8px 27px rgba(49, 59, 67, 0.05)',
     popoverShadow: '0 8px 27px rgba(49, 59, 67, 0.14)',
     handleShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',

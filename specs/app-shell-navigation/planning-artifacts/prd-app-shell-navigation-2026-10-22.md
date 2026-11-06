@@ -31,7 +31,8 @@ chip's read moved off the container, 0addef83, noted 2026-11-06; 2026-11-03: the
 userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
 edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet rail handle's `right`,
 `expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
-journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27) **Feature:** `app-shell-navigation`
+journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27; owner decisions of 2026-11-06: R-1 closed, the three exemptions approved, the badge
+colour DV-14, the undrawn header states dropped) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -336,6 +337,12 @@ nothing, because no notification destination exists. **Figma:** `…;282:14426` 
 `…;287:14576` 52×52 (tablet), `…;287:14652` bare 24 px glyph (mobile); disabled variant
 `451:26214`; badge `…;282:14434` / `…;287:14578` (18 px, `#1EAEFF`, r 45).
 
+**Amended 2026-11-06 (owner decision, "use all from Figma"; DV-14).** The badge ships `#D0D4D8`, the
+colour the disabled variant `451:26214` draws, not `#1EAEFF`. Figma's disabled variant was read directly
+on 2026-11-06: a 48×48 button in `#e1e7ea` with an 18×18 badge in `#d0d4d8` and white digits
+(`src/components/ui-app-header/styles.ts`). Every header button is disabled, so the badge follows the
+disabled variant. The colour recorded above is the plan as approved. See the shell README, DV-14.
+
 #### FR-3.1 — Bell, desktop and tablet
 
 A round button with the `bell-01` glyph in Figma's disabled round-button style. Its badge renders
@@ -356,6 +363,9 @@ passed as a prop (FR-19); the component holds no count of its own, and productio
 - **E** Given the disabled style, when measured, then the glyph is `#D0D4D8` on `#E1E7EA` with no
   border (research §4.5); it is exempt from 1.4.11 as an inactive component (NFR-4).
 
+Amended 2026-11-06 (owner decision, DV-14): the badge of FR-3 is `#D0D4D8` with white digits, as the
+disabled variant `451:26214` draws it; "Figma's exact badge style" above reads as that variant.
+
 #### FR-3.2 — Bell, mobile
 
 Below the sidebar breakpoint the bell is the bare 24 px glyph at x 200 (research §3.3) with the
@@ -374,6 +384,9 @@ same disabled semantics; Figma draws no badge at mobile, so none renders whateve
 **Class:** disabled with status (OQ-2, RESOLVED by owner 2026-10-23): clicking does nothing. **Figma:**
 `…;282:14436` 48×48 (desktop), `…;287:14580` 52×52 (tablet), `…;287:14653` bare 24 px (mobile);
 glyph `dotpoints-01`; disabled variant `451:26214`; badge `…;282:14438` / `…;287:14581`.
+
+Amended 2026-11-06 (owner decision, DV-14): the list badge is `#D0D4D8` with white digits, as FR-3
+records for the bell.
 
 #### FR-4.1 — Task list, desktop and tablet
 
@@ -494,7 +507,8 @@ and "the existing session link ends the session" apply only to the first.
 - **P** Given `userSettings` on, when `/` renders, then exactly one `currentUser` request is made
   for the chip.
 - **N** Given `userSettings` off, when `/` renders, then zero `currentUser` requests are made
-  (SM-16, R-1) and the chip has no name.
+  (SM-16, R-1) and the chip has no name. Amended 2026-11-06: R-1 is closed (§8) and the flag no
+  longer exists, so this criterion describes a state no build reaches.
 - **N** Given a failed read other than `session_ended`, when the chip renders, then no error text,
   toast or retry control appears and no `console.error` is emitted.
 - **N** Given a chip showing a name, when a pathname change re-reads and the re-read fails with
@@ -1079,6 +1093,8 @@ me to test visual parity with team lead, its not going to any later code").
 - **Stories are the parity artifact.** The header and icon-button stories pass exactly 1 (bell)
   and 8 (list). They are what the owner reviews with the team lead, and the badge parity rows of
   UX §10 are measured against them.
+- **Amended 2026-11-06 (owner decision, DV-14).** The badge paints `#D0D4D8` with white digits, the
+  disabled variant `451:26214`, not `#1EAEFF`.
 - **Announcement.** Only when a badge renders, its count is added to the control's description:
   "1 notification" / "8 tasks" (`uk` "1 сповіщення" / "8 завдань", CLDR plurals: `uk` one / few /
   many / other, `en` one / other).
@@ -1181,7 +1197,10 @@ entry, and it is enumerated here for the eight routes it reaches: `/boards`, `/p
 `/orders`, `/contacts`, `/analytics`, `/settings/integrations`, `/settings/webhooks` and
 `/settings/billing`. The page renders no `#error-page-digits`, and every other text on it meets
 4.5:1 (architecture AV-6). The badge digits (white on `#1EAEFF`, 2.46:1) need no entry: badges render only in stories
-(FR-19), never on a page the browser lane scans. Grey icons `#969B9D` on
+(FR-19), never on a page the browser lane scans. Amended 2026-11-06 (owner decision, DV-14): the badge
+is `#D0D4D8`, so the pair is white on `#D0D4D8`, about 1.5:1. It needs no entry either: the badge sits on
+a natively disabled control (an inactive component, exempt), it is `aria-hidden`, the count reaches
+assistive technology through the button's description, and production passes no count today. Grey icons `#969B9D` on
 white (2.81:1) and on `#FBFBFB` (≈ 2.7:1) are decorative or natively disabled everywhere except
 the three active controls the owner decision below names. Natively `disabled` controls (search, bell, list) are inactive
 user-interface components and are exempt. The former unavailable-row failure (`#D0D4D8`, 1.49:1)
@@ -1265,8 +1284,8 @@ entries: `src/modules/user/features/auth/stores/auth-session-provider.ts`,
 `src/modules/user/features/settings/utils/current-user-source.ts`. They follow from the owner decision
 of 2026-11-02 that moved the chip's read off the container (0addef83), because a container-free
 singleton in a gated directory has to be listed in that policy. That decision did not name these
-entries, and no separate approval of them is on record: explicit owner approval of this allowlist
-change is still pending.
+entries; the owner approved this allowlist change on 2026-11-06 (owner decision), so the three entries
+stand.
 
 ### NFR-7 — Data honesty
 
@@ -1377,8 +1396,8 @@ comments.
 
 **Amended 2026-11-06 (reconciliation with shipped code).** The three `EXEMPT_RENDER_PATH_FILES` entries NFR-6's
 note names are an allowlist change in `config/di-collaborator-policy.js`. They follow from the owner
-decision of 2026-11-02 that moved the chip's read off the container; no other approval of them is on
-record, and explicit owner approval of this allowlist change is still pending.
+decision of 2026-11-02 that moved the chip's read off the container; the owner approved
+this allowlist change on 2026-11-06 (owner decision), so the three entries stand.
 
 ### NFR-16 — Test lanes
 
@@ -1466,6 +1485,11 @@ every story with a visible surface.
   (owner, 2026-10-26, the Settings label's box), DV-12 (owner, 2026-11-04, the settings page centred)
   and DV-13 (owner, 2026-11-04, the handle on the sidebar edge) are owner-approved deviations too,
   recorded in UX §10.3 and the shell README. Any other visible difference is still a defect.
+- **Amended 2026-11-06 (owner decision).** DV-14 joins that list: the header badge paints Figma's
+  disabled-variant `#D0D4D8` (`451:26214`) where the plan specified `#1EAEFF`; the owner's instruction
+  was "use all from Figma". It is a Figma value, so it is not a deviation from the frames; it is listed
+  because it differs from the colour the plan recorded. Allowed difference (a) also no longer asks for
+  the undrawn header states (UX §10.2 amendment of 2026-11-06).
 - **Contrast.** A failure caused by an exact Figma colour is handled only by NFR-4's enumerated
   exceptions.
 
@@ -1477,30 +1501,42 @@ every story with a visible surface.
 | The current `origin/feat/330-user-settings` merged into this branch before readiness (merged: seven commits `c059a45b` to `9c1d2535` touch the user-settings plan, change-password, `use-blur-hold`, `ui-form` stories and a visual spec; re-verified by the readiness check) | readiness, every cited user-settings line |
 | `ProtectedOutletContext.signOut` (#106)                                                                                                                                                                                                                                       | FR-6.4, FR-10, FR-13.5                    |
 | Owner answers to every OQ (recorded 2026-10-23, §9)                                                                                                                                                                                                                           | acceptance criteria, readiness            |
-| user-service release that authenticates `currentUser`                                                                                                                                                                                                                         | chip name in production (OQ-11)           |
+| user-service release that authenticates `currentUser` (amended 2026-11-06: not needed to avoid a sign-out, R-1 closed)                                                                                                                                                        | chip name in production (OQ-11)           |
 | Shell icons and logos exported with `mcp__figma__download_assets` (NFR-22)                                                                                                                                                                                                    | FR-1.1 to FR-13 (research §12.3)          |
 
 ## 8. Risks as verification items
 
-| Id   | Risk                                                                                   | Verified by                                                             |
-| ---- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| R-1  | A chip read on `/` while user-service authenticates nobody signs every user out        | FR-5.3 negative case; e2e request count with the flag off (SM-16)       |
-| R-2  | Shell bytes cost the mobile Lighthouse floor on `/`                                    | NFR-5 measurement; CI Lighthouse (NFR-13)                               |
-| R-3  | The module-barrel slot closes a dependency cycle                                       | `make lint-deps` in architecture (OQ-17)                                |
-| R-4  | The 2FA bundle relies on home's settings link                                          | FR-16 note recorded for #331                                            |
-| R-5  | 134 baseline PNGs exceed CodeRabbit's 100-file limit                                   | review-only mirror PRs                                                  |
-| R-6  | A stacked PR gets no gating CI; a retarget re-shows #354                               | cherry-pick onto a `main`-based branch (C-6)                            |
-| R-7  | Active-row and grey-icon contrast                                                      | OQ-14 resolved: exact colour plus X-1 (NFR-4); axe in three engines     |
-| R-15 | Eight coming-soon routes add baselines, e2e and a11y scans                             | one shared chunk and spec per lane; review-only mirror PRs (R-5)        |
-| R-8  | Lazy catalog missing on `/`                                                            | NFR-9, NFR-14; unit test with a locale helper                           |
-| R-9  | Two independent reads on `/settings`, accepted under OQ-25                             | FR-5.3 edge case; the integration count test and the amended e2e counts |
-| R-10 | Undesigned states get invented                                                         | C-5; review against the research's FOUND list                           |
-| R-11 | Breakpoint switch conflicts with the `lg + 1` convention                               | OQ-5; layout unit tests at 1023, 1024, 1025                             |
-| R-12 | Figma components have no variants or variables                                         | parity table pins measured values                                       |
-| R-13 | With home cleaned up (OQ-7) and the shell chunk failing twice, sign out is unreachable | NFR-18; a failure test of the shell chunk; OQ-7 consequence             |
+| Id   | Risk                                                                                   | Verified by                                                                                                                                       |
+| ---- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R-1  | A chip read on `/` while user-service authenticates nobody signs every user out        | FR-5.3 negative case; e2e request count with the flag off (SM-16). Amended 2026-11-06: CLOSED by user-service source evidence, see the note below |
+| R-2  | Shell bytes cost the mobile Lighthouse floor on `/`                                    | NFR-5 measurement; CI Lighthouse (NFR-13)                                                                                                         |
+| R-3  | The module-barrel slot closes a dependency cycle                                       | `make lint-deps` in architecture (OQ-17)                                                                                                          |
+| R-4  | The 2FA bundle relies on home's settings link                                          | FR-16 note recorded for #331                                                                                                                      |
+| R-5  | 134 baseline PNGs exceed CodeRabbit's 100-file limit                                   | review-only mirror PRs                                                                                                                            |
+| R-6  | A stacked PR gets no gating CI; a retarget re-shows #354                               | cherry-pick onto a `main`-based branch (C-6)                                                                                                      |
+| R-7  | Active-row and grey-icon contrast                                                      | OQ-14 resolved: exact colour plus X-1 (NFR-4); axe in three engines                                                                               |
+| R-15 | Eight coming-soon routes add baselines, e2e and a11y scans                             | one shared chunk and spec per lane; review-only mirror PRs (R-5)                                                                                  |
+| R-8  | Lazy catalog missing on `/`                                                            | NFR-9, NFR-14; unit test with a locale helper                                                                                                     |
+| R-9  | Two independent reads on `/settings`, accepted under OQ-25                             | FR-5.3 edge case; the integration count test and the amended e2e counts                                                                           |
+| R-10 | Undesigned states get invented                                                         | C-5; review against the research's FOUND list                                                                                                     |
+| R-11 | Breakpoint switch conflicts with the `lg + 1` convention                               | OQ-5; layout unit tests at 1023, 1024, 1025                                                                                                       |
+| R-12 | Figma components have no variants or variables                                         | parity table pins measured values                                                                                                                 |
+| R-13 | With home cleaned up (OQ-7) and the shell chunk failing twice, sign out is unreachable | NFR-18; a failure test of the shell chunk; OQ-7 consequence                                                                                       |
 
-Amended 2026-11-06: R-1 is OPEN. Its flag-off verification describes a state no build reaches, and the
-owner has not answered. See the brief's R-1 banner and the readiness summary.
+Amended 2026-11-06 (owner decision): R-1 is **CLOSED** by evidence read from the user-service source, no
+guard needed. At `v2.8.0` (commit 56656f90, the version crm pins), `config/packages/security.yaml` has
+`firewalls.main.security: false`, so this read never gets a 401, whatever the token. At `main` (commit
+a95c1e85), `/api/graphql` is absent from the `$rules` of `PublicAccessResolver` in `config/services.yaml`,
+so `DualAuthenticator` `supports()` runs for any request carrying a token: a valid token answers 200, an
+invalid, expired or revoked token gets a 401 from `onAuthenticationFailure` (which correctly ends the
+session), and a request with no token gets a GraphQL authorization error at 200. The research's claim of a
+sign-out right after login (research §7.3 item 1) is superseded on both versions, and SM-16 stays void.
+The flag-off verification above describes a state no build reaches.
+Limits: read from source at those two commits, not observed on a deployed environment; a gateway in front
+of the service was not examined. Residual, recorded and not fixed: the sandbox's fixed
+`sandbox-demo-session-token` is not a real token, so a sandbox pointed at a real `main` user-service would
+end the demo session on the first read (`src/config/env/sandbox-demo-session-provider.ts`). See the
+brief's R-1 banner.
 
 ## 9. Owner decisions (every question RESOLVED by owner 2026-10-23)
 
@@ -1542,7 +1578,8 @@ as the recommended or stated option on 2026-10-23. OQ-18 and OQ-24 were not aske
 | OQ-28 | Coming-soon page design             | existing tokens and the error-page layout, marked for designer confirmation                                                                               | FR-18.1                      |
 
 **C-9, amended 2026-11-05.** The owner's parity decision stands, with the later owner decisions
-beside it: DV-10 (2026-10-23), DV-11 (2026-10-26), and DV-12 and DV-13 (2026-11-04). See NFR-22.
+beside it: DV-10 (2026-10-23), DV-11 (2026-10-26), and DV-12 and DV-13 (2026-11-04); DV-14 (2026-11-06, the
+badge colour) joins them. See NFR-22.
 
 OQ-25 amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md:1710` ("exactly
 one `CurrentUser` request") and these five assertions: `tests/e2e/modules/user/features/settings/settings.spec.ts:93`,
@@ -1578,7 +1615,7 @@ caller (architecture §5.7).
 Success metrics SM-1 to SM-16 (brief §5) bind unchanged; SM-11 is tightened by NFR-5.
 
 Amended 2026-11-06: SM-16 is void. The brief's 2026-11-03 banner voids "Gate the read" and SM-16, so "bind
-unchanged" holds for SM-1 to SM-15 only; the R-1 row in §8 stays OPEN until the owner answers.
+unchanged" holds for SM-1 to SM-15 only; the R-1 row in §8 was closed by the owner on 2026-11-06 (see the note under §8).
 
 ## 11. Copy (approved by the owner 2026-10-23, OQ-9)
 
