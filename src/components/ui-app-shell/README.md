@@ -118,7 +118,12 @@ Two choices record what Figma leaves open:
 - The desktop frame has no fill, so the sticky header paints the page colour `#FBFBFB`, the colour
   that shows through in the frame.
 - The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. Every header
-  button is disabled, so the badge follows the disabled variant.
+  button is disabled, so the badge follows the disabled variant. The owner approved this on
+  2026-11-06 ("use all from Figma"); see DV-14.
+- The round buttons' rest, hover and open states and the search field's rest, hover and active
+  states are not drawn in the app while those controls ship disabled, so the owner dropped them as
+  required Storybook state rows on 2026-11-06 (UX §10.2). The requirement returns when the controls
+  are enabled.
 
 ## Sidebar
 
@@ -459,6 +464,20 @@ Playwright container and run in CI only.
   focus indicators still reach
   3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
   `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
+
+### DV-14: the header badge takes the disabled variant's colour (owner decision, 2026-11-06)
+
+The plan specified a `#1EAEFF` badge on the bell and list buttons (PRD FR-3, FR-4, FR-19, NFR-4; UX
+§3). Figma's disabled variant `451:26214` was read directly on 2026-11-06 and draws a 48×48 button
+in `#e1e7ea` with an 18×18 badge in `#d0d4d8` and white digits. Every header button ships disabled,
+so the owner asked for all of it to come from Figma ("use all from Figma"), and
+`src/components/ui-app-header/styles.ts` paints the badge `#D0D4D8` with white Inter 500 12/18
+digits. Box, radius and position are unchanged (18 px, radius 45, 34,30 in the button).
+
+Contrast, recorded as it is: white on `#D0D4D8` is about 1.5:1. The badge sits on a natively
+disabled control (an inactive component, exempt from SC 1.4.3 and 1.4.11), it is `aria-hidden`, the
+count reaches assistive technology through the button's description, and production passes no count
+today, so no page renders it. No `A11Y_EXCEPTIONS` entry is added.
 
 ### DV-13: the handle rides the sidebar edge (owner decision, 2026-11-04)
 

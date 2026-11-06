@@ -32,7 +32,8 @@ sign-out latch amendment and the failed chip re-read; each change is marked in p
 amendment or owner decision; 2026-11-03: the userSettings flag removal; 2026-11-04: the settings page
 centred and the handle moved to the sidebar edge; 2026-11-05: reconciliation with shipped code, which
 also marks the 2026-10-27 owner decision on the drawer sub-items in NFR-3's two criteria; 2026-11-06:
-the tablet rail handle's `right`, the drawer and menu primitives and two Story 3.3 test notes)
+the tablet rail handle's `right`, the drawer and menu primitives and two Story 3.3 test notes; owner
+decisions: R-1 closed, the three exemptions approved, DV-14 and the dropped undrawn header states)
 **Feature:**
 `app-shell-navigation`
 
@@ -246,10 +247,10 @@ Each story's own criteria add to these; a story is not done until all of them ho
   is the enumerated parity entry of PRD NFR-4 (X-1 only; Story 3.2), because NFR-22 forbids changing a Figma colour to pass contrast. No `eslint-disable`, `@ts-ignore`, `@ts-expect-error`,
   `depcruise-ignore`, `!` in `src`, `.skip`, `.only`, `.fixme`, `waitForTimeout`, conditional
   `expect` or `data-testid`; no added code comments; a Stryker directive only with the proof
-  CLAUDE.md accepts (NFR-15). Pending, awaiting the owner (2026-11-06): the shipped tree adds three
+  CLAUDE.md accepts (NFR-15). Amended 2026-11-06 (owner decision): the shipped tree adds three
   `EXEMPT_RENDER_PATH_FILES` entries in `config/di-collaborator-policy.js` (`auth-session-provider.ts`,
-  `current-user-client.ts`, `current-user-source.ts`), which this list does not permit; the approval
-  is not recorded and no decision is made here (Story 2.4, PRD NFR-6 and NFR-15).
+  `current-user-client.ts`, `current-user-source.ts`), which this list does not name; the owner
+  approved them on 2026-11-06 (Story 2.4, PRD NFR-6 and NFR-15).
 - **Conventions.** Classes only in non-React `.ts` (no statics, no free functions, no
   function-valued properties of top-level object literals); types in type-only `types/` files
   imported with `import type`; approved class suffixes; components reach the container only through
@@ -329,7 +330,8 @@ NFR-5, NFR-9, NFR-11, NFR-14, NFR-15.
 
 > Assumption: the architecture's file list (§8) does not name `src/styles/colors.ts`, but AD-6 and
 > AD-7 style the shell "from palette tokens" and several FOUND values have no token today (the
-> 10 % active tint, the badge blue, and the three shadows of UX §6.2 and §6.4; the unavailable grey
+> 10 % active tint, the badge blue (amended 2026-11-06, owner decision DV-14: the badge paints Figma's
+> disabled-variant `#D0D4D8`, not `#1EAEFF`), and the three shadows of UX §6.2 and §6.4; the unavailable grey
 > is no longer needed since OQ-1 resolved). Under NFR-22 each entry holds the exact Figma value,
 > never the nearest existing token. This story adds named entries for exactly those
 > values, so no shell `styles.ts` repeats a literal. If the reviewer prefers literals in the shell
@@ -433,6 +435,16 @@ Story 1.1).
 - Given no `badgeCounts`, or `null` counts (every page in the app), when the header renders, then no badge, digit or count text exists, and no component, hook or route in `src` passes a count (FR-3.1 N, FR-4.1 N, FR-19 N).
 - Given the header story (`header-badge.stories.tsx` and the `UIAppHeader` story) at 1440 and 1024, when the badge parity rows P-39 to P-42 of UX §10 are measured against it, then they pass within the NFR-22 tolerance; that story, which passes exactly 1 and 8, is the artifact the owner reviews with the team lead (FR-19, NFR-22).
 - Given the mobile layout, when the header renders, then the bell and the list are the bare disabled glyphs at Figma's x 200 and x 240 with the 16 px gap, with the same names and status, no badge, and no target extension (FR-3.2, FR-4.2 E; OQ-15 resolved).
+
+> **Amended 2026-11-06 (owner decision, DV-14; "use all from Figma").** The badge criteria above
+> read as Figma's disabled variant `451:26214`: an 18×18 badge in `#D0D4D8` with white digits on the
+> `#E1E7EA` button, not `#1EAEFF` (read directly on 2026-11-06; `ui-app-header/styles.ts`). White on
+> `#D0D4D8` is about 1.5:1, on a disabled control whose badge is `aria-hidden`, with the count carried
+> by the button's description; production passes no count today. The round buttons' rest, hover and
+> open states and the search field's rest, hover and active states are no longer required as
+> Storybook state rows while the controls ship disabled; the requirement returns when they are
+> enabled (UX §10.2).
+
 - Given a `userMenu` slot that has not resolved, when the slot frame renders, then an `aria-hidden`, non-null placeholder reserves the chip's FOUND box for the current layout so the banner does not shift when the slot arrives (FR-5.3, FR-14 E).
 - Given `useShellLayout` at 1023, 1024, 1025, 1439 and 1440 px, when it renders the first time, then it returns the layout the answered OQ-5 assigns to that width with no second render to correct it (AD-3, AV-4, R-11).
 - Given the logo focused by keyboard, when focus is visible, then the indicator is the one OQ-13 selects, and a mouse focus draws no ring (NFR-2).
@@ -675,20 +687,29 @@ what they import; amended 2026-11-05, the plan named `ProfileProvider`) at 100 %
 > e2e count assertions listed in architecture §5.7 are rewritten with stubs that route replies by
 > caller (Story 3.3).
 
-> **OPEN as of 2026-11-06: R-1 (the chip's read can sign users out).** The flag-off criterion above
-> cites SM-16 and R-1, but the brief voids that mitigation ("Gate the read") and SM-16, and no build
-> reaches the flag-off state. The chip's read runs on every pathname change (`use-current-user.ts`)
-> and a transport 401 ends the session (`current-user-source.ts`), so a production 401 on that read
-> would sign users out after login. The owner has not answered what production returns for this read,
-> so this story records neither a mitigation nor an acceptance. See the brief's R-1 banner, PRD §8
-> and the readiness summary.
+> **R-1 CLOSED 2026-11-06 (owner decision; evidence read from the user-service source, no guard
+> needed).** The flag-off criterion above cites SM-16 and R-1, but the brief voids that mitigation
+> ("Gate the read") and SM-16, and no build reaches the flag-off state. The chip's read runs on every
+> pathname change (`use-current-user.ts`) and a transport 401 ends the session
+> (`current-user-source.ts`). At `v2.8.0` (commit 56656f90, the version crm pins),
+> `config/packages/security.yaml` has `firewalls.main.security: false`, so the read never gets a 401,
+> whatever the token. At `main` (commit a95c1e85), `/api/graphql` is absent from the `$rules` of
+> `PublicAccessResolver` in `config/services.yaml`, so `DualAuthenticator` `supports()` runs for any
+> request carrying a token: a valid token answers 200, an invalid, expired or revoked token gets a
+> 401 from `onAuthenticationFailure` (which correctly ends the session), and a request with no token
+> gets a GraphQL authorization error at 200. The research's claim of a sign-out right after login
+> does not hold on either version. Limits: read from source at those two commits, not observed on a
+> deployed environment; a gateway in front of the service was not examined. Residual, recorded and
+> not fixed: the sandbox's fixed `sandbox-demo-session-token` is not a real token, so a sandbox
+> pointed at a real `main` user-service would end the demo session on the first read. See the
+> brief's R-1 banner and PRD §8.
 
-> **Pending, awaiting the owner (2026-11-06): three allowlist entries.** `config/di-collaborator-policy.js`
-> adds `auth-session-provider.ts`, `current-user-client.ts` and `current-user-source.ts` to
+> **Owner approval 2026-11-06: three allowlist entries.** `config/di-collaborator-policy.js` adds
+> `auth-session-provider.ts`, `current-user-client.ts` and `current-user-source.ts` to
 > `EXEMPT_RENDER_PATH_FILES`. This story's Files list does not name the policy file or
-> `auth-session-provider.ts`, and the Definition of Done forbids allowlist edits. Whether the owner
-> approves the three entries or the singletons move out of the gated directories is not decided; no
-> approval is recorded here (PRD NFR-6 and NFR-15, readiness summary).
+> `auth-session-provider.ts`, and the Definition of Done forbids allowlist edits; the owner approved
+> the three entries on 2026-11-06 as the exception, so the singletons stay where they are (PRD NFR-6
+> and NFR-15).
 
 ### Story 2.5: Route every planned section to a shared coming-soon page
 
@@ -1150,10 +1171,11 @@ so the second rebases onto the first.
 ## Points for the owners
 
 1. Nothing blocks readiness: every question was RESOLVED by owner 2026-10-23 (PRD §9). Stories
-   are dispatched once the readiness check passes. Amended 2026-11-06: this covers the `OQ-n`
-   questions only. R-1 (the chip's read can sign users out) is OPEN and awaits the owner, as are the
-   badge colour, the undrawn header states and the three `EXEMPT_RENDER_PATH_FILES` entries; nothing
-   here records a decision on them (brief R-1 banner, readiness summary).
+   are dispatched once the readiness check passes. Amended 2026-11-06: nothing is left open. The
+   `OQ-n` questions were resolved on 2026-10-23, and the owner decided the four items that followed
+   on 2026-11-06: R-1 is closed by user-service source evidence (brief R-1 banner), the three
+   `EXEMPT_RENDER_PATH_FILES` entries are approved, the badge takes Figma's `#D0D4D8` (DV-14), and the
+   undrawn header state rows are dropped until those controls are enabled (UX §10.2).
 2. Brief §6 item 7 is split: each surface story lands its own unit tests and stories (the story
    coverage gate and TDD require it), and Story 3.2 keeps the cross-surface a11y suites and the
    coverage and mutation sweep.

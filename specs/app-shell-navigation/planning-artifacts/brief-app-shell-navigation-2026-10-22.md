@@ -62,14 +62,14 @@ the record of the plan as approved.
 > `use-display-name.ts` still resolves the mapper through `useService`. Where a banner here overrides
 > an answer in §10, the banner binds.
 
-> **Amended 2026-11-06 (three allowlist entries; approval pending).** C-1's "no allowlist change beyond
+> **Amended 2026-11-06 (three allowlist entries; owner-approved 2026-11-06).** C-1's "no allowlist change beyond
 > PRD NFR-4's enumerated X-1" and NFR-6's "without new exemptions" no longer hold literally.
 > `config/di-collaborator-policy.js` gains three `EXEMPT_RENDER_PATH_FILES` entries:
 > `src/modules/user/features/auth/stores/auth-session-provider.ts`,
 > `src/modules/user/features/settings/utils/current-user-client.ts` and
 > `src/modules/user/features/settings/utils/current-user-source.ts`. They follow from the owner decision
 > of 2026-11-02 that moved the chip's read off the container (0addef83), which did not name them.
-> Explicit owner approval of this allowlist change is still pending (PRD NFR-6, NFR-15).
+> The owner approved this allowlist change on 2026-11-06 (PRD NFR-6, NFR-15).
 
 > **Owner decision of 2026-10-27 (drawer sub-items at 42 px), noted 2026-11-06.** NFR-3's 44 px floor
 > on "drawer rows" does not reach the drawer's Settings sub-items. Integrations, Webhooks and Billing
@@ -90,15 +90,28 @@ the record of the plan as approved.
 > successful read, a re-read that fails as `unavailable` keeps the shown name and monogram; a
 > `session_ended` outcome resets the chip to pending (`settle` in `use-current-user.ts`; PRD FR-5.3).
 
-> **OPEN as of 2026-11-06: R-1 (the chip's read can sign users out).** The 2026-11-03 banner voids "Gate
-> the read" and SM-16, and no replacement is on record. The chip's read runs on every pathname change
-> (`use-current-user.ts`), and a transport 401 ends the session (`attempt.session.end` in
-> `current-user-source.ts`), so a production 401 on that read signs users out straight after login. A
-> missing token and a GraphQL-level 401 (`denied`) do not end it. The accepted consequence in
-> `src/modules/user/README.md` covers reading the wrong user, not this sign-out. **Deciding check:** what
-> production returns for the chip's read. The owner has not answered, so this brief records neither a
-> mitigation nor an acceptance. The "none is open" banner below covers the `OQ-n` questions, not this
-> risk.
+> **R-1 CLOSED 2026-11-06 (owner decision; evidence read from the user-service source, no guard needed).**
+> The earlier "OPEN as of 2026-11-06" note asked what production returns for the chip's read; this is
+> the answer. The read posts to `/api/graphql` with `Authorization: Bearer <token>`, and only a
+> transport 401 ends the session (`attempt.session.end` in `current-user-source.ts`).
+>
+> - At `v2.8.0` (commit 56656f90, the version crm pins): `config/packages/security.yaml` has
+>   `firewalls.main.security: false`, so nothing authenticates and this read never gets a 401,
+>   whatever the token.
+> - At `main` (commit a95c1e85): `/api/graphql` is absent from the `$rules` of `PublicAccessResolver`
+>   in `config/services.yaml`, so `DualAuthenticator` `supports()` runs for any request carrying a
+>   token. A valid token passes and the read answers 200. An invalid, expired or revoked token gets a
+>   401 from `onAuthenticationFailure`, which correctly ends the session. A request with no token
+>   passes `access_control` as PUBLIC_ACCESS and gets a GraphQL authorization error at 200.
+>
+> The research's claim that the chip would sign every production user out right after login (research
+> §7.3 item 1) therefore does not hold on either version and is superseded. SM-16 stays void and no
+> guard is added. **Limits:** this was read from source at those two commits, not observed on a
+> deployed environment, and a gateway in front of the service was not examined. **Residual, recorded
+> and not fixed:** `sandbox-demo-session-token` (`sandbox-demo-session-provider.ts`) is a fixed string,
+> not a token user-service issued, so a sandbox host pointed at a real `main` user-service would get a
+> 401 on the first read and end the demo session. The "none is open" banner below covers the `OQ-n`
+> questions.
 
 > **Every `OQ-n` is RESOLVED by owner 2026-10-23** (§10; PRD §9). None is open and none blocks
 > readiness. Decisions this stage took on its own are marked `> Assumption:`; later stages may
@@ -411,8 +424,9 @@ the existing `home.sign_out` wording ("Вийти" / "Sign out") so the two surf
 | R-11 | Breakpoint switch at 1024 conflicts with the repo's `lg + 1` convention; 1280/1366 baselines land in whichever layout wins                                 | Low    | OQ-5                                                                                       |
 | R-12 | Figma components have no variants or variables, so later design edits will not propagate                                                                   | Low    | Parity table pins measured values; re-measure on design change                             |
 
-Amended 2026-11-06: R-1 is **OPEN**. Its mitigation cell is the plan as approved and no longer applies;
-see the R-1 banner at the top of this brief. R-7's grey icons are covered by the 2026-10-27 banner.
+Amended 2026-11-06 (owner decision): R-1 is **CLOSED** by evidence read from the user-service source, no
+guard needed; its mitigation cell is the plan as approved and no longer applies (see the R-1 banner at
+the top of this brief). R-7's grey icons are covered by the 2026-10-27 banner.
 
 ## 9. Dependencies and Prerequisites
 
