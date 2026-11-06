@@ -27,7 +27,6 @@
         "modules/user/features/settings/components/social-networks",
         "modules/user/features/settings/components/user-profile-settings",
         "modules/user/features/settings/hooks/use-blur-hold.ts",
-        "modules/user/features/settings/hooks/use-display-name.ts",
         "modules/user/features/settings/hooks/use-email-resend.ts",
         "modules/user/features/settings/hooks/use-email-row.ts",
         "modules/user/features/settings/hooks/use-profile-form-model.ts",

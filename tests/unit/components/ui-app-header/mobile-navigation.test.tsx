@@ -59,6 +59,11 @@ function Wide({ mobile }: { mobile: boolean }): JSX.Element {
   );
 }
 
+const fadingScrim = (): HTMLElement =>
+  screen
+    .getAllByRole('generic', { hidden: true })
+    .find((box) => box.style.transition.includes('opacity')) as HTMLElement;
+
 const slidingPanel = (): HTMLElement =>
   screen
     .getAllByRole('generic', { hidden: true })
@@ -366,12 +371,13 @@ describe('MobileNavigation', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
-  it('slides in 200 ms by default and in 0 ms under reduced motion', async () => {
+  it('slides and fades in 200 ms by default and in 0 ms under reduced motion', async () => {
     stubMotionPreference(false);
     const view = renderNavigation();
     await open();
 
     expect(slidingPanel().style.transition).toContain('200ms');
+    expect(fadingScrim().style.transition).toContain('200ms');
     view.unmount();
 
     stubMotionPreference(true);
@@ -380,6 +386,8 @@ describe('MobileNavigation', () => {
 
     expect(slidingPanel().style.transition).toContain('0ms');
     expect(slidingPanel().style.transition).not.toContain('200ms');
+    expect(fadingScrim().style.transition).toContain('0ms');
+    expect(fadingScrim().style.transition).not.toContain('200ms');
   });
 
   it('renders no MUI ripple in the burger, the close button or the rows', async () => {

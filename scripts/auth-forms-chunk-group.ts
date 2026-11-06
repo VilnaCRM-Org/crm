@@ -53,11 +53,6 @@ export const authFormsVendorsCacheGroup = (): Rspack.OptimizationSplitChunksCach
 export const authFormsCacheGroup = (): Rspack.OptimizationSplitChunksCacheGroup =>
   sharedFormModulesGroup(AUTH_FORMS_CHUNK, false);
 
-/**
- * One chunk for the node_modules both auth page chunks contain (issue #362). Without it the app
- * shell's lazy chunks split that same code by which of them shares each module, and the many small
- * pieces compress worse, which cost `/sign-in` about 3 KB of transfer for under 1 KB of new code.
- */
 export const authPageVendorsCacheGroup = (): Rspack.OptimizationSplitChunksCacheGroup => ({
   name: AUTH_PAGE_VENDORS_CHUNK,
   chunks: 'async',

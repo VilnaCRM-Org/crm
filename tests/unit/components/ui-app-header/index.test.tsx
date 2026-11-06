@@ -5,6 +5,7 @@ import { lazy } from 'react';
 
 import UIAppHeader from '@/components/ui-app-header';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
+import { buildFullName } from '@tests/builders';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
@@ -116,11 +117,10 @@ describe('UIAppHeader', () => {
   });
 
   it('renders the resolved user menu inside the slot', () => {
-    renderShell(
-      <UIAppHeader layout="tablet" userMenu={<button type="button">Євгенія Маслова</button>} />
-    );
+    const name = buildFullName();
+    renderShell(<UIAppHeader layout="tablet" userMenu={<button type="button">{name}</button>} />);
 
-    expect(screen.getByRole('button', { name: 'Євгенія Маслова' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name })).toBeInTheDocument();
   });
 
   it('renders no MUI ripple anywhere in the header', () => {

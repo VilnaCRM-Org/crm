@@ -54,7 +54,7 @@ const PUBLIC_PATHS: readonly string[] = [
   `${ROUTE_PATHS.passwordReset}?token=LighthouseAuditResetToken0000001`,
 ];
 
-const SHELL_CHUNK = /ui-app-shell|user-menu|current-user/;
+const SHELL_CHUNK = /ui-app-shell|user-menu|current-user|protected-layout/;
 
 const LABEL_COLOUR = 'rgb(64, 65, 66)';
 const MENU_COLOUR = 'rgb(26, 28, 30)';
@@ -462,6 +462,31 @@ test.describe('Collapsed rail on a short tablet viewport, 1280x720 (FR-14, OQ-21
     await expect(sidebarSignOutOf(page)).toBeFocused();
     await expect(sidebarSignOutOf(page)).toBeInViewport({ ratio: 1 });
   });
+
+  for (const id of ['products', 'orders', 'settings']) {
+    test(`paints the ${id} tooltip above the settings page at 1024 px`, async ({ page }) => {
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await openProtected(page, ROUTE_PATHS.settings);
+      await page.getByRole('button', { name: shellText.collapse, exact: true }).click();
+      await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toBeVisible();
+
+      await linkOf(page, id).hover();
+
+      const tooltip = tooltipOf(page, id);
+      await expect(tooltip).toBeVisible();
+      const painted = await tooltip.evaluate((element): boolean => {
+        const box = element.getBoundingClientRect();
+        const y = (box.top + box.bottom) / 2;
+
+        return [box.left + 12, (box.left + box.right) / 2, box.right - 6].every((x) => {
+          const hit = document.elementFromPoint(x, y);
+
+          return hit !== null && element.contains(hit);
+        });
+      });
+      expect(painted).toBe(true);
+    });
+  }
 
   test('paints the tooltip of a scrolled row in full, outside the card', async ({ page }) => {
     await collapseAtShortTablet(page);

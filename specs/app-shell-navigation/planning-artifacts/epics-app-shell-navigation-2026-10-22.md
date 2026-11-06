@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-05
+revised: 2026-11-06
 iteration: 4
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
@@ -31,7 +31,9 @@ inputDocuments:
 sign-out latch amendment and the failed chip re-read; each change is marked in place as a dated
 amendment or owner decision; 2026-11-03: the userSettings flag removal; 2026-11-04: the settings page
 centred and the handle moved to the sidebar edge; 2026-11-05: reconciliation with shipped code, which
-also marks the 2026-10-27 owner decision on the drawer sub-items in NFR-3's two criteria) **Feature:**
+also marks the 2026-10-27 owner decision on the drawer sub-items in NFR-3's two criteria; 2026-11-06:
+the tablet rail handle's `right`, the drawer and menu primitives and two Story 3.3 test notes)
+**Feature:**
 `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
@@ -59,6 +61,11 @@ also marks the 2026-10-27 owner decision on the drawer sub-items in NFR-3's two 
 > read of 0addef83 (owner decision of 2026-11-02), through the container-free `currentUserSource`, and
 > the lazy `protected-layout` chunk of 663151bc, as architecture §5.7, §2.3 and §3.2 record them.
 > Criteria that describe the plan keep their text beside a dated note, or are restated with one.
+
+> **Amended 2026-11-06 (reconciliation with shipped code).** The DV-13 note above overstates one handle:
+> three handles take `right: -9px`. The tablet rail's keeps its 9 px overhang past the 76 px panel as
+> `right: 28px`, against a 113 px wrapper with a 37 px right padding (113 − 28 − 32 = 53), so it still
+> lands at 53,15 (`src/components/ui-sidebar/styles.ts`).
 
 Predecessors: [research](./research-app-shell-navigation-2026-10-22.md),
 [brief](./brief-app-shell-navigation-2026-10-22.md), [PRD](./prd-app-shell-navigation-2026-10-22.md)
@@ -218,7 +225,9 @@ Every UI story runs `figma-design-check` and `figma-ui-parity` against file
 - AD-3: `useShellLayout` over `useMediaQuery` with `noSsr: true`; one navigation landmark at a time.
 - AD-4, AD-5: navigation items are one typed, ordered data set; current route through `useMatch`.
 - AD-6: MUI `Drawer` (`temporary`, right) in the shell chunk; AD-7: the designed menu from
-  `MenuList`, `MenuItem`, `ClickAwayListener`, no portal.
+  `MenuList`, `MenuItem`, `ClickAwayListener`, no portal. Amended 2026-11-06 (architecture §5.5, §5.6):
+  the drawer shipped as MUI `Modal` plus `Slide` with `useDrawerFocus`, and an outside click on the menu
+  lands on a backdrop `Box`, not `ClickAwayListener`.
 - AD-8: two-stage user-aware slot (`user-menu` container-free, `current-user` only while
   `userSettings` is on; amended 2026-11-05, `current-user` is container-free too since 0addef83);
   AD-9: `UserDisplayNameMapper`; AD-10: FR-15 and FR-16 edits; AD-11:
@@ -496,7 +505,7 @@ body), `tests/unit/components/ui-navigation-list/{index,navigation-row}.test.tsx
 - Given an item set filtered to drop one row, when the sidebar renders, then the remaining rows keep their order and no gap is left (FR-7.5 E, G-5).
 - Given the longest `uk` product label, when rendered at 238 px, then it stays on one line without truncation (FR-7.3 E; measured again in Story 3.4).
 - Given the handle, when it is activated, then the sidebar toggles between expanded and rail, the handle's name and `aria-expanded` follow FR-12, rail rows show the tooltip `386:26142` on hover and keyboard focus, Escape hides the tooltip without moving focus, and rows behave as in the expanded sidebar (FR-12 P, N, E).
-- Given the expanded tablet panel at 1024, when it renders, then it shows the owner-approved handle at 222,15 (32×32, the tablet rail handle's box and style, UX DV-10); activating it collapses the panel to the tablet rail `378:21462`, whose handle `378:21542` expands it again, and the handle's 16 px overhang is not clipped by the panel (P-63) (FR-12 E, F-10). Amended 2026-11-05 (DV-13, owner decision 2026-11-04): the handle ships at 215,15 and the tablet rail's at 53,15, both with `right: -9px` (`src/components/ui-sidebar/styles.ts`), so the overhang that must not be clipped is 9 px and the handle clears the title by 3 px; see the [shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04).
+- Given the expanded tablet panel at 1024, when it renders, then it shows the owner-approved handle at 222,15 (32×32, the tablet rail handle's box and style, UX DV-10); activating it collapses the panel to the tablet rail `378:21462`, whose handle `378:21542` expands it again, and the handle's 16 px overhang is not clipped by the panel (P-63) (FR-12 E, F-10). Amended 2026-11-05 (DV-13, owner decision 2026-11-04): the handle ships at 215,15 and the tablet rail's at 53,15, both with `right: -9px` (`src/components/ui-sidebar/styles.ts`), so the overhang that must not be clipped is 9 px and the handle clears the title by 3 px; see the [shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04). Amended 2026-11-06 (reconciliation with shipped code): only the expanded handle takes `right: -9px`; the tablet rail's keeps its 9 px overhang past the 76 px panel as `right: 28px`, against a 113 px wrapper with a 37 px right padding, so it still lands at 53,15.
 - Given the handle and `matchMedia('(prefers-reduced-motion: reduce)')` matches, when the handle toggles the rail, then the width transition duration is 0 (NFR-20, UX §9).
 - Given the Settings row, the Sign out row and the handle, when activated by pointer, then no MUI `TouchRipple` element is rendered (NFR-20).
 - Given every row and its icon, when inspected, then the icons are `aria-hidden` stroke icons with `fill: 'none'`, and the focus indicator on Settings and Sign out is OQ-13's inset ring (FR-7 E, NFR-2).
@@ -536,6 +545,8 @@ initial focus),
 `src/components/ui-navigation-drawer/styles.ts` (NEW), `src/components/ui-navigation-drawer/ui-navigation-drawer.stories.tsx`
 (NEW), `src/components/types/ui-navigation-drawer/index.ts` (NEW), `src/components/types/ui-app-header/index.ts`
 (CHANGED: `MenuToggleButtonProps`), `config/i18n-catalog-policy.json` (CHANGED: appends `components/ui-navigation-drawer`).
+Amended 2026-11-06 (architecture §5.5): `UINavigationDrawer` shipped as MUI `Modal` plus `Slide`, not
+`Drawer`, and `src/components/ui-app-header/use-drawer-focus.ts` returns focus.
 
 **Tests:** `tests/unit/components/ui-app-header/menu-toggle-button.test.tsx` (NEW),
 `tests/unit/components/ui-navigation-drawer/{index.test.tsx,styles.test.ts}` (NEW), and the CHANGED
@@ -907,7 +918,7 @@ for a focused spec; the full lanes are CI-only; `retries: 0`.
 - Given every protected page, when it loads in the browser lanes, then no badge renders (FR-19 N, NFR-22 (d)).
 - Given each coming-soon route opened directly, when it renders, then the shell renders and that row is current (FR-18 P, FR-11).
 - Given `userSettings` off, when `/` loads, then no `CurrentUser` request and no `current-user` chunk request is made and the menu holds Sign out only; with it on, the request count equals OQ-25's resolution (FR-5.3 N, E; SM-16).
-- Given each of the seven public Lighthouse URLs, when it loads, then no request names `ui-app-shell`, `user-menu` or `current-user` (FR-14 N, NFR-5, SM-9).
+- Given each of the seven public Lighthouse URLs, when it loads, then no request names `ui-app-shell`, `user-menu` or `current-user` (FR-14 N, NFR-5, SM-9). Amended 2026-11-06 for 663151bc: nor `protected-layout`, which architecture §3.2 marks "never" on public routes and `SHELL_CHUNK` in `tests/e2e/modules/app-shell.spec.ts` now names.
 - Given 1440, when `expectTabOrder` runs with `visibleFocus: true`, then the stops on `/` are logo, chip, the handle (OQ-4 resolved), the five product rows, Settings, the Settings chevron, Sign out, then the page, and on `/settings` the three sub-items follow the chevron; given 1024, then the same (the expanded tablet panel carries the owner-approved handle, UX DV-10); given 375, then logo, avatar, burger (NFR-2, SM-7).
 - Given the chip by keyboard, when the menu opens, then the new arrow-key walk helper moves focus with ArrowDown, ArrowUp, Home and End and asserts each `menuitem` is focused, `:focus-visible` and visibly changed; Escape returns focus to the chip, and Tab closes it without a trap (FR-6.1, NFR-12).
 - Given 375, when the burger is opened with Enter, then focus is on the close control inside `role="dialog"`, Tab cycles inside the drawer, and Escape closes it with focus back on the burger (FR-13.2 P, NFR-12).
@@ -915,7 +926,7 @@ for a focused spec; the full lanes are CI-only; `retries: 0`.
 - Given the handle, when it is operated by keyboard at 1440 and at 1024, then the rail and the expanded sidebar toggle as FR-12 states (FR-12 P).
 - Given the mobile-chrome and mobile-safari projects, when the drawer is opened by tap and closed by the close control, the scrim and a drawer link, then each closes it, Settings and Sign out work from it, after drawer Settings `expect(page.locator('main')).toBeFocused()` holds, and the touched header control under the scrim is not activated (FR-13.2 N, E; FR-13.5 P).
 - Given both mobile projects, when the avatar is tapped and then Settings, then `/settings` renders with `<main>` focused; when the avatar is tapped and then Sign out, then `/sign-in` renders (FR-6.3 P, FR-6.4 P, SM-2).
-- Given both mobile projects, when `expectTouchTarget` measures the logo, avatar, burger, close, drawer rows, drawer Sign out and the mobile menu items My profile, Settings and Sign out, then each is at least 44×44 CSS px with transparent extensions; the disabled bell and list keep Figma's 40 px pitch, are not measured, and are recorded as a known sizing gap (NFR-3, SM-8; OQ-15 resolved). Amended 2026-11-05 (owner decision 2026-10-27, PRD NFR-3): the drawer's Settings sub-items are a second known sizing gap, excluded from the 44×44 measure; `tests/e2e/mobile/app-shell-touch.spec.ts` instead asserts their 42 px pitch, a tap target of the whole 42 px height and the drawer row width, and no overlap between adjacent sub-items.
+- Given both mobile projects, when `expectTouchTarget` measures the logo, avatar, burger, close, drawer rows, drawer Sign out and the mobile menu items My profile, Settings and Sign out, then each is at least 44×44 CSS px with transparent extensions; the disabled bell and list keep Figma's 40 px pitch, are not measured, and are recorded as a known sizing gap (NFR-3, SM-8; OQ-15 resolved). Amended 2026-11-05 (owner decision 2026-10-27, PRD NFR-3): the drawer's Settings sub-items are a second known sizing gap, excluded from the 44×44 measure; `tests/e2e/mobile/app-shell-touch.spec.ts` instead asserts their 42 px pitch, a tap target of the whole 42 px height and the drawer row width, and no overlap between adjacent sub-items. Amended 2026-11-06 (reconciliation with shipped code, PRD NFR-3): `tests/e2e/mobile/app-shell-touch.spec.ts` measures with its own `expectTapArea`, because `expectTouchTarget` reads the bounding box and cannot see a transparent tap extension.
 - Given both mobile projects at device width and at 320 px, when the page and the open drawer render, then the document has no horizontal overflow (FR-1 E, FR-13.5 E, OQ-24).
 - Given OQ-7's resolution, when `home.spec.ts`, the home keyboard spec, `sign-out.ts` and the settings specs run, then they sign out and reach `/settings` through the shell and pass (FR-16 E).
 - Given `tests/e2e/route-coverage.tsv`, when `make check-e2e-route-coverage` runs, then every existing route keeps its key, the eight new keys have their rows, and every row names an existing spec (NFR-16).

@@ -172,7 +172,7 @@ describe('navigation drawer styles', () => {
       boxSizing: 'border-box',
       width: 'min(313px, calc(100vw - 7px))',
       height: '622px',
-      maxHeight: 'calc(100vh - 56px)',
+      maxHeight: 'calc(100% - 56px)',
       overflowX: 'hidden',
       overflowY: 'auto',
       pointerEvents: 'auto',

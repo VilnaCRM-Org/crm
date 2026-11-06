@@ -101,11 +101,15 @@ describe('the assembled app shell accessibility (issue #362)', () => {
     const chip = await screen.findByRole('button', { name: 'Меню користувача' });
 
     await userEvent.setup().click(chip);
-    const menu = await screen.findByRole('menu');
+    const menu = await screen.findByRole('menu', { name: 'Меню користувача' });
 
     expect(chip).toHaveAttribute('aria-haspopup', 'menu');
     expect(chip).toHaveAttribute('aria-expanded', 'true');
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(3);
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent)
+    ).toEqual(['Мій профіль', 'Налаштування', 'Вийти']);
     await expectNoA11yViolations(document.body);
   });
 

@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-05
+revised: 2026-11-06
 iteration: 6
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
@@ -28,7 +28,8 @@ inputDocuments:
 2026-10-29 (owner decisions on the drawer sub-items, the WCAG 1.4.11 exception and the failed chip
 re-read; each change is marked in place as a dated amendment or owner decision; 2026-11-03: the
 userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
-edge; 2026-11-05: the dated notes for DV-11 and DV-13) **Feature:** `app-shell-navigation`
+edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet rail handle's `right`,
+`expectTapArea` in NFR-3 and the exemptions in NFR-6 and NFR-15) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -55,6 +56,9 @@ edge; 2026-11-05: the dated notes for DV-11 and DV-13) **Feature:** `app-shell-n
 > fade in over 200 ms; none of this animates under reduced motion. The FR-12 positions, the NFR-22
 > "one owner-approved visible deviation" and C-9 below are kept as approved, each with a dated note.
 > Details are in the [shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04).
+> Amended 2026-11-06 (reconciliation with shipped code): three handles take `right: -9px`. The tablet rail's
+> keeps its 9 px overhang past the 76 px panel as `right: 28px`, against a 113 px wrapper with a 37 px
+> right padding (113 − 28 − 32 = 53), so it still lands at 53,15.
 
 > **Owner decision of 2026-10-26 (Settings label clear of its chevron, DV-11), noted 2026-11-05.**
 > Figma draws the Settings chevron inside the room its label needs once WCAG 1.4.12 text spacing is
@@ -773,6 +777,8 @@ see §9.
 of the plan as approved. The shipped handles take `right: -9px`, a 9 px overhang: the expanded tablet
 panel's handle sits at 215,15 (abs 228,89) and the tablet rail's at 53,15 (abs 66,89), so the handle
 ends at x 260 and clears the title at x 263. The desktop positions, 223,15 and 57,15, are unchanged.
+Amended 2026-11-06 (reconciliation with shipped code): the tablet rail's handle keeps that 9 px overhang past
+the 76 px panel as `right: 28px`, against a 113 px wrapper with a 37 px right padding.
 
 Under OQ-4's resolution the handle is a `button` that toggles the sidebar between expanded and rail.
 
@@ -1104,6 +1110,15 @@ they are not pointer targets; if they ever become active, their 40 px pitch is r
 sizing gap (like the auth switcher gap in CLAUDE.md), never fixed by moving pixels. Asserted with
 `expectTouchTarget` on both mobile projects.
 
+**Amended 2026-11-06 (reconciliation with shipped code).** `tests/e2e/mobile/app-shell-touch.spec.ts` asserts these
+targets with its own `expectTapArea`, not `expectTouchTarget`. `expectTouchTarget` reads the control's
+bounding box, so it cannot see a transparent tap extension. `expectTapArea` calls
+`document.elementFromPoint` at the control's centre and at points half the 44 px target minus 0.5 px
+from it: the four edge midpoints and, unless the control is circular (a corner radius of at least half
+the target), the four corners. A probe past the viewport is clamped to its last pixel, and each probe
+must land on the control or a descendant. `expectTouchTarget` stays in
+`tests/e2e/mobile/settings-touch.spec.ts`.
+
 **Owner decision, 2026-10-27 (drawer sub-items).** The drawer's Settings sub-items Integrations,
 Webhooks and Billing keep Figma's 42 px PROP-18 pitch (FR-13.5) and are a second known sizing gap
 beside the bell and list, never fixed by moving pixels. Each sub-item still answers a tap across
@@ -1206,6 +1221,16 @@ user-aware slot in the `user` module, placed per OQ-17 (Option A, OQ-17 resolved
 (`config/class-naming-policy.js` on this branch has no `Var`, `State` or `Controller`), DI through
 tokens. Menu items are one typed, ordered data list (G-5).
 
+**Amended 2026-11-06 (reconciliation with shipped code).** "No new exemption" no longer holds literally.
+`config/di-collaborator-policy.js`, which feeds the dependency-cruiser rule
+`injectable-classes-no-value-imports` and its ESLint twin, gains three `EXEMPT_RENDER_PATH_FILES`
+entries: `src/modules/user/features/auth/stores/auth-session-provider.ts`,
+`src/modules/user/features/settings/utils/current-user-client.ts` and
+`src/modules/user/features/settings/utils/current-user-source.ts`. They follow from the owner decision
+of 2026-11-02 that moved the chip's read off the container (0addef83), because a container-free
+singleton in a gated directory has to be listed in that policy. That decision did not name these
+entries, and no separate approval of them is on record.
+
 ### NFR-7 — Data honesty
 
 The chip reads `currentUser` only through `ProfileProvider` resolved with `useService`; no second
@@ -1307,6 +1332,11 @@ No `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `!` in `src/**`, depcruis
 wildcard, jscpd or metrics ignore, Stryker disable without a proof, threshold, budget or allowlist
 change, `test.skip`, `test.fixme` or conditional assertion. No `data-testid`. No added code
 comments.
+
+**Amended 2026-11-06 (reconciliation with shipped code).** The three `EXEMPT_RENDER_PATH_FILES` entries NFR-6's
+note names are an allowlist change in `config/di-collaborator-policy.js`. They follow from the owner
+decision of 2026-11-02 that moved the chip's read off the container; no other approval of them is on
+record.
 
 ### NFR-16 — Test lanes
 
