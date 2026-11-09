@@ -30,9 +30,10 @@ Stable ids: user stories `US-n`, functional requirement seeds `FR-n`, non-functi
 `NFR-n`, goals `G-n`, success metrics `SM-n`, constraints `C-n`, risks `R-n` and open questions
 `OQ-n`. The PRD keeps these ids and adds acceptance criteria; it does not renumber them.
 
-Revised 2026-11-05, 2026-11-06 and 2026-11-09: the banners below were added on those dates to carry the owner
-decisions and shipped changes that came after this brief. Each row they name is kept unchanged as
-the record of the plan as approved.
+Revised 2026-11-05, 2026-11-06 and 2026-11-09: the banners below carry the owner decisions and
+shipped changes that came after this brief, each dated by its decision. The banner of the owner
+decisions of 2026-11-06 was added on 2026-11-09. Each row they name is kept unchanged as the record
+of the plan as approved.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
