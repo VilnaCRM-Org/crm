@@ -1,29 +1,9 @@
 import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
-import type { JSX } from 'react';
 
-import type { NavigationItemsProps } from '@/components/types/ui-navigation-list';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
-import NavigationExpandedItems from '@/components/ui-navigation-list/navigation-expanded-items';
-import useGroupDisclosure from '@/components/ui-navigation-list/use-group-disclosure';
+import { DisclosedItems } from '@stories/disclosed-navigation';
 import renderShell from '@tests/unit/utils/render-shell';
-
-function DisclosedItems({
-  layout,
-  items,
-  currentId,
-}: Omit<NavigationItemsProps, 'disclosure'>): JSX.Element {
-  const disclosure = useGroupDisclosure();
-
-  return (
-    <NavigationExpandedItems
-      layout={layout}
-      items={items}
-      currentId={currentId}
-      disclosure={disclosure}
-    />
-  );
-}
 
 describe('NavigationExpandedItems', () => {
   it('renders the five product rows and the Settings group header, in order', () => {

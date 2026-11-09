@@ -1,13 +1,10 @@
 import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { JSX } from 'react';
 import { Route, Routes } from 'react-router';
 
 import type { NavigationGroup as Group } from '@/components/types/ui-app-shell/navigation-item';
-import type { NavigationGroupProps } from '@/components/types/ui-navigation-list';
-import NavigationGroup from '@/components/ui-navigation-list/navigation-group';
-import useGroupDisclosure from '@/components/ui-navigation-list/use-group-disclosure';
+import { DisclosedGroup } from '@stories/disclosed-navigation';
 import renderShell from '@tests/unit/utils/render-shell';
 import ShellLocation from '@tests/unit/utils/shell-location';
 
@@ -31,18 +28,6 @@ const group: Group = {
     ],
   },
 };
-
-function DisclosedGroup({
-  layout,
-  group,
-  currentId,
-}: Omit<NavigationGroupProps, 'disclosure'>): JSX.Element {
-  const disclosure = useGroupDisclosure();
-
-  return (
-    <NavigationGroup layout={layout} group={group} currentId={currentId} disclosure={disclosure} />
-  );
-}
 
 const renderGroup = (
   path: string,

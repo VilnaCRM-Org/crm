@@ -1,28 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
 
-import type { NavigationGroupProps } from '@/components/types/ui-navigation-list';
+import { DisclosedGroup } from '@stories/disclosed-navigation';
 import { withRoutedStoryList } from '@stories/list-decorators';
 import { storyGroup } from '@stories/navigation-story-items';
 
 import NavigationGroup from './navigation-group';
-import useGroupDisclosure from './use-group-disclosure';
 
-function DisclosedGroup({
-  layout,
-  group,
-  currentId,
-}: Omit<NavigationGroupProps, 'disclosure'>): JSX.Element {
-  const disclosure = useGroupDisclosure();
-
-  return (
-    <NavigationGroup layout={layout} group={group} currentId={currentId} disclosure={disclosure} />
-  );
-}
-
-const meta: Meta<typeof DisclosedGroup> = {
+const meta: Meta<typeof NavigationGroup> = {
   title: 'Shell/Navigation/NavigationGroup',
-  component: DisclosedGroup,
+  component: NavigationGroup,
+  render: ({ layout, group, currentId }) => (
+    <DisclosedGroup layout={layout} group={group} currentId={currentId} />
+  ),
   tags: ['autodocs'],
   args: { layout: 'desktop', group: storyGroup, currentId: null },
   argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] } },
@@ -41,7 +30,7 @@ const meta: Meta<typeof DisclosedGroup> = {
 
 export default meta;
 
-type Story = StoryObj<typeof DisclosedGroup>;
+type Story = StoryObj<typeof NavigationGroup>;
 
 export const Expanded: Story = {
   args: { currentId: 'settings' },
