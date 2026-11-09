@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-06
-iteration: 6
+revised: 2026-11-09
+iteration: 7
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -32,7 +32,8 @@ userSettings flag removal; 2026-11-04: the settings page centred and the handle 
 edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet rail handle's `right`,
 `expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
 journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27; owner decisions of 2026-11-06: R-1 closed, the three exemptions approved, the badge
-colour DV-14, the undrawn header states dropped) **Feature:** `app-shell-navigation`
+colour DV-14, the undrawn header states dropped; 2026-11-09: the desktop journey's Settings group and
+settings card) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and

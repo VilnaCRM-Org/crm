@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-06
-iteration: 5
+revised: 2026-11-09
+iteration: 6
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -40,7 +40,8 @@ failed chip re-read; each change is marked in place as a dated amendment or owne
 2026-11-03: the lazy protected-layout chunk of 663151bc and the userSettings flag removal;
 2026-11-04: the settings page centred, DV-12; 2026-11-05: reconciliation with shipped code;
 2026-11-06: the drawer and menu primitives, §8 A and the chip's `session_ended` causes, and the
-owner-approved `auth-page-vendors` cache group)
+owner-approved `auth-page-vendors` cache group; 2026-11-09: the shipped `useGroupDisclosure()` API,
+the frame's grid placement and the navigation-items test row)
 **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
@@ -518,7 +519,7 @@ _Rejected:_ a `*Detector` class; a hook over the router is the whole rule.
 
 ### 5.4a Settings group disclosure (AD-15; OQ-6 RESOLVED by owner 2026-10-23)
 
-`useGroupDisclosure(pathname)` (`src/components/ui-navigation-list/use-group-disclosure.ts`, NEW, a
+`useGroupDisclosure()` (`src/components/ui-navigation-list/use-group-disclosure.ts`, NEW, a
 hook) derives the default from the route (expanded when the pathname is `/settings` or starts with
 `/settings/`, collapsed otherwise) and holds a user override that is dropped on the next pathname
 change, so nothing is persisted. `NavigationGroupToggle`

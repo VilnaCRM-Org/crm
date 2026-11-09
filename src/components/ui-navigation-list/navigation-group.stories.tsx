@@ -14,7 +14,10 @@ const meta: Meta<typeof NavigationGroup> = {
   ),
   tags: ['autodocs'],
   args: { layout: 'desktop', group: storyGroup, currentId: null },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] } },
+  argTypes: {
+    layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
+    disclosure: { control: false, table: { disable: true } },
+  },
   parameters: {
     docs: {
       description: {

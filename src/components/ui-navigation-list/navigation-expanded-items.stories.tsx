@@ -15,7 +15,10 @@ const meta: Meta<typeof NavigationExpandedItems> = {
   ),
   tags: ['autodocs'],
   args: { layout: 'desktop', items: storyItems, currentId: 'products' },
-  argTypes: navigationListStories.drawerLayoutArgTypes,
+  argTypes: {
+    ...navigationListStories.drawerLayoutArgTypes,
+    disclosure: { control: false, table: { disable: true } },
+  },
   decorators: withRoutedStoryList('/products', 238),
   parameters: navigationListStories.parameters(
     'The rows of the expanded sidebar from the item set: the five product rows and the ' +

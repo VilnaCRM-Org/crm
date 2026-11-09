@@ -18,9 +18,13 @@ export default function useGroupDisclosure(): GroupDisclosure {
   }
 
   const stateOf = ({ id, href }: DisclosureGroup): GroupDisclosureState => {
-    const expanded = overrides[id] ?? matchPath({ path: href, end: false }, pathname) !== null;
+    const routeExpanded = matchPath({ path: href, end: false }, pathname) !== null;
 
-    return { expanded, toggle: () => setOverrides({ ...overrides, [id]: !expanded }) };
+    return {
+      expanded: overrides[id] ?? routeExpanded,
+      toggle: () =>
+        setOverrides((current) => ({ ...current, [id]: !(current[id] ?? routeExpanded) })),
+    };
   };
 
   return { stateOf };

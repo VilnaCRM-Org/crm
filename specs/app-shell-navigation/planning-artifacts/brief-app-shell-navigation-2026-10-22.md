@@ -4,7 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-06
+revised: 2026-11-09
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -30,7 +30,7 @@ Stable ids: user stories `US-n`, functional requirement seeds `FR-n`, non-functi
 `NFR-n`, goals `G-n`, success metrics `SM-n`, constraints `C-n`, risks `R-n` and open questions
 `OQ-n`. The PRD keeps these ids and adds acceptance criteria; it does not renumber them.
 
-Revised 2026-11-05 and 2026-11-06: the banners below were added on those dates to carry the owner
+Revised 2026-11-05, 2026-11-06 and 2026-11-09: the banners below were added on those dates to carry the owner
 decisions and shipped changes that came after this brief. Each row they name is kept unchanged as
 the record of the plan as approved.
 

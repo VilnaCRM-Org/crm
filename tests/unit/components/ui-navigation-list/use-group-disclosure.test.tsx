@@ -126,6 +126,32 @@ describe('useGroupDisclosure', () => {
     expect(result.current.disclosure.stateOf(BOARDS).expanded).toBe(false);
   });
 
+  it('applies two toggles batched in one update, one per group', () => {
+    const { result } = setup('/boards');
+    const settings = result.current.disclosure.stateOf(SETTINGS);
+    const boards = result.current.disclosure.stateOf(BOARDS);
+
+    act(() => {
+      settings.toggle();
+      boards.toggle();
+    });
+
+    expect(result.current.expanded()).toBe(true);
+    expect(result.current.disclosure.stateOf(BOARDS).expanded).toBe(false);
+  });
+
+  it('flips back when one group toggles twice in one update', () => {
+    const { result } = setup('/boards');
+    const settings = result.current.disclosure.stateOf(SETTINGS);
+
+    act(() => {
+      settings.toggle();
+      settings.toggle();
+    });
+
+    expect(result.current.expanded()).toBe(false);
+  });
+
   it('keeps the override while the route does not change', () => {
     const { result, rerender } = setup('/boards');
 
