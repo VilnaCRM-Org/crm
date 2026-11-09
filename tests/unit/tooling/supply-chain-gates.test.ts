@@ -275,6 +275,7 @@ describe('production runtime image (issue #140)', () => {
       'libstdc++=${LIBSTDCPP_VERSION}',
       'libcrypto3=${OPENSSL_VERSION}',
       'libssl3=${OPENSSL_VERSION}',
+      'zlib=${ZLIB_VERSION}',
     ]);
     expect(runtime).not.toMatch(/apk upgrade/);
     expect(runtime).toContain('adduser -u 1000 -G node -s /bin/sh -D node');

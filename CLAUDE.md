@@ -870,10 +870,11 @@ bundled npm and its `node_modules` were the bulk of the image findings, and the 
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
 base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
 `serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
-`libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
-`node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `serve@14.2.6` pins `compression@1.8.1` exactly, which
+`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`,
+`libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), and `zlib`
+at `1.4-r0` (CVE-2026-85091 is in the base image's `1.3.2-r0`), a `node` user at uid/gid 1000 —
+copying in only `/usr/local/bin/node` and the resolved `/usr/local/lib/node_modules/serve` tree.
+`serve@14.2.6` pins `compression@1.8.1` exactly, which
 carries CVE-2026-87776, so the `serve-tools` stage sets `dependencies.compression` to `1.8.2` in
 the installed package and re-runs a production-only `npm install`; drop that step once a `serve`
 release ships the fix. `production` and `test-harness` both build on

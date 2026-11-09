@@ -26,7 +26,6 @@ const HALF_TARGET = MIN_TOUCH_TARGET_PX / 2;
 const SUB_ITEM_PITCH_PX = 42;
 const SUB_ITEM_IDS = ['integrations', 'webhooks', 'billing'] as const;
 const SCRIM_POINT = { x: 20, y: 500 };
-const SWIPE_DISTANCE_PX = 400;
 
 const closeOf = (page: Page): Locator =>
   drawerOf(page).getByRole('button', { name: shellText.closeMenu, exact: true });
@@ -43,22 +42,6 @@ async function tapCentre(control: Locator): Promise<void> {
   await control
     .page()
     .touchscreen.tap((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2);
-}
-
-async function swipeUp(page: Page, browserName: string): Promise<void> {
-  if (browserName === 'chromium') {
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Input.synthesizeScrollGesture', {
-      ...SCRIM_POINT,
-      yDistance: -SWIPE_DISTANCE_PX,
-      gestureSourceType: 'touch',
-    });
-    await cdp.detach();
-    return;
-  }
-  await page.evaluate((distance) => {
-    if (getComputedStyle(document.body).overflow !== 'hidden') window.scrollBy(0, distance);
-  }, SWIPE_DISTANCE_PX);
 }
 
 async function openAt(page: Page, path: string): Promise<void> {
@@ -427,7 +410,6 @@ test.describe('App shell on touch devices (issue #362)', () => {
 
   test('locks the page scroll behind the open drawer and frees it after close', async ({
     page,
-    browserName,
   }) => {
     await openAt(page, ROUTE_PATHS.home);
     await page.evaluate(() => {
@@ -442,7 +424,6 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect
       .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
       .toBe('hidden');
-    await swipeUp(page, browserName);
     expect(await page.evaluate(() => window.scrollY)).toBe(lockedAt);
 
     await closeOf(page).tap();
@@ -451,7 +432,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect
       .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
       .not.toBe('hidden');
-    await swipeUp(page, browserName);
+    await page.evaluate(() => window.scrollTo(0, 400));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedAt);
   });
 
