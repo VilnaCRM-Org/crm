@@ -684,7 +684,7 @@ what they import; amended 2026-11-05, the plan named `ProfileProvider`) at 100 %
 - Given the change, when the DoD gates run, then jest-axe is clean for the chip and the open menu in every story state, coverage is 100 % in both suites and Stryker reports zero survivors (NFR-8).
 
 > OQ-25 is resolved to independent reads, so the accepted user-settings criterion "exactly one
-> `CurrentUser` request" (user-settings epics line 1710) is amended with the owner's consent, and the
+> `CurrentUser` request" (user-settings epics, Story 4.2, first acceptance criterion) is amended with the owner's consent, and the
 > e2e count assertions listed in architecture §5.7 are rewritten with stubs that route replies by
 > caller (Story 3.3).
 

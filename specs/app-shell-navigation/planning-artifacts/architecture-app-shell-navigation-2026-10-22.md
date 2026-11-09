@@ -648,7 +648,7 @@ chip on the next navigation; while still on `/settings` after a save the chip sh
 name. OQ-25 resolved to these independent reads (§13). _Rejected:_ moving the settings read and
 update onto the Apollo cache for one shared read.
 
-**OQ-25 (resolved) amends an accepted user-settings criterion.** `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md:1710`
+**OQ-25 (resolved) amends an accepted user-settings criterion.** `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md` (Story 4.2, first acceptance criterion)
 requires "exactly one `CurrentUser` request" when `/settings` opens; two independent reads break it,
 and the owner accepted that amendment under OQ-25. The existing assertions
 that hard-code the page's count change with it: `tests/e2e/modules/user/features/settings/settings.spec.ts:93`
@@ -1394,13 +1394,13 @@ updated, because their sign-out now runs through the shell.
 
 ## 13. Questions this stage added or carried (all RESOLVED by owner 2026-10-23)
 
-| Id    | Question                                                     | Decision                                                                                                                                                                                                                                   |
-| ----- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| OQ-2a | How tests get the badge counts 1 and 8                       | stories only (AD-14); no seed, no source, no lane feed                                                                                                                                                                                     |
-| OQ-25 | `currentUser` request count and chip freshness               | independent reads: two on `/settings`, the chip re-reads on pathname change. Amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md:1710` and the five e2e assertions of §5.7; the stubs route replies by caller |
-| OQ-26 | Shell chunk fails twice                                      | keep the placeholders and capture the error (AD-12)                                                                                                                                                                                        |
-| OQ-27 | How `UserDisplayNameMapper` reaches its two `.tsx` consumers | registered under `AUTH_TOKENS.UserDisplayNameMapper`, read through `useService` in `use-display-name.ts`; `use-current-user.ts` reads through the container-free `currentUserSource` and its own instance since 0addef83 (AD-9)            |
-| OQ-28 | The coming-soon page design                                  | existing tokens and the error-page layout (UX §15), marked for designer confirmation                                                                                                                                                       |
+| Id    | Question                                                     | Decision                                                                                                                                                                                                                                                                      |
+| ----- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OQ-2a | How tests get the badge counts 1 and 8                       | stories only (AD-14); no seed, no source, no lane feed                                                                                                                                                                                                                        |
+| OQ-25 | `currentUser` request count and chip freshness               | independent reads: two on `/settings`, the chip re-reads on pathname change. Amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md` (Story 4.2, first acceptance criterion) and the five e2e assertions of §5.7; the stubs route replies by caller |
+| OQ-26 | Shell chunk fails twice                                      | keep the placeholders and capture the error (AD-12)                                                                                                                                                                                                                           |
+| OQ-27 | How `UserDisplayNameMapper` reaches its two `.tsx` consumers | registered under `AUTH_TOKENS.UserDisplayNameMapper`, read through `useService` in `use-display-name.ts`; `use-current-user.ts` reads through the container-free `currentUserSource` and its own instance since 0addef83 (AD-9)                                               |
+| OQ-28 | The coming-soon page design                                  | existing tokens and the error-page layout (UX §15), marked for designer confirmation                                                                                                                                                                                          |
 
 ## 14. Verification items
 

@@ -1588,7 +1588,7 @@ as the recommended or stated option on 2026-10-23. OQ-18 and OQ-24 were not aske
 beside it: DV-10 (2026-10-23), DV-11 (2026-10-26), and DV-12 and DV-13 (2026-11-04); DV-14 (2026-11-06, the
 badge colour) joins them. See NFR-22.
 
-OQ-25 amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md:1710` ("exactly
+OQ-25 amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md` (Story 4.2, first acceptance criterion) ("exactly
 one `CurrentUser` request") and these five assertions: `tests/e2e/modules/user/features/settings/settings.spec.ts:93`,
 `:105` (`toBe(1)`), `:110` (`toBe(2)` after one retry), `…/settings-save.spec.ts:73` (`toBe(1)`) and
 `tests/e2e/a11y/settings-states.a11y.spec.ts:103` (poll `toBe(2)`); their stubs route replies by

@@ -336,7 +336,7 @@ same commit; no weight file is committed, so none can go stale. At 449 files the
 the floor of 1 that each all-static file adds, so the 48 shards carry 123 to 139 weight units and 1
 to 9 files each. File size was a poor proxy for
 that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
-kill switch before it finished, while this scope packed by counted mutants carries 199 to 200
+kill switch before it finished, while this scope packed by counted mutants carries 198 to 199
 units per shard at 30.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
@@ -470,7 +470,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 448 files; not all of them produce scored mutants — the 48 unsharded ones hold no
+mutate scope is 449 files; not all of them produce scored mutants — the 48 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 

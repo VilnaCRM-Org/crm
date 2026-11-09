@@ -421,7 +421,7 @@ off the test path so the unit fetch-stub and the integration MSW server never co
 excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
 text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
 type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
-CI runners are 2-core, so parallelism comes from the shard count (currently 40), not from Stryker's
+CI runners are 2-core, so parallelism comes from the shard count (currently 48), not from Stryker's
 in-process concurrency.
 
 **Every mutant is classified on its merits.** A score is only worth enforcing when each status was
