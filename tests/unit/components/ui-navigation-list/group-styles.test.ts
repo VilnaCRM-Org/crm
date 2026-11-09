@@ -82,7 +82,7 @@ describe('navigation group styles', () => {
       border: 0,
       background: 'transparent',
       cursor: 'pointer',
-      color: '#969B9D',
+      color: '#57595B',
       '&:hover': {
         color: '#404142',
       },

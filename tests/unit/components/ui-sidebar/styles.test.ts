@@ -18,7 +18,7 @@ const HANDLE = {
   borderRadius: '33px',
   backgroundColor: '#FFFFFF',
   boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
-  color: '#969B9D',
+  color: '#57595B',
   cursor: 'pointer',
   '&:focus-visible': {
     outline: '2px solid #1A1C1E',

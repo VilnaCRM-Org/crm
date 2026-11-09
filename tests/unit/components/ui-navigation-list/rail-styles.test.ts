@@ -13,6 +13,7 @@ const PILL = {
   margin: '7px 8px',
   padding: '8px 16px',
   borderRadius: '8px',
+  '& svg': { flexShrink: 0, fill: 'none', color: '#57595B' },
   '&:hover': {
     backgroundColor: '#F4F5F6',
     '& svg': {

@@ -96,6 +96,11 @@ of the plan as approved.
 > tracked in #276. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
 > `A11Y_EXCEPTIONS` entry exists or is added for them (PRD NFR-4).
 
+> **Owner decision of 2026-11-09 (the three glyphs reach 3:1, DV-15).** The exception above is
+> withdrawn: the FR/NFR gate held that an accessibility failure cannot pass on owner acceptance, and
+> the owner chose to fix it. The three glyphs now rest at `#57595B`, about 7:1 on white. The banner
+> above is kept as the record of the decision it replaced.
+
 > **Owner decision of 2026-10-28 (a failed re-read keeps the name), noted 2026-11-06.** After a
 > successful read, a re-read that fails as `unavailable` keeps the shown name and monogram; a
 > `session_ended` outcome resets the chip to pending (`settle` in `use-current-user.ts`; PRD FR-5.3).

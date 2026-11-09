@@ -452,18 +452,22 @@ Playwright container and run in CI only.
   the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
   instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
   sub-items do not overlap.
-- **Three grey glyphs under 3:1** (WCAG 1.4.11, owner decision, 2026-10-27, issue #276). Three
-  active controls are identified at rest only by a `#969B9D` glyph on white, 2.81:1 against the
-  3:1 of SC 1.4.11 Non-text Contrast: the Settings disclosure chevron in the sidebar and the drawer
-  (`ui-navigation-list/group-styles.ts`, its state exposed through `aria-expanded`), the icon-only
-  sidebar collapse handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
-  (`ui-navigation-list/styles.ts` through `rail-styles.ts`, label visually hidden). The product
-  owner keeps Figma's `#969B9D` and accepts a scoped exception for exactly these three controls in
-  their resting state, tracked in issue #276 with the other palette exceptions. Hover (`#404142`)
-  passes, the current rail row falls under the existing current-row entry (PRD NFR-4 X-1), and
-  focus indicators still reach
-  3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
-  `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
+- **Three grey glyphs under 3:1** were a gap until 2026-11-09; they now reach 3:1, see DV-15.
+
+### DV-15: the icon-only shell glyphs reach 3:1 (owner decision, 2026-11-09)
+
+Three active controls are identified at rest only by their glyph: the Settings disclosure chevron
+in the sidebar and the drawer (`ui-navigation-list/group-styles.ts`), the icon-only sidebar collapse
+handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
+(`ui-navigation-list/rail-styles.ts`). Figma draws them `#969B9D`, 2.81:1 on white, under the 3:1 of
+WCAG 1.4.11 Non-text Contrast. The owner accepted that on 2026-10-27. On 2026-11-09 the FR/NFR gate
+held that an accessibility failure cannot pass on owner acceptance, and the owner chose to fix it:
+the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on white and already the
+burger's colour. Hover (`#404142`), the current rail row (`#0399ED`, PRD NFR-4 X-1) and the icons of
+the expanded rows, which sit beside a visible label, keep their Figma colours.
+
+No axe rule tests 1.4.11, so `tests/unit/a11y/non-text-contrast.test.ts` computes each resting
+glyph's contrast against white from the styles and fails under 3:1.
 
 ### DV-14: the header badge takes the disabled variant's colour (owner decision, 2026-11-06)
 

@@ -3,8 +3,8 @@ status: complete
 workflowType: ux-design
 project_name: crm
 date: 2026-10-22
-revised: 2026-11-06
-iteration: 5
+revised: 2026-11-09
+iteration: 6
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -36,7 +36,8 @@ userSettings flag removal; 2026-11-04: the settings page centred and the handle 
 edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: V-9 closed and P-62 filled, the
 tablet rail handle's `right`, the drawer primitive, the page content following the rail, the P-62
 width readings, and the owner decisions DV-14 (the badge colour) and the dropped undrawn header
-state rows, §10.2) **Feature:** `app-shell-navigation`
+state rows, §10.2; 2026-11-09: the iteration bump and DV-15, the three glyphs at 3:1, §10.3 and §11)
+**Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -783,7 +784,7 @@ Owner-approved visible deviation (outside classes (a) to (d)), named and the onl
 
 Amended 2026-11-05 (owner decisions after 2026-10-23): "the only one" above is the record of the plan
 as approved. These three now stand beside DV-10, each measured in the shell README. Amended 2026-11-06:
-DV-14 stands beside them (table below the three).
+DV-14 stands beside them (table below the three). Amended 2026-11-09: DV-15 joins DV-14 there.
 
 | Id                                                                                                                                    | Deviation from the Figma frame                                                                                                                                                                                                                                                                                                                       | Approved          |
 | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
@@ -794,6 +795,7 @@ DV-14 stands beside them (table below the three).
 | Id                                                                                                                                          | Deviation from the plan                                                                                                                                                                                                                                                                                         | Approved          |
 | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | [DV-14](../../../src/components/ui-app-shell/README.md#dv-14-the-header-badge-takes-the-disabled-variants-colour-owner-decision-2026-11-06) | The header badge paints `#D0D4D8` with white digits, as Figma's disabled variant `451:26214` draws it (read directly on 2026-11-06: a 48×48 button in `#e1e7ea`, an 18×18 badge in `#d0d4d8`), instead of the `#1EAEFF` of the plan (P-39 to P-42, FR-3, FR-4, FR-19, NFR-4). White on `#D0D4D8` is about 1.5:1 | owner, 2026-11-06 |
+| [DV-15](../../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09)                 | The Settings chevron, the collapse handle and the default collapsed-rail rows draw their resting glyph `#57595B` (7:1), not Figma's `#969B9D` (2.81:1), to meet WCAG 1.4.11.                                                                                                                                    |                   |
 
 Allowed differences (PRD NFR-22), and only these:
 
@@ -835,6 +837,9 @@ Allowed differences (PRD NFR-22), and only these:
   #276 with the other palette exceptions. Hover (`#404142`) passes, the current rail row is X-1,
   and focus indicators stay at 3:1 or more. axe's `color-contrast` rule evaluates text only and no
   axe rule tests 1.4.11, so no `A11Y_EXCEPTIONS` entry exists or is added.
+- Amended 2026-11-09 (owner decision, [DV-15](../../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09)): the exception above is withdrawn.
+  The three glyphs now rest at `#57595B`, about 7:1 on white, and a unit test pins each at 3:1 or
+  more.
 - Targets (NFR-3): §3.3 and §5.2; drawer rows 60 tall, drawer Sign out 54 tall; the mobile user-menu
   items 225×44 (My profile, Settings, Sign out); sidebar rows are not touch surfaces (≥ 1024); the
   disabled bell and list are not targets, and their 40 px pitch is a recorded sizing gap if they

@@ -26,7 +26,7 @@ export default {
     border: 0,
     background: 'transparent',
     cursor: 'pointer',
-    color: customColors.text.secondary,
+    color: customColors.text.muted,
     '&:hover': { color: customColors.text.primary },
     '& svg': { display: 'block', width: '100%', height: '100%', fill: 'none' },
     '&:focus-visible': {

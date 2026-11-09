@@ -33,7 +33,7 @@ edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet ra
 `expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
 journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27; owner decisions of 2026-11-06: R-1 closed, the three exemptions approved, the badge
 colour DV-14, the undrawn header states dropped; 2026-11-09: the desktop journey's Settings group and
-settings card, and the OQ-27 note) **Feature:** `app-shell-navigation`
+settings card, the OQ-27 note and the NFR-4 glyph fix, DV-15) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -1236,6 +1236,13 @@ against adjacent colours. axe's `color-contrast` rule evaluates text only and no
 1.4.11, so there is nothing for `A11Y_EXCEPTIONS` to scope: no entry exists or is added, and the
 X-1 table above is unchanged. The same record is in UX §11 and in
 `src/components/ui-app-shell/README.md`.
+
+**Amended 2026-11-09 (owner decision, DV-15).** The exception above is withdrawn. The FR/NFR gate
+held that an accessibility failure cannot pass on owner acceptance, and the owner chose to fix it:
+the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on white. Hover, the
+current rail row (X-1) and the expanded rows' icons are unchanged.
+`tests/unit/a11y/non-text-contrast.test.ts` fails if any of the three drops under 3:1, since no axe
+rule tests 1.4.11. The paragraphs above are kept as the record of the plan as approved.
 
 ### NFR-5 — Bundle, eager path and public routes
 

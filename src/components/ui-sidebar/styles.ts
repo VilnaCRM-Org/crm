@@ -38,7 +38,7 @@ const handle = {
   borderRadius: '33px',
   backgroundColor: paletteColors.background.default,
   boxShadow: customColors.shell.handleShadow,
-  color: customColors.text.secondary,
+  color: customColors.text.muted,
   cursor: 'pointer',
   transition: 'right 200ms ease-out',
   [REDUCED_MOTION]: { transitionDuration: '0s' },
