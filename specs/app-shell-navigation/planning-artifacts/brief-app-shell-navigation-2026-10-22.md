@@ -53,6 +53,15 @@ the record of the plan as approved.
 > its chevron no longer covers the page title from 1024 to 1440). Any other visible difference is
 > still a defect.
 
+> **Owner decisions of 2026-11-06 (DV-14, undrawn header states).**
+> [DV-14](../../../src/components/ui-app-shell/README.md#dv-14-the-header-badge-takes-the-disabled-variants-colour-owner-decision-2026-11-06)
+> now stands beside DV-10 to DV-13: the header badge paints `#D0D4D8`, the colour of Figma's
+> disabled variant (`451:26214`). The undrawn header states are dropped from SM-1 and G-1 while the
+> round buttons and search ship disabled: their rest, hover and open states and the search rest,
+> hover and active states are not required until those controls are enabled, and the disabled
+> variants the app renders stay measured (UX §10.2). The rows below are kept unchanged as the record
+> of the plan as approved.
+
 > **Amended 2026-11-05 (reconciliation with shipped code).** C-3 no longer holds:
 > `route-composer.tsx` imports `protectedLayoutLoader` statically, and `AppLayout` and
 > `ProtectedRoute` load from the lazy `protected-layout` chunk (663151bc), so neither ships in the
