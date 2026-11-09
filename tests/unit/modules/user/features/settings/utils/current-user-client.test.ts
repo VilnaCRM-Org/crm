@@ -5,6 +5,7 @@ import CurrentUserClient from '@/modules/user/features/settings/utils/current-us
 import ApiError from '@/modules/user/lib/api-errors/api-error';
 import sessionCorrelation from '@/services/observability/session-correlation';
 import { buildHttpUrl, buildToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 const ORIGINAL_ENV = { ...process.env };
@@ -229,5 +230,51 @@ describe('CurrentUserClient', () => {
     await jest.advanceTimersByTimeAsync(10_000);
 
     expect(sentInit(fetchSpy).signal?.aborted).toBe(false);
+  });
+  describe('module-level values evaluated inside the test', () => {
+    const loadClient = (): Promise<typeof CurrentUserClient> =>
+      loadIsolated(
+        async () =>
+          (await import('@/modules/user/features/settings/utils/current-user-client')).default
+      );
+
+    it('sends the exact CurrentUser operation body', async () => {
+      const Fresh = await loadClient();
+      const fetchSpy = answer('{}');
+
+      await new Fresh().send(request());
+
+      const body: unknown = JSON.parse(String(sentInit(fetchSpy).body));
+      expect(body).toEqual({
+        operationName: 'CurrentUser',
+        variables: {},
+        query: print(CurrentUserDocument),
+      });
+      expect(body).toHaveProperty('operationName', 'CurrentUser');
+      expect(String((body as { query: string }).query).length).toBeGreaterThan(0);
+    });
+
+    it('falls back to the exact local GraphQL URL outside production', async () => {
+      delete process.env.REACT_APP_GRAPHQL_URL;
+      const Fresh = await loadClient();
+      const fetchSpy = answer('{}');
+
+      await new Fresh().send(request());
+
+      expect(sentUrl(fetchSpy)).toBe('http://localhost:4000/graphql');
+    });
+
+    it('rejects with the exact missing-URL message in production', async () => {
+      delete process.env.REACT_APP_GRAPHQL_URL;
+      process.env = { ...process.env, NODE_ENV: 'production' };
+      const Fresh = await loadClient();
+      answer('{}');
+
+      await expect(new Fresh().send(request())).rejects.toThrow(
+        new Error(
+          'A GraphQL URL must be defined in production environment. Cannot default to localhost.'
+        )
+      );
+    });
   });
 });
