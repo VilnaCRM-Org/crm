@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
+import settleTransitions from '@tests/unit/utils/settle-transitions';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -70,12 +71,14 @@ describe('the assembled app shell accessibility (issue #362)', () => {
   });
 
   it('shares the name Main navigation between the open drawer and its nav', async () => {
+    stubMotionPreference(true);
     await renderAppShell({ path: '/settings', width: MOBILE, page: HOME });
     const user = userEvent.setup();
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Відкрити меню' }));
     const dialog = await screen.findByRole('dialog', { name: NAV_NAME });
+    await settleTransitions();
 
     expect(within(dialog).getByRole('navigation', { name: NAV_NAME })).toBeInTheDocument();
     expect(screen.getAllByRole('navigation')).toHaveLength(1);
@@ -85,11 +88,13 @@ describe('the assembled app shell accessibility (issue #362)', () => {
   });
 
   it('has no axe violation with the drawer open on /settings', async () => {
+    stubMotionPreference(true);
     await renderAppShell({ path: '/settings', width: MOBILE, page: HOME });
     const burger = screen.getByRole('button', { name: 'Відкрити меню' });
 
     await userEvent.setup().click(burger);
     await screen.findByRole('dialog', { name: NAV_NAME });
+    await settleTransitions();
 
     expect(burger).toHaveAttribute('aria-expanded', 'true');
     expect(burger).toHaveAttribute('aria-haspopup', 'dialog');

@@ -6,6 +6,7 @@ import currentUserSource from '@/modules/user/features/settings/utils/current-us
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import { buildFullName } from '@tests/builders';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
+import settleTransitions from '@tests/unit/utils/settle-transitions';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -14,13 +15,6 @@ const mockRead = jest.fn();
 const MOBILE = 375;
 const IDENTITY = new UserDisplayNameMapper().fromFullName(buildFullName());
 const PAGE = <h1>Головна</h1>;
-
-const settleTransitions = (): Promise<void> =>
-  act(async () => {
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 0);
-    });
-  });
 
 const openDrawer = async (): Promise<HTMLElement> => {
   await userEvent.setup().click(screen.getByRole('button', { name: 'Відкрити меню' }));
