@@ -33,7 +33,7 @@ edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet ra
 `expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
 journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27; owner decisions of 2026-11-06: R-1 closed, the three exemptions approved, the badge
 colour DV-14, the undrawn header states dropped; 2026-11-09: the desktop journey's Settings group and
-settings card) **Feature:** `app-shell-navigation`
+settings card, and the OQ-27 note) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -1593,6 +1593,13 @@ one `CurrentUser` request") and these five assertions: `tests/e2e/modules/user/f
 `:105` (`toBe(1)`), `:110` (`toBe(2)` after one retry), `…/settings-save.spec.ts:73` (`toBe(1)`) and
 `tests/e2e/a11y/settings-states.a11y.spec.ts:103` (poll `toBe(2)`); their stubs route replies by
 caller (architecture §5.7).
+
+OQ-27, amended 2026-11-06 (owner decision of 2026-11-02, 0addef83). Only the settings page reads
+the mapper through the container: `use-display-name.ts` calls
+`useService(AUTH_TOKENS.UserDisplayNameMapper)`. The header chip's `use-current-user.ts` reads
+through the container-free `currentUserSource`, which holds its own `UserDisplayNameMapper`
+instance (`current-user-source.ts`), so the chip resolves nothing from the container (architecture
+§12.2; FR-5 and NFR-7 carry the same note).
 
 ## 10. Traceability
 
