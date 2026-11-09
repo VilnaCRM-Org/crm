@@ -612,7 +612,8 @@ issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at
 decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
 owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
 on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
-issue #276 and deleted when it closes.
+issue #276 and deleted when it closes. Each entry is a known WCAG 2.1 AA non-conformance kept by owner
+decision, not a pass; the owner re-confirmed the current navigation row on 2026-11-09.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
 

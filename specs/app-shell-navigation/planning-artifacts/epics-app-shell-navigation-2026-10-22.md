@@ -204,30 +204,30 @@ Every UI story runs `figma-design-check` and `figma-ui-parity` against file
 
 ### NonFunctional Requirements
 
-| Id     | Subject (PRD §6)                                                  |
-| ------ | ----------------------------------------------------------------- |
-| NFR-1  | Landmarks (WCAG 1.3.1, 2.4.1)                                     |
-| NFR-2  | Keyboard, focus order, focus-visible (2.1.1, 2.1.2, 2.4.3, 2.4.7) |
-| NFR-3  | 44 px touch targets on mobile                                     |
-| NFR-4  | Contrast (1.4.3, 1.4.11)                                          |
-| NFR-5  | Bundle budgets, eager path, zero shell bytes on public routes     |
-| NFR-6  | Architecture layers, class and type conventions, items as data    |
-| NFR-7  | Data honesty                                                      |
-| NFR-8  | Coverage and mutation at 100 %                                    |
-| NFR-9  | Localization (`uk`, `en`, lazy catalogs)                          |
-| NFR-10 | Visual baselines                                                  |
-| NFR-11 | Browser floor (Baseline 2023)                                     |
-| NFR-12 | Modal dialog and menu semantics                                   |
-| NFR-13 | Lighthouse floors on `/`                                          |
-| NFR-14 | Console gate                                                      |
-| NFR-15 | No suppression                                                    |
-| NFR-16 | Test lanes                                                        |
-| NFR-17 | Metrics and duplication                                           |
-| NFR-18 | Reliability and observability                                     |
-| NFR-19 | Documentation                                                     |
-| NFR-20 | Motion: reduced motion and no ripple on shell controls            |
-| NFR-21 | Resize and text spacing (1.4.4, 1.4.12)                           |
-| NFR-22 | Full Figma colour and pixel parity (owner, 2026-10-23)            |
+| Id     | Subject (PRD §6)                                                                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------- |
+| NFR-1  | Landmarks (WCAG 1.3.1, 2.4.1)                                                                                  |
+| NFR-2  | Keyboard, focus order, focus-visible (2.1.1, 2.1.2, 2.4.3, 2.4.7); amended 2026-11-09: also WCAG 2.2 SC 2.4.11 |
+| NFR-3  | 44 px touch targets on mobile                                                                                  |
+| NFR-4  | Contrast (1.4.3, 1.4.11)                                                                                       |
+| NFR-5  | Bundle budgets, eager path, zero shell bytes on public routes                                                  |
+| NFR-6  | Architecture layers, class and type conventions, items as data                                                 |
+| NFR-7  | Data honesty                                                                                                   |
+| NFR-8  | Coverage and mutation at 100 %                                                                                 |
+| NFR-9  | Localization (`uk`, `en`, lazy catalogs)                                                                       |
+| NFR-10 | Visual baselines                                                                                               |
+| NFR-11 | Browser floor (Baseline 2023)                                                                                  |
+| NFR-12 | Modal dialog and menu semantics                                                                                |
+| NFR-13 | Lighthouse floors on `/`                                                                                       |
+| NFR-14 | Console gate                                                                                                   |
+| NFR-15 | No suppression                                                                                                 |
+| NFR-16 | Test lanes                                                                                                     |
+| NFR-17 | Metrics and duplication                                                                                        |
+| NFR-18 | Reliability and observability                                                                                  |
+| NFR-19 | Documentation                                                                                                  |
+| NFR-20 | Motion: reduced motion and no ripple on shell controls                                                         |
+| NFR-21 | Resize and text spacing (1.4.4, 1.4.12)                                                                        |
+| NFR-22 | Full Figma colour and pixel parity (owner, 2026-10-23)                                                         |
 
 ### Architecture requirements carried into stories
 
@@ -281,7 +281,7 @@ Each story's own criteria add to these; a story is not done until all of them ho
 - **Mutation.** Zero survivors on every new or changed file in `scripts/ci/mutation-scope.mjs`,
   `styles.ts` files included (NFR-8).
 - **Accessibility.** jest-axe on every new rendering component and state; no positive `tabindex`;
-  WCAG 2.1 AA (NFR-1 to NFR-4).
+  WCAG 2.1 AA (NFR-1 to NFR-4); amended 2026-11-09: the shell also meets WCAG 2.2 SC 2.4.11 (NFR-2).
 - **i18n.** Every key a story first uses lands in `uk` and `en` in that story with the OQ-9 wording;
   catalog edits are append-only; `make i18n-generate`, then `make lint-i18n`; shell tests render
   through `tests/unit/utils/create-app-shell-locale-i18n.ts` (NFR-9).
@@ -965,6 +965,7 @@ for a focused spec; the full lanes are CI-only; `retries: 0`.
 
 **Acceptance Criteria:**
 
+- Amended 2026-11-09 (PRD NFR-2, WCAG 2.2 SC 2.4.11): given the sticky header and sidebar at 1440 × 400 and 1000 × 300, when focus moves by Tab through the sidebar rows, the home link in `<main>` and the footer links, then no focused control is entirely hidden (`tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`, `tests/unit/components/ui-app-shell/use-sticky-focus-clearance.test.tsx`).
 - Given `/` at 1440, when Settings is activated in the sidebar, then `/settings` renders with `<main>` focused and the Settings link has `aria-current="page"`; on `/` no navigation element has it (FR-8 P, FR-11 P, N; SM-2).
 - Given `/` at 1440 and 1024, when Settings is chosen from the chip's menu, then `/settings` renders with `<main>` focused (FR-6.3 P, SM-2).
 - Given `/` and `/settings`, when Sign out is activated in the sidebar and, separately, in the chip's menu, then each lands on `/sign-in` with `<main>` focused (FR-10 P, FR-6.4 P, SM-2).
@@ -1126,7 +1127,7 @@ Stories 2.5 and 3.4.
 | FR-18, FR-18.1         | 2.5, 3.3, 3.4                     | `components/coming-soon/coming-soon-page`, `…/coming-soon-sections`, `routes/app-routes`, settings route contract, `tooling/performance-serving`                                                                                                                                                                  | `a11y/ui-components`                       | `modules/coming-soon`, `a11y/routes`, route coverage                 | `visual-comparison.coming-soon`, `mobile/coming-soon`                       |
 | FR-19                  | 2.1, 3.1, 3.3, 3.4                | `components/ui-app-header/header-badge`, `…/header-icon-button` (counts 0, 1, 2, 5, 8, 21, `null`)                                                                                                                                                                                                                | `a11y/ui-components`                       | `modules/app-shell` (no badge on any page)                           | header story (1 and 8, the parity artifact); no page baseline shows a badge |
 | NFR-1                  | 2.1, 2.2, 2.3, 3.1, 3.2           | `components/layouts/app-layout`                                                                                                                                                                                                                                                                                   | `a11y/app-shell`                           | `a11y/routes`                                                        | none                                                                        |
-| NFR-2                  | 2.1 to 2.4, 3.2, 3.3              | row, toggle and menu tests                                                                                                                                                                                                                                                                                        | `a11y/app-shell`, `a11y/user-menu`         | `a11y/app-shell-keyboard`                                            | none                                                                        |
+| NFR-2                  | 2.1 to 2.4, 3.2, 3.3              | row, toggle and menu tests; 2.4.11 (amended 2026-11-09): `ui-app-shell/use-sticky-focus-clearance`, e2e `a11y/app-shell-keyboard`                                                                                                                                                                                 | `a11y/app-shell`, `a11y/user-menu`         | `a11y/app-shell-keyboard`                                            | none                                                                        |
 | NFR-3                  | 2.1, 2.3, 2.4, 3.3                | style tests (declared boxes)                                                                                                                                                                                                                                                                                      | none                                       | `mobile/app-shell-touch`                                             | none                                                                        |
 | NFR-4                  | 1.1, 2.1, 2.2, 3.2, 3.3           | `styles/colors`, style tests                                                                                                                                                                                                                                                                                      | `a11y/a11y-gate`, `a11y/non-text-contrast` | `a11y/routes` (three engines)                                        | none                                                                        |
 | NFR-5                  | 1.1, 3.1, 3.3                     | `tooling/performance-serving`                                                                                                                                                                                                                                                                                     | none                                       | `modules/app-shell` (leak guard)                                     | none; CI bundle report                                                      |

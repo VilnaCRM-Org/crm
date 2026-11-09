@@ -2,7 +2,9 @@
 
 **Conformance target: WCAG 2.1 Level AA.** Every page and component this repository ships must
 meet it, and the gates below (issue #118) make that a merge condition rather than a review
-opinion. WCAG 2.2 AA (`wcag22aa`, in practice the `target-size` rule) is the next ratchet; the
+opinion. The palette exceptions tracked in #276 (the `A11Y_EXCEPTIONS` entries below) are known
+non-conformances kept by owner decision, not passes. WCAG 2.2 AA (`wcag22aa`, in practice the
+`target-size` rule) is the next ratchet; the
 44 px floor on the primary auth controls in `tests/e2e/mobile/` already covers its largest
 surface and the remaining under-sized controls are tracked as design work.
 
@@ -131,6 +133,8 @@ entry of the app shell (issue #362): the active row, group-header label and sub-
 sidebar and in the mobile drawer, whose list sits in its own `<nav>`
 (`nav a[aria-current="page"]` and `nav a[aria-current="page"] > span`), which render the Figma
 active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
+It does not conform to WCAG 2.1 AA: SC 1.4.3 for the label and SC 1.4.11 for the icon-only current
+rail row. The owner re-confirmed keeping it on 2026-11-09; it is tracked in #276.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
