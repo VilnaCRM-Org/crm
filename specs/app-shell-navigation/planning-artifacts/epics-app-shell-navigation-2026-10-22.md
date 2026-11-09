@@ -757,7 +757,7 @@ five protected routes), `settings/routes/index.ts` (CHANGED: three protected rou
 (CHANGED: eight entries), `src/routes/README.md` (CHANGED: the shell-owned routes and their later
 move).
 
-**Tests:** `tests/unit/components/coming-soon/{coming-soon-page.test.tsx,coming-soon-home-link.test.tsx,coming-soon-sections.test.ts,styles.test.ts}`
+**Tests:** `tests/unit/components/coming-soon/{coming-soon-page.test.tsx,coming-soon-home-link.test.tsx,coming-soon-sections.test.ts,styles.test.ts}` (amended 2026-11-09: plus `coming-soon-card.test.tsx` for the extracted `ComingSoonCard`)
 (NEW; the section set loaded in the test body), `tests/unit/routes/app-routes.test.ts` (**NEW**:
 no such file exists; `app-routes.ts` is pinned today only by
 `tests/unit/tooling/performance-serving.test.ts:129,236`), the settings route-contract test

@@ -781,6 +781,12 @@ dynamic `import()` exactly as for the other pages.
   `createSettingsLocaleI18n`.
 - **Title.** `usePageTitle` with the section key.
 
+  Amended 2026-11-09 (gate finding, UI kit): the page no longer writes the card markup inline.
+  `ComingSoonCard` (`src/components/coming-soon/coming-soon-card.tsx`, with
+  `coming-soon-card.stories.tsx` and `tests/unit/components/coming-soon/coming-soon-card.test.tsx`)
+  renders the `h1`, the message and `ComingSoonHomeLink` on the error-page card styles; the page
+  picks the section and renders it.
+
 ### 5.14 Header badge (AD-14; OQ-2 and OQ-2a RESOLVED by owner 2026-10-23)
 
 - **Contract.** `ShellBadgeCounts` (`src/components/types/ui-app-header/shell-badge-counts.ts`,

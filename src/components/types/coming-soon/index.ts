@@ -9,6 +9,10 @@ export interface ComingSoonSectionSet {
   readonly items: readonly ComingSoonSection[];
 }
 
+export interface ComingSoonCardProps {
+  readonly headingKey: string;
+}
+
 export interface ComingSoonContentProps {
   readonly section: ComingSoonSection;
 }
