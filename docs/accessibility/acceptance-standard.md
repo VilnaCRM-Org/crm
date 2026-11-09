@@ -147,13 +147,16 @@ by the product owner's decision
 exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
 3:1.
 
-The third is in the app shell (issue #362): three active controls whose only visible identifier at
-rest is a `grey[50]` `#969B9D` glyph on white, 2.81:1 under the 3:1 of SC 1.4.11. They are the
-Settings disclosure chevron in the sidebar and the mobile drawer, the icon-only sidebar collapse
-handle, and the default rows of the collapsed rail, whose labels are visually hidden. The product
-owner kept the Figma token on 2026-10-27. Hover (`#404142`) and focus indicators are outside the
-gap, and no axe rule tests non-text contrast, so no exception entry exists for it; it is resolved
-when #276 closes.
+The third was in the app shell (issue #362) and is resolved: three active controls whose only
+visible identifier at rest is a glyph, the Settings disclosure chevron in the sidebar and the mobile
+drawer, the icon-only sidebar collapse handle, and the default rows of the collapsed rail, whose
+labels are visually hidden. Figma's `grey[50]` `#969B9D` on white is 2.81:1, under the 3:1 of SC
+1.4.11, and the product owner kept it on 2026-10-27. On 2026-11-09 the owner chose to fix it
+instead (DV-15): the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on
+white. `tests/unit/a11y/non-text-contrast.test.ts` fails if any of them drops under 3:1, since no axe
+rule tests non-text contrast. Hover, the current rail row and focus indicators are outside this
+fix, as are the icons of expanded rows, which sit beside a visible label. See
+[the shell README, DV-15](../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 
 ## Adding coverage
 

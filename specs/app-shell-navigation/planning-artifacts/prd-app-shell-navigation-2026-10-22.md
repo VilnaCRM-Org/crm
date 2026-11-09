@@ -33,7 +33,8 @@ edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet ra
 `expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
 journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27; owner decisions of 2026-11-06: R-1 closed, the three exemptions approved, the badge
 colour DV-14, the undrawn header states dropped; 2026-11-09: the desktop journey's Settings group and
-settings card, the OQ-27 note and the NFR-4 glyph fix, DV-15) **Feature:** `app-shell-navigation`
+settings card, the OQ-27 note and the NFR-4 glyph fix, DV-15; the X-1 decision re-confirmed in NFR-4; the
+WCAG 2.2 SC 2.4.11 criterion in NFR-2; the DV-15 notes at C-9 and in NFR-22) **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
 > together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
@@ -141,7 +142,9 @@ nor download it.
 - **G-2** Settings and sign out work from both the sidebar (or drawer) and the user menu; every
   other menu item reaches its own coming-soon route; nothing pretends to work: zero dead links,
   and no count in `src` that is not data (FR-19).
-- **G-3** The shell is operable by keyboard, touch and screen reader at WCAG 2.1 AA.
+- **G-3** The shell is operable by keyboard, touch and screen reader at WCAG 2.1 AA, the repository's
+  binding target (`docs/accessibility/acceptance-standard.md`). Amended 2026-11-09: the shell also
+  meets WCAG 2.2 SC 2.4.11 Focus Not Obscured (Minimum), see NFR-2.
 - **G-4** No gate weakens, no budget rises, public routes download no shell byte, and `/` keeps
   its Lighthouse floors.
 - **G-5** Menu items are data that RBAC (#114) can later filter without restructuring.
@@ -1153,6 +1156,18 @@ landmarks (banner, navigation, main; ARIA11).
 - No keyboard trap outside an open drawer (NFR-12); no positive `tabindex`.
 - Accessible names contain the visible labels (2.5.3); icon-only controls are named; decorative
   icons are hidden.
+- **Amended 2026-11-09 (WCAG 2.2 SC 2.4.11 Focus Not Obscured (Minimum)).** G-3 stays WCAG 2.1 AA,
+  the repository's binding target; this shell also meets 2.4.11. Given the sticky 64 px header and
+  the sticky sidebar, when focus moves by Tab or Shift+Tab to any control in `<main>`, the sidebar
+  or the footer, the focused control is not entirely hidden behind them. It is implemented by
+  `scrollMarginTop` on the layout slots (`HEADER_CLEARANCE` in
+  `src/components/layouts/app-layout.styles.ts`) and by `useStickyFocusClearance`
+  (`src/components/ui-app-shell/use-sticky-focus-clearance.ts`), which scrolls a control the header
+  covers back into view. It is covered by
+  `tests/unit/components/ui-app-shell/use-sticky-focus-clearance.test.tsx` and by the browser specs
+  "Focus clears the sticky header" at 1440 x 400 and 1000 x 300 in
+  `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`, which walk the sidebar rows, the home link in
+  `<main>` and the footer links in both directions.
 
 ### NFR-3 — Touch targets on mobile
 
@@ -1243,6 +1258,13 @@ the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on w
 current rail row (X-1) and the expanded rows' icons are unchanged.
 `tests/unit/a11y/non-text-contrast.test.ts` fails if any of the three drops under 3:1, since no axe
 rule tests 1.4.11. The paragraphs above are kept as the record of the plan as approved.
+
+**Owner decision, 2026-11-09 (X-1 kept).** The FR/NFR gate flagged X-1 again on 2026-11-09, and the
+owner chose to keep Figma's `#0399ED` on the 10 % `#1EAEFF` tint for the current navigation row (label
+and icon). The pair stays at about 2.8:1, **below WCAG AA** by owner decision: under 4.5:1 for the
+label (SC 1.4.3) and under 3:1 for the icon-only collapsed-rail row (SC 1.4.11). It remains the scoped
+`color-contrast` exception X-1 in `tests/utils/a11y/axe-config.ts` (OQ-14), tracked with the palette
+debt in issue #276. This row does not conform; it is an accepted gap, not a pass.
 
 ### NFR-5 — Bundle, eager path and public routes
 
@@ -1504,8 +1526,14 @@ every story with a visible surface.
   was "use all from Figma". It is a Figma value, so it is not a deviation from the frames; it is listed
   because it differs from the colour the plan recorded. Allowed difference (a) also no longer asks for
   the undrawn header states (UX §10.2 amendment of 2026-11-06).
+- **Amended 2026-11-09 (owner decision).** DV-15 joins that list: the Settings disclosure chevron, the
+  sidebar collapse handle and the default rows of the collapsed rail rest at
+  `customColors.text.muted` `#57595B` instead of Figma's `#969B9D`, to reach WCAG 1.4.11's 3:1. See the
+  [shell README, DV-15](../../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 - **Contrast.** A failure caused by an exact Figma colour is handled only by NFR-4's enumerated
-  exceptions.
+  exceptions. Amended 2026-11-09 (owner decision, DV-15): a WCAG 1.4.11 failure of three resting
+  glyphs was fixed by an owner-approved colour change instead, the one such change; it is not a
+  precedent, and every other contrast failure is still handled only by NFR-4's exceptions.
 
 ## 7. Dependencies and prerequisites
 
@@ -1594,6 +1622,11 @@ as the recommended or stated option on 2026-10-23. OQ-18 and OQ-24 were not aske
 **C-9, amended 2026-11-05.** The owner's parity decision stands, with the later owner decisions
 beside it: DV-10 (2026-10-23), DV-11 (2026-10-26), and DV-12 and DV-13 (2026-11-04); DV-14 (2026-11-06, the
 badge colour) joins them. See NFR-22.
+
+**C-9, amended 2026-11-09 (owner decision, DV-15).** "A Figma colour is never changed to pass a gate"
+has one owner-approved exception: DV-15 changed the resting colour of three icon-only glyphs from
+`#969B9D` to `#57595B` to pass WCAG 1.4.11. Nothing else was changed to pass a gate. See NFR-22 and the
+[shell README, DV-15](../../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 
 OQ-25 amends `specs/user-settings/planning-artifacts/epics-user-settings-2026-10-06.md` (Story 4.2, first acceptance criterion) ("exactly
 one `CurrentUser` request") and these five assertions: `tests/e2e/modules/user/features/settings/settings.spec.ts:93`,

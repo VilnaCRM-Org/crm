@@ -65,8 +65,8 @@ describe('WCAG 1.4.11 non-text contrast of the icon-only shell controls (issue #
     );
   });
 
-  it.each(['desktop', 'tablet'] as const)(
-    'draws the %s rail row icons at 3:1 or more on white',
+  it.each(['desktop', 'tablet', 'tabletProducts', 'tabletCompact', 'action'] as const)(
+    'draws the %s rail shape icons at 3:1 or more on white',
     async (shape) => {
       const styles = await loadIsolated<RailStyles>(
         async () => (await import('@/components/ui-navigation-list/rail-styles')).default
