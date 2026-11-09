@@ -134,12 +134,11 @@ RUN npm --prefix /usr/local/lib/node_modules/serve pkg set dependencies.compress
 
 
 # -------- Static Server Stage --------
-FROM mirror.gcr.io/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base
+FROM mirror.gcr.io/library/alpine:3.21@sha256:bc21487101ae47172509130ee1092cc273a831968d64b617776d1f69c81e42ab AS serve-base
 
 ARG CURL_VERSION=8.14.1-r3
 ARG LIBSTDCPP_VERSION=14.2.0-r4
 ARG OPENSSL_VERSION=3.3.7-r2
-ARG ZLIB_VERSION=1.4-r0
 
 WORKDIR /app
 
@@ -150,8 +149,7 @@ RUN apk add --no-cache \
     libgcc=${LIBSTDCPP_VERSION} \
     libstdc++=${LIBSTDCPP_VERSION} \
     libcrypto3=${OPENSSL_VERSION} \
-    libssl3=${OPENSSL_VERSION} \
-    zlib=${ZLIB_VERSION} && \
+    libssl3=${OPENSSL_VERSION} && \
     addgroup -g 1000 node && \
     adduser -u 1000 -G node -s /bin/sh -D node && \
     mkdir -p /app && chown -R node:node /app
