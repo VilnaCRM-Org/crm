@@ -634,9 +634,9 @@ darkening `error.main` itself (it would change every border and icon that meets 
 (7.03:1) at the source, as the field errors are fixed above.
 
 **Decision.** The product owner kept the Figma token (2026-10-21). `#settings-greeting` carries a
-scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, the tenth entry, tracked with
-the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276) and deleted
-when it closes; the name beside the greeting stays `#1A1C1E`.
+scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, matched by that selector,
+tracked with the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276)
+and deleted when it closes; the name beside the greeting stays `#1A1C1E`.
 
 **Rejected.** `#57595B` at the source (the page would stop matching the frames); an unscoped
 exception (the gate accepts one rule, one selector, a reason and a tracking issue per entry).

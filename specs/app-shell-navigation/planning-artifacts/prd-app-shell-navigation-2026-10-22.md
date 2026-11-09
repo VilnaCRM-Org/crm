@@ -210,6 +210,12 @@ starts at x 262. Selecting "Settings" (sidebar or chip menu) lands on
 is left-aligned beside the sidebar. Selecting "Sign out" (either place) lands on `/sign-in` with
 `<main>` focused.
 
+Amended 2026-11-09 (gate finding; FR-8.1, DV-12): on `/` the Settings group is collapsed, showing
+the header row and its chevron only; it expands on `/settings` and its sub-routes (FR-8.1 P). Above
+1024 the settings card is centred beside the sidebar, not left-aligned (DV-12, owner decision of
+2026-11-04). The tablet journey below follows the same corrections. The paragraph above is kept as
+the record of the plan as approved.
+
 ### Tablet 1024
 
 The same journey with tablet metrics: 52 px header controls, a 360 px search, a 253 px chip, and
