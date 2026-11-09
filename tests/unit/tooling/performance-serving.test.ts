@@ -327,49 +327,49 @@ describe('performance serving config', () => {
     expect(protectedGraphIn(files)).toEqual(SHARED_WITH_EAGER_PATH);
   });
 
-  it('fails the protected-layout check when the composer imports AppLayout (must-fail)', () => {
-    const composer = 'src/routes/route-composer.tsx';
-    const tainted = (file: string): string =>
-      file === composer
-        ? `${readFile(file)}\nimport AppLayout from '@/components/layouts/app-layout';\n`
-        : readFile(file);
+  it.each([
+    [
+      'AppLayout',
+      "import AppLayout from '@/components/layouts/app-layout';",
+      [
+        'src/components/layouts/app-layout-frame.tsx',
+        'src/components/layouts/app-layout.styles.ts',
+        'src/components/layouts/app-layout.tsx',
+        'src/components/layouts/app-shell-loader.ts',
+        'src/components/layouts/app-shell-placeholders.tsx',
+        'src/components/layouts/footer-loader.ts',
+        'src/components/layouts/use-app-shell.ts',
+        'src/components/layouts/use-frame-focus.ts',
+        'src/hooks/use-arrival-focus.ts',
+      ],
+    ],
+    [
+      'the guard',
+      "import ProtectedRoute from '@auth/components/protected-route';",
+      [
+        'src/config/env/preloaded-auth-token.ts',
+        'src/config/env/sandbox-demo-session-provider.ts',
+        'src/modules/user/features/auth/components/protected-route/index.tsx',
+        'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
+        'src/modules/user/features/auth/stores/auth-session-provider.ts',
+        'src/modules/user/features/auth/stores/auth-store-selectors.ts',
+        'src/modules/user/features/auth/stores/use-auth-store.ts',
+        'src/modules/user/features/auth/stores/use-auth-token.ts',
+        'src/modules/user/features/auth/stores/use-sign-out.ts',
+      ],
+    ],
+  ])(
+    'fails the protected-layout check when the composer imports %s (must-fail)',
+    (_name, importLine, expected) => {
+      const composer = 'src/routes/route-composer.tsx';
+      const tainted = (file: string): string =>
+        file === composer ? `${readFile(file)}\n${importLine}\n` : readFile(file);
 
-    const { files } = eagerGraphOf('src/index.tsx', tainted);
+      const { files } = eagerGraphOf('src/index.tsx', tainted);
 
-    expect(protectedLayoutFilesOf(files)).toEqual([
-      'src/components/layouts/app-layout-frame.tsx',
-      'src/components/layouts/app-layout.styles.ts',
-      'src/components/layouts/app-layout.tsx',
-      'src/components/layouts/app-shell-loader.ts',
-      'src/components/layouts/app-shell-placeholders.tsx',
-      'src/components/layouts/footer-loader.ts',
-      'src/components/layouts/use-app-shell.ts',
-      'src/components/layouts/use-frame-focus.ts',
-      'src/hooks/use-arrival-focus.ts',
-    ]);
-  });
-
-  it('fails the protected-layout check when the composer imports the guard (must-fail)', () => {
-    const composer = 'src/routes/route-composer.tsx';
-    const tainted = (file: string): string =>
-      file === composer
-        ? `${readFile(file)}\nimport ProtectedRoute from '@auth/components/protected-route';\n`
-        : readFile(file);
-
-    const { files } = eagerGraphOf('src/index.tsx', tainted);
-
-    expect(protectedLayoutFilesOf(files)).toEqual([
-      'src/config/env/preloaded-auth-token.ts',
-      'src/config/env/sandbox-demo-session-provider.ts',
-      'src/modules/user/features/auth/components/protected-route/index.tsx',
-      'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
-      'src/modules/user/features/auth/stores/auth-session-provider.ts',
-      'src/modules/user/features/auth/stores/auth-store-selectors.ts',
-      'src/modules/user/features/auth/stores/use-auth-store.ts',
-      'src/modules/user/features/auth/stores/use-auth-token.ts',
-      'src/modules/user/features/auth/stores/use-sign-out.ts',
-    ]);
-  });
+      expect(protectedLayoutFilesOf(files)).toEqual(expected);
+    }
+  );
 
   it('loads the guard, the layout and the slot factory from one protected-layout chunk', () => {
     const loaderSource = readFile('src/routes/protected-layout-loader.ts');
