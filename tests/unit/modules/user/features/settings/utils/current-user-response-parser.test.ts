@@ -157,19 +157,21 @@ describe('CurrentUserResponseParser', () => {
     });
   });
 
-  it('reads Access Denied. as a denied session with a freshly loaded parser', async () => {
+  it('reads only extension status 401 as denied, with a freshly loaded parser', async () => {
     const loaded = await loadParser();
 
     expect(
       loaded.parse({
         status: 200,
-        text: JSON.stringify({ errors: [{ message: 'Access Denied.' }] }),
+        text: JSON.stringify({
+          errors: [{ message: 'Unauthorized', extensions: { status: 401 } }],
+        }),
       })
     ).toMatchObject({ kind: 'failed', reason: 'denied' });
     expect(
       loaded.parse({
         status: 200,
-        text: JSON.stringify({ errors: [{ message: 'Access denied' }] }),
+        text: JSON.stringify({ errors: [{ message: 'Access Denied.' }] }),
       })
     ).toMatchObject({ kind: 'failed', reason: 'unavailable' });
   });

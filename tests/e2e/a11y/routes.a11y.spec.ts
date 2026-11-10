@@ -49,7 +49,7 @@ const shellScan = (key: RouteScan['key'], ready = 'main h1'): RouteScan => ({
 
 const routeScans: readonly RouteScan[] = [
   shellScan('home'),
-  shellScan('settings', 'main form button[type="submit"]'),
+  shellScan('settings', 'main form button[type="submit"]:visible'),
   shellScan('boards'),
   shellScan('products'),
   shellScan('orders'),
