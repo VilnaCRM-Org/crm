@@ -1,4 +1,5 @@
 import { PiiScrubber } from '@/services/observability/pii-scrubber';
+import PiiTextScrubber from '@/services/observability/pii-text-scrubber';
 import type { SentryEvent } from '@/services/types/observability/sentry';
 import {
   buildEmail,
@@ -97,7 +98,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
 
     it('is the only pattern that catches the @-free vector (must-fail without it)', () => {
-      const others = (Reflect.get(scrubber(), 'patterns') as readonly RegExp[]).slice(1);
+      const others = (Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[]).slice(1);
       const leftover = others.reduce(
         (text, pattern) => text.replace(pattern, '[redacted]'),
         vector
@@ -344,7 +345,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
 
   describe('patterns', () => {
     const patternsOf = (): readonly RegExp[] =>
-      Reflect.get(scrubber(), 'patterns') as readonly RegExp[];
+      Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[];
 
     it('lists the otpauth pattern first, before the e-mail pattern', () => {
       const patterns = patternsOf();

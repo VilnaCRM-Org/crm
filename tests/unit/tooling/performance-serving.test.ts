@@ -98,6 +98,7 @@ const SHARED_WITH_EAGER_PATH = [
   'src/services/observability/correlation-id-provider.ts',
   'src/services/observability/observability-core.ts',
   'src/services/observability/pii-scrubber.ts',
+  'src/services/observability/pii-text-scrubber.ts',
   'src/services/observability/sentry-client.ts',
   'src/services/observability/sentry-config.ts',
   'src/services/observability/session-correlation.ts',

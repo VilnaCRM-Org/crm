@@ -1,4 +1,5 @@
 import piiScrubber, { PiiScrubber } from '@/services/observability/pii-scrubber';
+import PiiTextScrubber from '@/services/observability/pii-text-scrubber';
 import type { SentryEvent } from '@/services/types/observability/sentry';
 
 const DENIED_KEYS = [
@@ -63,7 +64,7 @@ describe('PiiScrubber', () => {
   });
 
   it('keeps nine free-text patterns after the otpauth one', () => {
-    const patterns = Reflect.get(scrubber(), 'patterns') as readonly RegExp[];
+    const patterns = Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[];
 
     expect(patterns.slice(1)).toHaveLength(9);
   });
