@@ -142,7 +142,7 @@ describe('TwoFactorPanel', () => {
       expect(secondAlert).not.toBe(firstAlert);
       const banner = screen
         .getAllByRole('generic')
-        .find((element) => element.tagName === 'SECTION' && element.contains(secondAlert));
+        .findLast((element) => element.contains(secondAlert));
       expect(banner).toHaveFocus();
     });
 

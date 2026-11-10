@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -154,16 +154,16 @@ describe('useRecoveryCodesBanner', () => {
     mockLoad.mockRejectedValue(new Error('chunk failed'));
     mount(1);
 
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
-
+    const banner = screen.getByRole('region', { name: 'banner' });
+    await waitFor(() => expect(banner).toBeEmptyDOMElement());
     expect(mockLoad).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('region', { name: 'banner' })).toBeEmptyDOMElement();
   });
 
   it('asks the loader again on the next mount after a failed load', async () => {
     mockLoad.mockRejectedValueOnce(new Error('chunk failed'));
     const { unmount } = mount(1);
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+    const banner = screen.getByRole('region', { name: 'banner' });
+    await waitFor(() => expect(banner).toBeEmptyDOMElement());
     unmount();
 
     mount(1);

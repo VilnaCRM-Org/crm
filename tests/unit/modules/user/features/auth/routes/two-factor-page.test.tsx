@@ -17,7 +17,7 @@ import ROUTE_PATHS from '@/routes/route-paths';
 import TwoFactorChallenge from '@auth/routes/two-factor';
 import type { AuthProviderLoader } from '@auth/stores';
 import useAuthStore from '@auth/stores/use-auth-store';
-import signInSubmitHandler from '@auth/utils/sign-in-submit-handler';
+import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
 import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -110,7 +110,7 @@ describe('TwoFactorChallenge page', () => {
       value: { kind: 'challenge', email: buildEmail(), pendingSessionId },
     });
     const resolve = jest.fn().mockResolvedValue({ login, loginSettled: jest.fn() });
-    await signInSubmitHandler.run(
+    await signInSubmitProcessor.run(
       {
         loader: { resolve } as unknown as AuthProviderLoader,
         store: useAuthStore,

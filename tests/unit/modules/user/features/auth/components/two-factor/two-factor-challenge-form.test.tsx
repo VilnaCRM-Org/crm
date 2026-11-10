@@ -188,9 +188,7 @@ describe('TwoFactorChallengeForm', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('Забагато спроб. Зачекайте хвилину і спробуйте знову.');
-    const banner = screen
-      .getAllByRole('generic')
-      .find((element) => element.tagName === 'SECTION' && element.contains(alert));
+    const banner = screen.getAllByRole('generic').findLast((element) => element.contains(alert));
     expect(banner).toHaveFocus();
     expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
   });
@@ -232,10 +230,8 @@ describe('TwoFactorChallengeForm', () => {
     view.rerender(tree({ ...RESTING, banner: 'transient', bannerOccurrence: 2 }, handlers));
 
     const second = screen.getByRole('alert');
-    const banner = screen
-      .getAllByRole('generic')
-      .find((element) => element.tagName === 'SECTION' && element.contains(second));
     expect(second).not.toBe(first);
+    const banner = screen.getAllByRole('generic').findLast((element) => element.contains(second));
     expect(banner).toHaveFocus();
   });
 

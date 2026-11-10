@@ -1,6 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { expectInsideContentBox } from '@tests/e2e/mobile/utils/layout';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { RECOVERY_CODES } from '@tests/e2e/utils/two-factor-settings-responses';
@@ -22,6 +21,7 @@ export const twoFactorText = {
   confirm: t('settings.two_factor.confirm.submit'),
   incomplete: t('settings.two_factor.errors.incomplete'),
   invalidCode: t('settings.two_factor.errors.invalid_code'),
+  confirmInvalidCode: t('settings.two_factor.errors.confirm_invalid_code'),
   codesTitle: t('settings.two_factor.codes.title'),
   copyCodes: t('settings.two_factor.codes.copy'),
   codesCopied: t('settings.two_factor.codes.copied'),
@@ -58,9 +58,7 @@ export const sectionOf = (page: Page): Locator =>
   page.getByRole('region', { name: twoFactorText.title, exact: true });
 
 export const errorBannerOf = (page: Page, text: string): Locator =>
-  sectionOf(page)
-    .locator('section[tabindex="-1"]')
-    .filter({ has: page.getByRole('alert').filter({ hasText: text }) });
+  sectionOf(page).getByRole('alert').filter({ hasText: text }).locator('..');
 
 export const startOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.start, exact: true });
@@ -190,35 +188,46 @@ export async function enableTwoFactor(page: Page): Promise<void> {
 
 export type Activate = (control: Locator) => Promise<void>;
 
-const SUBMIT = 'button[type="submit"]';
 const CARD_CODE = '123456';
 
-async function expectCardHolds(page: Page, selector: string, count: number): Promise<void> {
-  await expectInsideContentBox(sectionOf(page), selector, count);
-  const spill = await sectionOf(page).evaluate((card) => card.scrollWidth - card.clientWidth);
+async function expectCardHolds(page: Page, items: Locator, count: number): Promise<void> {
+  const card = await sectionOf(page).elementHandle();
+  const fit = await items.evaluateAll((elements, root) => {
+    const style = getComputedStyle(root);
+    const box = root.getBoundingClientRect();
+    const left = box.left + parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth);
+    const right = box.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+    const rects = elements.map((element) => element.getBoundingClientRect());
+    return {
+      count: rects.length,
+      outside: rects.filter((rect) => rect.left < left - 0.5 || rect.right > right + 0.5).length,
+    };
+  }, card);
+  expect(fit).toEqual({ count, outside: 0 });
+  const spill = await sectionOf(page).evaluate((root) => root.scrollWidth - root.clientWidth);
   expect(spill).toBeLessThanOrEqual(0);
 }
 
 export async function expectEveryStateInsideCard(page: Page, activate: Activate): Promise<void> {
-  await expectCardHolds(page, SUBMIT, 1);
+  await expectCardHolds(page, startOf(page), 1);
   await activate(startOf(page));
   await expect(setupHeadingOf(page)).toBeVisible();
-  await expectCardHolds(page, SUBMIT, 1);
+  await expectCardHolds(page, confirmOf(page), 1);
   await activate(codeCellsOf(page).first());
   await page.keyboard.type(CARD_CODE);
   await activate(confirmOf(page));
   await expect(codesHeadingOf(page)).toBeVisible();
-  await expectCardHolds(page, 'li', RECOVERY_CODES.length);
-  await expectCardHolds(page, SUBMIT, 1);
+  await expectCardHolds(page, codeListOf(page).getByRole('listitem'), RECOVERY_CODES.length);
+  await expectCardHolds(page, doneOf(page), 1);
   await activate(sectionOf(page).getByText(twoFactorText.saved, { exact: true }));
   await activate(doneOf(page));
   await expect(statusHeadingOf(page, twoFactorText.statusOn)).toBeVisible();
   await activate(openDisableOf(page));
   await expect(disableHeadingOf(page)).toBeVisible();
-  await expectCardHolds(page, 'input', 1);
-  await expectCardHolds(page, SUBMIT, 1);
+  await expectCardHolds(page, disableFieldOf(page), 1);
+  await expectCardHolds(page, disableSubmitOf(page), 1);
   await activate(cancelOf(page));
   await activate(openRegenerateOf(page));
   await expect(regenerateHeadingOf(page)).toBeVisible();
-  await expectCardHolds(page, SUBMIT, 1);
+  await expectCardHolds(page, regenerateSubmitOf(page), 1);
 }

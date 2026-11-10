@@ -8,7 +8,7 @@ import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
 const SETTLED: AuthStatePatch = { loginLoading: false };
 
-export class SignInSubmitHandler {
+export class SignInSubmitProcessor {
   public async run(
     context: SignInSubmitContext,
     dto: SignInDto,
@@ -79,6 +79,6 @@ export class SignInSubmitHandler {
   }
 }
 
-const signInSubmitHandler = new SignInSubmitHandler();
+const signInSubmitProcessor = new SignInSubmitProcessor();
 
-export default signInSubmitHandler;
+export default signInSubmitProcessor;

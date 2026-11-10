@@ -5,7 +5,7 @@ import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { SignInSubmitContext } from '@auth/types/sign-in/sign-in-submit-context';
 import type { SignInResult } from '@auth/types/two-factor/sign-in';
-import signInSubmitHandler from '@auth/utils/sign-in-submit-handler';
+import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
 import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -50,9 +50,9 @@ const runWith = (
   s: Stubs,
   credentials = dto(),
   signal = new AbortController().signal
-): Promise<boolean> => signInSubmitHandler.run(contextOf(s), credentials, signal);
+): Promise<boolean> => signInSubmitProcessor.run(contextOf(s), credentials, signal);
 
-describe('SignInSubmitHandler', () => {
+describe('SignInSubmitProcessor', () => {
   beforeEach(() => {
     resetClientStores();
     localStorage.removeItem('vilnacrm.sandbox-demo-session');

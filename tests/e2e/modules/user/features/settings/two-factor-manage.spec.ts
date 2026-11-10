@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 import { buildCredentials } from '@tests/builders';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
@@ -44,6 +46,20 @@ const SECRETS = {
   fresh: NEW_RECOVERY_CODES[0] ?? '',
 };
 const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } as const;
+
+async function expectEndedSessionFrom(page: Page, origin: string): Promise<void> {
+  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page.getByText(twoFactorText.sessionEnded)).toBeVisible();
+  const from = await page.evaluate(
+    () => (window.history.state as { usr?: { from?: { pathname?: string } } }).usr?.from?.pathname
+  );
+  expect(from).toBe(origin);
+  await expect(sectionOf(page)).toHaveCount(0);
+  await expect(page.getByRole('alert').filter({ hasText: twoFactorText.transient })).toHaveCount(0);
+  await expect(page.getByRole('alert').filter({ hasText: twoFactorText.rateLimited })).toHaveCount(
+    0
+  );
+}
 
 test.describe('Turning two-factor off and regenerating codes (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
@@ -143,6 +159,17 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
 
       await expect(statusHeadingOf(page, twoFactorText.statusAlreadyOff)).toBeFocused();
     });
+
+    test('ends the session on a transport 401 with no banner in the section', async ({ page }) => {
+      await stubDisable(page, [replyWithEndedSession]);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill('123456');
+      await disableSubmitOf(page).click();
+
+      await expectEndedSessionFrom(page, SETTINGS_URL);
+    });
   });
 
   test.describe('regenerate', () => {
@@ -189,8 +216,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
 
       await regenerateSubmitOf(page).click();
 
-      await expect(page).toHaveURL(/\/sign-in$/);
-      await expect(page.getByText(twoFactorText.sessionEnded)).toBeVisible();
+      await expectEndedSessionFrom(page, SETTINGS_URL);
     });
   });
 

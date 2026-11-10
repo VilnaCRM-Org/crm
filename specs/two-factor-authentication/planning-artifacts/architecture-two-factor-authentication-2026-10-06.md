@@ -63,6 +63,8 @@ revisions:
     A11Y_EXCEPTIONS entry; no resend row, no five-minute note, the Figma cell states'
   - '2026-11-04: owner decision; the setup card takes the Figma header and steps, Start stays'
   - '2026-11-05: owner decisions; the profile forms split in three, the shell sidebar from 768 px'
+  - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one exception to
+    no new module-level singleton (§19.1)'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -3065,6 +3067,18 @@ lazy-loads the challenge form section. It copies its four siblings
 (`SignInFormSectionLoader`, `SignUpFormSectionLoader`, `ResetPasswordFormSectionLoader`,
 `CreateNewPasswordFormSectionLoader`), so it is a route-chunk loader and not a layer. No new class
 is named `*Controller`, `*Service` or `*Handler`.
+
+> **Owner decision of 2026-11-10 (the sign-in submit unit, §1 and §19 amended).** One
+> lazily loaded, container-free unit sits between `useSignInSubmit` and `GraphQLSignInProvider`:
+> `SignInSubmitProcessor` (`@auth/utils/sign-in-submit-processor`), with its module singleton.
+> `useSignInSubmit` loads it through a `ChunkRetryLoader` on the first submit, so `AUTH_TOKENS`,
+> the demo-session check, the store patches and the security signal stay out of the `/sign-in`
+> form chunk and the paint path stays inside the mobile Lighthouse budget (commit fc45d9f6, pinned
+> by `tests/unit/tooling/performance-serving.test.ts`, "imports the sign-in processor and the auth
+> tokens only through a chunk-retry loader"). It was named `SignInSubmitHandler` until 2026-11-10
+> and was renamed off the `Handler` suffix NFR-22 rules out. It is the one exception to "no new
+> module-level singleton" and to "no class between a hook and the provider"; the challenge hook
+> still reaches the provider directly. §1's "no new module-level singleton" is kept as the record of the plan as approved.
 
 ### 19.2 Board element or edge → implementation
 

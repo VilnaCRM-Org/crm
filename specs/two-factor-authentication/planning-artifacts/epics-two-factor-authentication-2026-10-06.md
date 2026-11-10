@@ -40,6 +40,8 @@ revisions:
   - '2026-10-08: simplification (over-engineering review, apply all 10)'
   - '2026-10-27: reconciled to feat/331-two-factor-authentication; 25 stories, was 23'
   - '2026-11-03: owner decision; the twoFactorAuth flag removed, the section always renders'
+  - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one AR-2
+    exception'
 ---
 
 # Epics and stories: two-factor authentication for the user module
@@ -329,11 +331,25 @@ Derived from the architecture and from the repository gates this stage re-read:
 - AR-2 (§7): no new module-level singleton and no controller or service class;
   `TwoFactorCodeNormalizer` is built once per mount in a `useState` initializer and passed as a
   typed dependency.
+
+  > **Owner decision of 2026-11-10 (the sign-in submit unit, AR-2 amended).** One
+  > lazily loaded, container-free unit sits between `useSignInSubmit` and `GraphQLSignInProvider`:
+  > `SignInSubmitProcessor` (`@auth/utils/sign-in-submit-processor`), with its module singleton.
+  > `useSignInSubmit` loads it through a `ChunkRetryLoader` on the first submit, so `AUTH_TOKENS`,
+  > the demo-session check, the store patches and the security signal stay out of the `/sign-in`
+  > form chunk and the paint path stays inside the mobile Lighthouse budget (commit fc45d9f6, pinned
+  > by `tests/unit/tooling/performance-serving.test.ts`, "imports the sign-in processor and the auth
+  > tokens only through a chunk-retry loader"). It was named `SignInSubmitHandler` until 2026-11-10
+  > and was renamed off the `Handler` suffix NFR-22 rules out. It is the one exception to "no new
+  > module-level singleton" and to "no class between a hook and the provider"; the challenge hook
+  > still reaches the provider directly. AR-2 above is kept as the record of the plan as approved.
+
 - AR-3 (§6.18): single-flight, abort on unmount, Retry and StrictMode behaviour belong to #315's
   `useAbortableSubmit`; no hook of this feature re-implements them.
 - AR-4 (§7.3): every interface and alias lives in a type-only file under a `types/` folder.
 - AR-5 (§7.1): new classes use the approved suffixes `Repository`, `Transformer`, `Provider` and
-  `Normalizer`; this bundle edits no naming policy.
+  `Normalizer`; this bundle edits no naming policy. Since the 2026-11-10 owner amendment to AR-2,
+  `SignInSubmitProcessor` also uses the policy's existing `Processor` suffix.
 - AR-6 (§6.5): one-time navigation markers (`focusMain`, `notice`) are cleared only by
   `useArrivalFocus`, in one history replace.
 - AR-7: the integration suite's 100% threshold binds every `src` file an integration test loads;

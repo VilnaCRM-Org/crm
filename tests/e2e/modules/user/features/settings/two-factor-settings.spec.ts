@@ -121,10 +121,10 @@ test.describe('Two-factor settings section (issue #331)', () => {
 
       await startOf(page).click();
 
-      await expect(sectionOf(page).locator('form[aria-busy="true"]')).toBeVisible();
       await expect(
-        page.getByRole('status').filter({ hasText: twoFactorText.preparing })
+        sectionOf(page).getByRole('status').filter({ hasText: twoFactorText.preparing })
       ).toBeAttached();
+      await expect(startOf(page)).toBeDisabled();
       gate.release();
       await expect(setupHeadingOf(page)).toBeFocused();
       expect(setup.count()).toBe(1);
@@ -177,7 +177,9 @@ test.describe('Two-factor settings section (issue #331)', () => {
       expect(confirm.count()).toBe(0);
     });
 
-    test('keeps the QR image and key for a wrong code and focuses the field', async ({ page }) => {
+    test('clears the six cells and keeps the QR image and key for a wrong code', async ({
+      page,
+    }) => {
       await stubSetup(page);
       await stubConfirm(page, ['invalid_code']);
       await page.goto(SETTINGS_URL);
@@ -186,7 +188,13 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await typeCode(page, '123456');
       await confirmOf(page).click();
 
-      await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
+      await expect(
+        sectionOf(page).getByText(twoFactorText.confirmInvalidCode, { exact: true })
+      ).toBeVisible();
+      await expect(codeCellsOf(page)).toHaveCount(6);
+      for (const cell of await codeCellsOf(page).all()) {
+        await expect(cell).toHaveValue('');
+      }
       await expect(codeCellsOf(page).first()).toHaveAttribute('aria-invalid', 'true');
       await expect(codeCellsOf(page).first()).toBeFocused();
       await expect(qrOf(page)).toBeVisible();

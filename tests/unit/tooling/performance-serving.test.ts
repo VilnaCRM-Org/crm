@@ -653,11 +653,11 @@ describe('performance serving config', () => {
     'sign-in/sign-in-form-section.tsx',
     'reset-password/reset-password-form-section.tsx',
     'create-new-password/create-new-password-form-section.tsx',
-  ])('loads the auth tokens and the sign-in handler on submit, not with %s', (entry) => {
+  ])('loads the auth tokens and the sign-in processor on submit, not with %s', (entry) => {
     const { files } = eagerGraphOf(`src/modules/user/features/auth/routes/${entry}`);
     const submitOnly = [
       'src/modules/user/config/tokens.ts',
-      'src/modules/user/features/auth/utils/sign-in-submit-handler.ts',
+      'src/modules/user/features/auth/utils/sign-in-submit-processor.ts',
       'src/modules/user/features/auth/data-providers/graphql-sign-in-provider.ts',
       'src/modules/user/features/auth/data-providers/password-recovery-provider.ts',
     ];
@@ -666,12 +666,12 @@ describe('performance serving config', () => {
     expect(files.has('src/modules/user/features/auth/stores/index.ts')).toBe(true);
   });
 
-  it('imports the sign-in handler and the auth tokens only through a chunk-retry loader', () => {
+  it('imports the sign-in processor and the auth tokens only through a chunk-retry loader', () => {
     const signInSubmit = readFile('src/modules/user/features/auth/hooks/use-sign-in-submit.ts');
     const recoveryRun = readFile('src/modules/user/features/auth/hooks/use-recovery-run.ts');
 
     expect(signInSubmit).toContain(
-      "new ChunkRetryLoader(\n  () => import('@auth/utils/sign-in-submit-handler')\n);"
+      "new ChunkRetryLoader(\n  () => import('@auth/utils/sign-in-submit-processor')\n);"
     );
     expect(recoveryRun).toContain(
       "new ChunkRetryLoader(() => import('@/modules/user/config/tokens'));"

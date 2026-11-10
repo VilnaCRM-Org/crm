@@ -155,7 +155,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await page.keyboard.type('123456');
     await confirmOf(page).click();
 
-    await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toHaveCSS(
+    await expect(sectionOf(page).getByText(twoFactorText.confirmInvalidCode)).toHaveCSS(
       'color',
       ERROR_TEXT
     );

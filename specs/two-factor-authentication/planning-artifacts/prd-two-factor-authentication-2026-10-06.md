@@ -83,6 +83,8 @@ revisions:
   - '2026-11-05: owner decision; the shell shows the sidebar from 768 px and persists the rail'
   - '2026-11-10: the 2026-11-04 decisions marked at Goal 4, §4, FR-23, FR-40, NFR-5, NFR-6, NFR-8,
     NFR-9, NFR-13 and §10'
+  - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one NFR-22
+    exception'
 ---
 
 # PRD: two-factor authentication for the user module
@@ -1811,6 +1813,19 @@ Data provider through the container-free provider loader of #315 and write the S
 which is how the board's Sign-In → State edge ("2 save JWT token") is realised; no actions class
 sits between a hook and the provider. Only the sign-in path leaves the existing `AuthStoreActions`;
 its registration and logout are unchanged. There is no REST data path.
+
+> **Owner decision of 2026-11-10 (the sign-in submit unit, NFR-22 amended).** One
+> lazily loaded, container-free unit sits between `useSignInSubmit` and `GraphQLSignInProvider`:
+> `SignInSubmitProcessor` (`@auth/utils/sign-in-submit-processor`), with its module singleton.
+> `useSignInSubmit` loads it through a `ChunkRetryLoader` on the first submit, so `AUTH_TOKENS`,
+> the demo-session check, the store patches and the security signal stay out of the `/sign-in`
+> form chunk and the paint path stays inside the mobile Lighthouse budget (commit fc45d9f6, pinned
+> by `tests/unit/tooling/performance-serving.test.ts`, "imports the sign-in processor and the auth
+> tokens only through a chunk-retry loader"). It was named `SignInSubmitHandler` until 2026-11-10
+> and was renamed off the `Handler` suffix NFR-22 rules out. It is the one exception to "no new
+> module-level singleton" and to "no class between a hook and the provider"; the challenge hook
+> still reaches the provider directly. The paragraph above and the criteria below are kept as the
+> record of the plan as approved.
 
 - Given the architecture, when its Miro conformance section is read, then every class and
   component of the feature maps to a board element or edge, and every gap is listed with its

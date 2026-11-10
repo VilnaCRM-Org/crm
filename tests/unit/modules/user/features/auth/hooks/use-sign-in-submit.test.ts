@@ -2,11 +2,11 @@ import { act, renderHook } from '@testing-library/react';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import useSignInSubmit, { signInSubmitHandlerLoader } from '@auth/hooks/use-sign-in-submit';
+import useSignInSubmit, { signInSubmitProcessorLoader } from '@auth/hooks/use-sign-in-submit';
 import type { AuthProviderLoader } from '@auth/stores';
 import useAuthStore from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
-import signInSubmitHandler from '@auth/utils/sign-in-submit-handler';
+import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
 import { buildEmail, buildPassword } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -59,12 +59,12 @@ const abortedSignal = (): AbortSignal => {
   return controller.signal;
 };
 
-const failHandlerChunk = (): void => {
-  jest.spyOn(signInSubmitHandlerLoader, 'load').mockRejectedValueOnce(new Error('chunk'));
+const failProcessorChunk = (): void => {
+  jest.spyOn(signInSubmitProcessorLoader, 'load').mockRejectedValueOnce(new Error('chunk'));
 };
 
 const failProvider = (): void => {
-  jest.spyOn(signInSubmitHandler, 'run').mockResolvedValueOnce(false);
+  jest.spyOn(signInSubmitProcessor, 'run').mockResolvedValueOnce(false);
 };
 
 describe('useSignInSubmit', () => {
@@ -99,9 +99,9 @@ describe('useSignInSubmit', () => {
     expect(result.current).toBe(first);
   });
 
-  it('hands the loader, store, demo session, dto and signal to the handler', async () => {
+  it('hands the loader, store, demo session, dto and signal to the processor', async () => {
     const s = stubs();
-    const run = jest.spyOn(signInSubmitHandler, 'run');
+    const run = jest.spyOn(signInSubmitProcessor, 'run');
     const credentials = dto();
     const { signal } = new AbortController();
 
@@ -116,15 +116,15 @@ describe('useSignInSubmit', () => {
     expect(s.login).toHaveBeenCalledWith(credentials, signal);
   });
 
-  it('leaves the state the handler wrote once it handled the sign-in', async () => {
+  it('leaves the state the processor wrote once it processed the sign-in', async () => {
     await runWith(stubs());
 
     expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: invalid });
   });
 
   it.each([
-    ['the handler chunk fails to load', failHandlerChunk],
-    ['the handler cannot resolve the provider', failProvider],
+    ['the processor chunk fails to load', failProcessorChunk],
+    ['the processor cannot resolve the provider', failProvider],
   ])('writes the load-failure error when %s', async (_name, arrange) => {
     const s = stubs();
     arrange();
@@ -137,8 +137,8 @@ describe('useSignInSubmit', () => {
   });
 
   it.each([
-    ['the handler chunk fails to load', failHandlerChunk],
-    ['the handler cannot resolve the provider', failProvider],
+    ['the processor chunk fails to load', failProcessorChunk],
+    ['the processor cannot resolve the provider', failProvider],
   ])('writes no load-failure error for an aborted signal when %s', async (_name, arrange) => {
     arrange();
 
@@ -147,9 +147,9 @@ describe('useSignInSubmit', () => {
     expect(useAuthStore.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 
-  it('does not run a handler that failed to load', async () => {
-    failHandlerChunk();
-    const run = jest.spyOn(signInSubmitHandler, 'run');
+  it('does not run a processor that failed to load', async () => {
+    failProcessorChunk();
+    const run = jest.spyOn(signInSubmitProcessor, 'run');
 
     await runWith(stubs());
 

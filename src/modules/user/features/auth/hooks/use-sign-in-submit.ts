@@ -17,8 +17,8 @@ const LOAD_FAILURE: AuthError = {
 
 const START: AuthStatePatch = { loginLoading: true };
 
-export const signInSubmitHandlerLoader = new ChunkRetryLoader(
-  () => import('@auth/utils/sign-in-submit-handler')
+export const signInSubmitProcessorLoader = new ChunkRetryLoader(
+  () => import('@auth/utils/sign-in-submit-processor')
 );
 
 async function runSignIn(
@@ -27,10 +27,10 @@ async function runSignIn(
   signal: AbortSignal
 ): Promise<void> {
   useAuthStore.setState(START);
-  const handler = await signInSubmitHandlerLoader.load().catch(() => null);
+  const processor = await signInSubmitProcessorLoader.load().catch(() => null);
   const context = { loader, store: useAuthStore, demoSession: sandboxDemoSessionProvider };
-  const handled = handler !== null && (await handler.default.run(context, dto, signal));
-  if (!handled) {
+  const processed = processor !== null && (await processor.default.run(context, dto, signal));
+  if (!processed) {
     useAuthStore.setState({
       loginLoading: false,
       loginError: signal.aborted ? null : LOAD_FAILURE,

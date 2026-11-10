@@ -85,7 +85,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await openSetup(page);
     await typeCode(page, '123456');
     await confirmOf(page).click();
-    await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
+    await expect(sectionOf(page).getByText(twoFactorText.confirmInvalidCode)).toBeVisible();
 
     await expectCleanScan(page);
   });
