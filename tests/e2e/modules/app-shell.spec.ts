@@ -173,7 +173,7 @@ async function expectSettingsPage(page: Page): Promise<void> {
 }
 
 test.describe('App shell on desktop (issue #362)', () => {
-  test.use({ viewport: { width: 1440, height: 900 } });
+  test.use({ viewport: { width: 1440, height: 900 }, trace: 'retain-on-failure' });
 
   test('keeps the sidebar collapsed across a reload and a new sign-in', async ({ page }) => {
     await stubProfile(page);
