@@ -292,7 +292,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-48-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+56-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -320,7 +320,7 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 48-way shard count rather than
+These keep the run affordable — parallelism comes from the 56-way shard count rather than
 Stryker's in-process concurrency.
 
 **Shards are packed by mutant-run cost.** `scripts/ci/mutation-scope.mjs` counts each file's
@@ -352,15 +352,17 @@ cheap-looking files whose page tests type through a form met the kill switch whi
 near the minimum. The packing puts the heaviest file first onto the lightest shard that stays
 under that cap, the lightest of all when none does, ties broken by code-unit path order. Counting
 the whole scope takes about 4 s, so every shard job and the merge job count at run time and derive
-the same packing from the same commit; no weight file is committed, so none can go stale. At 560
-files the scope holds 503 sharded files; 57 files run in no shard. The 48 shards carry 86 to 216
-runnable mutants (mean 206) and 2,900 to 4,635 weight units, except `ui-form/styles.ts`, alone at
-5,332; it and `pii-text-scrubber.ts` (4,635) each fill a shard on their own. Weighing by scored
+the same packing from the same commit; no weight file is committed, so none can go stale. At 561
+files the scope holds 504 sharded files; 57 files run in no shard. The 56 shards carry 86 to 186
+runnable mutants (mean 176) and 2,076 to 3,270 weight units, except `ui-form/styles.ts`, alone at
+5,332. Weighing by scored
 mutants alone had packed that scrubber's 103 mutants (then still inside `pii-scrubber.ts`, 149
 mutants with 37 related test files) and `lazy-catalog-loader.ts` (111 related test files) into
 shards that ran an estimated 22 and 29 minutes cold, while 45 of the 48 shards finished an
 incremental run in about a minute. A file is the unit a shard cannot split, so a file that alone
-outgrows the kill switch is split by responsibility, as the scrubber was. File size was a poor
+outgrows the kill switch is split by responsibility, as the scrubber was twice: its free-text
+patterns moved to `PiiTextScrubber`, and when that file alone still took 14.6 minutes cold, its
+two-factor patterns moved to `TwoFactorTextScrubber` (47 and 60 mutants). File size was a poor
 proxy too: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
 kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
@@ -370,7 +372,7 @@ meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
-touching one area can therefore land most of its re-run cost in a single shard; 48 shards keep that
+touching one area can therefore land most of its re-run cost in a single shard; 56 shards keep that
 hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
 it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
@@ -384,7 +386,10 @@ the same count, so the two stay in lock-step. On 2026-11-09 the owner asked for 
 each allowed up to the 15-minute kill switch. A cold run at 44, which keeps the heaviest shard at
 the same 139 weight units, still met the kill switch on two shards at 222 of 226 and 236 of 237
 tested, each with six timed-out mutants, while the cold 48-shard run's slowest shard took 12.6 min.
-Weight does not predict timed-out mutants, so the count stays at 48.
+Weight does not predict timed-out mutants, so the count stayed at 48. It went from 48 to 56 on
+2026-11-10, at the owner's choice, when a fully cold run (the `timeoutMS` change invalidated every
+cache) met the kill switch on shards 9 and 20 at about 206 runnable mutants per shard; shard 20
+stopped at 176 of 214 tested with no timed-out mutant, so the cost was the count, not a hang.
 
 ### Honest mutant classification (issue #171)
 
@@ -501,7 +506,7 @@ Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The seventeenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -510,11 +515,11 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 559 files; not all of them produce scored mutants — the 57 unsharded ones hold no
+mutate scope is 561 files; not all of them produce scored mutants — the 57 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
@@ -1170,7 +1175,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 48-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 56-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -2566,7 +2571,8 @@ Three different things are outside the gate, and the distinction matters when yo
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
-  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, the
+  correlation-id / sentry-client / sentry-config / pii-scrubber / pii-text-scrubber / web-vitals
+  leaves, the
   app-shell session (`auth-session-provider`) and the chip's current-user read
   (`current-user-client`, `current-user-source`, issue #362).
 
