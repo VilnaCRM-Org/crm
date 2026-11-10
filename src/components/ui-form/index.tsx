@@ -106,34 +106,24 @@ function SubmitArea({
   );
 }
 
-function FormBody<T extends FieldValues>({
-  handleSubmit,
-  onInvalid,
-  children,
-  header,
-  lead,
-  submit,
-  submitting,
-  announceSubmitting,
-  footer,
-  offlineNotice,
-}: FormBodyProps<T>): JSX.Element {
+function FormBody<T extends FieldValues>(props: FormBodyProps<T>): JSX.Element {
+  const { submit, submitting, offlineNotice } = props;
   const { offline, block, disabled } = useFormSubmission({
     submit,
     submitting,
-    handleSubmit,
-    onInvalid,
+    handleSubmit: props.handleSubmit,
+    onInvalid: props.onInvalid,
     noticeShown: offlineNotice !== 'none',
   });
   return (
     <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>
       <FormLead
-        header={header}
-        lead={lead}
+        header={props.header}
+        lead={props.lead}
         offline={offline}
         liveOfflineNotice={offlineNotice === 'live'}
       />
-      {children}
+      {props.children}
       <InlineOfflineNotice offline={offline} mode={offlineNotice} />
       <SubmitArea
         block={block}
@@ -142,8 +132,8 @@ function FormBody<T extends FieldValues>({
         disabled={disabled}
         offline={offline}
       />
-      {footer}
-      <UILiveStatus message={announceSubmitting ? submit.submittingLabel : ''} />
+      {props.footer}
+      <UILiveStatus message={props.announceSubmitting ? submit.submittingLabel : ''} />
     </form>
   );
 }
