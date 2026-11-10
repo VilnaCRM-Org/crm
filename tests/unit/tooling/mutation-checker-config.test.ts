@@ -5,6 +5,7 @@ import path from 'path';
 
 import {
   collectMutateFiles,
+  fanOutFactor,
   packingWeights,
   packShards,
   shardMutateFiles,
@@ -28,6 +29,7 @@ interface StrykerConfigShape {
 interface PackedScope {
   shards: string[][];
   weights: Record<string, number>;
+  scored: Record<string, number>;
   unsharded: string[];
   runnable: Record<string, number>;
   fourth: string[];
@@ -194,19 +196,23 @@ describe('mutation shard slicing', () => {
 
   const packInChild = (total: number): PackedScope =>
     runScope<PackedScope>(
-      `const { shards, weights, unsharded } = await scope.packMutateShards(${total});` +
+      `const packing = await scope.packMutateShards(${total});` +
+        'const { shards, weights, unsharded } = packing;' +
         `const fourth = await scope.shardMutateFiles(${total}, 3);` +
         `const firstOfConfigTotal = scope.packShards(weights, ${SHARD_CONFIG_TOTAL})[0];` +
         'const counts = await scope.countMutants(unsharded);' +
         'const runnable = Object.fromEntries([...counts].map(([f, c]) => [f, c.runnable]));' +
-        'return { shards, weights: Object.fromEntries(weights), unsharded, runnable, fourth,' +
-        ' firstOfConfigTotal };'
+        'const scored = Object.fromEntries(' +
+        '  [...weights.keys()].map((f) => [f, packing.counts.get(f).scored])' +
+        ');' +
+        'return { shards, weights: Object.fromEntries(weights), scored, unsharded, runnable,' +
+        ' fourth, firstOfConfigTotal };'
     );
 
   const packed = packInChild(TOTAL);
   const everyFile: string[] = collectMutateFiles();
-  const load = (files: string[]): number =>
-    files.reduce((sum, file) => sum + (packed.weights[file] ?? 0), 0);
+  const scoredLoad = (files: string[]): number =>
+    files.reduce((sum, file) => sum + Math.max(1, packed.scored[file] ?? 0), 0);
 
   it('runs one shard count everywhere the matrix, the totals and the cache keys name it', () => {
     expect(TOTAL).toBeGreaterThan(1);
@@ -227,12 +233,11 @@ describe('mutation shard slicing', () => {
     expect(sharded.sort()).toEqual(Object.keys(packed.weights).sort());
   });
 
-  it('weighs every sharded file by a positive count of scored mutants', () => {
+  it('weighs every sharded file by a positive whole mutant-run cost', () => {
     for (const weight of Object.values(packed.weights)) {
       expect(Number.isInteger(weight)).toBe(true);
-      expect(weight).toBeGreaterThanOrEqual(1);
+      expect(weight).toBeGreaterThanOrEqual(fanOutFactor(0));
     }
-    expect(load(everyFile)).toBeGreaterThan(0);
   });
 
   it('leaves only files without a runnable mutant out of every shard', () => {
@@ -256,7 +261,7 @@ describe('mutation shard slicing', () => {
   });
 
   it('keeps the heaviest cold shard within the mutant cap the kill switch allows', () => {
-    expect(Math.max(...packed.shards.map(load))).toBeLessThanOrEqual(SHARD_MUTANT_CAP);
+    expect(Math.max(...packed.shards.map(scoredLoad))).toBeLessThanOrEqual(SHARD_MUTANT_CAP);
   });
 
   it('is deterministic across processes, so every shard job and the merge pack alike', () => {
@@ -345,19 +350,37 @@ describe('mutation shard slicing', () => {
         ['barrel.ts', { runnable: 0, scored: 0 }],
         ['styles.ts', { runnable: 3, scored: 0 }],
         ['service.ts', { runnable: 5, scored: 4 }],
+      ]),
+      new Map([
+        ['barrel.ts', 90],
+        ['service.ts', 40],
       ])
     );
 
-    it('weighs a file by its scored mutants', () => {
-      expect(weights.get('service.ts')).toBe(4);
+    it('weighs a file by its runnable mutants times the fan-out of its related tests', () => {
+      expect(weights.get('service.ts')).toBe(5 * 64);
     });
 
-    it('gives a file whose runnable mutants are all static the minimum weight of 1', () => {
-      expect(weights.get('styles.ts')).toBe(1);
+    it('charges a file with no related test the run overhead alone', () => {
+      expect(weights.get('styles.ts')).toBe(3 * 16);
     });
 
     it('leaves a file without a runnable mutant out of the packing', () => {
       expect([...weights.keys()]).toEqual(['styles.ts', 'service.ts']);
+    });
+
+    it.each([
+      [0, 16],
+      [6, 16],
+      [7, 32],
+      [29, 32],
+      [30, 64],
+      [37, 64],
+      [74, 64],
+      [75, 128],
+      [111, 128],
+    ])('rounds %p related tests plus the run overhead to a factor of %p', (related, factor) => {
+      expect(fanOutFactor(related)).toBe(factor);
     });
   });
 

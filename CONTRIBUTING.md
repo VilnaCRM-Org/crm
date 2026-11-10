@@ -492,13 +492,17 @@ regresses; never relax them to buy wall-clock.
 
 `mutation-testing.yml` fans `make test-mutation-shard` across a 48-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
-**scored-mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed
+**mutant-run cost** (heaviest file to the lightest shard), not sliced round-robin and not packed
 by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
 carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 485 mutants
-against a mean of 308. A static mutant (outside every function and instance property initializer,
-which `ignoreStatic` never runs) does not count, a file whose mutants are all static weighs 1, and
-a file with no runnable mutant (a barrel, a token module) goes to no shard, so its whole-suite
-related-test set no longer lands on one shard. Every shard job and the merge job count each file's
+against a mean of 308. A file weighs its runnable mutants times a fan-out factor: every mutant run
+makes Jest load each test file related to the mutated file, about 150 ms apiece even when every
+test in it is filtered out, so `scripts/ci/mutation-related-tests.mjs` counts those files the way
+Jest finds them for Stryker and the factor is that count plus a 16-load run overhead, rounded to a
+power of two. Packing by scored mutants alone had put a 37- and a 111-related-test file in shards
+that ran an estimated 22 and 29 minutes cold. A file with no runnable mutant (a barrel, a token
+module) goes to no shard, so its whole-suite related-test set no longer lands on one shard.
+Every shard job and the merge job count each file's
 mutants at run time with the instrumenter the pinned Stryker core resolves (about 4 s for the whole
 scope), so they all derive the same packing from the same commit; the merge fails if a sharded file
 is missing from its owner's report.

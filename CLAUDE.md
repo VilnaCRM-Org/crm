@@ -323,29 +323,41 @@ ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
 These keep the run affordable — parallelism comes from the 48-way shard count rather than
 Stryker's in-process concurrency.
 
-**Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
+**Shards are packed by mutant-run cost.** `scripts/ci/mutation-scope.mjs` counts each file's
 mutants with the instrumenter the pinned `@stryker-mutator/core` resolves, under the options Stryker
 uses when the config sets no `mutator` or `ignorers` (the config test pins that), and leaves out the
 mutants a `Stryker disable` directive already reports `Ignored`. A file with no mutant left goes
 to **no shard**: the barrels, token modules and route maps hold nothing to score, yet each one
 handed its shard a `findRelatedTests` set of the whole suite (one cold shard drew 57 of them, a
-3,779-test dry run, and timed out). Every other file is weighed by its **scored** mutants: a mutant
-outside every function body and instance property initializer runs on import, which
-`ignoreStatic` reports `Ignored` without running, so it costs nothing and does not count; a file
-whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
-onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
-4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 559 files the scope holds
-502 sharded files; 57 files run in no shard. Their packing weight is 7,331, the scored mutants plus
-the floor of 1 that each all-static file adds, so the 48 shards carry 152 to 153 weight units and 4
-to 11 files each. File size was a poor proxy for
-that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
-kill switch before it finished, while this scope packed by counted mutants carries 244 to 245
-units per shard at 30.
+3,779-test dry run, and timed out). Every other file is weighed by its **runnable** mutants times a
+**fan-out factor**, because a cold shard runs every runnable mutant (the static ones a test loads
+inside its own body included) and each mutant run makes Jest load every test file related to the
+mutated file, its setup and its imports, even when the coverage-derived name filter skips every
+test in it. That load, about 150 ms per file, dwarfs the few milliseconds the test bodies take.
+[`scripts/ci/mutation-related-tests.mjs`](scripts/ci/mutation-related-tests.mjs) counts those
+files the way Jest finds them for Stryker: it extracts dependencies like Jest's default extractor
+(`import type` and `jest.mock` are not dependencies) and walks only through files inside the roots
+Stryker hands Jest, the two test roots plus the mutated file's directory.
+`tests/unit/tooling/mutation-related-tests.test.ts` pins the rules on a fixture tree and holds
+the count equal to `jest --listTests --findRelatedTests`
+on real files. The factor is the related-file count plus a run overhead of 16 file loads, rounded
+to a power of two so that adding one test does not repack the scope and throw away the shards'
+incremental caches. The packing then puts the heaviest file first onto the lightest shard, ties
+broken by code-unit path order. Counting the whole scope takes about 4 s, so every shard job and
+the merge job count at run time and derive the same packing from the same commit; no weight file is
+committed, so none can go stale. At 560 files the scope holds 503 sharded files; 57 files run in
+no shard. The 48 shards carry 4,576 to 5,664 weight units and 1 to 12 files each, except the one
+that holds `pii-text-scrubber.ts` alone at 6,592. Weighing by scored mutants alone had packed that
+file's 103 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
+`lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
+minutes cold, while 45 of the 48 shards finished an incremental run in about a minute. A file is
+the unit a shard cannot split, so a file that alone outgrows the kill switch is split by
+responsibility, as the scrubber was. File size was a poor proxy too: under the 30-shard size
+packing a cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
-workflows' count passes 240 units of packing weight, so scope growth reddens a unit test before a
-shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and
-the `-of<N>-` cache-key segments disagree.
+workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard
+meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the
+`-of<N>-` cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff

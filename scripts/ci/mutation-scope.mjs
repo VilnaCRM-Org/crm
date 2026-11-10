@@ -3,6 +3,8 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { relatedTestCounts } from './mutation-related-tests.mjs';
+
 const MUTATION_ROOT = 'src';
 
 const EXCLUDED_PATTERNS = [
@@ -183,26 +185,45 @@ export async function countMutants(files) {
 }
 
 /**
- * The packing weight of every file that holds a runnable mutant: its scored mutants, and at least
- * 1, because a file whose mutants are all static still costs its shard a dry run and Stryker still
- * scores the static ones a test loads inside its own body. A file without a runnable mutant has no
- * weight and goes to no shard.
+ * The fixed cost of one mutant run, in related-test-file loads: starting Jest, resolving the
+ * related tests and type-checking the mutant cost about as much as loading 16 test files (measured
+ * at roughly 150 ms per load, the test bodies themselves taking a few milliseconds).
  */
-export function packingWeights(counts) {
+const RUN_OVERHEAD_IN_FILE_LOADS = 16;
+
+/**
+ * What one mutant of a file costs its shard, in file loads: the run overhead plus every related
+ * test file Jest loads for it. Rounded to a power of two so that adding or removing one test does
+ * not move the weight, and with it the packing and every shard's incremental cache.
+ */
+export function fanOutFactor(relatedTests) {
+  return 2 ** Math.round(Math.log2(RUN_OVERHEAD_IN_FILE_LOADS + relatedTests));
+}
+
+/**
+ * The packing weight of every file that holds a runnable mutant: its runnable mutants times the
+ * fan-out factor of its related tests. A cold shard runs every runnable mutant, the static ones a
+ * test loads inside its own body included, and each one reloads every related test file, so a
+ * 150-mutant file related to 37 tests costs what a 150-mutant leaf related to one never could. A
+ * file without a runnable mutant has no weight and goes to no shard.
+ */
+export function packingWeights(counts, relatedTests) {
   const weights = new Map();
-  for (const [file, { runnable, scored }] of counts) {
-    if (runnable > 0) weights.set(file, Math.max(1, scored));
+  for (const [file, { runnable }] of counts) {
+    if (runnable > 0) weights.set(file, runnable * fanOutFactor(relatedTests.get(file) ?? 0));
   }
   return weights;
 }
 
 /**
  * Deterministic longest-processing-time bin packing: heaviest file first, each to the currently
- * lightest shard. Weights are scored-mutant counts because a shard's cost is the mutants it runs;
- * packing by file size left a cold shard holding 1.6x the mean mutant load, and a sharded run is
- * only as fast as its slowest shard. Every weighed file lands in exactly one shard, each sorted by
- * path. `packingWeights` keeps every weight positive: zero-weight files would all tie onto the one
- * lightest shard, which is how one shard drew 57 barrels and a 3,779-test related set.
+ * lightest shard. Weights are mutant-run costs because a shard is only as fast as the mutants it
+ * runs: packing by file size left a cold shard holding 1.6x the mean mutant load, and packing by
+ * mutant count alone put a 37-related-test file and a 111-related-test file in shards that ran
+ * 22 and 29 minutes cold against a 15-minute cap. Every weighed file lands in exactly one shard,
+ * each sorted by path. `packingWeights` keeps every weight positive: zero-weight files would all
+ * tie onto the one lightest shard, which is how one shard drew 57 barrels and a 3,779-test related
+ * set.
  */
 export function packShards(weights, total) {
   assertShardTotal(total);
@@ -227,16 +248,19 @@ export function packShards(weights, total) {
 
 /**
  * The one packing every shard job and the merge job derive from the same commit. `weights` holds
- * every file with a runnable mutant and the shards hold exactly those; `unsharded` lists the rest
+ * every file with a runnable mutant and the shards hold exactly those, `counts` the mutant counts
+ * behind them; `unsharded` lists the rest
  * of `collectMutateFiles()` (barrels, token modules, files with nothing to mutate), which no shard
  * runs, so the merge can still account for the whole scope.
  */
 export async function packMutateShards(total) {
   assertShardTotal(total);
   const scope = collectMutateFiles();
-  const weights = packingWeights(await countMutants(scope));
+  const counts = await countMutants(scope);
+  const runnable = scope.filter((file) => counts.get(file).runnable > 0);
+  const weights = packingWeights(counts, relatedTestCounts(runnable));
   const unsharded = scope.filter((file) => !weights.has(file));
-  return { shards: packShards(weights, total), weights, unsharded };
+  return { shards: packShards(weights, total), weights, unsharded, counts };
 }
 
 export async function shardMutateFiles(total, index) {
