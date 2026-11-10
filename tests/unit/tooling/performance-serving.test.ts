@@ -626,7 +626,7 @@ describe('performance serving config', () => {
     expect(
       (merged.en?.translation.sign_in as { notices: Record<string, string> }).notices
         .two_factor_expired
-    ).toBe('The time to confirm your sign-in has run out. Please sign in again.');
+    ).toBe('The sign-in confirmation has expired. Please sign in again.');
     expect(files.has('src/routes/protected-layout-loader.ts')).toBe(true);
     expect(files.has('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toBe(
       false

@@ -13,13 +13,13 @@ const NO_RULES = {};
 
 const FIELD_ERROR_KEYS = new Map([
   ['incomplete', 'settings.two_factor.errors.incomplete'],
-  ['invalid_code', 'settings.two_factor.errors.invalid_code'],
+  ['invalid_code', 'settings.two_factor.errors.confirm_invalid_code'],
 ]);
 
 export default function ConfirmCodeField({ view, disabled }: ConfirmCodeFieldProps): JSX.Element {
   const { t } = useTranslation();
   const { control } = useFormContext<TwoFactorDto>();
-  useConfirmFieldFocus(view);
+  useConfirmFieldFocus(view, true);
   const key = view.fieldError === null ? undefined : FIELD_ERROR_KEYS.get(view.fieldError);
 
   return (

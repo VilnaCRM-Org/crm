@@ -133,7 +133,7 @@
         "errors": {
           "load_failed": "Failed to load sign-in form. Please try again.",
           "invalid_credentials": "Invalid e-mail or password",
-          "locked": "Your account is temporarily locked after too many failed attempts. Try again later.",
+          "locked": "The account is temporarily locked after too many failed attempts. Try again later.",
           "rate_limited": "Too many sign-in attempts. Try again later",
           "transient": "The request could not be sent. Check your connection and try again."
         },
@@ -156,8 +156,8 @@
         "notices": {
           "password_reset": "Your password has been changed. Sign in with your new password.",
           "session_ended": "Your session has ended. Please sign in again.",
-          "two_factor_expired": "The time to confirm your sign-in has run out. Please sign in again.",
-          "account_locked": "Your account is temporarily locked after too many failed attempts. Try again later."
+          "two_factor_expired": "The sign-in confirmation has expired. Please sign in again.",
+          "account_locked": "The account is temporarily locked after too many failed attempts. Try again later."
         },
         "success": {
           "title": "Welcome back!",

@@ -35,7 +35,7 @@ describe('SetupGuide', () => {
     expect(scan.getByRole('img', { name: 'QR-код для застосунку автентифікації' })).toBeVisible();
     expect(scan.getByRole('button', { name: 'Скопіювати ключ' })).toBeInTheDocument();
     expect(
-      scan.getByText('Якщо не вдається відсканувати QR-код, введіть цей ключ у застосунок вручну.')
+      scan.getByText('Якщо не вдається відсканувати QR-код, введіть цей ключ у застосунку вручну.')
     ).toBeInTheDocument();
   });
 

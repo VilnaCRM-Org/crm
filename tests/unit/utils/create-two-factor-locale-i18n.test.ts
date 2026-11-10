@@ -34,7 +34,7 @@ describe('createTwoFactorLocaleI18n', () => {
     const { t } = createTwoFactorLocaleI18n('en');
 
     expect(t('sign_in.notices.two_factor_expired')).toBe(
-      'The time to confirm your sign-in has run out. Please sign in again.'
+      'The sign-in confirmation has expired. Please sign in again.'
     );
   });
 

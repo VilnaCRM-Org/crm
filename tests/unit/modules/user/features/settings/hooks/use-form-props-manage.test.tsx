@@ -45,7 +45,7 @@ describe('useDisableFormProps', () => {
     result.current.errorAction?.onClick();
     (result.current.titleRef as (element: HTMLElement | null) => void)(node);
 
-    expect(result.current.error).toContain('Не вдалося виконати дію');
+    expect(result.current.error).toContain('Не вдалося надіслати запит');
     expect(result.current.errorOccurrence).toBe(2);
     expect(result.current.submitRef).toEqual({ current: null });
     expect(props.callbacks.disable).not.toHaveBeenCalled();

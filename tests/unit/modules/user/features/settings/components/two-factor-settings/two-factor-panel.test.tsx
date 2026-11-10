@@ -115,7 +115,7 @@ describe('TwoFactorPanel', () => {
       const props = panelProps({ view: viewState('off', { banner: 'transient' }) });
       renderPanel(props);
 
-      expect(screen.getByRole('alert')).toHaveTextContent('Не вдалося виконати дію');
+      expect(screen.getByRole('alert')).toHaveTextContent('Не вдалося надіслати запит');
       await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
 
       await waitFor(() => expect(props.callbacks.start).toHaveBeenCalledTimes(1));
@@ -201,7 +201,10 @@ describe('TwoFactorPanel', () => {
 
     it.each([
       ['incomplete', 'Введіть усі 6 цифр коду'],
-      ['invalid_code', 'Невірний код. Спробуйте ще раз.'],
+      [
+        'invalid_code',
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.',
+      ],
     ] as const)(
       'shows the %s field error, marks it invalid and moves focus into it',
       async (error, text) => {

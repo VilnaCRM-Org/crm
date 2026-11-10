@@ -32,7 +32,7 @@ const CASES: readonly (readonly [Reason, string, string, boolean])[] = [
   [
     'locked',
     'Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше.',
-    'Your account is temporarily locked after too many failed attempts. Try again later.',
+    'The account is temporarily locked after too many failed attempts. Try again later.',
     false,
   ],
   [

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 
@@ -11,9 +12,11 @@ import type {
   TwoFactorSettingsViewState,
 } from '@/modules/user/features/settings/types/two-factor/settings-view';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
+import { buildTotpCode } from '@tests/builders';
 
 interface ProbeProps {
   readonly state: TwoFactorSettingsViewState;
+  readonly clearsWrongCode?: boolean | undefined;
 }
 
 const view = (
@@ -27,18 +30,18 @@ const view = (
   statusCode: null,
 });
 
-function Probe({ state }: ProbeProps): JSX.Element {
+function Probe({ state, clearsWrongCode }: ProbeProps): JSX.Element {
   const { register } = useFormContext<TwoFactorDto>();
-  useConfirmFieldFocus(state);
+  useConfirmFieldFocus(state, clearsWrongCode);
   const field = register(CONFIRM_FIELD_NAME);
   return <input aria-label="code" name={field.name} ref={field.ref} onChange={field.onChange} />;
 }
 
-function Harness({ state }: ProbeProps): JSX.Element {
+function Harness({ state, clearsWrongCode }: ProbeProps): JSX.Element {
   const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
   return (
     <FormProvider {...methods}>
-      <Probe state={state} />
+      <Probe state={state} clearsWrongCode={clearsWrongCode} />
     </FormProvider>
   );
 }
@@ -62,6 +65,41 @@ describe('useConfirmFieldFocus', () => {
     await act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
 
     expect(screen.getByLabelText('code')).not.toHaveFocus();
+  });
+
+  it('clears a wrong code before focusing the field when asked to', async () => {
+    const { rerender } = render(<Harness state={view(null)} clearsWrongCode />);
+    const input = screen.getByLabelText('code');
+    await userEvent.type(input, buildTotpCode());
+
+    rerender(<Harness state={view('invalid_code')} clearsWrongCode />);
+
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveValue('');
+  });
+
+  it('keeps an incomplete code even when asked to clear wrong codes', async () => {
+    const code = buildTotpCode();
+    const { rerender } = render(<Harness state={view(null)} clearsWrongCode />);
+    const input = screen.getByLabelText('code');
+    await userEvent.type(input, code);
+
+    rerender(<Harness state={view('incomplete')} clearsWrongCode />);
+
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveValue(code);
+  });
+
+  it('keeps a wrong code by default', async () => {
+    const code = buildTotpCode();
+    const { rerender } = render(<Harness state={view(null)} />);
+    const input = screen.getByLabelText('code');
+    await userEvent.type(input, code);
+
+    rerender(<Harness state={view('invalid_code')} />);
+
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveValue(code);
   });
 
   it('focuses the field again when a new view with the same error arrives', async () => {

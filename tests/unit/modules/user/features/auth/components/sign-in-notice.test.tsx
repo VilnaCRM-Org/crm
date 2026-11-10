@@ -27,9 +27,9 @@ const TWO_FACTOR_EXPIRED_TEXT = 'Час на підтвердження вход
 const ACCOUNT_LOCKED_TEXT =
   'Обліковий запис тимчасово заблоковано через забагато невдалих спроб. Спробуйте пізніше.';
 const EN_TEXTS = {
-  two_factor_expired: 'The time to confirm your sign-in has run out. Please sign in again.',
+  two_factor_expired: 'The sign-in confirmation has expired. Please sign in again.',
   account_locked:
-    'Your account is temporarily locked after too many failed attempts. Try again later.',
+    'The account is temporarily locked after too many failed attempts. Try again later.',
 } as const;
 
 type SignInNoticeComponent = (props: SignInNoticeProps) => JSX.Element | null;

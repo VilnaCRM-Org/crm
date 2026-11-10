@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
-import { buildOtpauthUri, buildTotpSecret } from '@tests/builders';
+import { buildOtpauthUri, buildTotpCode, buildTotpSecret } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 
 import { EMPTY_SETTINGS, panelProps, viewState } from './render-panel';
@@ -58,7 +59,39 @@ describe('ConfirmCodeField', () => {
     mount(viewState('setup', { fieldError: 'invalid_code' }));
 
     expect(firstCell()).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByText('Невірний код. Спробуйте ще раз.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('clears the six cells and focuses the first when a wrong code settles', async () => {
+    const i18n = createSettingsLocaleI18n('uk', []);
+    const { rerender } = render(<Panel view={viewState('setup')} i18n={i18n} />);
+    await userEvent.click(firstCell());
+    await userEvent.keyboard(buildTotpCode());
+    expect(firstCell()).not.toHaveValue('');
+
+    rerender(<Panel view={viewState('setup', { fieldError: 'invalid_code' })} i18n={i18n} />);
+
+    await waitFor(() => expect(firstCell()).toHaveFocus());
+    const cells = screen.getAllByLabelText(/^Цифра \d з 6$/);
+    expect(cells).toHaveLength(6);
+    cells.forEach((cell) => expect(cell).toHaveValue(''));
+  });
+
+  it('keeps the typed code when only the incomplete error settles', async () => {
+    const i18n = createSettingsLocaleI18n('uk', []);
+    const code = buildTotpCode();
+    const { rerender } = render(<Panel view={viewState('setup')} i18n={i18n} />);
+    await userEvent.click(firstCell());
+    await userEvent.keyboard(code);
+
+    rerender(<Panel view={viewState('setup', { fieldError: 'incomplete' })} i18n={i18n} />);
+
+    await waitFor(() => expect(firstCell()).toHaveFocus());
+    expect(firstCell()).toHaveValue(code.charAt(0));
   });
 });
 
@@ -74,7 +107,7 @@ describe('DisableCodeField', () => {
       await i18n.changeLanguage('en');
     });
 
-    expect(await screen.findByText('Invalid code. Try again.')).toBeInTheDocument();
+    expect(await screen.findByText('Incorrect code. Try again.')).toBeInTheDocument();
     expect(elsewhere).toHaveFocus();
   });
 });

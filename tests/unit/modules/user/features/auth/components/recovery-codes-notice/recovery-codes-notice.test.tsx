@@ -45,7 +45,7 @@ describe('RecoveryCodesNotice', () => {
     [0, 'uk', 'Резервні коди закінчилися. Створіть нові коди зараз.'],
     [1, 'en', '1 recovery code left. Generate new codes in settings.'],
     [2, 'en', '2 recovery codes left. Generate new codes in settings.'],
-    [0, 'en', 'You are out of recovery codes. Generate new codes now.'],
+    [0, 'en', 'You have no recovery codes left. Generate new codes now.'],
   ] as const)('says, for %i code(s) in %s, "%s"', (count, language, text) => {
     renderNotice(count, language);
 

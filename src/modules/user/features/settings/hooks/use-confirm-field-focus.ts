@@ -7,10 +7,14 @@ import type { TwoFactorSettingsViewState } from '../types/two-factor/settings-vi
 
 export const CONFIRM_FIELD_NAME = 'twoFactorCode';
 
-export default function useConfirmFieldFocus(view: TwoFactorSettingsViewState): void {
-  const { setFocus } = useFormContext<TwoFactorDto>();
+export default function useConfirmFieldFocus(
+  view: TwoFactorSettingsViewState,
+  clearsWrongCode = false
+): void {
+  const { setFocus, setValue } = useFormContext<TwoFactorDto>();
 
   useEffect(() => {
+    if (clearsWrongCode && view.fieldError === 'invalid_code') setValue(CONFIRM_FIELD_NAME, '');
     if (view.fieldError !== null) setFocus(CONFIRM_FIELD_NAME);
-  }, [view, setFocus]);
+  }, [view, clearsWrongCode, setFocus, setValue]);
 }

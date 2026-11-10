@@ -93,7 +93,7 @@ describe('the codes view', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Скопіювати коди' }));
 
       expect(screen.getAllByRole('status').map((region) => region.textContent)).toContain(
-        'Не вдалося скопіювати. Виділіть коди й скопіюйте вручну.'
+        'Не вдалося скопіювати. Виділіть коди і скопіюйте вручну.'
       );
       expect(window.getSelection()?.toString()).toContain(VALUES[0]);
     });

@@ -26,7 +26,7 @@ describe('ModeToggle', () => {
     ['totp', 'uk', 'Використати резервний код'],
     ['recovery', 'uk', 'Використати код із застосунку'],
     ['totp', 'en', 'Use a recovery code'],
-    ['recovery', 'en', 'Use a code from the app'],
+    ['recovery', 'en', 'Use the app code'],
   ] as const)('reads the %s mode label in %s', (mode, locale, label) => {
     render(tree(mode, false, jest.fn(), locale));
 

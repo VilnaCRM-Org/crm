@@ -39,6 +39,6 @@ describe('useStatusText', () => {
       wrapper: english,
     });
 
-    expect(result.current).toBe('The setup has expired. Start again.');
+    expect(result.current).toBe('This setup has expired. Start again.');
   });
 });

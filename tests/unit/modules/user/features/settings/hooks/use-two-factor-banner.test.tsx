@@ -28,7 +28,7 @@ describe('useTwoFactorBanner', () => {
     const { result } = renderHook(() => useTwoFactorBanner('transient', retry), { wrapper });
 
     expect(result.current.error).toBe(
-      'Не вдалося виконати дію. Перевірте з’єднання та спробуйте ще раз.'
+      "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
     );
     expect(result.current.action?.label).toEqual(expect.any(String));
     expect(result.current.action?.label).not.toBe('');

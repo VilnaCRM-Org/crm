@@ -45,7 +45,7 @@ describe('useSetupFormProps', () => {
     });
     const { result } = renderHook(() => useSetupFormProps(props), { wrapper });
 
-    expect(result.current.error).toContain('Не вдалося виконати дію');
+    expect(result.current.error).toContain('Не вдалося надіслати запит');
     expect(result.current.errorAction?.label).toBe('Спробувати ще раз');
     expect(result.current.errorOccurrence).toBe(4);
     expect(result.current.submitRef).toEqual({ current: null });
