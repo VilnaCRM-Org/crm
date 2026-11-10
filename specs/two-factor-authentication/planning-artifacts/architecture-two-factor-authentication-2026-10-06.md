@@ -57,12 +57,42 @@ revisions:
   - '2026-10-27: reconciled to feat/331-two-factor-authentication at 77f59152 (#311, #333 on
     main; #315 PR #340, #330 PR #354 and #362 stacked); see "Reconciliation 2026-10-27"'
   - '2026-11-03: owner decision; the twoFactorAuth flag removed, the section always renders'
+  - '2026-11-04: owner decision; the sign-in code submits on its sixth digit (WCAG 3.2.2 departure)'
+  - '2026-11-04: owner decision; the challenge focuses its first cell, not the h1 through titleRef'
+  - '2026-11-04: owner decision; the challenge "Назад" keeps the Figma grey under an
+    A11Y_EXCEPTIONS entry; no resend row, no five-minute note, the Figma cell states'
+  - '2026-11-04: owner decision; the setup card takes the Figma header and steps, Start stays'
+  - '2026-11-05: owner decisions; the profile forms split in three, the shell sidebar from 768 px'
 ---
 
 # Architecture: two-factor authentication for the user module
 
-**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27 and 2026-11-03
-(owner decision: the `twoFactorAuth` flag removed) **Feature:** `two-factor-authentication`
+**Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27, 2026-11-03
+(owner decision: the `twoFactorAuth` flag removed), 2026-11-04 (owner decisions: the challenge as
+drawn, auto-submit, the Figma card) and 2026-11-05 (owner decisions: the profile forms split, the
+shell from 768 px) **Feature:** `two-factor-authentication`
+
+> **Owner decisions of 2026-11-04 (challenge as drawn, auto-submit, Figma card), noted
+> 2026-11-10.** The PRD's three 2026-11-04 blocks record them; this document follows them. The
+> sign-in challenge submits when the sixth digit is typed or pasted, and "Підтвердити" stays; the
+> owner declined an advance sentence, so this departs from WCAG 3.2.2, recorded in
+> `docs/accessibility/acceptance-standard.md`. On load focus goes to the first cell, not the `h1`
+> through `titleRef`. "Назад" keeps the Figma `#969B9D` (2.81:1) under the owner-accepted entry
+> `#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`, so
+> `A11Y_EXCEPTIONS` grows by one, to twelve. There is no resend row and no five-minute note, and
+> the cells take the Figma states: rest border `#E1E7EA`, no focus outline, and from `md` to just
+> under `xl` 130 px tall (`docs/ui-toolkit.md`, "The pin input"). The setup card takes the Figma
+> header and steps and Start stays (settings README, "The two-factor card"). §5.1, §6.4, §6.10,
+> §6.11, §6.12 and §13 carry dated notes; the text they amend is kept as the record of the plan as
+> approved.
+
+> **Owner decisions of 2026-11-05 (profile forms split, shell from 768 px).** From the owner's
+> hand test of #377, landing in #377: the settings profile card is split into three per-section
+> forms (full name, e-mail, password), each with its own password field, Save, `UpdateUser` and
+> toast, so the 2FA slot is no longer the page's only change; and the app shell shows the sidebar
+> from 768 px, a full-screen drawer with no shadow, a centred tablet header title and a collapsed
+> state persisted in `localStorage` under `crm.sidebar.collapsed` (confirmed by the owner on
+> 2026-11-10). See the PRD's 2026-11-05 block.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
@@ -1070,6 +1100,11 @@ stateDiagram-v2
   Leave --> [*]: /sign-in with RedirectNavigationState (arrival discards the challenge)
 ```
 
+Amended 2026-11-04 (owner decision, auto-submit): in authenticator mode `Authenticator` →
+`Submitting` also fires when the sixth digit is typed or pasted, not only on "Підтвердити"; a wrong
+code clears the cells, so the failed state cannot resubmit itself. Recovery mode still submits on
+the button.
+
 `Submitting` is `isSubmitting` and keeps the mode it came from; `Landing` is the page seeing a
 token and no pending session id, so it renders nothing while the redirect runs. A mode switch
 clears the value and the error and moves focus into the new input (FR-17).
@@ -1336,7 +1371,8 @@ always navigates with `{ focusMain: true }` and cannot carry `from`
 >
 > Assumption (reconciliation 2026-10-27): on completion the challenge page calls
 > `postLogin.proceed()` in an effect once `signedIn` turns true, a navigation the user's own
-> "Підтвердити" caused, not a timer. It shows no success card: Figma `72:4846` draws none. Open
+> "Підтвердити" caused, not a timer. Amended 2026-11-04 (owner decision, auto-submit): the
+> navigation may also follow the sixth digit the user typed or pasted; it is still never a timer. It shows no success card: Figma `72:4846` draws none. Open
 > question for the owner: reuse the sign-in success card ("Вітаємо!", "Продовжити") instead.
 
 ### 6.5 Arrival notices (#315's pieces, two members appended)
@@ -1546,6 +1582,9 @@ child in an implicit `minmax(0, 29.9375rem)` column (`settings/components/settin
 `settings/README.md` "Figma parity"). The one-line change is therefore
 `{twoFactorAuth && <TwoFactorSettings />}` after the profile-column `Box` inside `SettingsGrid`,
 with `const twoFactorAuth = useFeatureFlag('twoFactorAuth')` (`src/hooks/use-feature-flag.ts`).
+Amended 2026-11-05 (owner decision, profile forms split): the profile column beside the slot is
+split into three per-section forms in #377, each with its own password field, Save, `UpdateUser`
+and toast, so the slot is not the page's only change.
 
 ### 6.10 The 2FA section `TwoFactorSettings`: views, QR, clipboard, secrets
 
@@ -1588,6 +1627,11 @@ the `twoFactorAuth` flag renders the section; nothing is sent on mount.
   `UIPinInput` seam paints the same values on its cells through its own selector. The computed
   ring is a browser assertion (`toHaveCSS` after keyboard focus); jsdom computes no
   `:focus-visible` style.
+- Amended 2026-11-04 (owner decisions, Figma card and challenge as drawn): the `UIPinInput` seam
+  no longer paints the ring on its cells, which keep the toolkit's soft shadow and the caret with
+  no outline; the setup card takes the Figma header, step copy and key chips, and Start stays, so
+  the outlined copy button and the setup layout above are the plan as approved (settings README,
+  "The two-factor card").
 - **QR.** `qr-code-image.tsx` encodes `otpauthUri` with `qrcode-generator` (error correction
   `M`), reads the module matrix through `getModuleCount()` and `isDark(row, col)` and draws one
   `<svg role="img">` path in React, `#1A1C1E` on a white quiet zone of four modules, named
@@ -1691,13 +1735,20 @@ register. The pinned checksums (`config/ui-toolkit-checksums.json:1029-1040`) do
   (WCAG 2.1 SC 1.4.10). The confirm step in the settings section uses the same seam and rules
   against that card's content box. Tablet keeps 64 × 86 inside the 632 px card where the Figma
   tablet frame draws about 86 × 130 (research §4.1), a deviation raised in Follow-up 5.4.
+  Superseded 2026-11-04 (owner decision, challenge as drawn): from `md` to just under `xl` the
+  challenge card makes the cells fill its content box at 130 px (`8.125rem`) tall, as the tablet
+  frame draws; the overrides above give way to the Figma states (rest border `#E1E7EA`, hover
+  `#D0D4D8`, no focus outline, a visible `#D0D4D8` placeholder). `docs/ui-toolkit.md`, "The pin
+  input", records the shipped values.
 - **Errors.** `error` + `helperText` give `aria-invalid` on every cell and the
   `aria-describedby` link; the seam adds no live region, so the error is announced once by focus
   moving into the input (NFR-7).
 - **Focus.** The toolkit's forwarded ref lands on the group element, so the seam focuses the
   first `input` inside it. Paste of `123 456` filling six cells is pinned by a seam test.
 - Any requirement the props cannot meet is an override documented in the register and a
-  ui-toolkit issue, never an `A11Y_EXCEPTIONS` entry.
+  ui-toolkit issue, never an `A11Y_EXCEPTIONS` entry. Amended 2026-11-04 (owner decision): the
+  cells' SC 1.4.11 gaps have no exception entry because no axe rule tests them; they are recorded in
+  `docs/accessibility/acceptance-standard.md`.
 
 Code facts (Story 2.1, 2026-10-27): the seam's props are `control`, `name`, `rules`, `label`,
 `cellLabel` (a `PinCellLabel`, cell number to string), `helperText`, `error`, `disabled` and `id`;
@@ -1714,7 +1765,8 @@ seam file, and `scripts/ci/eslint-gate-fixtures.mjs` carries three seam fixtures
 `UIForm` (`src/components/ui-form/index.tsx`) arrives with the `errorAction` and `titleRef` that
 the #315 bundle adds and the `footer` that the #330 bundle adds; this feature uses all three (the
 challenge's Retry, its focused `h1`, its mode toggle) and adds one optional prop, typed in
-`src/components/types/ui-form/`:
+`src/components/types/ui-form/`. Amended 2026-11-04 (owner decision, challenge as drawn): the
+challenge focuses its first cell on load, not the `h1` through `titleRef`:
 
 - `submitBlockedReason?: string` — the codes view's "Готово" (FR-30). When set, the submit renders
   `aria-disabled="true"` instead of native `disabled`, so it stays focusable; the reason renders
@@ -1726,6 +1778,9 @@ challenge's Retry, its focused `h1`, its mode toggle) and adds one optional prop
 
 The challenge renders #315's `AuthCard` without the provider row and #315's `InCardLink` "Назад"
 (`#404142`, never a direct child of `section`, so it cannot match the switcher's axe exception).
+Superseded 2026-11-04 (owner decision, challenge as drawn): "Назад" is `CardBackControl` with an
+`onClick`, a `button`, in the Figma `#969B9D` (2.81:1), and it matches the owner-accepted entry
+`#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`.
 Error text uses #330's `paletteColors.error.text` (`#C62828`) through the shared banner and field
 error.
 
@@ -2726,7 +2781,9 @@ builders gain TOTP codes, recovery codes, session ids, base32 secrets and otpaut
   `routes.a11y.spec.ts` (the scan drives a stubbed sign-in first) and the settings section is
   scanned in its states; keyboard specs for both surfaces; mobile `tap()` flows on Pixel 7 and
   iPhone 14; `A11Y_EXCEPTIONS` stays at four (reconciled 2026-10-27: it holds ten entries at
-  HEAD, `tests/utils/a11y/axe-config.ts`; this feature adds none). The browser lanes own the
+  HEAD, `tests/utils/a11y/axe-config.ts`; this feature adds none). Superseded 2026-11-04 (owner
+  decision, challenge as drawn): this feature adds one entry, the challenge's grey "Назад", and the
+  list holds twelve (`docs/accessibility/acceptance-standard.md`, "Current exceptions"). The browser lanes own the
   layout facts jsdom cannot compute: every pin cell inside its card's content box with no horizontal
   overflow at 320, 360,
   600 and 767 px (§6.11), and the shared ring read with `toHaveCSS` after keyboard focus (§6.10).

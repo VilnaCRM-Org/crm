@@ -154,6 +154,50 @@ means removing its file; the two resolvers stay. Deleting the last one removes t
 also removes the `codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending folder read in
 `schema-loader.ts`: the mock refuses to start without the folder it was told to read.
 
+### Mock drift (two-factor)
+
+Every place where the local Apollo mock, the msw handlers or the Playwright stubs differ from real
+user-service for the two-factor operations, copied from §9 of the
+[two-factor PRD](../../../specs/two-factor-authentication/planning-artifacts/prd-two-factor-authentication-2026-10-06.md#9-mock-drift),
+which FR-41 points here; "§N", "FR-N" and "Follow-up N" refer to that PRD and its epics. The pin
+bump to the first release that declares the operations (Follow-up 5.1) re-checks each item against
+a real environment before production enablement.
+
+- **MD-1 — Schema source.** The pending file is user-service `main` at `a95c1e85`; a release may
+  differ. Recorded in the pending file header; detected by `make contract-diff` on the pin bump.
+- **MD-2 — Error codes.** Mock errors add `extensions.code`; real errors carry only
+  `extensions.status` and `category`, and real domain exceptions carry no `extensions` at all. The
+  client never reads `code` (FR-4 test) and classifies a status-less error by its message (§1).
+- **MD-3 — Error messages.** The completion, confirm and disable `401` messages are mirrored
+  exactly; real wording may change in a release. Constants live in one transformer (§1).
+- **MD-4 — `429` shape.** Real: HTTP `429` problem+json with `Retry-After`. The local mock has no
+  `429`; the msw handlers and the Playwright stubs answer HTTP `429` with `Retry-After`. The
+  client reads the status and never the body, so the body cannot reach it.
+- **MD-5 — HTTP status of GraphQL errors.** Real: reportedly 200, unverified; mock: Apollo Server's
+  status. The shared error transformer reads a transport `401` as `unauthenticated` without
+  reading its body, so an operation-specific `401` sent as a transport `401` would read as a
+  session end; user-service sends its 2FA `401`s as GraphQL errors, and Follow-up 5.1 re-checks
+  that against the released server (FR-34 accepted risk).
+- **MD-6 — TOTP.** Real: SHA-1, current and previous window, replay-protected; mock: fixed codes.
+- **MD-7 — Secret and URI.** Real: random per setup; mock: fixed (keeps QR baselines stable).
+- **MD-8 — Recovery codes.** Real: random, hashed, single use; mock: a fixed list, never consumed
+  (the mock is stateless).
+- **MD-9 — Pending session.** Real: 300 s TTL, five attempts; mock: none, any pending id passes.
+- **MD-10 — Rate limits and lockout.** Real: counters per IP, e-mail and user; mock: none (msw and
+  the route stubs inject `423` and `429`).
+- **MD-11 — Sudo window.** Real: session age under 300 s; mock: none (the stubs inject the `403`).
+- **MD-12 — Other sessions.** Real confirm revokes other sessions; not modelled.
+- **MD-13 — Bearer validation.** Real: JWT validated, cookie also accepted; mock: header presence.
+- **MD-14 — Enumeration timing.** Real dummy-hash timing not modelled; message uniform in both.
+- **MD-15 — Tokens.** Real JWTs with lifetimes; mock opaque strings; `rememberMe` not sent.
+- **MD-16 — `warning`, `id`, `_id`.** Never selected, so differences cannot reach the client.
+- **MD-17, MD-18 — Dropped (2026-10-08).** The mock holds no state, and no REST login remains.
+- **MD-19 — Third mock.** The msw handlers in integration tests share every drift class above.
+- **MD-20 — CORS.** Same-origin in the test stack; upstream allows `Authorization` but not the
+  correlation headers until user-service#514 ships (§8).
+- **MD-24, MD-25 — Dropped (2026-10-08).** The mock reads no token, as #330's does; every
+  401/403 branch comes from msw and `page.route`.
+
 ## Semantic breaking-change gate (issue #177)
 
 `make codegen-check` is **syntactic**: it proves the pins agree and that `src/api/generated/**`

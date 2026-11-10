@@ -56,7 +56,9 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 
 `useShellLayout()` returns `'mobile'` below 768 px, `'tablet'` from 768 to 1439 px and
 `'desktop'` from 1440 px. Tablets get the sidebar as desktops do and phones get a full-screen
-drawer; that is a product decision over the Figma frames, which draw a 313 px drawer up to 1023 px.
+drawer; that is a product decision over the Figma frames, which draw a 313 px drawer up to 1023 px
+(owner decision of 2026-11-05, confirmed 2026-11-10; see the
+[PRD amendment](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md)).
 The sidebar remembers whether it is collapsed in `localStorage` (`use-sidebar-collapse.ts`, key
 `crm.sidebar.collapsed`). The hook reads the two breakpoints from the crm scale (`md`, `xl`) through
 `useMediaQuery` with `noSsr`, so the first render is already the right layout. The values

@@ -79,13 +79,43 @@ revisions:
   - '2026-11-04: owner decision; the card takes the Figma header and steps, Start stays'
   - '2026-11-04: owner decision; the sign-in code submits on its sixth digit, reversing D6'
   - '2026-11-04: owner decision; the challenge page takes the Figma layout, states and copy'
+  - '2026-11-05: owner decision; the settings profile card splits into three per-section forms'
+  - '2026-11-05: owner decision; the shell shows the sidebar from 768 px and persists the rail'
+  - '2026-11-10: the 2026-11-04 decisions marked at Goal 4, §4, FR-23, FR-40, NFR-5, NFR-6, NFR-8,
+    NFR-9, NFR-13 and §10'
 ---
 
 # PRD: two-factor authentication for the user module
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-11-03 (owner
-decision: the `twoFactorAuth` flag removed) and 2026-11-04 (owner decision: the Figma card)
+decision: the `twoFactorAuth` flag removed), 2026-11-04 (owner decisions: the Figma card, the
+challenge page as drawn, auto-submit), 2026-11-05 (owner decisions: the settings profile forms
+split, the shell from 768 px) and 2026-11-10 (the 2026-11-04 decisions marked where they apply)
 **Feature:** `two-factor-authentication`
+
+> **Owner decisions of 2026-11-05 (from the owner's hand test of #377).** Both land in #377, not in
+> a separate pull request. **Profile forms split.** The settings profile card is split into three
+> per-section forms (full name, e-mail, password), each with its own password field and Save; each
+> save sends its own `UpdateUser` and shows its own toast. **Shell from 768 px.** The app shell
+> shows the sidebar from 768 px (it was `lg`, 1024, app-shell OQ-5); the mobile drawer is
+> full-screen with no shadow (it was the 313 px panel, app-shell OQ-24); the tablet header title is
+> centred; and the sidebar's collapsed state persists across reloads in `localStorage` under
+> `crm.sidebar.collapsed` (app-shell FR-12 E and OQ-4 said not persisted). The owner confirmed on
+> 2026-11-10 that persistence stays. These override FR-25's "only the slot's content changed" and
+> NFR-15's "no existing baseline changes": the `/settings` page around the slot, the shell and their
+> baselines change with #377. The app-shell PRD and the user-settings PRD carry the matching owner
+> decisions; FR-25 and NFR-15 carry dated notes and are kept as the record of the plan as approved.
+
+> **Amended 2026-11-10 (gate finding; owner decisions of 2026-11-04).** The three 2026-11-04 blocks
+> below named FR-14, FR-15, FR-16, FR-27 and FR-28 only. The same decisions also supersede Goal 4's
+> "without a new accessibility exception", §4's journey steps 2 and 3, FR-23's "real anchor",
+> FR-40's time note, NFR-5's exception count and back-link criterion, three NFR-6 rows and the cell
+> placeholder, NFR-8's arrival focus, NFR-9's ring on the pin cells, NFR-13's "no new
+> `A11Y_EXCEPTIONS` entry" and §10 assumption 15. Each carries a dated "superseded" mark; the text
+> is kept as the record of the plan as approved. The challenge's grey "Назад" is the owner-accepted
+> exception `#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`
+> (`#969B9D`, 2.81:1), and the cell states and auto-submit are recorded in
+> `docs/accessibility/acceptance-standard.md`, "Current exceptions".
 
 > **Owner decision of 2026-11-04 (challenge page as drawn).** The challenge takes frames `72:4846`,
 > `72:4882` and `72:4918`: their spacing, the grey "Назад", the cell states with no focus outline and
@@ -261,7 +291,10 @@ answer is classified the same with or without `extensions.status` (FR-34).
 3. Nothing leaks: no account enumeration; no pending session id, code, TOTP secret, otpauth URI,
    recovery code or token in the URL, browser storage, Apollo cache, logs or telemetry (goal 3).
 4. Both new screens meet WCAG 2.1 AA and every repository quality floor without a new
-   accessibility exception and without a suppression (goal 4).
+   accessibility exception and without a suppression (goal 4). Superseded in part 2026-11-04 by the
+   owner decisions (challenge page as drawn, auto-submit): the challenge's grey "Назад" carries one
+   owner-accepted `A11Y_EXCEPTIONS` entry, and the cell states and auto-submit are recorded gaps in
+   `docs/accessibility/acceptance-standard.md`; no suppression was added.
 
 ### Non-goals
 
@@ -331,6 +364,11 @@ footer); the settings page reuses the protected layout and its footer.
    320 px).
 3. He types or pastes the six digits and presses "Підтвердити".
 4. He lands on the protected page he originally asked for, with focus on `main`.
+
+Superseded 2026-11-04 by the owner decisions (challenge page as drawn, auto-submit): in step 2 focus
+goes to the first cell, not the heading, and from `md` to just under `xl` the cells are 130 px tall
+and fill the card's content box, as the tablet frame draws; in step 3 the code submits when the
+sixth digit is typed or pasted, and "Підтвердити" stays for a user who presses it.
 
 ### Iryna signs in with a recovery code
 
@@ -786,6 +824,10 @@ Trace: D11; ADR-009 (deadline, no transport retry).
 
 #### FR-23 — Leaving the challenge
 
+Superseded 2026-11-04 in part (owner decision, challenge page as drawn): "Назад" is a `button`
+(`CardBackControl` with an `onClick`, `useChallengeBack`), not an anchor; activating it navigates
+to `/sign-in` client-side with the same effects.
+
 "Назад" is a real anchor to `/sign-in` navigating client-side; it aborts an in-flight request and
 discards the pending challenge. Arriving on `/sign-in` by any means (Back included) discards a
 pending challenge, so browser Back behaves as "Назад". An aborted request shows nothing and
@@ -838,6 +880,11 @@ Enabling 2FA in an environment therefore needs `userSettings` on there too.
   2FA section; with `twoFactorAuth` off it renders without the section.
 - Given the page, the route contract and the home link after this feature, when they are read,
   then only the slot's content changed.
+
+Superseded 2026-11-05 by the owner decisions (profile forms split, shell from 768 px): the profile
+card beside the slot is split into three per-section forms, each with its own password field, Save,
+`UpdateUser` and toast, and the shell around the page shows the sidebar from 768 px, a full-screen
+drawer, a centred tablet header title and a persisted rail. Both land in #377.
 
 Trace: D7; Miro `UserProfile [component]<route>` → `2FASettings`; Figma "Помилка 404" frames.
 
@@ -1129,7 +1176,8 @@ New strings (key names are the architecture's):
 - authenticator subtitle: "Введіть шестизначний код із застосунку Google Authenticator." — "Enter
   the six-digit code from Google Authenticator."
 - time note: "Код можна ввести протягом 5 хвилин після входу." — "You can enter the code within 5
-  minutes of signing in."
+  minutes of signing in." Superseded 2026-11-04 (owner decision, challenge page as drawn): the
+  five-minute note is gone, so the challenge renders no time note.
 - recovery subtitle: "Введіть один із резервних кодів, які ви зберегли під час налаштування." —
   "Enter one of the recovery codes you saved during setup."
 - code group: "Код підтвердження" — "Verification code"; cell: "Цифра {{index}} з 6" — "Digit
@@ -1360,6 +1408,12 @@ colour. One `h1` per page, landmarks unchanged, colour never the only carrier of
 - Given the in-card "Назад" link, when the a11y spec runs, then it matches none of the
   `A11Y_EXCEPTIONS` selectors and passes `color-contrast` on its own colour.
 
+Superseded 2026-11-04 by the owner decision (challenge page as drawn): "zero new `A11Y_EXCEPTIONS`
+entries", "exactly its four entries" and the "Назад" criterion above no longer hold. The
+challenge's "Назад" keeps the Figma `#969B9D` (2.81:1 on white) under the owner-accepted entry
+`#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`; the list now holds
+twelve entries, counted in `docs/accessibility/acceptance-standard.md`, "Current exceptions".
+
 ### NFR-6 — Contrast overrides with exact colours
 
 Ratios are computed with the WCAG 2.1 relative-luminance formula against white `#FFFFFF` (the card
@@ -1392,6 +1446,14 @@ design, recorded through `figma-design-check` and raised in the designer follow-
 | Low-codes notice link                | no frame       | #0074B5                   | 5.04:1  |
 | "Увійти знову": text                 | no frame       | #1A1C1E (Font/100)        | 17.09:1 |
 | "Увійти знову": border               | no frame       | #80878A (outlined)        | 3.65:1  |
+
+Superseded 2026-11-04 for the challenge (owner decision, challenge page as drawn): the "Назад"
+row ships the Figma `#969B9D` (2.81:1) under the owner-accepted `A11Y_EXCEPTIONS` entry; the pin
+cell rest border ships the Figma `#E1E7EA` (`paletteColors.background.subtle`), the hover border
+`#D0D4D8` and the resting digit `#57595B`; a focused cell has no outline, only the toolkit's soft
+shadow and the caret; and the placeholder "0" is visible in `#D0D4D8`. The cells' SC 1.4.11 gaps are
+recorded in `docs/accessibility/acceptance-standard.md`; the shipped values are in
+`docs/ui-toolkit.md`, "The pin input". This decision does not change the other rows.
 
 Text needs 4.5:1 (1.4.3); borders, focus indicators and the checkbox need 3:1 against their
 adjacent colours (1.4.11, 2.4.7). The focus ring sits 2 px outside the cell on white, so its
@@ -1431,7 +1493,8 @@ keeps on each cell (FR-15).
 
 ### NFR-8 — Focus management and live regions
 
-- Arrival on `/sign-in/two-factor`: focus on the card `h1`. Arrival after completion: `main`
+- Arrival on `/sign-in/two-factor`: focus on the card `h1`. Superseded 2026-11-04 (owner decision,
+  challenge page as drawn): focus goes to the first cell. Arrival after completion: `main`
   (existing behaviour). Arrival on `/sign-in` with a notice: `main`, notice in a polite
   `role="status"` region.
 - Settings state changes (setup shown, codes shown, on, off, disable, regenerate,
@@ -1465,7 +1528,10 @@ inside the `contained` override; the `outlined` override at `:48-57` and the tex
 none), so the contained submits inherit it and every new non-contained control ("Назад", the
 mode toggle, the copy buttons, "Скасувати", the on view's buttons, "Увійти знову", the notice's
 link and dismiss, the banner Retry) applies one shared `:focus-visible`
-style with those values; the pin cells paint the same values through the seam. Existing stops
+style with those values; the pin cells paint the same values through the seam (superseded
+2026-11-04 by the owner decision, challenge page as drawn: the pin cells paint no ring, only the
+toolkit's soft shadow and the caret, a gap recorded in
+`docs/accessibility/acceptance-standard.md`). Existing stops
 (back-to-main, footer links, sign out) keep the ring they have today. The browser lanes read the
 ring with `toHaveCSS` after keyboard focus; jsdom cannot compute it. Enter submits; Escape in an
 inline confirmation acts as "Скасувати".
@@ -1522,7 +1588,9 @@ errors and 0 warnings; `tsc` 0 errors under the strict flags; markdownlint 0; de
 violations; `make lint-metrics` hard-fail policy (`config/metrics-policy.json`: at most 10
 functions per file, 8 public methods, 3 arguments, cyclomatic 10, cognitive 15); visual diffs 0.
 No `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, depcruise ignore, coverage suppression or
-new `A11Y_EXCEPTIONS` entry.
+new `A11Y_EXCEPTIONS` entry. Superseded 2026-11-04 for one entry (owner decision, challenge page as
+drawn): the challenge's grey "Назад" (`#969B9D`, 2.81:1) is the owner-accepted entry
+`#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`.
 
 ### NFR-14 — Conventions and architecture gates
 
@@ -1548,6 +1616,11 @@ Zero unintended diffs; baselines come from CI artifacts. New baselines:
   mobile pairs;
 - the mobile visual lane (`tests/visual/mobile/`, Pixel 7 and iPhone 14, device-scaled): the
   challenge and the settings off state.
+
+Superseded 2026-11-05 by the owner decisions (profile forms split, shell from 768 px): existing
+`/settings`, home and shell baselines change with #377, because the profile card is split into
+three forms and the sidebar shows from 768 px with a full-screen drawer below it. They are
+re-recorded from the CI artifact, as the rest of this requirement says.
 
 No existing baseline changes: the shared error red and the home settings link are #330's
 intended changes, and the `/sign-in` resting baselines are unchanged (GraphQL sign-in changes
@@ -1908,6 +1981,8 @@ Consolidated from the predecessors and this stage:
 14. The confirm step warns that other sessions end (brief §11).
 15. The challenge states its five-minute window in text; WCAG 2.2.1's essential exception covers
     the server's security limit, and expiry loses nothing but the password re-entry (FR-14).
+    Superseded 2026-11-04 (owner decision, challenge page as drawn): the five-minute note is
+    removed, so the challenge no longer states the window in text.
 16. Cross-origin deployment waits for user-service#514 (correlation headers in CORS); the
     `Authorization` header is already allowed (§8).
 

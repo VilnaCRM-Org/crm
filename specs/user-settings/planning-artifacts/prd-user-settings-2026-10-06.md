@@ -16,8 +16,8 @@ inputDocuments:
 # PRD: user settings for the `user` module
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
-2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below) and
-2026-11-05 (FR/NFR reconciliation)
+2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below),
+2026-11-05 (FR/NFR reconciliation, and the owner decision that splits the profile card)
 **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -45,6 +45,15 @@ inputDocuments:
 > - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
 >   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
 >   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
+
+> **Owner decision of 2026-11-05 (profile card split into three forms).** From the owner's hand
+> test of #377, landing in #377, not in a separate pull request: the settings profile card is split
+> into three per-section forms (full name, e-mail, password), each with its own password field and
+> Save; each save sends its own `UpdateUser` and shows its own toast. Where this PRD describes one
+> form, one current-password field, one Save and one `updateUser` for the whole card, and three
+> toasts in order when every aspect changes (journey step 5, FR-8, FR-11 to FR-14), the split
+> supersedes it; that text is kept as the record of the plan as approved. The two-factor PRD and
+> the app-shell PRD carry the matching owner decisions of 2026-11-05.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and
@@ -230,7 +239,9 @@ only stacking and toast placement change.
 4. An e-mail change ends in "Ми надіслали посилання для підтвердження на нову адресу" and the row
    "E-mail не підтверджено · Надіслати повторно"; a resend ends in its own success toast.
 5. A password change ends in "Ви успішно змінили пароль"; all three at once show three toasts in
-   the order name, e-mail, password. "Очистити" restores the last loaded values.
+   the order name, e-mail, password. "Очистити" restores the last loaded values. Superseded
+   2026-11-05 (owner decision, profile card split): each section saves on its own, so there is no
+   save of all three at once; each save shows its own toast.
 
 ### Tablet 1024
 
@@ -605,6 +616,10 @@ form to pristine; an e-mail change comes back with `confirmed` false.
   not-confirmed row appears.
 - Given all three changed, when the Save succeeds, then three toasts show in the order name,
   e-mail, password, each announced once, and an immediate second Save sends nothing.
+
+Superseded 2026-11-05 (owner decision, profile card split): the full name, e-mail and password are
+three forms, each with its own password field and Save. Each Save sends its own `UpdateUser` and
+shows its own toast, so the three-toast criterion above describes the plan as approved.
 
 #### FR-15 — Not-confirmed row and resend
 

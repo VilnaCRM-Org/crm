@@ -44,9 +44,28 @@ revisions:
 
 # Epics and stories: two-factor authentication for the user module
 
-**Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27 and
-2026-11-03 (owner decision: the `twoFactorAuth` flag removed) **Feature:**
+**Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27,
+2026-11-03 (owner decision: the `twoFactorAuth` flag removed) and 2026-11-10 (the owner decisions of
+2026-11-04 and 2026-11-05 marked in Stories 2.6, 2.7, 3.4, 3.6, 4.1, 4.2 and 4.4) **Feature:**
 `two-factor-authentication`
+
+> **Owner decisions of 2026-11-04 (challenge page as drawn, auto-submit, Figma card), noted
+> 2026-11-10.** The PRD's three 2026-11-04 blocks bind these stories: the challenge takes the
+> Figma frames (grey "Назад" under an owner-accepted `A11Y_EXCEPTIONS` entry, cell states with no
+> focus outline, no five-minute note, no resend row, focus on the first cell); the sign-in code
+> submits on its sixth digit, departing from WCAG 3.2.2; and the setup card takes the Figma header
+> and steps while Start stays. Stories 2.6, 2.7, 3.4 and 4.2 carry banners; the criteria they amend
+> are kept as the record of the plan as approved. See the [PRD](./prd-two-factor-authentication-2026-10-06.md), the
+> [settings README, "The two-factor card"](../../../src/modules/user/features/settings/README.md#the-two-factor-card) and the
+> [module README, "The challenge page against Figma"](../../../src/modules/user/README.md#the-challenge-page-against-figma-frames-724846-724882-724918).
+
+> **Owner decisions of 2026-11-05 (profile forms split, shell from 768 px).** From the owner's hand
+> test of #377, landing in #377: the settings profile card is split into three per-section forms
+> (full name, e-mail, password), each with its own password field, Save, `UpdateUser` and toast;
+> the app shell shows the sidebar from 768 px, the mobile drawer is full-screen with no shadow, the
+> tablet header title is centred, and the sidebar's collapsed state persists in `localStorage`
+> under `crm.sidebar.collapsed` (confirmed by the owner on 2026-11-10). The criteria in Stories
+> 3.6, 4.1 and 4.4 that say the shell or an existing baseline is unchanged carry dated notes.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
 > flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
@@ -1358,6 +1377,13 @@ handler), `SECURITY.md` (MODIFY), unit and integration tests.
 
 ### Story 2.6: Drive the challenge with the useTwoFactorChallenge hooks
 
+> **Owner decision of 2026-11-04 (auto-submit, D6 reversed).** The challenge submits when the sixth
+> digit is typed or pasted; "Підтвердити" stays, and a wrong code clears the cells so it cannot
+> resubmit itself. The first criterion's "six digits never submit by themselves" is superseded and
+> kept as the record of the plan as approved. The owner declined an advance sentence, so this
+> departs from WCAG 3.2.2, recorded in `docs/accessibility/acceptance-standard.md`. The setup
+> card's confirm step keeps its button. See the PRD's 2026-11-04 blocks.
+
 As a person on the challenge step,
 I want each submit checked before it is sent, my session stored when it succeeds, every answer
 turned into the right next step, and a request I leave behind cancelled,
@@ -1455,6 +1481,16 @@ state lookup, returns `TwoFactorChallengeProps`), `@auth/hooks/use-challenge-sub
   (NFR-22).
 
 ### Story 2.7: Complete the challenge on /sign-in/two-factor with an authenticator code
+
+> **Owner decision of 2026-11-04 (challenge page as drawn).** The page takes frames `72:4846`,
+> `72:4882` and `72:4918`: their spacing, the grey "Назад" (`#969B9D`, 2.81:1, under the
+> owner-accepted entry `#auth-form-card > button.MuiButton-text` in
+> `tests/utils/a11y/axe-config.ts`), the cell states with no focus outline, and Figma's desktop
+> subtitle with its spelling corrected. The five-minute note "Код можна ввести протягом 5 хвилин
+> після входу." is gone, there is no resend row, and on load focus goes to the first cell, not the
+> `h1` through `titleRef`. The criteria naming the `h1` focus and the note are superseded and kept
+> as the record of the plan as approved. See the PRD's 2026-11-04 blocks and the
+> [module README, "The challenge page against Figma"](../../../src/modules/user/README.md#the-challenge-page-against-figma-frames-724846-724882-724918).
 
 As Taras, whose account has 2FA on,
 I want a challenge step after my password where I type or paste the six digits from my
@@ -1953,6 +1989,15 @@ hook's types in `settings/types/hooks/`; this story keeps its view types in
 
 ### Story 3.4: Turn 2FA on from the settings section
 
+> **Owner decision of 2026-11-04 (Figma card, Start stays).** The owner kept the start button, so
+> setup still sends no request until it is pressed, and asked for the card to match Figma around
+> it: the authenticator logo, "Налаштуйте 2FA" and the subtitle, the Figma step copy, the QR, key
+> and hint inside step 2, an info tooltip and a second key chip in step 3, and "2FA підключено"
+> with the disable button in the text column. It replaces the off-view and setup-view descriptions
+> below (the separate `h3` "Налаштуйте двофакторну автентифікацію", the outlined copy button and
+> the setup layout), which are kept as the record of the plan as approved. The measurements and
+> deviations are in the [settings README, "The two-factor card"](../../../src/modules/user/features/settings/README.md#the-two-factor-card).
+
 As Olena,
 I want to start setup, scan a QR code drawn in the page, confirm a code and save my recovery codes
 once,
@@ -2185,7 +2230,10 @@ jest-axe.
   then `useAuthStore.setState` clears the count; arriving on `/settings` dismisses it in an effect;
   logout and a reload clear it.
 - Given `AppLayout` without a banner, when a protected page renders, then `Main`'s DOM, the shell
-  and the footer are unchanged and the shell baselines are untouched.
+  and the footer are unchanged and the shell baselines are untouched. Superseded 2026-11-05 in part
+  (owner decision, shell from 768 px): the notice still changes nothing in the shell, but the shell
+  itself changes in #377 (sidebar from 768 px, full-screen drawer, centred tablet header title,
+  persisted rail), so its baselines are re-recorded from the CI artifact.
 - Given the e2e spec (GraphQL stubbed per `operationName`), when a recovery-code completion
   reports one code, then the notice shows on the landing page, the link and the dismiss button
   read the shared ring with `toHaveCSS` after Tab, and the link renders `/settings` with the
@@ -2248,7 +2296,8 @@ Lighthouse.
   the 2FA section shows without a per-test override; with the flag forced off per test, the
   section is absent and sign-in and the challenge behave identically.
 - Given the visual suite, when it runs, then no existing baseline changes (the section is new and
-  the sign-in path renders as before).
+  the sign-in path renders as before). Superseded 2026-11-05 (owner decisions, profile forms split
+  and shell from 768 px): the existing `/settings`, home and shell baselines change in #377.
 - Given Lighthouse CI on the unchanged URL list, when it runs, then desktop performance,
   accessibility and best practices stay at or above 0.95 and SEO at or above 0.90, mobile
   performance is at or above 0.85 (median of three), `/sign-in` loses no point against `main`,
@@ -2258,6 +2307,15 @@ Lighthouse.
   enables the flag and production enables it in Follow-up 5.1.
 
 ### Story 4.2: Prove both surfaces against axe and the keyboard contract in every state
+
+> **Owner decision of 2026-11-04 (challenge page as drawn).** The challenge's grey "Назад" adds one
+> owner-accepted `A11Y_EXCEPTIONS` entry (`#auth-form-card > button.MuiButton-text`, `#969B9D`,
+> 2.81:1), so "none added" no longer holds; the list now holds twelve entries
+> (`docs/accessibility/acceptance-standard.md`, "Current exceptions"). The pin cells take the Figma
+> states: a resting border of `#E1E7EA`, not `#80878A`, and a focused cell with no outline, only the
+> toolkit's soft shadow and the caret, so the colour criterion's cell rows are superseded. The
+> criteria are kept as the record of the plan as approved; the shipped cell values are in
+> `docs/ui-toolkit.md`, "The pin input".
 
 As a keyboard or screen-reader user,
 I want every challenge and settings state to be operable without a mouse and correctly announced,
@@ -2385,7 +2443,9 @@ So that a later pixel regression on 2FA fails CI.
   re-authentication, `/sign-in` with the expired notice and a page with the low-codes notice have
   baselines; the mobile lane records the challenge and the settings off state.
 - Given the baselines, when they are committed, then they come from the CI `visual tests`
-  artifact of this branch, and no existing baseline changes.
+  artifact of this branch, and no existing baseline changes. Superseded 2026-11-05 (owner
+  decisions, profile forms split and shell from 768 px): the existing `/settings`, home and shell
+  baselines change in #377 and are re-recorded from the same CI artifact.
 - Given the manifest, when `make check-e2e-route-coverage` runs, then both route keys gain a
   visual row naming their spec.
 
