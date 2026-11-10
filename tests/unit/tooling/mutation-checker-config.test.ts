@@ -29,6 +29,7 @@ interface StrykerConfigShape {
 interface PackedScope {
   shards: string[][];
   weights: Record<string, number>;
+  mutants: Record<string, number>;
   scored: Record<string, number>;
   unsharded: string[];
   runnable: Record<string, number>;
@@ -199,14 +200,16 @@ describe('mutation shard slicing', () => {
       `const packing = await scope.packMutateShards(${total});` +
         'const { shards, weights, unsharded } = packing;' +
         `const fourth = await scope.shardMutateFiles(${total}, 3);` +
-        `const firstOfConfigTotal = scope.packShards(weights, ${SHARD_CONFIG_TOTAL})[0];` +
+        `const configTotal = ${SHARD_CONFIG_TOTAL};` +
+        'const firstOfConfigTotal = scope.packShards(weights, configTotal, packing.mutants)[0];' +
         'const counts = await scope.countMutants(unsharded);' +
         'const runnable = Object.fromEntries([...counts].map(([f, c]) => [f, c.runnable]));' +
         'const scored = Object.fromEntries(' +
         '  [...weights.keys()].map((f) => [f, packing.counts.get(f).scored])' +
         ');' +
-        'return { shards, weights: Object.fromEntries(weights), scored, unsharded, runnable,' +
-        ' fourth, firstOfConfigTotal };'
+        'const mutants = Object.fromEntries(packing.mutants);' +
+        'return { shards, weights: Object.fromEntries(weights), mutants, scored, unsharded,' +
+        ' runnable, fourth, firstOfConfigTotal };'
     );
 
   const packed = packInChild(TOTAL);
@@ -236,7 +239,7 @@ describe('mutation shard slicing', () => {
   it('weighs every sharded file by a positive whole mutant-run cost', () => {
     for (const weight of Object.values(packed.weights)) {
       expect(Number.isInteger(weight)).toBe(true);
-      expect(weight).toBeGreaterThanOrEqual(fanOutFactor(0));
+      expect(weight).toBeGreaterThanOrEqual(fanOutFactor({ logic: 0, component: 0 }));
     }
   });
 
@@ -258,6 +261,13 @@ describe('mutation shard slicing', () => {
     const mean = counts.reduce((total, count) => total + count, 0) / counts.length;
     expect(Math.min(...counts)).toBeGreaterThan(0);
     expect(Math.max(...counts)).toBeLessThanOrEqual(2 * mean);
+  });
+
+  it('holds every shard to 1.05x the mean runnable mutants, so slow tests cannot pile up', () => {
+    const held = (files: string[]): number =>
+      files.reduce((sum, file) => sum + (packed.mutants[file] ?? 0), 0);
+    const mean = held(packed.shards.flat()) / packed.shards.length;
+    expect(Math.max(...packed.shards.map(held))).toBeLessThanOrEqual(Math.ceil(1.05 * mean));
   });
 
   it('keeps the heaviest cold shard within the mutant cap the kill switch allows', () => {
@@ -352,17 +362,17 @@ describe('mutation shard slicing', () => {
         ['service.ts', { runnable: 5, scored: 4 }],
       ]),
       new Map([
-        ['barrel.ts', 90],
-        ['service.ts', 40],
+        ['barrel.ts', { logic: 90, component: 0 }],
+        ['service.ts', { logic: 30, component: 2 }],
       ])
     );
 
     it('weighs a file by its runnable mutants times the fan-out of its related tests', () => {
-      expect(weights.get('service.ts')).toBe(5 * 64);
+      expect(weights.get('service.ts')).toBe(5 * (4 + 30 + 3 * 2));
     });
 
     it('charges a file with no related test the run overhead alone', () => {
-      expect(weights.get('styles.ts')).toBe(3 * 16);
+      expect(weights.get('styles.ts')).toBe(3 * 4);
     });
 
     it('leaves a file without a runnable mutant out of the packing', () => {
@@ -370,16 +380,11 @@ describe('mutation shard slicing', () => {
     });
 
     it.each([
-      [0, 16],
-      [6, 16],
-      [7, 32],
-      [29, 32],
-      [30, 64],
-      [37, 64],
-      [74, 64],
-      [75, 128],
-      [111, 128],
-    ])('rounds %p related tests plus the run overhead to a factor of %p', (related, factor) => {
+      [{ logic: 0, component: 0 }, 4],
+      [{ logic: 37, component: 0 }, 41],
+      [{ logic: 0, component: 1 }, 7],
+      [{ logic: 2, component: 3 }, 15],
+    ])('charges %p related tests %p logic-test loads per mutant', (related, factor) => {
       expect(fanOutFactor(related)).toBe(factor);
     });
   });
@@ -430,6 +435,35 @@ describe('mutation shard slicing', () => {
         ['b.ts', 'e.ts'],
         ['c.ts', 'f.ts'],
       ]);
+    });
+
+    it('skips a lighter shard whose mutants would pass 1.05x the mean', () => {
+      const weights = new Map([
+        ['a.ts', 100],
+        ['b.ts', 10],
+        ['c.ts', 10],
+      ]);
+      const mutants = new Map([
+        ['a.ts', 1],
+        ['b.ts', 50],
+        ['c.ts', 50],
+      ]);
+
+      expect(packShards(weights, 2)).toEqual([['a.ts'], ['b.ts', 'c.ts']]);
+      expect(packShards(weights, 2, mutants)).toEqual([['a.ts', 'c.ts'], ['b.ts']]);
+    });
+
+    it('falls back to the lightest shard when no shard has room for the file', () => {
+      const one = new Map([
+        ['a.ts', 5],
+        ['b.ts', 1],
+      ]);
+      const mutants = new Map([
+        ['a.ts', 1],
+        ['b.ts', 99],
+      ]);
+
+      expect(packShards(one, 2, mutants)).toEqual([['a.ts'], ['b.ts']]);
     });
 
     it('degrades to a single shard holding everything', () => {

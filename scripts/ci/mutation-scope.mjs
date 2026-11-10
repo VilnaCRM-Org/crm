@@ -185,19 +185,30 @@ export async function countMutants(files) {
 }
 
 /**
- * The fixed cost of one mutant run, in related-test-file loads: starting Jest, resolving the
- * related tests and type-checking the mutant cost about as much as loading 16 test files (measured
- * at roughly 150 ms per load, the test bodies themselves taking a few milliseconds).
+ * What one mutant run costs on top of its related tests, in logic-test loads, and what a component
+ * test costs against a logic test. Fitted to 39 cold shards of one 48-shard run on 2026-11-10:
+ * about 0.3 s per mutant run, 0.09 s per related `.ts` test and 0.29 s per related `.tsx` test,
+ * against a fixed 75 s per shard (residual 50 s).
  */
-const RUN_OVERHEAD_IN_FILE_LOADS = 16;
+const RUN_OVERHEAD_IN_TEST_LOADS = 4;
+const COMPONENT_TEST_LOADS = 3;
 
 /**
- * What one mutant of a file costs its shard, in file loads: the run overhead plus every related
- * test file Jest loads for it. Rounded to a power of two so that adding or removing one test does
- * not move the weight, and with it the packing and every shard's incremental cache.
+ * How far over the mean a shard's runnable mutants may go. A load weight cannot see how long the
+ * covering tests themselves take, and a shard that drew 257 mutants of cheap-looking files with
+ * slow page tests met the kill switch while its weight sat at the minimum; capping the count
+ * bounds what that blind spot can add.
  */
-export function fanOutFactor(relatedTests) {
-  return 2 ** Math.round(Math.log2(RUN_OVERHEAD_IN_FILE_LOADS + relatedTests));
+const MUTANT_CAP_OVER_MEAN = 1.05;
+
+/**
+ * What one mutant of a file costs its shard, in logic-test loads: the run overhead plus every
+ * related test file Jest loads for it, a component test counting three. Not rounded: a power-of-two
+ * step once weighed the scrubber 29% light and packed eight files beside it, while a repack only
+ * costs the shards a cold run, which the mutant cap is sized for.
+ */
+export function fanOutFactor({ logic, component }) {
+  return RUN_OVERHEAD_IN_TEST_LOADS + logic + COMPONENT_TEST_LOADS * component;
 }
 
 /**
@@ -208,28 +219,45 @@ export function fanOutFactor(relatedTests) {
  * file without a runnable mutant has no weight and goes to no shard.
  */
 export function packingWeights(counts, relatedTests) {
+  const none = { logic: 0, component: 0 };
   const weights = new Map();
   for (const [file, { runnable }] of counts) {
-    if (runnable > 0) weights.set(file, runnable * fanOutFactor(relatedTests.get(file) ?? 0));
+    if (runnable > 0) weights.set(file, runnable * fanOutFactor(relatedTests.get(file) ?? none));
   }
   return weights;
 }
 
+function mutantCap(mutants, total) {
+  if (mutants === undefined) return Number.POSITIVE_INFINITY;
+  const sum = [...mutants.values()].reduce((all, count) => all + count, 0);
+  return Math.ceil((MUTANT_CAP_OVER_MEAN * sum) / total);
+}
+
+function targetShard(loads, held, room) {
+  let target = -1;
+  for (let i = 0; i < loads.length; i += 1) {
+    if (held[i] + room <= held.cap && (target < 0 || loads[i] < loads[target])) target = i;
+  }
+  return target < 0 ? lightestShard(loads) : target;
+}
+
 /**
- * Deterministic longest-processing-time bin packing: heaviest file first, each to the currently
- * lightest shard. Weights are mutant-run costs because a shard is only as fast as the mutants it
- * runs: packing by file size left a cold shard holding 1.6x the mean mutant load, and packing by
- * mutant count alone put a 37-related-test file and a 111-related-test file in shards that ran
- * 22 and 29 minutes cold against a 15-minute cap. Every weighed file lands in exactly one shard,
- * each sorted by path. `packingWeights` keeps every weight positive: zero-weight files would all
- * tie onto the one lightest shard, which is how one shard drew 57 barrels and a 3,779-test related
- * set.
+ * Deterministic longest-processing-time bin packing: heaviest file first, each to the lightest
+ * shard that stays within the mutant cap (the lightest of all when none does). Weights are
+ * mutant-run costs because a shard is only as fast as the mutants it runs: packing by file size
+ * left a cold shard holding 1.6x the mean mutant load, and packing by mutant count alone put a
+ * 37-related-test file and a 111-related-test file in shards that ran 22 and 29 minutes cold
+ * against a 15-minute cap. Every weighed file lands in exactly one shard, each sorted by path.
+ * `packingWeights` keeps every weight positive: zero-weight files would all tie onto the one
+ * lightest shard, which is how one shard drew 57 barrels and a 3,779-test related set. Without
+ * `mutants` no cap applies.
  */
-export function packShards(weights, total) {
+export function packShards(weights, total, mutants) {
   assertShardTotal(total);
 
   const shards = Array.from({ length: total }, () => []);
   const loads = new Array(total).fill(0);
+  const held = Object.assign(new Array(total).fill(0), { cap: mutantCap(mutants, total) });
 
   // Code-unit ordering, not localeCompare: the tiebreak decides which shard a file lands in, and
   // each shard carries its own incremental cache, so it has to agree across every machine's locale.
@@ -238,9 +266,11 @@ export function packShards(weights, total) {
     .sort((a, b) => b.weight - a.weight || byPath(a.file, b.file));
 
   for (const { file, weight } of heaviestFirst) {
-    const target = lightestShard(loads);
+    const count = mutants?.get(file) ?? 0;
+    const target = targetShard(loads, held, count);
     shards[target].push(file);
     loads[target] += weight;
+    held[target] += count;
   }
 
   return shards.map((files) => files.sort(byPath));
@@ -259,8 +289,9 @@ export async function packMutateShards(total) {
   const counts = await countMutants(scope);
   const runnable = scope.filter((file) => counts.get(file).runnable > 0);
   const weights = packingWeights(counts, relatedTestCounts(runnable));
+  const mutants = new Map(runnable.map((file) => [file, counts.get(file).runnable]));
   const unsharded = scope.filter((file) => !weights.has(file));
-  return { shards: packShards(weights, total), weights, unsharded, counts };
+  return { shards: packShards(weights, total, mutants), weights, mutants, unsharded, counts };
 }
 
 export async function shardMutateFiles(total, index) {

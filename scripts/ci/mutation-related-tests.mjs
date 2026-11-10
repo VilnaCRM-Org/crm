@@ -150,7 +150,17 @@ export function relatedTestFiles(importers, file) {
   return tests;
 }
 
+/**
+ * The related test files of each file, split by kind: a component test (`.tsx`) renders through
+ * React and MUI and costs a mutant run about three times what a logic test (`.ts`) does.
+ */
 export function relatedTestCounts(files) {
   const importers = buildImporterIndex();
-  return new Map(files.map((file) => [file, relatedTestFiles(importers, file).size]));
+  return new Map(
+    files.map((file) => {
+      const tests = [...relatedTestFiles(importers, file)];
+      const component = tests.filter((test) => test.endsWith('.tsx')).length;
+      return [file, { logic: tests.length - component, component }];
+    })
+  );
 }

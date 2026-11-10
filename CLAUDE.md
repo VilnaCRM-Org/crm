@@ -340,20 +340,29 @@ files the way Jest finds them for Stryker: it extracts dependencies like Jest's 
 Stryker hands Jest, the two test roots plus the mutated file's directory.
 `tests/unit/tooling/mutation-related-tests.test.ts` pins the rules on a fixture tree and holds
 the count equal to `jest --listTests --findRelatedTests`
-on real files. The factor is the related-file count plus a run overhead of 16 file loads, rounded
-to a power of two so that adding one test does not repack the scope and throw away the shards'
-incremental caches. The packing then puts the heaviest file first onto the lightest shard, ties
-broken by code-unit path order. Counting the whole scope takes about 4 s, so every shard job and
-the merge job count at run time and derive the same packing from the same commit; no weight file is
-committed, so none can go stale. At 560 files the scope holds 503 sharded files; 57 files run in
-no shard. The 48 shards carry 4,576 to 5,664 weight units and 1 to 12 files each, except the one
-that holds `pii-text-scrubber.ts` alone at 6,592. Weighing by scored mutants alone had packed that
-file's 103 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
-`lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
-minutes cold, while 45 of the 48 shards finished an incremental run in about a minute. A file is
-the unit a shard cannot split, so a file that alone outgrows the kill switch is split by
-responsibility, as the scrubber was. File size was a poor proxy too: under the 30-shard size
-packing a cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
+on real files. The factor is 4 + the related logic (`.ts`) tests + 3 x the related component
+(`.tsx`) tests, in logic-test loads: fitted on 2026-11-10 to 39 cold shards of one 48-shard run,
+which measured about 0.3 s per mutant run, 0.09 s per related logic test and 0.29 s per related
+component test against a fixed 75 s per shard, with a 50 s residual. It is not rounded: a
+power-of-two step once weighed the scrubber 29% light, and a repack costs the shards only a cold
+run. A load weight cannot see how long the covering tests themselves take, nor the mutants that
+time out (each waits out Stryker's timeout window and restarts its test runner), so the packing
+also caps every shard at 1.05x the mean runnable mutants: a shard that drew 257 mutants of
+cheap-looking files whose page tests type through a form met the kill switch while its weight sat
+near the minimum. The packing puts the heaviest file first onto the lightest shard that stays
+under that cap, the lightest of all when none does, ties broken by code-unit path order. Counting
+the whole scope takes about 4 s, so every shard job and the merge job count at run time and derive
+the same packing from the same commit; no weight file is committed, so none can go stale. At 560
+files the scope holds 503 sharded files; 57 files run in no shard. The 48 shards carry 86 to 216
+runnable mutants (mean 206) and 2,900 to 4,635 weight units, except `ui-form/styles.ts`, alone at
+5,332; it and `pii-text-scrubber.ts` (4,635) each fill a shard on their own. Weighing by scored
+mutants alone had packed that scrubber's 103 mutants (then still inside `pii-scrubber.ts`, 149
+mutants with 37 related test files) and `lazy-catalog-loader.ts` (111 related test files) into
+shards that ran an estimated 22 and 29 minutes cold, while 45 of the 48 shards finished an
+incremental run in about a minute. A file is the unit a shard cannot split, so a file that alone
+outgrows the kill switch is split by responsibility, as the scrubber was. File size was a poor
+proxy too: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
+kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard
 meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the

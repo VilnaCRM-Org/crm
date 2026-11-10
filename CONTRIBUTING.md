@@ -498,8 +498,10 @@ carrying 1.54x the mean load, and at 30 shards a size packing still left one hol
 against a mean of 308. A file weighs its runnable mutants times a fan-out factor: every mutant run
 makes Jest load each test file related to the mutated file, about 150 ms apiece even when every
 test in it is filtered out, so `scripts/ci/mutation-related-tests.mjs` counts those files the way
-Jest finds them for Stryker and the factor is that count plus a 16-load run overhead, rounded to a
-power of two. Packing by scored mutants alone had put a 37- and a 111-related-test file in shards
+Jest finds them for Stryker, and the factor is 4 + the related logic tests + 3 x the related
+component tests (fitted to measured shard times). Because no load weight sees slow covering tests
+or timeouts, no shard may also hold more than 1.05x the mean runnable mutants. Packing by scored
+mutants alone had put a 37- and a 111-related-test file in shards
 that ran an estimated 22 and 29 minutes cold. A file with no runnable mutant (a barrel, a token
 module) goes to no shard, so its whole-suite related-test set no longer lands on one shard.
 Every shard job and the merge job count each file's

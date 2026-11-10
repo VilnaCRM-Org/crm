@@ -68,6 +68,7 @@ describe('related tests a mutant run loads', () => {
     "// import '@/area/target';\n/* import '@/area/target'; */\n"
   );
   write('tests/unit/tooling/ignored.test.ts', "import '@/area/target';\n");
+  write('tests/unit/component.test.tsx', "import '@/area/target';\n");
   write('tests/integration/chain.integration.test.ts', "import '@/area/sibling';\n");
   write('tests/integration/not-matched.test.ts', "import '@/area/target';\n");
 
@@ -81,6 +82,7 @@ describe('related tests a mutant run loads', () => {
     expect(reached).toEqual(
       expect.arrayContaining([
         'tests/unit/direct.test.ts',
+        'tests/unit/component.test.tsx',
         'tests/unit/via-sibling.test.ts',
         'tests/unit/via-nested.test.ts',
         'tests/unit/via-helper.test.ts',
@@ -114,18 +116,18 @@ describe('related tests a mutant run loads', () => {
     expect(reached).not.toContain('tests/unit/tooling/ignored.test.ts');
     expect(reached).not.toContain('tests/integration/not-matched.test.ts');
     expect(reached).not.toContain('tests/unit/helpers/render.ts');
-    expect(reached).toHaveLength(8);
+    expect(reached).toHaveLength(9);
   });
 
-  it('counts the same files relatedTestCounts reports for each target', () => {
+  it("reports each target's related tests split into logic and component tests", () => {
     expect(
-      runRelated<Array<[string, number]>>(
+      runRelated<Array<[string, { logic: number; component: number }]>>(
         root,
         "return [...related.relatedTestCounts(['src/area/target.ts', 'src/other/outside.ts'])];"
       )
     ).toEqual([
-      ['src/area/target.ts', 8],
-      ['src/other/outside.ts', 1],
+      ['src/area/target.ts', { logic: 8, component: 1 }],
+      ['src/other/outside.ts', { logic: 1, component: 0 }],
     ]);
   });
 });
