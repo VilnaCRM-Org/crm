@@ -166,6 +166,9 @@ printf 'feat(#123): add a thing (#456)\n' | make lint-commit-message
 make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" COMMIT_RANGE_TO=HEAD
 ```
 
+The range starts at the merge base with the pull request's own base branch, so for a pull
+request stacked on another branch, replace `origin/main` with that branch.
+
 Do not relax `commitlint.config.js` to make a header pass — it is the contract the release
 pipeline parses.
 
