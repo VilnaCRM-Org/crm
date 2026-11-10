@@ -25,7 +25,7 @@ import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
-import { expectSignInPage } from '@tests/e2e/utils/sign-out';
+import { expectSignInPage, signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
@@ -166,6 +166,14 @@ async function signInByForm(page: Page): Promise<void> {
   await expectShellReady(page);
 }
 
+async function expectSidebarCollapsed(page: Page): Promise<void> {
+  await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toHaveAttribute(
+    'aria-expanded',
+    'false'
+  );
+  await expect(page.getByRole('button', { name: shellText.collapse, exact: true })).toHaveCount(0);
+}
+
 async function expectSettingsPage(page: Page): Promise<void> {
   await expect(page).toHaveURL(ROUTE_PATHS.settings);
   await expect(page.getByRole('heading', { level: 1, name: t('settings.heading') })).toBeVisible();
@@ -173,27 +181,25 @@ async function expectSettingsPage(page: Page): Promise<void> {
 }
 
 test.describe('App shell on desktop (issue #362)', () => {
-  test.use({ viewport: { width: 1440, height: 900 }, trace: 'retain-on-failure' });
+  test.use({ viewport: { width: 1440, height: 900 } });
 
   test('keeps the sidebar collapsed across a reload and a new sign-in', async ({ page }) => {
     await stubProfile(page);
     await stubSignIn(page, ['session', 'session']);
-    await page.goto(ROUTE_PATHS.signIn, { waitUntil: 'domcontentloaded' });
+    await signOutToSignIn(page);
     await signInByForm(page);
     await page.getByRole('button', { name: shellText.collapse, exact: true }).click();
-    await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toBeVisible();
+    await expectSidebarCollapsed(page);
 
     await page.reload({ waitUntil: 'domcontentloaded' });
+    await expectShellReady(page);
+    await expectSidebarCollapsed(page);
+
+    await sidebarSignOutOf(page).click();
     await expectSignInPage(page);
     await signInByForm(page);
 
-    await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toHaveAttribute(
-      'aria-expanded',
-      'false'
-    );
-    await expect(page.getByRole('button', { name: shellText.collapse, exact: true })).toHaveCount(
-      0
-    );
+    await expectSidebarCollapsed(page);
   });
 
   test('opens Settings from the sidebar and marks only that link current', async ({ page }) => {
