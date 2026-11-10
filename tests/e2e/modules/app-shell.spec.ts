@@ -58,7 +58,7 @@ const PUBLIC_PATHS: readonly string[] = [
   `${ROUTE_PATHS.passwordReset}?token=LighthouseAuditResetToken0000001`,
 ];
 
-const SHELL_CHUNK = /ui-app-shell|user-menu|current-user/;
+const SHELL_CHUNK = /ui-app-shell|user-menu|current-user|protected-layout/;
 
 const LABEL_COLOUR = 'rgb(64, 65, 66)';
 const MENU_COLOUR = 'rgb(26, 28, 30)';
@@ -88,6 +88,23 @@ const groupLabelFitOf = (scope: Locator): Promise<GroupLabelFit> =>
       lines: Math.round(text.height / lineHeight),
       overshoot: Math.max(0, text.right - toggle.getBoundingClientRect().left),
     };
+  }, labelOf('settings'));
+
+interface LabelEdge {
+  readonly x: number;
+  readonly y: number;
+}
+
+const settingsLabelEdgeOf = (scope: Locator): Promise<LabelEdge> =>
+  scope.evaluate((root, name): LabelEdge => {
+    const link = [...root.querySelectorAll('a')].find((anchor) => anchor.textContent === name);
+    const label = link?.querySelector('span');
+    if (!label) throw new Error('The Settings label is not rendered');
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    const text = range.getBoundingClientRect();
+
+    return { x: text.right - 2, y: text.top + text.height / 2 };
   }, labelOf('settings'));
 
 interface ViewportRect {
@@ -202,17 +219,29 @@ test.describe('App shell on desktop (issue #362)', () => {
   });
 
   for (const width of [1440, 1024]) {
-    test(`opens Settings from the chip menu at ${width} px and focuses main`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await openProtected(page, ROUTE_PATHS.home);
-      await openChipMenu(page);
+    for (const item of [shellText.settingsItem, shellText.profileItem]) {
+      test(`opens Settings from "${item}" in the chip menu at ${width} px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await openProtected(page, ROUTE_PATHS.home);
+        await openChipMenu(page);
 
-      await menuItemOf(page, shellText.settingsItem).click();
+        await menuItemOf(page, item).click();
 
-      await expectSettingsPage(page);
-      await expect(userMenuOf(page)).toHaveCount(0);
-    });
+        await expectSettingsPage(page);
+        await expect(userMenuOf(page)).toHaveCount(0);
+      });
+    }
   }
+
+  test('replaces the history entry when the logo is activated on /', async ({ page }) => {
+    await openProtected(page, ROUTE_PATHS.home);
+    const before = await page.evaluate(() => window.history.length);
+
+    await page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true }).click();
+
+    await expect(page.getByRole('main')).toBeFocused();
+    expect(await page.evaluate(() => window.history.length)).toBe(before);
+  });
 
   for (const startPath of [ROUTE_PATHS.home, ROUTE_PATHS.settings]) {
     test(`signs out from the sidebar on ${startPath} and focuses main of sign-in`, async ({
@@ -294,6 +323,24 @@ test.describe('App shell on desktop (issue #362)', () => {
 
       expect(fit.lines).toBe(1);
       expect(fit.overshoot).toBeLessThanOrEqual(1);
+    });
+  }
+
+  for (const width of [1440, 1024]) {
+    test(`opens Settings from the end of its label at ${width} px, group untouched`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await openProtected(page, ROUTE_PATHS.home);
+      const edge = await settingsLabelEdgeOf(sidebarOf(page));
+
+      await page.mouse.click(edge.x, edge.y);
+
+      await expectSettingsPage(page);
+      await expect(sidebarSettingsOf(page)).toHaveAttribute('aria-current', 'page');
+      await expect(
+        sidebarOf(page).getByRole('button', { name: shellText.groupCollapse, exact: true })
+      ).toHaveAttribute('aria-expanded', 'true');
     });
   }
 
@@ -485,6 +532,31 @@ test.describe('Collapsed rail on a short tablet viewport, 1280x720 (FR-14, OQ-21
     await expect(sidebarSignOutOf(page)).toBeFocused();
     await expect(sidebarSignOutOf(page)).toBeInViewport({ ratio: 1 });
   });
+
+  for (const id of ['products', 'orders', 'settings']) {
+    test(`paints the ${id} tooltip above the settings page at 1024 px`, async ({ page }) => {
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await openProtected(page, ROUTE_PATHS.settings);
+      await page.getByRole('button', { name: shellText.collapse, exact: true }).click();
+      await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toBeVisible();
+
+      await linkOf(page, id).hover();
+
+      const tooltip = tooltipOf(page, id);
+      await expect(tooltip).toBeVisible();
+      const painted = await tooltip.evaluate((element): boolean => {
+        const box = element.getBoundingClientRect();
+        const y = (box.top + box.bottom) / 2;
+
+        return [box.left + 12, (box.left + box.right) / 2, box.right - 6].every((x) => {
+          const hit = document.elementFromPoint(x, y);
+
+          return hit !== null && element.contains(hit);
+        });
+      });
+      expect(painted).toBe(true);
+    });
+  }
 
   test('paints the tooltip of a scrolled row in full, outside the card', async ({ page }) => {
     await collapseAtShortTablet(page);

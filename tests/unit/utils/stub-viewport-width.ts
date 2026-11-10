@@ -9,9 +9,14 @@ const matchesWidth = (width: number, query: string): boolean => {
   return !(width < min) && !(width > max);
 };
 
+const isWidthQuery = (query: string): boolean => /(?:min|max)-width/u.test(query);
+
 const stubViewportWidth = (width: number): void => {
+  const previous = window.matchMedia as typeof window.matchMedia | undefined;
   window.matchMedia = ((query: string) => ({
-    matches: matchesWidth(width, query),
+    matches: isWidthQuery(query)
+      ? matchesWidth(width, query)
+      : (previous?.call(window, query).matches ?? false),
     media: query,
     onchange: null,
     addEventListener: jest.fn(),

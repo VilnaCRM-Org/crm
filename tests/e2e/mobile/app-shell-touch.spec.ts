@@ -1,7 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import {
+  PROFILE_NODE,
+  stubProfile,
+} from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   burgerOf,
   chipOf,
@@ -33,6 +36,14 @@ const drawerSignOutOf = (page: Page): Locator =>
 const logoOf = (page: Page): Locator =>
   page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
 
+async function tapCentre(control: Locator): Promise<void> {
+  const box = await control.boundingBox();
+  expect(box, 'control must have a box to tap').not.toBeNull();
+  await control
+    .page()
+    .touchscreen.tap((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2);
+}
+
 async function openAt(page: Page, path: string): Promise<void> {
   await seedPreloadedAuthToken(page);
   await stubProfile(page);
@@ -53,17 +64,29 @@ async function expectTapArea(control: Locator, name: string): Promise<void> {
     const box = element.getBoundingClientRect();
     const centreX = box.left + box.width / 2;
     const centreY = box.top + box.height / 2;
-    const reach = half - 1;
+    const reach = half - 0.5;
+    const circular = Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) >= half;
     const probes = [
       [0, 0],
       [-reach, 0],
       [reach, 0],
       [0, -reach],
       [0, reach],
+      ...(circular
+        ? []
+        : [
+            [-reach, -reach],
+            [reach, -reach],
+            [-reach, reach],
+            [reach, reach],
+          ]),
     ];
 
     return probes.every(([dx, dy]) => {
-      const hit = document.elementFromPoint(centreX + (dx ?? 0), centreY + (dy ?? 0));
+      const x = centreX + (dx ?? 0);
+      const y = centreY + (dy ?? 0);
+      if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) return false;
+      const hit = document.elementFromPoint(Math.floor(x), Math.floor(y));
 
       return hit !== null && element.contains(hit);
     });
@@ -159,7 +182,9 @@ test.describe('App shell on touch devices (issue #362)', () => {
       (avatar?.y ?? 0) + (avatar?.height ?? 0) / 2
     );
 
+    await expect(drawerOf(page)).toHaveCount(0);
     await expect(userMenuOf(page)).toHaveCount(0);
+    await expect(chipOf(page)).toHaveAttribute('aria-expanded', 'false');
     await expect(page).toHaveURL(ROUTE_PATHS.home);
   });
 
@@ -194,6 +219,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await drawerSignOutOf(page).tap();
 
     await expectSignInPage(page);
+    await expect(page.getByRole('main')).toBeFocused();
   });
 
   test('opens Settings from the avatar menu and focuses main', async ({ page }) => {
@@ -263,7 +289,54 @@ test.describe('App shell on touch devices (issue #362)', () => {
       await expectTapArea(drawerLinkOf(page, id), `drawer ${id}`);
     }
     await expectTapArea(drawerSignOutOf(page), 'drawer sign out');
+    const expand = drawerOf(page).getByRole('button', { name: shellText.groupExpand, exact: true });
+    await expectTapArea(expand, 'drawer chevron, collapsed');
+    await expand.tap();
+    await expectTapArea(
+      drawerOf(page).getByRole('button', { name: shellText.groupCollapse, exact: true }),
+      'drawer chevron, expanded'
+    );
   });
+
+  test('keeps the bell and the list inert on a tap, with their status described', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await expect(chipOf(page)).toHaveAccessibleName(
+      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+    );
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(request.url()));
+
+    for (const name of [shellText.notifications, shellText.tasks]) {
+      const control = page.getByRole('banner').getByRole('button', { name, exact: true });
+      await expect(control).toBeDisabled();
+      await expect(control).toHaveAccessibleDescription(shellText.unavailable);
+      await control.tap({ force: true });
+    }
+
+    await expect(page).toHaveURL(ROUTE_PATHS.home);
+    expect(requests).toEqual([]);
+  });
+
+  for (const width of [320, 375]) {
+    test(`keeps the drawer search inert and fitting at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 700 });
+      await openAt(page, ROUTE_PATHS.home);
+      await burgerOf(page).tap();
+      const search = drawerOf(page).getByRole('searchbox', { name: shellText.search });
+
+      await expect(search).toBeDisabled();
+      await expect(search).toHaveAccessibleDescription(shellText.unavailable);
+      await expect(search).toBeInViewport({ ratio: 1 });
+      await search.tap({ force: true });
+
+      await expect(search).toHaveValue('');
+    });
+  }
 
   test('keeps the drawer sub-items at the recorded 42 px pitch, whole and not overlapping', async ({
     page,
@@ -301,6 +374,66 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect(drawerOf(page)).toBeVisible();
 
     await expectTapArea(closeOf(page), 'close');
+    await expectTapArea(drawerLinkOf(page, 'boards'), 'drawer boards at 320 px');
+    await expectTapArea(drawerSignOutOf(page), 'drawer sign out at 320 px');
+  });
+
+  test('scrolls the drawer to a reachable Sign out on a short viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 480 });
+    await openAt(page, ROUTE_PATHS.settings);
+    await burgerOf(page).tap();
+    await expect(drawerOf(page)).toBeVisible();
+
+    await drawerSignOutOf(page).scrollIntoViewIfNeeded();
+
+    await expect(drawerSignOutOf(page)).toBeInViewport({ ratio: 1 });
+  });
+
+  test('keeps the page where it was when the drawer closes and focus returns', async ({ page }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await page.evaluate(() => {
+      const filler = document.createElement('div');
+      filler.style.height = '3000px';
+      document.body.append(filler);
+      window.scrollTo(0, 400);
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
+
+    await tapCentre(burgerOf(page));
+    await expect(drawerOf(page)).toBeVisible();
+    await tapCentre(closeOf(page));
+    await expect(drawerOf(page)).toHaveCount(0);
+
+    await expect(burgerOf(page)).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(400);
+  });
+
+  test('locks the page scroll behind the open drawer and frees it after close', async ({
+    page,
+  }) => {
+    await openAt(page, ROUTE_PATHS.home);
+    await page.evaluate(() => {
+      const filler = document.createElement('div');
+      filler.style.height = '3000px';
+      document.body.append(filler);
+    });
+    await burgerOf(page).tap();
+    await expect(drawerOf(page)).toBeVisible();
+    const lockedAt = await page.evaluate(() => window.scrollY);
+
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+      .toBe('hidden');
+    expect(await page.evaluate(() => window.scrollY)).toBe(lockedAt);
+
+    await closeOf(page).tap();
+    await expect(drawerOf(page)).toHaveCount(0);
+
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
+      .not.toBe('hidden');
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedAt);
   });
 
   test('has no horizontal overflow at device width, with the drawer open', async ({ page }) => {

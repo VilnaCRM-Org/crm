@@ -507,6 +507,21 @@ Shared display-name rule (any option): move `displayNameOf` / `monogramOf` into
    read on `useFeatureFlag('userSettings')` (or a new flag); while off, render a name-less chip
    (person glyph, precedent `profile-header/index.tsx:34`) or hide it, and hide the Settings menu
    item (otherwise `RouteFlagGate` sends it to not-found). New owner decision.
+
+   > **Superseded 2026-11-06 (owner decision; R-1 closed by evidence read from the user-service
+   > source).** The claim above does not hold on either version. At `v2.8.0` (commit 56656f90, the
+   > version crm pins), `config/packages/security.yaml` has `firewalls.main.security: false`, so
+   > nothing authenticates and the read never gets a 401, whatever the token. At `main` (commit
+   > a95c1e85), `/api/graphql` is absent from the `$rules` of `PublicAccessResolver` in
+   > `config/services.yaml`, so `DualAuthenticator` `supports()` runs for any request carrying a token:
+   > a valid token passes and the read answers 200; an invalid, expired or revoked token gets a 401
+   > from `onAuthenticationFailure`, which correctly ends the session; a request with no token passes
+   > `access_control` as PUBLIC_ACCESS and gets a GraphQL authorization error at 200. No guard is
+   > needed. Limits: read from source at those two commits, not observed on a deployed environment,
+   > and a gateway in front of the service was not examined. Residual, not fixed: the sandbox's fixed
+   > `sandbox-demo-session-token` is not a real token, so a sandbox pointed at a real `main`
+   > user-service would end the demo session on the first read.
+
 2. **Missing catalog on `/`.** The chip chunk must register its own catalog
    (`lazyCatalogLoader.register`, deep-merge, safe to repeat) or use the shell catalog, or the
    console gate fails on i18next `missingKey`.

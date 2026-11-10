@@ -18,8 +18,9 @@ const RUNTIME_FILES = CODE_FILES.filter((file) => !file.includes('.stories.'));
 const CYRILLIC_RUSSIAN_ONLY = /[ыэъёЫЭЪЁ]/;
 
 describe('coming-soon source contract (issue #362)', () => {
-  it('finds the page, link, sections, styles and barrel', () => {
+  it('finds the page, card, link, sections, styles and barrel', () => {
     expect(RUNTIME_FILES.map((file) => path.relative(ROOT, file)).sort()).toEqual([
+      'coming-soon-card.tsx',
       'coming-soon-home-link.tsx',
       'coming-soon-page.tsx',
       'coming-soon-sections.ts',
@@ -36,9 +37,10 @@ describe('coming-soon source contract (issue #362)', () => {
 
   it('imports neither ErrorPageCard, ErrorPageActions nor ERROR_PAGE_VARIANTS values', () => {
     const page = read('coming-soon-page.tsx');
+    const card = read('coming-soon-card.tsx');
     const link = read('coming-soon-home-link.tsx');
 
-    for (const source of [page, link]) {
+    for (const source of [page, card, link]) {
       expect(source).not.toContain('error-page-card');
       expect(source).not.toContain('error-page-actions');
       expect(source).not.toMatch(/\bERROR_PAGE_VARIANTS\b/);

@@ -4,6 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-22
+revised: 2026-11-09
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 relatedIssues:
@@ -28,6 +29,104 @@ as "research §N". The task brief's owner decisions are cited as `B4.n` (task br
 Stable ids: user stories `US-n`, functional requirement seeds `FR-n`, non-functional seeds
 `NFR-n`, goals `G-n`, success metrics `SM-n`, constraints `C-n`, risks `R-n` and open questions
 `OQ-n`. The PRD keeps these ids and adds acceptance criteria; it does not renumber them.
+
+Revised 2026-11-05, 2026-11-06 and 2026-11-09: the banners below carry the owner decisions and
+shipped changes that came after this brief, each dated by its decision. The banner of the owner
+decisions of 2026-11-06 was added on 2026-11-09. Each row they name is kept unchanged as the record
+of the plan as approved.
+
+> **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
+> together with #331's `twoFactorAuth`: `/settings`, its three coming-soon sub-routes, the sidebar and
+> drawer Settings group and the user menu's profile and Settings links now ship in every environment
+> (`docs/feature-flags.md`, "`/settings` ships without a flag"). OQ-11's flag-off answer, SM-16, the
+> "Gate the read" mitigation of R-1 and NFR-7's "no read while the session cannot be authenticated"
+> therefore describe a state no build reaches any more.
+
+> **Owner decision of 2026-11-04 (settings centred, DV-12).** The owner asked for `/settings` to be
+> centred at 1440, which reverses FR-15's "Remove only the three centring declarations": the rule
+> stays in `settings/routes/user-profile/styles.ts`, and above 1024 px the heading and grid centre in
+> the content column. Measurements are in the [shell README, DV-12](../../../src/components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04).
+
+> **Owner decisions on the parity list (DV-11, DV-12, DV-13), noted 2026-11-05.** G-1 lists DV-10 as
+> the one owner-approved deviation. Three more now stand beside it, each recorded in the shell
+> README: [DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26) (2026-10-26, the Settings label keeps clear of its chevron), DV-12 above,
+> and [DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04) (2026-11-04, the collapse handle takes the desktop frames' 9 px overhang so
+> its chevron no longer covers the page title from 1024 to 1440). Any other visible difference is
+> still a defect.
+
+> **Owner decisions of 2026-11-06 (DV-14, undrawn header states).**
+> [DV-14](../../../src/components/ui-app-shell/README.md#dv-14-the-header-badge-takes-the-disabled-variants-colour-owner-decision-2026-11-06)
+> now stands beside DV-10 to DV-13: the header badge paints `#D0D4D8`, the colour of Figma's
+> disabled variant (`451:26214`). The undrawn header states are dropped from SM-1 and G-1 while the
+> round buttons and search ship disabled: their rest, hover and open states and the search rest,
+> hover and active states are not required until those controls are enabled, and the disabled
+> variants the app renders stay measured (UX §10.2). The rows below are kept unchanged as the record
+> of the plan as approved.
+
+> **Amended 2026-11-05 (reconciliation with shipped code).** C-3 no longer holds:
+> `route-composer.tsx` imports `protectedLayoutLoader` statically, and `AppLayout` and
+> `ProtectedRoute` load from the lazy `protected-layout` chunk (663151bc), so neither ships in the
+> entry. NFR-7's "through the existing `ProfileProvider` shape" and OQ-27's "read through
+> `useService`" no longer describe the chip: since 0addef83 (owner decision of 2026-11-02)
+> `useCurrentUser` calls the container-free `currentUserSource`, and only the settings page's
+> `use-display-name.ts` still resolves the mapper through `useService`. Where a banner here overrides
+> an answer in §10, the banner binds.
+
+> **Amended 2026-11-06 (three allowlist entries; owner-approved 2026-11-06).** C-1's "no allowlist change beyond
+> PRD NFR-4's enumerated X-1" and NFR-6's "without new exemptions" no longer hold literally.
+> `config/di-collaborator-policy.js` gains three `EXEMPT_RENDER_PATH_FILES` entries:
+> `src/modules/user/features/auth/stores/auth-session-provider.ts`,
+> `src/modules/user/features/settings/utils/current-user-client.ts` and
+> `src/modules/user/features/settings/utils/current-user-source.ts`. They follow from the owner decision
+> of 2026-11-02 that moved the chip's read off the container (0addef83), which did not name them.
+> The owner approved this allowlist change on 2026-11-06 (PRD NFR-6, NFR-15).
+
+> **Owner decision of 2026-10-27 (drawer sub-items at 42 px), noted 2026-11-06.** NFR-3's 44 px floor
+> on "drawer rows" does not reach the drawer's Settings sub-items. Integrations, Webhooks and Billing
+> keep Figma's 42 px PROP-18 pitch, a recorded sizing gap beside the bell and list (PRD NFR-3, FR-13.5;
+> shell README, "Known gaps"). Each still answers a tap across its whole 42 px height and the drawer row
+> width, and adjacent sub-items do not overlap.
+
+> **Owner decision of 2026-10-27 (three grey glyphs, WCAG 1.4.11), noted 2026-11-06.** NFR-4 and R-7
+> describe a parity contrast failure as accepted only through a selector-scoped `color-contrast`
+> exception. This one has no such entry. Three active controls are identified at rest only by a
+> `#969B9D` glyph on white, 2.81:1 against the 3:1 of SC 1.4.11: the Settings disclosure chevron in the
+> sidebar and the drawer, the icon-only sidebar collapse handle, and the default rows of the collapsed
+> rail. The owner keeps the colour and accepts a scoped exception for exactly these three at rest,
+> tracked in #276. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
+> `A11Y_EXCEPTIONS` entry exists or is added for them (PRD NFR-4).
+
+> **Owner decision of 2026-11-09 (the three glyphs reach 3:1, DV-15).** The exception above is
+> withdrawn: the FR/NFR gate held that an accessibility failure cannot pass on owner acceptance, and
+> the owner chose to fix it. The three glyphs now rest at `#57595B`, about 7:1 on white. The banner
+> above is kept as the record of the decision it replaced.
+
+> **Owner decision of 2026-10-28 (a failed re-read keeps the name), noted 2026-11-06.** After a
+> successful read, a re-read that fails as `unavailable` keeps the shown name and monogram; a
+> `session_ended` outcome resets the chip to pending (`settle` in `use-current-user.ts`; PRD FR-5.3).
+
+> **R-1 CLOSED 2026-11-06 (owner decision; evidence read from the user-service source, no guard needed).**
+> The earlier "OPEN as of 2026-11-06" note asked what production returns for the chip's read; this is
+> the answer. The read posts to `/api/graphql` with `Authorization: Bearer <token>`, and only a
+> transport 401 ends the session (`attempt.session.end` in `current-user-source.ts`).
+>
+> - At `v2.8.0` (commit 56656f90, the version crm pins): `config/packages/security.yaml` has
+>   `firewalls.main.security: false`, so nothing authenticates and this read never gets a 401,
+>   whatever the token.
+> - At `main` (commit a95c1e85): `/api/graphql` is absent from the `$rules` of `PublicAccessResolver`
+>   in `config/services.yaml`, so `DualAuthenticator` `supports()` runs for any request carrying a
+>   token. A valid token passes and the read answers 200. An invalid, expired or revoked token gets a
+>   401 from `onAuthenticationFailure`, which correctly ends the session. A request with no token
+>   passes `access_control` as PUBLIC_ACCESS and gets a GraphQL authorization error at 200.
+>
+> The research's claim that the chip would sign every production user out right after login (research
+> §7.3 item 1) therefore does not hold on either version and is superseded. SM-16 stays void and no
+> guard is added. **Limits:** this was read from source at those two commits, not observed on a
+> deployed environment, and a gateway in front of the service was not examined. **Residual, recorded
+> and not fixed:** `sandbox-demo-session-token` (`sandbox-demo-session-provider.ts`) is a fixed string,
+> not a token user-service issued, so a sandbox host pointed at a real `main` user-service would get a
+> 401 on the first read and end the demo session. The "none is open" banner below covers the `OQ-n`
+> questions.
 
 > **Every `OQ-n` is RESOLVED by owner 2026-10-23** (§10; PRD §9). None is open and none blocks
 > readiness. Decisions this stage took on its own are marked `> Assumption:`; later stages may
@@ -339,6 +438,10 @@ the existing `home.sign_out` wording ("Вийти" / "Sign out") so the two surf
 | R-10 | Design gaps tempt invented states (focus, sub-items, chip hover, collapsed group)                                                                          | Medium | C-5; OQ-13, OQ-16                                                                          |
 | R-11 | Breakpoint switch at 1024 conflicts with the repo's `lg + 1` convention; 1280/1366 baselines land in whichever layout wins                                 | Low    | OQ-5                                                                                       |
 | R-12 | Figma components have no variants or variables, so later design edits will not propagate                                                                   | Low    | Parity table pins measured values; re-measure on design change                             |
+
+Amended 2026-11-06 (owner decision): R-1 is **CLOSED** by evidence read from the user-service source, no
+guard needed; its mitigation cell is the plan as approved and no longer applies (see the R-1 banner at
+the top of this brief). R-7's grey icons are covered by the 2026-10-27 banner.
 
 ## 9. Dependencies and Prerequisites
 

@@ -3,7 +3,7 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-22
-revised: 2026-10-29
+revised: 2026-11-06
 feature: app-shell-navigation
 issue: https://github.com/VilnaCRM-Org/crm/issues/362
 stackedOn: 'PR #354 (feat/330-user-settings at 9c1d2535)'
@@ -24,12 +24,52 @@ inputDocuments:
 
 **Current verdict: READY as of re-review 2 (2026-10-23), pre-amendment** (0 Blocker, 0 Major,
 3 Minor; see "Re-review 2 (2026-10-23)" below). The bundle was amended afterwards, on 2026-10-27,
-2026-10-28 and 2026-10-29, and readiness was not re-run on the amended text: those amendments
-record product-owner decisions taken during implementation and review (the 42 px drawer
-sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph gap, a failed chip re-read keeping the
-shown name, the single sign-out latch in `useSignOut`) and their dated notes in the PRD,
-architecture and epics. The first pass and re-review 1 that follow are superseded history, kept
-for the record.
+2026-10-28, 2026-10-29, 2026-11-02, 2026-11-03, 2026-11-04, 2026-11-05 and 2026-11-06, and readiness
+was not re-run on any of the amended text. Those amendments record product-owner decisions taken during
+implementation and review and the shipped design that followed them:
+
+- 2026-10-27 to 2026-10-29: the 42 px drawer sub-items as an NFR-3 gap, the WCAG 1.4.11 grey-glyph
+  gap, a failed chip re-read keeping the shown name, the single sign-out latch in `useSignOut`.
+- 2026-11-02: the chip's read moved off `ProfileProvider` and `useService` onto the container-free
+  `currentUserSource` (0addef83).
+- 2026-11-03: the `userSettings` flag removed, and the lazy `protected-layout` chunk of 663151bc
+  recorded in the architecture.
+- 2026-11-04: the settings page centred (DV-12) and the handle moved to the sidebar edge (DV-13).
+- 2026-11-05: the dated notes for DV-11 and DV-13 and a reconciliation of the bundle with the
+  shipped code, which also gave the brief its first dated banners.
+- 2026-11-06: a further reconciliation with the shipped code: V-9 closed and P-62 filled, the drawer
+  and menu primitives, the tablet rail handle's `right: 28px`, `expectTapArea` and the three
+  `EXEMPT_RENDER_PATH_FILES` entries. Owner decisions the same day: the `auth-page-vendors` cache group
+  approved (architecture §9, §10, Story 3.1) and the page content kept moving with the rail's width
+  transition (UX §9). P-62 passes on position only; its width readings are in UX §10.2. Owner
+  decisions of 2026-11-06 on the four items below: R-1 closed, the three exemptions approved, the
+  badge colour (DV-14) and the dropped undrawn header states.
+
+**Open as of 2026-11-06: none.** Readiness was not re-run, so the items below are not findings of this
+check. Four items were listed here as open; the owner decided all of them on 2026-11-06:
+
+- **Brief risk R-1** (not the `R-1` finding of re-review 2 below, which is about P-64 and P-65) is
+  **closed** by evidence read from the user-service source, no guard needed. At `v2.8.0` (commit
+  56656f90, the version crm pins) `firewalls.main.security: false` means the chip's read never gets a 401. At `main` (commit a95c1e85) `/api/graphql` is absent from the `PublicAccessResolver` `$rules`,
+  so a valid token answers 200, an invalid, expired or revoked token gets a 401 that correctly ends
+  the session, and no token gets a GraphQL authorization error at 200. The research's sign-out claim
+  (research §7.3 item 1) is superseded and SM-16 stays void. Limits: read from source, not observed on
+  a deployed environment; a gateway in front of the service was not examined. Residual, not fixed: the
+  sandbox's fixed `sandbox-demo-session-token` is not a real token, so a sandbox pointed at a real
+  `main` user-service would end the demo session on the first read.
+- **The three `EXEMPT_RENDER_PATH_FILES` entries** (`auth-session-provider.ts`,
+  `current-user-client.ts`, `current-user-source.ts`) are **approved by the owner**, 2026-11-06 (PRD
+  NFR-6, NFR-15).
+- **The badge colour** is decided: `ui-app-header/styles.ts` ships Figma's `#D0D4D8` (disabled variant
+  `451:26214`, read directly on 2026-11-06) where FR-3 and NFR-4 say `#1EAEFF`. Recorded as DV-14 with
+  dated amendments to FR-3, FR-3.1, FR-4.1, FR-19, NFR-4, NFR-22 and the UX spec. White on `#D0D4D8`
+  is about 1.5:1, on a disabled control whose badge is `aria-hidden`, and production passes no count.
+- **The undrawn header states** (round buttons rest, hover and open; search rest, hover and active)
+  are **dropped** as Storybook state rows until those controls are enabled (UX §10.2); the
+  requirement returns then. `customColors.shell.searchHoverShadow` is deleted from code.
+
+The dated notes are in the PRD, UX spec, architecture and epics, and since 2026-11-05 in the brief.
+The first pass and re-review 1 that follow are superseded history, kept for the record.
 
 **First-pass verdict (superseded): NOT READY** (3 Blocker, 17 Major, 19 Minor). No story may be
 dispatched and no source file may change until every Blocker and Major below is corrected in the
@@ -121,7 +161,9 @@ U §4.1 and §4.4 (Figma values FOUND), and add the other drawn boxes the table 
 
 The tablet rail content start stays a V-9 re-measure and is added as P-62 once measured. State rows
 for controls the app never renders active (round header buttons rest / hover / open, search rest /
-hover / active) are measured in Storybook, which U §10.1 must say beside the badge rows.
+hover / active) are measured in Storybook, which U §10.1 must say beside the badge rows. Amended
+2026-11-06 (owner decision): these state rows are dropped while the controls ship disabled; see UX
+§10.2.
 
 ### Majors
 

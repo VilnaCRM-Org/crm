@@ -65,7 +65,12 @@ describe('app layout styles', () => {
   it('places the navigation slot and shows its placeholder only from the breakpoint', async () => {
     const styles = await loadStyles();
 
-    expect(styles.navSlot).toEqual({ gridColumn: 1, gridRow: 2 });
+    expect(styles.navSlot).toEqual({
+      gridColumn: 1,
+      gridRow: 2,
+      scrollMarginTop: '64px',
+      '& *': { scrollMarginTop: '64px' },
+    });
     expect(styles.navPlaceholder).toEqual({
       display: 'none',
       width: '250px',
@@ -99,6 +104,8 @@ describe('app layout styles', () => {
     const styles = await loadStyles();
 
     expect(styles.main).toEqual({
+      scrollMarginTop: '64px',
+      '& *': { scrollMarginTop: '64px' },
       gridColumn: 1,
       gridRow: 2,
       minWidth: 0,
@@ -112,7 +119,12 @@ describe('app layout styles', () => {
   it('puts the footer in the last row across every column', async () => {
     const styles = await loadStyles();
 
-    expect(styles.footerArea).toEqual({ gridColumn: '1 / -1', gridRow: 3 });
+    expect(styles.footerArea).toEqual({
+      gridColumn: '1 / -1',
+      gridRow: 3,
+      scrollMarginTop: '64px',
+      '& *': { scrollMarginTop: '64px' },
+    });
     expect(styles.footerSlot).toEqual({ minHeight: '4.125rem' });
   });
 
@@ -125,5 +137,12 @@ describe('app layout styles', () => {
     expect(source).not.toContain('ui-breakpoints');
     expect(source).not.toContain('@mui/');
     expect(source).not.toMatch(/^import /m);
+  });
+
+  it('reserves the header on the content slots and leaves the header itself out', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.headerSlot).not.toHaveProperty('scrollMarginTop');
+    expect(styles.headerSlot).not.toHaveProperty(['& *']);
   });
 });

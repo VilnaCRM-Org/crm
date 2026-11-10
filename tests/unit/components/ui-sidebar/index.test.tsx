@@ -119,10 +119,33 @@ describe('UISidebar', () => {
   );
 
   it.each([
+    ['/', 'Expand Settings', 'Collapse Settings'],
+    ['/settings', 'Collapse Settings', 'Expand Settings'],
+  ])(
+    'holds a Settings toggle on %s across the rail until the route changes',
+    async (path, from, to) => {
+      const user = userEvent.setup();
+      renderSidebar({}, path);
+
+      await user.click(screen.getByRole('button', { name: from }));
+      await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+      await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+
+      expect(screen.getByRole('button', { name: to })).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+      await user.click(screen.getByRole('link', { name: 'Boards' }));
+      await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+
+      expect(screen.getByRole('button', { name: 'Expand Settings' })).toBeInTheDocument();
+    }
+  );
+
+  it.each([
     ['desktop', false, '238px'],
     ['desktop', true, '72px'],
     ['tablet', false, '238px'],
-    ['tablet', true, '76px'],
+    ['tablet', true, '113px'],
   ] as const)('is %s wide when collapsed is %s: %s', async (layout, collapsed, width) => {
     const user = userEvent.setup();
     renderSidebar({ layout });
@@ -145,7 +168,9 @@ describe('UISidebar', () => {
 
     const wrapper = screen.getAllByRole('generic', { hidden: true })[1] as HTMLElement;
 
-    expect(styleRuleFor(wrapper)?.getPropertyValue('transition')).toBe('width 200ms ease-out');
+    expect(styleRuleFor(wrapper)?.getPropertyValue('transition')).toBe(
+      'width 200ms ease-out,padding-right 200ms ease-out'
+    );
     expect(
       mediaStyleRuleFor(wrapper, 'prefers-reduced-motion: reduce')?.getPropertyValue(
         'transition-duration'
@@ -225,6 +250,7 @@ describe('UISidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Expand sidebar' }));
     expect(nav).not.toHaveClass(atRest, { exact: true });
 
+    expect(nav).toHaveStyle({ width: '100%' });
     fireEvent.animationEnd(nav);
     expect(nav).toHaveClass(atRest, { exact: true });
   });

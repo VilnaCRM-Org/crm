@@ -61,6 +61,7 @@ export interface NavigationGroupProps {
   readonly layout: NavigationLayout;
   readonly group: NavigationGroup;
   readonly currentId: NavigationItemId | null;
+  readonly disclosure: GroupDisclosure;
 }
 
 export interface NavigationGroupToggleProps {
@@ -70,9 +71,15 @@ export interface NavigationGroupToggleProps {
   readonly onToggle: ActivateHandler;
 }
 
+export type DisclosureGroup = Pick<NavigationGroup, 'id' | 'href'>;
+
 export interface GroupDisclosureState {
   readonly expanded: boolean;
   readonly toggle: ActivateHandler;
+}
+
+export interface GroupDisclosure {
+  readonly stateOf: (group: DisclosureGroup) => GroupDisclosureState;
 }
 
 export interface RailTooltipState {
@@ -124,6 +131,7 @@ export interface NavigationItemsProps {
   readonly layout: NavigationLayout;
   readonly items: NavigationItemSet;
   readonly currentId: NavigationItemId | null;
+  readonly disclosure: GroupDisclosure;
 }
 
 export interface NavigationSignOutProps {

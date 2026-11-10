@@ -12,6 +12,7 @@ export default function NavigationExpandedItems({
   layout,
   items,
   currentId,
+  disclosure,
 }: NavigationItemsProps): JSX.Element {
   const { t } = useTranslation();
 
@@ -19,7 +20,13 @@ export default function NavigationExpandedItems({
     <>
       {items.items.map((item) =>
         'children' in item ? (
-          <NavigationGroup key={item.id} layout={layout} group={item} currentId={currentId} />
+          <NavigationGroup
+            key={item.id}
+            layout={layout}
+            group={item}
+            currentId={currentId}
+            disclosure={disclosure}
+          />
         ) : (
           <Box
             component="li"

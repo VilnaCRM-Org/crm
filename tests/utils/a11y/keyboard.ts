@@ -86,11 +86,6 @@ async function expectFocusedWithChange(
   );
 }
 
-/**
- * Walks a roving-focus list with the arrow keys, starting with `items[0]` focused: ArrowDown to
- * the end, ArrowDown wrapping to the first, ArrowUp wrapping to the last, Home, then End. Every
- * stop must be focused, `:focus-visible` and styled differently from its resting self.
- */
 export async function expectArrowKeyWalk(page: Page, items: readonly Locator[]): Promise<void> {
   expect(items.length).toBeGreaterThan(1);
   await expect(items[0] as Locator).toBeFocused();

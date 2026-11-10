@@ -6,10 +6,11 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate } from 'react-router';
 import '../../../../setup';
 import useCurrentUser from '@/modules/user/features/settings/hooks/use-current-user';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import type { ProtectedSessionContext } from '@/routes/types/protected-outlet-context';
 import authSessionProvider from '@auth/stores/auth-session-provider';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
-import { buildToken, buildUserNode } from '@tests/builders';
+import { buildFullName, buildToken, buildUserNode } from '@tests/builders';
 
 import { answerProfileOperation } from '../../../../mocks/profile-operations';
 import server from '../../../../mocks/server';
@@ -25,6 +26,22 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <MemoryRouter initialEntries={['/']}>
     <Routes>
       <Route element={<Outlet context={context} />}>
+        <Route path="*" element={children} />
+      </Route>
+    </Routes>
+  </MemoryRouter>
+);
+
+function TokenGuard(): JSX.Element | null {
+  const token = useAuthStore((state) => state.token);
+
+  return token === null ? null : <Outlet context={context} />;
+}
+
+const guardedWrapper = ({ children }: { children: ReactNode }): JSX.Element => (
+  <MemoryRouter initialEntries={['/']}>
+    <Routes>
+      <Route element={<TokenGuard />}>
         <Route path="*" element={children} />
       </Route>
     </Routes>
@@ -165,5 +182,34 @@ describe('useCurrentUser over the container-free read (integration)', () => {
 
     await waitFor(() => expect(hook.current.status).toBe('pending'));
     expect(hook.current.identity).toBeNull();
+  });
+
+  it('sign out then a second user shows no stale name', async () => {
+    const nameA = buildFullName();
+    const nameB = buildFullName();
+    const displayNameA = new UserDisplayNameMapper().fromFullName(nameA).displayName;
+    const displayNameB = new UserDisplayNameMapper().fromFullName(nameB).displayName;
+    expect(displayNameA).not.toBe(displayNameB);
+    const rendered: Array<string | undefined> = [];
+    answerWith(nameA);
+    const { result } = renderHook(
+      () => {
+        const state = useCurrentUser();
+        rendered.push(state.identity?.displayName);
+
+        return state;
+      },
+      { wrapper: guardedWrapper }
+    );
+    await waitFor(() => expect(result.current.identity?.displayName).toBe(displayNameA));
+
+    act(() => authSessionProvider.signOut());
+    const afterSignOut = rendered.length;
+    answerWith(nameB);
+    act(() => useAuthStore.setState({ token: buildToken() }));
+    await waitFor(() => expect(result.current.identity?.displayName).toBe(displayNameB));
+
+    expect(rendered.slice(afterSignOut)).not.toContain(displayNameA);
+    expect(rendered.slice(afterSignOut)[0]).toBeUndefined();
   });
 });

@@ -132,7 +132,10 @@ declare `shell.userMenu`.
   `src/services/`, and a settings component must not either (`no-feature-ui-to-services`), so the
   route layer is the only place that reaches the observability boundary.
 - **No ADR:** the composer change is recorded here and in the shell README rather than in
-  `docs/adr/` (OQ-10).
+  `docs/adr/` (OQ-10), and the pull request carries the `adr:not-required` label (or a `[no-adr]`
+  body line). Issue 362 supersedes enterprise-app-shell's prop-less `AppLayout` contract with an
+  optional `userMenu` slot, an `onShellFailure` callback and the props type file
+  `src/components/types/layouts/app-layout.ts`.
 
 ## The contract
 
@@ -179,10 +182,14 @@ size-holding placeholders, a header slot and a navigation column), the page's `<
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
 and is reported through the `onShellFailure` callback the composer passes beside the optional
-`userMenu` slot (see "Shell slots"). While it is mounted, `useHeaderClearance` (through
-`useFrameFocus`) reserves the 64 px sticky header as `scroll-padding-top` on the document, so a
-control that receives keyboard focus is never scrolled under the header (WCAG 2.4.11), the top
-counterpart of the toast stack's `scroll-padding-bottom`. The footer is loaded lazily behind its
+`userMenu` slot (see "Shell slots"). The frame reserves the 64 px sticky header as
+`scroll-margin-top` on the sidebar, `<main>` and footer slots. With the shell's
+browser-specific focus clearance (`useStickyFocusClearance`), that keeps a control that receives
+keyboard focus from sitting under the header (WCAG 2.4.11); the shell README lists the Firefox
+cases where a partly visible control stays under it until that follow-up runs.
+The header stays out of it: as `scroll-padding-top` on the document, the clearance made
+Chromium scroll the page whenever focus reached a header control. The footer is loaded lazily behind
+its
 own `<Suspense>`,
 so the footer and its theme stay out of the `protected-layout` chunk the page waits for. Its
 fallback is an empty, `aria-hidden` box that only holds the footer's
@@ -190,9 +197,10 @@ height: the page is already usable, so the chrome shows no loader and announces 
 chunk loads. The chunk comes through a `ChunkRetryLoader`
 (`src/components/layouts/footer-loader.ts`, issue #147), and a load that still fails resolves to an
 empty component: a missing footer never reaches the `AppLayout` `errorElement` and never replaces
-the page. `AppLayout` also forwards `ProtectedRoute`'s outlet context (`ProtectedOutletContext`,
-`{ signOut, twoFactorStatus, setTwoFactorStatus, banner, session }` as a
-`ProtectedSessionContext`, from
+the page. `AppLayoutFrame`, which `AppLayout` renders, also forwards `ProtectedRoute`'s outlet
+context (`ProtectedOutletContext`,
+`{ signOut, twoFactorStatus, setTwoFactorStatus, banner, session }` as a `ProtectedSessionContext`,
+from
 `src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
 react-router 7 — and hands the same `signOut` to the lazy app shell

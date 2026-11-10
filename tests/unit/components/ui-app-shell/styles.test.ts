@@ -45,7 +45,7 @@ describe('app shell styles', () => {
   it('sticks the sidebar 74px from the top: the 64px header plus the 10px nav inset', async () => {
     const styles = await loadStyles();
 
-    expect(styles.sticky).toEqual({ position: 'sticky', top: 'calc(64px + 10px)' });
+    expect(styles.sticky).toEqual({ position: 'sticky', top: 'calc(64px + 10px)', zIndex: 2 });
     expect(layoutStyles.headerHeight).toBe('64px');
     expect(layoutStyles.navInsetTop).toBe('10px');
   });

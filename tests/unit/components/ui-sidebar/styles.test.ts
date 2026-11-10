@@ -6,6 +6,8 @@ const loadStyles = (): Promise<Styles> =>
   loadIsolated(async () => (await import('@/components/ui-sidebar/styles')).default);
 
 const HANDLE = {
+  transition: 'right 200ms ease-out',
+  '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
   position: 'absolute',
   zIndex: 1,
   boxSizing: 'border-box',
@@ -16,7 +18,7 @@ const HANDLE = {
   borderRadius: '33px',
   backgroundColor: '#FFFFFF',
   boxShadow: '0 4px 5px rgba(33, 39, 46, 0.12)',
-  color: '#969B9D',
+  color: '#57595B',
   cursor: 'pointer',
   '&:focus-visible': {
     outline: '2px solid #1A1C1E',
@@ -36,7 +38,7 @@ describe('sidebar styles', () => {
         expanded: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, padding-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
@@ -45,7 +47,7 @@ describe('sidebar styles', () => {
         rail: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, padding-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
@@ -56,20 +58,24 @@ describe('sidebar styles', () => {
         expanded: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, padding-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
+          boxSizing: 'border-box',
           width: '238px',
+          paddingRight: 0,
         },
         rail: {
           position: 'relative',
           flexShrink: 0,
-          transition: 'width 200ms ease-out',
+          transition: 'width 200ms ease-out, padding-right 200ms ease-out',
           '@media (prefers-reduced-motion: reduce)': {
             transitionDuration: '0s',
           },
-          width: '76px',
+          boxSizing: 'border-box',
+          width: '113px',
+          paddingRight: '37px',
         },
       },
     });
@@ -126,7 +132,7 @@ describe('sidebar styles', () => {
       },
       tablet: {
         expanded: { ...HANDLE, top: '15px', right: '-9px', width: '32px', height: '32px' },
-        rail: { ...HANDLE, top: '15px', right: '-9px', width: '32px', height: '32px' },
+        rail: { ...HANDLE, top: '15px', right: '28px', width: '32px', height: '32px' },
       },
     });
   });
@@ -173,11 +179,14 @@ describe('sidebar styles', () => {
 
   it('reveals only the labels and the group chevron, and not under reduced motion', async () => {
     const styles = await loadStyles();
-    const { animation, ...rest } = styles.reveal['& li span, & li button[aria-expanded] svg'];
 
-    expect(animation).toContain('opacity: 0');
-    expect(animation).toContain('opacity: 1');
-    expect(animation).toMatch(/200ms ease-out$/);
-    expect(rest).toEqual({ '@media (prefers-reduced-motion: reduce)': { animation: 'none' } });
+    expect(styles.reveal).toEqual({
+      '& li span, & li button[aria-expanded] svg': {
+        animation: expect.stringMatching(
+          /from \{ opacity: 0; \}[\s\S]*to \{ opacity: 1; \}[\s\S]* 200ms ease-out$/
+        ),
+        '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+      },
+    });
   });
 });

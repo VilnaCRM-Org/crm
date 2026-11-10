@@ -58,6 +58,11 @@ async function expectResting(page: Page): Promise<void> {
 const takeSettingsSnapshot = (page: Page, screen: ScreenSize, name: string): Promise<void> =>
   takeStableSnapshot(page, `${currentLanguage}_settings-${name}_${screen.name}.png`);
 
+async function scrollToTop(page: Page): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+}
+
 async function fillEveryAspect(page: Page): Promise<void> {
   await nameField(page).fill(NEW_NAME);
   await namePasswordField(page).fill(PASSWORD);
@@ -120,6 +125,7 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await saveButton(page).click();
       await expectToastsInOrder(page, [text.saved, text.emailSent, text.passwordChanged]);
 
+      await scrollToTop(page);
       await takeSettingsSnapshot(page, screen, 'success-toasts');
     });
 
@@ -131,6 +137,7 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await saveNameButton(page).click();
       await expectErrorToast(page, text.transient);
 
+      await scrollToTop(page);
       await takeSettingsSnapshot(page, screen, 'transient-toast');
     });
 

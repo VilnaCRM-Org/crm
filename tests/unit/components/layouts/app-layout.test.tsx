@@ -172,17 +172,6 @@ describe('AppLayout', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
-  it('reserves the sticky header height as top scroll padding until it unmounts', async () => {
-    const view = await renderLayout(['/']);
-    const root = document.documentElement;
-
-    expect(root.style.getPropertyValue('scroll-padding-top')).toBe('64px');
-
-    view.unmount();
-
-    expect(root.style.getPropertyValue('scroll-padding-top')).toBe('');
-  });
-
   it('keeps the main landmark programmatically focusable but outside the tab order', async () => {
     await renderLayout(['/']);
 

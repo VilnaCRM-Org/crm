@@ -4,10 +4,13 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate } from 'react-router';
 
 import useCurrentUser from '@/modules/user/features/settings/hooks/use-current-user';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
+import type { UserDisplayName } from '@/modules/user/types/lib/user-display-name';
 import type {
   ProtectedSession,
   ProtectedSessionContext,
 } from '@/routes/types/protected-outlet-context';
+import { buildFullName } from '@tests/builders';
 
 type CurrentUserReadOutcome = Awaited<ReturnType<typeof currentUserSource.read>>;
 
@@ -32,10 +35,11 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   </MemoryRouter>
 );
 
-const named = (displayName: string, monogram: string): CurrentUserReadOutcome => ({
-  kind: 'ok',
-  identity: { displayName, monogram },
-});
+const mapper = new UserDisplayNameMapper();
+const olena = mapper.fromFullName(buildFullName());
+const anna = mapper.fromFullName(buildFullName());
+
+const named = (identity: UserDisplayName): CurrentUserReadOutcome => ({ kind: 'ok', identity });
 
 const settle = (outcome: CurrentUserReadOutcome): void => {
   mockRead.mockResolvedValue(outcome);
@@ -52,7 +56,7 @@ describe('useCurrentUser', () => {
   });
 
   it('starts name-less and pending, and makes one read with the outlet session', async () => {
-    settle(named('Олена Петренко', 'ОП'));
+    settle(named(olena));
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
@@ -65,14 +69,14 @@ describe('useCurrentUser', () => {
   });
 
   it('shows the display name and monogram once the read is ok', async () => {
-    settle(named('Олена Петренко', 'ОП'));
+    settle(named(olena));
 
     const { result } = renderHook(() => useCurrentUser(), { wrapper });
 
     await waitFor(() =>
       expect(result.current).toEqual({
         status: 'ready',
-        identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
+        identity: olena,
       })
     );
   });
@@ -107,7 +111,7 @@ describe('useCurrentUser', () => {
     expect(signal.aborted).toBe(false);
 
     unmount();
-    await act(async () => resolve(named('Анна Коваль', 'АК')));
+    await act(async () => resolve(named(anna)));
 
     expect(signal.aborted).toBe(true);
   });
@@ -126,7 +130,7 @@ describe('useCurrentUser', () => {
 
   const NAMED = {
     status: 'ready',
-    identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
+    identity: olena,
   } as const;
 
   it('re-reads on a pathname change and drops the late answer of the read in flight', async () => {
@@ -142,18 +146,18 @@ describe('useCurrentUser', () => {
 
     act(() => result.current.go('/boards'));
     await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
-    await act(async () => answers[1]?.(named('Анна Коваль', 'АК')));
-    await act(async () => answers[0]?.(named('Олена Петренко', 'ОП')));
+    await act(async () => answers[1]?.(named(anna)));
+    await act(async () => answers[0]?.(named(olena)));
 
     expect(first.aborted).toBe(true);
     expect(result.current.state).toEqual({
       status: 'ready',
-      identity: { displayName: 'Анна Коваль', monogram: 'АК' },
+      identity: anna,
     });
   });
 
   it('keeps the last good name when a later re-read is unavailable', async () => {
-    settle(named('Олена Петренко', 'ОП'));
+    settle(named(olena));
     const { result } = renderNavigable();
     await waitFor(() => expect(result.current.state).toEqual(NAMED));
     settle({ kind: 'failed', reason: 'unavailable' });
@@ -166,7 +170,7 @@ describe('useCurrentUser', () => {
   });
 
   it('clears the shown name when a later re-read reports the session ended', async () => {
-    settle(named('Олена Петренко', 'ОП'));
+    settle(named(olena));
     const { result } = renderNavigable();
     await waitFor(() => expect(result.current.state).toEqual(NAMED));
     settle({ kind: 'failed', reason: 'session_ended' });
@@ -191,7 +195,7 @@ describe('useCurrentUser', () => {
   });
 
   it('never shows the previous user on a fresh mount, not even for one render', async () => {
-    settle(named('Анна Коваль', 'АК'));
+    settle(named(anna));
     const { result: before, unmount } = renderHook(() => useCurrentUser(), { wrapper });
     await waitFor(() => expect(before.current.status).toBe('ready'));
     unmount();

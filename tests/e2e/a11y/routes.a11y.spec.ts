@@ -18,9 +18,9 @@ interface RouteScan {
   path: string;
   query?: () => string;
   ready: string;
-  shell?: boolean;
   prepare?: (page: Page) => Promise<void>;
   open?: (page: Page) => Promise<void>;
+  rendered: (page: Page) => Promise<void>;
 }
 
 async function prepareShell(page: Page): Promise<void> {
@@ -28,93 +28,81 @@ async function prepareShell(page: Page): Promise<void> {
   await stubProfile(page);
 }
 
+async function expectFooterRendered(page: Page): Promise<void> {
+  await expect(page.getByRole('contentinfo')).toBeVisible();
+}
+
+async function expectShellRendered(page: Page): Promise<void> {
+  await expectFooterRendered(page);
+  await expect(page.getByRole('banner')).toBeVisible();
+  await expect(sidebarOf(page)).toBeVisible();
+  await expect(chipOf(page)).toBeVisible();
+}
+
+const shellScan = (key: RouteScan['key'], ready = 'main h1'): RouteScan => ({
+  key,
+  path: ROUTE_PATHS[key],
+  ready,
+  prepare: prepareShell,
+  rendered: expectShellRendered,
+});
+
 const routeScans: readonly RouteScan[] = [
-  { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', shell: true, prepare: prepareShell },
+  shellScan('home'),
+  shellScan('settings', 'main form button[type="submit"]'),
+  shellScan('boards'),
+  shellScan('products'),
+  shellScan('orders'),
+  shellScan('contacts'),
+  shellScan('analytics'),
+  shellScan('settingsIntegrations'),
+  shellScan('settingsWebhooks'),
+  shellScan('settingsBilling'),
   {
-    key: 'settings',
-    path: ROUTE_PATHS.settings,
-    ready: 'main form button[type="submit"]',
-    shell: true,
-    prepare: prepareShell,
+    key: 'signIn',
+    path: ROUTE_PATHS.signIn,
+    ready: 'form button[type="submit"]',
+    rendered: expectFooterRendered,
   },
   {
-    key: 'boards',
-    path: ROUTE_PATHS.boards,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
+    key: 'signUp',
+    path: ROUTE_PATHS.signUp,
+    ready: 'form button[type="submit"]',
+    rendered: expectFooterRendered,
   },
-  {
-    key: 'products',
-    path: ROUTE_PATHS.products,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  {
-    key: 'orders',
-    path: ROUTE_PATHS.orders,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  {
-    key: 'contacts',
-    path: ROUTE_PATHS.contacts,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  {
-    key: 'analytics',
-    path: ROUTE_PATHS.analytics,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  {
-    key: 'settingsIntegrations',
-    path: ROUTE_PATHS.settingsIntegrations,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  {
-    key: 'settingsWebhooks',
-    path: ROUTE_PATHS.settingsWebhooks,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  {
-    key: 'settingsBilling',
-    path: ROUTE_PATHS.settingsBilling,
-    ready: 'main h1',
-    shell: true,
-    prepare: prepareShell,
-  },
-  { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
-  { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
   {
     key: 'twoFactorChallenge',
     path: ROUTE_PATHS.twoFactorChallenge,
     ready: 'form button[type="submit"]',
     open: openChallenge,
+    rendered: expectFooterRendered,
   },
   {
     key: 'passwordRecovery',
     path: ROUTE_PATHS.passwordRecovery,
     ready: 'form button[type="submit"]',
+    rendered: expectFooterRendered,
   },
   {
     key: 'passwordReset',
     path: ROUTE_PATHS.passwordReset,
     query: (): string => `?token=${buildResetToken()}`,
     ready: 'form #newPassword',
+    rendered: expectFooterRendered,
   },
-  { key: 'forbidden', path: ROUTE_PATHS.forbidden, ready: 'main h1' },
-  { key: 'serverError', path: ROUTE_PATHS.serverError, ready: 'main h1' },
-  { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1' },
+  {
+    key: 'forbidden',
+    path: ROUTE_PATHS.forbidden,
+    ready: 'main h1',
+    rendered: expectFooterRendered,
+  },
+  {
+    key: 'serverError',
+    path: ROUTE_PATHS.serverError,
+    ready: 'main h1',
+    rendered: expectFooterRendered,
+  },
+  { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1', rendered: expectFooterRendered },
 ];
 
 async function openChallenge(page: Page): Promise<void> {
@@ -126,16 +114,7 @@ async function openRoute(page: Page, scan: RouteScan): Promise<void> {
   await (scan.open?.(page) ??
     page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' }));
   await expect(page.locator(scan.ready).first()).toBeVisible();
-  await expect(page.getByRole('contentinfo')).toBeVisible();
-  if (scan.shell) {
-    await expectShellRendered(page);
-  }
-}
-
-async function expectShellRendered(page: Page): Promise<void> {
-  await expect(page.getByRole('banner')).toBeVisible();
-  await expect(sidebarOf(page)).toBeVisible();
-  await expect(chipOf(page)).toBeVisible();
+  await scan.rendered(page);
 }
 
 test.describe('WCAG 2.1 AA route scans (issue #118)', () => {

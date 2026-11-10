@@ -569,11 +569,11 @@ hooks read the status in one place. The settings page hooks do nothing on `sessi
 on the link to end a session whose request came back as a transport 401; the chip's
 `useCurrentUser` reads without Apollo, so its `currentUserSource` ends the session itself on a
 transport 401 through the outlet `session.end(token)`, with the same current-token check. A
-GraphQL `Access Denied.` error (`access_denied`) does not reach the link, and the two readers treat
-it differently. The settings Transformer has no mapping for it, so the settings page settles it as
-`rejected` and shows its failure state while the token stays. The chip's
-`CurrentUserResponseParser` reads it as `denied`, so `currentUserSource` returns `session_ended`
-and the chip clears the shown identity, again without ending the session.
+GraphQL `Access Denied.` error (`access_denied`) does not reach the link, and neither reader ends
+the session on it. The settings Transformer has no mapping for it, so the settings page settles it
+as `rejected` and shows its failure state while the token stays. The chip's
+`CurrentUserResponseParser` reads it as `unavailable`, so `currentUserSource` returns `unavailable`
+and the chip keeps the name it already shows (FR-5.3).
 The link receives its five collaborators as one `SessionLinkDeps` value
 (`AUTH_TOKENS.SessionLinkDeps`): the store, `CLEARED_AUTH_STATE` itself rather than a copy, the
 sandbox demo session, `ObservabilityService` and the error transformer, because a constructor may
@@ -656,9 +656,9 @@ darkening `error.main` itself (it would change every border and icon that meets 
 (7.03:1) at the source, as the field errors are fixed above.
 
 **Decision.** The product owner kept the Figma token (2026-10-21). `#settings-greeting` carries a
-scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, the tenth entry, tracked with
-the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276) and deleted
-when it closes; the name beside the greeting stays `#1A1C1E`.
+scoped `color-contrast` exception in `tests/utils/a11y/axe-config.ts`, matched by that selector,
+tracked with the other palette debt in [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276)
+and deleted when it closes; the name beside the greeting stays `#1A1C1E`.
 
 **Rejected.** `#57595B` at the source (the page would stop matching the frames); an unscoped
 exception (the gate accepts one rule, one selector, a reason and a tracking issue per entry).

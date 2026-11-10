@@ -5,6 +5,10 @@ class NavigationListStories {
     layout: { control: 'select', options: ['desktop', 'tablet'] },
   };
 
+  public readonly drawerLayoutArgTypes: ArgTypes = {
+    layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
+  };
+
   public readonly layoutAndVariantArgTypes: ArgTypes = {
     ...this.layoutArgTypes,
     variant: { control: 'select', options: ['expanded', 'rail'] },
@@ -13,6 +17,8 @@ class NavigationListStories {
   public readonly desktop: StoryObj = {};
 
   public readonly tablet: StoryObj = { args: { layout: 'tablet' } };
+
+  public readonly drawer: StoryObj = { args: { layout: 'drawer' } };
 
   public readonly rail: StoryObj = { args: { variant: 'rail' } };
 

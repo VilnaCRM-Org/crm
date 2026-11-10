@@ -2,7 +2,9 @@
 
 **Conformance target: WCAG 2.1 Level AA.** Every page and component this repository ships must
 meet it, and the gates below (issue #118) make that a merge condition rather than a review
-opinion. WCAG 2.2 AA (`wcag22aa`, in practice the `target-size` rule) is the next ratchet; the
+opinion. The palette exceptions tracked in #276 (the `A11Y_EXCEPTIONS` entries below) are known
+non-conformances kept by owner decision, not passes. WCAG 2.2 AA (`wcag22aa`, in practice the
+`target-size` rule) is the next ratchet; the
 44 px floor on the primary auth controls in `tests/e2e/mobile/` already covers its largest
 surface and the remaining under-sized controls are tracked as design work.
 
@@ -130,8 +132,10 @@ switcher, while the name beside it stays `#1A1C1E`. The eleventh covers the curr
 entry of the app shell (issue #362): the active row, group-header label and sub-item in the
 sidebar and in the mobile drawer, whose list sits in its own `<nav>`
 (`nav a[aria-current="page"]` and `nav a[aria-current="page"] > span`), which render the Figma
-active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14). The
-twelfth is the two-factor challenge's "Назад" (`#auth-form-card > button.MuiButton-text`).
+active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
+It does not conform to WCAG 2.1 AA: SC 1.4.3 for the label and SC 1.4.11 for the icon-only current
+rail row. The owner re-confirmed keeping it on 2026-11-09; it is tracked in #276.
+The twelfth is the two-factor challenge's "Назад" (`#auth-form-card > button.MuiButton-text`).
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
@@ -148,13 +152,16 @@ by the product owner's decision
 exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
 3:1.
 
-The third is in the app shell (issue #362): three active controls whose only visible identifier at
-rest is a `grey[50]` `#969B9D` glyph on white, 2.81:1 under the 3:1 of SC 1.4.11. They are the
-Settings disclosure chevron in the sidebar and the mobile drawer, the icon-only sidebar collapse
-handle, and the default rows of the collapsed rail, whose labels are visually hidden. The product
-owner kept the Figma token on 2026-10-27. Hover (`#404142`) and focus indicators are outside the
-gap, and no axe rule tests non-text contrast, so no exception entry exists for it; it is resolved
-when #276 closes.
+The third was in the app shell (issue #362) and is resolved: three active controls whose only
+visible identifier at rest is a glyph, the Settings disclosure chevron in the sidebar and the mobile
+drawer, the icon-only sidebar collapse handle, and the default rows of the collapsed rail, whose
+labels are visually hidden. Figma's `grey[50]` `#969B9D` on white is 2.81:1, under the 3:1 of SC
+1.4.11, and the product owner kept it on 2026-10-27. On 2026-11-09 the owner chose to fix it
+instead (DV-15): the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on
+white. `tests/unit/a11y/non-text-contrast.test.ts` fails if any of them drops under 3:1, since no axe
+rule tests non-text contrast. Hover, the current rail row and focus indicators are outside this
+fix, as are the icons of expanded rows, which sit beside a visible label. See
+[the shell README, DV-15](../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 
 The fourth is the password-visibility toggle of `UIPasswordField`: its eye and eye-off glyphs
 (`src/assets/icons/eye.svg`, `eye-off.svg`) are stroked in `grey[50]` `#969B9D`, 2.81:1 on white

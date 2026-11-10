@@ -26,7 +26,7 @@ export default {
     border: 0,
     background: 'transparent',
     cursor: 'pointer',
-    color: customColors.text.secondary,
+    color: customColors.text.muted,
     '&:hover': { color: customColors.text.primary },
     '& svg': { display: 'block', width: '100%', height: '100%', fill: 'none' },
     '&:focus-visible': {
@@ -41,14 +41,14 @@ export default {
       top: '19px',
       width: '20px',
       height: '20px',
-      '&::after': { ...hitArea, inset: '-12px' },
+      '&::after': { ...hitArea, inset: '-12px -12px -12px 0' },
     },
     tablet: {
       left: '190px',
       top: '24px',
       width: '24px',
       height: '24px',
-      '&::after': { ...hitArea, inset: '-10px' },
+      '&::after': { ...hitArea, inset: '-10px -10px -10px 0' },
     },
     drawer: {
       right: '24px',

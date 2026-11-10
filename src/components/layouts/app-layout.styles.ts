@@ -5,6 +5,10 @@ const FROM_SIDEBAR = `@media (min-width:${SIDEBAR_BREAKPOINT}px)`;
 const TABLET_ONLY = `${FROM_SIDEBAR} and (max-width:${DESKTOP_BREAKPOINT - 0.05}px)`;
 
 const HEADER_HEIGHT = '64px';
+const HEADER_CLEARANCE = {
+  scrollMarginTop: HEADER_HEIGHT,
+  '& *': { scrollMarginTop: HEADER_HEIGHT },
+};
 
 const NAV_INSET_TOP = 10;
 const NAV_VIEWPORT_GAP = 86;
@@ -13,6 +17,7 @@ const NAV_PANEL_MAX_HEIGHT = `calc(100vh - ${NAV_VIEWPORT_GAP}px)`;
 
 export default {
   sidebarBreakpoint: SIDEBAR_BREAKPOINT,
+  sidebarExpandedWidth: '238px',
   headerHeight: HEADER_HEIGHT,
   frame: {
     flexGrow: 1,
@@ -31,7 +36,7 @@ export default {
     boxSizing: 'border-box',
     height: HEADER_HEIGHT,
   },
-  navSlot: { gridColumn: 1, gridRow: 2 },
+  navSlot: { gridColumn: 1, gridRow: 2, ...HEADER_CLEARANCE },
   navInsetTop: `${NAV_INSET_TOP}px`,
   navPanel: {
     desktop: { height: `${NAV_PANEL_HEIGHT.desktop}px`, maxHeight: NAV_PANEL_MAX_HEIGHT },
@@ -46,6 +51,7 @@ export default {
     [TABLET_ONLY]: { width: '251px', height: `${NAV_INSET_TOP + NAV_PANEL_HEIGHT.tablet}px` },
   },
   main: {
+    ...HEADER_CLEARANCE,
     gridColumn: 1,
     gridRow: 2,
     minWidth: 0,
@@ -56,6 +62,6 @@ export default {
     '&:focus:not(:focus-visible)': { outline: 'none' },
     [FROM_SIDEBAR]: { gridColumn: 2 },
   },
-  footerArea: { gridColumn: '1 / -1', gridRow: 3 },
+  footerArea: { gridColumn: '1 / -1', gridRow: 3, ...HEADER_CLEARANCE },
   footerSlot: { minHeight: '4.125rem' },
 } as const;

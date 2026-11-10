@@ -17,7 +17,32 @@ const movableAnchor = (): { readonly anchor: HTMLElement; move: (top: number) =>
   };
 };
 
+const frames = (): { readonly flush: () => void; readonly cancelled: jest.SpyInstance } => {
+  const queue = new Map<number, FrameRequestCallback>();
+  let next = 0;
+  jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    next += 1;
+    queue.set(next, callback);
+
+    return next;
+  });
+  const cancelled = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+    queue.delete(id);
+  });
+
+  return {
+    cancelled,
+    flush: (): void => {
+      const pending = [...queue.values()];
+      queue.clear();
+      act(() => pending.forEach((callback) => callback(0)));
+    },
+  };
+};
+
 describe('useRailTooltipPosition', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('places the tooltip at the row box plus the offset on first render', () => {
     const { anchor } = movableAnchor();
 
@@ -30,12 +55,13 @@ describe('useRailTooltipPosition', () => {
     const { anchor, move } = movableAnchor();
     const scroller = document.createElement('ol');
     document.body.append(scroller);
+    const raf = frames();
     const { result } = renderHook(() => useRailTooltipPosition(anchor, OFFSET));
 
     move(120);
-    act(() => {
-      scroller.dispatchEvent(new Event('scroll'));
-    });
+    scroller.dispatchEvent(new Event('scroll'));
+    expect(result.current).toEqual({ left: 73, top: 204 });
+    raf.flush();
 
     expect(result.current).toEqual({ left: 73, top: 124 });
     scroller.remove();
@@ -43,14 +69,47 @@ describe('useRailTooltipPosition', () => {
 
   it('re-measures on a window resize', () => {
     const { anchor, move } = movableAnchor();
+    const raf = frames();
     const { result } = renderHook(() => useRailTooltipPosition(anchor, OFFSET));
 
     move(50);
-    act(() => {
-      window.dispatchEvent(new Event('resize'));
-    });
+    window.dispatchEvent(new Event('resize'));
+    raf.flush();
 
     expect(result.current).toEqual({ left: 73, top: 54 });
+  });
+
+  it('coalesces a burst of scroll and resize events into one measurement per frame', () => {
+    const { anchor } = movableAnchor();
+    const raf = frames();
+    const measure = jest.spyOn(anchor, 'getBoundingClientRect');
+    renderHook(() => useRailTooltipPosition(anchor, OFFSET));
+    const calls = measure.mock.calls.length;
+
+    window.dispatchEvent(new Event('scroll'));
+    window.dispatchEvent(new Event('scroll'));
+    window.dispatchEvent(new Event('resize'));
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1);
+    raf.flush();
+    expect(measure).toHaveBeenCalledTimes(calls + 1);
+
+    window.dispatchEvent(new Event('scroll'));
+    expect(window.requestAnimationFrame).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels a pending frame on unmount so it never measures afterwards', () => {
+    const { anchor } = movableAnchor();
+    const raf = frames();
+    const measure = jest.spyOn(anchor, 'getBoundingClientRect');
+    const { unmount } = renderHook(() => useRailTooltipPosition(anchor, OFFSET));
+    window.dispatchEvent(new Event('scroll'));
+    const calls = measure.mock.calls.length;
+
+    unmount();
+    raf.flush();
+
+    expect(raf.cancelled).toHaveBeenCalledWith(1);
+    expect(measure).toHaveBeenCalledTimes(calls);
   });
 
   it('removes both listeners on unmount', () => {
@@ -91,10 +150,10 @@ describe('useRailTooltipPosition', () => {
       { initialProps: { anchor: first.anchor, offset: OFFSET } }
     );
 
+    const raf = frames();
     rerender({ anchor: second.anchor, offset: { left: 10, top: 20 } });
-    act(() => {
-      window.dispatchEvent(new Event('resize'));
-    });
+    window.dispatchEvent(new Event('resize'));
+    raf.flush();
 
     expect(result.current).toEqual({ left: 22, top: 320 });
   });

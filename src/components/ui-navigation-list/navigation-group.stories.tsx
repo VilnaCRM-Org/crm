@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
+import { DisclosedGroup } from '@stories/disclosed-navigation';
 import { withRoutedStoryList } from '@stories/list-decorators';
 import { storyGroup } from '@stories/navigation-story-items';
 
@@ -8,9 +9,15 @@ import NavigationGroup from './navigation-group';
 const meta: Meta<typeof NavigationGroup> = {
   title: 'Shell/Navigation/NavigationGroup',
   component: NavigationGroup,
+  render: ({ layout, group, currentId }) => (
+    <DisclosedGroup layout={layout} group={group} currentId={currentId} />
+  ),
   tags: ['autodocs'],
   args: { layout: 'desktop', group: storyGroup, currentId: null },
-  argTypes: { layout: { control: 'select', options: ['desktop', 'tablet'] } },
+  argTypes: {
+    layout: { control: 'select', options: ['desktop', 'tablet', 'drawer'] },
+    disclosure: { control: false, table: { disable: true } },
+  },
   parameters: {
     docs: {
       description: {
@@ -38,4 +45,19 @@ export const Collapsed: Story = { decorators: withRoutedStoryList('/boards', 238
 export const TabletExpanded: Story = {
   args: { layout: 'tablet', currentId: 'settings' },
   decorators: withRoutedStoryList('/settings', 238),
+};
+
+export const TabletCollapsed: Story = {
+  args: { layout: 'tablet' },
+  decorators: withRoutedStoryList('/boards', 238),
+};
+
+export const DrawerExpanded: Story = {
+  args: { layout: 'drawer', currentId: 'settings' },
+  decorators: withRoutedStoryList('/settings', 238),
+};
+
+export const DrawerCollapsed: Story = {
+  args: { layout: 'drawer' },
+  decorators: withRoutedStoryList('/boards', 238),
 };

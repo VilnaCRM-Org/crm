@@ -80,7 +80,7 @@ describe('navigation group styles', () => {
       border: 0,
       background: 'transparent',
       cursor: 'pointer',
-      color: '#969B9D',
+      color: '#57595B',
       '&:hover': {
         color: '#404142',
       },
@@ -112,7 +112,7 @@ describe('navigation group styles', () => {
         '&::after': {
           content: '""',
           position: 'absolute',
-          inset: '-12px',
+          inset: '-12px -12px -12px 0',
         },
       },
       tablet: {
@@ -123,7 +123,7 @@ describe('navigation group styles', () => {
         '&::after': {
           content: '""',
           position: 'absolute',
-          inset: '-10px',
+          inset: '-10px -10px -10px 0',
         },
       },
       drawer: {

@@ -80,6 +80,32 @@ for (const width of [1440, 1024]) {
       ]);
     });
 
+    test('Tab visits the logo, chip, handle, pills and Sign out of the collapsed rail', async ({
+      page,
+    }) => {
+      await openAs(page, ROUTE_PATHS.home);
+      await handleOf(page).focus();
+      await page.keyboard.press('Enter');
+      await expect(handleOf(page)).toHaveAccessibleName(shellText.expand);
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+      const pills = [...PRODUCT_IDS, 'settings', ...SUB_ITEM_IDS].map((id) => ({
+        locator: id === 'settings' ? sidebarSettingsOf(page) : rowOf(page, id),
+        visibleFocus: true as const,
+      }));
+      const chip = { locator: chipOf(page), visibleFocus: true as const };
+      const logo = { locator: logoOf(page), visibleFocus: true as const };
+
+      await expectTabOrder(page, [chip, logo], 'Shift+Tab');
+      await expectTabOrder(page, [
+        chip,
+        { locator: handleOf(page), visibleFocus: true },
+        ...pills,
+        { locator: signOutOf(page), visibleFocus: true },
+        { locator: page.getByRole('contentinfo').getByRole('link').first(), visibleFocus: true },
+      ]);
+      await expect(groupToggleOf(page)).toHaveCount(0);
+    });
+
     test('Tab puts the three sub-items after the chevron on /settings', async ({ page }) => {
       await openAs(page, ROUTE_PATHS.settings);
 
@@ -101,6 +127,46 @@ for (const width of [1440, 1024]) {
       await page.keyboard.press('Space');
       await expect(handle).toHaveAttribute('aria-expanded', 'true');
       await expect(handle).toHaveAccessibleName(shellText.collapse);
+    });
+
+    test('keeps the page where it was when Tab moves between header controls', async ({ page }) => {
+      await openAs(page, ROUTE_PATHS.settings);
+      await page.evaluate(() => {
+        const filler = document.createElement('div');
+        filler.style.height = '3000px';
+        document.body.append(filler);
+        window.scrollTo(0, 400);
+      });
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
+      await logoOf(page).evaluate((logo: HTMLElement) => logo.focus({ preventScroll: true }));
+
+      await page.keyboard.press('Tab');
+
+      await expect(chipOf(page)).toBeFocused();
+      expect(await page.evaluate(() => window.scrollY)).toBe(400);
+    });
+
+    test('toggles the Settings group with Enter and Space and resets it on a route change', async ({
+      page,
+    }) => {
+      await openAs(page, ROUTE_PATHS.home);
+      const toggle = groupToggleOf(page);
+      await toggle.focus();
+
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await page.keyboard.press('Enter');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      await expect(toggle).toBeFocused();
+      await page.keyboard.press('Space');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await expect(toggle).toBeFocused();
+      await expect(page).toHaveURL(ROUTE_PATHS.home);
+
+      await page.keyboard.press('Enter');
+      await rowOf(page, 'boards').click();
+
+      await expect(page).toHaveURL(ROUTE_PATHS.boards);
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     });
 
     test('walks the chip menu with arrows, Home and End, and closes it with Escape', async ({

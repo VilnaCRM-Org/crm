@@ -4,15 +4,16 @@ import type { ReactElement } from 'react';
 
 import CurrentMenu from '@/modules/user/features/settings/components/user-menu/current-user-menu';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
+import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
+import { buildFullName } from '@tests/builders';
 import renderShell from '@tests/unit/utils/render-shell';
 import { inertSession } from '@tests/unit/utils/session-outlet';
 
 const mockRead = jest.fn();
 
-const READ_USER = {
-  kind: 'ok',
-  identity: { displayName: 'Олена Петренко', monogram: 'ОП' },
-};
+const identity = new UserDisplayNameMapper().fromFullName(buildFullName());
+
+const READ_USER = { kind: 'ok', identity };
 
 const renderMenu = (ui: ReactElement): ReturnType<typeof renderShell> =>
   renderShell(ui, { session: inertSession });
@@ -45,12 +46,7 @@ describe('CurrentMenu', () => {
     const onIdentity = jest.fn();
     renderMenu(<CurrentMenu onIdentity={onIdentity} />);
 
-    await waitFor(() =>
-      expect(onIdentity).toHaveBeenLastCalledWith({
-        displayName: 'Олена Петренко',
-        monogram: 'ОП',
-      })
-    );
+    await waitFor(() => expect(onIdentity).toHaveBeenLastCalledWith(identity));
     expect(mockRead).toHaveBeenCalledTimes(1);
   });
 
@@ -64,7 +60,9 @@ describe('CurrentMenu', () => {
       await mockRead.mock.results[0]?.value;
     });
 
-    expect(onIdentity).not.toHaveBeenCalledWith(expect.objectContaining({ monogram: 'ОП' }));
+    expect(onIdentity).not.toHaveBeenCalledWith(
+      expect.objectContaining({ monogram: identity.monogram })
+    );
     expect(onIdentity).toHaveBeenLastCalledWith(null);
   });
 });

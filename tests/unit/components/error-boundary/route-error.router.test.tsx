@@ -14,8 +14,12 @@ import {
 import RouteError from '@/components/error-boundary/route-error';
 import AppLayout from '@/components/layouts/app-layout';
 import type { FallbackLandmark } from '@/components/types/error-boundary';
+import shellEn from '@/components/ui-app-shell/i18n/en.json';
+import shellUk from '@/components/ui-app-shell/i18n/uk.json';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import routeComposer from '@/routes/route-composer';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
+import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 import createLocaleI18n from '../../utils/create-locale-i18n';
 
@@ -41,6 +45,7 @@ const GO_HOME = 'Go to homepage';
 const UNEXPECTED = 'An unexpected error occurred. You can try again or go to the homepage.';
 const ROUTE = 'This page is not available. Go to the homepage.';
 const RETRYABLE = 'The last action did not complete. Try again.';
+const NAVIGATION = 'Main navigation';
 const CHUNK_LOAD = 'Part of the page failed to load. Reload the page to get the latest version.';
 
 const STATUS_PAGES: [number, string][] = [
@@ -127,6 +132,7 @@ function StandInAppLayout(): JSX.Element {
 describe('RouteError inside a data router', () => {
   afterEach(() => {
     jest.restoreAllMocks();
+    Reflect.deleteProperty(window, 'matchMedia');
   });
 
   it('retries the index route in place without rewriting the URL to /?index', async () => {
@@ -307,6 +313,8 @@ describe('RouteError inside a data router', () => {
     expect(view.onCaughtError).toHaveBeenCalledTimes(1);
     view.unmount();
 
+    stubViewportWidth(1440);
+    lazyCatalogLoader.register(englishI18n, { en: shellEn, uk: shellUk });
     const thrown = data(null, { status: 404 });
     const { router, onCaughtError } = renderRoutes(
       [
@@ -320,10 +328,15 @@ describe('RouteError inside a data router', () => {
 
     const region = await screen.findByRole('region', { name: 'Error 404' });
     await screen.findByRole('contentinfo');
+    const banner = await screen.findByRole('banner');
+    const navigation = await screen.findByRole('navigation', { name: NAVIGATION });
     await waitFor(() => expect(router.state.location.state).toEqual({ focusMain: false }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Error 404' })).toHaveFocus();
     expect(screen.getByRole('main')).toContainElement(region);
+    expect(banner).toBeVisible();
+    expect(screen.getByRole('main')).not.toContainElement(banner);
+    expect(screen.getByRole('main')).not.toContainElement(navigation);
     expect(onCaughtError).toHaveBeenCalledWith(thrown, expect.anything());
   });
 });

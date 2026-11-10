@@ -30,6 +30,12 @@ const renderLink = (onClose = jest.fn(), layout: 'desktop' | 'tablet' = 'desktop
 };
 
 describe('UserMenuLink', () => {
+  it('never renders a MUI ripple', () => {
+    renderLink();
+
+    expect(screen.getByRole('menuitem', { name: 'Settings' })).not.toContainHTML('MuiTouchRipple');
+  });
+
   it('is a menu item link to /settings', () => {
     renderLink();
 

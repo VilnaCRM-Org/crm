@@ -6,6 +6,7 @@ import type { JSX } from 'react';
 import UserMenuItems from '@/modules/user/features/settings/components/user-menu/user-menu-items';
 import buildUserMenuState from '@tests/unit/utils/build-user-menu-state';
 import renderShell from '@tests/unit/utils/render-shell';
+import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 type Props = Parameters<typeof UserMenuItems>[0];
 
@@ -25,6 +26,17 @@ const renderItems = (props: Partial<Props> = {}, locale: 'en' | 'uk' = 'en'): vo
 };
 
 describe('UserMenuItems', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'matchMedia');
+  });
+
+  it('renders no MUI ripple in an open menu under reduced motion', () => {
+    stubMotionPreference(true);
+    renderItems();
+
+    expect(screen.getByRole('menu')).not.toContainHTML('MuiTouchRipple');
+  });
+
   it('is a menu named User menu with My profile, Settings and Sign out', () => {
     renderItems();
 
@@ -52,7 +64,7 @@ describe('UserMenuItems', () => {
     expect(screen.getAllByRole('menuitem')[0]).toHaveFocus();
   });
 
-  it('closes the menu and signs out when Sign out is activated', async () => {
+  it('dismisses the menu to the chip and signs out when Sign out is activated', async () => {
     const user = userEvent.setup();
     const menu = buildUserMenuState({ open: true });
     const signOut = jest.fn();
@@ -60,7 +72,8 @@ describe('UserMenuItems', () => {
 
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
 
-    expect(menu.close).toHaveBeenCalledTimes(1);
+    expect(menu.dismiss).toHaveBeenCalledTimes(1);
+    expect(menu.close).not.toHaveBeenCalled();
     expect(signOut).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +121,7 @@ describe('UserMenuItems', () => {
     });
   });
 
-  it('closes and signs out through the latest menu and signOut after they change', async () => {
+  it('dismisses and signs out through the latest menu and signOut after they change', async () => {
     const user = userEvent.setup();
     const first = { menu: buildUserMenuState({ open: true }), signOut: jest.fn() };
     const second = { menu: buildUserMenuState({ open: true }), signOut: jest.fn() };
@@ -120,9 +133,9 @@ describe('UserMenuItems', () => {
     view.rerender(items(second));
     await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
 
-    expect(first.menu.close).not.toHaveBeenCalled();
+    expect(first.menu.dismiss).not.toHaveBeenCalled();
     expect(first.signOut).not.toHaveBeenCalled();
-    expect(second.menu.close).toHaveBeenCalledTimes(1);
+    expect(second.menu.dismiss).toHaveBeenCalledTimes(1);
     expect(second.signOut).toHaveBeenCalledTimes(1);
   });
 });

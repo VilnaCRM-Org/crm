@@ -1,4 +1,5 @@
 import { act, renderHook, type RenderHookResult, waitFor } from '@testing-library/react';
+import * as React from 'react';
 import { StrictMode, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
@@ -18,6 +19,7 @@ import {
   buildUserEntity,
 } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const NEW_FULL_NAME = buildFullName();
 const NEW_EMAIL = buildEmail();
@@ -638,5 +640,69 @@ describe('useProfileSave', () => {
 
     expect(result.current.state.fieldErrors).toEqual({ items: [] });
     expect(result.current.state.settled).toBe(1);
+  });
+  describe('module-level values evaluated inside the test', () => {
+    const loadKeyed = (): Promise<typeof useProfileSave> =>
+      loadIsolated(async () => {
+        jest.doMock('react', () => React);
+        jest.doMock('react-i18next', () => ({
+          useTranslation: (): { t: (key: string) => string } => ({ t: (key) => key }),
+        }));
+        return (await import('@/modules/user/features/settings/hooks/use-profile-save')).default;
+      });
+
+    it('starts with no-change flags off', async () => {
+      const fresh = await loadKeyed();
+      const { props } = harness();
+
+      const { result } = renderHook(() => fresh(props, 'fullName'));
+
+      expect(result.current.state.noChanges).toBe(false);
+      expect(result.current.state.noChangesMarked).toBe(false);
+    });
+
+    it.each([
+      ['fullName', 'settings.toasts.saved'],
+      ['email', 'settings.toasts.email_sent'],
+      ['password', 'settings.toasts.password_changed'],
+    ] as const)('shows the %s success toast with its exact key', async (section, key) => {
+      const fresh = await loadKeyed();
+      const { props, show } = harness();
+      mockUpdate.mockResolvedValue(okOutcome());
+      const { result } = renderHook(() => fresh(props, section));
+
+      await act(async () => {
+        result.current.save(
+          buildProfileFormValues({
+            fullName: NEW_FULL_NAME,
+            email: NEW_EMAIL,
+            newPassword: NEW_PASSWORD,
+          })
+        );
+      });
+
+      expect(show).toHaveBeenCalledTimes(1);
+      expect(show.mock.calls[0]?.[0]).toEqual({ items: [{ tone: 'success', message: key }] });
+    });
+
+    it.each([
+      ['transient', 'settings.toasts.save_failed_transient'],
+      ['rejected', 'settings.toasts.save_failed'],
+      ['rate_limited', 'settings.toasts.rate_limited'],
+    ] as const)('shows the exact %s failure key', async (reason, key) => {
+      const fresh = await loadKeyed();
+      const { props, show } = harness();
+      mockUpdate.mockResolvedValue(failedOutcome(reason));
+      const { result } = renderHook(() => fresh(props, 'fullName'));
+
+      await act(async () => {
+        result.current.save(nameChange());
+      });
+
+      expect(show).toHaveBeenCalledTimes(1);
+      const drafts = show.mock.calls[0]?.[0] as { items: { tone: string; message: string }[] };
+      expect(drafts.items).toHaveLength(1);
+      expect(drafts.items[0]).toMatchObject({ tone: 'error', message: key });
+    });
   });
 });

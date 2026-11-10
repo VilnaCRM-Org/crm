@@ -5,8 +5,10 @@ import path from 'path';
 
 import {
   AUTH_FORM_CHUNKS,
+  AUTH_PAGE_CHUNKS,
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
+  authPageVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
   TWO_FACTOR_FORM_CHUNKS,
@@ -281,6 +283,9 @@ describe('performance serving config', () => {
     // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
     expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
     expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/routes/shell-slot-factory.ts')).toContain(
+      'new ThemedChunkLoader<ShellSlotProps>('
+    );
     expect(readFile('src/components/error-boundary/error-page-loader.ts')).toContain(
       'new ThemedChunkLoader<ErrorPageProps>('
     );
@@ -328,52 +333,51 @@ describe('performance serving config', () => {
     expect(protectedGraphIn(files)).toEqual(SHARED_WITH_EAGER_PATH);
   });
 
-  it('fails the protected-layout check when the composer imports AppLayout (must-fail)', () => {
-    const composer = 'src/routes/route-composer.tsx';
-    const tainted = (file: string): string =>
-      file === composer
-        ? `${readFile(file)}\nimport AppLayout from '@/components/layouts/app-layout';\n`
-        : readFile(file);
+  it.each([
+    [
+      'AppLayout',
+      "import AppLayout from '@/components/layouts/app-layout';",
+      [
+        'src/components/layouts/app-layout-frame.tsx',
+        'src/components/layouts/app-layout.styles.ts',
+        'src/components/layouts/app-layout.tsx',
+        'src/components/layouts/app-shell-loader.ts',
+        'src/components/layouts/app-shell-placeholders.tsx',
+        'src/components/layouts/footer-loader.ts',
+        'src/components/layouts/use-app-shell.ts',
+        'src/components/layouts/use-frame-focus.ts',
+        'src/hooks/use-arrival-focus.ts',
+      ],
+    ],
+    [
+      'the guard',
+      "import ProtectedRoute from '@auth/components/protected-route';",
+      [
+        'src/config/env/preloaded-auth-token.ts',
+        'src/config/env/sandbox-demo-session-provider.ts',
+        'src/modules/user/features/auth/components/protected-route/index.tsx',
+        'src/modules/user/features/auth/components/protected-route/recovery-notice-loader.ts',
+        'src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
+        'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
+        'src/modules/user/features/auth/stores/auth-session-provider.ts',
+        'src/modules/user/features/auth/stores/auth-store-selectors.ts',
+        'src/modules/user/features/auth/stores/use-auth-store.ts',
+        'src/modules/user/features/auth/stores/use-auth-token.ts',
+        'src/modules/user/features/auth/stores/use-sign-out.ts',
+      ],
+    ],
+  ])(
+    'fails the protected-layout check when the composer imports %s (must-fail)',
+    (_name, importLine, expected) => {
+      const composer = 'src/routes/route-composer.tsx';
+      const tainted = (file: string): string =>
+        file === composer ? `${readFile(file)}\n${importLine}\n` : readFile(file);
 
-    const { files } = eagerGraphOf('src/index.tsx', tainted);
+      const { files } = eagerGraphOf('src/index.tsx', tainted);
 
-    expect(protectedLayoutFilesOf(files)).toEqual([
-      'src/components/layouts/app-layout-frame.tsx',
-      'src/components/layouts/app-layout.styles.ts',
-      'src/components/layouts/app-layout.tsx',
-      'src/components/layouts/app-shell-loader.ts',
-      'src/components/layouts/app-shell-placeholders.tsx',
-      'src/components/layouts/footer-loader.ts',
-      'src/components/layouts/use-app-shell.ts',
-      'src/components/layouts/use-frame-focus.ts',
-      'src/components/layouts/use-header-clearance.ts',
-      'src/hooks/use-arrival-focus.ts',
-    ]);
-  });
-
-  it('fails the protected-layout check when the composer imports the guard (must-fail)', () => {
-    const composer = 'src/routes/route-composer.tsx';
-    const tainted = (file: string): string =>
-      file === composer
-        ? `${readFile(file)}\nimport ProtectedRoute from '@auth/components/protected-route';\n`
-        : readFile(file);
-
-    const { files } = eagerGraphOf('src/index.tsx', tainted);
-
-    expect(protectedLayoutFilesOf(files)).toEqual([
-      'src/config/env/preloaded-auth-token.ts',
-      'src/config/env/sandbox-demo-session-provider.ts',
-      'src/modules/user/features/auth/components/protected-route/index.tsx',
-      'src/modules/user/features/auth/components/protected-route/recovery-notice-loader.ts',
-      'src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
-      'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
-      'src/modules/user/features/auth/stores/auth-session-provider.ts',
-      'src/modules/user/features/auth/stores/auth-store-selectors.ts',
-      'src/modules/user/features/auth/stores/use-auth-store.ts',
-      'src/modules/user/features/auth/stores/use-auth-token.ts',
-      'src/modules/user/features/auth/stores/use-sign-out.ts',
-    ]);
-  });
+      expect(protectedLayoutFilesOf(files)).toEqual(expected);
+    }
+  );
 
   it('loads the guard, the layout and the slot factory from one protected-layout chunk', () => {
     const loaderSource = readFile('src/routes/protected-layout-loader.ts');
@@ -397,6 +401,8 @@ describe('performance serving config', () => {
     const loaderSource = readFile('src/components/layouts/app-shell-loader.ts');
 
     expect(loaderSource).toContain('new ThemedChunkLoader<UIAppShellProps>(');
+    expect(loaderSource).toContain('new ChunkRetryLoader(');
+    expect(loaderSource).not.toContain('ReloadingChunkLoader');
     expect(loaderSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "ui-app-shell" \*\/\s*'@\/components\/ui-app-shell'\s*\)/
     );
@@ -684,8 +690,16 @@ describe('performance serving config', () => {
 
     expect(rsbuildConfigSource.replace(/\s+/g, ' ')).toContain(
       'cacheGroups: { authFormsVendors: authFormsVendorsCacheGroup(), ' +
-        'authForms: authFormsCacheGroup(), },'
+        'authForms: authFormsCacheGroup(), authPageVendors: authPageVendorsCacheGroup(), },'
     );
+    expect(authPageVendorsCacheGroup().name).toBe('auth-page-vendors');
+    expect(
+      AUTH_PAGE_CHUNKS.map((chunk) =>
+        readFile('src/modules/user/features/auth/routes/index.ts').includes(
+          `webpackChunkName: "${chunk}"`
+        )
+      )
+    ).toEqual([true, true]);
     expect([authFormsVendorsCacheGroup().name, authFormsCacheGroup().name]).toEqual([
       'auth-forms-vendors',
       'auth-forms',

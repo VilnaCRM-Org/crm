@@ -4,7 +4,11 @@ import path from 'path';
 
 const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const SETTINGS_ROOT = 'src/modules/user/features/settings';
-const SHARED_STATE_STUB_CALLS = ['withProfileProvider(', 'withCurrentUserAnswer('];
+const SHARED_STATE_STUB_CALLS = [
+  'withProfileProvider(',
+  'withCurrentUserAnswer(',
+  'withCurrentUserFailure(',
+];
 
 interface DocsStoryParameters {
   readonly inline?: boolean;

@@ -12,6 +12,7 @@ const pill = {
   margin: '7px 8px',
   padding: '8px 16px',
   borderRadius: '8px',
+  '& svg': { flexShrink: 0, fill: 'none', color: customColors.text.muted },
   '&:hover': {
     backgroundColor: paletteColors.background.paper,
     '& svg': { color: customColors.text.dark },
@@ -29,6 +30,9 @@ const tabletShapes: Partial<Record<NavigationRowId, RailShape>> = {
 };
 
 const itemBase = { position: 'relative', display: 'flex' };
+
+const tooltipBodyInset = `inset 0 0 0 1px ${paletteColors.background.subtle}`;
+const tooltipBodyShadow = `${customColors.shell.tooltipShadow}, ${tooltipBodyInset}`;
 
 export default {
   rail: {
@@ -65,7 +69,6 @@ export default {
     zIndex: 1,
     display: 'flex',
     alignItems: 'center',
-    filter: `drop-shadow(${customColors.shell.tooltipShadow})`,
   },
   tooltipCaret: {
     flexShrink: 0,
@@ -79,7 +82,7 @@ export default {
     padding: '12px 16px',
     borderRadius: '8px',
     backgroundColor: paletteColors.background.default,
-    boxShadow: `inset 0 0 0 1px ${paletteColors.background.subtle}`,
+    boxShadow: tooltipBodyShadow,
     fontFamily: FONT,
     fontWeight: 500,
     fontSize: '16px',

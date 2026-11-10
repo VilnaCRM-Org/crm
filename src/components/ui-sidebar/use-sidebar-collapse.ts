@@ -1,6 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 
-import type { SidebarCollapse } from '@/components/types/ui-sidebar';
+import type {
+  SidebarCollapse,
+  SidebarCollapseEvent,
+  SidebarCollapseState,
+} from '@/components/types/ui-sidebar';
 
 const STORAGE_KEY = 'crm.sidebar.collapsed';
 
@@ -24,15 +28,21 @@ class SidebarCollapseSource {
 
 const sidebarCollapseSource = new SidebarCollapseSource();
 
+function initial(): SidebarCollapseState {
+  return { collapsed: sidebarCollapseSource.read(), revealing: false };
+}
+
+function next(state: SidebarCollapseState, event: SidebarCollapseEvent): SidebarCollapseState {
+  if (event.type === 'animationend') return { ...state, revealing: false };
+  return { collapsed: !state.collapsed, revealing: state.collapsed };
+}
+
 export default function useSidebarCollapse(): SidebarCollapse {
-  const [collapsed, setCollapsed] = useState(() => sidebarCollapseSource.read());
+  const [state, step] = useReducer(next, undefined, initial);
 
-  const flip = useCallback((): void => {
-    setCollapsed((current) => {
-      sidebarCollapseSource.write(!current);
-      return !current;
-    });
-  }, []);
+  useEffect(() => {
+    sidebarCollapseSource.write(state.collapsed);
+  }, [state.collapsed]);
 
-  return { collapsed, flip };
+  return { ...state, step };
 }

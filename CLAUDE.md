@@ -292,7 +292,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-40-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+48-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -320,7 +320,7 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 40-way shard count rather than
+These keep the run affordable — parallelism comes from the 48-way shard count rather than
 Stryker's in-process concurrency.
 
 **Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
@@ -335,14 +335,13 @@ outside every function body and instance property initializer runs on import, wh
 whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 539 files the scope holds 9,379
-runnable mutants, 6,959 of them scored, in 482 sharded files; 57 files run in no shard, and the 40
-shards hold 175 to 176 units of packing weight (a file's scored mutants, or 1 for a file whose
-mutants are all static) and 8 to 13 files each. File size was a poor proxy for that load: at the
-two-factor scope (528 files, 9,232 runnable mutants) a size packing held 149 to 485 runnable
-mutants per shard at 30 shards, first fell under 240 at 69 shards (225), and rose again to 270 at
-70 and 293 at 73. Weighing each file by its runnable mutants instead held every shard within one
-mutant of the mean: 307 to 308 at 30, 237 at 39, 230 to 231 at 40.
+same commit; no weight file is committed, so none can go stale. At 559 files the scope holds
+502 sharded files; 57 files run in no shard. Their packing weight is 7,331, the scored mutants plus
+the floor of 1 that each all-static file adds, so the 48 shards carry 152 to 153 weight units and 4
+to 11 files each. File size was a poor proxy for
+that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
+kill switch before it finished, while this scope packed by counted mutants carries 244 to 245
+units per shard at 30.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 units of packing weight, so scope growth reddens a unit test before a
 shard meets the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and
@@ -350,16 +349,21 @@ the `-of<N>-` cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
-touching one area can therefore land most of its re-run cost in a single shard; 40 shards keep that
+touching one area can therefore land most of its re-run cost in a single shard; 48 shards keep that
 hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
 it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
 to 30 when the password-recovery files repacked the split so a cold shard 6 drew 443 mutants (the
 next heaviest drew 291) and hit the kill switch at 250 tested; the same size packing at 30 capped
-the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when the
-two-factor files grew the scope until most cold shards hit the kill switch. 39 shards would
-already hold 237, but 40 leaves room for about 360 more mutants before the heaviest shard reaches
-240, where 39 leaves room for about 120.
+the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when that
+cold shard 11 kept meeting the kill switch and the two-factor files grew the scope until most cold
+shards hit it. It went from 40 to 48 when a cold shard 32 (11 files, 250 mutants) met the kill
+switch at 247 tested on two runs in a row; the app shell (#362) and two-factor (#331) branches take
+the same count, so the two stay in lock-step. On 2026-11-09 the owner asked for fewer shards,
+each allowed up to the 15-minute kill switch. A cold run at 44, which keeps the heaviest shard at
+the same 139 weight units, still met the kill switch on two shards at 222 of 226 and 236 of 237
+tested, each with six timed-out mutants, while the cold 48-shard run's slowest shard took 12.6 min.
+Weight does not predict timed-out mutants, so the count stays at 48.
 
 ### Honest mutant classification (issue #171)
 
@@ -475,7 +479,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a seventeen
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 539 files; not all of them produce scored mutants — the 57 unsharded ones hold no
+mutate scope is 559 files; not all of them produce scored mutants — the 57 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
@@ -617,7 +621,8 @@ issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at
 decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
 owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
 on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
-issue #276 and deleted when it closes.
+issue #276 and deleted when it closes. Each entry is a known WCAG 2.1 AA non-conformance kept by owner
+decision, not a pass; the owner re-confirmed the current navigation row on 2026-11-09.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
 
@@ -1130,7 +1135,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 40-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 48-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1849,10 +1854,10 @@ through `usePageTitle` after its module has registered the catalog). The setting
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
 the seven settings `components/` folders that page renders (`change-password`, `profile-form`,
 `profile-header`, `settings-grid`, `social-networks`, `two-factor-settings` and
-`user-profile-settings`), the thirteen `hooks/` files those components call (`use-blur-hold`,
-`use-codes-form-props`, `use-disable-form-props`, `use-display-name`, `use-email-resend`,
-`use-email-row`, `use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`,
-`use-profile-save`, `use-regenerate-form-props`, `use-settled-focus` and `use-setup-form-props`),
+`user-profile-settings`), the twelve `hooks/` files that own settings translations (`use-blur-hold`,
+`use-codes-form-props`, `use-disable-form-props`, `use-email-resend`, `use-email-row`,
+`use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`, `use-profile-save`,
+`use-regenerate-form-props`, `use-settled-focus` and `use-setup-form-props`),
 and the settings route contract `routes/index.ts` for
 its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
@@ -2014,10 +2019,11 @@ import a page. Three checks fail CI on a regression:
 **Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
 subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
 two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
-instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds two
-top-level `splitChunks.cacheGroups` entries, `authFormsVendors` (chunk `auth-forms-vendors`)
-and `authForms` (chunk `auth-forms`), built by
-[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` holds three top-level
+`splitChunks.cacheGroups` entries, all built by
+[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Two answer that failure,
+`authFormsVendors` (chunk `auth-forms-vendors`) and `authForms` (chunk `auth-forms`), and the
+third is described below. For those two, membership is decided
 per module: each `test` admits a module only when both the `sign-in-form-section` and the
 `sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`, and
 then by resource: a module under `node_modules` goes to `auth-forms-vendors`, anything else to
@@ -2041,6 +2047,13 @@ each selects the chunk names the loaders' `webpackChunkName` values emit, so ren
 chunk cannot silently disable either group. Chunk
 sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
 clears the mobile floor is decided by CI Lighthouse, not by a local build.
+
+**Shared auth-page vendors (issue #362, owner decision 2026-11-06).** The third entry,
+`authPageVendors` (chunk `auth-page-vendors`), takes the `node_modules` modules that both the
+`sign-in` and the `sign-up` page chunks contain. The app shell's lazy chunks had split that code
+into pieces that compress worse, which put `/sign-in` at 265,997 bytes against the 265,000
+`lighthouse.scriptSizeBytes` budget. With the group it passes in CI, and no budget was raised. The
+same two tests pin its rule and its wiring.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same

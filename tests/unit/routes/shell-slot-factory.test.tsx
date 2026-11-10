@@ -1,10 +1,12 @@
 import '@testing-library/jest-dom';
+import { useTheme } from '@mui/material/styles';
 import { render, type RenderResult, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type JSX, Suspense, useCallback } from 'react';
 
 import ShellSlotFactory from '@/routes/shell-slot-factory';
 import type { ShellSlotProps } from '@/routes/types/shell-slot';
+import { paletteColors } from '@/styles/colors';
 
 const chunkFailure = (): Error =>
   Object.assign(new Error('Loading chunk user-menu failed.'), { name: 'ChunkLoadError' });
@@ -44,7 +46,21 @@ const mount = (
     </div>
   );
 
+function ThemedSlot(): JSX.Element {
+  return <p>{useTheme().palette.primary.main}</p>;
+}
+
 describe('ShellSlotFactory', () => {
+  it('gives the loaded slot the CRM theme from the theme chunk', async () => {
+    const Slot = new ShellSlotFactory(jest.fn()).create(() =>
+      Promise.resolve({ default: ThemedSlot })
+    );
+
+    mount(Slot);
+
+    expect(await screen.findByText(paletteColors.primary.main)).toBeInTheDocument();
+  });
+
   it('renders the loaded slot with the outlet sign-out and the failure handler bound', async () => {
     const report = jest.fn();
     const signOut = jest.fn();

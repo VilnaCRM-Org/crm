@@ -77,7 +77,7 @@ describe('currentUserSource over msw (integration)', () => {
   });
 
   it.each([
-    ['an Access Denied. message', { message: 'Access Denied.' }, 'session_ended'],
+    ['an Access Denied. message', { message: 'Access Denied.' }, 'unavailable'],
     ['an extension status of 401', { message: 'x', extensions: { status: 401 } }, 'session_ended'],
     ['another GraphQL error', { message: 'x', extensions: { status: 500 } }, 'unavailable'],
   ] as const)('reads %s on the first GraphQL error', async (_name, first, reason) => {

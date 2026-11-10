@@ -34,8 +34,9 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
   `X-Correlation-Id` and the request deadline. `CurrentUserResponseParser` narrows the answer by
   hand and reads only `initials` (the full name). A transport 401 ends the session through
   `session.end(token)`, which, like `SessionLinkFactory`, only ends it while the store still holds
-  the token the request carried; a GraphQL `Access Denied.` (or extension status 401) only resets
-  the chip to pending. Every other failure keeps the last good name or shows the name-less chip,
+  the token the request carried; a GraphQL error with extension status 401 only resets the chip to
+  pending. Every other failure, a GraphQL `Access Denied.` included, keeps the last good name or
+  shows the name-less chip,
   and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
   caller aborted the read. The settings page itself still reads through `ProfileProvider`.
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
@@ -68,23 +69,26 @@ Each shared piece has one owner (architecture §15.2). Imported from #315 (passw
 copied:
 
 - `UserServiceErrorTransformer` (`src/modules/user/transformers`) and `UserEntity`.
-- `UIForm`, `UIFormField`, `UIPasswordField`, `UIPasswordPolicyRules`, `UIServerFieldError`, the
-  name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
+- `UIForm`, the name, e-mail and password validators, `useAbortableSubmit` and `useOfflineSubmit`.
+
+Built here:
+
+- The `submitRef`, `submitSx` and `footer` props of `UIForm`.
 - `SessionLinkFactory` (`@auth/repositories`), where a transport 401 on an Apollo operation ends
   a session. No settings file imports it: the user module's composition root
   (`src/modules/user/config/di.ts`) puts its link on the Apollo client the settings repositories
   receive by injection. The chip's container-free read ends a session through the outlet `session`
   instead.
-
-Owned here for #331 (two-factor authentication), which imports them rather than rebuilding them:
-
-- `UIToastStack`, `UIToast` and `useToastQueue`: no timer, a polite region for success texts and
-  an assertive one for error texts, both always mounted, at most three on screen.
+- The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
+  `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
+- `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
+  region for success texts and an assertive one for error texts, both always mounted, at most three
+  on screen. The two-factor card reports inside its own card.
 - The `SettingsGrid`, whose second slot is reserved for the two-factor card.
 
 Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
 `SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
-`error.text` token, the home link and the `session_ended` notice.
+`error.text` token and the `session_ended` notice.
 
 ## Page tree
 
@@ -216,7 +220,7 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   "Особисті дані" section holds the e-mail only. The loading skeleton follows the same order.
   The field holds the full ПІБ (surname, first name, patronymic), while the header greets by
   first name and surname: three or more words show as the second then the first ("Маслова
-  Евгения Олеговна" → "Евгения Маслова"), one or two words show as typed, and the monogram
+  Євгенія Олегівна" → "Євгенія Маслова"), one or two words show as typed, and the monogram
   follows the greeted name.
 - **"Новий пароль" shows nothing extra at rest.** Figma draws no hint and no rule list, so the
   field's hint is visually hidden (still in `aria-describedby`) and the four policy rules

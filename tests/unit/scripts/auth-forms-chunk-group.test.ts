@@ -7,8 +7,11 @@ import {
   AUTH_FORM_CHUNKS,
   AUTH_FORMS_CHUNK,
   AUTH_FORMS_VENDORS_CHUNK,
+  AUTH_PAGE_CHUNKS,
+  AUTH_PAGE_VENDORS_CHUNK,
   authFormsCacheGroup,
   authFormsVendorsCacheGroup,
+  authPageVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
   TWO_FACTOR_FORM_CHUNKS,
@@ -133,5 +136,38 @@ describe('auth-form cache groups', () => {
   ])('sends an app module held by %j at %s only to the app group', (chunks, resource) => {
     expect(admits(authFormsCacheGroup, chunks, resource)).toBe(true);
     expect(admits(authFormsVendorsCacheGroup, chunks, resource)).toBe(false);
+  });
+
+  describe('authPageVendorsCacheGroup', () => {
+    const BOTH_PAGES = ['sign-in', 'sign-up'];
+
+    it('names the chunk over every async consumer, below the form-section groups', () => {
+      expect(AUTH_PAGE_VENDORS_CHUNK).toBe('auth-page-vendors');
+      expect(AUTH_PAGE_CHUNKS).toEqual(BOTH_PAGES);
+      expect(authPageVendorsCacheGroup()).toMatchObject({
+        name: 'auth-page-vendors',
+        chunks: 'async',
+        minChunks: 2,
+        priority: 5,
+        reuseExistingChunk: true,
+      });
+    });
+
+    it.each([
+      [BOTH_PAGES, VENDOR_RESOURCE],
+      [BOTH_PAGES, WINDOWS_VENDOR_RESOURCE],
+      [['sign-in', 'ui-app-shell', 'sign-up'], VENDOR_RESOURCE],
+    ])('admits a node_modules module held by %j', (chunks, resource) => {
+      expect(admits(authPageVendorsCacheGroup, chunks, resource)).toBe(true);
+    });
+
+    it.each([
+      [['sign-in'], VENDOR_RESOURCE],
+      [['sign-up', 'ui-app-shell'], VENDOR_RESOURCE],
+      [BOTH_PAGES, APP_RESOURCE],
+      [BOTH_PAGES, undefined],
+    ])('refuses a module held by %j at %s', (chunks, resource) => {
+      expect(admits(authPageVendorsCacheGroup, chunks, resource)).toBe(false);
+    });
   });
 });

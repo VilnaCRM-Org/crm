@@ -1,16 +1,23 @@
 import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
+import { createElement, type JSX } from 'react';
 
+import type { NavigationItemsProps } from '@/components/types/ui-navigation-list';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import NavigationExpandedItems from '@/components/ui-navigation-list/navigation-expanded-items';
+import useGroupDisclosure from '@/components/ui-navigation-list/use-group-disclosure';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
+
+function DisclosedItems(props: Omit<NavigationItemsProps, 'disclosure'>): JSX.Element {
+  return createElement(NavigationExpandedItems, { ...props, disclosure: useGroupDisclosure() });
+}
 
 describe('NavigationExpandedItems', () => {
   it('renders the five product rows and the Settings group header, in order', () => {
     renderShell(
       <ol>
-        <NavigationExpandedItems layout="desktop" items={navigationItems} currentId={null} />
+        <DisclosedItems layout="desktop" items={navigationItems} currentId={null} />
       </ol>
     );
 
@@ -28,7 +35,7 @@ describe('NavigationExpandedItems', () => {
   it('lets a drawer product row item fill the full-screen drawer', () => {
     renderShell(
       <ol>
-        <NavigationExpandedItems layout="drawer" items={navigationItems} currentId={null} />
+        <DisclosedItems layout="drawer" items={navigationItems} currentId={null} />
       </ol>
     );
 
@@ -44,7 +51,7 @@ describe('NavigationExpandedItems', () => {
     (layout) => {
       renderShell(
         <ol>
-          <NavigationExpandedItems layout={layout} items={navigationItems} currentId={null} />
+          <DisclosedItems layout={layout} items={navigationItems} currentId={null} />
         </ol>
       );
 
@@ -59,7 +66,7 @@ describe('NavigationExpandedItems', () => {
   it('marks only the current row', () => {
     renderShell(
       <ol>
-        <NavigationExpandedItems layout="tablet" items={navigationItems} currentId="orders" />
+        <DisclosedItems layout="tablet" items={navigationItems} currentId="orders" />
       </ol>
     );
 
@@ -71,7 +78,7 @@ describe('NavigationExpandedItems', () => {
   it('closes the gap when a row is filtered out of the set', () => {
     renderShell(
       <ol>
-        <NavigationExpandedItems
+        <DisclosedItems
           layout="desktop"
           items={{ items: navigationItems.items.filter(({ id }) => id !== 'orders') }}
           currentId={null}
@@ -91,7 +98,7 @@ describe('NavigationExpandedItems', () => {
   it('reads in uk', () => {
     renderShell(
       <ol>
-        <NavigationExpandedItems layout="desktop" items={navigationItems} currentId={null} />
+        <DisclosedItems layout="desktop" items={navigationItems} currentId={null} />
       </ol>,
       { locale: 'uk' }
     );

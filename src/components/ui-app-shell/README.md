@@ -36,6 +36,15 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
   frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
   the document. Nothing under `src/components/layouts/` imports from `src/services/`.
+- **The auth pages share one more vendor chunk (owner decision, 2026-11-06).** The shell's lazy
+  chunks had split the `node_modules` code that both the `sign-in` and `sign-up` page chunks contain
+  into pieces that compress worse, and `/sign-in` reached 265,997 bytes against the 265,000
+  `lighthouse.scriptSizeBytes` budget. `authPageVendorsCacheGroup`
+  (`scripts/auth-forms-chunk-group.ts`, wired in `rsbuild.config.ts`) puts that code in one
+  `auth-page-vendors` chunk. `/sign-in` now passes in CI (Lighthouse desktop and mobile
+  both passed in
+  [run 42199290356](https://github.com/VilnaCRM-Org/crm/actions/runs/42199290356), at commit
+  007c533d) and no budget was raised.
 - **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
   supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
   optional `userMenu` slot and an `onShellFailure` callback, typed in
@@ -112,7 +121,12 @@ Two choices record what Figma leaves open:
 - The desktop frame has no fill, so the sticky header paints the page colour `#FBFBFB`, the colour
   that shows through in the frame.
 - The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. Every header
-  button is disabled, so the badge follows the disabled variant.
+  button is disabled, so the badge follows the disabled variant. The owner approved this on
+  2026-11-06 ("use all from Figma"); see DV-14.
+- The round buttons' rest, hover and open states and the search field's rest, hover and active
+  states are not drawn in the app while those controls ship disabled, so the owner dropped them as
+  required Storybook state rows on 2026-11-06 (UX §10.2). The requirement returns when the controls
+  are enabled.
 
 ## Sidebar
 
@@ -214,7 +228,7 @@ What Figma leaves open, and how it was built:
   no stop to be scrolled by keyboard, and its role is unchanged.
 - The sticky card is limited to the navigation grid row, so once the footer scrolls in it moves up
   under the 64 px header. Chromium and WebKit scroll a focused sidebar control fully into view,
-  honouring the list's `scroll-padding-bottom` and the root `scroll-padding-top`. Firefox scrolls
+  honouring the list's `scroll-padding-bottom` and the slot's `scroll-margin-top`. Firefox scrolls
   only a control that is entirely out of view, so a partly visible one stays clipped by the list or
   under the header (the collapse handle entirely, at 1440×400). One frame after a sidebar control
   takes focus, `useStickyFocusClearance` scrolls it into view within its list
@@ -441,28 +455,55 @@ Playwright container and run in CI only.
   the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
   instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
   sub-items do not overlap.
-- **Three grey glyphs under 3:1** (WCAG 1.4.11, owner decision, 2026-10-27, issue #276). Three
-  active controls are identified at rest only by a `#969B9D` glyph on white, 2.81:1 against the
-  3:1 of SC 1.4.11 Non-text Contrast: the Settings disclosure chevron in the sidebar and the drawer
-  (`ui-navigation-list/group-styles.ts`, its state exposed through `aria-expanded`), the icon-only
-  sidebar collapse handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
-  (`ui-navigation-list/styles.ts` through `rail-styles.ts`, label visually hidden). The product
-  owner keeps Figma's `#969B9D` and accepts a scoped exception for exactly these three controls in
-  their resting state, tracked in issue #276 with the other palette exceptions. Hover (`#404142`)
-  passes, the current rail row falls under the existing current-row entry (PRD NFR-4 X-1), and
-  focus indicators still reach
-  3:1. axe's `color-contrast` rule evaluates text only and no axe rule tests 1.4.11, so no
-  `A11Y_EXCEPTIONS` entry exists or is added for these glyphs. See PRD NFR-4.
 
-### DV-13: the handle rides the sidebar edge (owner report, 2026-11-04)
+### DV-15: the icon-only shell glyphs reach 3:1 (owner decision, 2026-11-09)
+
+Three active controls are identified at rest only by their glyph: the Settings disclosure chevron
+in the sidebar and the drawer (`ui-navigation-list/group-styles.ts`), the icon-only sidebar collapse
+handle (`ui-sidebar/styles.ts`) and the default rows of the collapsed rail
+(`ui-navigation-list/rail-styles.ts`). Figma draws them `#969B9D`, 2.81:1 on white, under the 3:1 of
+WCAG 1.4.11 Non-text Contrast. The owner accepted that on 2026-10-27. On 2026-11-09 the FR/NFR gate
+held that an accessibility failure cannot pass on owner acceptance, and the owner chose to fix it:
+the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on white and already the
+burger's colour. Hover (`#404142`), the current rail row (`#0399ED`, PRD NFR-4 X-1) and the icons of
+the expanded rows, which sit beside a visible label, keep their Figma colours.
+
+No axe rule tests 1.4.11, so `tests/unit/a11y/non-text-contrast.test.ts` computes each resting
+glyph's contrast against white from the styles and fails under 3:1.
+
+### DV-14: the header badge takes the disabled variant's colour (owner decision, 2026-11-06)
+
+The plan specified a `#1EAEFF` badge on the bell and list buttons (PRD FR-3, FR-4, FR-19, NFR-4; UX
+§3). Figma's disabled variant `451:26214` was read directly on 2026-11-06 and draws a 48×48 button
+in `#e1e7ea` with an 18×18 badge in `#d0d4d8` and white digits. Every header button ships disabled,
+so the owner asked for all of it to come from Figma ("use all from Figma"), and
+`src/components/ui-app-header/styles.ts` paints the badge `#D0D4D8` with white Inter 500 12/18
+digits. Box, radius and position are unchanged (18 px, radius 45, 34,30 in the button).
+
+Contrast, recorded as it is: white on `#D0D4D8` is about 1.5:1. The badge sits on a natively
+disabled control (an inactive component, exempt from SC 1.4.3 and 1.4.11), it is `aria-hidden`, the
+count reaches assistive technology through the button's description, and production passes no count
+today, so no page renders it. No `A11Y_EXCEPTIONS` entry is added.
+
+### DV-13: the handle rides the sidebar edge (owner decision, 2026-11-04)
 
 Figma places the 32 px tablet handle 16 px past the panel, so at 1024 it covers the first 4 px of
-the page title, which Figma starts at x 263; the owner reported that collision. The handle also took
+the page title, which Figma starts at x 263. The owner asked for this change directly: from 1024 to
+1440 the chevron sat on top of the first letter of "Налаштування". The handle also took
 its final `left` on the first frame of the width transition and waited for the panel to catch up.
-All four handles now take `right: -9px`, the overhang the desktop frames already draw, so the handle
-moves with the transition and clears the title by 3 px at every width. Desktop is unchanged (223
-and 57 from the wrapper); tablet moves 7 px left, to 215 and 53. The chevron turns over the same
-200 ms, and neither animates under `prefers-reduced-motion`.
+Three handles now take `right: -9px`, the overhang the desktop frames already draw, and the tablet
+rail takes `right: 28px`, the same 9 px past its 76 px panel, because its wrapper is 113 px wide
+with a 37 px right padding (113 − 28 − 32 = 53). So the handle moves with the transition and clears
+the title by 3 px at every width. Desktop is unchanged (223 and 57 from the wrapper); tablet moves
+7 px left, to 215 and 53 from the wrapper. The navigation adds 13 px at 1024, so those two render
+at x 228 and x 66 on the page. The chevron turns over the same 200 ms, and neither animates under
+`prefers-reduced-motion`.
+
+**Owner decision, 2026-11-06 (the page content follows the rail).** The wrapper animates its `width`
+(and its `padding-right` on tablet), and `app-layout.styles.ts` sizes that grid column as `auto`, so
+`<main>` and the page content inside it follow the same 200 ms transition on every toggle. The owner
+kept this, which amends UX §9's "nothing animates layout of `<main>` content". Under
+`prefers-reduced-motion: reduce` the transition has duration 0, so the content moves at once.
 
 The labels used to wrap inside the narrow panel while it opened, so rows started at up to 184 px
 tall and snapped back to 54. Sidebar rows now hold a 238 px `min-width` and the list clips them, so
@@ -507,22 +548,33 @@ text against every other control's box, and a chevron, which holds no text, is c
 Measured on the 3004 dev server with `getBoundingClientRect()` (text rows with a `Range` over the
 label); the rows not listed here are in the tables above.
 
-| Row                          | Width | Figma          | Measured       | Result |
-| ---------------------------- | ----- | -------------- | -------------- | ------ |
-| P-13 Settings title start    | 1440  | x 262, y 92    | x 262, y 92    | pass   |
-| P-26 Settings title start    | 1024  | x 263, y 88    | x 263, y 88    | pass   |
-| P-51 desktop rail page start | 1440  | 125, title 137 | 84, title 179  | DV-12  |
-| P-58 first sub-item text     | 1024  | x 73, y 503    | x 73, y 503    | pass   |
-| P-64 current sub-item tint   | 1440  | 12,419, 238×42 | 12,419, 238×42 | pass   |
-| P-65 current sub-item tint   | 1024  | 13,495, 238×46 | 13,495, 238×46 | pass   |
+| Row                          | Width | Figma                | Measured             | Result |
+| ---------------------------- | ----- | -------------------- | -------------------- | ------ |
+| P-13 Settings title start    | 1440  | x 262, y 92          | x 262, y 92          | pass   |
+| P-26 Settings title start    | 1024  | x 263, y 88          | x 263, y 88          | pass   |
+| P-51 desktop rail page start | 1440  | 125, title 137       | 84, title 179        | DV-12  |
+| P-58 first sub-item text     | 1024  | x 73, y 503          | x 73, y 503          | pass   |
+| P-62 tablet rail page start  | 1024  | 126,64, title 138,88 | 126,64, title 138,88 | pass   |
+| P-64 current sub-item tint   | 1440  | 12,419, 238×42       | 12,419, 238×42       | pass   |
+| P-65 current sub-item tint   | 1024  | 13,495, 238×46       | 13,495, 238×46       | pass   |
 
 P-51 departs from Figma by owner decision (DV-12 above). P-58's text box is 18 px tall in Figma and
 starts at y 503; the browser's `Range` rectangle is the 21 px glyph box centred on it, so it reads 501.5.
 The current sub-item tint is `rgba(30, 174, 255, 0.1)`, the fill of `386:26373`. P-62, the tablet
-rail content start, has no Figma value yet (UX 10.2, V-9): the tablet page follows the rail edge
-(x 89, title x 101) until it is measured.
+rail content start, was measured on 2026-11-05 (UX 10.2, V-9): Figma `377:20163` draws the content
+at x 126 and 773 wide, with the title at x 138. The tablet rail carries the 37 px gap in its own
+width, a 113 px wrapper with a 37 px right padding, so the panel and handle animate together and
+the page starts as drawn. P-62 was read in a browser at 1024 px, with the rail collapsed, the
+navigation at x 13 and 76 wide and the handle at x 66. `main` measures x 126 and 898 wide, and the
+`h1` x 138 and 874 wide. The row passes: 898 and 874 are `main` and its heading,
+while the settings card measures 749 px wide, which is Figma's 773 px content frame less its 12 px
+insets on each side.
 
 ### Visual baselines (Story 3.4)
+
+The counts below are from the first recording. On 2026-11-06, 135 of these baselines were re-recorded
+from the CI report after each diff was inspected: the sidebar and rail states (DV-13 and the sign-out
+side lines), the settings pages (DV-12 and the toast clearance) and the tablet rail page (P-62).
 
 The baselines were recorded in the pinned Playwright container against a freshly built
 `test-harness` image (`make start-prod`, then `playwright test tests/visual --update-snapshots
@@ -530,7 +582,8 @@ The baselines were recorded in the pinned Playwright container against a freshly
 
 - **Changed, 134:** exactly the protected pages. The 39 home snapshots (13 viewports, three engines)
   show the shell without badges and without home's former Settings link and Sign out button
-  (FR-15); the 93 desktop and 2 mobile settings snapshots show the shell and the left-aligned page.
+  (FR-15); the 93 desktop and 2 mobile settings snapshots show the shell and, since DV-12, the
+  centred page.
   No public page (sign-in, sign-up, password recovery, error pages) changed.
 - **Added, 88:** the eight coming-soon routes at the three Figma widths in three engines
   (`visual-comparison.coming-soon.spec.ts`, 72) and on both mobile projects
