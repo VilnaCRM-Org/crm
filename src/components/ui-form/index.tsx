@@ -64,11 +64,11 @@ function SubmitControls({
 }
 
 function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
-  return block.blocked ? (
+  return block.reason === '' ? null : (
     <UITypography id={block.reasonId} sx={styles.blockedReason}>
       {block.reason}
     </UITypography>
-  ) : null;
+  );
 }
 
 function InlineOfflineNotice({ offline, mode }: InlineOfflineNoticeProps): JSX.Element | null {
@@ -123,6 +123,7 @@ function FormBody<T extends FieldValues>({
     submitting,
     handleSubmit,
     onInvalid,
+    noticeShown: offlineNotice !== 'none',
   });
   return (
     <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>

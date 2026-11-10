@@ -55,7 +55,7 @@ export default {
       [TITLE]: LARGE_TITLE,
       [SUBTITLE]: LARGE_SUBTITLE,
       [SUBMIT]: { marginTop: '2rem' },
-      [CELL]: { '--pin-cell-width': '64px', ...LARGE_CELL },
+      [CELL]: { '--pin-cell-width': 'min(64px, calc((100cqw - 40px) / 6))', ...LARGE_CELL },
       [TOGGLE]: { marginTop: '1rem' },
     },
   },

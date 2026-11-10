@@ -28,7 +28,7 @@ export default {
     fontWeight: 600,
     fontSize: '1rem',
     lineHeight: '1.5rem',
-    color: '#0074B5',
+    color: paletteColors.primary.linkText,
     textDecoration: 'underline',
     ...focusVisibleRing,
   },

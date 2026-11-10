@@ -11,6 +11,7 @@ export default function ErrorBanner({
   error,
   action,
   focusReturn,
+  unavailable,
   unavailableReasonId,
 }: ErrorBannerProps): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLElement>();
@@ -31,7 +32,7 @@ export default function ErrorBanner({
       {action && (
         <UILinkButton
           onClick={action.onClick}
-          unavailable={unavailableReasonId !== undefined}
+          unavailable={unavailable}
           describedBy={unavailableReasonId}
         >
           {action.label}

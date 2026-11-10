@@ -5,6 +5,7 @@ import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
+import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import ROUTE_PATHS from '@/routes/route-paths';
 import TwoFactorFormSection from '@auth/routes/two-factor/two-factor-form-section';
@@ -140,6 +141,34 @@ describe('TwoFactorFormSection', () => {
       recoveryCodesRemaining: 2,
     });
     expect(challengeSettled).toHaveBeenCalledTimes(1);
+  });
+
+  it('never auto-submits six digits offline, and submits once online again', async () => {
+    completeChallenge.mockResolvedValue({
+      kind: 'completed',
+      token: buildToken(),
+      recoveryCodesRemaining: null,
+    });
+    mount();
+    act(() => useConnectivityStore.setState({ online: false }));
+
+    await enter('123456');
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+
+    expect(completeChallenge).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Ви офлайн. Надсилання недоступне, доки з'єднання не відновиться.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeDisabled();
+
+    act(() => useConnectivityStore.setState({ online: true }));
+    await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
+
+    await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(1));
+    expect(completeChallenge).toHaveBeenCalledWith(
+      { twoFactorCode: '123456', pendingSessionId },
+      expect.any(AbortSignal)
+    );
   });
 
   it('empties the cells and explains a wrong code, keeping the session', async () => {

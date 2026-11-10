@@ -52,6 +52,8 @@ describe('useRecoveryCodesBanner', () => {
     mockLoad.mockResolvedValue({ default: NoticeStub });
   });
 
+  afterEach(() => jest.useRealTimers());
+
   it('renders nothing and never requests the notice chunk without a reported count', () => {
     mount(null);
 
@@ -72,6 +74,23 @@ describe('useRecoveryCodesBanner', () => {
 
     const banner = screen.getByRole('region', { name: 'banner' });
     expect(within(banner).getByRole('status')).toBeInTheDocument();
+  });
+
+  it('reserves only the notice height, never the half-screen route loader, while loading', () => {
+    jest.useFakeTimers();
+    mockLoad.mockReturnValue(new Promise(() => undefined));
+    mount(1);
+
+    act(() => {
+      jest.advanceTimersByTime(150);
+    });
+
+    const banner = screen.getByRole('region', { name: 'banner' });
+    const heights = within(banner)
+      .getAllByRole('generic')
+      .map((element) => window.getComputedStyle(element).minHeight);
+    expect(heights).toContain('5.125rem');
+    expect(heights).not.toContain('50vh');
   });
 
   it('clears the count when the notice is dismissed', async () => {

@@ -165,14 +165,15 @@ describe('SignInSubmitHandler', () => {
       aborted: true,
     };
     const s = stubs({ ok: false, error: aborted });
-    useAuthStore.setState({ email: 'kept@example.com' });
+    const kept = buildEmail();
+    useAuthStore.setState({ email: kept });
 
     await runWith(s);
 
     expect(useAuthStore.getState()).toMatchObject({
       loginLoading: false,
       loginError: null,
-      email: 'kept@example.com',
+      email: kept,
     });
     expect(s.resolve).toHaveBeenCalledTimes(1);
     expect(s.loginSettled).not.toHaveBeenCalled();

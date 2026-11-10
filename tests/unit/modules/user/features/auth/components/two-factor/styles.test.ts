@@ -27,7 +27,7 @@ describe('two-factor challenge styles', () => {
       recoveryField: { flexDirection: 'column', marginBottom: '1rem' },
       recoveryInput: {
         '& .MuiOutlinedInput-notchedOutline': { borderColor: '#80878A' },
-        '& .MuiFormHelperText-root': { marginLeft: 0, color: '#57595B' },
+        '& .MuiFormHelperText-root': { marginLeft: 0, color: '#404142' },
         '& .Mui-error ~ .MuiFormHelperText-root, & .MuiFormHelperText-root.Mui-error': {
           color: '#D63333',
         },

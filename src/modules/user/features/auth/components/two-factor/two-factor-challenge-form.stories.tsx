@@ -22,7 +22,7 @@ const meta: Meta<typeof TwoFactorChallengeForm> = {
   tags: ['autodocs'],
   decorators: [
     (Story): JSX.Element => (
-      <AuthCard>
+      <AuthCard variant="challenge">
         <Story />
       </AuthCard>
     ),

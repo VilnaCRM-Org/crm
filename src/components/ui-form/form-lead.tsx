@@ -46,6 +46,7 @@ export default function FormLead({
         error={lead.error}
         action={lead.errorAction}
         focusReturn={focusReturn}
+        unavailable={!offline.online}
         unavailableReasonId={offline.online ? undefined : offline.noticeId}
       />
       {liveOfflineNotice && (

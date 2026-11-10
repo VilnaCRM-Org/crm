@@ -49,3 +49,20 @@ export const WithAction: Story = {
     },
   },
 };
+
+export const ActionUnavailable: Story = {
+  args: {
+    action: { label: 'Спробувати ще раз', onClick: noop },
+    unavailable: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`unavailable` keeps the action in the Tab order but makes it `aria-disabled` and ' +
+          'ignores clicks; UIForm sets it while offline and passes the offline notice id as ' +
+          '`unavailableReasonId` whenever the form renders a notice.',
+      },
+    },
+  },
+};

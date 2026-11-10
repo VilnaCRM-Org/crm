@@ -442,25 +442,35 @@ two-factor change (#331), not by the bump, behind `src/components/ui-pin-input`
 (`UIPinInput`), which takes `control`, `name` and `rules` like `UIFormInputField` and renders the
 toolkit component through react-hook-form's `Controller`. The group is named by the caller's
 `label` and each cell by the caller's `cellLabel` ("Цифра N з 6" / "Digit N of 6"), so the seam
-holds no copy; the toolkit adds no live region, and neither does the seam. The seam owns these
-overrides, merged through the root `sx` because the toolkit merges `sx` there only:
+holds no copy; the toolkit adds no live region, and neither does the seam. The seam's overrides
+are merged through the root `sx`, because the toolkit merges `sx` there only.
 
-- **Focus ring.** The compiled `:focus-visible` rule is `outline: none` plus a 15 % shadow. The
-  seam paints `focusVisibleRing` (`src/styles/focus-ring.ts`: `2px solid #404142`, offset 2 px,
-  10.23:1 on white) under `&& .ui-pin-input__cell:focus-visible:not([aria-disabled="true"])`,
-  which outranks the compiled selector.
-- **Border.** The toolkit's `#E1E7EA` rest border is 1.25:1 on white. The seam uses
-  `paletteColors.border.strong` (`#80878A`, 3.65:1 on white, 3.53:1 on `#FBFBFB`), hover
-  `#57595B` (7.03:1), error `#DC3939` and digit `#1A1C1E` (17.09:1).
-- **Gap and cell size.** Below crm `md` (a media query on `breakpointsTheme.breakpoints.values.md`,
-  never an `sx` breakpoint key, which would resolve against MUI's 600 px) the cells are
-  `flex: 1 1 0`, `min-width: 0`, at most 49 px wide and 64 px tall with a 4 px gap, as the mobile
-  frame 72:4918 draws. From `md` they are 64 px wide, 86 px tall and shrinkable with an 8 px gap
-  (frame 72:4846; the toolkit's 12 px gap is replaced). The tablet frame draws about 86 × 130
-  cells; the seam keeps 64 × 86, a deviation recorded for Follow-up 5.4.
-- **Hidden placeholder.** The compiled cell sets `placeholder="0"` from a constant and the props
-  have no placeholder, so the seam hides the digit with a `transparent` `::placeholder` colour.
-  The attribute stays; removing it is a toolkit change recorded for Follow-up 5.7.
+The cells take the Figma "2FA item" states on the owner's decision of 2026-11-04, which replaced
+the NFR-6 contrast overrides the plan proposed; the resulting SC 1.4.11 gaps are recorded in
+[the acceptance standard](accessibility/acceptance-standard.md#current-exceptions), "The two-factor
+code cells take the Figma states". The seam (`src/components/ui-pin-input/styles.ts`) and the
+challenge card (`src/modules/user/features/auth/components/auth-card/styles.ts`) ship the
+following:
+
+- **Focus.** No outline: a focused enabled cell sets `outline: none` and turns its digit
+  `customColors.text.dark` (`#1A1C1E`), so the toolkit's compiled 15 % shadow and the
+  `paletteColors.primary.main` caret are the only focus marks. The seam paints no ring.
+- **Border.** The rest border is `paletteColors.background.subtle` (`#E1E7EA`, as Figma draws it), hover
+  is `customColors.checkbox.main` (`#D0D4D8`), and an invalid cell takes `paletteColors.error.main`
+  (`#DC3939`); the error helper text is `paletteColors.error.text`. The resting digit is
+  `customColors.text.muted` (`#57595B`).
+- **Placeholder.** The toolkit's `placeholder="0"` stays visible, painted in
+  `customColors.checkbox.main` (`#D0D4D8`) at full opacity as Figma draws it. While an empty cell is
+  focused the placeholder's padding is recomputed so the caret and the "0" stay centred.
+- **Gap and cell size.** Media queries on `breakpointsTheme.breakpoints.values.md` and `xl`, never
+  an `sx` breakpoint key (which would resolve against MUI's 600 px). The group is an inline-size
+  container and the cells are `flex: 0 0 auto`. Below `md` the seam makes them
+  `min(49px, (100cqw - 20px) / 6)` wide and 64 px tall with a 4 px gap, as the mobile frame 72:4918
+  draws; from `md`, `min(64px, (100cqw - 40px) / 6)` wide and 86 px tall with an 8 px gap (frame
+  72:4846; the toolkit's 12 px gap is replaced). The challenge card sets its own: radius 8 and a
+  600 18 px digit below `md`; from `md` to just under `xl` the cells fill the content box
+  (`(100cqw - 40px) / 6`) at 130 px (`8.125rem`) tall, the height the tablet frame 72:4882 draws;
+  from `xl` they are 64 px wide; from `md` up, radius 12 and a 700 22 px digit.
 - **Focus helper.** The toolkit's forwarded ref lands on the group, so the seam hands
   react-hook-form a target whose `focus()` focuses the first `input` inside the group.
 

@@ -170,7 +170,7 @@ describe('useChallengeSubmit', () => {
   });
 
   it.each<ChallengeResult>([
-    completed('t'),
+    completed(buildToken()),
     failed('invalid_code'),
     failed('expired_session'),
     failed('locked'),

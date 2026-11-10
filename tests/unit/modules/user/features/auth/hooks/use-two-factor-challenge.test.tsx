@@ -9,6 +9,7 @@ import type {
   ChallengeSubmitHookDeps,
   TwoFactorChallengeProps,
 } from '@auth/types/two-factor/challenge-view';
+import { buildToken } from '@tests/builders';
 
 const mockSubmit = jest.fn();
 const mockDeps = jest.fn();
@@ -229,7 +230,7 @@ describe('useTwoFactorChallenge', () => {
   it.each([
     [failed('expired_session')],
     [failed('locked')],
-    [{ kind: 'completed', token: 't', recoveryCodesRemaining: null } as ChallengeResult],
+    [{ kind: 'completed', token: buildToken(), recoveryCodesRemaining: null } as ChallengeResult],
     [null],
   ])('leaves the view alone for %j', async (result) => {
     const view = setUp();

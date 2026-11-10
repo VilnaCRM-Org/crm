@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { createRef, type JSX } from 'react';
 
 import type { UIFormProps } from '@/components/types/ui-form';
@@ -34,6 +34,20 @@ const defaultForm = (): JSX.Element => (
     submittingLabel="Submitting…"
     title="My Title"
     titleComponent="h1"
+  >
+    <input name="name" aria-label="name" />
+  </UIForm>
+);
+
+const noneForm = (onSubmit: jest.Mock, submitRef = createRef<HTMLButtonElement>()): JSX.Element => (
+  <UIForm<Values>
+    defaultValues={DEFAULTS}
+    onSubmit={onSubmit}
+    submitRef={submitRef}
+    submitLabel="Submit"
+    submittingLabel="Submitting…"
+    title={null}
+    offlineNotice="none"
   >
     <input name="name" aria-label="name" />
   </UIForm>
@@ -126,35 +140,53 @@ describe('UIForm offlineNotice', () => {
     expect(screen.getAllByRole('status')).toHaveLength(1);
   });
 
-  it('none renders no notice, online or offline, and still disables the submit', () => {
-    renderWithI18n(form('none'));
+  it('none renders no notice, online or offline, and refuses the submit while offline', () => {
+    const onSubmit = jest.fn();
+    renderWithI18n(noneForm(onSubmit));
     const button = screen.getByRole('button', { name: 'Submit' });
 
     expect(screen.getAllByRole('status')).toHaveLength(1);
     goOffline();
+    fireEvent.click(button);
 
     expect(screen.queryByText(OFFLINE)).not.toBeInTheDocument();
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it('none survives the focused submit becoming disabled with nowhere to park focus', () => {
-    const submitRef = createRef<HTMLButtonElement>();
-    renderWithI18n(
-      <UIForm<Values>
-        defaultValues={DEFAULTS}
-        onSubmit={jest.fn()}
-        submitRef={submitRef}
-        submitLabel="Submit"
-        submittingLabel="Submitting…"
-        title={null}
-        offlineNotice="none"
-      >
-        <input name="name" aria-label="name" />
-      </UIForm>
-    );
-    act(() => submitRef.current?.focus());
+  it('none points the submit description at no id, online or offline', () => {
+    renderWithI18n(noneForm(jest.fn()));
+    const button = screen.getByRole('button', { name: 'Submit' });
 
-    expect(() => goOffline()).not.toThrow();
-    expect(submitRef.current).toBeDisabled();
+    expect(button).not.toHaveAttribute('aria-describedby');
+    goOffline();
+
+    expect(button).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('none keeps keyboard focus on the submit when it becomes unavailable offline', async () => {
+    const submitRef = createRef<HTMLButtonElement>();
+    renderWithI18n(noneForm(jest.fn(), submitRef));
+    await act(async () => submitRef.current?.focus());
+
+    goOffline();
+    await act(async () => undefined);
+
+    expect(submitRef.current).toBeEnabled();
+    expect(submitRef.current).toHaveAttribute('aria-disabled', 'true');
+    expect(submitRef.current).toHaveFocus();
+  });
+
+  it('none submits again once the connection returns', async () => {
+    const onSubmit = jest.fn();
+    renderWithI18n(noneForm(onSubmit));
+    const button = screen.getByRole('button', { name: 'Submit' });
+    goOffline();
+
+    act(() => useConnectivityStore.setState({ online: true }));
+    fireEvent.click(button);
+
+    expect(button).not.toHaveAttribute('aria-disabled');
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
   });
 });

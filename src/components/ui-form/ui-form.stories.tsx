@@ -183,6 +183,60 @@ export const Offline: Story = {
   },
 };
 
+const goOfflineForStory = (): (() => void) => {
+  useConnectivityStore.setState({ online: false });
+  return (): void => useConnectivityStore.setState({ online: true });
+};
+
+export const OfflineNoticeInline: Story = {
+  args: { offlineNotice: 'inline' },
+  beforeEach: goOfflineForStory,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`offlineNotice: "inline"` renders the offline notice as plain text just before the ' +
+          'submit, outside any live region, for a form that already announces its own status. ' +
+          'The submit is disabled and described by the notice; a focused submit parks focus on ' +
+          'the notice.',
+      },
+    },
+  },
+};
+
+export const OfflineNoticeNone: Story = {
+  args: { offlineNotice: 'none' },
+  beforeEach: goOfflineForStory,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`offlineNotice: "none"` renders no notice at all, for a form whose page shows the ' +
+          'connection state elsewhere. Offline, the submit stays focusable and is ' +
+          '`aria-disabled` instead of natively disabled, so a focused submit keeps focus; it ' +
+          'sends nothing and points `aria-describedby` at no notice.',
+      },
+    },
+  },
+};
+
+export const ErrorActionOffline: Story = {
+  args: {
+    error: 'Не вдалося надіслати запит. Перевірте з’єднання та спробуйте ще раз.',
+    errorAction: { label: 'Спробувати ще раз', onClick: (): undefined => undefined },
+  },
+  beforeEach: goOfflineForStory,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'While offline the banner action is `aria-disabled`, ignores clicks, and is described ' +
+          'by the offline notice, so it is announced as unavailable with the reason.',
+      },
+    },
+  },
+};
+
 export const WithNotice: Story = {
   args: { notice: <DemoNotice /> },
   parameters: {

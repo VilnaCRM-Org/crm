@@ -19,8 +19,8 @@ const HEADER: FormHeaderProps = {
 
 const RETRY = { label: 'Retry', onClick: jest.fn() };
 
-function offlineOf(online: boolean): OfflineSubmit {
-  return { online, noticeId: NOTICE_ID, noticeRef: createRef(), submitRef: createRef() };
+function offlineOf(online: boolean, noticeId: string | undefined): OfflineSubmit {
+  return { online, noticeId, noticeRef: createRef(), submitRef: createRef() };
 }
 
 interface LeadOverrides {
@@ -28,6 +28,7 @@ interface LeadOverrides {
   readonly lead?: Partial<FormLeadProps>;
   readonly online?: boolean;
   readonly live?: boolean;
+  readonly withNotice?: boolean;
 }
 
 function renderLead({
@@ -35,12 +36,13 @@ function renderLead({
   lead = {},
   online = true,
   live = true,
+  withNotice = true,
 }: LeadOverrides = {}): void {
   render(
     <FormLead
       header={{ ...HEADER, ...header }}
       lead={{ error: null, ...lead }}
-      offline={offlineOf(online)}
+      offline={offlineOf(online, withNotice ? NOTICE_ID : undefined)}
       liveOfflineNotice={live}
     />
   );
@@ -140,9 +142,30 @@ describe('FormLead', () => {
     );
   });
 
-  it('leaves the banner action undescribed while online', () => {
+  it('leaves the banner action undescribed and available while online', () => {
     renderLead({ lead: { error: ERROR_TEXT, errorAction: RETRY } });
 
-    expect(screen.getByRole('button', { name: 'Retry' })).not.toHaveAttribute('aria-describedby');
+    const action = screen.getByRole('button', { name: 'Retry' });
+    expect(action).not.toHaveAttribute('aria-describedby');
+    expect(action).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('marks the banner action unavailable while offline', () => {
+    renderLead({ online: false, lead: { error: ERROR_TEXT, errorAction: RETRY } });
+
+    expect(screen.getByRole('button', { name: 'Retry' })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('marks the action unavailable but points at no id when the form renders no notice', () => {
+    renderLead({
+      online: false,
+      live: false,
+      withNotice: false,
+      lead: { error: ERROR_TEXT, errorAction: RETRY },
+    });
+
+    const action = screen.getByRole('button', { name: 'Retry' });
+    expect(action).toHaveAttribute('aria-disabled', 'true');
+    expect(action).not.toHaveAttribute('aria-describedby');
   });
 });

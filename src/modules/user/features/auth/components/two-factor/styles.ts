@@ -28,7 +28,7 @@ export default {
     },
     '& .MuiFormHelperText-root': {
       marginLeft: 0,
-      color: customColors.text.muted,
+      color: customColors.text.primary,
     },
     '& .Mui-error ~ .MuiFormHelperText-root, & .MuiFormHelperText-root.Mui-error': {
       color: paletteColors.error.text,

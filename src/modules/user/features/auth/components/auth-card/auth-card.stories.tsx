@@ -18,7 +18,7 @@ const meta: Meta<typeof AuthCard> = {
     children: { control: false },
     after: { control: false },
     page: { control: 'select', options: [undefined, 'signIn', 'signUp'] },
-    variant: { control: 'select', options: [undefined, 'recovery'] },
+    variant: { control: 'select', options: [undefined, 'recovery', 'challenge'] },
   },
   parameters: {
     docs: {
@@ -42,5 +42,16 @@ export const Default: Story = {};
 export const WithContentAfterTheCard: Story = {
   args: {
     after: <UITypography>Content rendered under the card</UITypography>,
+  },
+};
+
+export const Challenge: Story = {
+  args: {
+    variant: 'challenge',
+    children: (
+      <UITypography component="h1" variant="h4">
+        Двофакторна автентифікація
+      </UITypography>
+    ),
   },
 };

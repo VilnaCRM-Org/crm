@@ -68,7 +68,10 @@ describe('auth card styles', () => {
         '& form > h1': largeTitle,
         '& form > h1 + p': largeSubtitle,
         '& form > button[type="submit"]': { marginTop: '2rem' },
-        '&& .ui-pin-input__cell': { '--pin-cell-width': '64px', ...largeCell },
+        '&& .ui-pin-input__cell': {
+          '--pin-cell-width': 'min(64px, calc((100cqw - 40px) / 6))',
+          ...largeCell,
+        },
         '&& [data-challenge-toggle]': { marginTop: '1rem' },
       },
     });

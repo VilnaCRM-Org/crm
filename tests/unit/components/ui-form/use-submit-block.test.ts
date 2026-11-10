@@ -10,10 +10,12 @@ const NOTICE_ID = 'offline-notice';
 const run = (
   reason: string | undefined,
   nativelyDisabled: boolean,
-  onSubmit = jest.fn()
+  onSubmit = jest.fn(),
+  held = false
 ): SubmitBlock =>
-  renderHook(() => useSubmitBlock({ reason, nativelyDisabled, noticeId: NOTICE_ID, onSubmit }))
-    .result.current;
+  renderHook(() =>
+    useSubmitBlock({ reason, nativelyDisabled, held, noticeId: NOTICE_ID, onSubmit })
+  ).result.current;
 
 const submitEvent = (): FormEvent<HTMLFormElement> =>
   ({ preventDefault: jest.fn() }) as unknown as FormEvent<HTMLFormElement>;
@@ -60,7 +62,53 @@ describe('useSubmitBlock', () => {
     const block = run(REASON, true);
 
     expect(block.blocked).toBe(false);
+    expect(block.reason).toBe('');
     expect(block.describedBy).toBe(NOTICE_ID);
+  });
+
+  it('blocks a held submit without a reason, describing it by the notice only', () => {
+    const onSubmit = jest.fn();
+    const event = submitEvent();
+    const block = run(undefined, false, onSubmit, true);
+
+    block.onSubmit(event);
+
+    expect(block.blocked).toBe(true);
+    expect(block.reason).toBe('');
+    expect(block.describedBy).toBe(NOTICE_ID);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('lets a native disabled state win over a hold', () => {
+    expect(run(undefined, true, jest.fn(), true).blocked).toBe(false);
+  });
+
+  it('describes the submit by nothing when no notice renders and nothing blocks it', () => {
+    const block = renderHook(() =>
+      useSubmitBlock({
+        nativelyDisabled: false,
+        held: false,
+        noticeId: undefined,
+        onSubmit: jest.fn(),
+      })
+    ).result.current;
+
+    expect(block.describedBy).toBeUndefined();
+  });
+
+  it('describes the submit by the reason alone when no notice renders', () => {
+    const block = renderHook(() =>
+      useSubmitBlock({
+        reason: REASON,
+        nativelyDisabled: false,
+        held: false,
+        noticeId: undefined,
+        onSubmit: jest.fn(),
+      })
+    ).result.current;
+
+    expect(block.describedBy).toBe(block.reasonId);
   });
 
   it.each([

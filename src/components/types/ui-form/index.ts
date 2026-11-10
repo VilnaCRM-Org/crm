@@ -65,7 +65,7 @@ export interface SubmitControlsProps {
   isSubmitDisabled: boolean;
   blocked: boolean;
   submitLabel: string;
-  describedBy: string;
+  describedBy: string | undefined;
   buttonRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
   spacing?: SubmitSpacing | undefined;
   submitSx?: SystemStyleObject<Theme> | undefined;
@@ -82,6 +82,7 @@ export interface ErrorBannerProps {
   error?: string | null;
   action?: UIFormErrorAction | undefined;
   focusReturn: FocusReturnHandlers;
+  unavailable?: boolean | undefined;
   unavailableReasonId?: string | undefined;
 }
 
@@ -101,7 +102,7 @@ export interface FormHeaderProps {
 
 export interface OfflineSubmit {
   online: boolean;
-  noticeId: string;
+  noticeId: string | undefined;
   noticeRef: RefObject<HTMLSpanElement | null>;
   submitRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 }
@@ -149,7 +150,8 @@ export interface FormSubmitProps {
 export interface SubmitBlockOptions {
   reason?: string | undefined;
   nativelyDisabled: boolean;
-  noticeId: string;
+  held: boolean;
+  noticeId: string | undefined;
   onSubmit: FormEventHandler<HTMLFormElement>;
 }
 
@@ -157,7 +159,7 @@ export interface SubmitBlock {
   blocked: boolean;
   reason: string;
   reasonId: string;
-  describedBy: string;
+  describedBy: string | undefined;
   onSubmit: FormEventHandler<HTMLFormElement>;
 }
 
@@ -166,6 +168,7 @@ export interface FormSubmissionOptions<T extends FieldValues> {
   submitting: boolean;
   handleSubmit: SubmitHandler<T>;
   onInvalid?: SubmitErrorHandler<T> | undefined;
+  noticeShown: boolean;
 }
 
 export interface FormSubmission {

@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import useChallengeView, { fieldErrorOf } from '@auth/hooks/use-challenge-view';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import type { ChallengeAction } from '@auth/types/two-factor/challenge-view';
+import { buildToken } from '@tests/builders';
 
 const failed = (reason: ChallengeFailureReason): ChallengeResult => ({ kind: 'failed', reason });
 
@@ -122,7 +123,7 @@ describe('useChallengeView', () => {
   it.each<ChallengeResult | null>([
     failed('expired_session'),
     failed('locked'),
-    { kind: 'completed', token: 't', recoveryCodesRemaining: 1 },
+    { kind: 'completed', token: buildToken(), recoveryCodesRemaining: 1 },
     null,
   ])('ignores the settled result %j', (settled) => {
     const { result } = setUp();

@@ -540,13 +540,14 @@ describe('ProfileSectionForm', () => {
       act(() => useConnectivityStore.setState({ online: false }));
     };
 
-    it('renders no notice in a clean name form, even offline', () => {
+    it('renders no notice in a clean name form, even offline, and holds its Save', () => {
       render(sectionForm('fullName'), { wrapper });
 
       goOffline();
 
       expect(screen.queryByText(OFFLINE)).not.toBeInTheDocument();
-      expect(hiddenButton(SAVE_NAME)).toBeDisabled();
+      expect(hiddenButton(SAVE_NAME)).toHaveAttribute('aria-disabled', 'true');
+      expect(hiddenButton(SAVE_NAME)).not.toHaveAttribute('aria-describedby');
     });
 
     it('renders the notice before the Save of a revealed form, in no live region', async () => {

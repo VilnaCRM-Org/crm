@@ -16,6 +16,7 @@ const meta: Meta<typeof FormLead> = {
       titleComponent: 'h1',
     },
     lead: { error: null },
+    liveOfflineNotice: true,
     offline: {
       online: true,
       noticeId: 'form-lead-offline-notice',

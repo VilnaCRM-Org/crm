@@ -5,7 +5,7 @@ import { type Location, MemoryRouter, useLocation, useNavigate } from 'react-rou
 import ROUTE_PATHS from '@/routes/route-paths';
 import useTwoFactorRedirect from '@auth/hooks/use-two-factor-redirect';
 import useAuthStore from '@auth/stores/use-auth-store';
-import { buildPendingSessionId } from '@tests/builders';
+import { buildEmail, buildPendingSessionId } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 interface WrapperProps {
@@ -102,7 +102,7 @@ describe('useTwoFactorRedirect', () => {
     act(() => useAuthStore.setState({ pendingSessionId }));
     const key = result.current.key;
 
-    act(() => useAuthStore.setState({ email: 'someone@example.com' }));
+    act(() => useAuthStore.setState({ email: buildEmail() }));
 
     expect(result.current.key).toBe(key);
   });

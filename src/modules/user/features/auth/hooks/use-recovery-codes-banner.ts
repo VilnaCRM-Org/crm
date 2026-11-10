@@ -39,7 +39,7 @@ export default function useRecoveryCodesBanner(): ReactNode {
   if (remaining === null || onSettings) return undefined;
   return createElement(
     Suspense,
-    { fallback: createElement(RouteFallback) },
+    { fallback: createElement(RouteFallback, { minHeight: '5.125rem' }) },
     createElement(Notice, { count: remaining, onDismiss: dismiss })
   );
 }

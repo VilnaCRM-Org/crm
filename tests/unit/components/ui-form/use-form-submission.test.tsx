@@ -27,11 +27,13 @@ function Provider({ children }: { children: ReactNode }): JSX.Element {
 
 const run = (
   submit: FormSubmitProps,
-  submitting = false
+  submitting = false,
+  noticeShown = true
 ): { result: { current: FormSubmission } } =>
-  renderHook(() => useFormSubmission<Values>({ submit, submitting, handleSubmit: jest.fn() }), {
-    wrapper: Provider,
-  });
+  renderHook(
+    () => useFormSubmission<Values>({ submit, submitting, handleSubmit: jest.fn(), noticeShown }),
+    { wrapper: Provider }
+  );
 
 describe('useFormSubmission', () => {
   beforeEach(() => resetClientStores());
@@ -73,6 +75,31 @@ describe('useFormSubmission', () => {
 
     expect(result.current.disabled).toBe(true);
     expect(result.current.offline.online).toBe(false);
+    expect(result.current.block.blocked).toBe(false);
+  });
+
+  it('names the notice id while a notice renders', () => {
+    const { result } = run(submitProps());
+
+    expect(result.current.offline.noticeId).toEqual(expect.any(String));
+    expect(result.current.block.describedBy).toBe(result.current.offline.noticeId);
+  });
+
+  it('names no notice id and holds the submit focusable offline when no notice renders', () => {
+    const { result } = run(submitProps(), false, false);
+
+    expect(result.current.offline.noticeId).toBeUndefined();
+    expect(result.current.block.describedBy).toBeUndefined();
+    act(() => useConnectivityStore.setState({ online: false }));
+
+    expect(result.current.disabled).toBe(false);
+    expect(result.current.block.blocked).toBe(true);
+  });
+
+  it('holds nothing online when no notice renders', () => {
+    const { result } = run(submitProps(), false, false);
+
+    expect(result.current.disabled).toBe(false);
     expect(result.current.block.blocked).toBe(false);
   });
 });

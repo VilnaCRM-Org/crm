@@ -6,7 +6,7 @@ import type { ObservabilityService } from '@/services/types/observability/observ
 import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 import type { AuthError } from '@auth/types/auth-error';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
-import { buildEmail, buildPassword, buildPendingSessionId } from '@tests/builders';
+import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const buildRecorder = (): SecurityEventRecorder => ({
@@ -41,7 +41,7 @@ describe('AuthSecuritySignals', () => {
 
     new AuthSecuritySignals(recorder, observability).loginSettled({
       ok: true,
-      value: { kind: 'session', email: buildEmail(), token: 'session-token' },
+      value: { kind: 'session', email: buildEmail(), token: buildToken() },
     });
 
     expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
