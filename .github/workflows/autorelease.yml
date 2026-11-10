@@ -75,7 +75,7 @@ jobs:
       # GitHub's maintained equivalent and a drop-in for this usage.
       - name: Generate token
         id: generate_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           # `app-id`, not the newer `client-id`: the org secret holds the App ID. Switching
           # inputs would need a new secret carrying the App's Client ID.
@@ -94,7 +94,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
 
@@ -208,7 +208,7 @@ jobs:
       # is public, so nothing is signed that is not already published under the tag.
       - name: Install cosign
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         with:
           cosign-release: 'v3.1.3'
 
