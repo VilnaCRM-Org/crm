@@ -1,4 +1,4 @@
-import { act, renderHook, type RenderHookResult } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { createRef } from 'react';
 
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
