@@ -188,14 +188,19 @@ describe('settings page save outcomes (page)', () => {
   it('sends one request when Save is activated twice before the answer', async () => {
     await mount();
     await editName();
+    let release = (): void => undefined;
     const answered = answerProfileOperation('UpdateUser', {
-      delayMs: 30,
+      until: new Promise<void>((resolve) => {
+        release = resolve;
+      }),
       respond: () => saved({ initials: NEW_NAME }),
     });
     await typeInto(NAME_PASSWORD, 'abc');
 
     await userEvent.click(saveButton());
     fireEvent.click(saveButton());
+    await waitFor(() => expect(answered).toHaveLength(1));
+    release();
 
     await waitFor(() => expect(toastTexts()).toHaveLength(1));
     expect(answered).toHaveLength(1);

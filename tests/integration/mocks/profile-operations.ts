@@ -12,6 +12,7 @@ export interface AnsweredProfileRequest {
 export interface ProfileAnswer {
   readonly respond: () => Response;
   readonly delayMs?: number;
+  readonly until?: Promise<void>;
 }
 
 export const answerProfileOperation = (
@@ -25,6 +26,7 @@ export const answerProfileOperation = (
     register(operation, async ({ variables, request }) => {
       answered.push({ variables, authorization: request.headers.get('authorization') });
       if (answer.delayMs) await delay(answer.delayMs);
+      await answer.until;
       return answer.respond();
     })
   );
