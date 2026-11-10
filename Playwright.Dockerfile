@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.63.0-jammy@sha256:167d0506cfbe3c294fb214b2d11737326eeee028aa611fa1ba538e5057675847
+FROM mcr.microsoft.com/playwright:v1.65.0-jammy@sha256:5a8620d70618963ec6628dd77cc25ec6a4b232e26c4a41241a8c1def04e2dc04
 
 ARG BUN_VERSION=1.3.5
 ARG UBUNTU_SNAPSHOT=20260925T000000Z
