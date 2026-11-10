@@ -90,6 +90,7 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
   test('Enter on Підтвердити retries a kept code and Space does too', async ({ page }) => {
     const challenge = await stubChallenge(page, ['unavailable', 'unavailable', 'completed']);
     await signInToChallenge(page, credentials);
+    await expect(codeCellsOf(page).first()).toBeFocused();
     await page.keyboard.type(CODE);
     await expect.poll(() => challenge.count()).toBe(1);
 
