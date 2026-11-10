@@ -18,6 +18,7 @@ const meta: Meta<typeof ComingSoonCard> = {
           'The coming-soon card: the section name as the page `h1`, the shared message and the ' +
           'home link, on the error-page card styles. The page picks the heading from the route.',
       },
+      story: { inline: false },
     },
     layout: 'fullscreen',
   },

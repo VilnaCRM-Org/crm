@@ -452,7 +452,6 @@ Playwright container and run in CI only.
   the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
   instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
   sub-items do not overlap.
-- **Three grey glyphs under 3:1** were a gap until 2026-11-09; they now reach 3:1, see DV-15.
 
 ### DV-15: the icon-only shell glyphs reach 3:1 (owner decision, 2026-11-09)
 

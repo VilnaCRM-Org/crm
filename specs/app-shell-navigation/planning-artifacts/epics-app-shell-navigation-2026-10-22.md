@@ -812,6 +812,8 @@ NFR-14, NFR-18, NFR-19.
 > preview) run in this story; AV-2 and AV-5 come from the CI bundle report of the first
 > `main`-targeted run and are recorded here when it exists.
 
+**Files (amended 2026-11-09):** also `src/components/ui-app-shell/use-sticky-focus-clearance.ts` (NEW, wired in `ui-app-shell/index.tsx`), its test `tests/unit/components/ui-app-shell/use-sticky-focus-clearance.test.tsx` (NEW), and `HEADER_CLEARANCE` in `src/components/layouts/app-layout.styles.ts` (CHANGED), for WCAG 2.2 SC 2.4.11 (PRD NFR-2).
+
 **Files:** `src/components/layouts/app-layout.tsx` (CHANGED: grid frame, `lazy(appShellLoader)` in
 Suspense with the two placeholders, forwards `signOut` and `userMenu`, calls the injected
 `onShellFailure` prop on the second shell failure and imports nothing from `src/services/`),
@@ -965,7 +967,7 @@ for a focused spec; the full lanes are CI-only; `retries: 0`.
 
 **Acceptance Criteria:**
 
-- Amended 2026-11-09 (PRD NFR-2, WCAG 2.2 SC 2.4.11): given the sticky header and sidebar at 1440 × 400 and 1000 × 300, when focus moves by Tab through the sidebar rows, the home link in `<main>` and the footer links, then no focused control is entirely hidden (`tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`, `tests/unit/components/ui-app-shell/use-sticky-focus-clearance.test.tsx`).
+- Amended 2026-11-09 (PRD NFR-2, WCAG 2.2 SC 2.4.11): given the sticky header and sidebar, when focus moves by Tab or Shift+Tab to any control in `<main>`, the sidebar or the footer, then the focused control is not entirely hidden. At 1440 × 400 the walk goes forward with Tab and back with Shift+Tab over the sidebar rows (and the sub-items on a Settings route), the home link in `<main>` and the footer links. At 1000 × 300, below the 1024 px sidebar breakpoint, Shift+Tab from the footer keeps the coming-soon home link below the header (`tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`, `tests/unit/components/ui-app-shell/use-sticky-focus-clearance.test.tsx`).
 - Given `/` at 1440, when Settings is activated in the sidebar, then `/settings` renders with `<main>` focused and the Settings link has `aria-current="page"`; on `/` no navigation element has it (FR-8 P, FR-11 P, N; SM-2).
 - Given `/` at 1440 and 1024, when Settings is chosen from the chip's menu, then `/settings` renders with `<main>` focused (FR-6.3 P, SM-2).
 - Given `/` and `/settings`, when Sign out is activated in the sidebar and, separately, in the chip's menu, then each lands on `/sign-in` with `<main>` focused (FR-10 P, FR-6.4 P, SM-2).

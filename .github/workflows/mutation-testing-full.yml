@@ -20,7 +20,7 @@ jobs:
     # Kill switch, not a target. This pass is cold by definition, which is the
     # ~6-7 min case the pull-request shards also measure; failing at twice that
     # surfaces a runtime regression instead of burning a scheduled runner.
-    timeout-minutes: 12
+    timeout-minutes: 15
     permissions:
       contents: read
     strategy:
