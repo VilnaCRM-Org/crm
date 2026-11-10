@@ -139,6 +139,10 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free PII scrubbing leaf used by the Sentry beforeSend hook.',
   },
   {
+    path: 'src/services/observability/pii-text-scrubber.ts',
+    reason: 'Container-free free-text half of that scrubber; builds its two-factor patterns.',
+  },
+  {
     path: 'src/services/observability/web-vitals-reporter.ts',
     reason: 'Container-free web-vitals leaf; dynamic import of web-vitals.',
   },

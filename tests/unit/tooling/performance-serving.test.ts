@@ -102,6 +102,7 @@ const SHARED_WITH_EAGER_PATH = [
   'src/services/observability/sentry-client.ts',
   'src/services/observability/sentry-config.ts',
   'src/services/observability/session-correlation.ts',
+  'src/services/observability/two-factor-text-scrubber.ts',
   'src/services/observability/web-vitals-reporter.ts',
   'src/styles/colors.ts',
 ];

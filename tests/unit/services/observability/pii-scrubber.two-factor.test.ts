@@ -1,5 +1,6 @@
 import { PiiScrubber } from '@/services/observability/pii-scrubber';
 import PiiTextScrubber from '@/services/observability/pii-text-scrubber';
+import TwoFactorTextScrubber from '@/services/observability/two-factor-text-scrubber';
 import type { SentryEvent } from '@/services/types/observability/sentry';
 import {
   buildEmail,
@@ -98,7 +99,10 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
 
     it('is the only pattern that catches the @-free vector (must-fail without it)', () => {
-      const others = (Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[]).slice(1);
+      const others = [
+        ...(Reflect.get(new TwoFactorTextScrubber(), 'patterns') as readonly RegExp[]).slice(1),
+        ...(Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[]),
+      ];
       const leftover = others.reduce(
         (text, pattern) => text.replace(pattern, '[redacted]'),
         vector
@@ -344,27 +348,24 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
   });
 
   describe('patterns', () => {
-    const patternsOf = (): readonly RegExp[] =>
+    const twoFactorPatternsOf = (): readonly RegExp[] =>
+      Reflect.get(new TwoFactorTextScrubber(), 'patterns') as readonly RegExp[];
+    const credentialPatternsOf = (): readonly RegExp[] =>
       Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[];
+    const sourcesOf = (patterns: readonly RegExp[]): string[][] =>
+      patterns.map((pattern) => [pattern.source, pattern.flags]);
 
-    it('lists the otpauth pattern first, before the e-mail pattern', () => {
-      const patterns = patternsOf();
+    it('lists the otpauth pattern first among the two-factor patterns', () => {
+      const patterns = twoFactorPatternsOf();
 
-      expect(patterns).toHaveLength(10);
+      expect(patterns).toHaveLength(4);
       expect(patterns[0]?.source).toBe(String.raw`otpauth:[^\s"']+`);
       expect(patterns[0]?.flags).toBe('gi');
-      expect(patterns[1]?.source).toBe(String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`);
     });
 
-    it('pins every pattern and its flags, in the order the scrubber applies them', () => {
-      expect(patternsOf().map((pattern) => [pattern.source, pattern.flags])).toEqual([
+    it('pins every two-factor pattern and its flags, in the order they apply', () => {
+      expect(sourcesOf(twoFactorPatternsOf())).toEqual([
         [String.raw`otpauth:[^\s"']+`, 'gi'],
-        [String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`, 'g'],
-        [String.raw`bearer\s+[\w.\-~+/]+=*`, 'gi'],
-        [String.raw`eyJ[\w-]+\.[\w-]+\.[\w-]+`, 'g'],
-        [String.raw`(?<=token=)[^&#\s]+`, 'gi'],
-        [String.raw`(?<=token%3d)(?:(?!%26|%23)[^&#\s])+`, 'gi'],
-        [String.raw`(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+`, 'gi'],
         [String.raw`(?<=recoveryCodes\\?["']?\s*[=:]\s*)\[[^\]]*\]`, 'gi'],
         [
           String.raw`(?<=recoveryCodes\\?["']?\s*[=:][\w\s,\\"'-]*,[\s\\"']*)` +
@@ -377,6 +378,23 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
           'gi',
         ],
       ]);
+    });
+
+    it('pins every credential pattern and its flags, in the order they apply', () => {
+      expect(sourcesOf(credentialPatternsOf())).toEqual([
+        [String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`, 'g'],
+        [String.raw`bearer\s+[\w.\-~+/]+=*`, 'gi'],
+        [String.raw`eyJ[\w-]+\.[\w-]+\.[\w-]+`, 'g'],
+        [String.raw`(?<=token=)[^&#\s]+`, 'gi'],
+        [String.raw`(?<=token%3d)(?:(?!%26|%23)[^&#\s])+`, 'gi'],
+        [String.raw`(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+`, 'gi'],
+      ]);
+    });
+
+    it('runs the two-factor patterns before the e-mail pattern can split an otpauth label', () => {
+      expect(new PiiTextScrubber().scrub('scan otpauth://totp/VilnaCRM:a@b.c?secret=ABC')).toBe(
+        'scan [redacted]'
+      );
     });
   });
 
