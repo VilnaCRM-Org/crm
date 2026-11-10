@@ -1,6 +1,5 @@
 import { type JSX, useContext } from 'react';
 
-import { CANCELLED_FROM } from '../../hooks/use-two-factor-heading';
 import type { TwoFactorSettingsProps } from '../../types/two-factor/settings-view';
 
 import ArrivalContext from './arrival-context';
@@ -13,7 +12,7 @@ export default function OnView({ callbacks }: TwoFactorSettingsProps): JSX.Eleme
     <OnActions
       onDisable={callbacks.openDisable}
       onRegenerate={callbacks.openRegenerate}
-      returnTo={from !== null && CANCELLED_FROM.has(from) ? from : null}
+      returnTo={from}
     />
   );
 }
