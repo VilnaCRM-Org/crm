@@ -10,18 +10,18 @@ const STORAGE_KEY = 'crm.sidebar.collapsed';
 
 class SidebarCollapseSource {
   public read(): boolean {
-    try {
-      return window.localStorage.getItem(STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
+    return this.attempt(() => window.localStorage.getItem(STORAGE_KEY) === 'true', false);
   }
 
   public write(collapsed: boolean): void {
+    this.attempt(() => window.localStorage.setItem(STORAGE_KEY, String(collapsed)), undefined);
+  }
+
+  private attempt<T>(action: () => T, fallback: T): T {
     try {
-      window.localStorage.setItem(STORAGE_KEY, String(collapsed));
+      return action();
     } catch {
-      return;
+      return fallback;
     }
   }
 }

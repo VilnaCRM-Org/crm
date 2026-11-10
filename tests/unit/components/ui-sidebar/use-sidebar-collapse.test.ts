@@ -25,6 +25,22 @@ describe('useSidebarCollapse', () => {
     expect(result.current.revealing).toBe(false);
   });
 
+  it('reads and writes its own storage key on a hook loaded in the test', async () => {
+    window.localStorage.setItem(STORAGE_KEY, 'true');
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/components/ui-sidebar/use-sidebar-collapse')).default;
+    });
+
+    const { result } = renderHook(() => fresh());
+    expect(result.current.collapsed).toBe(true);
+
+    act(() => result.current.step(CLICK));
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe('false');
+    expect(Object.keys(window.localStorage)).toEqual([STORAGE_KEY]);
+  });
+
   it('starts expanded with nothing revealing when nothing is stored', () => {
     const { result } = renderHook(() => useSidebarCollapse());
 
