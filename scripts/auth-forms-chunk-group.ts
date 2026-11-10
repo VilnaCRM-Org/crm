@@ -8,6 +8,8 @@ export const RECOVERY_FORM_CHUNKS: readonly string[] = [
   'create-new-password-form-section',
 ];
 export const SETTINGS_CHUNKS: readonly string[] = ['settings'];
+export const AUTH_PAGE_VENDORS_CHUNK = 'auth-page-vendors';
+export const AUTH_PAGE_CHUNKS: readonly string[] = ['sign-in', 'sign-up'];
 
 const formSectionChunks = new Set([
   ...AUTH_FORM_CHUNKS,
@@ -50,3 +52,20 @@ export const authFormsVendorsCacheGroup = (): Rspack.OptimizationSplitChunksCach
 
 export const authFormsCacheGroup = (): Rspack.OptimizationSplitChunksCacheGroup =>
   sharedFormModulesGroup(AUTH_FORMS_CHUNK, false);
+
+export const authPageVendorsCacheGroup = (): Rspack.OptimizationSplitChunksCacheGroup => ({
+  name: AUTH_PAGE_VENDORS_CHUNK,
+  chunks: 'async',
+  test: (module, { chunkGraph }) => {
+    const owners = new Set(
+      Array.from(chunkGraph.getModuleChunksIterable(module), (chunk) => chunk.name)
+    );
+    return (
+      AUTH_PAGE_CHUNKS.every((owner) => owners.has(owner)) &&
+      NODE_MODULES.test(module.nameForCondition() ?? '')
+    );
+  },
+  minChunks: 2,
+  priority: 5,
+  reuseExistingChunk: true,
+});

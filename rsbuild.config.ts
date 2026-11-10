@@ -6,7 +6,11 @@ import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
-import { authFormsCacheGroup, authFormsVendorsCacheGroup } from './scripts/auth-forms-chunk-group';
+import {
+  authFormsCacheGroup,
+  authFormsVendorsCacheGroup,
+  authPageVendorsCacheGroup,
+} from './scripts/auth-forms-chunk-group';
 import {
   documentHeaders,
   loadPolicy,
@@ -146,6 +150,7 @@ export default defineConfig({
     cacheGroups: {
       authFormsVendors: authFormsVendorsCacheGroup(),
       authForms: authFormsCacheGroup(),
+      authPageVendors: authPageVendorsCacheGroup(),
     },
   },
   performance: {

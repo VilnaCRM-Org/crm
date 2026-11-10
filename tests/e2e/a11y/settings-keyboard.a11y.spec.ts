@@ -7,6 +7,7 @@ import {
   replyWithGraphQLError,
   replyWithProfile,
   replyWithSaved,
+  signInToSettings,
   stubProfile,
   type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -26,7 +27,6 @@ import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const NEW_NAME = buildFullName();
 const password = buildPassword();
@@ -60,7 +60,7 @@ async function saveName(page: Page): Promise<void> {
 
 test.describe('Settings keyboard contract (issue #330)', () => {
   test.beforeEach(async ({ page }) => {
-    await seedPreloadedAuthToken(page);
+    await signInToSettings(page);
   });
 
   test('Tab visits the form, the toast and the footer in reading order', async ({ page }) => {

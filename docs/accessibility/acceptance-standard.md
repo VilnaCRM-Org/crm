@@ -2,7 +2,9 @@
 
 **Conformance target: WCAG 2.1 Level AA.** Every page and component this repository ships must
 meet it, and the gates below (issue #118) make that a merge condition rather than a review
-opinion. WCAG 2.2 AA (`wcag22aa`, in practice the `target-size` rule) is the next ratchet; the
+opinion. The palette exceptions tracked in #276 (the `A11Y_EXCEPTIONS` entries below) are known
+non-conformances kept by owner decision, not passes. WCAG 2.2 AA (`wcag22aa`, in practice the
+`target-size` rule) is the next ratchet; the
 44 px floor on the primary auth controls in `tests/e2e/mobile/` already covers its largest
 surface and the remaining under-sized controls are tracked as design work.
 
@@ -16,17 +18,18 @@ surface and the remaining under-sized controls are tracked as design work.
 | Keyboard       | Playwright               | `make test-a11y-e2e`               |
 | Category score | Lighthouse               | `performance testing`, second line |
 
-The component lane calls [`expectNoA11yViolations`][component-helper] over the `UI*` components
-and pages listed in [`tests/unit/a11y/`][unit] and also runs inside `make test-unit-all`. The
-route lane calls [`expectNoAxeViolations`][route-helper] on every route in
-`src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane uses
-[`expectTabOrder`][keyboard-helper] to assert tab order, `:focus-visible`, a visible focus change
-and Space/Enter activation. Both Playwright lanes ride the `accessibility testing` check.
-Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
-`/sign-up`, `/forbidden`, `/server-error`, the catch-all 404 (`/definitely-not-a-route`),
-`/password-recovery` and `/password-reset` (with a fixed, non-empty dummy value in its `token`
-query parameter, so the form renders rather than the invalid-link state) as a second signal, not
-the primary gate.
+The component lane calls [`expectNoA11yViolations`][component-helper] over the `UI*` components and
+pages listed in [`tests/unit/a11y/`][unit] and also runs inside `make test-unit-all`. The route lane
+calls [`expectNoAxeViolations`][route-helper] on every route in `src/routes/route-paths.ts` in
+Chromium, Firefox and WebKit, and the keyboard lane uses [`expectTabOrder`][keyboard-helper] to
+assert tab order, `:focus-visible`, a visible focus change and Space/Enter activation, and
+`expectArrowKeyWalk` from the same helper to walk a roving-focus menu with ArrowDown/ArrowUp
+(wrapping), Home and End, each stop focused, `:focus-visible` and visibly changed. Both Playwright
+lanes ride the `accessibility testing` check. Lighthouse keeps its 0.95 desktop / 0.90 mobile
+accessibility scores on `/`, `/sign-in`, `/sign-up`, `/forbidden`, `/server-error`, the catch-all
+404 (`/definitely-not-a-route`), `/password-recovery` and `/password-reset` (with a fixed, non-empty
+dummy value in its `token` query parameter, so the form renders rather than the invalid-link state)
+as a second signal, not the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are
@@ -51,7 +54,9 @@ A change is accessibility-done when all of the following hold, in addition to th
   `aria-describedby` and the field carries `aria-invalid` (3.3.1).
 - Everything reachable with a pointer is reachable and operable with the keyboard alone, in an
   order that follows the reading order (2.1.1, 2.4.3), with a focus indicator visible on every
-  stop (2.4.7). Dialogs and menus trap focus while open and return it on close.
+  stop (2.4.7). A modal dialog traps focus while open and returns it on close. A menu-button
+  menu (the WAI-ARIA APG menu-button pattern) does not trap: Tab closes it and moves on in the
+  page order, and Escape closes it and returns focus to its button.
 - Icon-only controls have a text alternative; decorative images have `alt=""` and are hidden from
   the accessibility tree (1.1.1).
 - Text contrast is at least 4.5:1, large text and UI component boundaries at least 3:1 (1.4.3,
@@ -95,7 +100,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Ten `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Eleven `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -123,7 +128,13 @@ The tenth covers the settings greeting
 "Вітаємо!" on `/settings` (`#settings-greeting`, issue #330), plain text in the Figma grey
 `#969B9D` on white at 2.81:1: the product owner kept the Figma token over the `#57595B` (7.03:1)
 the plan proposed, so it carries the same token debt as the back-to-main label and the auth
-switcher, while the name beside it stays `#1A1C1E`.
+switcher, while the name beside it stays `#1A1C1E`. The eleventh covers the current navigation
+entry of the app shell (issue #362): the active row, group-header label and sub-item in the
+sidebar and in the mobile drawer, whose list sits in its own `<nav>`
+(`nav a[aria-current="page"]` and `nav a[aria-current="page"] > span`), which render the Figma
+active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
+It does not conform to WCAG 2.1 AA: SC 1.4.3 for the label and SC 1.4.11 for the icon-only current
+rail row. The owner re-confirmed keeping it on 2026-11-09; it is tracked in #276.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),
@@ -139,6 +150,17 @@ by the product owner's decision
 (ui-toolkit DEV-67). axe's `color-contrast` rule does not evaluate non-text contrast, so no
 exception entry exists for it either; it is resolved when #276 closes or the toolkit fill reaches
 3:1.
+
+The third was in the app shell (issue #362) and is resolved: three active controls whose only
+visible identifier at rest is a glyph, the Settings disclosure chevron in the sidebar and the mobile
+drawer, the icon-only sidebar collapse handle, and the default rows of the collapsed rail, whose
+labels are visually hidden. Figma's `grey[50]` `#969B9D` on white is 2.81:1, under the 3:1 of SC
+1.4.11, and the product owner kept it on 2026-10-27. On 2026-11-09 the owner chose to fix it
+instead (DV-15): the three glyphs now rest at `customColors.text.muted` `#57595B`, about 7:1 on
+white. `tests/unit/a11y/non-text-contrast.test.ts` fails if any of them drops under 3:1, since no axe
+rule tests non-text contrast. Hover, the current rail row and focus indicators are outside this
+fix, as are the icons of expanded rows, which sit beside a visible label. See
+[the shell README, DV-15](../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 
 ## Adding coverage
 

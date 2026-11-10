@@ -18,40 +18,36 @@ async function navigateInApp(page, targetPath) {
   }, targetPath);
 }
 
-async function waitForHomeOrRedirect(page, signOutLabel) {
+async function waitForHomeOrRedirect(page, heading) {
   const settled = await page.waitForFunction(
-    (homePath, label) =>
+    (homePath, text) =>
       window.location.pathname !== homePath ||
-      [...document.querySelectorAll('main button[type="button"]')].some(
-        (button) => button.textContent?.trim() === label
-      ),
+      [...document.querySelectorAll('main h1')].some((h1) => h1.textContent?.trim() === text),
     { timeout: HOME_TIMEOUT },
     HOME_PATH,
-    signOutLabel
+    heading
   );
   await settled.dispose();
 }
 
-async function waitForSignOutButton(page, signOutLabel) {
+async function waitForHomeHeading(page, heading) {
   const rendered = await page.waitForFunction(
-    (label) =>
-      [...document.querySelectorAll('main button[type="button"]')].some(
-        (candidate) => candidate.textContent?.trim() === label
-      ),
+    (text) =>
+      [...document.querySelectorAll('main h1')].some((h1) => h1.textContent?.trim() === text),
     { timeout: HOME_TIMEOUT },
-    signOutLabel
+    heading
   );
   await rendered.dispose();
 }
 
 async function action(page) {
   try {
-    const signOutLabel = t('home.sign_out');
+    const heading = t('home.heading');
 
     await navigateInApp(page, HOME_PATH);
-    await waitForHomeOrRedirect(page, signOutLabel);
+    await waitForHomeOrRedirect(page, heading);
     await verifyPage(page, HOME_PATH);
-    await waitForSignOutButton(page, signOutLabel);
+    await waitForHomeHeading(page, heading);
   } catch (error) {
     logger.error(`❌ Home action failed: ${error.message}`);
     throw error;

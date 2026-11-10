@@ -1,18 +1,18 @@
 import { type ClientOnErrorFunction, isRouteErrorResponse, type RouteObject } from 'react-router';
 
 import RouteError from '@/components/error-boundary/route-error';
-import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
 import type { FallbackLandmark } from '@/components/types/error-boundary';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
-import ProtectedRoute from '@auth/components/protected-route';
 
+import protectedLayoutLoader from './protected-layout-loader';
 import routeMapper from './route-mapper';
 import ROUTE_PATHS from './route-paths';
 import routeValidator from './route-validator';
 import type { AppRouteObject } from './types/app-route';
 import type { ComposedRoutes } from './types/composed-routes';
 import type { RouteModuleRegistry } from './types/route-module';
+import type { ShellSlotLoad } from './types/shell-slot';
 
 class RouteComposer {
   public compose(registry: RouteModuleRegistry): ComposedRoutes {
@@ -24,7 +24,7 @@ class RouteComposer {
           path: ROUTE_PATHS.home,
           element: <RootLayout />,
           errorElement: <RouteError landmark="main" />,
-          children: this.children(routes),
+          children: this.children(routes, this.userMenuLoad(registry)),
         },
       ],
     };
@@ -54,23 +54,47 @@ class RouteComposer {
     return new Error(String(error));
   }
 
-  private children(routes: readonly AppRouteObject[]): RouteObject[] {
-    const secured = routes.filter((route) => route.guard === 'protected');
-    const open = routes.filter((route) => route.guard !== 'protected');
-    return [...this.protectedBranch(secured), ...this.pages(open, 'main')];
+  private userMenuLoad(registry: RouteModuleRegistry): ShellSlotLoad | undefined {
+    for (const { shell } of registry.items) {
+      if (shell?.userMenu !== undefined) return shell.userMenu;
+    }
+    return undefined;
   }
 
-  private protectedBranch(routes: readonly AppRouteObject[]): RouteObject[] {
+  private children(routes: readonly AppRouteObject[], userMenu?: ShellSlotLoad): RouteObject[] {
+    const secured = routes.filter((route) => route.guard === 'protected');
+    const open = routes.filter((route) => route.guard !== 'protected');
+    return [...this.protectedBranch(secured, userMenu), ...this.pages(open, 'main')];
+  }
+
+  private protectedBranch(
+    routes: readonly AppRouteObject[],
+    userMenu?: ShellSlotLoad
+  ): RouteObject[] {
     if (routes.length === 0) {
       return [];
     }
     const errorElement = <RouteError landmark="main" />;
+    const layout = protectedLayoutLoader.create({
+      userMenu,
+      report: routeMapper.slotFailureReporter(),
+    });
+    const { ProtectedRoute, AppLayout } = layout;
     return [
       {
         element: <ProtectedRoute />,
         errorElement,
         children: [
-          { element: <AppLayout />, errorElement, children: this.pages(routes, 'region') },
+          {
+            element: (
+              <AppLayout
+                userMenu={layout.userMenu}
+                onShellFailure={routeMapper.chunkFailureReporter('app-shell:load')}
+              />
+            ),
+            errorElement,
+            children: this.pages(routes, 'region'),
+          },
         ],
       },
     ];

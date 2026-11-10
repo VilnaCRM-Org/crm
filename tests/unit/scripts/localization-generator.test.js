@@ -184,6 +184,9 @@ describe('LocalizationGenerator', () => {
         'components/ui-password-policy-rules/i18n',
         'modules/user/features/settings/i18n',
         'components/ui-toast/i18n',
+        'components/ui-app-shell/i18n',
+        'components/coming-soon/i18n',
+        'modules/user/features/settings/components/user-menu/i18n',
       ]);
     });
   });

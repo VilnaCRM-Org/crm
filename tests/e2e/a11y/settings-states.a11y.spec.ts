@@ -4,6 +4,7 @@ import {
   replyWithProfile,
   replyWithSaved,
   replyWithStatus,
+  signInToSettings,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
@@ -20,7 +21,6 @@ import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { expectNextTabStop } from '@tests/utils/a11y/keyboard';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const NEW_NAME = buildFullName();
 const password = buildPassword();
@@ -30,7 +30,7 @@ const personalHeading: string = t('settings.profile.sections.personal');
 
 test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
   test.beforeEach(async ({ page }) => {
-    await seedPreloadedAuthToken(page);
+    await signInToSettings(page);
   });
 
   test('the unconfirmed e-mail row has no axe violations', async ({ page }) => {

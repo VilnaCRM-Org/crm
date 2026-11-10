@@ -121,8 +121,10 @@ sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails container star
 
 ### `/settings` ships without a flag
 
-The user settings page (issue #330) is not flagged: `/settings` is registered in every
-environment and the home page always renders its "Налаштування" link to it.
+The user settings page (issue #330) and the three coming-soon settings pages
+`/settings/integrations`, `/settings/webhooks` and `/settings/billing` (issue #362) are not
+flagged: all four are registered in every environment, and the app shell always renders their
+entry points, the sidebar and drawer Settings group and the user menu's profile and Settings links.
 
 ## Rules
 

@@ -1,5 +1,11 @@
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
+import {
+  ERROR_PAGE_MOBILE as MOBILE,
+  ERROR_PAGE_PADDINGS,
+  ERROR_PAGE_TABLET as TABLET,
+} from './error-page-paddings';
+
 type ErrorPageStylesModule = typeof import('@/components/error-page/styles/error-page-styles');
 
 const loadErrorPageStyles = async (): Promise<ErrorPageStylesModule['default']> => {
@@ -8,9 +14,6 @@ const loadErrorPageStyles = async (): Promise<ErrorPageStylesModule['default']> 
   );
   return errorPageStyles;
 };
-
-const TABLET = '@media (max-width: 1024px)';
-const MOBILE = '@media (max-width:767.95px)';
 
 describe('ErrorPageStyles', () => {
   it('builds the landmark surface that clips overflow and grows above the footer', async () => {
@@ -22,10 +25,7 @@ describe('ErrorPageStyles', () => {
       flex: '1 0 auto',
       overflowX: 'clip',
       backgroundColor: '#FBFBFB',
-      paddingTop: '76px',
-      paddingBottom: '121px',
-      [TABLET]: { paddingTop: '76px', paddingBottom: '121px' },
-      [MOBILE]: { paddingTop: '43.61px', paddingBottom: '73.91px' },
+      ...ERROR_PAGE_PADDINGS,
     });
   });
 

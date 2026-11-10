@@ -10,7 +10,15 @@ import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations'
 
 const mockRead = jest.fn();
 const mockUpdate = jest.fn();
-const mockProvider = { read: mockRead, update: mockUpdate, resend: jest.fn() };
+const mockProvider = {
+  read: mockRead,
+  update: mockUpdate,
+  resend: jest.fn(),
+  fromFullName: (fullName: string): object =>
+    new (jest.requireActual(
+      '@/modules/user/store/user-display-name-mapper'
+    ).default)().fromFullName(fullName),
+};
 
 jest.mock('@/providers/di', () => ({
   __esModule: true,

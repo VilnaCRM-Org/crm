@@ -1,13 +1,13 @@
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
-import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import {
   holdReply,
   replyWithGraphQLError,
   replyWithSaved,
   replyWithStatus,
+  signInToSettings,
   stubProfile,
   watchContactedOrigins,
   type StubbedProfile,
@@ -34,7 +34,7 @@ test.describe('Settings save failures (issue #330)', () => {
 
   test.beforeEach(async ({ page }) => {
     contacted = watchContactedOrigins(page);
-    await seedPreloadedAuthToken(page);
+    await signInToSettings(page);
   });
 
   test.afterEach(async ({ page, context }) => {

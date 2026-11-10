@@ -165,16 +165,25 @@ more project names.
   `/password-reset`) completed the same way with their own touch-target, overflow and
   keyboard-height checks, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
-  overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
+  overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
+  same for the app shell: the drawer, the avatar menu, and no overflow at device width and 320 px.
+  Its 44 px tap-area floor applies to every shell control except two recorded gaps: the drawer
+  sub-items (42 px Figma pitch) and the disabled bell and list (40 px Figma pitch), both listed
+  under "Known gaps" in `src/components/ui-app-shell/README.md`. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
-  two password recovery pages (`/password-recovery`, `/password-reset`) and the three error pages
-  (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so the baselines are true
-  2.625× / 3× rasters and catch the asset and raster regressions that CSS-scaled desktop snapshots
-  average away. Baselines live in
-  `tests/visual/mobile/auth.spec.ts-snapshots/` and
-  `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
+  two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
+  (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
+  shell (`/boards`, `/products`, `/orders`, `/contacts`, `/analytics`, `/settings/integrations`,
+  `/settings/webhooks`, `/settings/billing`, issue #362) and the app shell states (home with the
+  closed header, the drawer open on `/settings` and the user menu open, issue #362) captured with
+  `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the asset and raster
+  regressions that CSS-scaled desktop snapshots average away. Baselines live in `tests/visual/mobile/auth.spec.ts-snapshots/`,
+  `tests/visual/mobile/error-pages.spec.ts-snapshots/`,
+  `tests/visual/mobile/settings.spec.ts-snapshots/`,
+  `tests/visual/mobile/coming-soon.spec.ts-snapshots/` and
+  `tests/visual/mobile/app-shell.spec.ts-snapshots/`, one per page or shell state per mobile project.
 
 Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
 `e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in
@@ -279,7 +288,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-40-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+48-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -307,7 +316,7 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 40-way shard count rather than
+These keep the run affordable — parallelism comes from the 48-way shard count rather than
 Stryker's in-process concurrency.
 
 **Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
@@ -322,13 +331,13 @@ outside every function body and instance property initializer runs on import, wh
 whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
 onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 354 files the scope holds
-6,555 runnable mutants, 4,920 of them scored, in 311 sharded files, 48 of which are all static, so
-the total packing weight is 4,968; 43 files run in no shard, and the 40 shards carry a weight of
-123 to 139 (the heaviest is one 139-mutant file on its own) and 1 to 9 files each. File size was a
-poor proxy for that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met
-the 15-minute kill switch before it finished, while the same scope packed by counted mutants
-carries a weight of 165 to 166 per shard at 30.
+same commit; no weight file is committed, so none can go stale. At 450 files the scope holds
+402 sharded files; 48 files run in no shard. Their packing weight is 5,968, the scored mutants plus
+the floor of 1 that each all-static file adds, so the 48 shards carry 124 to 139 weight units and 1
+to 9 files each. File size was a poor proxy for
+that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
+kill switch before it finished, while this scope packed by counted mutants carries 198 to 199
+units per shard at 30.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
 kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
@@ -336,15 +345,20 @@ cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
-touching one area can therefore land most of its re-run cost in a single shard; 40 shards keep that
+touching one area can therefore land most of its re-run cost in a single shard; 48 shards keep that
 hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
 it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
 to 30 when the password-recovery files repacked the split so a cold shard 6 drew 443 mutants (the
 next heaviest drew 291) and hit the kill switch at 250 tested; the same size packing at 30 capped
 the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when that
-cold shard 11 kept meeting the kill switch; 40 is also the count the two-factor branch (#331)
-runs, so the two stay in lock-step.
+cold shard 11 kept meeting the kill switch. It went from 40 to 48 when a cold shard 32 (11 files,
+250 mutants) met the kill switch at 247 tested on two runs in a row; the two-factor branch (#331)
+takes the same count, so the two stay in lock-step. On 2026-11-09 the owner asked for fewer shards,
+each allowed up to the 15-minute kill switch. A cold run at 44, which keeps the heaviest shard at
+the same 139 weight units, still met the kill switch on two shards at 222 of 226 and 236 of 237
+tested, each with six timed-out mutants, while the cold 48-shard run's slowest shard took 12.6 min.
+Weight does not predict timed-out mutants, so the count stays at 48.
 
 ### Honest mutant classification (issue #171)
 
@@ -460,7 +474,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 354 files; not all of them produce scored mutants — the 43 unsharded ones hold no
+mutate scope is 450 files; not all of them produce scored mutants — the 48 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
@@ -593,14 +607,17 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries ten `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries eleven `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
 text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
 in-card link buttons "До входу" and "Запросити нове посилання", white on `#1EAEFF` at 2.45:1,
 issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
-decision on issue #315, and the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
-owner's call on issue #330), tracked in issue #276 and deleted when it closes.
+decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
+owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
+on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
+issue #276 and deleted when it closes. Each entry is a known WCAG 2.1 AA non-conformance kept by owner
+decision, not a pass; the owner re-confirmed the current navigation row on 2026-11-09.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
 fail, that a wildcard is never honoured, and that every entry carries all four fields.
 
@@ -1113,7 +1130,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 40-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 48-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1830,14 +1847,25 @@ key on `/sign-up`. The owners are the two recovery route folders, the recovery c
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
 through `usePageTitle` after its module has registered the catalog). The settings catalog
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
-the settings `components/` and `hooks/` folders that page renders, and the settings route contract
-`routes/index.ts` for its `meta.titleKey`; the feature's `data-providers/`, `repositories/` and
-`transformers/` load in the container chunk and own no settings key. The toast catalog
+the six settings `components/` folders that page renders (`change-password`, `profile-form`,
+`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the eight
+`hooks/` files that own settings translations (`use-blur-hold`, `use-email-resend`, `use-email-row`,
+`use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`, `use-profile-save` and
+`use-settled-focus`), and the settings route contract `routes/index.ts` for
+its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
+`use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
+protected page, before the settings catalog is registered, so they own no settings key; the
+feature's `data-providers/`, `repositories/` and `transformers/` load in the container chunk and
+own no settings key. The toast catalog
 (`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
-label stays off `/sign-in`. Adding an owner is a reviewed
-policy edit and must name a file only the registering routes import. A policy entry that names no
-discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`), and an
-unreadable or malformed policy fails the run before any check.
+label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are owned the same
+way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
+`ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
+copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
+`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. Adding an owner is a
+reviewed policy edit and must name a file only the registering routes import. A policy entry that
+names no discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`),
+and an unreadable or malformed policy fails the run before any check.
 
 **What the gate enforces:**
 
@@ -1939,23 +1967,26 @@ breached; the size diff itself is informational. The job can also fail earlier, 
 step, when an Rspack **raw** budget is exceeded (that gate fails every production build, not
 just this workflow).
 
-**Route-level splitting:** page-level routes are code-split by the module-owned route registry
-(see "Route Registry (issue #105)" below). Each route contract declares a dynamic `import()`
-loader — named via `webpackChunkName` so the bundle-size report can track its chunk per route —
-and the composer wraps every loader in `React.lazy` and attaches a per-route `errorElement`
-(`<RouteError landmark=… />`, issue #116) so a page that throws is caught by its own route, not
-by the root boundary. The route-level `Suspense` boundary lives in
-[`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx)
-and ships a **non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)):
-it paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the
-layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
-announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
-`message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
-it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either:
-`RouteMapper` and the footer loader wrap each lazy surface in a `ThemedChunkLoader` that fetches
-the `mui-theme` chunk in parallel with it, and the paint-path components style themselves with
-`@emotion/styled`, never `Box` or another `@mui/material` import. To add a page, follow the
-registry ("Adding a page" below); never eagerly import a page. Three checks fail CI on a regression:
+**Route-level splitting:** page-level routes are code-split by the module-owned route registry (see
+"Route Registry (issue #105)" below). Each route contract declares a dynamic `import()` loader —
+named via `webpackChunkName` so the bundle-size report can track its chunk per route — and the
+composer wraps every loader in `React.lazy` and attaches a per-route `errorElement`
+(`<RouteError landmark=… />`, issue #116) so a page that throws is caught by its own route, not by
+the root boundary. The route-level `Suspense` boundary lives in
+[`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx) and ships a
+**non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)): it
+paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the layout
+shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and announces loading
+via a polite live region. `RouteFallback` takes optional `minHeight` and `message` props, so an
+in-page Suspense boundary (the registration form's result chunk) reuses it instead of shipping
+`fallback={null}`. The MUI theme engine is not on the eager path either: `RouteMapper`, the footer
+loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
+surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
+paint-path components style themselves with `@emotion/styled`, never `Box` or another
+`@mui/material` import. The protected branch is off the eager path as well: `ProtectedRoute` and
+`AppLayout` load together from one `protected-layout` chunk, so the public auth and error pages
+never download them. To add a page, follow the registry ("Adding a page" below); never eagerly
+import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
   ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
@@ -1974,10 +2005,11 @@ registry ("Adding a page" below); never eagerly import a page. Three checks fail
 **Shared auth-form chunk (issue #315).** The password-recovery form sections reuse a different
 subset of the sign-in/sign-up form modules each, so Rspack's `default` preset cut the chunk the
 two auth pages used to share into one chunk per consumer set (17 `/sign-in` script requests
-instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` therefore adds two
-top-level `splitChunks.cacheGroups` entries, `authFormsVendors` (chunk `auth-forms-vendors`)
-and `authForms` (chunk `auth-forms`), built by
-[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Membership is decided
+instead of 15 in the Lighthouse run that failed). `rsbuild.config.ts` holds three top-level
+`splitChunks.cacheGroups` entries, all built by
+[`scripts/auth-forms-chunk-group.ts`](scripts/auth-forms-chunk-group.ts). Two answer that failure,
+`authFormsVendors` (chunk `auth-forms-vendors`) and `authForms` (chunk `auth-forms`), and the
+third is described below. For those two, membership is decided
 per module: each `test` admits a module only when both the `sign-in-form-section` and the
 `sign-up-form-section` chunks contain it, so nothing recovery-only can reach `/sign-in`, and
 then by resource: a module under `node_modules` goes to `auth-forms-vendors`, anything else to
@@ -2001,6 +2033,13 @@ each selects the chunk names the loaders' `webpackChunkName` values emit, so ren
 chunk cannot silently disable either group. Chunk
 sizes are not recorded here: they come from the PR's bundle-size comment, and whether `/sign-in`
 clears the mobile floor is decided by CI Lighthouse, not by a local build.
+
+**Shared auth-page vendors (issue #362, owner decision 2026-11-06).** The third entry,
+`authPageVendors` (chunk `auth-page-vendors`), takes the `node_modules` modules that both the
+`sign-in` and the `sign-up` page chunks contain. The app shell's lazy chunks had split that code
+into pieces that compress worse, which put `/sign-in` at 265,997 bytes against the 265,000
+`lighthouse.scriptSizeBytes` budget. With the group it passes in CI, and no budget was raised. The
+same two tests pin its rule and its wiring.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same
@@ -2477,8 +2516,10 @@ Three different things are outside the gate, and the distinction matters when yo
   `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
-  `security-event-core` and its `auth-failure-monitor` leaf, and the observability core /
-  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves.
+  `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
+  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, the
+  app-shell session (`auth-session-provider`) and the chip's current-user read
+  (`current-user-client`, `current-user-source`, issue #362).
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
@@ -2605,7 +2646,9 @@ flag is declared today: the last one, `forgotPassword`, was removed in #309 when
 "Забули пароль?" link started rendering unconditionally, so the union is `never` and the committed
 block ships `{ "flags": {} }`. An environment that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD`
 to a non-empty value fails container start with `Known flags: (none).` and must unset it. The
-settings page (issue #330) ships without a flag: `/settings` is registered in every environment.
+settings page (issue #330), its three coming-soon sub-pages and their app-shell entry points
+(issue #362) ship without a flag: the four routes are registered in every environment, the
+sidebar and the drawer always link to all four, and the user menu always links to `/settings`.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2625,13 +2668,23 @@ its own `routes/` folder; a central registry collects the contracts and a
 composer builds the `createBrowserRouter` tree. `src/routes/routes.tsx` is pure
 wiring — it contains no route-array literal and no feature/module page imports.
 
-- **Contract types** — `src/routes/types/{app-route,route-module}.ts`
-  (`AppRouteObject`: `path`/`index`, lazy `load`, declarative `guard`, `meta`;
-  `RouteModule`: `id` + `routes`). Type-only files (issue #88).
-- **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a
-  `RouteModule` whose routes lazy-`load` the feature's pages (per-route code
-  splitting preserved). The auth feature: `@auth/routes`. The app shell's own
-  routes (home, 404, 403 and 5xx) live in `src/routes/app-routes.ts`.
+- **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
+  `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
+  optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
+  one declared `shell.userMenu` (`routeValidator` rejects a second) to
+  `protectedLayoutLoader.create`, which wraps it through `ShellSlotFactory`, and passes the slot
+  plus a chunk-failure reporter to `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar,
+  mobile drawer) around the page outlet (issue #362). `ProtectedRoute`, `AppLayout` and
+  `ShellSlotFactory` are not in the eager entrypoint: they arrive together in one
+  `protected-layout` chunk (`src/routes/protected-layout-loader.ts`, one `ChunkRetryLoader`, no
+  reload), so a public page never downloads them.
+- **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a `RouteModule` whose
+  routes lazy-`load` the feature's pages (per-route code splitting preserved). The auth feature:
+  `@auth/routes`. The app shell's own routes (home, the five protected coming-soon sections
+  `/boards`, `/products`, `/orders`, `/contacts` and `/analytics`, and 404, 403 and 5xx) live in
+  `src/routes/app-routes.ts`; the settings contract adds the three coming-soon sub-pages
+  (`/settings/integrations`, `/settings/webhooks`, `/settings/billing`), and all eight load the
+  shared `ComingSoonPage` from `@/components/coming-soon` in one `coming-soon` chunk.
 - **Registry** — `src/routes/registry.ts` collects the contracts (one-line
   append per new module).
 - **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
@@ -2703,29 +2756,35 @@ verified in CI.
   locales synchronously when the route module evaluates — before the page's `usePageTitle` runs —
   through the one container-free `lazyCatalogLoader` singleton
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
-  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls
-  `addResourceBundle` for both locales; the owner keeps the JSON import, so the chunk split does
-  not move, and a new lazy catalog adds no loader class. Four lazy catalogs exist today: the
-  password-recovery copy (`password_recovery.*`, `password_reset.*`), owned by
+  owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
+  for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
+  lazy catalog adds no loader class. Seven lazy catalogs exist today: the password-recovery copy
+  (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
   copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
   when that component module evaluates; the settings copy (`settings.*`), owned by
   `src/modules/user/features/settings/` and registered when the `UserProfile` route module
-  evaluates; and the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered
-  when `UIToast` evaluates. The recovery keys were 3,742 B of the minified merged
-  catalog; moving them took `index.js` from 51,394 B to about 47.9 kB raw, about 3.5 KB less and
-  still about 0.95 KB above the #333 base (46,946 B), so the move alone does not restore the
-  `/sign-in` headroom (that base already scored a median of about 0.8375 against the 0.84 mobile
-  floor). Keep a key eager when a page outside those routes renders it
+  evaluates; the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered when
+  `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
+  `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
+  `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
+  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; and the user-menu
+  copy (`user_menu.*`), owned by `src/modules/user/features/settings/components/user-menu/` and
+  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates. The recovery keys were
+  3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
+  raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
+  does not restore the `/sign-in` headroom (that base already scored a median of about 0.8375
+  against the 0.84 mobile floor). Keep a key eager when a page outside those routes renders it
   (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
   Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
   use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
-  `createToastLocaleI18n`), so a lazy key leaking into an eager page renders raw in that
-  page's tests too. Storybook's preview and the e2e `initialize-localization.js` (which reads the
-  policy and registers every lazy catalog from its JSON files) keep the copy available for every
-  story and spec.
+  `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
+  user-menu catalog, and coming-soon tests `createComingSoonLocaleI18n`), so a lazy key leaking into
+  an eager page renders raw in that page's tests too. Storybook's preview and the e2e
+  `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
+  JSON files) keep the copy available for every story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
 - **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
   every pull request) and of the CI lint phase, so locale drift never lands.
@@ -3105,20 +3164,23 @@ replaces.
 2. **Form Validation**: Centralized in the user module (`src/modules/user/lib/validations/`),
    shared by every feature
 
-3. **Routing**: Module-owned route contracts collected by a registry and
-   assembled by a composer into `createBrowserRouter` (see "Route Registry"
-   above). Add a page in the owning module's `routes/` folder — never in the
-   app shell. `ProtectedRoute` preserves the intended destination in its
-   redirect state (`state.from`), and the sign-in page redirects back to it
-   after a successful login (issue #150). The redirect fires only on a
-   null→token transition — never on mount — so the Lighthouse seeded-token
-   audit of `/sign-in` is unaffected; the target must be an internal path and
-   `AppLayout` moves focus to `<main>` when it lands. Sign-out reaches a protected page
-   through the outlet context `ProtectedRoute` provides and `AppLayout` forwards
-   (`ProtectedOutletContext`, `{ signOut }`, issue #106); the redirect it causes
-   carries `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in`
-   through the same `useArrivalFocus` hook, which then clears the marker from the
-   history entry so Back never moves focus again.
+3. **Routing**: Module-owned route contracts collected by a registry and assembled by a composer
+   into `createBrowserRouter` (see "Route Registry" above). Add a page in the owning module's
+   `routes/` folder — never in the app shell. `ProtectedRoute` preserves the intended destination in
+   its redirect state (`state.from`), and the sign-in page redirects back to it after a successful
+   login (issue #150). The redirect fires only on a null→token transition — never on mount — so the
+   Lighthouse seeded-token audit of `/sign-in` is unaffected; the target must be an internal path
+   and `AppLayout` moves focus to `<main>` when it lands. Sign-out lives in the app shell (issue
+   #362): `AppLayout` reads `signOut` from the outlet context `ProtectedRoute` provides
+   (`ProtectedSessionContext`, `{ signOut, session }`, issues #106 and #362) and passes it to
+   `UIAppShell`, which renders it in the sidebar, the mobile navigation drawer and the user menu;
+   `AppLayout` still forwards the same context to the page outlet. `session` is the container-free
+   `authSessionProvider`: the header chip's current-user read takes the token from it and ends
+   a session the API rejects through it, so no protected page loads the DI container for the
+   chip. The sign-out redirect carries
+   `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
+   `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
+   focus again.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities
@@ -3350,15 +3412,19 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
 
     Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
     forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
-    every page loader in `RouteMapper`, the footer loader, the `mui-theme` shell loader, the
-    registration-notification loader, and `DeferredAuthActions.load()`. `ReloadingChunkLoader` —
-    **public routes only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag,
-    refusing when storage throws) and calls `pageReloadNavigator.reload()` once, leaving React
-    suspended on the fallback; a second miss in the session, and every miss on a protected route,
-    is rethrown to the route `errorElement` (strategy `reload`, user-initiated).
-    `tests/unit/routes/route-mapper.test.tsx` pins the guard-dependent choice,
-    `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
-    `route.load` through `React.lazy`.
+    every page loader in `RouteMapper`, the footer loader, the app-shell loader
+    (`app-shell-loader.ts`), the user-menu shell slot (`ShellSlotFactory`) and its current-user
+    loader, the `mui-theme` shell loader, the registration-notification loader, and
+    `DeferredAuthActions.load()`. A shell chunk that still fails is never rethrown to a route
+    `errorElement`: it renders the shell placeholders, an empty user-menu slot or the identity-less
+    menu, and is captured through `observabilityCore.captureError` with source `app-shell:load`,
+    `app-shell:user-menu` or `app-shell:current-user`. `ReloadingChunkLoader` — **public routes
+    only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage
+    throws) and calls `pageReloadNavigator.reload()` once, leaving React suspended on the fallback;
+    a second miss in the session, and every miss on a protected route, is rethrown to the route
+    `errorElement` (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx`
+    pins the guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
+    mapper still wraps `route.load` through `React.lazy`.
 
     Post-load warm-up (issue #309): `PostLoadPrefetcher` (`src/lib/reliability/`),
     attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the

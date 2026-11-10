@@ -89,6 +89,14 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
   },
   {
     ruleId: 'color-contrast',
+    selector: 'nav a[aria-current="page"], nav a[aria-current="page"] > span',
+    reason:
+      'Current navigation row, group-header label and sub-item: Figma active #0399ED on the ' +
+      '10% #1EAEFF tint is 2.8:1; owner-accepted in OQ-14.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
     selector:
       '#auth-form-card > a.MuiButton-text[href="/sign-in"], ' +
       '#auth-form-card > button.MuiButton-text',
