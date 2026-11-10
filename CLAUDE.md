@@ -389,7 +389,7 @@ Weight does not predict timed-out mutants, so the count stays at 48.
 ### Honest mutant classification (issue #171)
 
 A mutation score is only worth enforcing if every mutant is classified for the reason the status
-claims. Three settings in `stryker.config.mjs` keep that true, and
+claims. Four settings in `stryker.config.mjs` keep that true, and
 `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of them regresses:
 
 - **`checkers: ['typescript']`** (plugin `@stryker-mutator/typescript-checker`, pinned to the same
@@ -423,6 +423,14 @@ claims. Three settings in `stryker.config.mjs` keep that true, and
   25,584 to 194,773 (7.6×, 9× for the median file), which would push shards past the 15-minute
   kill switch and bring back the `Timeout` inflation above. Take it only with the shard
   wall-clock re-measured and the shard count raised first.
+- **`timeoutMS: 20000`.** Stryker calls a mutant run a hang when it outlasts this allowance plus
+  `timeoutFactor` times the covering tests' net time, and the net time leaves out the cost of
+  loading every related test file, which a high fan-out file pays on each run. At the default
+  5 s a CI runner timed out 98 of the 103 `pii-text-scrubber.ts` mutants and 36 of the 86
+  `ui-form/styles.ts` ones, every one of them killed by an assertion on a laptop, so they were
+  scored `Timeout` without a reason and each killed and restarted its test runner, which is what
+  pushed those shards to the kill switch. 20 s covers the slowest related-test load measured; a
+  real hang now costs 20 s instead of 5 s, and there are few of those.
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
 independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only

@@ -17,6 +17,7 @@ interface StrykerConfigShape {
   plugins?: string[];
   checkers?: string[];
   disableTypeChecks?: boolean;
+  timeoutMS?: number;
   tsconfigFile?: string;
   typescriptChecker?: { prioritizePerformanceOverAccuracy?: boolean };
   jest?: { enableFindRelatedTests?: boolean };
@@ -127,6 +128,10 @@ describe('stryker mutant-classification config', () => {
     it('groups checker work so type checking does not recompile per mutant', () => {
       expect(base.typescriptChecker?.prioritizePerformanceOverAccuracy).toBe(true);
     });
+
+    it('gives a mutant run time to load every related test file before it calls it a hang', () => {
+      expect(base.timeoutMS).toBeGreaterThanOrEqual(20_000);
+    });
   });
 
   describe('the shard config inherits every classification setting', () => {
@@ -139,6 +144,7 @@ describe('stryker mutant-classification config', () => {
         base.typescriptChecker?.prioritizePerformanceOverAccuracy
       );
       expect(shard.jest?.enableFindRelatedTests).toBe(true);
+      expect(shard.timeoutMS).toBe(base.timeoutMS);
     });
 
     it('leaves the break gate to the merge job while keeping the base band intact', () => {
