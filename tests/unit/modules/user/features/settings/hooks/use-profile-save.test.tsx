@@ -661,6 +661,25 @@ describe('useProfileSave', () => {
       expect(result.current.state.noChangesMarked).toBe(false);
     });
 
+    it('starts with the whole form state empty, including the last settle flag', async () => {
+      const fresh = await loadKeyed();
+      const { props } = harness();
+
+      const { result } = renderHook(() => fresh(props, 'fullName'));
+
+      expect(result.current.state).toEqual({
+        fieldErrors: { items: [] },
+        noChanges: false,
+        noChangesMarked: false,
+        settled: 0,
+        saved: 0,
+        lastSettleSaved: false,
+        cleared: 0,
+        attempts: 0,
+      });
+      expect(result.current.state.lastSettleSaved).toBe(false);
+    });
+
     it.each([
       ['fullName', 'settings.toasts.saved'],
       ['email', 'settings.toasts.email_sent'],

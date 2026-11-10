@@ -13,6 +13,7 @@ function Wrapper({ children }: { children: ReactNode }): JSX.Element {
 }
 
 const FAILED = 'Не вдалося скопіювати. Виділіть ключ і скопіюйте вручну.';
+const CHECK_ICON = 'MuiSvgIcon-root';
 
 describe('KeyBlock', () => {
   it('names an icon-only, non-submitting copy button beside the code', () => {
@@ -23,6 +24,7 @@ describe('KeyBlock', () => {
     const button = screen.getByRole('button', { name: 'Скопіювати ключ' });
     expect(button).toHaveAttribute('type', 'button');
     expect(button.innerHTML).toMatch(/<svg[^>]*aria-hidden="true"/);
+    expect(button.innerHTML).not.toContain(CHECK_ICON);
     expect(screen.getByRole('code')).toBeInTheDocument();
   });
 
@@ -39,6 +41,8 @@ describe('KeyBlock', () => {
     expect(writeText).toHaveBeenCalledWith(secret);
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Ключ скопійовано'));
     expect(button.innerHTML).not.toBe(before);
+    expect(before).not.toContain(CHECK_ICON);
+    expect(button.innerHTML).toContain(CHECK_ICON);
     expect(screen.queryByText(FAILED)).not.toBeInTheDocument();
   });
 
@@ -48,9 +52,11 @@ describe('KeyBlock', () => {
     jest.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('denied'));
     render(<KeyBlock secret={secret} copyLabel="Скопіювати ключ" />, { wrapper: Wrapper });
 
-    await user.click(screen.getByRole('button', { name: 'Скопіювати ключ' }));
+    const button = screen.getByRole('button', { name: 'Скопіювати ключ' });
+    await user.click(button);
 
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(FAILED));
+    expect(button.innerHTML).not.toContain(CHECK_ICON);
     expect(screen.getAllByText(FAILED).find((node) => node.tagName === 'P')).toHaveAttribute(
       'aria-hidden',
       'true'

@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import type { ComponentProps, JSX, ReactNode } from 'react';
+import * as ReactHookForm from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import SectionFields from '@/modules/user/features/settings/components/profile-form/section-fields';
@@ -12,6 +15,7 @@ import ProfileChangeDetector from '@/modules/user/features/settings/utils/profil
 import passwordValidator from '@/modules/user/lib/validations/password';
 import { buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type ProfileSectionFieldsProps = ComponentProps<typeof SectionFields>;
 
@@ -122,6 +126,15 @@ const fieldsOf = (
     onChange={onChange}
   />
 );
+
+const loadFreshSectionFields = (): Promise<typeof SectionFields> =>
+  loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    jest.doMock('react-hook-form', () => ReactHookForm);
+    jest.doMock('react-i18next', () => ReactI18next);
+    return (await import('@/modules/user/features/settings/components/profile-form/section-fields'))
+      .default;
+  });
 
 const field = (label: string): HTMLInputElement => screen.getByLabelText(label) as HTMLInputElement;
 
@@ -290,6 +303,62 @@ describe('SectionFields', () => {
       );
 
       expect(field(CURRENT)).toHaveAttribute('type', 'text');
+    });
+  });
+
+  describe('the hint ids, with the module loaded inside the test', () => {
+    const hintOf = (): HTMLElement => screen.getByText(HINT);
+
+    it('points the name field at the hint element carrying exactly its id', async () => {
+      const Fresh = await loadFreshSectionFields();
+      render(
+        <Fresh
+          context={contextOf()}
+          section="fullName"
+          rules={rules}
+          save={saveOf()}
+          onChange={jest.fn()}
+        />,
+        { wrapper: Frame }
+      );
+
+      expect(hintOf()).toHaveAttribute('id', 'full-name-save-hint');
+      expect(field(NAME)).toHaveAttribute('aria-describedby', 'full-name-save-hint');
+      expect(field(NAME)).toHaveAccessibleDescription(HINT);
+    });
+
+    it('points a confirmed e-mail field at the hint element carrying exactly its id', async () => {
+      const Fresh = await loadFreshSectionFields();
+      render(
+        <Fresh
+          context={contextOf()}
+          section="email"
+          rules={rules}
+          save={saveOf()}
+          onChange={jest.fn()}
+        />,
+        { wrapper: Frame }
+      );
+
+      expect(hintOf()).toHaveAttribute('id', 'email-save-hint');
+      expect(field(EMAIL)).toHaveAttribute('aria-describedby', 'email-save-hint');
+    });
+
+    it('lists the hint and then the status row for an unconfirmed e-mail', async () => {
+      const Fresh = await loadFreshSectionFields();
+      render(
+        <Fresh
+          context={contextOf({ ...user, confirmed: false })}
+          section="email"
+          rules={rules}
+          save={saveOf()}
+          onChange={jest.fn()}
+        />,
+        { wrapper: Frame }
+      );
+
+      expect(hintOf()).toHaveAttribute('id', 'email-save-hint');
+      expect(field(EMAIL)).toHaveAttribute('aria-describedby', 'email-save-hint email-status');
     });
   });
 });

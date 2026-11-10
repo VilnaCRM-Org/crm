@@ -28,9 +28,13 @@ export default function ChallengeCodeField({
   useChallengeFieldSync(state);
   useChallengeAutoSubmit(onComplete);
 
-  useEffect(() => {
-    setFocus(CODE_FIELD_NAME);
-  }, [setFocus]);
+  useEffect(
+    () => {
+      setFocus(CODE_FIELD_NAME);
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
+    [setFocus]
+  );
 
   return (
     <UIPinInput<TwoFactorDto>

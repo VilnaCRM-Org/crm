@@ -63,18 +63,6 @@ describe('navigation list styles', () => {
     });
   });
 
-  it('pins itemDrawer', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.itemDrawer).toEqual({
-      position: 'relative',
-      flexShrink: 0,
-      margin: 0,
-      padding: 0,
-      listStyle: 'none',
-    });
-  });
-
   it('pins row', async () => {
     const styles = await loadStyles();
 

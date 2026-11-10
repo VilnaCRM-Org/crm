@@ -87,13 +87,6 @@ export default {
     drawer: { margin: '8px 0 0', padding: 0, listStyle: 'none' },
   },
   item: { position: 'relative', flexShrink: 0, margin: 0, padding: 0, listStyle: 'none' },
-  itemDrawer: {
-    position: 'relative',
-    flexShrink: 0,
-    margin: 0,
-    padding: 0,
-    listStyle: 'none',
-  },
   row: {
     desktop: {
       ...rowBase,

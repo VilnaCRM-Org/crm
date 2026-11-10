@@ -455,11 +455,11 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
+Seventeen directives are annotated today, at two mutators. Sixteen are `ArrayDeclaration` on a
 React hook dependency array, and they come in two shapes. Eleven are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
 - `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
@@ -473,6 +473,12 @@ and each is equivalent for a reason worth stating separately:
   the token is a module constant; `src/modules/user/config/di.ts` binds it with
   `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
   therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
+- `challenge-code-field.tsx` (issue #331) annotates `[setFocus]` on the effect that focuses the
+  code field when the challenge mounts. `setFocus` comes from `useFormContext`, and react-hook-form
+  hands out one `setFocus` per form for the form's whole lifetime, so an emptied list runs the
+  effect exactly once, as `[setFocus]` does. jsdom shows no focus from that call, while the e2e
+  spec pins the first cell focused on arrival, so only a test that fakes a changing `setFocus`
+  could tell the two apart.
 
 Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an

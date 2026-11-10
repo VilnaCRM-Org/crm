@@ -40,6 +40,40 @@ describe('TwoFactorPanel', () => {
     });
   });
 
+  describe('the card chrome', () => {
+    const rowStyle = (property: 'alignItems' | 'marginBottom'): string[] => {
+      const heading = screen.getByRole('heading', { level: 2 });
+      return screen
+        .getAllByRole('generic')
+        .filter((element) => element.contains(heading))
+        .map((element) => getComputedStyle(element)[property]);
+    };
+
+    it('uses the tall card and a divided header row for every view but on', () => {
+      renderPanel(panelProps());
+
+      const section = screen.getByRole('region', { name: 'Двофакторна автентифікація' });
+      expect(section).toHaveStyle({ paddingTop: '1.0625rem', paddingBottom: '2.1875rem' });
+      expect(rowStyle('alignItems')).toContain('center');
+      expect(rowStyle('marginBottom')).toContain('1.4375rem');
+    });
+
+    it('uses the compact card and a plain header row for the on view', () => {
+      renderPanel(
+        panelProps({
+          settings: { ...EMPTY_SETTINGS, status: 'enabled' },
+          view: viewState('on'),
+        })
+      );
+
+      const section = screen.getByRole('region', { name: 'Двофакторна автентифікація' });
+      expect(section).toHaveStyle({ paddingTop: '0.9375rem', paddingBottom: '0.9375rem' });
+      expect(rowStyle('alignItems')).toContain('flex-start');
+      expect(rowStyle('alignItems')).not.toContain('center');
+      expect(rowStyle('marginBottom')).not.toContain('1.4375rem');
+    });
+  });
+
   describe('the off view', () => {
     it('shows three numbered steps and the start button', () => {
       renderPanel(panelProps());
