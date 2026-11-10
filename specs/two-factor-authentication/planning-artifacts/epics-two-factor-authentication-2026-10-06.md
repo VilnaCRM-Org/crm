@@ -632,7 +632,7 @@ build schemas from `tests/apollo-server/mock-schema-fixtures.ts`.
 - Given the stateless resolvers, when each mutation runs against a test-built server with the
   composed schema and the real `formatError`, then sign-in answers an `accessToken` with
   `twoFactorEnabled` false, or a `pendingSessionId` for the local part `2fa`; completion with
-  `123456` answers an `accessToken`; setup answers a fixed `otpauthUri` and 32-character `secret`;
+  any well-formed code answers an `accessToken`; setup answers a fixed `otpauthUri` and 32-character `secret`;
   confirm and regenerate answer eight fixed codes; disable answers `success`.
 - Given a malformed e-mail on sign-in or a malformed code on completion, confirm or disable, when
   it runs, then the resolver throws through the shared `rejectViolation('email' | 'twoFactorCode',

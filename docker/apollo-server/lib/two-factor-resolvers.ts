@@ -1,5 +1,3 @@
-import { GraphQLError } from 'graphql';
-
 import type {
   ClientMutationInput,
   CompleteTwoFactorInput,
@@ -14,7 +12,6 @@ const TOTP_CODE_REGEX = /^\d{6}$/u;
 const RECOVERY_CODE_REGEX = /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/u;
 
 const CHALLENGE_LOCAL_PART = '2fa';
-const ACCEPTED_TOTP_CODE = '123456';
 
 const MOCK_PAYLOAD_ID = '/api/users/0193a9e2-7c1d-7d8e-9f3a-5b6c7d8e9f01';
 const MOCK_ACCESS_TOKEN = 'mock-access-token';
@@ -66,14 +63,6 @@ const rejectMalformedCode = (code: string, shapes: readonly RegExp[]): void => {
   }
 };
 
-const rejectWrongCode = (code: string): void => {
-  if (code !== ACCEPTED_TOTP_CODE) {
-    throw new GraphQLError('Invalid two-factor code.', {
-      extensions: { code: 'UNAUTHENTICATED', status: 401 },
-    });
-  }
-};
-
 const requiresChallenge = (email: string): boolean =>
   email.slice(0, email.indexOf('@')).toLowerCase() === CHALLENGE_LOCAL_PART;
 
@@ -104,7 +93,6 @@ export const twoFactorResolvers = {
     ): Promise<TwoFactorPayload> => {
       rejectBlank('pendingSessionId', input.pendingSessionId);
       rejectMalformedCode(input.twoFactorCode, [TOTP_CODE_REGEX, RECOVERY_CODE_REGEX]);
-      rejectWrongCode(input.twoFactorCode);
       return twoFactorPayload(
         {
           twoFactorEnabled: true,

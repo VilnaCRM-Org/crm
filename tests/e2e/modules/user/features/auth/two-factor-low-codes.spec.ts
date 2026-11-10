@@ -1,6 +1,6 @@
 import type { Page, Request } from '@playwright/test';
 
-import { buildCredentials } from '@tests/builders';
+import { buildCredentials, buildRecoveryCode } from '@tests/builders';
 import { sidebarOf } from '@tests/e2e/utils/app-shell';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
@@ -20,9 +20,13 @@ import {
 import { stubProfile } from '../settings/utils/profile-stub';
 
 const NOTICE_CHUNK = /recovery-codes-notice(?:\.[\w-]+)?\.js$/;
-const RECOVERY_CODE = 'ABCD-2345';
+const RECOVERY_CODE = buildRecoveryCode();
 const credentials = buildCredentials();
-const secrets = { token: CHALLENGE_ACCESS_TOKEN, password: credentials.password };
+const secrets = {
+  token: CHALLENGE_ACCESS_TOKEN,
+  password: credentials.password,
+  code: RECOVERY_CODE,
+};
 const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(64, 65, 66)' } as const;
 
 const NOTICES = [

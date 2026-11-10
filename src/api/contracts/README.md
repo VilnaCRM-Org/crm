@@ -118,8 +118,8 @@ declaration silently, so each pending file opens with `# pending-against: <versi
 
   - `signInUser` with a valid e-mail answers `accessToken` and `twoFactorEnabled: false`; with the
     local part `2fa` it answers `pendingSessionId` and `twoFactorEnabled: true`, and no token.
-  - `completeTwoFactorUser` with `123456` answers `accessToken` and `twoFactorEnabled: true`; any
-    other well-formed code answers `Invalid two-factor code.` with `extensions.status` 401.
+  - `completeTwoFactorUser` with any well-formed code answers `accessToken` and
+    `twoFactorEnabled: true`; a wrong-code 401 comes only from msw and `page.route` (FR-4).
   - `setupTwoFactorUser` answers a fixed `otpauthUri` and a 32-character `secret`.
   - `confirmTwoFactorUser` and `regenerateRecoveryCodesUser` answer the same eight fixed
     `recoveryCodes`.

@@ -7,6 +7,7 @@ export interface ClientStateDump {
   readonly localStorage: string;
   readonly sessionStorage: string;
   readonly indexedDB: string;
+  readonly cookies: string;
   readonly unreadable: readonly string[];
 }
 
@@ -125,6 +126,7 @@ export async function readClientState(): Promise<ClientStateDump> {
     localStorage: entriesOf(window.localStorage),
     sessionStorage: entriesOf(window.sessionStorage),
     indexedDB: JSON.stringify([names, dumps]),
+    cookies: document.cookie,
     unreadable: names.filter((_name, index) => dumps[index] === null),
   };
 }
@@ -136,6 +138,7 @@ const PLACES: readonly ScannedPlace[] = [
   'localStorage',
   'sessionStorage',
   'indexedDB',
+  'cookies',
 ];
 
 const forms = (secret: string): readonly string[] => [

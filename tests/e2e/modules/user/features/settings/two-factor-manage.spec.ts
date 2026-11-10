@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { buildCredentials } from '@tests/builders';
+import { buildCredentials, buildTotpCode } from '@tests/builders';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
 import { submitSignIn, typeCode as typeChallengeCode } from '@tests/e2e/utils/reach-challenge';
@@ -39,6 +39,8 @@ import {
 
 const SETTINGS_URL = '/settings';
 const credentials = buildCredentials();
+const CODE = buildTotpCode();
+const RETYPED_CODE = buildTotpCode();
 const SECRETS = {
   secret: SETUP_SECRET,
   uri: SETUP_URI,
@@ -128,7 +130,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(CODE);
       await disableSubmitOf(page).click();
 
       await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
@@ -141,7 +143,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(CODE);
       await disableSubmitOf(page).click();
 
       await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
@@ -154,7 +156,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(CODE);
       await disableSubmitOf(page).click();
 
       await expect(statusHeadingOf(page, twoFactorText.statusAlreadyOff)).toBeFocused();
@@ -165,7 +167,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(CODE);
       await disableSubmitOf(page).click();
 
       await expectEndedSessionFrom(page, SETTINGS_URL);
@@ -204,7 +206,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await expect(page).toHaveURL(/\/sign-in$/);
       await expect(page.getByText(twoFactorText.sessionEnded)).toHaveCount(0);
       await submitSignIn(page, credentials);
-      await typeChallengeCode(page, '123456');
+      await typeChallengeCode(page, CODE);
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(new RegExp(`${SETTINGS_URL}$`));
     });
@@ -248,7 +250,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(CODE);
       await disableSubmitOf(page).click();
 
       await expect(sectionOf(page).getByRole('alert')).toHaveText(twoFactorText.rateLimited);
@@ -256,7 +258,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await expect(sectionOf(page).getByRole('button', { name: twoFactorText.retry })).toHaveCount(
         0
       );
-      await expect(disableFieldOf(page)).toHaveValue('123456');
+      await expect(disableFieldOf(page)).toHaveValue(CODE);
       expect(disable.count()).toBe(1);
     });
 
@@ -264,18 +266,18 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       const disable = await stubDisable(page, ['unavailable', 'disabled']);
       await enableTwoFactor(page);
       await openDisableOf(page).click();
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(CODE);
       await disableSubmitOf(page).click();
       await expect(
         sectionOf(page).getByRole('alert').filter({ hasText: twoFactorText.transient })
       ).toBeVisible();
 
-      await disableFieldOf(page).fill('654321');
+      await disableFieldOf(page).fill(RETYPED_CODE);
       await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
 
       await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
       expect(disable.count()).toBe(2);
-      expect(disable.calls[1]?.variables['input']).toMatchObject({ twoFactorCode: '654321' });
+      expect(disable.calls[1]?.variables['input']).toMatchObject({ twoFactorCode: RETYPED_CODE });
     });
 
     test('retries a transient regenerate failure exactly once more', async ({ page }) => {

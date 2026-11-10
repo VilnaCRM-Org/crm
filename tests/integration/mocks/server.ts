@@ -1,4 +1,4 @@
-import { graphql, http, HttpResponse } from 'msw';
+import { graphql, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
 import GraphQLUrl from '@/utils/get-graphql-url';
@@ -14,7 +14,7 @@ export const defaultGraphqlUser = buildGraphqlUser();
 export const defaultClientMutationId = buildClientMutationId();
 
 const handlers = [
-  http.post(GRAPHQL_URL, () =>
+  userServiceGraphql.mutation('CreateUser', () =>
     HttpResponse.json({
       data: {
         createUser: {

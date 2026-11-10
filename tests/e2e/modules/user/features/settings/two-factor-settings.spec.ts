@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { buildTotpCode } from '@tests/builders';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -41,6 +42,7 @@ import {
 
 const SETTINGS_URL = '/settings';
 const socialTitle: string = t('settings.social.heading');
+const CODE = buildTotpCode();
 const SECRETS = { secret: SETUP_SECRET, uri: SETUP_URI, code: RECOVERY_CODES[0] ?? '' };
 async function boxOf(locator: Locator): Promise<{ x: number; y: number }> {
   const box = await locator.boundingBox();
@@ -185,7 +187,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await page.goto(SETTINGS_URL);
       await openSetup(page);
 
-      await typeCode(page, '123456');
+      await typeCode(page, CODE);
       await confirmOf(page).click();
 
       await expect(
@@ -272,7 +274,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await page.goto(SETTINGS_URL);
       await openSetup(page);
 
-      await typeCode(page, '123456');
+      await typeCode(page, CODE);
       await confirmOf(page).click();
 
       await expect(statusHeadingOf(page, twoFactorText.statusStale)).toBeFocused();
@@ -321,7 +323,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
         const confirm = await stubConfirm(page, ['network', 'confirmed']);
         await page.goto(SETTINGS_URL);
         await openSetup(page);
-        await typeCode(page, '123456');
+        await typeCode(page, CODE);
         await confirmOf(page).click();
         await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
         await expect(qrOf(page)).toBeVisible();
@@ -331,7 +333,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
         await expect(codesHeadingOf(page)).toBeFocused();
         expect(confirm.count()).toBe(2);
         const [first, second] = confirm.calls.map((call) => call.variables['input'] as object);
-        expect(first).toMatchObject({ twoFactorCode: '123456' });
+        expect(first).toMatchObject({ twoFactorCode: CODE });
         expect({ ...second, clientMutationId: 0 }).toEqual({ ...first, clientMutationId: 0 });
       });
     });

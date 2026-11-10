@@ -1,7 +1,7 @@
 import type { Locator, Page, Route } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { buildCredentials } from '@tests/builders';
+import { buildCredentials, buildTotpCode } from '@tests/builders';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -30,7 +30,7 @@ import {
 import waitForSettledScroll from '@tests/e2e/utils/wait-for-settled-scroll';
 
 const PRESERVED_DESTINATION = '/?tab=deals#pipeline';
-const CODE = '123456';
+const CODE = buildTotpCode();
 const RECOVERY_CODE = 'ABCD-0001';
 const homeHeading: string = t('home.heading');
 

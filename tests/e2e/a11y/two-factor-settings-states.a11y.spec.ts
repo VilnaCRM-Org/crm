@@ -1,3 +1,4 @@
+import { buildTotpCode } from '@tests/builders';
 import {
   signInToSettings,
   stubProfile,
@@ -27,8 +28,13 @@ import {
   twoFactorText,
   typeCode,
 } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import {
+  NEW_RECOVERY_CODES,
+  RECOVERY_CODES,
+  SETUP_SECRET,
+  SETUP_URI,
   stubConfirm,
   stubDisable,
   stubRegenerate,
@@ -37,6 +43,14 @@ import {
 import expectCleanScan from '@tests/utils/a11y/expect-clean-scan';
 
 const SETTINGS_URL = '/settings';
+const CODE = buildTotpCode();
+const SECRETS = {
+  secret: SETUP_SECRET,
+  uri: SETUP_URI,
+  recoveryCode: RECOVERY_CODES[0] ?? '',
+  freshCode: NEW_RECOVERY_CODES[0] ?? '',
+  code: CODE,
+};
 
 test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)', () => {
   test.beforeEach(async ({ page }) => {
@@ -83,7 +97,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
   test('the wrong-code error has no axe violations', async ({ page }) => {
     await stubConfirm(page, ['invalid_code']);
     await openSetup(page);
-    await typeCode(page, '123456');
+    await typeCode(page, CODE);
     await confirmOf(page).click();
     await expect(sectionOf(page).getByText(twoFactorText.confirmInvalidCode)).toBeVisible();
 
@@ -130,7 +144,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await expect(sectionOf(page).getByText(twoFactorText.formatError)).toBeVisible();
     await expectCleanScan(page);
 
-    await disableFieldOf(page).fill('123456');
+    await disableFieldOf(page).fill(CODE);
     await disableSubmitOf(page).click();
     await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
     await expectCleanScan(page);
@@ -150,6 +164,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await openRegenerateOf(page).click();
     await regenerateSubmitOf(page).click();
     await expect(codesHeadingOf(page)).toBeFocused();
+    await expectNoSecrets(page, SECRETS);
 
     await expectCleanScan(page);
   });
@@ -176,9 +191,10 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await stubDisable(page);
     await enableTwoFactor(page);
     await openDisableOf(page).click();
-    await disableFieldOf(page).fill('123456');
+    await disableFieldOf(page).fill(CODE);
     await disableSubmitOf(page).click();
     await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
+    await expectNoSecrets(page, SECRETS);
 
     await expectCleanScan(page);
   });
@@ -187,7 +203,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
     await stubDisable(page, ['rate_limited']);
     await enableTwoFactor(page);
     await openDisableOf(page).click();
-    await disableFieldOf(page).fill('123456');
+    await disableFieldOf(page).fill(CODE);
     await disableSubmitOf(page).click();
     await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
 

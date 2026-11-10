@@ -277,28 +277,31 @@ describe('2FA operations on the stateless mock', () => {
   describe('completeTwoFactorUser', () => {
     const pendingSessionId = '01JAQZ8M3K5N7P9R2T4V6X8Z0B';
 
-    it('answers an access token for 123456', async () => {
-      const clientMutationId = buildClientMutationId();
+    it.each(['123456', '654321', 'ABCD-2345'])(
+      'answers an access token for any well-formed code %p, holding no rule of user-service',
+      async (twoFactorCode) => {
+        const clientMutationId = buildClientMutationId();
 
-      const result = await execute(server, COMPLETE, {
-        pendingSessionId,
-        twoFactorCode: '123456',
-        clientMutationId,
-      });
-
-      expect(result.errors).toBeUndefined();
-      expect(result.data).toEqual({
-        completeTwoFactorUser: {
-          user: {
-            twoFactorEnabled: true,
-            accessToken: 'mock-access-token',
-            refreshToken: 'mock-refresh-token',
-            recoveryCodesRemaining: null,
-          },
+        const result = await execute(server, COMPLETE, {
+          pendingSessionId,
+          twoFactorCode,
           clientMutationId,
-        },
-      });
-    });
+        });
+
+        expect(result.errors).toBeUndefined();
+        expect(result.data).toEqual({
+          completeTwoFactorUser: {
+            user: {
+              twoFactorEnabled: true,
+              accessToken: 'mock-access-token',
+              refreshToken: 'mock-refresh-token',
+              recoveryCodesRemaining: null,
+            },
+            clientMutationId,
+          },
+        });
+      }
+    );
 
     it.each(['', '   '])(
       'rejects the blank pending session id %p before checking the code',
@@ -325,21 +328,6 @@ describe('2FA operations on the stateless mock', () => {
       'rejects the malformed code %p with a coded twoFactorCode violation at 422',
       async (twoFactorCode) => {
         await expectCodeViolation(server, COMPLETE, { pendingSessionId, twoFactorCode });
-      }
-    );
-
-    it.each(['654321', 'ABCD-2345'])(
-      'answers the upstream 401 message for the well-formed but wrong code %p',
-      async (twoFactorCode) => {
-        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-
-        const result = await execute(server, COMPLETE, { pendingSessionId, twoFactorCode });
-
-        expect(result.errors).toHaveLength(1);
-        expect(result.errors?.[0]?.message).toBe('Invalid two-factor code.');
-        expect(result.errors?.[0]?.extensions).toEqual({ code: 'UNAUTHENTICATED', status: 401 });
-        expect(result.data).toEqual({ completeTwoFactorUser: null });
-        expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
       }
     );
   });

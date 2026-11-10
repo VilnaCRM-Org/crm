@@ -23,6 +23,13 @@ const livePage: PageEvaluator = {
   evaluate: ((run: () => unknown) => Promise.resolve(run())) as PageEvaluator['evaluate'],
 };
 
+const clearCookies = (): void => {
+  document.cookie.split('; ').forEach((cookie) => {
+    const [name] = cookie.split('=');
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  });
+};
+
 const installIndexedDb = (databases: readonly FakeDatabase[], failOpen = false): void => {
   const open = (name: string): IDBOpenDBRequest => {
     const request = {} as IDBOpenDBRequest;
@@ -91,6 +98,7 @@ describe('findSecretLeaks', () => {
     window.sessionStorage.clear();
     window.history.replaceState(null, '', '/sign-in');
     document.title = 'Sign in';
+    clearCookies();
     installIndexedDb([]);
   });
 
@@ -121,6 +129,16 @@ describe('findSecretLeaks', () => {
     expect(JSON.stringify(leaks)).not.toContain(password);
   });
 
+  it('finds a secret held in a cookie crm set', async () => {
+    document.cookie = `session=${token}; path=/`;
+    document.cookie = `draft=${encodeURIComponent(password)}; path=/`;
+
+    expect(await findSecretLeaks(livePage, secrets)).toEqual([
+      { place: 'cookies', secret: 'token' },
+      { place: 'cookies', secret: 'password' },
+    ]);
+  });
+
   it('finds a secret in its URL-encoded and JSON-escaped forms', async () => {
     const odd = 'p@ss word"1';
     window.history.replaceState(null, '', `/sign-in?p=${encodeURIComponent(odd)}`);
@@ -140,6 +158,7 @@ describe('findSecretLeaks', () => {
       localStorage: '[]',
       sessionStorage: '[]',
       indexedDB: '[[],[]]',
+      cookies: '',
       unreadable: [],
     });
 
@@ -203,13 +222,15 @@ describe('readClientState', () => {
     window.sessionStorage.clear();
     window.history.replaceState(null, '', '/sign-in');
     document.title = 'Sign in';
+    clearCookies();
   });
 
-  it('dumps the url, title, history state and both storages', async () => {
+  it('dumps the url, title, history state, both storages and the cookies', async () => {
     installIndexedDb([]);
     window.history.replaceState({ from: '/boards' }, '', '/sign-in');
     window.localStorage.setItem('a', '1');
     window.sessionStorage.setItem('b', '2');
+    document.cookie = 'c=3; path=/';
 
     expect(await readClientState()).toEqual({
       url: `${window.location.origin}/sign-in`,
@@ -218,6 +239,7 @@ describe('readClientState', () => {
       localStorage: 'a=1',
       sessionStorage: 'b=2',
       indexedDB: '[[],[]]',
+      cookies: 'c=3',
       unreadable: [],
     });
   });

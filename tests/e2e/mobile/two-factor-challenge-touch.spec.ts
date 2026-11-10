@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { buildTotpCode } from '@tests/builders';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import {
@@ -33,7 +34,7 @@ import {
 } from './utils/layout';
 import expectTouchTarget from './utils/touch-target';
 
-const CODE = '123456';
+const CODE = buildTotpCode();
 const RECOVERY_CODE = 'abcd0001';
 const CARD = '#auth-form-card';
 const CELL = '[role="group"] input';

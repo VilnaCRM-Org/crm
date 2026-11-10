@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { buildCredentials } from '@tests/builders';
+import { buildCredentials, buildRecoveryCode, buildTotpCode } from '@tests/builders';
 import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import {
@@ -14,11 +15,16 @@ import {
   signInToChallenge,
   typeCode,
 } from '@tests/e2e/utils/reach-challenge';
-import { replyWithRemainingCodes, stubChallenge } from '@tests/e2e/utils/two-factor-responses';
+import {
+  CHALLENGE_ACCESS_TOKEN,
+  replyWithRemainingCodes,
+  SIGN_IN_PENDING_SESSION_ID,
+  stubChallenge,
+} from '@tests/e2e/utils/two-factor-responses';
 import expectCleanScan from '@tests/utils/a11y/expect-clean-scan';
 
-const CODE = '123456';
-const RECOVERY_CODE = 'ABCD-2345';
+const CODE = buildTotpCode();
+const RECOVERY_CODE = buildRecoveryCode();
 const credentials = buildCredentials();
 const homeHeading: string = t('home.heading');
 
@@ -133,6 +139,12 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
         .getByRole('status')
         .filter({ hasText: t('recovery_codes_notice.remaining', { count: 1 }) })
     ).toBeVisible();
+    await expectNoSecrets(page, {
+      sessionId: SIGN_IN_PENDING_SESSION_ID,
+      code: RECOVERY_CODE,
+      token: CHALLENGE_ACCESS_TOKEN,
+      password: credentials.password,
+    });
 
     await expectCleanScan(page);
   });

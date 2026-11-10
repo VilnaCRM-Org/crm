@@ -1,11 +1,16 @@
 import type { Page, Request, Route } from '@playwright/test';
 
+import { buildPendingSessionId, buildToken, seedFaker } from '@tests/builders';
+
 const GRAPHQL_URL = '**/graphql';
 const SIGN_IN_OPERATION = 'SignInUser';
 const CHALLENGE_OPERATION = 'CompleteTwoFactorUser';
 
-export const SIGN_IN_ACCESS_TOKEN = 'e2e-access-token';
-export const SIGN_IN_PENDING_SESSION_ID = '01JAQZ8M3K5N7P9R2T4V6X8Z0B';
+seedFaker();
+
+export const SIGN_IN_ACCESS_TOKEN = buildToken();
+export const SIGN_IN_PENDING_SESSION_ID = buildPendingSessionId();
+export const CHALLENGE_ACCESS_TOKEN = buildToken();
 
 export type SignInOutcome =
   | 'session'
@@ -117,8 +122,6 @@ export function stubSignIn(
 ): Promise<StubbedSignIn> {
   return stubOperation(page, SIGN_IN_OPERATION, SIGN_IN_REPLIES, 'session', outcomes);
 }
-
-export const CHALLENGE_ACCESS_TOKEN = 'e2e-challenge-token';
 
 export type ChallengeOutcome =
   | 'completed'

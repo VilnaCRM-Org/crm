@@ -1,5 +1,6 @@
 import type { Locator } from '@playwright/test';
 
+import { buildTotpCode } from '@tests/builders';
 import {
   PROFILE_NODE,
   signInToSettings,
@@ -36,9 +37,13 @@ import {
   stubClipboard,
   twoFactorText,
 } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import {
+  RECOVERY_CODES,
+  SETUP_SECRET,
+  SETUP_URI,
   stubConfirm,
   stubDisable,
   stubRegenerate,
@@ -51,6 +56,13 @@ const SETTINGS_RING = 'rgb(26, 28, 30)';
 const CELL_BORDER = 'rgb(225, 231, 234)';
 const ERROR_TEXT = 'rgb(214, 51, 51)';
 const CELL_INDEXES = [0, 1, 2, 3, 4, 5] as const;
+const CODE = buildTotpCode();
+const SECRETS = {
+  secret: SETUP_SECRET,
+  uri: SETUP_URI,
+  recoveryCode: RECOVERY_CODES[0] ?? '',
+  code: CODE,
+};
 
 async function expectRing(target: Locator, color: string): Promise<void> {
   await expect(target).toHaveCSS('outline-style', 'solid');
@@ -106,11 +118,12 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await page.keyboard.press('Tab');
     await expect(codeCellsOf(page).first()).toBeFocused();
 
-    await page.keyboard.type('123456');
+    await page.keyboard.type(CODE);
     await page.keyboard.press('Enter');
 
     await expect.poll(() => confirm.count()).toBe(1);
     await expect(codesHeadingOf(page)).toBeFocused();
+    await expectNoSecrets(page, SECRETS);
   });
 
   test('the key info tooltip shows on focus, describes the button and hides on Escape', async ({
@@ -152,7 +165,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await expect(codeCellsOf(page).first()).toHaveCSS('outline-style', 'none');
     await expect(codeCellsOf(page).first()).not.toHaveCSS('box-shadow', 'none');
 
-    await page.keyboard.type('123456');
+    await page.keyboard.type(CODE);
     await confirmOf(page).click();
 
     await expect(sectionOf(page).getByText(twoFactorText.confirmInvalidCode)).toHaveCSS(
@@ -187,6 +200,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await page.keyboard.press('Enter');
 
     await expect(statusHeadingOf(page, twoFactorText.statusOn)).toBeFocused();
+    await expectNoSecrets(page, SECRETS);
   });
 
   test('on tabs from Вимкнути to Створити нові резервні коди', async ({ page }) => {
@@ -225,11 +239,12 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await page.keyboard.press('Tab');
     await expect(disableFieldOf(page)).toBeFocused();
 
-    await page.keyboard.type('123456');
+    await page.keyboard.type(CODE);
     await page.keyboard.press('Enter');
 
     await expect.poll(() => disable.count()).toBe(1);
     await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
+    await expectNoSecrets(page, SECRETS);
   });
 
   test('regenerate tabs from Створити коди to Скасувати, and Escape cancels', async ({ page }) => {
@@ -261,7 +276,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
     await stubDisable(page, ['rate_limited']);
     await enableTwoFactor(page);
     await openDisableOf(page).click();
-    await disableFieldOf(page).fill('123456');
+    await disableFieldOf(page).fill(CODE);
     await disableSubmitOf(page).click();
     await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
     await expect(cancelOf(page)).toBeEnabled();

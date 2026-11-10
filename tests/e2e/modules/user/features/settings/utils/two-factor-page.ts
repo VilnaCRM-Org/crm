@@ -1,8 +1,9 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { buildTotpCode } from '@tests/builders';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { RECOVERY_CODES } from '@tests/e2e/utils/two-factor-settings-responses';
+import { RECOVERY_CODES, SETUP_SECRET } from '@tests/e2e/utils/two-factor-settings-responses';
 
 export const twoFactorText = {
   title: t('settings.two_factor.title'),
@@ -52,7 +53,7 @@ export const twoFactorText = {
   sessionEnded: t('sign_in.notices.session_ended'),
 } as const;
 
-export const KEY_IN_GROUPS = 'JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP';
+export const KEY_IN_GROUPS = SETUP_SECRET.replace(/(.{4})(?=.)/gu, '$1 ');
 
 export const sectionOf = (page: Page): Locator =>
   page.getByRole('region', { name: twoFactorText.title, exact: true });
@@ -116,9 +117,11 @@ export async function openSetup(page: Page): Promise<void> {
   await expect(setupHeadingOf(page)).toBeFocused();
 }
 
+const SETUP_CODE = buildTotpCode();
+
 export async function reachCodes(page: Page): Promise<void> {
   await openSetup(page);
-  await typeCode(page, '123456');
+  await typeCode(page, SETUP_CODE);
   await confirmOf(page).click();
   await expect(codesHeadingOf(page)).toBeFocused();
 }
@@ -188,7 +191,7 @@ export async function enableTwoFactor(page: Page): Promise<void> {
 
 export type Activate = (control: Locator) => Promise<void>;
 
-const CARD_CODE = '123456';
+const CARD_CODE = buildTotpCode();
 
 async function expectCardHolds(page: Page, items: Locator, count: number): Promise<void> {
   const card = await sectionOf(page).elementHandle();

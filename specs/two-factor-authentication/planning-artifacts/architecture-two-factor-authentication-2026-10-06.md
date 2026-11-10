@@ -1932,7 +1932,7 @@ local mock composition; there is no expiry checker (FR-2 is withdrawn). This fea
 - **Resolvers.** `docker/apollo-server/lib/two-factor-resolvers.ts`, spread into the exported
   `resolvers.Mutation` (`resolvers.ts:55-84`), stateless: `signInUser` answers `accessToken` with
   `twoFactorEnabled: false`, or `pendingSessionId` with `twoFactorEnabled: true` when the e-mail's
-  local part is `2fa`; `completeTwoFactorUser` answers an `accessToken` for `123456`;
+  local part is `2fa`; `completeTwoFactorUser` answers an `accessToken` for any well-formed code;
   `setupTwoFactorUser` a fixed `otpauthUri` and 32-character `secret`; `confirmTwoFactorUser` and
   `regenerateRecoveryCodesUser` eight fixed codes; `disableTwoFactorUser` `success`. Each mutation
   that takes input has one violation: an e-mail failing the mock regex on sign-in and a malformed
@@ -1940,8 +1940,8 @@ local mock composition; there is no expiry checker (FR-2 is withdrawn). This fea
   422, `extensions.violations` and `extensions.code` `BAD_USER_INPUT`, so the real `formatError`
   keeps its message (`format-error.ts:13-20`). The mock reads no token, as #330's does; every
   401/403 branch comes from msw and `page.route`.
-- **README.** The contracts README pending section gains the 2FA row and the two magic inputs
-  (`2fa`, `123456`).
+- **README.** The contracts README pending section gains the 2FA row and the one magic input
+  (`2fa`).
 
 Every other branch (401s, 403s, 409, 423, 429, 5xx, no answer) is exercised by the msw handlers
 in integration and the `page.route` stubs in the browser lanes, which CI runs; the local mock

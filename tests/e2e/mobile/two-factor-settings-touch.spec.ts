@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
+import { buildTotpCode } from '@tests/builders';
 import {
   signInToSettings,
   stubProfile,
@@ -57,7 +58,7 @@ import {
 import expectTouchTarget from './utils/touch-target';
 
 const SETTINGS_URL = '/settings';
-const CODE = '123456';
+const CODE = buildTotpCode();
 const CELL_COUNT = 6;
 const CARD_WIDTHS: readonly number[] = [320, 375, 390, 412, 767];
 const SECRETS = {

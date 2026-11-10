@@ -1,7 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { buildCredentials } from '@tests/builders';
+import { buildCredentials, buildTotpCode } from '@tests/builders';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import {
@@ -14,11 +15,21 @@ import {
   recoveryToggleOf,
   signInToChallenge,
 } from '@tests/e2e/utils/reach-challenge';
-import { stubChallenge } from '@tests/e2e/utils/two-factor-responses';
+import {
+  CHALLENGE_ACCESS_TOKEN,
+  SIGN_IN_PENDING_SESSION_ID,
+  stubChallenge,
+} from '@tests/e2e/utils/two-factor-responses';
 import { expectNextTabStop, expectTabOrder } from '@tests/utils/a11y/keyboard';
 
-const CODE = '123456';
+const CODE = buildTotpCode();
 const credentials = buildCredentials();
+const secrets = {
+  sessionId: SIGN_IN_PENDING_SESSION_ID,
+  code: CODE,
+  token: CHALLENGE_ACCESS_TOKEN,
+  password: credentials.password,
+};
 const BRAND_LINK = 'rgb(0, 116, 181)';
 const SHARED_RING = 'rgb(64, 65, 66)';
 const CELL_BORDER = 'rgb(225, 231, 234)';
@@ -73,6 +84,7 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
     await expect.poll(() => challenge.count()).toBe(1);
     expect(challenge.calls[0]?.variables['input']).toMatchObject({ twoFactorCode: CODE });
     await expect(page).not.toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
+    await expectNoSecrets(page, secrets);
   });
 
   test('Enter on Підтвердити retries a kept code and Space does too', async ({ page }) => {
@@ -91,6 +103,8 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
     await page.keyboard.press('Space');
 
     await expect.poll(() => challenge.count()).toBe(3);
+    await expect(page).not.toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
+    await expectNoSecrets(page, secrets);
   });
 
   test('recovery mode swaps the cells for the field and renames the toggle', async ({ page }) => {
@@ -121,6 +135,8 @@ test.describe('Sign-in challenge keyboard contract (issue #331)', () => {
 
     await expect.poll(() => challenge.count()).toBe(1);
     expect(challenge.calls[0]?.variables['input']).toMatchObject({ twoFactorCode: 'ABCD-0001' });
+    await expect(page).not.toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
+    await expectNoSecrets(page, { ...secrets, code: 'ABCD-0001', typed: 'abcd0001' });
   });
 
   test('paints the mode toggle in brand blue with its own ring in both modes', async ({ page }) => {

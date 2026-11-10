@@ -1,6 +1,14 @@
 import type { Page } from '@playwright/test';
 
 import {
+  buildEmail,
+  buildOtpauthUri,
+  buildRecoveryCodeSet,
+  buildTotpSecret,
+  seedFaker,
+} from '@tests/builders';
+
+import {
   graphQLFailure,
   json,
   stubOperation,
@@ -8,31 +16,15 @@ import {
   type StubbedSignIn,
 } from './two-factor-responses';
 
-export const SETUP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
-const SETUP_LABEL = 'VilnaCRM%3Aolena.petrenko%40example.com';
+seedFaker();
 
-export const SETUP_URI = `otpauth://totp/${SETUP_LABEL}?secret=${SETUP_SECRET}&issuer=VilnaCRM`;
-export const NEW_RECOVERY_CODES: readonly string[] = [
-  'A2BC-3DEF',
-  'G4HJ-5KMN',
-  'P6QR-7STV',
-  'W8XY-9Z2A',
-  'B3CD-4EFG',
-  'H5JK-6MNP',
-  'Q7RS-8TVW',
-  'X9YZ-2ABC',
-];
+const recoveryCodesOf = (): readonly string[] =>
+  buildRecoveryCodeSet().items.map(({ value }) => value);
 
-export const RECOVERY_CODES: readonly string[] = [
-  'K7QM-4RTD',
-  'W2XB-9NHF',
-  'P5ZC-1LVA',
-  'D8GJ-6YSE',
-  'T3UR-7KBN',
-  'H4EW-2MQX',
-  'C9FA-5ZPL',
-  'N6VD-8JTG',
-];
+export const SETUP_SECRET = buildTotpSecret();
+export const SETUP_URI = buildOtpauthUri(buildEmail(), SETUP_SECRET);
+export const RECOVERY_CODES: readonly string[] = recoveryCodesOf();
+export const NEW_RECOVERY_CODES: readonly string[] = recoveryCodesOf();
 
 export type SetupOutcome =
   'created' | 'already_enabled' | 'rate_limited' | 'unavailable' | 'network';
@@ -57,21 +49,34 @@ const transport: Record<'rate_limited' | 'unavailable' | 'network', SignInReply>
   network: (route) => route.abort('failed'),
 };
 
-export const SETUP_REPLIES: Record<SetupOutcome, SignInReply> = {
-  created: (route) =>
+export const replyWithSetup =
+  (otpauthUri: string, secret: string): SignInReply =>
+  (route) =>
+    json(route, 200, { data: { setupTwoFactorUser: { user: { otpauthUri, secret } } } });
+
+export const replyWithConfirmedCodes =
+  (recoveryCodes: readonly string[]): SignInReply =>
+  (route) =>
     json(route, 200, {
-      data: { setupTwoFactorUser: { user: { otpauthUri: SETUP_URI, secret: SETUP_SECRET } } },
-    }),
+      data: { confirmTwoFactorUser: { user: { recoveryCodes: [...recoveryCodes] } } },
+    });
+
+export const replyWithRegeneratedCodes =
+  (recoveryCodes: readonly string[]): SignInReply =>
+  (route) =>
+    json(route, 200, {
+      data: { regenerateRecoveryCodesUser: { user: { recoveryCodes: [...recoveryCodes] } } },
+    });
+
+export const SETUP_REPLIES: Record<SetupOutcome, SignInReply> = {
+  created: replyWithSetup(SETUP_URI, SETUP_SECRET),
   already_enabled: (route) =>
     json(route, 200, graphQLFailure('Two-factor authentication is already enabled.', 409)),
   ...transport,
 };
 
 export const CONFIRM_REPLIES: Record<ConfirmOutcome, SignInReply> = {
-  confirmed: (route) =>
-    json(route, 200, {
-      data: { confirmTwoFactorUser: { user: { recoveryCodes: [...RECOVERY_CODES] } } },
-    }),
+  confirmed: replyWithConfirmedCodes(RECOVERY_CODES),
   invalid_code: (route) => json(route, 200, graphQLFailure('Invalid two-factor code.', 401)),
   setup_not_initiated: (route) =>
     json(route, 200, graphQLFailure('Two-factor setup not initiated.', 401)),
@@ -103,10 +108,7 @@ export const DISABLE_REPLIES: Record<DisableOutcome, SignInReply> = {
 };
 
 export const REGENERATE_REPLIES: Record<RegenerateOutcome, SignInReply> = {
-  regenerated: (route) =>
-    json(route, 200, {
-      data: { regenerateRecoveryCodesUser: { user: { recoveryCodes: [...NEW_RECOVERY_CODES] } } },
-    }),
+  regenerated: replyWithRegeneratedCodes(NEW_RECOVERY_CODES),
   reauth_required: (route) => json(route, 200, graphQLFailure('Re-authentication required.', 403)),
   not_enabled: (route) => json(route, 200, graphQLFailure(NOT_ENABLED, 403)),
   ...transport,
