@@ -13,7 +13,7 @@ const POSITIONER = {
   [SETTINGS_TABLET]: {
     left: '8.9375rem',
     right: 'auto',
-    width: '23.3125rem',
+    width: 'min(23.3125rem, calc(100% - 8.9375rem))',
     bottom: 'calc(100% - 0.625rem)',
     paddingBottom: '0.4375rem',
   },
