@@ -71,8 +71,15 @@ export interface TwoFactorOperationPlan {
   readonly failures: ReadonlyMap<TwoFactorSettingsFailureReason, TwoFactorFailureRow>;
 }
 
+export type TwoFactorSettleCallback = (
+  outcome: TwoFactorSettingsOutcome,
+  plan: TwoFactorOperationPlan
+) => void;
+
+export type TwoFactorRefuseCallback = (fieldError: TwoFactorFieldError) => void;
+
 export interface TwoFactorSettle {
-  readonly settle: (outcome: TwoFactorSettingsOutcome, plan: TwoFactorOperationPlan) => void;
+  readonly settle: TwoFactorSettleCallback;
   readonly show: (view: TwoFactorSettingsView) => void;
-  readonly refuse: (fieldError: TwoFactorFieldError) => void;
+  readonly refuse: TwoFactorRefuseCallback;
 }

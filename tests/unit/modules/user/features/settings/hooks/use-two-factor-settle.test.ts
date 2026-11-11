@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 
 import useTwoFactorSettle from '@/modules/user/features/settings/hooks/use-two-factor-settle';
-import { buildRecoveryCodeSet, buildTotpSecret } from '@tests/builders';
+import { buildOtpauthUri, buildRecoveryCodeSet, buildTotpSecret } from '@tests/builders';
 
 import {
   EMPTY_SETTINGS,
@@ -12,8 +12,9 @@ import {
 } from './two-factor-test-deps';
 
 const KEPT_SECRET = buildTotpSecret();
+const KEPT_URI = buildOtpauthUri();
 const current = {
-  settings: { ...EMPTY_SETTINGS, secret: KEPT_SECRET, otpauthUri: 'otpauth://totp/x' },
+  settings: { ...EMPTY_SETTINGS, secret: KEPT_SECRET, otpauthUri: KEPT_URI },
   view: viewState('setup', {
     fieldError: 'invalid_code' as const,
     fieldErrorOccurrence: 2,

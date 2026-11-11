@@ -9,9 +9,10 @@ import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import type { TwoFactorSettingsOutcome } from '../two-factor/outcome';
 import type {
   TwoFactorOperationPlan,
+  TwoFactorRefuseCallback,
   TwoFactorSettingsTransition,
   TwoFactorSettingsView,
-  TwoFactorSettle,
+  TwoFactorSettleCallback,
 } from '../two-factor/settings-view';
 
 import type {
@@ -23,7 +24,7 @@ import type {
 export interface SettledSubmitOptions<TInput> {
   readonly run: AbortableRun<TInput, TwoFactorSettingsOutcome>;
   readonly plan: TwoFactorOperationPlan;
-  readonly settle: TwoFactorSettle['settle'];
+  readonly settle: TwoFactorSettleCallback;
 }
 
 export interface SettledSubmit<TInput> {
@@ -35,7 +36,7 @@ export interface CodeEntry {
   readonly normalizer: TwoFactorCodeNormalizer;
   readonly accept: TwoFactorCodeAcceptance;
   readonly refusal: TwoFactorFieldError;
-  readonly refuse: TwoFactorSettle['refuse'];
+  readonly refuse: TwoFactorRefuseCallback;
 }
 
 export interface TransitionStore {

@@ -10,7 +10,7 @@ import { I18nextProvider } from 'react-i18next';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import Form from '@/modules/user/features/settings/components/profile-form/profile-section-form';
 import type { ProfileFieldError } from '@/modules/user/features/settings/types/user-profile';
-import { buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import loadIsolated from '@tests/unit/utils/isolated-module';
@@ -21,6 +21,7 @@ type ProfileSection = ProfileSectionFormProps['section'];
 
 const NEW_NAME = buildFullName();
 const NEW_PASSWORD = buildPassword();
+const ENTERED_PASSWORD = buildPassword();
 
 const mockUpdate = jest.fn();
 
@@ -44,8 +45,8 @@ const OFFLINE = "Ви офлайн. Надсилання недоступне, �
 const WRONG_PASSWORD = 'Неправильний поточний пароль';
 
 const user = buildUserEntity({
-  fullName: 'Олена Петренко',
-  email: 'olena@example.com',
+  fullName: buildFullName(),
+  email: buildEmail(),
   confirmed: true,
 });
 
@@ -131,16 +132,16 @@ const invalidWith = (...items: ProfileFieldError[]): object => ({
 
 const revealName = async (): Promise<void> => {
   await userEvent.type(field(NAME), ' Іванівна');
-  await userEvent.type(field(NAME_PASSWORD), 'abc');
+  await userEvent.type(field(NAME_PASSWORD), ENTERED_PASSWORD);
 };
 
 const revealEmail = async (): Promise<void> => {
   await userEvent.type(field(EMAIL), '.ua');
-  await userEvent.type(field(EMAIL_PASSWORD), 'abc');
+  await userEvent.type(field(EMAIL_PASSWORD), ENTERED_PASSWORD);
 };
 
 const revealPassword = async (): Promise<void> => {
-  await userEvent.type(field(CURRENT), 'abc');
+  await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
   await userEvent.type(field(NEW), NEW_PASSWORD);
 };
 
@@ -276,7 +277,7 @@ describe('ProfileSectionForm', () => {
       render(<AdoptingSection />, { wrapper });
       await userEvent.clear(field(NAME));
       await userEvent.type(field(NAME), NEW_NAME);
-      await userEvent.type(field(NAME_PASSWORD), 'abc');
+      await userEvent.type(field(NAME_PASSWORD), ENTERED_PASSWORD);
 
       await userEvent.click(screen.getByRole('button', { name: SAVE_NAME }));
 
@@ -294,7 +295,7 @@ describe('ProfileSectionForm', () => {
       await userEvent.click(screen.getByRole('button', { name: SAVE_NAME }));
 
       await waitFor(() => expect(screen.getByRole('button', { name: SAVE_NAME })).toHaveFocus());
-      expect(field(NAME_PASSWORD)).toHaveValue('abc');
+      expect(field(NAME_PASSWORD)).toHaveValue(ENTERED_PASSWORD);
       expect(field(NAME)).toHaveValue(`${user.fullName} Іванівна`);
     });
   });
@@ -322,7 +323,7 @@ describe('ProfileSectionForm', () => {
       await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
       expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
         id: user.id,
-        currentPassword: 'abc',
+        currentPassword: ENTERED_PASSWORD,
         fullName: `${user.fullName} Іванівна`,
       });
     });
@@ -336,7 +337,7 @@ describe('ProfileSectionForm', () => {
       await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
       expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
         id: user.id,
-        currentPassword: 'abc',
+        currentPassword: ENTERED_PASSWORD,
         email: `${user.email}.ua`,
       });
     });
@@ -380,7 +381,7 @@ describe('ProfileSectionForm', () => {
         invalidWith({ field: 'currentPassword', reason: 'password_wrong' })
       );
       render(sectionForm('password'), { wrapper });
-      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
       await userEvent.type(field(NEW), NEW_PASSWORD);
 
       await userEvent.click(screen.getByRole('button', { name: SAVE }));
@@ -430,7 +431,7 @@ describe('ProfileSectionForm', () => {
         invalidWith({ field: 'newPassword', reason: 'new_password_rejected' })
       );
       render(sectionForm('password'), { wrapper });
-      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
       await userEvent.type(field(NEW), NEW_PASSWORD);
 
       await userEvent.click(screen.getByRole('button', { name: SAVE }));

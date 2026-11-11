@@ -48,9 +48,12 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
       ['a null user', { setupTwoFactorUser: { user: null } }],
       [
         'a null secret',
-        { setupTwoFactorUser: { user: { otpauthUri: 'otpauth://x', secret: null } } },
+        { setupTwoFactorUser: { user: { otpauthUri: buildOtpauthUri(), secret: null } } },
       ],
-      ['an empty URI', { setupTwoFactorUser: { user: { otpauthUri: '', secret: 'ABCD' } } }],
+      [
+        'an empty URI',
+        { setupTwoFactorUser: { user: { otpauthUri: '', secret: buildTotpSecret() } } },
+      ],
     ])('fails with the server reason for %s', (_name, payload) => {
       expect(transformer.toSetupOutcome(payload)).toEqual(SERVER);
     });

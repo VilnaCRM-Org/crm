@@ -11,6 +11,9 @@ import type {
 } from '@/modules/user/features/settings/types/two-factor/outcome';
 import DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter';
 import { HttpError } from '@/services/https-client/http-error';
+import observabilityCore from '@/services/observability/observability-core';
+import securityEventCore from '@/services/security-events/security-event-core';
+import SecurityEventReporter from '@/services/security-events/security-event-reporter';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import {
   buildOtpauthUri,
@@ -68,6 +71,16 @@ const problem = (status: number): Response =>
 
 const graphQLError = (error: object): Response =>
   HttpResponse.json({ data: null, errors: [error] });
+
+const watchSecuritySignals = (): readonly jest.SpyInstance[] => [
+  jest.spyOn(observabilityCore, 'report'),
+  jest.spyOn(securityEventCore, 'authFailure'),
+  jest.spyOn(securityEventCore, 'unauthorizedResponse'),
+  jest.spyOn(securityEventCore, 'boundaryCatch'),
+  jest.spyOn(SecurityEventReporter.prototype, 'authFailure'),
+  jest.spyOn(SecurityEventReporter.prototype, 'unauthorizedResponse'),
+  jest.spyOn(SecurityEventReporter.prototype, 'boundaryCatch'),
+];
 
 const failed = (reason: TwoFactorSettingsFailureReason): object => ({ kind: 'failed', reason });
 
@@ -248,5 +261,40 @@ describe('TwoFactorSettingsProvider over the container client (integration)', ()
     );
 
     await expect(run('DisableTwoFactorUser')).resolves.toEqual(failed('server'));
+  });
+
+  describe.each(OPERATIONS)('%s records no security signal', (operation) => {
+    it.each([
+      [
+        'a success',
+        (): Response =>
+          HttpResponse.json({
+            data: {
+              setupTwoFactorUser: {
+                user: { otpauthUri: buildOtpauthUri(), secret: buildTotpSecret() },
+              },
+              confirmTwoFactorUser: { user: { recoveryCodes: [] } },
+              disableTwoFactorUser: { user: { success: true } },
+              regenerateRecoveryCodesUser: { user: { recoveryCodes: [] } },
+            },
+          }),
+      ],
+      ['HTTP 401', (): Response => problem(401)],
+      ['HTTP 429', (): Response => problem(429)],
+      ['HTTP 503', (): Response => problem(503)],
+      ['a network failure', (): Response => HttpResponse.error()],
+      [
+        'a wrong code',
+        (): Response =>
+          graphQLError({ message: 'Invalid two-factor code.', extensions: { status: 403 } }),
+      ],
+    ] as const)('when it settles as %s', async (_name, respond) => {
+      const spies = watchSecuritySignals();
+      answerTwoFactorSettings(operation, respond);
+
+      await run(operation);
+
+      spies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+    });
   });
 });

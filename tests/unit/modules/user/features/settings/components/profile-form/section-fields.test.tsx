@@ -13,7 +13,7 @@ import type { ProfileSave } from '@/modules/user/features/settings/types/hooks/u
 import type { ProfileFormValues } from '@/modules/user/features/settings/types/user-profile';
 import ProfileChangeDetector from '@/modules/user/features/settings/utils/profile-change-detector';
 import passwordValidator from '@/modules/user/lib/validations/password';
-import { buildPassword, buildUserEntity } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
@@ -35,8 +35,8 @@ const NEW = 'Новий пароль';
 const HINT = 'Щоб зберегти зміну, введіть поточний пароль.';
 
 const user = buildUserEntity({
-  fullName: 'Олена Петренко',
-  email: 'olena@example.com',
+  fullName: buildFullName(),
+  email: buildEmail(),
   confirmed: true,
 });
 

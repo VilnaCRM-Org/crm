@@ -12,7 +12,7 @@ import {
   buildUserEntity,
 } from '@tests/builders';
 
-const user = buildUserEntity({ fullName: 'Олена Петренко', email: 'olena@example.com' });
+const user = buildUserEntity({ fullName: buildFullName(), email: buildEmail() });
 const OTHER_NAME = buildFullName();
 const OTHER_EMAIL = buildEmail();
 
