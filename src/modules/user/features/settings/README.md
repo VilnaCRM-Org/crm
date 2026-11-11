@@ -14,8 +14,16 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
   toast queue.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
   (`ProfileSectionForm`, `SectionFields`, `ClearButton`, `EmailStatusRow`), `change-password`,
-  `settings-grid`, `social-networks`, `user-menu` (the
+  `settings-grid`, `social-networks`, `two-factor-settings` (the two-factor card, issue #331),
+  `qr-code-image` (the setup QR code, drawn as one inline SVG path) and `user-menu` (the
   app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
+- `components/two-factor-settings/` — `TwoFactorSettings` calls `useTwoFactorSettings` and hands
+  the result to `TwoFactorPanel`, which picks one view from a `Record<TwoFactorSettingsView, …>`
+  table: `OffView`, `SetupView`, `CodesView`, `OnView`, `DisableView`, `RegenerateView` and
+  `ReauthView`. The pieces they share are the card header and status heading, the setup guide
+  (`SetupGuide`, `StepItem`, `ScanStepBody`, `KeyBlock` with its copy button and info tooltip), the
+  confirmation form and its code fields, the recovery `CodesBlock` and `SavedCheckbox`, and
+  `OnActions`.
 - `components/user-menu/user-menu-slot.tsx` — `UserMenuSlot`, the `user-menu` chunk entry. It
   mounts one `UserMenu` for its whole life and owns the identity it shows. It lazy-loads only the
   identity source, `CurrentUserMenu` (chunk `current-user`), which
@@ -43,9 +51,21 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useSectionReveal`,
   `useCollapseFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
-- `data-providers/profile-provider.ts` — `ProfileProvider`, the translation boundary.
-- `transformers/graphql-profile-transformer.ts` — `GraphQLProfileTransformer`.
-- `repositories/` — `GraphQLProfileRepository` and the three GraphQL document seams.
+- `hooks/` for two-factor — the compose hook `useTwoFactorSettings` over `useTwoFactorTransition`
+  (the view state store) and the three operations `useTwoFactorSetup`, `useTwoFactorDisable` and
+  `useRecoveryCodesRegenerate`, which settle through `useTwoFactorSettle`. The panel reads
+  `useTwoFactorHeading`, `usePreviousView`, `useStatusText` and `useTwoFactorBanner`; the views
+  build their forms with `useSetupFormProps`, `useCodesFormProps`, `useDisableFormProps`,
+  `useRegenerateFormProps`, `useCodeFormProps`, `useCodeSubmit`, `useSettledSubmit` and
+  `useConfirmationShell`. Focus and feedback are `useConfirmFieldFocus`, `useOptionalFocus`,
+  `useEscapeCancel`, `useCopyToClipboard`, `useCopyAnnouncement`, `useKeyInfoTooltip`,
+  `useKeyInfoControls` and `useKeyInfoDismissal`.
+- `data-providers/` — `ProfileProvider` and `TwoFactorSettingsProvider`, the translation
+  boundaries.
+- `transformers/` — `GraphQLProfileTransformer` and `GraphQLTwoFactorSettingsTransformer`.
+- `repositories/` — `GraphQLProfileRepository` and its three GraphQL document seams, and
+  `GraphQLTwoFactorSettingsRepository` with its four (`setup`, `confirm`, `disable` and
+  `regenerate-recovery-codes` mutations, each a `.graphql` document beside its typed mutation).
 - `utils/` — `ProfileChangeDetector`, the zod `response-schemas`, and the container-free chip read:
   `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
 - `types/` — type-only files, grouped by source area (TB-1).
@@ -84,11 +104,16 @@ Built here:
 - `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
   region for success texts and an assertive one for error texts, both always mounted, at most three
   on screen. The two-factor card reports inside its own card.
-- The `SettingsGrid`, whose second slot is reserved for the two-factor card.
+- The `SettingsGrid`, whose second slot holds the two-factor card.
+- The two-factor card itself (#331): `TwoFactorSettings` in that slot, the `TwoFactorSettingsEntity`,
+  the `TwoFactorDto` and `TwoFactorCodeNormalizer` in the user module, and `twoFactorStatus` /
+  `setTwoFactorStatus` on `ProtectedOutletContext`, which `ProtectedRoute` provides and through
+  which the card reads and records the account's two-factor status.
 
 Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
 `SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
-`error.text` token and the `session_ended` notice.
+`error.text` token and the `session_ended` notice. The card reuses `UserServiceErrorTransformer`
+through `TwoFactorSettingsProvider` and signs the user out through the outlet `signOut`.
 
 ## Page tree
 
@@ -96,7 +121,7 @@ Two-factor authentication (#331) imports these rather than rebuilding them (arch
 UserProfile [component]<route>          title, toast queue, useProfileLoad
 └ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
-  ├ SettingsGrid                        profile column; the second column is the 2FA slot
+  ├ SettingsGrid                        profile column; the second column holds the 2FA card
   │ ├ UserProfileSettings               loading | failed | ready
   │ │ ├ UILiveStatus                    "Завантаження профілю…" while loading, set after mount
   │ │ ├ UILiveStatus (assertive)        "Не вдалося завантажити профіль" while failed
@@ -113,7 +138,16 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │ │     └ ProfileSectionForm password     UIForm key=saved, submitRef, onInvalid, ClearButton
   │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords, policy rules
   │ │       └ UIServerFieldError per field, p role=status
-  │ └ SocialNetworks                    h2 "Соціальні мережі", four presentational tiles
+  │ ├ SocialNetworks                    h2 "Соціальні мережі", four presentational tiles
+  │ └ TwoFactorSettings                 section, useTwoFactorSettings; reports inside its card
+  │   └ TwoFactorPanel                  CardHeader (key=view) + one view, ArrivalContext
+  │     ├ OffView                       off: UIForm "Почати налаштування", OffGuide, banner
+  │     ├ SetupView                     setup: SetupGuide (QrCodeImage, KeyBlock), code field
+  │     ├ CodesView                     codes: CodesBlock, SavedCheckbox, confirm
+  │     ├ OnView                        on: OnActions (disable, regenerate)
+  │     ├ DisableView                   disable: code field, Cancel
+  │     ├ RegenerateView                regenerate: confirm, Cancel
+  │     └ ReauthView                    reauth: message, "sign in again" button
   └ UIToastStack                        returns focus to the Save, or the input if its Save hid
 ```
 
@@ -128,10 +162,15 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | `UserProfile` route   | `routes/user-profile/index.tsx`                                  |
 | `UserProfileSettings` | `components/user-profile-settings` and its child components      |
 | `ChangePassword`      | `components/change-password`                                     |
+| `TwoFactorSettings`   | `components/two-factor-settings` and `components/qr-code-image`  |
 | React hook            | `useProfileLoad`, `useProfileFormModel` over `useProfileSave`, … |
+| React hook (2FA)      | `useTwoFactorSettings` over the three two-factor operation hooks |
 | Data provider         | `ProfileProvider` (three `@inject` collaborators)                |
+| Data provider (2FA)   | `TwoFactorSettingsProvider` (three `@inject` collaborators)      |
 | Transformer           | `GraphQLProfileTransformer`, over #315's error transformer       |
+| Transformer (2FA)     | `GraphQLTwoFactorSettingsTransformer`                            |
 | Repository            | `GraphQLProfileRepository` and the three document seams          |
+| Repository (2FA)      | `GraphQLTwoFactorSettingsRepository` and the four document seams |
 | Repository → API edge | the container's Apollo client with the `SessionLinkFactory` link |
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
@@ -140,8 +179,9 @@ board's social-network component is presentational only — `SocialNetworks` dra
 list rather than buttons, each tile telling a screen reader that linking is not available yet,
 because user-service has no link, list or unlink — the header menu with the "Log-out" edge is now
 drawn (the app-shell user menu in `components/user-menu/`, declared as `shell.userMenu` in
-`routes/index.ts`, issue #362) and is no longer one of them, the two-factor card belongs to #331,
-and the session link reads and resets `useAuthStore` without a Repository → State edge on the board.
+`routes/index.ts`, issue #362) and is no longer one of them, nor is the two-factor card (#331),
+whose layers are in the rows above, and the session link reads and resets `useAuthStore`
+without a Repository → State edge on the board.
 
 ## Data provider outcomes
 
@@ -200,10 +240,10 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
 | ------- | ----------------- | ----------------------- | -------------------------------- |
 | Phone   | below 768 px      | 8 px from the edges     | label over a 48 px input         |
 | Tablet  | 768 px to 1024 px | one 749 px column       | 173 px label column, 70 px input |
-| Desktop | above 1024 px     | 675 px, 2FA slot beside | 152 px label column, 64 px input |
+| Desktop | above 1024 px     | 675 px, 2FA card beside | 152 px label column, 64 px input |
 
 - **Desktop starts above 1024 px**, so the 1024 px tablet frame gets its own layout. The
-  2FA slot is an implicit grid column: with one section there is no empty column.
+  2FA card sits in an implicit grid column: with one section there is no empty column.
 - **Desktop content is centred beside the sidebar** (owner decision of 2026-11-04,
   [DV-12](../../../../components/ui-app-shell/README.md#dv-12-the-settings-page-centres-beside-the-sidebar-owner-decision-2026-11-04)).
   Above 1024 px the heading and the grid shrink to the grid's columns (`width: fit-content`) and
