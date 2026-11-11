@@ -25,7 +25,7 @@ const FIELD_ERROR_KEYS: Record<TwoFactorFieldError, string> = {
 export default function RecoveryCodeField({ state }: RecoveryCodeFieldProps): JSX.Element {
   const { t } = useTranslation();
   const { control } = useFormContext<TwoFactorDto>();
-  const { fieldError, isSubmitting } = state;
+  const { fieldError, focusRequest, isSubmitting } = state;
   useChallengeFieldSync(state);
 
   return (
@@ -48,6 +48,7 @@ export default function RecoveryCodeField({ state }: RecoveryCodeFieldProps): JS
       <UIServerFieldError
         name={CODE_FIELD_NAME}
         message={fieldError === null ? null : t(FIELD_ERROR_KEYS[fieldError])}
+        occurrence={focusRequest}
         focus={false}
       />
     </Grid>

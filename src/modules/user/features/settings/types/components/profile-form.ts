@@ -97,6 +97,7 @@ export interface ClearButtonProps {
 export interface ServerFieldErrorsProps {
   readonly section: ProfileSection;
   readonly errors: ProfileFieldErrorSet;
+  readonly occurrence: number;
 }
 
 export interface EmailStatusRowProps {

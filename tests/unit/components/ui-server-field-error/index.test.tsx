@@ -8,6 +8,7 @@ import ServerFieldError from '@/components/ui-server-field-error';
 
 interface HarnessProps {
   readonly message: string | null;
+  readonly occurrence?: number | undefined;
   readonly focus?: boolean | undefined;
 }
 
@@ -39,7 +40,7 @@ function Field(): JSX.Element {
   );
 }
 
-function Harness({ message, focus }: HarnessProps): JSX.Element {
+function Harness({ message, occurrence = 0, focus }: HarnessProps): JSX.Element {
   const methods = useForm<{ email: string }>({
     defaultValues: { email: '' },
     mode: 'onSubmit',
@@ -49,7 +50,7 @@ function Harness({ message, focus }: HarnessProps): JSX.Element {
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(() => undefined)}>
         <Field />
-        <ServerFieldError name="email" message={message} focus={focus} />
+        <ServerFieldError name="email" message={message} occurrence={occurrence} focus={focus} />
         <button type="submit">Send</button>
       </form>
     </FormProvider>
@@ -60,7 +61,7 @@ function Bare(): JSX.Element {
   const methods = useForm<{ email: string }>({ defaultValues: { email: '' } });
   return (
     <FormProvider {...methods}>
-      <ServerFieldError name="email" message="Not a valid address" />
+      <ServerFieldError name="email" message="Not a valid address" occurrence={0} />
     </FormProvider>
   );
 }
@@ -105,6 +106,21 @@ describe('ServerFieldError', () => {
     await userEvent.type(screen.getByLabelText('Email'), 'a');
 
     expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('puts the same message back when a new refusal follows an edit', async () => {
+    const { rerender } = render(<Harness message={null} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    rerender(<Harness message="Not a valid address" occurrence={1} />);
+    await screen.findByText('Not a valid address');
+    await userEvent.type(screen.getByLabelText('Email'), 'a');
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'false');
+
+    rerender(<Harness message="Not a valid address" occurrence={2} />);
+
+    expect(await screen.findByText('Not a valid address')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Email')).toHaveAttribute('data-error-type', 'server');
   });
 
   it('clears its server error when the message goes away', async () => {

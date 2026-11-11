@@ -20,6 +20,7 @@ const INITIAL_VIEW: ResetPasswordView = {
   submittedEmail: '',
   maskedEmail: null,
   failure: null,
+  failureOccurrence: 0,
   returned: false,
 };
 
@@ -37,7 +38,11 @@ function settle(
   const accepted = { ...view, submittedEmail: email };
   return outcome.kind === 'sent'
     ? { ...accepted, step: 'sent', maskedEmail: outcome.maskedEmail }
-    : { ...accepted, failure: outcome.failure };
+    : {
+        ...accepted,
+        failure: outcome.failure,
+        failureOccurrence: view.failureOccurrence + 1,
+      };
 }
 
 function reduceResetPassword(

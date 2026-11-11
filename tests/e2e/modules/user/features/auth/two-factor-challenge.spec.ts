@@ -322,6 +322,22 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     expect(challenge.count()).toBe(0);
   });
 
+  test('a second malformed recovery code shows the format text again', async ({ page }) => {
+    const challenge = await stubChallenge(page);
+    await signInToChallenge(page, credentials);
+    await recoveryToggleOf(page).click();
+    await recoveryFieldOf(page).fill('abc-123');
+    await confirmButtonOf(page).click();
+    await expect(page.getByText(challengeText.recoveryFormat)).toBeVisible();
+
+    await recoveryFieldOf(page).fill('xyz-98');
+    await confirmButtonOf(page).click();
+
+    await expect(page.getByText(challengeText.recoveryFormat)).toBeVisible();
+    await expect(recoveryFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+    expect(challenge.count()).toBe(0);
+  });
+
   test('a wrong recovery code empties the field and keeps focus in it', async ({ page }) => {
     await stubChallenge(page, ['invalid_code']);
     await signInToChallenge(page, credentials);

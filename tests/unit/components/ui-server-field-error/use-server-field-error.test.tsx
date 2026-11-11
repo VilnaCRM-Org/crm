@@ -11,6 +11,7 @@ interface Values {
 
 interface HarnessProps {
   readonly message: string | null;
+  readonly occurrence?: number | undefined;
   readonly focus?: boolean | undefined;
 }
 
@@ -21,12 +22,12 @@ function form(): UseFormReturn<Values> {
   return captured.form;
 }
 
-function Consumer({ message, focus }: HarnessProps): null {
-  useServerFieldError({ name: 'email', message, focus });
+function Consumer({ message, occurrence = 0, focus }: HarnessProps): null {
+  useServerFieldError({ name: 'email', message, occurrence, focus });
   return null;
 }
 
-function Harness({ message, focus }: HarnessProps): JSX.Element {
+function Harness({ message, occurrence, focus }: HarnessProps): JSX.Element {
   const methods = useForm<Values>({ defaultValues: { email: '' } });
   captured.form = methods;
   const { ref, name, onChange, onBlur } = methods.register('email');
@@ -34,7 +35,7 @@ function Harness({ message, focus }: HarnessProps): JSX.Element {
     <FormProvider {...methods}>
       <label htmlFor="email">Email</label>
       <input id="email" ref={ref} name={name} onChange={onChange} onBlur={onBlur} />
-      <Consumer message={message} focus={focus} />
+      <Consumer message={message} occurrence={occurrence} focus={focus} />
     </FormProvider>
   );
 }
@@ -42,11 +43,11 @@ function Harness({ message, focus }: HarnessProps): JSX.Element {
 function renderWith(
   message: string | null,
   focus?: boolean
-): { readonly show: (next: string | null) => void } {
+): { readonly show: (next: string | null, occurrence?: number) => void } {
   const view = render(<Harness message={message} focus={focus} />);
   return {
-    show: (next: string | null): void => {
-      view.rerender(<Harness message={next} focus={focus} />);
+    show: (next: string | null, occurrence?: number): void => {
+      view.rerender(<Harness message={next} occurrence={occurrence} focus={focus} />);
     },
   };
 }
@@ -70,6 +71,38 @@ describe('useServerFieldError', () => {
       expect.objectContaining({ type: 'server', message: 'Not a valid address' })
     );
     await waitFor(() => expect(focus).toHaveBeenCalledTimes(1));
+  });
+
+  it('sets the same message again and refocuses when the occurrence moves on', async () => {
+    const { show: showMessage } = renderWith(null);
+    const focus = jest.spyOn(screen.getByLabelText('Email'), 'focus');
+    showMessage('Not a valid address', 1);
+    await waitFor(() => expect(focus).toHaveBeenCalledTimes(1));
+    act(() => {
+      form().clearErrors('email');
+    });
+
+    showMessage('Not a valid address', 2);
+
+    expect(form().getFieldState('email').error).toEqual(
+      expect.objectContaining({ type: 'server', message: 'Not a valid address' })
+    );
+    await waitFor(() => expect(focus).toHaveBeenCalledTimes(2));
+  });
+
+  it('neither resets nor refocuses while the message and occurrence stay the same', async () => {
+    const { show: showMessage } = renderWith(null);
+    const focus = jest.spyOn(screen.getByLabelText('Email'), 'focus');
+    showMessage('Not a valid address', 1);
+    await waitFor(() => expect(focus).toHaveBeenCalledTimes(1));
+    act(() => {
+      form().clearErrors('email');
+    });
+
+    showMessage('Not a valid address', 1);
+
+    expect(form().getFieldState('email').error).toBeUndefined();
+    expect(focus).toHaveBeenCalledTimes(1);
   });
 
   it('sets the error but leaves focus in place when focus is false', () => {

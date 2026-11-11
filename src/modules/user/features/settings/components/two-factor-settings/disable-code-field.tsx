@@ -35,9 +35,9 @@ export default function DisableCodeField({ view, busy }: DisableCodeFieldProps):
         sx={styles.disableCodeField}
       />
       <UIServerFieldError
-        key={`refusal-${view.fieldErrorOccurrence}`}
         name={CONFIRM_FIELD_NAME}
         message={key === undefined ? null : t(key)}
+        occurrence={view.fieldErrorOccurrence}
         focus={false}
       />
     </>

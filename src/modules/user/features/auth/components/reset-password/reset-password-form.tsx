@@ -14,7 +14,7 @@ import type {
   ResetPasswordFormProps,
 } from '@auth/types/password-recovery/components';
 
-function EmailField({ failure }: ResetPasswordEmailFieldProps): JSX.Element {
+function EmailField({ failure, failureOccurrence }: ResetPasswordEmailFieldProps): JSX.Element {
   const { t } = useTranslation();
   const emailRejected =
     failure?.reason === 'invalid_email' ? t('password_recovery.errors.email_rejected') : null;
@@ -30,7 +30,7 @@ function EmailField({ failure }: ResetPasswordEmailFieldProps): JSX.Element {
         rules={{ validate: formValidators.create(t).email }}
         sx={fieldStyles.formFieldWrapper}
       />
-      <UIServerFieldError name="email" message={emailRejected} />
+      <UIServerFieldError name="email" message={emailRejected} occurrence={failureOccurrence} />
     </>
   );
 }
@@ -40,6 +40,7 @@ export default function ResetPasswordForm({
   onSubmit,
   onDismissFailure,
   failure,
+  failureOccurrence,
   isSubmitting,
   focusTitle,
 }: ResetPasswordFormProps): JSX.Element {
@@ -61,7 +62,7 @@ export default function ResetPasswordForm({
       titleRef={focusTitle ? focusOnMount : undefined}
       subtitle={t('password_recovery.body')}
     >
-      <EmailField failure={failure} />
+      <EmailField failure={failure} failureOccurrence={failureOccurrence} />
     </UIForm>
   );
 }

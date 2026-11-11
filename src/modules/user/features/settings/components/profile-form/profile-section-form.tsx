@@ -62,7 +62,7 @@ const ERROR_MESSAGES = new Map<FieldErrorReason, string>([
   ['new_password_rejected', 'settings.errors.new_password_rejected'],
 ]);
 
-function ServerFieldErrors({ section, errors }: ServerFieldErrorsProps): JSX.Element {
+function ServerFieldErrors({ section, errors, occurrence }: ServerFieldErrorsProps): JSX.Element {
   const { t } = useTranslation();
   const fields = SECTION_ERROR_FIELDS[section];
   const first = fields.find(({ error }) => errors.items.some((item) => item.field === error));
@@ -77,6 +77,7 @@ function ServerFieldErrors({ section, errors }: ServerFieldErrorsProps): JSX.Ele
             key={entry.field}
             name={entry.field}
             message={key === undefined ? null : t(key)}
+            occurrence={occurrence}
             focus={entry === first}
           />
         );
@@ -99,11 +100,7 @@ function SectionBody({ context, section, model, onChange }: SectionBodyProps): J
         save={save}
         onChange={onChange}
       />
-      <ServerFieldErrors
-        key={`errors-${state.attempts}`}
-        section={section}
-        errors={state.fieldErrors}
-      />
+      <ServerFieldErrors section={section} errors={state.fieldErrors} occurrence={state.attempts} />
       {section === 'password' && <Box aria-hidden="true" sx={styles.actionsDivider} />}
       <Box component="p" role="status" sx={styles.status}>
         {state.noChanges

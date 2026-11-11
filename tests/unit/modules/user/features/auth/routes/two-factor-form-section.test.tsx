@@ -346,6 +346,22 @@ describe('TwoFactorFormSection', () => {
       expect(completeChallenge).not.toHaveBeenCalled();
     });
 
+    it('shows the format error again for a second malformed code', async () => {
+      mount();
+      await openRecovery();
+      await submitRecovery('abc-123');
+      await screen.findByText('Введіть резервний код у форматі XXXX-XXXX');
+      await userEvent.clear(recoveryField());
+
+      await submitRecovery('xyz-9');
+
+      expect(
+        await screen.findByText('Введіть резервний код у форматі XXXX-XXXX')
+      ).toBeInTheDocument();
+      expect(recoveryField()).toHaveAttribute('aria-invalid', 'true');
+      expect(completeChallenge).not.toHaveBeenCalled();
+    });
+
     it('empties the field and explains a wrong recovery code, keeping focus in it', async () => {
       completeChallenge.mockResolvedValue(failed('invalid_code'));
       mount();

@@ -35,6 +35,7 @@ export default function CreateNewPasswordFormSection(): JSX.Element {
           onSubmit={state.callbacks.submit}
           onDismissFailure={state.callbacks.dismissFailure}
           failure={state.failure}
+          failureOccurrence={state.failureOccurrence}
           isSubmitting={state.isSubmitting}
         />
       )}

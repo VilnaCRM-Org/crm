@@ -135,10 +135,10 @@ describe('ChallengeCodeField', () => {
     expect(stored()).toBe('12');
   });
 
-  it('does not focus a cell until a focus is requested', () => {
+  it('focuses the first cell on arrival, before any focus request', async () => {
     render(<Harness state={RESTING} />);
 
-    expect(document.body).toHaveFocus();
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
   });
 
   it('focuses the first empty cell once a focus is requested', async () => {
