@@ -9,7 +9,7 @@ import type {
   ChallengeSubmitHookDeps,
   TwoFactorChallengeProps,
 } from '@auth/types/two-factor/challenge-view';
-import { buildToken } from '@tests/builders';
+import { buildRecoveryCode, buildToken, buildTotpCode } from '@tests/builders';
 
 const mockSubmit = jest.fn();
 const mockDeps = jest.fn();
@@ -184,7 +184,7 @@ describe('useTwoFactorChallenge', () => {
   it('refuses a recovery-shaped code in authenticator mode', async () => {
     const view = setUp();
 
-    await submitCode(view, 'abcd-2345');
+    await submitCode(view, buildRecoveryCode());
 
     expect(mockSubmit).not.toHaveBeenCalled();
     expect(view.result.current.state.fieldError).toBe('format');
@@ -194,7 +194,7 @@ describe('useTwoFactorChallenge', () => {
     const view = setUp();
     act(() => view.result.current.callbacks.switchMode());
 
-    await submitCode(view, 'abcd2345', failed('invalid_code'));
+    await submitCode(view, buildRecoveryCode(), failed('invalid_code'));
 
     expect(view.result.current.state).toMatchObject({
       mode: 'recovery',
@@ -213,12 +213,13 @@ describe('useTwoFactorChallenge', () => {
     'shows the %s failure as the %s banner and keeps value and mode',
     async (reason, banner) => {
       const view = setUp();
+      const code = buildTotpCode();
 
-      await submitCode(view, '123456', failed(reason));
+      await submitCode(view, code, failed(reason));
 
       expect(view.result.current.state).toMatchObject({
         mode: 'totp',
-        value: '123456',
+        value: code,
         fieldError: null,
         banner,
         bannerOccurrence: 1,
@@ -234,11 +235,12 @@ describe('useTwoFactorChallenge', () => {
     [null],
   ])('leaves the view alone for %j', async (result) => {
     const view = setUp();
+    const code = buildTotpCode();
 
-    await submitCode(view, '123456', result);
+    await submitCode(view, code, result);
 
     expect(view.result.current.state).toMatchObject({
-      value: '123456',
+      value: code,
       fieldError: null,
       banner: null,
       bannerOccurrence: 0,
@@ -248,7 +250,8 @@ describe('useTwoFactorChallenge', () => {
 
   it('keeps the banner while the next submit runs, then clears it on a wrong code', async () => {
     const view = setUp();
-    await submitCode(view, '123456', failed('network'));
+    const next = buildTotpCode();
+    await submitCode(view, buildTotpCode(), failed('network'));
     let settle: (result: ChallengeResult) => void = () => undefined;
     mockSubmit.mockReturnValueOnce(
       new Promise<ChallengeResult>((resolve) => {
@@ -256,10 +259,10 @@ describe('useTwoFactorChallenge', () => {
       })
     );
 
-    act(() => view.result.current.callbacks.submit({ twoFactorCode: '654321' }));
+    act(() => view.result.current.callbacks.submit({ twoFactorCode: next }));
 
     expect(view.result.current.state).toMatchObject({
-      value: '654321',
+      value: next,
       banner: 'transient',
       bannerOccurrence: 1,
       fieldError: null,
@@ -274,13 +277,14 @@ describe('useTwoFactorChallenge', () => {
 
   it('counts a repeated banner failure so the banner is raised again', async () => {
     const view = setUp();
-    await submitCode(view, '123456', failed('network'));
+    const next = buildTotpCode();
+    await submitCode(view, buildTotpCode(), failed('network'));
 
-    await submitCode(view, '654321', failed('server'));
+    await submitCode(view, next, failed('server'));
 
-    expect(mockSubmit).toHaveBeenLastCalledWith({ twoFactorCode: '654321' });
+    expect(mockSubmit).toHaveBeenLastCalledWith({ twoFactorCode: next });
     expect(view.result.current.state).toMatchObject({
-      value: '654321',
+      value: next,
       banner: 'transient',
       bannerOccurrence: 2,
     });
@@ -288,7 +292,7 @@ describe('useTwoFactorChallenge', () => {
 
   it('clears the banner when the next code is refused before it is sent', async () => {
     const view = setUp();
-    await submitCode(view, '123456', failed('network'));
+    await submitCode(view, buildTotpCode(), failed('network'));
 
     await submitCode(view, '12');
 
@@ -320,7 +324,7 @@ describe('useTwoFactorChallenge', () => {
   it('builds the normaliser once per mount', async () => {
     const view = setUp();
 
-    await submitCode(view, '123456');
+    await submitCode(view, buildTotpCode());
     view.rerender();
     view.rerender();
 

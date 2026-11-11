@@ -62,7 +62,7 @@ describe('useConfirmFieldFocus', () => {
 
   it('leaves focus alone without a field error', async () => {
     render(<Harness state={view(null)} />);
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
+    await act(async () => Promise.resolve());
 
     expect(screen.getByLabelText('code')).not.toHaveFocus();
   });

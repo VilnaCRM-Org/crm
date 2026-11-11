@@ -7,10 +7,10 @@ import type { AuthProviderLoader } from '@auth/stores';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import type { ChallengeSubmitHookDeps } from '@auth/types/two-factor/challenge-view';
-import { buildPendingSessionId, buildToken } from '@tests/builders';
+import { buildPendingSessionId, buildToken, buildTotpCode } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
-const CODE = '123456';
+const CODE = buildTotpCode();
 const dto = { twoFactorCode: CODE };
 
 interface Harness {

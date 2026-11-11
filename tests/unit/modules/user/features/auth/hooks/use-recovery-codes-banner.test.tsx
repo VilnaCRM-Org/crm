@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, useNavigate } from 'react-router';
 
@@ -14,16 +14,25 @@ let navigate: ReturnType<typeof useNavigate> | undefined;
 
 const mockLoad = jest.fn();
 
-jest.mock('@auth/components/protected-route/recovery-notice-loader', () => ({
+jest.mock('@auth/components/recovery-codes-notice', () => ({
+  __esModule: true,
+  default: ({ count, onDismiss }: { count: number; onDismiss: () => void }): JSX.Element => (
+    <button type="button" onClick={onDismiss}>
+      notice:{count}
+    </button>
+  ),
+}));
+
+jest.mock('@/providers/mui-theme/mui-theme-shell-loader', () => ({
   __esModule: true,
   default: { load: (): Promise<unknown> => mockLoad() },
 }));
 
-function NoticeStub({ count, onDismiss }: { count: number; onDismiss: () => void }): JSX.Element {
+function ShellStub({ children }: { children: ReactNode }): JSX.Element {
   return (
-    <button type="button" onClick={onDismiss}>
-      notice:{count}
-    </button>
+    <div role="group" aria-label="theme shell">
+      {children}
+    </div>
   );
 }
 
@@ -49,7 +58,7 @@ const mount = (remaining: number | null, path = '/'): ReturnType<typeof render> 
 describe('useRecoveryCodesBanner', () => {
   beforeEach(() => {
     mockLoad.mockReset();
-    mockLoad.mockResolvedValue({ default: NoticeStub });
+    mockLoad.mockResolvedValue({ default: ShellStub });
   });
 
   afterEach(() => jest.useRealTimers());
@@ -65,6 +74,17 @@ describe('useRecoveryCodesBanner', () => {
     mount(count);
 
     expect(await screen.findByRole('button', { name: `notice:${count}` })).toBeInTheDocument();
+  });
+
+  it('renders the notice inside the MUI theme shell and forwards its dismiss handler', async () => {
+    mount(2);
+
+    const notice = await screen.findByRole('button', { name: 'notice:2' });
+    expect(screen.getByRole('group', { name: 'theme shell' })).toContainElement(notice);
+
+    await userEvent.click(notice);
+
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
   });
 
   it('holds the route fallback status region while the notice chunk is loading', () => {

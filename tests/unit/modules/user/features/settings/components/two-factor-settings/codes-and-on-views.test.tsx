@@ -233,6 +233,10 @@ describe('the on view and the status headings', () => {
 
     expect(screen.getByRole('heading', { level: 3, name: text })).toHaveFocus();
     expect(screen.getByRole('button', { name: 'Почати налаштування' })).toBeInTheDocument();
+    const regions = [...screen.queryAllByRole('status'), ...screen.queryAllByRole('alert')];
+    expect(regions.map((region) => region.textContent)).not.toContainEqual(
+      expect.stringContaining(text)
+    );
   });
 
   it('shows no level-3 heading in the plain off view', () => {

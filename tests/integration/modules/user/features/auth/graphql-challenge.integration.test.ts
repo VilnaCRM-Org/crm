@@ -15,7 +15,7 @@ import type {
   TwoFactorChallengeInput,
 } from '@auth/types/two-factor/challenge';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
-import { buildPendingSessionId, buildToken } from '@tests/builders';
+import { buildPendingSessionId, buildToken, buildTotpCode } from '@tests/builders';
 
 import server from '../../../../mocks/server';
 import { answerChallenge } from '../../../../mocks/sign-in-operations';
@@ -26,7 +26,7 @@ const client = container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKEN
 
 const challenge = (): TwoFactorChallengeInput => ({
   pendingSessionId: buildPendingSessionId(),
-  twoFactorCode: '123456',
+  twoFactorCode: buildTotpCode(),
 });
 
 const payload = (user: object): Response =>

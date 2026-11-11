@@ -9,6 +9,7 @@ import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import ChallengeCodeField from '@auth/components/two-factor/challenge-code-field';
 import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
+import { buildTotpCode } from '@tests/builders';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 
 const RESTING: TwoFactorChallengeState = {
@@ -100,9 +101,10 @@ describe('ChallengeCodeField', () => {
   });
 
   it('clears the stored code when the hook value is empty after a wrong code', async () => {
-    const view = render(<Harness state={{ ...RESTING, value: '123456' }} />);
-    await userEvent.type(cells()[0] as HTMLInputElement, '123456');
-    expect(stored()).toBe('123456');
+    const code = buildTotpCode();
+    const view = render(<Harness state={{ ...RESTING, value: code }} />);
+    await userEvent.type(cells()[0] as HTMLInputElement, code);
+    expect(stored()).toBe(code);
 
     view.rerender(<Harness state={{ ...RESTING, value: '', fieldError: 'invalid_code' }} />);
 
@@ -110,9 +112,10 @@ describe('ChallengeCodeField', () => {
   });
 
   it('clears the stored code on a new focus request while the hook value stays empty', async () => {
+    const code = buildTotpCode();
     const view = render(<Harness state={RESTING} />);
-    await userEvent.type(cells()[0] as HTMLInputElement, '123456');
-    expect(stored()).toBe('123456');
+    await userEvent.type(cells()[0] as HTMLInputElement, code);
+    expect(stored()).toBe(code);
 
     view.rerender(<Harness state={{ ...RESTING, fieldError: 'invalid_code', focusRequest: 1 }} />);
 

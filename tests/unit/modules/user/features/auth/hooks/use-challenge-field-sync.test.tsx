@@ -5,6 +5,7 @@ import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import useChallengeFieldSync, { CODE_FIELD_NAME } from '@auth/hooks/use-challenge-field-sync';
 import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
+import { buildTotpCode } from '@tests/builders';
 
 const RESTING: TwoFactorChallengeState = {
   mode: 'totp',
@@ -52,7 +53,7 @@ describe('useChallengeFieldSync', () => {
   });
 
   it('clears a stored code when the hook value is empty', async () => {
-    const { harness } = mount(RESTING, '123456');
+    const { harness } = mount(RESTING, buildTotpCode());
 
     await waitFor(() => expect(harness().form.getValues('twoFactorCode')).toBe(''));
   });
@@ -67,7 +68,7 @@ describe('useChallengeFieldSync', () => {
 
   it('clears again on a new focus request even though the value stayed empty', async () => {
     const { rerender, harness } = mount(RESTING);
-    harness().form.setValue('twoFactorCode', '654321');
+    harness().form.setValue('twoFactorCode', buildTotpCode());
 
     rerender({ ...RESTING, focusRequest: 1 });
 

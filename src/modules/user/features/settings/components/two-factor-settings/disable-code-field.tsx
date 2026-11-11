@@ -8,6 +8,8 @@ import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import useConfirmFieldFocus, { CONFIRM_FIELD_NAME } from '../../hooks/use-confirm-field-focus';
 import type { DisableCodeFieldProps } from '../../types/components/two-factor-settings';
 
+import styles from './styles';
+
 const NO_RULES = {};
 
 const FIELD_ERROR_KEYS = new Map([
@@ -30,6 +32,7 @@ export default function DisableCodeField({ view, busy }: DisableCodeFieldProps):
         autoComplete="one-time-code"
         rules={NO_RULES}
         inputProps={{ readOnly: busy }}
+        sx={styles.disableCodeField}
       />
       <UIServerFieldError
         name={CONFIRM_FIELD_NAME}

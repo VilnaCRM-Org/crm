@@ -6,7 +6,7 @@ import type { FieldNode, OperationDefinitionNode } from 'graphql';
 import { CompleteTwoFactorUserDocument } from '@/api/generated/graphql';
 import { GraphQLSignInRepository } from '@auth/repositories';
 import type { TwoFactorChallengeInput } from '@auth/types/two-factor/challenge';
-import { buildPendingSessionId, buildToken } from '@tests/builders';
+import { buildPendingSessionId, buildToken, buildTotpCode } from '@tests/builders';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -24,7 +24,7 @@ const userSelection = (): string[] => {
 
 const input = (): TwoFactorChallengeInput => ({
   pendingSessionId: buildPendingSessionId(),
-  twoFactorCode: '123456',
+  twoFactorCode: buildTotpCode(),
 });
 
 const setUp = (): {

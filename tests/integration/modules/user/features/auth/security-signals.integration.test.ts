@@ -7,7 +7,12 @@ import securityEventConfig from '@/services/security-events/security-event-confi
 import securityEventCore from '@/services/security-events/security-event-core';
 import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
-import { buildEmail, buildPendingSessionId, buildRegistrationResponse } from '@tests/builders';
+import {
+  buildEmail,
+  buildPendingSessionId,
+  buildRegistrationResponse,
+  buildToken,
+} from '@tests/builders';
 
 let clock = Date.now();
 
@@ -81,15 +86,17 @@ describe('auth security signals (integration)', () => {
 
   it('tags an opaque identity on a successful login without leaking an address', () => {
     const setUser = jest.spyOn(observabilityCore, 'setUser').mockImplementation();
+    const email = buildEmail();
+    const token = buildToken();
 
-    resolveSignals().loginSettled({
-      ok: true,
-      value: { kind: 'session', email: 'user@example.com', token: 'session-token' },
-    });
+    resolveSignals().loginSettled({ ok: true, value: { kind: 'session', email, token } });
 
     const identity = setUser.mock.calls[0]?.[0] as { id: string };
     expect(identity.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(Object.keys(identity)).toEqual(['id']);
+    const serialised = JSON.stringify(setUser.mock.calls);
+    expect(serialised).not.toContain(email);
+    expect(serialised).not.toContain(token);
   });
 
   it('tags no identity and records nothing when the sign-in asks for a challenge', () => {

@@ -49,6 +49,11 @@ const SECRETS = {
 };
 const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } as const;
 
+async function expectAnnouncedOnce(page: Page, heading: string): Promise<void> {
+  await expect(sectionOf(page).getByRole('status').filter({ hasText: heading })).toHaveCount(0);
+  await expect(sectionOf(page).getByRole('alert').filter({ hasText: heading })).toHaveCount(0);
+}
+
 async function expectEndedSessionFrom(page: Page, origin: string): Promise<void> {
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect(page.getByText(twoFactorText.sessionEnded)).toBeVisible();
@@ -147,6 +152,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await disableSubmitOf(page).click();
 
       await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
+      await expectAnnouncedOnce(page, twoFactorText.statusDisabled);
       await expect(startOf(page)).toBeVisible();
       await expectNoSecrets(page, SECRETS);
     });
@@ -160,6 +166,7 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await disableSubmitOf(page).click();
 
       await expect(statusHeadingOf(page, twoFactorText.statusAlreadyOff)).toBeFocused();
+      await expectAnnouncedOnce(page, twoFactorText.statusAlreadyOff);
     });
 
     test('ends the session on a transport 401 with no banner in the section', async ({ page }) => {

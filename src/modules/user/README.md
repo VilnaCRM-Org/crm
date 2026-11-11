@@ -758,31 +758,28 @@ which is the owner's call; none was added here.
 
 ### The challenge page against Figma (frames 72:4846, 72:4882, 72:4918)
 
-The Figma MCP was reachable, and the three frames were read on 2026-10-27. The page keeps their
-structure: the shared card with "Назад", the title, the subtitle and a row of six cells above the
-submit. What it deliberately does not copy, for Follow-up 5.4 to reconcile with design:
+The page follows the three frames and the owner decisions of 2026-11-04: the shared card with
+"Назад" in the Figma grey `#969B9D`, the title, the Figma subtitle "Перевірте додаток Google
+Authenticator" and a row of six cells above "Підтвердити". The cells keep the frames' states: a
+`#E1E7EA` rest border, a visible `#D0D4D8` placeholder digit, and a focused cell marked by a soft
+shadow and the caret with no outline. Focus lands on the first cell on arrival, and the sixth
+digit submits the code by itself. The cells are 64 × 86 px with an 8 px gap from the `md`
+breakpoint up and at most 49 × 64 px with a 4 px gap below it, so the card keeps the sign-in
+card's width; the 1024 frame's 86 × 130 px cells are not copied.
 
-- **Copy (D1).** The frames still carry the e-mail wording ("Ми надіслали Вам лист на пошту …")
-  and a "Надіслати код ще раз" row with a `00:34` countdown. The page uses the authenticator copy
-  from the PRD and has no e-mail, resend row or countdown.
-- **Tablet cells.** The 1024 frame draws cells of about 86 × 130 px that fill the card; the page
-  keeps the 64 × 86 desktop cell (8 px gap) from the `md` breakpoint up and the 49 × 64 cell
-  (4 px gap) below it,
-  so the card width stays the sign-in card's at every width.
-- **Pin-input overrides (NFR-6).** The cell border is `paletteColors.border.strong`, the invalid
-  border the error red and the focus ring the shared two-colour ring, where the frames draw a thin
-  grey border only.
+The contrast and focus-indicator gaps these states leave, the "Назад" exception and the WCAG 3.2.2
+gap of the auto-submit are recorded, with their owner decisions, in
+[`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md).
 
-- **Recovery mode (D12).** None of the three frames draws it; the research lists the recovery-code
-  entry as a missing frame. The mode is built from the story's own acceptance criteria: one
-  labelled field with the `XXXX-XXXX` helper, no placeholder, the strong grey border and the
-  shared invalid state, and a `UILinkButton` toggle in the form footer, which replaces the frames'
-  "Надіслати код ще раз" row. Design owns the final look.
+- **No e-mail copy (D1).** The frames carry an e-mail wording and a "Надіслати код ще раз" row
+  with a `00:34` countdown; the page has no e-mail, resend row or countdown.
+- **Recovery mode (D12).** No frame draws it. It is one labelled field with the `XXXX-XXXX` helper,
+  no placeholder, the strong grey `#80878A` border and the shared invalid state, and a
+  `UILinkButton` toggle in the form footer. Design owns the final look.
 
-The live measurement at 1440, 1024 and 375 px on port 3005 could not run in this worktree, whose
-shared `node_modules` lacks `zustand` and the ui-toolkit, so the dev server cannot build. The
-recorded frame sizes (card 502 × 404, cells 64 × 86 at 8 px, mobile cells 49 × 64 at 4 px) are what
-the pin-input styles and their tests pin; the measurement is left for CI or the owner.
+**Superseded plan (2026-10-27).** The first cut used the authenticator copy from the PRD in place
+of the Figma subtitle, an `#80878A` cell border with the shared two-colour focus ring, a hidden
+placeholder and an explicit submit only. The owner decisions of 2026-11-04 replaced all four.
 
 ### The pending file lives in #315's mechanism
 
@@ -967,40 +964,30 @@ entity and the view state, and reconciles every transition: the URI and key surv
 `setup` view, the recovery codes only in `codes`, and the status follows the view, so "Готово", a
 stale setup and unmount all leave an entity with `null` secrets.
 
-### The 2FA card against the Figma frames (313:10242, 313:10480, 313:10606)
+### The 2FA card against the Figma frames
 
-**Check.** `figma-design-check` ran against the CRM design file with the Figma MCP answering. The
-desktop frame puts the setup card (479 px wide) beside the 675 px profile column, and the tablet and
-mobile frames stack it below; `SettingsGrid` already has that 479 px second column, so the card is
-its second child. The card takes its tokens from the frame: a white card with a 1 px `#E1E7EA`
-border and a 12 px radius, the title in Golos Bold 22 `#1A1C1E`, a divider under the header, 24 px
-`#E1E7EA` step badges with Inter Medium 16 `#57595B`, step text in Golos SemiBold 16 `#404142`, the
-QR code in a `#FBFBFB` frame with a 12 px radius, and the key chip on `#EAECEE` with a 4 px radius
-and Golos SemiBold 16 `#57595B`.
-
-**Deviations, all recorded.** The frames carry no off view and no start button, so the off view is
-built from the story: a description, the three steps and the contained "Почати налаштування"
-submit. The frames show the key twice, as the manual key under the QR code and again under step 3;
-the card shows it once, with a separate outlined "Скопіювати ключ" button (border `#80878A`, text
-`#1B2327`) in place of the copy glyph inside the chip. The Google logo is dropped, the app is named
-in the step text only, and the info-circle callout that quotes a seven-day reset is not built,
-because the product makes no such promise. The frames have no section heading; the `h2` is added so
-the card is a named region, and the `h3` carries the view title and takes focus on arrival. Copy is
-Ukrainian from the story; the frames' Russian text is not used. Live measurement on port 3005 could
-not run here, so the sizes above are pinned in unit tests and the CI visual lane is the measurement.
+The card's frames, measurements and deliberate differences (the "Налаштуйте 2FA" and "2FA
+підключено" headers with the logo, the step badges, the info tooltip, the second key chip, the
+kept start view and the confirmation below step 3) are recorded in one place, "The two-factor
+card" in [`src/modules/user/features/settings/README.md`](features/settings/README.md). The
+first cut recorded here on 2026-10-27 (no logo, no tooltip, one key chip and an added `h2`) was
+replaced by that card and is not repeated.
 
 ### The codes view and the status headings
 
-The codes view is a `UIForm` whose submit is "Готово". It shows the eight codes as an ordered list
-(`#1A1C1E` on `#EAECEE`), an outlined "Скопіювати коди" button that copies them newline-separated
-through `useCopyToClipboard`, and a `UICheckbox` "Я зберіг(-ла) коди в надійному місці". While the
-box is unticked the form passes `submitBlockedReason`, so "Готово" stays focusable, is
-`aria-disabled` and described by the reason, and sends nothing; the ticked state is local to the view,
-and the view that replaces it holds no code. The on view and any off view with a status code show one
-focused level-3 status heading, the only announcement: "Двофакторну автентифікацію ввімкнено" with a
-decorative icon, "вже ввімкнено", "Налаштування застаріло. Почніть знову.", "вимкнено" and "вже
-вимкнено". `/settings` mounts the card as the second child of `SettingsGrid`. The views for
-disable, regenerate and re-authentication belong to the next story.
+The codes view is a `UIForm` whose submit is "Готово". It shows the eight codes as a list of
+monospaced chips (`#1A1C1E` on `#EAECEE`, tabular figures; no frame draws the codes view, FR-30),
+an outlined "Скопіювати коди" button that copies them newline-separated through
+`useCopyToClipboard`, and a `UICheckbox` "Я зберіг(-ла) коди в надійному місці". While the box is
+unticked the form passes `submitBlockedReason`, so "Готово" stays focusable, is `aria-disabled`
+and described by the reason, and sends nothing; the ticked state is local to the view, and the
+view that replaces it holds no code. Leaving the page drops the codes with the hooks' state, so a
+return to Settings shows the on view. Each result has one focused heading, the only
+announcement: in the on view the card heading, "2FA підключено" or, after a conflict, "Двофакторну
+автентифікацію вже ввімкнено."; in the off view a level-3 status heading, "Налаштування
+застаріло. Почніть знову.", "Двофакторну автентифікацію вимкнено." or "вже вимкнено.". The card
+itself is described in "The two-factor card" in
+[`src/modules/user/features/settings/README.md`](features/settings/README.md).
 
 ### Turning 2FA off and regenerating the codes
 
@@ -1033,11 +1020,11 @@ focus ring.
 codes leaves that number in the auth store. `ProtectedRoute` reads it through
 `useRecoveryCodesBanner` and puts the lazily loaded `RecoveryCodesNotice` into the outlet context as
 `banner`; `AppLayout` renders it first inside `<main>`, so a page without one keeps exactly the DOM
-it had. The hook builds the lazy component once per mount in a `useState` initializer, from the
-container-free `recoveryNoticeLoader` singleton
-(`components/protected-route/recovery-notice-loader.ts`: a `ThemedChunkLoader` over a
-`ChunkRetryLoader` and `muiThemeShellLoader`, so a loaded chunk is reused across `ProtectedRoute`
-remounts), behind the non-null `RouteFallback`; with no count the chunk is never requested, and a
+it had. The hook builds its loader and the lazy component once per mount in a `useState`
+initializer: a `ThemedChunkLoader` over a `ChunkRetryLoader` for the `recovery-codes-notice` chunk
+and `muiThemeShellLoader`, behind the non-null `RouteFallback`. No module exports a loader or a
+module-level instance (FR-37); a `ProtectedRoute` remount builds a new loader, and the bundler's
+module cache serves a chunk that already loaded. With no count the chunk is never requested, and a
 chunk that cannot load renders nothing rather than breaking the page. The notice is a polite
 `role="status"` region that mounts empty, is filled in an effect and never takes focus; the count
 has uk one, few, many and other forms and en one and other forms, and zero reads "Резервні коди
@@ -1098,22 +1085,30 @@ offline notice id. A native disabled state wins: offline, `isSubmitDisabled` and
 the reason and set `disabled`. Without the prop every existing form renders as before. The wiring
 sits in `use-form-submission.ts` and `use-submit-block.ts`, each with its own test.
 
-### `UIPinInput` adopts the toolkit pin input with the project's overrides
+### `UIPinInput` adopts the toolkit pin input with the Figma states
 
-**Context.** The code is six digits typed or pasted. The toolkit's `UiPinInput` supplies the cells
-but its default border, focus ring, gap and placeholder do not meet the accessibility target.
+**Context.** The code is six digits typed or pasted. The toolkit's `UiPinInput` supplies the cells,
+paste handling and per-cell navigation.
 
 **Decision.** `src/components/ui-pin-input/` is the only file importing
-`@vilnacrm/ui-toolkit/ui-pin-input`. It overrides the rest border with `#80878A`, paints the shared
-`focusVisibleRing` (`2px solid #404142`, offset `2px`), sets the cell gap and size per breakpoint
-(8 px and 64 × 86 px from `md`; 4 px and at most 49 × 64 px below it), hides the toolkit's
-constant `placeholder="0"` with a transparent `::placeholder` colour, and takes the group label
-and a per-cell label from the caller. It adds no live region: one element carries the error
-message. `docs/ui-toolkit.md` lists the overrides.
+`@vilnacrm/ui-toolkit/ui-pin-input`. It sets the Figma states on the owner's decision of
+2026-11-04: the `#E1E7EA` rest border, `#D0D4D8` on hover, the error red on an invalid cell, no
+outline on focus (the toolkit's soft shadow and the caret mark the focused cell), and the toolkit's
+`placeholder="0"` left visible in `#D0D4D8`. It sets the cell gap and size per breakpoint (8 px
+and at most 64 × 86 px from `md`; 4 px and at most 49 × 64 px below it), takes the group label and
+a per-cell label from the caller, and focuses the first empty cell (the first cell on arrival)
+when the form asks for focus. It adds no live region: one element carries the error message.
+`docs/ui-toolkit.md` lists the overrides, and the SC 1.4.11 gaps of the rest border and the focused
+cell are recorded in
+[`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md).
 
 **Rejected.** Forking the toolkit component (it would stop tracking the pin); six separate text
 inputs (no paste handling); an `sx` breakpoint key for the sizes (the project's `md` comes from
 `breakpointsTheme`, not the MUI default).
+
+**Superseded plan (2026-10-27).** The first cut overrode the rest border with `#80878A`, painted
+the shared `2px solid #404142` focus ring and hid the placeholder; the owner decisions of 2026-11-04
+replaced those three overrides with the Figma states above.
 
 ### Both surfaces are scanned and tabbed in every state
 
@@ -1125,14 +1120,20 @@ engines: `two-factor-challenge-states` and `two-factor-settings-states` run the 
 scan plus the no-positive-`tabindex` check (`expectCleanScan`) on every state, and
 `two-factor-challenge-keyboard` and `two-factor-settings-keyboard` walk the tab order with
 `expectTabOrder`, then check Enter, Space, Escape, the focus target of each change and the
-colours with `toHaveCSS`. `A11Y_EXCEPTIONS` keeps its ten entries; the unit test that pins the
-count is unchanged. The keyboard specs start from the heading that holds focus after the
+colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has twelve entries, and the unit test pins the count;
+the twelfth is the challenge's grey "Назад" (`#969B9D`, 2.81:1), kept on the owner's decision of
+2026-11-04 and recorded in
+[`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md),
+with the pin cells' contrast and focus gaps and the auto-submit's WCAG 3.2.2 gap, which no axe
+rule tests. The keyboard specs start from the heading that holds focus after the
 transition; the challenge climbs with Shift+Tab to reach back-to-main, and the off view starts
 from a click on the section heading. The
 settings card paints its outlined buttons with the settings ring, `2px solid #1A1C1E`, offset
-2 px, as `profile-form` does; the pin cells and the challenge's own controls keep `#404142`
-and the mode toggle `#0074B5`. The story text named `#404142` for every new control, and the
-code decides: the settings ring is the page's, not the toolkit's.
+2 px, as `profile-form` does; the challenge's own controls keep `#404142` and the mode toggle
+`#0074B5`, and a focused pin cell draws no outline (the keyboard spec pins `outline-style: none`).
+The story text named `#404142` for every new control, and the code decides: the settings ring is
+the page's, not the toolkit's. Until 2026-11-04 the pin cells also carried the `#404142` ring and
+the scan kept ten exceptions.
 
 **Not done here.** The NVDA and VoiceOver pass (group name, cell names, one error, whether the
 hidden `placeholder="0"` is read) needs a person with both screen readers; its evidence is

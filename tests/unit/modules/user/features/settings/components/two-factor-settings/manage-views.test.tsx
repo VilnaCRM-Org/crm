@@ -3,6 +3,7 @@ import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
+import { buildTotpCode } from '@tests/builders';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 import { EMPTY_SETTINGS, panelProps, renderPanel, viewState } from './render-panel';
@@ -14,10 +15,7 @@ const withView = (
   isSubmitting = false
 ): ReturnType<typeof panelProps> => panelProps({ settings: ENABLED, view, isSubmitting });
 
-const settle = (): Promise<void> =>
-  act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
+const settle = (): Promise<void> => act(async () => Promise.resolve());
 
 const transition = async (
   utils: ReturnType<typeof renderPanel>,
@@ -74,7 +72,7 @@ describe('the on view actions', () => {
 
       await transition(utils, props, viewState('on'));
 
-      expect(button()).toHaveFocus();
+      await waitFor(() => expect(button()).toHaveFocus());
       expect(screen.getByRole('heading', { level: 2, name: '2FA підключено' })).not.toHaveFocus();
     }
   );
@@ -85,7 +83,7 @@ describe('the on view actions', () => {
     await transition(utils, props, viewState('disable'));
     await transition(utils, props, viewState('on'));
     const field = disableButton();
-    expect(field).toHaveFocus();
+    await waitFor(() => expect(field).toHaveFocus());
     act(() => field.blur());
 
     await transition(utils, props, viewState('on', { banner: 'transient' }));
@@ -199,13 +197,14 @@ describe('the disable view', () => {
 
   it('retries from the transient banner by submitting the code as it is now', async () => {
     const props = withView(viewState('disable', { banner: 'transient', bannerOccurrence: 1 }));
+    const code = buildTotpCode();
     renderPanel(props);
-    await userEvent.type(screen.getByRole('textbox'), '654321');
+    await userEvent.type(screen.getByRole('textbox'), code);
 
     await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
 
     await waitFor(() => expect(props.callbacks.disable).toHaveBeenCalledTimes(1));
-    expect(props.callbacks.disable).toHaveBeenCalledWith({ twoFactorCode: '654321' });
+    expect(props.callbacks.disable).toHaveBeenCalledWith({ twoFactorCode: code });
   });
 
   it.each([
@@ -214,8 +213,10 @@ describe('the disable view', () => {
     ['with a wrong code', viewState('disable', { fieldError: 'invalid_code' })],
     ['with a banner', viewState('disable', { banner: 'transient' })],
   ])('has no accessibility violation %s', async (_name, view) => {
+    jest.useFakeTimers();
     const utils = renderPanel(withView(view));
-    await settle();
+    act(() => jest.runOnlyPendingTimers());
+    jest.useRealTimers();
 
     await expectNoA11yViolations(utils.container);
   });

@@ -76,13 +76,17 @@ export default {
     overflowWrap: 'anywhere',
     backgroundColor: paletteColors.border.default,
     borderRadius: '0.25rem',
-    fontFamily: 'Golos',
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
+    fontVariantNumeric: 'tabular-nums',
     fontWeight: 600,
     fontSize: '1rem',
     lineHeight: 'normal',
     color: customColors.text.dark,
   },
   savedRow: { margin: '1.25rem 0 0' },
+  disableCodeField: {
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: paletteColors.border.strong },
+  },
   statusHeading: {
     display: 'flex',
     alignItems: 'center',

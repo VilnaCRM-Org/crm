@@ -358,7 +358,6 @@ describe('performance serving config', () => {
         'src/config/env/preloaded-auth-token.ts',
         'src/config/env/sandbox-demo-session-provider.ts',
         'src/modules/user/features/auth/components/protected-route/index.tsx',
-        'src/modules/user/features/auth/components/protected-route/recovery-notice-loader.ts',
         'src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
         'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
         'src/modules/user/features/auth/stores/auth-session-provider.ts',
@@ -635,6 +634,12 @@ describe('performance serving config', () => {
       []
     );
     expect(catalogEdges).toEqual([]);
+    expect(readFile('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toMatch(
+      new RegExp(
+        String.raw`import\(\s*/\* webpackChunkName: "recovery-codes-notice" \*/\s*` +
+          String.raw`'@auth/components/recovery-codes-notice'\s*\)`
+      )
+    );
     expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
       "import en from '@auth/routes/two-factor-catalog/i18n/en.json';"
     );

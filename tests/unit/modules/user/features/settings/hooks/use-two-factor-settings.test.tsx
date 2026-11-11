@@ -118,6 +118,52 @@ describe('useTwoFactorSettings', () => {
   });
 
   describe('enrolment', () => {
+    const enrol = async (
+      view: RenderHookResult<TwoFactorSettingsProps, unknown>
+    ): Promise<void> => {
+      await act(async () => view.result.current.callbacks.start());
+      expect(view.result.current.settings.secret).toBe(secret);
+      await act(async () =>
+        view.result.current.callbacks.confirm({ twoFactorCode: buildTotpCode() })
+      );
+      expect(view.result.current.settings.recoveryCodes).toEqual(recoveryCodes);
+    };
+
+    it('keeps no key, URI or codes for a remount under the same outlet context', async () => {
+      mockProvider.setup.mockResolvedValue(SETUP);
+      mockProvider.confirm.mockResolvedValue(CODES);
+      const view = mount('disabled');
+      await enrol(view);
+
+      view.unmount();
+      const { result } = mount('disabled');
+
+      expect(result.current.settings).toMatchObject({
+        otpauthUri: null,
+        secret: null,
+        recoveryCodes: null,
+      });
+    });
+
+    it('comes back to the on view without the codes after leaving the codes view', async () => {
+      mockProvider.setup.mockResolvedValue(SETUP);
+      mockProvider.confirm.mockResolvedValue(CODES);
+      const view = mount('disabled');
+      await enrol(view);
+      expect(view.result.current.view.view).toBe('codes');
+
+      view.unmount();
+      const { result } = mount('enabled');
+
+      expect(result.current.view.view).toBe('on');
+      expect(result.current.settings).toEqual({
+        status: 'enabled',
+        otpauthUri: null,
+        secret: null,
+        recoveryCodes: null,
+      });
+    });
+
     it('walks start, confirm and done, holding secrets only where they show', async () => {
       mockProvider.setup.mockResolvedValue(SETUP);
       mockProvider.confirm.mockResolvedValue(CODES);

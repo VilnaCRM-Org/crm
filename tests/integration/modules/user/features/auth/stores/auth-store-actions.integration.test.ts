@@ -28,12 +28,10 @@ const recorder = {
 
 const securitySignals = new AuthSecuritySignals(recorder, observability);
 
-const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
-  ({
-    login: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c', token: 't' } }),
-    register: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c' } }),
-    ...over,
-  }) as AuthRepository;
+const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository => ({
+  register: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c' } }),
+  ...over,
+});
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions({

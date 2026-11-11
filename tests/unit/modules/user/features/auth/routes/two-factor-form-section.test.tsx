@@ -11,7 +11,12 @@ import ROUTE_PATHS from '@/routes/route-paths';
 import TwoFactorFormSection from '@auth/routes/two-factor/two-factor-form-section';
 import useAuthStore from '@auth/stores/use-auth-store';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
-import { buildPendingSessionId, buildToken } from '@tests/builders';
+import {
+  buildPendingSessionId,
+  buildRecoveryCode,
+  buildToken,
+  buildTotpCode,
+} from '@tests/builders';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -124,15 +129,16 @@ describe('TwoFactorFormSection', () => {
 
   it('completes with the session id and writes the token once', async () => {
     const token = buildToken();
+    const code = buildTotpCode();
     completeChallenge.mockResolvedValue({ kind: 'completed', token, recoveryCodesRemaining: 2 });
     mount();
 
-    await enter('123456');
+    await enter(code);
 
     await waitFor(() => expect(useAuthStore.getState().token).toBe(token));
     expect(completeChallenge).toHaveBeenCalledTimes(1);
     expect(completeChallenge).toHaveBeenCalledWith(
-      { twoFactorCode: '123456', pendingSessionId },
+      { twoFactorCode: code, pendingSessionId },
       expect.any(AbortSignal)
     );
     expect(useAuthStore.getState()).toMatchObject({
@@ -149,11 +155,12 @@ describe('TwoFactorFormSection', () => {
       token: buildToken(),
       recoveryCodesRemaining: null,
     });
+    const code = buildTotpCode();
     mount();
     act(() => useConnectivityStore.setState({ online: false }));
 
-    await enter('123456');
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+    await enter(code);
+    await act(async () => Promise.resolve());
 
     expect(completeChallenge).not.toHaveBeenCalled();
     expect(
@@ -166,7 +173,7 @@ describe('TwoFactorFormSection', () => {
 
     await waitFor(() => expect(completeChallenge).toHaveBeenCalledTimes(1));
     expect(completeChallenge).toHaveBeenCalledWith(
-      { twoFactorCode: '123456', pendingSessionId },
+      { twoFactorCode: code, pendingSessionId },
       expect.any(AbortSignal)
     );
   });
@@ -175,7 +182,7 @@ describe('TwoFactorFormSection', () => {
     completeChallenge.mockResolvedValue(failed('invalid_code'));
     mount();
 
-    await enter('123456');
+    await enter(buildTotpCode());
 
     expect(
       await screen.findByText(
@@ -200,7 +207,7 @@ describe('TwoFactorFormSection', () => {
     completeChallenge.mockResolvedValue(failed(reason));
     mount();
 
-    await enter('123456');
+    await enter(buildTotpCode());
 
     expect(
       await screen.findByText(
@@ -213,7 +220,7 @@ describe('TwoFactorFormSection', () => {
     completeChallenge.mockResolvedValue(failed('rate_limited'));
     mount();
 
-    await enter('123456');
+    await enter(buildTotpCode());
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Забагато спроб. Зачекайте хвилину і спробуйте знову.'
@@ -229,7 +236,7 @@ describe('TwoFactorFormSection', () => {
       recoveryCodesRemaining: null,
     });
     mount();
-    await enter('123456');
+    await enter(buildTotpCode());
 
     await userEvent.click(await screen.findByRole('button', { name: 'Спробувати ще раз' }));
 
@@ -247,7 +254,7 @@ describe('TwoFactorFormSection', () => {
         })
     );
     mount();
-    await enter('123456');
+    await enter(buildTotpCode());
     const retry = await screen.findByRole('button', { name: 'Спробувати ще раз' });
 
     await userEvent.click(retry);
@@ -273,7 +280,7 @@ describe('TwoFactorFormSection', () => {
         })
     );
     mount();
-    await enter('123456');
+    await enter(buildTotpCode());
     await waitFor(() => expect(signal).toBeDefined());
 
     await userEvent.click(screen.getByRole('button', { name: 'Назад' }));
@@ -344,7 +351,7 @@ describe('TwoFactorFormSection', () => {
       mount();
       await openRecovery();
 
-      await submitRecovery('abcd2345');
+      await submitRecovery(buildRecoveryCode());
 
       const message = await screen.findByText('Невірний резервний код. Спробуйте ще раз.');
       await waitFor(() => expect(recoveryField()).toHaveValue(''));
@@ -371,15 +378,16 @@ describe('TwoFactorFormSection', () => {
 
     it('completes with a recovery code and writes the token', async () => {
       const token = buildToken();
+      const code = buildRecoveryCode();
       completeChallenge.mockResolvedValue({ kind: 'completed', token, recoveryCodesRemaining: 1 });
       mount();
       await openRecovery();
 
-      await submitRecovery('abcd0001');
+      await submitRecovery(code);
 
       await waitFor(() => expect(useAuthStore.getState().token).toBe(token));
       expect(completeChallenge.mock.calls[0]?.[0]).toEqual({
-        twoFactorCode: 'ABCD-0001',
+        twoFactorCode: code,
         pendingSessionId,
       });
       expect(useAuthStore.getState().recoveryCodesRemaining).toBe(1);

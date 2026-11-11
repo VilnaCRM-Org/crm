@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { buildTotpCode } from '@tests/builders';
+import { sidebarOf, sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -256,6 +257,25 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(codeListOf(page)).toHaveCount(0);
       await expect(codesHeadingOf(page)).toHaveCount(0);
       expect(await page.content()).not.toContain(RECOVERY_CODES[0]);
+      await expectNoSecrets(page, SECRETS);
+    });
+
+    test('comes back to the on view with no code after leaving the codes view', async ({
+      page,
+    }) => {
+      await stubSetup(page);
+      await stubConfirm(page);
+      await page.goto(SETTINGS_URL);
+      await reachCodes(page);
+
+      await sidebarOf(page)
+        .getByRole('link', { name: t('app_shell.items.boards') })
+        .click();
+      await expect(codesHeadingOf(page)).toHaveCount(0);
+      await sidebarSettingsOf(page).click();
+
+      await expect(statusHeadingOf(page, twoFactorText.statusOn)).toBeVisible();
+      await expect(codeListOf(page).getByRole('listitem')).toHaveCount(0);
       await expectNoSecrets(page, SECRETS);
     });
 

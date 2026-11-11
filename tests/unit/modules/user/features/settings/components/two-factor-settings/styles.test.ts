@@ -94,13 +94,17 @@ describe('two-factor settings styles', () => {
         overflowWrap: 'anywhere',
         backgroundColor: '#EAECEE',
         borderRadius: '0.25rem',
-        fontFamily: 'Golos',
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
+        fontVariantNumeric: 'tabular-nums',
         fontWeight: 600,
         fontSize: '1rem',
         lineHeight: 'normal',
         color: '#1A1C1E',
       },
       savedRow: { margin: '1.25rem 0 0' },
+      disableCodeField: {
+        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#80878A' },
+      },
       statusHeading: {
         display: 'flex',
         alignItems: 'center',

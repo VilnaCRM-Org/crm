@@ -45,6 +45,18 @@ export const WithContentAfterTheCard: Story = {
   },
 };
 
+export const Recovery: Story = {
+  args: { variant: 'recovery' },
+  globals: { viewport: { value: 'md', isRotated: false } },
+  parameters: {
+    docs: {
+      description: {
+        story: 'The recovery pages card at the tablet width, where its own padding applies.',
+      },
+    },
+  },
+};
+
 export const Challenge: Story = {
   args: {
     variant: 'challenge',

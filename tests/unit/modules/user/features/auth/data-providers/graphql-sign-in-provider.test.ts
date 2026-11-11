@@ -5,7 +5,13 @@ import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider
 import type { GraphQLSignInRepository } from '@auth/repositories';
 import GraphQLSignInTransformer from '@auth/transformers/graphql-sign-in-transformer';
 import type { TwoFactorChallengeInput } from '@auth/types/two-factor/challenge';
-import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
+import {
+  buildEmail,
+  buildPassword,
+  buildPendingSessionId,
+  buildToken,
+  buildTotpCode,
+} from '@tests/builders';
 
 const setUp = (): {
   provider: GraphQLSignInProvider;
@@ -110,7 +116,7 @@ describe('GraphQLSignInProvider.login', () => {
 describe('GraphQLSignInProvider.completeChallenge', () => {
   const challenge = (): TwoFactorChallengeInput => ({
     pendingSessionId: buildPendingSessionId(),
-    twoFactorCode: '123456',
+    twoFactorCode: buildTotpCode(),
   });
 
   const setUpChallenge = (): ReturnType<typeof setUp> & { complete: jest.Mock } => {

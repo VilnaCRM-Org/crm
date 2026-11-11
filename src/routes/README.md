@@ -176,7 +176,8 @@ fails when the eager graph reaches either component or a file only they import.
 
 `AppLayout` is the shell chrome of every protected page (issues #106, #362). It hands
 `appShellLoader` to `AppLayoutFrame`, a CSS grid frame that renders, in order, the lazy
-`UIAppShell` (header, sidebar from 1024 px or mobile drawer below it, built by `useAppShell` from
+`UIAppShell` (header, sidebar from 768 px or mobile drawer below it, per the owner decision of
+2026-11-05, built by `useAppShell` from
 that loader behind a `<Suspense>` whose fallback is `AppShellPlaceholders`, two `aria-hidden`
 size-holding placeholders, a header slot and a navigation column), the page's `<main>` and, after it
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits

@@ -9,6 +9,7 @@ import type {
   TwoFactorChallengeProps,
   TwoFactorChallengeState,
 } from '@auth/types/two-factor/challenge-view';
+import { buildTotpCode } from '@tests/builders';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -91,14 +92,15 @@ describe('TwoFactorChallengeForm', () => {
   });
 
   it('hands the code to submit once on the sixth digit, with no button pressed', async () => {
+    const code = buildTotpCode();
     const { handlers } = mount();
 
-    await userEvent.type(cells()[0] as HTMLInputElement, '12345');
+    await userEvent.type(cells()[0] as HTMLInputElement, code.slice(0, 5));
     expect(handlers.submit).not.toHaveBeenCalled();
-    await userEvent.type(cells()[5] as HTMLInputElement, '6');
+    await userEvent.type(cells()[5] as HTMLInputElement, code.slice(5));
 
     await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
-    expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: '123456' });
+    expect(handlers.submit).toHaveBeenCalledWith({ twoFactorCode: code });
   });
 
   it('does not auto-submit in recovery mode', async () => {
@@ -144,8 +146,9 @@ describe('TwoFactorChallengeForm', () => {
   it('empties every cell and marks them invalid after a wrong code', async () => {
     const handlers = callbacks();
     const view = mount({}, handlers);
-    await userEvent.type(cells()[0] as HTMLInputElement, '123456');
-    view.rerender(tree({ ...RESTING, value: '123456' }, handlers));
+    const code = buildTotpCode();
+    await userEvent.type(cells()[0] as HTMLInputElement, code);
+    view.rerender(tree({ ...RESTING, value: code }, handlers));
 
     view.rerender(
       tree({ ...RESTING, value: '', fieldError: 'invalid_code', focusRequest: 1 }, handlers)
@@ -173,7 +176,7 @@ describe('TwoFactorChallengeForm', () => {
   });
 
   it('marks the form busy, announces the check and locks the cells while submitting', () => {
-    mount({ isSubmitting: true, value: '123456' });
+    mount({ isSubmitting: true, value: buildTotpCode() });
 
     expect(document.forms[0]).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByText('Перевірка…')).toHaveAttribute('role', 'status');
@@ -196,19 +199,20 @@ describe('TwoFactorChallengeForm', () => {
   it('retries through the form submit with the code as it is now, keeping focus', async () => {
     const handlers = callbacks();
     const transient = { banner: 'transient', bannerOccurrence: 1 } as const;
+    const code = buildTotpCode();
     const view = mount(transient, handlers);
-    await userEvent.type(cells()[0] as HTMLInputElement, '654321');
+    await userEvent.type(cells()[0] as HTMLInputElement, code);
     await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(1));
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз."
     );
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
-    const pending = { ...RESTING, ...transient, value: '654321', isSubmitting: true };
+    const pending = { ...RESTING, ...transient, value: code, isSubmitting: true };
     view.rerender(tree(pending, handlers));
 
     await waitFor(() => expect(handlers.submit).toHaveBeenCalledTimes(2));
-    expect(handlers.submit).toHaveBeenLastCalledWith({ twoFactorCode: '654321' });
+    expect(handlers.submit).toHaveBeenLastCalledWith({ twoFactorCode: code });
     expect(screen.getByRole('button', { name: 'Спробувати ще раз' })).toHaveFocus();
   });
 

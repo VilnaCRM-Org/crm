@@ -244,16 +244,20 @@ What Figma leaves open, and how it was built:
 
 ## Mobile drawer
 
-Below 1024 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
+Below 768 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
 transparent target around the 24 px glyph at 336,16) and `UINavigationDrawer` opens a modal dialog
 named "Main navigation". It is MUI's `Modal`, so the focus trap, the hidden page (the app root,
 banner, main and footer lose their roles), the scroll lock and Escape are MUI's; no `inert`, `:has()`
 or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies of the logo, bell,
-list and avatar and the one operable `x-close` button, and a 313×622 panel at 62,56 with the
-disabled drawer search and the same `UINavigationList` as the sidebar in 60 px rows (the Settings
-header is 48 px while the group is open, as drawn). The panel slides in over 200 ms and the scrim
-fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0
-(`useDrawerMotion`).
+list and avatar and the one operable `x-close` button, and a panel under that header that spans the
+whole viewport width down to the bottom edge with no shadow, holding the disabled drawer search and
+the same `UINavigationList` as the sidebar in 60 px rows (the Settings header is 48 px while the
+group is open, as drawn). Both the 768 px breakpoint and the viewport-wide panel are the owner
+decision of 2026-11-05, confirmed 2026-11-10 (see the amendment banner of
+[the app-shell PRD](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md));
+until then the drawer served everything below 1024 px as a 313×622 panel at 62,56,
+as the Figma frame draws it. The panel slides in over 200 ms and the scrim fades in over 200 ms;
+under `prefers-reduced-motion: reduce` both durations are 0 (`useDrawerMotion`).
 
 Focus: the close button takes focus on open. Escape, the close button, a tap anywhere outside the
 panel (the scrim, the untinted footer, or the header outside the close button) close the drawer and
@@ -285,6 +289,10 @@ closes the drawer and runs `signOut` once.
 | P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass      |
 | drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
 | scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
+
+The P-34 panel, P-36 first-row and P-44 Sign out rows were measured before the owner decision of
+2026-11-05: the panel now starts at 0,56 and spans the viewport, so the 62 px x offset of those
+three rows no longer applies.
 
 The scrim row compares the rule, not a y value: Figma's 375×812 drawer frame puts the footer top
 at y 772, and `/boards` at 375×812 puts it at 604.4, and in both the scrim ends there.

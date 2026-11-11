@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 import type {
   ClipboardCopy,
@@ -31,14 +31,10 @@ async function writeOrSelect({
 export default function useCopyToClipboard(): ClipboardCopy {
   const [status, setStatus] = useState<ClipboardCopyStatus>('idle');
 
-  const copy = useCallback(
-    async (request: ClipboardCopyRequest) => {
-      setStatus('idle');
-      setStatus(await writeOrSelect(request));
-    },
-    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-    []
-  );
+  const [copy] = useState(() => async (request: ClipboardCopyRequest): Promise<void> => {
+    setStatus('idle');
+    setStatus(await writeOrSelect(request));
+  });
 
   return { status, copy };
 }

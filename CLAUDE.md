@@ -434,8 +434,10 @@ claims. Four settings in `stryker.config.mjs` keep that true, and
   5 s a CI runner timed out 98 of the 103 `pii-text-scrubber.ts` mutants and 36 of the 86
   `ui-form/styles.ts` ones, every one of them killed by an assertion on a laptop, so they were
   scored `Timeout` without a reason and each killed and restarted its test runner, which is what
-  pushed those shards to the kill switch. 20 s covers the slowest related-test load measured; a
-  real hang now costs 20 s instead of 5 s, and there are few of those.
+  pushed those shards to the kill switch. 20 s covers those two files; a real hang now costs 20 s
+  instead of 5 s, and there are few of those. It does not cover `lazy-catalog-loader.ts`, whose
+  seven mutants each load 106 related component tests: the cold 56-shard run still scored six of
+  them `Timeout` (detected, so the gate holds, but not earned by an assertion).
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
 independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
@@ -477,8 +479,8 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Seventeen directives are annotated today, at two mutators. Sixteen are `ArrayDeclaration` on a
-React hook dependency array, and they come in two shapes. Eleven are empty: `ArrayDeclaration` rewrites
+Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
 does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
@@ -506,7 +508,7 @@ Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The seventeenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -515,7 +517,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
