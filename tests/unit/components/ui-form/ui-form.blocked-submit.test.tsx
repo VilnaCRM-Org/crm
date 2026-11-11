@@ -76,6 +76,9 @@ describe('UIForm submitBlockedReason', () => {
       mount('');
 
       expect(submit()).not.toHaveAttribute('aria-disabled');
+      expect(
+        screen.queryAllByRole('paragraph').filter((paragraph) => paragraph.textContent === '')
+      ).toHaveLength(0);
     });
 
     it('still submits', async () => {

@@ -1,12 +1,15 @@
 import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useEmailResend from '@/modules/user/features/settings/hooks/use-email-resend';
 import type { ProfileResendOutcome } from '@/modules/user/features/settings/types/user-profile';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const mockResend = jest.fn();
 const mockProvider = { resend: mockResend };
@@ -172,6 +175,43 @@ describe('useEmailResend', () => {
     expect(show).toHaveBeenCalledWith({ items: [{ tone: 'error', message }] });
     expect(confirm).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],
+    ['transient', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+    ['rejected', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+  ] as const)(
+    'maps the %s failure to its toast in a hook loaded in the test',
+    async (reason, message) => {
+      const fresh = await loadIsolated(async () => {
+        jest.doMock('react', () => React);
+        jest.doMock('react-i18next', () => ReactI18next);
+        return (await import('@/modules/user/features/settings/hooks/use-email-resend')).default;
+      });
+      mockResend.mockResolvedValue({ kind: 'failed', reason });
+      const show = jest.fn();
+      const toasts = {
+        toasts: { items: [] },
+        announcement: '',
+        alert: '',
+        show,
+        dismiss: jest.fn(),
+      };
+      const adoption = {
+        adopt: jest.fn(),
+        confirm: jest.fn(),
+        isCurrent: jest.fn(() => true),
+        revision: jest.fn(() => 0),
+      };
+      const { result } = renderHook(() => fresh(user, adoption, toasts), { wrapper });
+
+      await act(async () => {
+        result.current.resend();
+      });
+
+      expect(show).toHaveBeenCalledWith({ items: [{ tone: 'error', message }] });
+    }
+  );
 
   it('does nothing when the session ended', async () => {
     mockResend.mockResolvedValue({ kind: 'failed', reason: 'session_ended' });
