@@ -6,7 +6,7 @@ const config = {
   reporters: ['html', 'clear-text', 'progress'],
   testRunner: 'jest',
   coverageAnalysis: 'perTest',
-  timeoutMS: 20000,
+  timeoutMS: 60000,
   ignoreStatic: true,
   plugins: ['@stryker-mutator/jest-runner', '@stryker-mutator/typescript-checker'],
   checkers: ['typescript'],

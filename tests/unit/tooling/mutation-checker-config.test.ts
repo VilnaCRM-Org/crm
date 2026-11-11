@@ -130,7 +130,7 @@ describe('stryker mutant-classification config', () => {
     });
 
     it('gives a mutant run time to load every related test file before it calls it a hang', () => {
-      expect(base.timeoutMS).toBeGreaterThanOrEqual(20_000);
+      expect(base.timeoutMS).toBeGreaterThanOrEqual(60_000);
     });
   });
 

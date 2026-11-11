@@ -427,16 +427,18 @@ claims. Four settings in `stryker.config.mjs` keep that true, and
   25,584 to 194,773 (7.6×, 9× for the median file), which would push shards past the 15-minute
   kill switch and bring back the `Timeout` inflation above. Take it only with the shard
   wall-clock re-measured and the shard count raised first.
-- **`timeoutMS: 20000`.** Stryker calls a mutant run a hang when it outlasts this allowance plus
+- **`timeoutMS: 60000`.** Stryker calls a mutant run a hang when it outlasts this allowance plus
   `timeoutFactor` times the covering tests' net time, and the net time leaves out the cost of
   loading every related test file, which a high fan-out file pays on each run. At the default
   5 s a CI runner timed out 98 of the 103 `pii-text-scrubber.ts` mutants and 36 of the 86
   `ui-form/styles.ts` ones, every one of them killed by an assertion on a laptop, so they were
   scored `Timeout` without a reason and each killed and restarted its test runner, which is what
-  pushed those shards to the kill switch. 20 s covers those two files; a real hang now costs 20 s
-  instead of 5 s, and there are few of those. It does not cover `lazy-catalog-loader.ts`, whose
-  seven mutants each load 106 related component tests: the cold 56-shard run still scored six of
-  them `Timeout` (detected, so the gate holds, but not earned by an assertion).
+  pushed those shards to the kill switch. 20 s covered those two files but not
+  `lazy-catalog-loader.ts`, whose seven mutants each load 106 related component tests: at 20 s the
+  cold 56-shard runs scored six of them `Timeout` and restarted a runner for each, and on
+  2026-11-11 that cost alone held shard 5 at 102 of 103 tested when the kill switch fired. 60 s
+  lets those runs finish and score on their assertions; a real hang now costs 60 s, and there are
+  few of those.
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
 independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
