@@ -373,7 +373,7 @@ describe('mutation shard slicing', () => {
       ])
     );
 
-    it('weighs a file by its runnable mutants plus its dry run times the fan-out of its tests', () => {
+    it('weighs a file by its runnable mutants plus its dry run, times its fan-out', () => {
       expect(weights.get('service.ts')).toBe((5 + 1) * (4 + 30 + 3 * 2));
     });
 
