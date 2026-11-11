@@ -27,21 +27,23 @@ const dismiss = (): void => {
   useAuthStore.setState(patch);
 };
 
+function lazyNotice(): ComponentType<RecoveryCodesNoticeProps> {
+  const loader = new ThemedChunkLoader<RecoveryCodesNoticeProps>(
+    new ChunkRetryLoader(
+      () =>
+        import(
+          /* webpackChunkName: "recovery-codes-notice" */ '@auth/components/recovery-codes-notice'
+        )
+    ),
+    muiThemeShellLoader
+  );
+  return lazy(() => loader.load().catch(() => ({ default: NoticeUnavailable })));
+}
+
 export default function useRecoveryCodesBanner(): ReactNode {
   const remaining = useAuthStore((state: AuthState) => state.recoveryCodesRemaining);
   const onSettings = useLocation().pathname === ROUTE_PATHS.settings;
-  const [Notice] = useState<ComponentType<RecoveryCodesNoticeProps>>(() => {
-    const loader = new ThemedChunkLoader<RecoveryCodesNoticeProps>(
-      new ChunkRetryLoader(
-        () =>
-          import(
-            /* webpackChunkName: "recovery-codes-notice" */ '@auth/components/recovery-codes-notice'
-          )
-      ),
-      muiThemeShellLoader
-    );
-    return lazy(() => loader.load().catch(() => ({ default: NoticeUnavailable })));
-  });
+  const [Notice] = useState(lazyNotice);
 
   useEffect(() => {
     if (onSettings && remaining !== null) dismiss();
