@@ -681,8 +681,10 @@ describe('performance serving config', () => {
     );
     expect(signInSubmit).not.toMatch(/^(export )?const \w+ = new ChunkRetryLoader/m);
     expect(recoveryRun).toContain(
-      "new ChunkRetryLoader(() => import('@/modules/user/config/tokens'));"
+      '  const [tokensLoader] = useState(\n' +
+        "    () => new ChunkRetryLoader(() => import('@/modules/user/config/tokens'))\n  );"
     );
+    expect(recoveryRun).not.toMatch(/^(export )?const \w+ = new ChunkRetryLoader/m);
     expect(staticImportsOf(signInSubmit)).not.toContain('@/modules/user/config/tokens');
     expect(staticImportsOf(recoveryRun)).not.toContain('@/modules/user/config/tokens');
   });

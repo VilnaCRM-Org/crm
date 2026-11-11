@@ -1,8 +1,10 @@
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';
 
+import type { AbortableRun } from '@/hooks/types/use-abortable-submit';
+import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import useRecoveryRun, { authTokensLoader } from '@auth/hooks/use-recovery-run';
+import useRecoveryRun from '@auth/hooks/use-recovery-run';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { RecoveryProviderStep } from '@auth/types/password-recovery/state';
 import { buildEmail } from '@tests/builders';
@@ -60,7 +62,7 @@ describe('useRecoveryRun', () => {
   });
 
   it('maps a token module that fails to load to the same failure, resolving nothing', async () => {
-    jest.spyOn(authTokensLoader, 'load').mockRejectedValueOnce(new Error('chunk failed'));
+    jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(new Error('chunk failed'));
     const loader = providerLoader({});
     const step = echoStep();
     const { result } = renderHook(() => useRecoveryRun(loader, step));
@@ -71,6 +73,27 @@ describe('useRecoveryRun', () => {
     });
     expect(loader.resolve).not.toHaveBeenCalled();
     expect(step).not.toHaveBeenCalled();
+  });
+
+  it('builds one token loader per mount and reuses it across that mount', async () => {
+    const load = jest.spyOn(ChunkRetryLoader.prototype, 'load');
+    const run = async (current: AbortableRun<string, unknown>): Promise<unknown> =>
+      current(buildEmail(), new AbortController().signal);
+    const view = renderHook(() => useRecoveryRun(providerLoader({}), echoStep()));
+    await run(view.result.current);
+    view.rerender();
+    await run(view.result.current);
+    const { result: secondResult } = renderHook(() =>
+      useRecoveryRun(providerLoader({}), echoStep())
+    );
+    await run(secondResult.current);
+
+    const [firstMount, rerendered, secondMount] = load.mock.contexts;
+    expect(load).toHaveBeenCalledTimes(3);
+    expect(firstMount).toBeInstanceOf(ChunkRetryLoader);
+    expect(rerendered).toBe(firstMount);
+    expect(secondMount).toBeInstanceOf(ChunkRetryLoader);
+    expect(secondMount).not.toBe(firstMount);
   });
 
   it('keeps one run across renders and rebuilds it for a new loader or step', async () => {

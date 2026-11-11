@@ -95,6 +95,23 @@ describe('GraphQLSignInTransformer.toChallengeFailure', () => {
     });
   });
 
+  it.each(FAILURE_ROWS.filter(([reason]) => reason !== 'invalid_code'))(
+    'maps a %s reason with status 401 to the expired_session outcome (FR-20)',
+    (reason) => {
+      expect(transformer.toChallengeFailure(failure(reason, 401))).toEqual({
+        kind: 'failed',
+        reason: 'expired_session',
+      });
+    }
+  );
+
+  it('keeps a 401 invalid_code answer as the wrong-code outcome (FR-19)', () => {
+    expect(transformer.toChallengeFailure(failure('invalid_code', 401))).toEqual({
+      kind: 'failed',
+      reason: 'invalid_code',
+    });
+  });
+
   it('loads the same table when the module evaluates inside the test', async () => {
     const Loaded = await loadIsolated(
       async () => (await import('@auth/transformers/graphql-sign-in-transformer')).default
@@ -104,5 +121,21 @@ describe('GraphQLSignInTransformer.toChallengeFailure', () => {
     expect(FAILURE_ROWS.map(([reason]) => loaded.toChallengeFailure(failure(reason)))).toEqual(
       FAILURE_ROWS.map(([, expected]) => ({ kind: 'failed', reason: expected }))
     );
+  });
+
+  it('decides a 401 inside the test: expired unless the code was wrong', async () => {
+    const Loaded = await loadIsolated(
+      async () => (await import('@auth/transformers/graphql-sign-in-transformer')).default
+    );
+    const loaded = new Loaded();
+
+    expect(loaded.toChallengeFailure(failure('access_denied', 401))).toEqual({
+      kind: 'failed',
+      reason: 'expired_session',
+    });
+    expect(loaded.toChallengeFailure(failure('invalid_code', 401))).toEqual({
+      kind: 'failed',
+      reason: 'invalid_code',
+    });
   });
 });

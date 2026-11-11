@@ -732,8 +732,9 @@ user-service operation goes through a GraphQL repository.
 singleton in its lazily loaded chunk, the one exception the owner accepted on 2026-11-10. The
 processor resolves `GraphQLSignInProvider` through the container-free `AuthProviderLoader`, writes
 the result to `useAuthStore` and records the security signal; a processor or provider that cannot
-load leaves the retryable load error. `useRecoveryRun` loads `AUTH_TOKENS` through a
-`ChunkRetryLoader` for the two password-recovery pages. The provider calls the transport-only
+load leaves the retryable load error. `useRecoveryRun` loads `AUTH_TOKENS` for the two
+password-recovery pages through a `ChunkRetryLoader` it also builds once per mount in a `useState`
+initializer. The provider calls the transport-only
 `GraphQLSignInRepository` and translates through `GraphQLSignInTransformer` and
 `UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`, `LoginResponseMapper` and
 `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and logout are unchanged.
@@ -885,7 +886,10 @@ A `423` gives `locked`; six exact messages give the others, matched whole, with 
 status; `twoFactorCode` joins the properties whose violations classify as `violation`. The rows
 are appended to the two-step classification above, and every earlier row keeps its result. The
 sign-in and settings Data providers map the reason to their own outcome; no hook reads a GraphQL
-shape or an English message.
+shape or an English message. `GraphQLSignInTransformer` decides a sign-in answer on its status
+before its reason, so every `401` and `422` gives the one invalid-credentials failure whatever its
+message (NFR-3), and on completion any `401` that is not `invalid_code` is the expired session
+(FR-20).
 
 **Rejected.** A contains-match on the message (`Invalid two-factor code. Retry` must not classify
 as a wrong code); reading `extensions.code` (upstream sends none); a second classifier per feature

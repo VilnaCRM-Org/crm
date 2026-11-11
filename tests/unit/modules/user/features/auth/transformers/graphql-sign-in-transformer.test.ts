@@ -137,6 +137,51 @@ describe('GraphQLSignInTransformer.toSignInFailure', () => {
     }
   );
 
+  const SHARED_ROW_REASONS: readonly UserServiceFailureReason[] = [
+    'server',
+    'unknown',
+    'access_denied',
+    'invalid_password',
+    'invalid_code',
+    'expired_session',
+    'setup_not_initiated',
+    'already_enabled',
+    'not_enabled',
+    'reauth_required',
+    'locked',
+    'rate_limited',
+    'network',
+  ];
+
+  const UNIFORM_ROWS = SHARED_ROW_REASONS.flatMap((reason) =>
+    [401, 422].map((status) => [reason, status] as const)
+  );
+
+  it.each(UNIFORM_ROWS)(
+    'decides a %s answer with status %p on the status: the uniform invalid_credentials failure',
+    (reason, status) => {
+      expect(transformer.toSignInFailure(failure(reason, status))).toEqual(INVALID_CREDENTIALS);
+    }
+  );
+
+  it.each<UserServiceFailureReason>(['access_denied', 'invalid_code', 'unknown'])(
+    'decides a %s answer with status 423 on the status: the locked failure',
+    (reason) => {
+      expect(transformer.toSignInFailure(failure(reason, 423))).toMatchObject({
+        error: { reason: 'locked', status: 423 },
+      });
+    }
+  );
+
+  it.each<UserServiceFailureReason>(['access_denied', 'invalid_code', 'unknown'])(
+    'decides a %s answer with status 429 on the status: the rate-limited failure',
+    (reason) => {
+      expect(transformer.toSignInFailure(failure(reason, 429))).toMatchObject({
+        error: { reason: 'rate_limited', status: 429 },
+      });
+    }
+  );
+
   it('maps locked to an authentication failure with status 423 and no retry', () => {
     expect(transformer.toSignInFailure(failure('locked', 423))).toEqual({
       ok: false,
@@ -225,6 +270,30 @@ describe('GraphQLSignInTransformer.toSignInFailure', () => {
   it.each<[UserServiceFailureReason, number | null, object]>([
     ['aborted', null, { kind: 'network', displayMessage: '', retryable: false, aborted: true }],
     ['refused', 401, INVALID_CREDENTIALS.error],
+    ['access_denied', 401, INVALID_CREDENTIALS.error],
+    ['reauth_required', 422, INVALID_CREDENTIALS.error],
+    [
+      'invalid_code',
+      423,
+      {
+        kind: 'authentication',
+        displayMessage: 'sign_in.errors.locked',
+        retryable: false,
+        status: 423,
+        reason: 'locked',
+      },
+    ],
+    [
+      'unknown',
+      429,
+      {
+        kind: 'server',
+        displayMessage: 'sign_in.errors.rate_limited',
+        retryable: false,
+        status: 429,
+        reason: 'rate_limited',
+      },
+    ],
     [
       'locked',
       423,

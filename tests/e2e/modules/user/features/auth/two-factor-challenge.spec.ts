@@ -94,6 +94,44 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     expect(challenge.count()).toBe(0);
   });
 
+  test('browser Back then Forward from the challenge ends on /sign-in with no request', async ({
+    page,
+  }) => {
+    const challenge = await stubChallenge(page);
+    await signInToChallenge(page, credentials);
+
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
+    await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();
+
+    await page.goForward();
+
+    await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
+    await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();
+    await expect(challengeHeadingOf(page)).toHaveCount(0);
+    expect(challenge.count()).toBe(0);
+    await expectNoSecrets(page, secrets);
+  });
+
+  test('browser Back after a completed challenge does not render the challenge', async ({
+    page,
+  }) => {
+    const challenge = await stubChallenge(page);
+    await signInToChallenge(page, credentials);
+    await typeCode(page, CODE);
+    await expect(
+      page.getByRole('main').getByRole('heading', { level: 1, name: homeHeading })
+    ).toBeVisible();
+
+    await page.goBack();
+
+    await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
+    await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();
+    await expect(challengeHeadingOf(page)).toHaveCount(0);
+    await expect(codeCellsOf(page)).toHaveCount(0);
+    expect(challenge.count()).toBe(1);
+  });
+
   test('shows the card and keeps the session id out of the URL, history and title', async ({
     page,
   }) => {

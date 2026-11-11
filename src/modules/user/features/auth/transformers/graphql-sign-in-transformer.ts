@@ -63,6 +63,13 @@ const FAILURES = new Map<UserServiceFailureReason, AuthError>([
   ['aborted', ABORTED_ERROR],
 ]);
 
+const STATUS_FAILURES = new Map<number | null, AuthError>([
+  [401, INVALID_CREDENTIALS],
+  [422, INVALID_CREDENTIALS],
+  [423, LOCKED],
+  [429, RATE_LIMITED],
+]);
+
 const CHALLENGE_FAILURES = new Map<UserServiceFailureReason, ChallengeFailureReason>([
   ['invalid_code', 'invalid_code'],
   ['violation', 'invalid_code'],
@@ -98,7 +105,9 @@ export default class GraphQLSignInTransformer {
   }
 
   public toSignInFailure(failure: UserServiceFailure): SignInResult {
-    return { ok: false, error: FAILURES.get(failure.reason) ?? TRANSIENT_SERVER };
+    const error =
+      STATUS_FAILURES.get(failure.status) ?? FAILURES.get(failure.reason) ?? TRANSIENT_SERVER;
+    return { ok: false, error };
   }
 
   public toChallengeResult(
@@ -114,7 +123,10 @@ export default class GraphQLSignInTransformer {
   }
 
   public toChallengeFailure(failure: UserServiceFailure): ChallengeFailedOutcome {
-    const reason = CHALLENGE_FAILURES.get(failure.reason);
+    const reason =
+      failure.status === 401 && failure.reason !== 'invalid_code'
+        ? 'expired_session'
+        : CHALLENGE_FAILURES.get(failure.reason);
     return reason === undefined ? SERVER_CHALLENGE_FAILURE : { kind: 'failed', reason };
   }
 }
