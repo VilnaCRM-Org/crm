@@ -364,8 +364,8 @@ as the scrubber was twice: its free-text patterns moved to `PiiTextScrubber`, an
 alone still took 14.6 minutes cold, its two-factor patterns moved to `TwoFactorTextScrubber` (47 and
 60 mutants). The cap binds the same way: at 63 shards it fell to 166, under the 177 runnable
 mutants `user-service-error-transformer.ts` held alone, so its field-violation parsing moved to an
-injected `FieldViolationParser`. File size was a poor proxy too: under the 30-shard size packing a cold shard 11 drew
-253 mutants and met the 15-minute kill switch before it finished.
+injected `FieldViolationParser`. File size was a poor proxy too: under the 30-shard size packing a
+cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard meets
 the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
