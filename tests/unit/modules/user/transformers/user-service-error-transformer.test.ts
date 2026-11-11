@@ -2,6 +2,7 @@ import { ApolloError } from '@apollo/client';
 import { faker } from '@faker-js/faker';
 
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import type {
   FieldViolationReason,
   UserServiceFailure,
@@ -10,7 +11,7 @@ import type {
 import { HttpError } from '@/services/https-client/http-error';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
-const transformer = new UserServiceErrorTransformer();
+const transformer = new UserServiceErrorTransformer(new FieldViolationParser());
 
 const none = { items: [], complete: true };
 
@@ -47,10 +48,12 @@ const failed = (reason: UserServiceFailureReason, status: number | null): UserSe
 });
 
 const loadTransformer = async (): Promise<UserServiceErrorTransformer> => {
-  const Transformer = await loadIsolated(
-    async () => (await import('@/modules/user/transformers/user-service-error-transformer')).default
-  );
-  return new Transformer();
+  const { Transformer, Parser } = await loadIsolated(async () => ({
+    Transformer: (await import('@/modules/user/transformers/user-service-error-transformer'))
+      .default,
+    Parser: (await import('@/modules/user/transformers/field-violation-parser')).default,
+  }));
+  return new Transformer(new Parser());
 };
 
 describe('UserServiceErrorTransformer', () => {

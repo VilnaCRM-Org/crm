@@ -1,10 +1,11 @@
 import type { ApolloError } from '@apollo/client';
 import type { NetworkError } from '@apollo/client/errors';
 import type { GraphQLFormattedError } from 'graphql';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import type {
-  FieldViolation,
   FieldViolationSet,
   UserServiceFailure,
   UserServiceFailureReason,
@@ -30,24 +31,15 @@ const MESSAGE_REASONS = new Map<string, UserServiceFailureReason>([
   ['Re-authentication required.', 'reauth_required'],
 ]);
 
-const TAKEN_MESSAGES: ReadonlySet<string> = new Set([
-  'This email address is already registered',
-  'Ця email-адреса вже зареєстрована',
-]);
-
 const NO_VIOLATIONS: FieldViolationSet = { items: [], complete: true };
-
-const VIOLATION_PROPERTIES: readonly string[] = [
-  'email',
-  'token',
-  'newPassword',
-  'initials',
-  'password',
-  'twoFactorCode',
-];
 
 @injectable()
 export default class UserServiceErrorTransformer {
+  constructor(
+    @inject(AUTH_TOKENS.FieldViolationParser)
+    private readonly violations: FieldViolationParser
+  ) {}
+
   public normalize(error: unknown, signal?: AbortSignal): UserServiceFailure {
     const { networkError, graphQLErrors } = (error ?? {}) as Partial<ApolloError>;
     if (signal?.aborted || this.isAbortError(error) || this.isAbortError(networkError)) {
@@ -61,7 +53,9 @@ export default class UserServiceErrorTransformer {
     graphQLErrors: readonly GraphQLFormattedError[]
   ): GraphQLFormattedError | undefined {
     const tokenError = graphQLErrors.find((graphQLError) =>
-      this.violationsOf(graphQLError.message)?.items.some((violation) => violation.path === 'token')
+      this.violations
+        .parse(graphQLError.message)
+        ?.items.some((violation) => violation.path === 'token')
     );
     return tokenError ?? graphQLErrors[0];
   }
@@ -70,7 +64,7 @@ export default class UserServiceErrorTransformer {
     if (!graphQLError) return this.failure('unknown', null, NO_VIOLATIONS);
     const extensionStatus = graphQLError.extensions?.status;
     const status = typeof extensionStatus === 'number' ? extensionStatus : null;
-    const violations = this.violationsOf(graphQLError.message);
+    const violations = this.violations.parse(graphQLError.message);
     if (violations) return this.failure('violation', status, violations);
     return this.fromCode(graphQLError, status);
   }
@@ -91,24 +85,6 @@ export default class UserServiceErrorTransformer {
       status,
       NO_VIOLATIONS
     );
-  }
-
-  private violationsOf(message: string): FieldViolationSet | null {
-    const lines = message.split(/\r?\n/).filter((line) => line.trim() !== '');
-    const items: FieldViolation[] = [];
-    for (const line of lines) {
-      const violation = this.violationOf(line);
-      if (violation) items.push(violation);
-    }
-    if (items.length === 0) return null;
-    return { items, complete: items.length === lines.length };
-  }
-
-  private violationOf(message: string): FieldViolation | null {
-    const path = VIOLATION_PROPERTIES.find((property) => message.startsWith(`${property}:`));
-    if (path === undefined) return null;
-    const text = message.slice(path.length + 1).trim();
-    return { path, reason: TAKEN_MESSAGES.has(text) ? 'taken' : 'other' };
   }
 
   private statusOf(networkError: NonNullable<NetworkError>): number | null {

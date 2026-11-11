@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider';
 import type { GraphQLSignInRepository } from '@auth/repositories';
 import GraphQLSignInTransformer from '@auth/transformers/graphql-sign-in-transformer';
@@ -22,7 +23,7 @@ const setUp = (): {
   const signIn = jest.fn();
   const repository = { signIn } as unknown as GraphQLSignInRepository;
   const transformer = new GraphQLSignInTransformer();
-  const errors = new UserServiceErrorTransformer();
+  const errors = new UserServiceErrorTransformer(new FieldViolationParser());
   return {
     provider: new GraphQLSignInProvider(repository, transformer, errors),
     signIn,
@@ -123,7 +124,7 @@ describe('GraphQLSignInProvider.completeChallenge', () => {
     const complete = jest.fn();
     const repository = { completeChallenge: complete } as unknown as GraphQLSignInRepository;
     const transformer = new GraphQLSignInTransformer();
-    const errors = new UserServiceErrorTransformer();
+    const errors = new UserServiceErrorTransformer(new FieldViolationParser());
     return {
       provider: new GraphQLSignInProvider(repository, transformer, errors),
       signIn: jest.fn(),

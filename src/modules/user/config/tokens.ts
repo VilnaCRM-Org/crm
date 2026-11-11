@@ -19,6 +19,7 @@ const AUTH_TOKENS = Object.freeze({
   PasswordRecoveryRepository: Symbol('PasswordRecoveryRepository'),
   PasswordRecoveryTransformer: Symbol('PasswordRecoveryTransformer'),
   UserServiceErrorTransformer: Symbol('UserServiceErrorTransformer'),
+  FieldViolationParser: Symbol('FieldViolationParser'),
   GraphQLProfileRepository: Symbol('GraphQLProfileRepository'),
   GraphQLProfileTransformer: Symbol('GraphQLProfileTransformer'),
   ProfileProvider: Symbol('ProfileProvider'),

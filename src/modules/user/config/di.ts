@@ -19,6 +19,7 @@ import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import type ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { ObservabilityService } from '@/services/types/observability/observability';
@@ -127,6 +128,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
       AUTH_TOKENS.PasswordRecoveryTransformer,
       PasswordRecoveryTransformer
     );
+    container.registerSingleton(AUTH_TOKENS.FieldViolationParser, FieldViolationParser);
     container.registerSingleton(
       AUTH_TOKENS.UserServiceErrorTransformer,
       UserServiceErrorTransformer

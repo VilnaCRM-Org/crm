@@ -3,6 +3,7 @@ import type { StoreApi } from 'zustand';
 
 import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
 import type { AuthState } from '@auth/types/auth-store';
@@ -41,7 +42,7 @@ const harness = (session: SessionBox, terminal: ApolloLink | null = null): Harne
     signedOut,
     sandboxDemoSession: { signOut } as unknown as SandboxDemoSessionProvider,
     observability: { clearUser } as unknown as ObservabilityService,
-    errors: new UserServiceErrorTransformer(),
+    errors: new UserServiceErrorTransformer(new FieldViolationParser()),
   });
   const recorder = new ApolloLink((operation) => {
     headers.push(operation.getContext().headers as Record<string, string> | undefined);

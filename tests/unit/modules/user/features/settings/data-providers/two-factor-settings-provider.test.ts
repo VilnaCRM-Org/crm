@@ -5,6 +5,7 @@ import { ApolloError } from '@apollo/client';
 import { TwoFactorSettingsProvider } from '@/modules/user/features/settings/data-providers';
 import { GraphQLTwoFactorSettingsTransformer } from '@/modules/user/features/settings/transformers';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import {
   buildOtpauthUri,
   buildRecoveryCodeSet,
@@ -34,7 +35,7 @@ const build = (): {
   const provider = new TwoFactorSettingsProvider(
     repository as unknown as ConstructorParameters<typeof TwoFactorSettingsProvider>[0],
     transformer,
-    new UserServiceErrorTransformer()
+    new UserServiceErrorTransformer(new FieldViolationParser())
   );
   return { provider, repository, transformer };
 };
