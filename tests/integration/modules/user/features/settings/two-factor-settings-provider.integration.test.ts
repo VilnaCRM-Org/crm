@@ -1,3 +1,4 @@
+import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import { HttpResponse } from 'msw';
 
 import '../../../../setup';
@@ -28,6 +29,8 @@ import {
 const provider = container.resolve<TwoFactorSettingsProvider>(
   AUTH_TOKENS.TwoFactorSettingsProvider
 );
+
+const client = container.resolve<ApolloClient<NormalizedCacheObject>>(AUTH_TOKENS.ApolloClient);
 
 const { signal } = new AbortController();
 const dto = { twoFactorCode: buildTotpCode() };
@@ -89,7 +92,8 @@ describe('TwoFactorSettingsProvider over the container client (integration)', ()
     expect(provider).toBeInstanceOf(TwoFactorSettingsProvider);
   });
 
-  it('answers setup, confirm, disable and regenerate with the changed entity', async () => {
+  it('answers every operation with the changed entity and writes no cache', async () => {
+    const write = jest.spyOn(client.cache, 'write');
     const otpauthUri = buildOtpauthUri();
     const secret = buildTotpSecret();
     const set = buildRecoveryCodeSet();
@@ -113,18 +117,22 @@ describe('TwoFactorSettingsProvider over the container client (integration)', ()
       kind: 'changed',
       settings: { status: 'disabled', otpauthUri, secret, recoveryCodes: null },
     });
+    expect(write).not.toHaveBeenCalled();
     await expect(run('ConfirmTwoFactorUser')).resolves.toEqual({
       kind: 'changed',
       settings: { status: 'enabled', otpauthUri: null, secret: null, recoveryCodes: set },
     });
+    expect(write).not.toHaveBeenCalled();
     await expect(run('DisableTwoFactorUser')).resolves.toEqual({
       kind: 'changed',
       settings: { status: 'disabled', otpauthUri: null, secret: null, recoveryCodes: null },
     });
+    expect(write).not.toHaveBeenCalled();
     await expect(run('RegenerateRecoveryCodesUser')).resolves.toEqual({
       kind: 'changed',
       settings: { status: 'enabled', otpauthUri: null, secret: null, recoveryCodes: set },
     });
+    expect(write).not.toHaveBeenCalled();
   });
 
   describe.each(OPERATIONS)('%s', (operation) => {

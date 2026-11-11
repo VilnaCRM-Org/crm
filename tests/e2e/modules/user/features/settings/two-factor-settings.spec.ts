@@ -53,6 +53,8 @@ async function boxOf(locator: Locator): Promise<{ x: number; y: number }> {
 
 const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(64, 65, 66)' } as const;
 const WIDTHS = [320, 360, 600, 767, 768, 1024] as const;
+const MUTED_FILL = 'rgb(87, 89, 91)';
+const SAVED_BOX = { outline: 'rgb(128, 135, 138)', fill: 'rgb(0, 116, 181)' } as const;
 
 async function clickCopyKey(page: Page, clipboard: 'works' | 'missing'): Promise<void> {
   await stubClipboard(page, clipboard);
@@ -156,6 +158,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
 
       expect(await copiedText(page)).toBe(SETUP_SECRET);
       await expectCopyAnnounced(page, twoFactorText.keyCopied);
+      await expect(copyKeyOf(page).locator('svg')).toHaveCSS('fill', MUTED_FILL);
     });
 
     test('selects the key and announces the manual fallback without a clipboard', async ({
@@ -238,6 +241,24 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(
         page.getByRole('status').filter({ hasText: twoFactorText.codesCopied })
       ).toBeAttached();
+    });
+
+    test('outlines the box in #80878A, keeps the hover edge dark and fills it #0074B5', async ({
+      page,
+    }) => {
+      await stubSetup(page);
+      await stubConfirm(page);
+      await page.goto(SETTINGS_URL);
+      await reachCodes(page);
+      const glyph = savedBoxOf(page).locator('xpath=..').locator('.ui-checkbox-box');
+
+      await expect(glyph).toHaveCSS('border-top-color', SAVED_BOX.outline);
+      await savedBoxOf(page).hover();
+      await expect(glyph).toHaveCSS('border-top-color', SAVED_BOX.fill);
+      await savedBoxOf(page).check();
+
+      await expect(glyph).toHaveCSS('background-color', SAVED_BOX.fill);
+      await expect(glyph).toHaveCSS('background-image', /stroke%3D'white'/u);
     });
 
     test('ticks the box with Space, finishes with Готово and leaves no code in the page', async ({

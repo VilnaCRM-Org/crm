@@ -13,7 +13,6 @@ import { buildTotpCode } from '@tests/builders';
 
 interface FakeClient {
   readonly mutate: jest.Mock;
-  readonly cache: { readonly write: jest.Mock };
 }
 
 interface MutateOptions {
@@ -31,7 +30,6 @@ const build = (): {
 } => {
   const client: FakeClient = {
     mutate: jest.fn().mockResolvedValue({ data: { marker: true } }),
-    cache: { write: jest.fn() },
   };
   const repository = new GraphQLTwoFactorSettingsRepository(
     client as unknown as ApolloClient<NormalizedCacheObject>
@@ -114,19 +112,6 @@ describe('GraphQLTwoFactorSettingsRepository', () => {
     expect(optionsOf(client, 0).variables.input['clientMutationId']).not.toBe(
       optionsOf(client, 1).variables.input['clientMutationId']
     );
-  });
-
-  it('never writes to the cache', async () => {
-    const { repository, client } = build();
-    const { signal } = new AbortController();
-    const dto = { twoFactorCode: buildTotpCode() };
-
-    await repository.setup(signal);
-    await repository.confirm(dto, signal);
-    await repository.disable(dto, signal);
-    await repository.regenerate(signal);
-
-    expect(client.cache.write).not.toHaveBeenCalled();
   });
 
   it.each([

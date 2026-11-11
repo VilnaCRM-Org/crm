@@ -19,6 +19,7 @@ export type TwoFactorStatusCode = 'already_on' | 'stale' | 'disabled' | 'already
 export interface TwoFactorSettingsViewState {
   readonly view: TwoFactorSettingsView;
   readonly fieldError: TwoFactorFieldError | null;
+  readonly fieldErrorOccurrence: number;
   readonly banner: TwoFactorBannerCode | null;
   readonly bannerOccurrence: number;
   readonly statusCode: TwoFactorStatusCode | null;

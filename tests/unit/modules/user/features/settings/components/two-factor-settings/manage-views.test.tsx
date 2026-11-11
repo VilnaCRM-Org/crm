@@ -149,6 +149,30 @@ describe('the disable view', () => {
     }
   );
 
+  it.each([
+    ['format', 'Введіть 6 цифр або резервний код у форматі XXXX-XXXX'],
+    ['invalid_code', 'Невірний код. Спробуйте ще раз.'],
+  ] as const)('shows the %s error again for a second identical refusal', async (error, text) => {
+    const props = withView(viewState('disable', { fieldError: error, fieldErrorOccurrence: 1 }));
+    const utils = renderPanel(props);
+    const field = (): HTMLElement => screen.getByRole('textbox', { name: 'Код підтвердження' });
+    expect(await screen.findByText(text)).toBeInTheDocument();
+
+    await userEvent.type(field(), buildTotpCode());
+    await userEvent.click(screen.getByRole('button', { name: 'Вимкнути' }));
+    expect(props.callbacks.disable).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(text)).not.toBeInTheDocument();
+    await transition(
+      utils,
+      props,
+      viewState('disable', { fieldError: error, fieldErrorOccurrence: 2 })
+    );
+
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    expect(field()).toHaveAttribute('aria-invalid', 'true');
+    expect(field()).toHaveAccessibleDescription(text);
+  });
+
   it('cancels with the button and with Escape', async () => {
     const props = withView(viewState('disable'));
     renderPanel(props);

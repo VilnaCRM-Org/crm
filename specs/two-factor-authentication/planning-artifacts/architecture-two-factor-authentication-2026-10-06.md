@@ -67,6 +67,8 @@ revisions:
     no new module-level singleton (§19.1)'
   - '2026-11-11: gate finding; SignInSubmitProcessor drawn in §2.4, §3.3, §4.1, §7.1, §19.2 and
     §19.3; its loader and the challenge form-section loader are no longer module-level instances'
+  - '2026-11-11: gate finding; §6.1 the sign-in start patch keeps loginError until the run
+    settles, and the aborted run clears it only when the processor did not resolve the provider'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -1282,6 +1284,14 @@ synchronous submit feedback its comment cites (`@auth/stores/index.ts`).
 > does (a `session` outcome), and otherwise resolves the provider through the loader. So
 > `AuthState.loginLoading`, its cleared-state entry and `AuthStoreSelectors.loginLoading` stay;
 > `AuthStoreActionsDeps` loses `sandboxDemoSession`, whose only reader was `login`.
+>
+> Amended 2026-11-11 (gate finding, FR-8): the run's first write is `{ loginLoading: true }`
+> alone, not `loginError: null` with it; the start patch keeps `loginError` until the run
+> settles, so the result card keeps its text during a Retry, and the settle patch writes the
+> outcome's `loginError`. An aborted run writes `{ loginLoading: false }` only once
+> `SignInSubmitProcessor` has resolved the provider; when the processor chunk fails to load or the
+> provider cannot be resolved, it writes `{ loginLoading: false, loginError: null }`
+> (`use-sign-in-submit.ts`).
 >
 > Assumption (reconciliation 2026-10-27): the reason text keeps the shipped catalog: existing
 > `invalid_credentials` and `rate_limited` keys and texts stay, `locked` and `transient` are

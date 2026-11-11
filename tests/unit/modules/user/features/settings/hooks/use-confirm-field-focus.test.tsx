@@ -25,6 +25,7 @@ const view = (
 ): TwoFactorSettingsViewState => ({
   view: name,
   fieldError,
+  fieldErrorOccurrence: 0,
   banner: null,
   bannerOccurrence: 0,
   statusCode: null,

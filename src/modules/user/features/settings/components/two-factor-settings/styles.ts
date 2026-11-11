@@ -84,6 +84,15 @@ export default {
     color: customColors.text.dark,
   },
   savedRow: { margin: '1.25rem 0 0' },
+  savedCheckbox: {
+    '&& .ui-checkbox-box': { borderColor: paletteColors.border.strong },
+    '&& .MuiCheckbox-root:hover:not(.Mui-disabled) .ui-checkbox-box': {
+      borderColor: paletteColors.primary.linkText,
+    },
+    '&& .ui-checkbox-box.ui-checkbox-box--checked': {
+      backgroundColor: paletteColors.primary.linkText,
+    },
+  },
   disableCodeField: {
     '& .MuiOutlinedInput-notchedOutline': { borderColor: paletteColors.border.strong },
   },

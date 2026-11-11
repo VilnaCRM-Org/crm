@@ -14,7 +14,11 @@ import {
 const KEPT_SECRET = buildTotpSecret();
 const current = {
   settings: { ...EMPTY_SETTINGS, secret: KEPT_SECRET, otpauthUri: 'otpauth://totp/x' },
-  view: viewState('setup', { fieldError: 'invalid_code' as const, bannerOccurrence: 3 }),
+  view: viewState('setup', {
+    fieldError: 'invalid_code' as const,
+    fieldErrorOccurrence: 2,
+    bannerOccurrence: 3,
+  }),
 };
 
 const row = (overrides: Partial<TwoFactorFailureRow> = {}): TwoFactorFailureRow => ({
@@ -63,6 +67,7 @@ describe('useTwoFactorSettle', () => {
       view: {
         view: 'off',
         fieldError: null,
+        fieldErrorOccurrence: 0,
         banner: null,
         bannerOccurrence: 0,
         statusCode: 'disabled',
@@ -96,6 +101,7 @@ describe('useTwoFactorSettle', () => {
       view: {
         view: 'off',
         fieldError: null,
+        fieldErrorOccurrence: 2,
         banner: null,
         bannerOccurrence: 3,
         statusCode: 'already_off',
@@ -114,6 +120,7 @@ describe('useTwoFactorSettle', () => {
       view: {
         view: 'setup',
         fieldError: 'invalid_code',
+        fieldErrorOccurrence: 3,
         banner: null,
         bannerOccurrence: 3,
         statusCode: null,
@@ -140,7 +147,14 @@ describe('useTwoFactorSettle', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: current.settings,
-        view: { view: 'setup', fieldError: null, banner, bannerOccurrence: 4, statusCode: null },
+        view: {
+          view: 'setup',
+          fieldError: null,
+          fieldErrorOccurrence: 2,
+          banner,
+          bannerOccurrence: 4,
+          statusCode: null,
+        },
       });
       expect(recordStatus).not.toHaveBeenCalled();
     }
@@ -169,6 +183,7 @@ describe('useTwoFactorSettle', () => {
       view: {
         view: 'reauth',
         fieldError: null,
+        fieldErrorOccurrence: 2,
         banner: null,
         bannerOccurrence: 3,
         statusCode: null,
@@ -186,6 +201,7 @@ describe('useTwoFactorSettle', () => {
       view: {
         view: 'disable',
         fieldError: null,
+        fieldErrorOccurrence: 0,
         banner: null,
         bannerOccurrence: 0,
         statusCode: null,
@@ -203,6 +219,7 @@ describe('useTwoFactorSettle', () => {
       view: {
         view: 'setup',
         fieldError: 'incomplete',
+        fieldErrorOccurrence: 3,
         banner: null,
         bannerOccurrence: 3,
         statusCode: null,

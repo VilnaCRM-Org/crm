@@ -37,7 +37,7 @@ describe('useTwoFactorDisable', () => {
   it.each(['disable', 'regenerate'] as const)('cancels the %s confirmation back to on', (view) => {
     const { utils, apply } = mount({
       settings: ENABLED,
-      view: viewState(view, { fieldError: 'format' }),
+      view: viewState(view, { fieldError: 'format', fieldErrorOccurrence: 1 }),
     });
 
     act(() => utils.result.current.cancel());
@@ -56,7 +56,7 @@ describe('useTwoFactorDisable', () => {
         expect(provider.disable).not.toHaveBeenCalled();
         expect(apply).toHaveBeenCalledWith({
           settings: ENABLED,
-          view: viewState('disable', { fieldError: 'format' }),
+          view: viewState('disable', { fieldError: 'format', fieldErrorOccurrence: 1 }),
         });
       }
     );
@@ -121,7 +121,7 @@ describe('useTwoFactorDisable', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: ENABLED,
-        view: viewState('disable', { fieldError: 'invalid_code' }),
+        view: viewState('disable', { fieldError: 'invalid_code', fieldErrorOccurrence: 1 }),
       });
       expect(recordStatus).not.toHaveBeenCalled();
     });
@@ -194,7 +194,7 @@ describe('useTwoFactorDisable', () => {
       expect(provider.disable).not.toHaveBeenCalled();
       expect(apply).toHaveBeenLastCalledWith({
         settings: ENABLED,
-        view: { ...transient, fieldError: 'format', banner: null },
+        view: { ...transient, fieldError: 'format', fieldErrorOccurrence: 1, banner: null },
       });
     });
 

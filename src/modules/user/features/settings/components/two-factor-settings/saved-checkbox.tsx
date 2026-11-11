@@ -17,6 +17,7 @@ export default function SavedCheckbox({ checked, onChange }: SavedCheckboxProps)
         label={t('settings.two_factor.codes.saved')}
         checked={checked}
         onChange={onChange}
+        sx={styles.savedCheckbox}
       />
     </Box>
   );

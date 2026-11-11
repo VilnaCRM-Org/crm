@@ -3,6 +3,8 @@ import { focusVisibleRing } from '@/styles/focus-ring';
 
 import { SETTINGS_DESKTOP, SETTINGS_TABLET } from '../profile-form/styles';
 
+const ICON_BOX = { display: 'block', width: '1.25rem', height: '1.25rem' };
+
 const STEP_ROW = { display: 'flex', alignItems: 'flex-start', gap: '1rem' };
 
 const STEP_TEXT_TABLET = {
@@ -130,7 +132,8 @@ export default {
     cursor: 'pointer',
     ...focusVisibleRing,
   },
-  copyIcon: { display: 'block', width: '1.25rem', height: '1.25rem', fill: 'none' },
+  copyIcon: { ...ICON_BOX, fill: 'none' },
+  copiedIcon: ICON_BOX,
   copyFailed: {
     margin: '0.5rem 0 0',
     fontFamily: 'Inter',

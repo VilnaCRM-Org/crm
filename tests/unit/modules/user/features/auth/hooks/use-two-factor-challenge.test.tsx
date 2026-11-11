@@ -149,12 +149,13 @@ describe('useTwoFactorChallenge', () => {
     }
   );
 
-  it('never submits by itself while digits change', () => {
+  it('sends nothing when the mode switches to recovery and back to the app code', () => {
     const view = setUp();
 
     act(() => view.result.current.callbacks.switchMode());
     act(() => view.result.current.callbacks.switchMode());
 
+    expect(view.result.current.state.mode).toBe('totp');
     expect(mockSubmit).not.toHaveBeenCalled();
   });
 

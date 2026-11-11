@@ -17,7 +17,7 @@ export default function KeyCopyButton({ label, copied, onCopy }: KeyCopyButtonPr
       sx={styles.copyIconButton}
     >
       {copied ? (
-        <CheckCircleOutlinedIcon aria-hidden="true" sx={styles.copyIcon} />
+        <CheckCircleOutlinedIcon aria-hidden="true" sx={styles.copiedIcon} />
       ) : (
         <Box component={CopyIcon} aria-hidden="true" focusable="false" sx={styles.copyIcon} />
       )}

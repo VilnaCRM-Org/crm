@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-10
+revised: 2026-11-11
 iteration: 4
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -1097,6 +1097,15 @@ lists 27 symbols, the settings ones among them.
 > `useLoginView` stay; `AuthStoreActionsDeps` loses `sandboxDemoSession`. The registrar makes
 > room for the new bindings by folding `registerErrorFactories` into `registerErrorHandling` and
 > adding one step, `registerUserServiceProviders` (architecture §7.2).
+>
+> Amended 2026-11-11 (gate finding, FR-8): the run's first write is `{ loginLoading: true }`
+> alone; `loginError` is kept until the run settles, so a Retry from the result card keeps the
+> card's text on screen instead of blanking it mid-request. The settle patch then writes the
+> outcome's `loginError` (`null` for a `session` or `challenge`, the failure otherwise). An abort
+> writes `{ loginLoading: false }` only when the processor chunk loaded and resolved the provider;
+> when the chunk fails to load or the provider cannot be resolved, an aborted run writes
+> `{ loginLoading: false, loginError: null }` (`use-sign-in-submit.ts`), and a run that was not
+> aborted writes the load-failure `loginError` in its place.
 
 **Gates:** DoD local gates; `make codegen`, `make codegen-check`, `make lint-eslint`,
 `make lint-deps`, `make lint-metrics`, `make lint-docs`.
@@ -1134,6 +1143,10 @@ lists 27 symbols, the settings ones among them.
   `AUTH_TOKENS.GraphQLSignInProvider` through the loader, calls `login(dto, signal)` once and no
   flag is read; `useLoginSubmitter` builds the loader with `useAuthProviderLoader()`, hands the
   run to its existing `useAbortableLogin`, and keeps `isSubmitting` from `loginLoading`.
+  Amended 2026-11-11 (gate finding, FR-8): the synchronous write is `{ loginLoading: true }`
+  only and leaves `loginError` as it was until the run settles, so the result card keeps its
+  text during a Retry (`use-sign-in-submit.test.ts`, "writes the loading state synchronously and
+  keeps the error the retry answers").
 - Given the sandbox demo credentials (`demo@vilnacrm.com`, `Demo1234`) while the demo is active,
   when the run is called, then no loader resolve and no request happen and the `session` patch
   below is written with the demo token, as `AuthStoreActions.login` did.
@@ -1153,6 +1166,11 @@ lists 27 symbols, the settings ones among them.
   writes `loginLoading: false` with the load-failure `loginError` and the second writes
   `loginLoading: false` only and records nothing; the result card's "Назад" still aborts a
   running request (the existing `login-retry` behaviour).
+  Amended 2026-11-11 (gate finding, FR-8): "`loginLoading: false` only" holds when the
+  processor chunk loaded and resolved the provider (`SignInSubmitProcessor` writes its settled
+  patch). When the chunk fails to load or the provider cannot be resolved, an aborted run writes
+  `{ loginLoading: false, loginError: null }`, clearing the error the start patch kept; it still
+  records nothing.
 - Given `AuthStoreActions`, `DeferredAuthActions` and `UserModuleRegistrar`, when the change is
   read and `make lint-metrics` runs, then only `login`, `applyLogin`, `applyLoginRejection` and
   `loginUser` are gone, registration and logout are unchanged, `AuthStoreActionsDeps` loses only

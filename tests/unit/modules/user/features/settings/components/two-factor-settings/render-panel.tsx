@@ -23,6 +23,7 @@ export const viewState = (
 ): TwoFactorSettingsViewState => ({
   view,
   fieldError: null,
+  fieldErrorOccurrence: 0,
   banner: null,
   bannerOccurrence: 0,
   statusCode: null,

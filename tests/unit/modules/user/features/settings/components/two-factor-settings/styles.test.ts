@@ -102,6 +102,13 @@ describe('two-factor settings styles', () => {
         color: '#1A1C1E',
       },
       savedRow: { margin: '1.25rem 0 0' },
+      savedCheckbox: {
+        '&& .ui-checkbox-box': { borderColor: '#80878A' },
+        '&& .MuiCheckbox-root:hover:not(.Mui-disabled) .ui-checkbox-box': {
+          borderColor: '#0074B5',
+        },
+        '&& .ui-checkbox-box.ui-checkbox-box--checked': { backgroundColor: '#0074B5' },
+      },
       disableCodeField: {
         '& .MuiOutlinedInput-notchedOutline': { borderColor: '#80878A' },
       },
@@ -342,6 +349,7 @@ describe('two-factor settings styles', () => {
         '&:focus-visible': RING,
       },
       copyIcon: { display: 'block', width: '1.25rem', height: '1.25rem', fill: 'none' },
+      copiedIcon: { display: 'block', width: '1.25rem', height: '1.25rem' },
       copyFailed: { margin: '0.5rem 0 0', ...INTER_NOTE },
       hint: {
         maxWidth: '15.125rem',

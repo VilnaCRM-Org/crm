@@ -89,6 +89,7 @@ describe('useTwoFactorSettings', () => {
       expect(result.current.view).toEqual({
         view,
         fieldError: null,
+        fieldErrorOccurrence: 0,
         banner: null,
         bannerOccurrence: 0,
         statusCode: null,
@@ -187,6 +188,7 @@ describe('useTwoFactorSettings', () => {
       expect(result.current.view).toEqual({
         view: 'on',
         fieldError: null,
+        fieldErrorOccurrence: 0,
         banner: null,
         bannerOccurrence: 0,
         statusCode: null,
@@ -332,6 +334,7 @@ describe('useTwoFactorSettings', () => {
       expect(result.current.view).toEqual({
         view: 'off',
         fieldError: null,
+        fieldErrorOccurrence: 0,
         banner,
         bannerOccurrence: 1,
         statusCode: null,

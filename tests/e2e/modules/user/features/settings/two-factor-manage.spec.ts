@@ -116,17 +116,25 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await expect.poll(() => disable.count()).toBe(2);
       expect(disable.calls[0]?.variables).toMatchObject({ input: { twoFactorCode: '123456' } });
       expect(disable.calls[1]?.variables).toMatchObject({ input: { twoFactorCode: 'ABCD-2345' } });
+      await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
     });
 
-    test('refuses a malformed value and sends nothing', async ({ page }) => {
+    test('refuses two malformed values in a row with the text each time and sends nothing', async ({
+      page,
+    }) => {
       const disable = await stubDisable(page);
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
       await disableFieldOf(page).fill('12345');
       await disableSubmitOf(page).click();
+      await expect(sectionOf(page).getByText(twoFactorText.formatError)).toBeVisible();
+      await disableFieldOf(page).fill('1234567');
+      await disableSubmitOf(page).click();
 
       await expect(sectionOf(page).getByText(twoFactorText.formatError)).toBeVisible();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
       expect(disable.count()).toBe(0);
     });
 

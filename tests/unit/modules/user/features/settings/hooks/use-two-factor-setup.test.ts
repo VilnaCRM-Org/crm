@@ -132,7 +132,7 @@ describe('useTwoFactorSetup', () => {
         expect(provider.confirm).not.toHaveBeenCalled();
         expect(apply).toHaveBeenCalledWith({
           settings: setupView.settings,
-          view: viewState('setup', { fieldError: 'incomplete' }),
+          view: viewState('setup', { fieldError: 'incomplete', fieldErrorOccurrence: 1 }),
         });
       }
     );
@@ -165,7 +165,7 @@ describe('useTwoFactorSetup', () => {
 
       expect(apply).toHaveBeenCalledWith({
         settings: setupView.settings,
-        view: viewState('setup', { fieldError: 'invalid_code' }),
+        view: viewState('setup', { fieldError: 'invalid_code', fieldErrorOccurrence: 1 }),
       });
       expect(recordStatus).not.toHaveBeenCalled();
     });
@@ -236,7 +236,7 @@ describe('useTwoFactorSetup', () => {
       expect(provider.confirm).not.toHaveBeenCalled();
       expect(apply).toHaveBeenLastCalledWith({
         ...setupView,
-        view: { ...transient, fieldError: 'incomplete', banner: null },
+        view: { ...transient, fieldError: 'incomplete', fieldErrorOccurrence: 1, banner: null },
       });
     });
 

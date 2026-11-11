@@ -28,7 +28,14 @@ const BANNERS = new Map<TwoFactorSettingsFailureReason, TwoFactorBannerCode>([
 ]);
 
 function freshView(view: TwoFactorSettingsView): TwoFactorSettingsViewState {
-  return { view, fieldError: null, banner: null, bannerOccurrence: 0, statusCode: null };
+  return {
+    view,
+    fieldError: null,
+    fieldErrorOccurrence: 0,
+    banner: null,
+    bannerOccurrence: 0,
+    statusCode: null,
+  };
 }
 
 function show(deps: TwoFactorSettingsHookDeps, view: TwoFactorSettingsView): void {
@@ -37,7 +44,8 @@ function show(deps: TwoFactorSettingsHookDeps, view: TwoFactorSettingsView): voi
 
 function refuse(deps: TwoFactorSettingsHookDeps, fieldError: TwoFactorFieldError): void {
   const { settings, view } = deps.read();
-  deps.apply({ settings, view: { ...view, fieldError, banner: null } });
+  const fieldErrorOccurrence = view.fieldErrorOccurrence + 1;
+  deps.apply({ settings, view: { ...view, fieldError, fieldErrorOccurrence, banner: null } });
 }
 
 function keepWithBanner(
@@ -55,9 +63,10 @@ function moveTo(deps: TwoFactorSettingsHookDeps, row: TwoFactorFailureRow): void
   const { settings, view } = deps.read();
   const { fieldError, statusCode } = row;
   const next = row.view ?? view.view;
+  const fieldErrorOccurrence = view.fieldErrorOccurrence + (fieldError === null ? 0 : 1);
   deps.apply({
     settings,
-    view: { ...view, view: next, fieldError, banner: null, statusCode },
+    view: { ...view, view: next, fieldError, fieldErrorOccurrence, banner: null, statusCode },
   });
   if (row.record !== null) deps.recordStatus(row.record);
 }
