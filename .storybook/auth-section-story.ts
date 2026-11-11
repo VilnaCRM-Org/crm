@@ -1,4 +1,4 @@
-import type { Decorator, Parameters } from '@storybook/react-webpack5';
+import type { Decorator, Parameters, StoryObj } from '@storybook/react-webpack5';
 
 import { withMemoryRouter } from './router-decorators';
 
@@ -8,6 +8,8 @@ interface AuthSectionMeta {
 }
 
 class AuthSectionStories {
+  public readonly default: StoryObj = {};
+
   public meta(initialPath: string, description: string): AuthSectionMeta {
     return {
       decorators: [withMemoryRouter(initialPath)],
