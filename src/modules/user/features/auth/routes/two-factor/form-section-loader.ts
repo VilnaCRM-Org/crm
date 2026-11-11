@@ -1,4 +1,4 @@
-class TwoFactorFormSectionLoader {
+export default class TwoFactorFormSectionLoader {
   public load(): Promise<typeof import('./two-factor-form-section')> {
     return import(
       /* webpackChunkName: "two-factor-form-section" */
@@ -7,5 +7,3 @@ class TwoFactorFormSectionLoader {
     );
   }
 }
-
-export default new TwoFactorFormSectionLoader();

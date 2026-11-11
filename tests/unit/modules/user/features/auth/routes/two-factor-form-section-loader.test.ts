@@ -16,9 +16,9 @@ describe('two-factor form-section loader', () => {
       default: FormSection,
     }));
 
-    const { default: loader } = await import('@auth/routes/two-factor/form-section-loader');
+    const { default: Loader } = await import('@auth/routes/two-factor/form-section-loader');
 
-    await expect(loader.load()).resolves.toMatchObject({ default: FormSection });
+    await expect(new Loader().load()).resolves.toMatchObject({ default: FormSection });
   });
 
   it('load() keeps a failed import rejected', async () => {
@@ -26,8 +26,8 @@ describe('two-factor form-section loader', () => {
       throw new Error('chunk failed');
     });
 
-    const { default: loader } = await import('@auth/routes/two-factor/form-section-loader');
+    const { default: Loader } = await import('@auth/routes/two-factor/form-section-loader');
 
-    await expect(loader.load()).rejects.toThrow('chunk failed');
+    await expect(new Loader().load()).rejects.toThrow('chunk failed');
   });
 });

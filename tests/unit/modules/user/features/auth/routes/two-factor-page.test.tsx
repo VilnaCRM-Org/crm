@@ -26,7 +26,7 @@ const mockLayout = jest.fn();
 
 jest.mock('@auth/routes/two-factor/form-section-loader', () => ({
   __esModule: true,
-  default: { load: (): unknown => mockLoadSection() },
+  default: jest.fn().mockImplementation(() => ({ load: (): unknown => mockLoadSection() })),
 }));
 
 jest.mock('@auth/components/recovery-page-layout', () => ({

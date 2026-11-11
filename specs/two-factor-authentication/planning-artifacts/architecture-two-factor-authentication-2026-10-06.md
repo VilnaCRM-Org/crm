@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-03
+revised: 2026-11-11
 iteration: 8
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -65,6 +65,8 @@ revisions:
   - '2026-11-05: owner decisions; the profile forms split in three, the shell sidebar from 768 px'
   - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one exception to
     no new module-level singleton (§19.1)'
+  - '2026-11-11: gate finding; SignInSubmitProcessor drawn in §2.4, §3.3, §4.1, §7.1, §19.2 and
+    §19.3; its loader and the challenge form-section loader are no longer module-level instances'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -474,8 +476,9 @@ is the architecture of both features. Arrows point at what a layer depends on:
   `UserProfile` (`/settings`).
 - **`[React component]` / `[component]`** — auth: `LoginForm`, `TwoFactorChallengeForm`,
   `RecoveryCodesNotice`. Settings: `TwoFactorSettings` and its views, `QrCodeImage`.
-- **`React hook`** — auth: `useLoginSubmitter`, `useSignInSubmit`, `useTwoFactorChallenge`,
-  `useChallengeSubmit`, `useTwoFactorRedirect`. Settings: `useTwoFactorSettings`,
+- **`React hook`** — auth: `useLoginSubmitter`, `useSignInSubmit` (with `SignInSubmitProcessor`
+  inside its box, lazily loaded), `useTwoFactorChallenge`, `useChallengeSubmit`,
+  `useTwoFactorRedirect`. Settings: `useTwoFactorSettings`,
   `useTwoFactorSetup`, `useTwoFactorDisable`, `useRecoveryCodesRegenerate`, `useCopyToClipboard`.
 - **`[Data provider]`** — auth: `GraphQLSignInProvider`. Settings: `TwoFactorSettingsProvider`.
   One implementation each, so no interface (contract §2).
@@ -500,6 +503,13 @@ inside the Data provider box on the paint path, #330's `SessionLinkFactory` on t
 API edge, `TwoFactorCodeNormalizer` inside the React hooks, `UserModuleRegistrar` in the
 composition root, `AuthSecuritySignals` where it is called. There is no Controller, Service or
 Handler class anywhere in this design (§19.1).
+
+Amended 2026-11-11 (owner amendment of 2026-11-10, §19.1): `SignInSubmitProcessor` sits inside the
+`React hook` box of `useSignInSubmit`, between the hook and `AuthProviderLoader`. The hook loads it
+on the first submit through a `ChunkRetryLoader` it builds per mount, so `AUTH_TOKENS`, the
+store patches and the security signal stay out of the `/sign-in` form chunk (the paint budget,
+commit fc45d9f6). It is the one class between a hook and a Data provider; the challenge hook still
+reaches the provider through the loader directly.
 
 ### 2.5 Typed boundaries (TB-1)
 
@@ -707,7 +717,10 @@ flowchart BT
   signInTr["GraphQLSignInTransformer<br/>[Transformer]"]:::component
   errorTr["UserServiceErrorTransformer<br/>[Transformer], #315"]:::external
   state[("useAuthStore<br/>[Zustand store]")]:::component
-  loginHook["React hook<br/>useLoginSubmitter, useSignInSubmit"]:::component
+  subgraph signInHookBox["React hook (sign-in)"]
+    loginHook["useLoginSubmitter, useSignInSubmit"]:::component
+    processor["SignInSubmitProcessor<br/>lazily loaded, ChunkRetryLoader"]:::component
+  end
   redirectHook["React hook<br/>useTwoFactorRedirect"]:::component
   challengeHook["React hook<br/>useTwoFactorChallenge, useChallengeSubmit"]:::component
   loginForm["LoginForm<br/>[React component]"]:::component
@@ -720,8 +733,10 @@ flowchart BT
   provider <-->|"SignInUserMutation, UserServiceFailure ⇄ SignInResult"| signInTr
   provider <-->|"CompleteTwoFactorUserMutation, UserServiceFailure ⇄ ChallengeResult"| signInTr
   provider -->|"unknown → UserServiceFailure"| errorTr
-  loginHook -.->|"import() + resolve: SignInDto / SignInResult"| provider
-  loginHook -->|"2 save JWT token: setState(AuthStatePatch)"| state
+  loginHook -.->|"import() on submit: SignInSubmitContext, SignInDto / boolean"| processor
+  loginHook -->|"setState(AuthStatePatch): loading, load failure"| state
+  processor -.->|"resolve: SignInDto / SignInResult"| provider
+  processor -->|"2 save JWT token: setState(AuthStatePatch)"| state
   challengeHook -.->|"import() + resolve: TwoFactorChallengeInput / ChallengeResult"| provider
   challengeHook -->|"2 save JWT token: setState(AuthStatePatch)"| state
   loginHook -->|"selector: AuthState"| state
@@ -745,6 +760,14 @@ a static import of the container, Apollo, zod or tsyringe
 (`tests/unit/tooling/paint-path-graph.test.ts`). `TwoFactorCodeNormalizer` is drawn inside the
 challenge hook box; `AuthSecuritySignals` inside the two hook boxes, the two places that write
 the token.
+
+Amended 2026-11-11 (owner amendment of 2026-11-10, §19.1): on sign-in the dotted edge into the
+Data provider leaves `SignInSubmitProcessor`, drawn inside the sign-in hook box. `useSignInSubmit`
+writes the loading state, imports the processor on the first submit through a `ChunkRetryLoader`
+built in its `useState` initializer, and hands it the `SignInSubmitContext` (loader, store, demo
+session); the processor resolves the provider, writes the token or the pending session and calls
+`AuthSecuritySignals`. The hook itself writes only the loading state and, when the processor or
+the provider cannot load, the retryable load error.
 
 ### 3.4 L3 stack: the 2FA section (settings feature, below the route code split)
 
@@ -852,6 +875,7 @@ sequenceDiagram
   participant U as Customer<br/>[Person]
   participant F as LoginForm<br/>[React component]
   participant H as useLoginSubmitter + useSignInSubmit<br/>[React hook]
+  participant Q as SignInSubmitProcessor<br/>(inside the hook box, lazily loaded)
   participant L as AuthProviderLoader<br/>[inside Data provider]
   participant P as GraphQLSignInProvider<br/>[Data provider]
   participant R as GraphQLSignInRepository<br/>[Repository]
@@ -862,9 +886,11 @@ sequenceDiagram
   participant API as API<br/>[Software System]
   U->>F: submit the UIForm values (SignInDto)
   F->>H: onSubmit(SignInDto), useAbortableSubmit sets isSubmitting
-  H->>L: resolve(AUTH_TOKENS.GraphQLSignInProvider) inside the useAbortableSubmit run
-  L-->>H: GraphQLSignInProvider (container imported once, ChunkRetryLoader)
-  H->>P: login(SignInDto, AbortSignal)
+  H->>S: setState(AuthStatePatch: loginLoading true)
+  H->>Q: import() through the per-mount ChunkRetryLoader, run(SignInSubmitContext, SignInDto, AbortSignal)
+  Q->>L: resolve(AUTH_TOKENS.GraphQLSignInProvider)
+  L-->>Q: GraphQLSignInProvider (container imported once, ChunkRetryLoader)
+  Q->>P: login(SignInDto, AbortSignal)
   P->>R: signIn(SignInDto, AbortSignal)
   R->>API: mutation SignInUser (no-cache, anonymous, deadline)
   alt twoFactorEnabled false + accessToken
@@ -872,16 +898,16 @@ sequenceDiagram
     R-->>P: SignInUserMutation
     P->>T: toSignInResult(SignInUserMutation)
     T-->>P: SignInResult holding SignInSessionOutcome
-    P-->>H: SignInResult
-    H->>S: setState(AuthStatePatch: token, email, twoFactorStatus disabled, loginError null)
+    P-->>Q: SignInResult
+    Q->>S: setState(AuthStatePatch: token, email, twoFactorStatus disabled, loginError null)
     Note over F: usePostLoginRedirect: null→token → from target, focusMain
   else twoFactorEnabled true + pendingSessionId
     API-->>R: SignInUserMutation
     R-->>P: SignInUserMutation
     P->>T: toSignInResult(SignInUserMutation)
     T-->>P: SignInResult holding SignInChallengeOutcome
-    P-->>H: SignInResult
-    H->>S: setState(AuthStatePatch: pendingSessionId, email, loginError null, never token)
+    P-->>Q: SignInResult
+    Q->>S: setState(AuthStatePatch: pendingSessionId, email, loginError null, never token)
     Note over F: useTwoFactorRedirect: false→true → /sign-in/two-factor, RedirectNavigationState
   else 401 / 422 / domain refusal / 423 / HTTP 429 / no response / 5xx
     API-->>R: Apollo error
@@ -890,16 +916,23 @@ sequenceDiagram
     E-->>P: UserServiceFailure
     P->>T: toSignInFailure(UserServiceFailure)
     T-->>P: SignInResult holding AuthError (SignInFailureReason)
-    P-->>H: SignInResult
-    H->>S: setState(AuthStatePatch: loginError)
+    P-->>Q: SignInResult
+    Q->>S: setState(AuthStatePatch: loginError)
   end
-  H->>L: resolve(AUTH_TOKENS.AuthSecuritySignals)
-  H->>X: loginSettled(SignInResult) unless the signal is aborted
+  Q->>L: resolve(AUTH_TOKENS.AuthSecuritySignals)
+  Q->>X: loginSettled(SignInResult) unless the signal is aborted
+  Q-->>H: true (processed)
+  Note over H: processor or provider not loaded: H writes loginLoading false and the load error
 ```
 
 There is one sign-in path in every environment: the REST request of `LoginAPI` no longer exists
 (§6.19). A rejected loader resolve becomes the module-level `transient` failure inside the run;
 an aborted run writes and records nothing and resolves `null` in `useAbortableSubmit`.
+
+Amended 2026-11-11 (owner amendment of 2026-11-10, §19.1): the sequence above is drawn as shipped,
+with `SignInSubmitProcessor` between the hook and the loader. A processor chunk that fails to load,
+or a provider the processor cannot resolve, makes `run` report it unprocessed, and the hook writes
+the retryable load error, or no error when the signal is aborted.
 
 ### 4.2 Challenge completion, including expiry and lock
 
@@ -2050,7 +2083,9 @@ ChallengeSubmitHookDeps)` (`@auth/hooks/use-challenge-submit.ts`), whose run is 
   `isSubmitting`, not a stored flag.
 - **No module singleton.** The normalizer is constructed per mount and the loader per page mount;
   the only module-level instances the hooks touch are the `useAuthStore` store and the container
-  instances.
+  instances. Amended 2026-11-11 (owner amendment of 2026-11-10, §19.1): `useSignInSubmit` also
+  reaches the `SignInSubmitProcessor` singleton in its lazily loaded chunk, the one accepted
+  exception; the `ChunkRetryLoader` that loads it is built per mount in a `useState` initializer.
 
 Code facts (reconciled 2026-10-27): `useAbortableSubmit<TInput, TOutcome>(run)` is
 `src/hooks/use-abortable-submit.ts`; it returns `{ isSubmitting, submit }`, resolves `null` for
@@ -2137,7 +2172,7 @@ gone. Acceptance: a repository search for `LoginAPI`, `API_ENDPOINTS`, `api-conf
 
 Every class below sits in one board layer (§2.4); §19.2 maps each to its board element.
 
-### 7.1 New classes (seven)
+### 7.1 New classes (eight)
 
 - `GraphQLSignInProvider` — `[Data provider]`; `@auth/data-providers/graphql-sign-in-provider.ts`;
   `AUTH_TOKENS.GraphQLSignInProvider`, `registerSingleton`; three collaborators by `@inject`:
@@ -2173,11 +2208,19 @@ Every class below sits in one board layer (§2.4); §19.2 maps each to its board
   `AUTH_TOKENS.TwoFactorSettingsProvider`, `registerSingleton`; three collaborators by `@inject`
   (`GraphQLTwoFactorSettingsRepository`, `GraphQLTwoFactorSettingsTransformer`,
   `UserServiceErrorTransformer`); public `setup`, `confirm`, `disable`, `regenerate`.
+- `SignInSubmitProcessor` — `Processor`, inside the `React hook` box of `useSignInSubmit` (§2.4),
+  lazily loaded; `@auth/utils/sign-in-submit-processor.ts`; undecorated, never registered, a module
+  singleton in its own chunk, which `useSignInSubmit` imports on the first submit through a
+  `ChunkRetryLoader` it builds per mount; no injected collaborators, it receives a
+  `SignInSubmitContext` (loader, store, demo session) per call; public
+  `run(SignInSubmitContext, SignInDto, AbortSignal): Promise<boolean>`. Added by the owner
+  amendment of 2026-11-10 to keep `AUTH_TOKENS` off the `/sign-in` form chunk (the paint budget,
+  commit fc45d9f6); named `SignInSubmitHandler` until 2026-11-10 (§19.1).
 
 Every suffix is in `config/class-naming-policy.js` once chore #332 adds `Transformer`: `Provider`,
-`Repository`, `Transformer`, `Normalizer`. No class is a `Controller`, `Service`, `Handler` or
-`Actions`. Every constructor has at most three arguments; every class has at most four public
-methods. `AUTH_TOKENS` (`tokens.ts:1-18`) gains six symbols — `GraphQLSignInProvider`,
+`Repository`, `Transformer`, `Normalizer`, `Processor`. No class is a `Controller`, `Service`,
+`Handler` or `Actions`. Every constructor has at most three arguments; every class has at most four
+public methods. `AUTH_TOKENS` (`tokens.ts:1-18`) gains six symbols — `GraphQLSignInProvider`,
 `GraphQLSignInRepository`, `GraphQLSignInTransformer`, `GraphQLTwoFactorSettingsRepository`,
 `GraphQLTwoFactorSettingsTransformer`, `TwoFactorSettingsProvider` — and loses two, `LoginAPI` and
 `LoginResponseMapper` (§6.19).
@@ -3068,6 +3111,14 @@ lazy-loads the challenge form section. It copies its four siblings
 `CreateNewPasswordFormSectionLoader`), so it is a route-chunk loader and not a layer. No new class
 is named `*Controller`, `*Service` or `*Handler`.
 
+Code facts (2026-11-11): beside `TwoFactorFormSectionLoader`, the shipped code adds
+`SignInSubmitProcessor`, which §7.1 now lists under the owner amendment below, so
+`TwoFactorFormSectionLoader` is the only new class §7.1 does not list. Unlike its four siblings,
+which export a module-level instance, it exports the class and `TwoFactorChallenge` constructs it
+inside its `lazy()` factory; and `useSignInSubmit` builds the processor's `ChunkRetryLoader` per
+mount in its `useState` initializer, with no exported loader. The processor's own singleton, in its
+lazily loaded chunk, is therefore the only new module-level instance on the 2FA paths.
+
 > **Owner decision of 2026-11-10 (the sign-in submit unit, §1 and §19 amended).** One
 > lazily loaded, container-free unit sits between `useSignInSubmit` and `GraphQLSignInProvider`:
 > `SignInSubmitProcessor` (`@auth/utils/sign-in-submit-processor`), with its module singleton.
@@ -3104,20 +3155,23 @@ User module, component level (`miro/01`):
   `GraphQLTwoFactorSettingsRepository` → user-service.
 - Sign-In ↔ BFF, "1 get cookie and token by credential" → `GraphQLSignInProvider` →
   `GraphQLSignInRepository` (`SignInUser`, `CompleteTwoFactorUser`) → the API (§19.3).
-- Sign-In → State, "2 save JWT token" → `useSignInSubmit` after the password step and the
-  challenge hook after the code step, each calling `useAuthStore.setState(AuthStatePatch)`.
+- Sign-In → State, "2 save JWT token" → `SignInSubmitProcessor`, inside `useSignInSubmit`'s
+  hook box, after the password step and the challenge hook after the code step, each calling
+  `useAuthStore.setState(AuthStatePatch)`.
 - User profile → BFF, "Log-out" → `ProtectedOutletContext.signOut` ("Увійти знову"), local
   (§19.3).
 
 Interactive access control and Onboarding component (`miro/05`, `miro/22-23`):
 
-- `React hook` → `useSignInSubmit`, `useTwoFactorChallenge`, `useChallengeSubmit`,
+- `React hook` → `useSignInSubmit` (with `SignInSubmitProcessor` inside its box),
+  `useTwoFactorChallenge`, `useChallengeSubmit`,
   `useTwoFactorRedirect`, `useTwoFactorSettings`, `useTwoFactorSetup`, `useTwoFactorDisable`,
   `useRecoveryCodesRegenerate`, `useCopyToClipboard`.
 - Root page component → React hook → `TwoFactorChallenge` → `useTwoFactorChallenge`;
   `TwoFactorSettings` → `useTwoFactorSettings`.
 - React hook ↔ `EntityProvider [Data provider]` → the sign-in and challenge hooks ↔
-  `GraphQLSignInProvider` through `AuthProviderLoader` (`SignInDto` / `SignInResult`,
+  `GraphQLSignInProvider` through `AuthProviderLoader`, the sign-in hook by way of the lazily
+  loaded `SignInSubmitProcessor` inside its box (`SignInDto` / `SignInResult`,
   `TwoFactorChallengeInput` / `ChallengeResult`); the settings
   hooks ↔ `TwoFactorSettingsProvider` (`TwoFactorDto` / `TwoFactorSettingsOutcome`).
 - `EntityProvider` ↔ `GraphQLTransformer [Transformer]` → each provider ↔ its feature
@@ -3155,3 +3209,8 @@ purpose:
    `ThemedChunkLoader` are drawn inside the box they serve (contract §2), never as layers.
 4. **Zustand, not Redux.** `State [Redux]` is implemented by the Zustand store `useAuthStore`
    (the chore `zustand-client-state` ADR, superseding ADR-008); the role, not the library, binds.
+5. **`SignInSubmitProcessor` between the sign-in hook and the provider.** The board draws
+   `React hook` ↔ `[Data provider]` directly. The processor is drawn inside the `React hook` box,
+   lazily loaded, because loading the sign-in work on the first submit keeps `AUTH_TOKENS` and the
+   store patches off the `/sign-in` form chunk and inside the mobile Lighthouse budget (commit
+   fc45d9f6; owner amendment of 2026-11-10, §19.1). It is not a layer.

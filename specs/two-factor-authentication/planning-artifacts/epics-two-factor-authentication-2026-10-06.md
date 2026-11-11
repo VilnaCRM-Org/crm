@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-03
+revised: 2026-11-10
 iteration: 4
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -40,6 +40,15 @@ revisions:
   - '2026-10-08: simplification (over-engineering review, apply all 10)'
   - '2026-10-27: reconciled to feat/331-two-factor-authentication; 25 stories, was 23'
   - '2026-11-03: owner decision; the twoFactorAuth flag removed, the section always renders'
+  - '2026-11-04: owner decision; the sign-in code submits on its sixth digit (WCAG 3.2.2 departure)'
+  - '2026-11-04: owner decision; the challenge page takes the Figma frames, states and copy'
+  - '2026-11-04: owner decision; the setup card takes the Figma header and steps, Start stays'
+  - '2026-11-05: owner decision; the settings profile card splits into three per-section forms'
+  - '2026-11-05: owner decision; the shell shows the sidebar from 768 px, full-screen drawer,
+    centred tablet title, collapsed state persisted'
+  - '2026-11-10: the 2026-11-04 and 2026-11-05 decisions marked in Stories 2.6, 2.7, 3.4, 3.6,
+    4.1, 4.2 and 4.4'
+  - '2026-11-10: owner decision; the collapsed sidebar state stays persisted in localStorage'
   - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one AR-2
     exception'
 ---

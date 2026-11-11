@@ -11,11 +11,11 @@ import en from '@auth/routes/two-factor-catalog/i18n/en.json';
 import uk from '@auth/routes/two-factor-catalog/i18n/uk.json';
 import useAuthStore from '@auth/stores/use-auth-store';
 
-import twoFactorFormSectionLoader from './form-section-loader';
+import TwoFactorFormSectionLoader from './form-section-loader';
 
 lazyCatalogLoader.register(i18n, { en, uk });
 
-const TwoFactorFormSection = lazy(() => twoFactorFormSectionLoader.load());
+const TwoFactorFormSection = lazy(() => new TwoFactorFormSectionLoader().load());
 
 function useProceedWhenSignedIn(): void {
   const { proceed, signedIn } = usePostLoginRedirect();

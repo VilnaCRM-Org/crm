@@ -82,7 +82,7 @@ test.describe('WCAG 2.1 AA scans of the sign-in challenge states (issue #331)', 
     await stubChallenge(page, ['invalid_code']);
     await signInToChallenge(page, credentials);
     await recoveryToggleOf(page).click();
-    await recoveryFieldOf(page).fill('abcd0002');
+    await recoveryFieldOf(page).fill(buildRecoveryCode());
     await confirmButtonOf(page).click();
     await expect(page.getByText(challengeText.recoveryInvalid)).toBeVisible();
 

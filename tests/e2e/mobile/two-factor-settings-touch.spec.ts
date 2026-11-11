@@ -64,7 +64,8 @@ const CARD_WIDTHS: readonly number[] = [320, 375, 390, 412, 767];
 const SECRETS = {
   secret: SETUP_SECRET,
   uri: SETUP_URI,
-  code: RECOVERY_CODES[0] ?? '',
+  code: CODE,
+  recovery: RECOVERY_CODES[0] ?? '',
   fresh: NEW_RECOVERY_CODES[0] ?? '',
 };
 
@@ -133,6 +134,7 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
     await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeVisible();
     expect(disable.count()).toBe(1);
     expect(disable.calls[0]?.variables['input']).toMatchObject({ twoFactorCode: CODE });
+    await expectNoSecrets(page, SECRETS);
   });
 
   test('regenerates the codes with taps only and cancels with a tap', async ({ page }) => {

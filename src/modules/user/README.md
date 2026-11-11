@@ -727,15 +727,18 @@ user-service operation goes through a GraphQL repository.
 **Decision.** `useSignInSubmit` writes the loading state, then loads `SignInSubmitProcessor`
 (`@auth/utils/sign-in-submit-processor`) behind a `ChunkRetryLoader`, so the processor and
 `AUTH_TOKENS` reach the browser on the first submit rather than with the `/sign-in` form chunk
-(the mobile Lighthouse script budget). The processor resolves `GraphQLSignInProvider` through the
-container-free `AuthProviderLoader`, writes the result to `useAuthStore` and records the security
-signal; a processor or provider that cannot load leaves the retryable load error.
-`useRecoveryRun` loads `AUTH_TOKENS` the same way for the two password-recovery pages. The
-provider calls the transport-only `GraphQLSignInRepository` and translates through
-`GraphQLSignInTransformer` and `UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`,
-`LoginResponseMapper` and `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and
-logout are unchanged. Production sign-in has no backend until user-service ships `signInUser`,
-exactly as the REST placeholder had none.
+(the mobile Lighthouse script budget). The hook builds that loader once per mount, inside its
+`useState` initializer, so the only module-level instance on this path is the processor's own
+singleton in its lazily loaded chunk, the one exception the owner accepted on 2026-11-10. The
+processor resolves `GraphQLSignInProvider` through the container-free `AuthProviderLoader`, writes
+the result to `useAuthStore` and records the security signal; a processor or provider that cannot
+load leaves the retryable load error. `useRecoveryRun` loads `AUTH_TOKENS` through a
+`ChunkRetryLoader` for the two password-recovery pages. The provider calls the transport-only
+`GraphQLSignInRepository` and translates through `GraphQLSignInTransformer` and
+`UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`, `LoginResponseMapper` and
+`AuthRepositoryImpl.login` are deleted; registration (`createUser`) and logout are unchanged.
+Production sign-in has no backend until user-service ships `signInUser`, exactly as the REST
+placeholder had none.
 
 **Rejected.** Keeping the REST placeholder behind a flag-selected sign-in Strategy (a Strategy over
 a placeholder with no working backend); waiting for the user-service release before building

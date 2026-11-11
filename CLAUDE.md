@@ -486,9 +486,10 @@ constant one-element array is equal on every render and the effect or memo fires
 does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
-- `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
-  `authActions` module singleton and `loginControllersRef` is a `useRef` box, so neither identity
-  ever changes and an emptied list memoizes exactly the same callback.
+- `use-login-submitter.ts` annotates `[run, loginControllersRef]`: `run` is the `SignInRun` that
+  `useSignInSubmit` holds in a `useState` initializer, built once on mount and never set again,
+  and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an emptied
+  list memoizes exactly the same callback.
 - `use-login-submitter.ts` also annotates `[login]` on `handleLogin`: `login` is that same
   memoized callback, so its identity never changes either.
 - `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of

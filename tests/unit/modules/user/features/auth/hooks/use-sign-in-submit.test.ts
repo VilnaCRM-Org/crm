@@ -1,8 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
+import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import useSignInSubmit, { signInSubmitProcessorLoader } from '@auth/hooks/use-sign-in-submit';
+import useSignInSubmit from '@auth/hooks/use-sign-in-submit';
 import type { AuthProviderLoader } from '@auth/stores';
 import useAuthStore from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
@@ -60,7 +61,7 @@ const abortedSignal = (): AbortSignal => {
 };
 
 const failProcessorChunk = (): void => {
-  jest.spyOn(signInSubmitProcessorLoader, 'load').mockRejectedValueOnce(new Error('chunk'));
+  jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(new Error('chunk'));
 };
 
 const failProvider = (): void => {

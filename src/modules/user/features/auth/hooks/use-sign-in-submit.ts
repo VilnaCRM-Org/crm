@@ -17,32 +17,26 @@ const LOAD_FAILURE: AuthError = {
 
 const START: AuthStatePatch = { loginLoading: true };
 
-export const signInSubmitProcessorLoader = new ChunkRetryLoader(
-  () => import('@auth/utils/sign-in-submit-processor')
-);
+function signInRunner(loader: AuthProviderLoader): SignInRun {
+  const processorLoader = new ChunkRetryLoader(
+    () => import('@auth/utils/sign-in-submit-processor')
+  );
 
-async function runSignIn(
-  loader: AuthProviderLoader,
-  dto: SignInDto,
-  signal: AbortSignal
-): Promise<void> {
-  useAuthStore.setState(START);
-  const processor = await signInSubmitProcessorLoader.load().catch(() => null);
-  const context = { loader, store: useAuthStore, demoSession: sandboxDemoSessionProvider };
-  const processed = processor !== null && (await processor.default.run(context, dto, signal));
-  if (!processed) {
-    useAuthStore.setState({
-      loginLoading: false,
-      loginError: signal.aborted ? null : LOAD_FAILURE,
-    });
-  }
+  return async (dto: SignInDto, signal: AbortSignal): Promise<void> => {
+    useAuthStore.setState(START);
+    const processor = await processorLoader.load().catch(() => null);
+    const context = { loader, store: useAuthStore, demoSession: sandboxDemoSessionProvider };
+    const processed = processor !== null && (await processor.default.run(context, dto, signal));
+    if (!processed) {
+      useAuthStore.setState({
+        loginLoading: false,
+        loginError: signal.aborted ? null : LOAD_FAILURE,
+      });
+    }
+  };
 }
 
 export default function useSignInSubmit(loader: AuthProviderLoader): SignInRun {
-  const [run] = useState(
-    () =>
-      (dto: SignInDto, signal: AbortSignal): Promise<void> =>
-        runSignIn(loader, dto, signal)
-  );
+  const [run] = useState(() => signInRunner(loader));
   return run;
 }

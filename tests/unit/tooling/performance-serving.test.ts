@@ -676,8 +676,10 @@ describe('performance serving config', () => {
     const recoveryRun = readFile('src/modules/user/features/auth/hooks/use-recovery-run.ts');
 
     expect(signInSubmit).toContain(
-      "new ChunkRetryLoader(\n  () => import('@auth/utils/sign-in-submit-processor')\n);"
+      '  const processorLoader = new ChunkRetryLoader(\n' +
+        "    () => import('@auth/utils/sign-in-submit-processor')\n  );"
     );
+    expect(signInSubmit).not.toMatch(/^(export )?const \w+ = new ChunkRetryLoader/m);
     expect(recoveryRun).toContain(
       "new ChunkRetryLoader(() => import('@/modules/user/config/tokens'));"
     );
