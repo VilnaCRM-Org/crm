@@ -29,6 +29,20 @@ inputDocuments:
 
 # Implementation readiness: two-factor authentication, iteration 4
 
+> **Owner decisions of 2026-11-03/04/05/10, recorded after this artifact was written.** The
+> owner-decision blocks under the title of the
+> [PRD](./prd-two-factor-authentication-2026-10-06.md) (2026-11-03 flag removed; 2026-11-04
+> challenge page as drawn, auto-submit, Figma card; 2026-11-05 profile forms split and shell from
+> 768 px; 2026-11-10 amendments and the `SignInSubmitProcessor` NFR-22 exception) are
+> authoritative. The text below is kept as the record of this artifact as written; these
+> statements in it are superseded:
+>
+> - **The `twoFactorAuth` flag.** "Summary", "The `twoFactorAuth` flag gates only the 2FA
+>   section" (the test stack enabling it in Story 4.1).
+>   The owner removed the `twoFactorAuth` flag on 2026-11-03: `/settings` always renders the
+>   2FA section in every environment, and no deployment step enables it (user module README,
+>   [No feature flag for the two-factor section](../../../src/modules/user/README.md#no-feature-flag-for-the-two-factor-section)).
+
 **Checker:** BMad implementation-readiness, adversarial and non-interactive. **Date:**
 2026-10-08. **Feature:** `two-factor-authentication`. **Iteration:** 4.
 

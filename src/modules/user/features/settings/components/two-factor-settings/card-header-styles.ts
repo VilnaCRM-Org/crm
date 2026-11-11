@@ -1,6 +1,7 @@
 import { customColors, paletteColors } from '@/styles/colors';
+import { focusVisibleRing } from '@/styles/focus-ring';
 
-import { SETTINGS_DESKTOP, SETTINGS_FOCUS_RING, SETTINGS_TABLET } from '../profile-form/styles';
+import { SETTINGS_DESKTOP, SETTINGS_TABLET } from '../profile-form/styles';
 
 const ROW_FROM_TABLET = { gap: '1.25rem', marginInline: '-1.9375rem', paddingInline: '1.9375rem' };
 
@@ -40,7 +41,7 @@ export default {
     lineHeight: '1.375rem',
     color: customColors.text.dark,
     outline: 'none',
-    '&:focus-visible': SETTINGS_FOCUS_RING,
+    ...focusVisibleRing,
     [SETTINGS_TABLET]: { fontWeight: 700, fontSize: '1.75rem', lineHeight: '2.125rem' },
     [SETTINGS_DESKTOP]: { fontSize: '1.375rem', lineHeight: '1.625rem' },
   },

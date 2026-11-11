@@ -52,7 +52,7 @@ import {
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
 const SETTINGS_URL = '/settings';
-const SETTINGS_RING = 'rgb(26, 28, 30)';
+const SETTINGS_RING = 'rgb(64, 65, 66)';
 const CELL_BORDER = 'rgb(225, 231, 234)';
 const ERROR_TEXT = 'rgb(214, 51, 51)';
 const CELL_INDEXES = [0, 1, 2, 3, 4, 5] as const;

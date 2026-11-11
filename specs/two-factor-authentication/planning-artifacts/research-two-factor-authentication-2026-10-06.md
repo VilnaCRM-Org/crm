@@ -61,6 +61,31 @@ inputDocuments:
 
 # Research: two-factor authentication in the `user` module
 
+> **Owner decisions of 2026-11-03/04/05/10, recorded after this artifact was written.** The
+> owner-decision blocks under the title of the
+> [PRD](./prd-two-factor-authentication-2026-10-06.md) (2026-11-03 flag removed; 2026-11-04
+> challenge page as drawn, auto-submit, Figma card; 2026-11-05 profile forms split and shell from
+> 768 px; 2026-11-10 amendments and the `SignInSubmitProcessor` NFR-22 exception) are
+> authoritative. The text below is kept as the record of this artifact as written; these
+> statements in it are superseded:
+>
+> - **The `twoFactorAuth` flag.** The "Simplification 2026-10-08" note (§8.1 item 3, "the flag,
+>   which gates only the 2FA section"), §3.1 (production keeps the flag off), §5.4 "Runtime
+>   flags" (the D-rules defaults and `APP_CONFIG_FLAG_TWO_FACTOR_AUTH`), §7.1 risk 1, §7.2 (the
+>   flag-off path) and §8.1 (the flag-gated `/settings` route; #330's `userSettings` flag went
+>   with it).
+>   The owner removed the `twoFactorAuth` flag on 2026-11-03: `/settings` always renders the
+>   2FA section in every environment, and no deployment step enables it (user module README,
+>   [No feature flag for the two-factor section](../../../src/modules/user/README.md#no-feature-flag-for-the-two-factor-section)).
+> - **Explicit submit.** §8.1 item 5 ("no auto-submit"). By the owner decision of 2026-11-04 (D6
+>   reversed) the sign-in challenge submits on its sixth digit; the setup card's confirm step
+>   keeps its button.
+> - **No new accessibility exception.** §7.1 risk 7 ("no new `A11Y_EXCEPTIONS` entry"). By the
+>   owner decision of 2026-11-04 the grey "Назад" is the owner-accepted exception
+>   `#auth-form-card > button.MuiButton-text`, and the pin cells draw no focus outline; the cell
+>   states and the auto-submit gap are recorded in `docs/accessibility/acceptance-standard.md`,
+>   "Current exceptions".
+
 **Author:** BMad (Analyst) **Date:** 2026-10-06 **Feature:** `two-factor-authentication`
 
 This is the first artifact of the bundle; the brief, PRD, architecture, epics and readiness

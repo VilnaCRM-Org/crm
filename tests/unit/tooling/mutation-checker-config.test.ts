@@ -373,12 +373,12 @@ describe('mutation shard slicing', () => {
       ])
     );
 
-    it('weighs a file by its runnable mutants times the fan-out of its related tests', () => {
-      expect(weights.get('service.ts')).toBe(5 * (4 + 30 + 3 * 2));
+    it('weighs a file by its runnable mutants plus its dry run times the fan-out of its tests', () => {
+      expect(weights.get('service.ts')).toBe((5 + 1) * (4 + 30 + 3 * 2));
     });
 
-    it('charges a file with no related test the run overhead alone', () => {
-      expect(weights.get('styles.ts')).toBe(3 * 4);
+    it('charges a file with no related test the run overhead alone, dry run included', () => {
+      expect(weights.get('styles.ts')).toBe((3 + 1) * 4);
     });
 
     it('leaves a file without a runnable mutant out of the packing', () => {

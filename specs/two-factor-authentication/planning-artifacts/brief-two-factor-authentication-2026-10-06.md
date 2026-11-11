@@ -20,6 +20,30 @@ inputDocuments:
 
 # Product Brief: two-factor authentication for the `user` module
 
+> **Owner decisions of 2026-11-03/04/05/10, recorded after this artifact was written.** The
+> owner-decision blocks under the title of the
+> [PRD](./prd-two-factor-authentication-2026-10-06.md) (2026-11-03 flag removed; 2026-11-04
+> challenge page as drawn, auto-submit, Figma card; 2026-11-05 profile forms split and shell from
+> 768 px; 2026-11-10 amendments and the `SignInSubmitProcessor` NFR-22 exception) are
+> authoritative. The text below is kept as the record of this artifact as written; these
+> statements in it are superseded:
+>
+> - **The `twoFactorAuth` flag.** The "Simplification 2026-10-08" note, §1, §2 "Proposed
+>   Solution", §3 "Deployment admin", §5 "In scope" (the 2FA section shown while the flag is on
+>   and the "Runtime flag `twoFactorAuth`" item), §5 "Out of scope" (production enablement) and
+>   §6 "Flag off in production".
+>   The owner removed the `twoFactorAuth` flag on 2026-11-03: `/settings` always renders the
+>   2FA section in every environment, and no deployment step enables it (user module README,
+>   [No feature flag for the two-factor section](../../../src/modules/user/README.md#no-feature-flag-for-the-two-factor-section)).
+> - **Explicit submit.** §5 "In scope" ("no auto-submit on the sixth digit") and §8 "Explicit
+>   submit". By the owner decision of 2026-11-04 (D6 reversed) the sign-in challenge submits on
+>   its sixth digit, typed or pasted; the setup card's confirm step keeps its button.
+> - **Zero new accessibility exceptions.** §4 "Success Measures", the release gate "New
+>   `A11Y_EXCEPTIONS` entries: 0". By the owner decision of 2026-11-04 (challenge page as drawn)
+>   the grey "Назад" is the owner-accepted exception `#auth-form-card > button.MuiButton-text`
+>   in `tests/utils/a11y/axe-config.ts`, and the cell states and the auto-submit's WCAG 3.2.2 gap
+>   are recorded in `docs/accessibility/acceptance-standard.md`, "Current exceptions".
+
 Predecessor: [research](./research-two-factor-authentication-2026-10-06.md) (Miro intent, the
 user-service contract on `main`, the Figma inventory, the crm code map, risks and mock drift).
 Every figure below comes from that document; section references such as "research §3.4" point

@@ -1,6 +1,7 @@
 import { customColors, paletteColors } from '@/styles/colors';
+import { focusVisibleRing } from '@/styles/focus-ring';
 
-import { SETTINGS_DESKTOP, SETTINGS_FOCUS_RING, SETTINGS_TABLET } from '../profile-form/styles';
+import { SETTINGS_DESKTOP, SETTINGS_TABLET } from '../profile-form/styles';
 
 const STEP_ROW = { display: 'flex', alignItems: 'flex-start', gap: '1rem' };
 
@@ -127,7 +128,7 @@ export default {
     backgroundColor: 'transparent',
     color: customColors.text.muted,
     cursor: 'pointer',
-    '&:focus-visible': SETTINGS_FOCUS_RING,
+    ...focusVisibleRing,
   },
   copyIcon: { display: 'block', width: '1.25rem', height: '1.25rem', fill: 'none' },
   copyFailed: {

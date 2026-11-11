@@ -353,14 +353,16 @@ describe('useTwoFactorSettings', () => {
     it('confirms the edited code after a transient failure', async () => {
       mockProvider.setup.mockResolvedValue(SETUP);
       mockProvider.confirm.mockResolvedValue(failed('network'));
+      const first = buildTotpCode();
+      const edited = buildTotpCode();
       const { result } = mount();
       await act(async () => result.current.callbacks.start());
-      await act(async () => result.current.callbacks.confirm({ twoFactorCode: '123456' }));
+      await act(async () => result.current.callbacks.confirm({ twoFactorCode: first }));
 
-      await act(async () => result.current.callbacks.confirm({ twoFactorCode: '654321' }));
+      await act(async () => result.current.callbacks.confirm({ twoFactorCode: edited }));
 
       expect(mockProvider.confirm).toHaveBeenCalledTimes(2);
-      expect(mockProvider.confirm.mock.calls[1]?.[0]).toEqual({ twoFactorCode: '654321' });
+      expect(mockProvider.confirm.mock.calls[1]?.[0]).toEqual({ twoFactorCode: edited });
     });
 
     it('offers no separate retry callback', () => {

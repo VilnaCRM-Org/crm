@@ -47,7 +47,7 @@ const SECRETS = {
   code: RECOVERY_CODES[0] ?? '',
   fresh: NEW_RECOVERY_CODES[0] ?? '',
 };
-const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } as const;
+const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(64, 65, 66)' } as const;
 
 async function expectAnnouncedOnce(page: Page, heading: string): Promise<void> {
   await expect(sectionOf(page).getByRole('status').filter({ hasText: heading })).toHaveCount(0);

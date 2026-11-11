@@ -1,4 +1,11 @@
-import { buildUserNode } from '@tests/builders';
+import {
+  buildEmail,
+  buildOtpauthUri,
+  buildRecoveryCode,
+  buildRecoveryCodeSet,
+  buildTotpSecret,
+  buildUserNode,
+} from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type SchemasModule = typeof import('@/modules/user/features/settings/utils/response-schemas');
@@ -82,13 +89,16 @@ describe('settings response schemas', () => {
   });
 
   describe('two-factor settings results', () => {
-    const codes = ['ABCD-2345', 'WXYZ-6789'];
+    const codes = buildRecoveryCodeSet().items.map((item) => item.value);
+    const code = buildRecoveryCode();
+    const secret = buildTotpSecret();
+    const otpauthUri = buildOtpauthUri(buildEmail(), secret);
 
     it('accepts the generated setup shape and hands the secret back unchanged', async () => {
       const { SetupTwoFactorResultSchema } = await loadSchemas();
       const payload = {
         setupTwoFactorUser: {
-          user: { otpauthUri: 'otpauth://totp/x?secret=ABCD', secret: 'ABCD' },
+          user: { otpauthUri, secret },
         },
       };
 
@@ -99,10 +109,10 @@ describe('settings response schemas', () => {
     });
 
     it.each([
-      ['an empty URI', { otpauthUri: '', secret: 'ABCD' }],
-      ['an empty secret', { otpauthUri: 'otpauth://totp/x', secret: '' }],
-      ['a missing secret', { otpauthUri: 'otpauth://totp/x' }],
-      ['a null URI', { otpauthUri: null, secret: 'ABCD' }],
+      ['an empty URI', { otpauthUri: '', secret }],
+      ['an empty secret', { otpauthUri, secret: '' }],
+      ['a missing secret', { otpauthUri }],
+      ['a null URI', { otpauthUri: null, secret }],
     ])('rejects a setup user with %s', async (_name, user) => {
       const { SetupTwoFactorResultSchema } = await loadSchemas();
 
@@ -143,10 +153,10 @@ describe('settings response schemas', () => {
 
     it.each([
       ['an empty list', []],
-      ['a list holding a blank code', ['ABCD-2345', '']],
-      ['a string', 'ABCD-2345'],
-      ['an object', { 0: 'ABCD-2345' }],
-      ['an array holding a number', ['ABCD-2345', 7]],
+      ['a list holding a blank code', [code, '']],
+      ['a string', code],
+      ['an object', { 0: code }],
+      ['an array holding a number', [code, 7]],
       ['null', null],
       ['undefined', undefined],
     ])('rejects recovery codes given as %s', async (_name, recoveryCodes) => {

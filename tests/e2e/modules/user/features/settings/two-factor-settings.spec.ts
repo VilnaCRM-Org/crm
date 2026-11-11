@@ -51,7 +51,7 @@ async function boxOf(locator: Locator): Promise<{ x: number; y: number }> {
   return box;
 }
 
-const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(26, 28, 30)' } as const;
+const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(64, 65, 66)' } as const;
 const WIDTHS = [320, 360, 600, 767, 768, 1024] as const;
 
 async function clickCopyKey(page: Page, clipboard: 'works' | 'missing'): Promise<void> {

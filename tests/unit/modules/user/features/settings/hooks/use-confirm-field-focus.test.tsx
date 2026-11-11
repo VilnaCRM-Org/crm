@@ -47,6 +47,10 @@ function Harness({ state, clearsWrongCode }: ProbeProps): JSX.Element {
 }
 
 describe('useConfirmFieldFocus', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('names the code field twoFactorCode', () => {
     expect(CONFIRM_FIELD_NAME).toBe('twoFactorCode');
   });
@@ -60,9 +64,12 @@ describe('useConfirmFieldFocus', () => {
     }
   );
 
-  it('leaves focus alone without a field error', async () => {
+  it('leaves focus alone without a field error, after every pending timer has run', () => {
+    jest.useFakeTimers();
     render(<Harness state={view(null)} />);
-    await act(async () => Promise.resolve());
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
 
     expect(screen.getByLabelText('code')).not.toHaveFocus();
   });

@@ -1,9 +1,9 @@
 import { customColors, paletteColors } from '@/styles/colors';
+import { focusVisibleRing } from '@/styles/focus-ring';
 
 import {
   SETTINGS_DESKTOP,
   SETTINGS_FIELD_WIDTH_RESET,
-  SETTINGS_FOCUS_RING,
   SETTINGS_PILL,
   SETTINGS_SUBMIT_WIDTH_RESET,
   SETTINGS_TABLET,
@@ -27,7 +27,7 @@ const OUTLINED_BUTTON = {
   backgroundColor: paletteColors.background.default,
   color: customColors.brand.darkPrimary,
   '&:hover': { backgroundColor: paletteColors.background.paper },
-  '&:focus-visible': SETTINGS_FOCUS_RING,
+  ...focusVisibleRing,
 };
 
 export default {
@@ -98,7 +98,7 @@ export default {
     lineHeight: 'normal',
     color: customColors.text.dark,
     outline: 'none',
-    '&:focus-visible': SETTINGS_FOCUS_RING,
+    ...focusVisibleRing,
   },
   actions: {
     display: 'flex',
@@ -119,7 +119,7 @@ export default {
     lineHeight: '1.5rem',
     color: customColors.text.dark,
     outline: 'none',
-    '&:focus-visible': SETTINGS_FOCUS_RING,
+    ...focusVisibleRing,
   },
   reauthButton: {
     '&&': {
@@ -129,7 +129,7 @@ export default {
       backgroundColor: paletteColors.background.default,
       color: customColors.text.dark,
       '&:hover': { backgroundColor: paletteColors.background.paper },
-      '&:focus-visible': SETTINGS_FOCUS_RING,
+      ...focusVisibleRing,
     },
   },
   note: {

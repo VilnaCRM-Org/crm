@@ -1137,6 +1137,10 @@ lists 27 symbols, the settings ones among them.
 - Given the sandbox demo credentials (`demo@vilnacrm.com`, `Demo1234`) while the demo is active,
   when the run is called, then no loader resolve and no request happen and the `session` patch
   below is written with the demo token, as `AuthStoreActions.login` did.
+  Amended 2026-11-11 (gate finding): no request happens and the provider is not resolved, but
+  `SignInSubmitProcessor` then resolves `AuthSecuritySignals` through the loader and records the
+  demo result with `loginSettled`, as it does for a live sign-in (architecture, "Code facts
+  (Story 2.2 step B)", amendment of 2026-11-11).
 - Given a `session` outcome, when the run settles, then one `useAuthStore.setState` writes
   `loginLoading: false`, `loginError: null`, the e-mail, the token and
   `twoFactorStatus: 'disabled'`, `LoginForm` shows #315's success card, and no refresh token
@@ -2362,6 +2366,11 @@ settings ring `2px solid #1A1C1E` (`SETTINGS_FOCUS_RING`), not `#404142`; only t
 challenge's "Назад" and the recovery notice use `#404142`. The specs landed as
 `two-factor-challenge-{states,keyboard}.a11y.spec.ts` and
 `two-factor-settings-{states,keyboard}.a11y.spec.ts`, plus `tests/utils/a11y/expect-clean-scan.ts`.
+
+Amended 2026-11-11 (gate finding, NFR-9): no owner decision recorded the `#1A1C1E` ring, so the
+2FA card's buttons and focusable headings now take the shared `focusVisibleRing`
+(`2px solid #404142`, offset 2 px), and the settings and keyboard specs assert that colour. The
+profile forms of #330 keep `SETTINGS_FOCUS_RING`.
 
 **Files:** `tests/e2e/a11y/two-factor-challenge-keyboard.a11y.spec.ts`,
 `tests/e2e/a11y/settings-two-factor-keyboard.a11y.spec.ts`,

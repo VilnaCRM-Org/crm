@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
-import { buildOtpauthUri, buildTotpSecret } from '@tests/builders';
+import { buildOtpauthUri, buildTotpCode, buildTotpSecret } from '@tests/builders';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 import { EMPTY_SETTINGS, panelProps, renderPanel, viewState } from './render-panel';
@@ -186,16 +186,17 @@ describe('TwoFactorPanel', () => {
     });
 
     it('sends the six typed digits to confirm once', async () => {
+      const code = buildTotpCode();
       const props = setupProps();
       renderPanel(props);
 
       await userEvent.click(screen.getByLabelText('Цифра 1 з 6'));
-      await userEvent.keyboard('123456');
+      await userEvent.keyboard(code);
       await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 
       expect(props.callbacks.confirm).toHaveBeenCalledTimes(1);
       expect(jest.mocked(props.callbacks.confirm).mock.calls[0]?.[0]).toEqual({
-        twoFactorCode: '123456',
+        twoFactorCode: code,
       });
     });
 
@@ -249,14 +250,15 @@ describe('TwoFactorPanel', () => {
     });
 
     it('shows the transient banner with a Retry that confirms the typed code once', async () => {
+      const code = buildTotpCode();
       const props = setupProps({ view: viewState('setup', { banner: 'transient' }) });
       renderPanel(props);
-      await userEvent.type(screen.getByLabelText('Цифра 1 з 6'), '654321');
+      await userEvent.type(screen.getByLabelText('Цифра 1 з 6'), code);
 
       await userEvent.click(screen.getByRole('button', { name: /спробувати/i }));
 
       await waitFor(() => expect(props.callbacks.confirm).toHaveBeenCalledTimes(1));
-      expect(props.callbacks.confirm).toHaveBeenCalledWith({ twoFactorCode: '654321' });
+      expect(props.callbacks.confirm).toHaveBeenCalledWith({ twoFactorCode: code });
     });
 
     it('hands focus from a closing banner to the code, never to the page', async () => {

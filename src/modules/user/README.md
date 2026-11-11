@@ -1065,7 +1065,7 @@ unit test) and the profile by `stubProfile`. It covers the section's place besid
 column, the Authorization header, the busy status, focus on each new heading, the QR image, the
 key in groups of four, both clipboard paths, the three confirm outcomes, the recovery codes and
 the acknowledgement, Retry that sends exactly one more request, the shared
-`2px #1A1C1E` focus ring and the pin cells inside the card at 320, 360, 600, 767, 768 and 1024 px.
+`2px #404142` focus ring and the pin cells inside the card at 320, 360, 600, 767, 768 and 1024 px.
 `expectNoSecrets` runs after the steps that hold a secret. Playwright and the production stack are
 CI-only, so this spec ran nowhere in the local loop. `two-factor-manage.spec.ts` does the same for
 turning 2FA off and regenerating the codes, and also drives the re-authentication sign-in back to
@@ -1131,11 +1131,13 @@ with the pin cells' contrast and focus gaps and the auto-submit's WCAG 3.2.2 gap
 rule tests. The keyboard specs start from the heading that holds focus after the
 transition; the challenge climbs with Shift+Tab to reach back-to-main, and the off view starts
 from a click on the section heading. The
-settings card paints its outlined buttons with the settings ring, `2px solid #1A1C1E`, offset
-2 px, as `profile-form` does; the challenge's own controls keep `#404142` and the mode toggle
-`#0074B5`, and a focused pin cell draws no outline (the keyboard spec pins `outline-style: none`).
-The story text named `#404142` for every new control, and the code decides: the settings ring is
-the page's, not the toolkit's. Until 2026-11-04 the pin cells also carried the `#404142` ring and
+2FA card paints its buttons and focusable headings with the shared `focusVisibleRing`
+(`src/styles/focus-ring.ts`), `2px solid #404142`, offset 2 px, as NFR-9 and the architecture's
+"Focus ring" require; the challenge's own controls keep `#404142` and the mode toggle `#0074B5`,
+and a focused pin cell draws no outline (the keyboard spec pins `outline-style: none`). Amended
+2026-11-11: until then the card reused #330's settings ring, `2px solid #1A1C1E`, which no owner
+decision recorded, and the specs pinned that colour. #330's profile forms keep it.
+Until 2026-11-04 the pin cells also carried the `#404142` ring and
 the scan kept ten exceptions.
 
 **Not done here.** The NVDA and VoiceOver pass (group name, cell names, one error, whether the
@@ -1168,7 +1170,12 @@ hinting and sub-pixel rasterisation, so a local run would fail the first CI run.
 `tests/visual/mobile/two-factor.spec.ts` are committed without images. The first CI `visual
 tests` run on the branch fails on the missing baselines and uploads the actual screenshots as an
 artifact; those files, copied unchanged into the matching `-snapshots` folders, are the baselines.
-No existing baseline changes. The desktop spec records the challenge in authenticator mode and the
+Existing baselines change too, by the owner decisions of 2026-11-05 (2FA PRD, NFR-15): the
+`/settings` page around the section, home and the shell baselines are re-recorded with #377,
+because the profile card splits into three forms and the sidebar shows from 768 px with a
+full-screen drawer below it; and the recovery-code baselines change because the code chips use a
+monospace font (FR-30). They are re-recorded from the CI artifact the same way.
+The desktop spec records the challenge in authenticator mode and the
 settings off state on the full 13-size matrix, and recovery mode, the wrong-code error, setup with
 the fixed secret and QR, the recovery codes, on, the disable confirmation, re-authentication,
 `/sign-in` with the expired notice and `/` with the low-codes notice at desktop, tablet and mobile

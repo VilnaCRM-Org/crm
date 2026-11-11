@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 
 import type {
   SidebarCollapse,
@@ -6,30 +6,10 @@ import type {
   SidebarCollapseState,
 } from '@/components/types/ui-sidebar';
 
-const STORAGE_KEY = 'crm.sidebar.collapsed';
+import SidebarCollapseSource from './sidebar-collapse-source';
 
-class SidebarCollapseSource {
-  public read(): boolean {
-    return this.attempt(() => window.localStorage.getItem(STORAGE_KEY) === 'true', false);
-  }
-
-  public write(collapsed: boolean): void {
-    this.attempt(() => window.localStorage.setItem(STORAGE_KEY, String(collapsed)), undefined);
-  }
-
-  private attempt<T>(action: () => T, fallback: T): T {
-    try {
-      return action();
-    } catch {
-      return fallback;
-    }
-  }
-}
-
-const sidebarCollapseSource = new SidebarCollapseSource();
-
-function initial(): SidebarCollapseState {
-  return { collapsed: sidebarCollapseSource.read(), revealing: false };
+function initial(source: SidebarCollapseSource): SidebarCollapseState {
+  return { collapsed: source.read(), revealing: false };
 }
 
 function next(state: SidebarCollapseState, event: SidebarCollapseEvent): SidebarCollapseState {
@@ -38,11 +18,12 @@ function next(state: SidebarCollapseState, event: SidebarCollapseEvent): Sidebar
 }
 
 export default function useSidebarCollapse(): SidebarCollapse {
-  const [state, step] = useReducer(next, undefined, initial);
+  const [source] = useState(() => new SidebarCollapseSource());
+  const [state, step] = useReducer(next, source, initial);
 
   useEffect(() => {
-    sidebarCollapseSource.write(state.collapsed);
-  }, [state.collapsed]);
+    source.write(state.collapsed);
+  }, [source, state.collapsed]);
 
   return { ...state, step };
 }

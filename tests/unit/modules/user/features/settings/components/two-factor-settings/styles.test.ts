@@ -1,6 +1,6 @@
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
-const RING = { outline: '2px solid #1A1C1E', outlineOffset: '2px' };
+const RING = { outline: '2px solid #404142', outlineOffset: '2px' };
 const PILL = {
   minWidth: 0,
   maxHeight: 'none',

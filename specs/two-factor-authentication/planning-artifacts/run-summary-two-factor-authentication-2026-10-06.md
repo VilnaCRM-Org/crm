@@ -18,6 +18,23 @@ inputDocuments:
 
 # Run summary — two-factor authentication
 
+> **Owner decisions of 2026-11-03/04/05/10, recorded after this artifact was written.** The
+> owner-decision blocks under the title of the
+> [PRD](./prd-two-factor-authentication-2026-10-06.md) (2026-11-03 flag removed; 2026-11-04
+> challenge page as drawn, auto-submit, Figma card; 2026-11-05 profile forms split and shell from
+> 768 px; 2026-11-10 amendments and the `SignInSubmitProcessor` NFR-22 exception) are
+> authoritative. The text below is kept as the record of this artifact as written; these
+> statements in it are superseded:
+>
+> - **The `twoFactorAuth` flag.** "Outcome" (the flag, off in production and on in the test
+>   stack, gating the 2FA section), "Open questions, warnings and blockers" (Follow-up 5.1
+>   enabling the flag) and "Simplification 2026-10-08", "Flag".
+>   The owner removed the `twoFactorAuth` flag on 2026-11-03: `/settings` always renders the
+>   2FA section in every environment, and no deployment step enables it (user module README,
+>   [No feature flag for the two-factor section](../../../src/modules/user/README.md#no-feature-flag-for-the-two-factor-section)).
+>   "Outcome" cited `docs/feature-flags.md`, "`twoFactorAuth`", which no longer documents the
+>   flag; it now cites that README section.
+
 ## Task framing
 
 Plan two-factor authentication for the crm `user` module with BMAD, then file the GitHub issues.
@@ -43,8 +60,8 @@ and `implementation_artifacts` at this bundle.
   the contract-pin bump (the 2026-10-08 revision withdrew the expiry checker). The
   `twoFactorAuth` runtime flag (off in production, on in the test stack) gates only the 2FA
   section of `/settings`;
-  `/sign-in/two-factor` is reachable in every environment (`docs/feature-flags.md`,
-  "`twoFactorAuth`").
+  `/sign-in/two-factor` is reachable in every environment (`src/modules/user/README.md`,
+  "No feature flag for the two-factor section").
 - Stories: 32 in four epics (386 acceptance criteria) at this run, plus nine follow-ups; bmalph
   parses every story with no warnings, and every dependency points backwards in file order. These
   counts are superseded: the 2026-10-08 revision cut the plan to 23 stories and 243 criteria, and

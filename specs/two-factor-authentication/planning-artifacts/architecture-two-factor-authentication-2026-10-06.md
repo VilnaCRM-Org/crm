@@ -2287,6 +2287,18 @@ sign-in provider integration test and the registration equivalents of the shared
 cases. The reason texts of the result card stay with Story 2.4: until then a `locked` or
 `transient` error renders through the existing kind mapping.
 
+**Amended 2026-11-11 (gate finding).** The note above describes step B as written, not what
+ships. The sign-in submit unit is `SignInSubmitProcessor` (`@auth/utils/sign-in-submit-processor`,
+owner decision of 2026-11-10), not module functions of `useSignInSubmit`: `signInDemo` and
+`recordSignal` are its private methods, and its `run` resolves `GraphQLSignInProvider` through the
+loader and calls `login` inline, so no `resolveProvider` or `runSignIn` exists. The sandbox demo
+credentials still answer a session without resolving the provider and without a request, but the
+processor then records the demo result like any other: `recordSignal` resolves
+`AuthSecuritySignals` through the loader and calls `loginSettled`, which tags an opaque
+observability identity for the session. A signal chunk that fails to load is swallowed and the
+demo session stands. The test "records the demo session as a settled successful sign-in" in
+`tests/unit/modules/user/features/auth/utils/sign-in-submit-processor.test.ts` pins it.
+
 > Assumption (reconciliation 2026-10-27): the six new bindings live in one new step,
 > `registerUserServiceProviders(container)` (the sign-in repository, transformer and provider in
 > Story 2.2; the settings three in Story 3.2), and Story 2.2 makes room for it by folding

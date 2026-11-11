@@ -59,8 +59,10 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 drawer; that is a product decision over the Figma frames, which draw a 313 px drawer up to 1023 px
 (owner decision of 2026-11-05, confirmed 2026-11-10; see the
 [PRD amendment](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md)).
-The sidebar remembers whether it is collapsed in `localStorage` (`use-sidebar-collapse.ts`, key
-`crm.sidebar.collapsed`). The hook reads the two breakpoints from the crm scale (`md`, `xl`) through
+The sidebar remembers whether it is collapsed in `localStorage` under `crm.sidebar.collapsed`:
+`use-sidebar-collapse.ts` keeps one `SidebarCollapseSource` (`sidebar-collapse-source.ts`) per
+mount, which falls back to expanded when storage cannot be read and ignores a failed write.
+The hook reads the two breakpoints from the crm scale (`md`, `xl`) through
 `useMediaQuery` with `noSsr`, so the first render is already the right layout. The values
 are pinned by test rather than duplicated as constants: `use-shell-layout.test.ts` asserts the
 layout at 767, 768, 1439 and 1440 px, and `app-layout.styles.tokens.test.ts` holds the frame's

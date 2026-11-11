@@ -1,16 +1,20 @@
 import type { TwoFactorCodeAcceptance } from '@/modules/user/types/two-factor/code';
 
-const TOTP_CODE = /^\d{6}$/;
-const RECOVERY_CODE = /^[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}$/;
-const WHITESPACE = /\s+/g;
-const RECOVERY_GROUP_LENGTH = 4;
-
 export default class TwoFactorCodeNormalizer {
+  private readonly totpCode = /^\d{6}$/;
+
+  private readonly recoveryCode = /^[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}$/;
+
+  private readonly whitespace = /\s/g;
+
+  private readonly recoveryGroupLength = 4;
+
   public normalize(raw: string, accept: TwoFactorCodeAcceptance): string | null {
-    const compact = raw.replace(WHITESPACE, '');
-    if (accept !== 'recovery' && TOTP_CODE.test(compact)) return compact;
-    if (accept === 'totp' || !RECOVERY_CODE.test(compact)) return null;
+    const compact = raw.replace(this.whitespace, '');
+    if (accept !== 'recovery' && this.totpCode.test(compact)) return compact;
+    if (accept === 'totp' || !this.recoveryCode.test(compact)) return null;
     const letters = compact.replace('-', '').toUpperCase();
-    return `${letters.slice(0, RECOVERY_GROUP_LENGTH)}-${letters.slice(RECOVERY_GROUP_LENGTH)}`;
+    const group = this.recoveryGroupLength;
+    return `${letters.slice(0, group)}-${letters.slice(group)}`;
   }
 }

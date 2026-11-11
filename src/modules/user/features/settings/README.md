@@ -312,7 +312,9 @@ least 7 days (owner decision of 2026-11-04): nothing confirms that process exist
 
 States Figma does not draw follow the card: the skeleton and the load failure render inside the
 card, the skeleton reserves the loaded card's height at each layout, and "Спробувати ще раз" is
-the outlined "Очистити" pill. Buttons and the `h1` share the 2 px `#1A1C1E` ring; text links (the
-resend control and the home "Налаштування" link) use a 2 px `#0074B5` ring and darken to
-`#00588A` on hover. Deliberate colour deviations (greeting, resend link, field errors, toast
+the outlined "Очистити" pill. The card's buttons and focusable headings take the shared
+`focusVisibleRing` (`src/styles/focus-ring.ts`, 2 px `#404142`, offset 2 px, NFR-9); the profile
+forms' buttons and the page `h1` keep #330's 2 px `#1A1C1E` ring. Text links (the resend control
+and the home "Налаштування" link) use a 2 px `#0074B5` ring and darken to `#00588A` on hover.
+Deliberate colour deviations (greeting, resend link, field errors, toast
 icon and text) are recorded in the user module README.

@@ -2,10 +2,8 @@ import TwoFactorCodeNormalizer from '@/modules/user/lib/two-factor-code-normaliz
 import type { TwoFactorCodeAcceptance } from '@/modules/user/types/two-factor/code';
 import { buildRecoveryCode, buildTotpCode } from '@tests/builders';
 
-const normalizer = new TwoFactorCodeNormalizer();
-
 const normalize = (raw: string, accept: TwoFactorCodeAcceptance): string | null =>
-  normalizer.normalize(raw, accept);
+  new TwoFactorCodeNormalizer().normalize(raw, accept);
 
 describe('TwoFactorCodeNormalizer', () => {
   describe('accepting a TOTP code', () => {
@@ -22,6 +20,8 @@ describe('TwoFactorCodeNormalizer', () => {
     it.each([
       ['five digits', '12345'],
       ['seven digits', '1234567'],
+      ['a leading extra character', 'a123456'],
+      ['a trailing extra character', '123456a'],
       ['letters', 'abcdef'],
       ['digits with a letter', '12345a'],
       ['a hyphenated code', '123-456'],
@@ -58,6 +58,12 @@ describe('TwoFactorCodeNormalizer', () => {
     it.each([
       ['a short code', 'abc-123'],
       ['a long code', 'abcd-23456'],
+      ['a short first group', 'abc-2345'],
+      ['a short second group', 'abcd-234'],
+      ['a long first group', 'abcde-2345'],
+      ['a long plain code', 'abcd23456'],
+      ['a leading extra character', '5abcd-2345'],
+      ['a trailing extra character', 'abcd-2345x'],
       ['a misplaced hyphen', 'abc-d2345'],
       ['two hyphens', 'ab-cd-2345'],
       ['a TOTP code', '123456'],

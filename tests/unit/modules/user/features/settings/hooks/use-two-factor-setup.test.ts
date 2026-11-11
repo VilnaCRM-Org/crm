@@ -217,8 +217,8 @@ describe('useTwoFactorSetup', () => {
         view: viewState('setup', { banner: 'transient', bannerOccurrence: 1 }),
       });
       provider.confirm.mockResolvedValue(failed('network'));
-      const first = '123456';
-      const edited = '654321';
+      const first = buildTotpCode();
+      const edited = buildTotpCode();
 
       await act(async () => utils.result.current.confirm({ twoFactorCode: first }));
       await act(async () => utils.result.current.confirm({ twoFactorCode: edited }));

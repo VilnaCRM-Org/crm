@@ -212,17 +212,21 @@ export function fanOutFactor({ logic, component }) {
 }
 
 /**
- * The packing weight of every file that holds a runnable mutant: its runnable mutants times the
- * fan-out factor of its related tests. A cold shard runs every runnable mutant, the static ones a
- * test loads inside its own body included, and each one reloads every related test file, so a
- * 150-mutant file related to 37 tests costs what a 150-mutant leaf related to one never could. A
- * file without a runnable mutant has no weight and goes to no shard.
+ * The packing weight of every file that holds a runnable mutant: its runnable mutants, plus one
+ * for the shard's dry run, times the fan-out factor of its related tests. A cold shard runs every
+ * runnable mutant, the static ones a test loads inside its own body included, and each one reloads
+ * every related test file, so a 150-mutant file related to 37 tests costs what a 150-mutant leaf
+ * related to one never could; the dry run loads each file's related tests once more, which keeps
+ * a pile of cheap files from looking free. A file without a runnable mutant has no weight and goes
+ * to no shard.
  */
 export function packingWeights(counts, relatedTests) {
   const none = { logic: 0, component: 0 };
   const weights = new Map();
   for (const [file, { runnable }] of counts) {
-    if (runnable > 0) weights.set(file, runnable * fanOutFactor(relatedTests.get(file) ?? none));
+    if (runnable > 0) {
+      weights.set(file, (runnable + 1) * fanOutFactor(relatedTests.get(file) ?? none));
+    }
   }
   return weights;
 }

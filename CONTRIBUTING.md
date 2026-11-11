@@ -498,7 +498,8 @@ deterministic, disjoint slice and uploads a per-shard JSON report. The slice is 
 **mutant-run cost** (heaviest file to the lightest shard), not sliced round-robin and not packed
 by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
 carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 485 mutants
-against a mean of 308. A file weighs its runnable mutants times a fan-out factor: every mutant run
+against a mean of 308. A file weighs its runnable mutants plus one for the dry run, times a fan-out
+factor: every mutant run
 makes Jest load each test file related to the mutated file, about 150 ms apiece even when every
 test in it is filtered out, so `scripts/ci/mutation-related-tests.mjs` counts those files the way
 Jest finds them for Stryker, and the factor is 4 + the related logic tests + 3 x the related

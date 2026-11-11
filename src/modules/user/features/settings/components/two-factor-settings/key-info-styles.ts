@@ -1,6 +1,7 @@
 import { customColors, paletteColors } from '@/styles/colors';
+import { focusVisibleRing } from '@/styles/focus-ring';
 
-import { SETTINGS_DESKTOP, SETTINGS_FOCUS_RING, SETTINGS_TABLET } from '../profile-form/styles';
+import { SETTINGS_DESKTOP, SETTINGS_TABLET } from '../profile-form/styles';
 
 const FIGMA_DESKTOP = '@media (min-width:1440px)';
 
@@ -41,7 +42,7 @@ export default {
     backgroundColor: 'transparent',
     color: customColors.text.muted,
     cursor: 'pointer',
-    '&:focus-visible': SETTINGS_FOCUS_RING,
+    ...focusVisibleRing,
   },
   icon: {
     display: 'block',
