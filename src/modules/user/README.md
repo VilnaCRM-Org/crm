@@ -890,6 +890,8 @@ shape or an English message. `GraphQLSignInTransformer` decides a sign-in answer
 before its reason, so every `401` and `422` gives the one invalid-credentials failure whatever its
 message (NFR-3), and on completion any `401` that is not `invalid_code` is the expired session
 (FR-20).
+The input-property step lives in the injected `FieldViolationParser`, split out of the transformer
+so the file fits one mutation shard; its rows and order are the transformer's.
 
 **Rejected.** A contains-match on the message (`Invalid two-factor code. Retry` must not classify
 as a wrong code); reading `extensions.code` (upstream sends none); a second classifier per feature

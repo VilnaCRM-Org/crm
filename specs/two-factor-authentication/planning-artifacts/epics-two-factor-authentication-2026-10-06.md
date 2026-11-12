@@ -805,6 +805,10 @@ AR-2, AR-5, AR-7, AR-8, AR-10 (architecture §6.8, §7.1, §19).
 > unknown), with #330's `401` → `unauthenticated` row and its exact-message step ("Access
 > Denied." → `access_denied`). This story only appends; it never reorders or removes a step.
 
+> Amended 2026-11-11 (gate finding, mutation-shard cap): beyond the appended rows, the
+> input-property step moved to an injected `FieldViolationParser` under
+> `AUTH_TOKENS.FieldViolationParser`; its rows and order are unchanged (architecture §6.8, §7.1).
+
 Code facts (reconciled 2026-10-27): the transformer is
 `src/modules/user/transformers/user-service-error-transformer.ts` (default export of
 `src/modules/user/transformers/index.ts`), `@injectable()` and registered with

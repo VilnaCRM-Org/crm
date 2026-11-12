@@ -69,6 +69,8 @@ revisions:
     §19.3; its loader and the challenge form-section loader are no longer module-level instances'
   - '2026-11-11: gate finding; §6.1 the sign-in start patch keeps loginError until the run
     settles, and the aborted run clears it only when the processor did not resolve the provider'
+  - '2026-11-11: gate finding; the transformer's input-property step moved to an injected
+    FieldViolationParser (§6.8, §7.1, §7.2, §19.2): nine new classes, seven new tokens'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -1571,6 +1573,14 @@ This feature only appends, never reorders or removes:
   `expired_session`, `setup_not_initiated`, `already_enabled`, `not_enabled`,
   `reauth_required`.
 
+Amended 2026-11-11 (gate finding, mutation-shard cap): the input-property step (step 3) moved
+out of `UserServiceErrorTransformer` into `FieldViolationParser`
+(`src/modules/user/transformers/field-violation-parser.ts`), an `@injectable()` `Parser` registered
+under `AUTH_TOKENS.FieldViolationParser` and injected into the transformer's constructor. The step,
+its property list, its taken messages and its order are unchanged; only where the code lives moved.
+The transformer alone held 177 runnable mutants, above the 166-mutant cap a 63-shard matrix allows,
+and a shard cannot split a file (CLAUDE.md, mutation scope and baseline).
+
 The message step runs before step 4 because user-service domain exceptions reach the client with
 no `extensions` at all (`DomainExceptionNormalizer.php:29-41` at `a95c1e85`) and because one
 status (`401`, `403`) means several things. The rows are untranslated wire text
@@ -2235,6 +2245,10 @@ public methods. `AUTH_TOKENS` (`tokens.ts:1-18`) gains six symbols — `GraphQLS
 `GraphQLTwoFactorSettingsTransformer`, `TwoFactorSettingsProvider` — and loses two, `LoginAPI` and
 `LoginResponseMapper` (§6.19).
 
+Amended 2026-11-11 (gate finding): a ninth new class, `FieldViolationParser` (`Parser`, one public
+method, no constructor arguments), and a seventh new symbol, `AUTH_TOKENS.FieldViolationParser`; see
+§6.8.
+
 **Removed from the earlier plan:** `TwoFactorChallengeActions` and its `AuthStateActions`
 interface (the hook calls the provider through the loader, §6.3), the `SignInProvider` Strategy
 and its legacy REST implementation, `SessionLinkFactory` as a class this bundle might build (it
@@ -2256,6 +2270,8 @@ Changed (nine):
   sessions only, `loginFailed` removed with its only caller (§6.1, §6.14).
 - `UserServiceErrorTransformer` (#315) — appended input properties, one status row, six message
   rows and seven reason literals (§6.8).
+  Amended 2026-11-11: its constructor now takes the injected `FieldViolationParser`, which owns the
+  input-property step (§6.8); this is the one change to the transformer beyond appended rows.
 - `LoginRedirectTarget` — rejects the challenge path.
 - `PiiScrubber` — four fragments, one pattern.
 - `UserModuleRegistrar` (`di.ts:31-112`) — six `registerSingleton` calls folded into the
@@ -3168,6 +3184,8 @@ User module, code level (`miro/20`, `miro/21`):
   which calls `useTwoFactorSettings()` itself.
 - `2FASettings` → `2FADTOSettingsEntity [type]` → the `settings` prop, a
   `TwoFactorSettingsEntity`.
+- The board has no element below `[Transformer]`; `FieldViolationParser` (amended 2026-11-11, §6.8)
+  is part of the `UserServiceErrorTransformer` box, injected into it, and adds no layer or edge.
 
 User module, component level (`miro/01`):
 
