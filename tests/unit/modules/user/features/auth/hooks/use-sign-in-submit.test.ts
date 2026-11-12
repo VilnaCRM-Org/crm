@@ -5,7 +5,8 @@ import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import useSignInSubmit from '@auth/hooks/use-sign-in-submit';
 import type { AuthProviderLoader } from '@auth/stores';
-import useAuthStore from '@auth/stores/use-auth-store';
+import authSessionProvider from '@auth/stores/auth-session-provider';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
 import { buildEmail, buildPassword } from '@tests/builders';
@@ -100,7 +101,7 @@ describe('useSignInSubmit', () => {
     expect(result.current).toBe(first);
   });
 
-  it('hands the loader, store, demo session, dto and signal to the processor', async () => {
+  it('hands the loader, store, both sessions, dto and signal to the processor', async () => {
     const s = stubs();
     const run = jest.spyOn(signInSubmitProcessor, 'run');
     const credentials = dto();
@@ -110,7 +111,13 @@ describe('useSignInSubmit', () => {
 
     expect(run).toHaveBeenCalledTimes(1);
     expect(run).toHaveBeenCalledWith(
-      { loader: s.loader, store: useAuthStore, demoSession: sandboxDemoSessionProvider },
+      {
+        loader: s.loader,
+        store: useAuthStore,
+        demoSession: sandboxDemoSessionProvider,
+        session: authSessionProvider,
+        signedOut: CLEARED_AUTH_STATE,
+      },
       credentials,
       signal
     );

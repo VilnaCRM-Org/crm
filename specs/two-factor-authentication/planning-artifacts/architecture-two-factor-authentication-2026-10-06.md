@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-11
+revised: 2026-11-12
 iteration: 8
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -71,6 +71,9 @@ revisions:
     settles, and the aborted run clears it only when the processor did not resolve the provider'
   - '2026-11-11: gate finding; the transformer's input-property step moved to an injected
     FieldViolationParser (§6.8, §7.1, §7.2, §19.2): nine new classes, seven new tokens'
+  - '2026-11-12: gate finding, FR-10; §6.1 a challenge ends an earlier session: the patch is the
+    cleared signed-out state plus the pending session and e-mail, after the logout path when a
+    token was held'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -1239,6 +1242,20 @@ challenge's shape; only the sign-in path leaves `AuthStoreActions` and `Deferred
 - `AuthSecuritySignals.loginSettled` (`auth-security-signals.ts:33-40`) takes the `SignInResult`
   and calls `observability.setUser` only for a `session` outcome, so a pending step is not a
   sign-in.
+
+> Amended 2026-11-12 (gate finding, FR-10): a challenge ends an earlier session: the patch is the
+> cleared signed-out state plus the pending session and e-mail, so a `SignInChallengeOutcome`
+> writes `CLEARED_AUTH_STATE` with `email` and `pendingSessionId` over it — `token: null`,
+> `twoFactorStatus: 'unknown'`, `recoveryCodesRemaining: null`, `user: null` and
+> `loginError: null` with them — rather than leaving `token` unwritten. When a token was held
+> before the patch, `SignInSubmitProcessor` first runs the logout path,
+> `authSessionProvider.signOut()` (observability `clearUser`, the sandbox demo-session sign-out,
+> the cleared state); when none was held it logs nobody out. The hook hands both in through
+> `SignInSubmitContext` (`session`, `signedOut`), so the processor value-imports neither and the
+> paint chunk is unchanged. An aborted run and a failure leave a held session as it was. The
+> challenge page's `signedIn` edge still sees a null-to-token transition on completion. "Never
+> `token`" in decision 2 of §1, the §5 sign-in sequence and the §6.2 heading reads "never holds a
+> token" under this amendment; the text is kept as the record of the plan as approved.
 
 No tsyringe, Apollo or zod reaches the paint chunk: the hook value-imports only the token module
 and `useAuthStore`, as the challenge hook does, and the loader stays container-free

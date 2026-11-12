@@ -4,7 +4,8 @@ import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provid
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type { AuthProviderLoader } from '@auth/stores';
-import useAuthStore from '@auth/stores/use-auth-store';
+import authSessionProvider from '@auth/stores/auth-session-provider';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthStatePatch } from '@auth/types/auth-store';
 import type { SignInRun } from '@auth/types/sign-in/sign-in-run';
@@ -25,7 +26,13 @@ function signInRunner(loader: AuthProviderLoader): SignInRun {
   return async (dto: SignInDto, signal: AbortSignal): Promise<void> => {
     useAuthStore.setState(START);
     const processor = await processorLoader.load().catch(() => null);
-    const context = { loader, store: useAuthStore, demoSession: sandboxDemoSessionProvider };
+    const context = {
+      loader,
+      store: useAuthStore,
+      demoSession: sandboxDemoSessionProvider,
+      session: authSessionProvider,
+      signedOut: CLEARED_AUTH_STATE,
+    };
     const processed = processor !== null && (await processor.default.run(context, dto, signal));
     if (!processed) {
       useAuthStore.setState({

@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-11
+revised: 2026-11-12
 iteration: 4
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -239,7 +239,9 @@ The dispatch-readiness legend used on every `**Dispatch:** … **Status:** …` 
   the REST login is removed; registration is unchanged.
 - FR-9: a 2FA-off sign-in stores the access token in memory only and drops the refresh token.
 - FR-10: a 2FA-on sign-in stores the pending session id, never the token, and navigates to the
-  challenge carrying only `state.from`.
+  challenge carrying only `state.from`. Amended 2026-11-12 (gate finding): a challenge ends an
+  earlier session: the patch is the cleared signed-out state plus the pending session and e-mail,
+  after the logout path when a token was held (Story 2.2).
 - FR-11: sign-in failures map to i18n messages (uniform `401`/`422`, `423`, `429`, transient with
   a user Retry, abort silent).
 - FR-12: public lazy route `/sign-in/two-factor`, always registered, read by no flag, reachable
@@ -1166,6 +1168,13 @@ lists 27 symbols, the settings ones among them.
   `loginError: null`, the e-mail and `pendingSessionId` and never `token`, so `isAuthenticated`
   and `postLogin.signedIn` stay false and `LoginForm` shows neither card; `logout`, the
   cleared-state reset and a reload clear the id.
+  Amended 2026-11-12 (gate finding, FR-10): a challenge ends an earlier session: the patch is the
+  cleared signed-out state plus the pending session and e-mail, so it writes `token: null`,
+  `twoFactorStatus: 'unknown'` and `recoveryCodesRemaining: null` instead of never writing
+  `token`. When a token was held before the patch, the run first calls the logout path
+  (`authSessionProvider.signOut()`: observability `clearUser`, the sandbox demo-session sign-out);
+  when none was held it calls neither. An aborted run and a failure leave a held session as it
+  was (architecture §6.1, amendment of 2026-11-12).
 - Given a rejected loader resolve or an aborted signal, when the run settles, then the first
   writes `loginLoading: false` with the load-failure `loginError` and the second writes
   `loginLoading: false` only and records nothing; the result card's "Назад" still aborts a

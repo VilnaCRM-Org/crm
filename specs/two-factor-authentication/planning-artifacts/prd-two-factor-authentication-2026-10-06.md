@@ -601,6 +601,17 @@ clear it.
 - Given a pending challenge, when the logout action runs or the page reloads, then the challenge
   no longer exists.
 
+> **Amended 2026-11-12 (gate finding).** A challenge ends an earlier session: the patch is the
+> cleared signed-out state plus the pending session and e-mail, so "leaves `token` untouched"
+> becomes "writes `token: null`" along with `twoFactorStatus: 'unknown'` and
+> `recoveryCodesRemaining: null`, and `isAuthenticated` stays false. When a token was held before
+> the challenge, the earlier session ends through the logout path — the observability identity is
+> cleared and the sandbox demo session signed out — and when none was held nothing is logged out.
+> An aborted sign-in and a failure leave a held session as it was. Given a held token and a
+> 2FA-on answer, when it settles, then the store equals the cleared state with the e-mail and the
+> pending session id, and observability `clearUser` ran once (architecture §6.1, Story 2.2,
+> amendments of 2026-11-12).
+
 Trace: D4; research §5.2, §6 (pending session).
 
 #### FR-11 — Sign-in failures on the GraphQL path

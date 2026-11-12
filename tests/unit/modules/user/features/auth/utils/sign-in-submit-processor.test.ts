@@ -1,12 +1,20 @@
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import observabilityCore from '@/services/observability/observability-core';
 import type { AuthProviderLoader } from '@auth/stores';
+import authSessionProvider from '@auth/stores/auth-session-provider';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import type { SignInSubmitContext } from '@auth/types/sign-in/sign-in-submit-context';
 import type { SignInResult } from '@auth/types/two-factor/sign-in';
 import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
-import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
+import {
+  buildEmail,
+  buildPassword,
+  buildPendingSessionId,
+  buildRecoveryCodeSet,
+  buildToken,
+} from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const DEMO = { email: 'demo@vilnacrm.com', password: 'Demo1234' };
@@ -44,6 +52,8 @@ const contextOf = (s: Stubs): SignInSubmitContext => ({
   loader: s.loader,
   store: useAuthStore,
   demoSession: sandboxDemoSessionProvider,
+  session: authSessionProvider,
+  signedOut: CLEARED_AUTH_STATE,
 });
 
 const runWith = (
@@ -130,23 +140,74 @@ describe('SignInSubmitProcessor', () => {
     expect(state.twoFactorStatus).toBe('unknown');
   });
 
-  it('drops a token held from an earlier session when a challenge is issued', async () => {
+  it('ends an earlier session completely when a challenge follows a held token', async () => {
     const email = buildEmail();
     const pendingSessionId = buildPendingSessionId();
-    useAuthStore.setState({ token: buildToken() });
+    useAuthStore.setState({
+      token: buildToken(),
+      twoFactorStatus: 'enabled',
+      recoveryCodesRemaining: buildRecoveryCodeSet().items.length,
+    });
     const s = stubs({ ok: true, value: { kind: 'challenge', email, pendingSessionId } });
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    const demoSignOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
     const setState = jest.spyOn(useAuthStore, 'setState');
 
     await runWith(s);
 
     expect(useAuthStore.getState()).toEqual({ ...CLEARED_AUTH_STATE, email, pendingSessionId });
-    expect(setState).toHaveBeenLastCalledWith({
-      loginLoading: false,
-      loginError: null,
-      email,
-      token: null,
-      pendingSessionId,
+    expect(useAuthStore.getState().twoFactorStatus).toBe('unknown');
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
+    expect(useAuthStore.getState().token).toBeNull();
+    expect(clearUser).toHaveBeenCalledTimes(1);
+    expect(demoSignOut).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenLastCalledWith({ ...CLEARED_AUTH_STATE, email, pendingSessionId });
+  });
+
+  it('ends a held sandbox demo session when a challenge is issued', async () => {
+    const s = stubs({
+      ok: true,
+      value: { kind: 'challenge', email: buildEmail(), pendingSessionId: buildPendingSessionId() },
     });
+    await runWith(stubs(), DEMO);
+    expect(sandboxDemoSessionProvider.restore()).not.toBeNull();
+
+    await runWith(s);
+
+    expect(sandboxDemoSessionProvider.restore()).toBeNull();
+    expect(useAuthStore.getState().token).toBeNull();
+  });
+
+  it('clears a stale status from the patch without a logout when no token is held', async () => {
+    const email = buildEmail();
+    const pendingSessionId = buildPendingSessionId();
+    useAuthStore.setState({
+      twoFactorStatus: 'enabled',
+      recoveryCodesRemaining: buildRecoveryCodeSet().items.length,
+    });
+    const s = stubs({ ok: true, value: { kind: 'challenge', email, pendingSessionId } });
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    const demoSignOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
+    const setState = jest.spyOn(useAuthStore, 'setState');
+
+    await runWith(s);
+
+    expect(useAuthStore.getState()).toEqual({ ...CLEARED_AUTH_STATE, email, pendingSessionId });
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(demoSignOut).not.toHaveBeenCalled();
+    expect(setState).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith({ ...CLEARED_AUTH_STATE, email, pendingSessionId });
+  });
+
+  it('keeps a held session and logs nobody out for a failed sign-in', async () => {
+    const token = buildToken();
+    useAuthStore.setState({ token, twoFactorStatus: 'enabled' });
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+
+    await runWith(stubs({ ok: false, error: invalid }));
+
+    expect(useAuthStore.getState()).toMatchObject({ token, twoFactorStatus: 'enabled' });
+    expect(clearUser).not.toHaveBeenCalled();
   });
 
   it('writes the failure as loginError and stops loading', async () => {
@@ -229,6 +290,7 @@ describe('SignInSubmitProcessor', () => {
     const email = buildEmail();
     const pendingSessionId = buildPendingSessionId();
     const s = stubs();
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
     const controller = new AbortController();
     s.login.mockImplementation(async () => {
       controller.abort();
@@ -238,6 +300,31 @@ describe('SignInSubmitProcessor', () => {
     await runWith(s, dto(), controller.signal);
 
     expect(useAuthStore.getState()).toEqual(CLEARED_AUTH_STATE);
+    expect(clearUser).not.toHaveBeenCalled();
+  });
+
+  it('keeps a held session when a challenge resolves after the abort', async () => {
+    const token = buildToken();
+    useAuthStore.setState({ token });
+    const s = stubs();
+    const controller = new AbortController();
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    s.login.mockImplementation(async () => {
+      controller.abort();
+      return {
+        ok: true,
+        value: {
+          kind: 'challenge',
+          email: buildEmail(),
+          pendingSessionId: buildPendingSessionId(),
+        },
+      };
+    });
+
+    await runWith(s, dto(), controller.signal);
+
+    expect(useAuthStore.getState()).toMatchObject({ token, pendingSessionId: null });
+    expect(clearUser).not.toHaveBeenCalled();
   });
 
   it('survives a failing signals step without disturbing the written state', async () => {

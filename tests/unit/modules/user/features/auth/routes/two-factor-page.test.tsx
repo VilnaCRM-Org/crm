@@ -16,7 +16,8 @@ import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provid
 import ROUTE_PATHS from '@/routes/route-paths';
 import TwoFactorChallenge from '@auth/routes/two-factor';
 import type { AuthProviderLoader } from '@auth/stores';
-import useAuthStore from '@auth/stores/use-auth-store';
+import authSessionProvider from '@auth/stores/auth-session-provider';
+import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
 import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -103,7 +104,7 @@ describe('TwoFactorChallenge page', () => {
   });
 
   it('proceeds home after a sign-in challenge issued while an earlier token was held', async () => {
-    useAuthStore.setState({ token: buildToken() });
+    useAuthStore.setState({ token: buildToken(), twoFactorStatus: 'enabled' });
     const pendingSessionId = buildPendingSessionId();
     const login = jest.fn().mockResolvedValue({
       ok: true,
@@ -115,10 +116,17 @@ describe('TwoFactorChallenge page', () => {
         loader: { resolve } as unknown as AuthProviderLoader,
         store: useAuthStore,
         demoSession: sandboxDemoSessionProvider,
+        session: authSessionProvider,
+        signedOut: CLEARED_AUTH_STATE,
       },
       { email: buildEmail(), password: buildPassword() },
       new AbortController().signal
     );
+    expect(useAuthStore.getState()).toMatchObject({
+      token: null,
+      twoFactorStatus: 'unknown',
+      pendingSessionId,
+    });
     mount();
     await screen.findByText('challenge section');
 
