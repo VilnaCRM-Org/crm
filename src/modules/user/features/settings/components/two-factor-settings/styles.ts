@@ -4,7 +4,6 @@ import { focusVisibleRing } from '@/styles/focus-ring';
 import {
   SETTINGS_DESKTOP,
   SETTINGS_FIELD_WIDTH_RESET,
-  SETTINGS_PILL,
   SETTINGS_SUBMIT_WIDTH_RESET,
   SETTINGS_TABLET,
 } from '../profile-form/styles';
@@ -18,16 +17,6 @@ const CARD = {
   color: customColors.text.primary,
   minWidth: 0,
   ...SETTINGS_FIELD_WIDTH_RESET,
-};
-
-const OUTLINED_BUTTON = {
-  ...SETTINGS_PILL,
-  height: '2.5rem',
-  border: `1px solid ${paletteColors.border.strong}`,
-  backgroundColor: paletteColors.background.default,
-  color: customColors.brand.darkPrimary,
-  '&:hover': { backgroundColor: paletteColors.background.paper },
-  ...focusVisibleRing,
 };
 
 export default {
@@ -44,23 +33,19 @@ export default {
     [SETTINGS_DESKTOP]: { padding: '1.6875rem 1.9375rem' },
   },
   submit: SETTINGS_SUBMIT_WIDTH_RESET,
-  copyButton: { '&&': OUTLINED_BUTTON },
   actionButton: {
-    '&&': {
-      ...OUTLINED_BUTTON,
-      height: '2.75rem',
-      [SETTINGS_TABLET]: {
-        height: '3.875rem',
-        padding: '0 2rem',
-        fontWeight: 600,
-        fontSize: '1.125rem',
-      },
-      [SETTINGS_DESKTOP]: {
-        height: '2.625rem',
-        padding: '0 1.5rem',
-        fontWeight: 500,
-        fontSize: '0.9375rem',
-      },
+    minHeight: '2.75rem',
+    [SETTINGS_TABLET]: {
+      minHeight: '3.875rem',
+      padding: '0 2rem',
+      fontWeight: 600,
+      fontSize: '1.125rem',
+    },
+    [SETTINGS_DESKTOP]: {
+      minHeight: '2.625rem',
+      padding: '0 1.5rem',
+      fontWeight: 500,
+      fontSize: '0.9375rem',
     },
   },
   codeList: {
@@ -95,6 +80,13 @@ export default {
   },
   disableCodeField: {
     '& .MuiOutlinedInput-notchedOutline': { borderColor: paletteColors.border.strong },
+    '& .MuiOutlinedInput-root:hover:not(.Mui-error) .MuiOutlinedInput-notchedOutline': {
+      borderColor: paletteColors.border.strong,
+    },
+    '& .MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline': {
+      borderColor: customColors.text.dark,
+      borderWidth: '2px',
+    },
   },
   statusHeading: {
     display: 'flex',
@@ -119,7 +111,7 @@ export default {
     [SETTINGS_TABLET]: { marginTop: '1rem', marginLeft: '5.8125rem' },
     [SETTINGS_DESKTOP]: { marginTop: '0.3125rem' },
   },
-  footerButton: { '&&': { ...OUTLINED_BUTTON, marginTop: '0.75rem' } },
+  footerButton: { marginTop: '0.75rem' },
   reauthMessage: {
     margin: '0 0 1rem',
     fontFamily: 'Inter',
@@ -129,17 +121,6 @@ export default {
     color: customColors.text.dark,
     outline: 'none',
     ...focusVisibleRing,
-  },
-  reauthButton: {
-    '&&': {
-      ...SETTINGS_PILL,
-      height: '2.5rem',
-      border: `1px solid ${paletteColors.border.strong}`,
-      backgroundColor: paletteColors.background.default,
-      color: customColors.text.dark,
-      '&:hover': { backgroundColor: paletteColors.background.paper },
-      ...focusVisibleRing,
-    },
   },
   note: {
     margin: '1rem 0 0',

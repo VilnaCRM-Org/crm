@@ -23,7 +23,7 @@ export default function OnActions({
       <UIButton
         ref={focusDisable}
         type="button"
-        variant="outlined"
+        variant="outlinedPill"
         onClick={onDisable}
         sx={styles.actionButton}
       >
@@ -32,7 +32,7 @@ export default function OnActions({
       <UIButton
         ref={focusRegenerate}
         type="button"
-        variant="outlined"
+        variant="outlinedPill"
         onClick={onRegenerate}
         sx={styles.actionButton}
       >

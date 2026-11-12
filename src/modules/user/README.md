@@ -1004,8 +1004,9 @@ itself is described in "The two-factor card" in
 on view, no disable or regenerate confirmation and no re-authentication message, so these views are
 built from the story copy and the card's tokens, and no state is invented beyond it.
 
-**Behaviour.** The on view keeps its status heading and adds two outlined buttons, "Вимкнути" and
-"Створити нові резервні коди" (border `#80878A`, text `#1B2327`). Each opens a `UIForm` confirmation
+**Behaviour.** The on view keeps its status heading and adds two kit outlined pills
+(`UIButton variant="outlinedPill"`), "Вимкнути" and "Створити нові резервні коди" (border
+`#80878A`, text `#1B2327`). Each opens a `UIForm` confirmation
 with a focused level-3 title, "Скасувати" in the form's footer, and the banners of the other views.
 The disable form has one labelled "Код підтвердження" text field with no placeholder; it takes six
 digits or `XXXX-XXXX` (the hook normalises it) and shows the format or wrong-code text with
@@ -1014,16 +1015,19 @@ digits or `XXXX-XXXX` (the hook normalises it) and shows the format or wrong-cod
 `usePreviousView` records the view each view came from once per change, and the panel hands it to
 the views through `ArrivalContext`, so the plain on view takes focus on its heading only when a
 transition (done, setup 409) brought the user there and never on first render. A regenerate refused
-for a stale sign-in shows the re-authentication message, focused, with an outlined "Увійти знову"
-(text `#1A1C1E`) that runs the outlet `signOut` as `callbacks.signInAgain`; the section never ends a
+for a stale sign-in shows the re-authentication message, focused, with an outlined pill "Увійти
+знову" (text `#1B2327`, the kit token) that runs the outlet `signOut` as `callbacks.signInAgain`; the section never ends a
 session on its own.
 
 ### The low recovery codes notice
 
 **Figma.** There is no frame for the notice, so it takes the settings card tokens (white, 1 px
-`#E1E7EA` border, 12 px radius) and the story's colours: the link `#0074B5`, the outlined
-"Закрити сповіщення" button with border `#80878A` and text `#1B2327`, and the shared `2px #404142`
-focus ring.
+`#E1E7EA` border, 12 px radius) and the story's colours: the link `#0074B5`, the compact kit pill
+(`UIButton variant="outlinedPill" size="small"`) "Закрити сповіщення" with border `#80878A` and
+text `#1B2327`, and the shared `2px #404142` focus ring. Every outlined pill of the 2FA surfaces
+is that declared `UIButton` variant: its look lives in `src/components/ui-button/theme.ts`, and
+the features add only layout (the on view's per-breakpoint height and padding, the footer's top
+margin).
 
 **Behaviour.** A challenge that completed with a recovery code and reported two or fewer remaining
 codes leaves that number in the auth store. `ProtectedRoute` reads it through

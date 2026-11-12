@@ -1,27 +1,6 @@
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const RING = { outline: '2px solid #404142', outlineOffset: '2px' };
-const PILL = {
-  minWidth: 0,
-  maxHeight: 'none',
-  margin: 0,
-  padding: '0 1.5rem',
-  borderRadius: '3.5625rem',
-  fontFamily: 'Golos',
-  fontWeight: 500,
-  fontSize: '0.9375rem',
-  lineHeight: '1.125rem',
-  letterSpacing: 0,
-  textTransform: 'none',
-  '&:focus-visible': RING,
-};
-const OUTLINED = {
-  height: '2.5rem',
-  border: '1px solid #80878A',
-  backgroundColor: '#FFFFFF',
-  '&:hover': { backgroundColor: '#F4F5F6' },
-  '&:focus-visible': RING,
-};
 const CARD = {
   marginInline: '-0.4375rem',
   backgroundColor: '#FFFFFF',
@@ -60,25 +39,19 @@ describe('two-factor settings styles', () => {
         '@media (min-width:1025px)': { padding: '1.6875rem 1.9375rem' },
       },
       submit: { '&&': { minWidth: 0 } },
-      copyButton: { '&&': { ...PILL, ...OUTLINED, color: '#1B2327' } },
       actionButton: {
-        '&&': {
-          ...PILL,
-          ...OUTLINED,
-          color: '#1B2327',
-          height: '2.75rem',
-          '@media (min-width:768px)': {
-            height: '3.875rem',
-            padding: '0 2rem',
-            fontWeight: 600,
-            fontSize: '1.125rem',
-          },
-          '@media (min-width:1025px)': {
-            height: '2.625rem',
-            padding: '0 1.5rem',
-            fontWeight: 500,
-            fontSize: '0.9375rem',
-          },
+        minHeight: '2.75rem',
+        '@media (min-width:768px)': {
+          minHeight: '3.875rem',
+          padding: '0 2rem',
+          fontWeight: 600,
+          fontSize: '1.125rem',
+        },
+        '@media (min-width:1025px)': {
+          minHeight: '2.625rem',
+          padding: '0 1.5rem',
+          fontWeight: 500,
+          fontSize: '0.9375rem',
         },
       },
       codeList: {
@@ -111,6 +84,13 @@ describe('two-factor settings styles', () => {
       },
       disableCodeField: {
         '& .MuiOutlinedInput-notchedOutline': { borderColor: '#80878A' },
+        '& .MuiOutlinedInput-root:hover:not(.Mui-error) .MuiOutlinedInput-notchedOutline': {
+          borderColor: '#80878A',
+        },
+        '& .MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline': {
+          borderColor: '#1A1C1E',
+          borderWidth: '2px',
+        },
       },
       statusHeading: {
         display: 'flex',
@@ -135,7 +115,7 @@ describe('two-factor settings styles', () => {
         '@media (min-width:768px)': { marginTop: '1rem', marginLeft: '5.8125rem' },
         '@media (min-width:1025px)': { marginTop: '0.3125rem' },
       },
-      footerButton: { '&&': { ...PILL, ...OUTLINED, marginTop: '0.75rem', color: '#1B2327' } },
+      footerButton: { marginTop: '0.75rem' },
       reauthMessage: {
         margin: '0 0 1rem',
         fontFamily: 'Inter',
@@ -146,7 +126,6 @@ describe('two-factor settings styles', () => {
         outline: 'none',
         '&:focus-visible': RING,
       },
-      reauthButton: { '&&': { ...PILL, ...OUTLINED, color: '#1A1C1E' } },
       note: { margin: '1rem 0 0', ...INTER_NOTE },
     });
   });

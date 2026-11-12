@@ -38,11 +38,11 @@ const regenerateButton = (): HTMLElement =>
   screen.getByRole('button', { name: 'Створити нові резервні коди' });
 
 describe('the on view actions', () => {
-  it('offers the two outlined buttons by name, in that order', async () => {
+  it('offers the two outlined pill buttons by name, in that order', async () => {
     renderPanel(withView(viewState('on')));
 
-    expect(disableButton()).toHaveClass('MuiButton-outlined');
-    expect(regenerateButton()).toHaveClass('MuiButton-outlined');
+    expect(disableButton()).toHaveClass('MuiButton-outlinedPill');
+    expect(regenerateButton()).toHaveClass('MuiButton-outlinedPill');
     await userEvent.tab();
     expect(disableButton()).toHaveFocus();
     await userEvent.tab();
@@ -116,7 +116,7 @@ describe('the disable view', () => {
     const cancel = screen.getByRole('button', { name: 'Скасувати' });
     expect(field.getAttribute('placeholder') ?? '').toBe('');
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
-    expect(cancel).toHaveClass('MuiButton-outlined');
+    expect(cancel).toHaveClass('MuiButton-outlinedPill');
     expect(submit.compareDocumentPosition(cancel)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
@@ -328,7 +328,9 @@ describe('the reauth view', () => {
     renderPanel(withView(viewState('reauth')));
 
     expect(screen.getByText(MESSAGE)).toHaveFocus();
-    expect(screen.getByRole('button', { name: 'Увійти знову' })).toHaveClass('MuiButton-outlined');
+    expect(screen.getByRole('button', { name: 'Увійти знову' })).toHaveClass(
+      'MuiButton-outlinedPill'
+    );
   });
 
   it('signs in again through the callback, once', async () => {

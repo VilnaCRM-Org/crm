@@ -150,10 +150,10 @@ describe('CopyButton', () => {
     return { text, target: screen.getByText(text) };
   };
 
-  it('is an outlined button with no status until pressed', () => {
+  it('is an outlined pill button with no status until pressed', () => {
     mount();
 
-    expect(screen.getByRole('button', { name: 'Copy' })).toHaveClass('MuiButton-outlined');
+    expect(screen.getByRole('button', { name: 'Copy' })).toHaveClass('MuiButton-outlinedPill');
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 

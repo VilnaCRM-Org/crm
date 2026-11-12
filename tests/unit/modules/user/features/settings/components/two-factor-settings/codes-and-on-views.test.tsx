@@ -194,9 +194,9 @@ describe('the on view and the status headings', () => {
       panelProps({ view: viewState('on'), settings: { ...EMPTY_SETTINGS, status: 'enabled' } })
     );
 
-    expect(screen.getByRole('button', { name: 'Вимкнути' })).toHaveStyle({ height: '2.75rem' });
+    expect(screen.getByRole('button', { name: 'Вимкнути' })).toHaveStyle({ minHeight: '2.75rem' });
     expect(screen.getByRole('button', { name: 'Створити нові резервні коди' })).toHaveStyle({
-      height: '2.75rem',
+      minHeight: '2.75rem',
     });
   });
 

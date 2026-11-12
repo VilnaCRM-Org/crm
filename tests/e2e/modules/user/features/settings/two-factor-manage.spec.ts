@@ -156,6 +156,31 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await expect(disableFieldOf(page)).toBeFocused();
     });
 
+    test('keeps the field outline at 3:1 at rest, on hover and on focus, red in error', async ({
+      page,
+    }) => {
+      await stubDisable(page, ['invalid_code']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+      const outline = disableFieldOf(page).locator('xpath=..').locator('fieldset');
+
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(128, 135, 138)');
+      await expect(outline).toHaveCSS('border-top-width', '1px');
+      await disableFieldOf(page).hover();
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(128, 135, 138)');
+      await disableFieldOf(page).focus();
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(26, 28, 30)');
+      await expect(outline).toHaveCSS('border-top-width', '2px');
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+      await expect(disableFieldOf(page)).toHaveAccessibleDescription(twoFactorText.invalidCode);
+      await disableFieldOf(page).focus();
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(220, 57, 57)');
+      await expect(outline).toHaveCSS('border-top-width', '2px');
+    });
+
     test('turns off, shows the off view with its status heading and no codes', async ({ page }) => {
       await stubDisable(page);
       await enableTwoFactor(page);

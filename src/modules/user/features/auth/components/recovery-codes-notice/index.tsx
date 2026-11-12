@@ -34,7 +34,7 @@ export default function RecoveryCodesNotice({
           <Box component={Link} to={ROUTE_PATHS.settings} onClick={onDismiss} sx={styles.link}>
             {t('recovery_codes_notice.open_settings')}
           </Box>
-          <UIButton type="button" variant="outlined" onClick={onDismiss} sx={styles.dismiss}>
+          <UIButton type="button" variant="outlinedPill" size="small" onClick={onDismiss}>
             {t('recovery_codes_notice.dismiss')}
           </UIButton>
         </Box>

@@ -32,21 +32,4 @@ export default {
     textDecoration: 'underline',
     ...focusVisibleRing,
   },
-  dismiss: {
-    '&&': {
-      minWidth: 0,
-      height: '2.5rem',
-      padding: '0 1.25rem',
-      borderRadius: '3.5625rem',
-      border: `1px solid ${paletteColors.border.strong}`,
-      backgroundColor: paletteColors.background.default,
-      color: customColors.brand.darkPrimary,
-      fontFamily: 'Golos',
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      textTransform: 'none',
-      '&:hover': { backgroundColor: paletteColors.background.paper },
-      ...focusVisibleRing,
-    },
-  },
 } as const;

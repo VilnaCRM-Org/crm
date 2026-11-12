@@ -18,7 +18,7 @@ export default function CancelButton({
     <UIButton
       ref={buttonRef}
       type="button"
-      variant="outlined"
+      variant="outlinedPill"
       onClick={onCancel}
       disabled={disabled}
       sx={styles.footerButton}

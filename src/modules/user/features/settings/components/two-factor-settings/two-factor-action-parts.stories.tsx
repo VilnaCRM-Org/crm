@@ -52,6 +52,10 @@ export const SavedAcknowledgement: Story = {
   render: () => <SavedCheckbox checked={false} onChange={noop} />,
 };
 
+export const SavedAcknowledgementChecked: Story = {
+  render: () => <SavedCheckbox checked onChange={noop} />,
+};
+
 export const Cancel: Story = {
   render: () => <CancelButton onCancel={noop} disabled={false} buttonRef={null} />,
 };

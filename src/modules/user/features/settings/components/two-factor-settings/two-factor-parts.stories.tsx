@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { createRef } from 'react';
 
+import { withRefusingClipboard } from '@stories/clipboard-decorators';
 import { OTPAUTH_URI, SECRET } from '@stories/two-factor-story-fixtures';
 
 import CopyButton from './copy-button';
@@ -60,6 +61,23 @@ export const Copy: Story = {
 
 export const KeyWithCopy: Story = {
   render: () => <KeyBlock secret={SECRET} copyLabel="Скопіювати ключ" />,
+};
+
+export const KeyWithCopyFailed: Story = {
+  render: () => <KeyBlock secret={SECRET} copyLabel="Скопіювати ключ" />,
+  decorators: [withRefusingClipboard()],
+  play: ({ canvasElement }) => {
+    canvasElement.querySelector<HTMLButtonElement>('button[aria-label="Скопіювати ключ"]')?.click();
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The clipboard refuses the write, so the key is selected and the manual instruction ' +
+          'is shown below it and announced through the live region.',
+      },
+    },
+  },
 };
 
 export const OffSteps: Story = { render: () => <OffGuide /> };

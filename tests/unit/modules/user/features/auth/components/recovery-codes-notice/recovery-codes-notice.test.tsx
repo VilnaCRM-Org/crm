@@ -92,14 +92,14 @@ describe('RecoveryCodesNotice', () => {
     expect(screen.getByText('settings page')).toBeInTheDocument();
   });
 
-  it('dismisses with the outlined close button', async () => {
+  it('dismisses with the compact outlined pill close button', async () => {
     const onDismiss = jest.fn();
     renderNotice(1, 'uk', onDismiss);
     const button = screen.getByRole('button', { name: 'Закрити сповіщення' });
 
     await userEvent.click(button);
 
-    expect(button).toHaveClass('MuiButton-outlined');
+    expect(button).toHaveClass('MuiButton-outlinedPill', 'MuiButton-sizeSmall');
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
