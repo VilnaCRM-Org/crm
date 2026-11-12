@@ -40,10 +40,11 @@ export class SignInSubmitProcessor {
     dto: SignInDto,
     signal: AbortSignal
   ): SignInResult | null {
-    const demo = signal.aborted ? null : context.demoSession.signIn(dto);
+    const demo = signal.aborted ? null : context.demoSession.match(dto);
     if (demo === null) return null;
     const outcome: SignInSessionOutcome = { kind: 'session', ...demo };
-    context.store.setState(this.sessionPatch(outcome));
+    this.startSession(context, outcome);
+    context.demoSession.signIn(dto);
     return { ok: true, value: outcome };
   }
 
@@ -70,28 +71,31 @@ export class SignInSubmitProcessor {
   }
 
   private apply(context: SignInSubmitContext, outcome: SignInOutcome): void {
-    if (outcome.kind === 'session') context.store.setState(this.sessionPatch(outcome));
+    if (outcome.kind === 'session') this.startSession(context, outcome);
     else this.challenge(context, outcome);
   }
 
-  private challenge(context: SignInSubmitContext, outcome: SignInChallengeOutcome): void {
+  private endEarlierSession(context: SignInSubmitContext): void {
     if (context.session.token() !== null) context.session.signOut();
+  }
+
+  private startSession(context: SignInSubmitContext, outcome: SignInSessionOutcome): void {
+    this.endEarlierSession(context);
+    context.store.setState({
+      ...context.signedOut,
+      email: outcome.email,
+      token: outcome.token,
+      twoFactorStatus: 'disabled',
+    });
+  }
+
+  private challenge(context: SignInSubmitContext, outcome: SignInChallengeOutcome): void {
+    this.endEarlierSession(context);
     context.store.setState({
       ...context.signedOut,
       email: outcome.email,
       pendingSessionId: outcome.pendingSessionId,
     });
-  }
-
-  private sessionPatch(outcome: SignInSessionOutcome): AuthStatePatch {
-    return {
-      ...SETTLED,
-      loginError: null,
-      email: outcome.email,
-      token: outcome.token,
-      pendingSessionId: null,
-      twoFactorStatus: 'disabled',
-    };
   }
 }
 

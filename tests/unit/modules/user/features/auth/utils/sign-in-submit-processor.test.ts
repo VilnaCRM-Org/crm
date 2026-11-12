@@ -87,7 +87,7 @@ describe('SignInSubmitProcessor', () => {
     expect(s.login).toHaveBeenCalledWith(credentials, signal);
   });
 
-  it('writes one session patch: token, status disabled, no pending session', async () => {
+  it('writes the signed-out state plus the session with status disabled', async () => {
     const email = buildEmail();
     const token = buildToken();
     const s = stubs({ ok: true, value: { kind: 'session', email, token } });
@@ -102,11 +102,78 @@ describe('SignInSubmitProcessor', () => {
       twoFactorStatus: 'disabled',
     });
     expect(setState).toHaveBeenLastCalledWith({
-      loginLoading: false,
-      loginError: null,
+      ...CLEARED_AUTH_STATE,
       email,
       token,
-      pendingSessionId: null,
+      twoFactorStatus: 'disabled',
+    });
+  });
+
+  it('ends an earlier session completely before recording a new session over it', async () => {
+    const email = buildEmail();
+    const token = buildToken();
+    useAuthStore.setState({
+      token: buildToken(),
+      email: buildEmail(),
+      twoFactorStatus: 'enabled',
+      recoveryCodesRemaining: buildRecoveryCodeSet().items.length,
+    });
+    const s = stubs({ ok: true, value: { kind: 'session', email, token } });
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    const demoSignOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
+    const setState = jest.spyOn(useAuthStore, 'setState');
+
+    await runWith(s);
+
+    expect(useAuthStore.getState()).toEqual({
+      ...CLEARED_AUTH_STATE,
+      email,
+      token,
+      twoFactorStatus: 'disabled',
+    });
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
+    expect(clearUser).toHaveBeenCalledTimes(1);
+    expect(demoSignOut).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledTimes(2);
+    expect(setState).toHaveBeenNthCalledWith(1, CLEARED_AUTH_STATE);
+    expect(setState).toHaveBeenLastCalledWith({
+      ...CLEARED_AUTH_STATE,
+      email,
+      token,
+      twoFactorStatus: 'disabled',
+    });
+  });
+
+  it('records a new session without a logout when no token is held', async () => {
+    const email = buildEmail();
+    const token = buildToken();
+    useAuthStore.setState({ recoveryCodesRemaining: buildRecoveryCodeSet().items.length });
+    const s = stubs({ ok: true, value: { kind: 'session', email, token } });
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    const demoSignOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
+    const setState = jest.spyOn(useAuthStore, 'setState');
+
+    await runWith(s);
+
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(demoSignOut).not.toHaveBeenCalled();
+    expect(setState).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends a held sandbox demo session when a real session is issued', async () => {
+    const email = buildEmail();
+    const token = buildToken();
+    await runWith(stubs(), DEMO);
+    expect(sandboxDemoSessionProvider.restore()).not.toBeNull();
+
+    await runWith(stubs({ ok: true, value: { kind: 'session', email, token } }));
+
+    expect(sandboxDemoSessionProvider.restore()).toBeNull();
+    expect(useAuthStore.getState()).toEqual({
+      ...CLEARED_AUTH_STATE,
+      email,
+      token,
       twoFactorStatus: 'disabled',
     });
   });
@@ -202,12 +269,37 @@ describe('SignInSubmitProcessor', () => {
 
   it('keeps a held session and logs nobody out for a failed sign-in', async () => {
     const token = buildToken();
-    useAuthStore.setState({ token, twoFactorStatus: 'enabled' });
+    const recoveryCodesRemaining = buildRecoveryCodeSet().items.length;
+    useAuthStore.setState({ token, twoFactorStatus: 'enabled', recoveryCodesRemaining });
     const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    const demoSignOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
 
     await runWith(stubs({ ok: false, error: invalid }));
 
-    expect(useAuthStore.getState()).toMatchObject({ token, twoFactorStatus: 'enabled' });
+    expect(useAuthStore.getState()).toMatchObject({
+      token,
+      twoFactorStatus: 'enabled',
+      recoveryCodesRemaining,
+    });
+    expect(clearUser).not.toHaveBeenCalled();
+    expect(demoSignOut).not.toHaveBeenCalled();
+  });
+
+  it('keeps a held session when a session resolves after the abort', async () => {
+    const token = buildToken();
+    const recoveryCodesRemaining = buildRecoveryCodeSet().items.length;
+    useAuthStore.setState({ token, recoveryCodesRemaining });
+    const s = stubs();
+    const controller = new AbortController();
+    const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+    s.login.mockImplementation(async () => {
+      controller.abort();
+      return { ok: true, value: { kind: 'session', email: buildEmail(), token: buildToken() } };
+    });
+
+    await runWith(s, dto(), controller.signal);
+
+    expect(useAuthStore.getState()).toMatchObject({ token, recoveryCodesRemaining });
     expect(clearUser).not.toHaveBeenCalled();
   });
 
@@ -372,6 +464,46 @@ describe('SignInSubmitProcessor', () => {
       sandboxDemoSessionProvider.signOut();
     });
 
+    it('ends an earlier real session before recording the demo session', async () => {
+      useAuthStore.setState({
+        token: buildToken(),
+        email: buildEmail(),
+        twoFactorStatus: 'enabled',
+        recoveryCodesRemaining: buildRecoveryCodeSet().items.length,
+      });
+      const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+
+      await runWith(stubs(), DEMO);
+
+      expect(clearUser).toHaveBeenCalledTimes(1);
+      expect(sandboxDemoSessionProvider.restore()).toEqual({
+        email: DEMO.email,
+        token: DEMO_TOKEN,
+      });
+      expect(useAuthStore.getState()).toEqual({
+        ...CLEARED_AUTH_STATE,
+        email: DEMO.email,
+        token: DEMO_TOKEN,
+        twoFactorStatus: 'disabled',
+      });
+      sandboxDemoSessionProvider.signOut();
+    });
+
+    it('keeps the demo session remembered when the demo signs in over itself', async () => {
+      await runWith(stubs(), DEMO);
+      const clearUser = jest.spyOn(observabilityCore, 'clearUser');
+
+      await runWith(stubs(), DEMO);
+
+      expect(clearUser).toHaveBeenCalledTimes(1);
+      expect(sandboxDemoSessionProvider.restore()).toEqual({
+        email: DEMO.email,
+        token: DEMO_TOKEN,
+      });
+      expect(useAuthStore.getState().token).toBe(DEMO_TOKEN);
+      sandboxDemoSessionProvider.signOut();
+    });
+
     it('records the demo session as a settled successful sign-in', async () => {
       const s = stubs();
 
@@ -451,7 +583,7 @@ describe('SignInSubmitProcessor settled patch loaded inside the test', () => {
     return { patches: setState.mock.calls, handled };
   };
 
-  it('writes the session patch with loading cleared', async () => {
+  it('writes the signed-out state plus the session with loading cleared', async () => {
     const email = buildEmail();
     const token = buildToken();
 
@@ -462,17 +594,45 @@ describe('SignInSubmitProcessor settled patch loaded inside the test', () => {
 
     expect(handled).toBe(true);
     expect(patches).toStrictEqual([
-      [
-        {
-          loginLoading: false,
-          loginError: null,
-          email,
-          token,
-          pendingSessionId: null,
-          twoFactorStatus: 'disabled',
-        },
-      ],
+      [{ ...CLEARED_AUTH_STATE, email, token, twoFactorStatus: 'disabled' }],
     ]);
+  });
+
+  it('logs a held session out before writing the new session', async () => {
+    const { processor, tokens } = await loadIsolated(async () => ({
+      processor: (await import('@auth/utils/sign-in-submit-processor')).default,
+      tokens: (await import('@/modules/user/config/tokens')).default,
+    }));
+    const email = buildEmail();
+    const token = buildToken();
+    const signOut = jest.fn();
+    const setState = jest.fn();
+    const login = jest.fn(async () => ({ ok: true, value: { kind: 'session', email, token } }));
+    const resolve = jest.fn((key: symbol) =>
+      Promise.resolve(
+        key === tokens.GraphQLSignInProvider ? { login } : { loginSettled: jest.fn() }
+      )
+    );
+
+    await processor.run(
+      {
+        loader: { resolve } as unknown as AuthProviderLoader,
+        store: { setState },
+        demoSession: sandboxDemoSessionProvider,
+        session: { token: () => buildToken(), signOut },
+        signedOut: CLEARED_AUTH_STATE,
+      },
+      dto(),
+      new AbortController().signal
+    );
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(setState.mock.calls).toStrictEqual([
+      [{ ...CLEARED_AUTH_STATE, email, token, twoFactorStatus: 'disabled' }],
+    ]);
+    expect(signOut.mock.invocationCallOrder[0]).toBeLessThan(
+      setState.mock.invocationCallOrder[0] ?? 0
+    );
   });
 
   it('writes the failure with loading cleared', async () => {

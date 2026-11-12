@@ -582,6 +582,20 @@ leaves the existing post-login redirect to do the rest (redirect-back per issue 
 - Given the same answer, when browser storage and the Apollo cache are inspected, then neither
   holds the token.
 
+> **Amended 2026-11-12 (gate finding).** A session sign-in over a held session also ends it
+> first: the logout path runs, then the cleared signed-out state plus the new session is written,
+> so no recovery-code count or 2FA status carries over. The patch is `CLEARED_AUTH_STATE` with the
+> e-mail, the token and `twoFactorStatus: 'disabled'` over it, which also writes
+> `pendingSessionId: null`, `recoveryCodesRemaining: null`, `user: null` and `loginError: null`.
+> When a token was held before the patch, the earlier session ends through the logout path — the
+> observability identity is cleared and the sandbox demo session signed out — before the new one
+> is recorded, so the sandbox demo signing in over a held session stays remembered, and a real
+> sign-in over a held demo session forgets the demo. When none was held nothing is logged out. An
+> aborted sign-in and a failure leave a held session as it was. Given a held token with a
+> reported recovery-code count and a 2FA-off answer, when it settles, then the store equals the
+> cleared state with the e-mail, the token and status off, and observability `clearUser` ran once
+> (architecture §6.1, Story 2.2, amendments of 2026-11-12).
+
 Trace: D3; research §5.2.
 
 #### FR-10 — Sign-in outcome: 2FA on
@@ -1147,6 +1161,14 @@ when a notice exists (NFR-11).
   both locales (uk plural forms one and few).
 - Given `recoveryCodesRemaining` absent, when the user lands, then no notice exists.
 - Given the link, when activated, then `/settings` renders and the notice is gone.
+
+> **Amended 2026-11-12 (gate finding).** A session sign-in over a held session also ends it
+> first: the logout path runs, then the cleared signed-out state plus the new session is written,
+> so no recovery-code count or 2FA status carries over. A count reported by an earlier completion
+> therefore never reaches a later 2FA-off or sandbox demo sign-in: given a held session with
+> `recoveryCodesRemaining` 1 and a new sign-in without a challenge, when it settles, then
+> `recoveryCodesRemaining` is absent and no notice exists (FR-9, architecture §6.1, Story 2.2,
+> amendments of 2026-11-12).
 
 Trace: D9; brief §11 (zero codes).
 

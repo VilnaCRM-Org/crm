@@ -138,11 +138,13 @@ where a sandbox host starts with `sandbox-crm-`, ends with `.amazonaws.com`, and
 - `signIn({ email, password })` returns the demo session for exactly `demo@vilnacrm.com` /
   `Demo1234` and remembers the demo **email** (never the password or a token) in `localStorage`
   under `vilnacrm.sandbox-demo-session`;
+- `match({ email, password })` answers the same demo session without remembering anything, so
+  the sign-in can end an earlier session before `signIn` records the demo;
 - `restore()` turns that marker back into the demo session, so `useAuthStore` starts signed in
   after a reload or a deep link;
 - `signOut()` removes the marker; the auth composition root's `logout` calls it.
 
-Inactive, `signIn` and `restore` return `null` and nothing is written. Every storage call is
+Inactive, `match`, `signIn` and `restore` return `null` and nothing is written. Every storage call is
 wrapped, so a browser that refuses storage simply gets no persistence. The location and the
 storage are constructor parameters defaulting to `globalThis`, so tests drive the host without
 touching globals. The auth module's composition root registers the singleton by value under

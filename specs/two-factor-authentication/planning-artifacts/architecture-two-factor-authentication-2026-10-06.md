@@ -74,6 +74,9 @@ revisions:
   - '2026-11-12: gate finding, FR-10; §6.1 a challenge ends an earlier session: the patch is the
     cleared signed-out state plus the pending session and e-mail, after the logout path when a
     token was held'
+  - '2026-11-12: gate finding, FR-37, FR-9; §6.1 a session sign-in over a held session also ends
+    it first: the logout path runs, then the cleared signed-out state plus the new session is
+    written; the sandbox demo is matched, the earlier session ended, then the demo remembered'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -1256,6 +1259,20 @@ challenge's shape; only the sign-in path leaves `AuthStoreActions` and `Deferred
 > challenge page's `signedIn` edge still sees a null-to-token transition on completion. "Never
 > `token`" in decision 2 of §1, the §5 sign-in sequence and the §6.2 heading reads "never holds a
 > token" under this amendment; the text is kept as the record of the plan as approved.
+>
+> Amended 2026-11-12 (gate finding, FR-37, FR-9): a session sign-in over a held session also ends
+> it first: the logout path runs, then the cleared signed-out state plus the new session is
+> written, so no recovery-code count or 2FA status carries over. A `SignInSessionOutcome` writes
+> `{ ...context.signedOut, email, token, twoFactorStatus: 'disabled' }` — `pendingSessionId`,
+> `recoveryCodesRemaining`, `user` and `loginError` reset with it — through one private
+> `startSession`, and the challenge and session paths share one private `endEarlierSession` that
+> calls `context.session.signOut()` only when `context.session.token()` is not null. The order is
+> load-bearing for the sandbox demo, because the logout path forgets the remembered demo:
+> `SandboxDemoSessionProvider` gains a side-effect-free `match(credentials)` (`signIn` is now
+> `match` plus remembering), so the processor matches the demo, ends the earlier session, writes
+> the demo session and only then calls `signIn` to remember it. A demo over a held session stays
+> remembered; a real session over a held demo forgets it. An aborted run and a failure leave a
+> held session as it was.
 
 No tsyringe, Apollo or zod reaches the paint chunk: the hook value-imports only the token module
 and `useAuthStore`, as the challenge hook does, and the loader stays container-free

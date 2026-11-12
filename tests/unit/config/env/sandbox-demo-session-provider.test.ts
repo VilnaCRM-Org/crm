@@ -81,6 +81,16 @@ describe('SandboxDemoSessionProvider', () => {
       expect(storage.entries.size).toBe(0);
     });
 
+    it('matches the published demo credentials without remembering them', () => {
+      const storage = fakeStorage();
+      const provider = providerOn('localhost', storage);
+
+      expect(provider.match(demoCredentials)).toEqual(DEMO_SESSION);
+      expect(provider.match({ email: DEMO_EMAIL, password: buildPassword() })).toBeNull();
+      expect(provider.match({ email: buildEmail(), password: DEMO_PASSWORD })).toBeNull();
+      expect(storage.entries.size).toBe(0);
+    });
+
     it('still signs in when the browser refuses to store the marker', () => {
       expect(providerOn('localhost', throwingStorage()).signIn(demoCredentials)).toEqual(
         DEMO_SESSION
@@ -153,6 +163,7 @@ describe('SandboxDemoSessionProvider', () => {
       const provider = providerOn(hostname, storage);
 
       expect(provider.signIn(demoCredentials)).toBeNull();
+      expect(provider.match(demoCredentials)).toBeNull();
       expect(provider.restore()).toBeNull();
     });
 

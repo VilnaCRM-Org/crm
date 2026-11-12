@@ -238,6 +238,9 @@ The dispatch-readiness legend used on every `**Dispatch:** … **Status:** …` 
 - FR-8: sign-in runs over GraphQL `signInUser` only, through one Data provider; no `rememberMe`;
   the REST login is removed; registration is unchanged.
 - FR-9: a 2FA-off sign-in stores the access token in memory only and drops the refresh token.
+  Amended 2026-11-12 (gate finding): a session sign-in over a held session also ends it first:
+  the logout path runs, then the cleared signed-out state plus the new session is written, so no
+  recovery-code count or 2FA status carries over (Story 2.2).
 - FR-10: a 2FA-on sign-in stores the pending session id, never the token, and navigates to the
   challenge carrying only `state.from`. Amended 2026-11-12 (gate finding): a challenge ends an
   earlier session: the patch is the cleared signed-out state plus the pending session and e-mail,
@@ -1175,6 +1178,16 @@ lists 27 symbols, the settings ones among them.
   (`authSessionProvider.signOut()`: observability `clearUser`, the sandbox demo-session sign-out);
   when none was held it calls neither. An aborted run and a failure leave a held session as it
   was (architecture §6.1, amendment of 2026-11-12).
+  Amended 2026-11-12 (gate finding, FR-9, FR-37): a session sign-in over a held session also
+  ends it first: the logout path runs, then the cleared signed-out state plus the new session is
+  written, so no recovery-code count or 2FA status carries over. A `session` outcome writes
+  `CLEARED_AUTH_STATE` with the e-mail, the token and `twoFactorStatus: 'disabled'` over it, so
+  `recoveryCodesRemaining`, `user`, `pendingSessionId` and `loginError` are reset with it. The run
+  calls the logout path only when a token was held, and before the new session is recorded: the
+  sandbox demo is matched without being remembered (`SandboxDemoSessionProvider.match`), the
+  earlier session ends, and only then `signIn` remembers the demo, so the demo signing in over a
+  held session stays signed in and a real session over a held demo forgets it. An aborted run and
+  a failure still leave a held session as it was (architecture §6.1, amendment of 2026-11-12).
 - Given a rejected loader resolve or an aborted signal, when the run settles, then the first
   writes `loginLoading: false` with the load-failure `loginError` and the second writes
   `loginLoading: false` only and records nothing; the result card's "Назад" still aborts a
