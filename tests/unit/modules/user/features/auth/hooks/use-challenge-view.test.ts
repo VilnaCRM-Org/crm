@@ -1,9 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import useChallengeView, { fieldErrorOf } from '@auth/hooks/use-challenge-view';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import type { ChallengeAction } from '@auth/types/two-factor/challenge-view';
 import { buildToken } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const failed = (reason: ChallengeFailureReason): ChallengeResult => ({ kind: 'failed', reason });
 
@@ -177,4 +179,91 @@ describe('fieldErrorOf', () => {
   it.each(['', '12', 'abc', 'abcd-123'])('calls %j a format error in recovery mode', (raw) => {
     expect(fieldErrorOf(raw, 'recovery')).toBe('format');
   });
+});
+
+const loadView = (): Promise<typeof import('@auth/hooks/use-challenge-view')> =>
+  loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    return import('@auth/hooks/use-challenge-view');
+  });
+
+describe('useChallengeView tables loaded inside the test', () => {
+  it('starts from the initial view and returns to it, mode aside, on every switch', async () => {
+    const { default: loaded } = await loadView();
+    const { result } = renderHook(() => loaded());
+
+    expect(result.current.view).toStrictEqual({
+      mode: 'totp',
+      value: '',
+      fieldError: null,
+      banner: null,
+      bannerOccurrence: 0,
+      focusRequest: 0,
+    });
+    act(() => result.current.dispatch({ type: 'rejected', value: '1', fieldError: 'incomplete' }));
+    act(() => result.current.dispatch({ type: 'switched' }));
+    expect(result.current.view).toStrictEqual({
+      mode: 'recovery',
+      value: '',
+      fieldError: null,
+      banner: null,
+      bannerOccurrence: 0,
+      focusRequest: 2,
+    });
+  });
+
+  it.each([
+    ['invalid_code', null],
+    ['expired_session', null],
+    ['locked', null],
+    ['rate_limited', 'rate_limited'],
+    ['network', 'transient'],
+    ['server', 'transient'],
+  ] as const)('raises the banner for %s as %s', async (reason, banner) => {
+    const { default: loaded } = await loadView();
+    const { result } = renderHook(() => loaded());
+    act(() => result.current.dispatch({ type: 'submitted', value: '123456' }));
+
+    act(() => result.current.dispatch({ type: 'settled', result: failed(reason) }));
+
+    const raised = banner !== null;
+    expect(result.current.view.banner).toBe(banner);
+    expect(result.current.view.bannerOccurrence).toBe(raised ? 1 : 0);
+    expect(result.current.view.fieldError).toBe(reason === 'invalid_code' ? 'invalid_code' : null);
+    expect(result.current.view.value).toBe(reason === 'invalid_code' ? '' : '123456');
+  });
+
+  it.each(['', '1', '12345', ' 1 2 3 4 5 ', '\t99', '1\n2 3\t4 5', '\u00a012345'])(
+    'calls %j incomplete in authenticator mode',
+    async (raw) => {
+      const { fieldErrorOf } = await loadView();
+
+      expect(fieldErrorOf(raw, 'totp')).toBe('incomplete');
+    }
+  );
+
+  it.each([
+    '123456',
+    '1 2 3 4 5 6',
+    '1234567',
+    '12a45',
+    'a12345',
+    '12345a',
+    '12\n34-5',
+    '١٢٣',
+    'abc',
+  ])('calls %j a format error in authenticator mode', async (raw) => {
+    const { fieldErrorOf } = await loadView();
+
+    expect(fieldErrorOf(raw, 'totp')).toBe('format');
+  });
+
+  it.each(['', '12', '12345', 'abcd-123'])(
+    'calls %j a format error in recovery mode',
+    async (raw) => {
+      const { fieldErrorOf } = await loadView();
+
+      expect(fieldErrorOf(raw, 'recovery')).toBe('format');
+    }
+  );
 });

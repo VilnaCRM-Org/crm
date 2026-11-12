@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import type { JSX } from 'react';
+import * as ReactHookForm from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
@@ -10,6 +13,7 @@ import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import RecoveryCodeField from '@auth/components/two-factor/recovery-code-field';
 import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const RESTING: TwoFactorChallengeState = {
@@ -162,5 +166,44 @@ describe('RecoveryCodeField', () => {
 
     await screen.findByRole('main');
     await expectNoA11yViolations(container);
+  });
+});
+
+describe('RecoveryCodeField error table loaded inside the test', () => {
+  const FORMAT = 'Введіть резервний код у форматі XXXX-XXXX';
+  const INVALID = 'Невірний резервний код. Спробуйте ще раз.';
+
+  it.each<[TwoFactorFieldError, string, string]>([
+    ['format', FORMAT, INVALID],
+    ['incomplete', FORMAT, INVALID],
+    ['invalid_code', INVALID, FORMAT],
+  ])('shows the %s text', async (fieldError, text, absent) => {
+    const Loaded = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-hook-form', () => ReactHookForm);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@auth/components/two-factor/recovery-code-field')).default;
+    });
+    function LoadedHarness(): JSX.Element {
+      const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
+      return (
+        <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>
+          <FormProvider {...methods}>
+            <main>
+              <Loaded state={{ ...RESTING, fieldError }} />
+            </main>
+          </FormProvider>
+        </I18nextProvider>
+      );
+    }
+
+    render(<LoadedHarness />);
+
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    expect(screen.queryByText(absent)).not.toBeInTheDocument();
+    expect(field()).toHaveAccessibleDescription(text);
+    expect(field()).toHaveAttribute('autocomplete', 'off');
+    expect(field()).toHaveAttribute('autocapitalize', 'characters');
+    expect(field()).toHaveAttribute('spellcheck', 'false');
   });
 });

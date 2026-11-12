@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import type { JSX } from 'react';
+import * as ReactHookForm from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
@@ -11,6 +14,7 @@ import ChallengeCodeField from '@auth/components/two-factor/challenge-code-field
 import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
 import { buildTotpCode } from '@tests/builders';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const RESTING: TwoFactorChallengeState = {
   mode: 'totp',
@@ -148,5 +152,36 @@ describe('ChallengeCodeField', () => {
     view.rerender(<Harness state={{ ...RESTING, focusRequest: 1 }} />);
 
     await waitFor(() => expect(cells()[2]).toHaveFocus());
+  });
+});
+
+describe('ChallengeCodeField error table loaded inside the test', () => {
+  it.each(FIELD_ERROR_TEXTS)('shows the %s text', async (fieldError, text) => {
+    const Loaded = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-hook-form', () => ReactHookForm);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@auth/components/two-factor/challenge-code-field')).default;
+    });
+    function LoadedHarness(): JSX.Element {
+      const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
+      return (
+        <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>
+          <FormProvider {...methods}>
+            <Loaded state={{ ...RESTING, fieldError }} onComplete={jest.fn()} />
+          </FormProvider>
+        </I18nextProvider>
+      );
+    }
+
+    render(<LoadedHarness />);
+
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    expect(cells().map((cell) => cell.getAttribute('aria-label'))).toStrictEqual(
+      [1, 2, 3, 4, 5, 6].map((position) => `Цифра ${position} з 6`)
+    );
+    FIELD_ERROR_TEXTS.filter(([key]) => key !== fieldError).forEach(([, other]) =>
+      expect(screen.queryByText(other)).not.toBeInTheDocument()
+    );
   });
 });

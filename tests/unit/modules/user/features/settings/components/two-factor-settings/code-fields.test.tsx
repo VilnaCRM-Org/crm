@@ -1,12 +1,15 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import type { JSX } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
 import { buildOtpauthUri, buildTotpCode, buildTotpSecret } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import { EMPTY_SETTINGS, panelProps, viewState } from './render-panel';
 
@@ -109,5 +112,69 @@ describe('DisableCodeField', () => {
 
     expect(await screen.findByText('Incorrect code. Try again.')).toBeInTheDocument();
     expect(elsewhere).toHaveFocus();
+  });
+});
+
+describe('code field error tables loaded inside the test', () => {
+  const TEXTS = {
+    incomplete: 'Введіть усі 6 цифр коду',
+    confirmInvalid:
+      'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.',
+    format: 'Введіть 6 цифр або резервний код у форматі XXXX-XXXX',
+    disableInvalid: 'Невірний код. Спробуйте ще раз.',
+  } as const;
+
+  const mountLoaded = async (view: View): Promise<void> => {
+    const Loaded = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@/modules/user/features/settings/components/two-factor-settings'))
+        .TwoFactorPanel;
+    });
+    const props = panelProps({ settings: SETUP_SETTINGS, view });
+    render(
+      <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>
+        <main>
+          <Loaded
+            settings={props.settings}
+            view={props.view}
+            callbacks={props.callbacks}
+            isSubmitting={props.isSubmitting}
+          />
+        </main>
+      </I18nextProvider>
+    );
+  };
+
+  const shown = (): string[] =>
+    Object.values(TEXTS).filter((text) => screen.queryByText(text) !== null);
+
+  it.each([
+    ['incomplete', [TEXTS.incomplete]],
+    ['invalid_code', [TEXTS.confirmInvalid]],
+    ['format', []],
+    [null, []],
+  ] as const)('shows the confirm field error %s as %j', async (fieldError, texts) => {
+    await mountLoaded(viewState('setup', { fieldError }));
+
+    await act(async () => undefined);
+
+    expect(screen.getByLabelText('Цифра 1 з 6').getAttribute('aria-invalid') === 'true').toBe(
+      texts.length > 0
+    );
+    expect(shown()).toStrictEqual(texts);
+  });
+
+  it.each([
+    ['format', [TEXTS.format]],
+    ['invalid_code', [TEXTS.disableInvalid]],
+    ['incomplete', []],
+    [null, []],
+  ] as const)('shows the disable field error %s as %j', async (fieldError, texts) => {
+    await mountLoaded(viewState('disable', { fieldError, fieldErrorOccurrence: 1 }));
+
+    await act(async () => undefined);
+
+    expect(shown()).toStrictEqual(texts);
   });
 });

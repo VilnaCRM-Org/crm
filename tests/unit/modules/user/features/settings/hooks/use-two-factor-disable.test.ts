@@ -1,7 +1,9 @@
 import { act } from '@testing-library/react';
+import * as React from 'react';
 
 import useTwoFactorDisable from '@/modules/user/features/settings/hooks/use-two-factor-disable';
 import { buildRecoveryCode, buildTotpCode } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import {
   EMPTY_SETTINGS,
@@ -10,6 +12,7 @@ import {
   viewState,
   type Mounted,
   type TwoFactorDisable,
+  type TwoFactorSettingsFailureReason,
   type TwoFactorSettingsTransition,
 } from './two-factor-test-deps';
 
@@ -207,4 +210,95 @@ describe('useTwoFactorDisable', () => {
       ]);
     });
   });
+});
+
+describe('useTwoFactorDisable plan loaded inside the test', () => {
+  const REASONS: readonly TwoFactorSettingsFailureReason[] = [
+    'already_enabled',
+    'not_enabled',
+    'setup_not_initiated',
+    'invalid_code',
+    'reauth_required',
+    'session_ended',
+    'rate_limited',
+    'network',
+    'server',
+  ];
+
+  const bannerOf = (
+    reason: TwoFactorSettingsFailureReason
+  ): 'rate_limited' | 'transient' | null => {
+    if (reason === 'session_ended') return null;
+    return reason === 'rate_limited' ? 'rate_limited' : 'transient';
+  };
+
+  const mountLoaded = async (): Promise<Mounted<TwoFactorDisable>> => {
+    const hook = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/modules/user/features/settings/hooks/use-two-factor-disable'))
+        .default;
+    });
+    return mountWith(hook, disableView);
+  };
+
+  it('moves to off with the disabled status code and records disabled on success', async () => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded();
+    provider.disable.mockResolvedValue({ kind: 'changed', settings: EMPTY_SETTINGS });
+
+    await act(async () => utils.result.current.disable({ twoFactorCode: buildTotpCode() }));
+
+    expect(apply.mock.calls).toStrictEqual([
+      [{ settings: EMPTY_SETTINGS, view: viewState('off', { statusCode: 'disabled' }) }],
+    ]);
+    expect(recordStatus.mock.calls).toStrictEqual([['disabled']]);
+  });
+
+  it.each(REASONS)('settles the disable failure %s', async (reason) => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded();
+    provider.disable.mockResolvedValue(failed(reason));
+    const banner = bannerOf(reason);
+
+    await act(async () => utils.result.current.disable({ twoFactorCode: buildTotpCode() }));
+
+    const rows: Partial<Record<TwoFactorSettingsFailureReason, ReturnType<typeof viewState>>> = {
+      not_enabled: viewState('off', { statusCode: 'already_off' }),
+      invalid_code: viewState('disable', { fieldError: 'invalid_code', fieldErrorOccurrence: 1 }),
+    };
+    const next = rows[reason] ?? viewState('disable', { banner, bannerOccurrence: 1 });
+    expect(apply.mock.calls).toStrictEqual(
+      banner === null && rows[reason] === undefined ? [] : [[{ settings: ENABLED, view: next }]]
+    );
+    expect(recordStatus.mock.calls).toStrictEqual(reason === 'not_enabled' ? [['disabled']] : []);
+  });
+
+  it.each([buildTotpCode(), buildRecoveryCode(), 'abcd2345'])(
+    'accepts the authenticator or recovery code %s',
+    async (code) => {
+      const { utils, provider } = await mountLoaded();
+      provider.disable.mockResolvedValue(failed('network'));
+
+      await act(async () => utils.result.current.disable({ twoFactorCode: code }));
+
+      expect(provider.disable).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it.each(['', '12345', 'abc', 'abcd-23456'])(
+    'refuses %j as a format error rather than an incomplete one',
+    async (code) => {
+      const { utils, provider, apply } = await mountLoaded();
+
+      await act(async () => utils.result.current.disable({ twoFactorCode: code }));
+
+      expect(provider.disable).not.toHaveBeenCalled();
+      expect(apply.mock.calls).toStrictEqual([
+        [
+          {
+            settings: ENABLED,
+            view: viewState('disable', { fieldError: 'format', fieldErrorOccurrence: 1 }),
+          },
+        ],
+      ]);
+    }
+  );
 });

@@ -1,9 +1,12 @@
 import { renderHook } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useChallengeBanner from '@auth/hooks/use-challenge-banner';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 interface WrapperProps {
   readonly children: ReactNode;
@@ -59,5 +62,39 @@ describe('useChallengeBanner', () => {
       'The request could not be sent. Check your connection and try again.'
     );
     expect(result.current.action?.label).toBe('Try again');
+  });
+});
+
+describe('useChallengeBanner table loaded inside the test', () => {
+  it.each([
+    [
+      'rate_limited',
+      'Забагато спроб. Зачекайте хвилину і спробуйте знову.',
+      'Too many attempts. Wait a minute and try again.',
+      false,
+    ],
+    [
+      'transient',
+      "Не вдалося надіслати запит. Перевірте з'єднання та спробуйте ще раз.",
+      'The request could not be sent. Check your connection and try again.',
+      true,
+    ],
+  ] as const)('speaks the %s banner in both languages', async (banner, uk, en, hasRetry) => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@auth/hooks/use-challenge-banner')).default;
+    });
+    const retry = jest.fn();
+
+    const { result: ukResult } = renderHook(() => fresh(banner, retry), {
+      wrapper: wrapperFor('uk'),
+    });
+    const { result: enResult } = renderHook(() => fresh(banner, retry), {
+      wrapper: wrapperFor('en'),
+    });
+
+    expect([ukResult.current.error, enResult.current.error]).toStrictEqual([uk, en]);
+    expect(ukResult.current.action === undefined).toBe(!hasRetry);
   });
 });

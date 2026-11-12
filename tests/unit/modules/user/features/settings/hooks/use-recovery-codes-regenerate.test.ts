@@ -1,7 +1,9 @@
 import { act } from '@testing-library/react';
+import * as React from 'react';
 
 import useRegenerate from '@/modules/user/features/settings/hooks/use-recovery-codes-regenerate';
 import { buildRecoveryCodeSet } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import {
   EMPTY_SETTINGS,
@@ -10,6 +12,7 @@ import {
   viewState,
   type Mounted,
   type RecoveryCodesRegenerate,
+  type TwoFactorSettingsFailureReason,
   type TwoFactorSettingsTransition,
 } from './two-factor-test-deps';
 
@@ -118,5 +121,64 @@ describe('useRecoveryCodesRegenerate', () => {
       'open',
       'regenerate',
     ]);
+  });
+});
+
+describe('useRecoveryCodesRegenerate plan loaded inside the test', () => {
+  const REASONS: readonly TwoFactorSettingsFailureReason[] = [
+    'already_enabled',
+    'not_enabled',
+    'setup_not_initiated',
+    'invalid_code',
+    'reauth_required',
+    'session_ended',
+    'rate_limited',
+    'network',
+    'server',
+  ];
+
+  const bannerOf = (
+    reason: TwoFactorSettingsFailureReason
+  ): 'rate_limited' | 'transient' | null => {
+    if (reason === 'session_ended') return null;
+    return reason === 'rate_limited' ? 'rate_limited' : 'transient';
+  };
+
+  const mountLoaded = async (): Promise<Mounted<RecoveryCodesRegenerate>> => {
+    const hook = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/modules/user/features/settings/hooks/use-recovery-codes-regenerate'))
+        .default;
+    });
+    return mountWith(hook, confirmView);
+  };
+
+  it('shows the codes view with the entity and records nothing on success', async () => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded();
+    const settings = { ...ENABLED, recoveryCodes: buildRecoveryCodeSet() };
+    provider.regenerate.mockResolvedValue({ kind: 'changed', settings });
+
+    await act(async () => utils.result.current.regenerate());
+
+    expect(apply.mock.calls).toStrictEqual([[{ settings, view: viewState('codes') }]]);
+    expect(recordStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(REASONS)('settles the regenerate failure %s', async (reason) => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded();
+    provider.regenerate.mockResolvedValue(failed(reason));
+    const banner = bannerOf(reason);
+
+    await act(async () => utils.result.current.regenerate());
+
+    const rows: Partial<Record<TwoFactorSettingsFailureReason, ReturnType<typeof viewState>>> = {
+      reauth_required: viewState('reauth'),
+      not_enabled: viewState('off', { statusCode: 'already_off' }),
+    };
+    const next = rows[reason] ?? viewState('regenerate', { banner, bannerOccurrence: 1 });
+    expect(apply.mock.calls).toStrictEqual(
+      banner === null && rows[reason] === undefined ? [] : [[{ settings: ENABLED, view: next }]]
+    );
+    expect(recordStatus.mock.calls).toStrictEqual(reason === 'not_enabled' ? [['disabled']] : []);
   });
 });

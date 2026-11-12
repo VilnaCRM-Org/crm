@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 
 import useTwoFactorSettle from '@/modules/user/features/settings/hooks/use-two-factor-settle';
 import { buildOtpauthUri, buildRecoveryCodeSet, buildTotpSecret } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import {
   EMPTY_SETTINGS,
@@ -226,5 +227,74 @@ describe('useTwoFactorSettle', () => {
         statusCode: null,
       },
     });
+  });
+});
+
+describe('useTwoFactorSettle tables loaded inside the test', () => {
+  const loadSettle = (): Promise<typeof useTwoFactorSettle> =>
+    loadIsolated(
+      async () =>
+        (await import('@/modules/user/features/settings/hooks/use-two-factor-settle')).default
+    );
+
+  it.each([
+    ['already_enabled', 'transient'],
+    ['not_enabled', 'transient'],
+    ['setup_not_initiated', 'transient'],
+    ['invalid_code', 'transient'],
+    ['reauth_required', 'transient'],
+    ['session_ended', null],
+    ['rate_limited', 'rate_limited'],
+    ['network', 'transient'],
+    ['server', 'transient'],
+  ] as const)('shows the unplanned %s failure as the %s banner', async (reason, banner) => {
+    const fake = fakeDeps(current);
+    const { settle } = (await loadSettle())(fake.deps);
+
+    settle({ kind: 'failed', reason }, plan({ failures: new Map() }));
+
+    expect(fake.apply.mock.calls).toStrictEqual(
+      banner === null
+        ? []
+        : [
+            [
+              {
+                settings: current.settings,
+                view: { ...current.view, fieldError: null, banner, bannerOccurrence: 4 },
+              },
+            ],
+          ]
+    );
+    expect(fake.recordStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(['off', 'setup', 'codes', 'on', 'disable', 'regenerate', 'reauth'] as const)(
+    'shows the %s view with a completely fresh view state',
+    async (view) => {
+      const fake = fakeDeps(current);
+      const { show } = (await loadSettle())(fake.deps);
+
+      show(view);
+
+      expect(fake.apply.mock.calls).toStrictEqual([
+        [{ settings: current.settings, view: viewState(view) }],
+      ]);
+    }
+  );
+
+  it('applies a changed outcome over a fresh view carrying the plan status code', async () => {
+    const fake = fakeDeps(current);
+    const { settle } = (await loadSettle())(fake.deps);
+    const settings = { ...EMPTY_SETTINGS, recoveryCodes: buildRecoveryCodeSet() };
+
+    settle(
+      { kind: 'changed', settings },
+      plan({ view: 'on', statusCode: 'already_on', record: 'enabled' })
+    );
+
+    expect(fake.apply.mock.calls).toStrictEqual([
+      [{ settings, view: viewState('on', { statusCode: 'already_on' }) }],
+    ]);
+    expect(fake.recordStatus.mock.calls).toStrictEqual([['enabled']]);
   });
 });

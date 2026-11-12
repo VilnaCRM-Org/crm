@@ -1,9 +1,15 @@
 import '@testing-library/jest-dom';
-import { screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
+import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
+import { I18nextProvider } from 'react-i18next';
 
 import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
 import { buildOtpauthUri, buildTotpCode, buildTotpSecret } from '@tests/builders';
+import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 import { EMPTY_SETTINGS, panelProps, renderPanel, viewState } from './render-panel';
@@ -365,5 +371,48 @@ describe('TwoFactorPanel', () => {
       expect(first).toBe('Ключ скопійовано');
       expect(second).toBe('Ключ скопійовано​');
     });
+  });
+});
+
+describe('TwoFactorPanel view table loaded inside the test', () => {
+  const MARKERS = [
+    ['off', 'button', 'Почати налаштування'],
+    ['setup', 'button', 'Підтвердити'],
+    ['codes', 'button', 'Готово'],
+    ['on', 'button', 'Створити нові резервні коди'],
+    ['disable', 'textbox', 'Код підтвердження'],
+    ['regenerate', 'button', 'Створити коди'],
+    ['reauth', 'button', 'Увійти знову'],
+  ] as const;
+
+  const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
+    <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>
+      <main>{children}</main>
+    </I18nextProvider>
+  );
+
+  it.each(MARKERS)('renders the %s view and no other', async (view, role, name) => {
+    const Loaded = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@/modules/user/features/settings/components/two-factor-settings'))
+        .TwoFactorPanel;
+    });
+    const props = panelProps({ settings: SETUP_SETTINGS, view: viewState(view) });
+
+    render(
+      <Loaded
+        settings={props.settings}
+        view={props.view}
+        callbacks={props.callbacks}
+        isSubmitting={props.isSubmitting}
+      />,
+      { wrapper }
+    );
+
+    expect(screen.getByRole(role, { name })).toBeInTheDocument();
+    MARKERS.filter(([other]) => other !== view).forEach(([, otherRole, otherName]) =>
+      expect(screen.queryByRole(otherRole, { name: otherName })).not.toBeInTheDocument()
+    );
   });
 });

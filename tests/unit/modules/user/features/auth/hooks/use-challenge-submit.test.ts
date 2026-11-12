@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import ROUTE_PATHS from '@/routes/route-paths';
@@ -8,6 +9,7 @@ import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import type { ChallengeSubmitHookDeps } from '@auth/types/two-factor/challenge-view';
 import { buildPendingSessionId, buildToken, buildTotpCode } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const CODE = buildTotpCode();
@@ -376,5 +378,113 @@ describe('useChallengeSubmit', () => {
 
     expect(outcome).toEqual(failed('server'));
     expect(h.completeChallenge).toHaveBeenCalledTimes(1);
+  });
+});
+
+const loadSubmit = (): Promise<{
+  readonly useSubmit: typeof useChallengeSubmit;
+  readonly store: typeof useAuthStore;
+  readonly tokens: typeof AUTH_TOKENS;
+}> =>
+  loadIsolated(async () => {
+    jest.doMock('react', () => React);
+    return {
+      useSubmit: (await import('@auth/hooks/use-challenge-submit')).default,
+      store: (await import('@auth/stores/use-auth-store')).default,
+      tokens: (await import('@/modules/user/config/tokens')).default,
+    };
+  });
+
+describe('useChallengeSubmit tables loaded inside the test', () => {
+  const loaded = async (
+    result: ChallengeResult | 'load-failure',
+    pending: string | null = buildPendingSessionId()
+  ): Promise<{
+    readonly outcome: ChallengeResult | null;
+    readonly navigate: jest.Mock;
+    readonly store: typeof useAuthStore;
+  }> => {
+    const { useSubmit, store, tokens } = await loadSubmit();
+    store.setState({ ...CLEARED_AUTH_STATE, pendingSessionId: pending });
+    const navigate = jest.fn();
+    const resolve = jest.fn((token: symbol): Promise<unknown> => {
+      if (token !== tokens.GraphQLSignInProvider) {
+        return Promise.resolve({ challengeSettled: jest.fn() });
+      }
+      return result === 'load-failure'
+        ? Promise.reject(new Error('chunk'))
+        : Promise.resolve({ completeChallenge: jest.fn().mockResolvedValue(result) });
+    });
+    const deps = {
+      loader: { resolve } as unknown as AuthProviderLoader,
+      navigate,
+      from: undefined,
+    };
+    const view = renderHook(() => useSubmit(deps));
+    let outcome: ChallengeResult | null = null;
+    await act(async () => {
+      outcome = await view.result.current.submit(dto);
+    });
+    return { outcome, navigate, store };
+  };
+
+  it('answers expired_session and leaves for sign-in when no pending session exists', async () => {
+    const { outcome, navigate } = await loaded(failed('server'), null);
+
+    expect(outcome).toStrictEqual({ kind: 'failed', reason: 'expired_session' });
+    expect(navigate).toHaveBeenCalledWith(ROUTE_PATHS.signIn, {
+      replace: true,
+      state: { focusMain: true, notice: 'two_factor_expired' },
+    });
+  });
+
+  it('answers a network failure, without leaving, when the provider cannot load', async () => {
+    const { outcome, navigate } = await loaded('load-failure');
+
+    expect(outcome).toStrictEqual({ kind: 'failed', reason: 'network' });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['invalid_code', null],
+    ['expired_session', 'two_factor_expired'],
+    ['locked', 'account_locked'],
+    ['rate_limited', null],
+    ['network', null],
+    ['server', null],
+  ] as const)(
+    'leaves for sign-in with notice %s -> %s only when one is mapped',
+    async (reason, notice) => {
+      const { navigate } = await loaded(failed(reason));
+
+      const expected =
+        notice === null
+          ? []
+          : [[ROUTE_PATHS.signIn, { replace: true, state: { focusMain: true, notice } }]];
+      expect(navigate.mock.calls).toStrictEqual(expected);
+    }
+  );
+
+  it.each([
+    [-1, null],
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, null],
+    [4, null],
+    [null, null],
+  ])('keeps %p remaining codes as %p after completing', async (remaining, kept) => {
+    const token = buildToken();
+
+    const { store, navigate } = await loaded(completed(token, remaining));
+
+    expect(store.getState()).toStrictEqual({
+      ...CLEARED_AUTH_STATE,
+      token,
+      twoFactorStatus: 'enabled',
+      pendingSessionId: null,
+      recoveryCodesRemaining: kept,
+    });
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

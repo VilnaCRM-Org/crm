@@ -15,6 +15,7 @@ import {
   buildRecoveryCodeSet,
   buildToken,
 } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const DEMO = { email: 'demo@vilnacrm.com', password: 'Demo1234' };
@@ -413,5 +414,101 @@ describe('SignInSubmitProcessor', () => {
 
       expect(s.login).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('SignInSubmitProcessor settled patch loaded inside the test', () => {
+  const runLoaded = async (
+    result: SignInResult,
+    aborting = false
+  ): Promise<{ readonly patches: unknown[][]; readonly handled: boolean }> => {
+    const { processor, tokens } = await loadIsolated(async () => ({
+      processor: (await import('@auth/utils/sign-in-submit-processor')).default,
+      tokens: (await import('@/modules/user/config/tokens')).default,
+    }));
+    const controller = new AbortController();
+    const login = jest.fn(async () => {
+      if (aborting) controller.abort();
+      return result;
+    });
+    const resolve = jest.fn((token: symbol) =>
+      Promise.resolve(
+        token === tokens.GraphQLSignInProvider ? { login } : { loginSettled: jest.fn() }
+      )
+    );
+    const setState = jest.fn();
+    const handled = await processor.run(
+      {
+        loader: { resolve } as unknown as AuthProviderLoader,
+        store: { setState },
+        demoSession: sandboxDemoSessionProvider,
+        session: { token: () => null, signOut: jest.fn() },
+        signedOut: CLEARED_AUTH_STATE,
+      },
+      dto(),
+      controller.signal
+    );
+    return { patches: setState.mock.calls, handled };
+  };
+
+  it('writes the session patch with loading cleared', async () => {
+    const email = buildEmail();
+    const token = buildToken();
+
+    const { patches, handled } = await runLoaded({
+      ok: true,
+      value: { kind: 'session', email, token },
+    });
+
+    expect(handled).toBe(true);
+    expect(patches).toStrictEqual([
+      [
+        {
+          loginLoading: false,
+          loginError: null,
+          email,
+          token,
+          pendingSessionId: null,
+          twoFactorStatus: 'disabled',
+        },
+      ],
+    ]);
+  });
+
+  it('writes the failure with loading cleared', async () => {
+    const { patches } = await runLoaded({ ok: false, error: invalid });
+
+    expect(patches).toStrictEqual([[{ loginLoading: false, loginError: invalid }]]);
+  });
+
+  it('writes only the cleared loading flag for an aborted failure', async () => {
+    const aborted: AuthError = {
+      kind: 'network',
+      displayMessage: '',
+      retryable: false,
+      aborted: true,
+    };
+
+    const { patches } = await runLoaded({ ok: false, error: aborted });
+
+    expect(patches).toStrictEqual([[{ loginLoading: false }]]);
+  });
+
+  it('writes only the cleared loading flag when the signal aborts during the request', async () => {
+    const { patches } = await runLoaded({ ok: false, error: invalid }, true);
+
+    expect(patches).toStrictEqual([[{ loginLoading: false }]]);
+  });
+
+  it('writes the signed-out state with the pending session for a challenge', async () => {
+    const email = buildEmail();
+    const pendingSessionId = buildPendingSessionId();
+
+    const { patches } = await runLoaded({
+      ok: true,
+      value: { kind: 'challenge', email, pendingSessionId },
+    });
+
+    expect(patches).toStrictEqual([[{ ...CLEARED_AUTH_STATE, email, pendingSessionId }]]);
   });
 });

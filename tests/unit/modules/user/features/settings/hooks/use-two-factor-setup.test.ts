@@ -1,4 +1,5 @@
 import { act } from '@testing-library/react';
+import * as React from 'react';
 
 import useTwoFactorSetup from '@/modules/user/features/settings/hooks/use-two-factor-setup';
 import {
@@ -7,6 +8,7 @@ import {
   buildTotpCode,
   buildTotpSecret,
 } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import {
   EMPTY_SETTINGS,
@@ -14,6 +16,7 @@ import {
   mountWith,
   viewState,
   type Mounted,
+  type TwoFactorSettingsFailureReason,
   type TwoFactorSettingsOutcome,
   type TwoFactorSetup,
   type TwoFactorSettingsTransition,
@@ -248,5 +251,133 @@ describe('useTwoFactorSetup', () => {
         'start',
       ]);
     });
+  });
+});
+
+describe('useTwoFactorSetup plans loaded inside the test', () => {
+  const REASONS: readonly TwoFactorSettingsFailureReason[] = [
+    'already_enabled',
+    'not_enabled',
+    'setup_not_initiated',
+    'invalid_code',
+    'reauth_required',
+    'session_ended',
+    'rate_limited',
+    'network',
+    'server',
+  ];
+
+  const bannerOf = (
+    reason: TwoFactorSettingsFailureReason
+  ): 'rate_limited' | 'transient' | null => {
+    if (reason === 'session_ended') return null;
+    return reason === 'rate_limited' ? 'rate_limited' : 'transient';
+  };
+
+  const mountLoaded = async (
+    current: TwoFactorSettingsTransition
+  ): Promise<Mounted<TwoFactorSetup>> => {
+    const hook = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/modules/user/features/settings/hooks/use-two-factor-setup')).default;
+    });
+    return mountWith(hook, current);
+  };
+
+  it('shows the setup view with the entity and records nothing when setup succeeds', async () => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded(offView);
+    const settings = {
+      ...EMPTY_SETTINGS,
+      otpauthUri: buildOtpauthUri(),
+      secret: buildTotpSecret(),
+    };
+    provider.setup.mockResolvedValue({ kind: 'changed', settings });
+
+    await act(async () => utils.result.current.start());
+
+    expect(apply.mock.calls).toStrictEqual([[{ settings, view: viewState('setup') }]]);
+    expect(recordStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(REASONS)('settles the setup failure %s', async (reason) => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded(offView);
+    provider.setup.mockResolvedValue(failed(reason));
+    const banner = bannerOf(reason);
+
+    await act(async () => utils.result.current.start());
+
+    const row = { settings: EMPTY_SETTINGS, view: viewState('on', { statusCode: 'already_on' }) };
+    const kept = {
+      settings: EMPTY_SETTINGS,
+      view: viewState('off', { banner, bannerOccurrence: 1 }),
+    };
+    const expected = reason === 'already_enabled' ? [[row]] : banner === null ? [] : [[kept]];
+    expect(apply.mock.calls).toStrictEqual(expected);
+    expect(recordStatus.mock.calls).toStrictEqual(
+      reason === 'already_enabled' ? [['enabled']] : []
+    );
+  });
+
+  it('shows the codes view with the entity and records enabled when confirm succeeds', async () => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded(setupView);
+    const settings = {
+      ...EMPTY_SETTINGS,
+      status: 'enabled' as const,
+      recoveryCodes: buildRecoveryCodeSet(),
+    };
+    provider.confirm.mockResolvedValue({ kind: 'changed', settings });
+
+    await act(async () => utils.result.current.confirm({ twoFactorCode: buildTotpCode() }));
+
+    expect(apply.mock.calls).toStrictEqual([[{ settings, view: viewState('codes') }]]);
+    expect(recordStatus.mock.calls).toStrictEqual([['enabled']]);
+  });
+
+  it.each(REASONS)('settles the confirm failure %s', async (reason) => {
+    const { utils, provider, apply, recordStatus } = await mountLoaded(setupView);
+    provider.confirm.mockResolvedValue(failed(reason));
+    const banner = bannerOf(reason);
+
+    await act(async () => utils.result.current.confirm({ twoFactorCode: buildTotpCode() }));
+
+    const rows: Partial<Record<TwoFactorSettingsFailureReason, ReturnType<typeof viewState>>> = {
+      invalid_code: viewState('setup', { fieldError: 'invalid_code', fieldErrorOccurrence: 1 }),
+      setup_not_initiated: viewState('off', { statusCode: 'stale' }),
+    };
+    const next = rows[reason] ?? viewState('setup', { banner, bannerOccurrence: 1 });
+    expect(apply.mock.calls).toStrictEqual(
+      banner === null && rows[reason] === undefined
+        ? []
+        : [[{ settings: setupView.settings, view: next }]]
+    );
+    expect(recordStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(['', '12345', '1234567', 'abcdef', '123 45'])(
+    'refuses "%s" as incomplete rather than as a format error',
+    async (code) => {
+      const { utils, provider, apply } = await mountLoaded(setupView);
+
+      await act(async () => utils.result.current.confirm({ twoFactorCode: code }));
+
+      expect(provider.confirm).not.toHaveBeenCalled();
+      expect(apply.mock.calls).toStrictEqual([
+        [
+          {
+            settings: setupView.settings,
+            view: viewState('setup', { fieldError: 'incomplete', fieldErrorOccurrence: 1 }),
+          },
+        ],
+      ]);
+    }
+  );
+
+  it('accepts only an authenticator code to confirm, never a recovery code', async () => {
+    const { utils, provider } = await mountLoaded(setupView);
+    provider.confirm.mockResolvedValue(failed('network'));
+
+    await act(async () => utils.result.current.confirm({ twoFactorCode: 'ABCD-2345' }));
+
+    expect(provider.confirm).not.toHaveBeenCalled();
   });
 });

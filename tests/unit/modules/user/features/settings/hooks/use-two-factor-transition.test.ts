@@ -1,7 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import useStore from '@/modules/user/features/settings/hooks/use-two-factor-transition';
 import { buildOtpauthUri, buildRecoveryCodeSet, buildTotpSecret } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import { EMPTY_SETTINGS, viewState } from './two-factor-test-deps';
 
@@ -72,4 +74,55 @@ describe('useTwoFactorTransition', () => {
     expect(result.current.read().view.view).toBe('setup');
     expect(result.current.current.view.view).toBe('setup');
   });
+});
+
+describe('useTwoFactorTransition table loaded inside the test', () => {
+  const loadStore = (): Promise<typeof useStore> =>
+    loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/modules/user/features/settings/hooks/use-two-factor-transition'))
+        .default;
+    });
+
+  it.each([
+    ['off', 'disabled'],
+    ['setup', 'disabled'],
+    ['on', 'enabled'],
+    ['codes', 'enabled'],
+    ['disable', 'enabled'],
+    ['regenerate', 'enabled'],
+    ['reauth', 'enabled'],
+  ] as const)(
+    'reconciles the %s view to the %s status whatever the entity said',
+    async (view, status) => {
+      const fresh = await loadStore();
+      const initial = status === 'enabled' ? 'disabled' : 'enabled';
+      const { result } = renderHook(() => fresh(initial));
+
+      act(() =>
+        result.current.apply({ settings: { ...FULL, status: initial }, view: viewState(view) })
+      );
+
+      expect(result.current.read().settings.status).toBe(status);
+      expect(result.current.current.settings.status).toBe(status);
+    }
+  );
+
+  it.each([
+    ['enabled', 'on', 'enabled'],
+    ['disabled', 'off', 'disabled'],
+    ['unknown', 'off', 'disabled'],
+  ] as const)(
+    'starts from the %s status in the %s view with status %s',
+    async (status, view, entityStatus) => {
+      const fresh = await loadStore();
+
+      const { result } = renderHook(() => fresh(status));
+
+      expect(result.current.current).toStrictEqual({
+        settings: { status: entityStatus, otpauthUri: null, secret: null, recoveryCodes: null },
+        view: viewState(view),
+      });
+    }
+  );
 });

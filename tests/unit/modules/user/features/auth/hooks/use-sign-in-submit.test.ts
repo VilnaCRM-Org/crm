@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
@@ -10,6 +11,7 @@ import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import type { AuthError } from '@auth/types/auth-error';
 import signInSubmitProcessor from '@auth/utils/sign-in-submit-processor';
 import { buildEmail, buildPassword } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const LOAD_FAILURE: AuthError = {
@@ -162,5 +164,68 @@ describe('useSignInSubmit', () => {
     await runWith(stubs());
 
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('useSignInSubmit constants loaded inside the test', () => {
+  const loadHook = (): Promise<{
+    readonly useSubmit: typeof useSignInSubmit;
+    readonly store: typeof useAuthStore;
+  }> =>
+    loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return {
+        useSubmit: (await import('@auth/hooks/use-sign-in-submit')).default,
+        store: (await import('@auth/stores/use-auth-store')).default,
+      };
+    });
+
+  const rejectingLoader = (): AuthProviderLoader =>
+    ({
+      resolve: jest.fn(() => Promise.reject(new Error('chunk'))),
+    }) as unknown as AuthProviderLoader;
+
+  it('starts every run by raising loginLoading and nothing else', async () => {
+    const { useSubmit, store } = await loadHook();
+    store.setState({ loginError: LOAD_FAILURE });
+    const setState = jest.spyOn(store, 'setState');
+    const never = new Promise<never>(() => undefined);
+    const loader = { resolve: jest.fn(() => never) } as unknown as AuthProviderLoader;
+    const { result } = renderHook(() => useSubmit(loader));
+
+    act(() => {
+      void result.current(dto(), new AbortController().signal);
+    });
+
+    expect(setState).toHaveBeenCalledTimes(1);
+    expect(setState).toHaveBeenCalledWith({ loginLoading: true });
+    expect(store.getState().loginError).toBe(LOAD_FAILURE);
+  });
+
+  it('writes the network failure and clears loading when the provider cannot load', async () => {
+    const { useSubmit, store } = await loadHook();
+    const { result } = renderHook(() => useSubmit(rejectingLoader()));
+
+    await act(async () => {
+      await result.current(dto(), new AbortController().signal);
+    });
+
+    expect(store.getState().loginLoading).toBe(false);
+    expect(store.getState().loginError).toStrictEqual({
+      kind: 'network',
+      displayMessage: 'Failed to load the authentication service. Please try again.',
+      retryable: true,
+    });
+  });
+
+  it('writes no load failure when the same run was aborted', async () => {
+    const { useSubmit, store } = await loadHook();
+    const { result } = renderHook(() => useSubmit(rejectingLoader()));
+
+    await act(async () => {
+      await result.current(dto(), abortedSignal());
+    });
+
+    expect(store.getState()).toMatchObject({ loginLoading: false, loginError: null });
   });
 });
