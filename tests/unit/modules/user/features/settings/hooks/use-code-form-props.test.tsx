@@ -1,9 +1,12 @@
 import { renderHook } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useCodeFormProps from '@/modules/user/features/settings/hooks/use-code-form-props';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import { panelProps } from '../components/two-factor-settings/render-panel';
 
@@ -27,6 +30,18 @@ describe('useCodeFormProps', () => {
 
     expect(result.current.onSubmit).toBe(onSubmit);
     expect(result.current.defaultValues).toEqual({ twoFactorCode: '' });
+  });
+
+  it('evaluates the empty code defaults in a hook loaded inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@/modules/user/features/settings/hooks/use-code-form-props')).default;
+    });
+
+    const { result } = renderHook(() => fresh(panelProps(), jest.fn(), COPY), { wrapper });
+
+    expect(result.current.defaultValues).toStrictEqual({ twoFactorCode: '' });
   });
 
   it('translates the four copy keys it is given', () => {

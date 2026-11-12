@@ -267,33 +267,39 @@ describe('TwoFactorSettingsProvider over the container client (integration)', ()
     it.each([
       [
         'a success',
-        (): Response =>
-          HttpResponse.json({
+        'changed',
+        (): Response => {
+          const codes = buildRecoveryCodeSet().items.map((code) => code.value);
+
+          return HttpResponse.json({
             data: {
               setupTwoFactorUser: {
                 user: { otpauthUri: buildOtpauthUri(), secret: buildTotpSecret() },
               },
-              confirmTwoFactorUser: { user: { recoveryCodes: [] } },
+              confirmTwoFactorUser: { user: { recoveryCodes: codes } },
               disableTwoFactorUser: { user: { success: true } },
-              regenerateRecoveryCodesUser: { user: { recoveryCodes: [] } },
+              regenerateRecoveryCodesUser: { user: { recoveryCodes: codes } },
             },
-          }),
+          });
+        },
       ],
-      ['HTTP 401', (): Response => problem(401)],
-      ['HTTP 429', (): Response => problem(429)],
-      ['HTTP 503', (): Response => problem(503)],
-      ['a network failure', (): Response => HttpResponse.error()],
+      ['HTTP 401', 'failed', (): Response => problem(401)],
+      ['HTTP 429', 'failed', (): Response => problem(429)],
+      ['HTTP 503', 'failed', (): Response => problem(503)],
+      ['a network failure', 'failed', (): Response => HttpResponse.error()],
       [
         'a wrong code',
+        'failed',
         (): Response =>
           graphQLError({ message: 'Invalid two-factor code.', extensions: { status: 403 } }),
       ],
-    ] as const)('when it settles as %s', async (_name, respond) => {
+    ] as const)('when it settles as %s', async (_name, kind, respond) => {
       const spies = watchSecuritySignals();
       answerTwoFactorSettings(operation, respond);
 
-      await run(operation);
+      const outcome = await run(operation);
 
+      expect(outcome.kind).toBe(kind);
       spies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
     });
   });

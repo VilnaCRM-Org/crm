@@ -10,6 +10,11 @@ import {
 const NEW_FULL_NAME = buildFullName();
 const NEW_EMAIL = buildEmail();
 const NEW_PASSWORD = buildPassword();
+const CURRENT_PASSWORD = buildPassword();
+const OTHER_PASSWORD = buildPassword();
+const ANOTHER_PASSWORD = buildPassword();
+const PADDED_CURRENT_PASSWORD = ` ${CURRENT_PASSWORD} `;
+const PADDED_NEW_PASSWORD = ` ${NEW_PASSWORD} `;
 
 const detector = new ProfileChangeDetector();
 
@@ -31,9 +36,9 @@ describe('ProfileChangeDetector.detect', () => {
     'returns null for the %s section when only a password is filled in',
     (section) => {
       const values = unchanged({
-        fullNamePassword: 'Current1',
-        emailPassword: 'Current1',
-        currentPassword: 'Current1',
+        fullNamePassword: CURRENT_PASSWORD,
+        emailPassword: CURRENT_PASSWORD,
+        currentPassword: CURRENT_PASSWORD,
       });
 
       expect(detector.detect(section, user, values)).toBeNull();
@@ -60,14 +65,14 @@ describe('ProfileChangeDetector.detect', () => {
   it('sends only the trimmed name and its own password for a name change', () => {
     const values = unchanged({
       fullName: '  Ірина Коваль  ',
-      fullNamePassword: ' Current1 ',
-      emailPassword: 'other',
-      currentPassword: 'another',
+      fullNamePassword: PADDED_CURRENT_PASSWORD,
+      emailPassword: OTHER_PASSWORD,
+      currentPassword: ANOTHER_PASSWORD,
     });
 
     expect(detector.detect('fullName', user, values)).toStrictEqual({
       id: user.id,
-      currentPassword: ' Current1 ',
+      currentPassword: PADDED_CURRENT_PASSWORD,
       fullName: 'Ірина Коваль',
     });
   });
@@ -86,14 +91,14 @@ describe('ProfileChangeDetector.detect', () => {
   it('sends only the trimmed e-mail in the typed case and its own password', () => {
     const values = unchanged({
       email: '  New.Person@Example.com ',
-      emailPassword: 'Current1',
-      fullNamePassword: 'other',
-      currentPassword: 'another',
+      emailPassword: CURRENT_PASSWORD,
+      fullNamePassword: OTHER_PASSWORD,
+      currentPassword: ANOTHER_PASSWORD,
     });
 
     expect(detector.detect('email', user, values)).toStrictEqual({
       id: user.id,
-      currentPassword: 'Current1',
+      currentPassword: CURRENT_PASSWORD,
       email: 'New.Person@Example.com',
     });
   });
@@ -109,12 +114,15 @@ describe('ProfileChangeDetector.detect', () => {
   });
 
   it('sends a non-empty new password exactly as typed, spaces included', () => {
-    const values = unchanged({ newPassword: ' Next12345 ', currentPassword: 'Current1' });
+    const values = unchanged({
+      newPassword: PADDED_NEW_PASSWORD,
+      currentPassword: CURRENT_PASSWORD,
+    });
 
     expect(detector.detect('password', user, values)).toStrictEqual({
       id: user.id,
-      currentPassword: 'Current1',
-      newPassword: ' Next12345 ',
+      currentPassword: CURRENT_PASSWORD,
+      newPassword: PADDED_NEW_PASSWORD,
     });
   });
 

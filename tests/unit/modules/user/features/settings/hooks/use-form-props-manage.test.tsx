@@ -1,10 +1,13 @@
 import { renderHook } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useDisableFormProps from '@/modules/user/features/settings/hooks/use-disable-form-props';
 import useRegenerate from '@/modules/user/features/settings/hooks/use-regenerate-form-props';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import { panelProps, viewState } from '../components/two-factor-settings/render-panel';
 
@@ -68,6 +71,19 @@ describe('useRegenerateFormProps', () => {
 
     expect(result.current.onSubmit).toBe(props.callbacks.regenerate);
     expect(result.current.defaultValues).toEqual({});
+  });
+
+  it('evaluates the empty defaults in a hook loaded inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@/modules/user/features/settings/hooks/use-regenerate-form-props'))
+        .default;
+    });
+
+    const { result } = renderHook(() => fresh(panelProps()), { wrapper });
+
+    expect(result.current.defaultValues).toStrictEqual({});
   });
 
   it('carries the translated copy', () => {

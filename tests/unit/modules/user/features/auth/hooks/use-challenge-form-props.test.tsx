@@ -1,10 +1,13 @@
 import { render, renderHook, screen } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useChallengeFormProps from '@auth/hooks/use-challenge-form-props';
 import type { TwoFactorChallengeProps } from '@auth/types/two-factor/challenge-view';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 interface WrapperProps {
   readonly children: ReactNode;
@@ -37,6 +40,19 @@ describe('useChallengeFormProps', () => {
 
     expect(result.current.onSubmit).toBe(props.callbacks.submit);
     expect(result.current.defaultValues).toEqual({ twoFactorCode: '' });
+  });
+
+  it('evaluates the empty code defaults in a hook loaded inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@auth/hooks/use-challenge-form-props')).default;
+    });
+    const props = propsOf();
+
+    const { result } = renderHook(() => fresh(props), { wrapper: I18nWrapper });
+
+    expect(result.current.defaultValues).toStrictEqual({ twoFactorCode: '' });
   });
 
   it('carries the copy of the current mode', () => {

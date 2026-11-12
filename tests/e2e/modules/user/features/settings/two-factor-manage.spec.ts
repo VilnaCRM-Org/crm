@@ -61,6 +61,7 @@ async function expectEndedSessionFrom(page: Page, origin: string): Promise<void>
     () => (window.history.state as { usr?: { from?: { pathname?: string } } }).usr?.from?.pathname
   );
   expect(from).toBe(origin);
+  await expectNoSecrets(page, SECRETS);
   await expect(sectionOf(page)).toHaveCount(0);
   await expect(page.getByRole('alert').filter({ hasText: twoFactorText.transient })).toHaveCount(0);
   await expect(page.getByRole('alert').filter({ hasText: twoFactorText.rateLimited })).toHaveCount(
@@ -75,6 +76,10 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
     await stubSetup(page);
     await stubConfirm(page);
     await page.goto(SETTINGS_URL);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await expectNoSecrets(page, SECRETS);
   });
 
   test('offers the two outlined buttons by name, in that order', async ({ page }) => {
@@ -220,10 +225,13 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
 
       await expect(page).toHaveURL(/\/sign-in$/);
       await expect(page.getByText(twoFactorText.sessionEnded)).toHaveCount(0);
+      await expectNoSecrets(page, SECRETS);
       await submitSignIn(page, credentials);
+      await expectNoSecrets(page, SECRETS);
       await typeChallengeCode(page, CODE);
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(new RegExp(`${SETTINGS_URL}$`));
+      await expectNoSecrets(page, SECRETS);
     });
 
     test('ends the session on a transport 401 with no banner in the section', async ({ page }) => {

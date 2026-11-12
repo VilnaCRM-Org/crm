@@ -75,6 +75,10 @@ test.describe('Two-factor settings section (issue #331)', () => {
     await stubProfile(page);
   });
 
+  test.afterEach(async ({ page }) => {
+    await expectNoSecrets(page, SECRETS);
+  });
+
   test.describe('the section', () => {
     test('shows the off view beside the profile column above 1024 px and sends nothing', async ({
       page,
