@@ -11,6 +11,7 @@ import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import {
   buildEmail,
   buildFullName,
+  buildPassword,
   buildToken,
   buildUserIri,
   buildUserNode,
@@ -25,6 +26,7 @@ const FAILED = 'Не вдалося надіслати посилання. Сп�
 const STATUS = 'E-mail не підтверджено';
 
 const NEW_EMAIL = buildEmail();
+const ENTERED_PASSWORD = buildPassword();
 
 const unconfirmed = buildUserNode({
   id: buildUserIri(),
@@ -154,7 +156,7 @@ describe('settings page e-mail resend (page)', () => {
   it('keeps unsaved edits and typed passwords because the form is not remounted', async () => {
     await mount();
     await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
-    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), 'abc');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), ENTERED_PASSWORD);
     await userEvent.type(screen.getByLabelText('Поточний пароль'), 'def');
     answerResend(() => resendPayload(false));
 
@@ -162,7 +164,7 @@ describe('settings page e-mail resend (page)', () => {
 
     await screen.findByText(RESENT);
     expect(screen.getByLabelText('Ваше ПІБ')).toHaveValue(`${unconfirmed.initials} Іванівна`);
-    expect(screen.getByLabelText('Пароль для зміни імені')).toHaveValue('abc');
+    expect(screen.getByLabelText('Пароль для зміни імені')).toHaveValue(ENTERED_PASSWORD);
     expect(screen.getByLabelText('Поточний пароль')).toHaveValue('def');
     expect(resendLink()).toHaveFocus();
   });
@@ -241,7 +243,7 @@ describe('settings page e-mail resend (page)', () => {
     await userEvent.click(resendLink());
     await userEvent.clear(email());
     await userEvent.type(email(), NEW_EMAIL);
-    await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), ENTERED_PASSWORD);
     const save = screen.getByRole('button', { name: 'Зберегти пошту' });
 
     expect(save).toBeEnabled();
@@ -260,7 +262,7 @@ describe('settings page e-mail resend (page)', () => {
   it('is aria-disabled and sends nothing while an e-mail save is in flight', async () => {
     await mount();
     await userEvent.type(email(), 'x');
-    await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), ENTERED_PASSWORD);
     answerProfileOperation('UpdateUser', {
       delayMs: 60,
       respond: () => HttpResponse.json({ data: { updateUser: { user: unconfirmed } } }),
@@ -278,7 +280,7 @@ describe('settings page e-mail resend (page)', () => {
   it('stays usable while a name save is in flight, because that save owns no e-mail', async () => {
     await mount();
     await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
-    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), 'abc');
+    await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), ENTERED_PASSWORD);
     answerProfileOperation('UpdateUser', {
       delayMs: 60,
       respond: () => HttpResponse.json({ data: { updateUser: { user: unconfirmed } } }),

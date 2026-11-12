@@ -13,6 +13,10 @@ const NEW_EMAIL = buildEmail();
 const NEW_NAME = buildFullName();
 const NEW_PASSWORD = buildPassword();
 const SECTION_PASSWORD = buildPassword();
+const ENTERED_PASSWORD = buildPassword();
+const KEPT_PASSWORD = buildPassword();
+const EMAIL_FORM_PASSWORD = buildPassword();
+const PASSWORD_FORM_PASSWORD = buildPassword();
 
 const mockUpdate = jest.fn();
 const mockProvider = { update: mockUpdate, resend: jest.fn() };
@@ -113,12 +117,12 @@ const formOf = (label: string): HTMLFormElement => {
 const clearIn = (label: string): HTMLElement =>
   within(formOf(label)).getByRole('button', { name: CLEAR });
 
-const editName = async (value = ' Іванівна', password = 'abc'): Promise<void> => {
+const editName = async (value = ' Іванівна', password = ENTERED_PASSWORD): Promise<void> => {
   await userEvent.type(field(NAME), value);
   await userEvent.type(field(NAME_PASSWORD), password);
 };
 
-const editEmail = async (value = '.ua', password = 'abc'): Promise<void> => {
+const editEmail = async (value = '.ua', password = ENTERED_PASSWORD): Promise<void> => {
   await userEvent.type(field(EMAIL), value);
   await userEvent.type(field(EMAIL_PASSWORD), password);
 };
@@ -216,7 +220,7 @@ describe('ProfileForm', () => {
     mockUpdate.mockReturnValue(new Promise(() => undefined));
     render(form({ saveRef }), { wrapper });
     expect(saveRef.current).toBeNull();
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.type(field(NEW), NEW_PASSWORD);
 
     await userEvent.click(save());
@@ -229,14 +233,14 @@ describe('ProfileForm', () => {
     render(form({ user: legacy }), { wrapper });
     await userEvent.clear(field(EMAIL));
     await userEvent.type(field(EMAIL), 'b@example.com');
-    await userEvent.type(field(EMAIL_PASSWORD), 'abc');
+    await userEvent.type(field(EMAIL_PASSWORD), ENTERED_PASSWORD);
 
     await userEvent.click(save(SAVE_EMAIL));
 
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
     expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
       id: legacy.id,
-      currentPassword: 'abc',
+      currentPassword: ENTERED_PASSWORD,
       email: 'b@example.com',
     });
     expect(screen.queryByText(/правильному форматі/)).not.toBeInTheDocument();
@@ -268,7 +272,7 @@ describe('ProfileForm', () => {
 
   it('shows the no-change status for a lone current password and no field error', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
 
     await userEvent.click(save());
 
@@ -297,7 +301,7 @@ describe('ProfileForm', () => {
     render(<AdoptingForm initial={user} />, { wrapper });
     await userEvent.clear(field(EMAIL));
     await userEvent.type(field(EMAIL), NEW_EMAIL);
-    await userEvent.type(field(EMAIL_PASSWORD), 'kept');
+    await userEvent.type(field(EMAIL_PASSWORD), KEPT_PASSWORD);
     await userEvent.type(field(NEW), NEW_PASSWORD);
     await userEvent.clear(field(NAME));
     await editName(NEW_NAME, SECTION_PASSWORD);
@@ -314,7 +318,7 @@ describe('ProfileForm', () => {
     expect(field(NAME)).toHaveValue(NEW_NAME);
     expect(screen.queryByLabelText(NAME_PASSWORD)).not.toBeInTheDocument();
     expect(field(EMAIL)).toHaveValue(NEW_EMAIL);
-    expect(field(EMAIL_PASSWORD)).toHaveValue('kept');
+    expect(field(EMAIL_PASSWORD)).toHaveValue(KEPT_PASSWORD);
     expect(field(NEW)).toHaveValue(NEW_PASSWORD);
   });
 
@@ -323,8 +327,8 @@ describe('ProfileForm', () => {
     mockUpdate.mockResolvedValue({ kind: 'ok', user: saved });
     render(<AdoptingForm initial={user} />, { wrapper });
     await userEvent.clear(field(EMAIL));
-    await editEmail(NEW_EMAIL, 'for-email');
-    await userEvent.type(field(CURRENT), 'for-password');
+    await editEmail(NEW_EMAIL, EMAIL_FORM_PASSWORD);
+    await userEvent.type(field(CURRENT), PASSWORD_FORM_PASSWORD);
     await userEvent.type(field(NEW), NEW_PASSWORD);
 
     await userEvent.click(save(SAVE_EMAIL));
@@ -334,19 +338,19 @@ describe('ProfileForm', () => {
 
     expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
       id: user.id,
-      currentPassword: 'for-email',
+      currentPassword: EMAIL_FORM_PASSWORD,
       email: NEW_EMAIL,
     });
     expect(mockUpdate.mock.calls[1]?.[0]).toEqual({
       id: user.id,
-      currentPassword: 'for-password',
+      currentPassword: PASSWORD_FORM_PASSWORD,
       newPassword: NEW_PASSWORD,
     });
   });
 
   it('shows the no-change status for a whitespace-only new password alone', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.type(field(NEW), ' ');
 
     await userEvent.click(save());
@@ -358,7 +362,7 @@ describe('ProfileForm', () => {
 
   it('marks only the length rule unmet for Pa1 and rejects it on Save', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.type(field(NEW), 'Pa1');
 
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
@@ -375,7 +379,7 @@ describe('ProfileForm', () => {
 
   it('shows the uppercase message for a Cyrillic-only password and focuses it', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.type(field(NEW), 'Пароль123');
 
     await userEvent.click(save());
@@ -442,7 +446,7 @@ describe('ProfileForm', () => {
       }
     );
     await userEvent.type(field(NAME), ' Іванівна');
-    await userEvent.type(field(NAME_PASSWORD), 'abc{Enter}');
+    await userEvent.type(field(NAME_PASSWORD), `${ENTERED_PASSWORD}{Enter}`);
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
 
     expect(field(NAME_PASSWORD)).toHaveFocus();
@@ -455,7 +459,7 @@ describe('ProfileForm', () => {
     [EMAIL, CURRENT, NEW].forEach((label) => {
       expect(field(label)).not.toHaveAttribute('readonly');
     });
-    expect(field(NAME_PASSWORD)).toHaveValue('abc');
+    expect(field(NAME_PASSWORD)).toHaveValue(ENTERED_PASSWORD);
     expect(field(NAME)).toHaveValue('Олена Петренко Іванівна');
     expect(mockUpdate).toHaveBeenCalledTimes(1);
 
@@ -465,14 +469,14 @@ describe('ProfileForm', () => {
       expect(field(label)).not.toHaveAttribute('readonly');
     });
     await userEvent.type(field(NAME_PASSWORD), 'def');
-    expect(field(NAME_PASSWORD)).toHaveValue('abcdef');
+    expect(field(NAME_PASSWORD)).toHaveValue(`${ENTERED_PASSWORD}def`);
     expect(adopt).not.toHaveBeenCalled();
   });
 
   it('submits with Enter in the section password field', async () => {
     render(form(), { wrapper });
     await userEvent.type(field(NAME), ' Іванівна');
-    await userEvent.type(field(NAME_PASSWORD), 'abc{Enter}');
+    await userEvent.type(field(NAME_PASSWORD), `${ENTERED_PASSWORD}{Enter}`);
 
     await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
   });
@@ -502,7 +506,7 @@ describe('ProfileForm', () => {
 
   it('focuses the password Save once a password save settled', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.type(field(NEW), NEW_PASSWORD);
 
     await userEvent.click(save());
@@ -582,7 +586,7 @@ describe('ProfileForm', () => {
 
   it('clears the no-change status when a later Save is blocked by a short password', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.click(save());
     await screen.findByText(NO_CHANGES);
     await userEvent.type(field(NEW), 'Pa1');
@@ -612,7 +616,7 @@ describe('ProfileForm', () => {
 
   it('shows the no-change status again after a blocked Save is corrected back', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.click(save());
     await userEvent.type(field(NEW), 'Pa1');
     await userEvent.click(save());
@@ -627,7 +631,7 @@ describe('ProfileForm', () => {
 
   it('re-announces a repeated no-change Save with an alternating mark', async () => {
     render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     const status = (): HTMLElement =>
       screen.getAllByRole('status').find((node) => node.textContent?.includes('Немає змін')) ??
       document.body;
@@ -679,19 +683,19 @@ describe('ProfileForm', () => {
 
   it('keeps edits and typed passwords when only the entity changes', async () => {
     const view = render(form(), { wrapper });
-    await userEvent.type(field(CURRENT), 'abc');
+    await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
     await userEvent.type(field(NAME), ' Іванівна');
 
     view.rerender(form({ user: { ...user, confirmed: false } }));
 
-    expect(field(CURRENT)).toHaveValue('abc');
+    expect(field(CURRENT)).toHaveValue(ENTERED_PASSWORD);
     expect(field(NAME)).toHaveValue('Олена Петренко Іванівна');
   });
 
   describe('Clear', () => {
     it('restores the password form, empties both fields and removes every error', async () => {
       render(form(), { wrapper });
-      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
       await userEvent.type(field(NEW), 'Pa1');
       await userEvent.click(save());
       await screen.findByText(BAD_LENGTH);
@@ -726,7 +730,7 @@ describe('ProfileForm', () => {
 
     it('clears the no-change status', async () => {
       render(form(), { wrapper });
-      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
       await userEvent.click(save());
       await screen.findByText(NO_CHANGES);
 
@@ -738,7 +742,7 @@ describe('ProfileForm', () => {
 
     it('masks both passwords again and resets their toggles', async () => {
       render(form(), { wrapper });
-      await userEvent.type(field(CURRENT), 'abc');
+      await userEvent.type(field(CURRENT), ENTERED_PASSWORD);
       await userEvent.type(field(NEW), NEW_PASSWORD);
       const [currentToggle, newToggle] = screen.getAllByRole('button', { name: 'Показати пароль' });
       await userEvent.click(currentToggle as HTMLElement);
@@ -790,7 +794,7 @@ describe('ProfileForm', () => {
       expect(clear).toHaveAttribute('aria-disabled', 'true');
       expect(clear).toBeEnabled();
       expect(clear).toHaveFocus();
-      expect(field(NAME_PASSWORD)).toHaveValue('abc');
+      expect(field(NAME_PASSWORD)).toHaveValue(ENTERED_PASSWORD);
       expect(field(NAME)).toHaveValue('Олена Петренко Іванівна');
       await act(async () => settle(okOutcome));
     });

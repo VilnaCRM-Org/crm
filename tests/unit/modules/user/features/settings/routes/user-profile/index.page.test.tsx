@@ -40,6 +40,8 @@ const RETRY = 'Спробувати ще раз';
 const NEW_EMAIL = buildEmail();
 const NEW_NAME = buildFullName();
 const NEW_PASSWORD = buildPassword();
+const ENTERED_PASSWORD = buildPassword();
+const KEPT_PASSWORD = buildPassword();
 const TAKEN_EMAIL = buildEmail();
 
 const loaded = buildUserNode({
@@ -97,7 +99,7 @@ const submitWith = async (
   save = SAVE_NAME
 ): Promise<ReturnType<typeof answerProfileOperation>> => {
   const answered = answerProfileOperation('UpdateUser', { respond: answer });
-  await typeInto(password, 'abc');
+  await typeInto(password, ENTERED_PASSWORD);
   await userEvent.click(saveButton(save));
   return answered;
 };
@@ -146,7 +148,7 @@ describe('settings page save outcomes (page)', () => {
     await mount();
     await editName();
     answerProfileOperation('UpdateUser', { respond: () => saved({ initials: NEW_NAME }) });
-    await typeInto(NAME_PASSWORD, 'abc');
+    await typeInto(NAME_PASSWORD, ENTERED_PASSWORD);
 
     await userEvent.click(saveButton());
 
@@ -195,7 +197,7 @@ describe('settings page save outcomes (page)', () => {
       }),
       respond: () => saved({ initials: NEW_NAME }),
     });
-    await typeInto(NAME_PASSWORD, 'abc');
+    await typeInto(NAME_PASSWORD, ENTERED_PASSWORD);
 
     await userEvent.click(saveButton());
     fireEvent.click(saveButton());
@@ -210,14 +212,14 @@ describe('settings page save outcomes (page)', () => {
     await mount();
     await editEmail();
     await typeInto(NEW, NEW_PASSWORD);
-    await typeInto(CURRENT, 'kept');
+    await typeInto(CURRENT, KEPT_PASSWORD);
     await editName();
 
     const name = await submitWith(() => saved({ initials: NEW_NAME }));
     await waitFor(() => expect(toastTexts()).toHaveLength(1));
     expect(field(EMAIL)).toHaveValue(NEW_EMAIL);
     expect(field(NEW)).toHaveValue(NEW_PASSWORD);
-    expect(field(CURRENT)).toHaveValue('kept');
+    expect(field(CURRENT)).toHaveValue(KEPT_PASSWORD);
     await submitEmailWith(() => saved({ initials: NEW_NAME, email: NEW_EMAIL }));
     await waitFor(() => expect(toastTexts()).toHaveLength(2));
     await userEvent.click(saveButton(SAVE_PASSWORD));
@@ -365,7 +367,7 @@ describe('settings page save outcomes (page)', () => {
         return sent === 1 ? fail() : saved({ initials: NEW_NAME });
       },
     });
-    await typeInto(NAME_PASSWORD, 'abc');
+    await typeInto(NAME_PASSWORD, ENTERED_PASSWORD);
     await userEvent.click(saveButton());
     expect(await screen.findByText(TRANSIENT)).toBeVisible();
 
