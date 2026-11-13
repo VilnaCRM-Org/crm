@@ -28,7 +28,7 @@ describe('useChipLabel', () => {
     expect(result.current).toBe('Меню користувача');
   });
 
-  it('starts with the display name followed by the localized User menu', () => {
+  it('starts with the visible initials, then the display name and the localized User menu', () => {
     const { result } = renderHook(
       () => useChipLabel({ displayName: 'Анна Коваль', monogram: 'АК' }),
       {
@@ -36,7 +36,7 @@ describe('useChipLabel', () => {
       }
     );
 
-    expect(result.current).toBe('Анна Коваль, Меню користувача');
+    expect(result.current).toBe('АК, Анна Коваль, Меню користувача');
   });
 
   it('is the localized User menu alone for a whitespace-only display name', () => {
@@ -47,11 +47,11 @@ describe('useChipLabel', () => {
     expect(result.current).toBe('User menu');
   });
 
-  it('names the trimmed display name before the localized User menu', () => {
+  it('names the initials and the trimmed display name before the localized User menu', () => {
     const { result } = renderHook(() => useChipLabel({ displayName: ' Ann ', monogram: 'A' }), {
       wrapper: wrapperFor('en'),
     });
 
-    expect(result.current).toBe('Ann, User menu');
+    expect(result.current).toBe('A, Ann, User menu');
   });
 });

@@ -23,6 +23,9 @@ export interface StubbedProfile {
 
 export type ProfileReplies = Partial<Record<ProfileOperation, Reply[]>>;
 
+/** The initials the chip shows for PROFILE_NODE; they lead the chip's accessible name. */
+export const PROFILE_MONOGRAM = 'ОП';
+
 export const PROFILE_NODE = {
   id: '/api/users/0193a9e2-7c1d-7d8e-9f3a-5b6c7d8e9f01',
   email: 'olena.petrenko@example.com',

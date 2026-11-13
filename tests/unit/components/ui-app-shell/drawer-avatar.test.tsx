@@ -44,7 +44,9 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
       identity: IDENTITY,
     });
     await renderAppShell({ path: '/', width: MOBILE, page: PAGE });
-    await screen.findByRole('button', { name: `${IDENTITY.displayName}, Меню користувача` });
+    await screen.findByRole('button', {
+      name: `${IDENTITY.monogram}, ${IDENTITY.displayName}, Меню користувача`,
+    });
 
     const dialog = await openDrawer();
     const copy = within(dialog).getByText(IDENTITY.monogram);

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const fs = require('node:fs');
 const { run, analyze, config } = require('@memlab/api');

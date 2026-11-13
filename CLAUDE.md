@@ -20,9 +20,10 @@ This template is used for all VilnaCRM microservices.
 - **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
-  Bun is used only to manage dependencies using `bun.lock`.
-- **Node**: >=24.8.0 (enforced via engineStrict); `@types/node` tracks the same major
+- **Package Manager**: Bun (required, version >=1.4.4). Bun manages dependencies through
+  `bun.lock` and type-checks with `bun check` (`make lint-tsc`, ADR-003); Node.js remains the
+  runtime for the app tooling, Jest and `serve`.
+- **Node**: >=24.11.0 (enforced via engineStrict); `@types/node` tracks the same major
 - **Testing**: Jest 30 (jsdom 26), Testing Library 16, msw 2, Playwright
 
 ## Development Environment
@@ -288,7 +289,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-48-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+52-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -316,7 +317,7 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 48-way shard count rather than
+These keep the run affordable — parallelism comes from the 52-way shard count rather than
 Stryker's in-process concurrency.
 
 **Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
@@ -333,7 +334,7 @@ onto the lightest shard, ties broken by code-unit path order. Counting the whole
 4 s, so every shard job and the merge job count at run time and derive the same packing from the
 same commit; no weight file is committed, so none can go stale. At 450 files the scope holds
 402 sharded files; 48 files run in no shard. Their packing weight is 5,968, the scored mutants plus
-the floor of 1 that each all-static file adds, so the 48 shards carry 124 to 139 weight units and 1
+the floor of 1 that each all-static file adds, so the 52 shards carry 114 to 139 weight units and 1
 to 9 files each. File size was a poor proxy for
 that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
 kill switch before it finished, while this scope packed by counted mutants carries 198 to 199
@@ -345,7 +346,7 @@ cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
-touching one area can therefore land most of its re-run cost in a single shard; 48 shards keep that
+touching one area can therefore land most of its re-run cost in a single shard; 52 shards keep that
 hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
 it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
@@ -358,7 +359,12 @@ takes the same count, so the two stay in lock-step. On 2026-11-09 the owner aske
 each allowed up to the 15-minute kill switch. A cold run at 44, which keeps the heaviest shard at
 the same 139 weight units, still met the kill switch on two shards at 222 of 226 and 236 of 237
 tested, each with six timed-out mutants, while the cold 48-shard run's slowest shard took 12.6 min.
-Weight does not predict timed-out mutants, so the count stays at 48.
+Weight does not predict timed-out mutants, so the count stayed at 48. It went from 48 to 52 when
+a change during the Bun 1.4 upgrade (#387) added three mutants to `user-avatar.tsx` (later
+reverted) and the repacked cold shard 4 drew `routes/registry.ts`, `session-correlation.ts`,
+`pii-scrubber.ts` and `error-handler.ts` together: balanced by weight (125 units) but not by test
+cost, it met the kill switch at 179 and 186 of 191 tested on two runs. At 52 those four files land
+in four different shards.
 
 ### Honest mutant classification (issue #171)
 
@@ -874,23 +880,23 @@ tracking issue the week its fix ships.
 **The deployable image ships no package manager.** The runtime base was `node:alpine`, whose
 bundled npm and its `node_modules` were the bulk of the image findings, and the `dockerfile
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
-base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
-`serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
+base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.7` in a throwaway
+`serve-tools` stage (`node:24.11.0-alpine3.21`) and builds `serve-base`
+`FROM mirror.gcr.io/library/alpine:3.24` — pinned `curl`, `libgcc`, `libstdc++`, and
 `libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `serve@14.2.6` pins `compression@1.8.1` exactly, which
+`/usr/local/lib/node_modules/serve` tree. `serve@14.2.7` pins `compression@1.8.1` exactly, which
 carries CVE-2026-87776, so the `serve-tools` stage sets `dependencies.compression` to `1.8.2` in
 the installed package and re-runs a production-only `npm install`; drop that step once a `serve`
 release ships the fix. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
-`serve@14.2.6` pins `compression` exactly at 1.8.1 (CVE-2026-87776, fixed in 1.8.2), so the
+`serve@14.2.7` pins `compression` exactly at 1.8.1 (CVE-2026-87776, fixed in 1.8.2), so the
 same stage rewrites that one dependency of the installed `serve` and reinstalls its production
 tree; drop the repin once a `serve` release depends on a fixed `compression`.
 `NO_UPDATE_CHECK=1` stops `serve` from contacting the npm registry at container start, and the
-`serve` bump (`14.2.0` → `14.2.6`) negotiates Brotli where the client accepts it, so measured
+`serve` bump (`14.2.0` → `14.2.7`) negotiates Brotli where the client accepts it, so measured
 transfer sizes can only shrink against the Lighthouse resource budgets.
 
 **The `dependencies` map is what the blocking scan scores.** `@apollo/server`,
@@ -1130,7 +1136,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 48-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 52-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1154,7 +1160,7 @@ raising any major.
 
 Two constraints in this repository are easy to trip over:
 
-- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.8.0`, so
+- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.11.0`, so
   the types stay on the 24 line; a newer major would make type-checking describe a runtime the
   project does not run.
 - **The test runner moves as a set.** `jest`, `jest-environment-jsdom`, `@types/jest`,

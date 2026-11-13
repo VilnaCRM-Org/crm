@@ -22,7 +22,7 @@ jobs:
     # they drew while the packing balanced file bytes rather than mutants — measured
     # directly at 12 shards: four cold runs of shard 5 landed at 12m48s-12m51s, and
     # shard 4 at 11m19s, while the fastest shards land ~6-7 min. The packing now
-    # balances counted mutants and this matrix is 48 shards of at most 240 mutants each,
+    # balances counted mutants and this matrix is 52 shards of at most 240 mutants each,
     # so every bin is smaller than the ones those numbers came from and the ceiling is
     # headroom rather than a target. 15 min still
     # catches a real regression (e.g. the checker regressing to non-incremental
@@ -87,16 +87,20 @@ jobs:
             45,
             46,
             47,
+            48,
+            49,
+            50,
+            51,
           ]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
 
@@ -112,18 +116,18 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-of48-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-of52-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-${{ github.run_id }}
           restore-keys: |
-            mutation-incremental-shard-${{ matrix.index }}-of48-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-
+            mutation-incremental-shard-${{ matrix.index }}-of52-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-
 
       - name: Start dev container
         run: make start-dev
 
       - name: Run mutation shard (incremental)
-        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=48 MUTATION_INCREMENTAL=1
+        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=52 MUTATION_INCREMENTAL=1
 
       - name: Upload shard report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mutation-shard-${{ matrix.index }}
           path: reports/mutation/mutation-shard-${{ matrix.index }}.json
@@ -150,12 +154,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
 
@@ -168,7 +172,7 @@ jobs:
           exit 1
 
       - name: Download shard reports
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: mutation-shard-*
           path: reports/mutation
@@ -178,7 +182,7 @@ jobs:
         run: make start-dev
 
       - name: Merge reports and enforce mutation-score gate
-        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=48
+        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=52
 
       - name: Stop docker test environment
         if: always()

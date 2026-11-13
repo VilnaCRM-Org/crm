@@ -46,12 +46,14 @@ describe('UserMenu', () => {
     Reflect.deleteProperty(window, 'matchMedia');
   });
 
-  it('is a menu button named by the visible display name followed by User menu', () => {
+  it('is a menu button named by the visible initials and display name, then User menu', () => {
     renderMenu();
 
     expect(chip()).toHaveAttribute('aria-haspopup', 'menu');
     expect(chip()).toHaveAttribute('aria-expanded', 'false');
-    expect(chip()).toHaveAccessibleName(`${identity.displayName}, Меню користувача`);
+    expect(chip()).toHaveAccessibleName(
+      `${identity.monogram}, ${identity.displayName}, Меню користувача`
+    );
     expect(chip()).toHaveTextContent(`${identity.monogram}${identity.displayName}`);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
@@ -72,7 +74,7 @@ describe('UserMenu', () => {
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
     });
-    expect(chip()).toHaveAccessibleName('Олександр Дуже-Довгопрізвищенко, Меню користувача');
+    expect(chip()).toHaveAccessibleName('ОД, Олександр Дуже-Довгопрізвищенко, Меню користувача');
   });
 
   it.each([
@@ -253,7 +255,9 @@ describe('UserMenu', () => {
     stubViewportWidth(375);
     renderMenu();
 
-    expect(chip()).toHaveAccessibleName(`${identity.displayName}, Меню користувача`);
+    expect(chip()).toHaveAccessibleName(
+      `${identity.monogram}, ${identity.displayName}, Меню користувача`
+    );
     expect(chip()).toHaveStyle({ width: '44px', height: '44px' });
     expect(screen.queryByText(identity.displayName)).not.toBeInTheDocument();
     expect(screen.getByText(identity.monogram)).toHaveAttribute('aria-hidden', 'true');

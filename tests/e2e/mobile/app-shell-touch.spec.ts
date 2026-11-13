@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -303,7 +304,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
   }) => {
     await openAt(page, ROUTE_PATHS.home);
     await expect(chipOf(page)).toHaveAccessibleName(
-      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
     );
     await page.evaluate(async () => {
       await document.fonts.ready;

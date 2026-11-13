@@ -38,9 +38,9 @@ describe('frontend state architecture contract (issues #110, #334, ADR-002)', ()
     const dependencies = manifest.dependencies as Record<string, string>;
     const devDependencies = (manifest.devDependencies ?? {}) as Record<string, string>;
 
-    expect(dependencies.zustand).toBe('^5.0.15');
+    expect(dependencies.zustand).toBe('^5.1.0');
     expect(Object.keys(devDependencies)).not.toContain('zustand');
-    expect(readFile('bun.lock')).toContain('"zustand": ["zustand@5.0.15"');
+    expect(readFile('bun.lock')).toContain('"zustand": ["zustand@5.1.0"');
   });
 
   it('imports zustand only from its root specifier, so no middleware subpath can appear', () => {

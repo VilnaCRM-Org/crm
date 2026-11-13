@@ -2,7 +2,7 @@ const { resolve } = require('path');
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');
 
-dotenvExpand.expand(dotenv.config({ path: resolve(__dirname, '../.env') }));
+dotenvExpand.expand(dotenv.config({ path: resolve(__dirname, '../.env'), quiet: true }));
 
 const baseUrl =
   process.env.LHCI_TARGET_URL ||

@@ -162,6 +162,26 @@ rule tests non-text contrast. Hover, the current rail row and focus indicators a
 fix, as are the icons of expanded rows, which sit beside a visible label. See
 [the shell README, DV-15](../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 
+### The user-menu chip and WCAG 2.5.3 (resolved, 2026-11-13)
+
+axe 4.14 runs `label-content-name-mismatch` under the `wcag21a` tag, and it counts every visible
+text node of a control, `aria-hidden` ones included. The user-menu chip draws the user's initials in
+an `aria-hidden` avatar beside the name, and on mobile it shows the avatar alone, so the chip
+showed "ОП Олена Петренко" (desktop) or "ОП" (mobile) while its accessible name was "Олена
+Петренко, Меню користувача". SC 2.5.3 Label in Name requires the visible label text to be
+contained in the accessible name, so the initials were missing from it (pull request #387).
+
+The name now starts with the initials it shows: `user_menu.button_named` is
+"{{monogram}}, {{name}}, Меню користувача" (`en`: "{{monogram}}, {{name}}, User menu"), giving
+"ОП, Олена Петренко, Меню користувача". A speech-input user who says what they see on either
+layout reaches the chip. The cost is that screen readers announce the initials before the name.
+The initials stay a DOM text node and no exception entry exists: the rule runs unchanged.
+
+- `tests/e2e/modules/app-shell.spec.ts` asserts in a real browser that the chip shows the initials
+  and that its name starts with them.
+- `tests/unit/modules/user/features/settings/hooks/use-chip-label.test.tsx` pins the label in both
+  locales, and every test that names the chip asserts the full name.
+
 ## Adding coverage
 
 - **A new `UI*` component**: add a row to `componentCases` in

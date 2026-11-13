@@ -24,7 +24,6 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "incremental": true,
     "experimentalDecorators": true,
     "importHelpers": true,

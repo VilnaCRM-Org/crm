@@ -22,8 +22,8 @@ const ready = mapper.fromFullName(buildFullName());
 const long = mapper.fromFullName('Олександр Дуже-Довгопрізвищенко-Довгопрізвищенко');
 
 const states: Record<string, MenuState> = {
-  Ready: { identity: ready, chipName: `${ready.displayName}, ${MENU}` },
-  LongName: { identity: long, chipName: `${long.displayName}, ${MENU}` },
+  Ready: { identity: ready, chipName: `${ready.monogram}, ${ready.displayName}, ${MENU}` },
+  LongName: { identity: long, chipName: `${long.monogram}, ${long.displayName}, ${MENU}` },
   Pending: { identity: null, chipName: MENU },
 };
 

@@ -103,9 +103,9 @@ describe('Lighthouse DIND runtime contract', () => {
     const dotenvExpandVersion = lock.match(/^\s*"dotenv-expand": \["dotenv-expand@([^"]+)"/m)?.[1];
     const dotenvVersion = lock.match(/^\s*"dotenv": \["dotenv@([^"]+)"/m)?.[1];
 
-    expect(lhciVersion).toBe('0.15.1');
+    expect(lhciVersion).toBe('0.16.1');
     expect(dotenvExpandVersion).toBe('13.0.0');
-    expect(dotenvVersion).toBe('17.4.2');
+    expect(dotenvVersion).toBe('18.0.10');
     expect(makefile).toMatch(/LHCI_DIND_CLI_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
     expect(makefile).toMatch(/DOTENV_EXPAND_DIND_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
     expect(makefile).toMatch(/DOTENV_DIND_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
@@ -117,5 +117,7 @@ describe('Lighthouse DIND runtime contract', () => {
     expect(makefile).toContain('[ -n "$$DOTENV_VERSION" ]');
     expect(makefile).toContain('npm install -g --prefix /usr/local');
     expect(makefile).toContain('chromium=136.0.7103.113-r0');
+    expect(makefile).toContain('apk add --no-cache $(PROD_CHROMIUM_APK_PACKAGES); npm install');
+    expect(makefile).toContain('chromium=156.0.8078.79-r0');
   });
 });

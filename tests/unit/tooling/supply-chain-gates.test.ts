@@ -244,6 +244,13 @@ describe('production runtime image (issue #140)', () => {
 
   it('ships no package manager: serve is resolved in a tooling stage and copied in', () => {
     expect(stageOf(dockerfile, 'serve-tools')).toMatch(/^RUN npm install -g serve@\d+\.\d+\.\d+$/m);
+    const manifest = JSON.parse(readRepoFile('package.json')) as {
+      devDependencies: Record<string, string>;
+    };
+    const serveVersion = manifest.devDependencies.serve?.replace(/^\^/u, '') ?? '';
+    expect(stageOf(dockerfile, 'serve-tools').split('\n')).toContain(
+      `RUN npm install -g serve@${serveVersion}`
+    );
     const servePrefix = 'npm --prefix /usr/local/lib/node_modules/serve';
     expect(stageOf(dockerfile, 'serve-tools')).toContain(
       `RUN ${servePrefix} pkg set dependencies.compression=1.8.2 && \\\n` +

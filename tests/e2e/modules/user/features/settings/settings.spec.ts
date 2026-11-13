@@ -8,6 +8,7 @@ import fillInput from '../../../../utils/fill-input';
 import { t } from '../../../../utils/initialize-localization';
 
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   replyWithGraphQLError,
   replyWithProfile,
@@ -57,7 +58,9 @@ test.describe('Settings route', () => {
 
     await expect(page.getByText(greeting)).toBeVisible();
     await expect(page.getByRole('main').getByText(PROFILE_NODE.initials)).toBeVisible();
-    await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
+    await expect(chipOf(page)).toHaveAccessibleName(
+      new RegExp(`^${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}`, 'u')
+    );
     expect(reads(stub)).toBe(1);
     expect(stub.shellCalls).toHaveLength(1);
   });

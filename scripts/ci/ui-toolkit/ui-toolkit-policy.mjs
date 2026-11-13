@@ -7,7 +7,7 @@ const UI_TOOLKIT_POLICY = Object.freeze({
   LOCKFILE_GATE_PATH: 'scripts/ci/check-lockfile-registries.sh',
   ALGORITHM: 'sha256',
   DEFAULT_COMMENT: 'SHA-256 digests of the installed toolkit files; see docs/ui-toolkit.md.',
-  UNHASHED_FILES: Object.freeze(['LICENSE', 'README.md']),
+  UNHASHED_FILES: Object.freeze(['LICENSE', 'README.md', '.bun-tag']),
   CHECKSUM_STATES: Object.freeze(['matched']),
   RELEASE_API_URL: 'https://api.github.com/repos/VilnaCRM-Org/ui-toolkit/releases/tags/v',
   RELEASE_API_ACCEPT: 'application/vnd.github+json',

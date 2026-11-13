@@ -2,7 +2,7 @@ import { defineConfig, devices, type ReporterDescription } from '@playwright/tes
 import { config as dotenvConfig, type DotenvConfigOutput } from 'dotenv';
 import { expand as dotenvExpand } from 'dotenv-expand';
 
-const env: DotenvConfigOutput = dotenvConfig();
+const env: DotenvConfigOutput = dotenvConfig({ quiet: true });
 dotenvExpand(env);
 
 const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME?.trim();
