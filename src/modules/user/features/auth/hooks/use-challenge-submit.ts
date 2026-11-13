@@ -56,10 +56,10 @@ async function resolveResult(
 }
 
 async function recordResult(loader: AuthProviderLoader, result: ChallengeResult): Promise<void> {
-  const signals = await loader
+  await loader
     .resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals)
+    .then((signals) => signals.challengeSettled(result))
     .catch(() => undefined);
-  signals?.challengeSettled(result);
 }
 
 function leaveFor(result: ChallengeResult, { navigate, from }: ChallengeSubmitHookDeps): void {

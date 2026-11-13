@@ -2,8 +2,12 @@ export default class TwoFactorTextScrubber {
   private readonly patterns: readonly RegExp[] = [
     /otpauth:[^\s"']+/gi,
     /(?<=recoveryCodes\\?["']?\s*[=:]\s*)\[[^\]]*\]/gi,
-    /(?<=recoveryCodes\\?["']?\s*[=:][\w\s,\\"'-]*,[\s\\"']*)[\w-]+(?![\w-]|\\?["']?\s*[=:])/gi,
-    /(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)\\?["']?\s*[=:]\s*\\?["']?)[\w-]+/gi,
+    /(?<=recoveryCodes\\?["']?\s*[=:][\w\s,\\"'-]*,[\s\\"']*)[\w-]+(?!\.?[\w-]|\\?["']?\s*[=:])/gi,
+    new RegExp(
+      String.raw`(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)\\?["']?\s*[=:]\s*\\?["']?)` +
+        String.raw`[\w.-]*[\w-]`,
+      'gi'
+    ),
   ];
 
   public scrub(value: string): string {

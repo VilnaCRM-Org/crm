@@ -1,13 +1,10 @@
 import '@testing-library/jest-dom';
 import { render, screen, waitFor, within } from '@testing-library/react';
-import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter } from 'react-router';
 
 import UIShellContent from '@/components/ui-shell-content';
 import i18n from '@/i18n';
-import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-import SessionOutlet from '@tests/unit/utils/session-outlet';
+import renderUserProfile from '@tests/unit/utils/render-user-profile';
 
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
   jest.requireActual('@tests/unit/utils/loading-profile-load-stub')
@@ -15,15 +12,7 @@ jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
 
 describe('UserProfile', () => {
   it('renders one level-1 heading, the social card heading and the subtitle', () => {
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <MemoryRouter>
-          <SessionOutlet>
-            <UserProfile />
-          </SessionOutlet>
-        </MemoryRouter>
-      </I18nextProvider>
-    );
+    renderUserProfile(createSettingsLocaleI18n('uk'));
 
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByRole('heading', { level: 1, name: 'Налаштування' })).toBeInTheDocument();
@@ -34,15 +23,7 @@ describe('UserProfile', () => {
   });
 
   it('renders the English copy for an English session', () => {
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('en')}>
-        <MemoryRouter>
-          <SessionOutlet>
-            <UserProfile />
-          </SessionOutlet>
-        </MemoryRouter>
-      </I18nextProvider>
-    );
+    renderUserProfile(createSettingsLocaleI18n('en'));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
     expect(
@@ -51,15 +32,7 @@ describe('UserProfile', () => {
   });
 
   it('leaves the main landmark to AppLayout, with the two-factor section its only region', () => {
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <MemoryRouter>
-          <SessionOutlet>
-            <UserProfile />
-          </SessionOutlet>
-        </MemoryRouter>
-      </I18nextProvider>
-    );
+    renderUserProfile(createSettingsLocaleI18n('uk'));
 
     expect(screen.queryByRole('main')).not.toBeInTheDocument();
     expect(screen.getByRole('region')).toHaveAccessibleName('Двофакторна автентифікація');
@@ -71,15 +44,7 @@ describe('UserProfile', () => {
     const view = render(<UIShellContent>probe</UIShellContent>);
     const shellContent = screen.getByText('probe').className;
     view.unmount();
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <MemoryRouter>
-          <SessionOutlet>
-            <UserProfile />
-          </SessionOutlet>
-        </MemoryRouter>
-      </I18nextProvider>
-    );
+    renderUserProfile(createSettingsLocaleI18n('uk'));
 
     const holders = screen
       .getAllByRole('generic')
@@ -90,15 +55,7 @@ describe('UserProfile', () => {
   });
 
   it('puts the subtitle after the heading, as the subtitle', () => {
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <MemoryRouter>
-          <SessionOutlet>
-            <UserProfile />
-          </SessionOutlet>
-        </MemoryRouter>
-      </I18nextProvider>
-    );
+    renderUserProfile(createSettingsLocaleI18n('uk'));
 
     const heading = screen.getByRole('heading', { level: 1 });
     const subtitle = screen.getByText('Керуйте особистими даними та безпекою облікового запису.');
@@ -107,15 +64,7 @@ describe('UserProfile', () => {
   });
 
   it('sets the document title from the settings catalog', async () => {
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
-        <MemoryRouter>
-          <SessionOutlet>
-            <UserProfile />
-          </SessionOutlet>
-        </MemoryRouter>
-      </I18nextProvider>
-    );
+    renderUserProfile(createSettingsLocaleI18n('uk'));
 
     await waitFor(() => expect(document.title).toBe('Налаштування - VilnaCRM'));
   });

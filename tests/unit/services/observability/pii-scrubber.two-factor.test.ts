@@ -162,6 +162,37 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
 
     it.each([
+      ['pendingSessionId=', 'pendingSessionId=[redacted]'],
+      ['twoFactorCode: ', 'twoFactorCode: [redacted]'],
+      ['recoveryCode=', 'recoveryCode=[redacted]'],
+      ['recoveryCodes=', 'recoveryCodes=[redacted]'],
+      ['"pendingSessionId":"', '"pendingSessionId":"[redacted]'],
+    ])('redacts a whole JWT after %s, leaving none of its segments', (label, redacted) => {
+      const token = buildToken();
+
+      const result = scrubMessage(`${label}${token} next`) as { message: string };
+
+      expect(result.message).toBe(`${redacted} next`);
+      for (const segment of token.split('.')) {
+        expect(result.message).not.toContain(segment);
+      }
+    });
+
+    it('redacts a whole JWT that follows another code of a recovery list', () => {
+      const token = buildToken();
+
+      expect(scrubMessage(`recoveryCodes=AB12-CD34,${token}&step=2`)).toEqual({
+        message: 'recoveryCodes=[redacted],[redacted]&step=2',
+      });
+    });
+
+    it('keeps a dotted label that follows a recovery list', () => {
+      expect(scrubMessage('recoveryCodes=AB12-CD34,step.id=2')).toEqual({
+        message: 'recoveryCodes=[redacted],step.id=2',
+      });
+    });
+
+    it.each([
       ['an unlabelled six-digit number', 'order 123456 shipped'],
       ['a label with no separator', 'twoFactorCode 123456'],
       ['an unrelated label', 'orderCode=123456'],
@@ -369,12 +400,12 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
         [String.raw`(?<=recoveryCodes\\?["']?\s*[=:]\s*)\[[^\]]*\]`, 'gi'],
         [
           String.raw`(?<=recoveryCodes\\?["']?\s*[=:][\w\s,\\"'-]*,[\s\\"']*)` +
-            String.raw`[\w-]+(?![\w-]|\\?["']?\s*[=:])`,
+            String.raw`[\w-]+(?!\.?[\w-]|\\?["']?\s*[=:])`,
           'gi',
         ],
         [
           String.raw`(?<=(?:pendingSessionId|twoFactorCode|recoveryCodes?)` +
-            String.raw`\\?["']?\s*[=:]\s*\\?["']?)[\w-]+`,
+            String.raw`\\?["']?\s*[=:]\s*\\?["']?)[\w.-]*[\w-]`,
           'gi',
         ],
       ]);
@@ -392,9 +423,9 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
     });
 
     it('runs the two-factor patterns before the e-mail pattern can split an otpauth label', () => {
-      expect(new PiiTextScrubber().scrub('scan otpauth://totp/VilnaCRM:a@b.c?secret=ABC')).toBe(
-        'scan [redacted]'
-      );
+      expect(
+        new PiiTextScrubber().scrub('scan "otpauth://totp/VilnaCRM:a@b.c?secret=ABC" next')
+      ).toBe('scan "[redacted]" next');
     });
   });
 

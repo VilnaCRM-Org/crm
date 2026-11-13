@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-12
+revised: 2026-11-13
 iteration: 8
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -2056,9 +2056,10 @@ Code facts (Story 1.1, 2026-10-27): the pending file is
 every server test that uses the exported `resolvers` also spreads `TWO_FACTOR_SDL_FIXTURES`
 (`tests/apollo-server/two-factor-fixtures.ts`: the `Node` interface plus the pending file). A
 `GraphQLError` thrown without `extensions.code` gets `INTERNAL_SERVER_ERROR` and the real
-`formatError` masks its message, so the mock's one non-violation error (a well-formed code other
-than `123456` on completion, message `Invalid two-factor code.`, `extensions.status` 401) carries
-`code: 'UNAUTHENTICATED'`. The type bodies follow research §3.2; the upstream file could not be
+`formatError` masks its message, so every error the mock throws is a `BAD_USER_INPUT` violation
+(status 422): `completeTwoFactorUser` accepts any well-formed code
+(`docker/apollo-server/lib/two-factor-resolvers.ts`), and a 401 on completion comes only from msw
+and `page.route`. The type bodies follow research §3.2; the upstream file could not be
 re-fetched during the story, so diff them against `a95c1e85` at the first opportunity.
 
 > Assumption (reconciliation 2026-10-27): the 2FA file opens with `# pending-against: v2.8.0`;

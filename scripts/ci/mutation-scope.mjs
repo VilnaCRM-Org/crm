@@ -70,12 +70,15 @@ function byPath(a, b) {
   return a < b ? -1 : 1;
 }
 
-function lightestShard(loads) {
-  let lightest = 0;
-  for (let i = 1; i < loads.length; i += 1) {
-    if (loads[i] < loads[lightest]) lightest = i;
+function comesBefore(i, j, keys) {
+  for (const key of keys) {
+    if (key[i] !== key[j]) return key[i] < key[j];
   }
-  return lightest;
+  return false;
+}
+
+function leastShard(candidates, ...keys) {
+  return candidates.reduce((best, i) => (comesBefore(i, best, keys) ? i : best));
 }
 
 function assertShardTotal(total) {
@@ -247,23 +250,26 @@ function fits(held, files, i, room) {
 }
 
 function targetShard(loads, held, room, files) {
-  let target = -1;
-  for (let i = 0; i < loads.length; i += 1) {
-    if (fits(held, files, i, room) && (target < 0 || loads[i] < loads[target])) target = i;
-  }
-  return target < 0 ? lightestShard(loads) : target;
+  const every = loads.map((_load, i) => i);
+  const fitting = every.filter((i) => fits(held, files, i, room));
+  if (fitting.length > 0) return leastShard(fitting, loads);
+  const open = every.filter((i) => files[i] < files.cap);
+  return leastShard(open, held, loads);
 }
 
 /**
  * Deterministic longest-processing-time bin packing: heaviest file first, each to the lightest
- * shard that stays within the mutant cap (the lightest of all when none does). Weights are
- * mutant-run costs because a shard is only as fast as the mutants it runs: packing by file size
- * left a cold shard holding 1.6x the mean mutant load, and packing by mutant count alone put a
- * 37-related-test file and a 111-related-test file in shards that ran 22 and 29 minutes cold
- * against a 15-minute cap. Every weighed file lands in exactly one shard, each sorted by path.
- * `packingWeights` keeps every weight positive: zero-weight files would all tie onto the one
- * lightest shard, which is how one shard drew 57 barrels and a 3,779-test related set. Without
- * `mutants` no cap applies.
+ * shard that stays within both the mutant cap and the file cap. The file cap always holds, since
+ * `total` shards at the cap seat at least every weighed file. The mutant cap is a target: when no
+ * shard has room for a file's mutants, the file goes to the shard under the file cap that holds
+ * the fewest mutants, the lighter load and then the lower index breaking ties, so the overshoot
+ * lands where it adds the least. Weights are mutant-run costs because a shard is only as fast as
+ * the mutants it runs: packing by file size left a cold shard holding 1.6x the mean mutant load,
+ * and packing by mutant count alone put a 37-related-test file and a 111-related-test file in
+ * shards that ran 22 and 29 minutes cold against a 15-minute cap. Every weighed file lands in
+ * exactly one shard, each sorted by path. `packingWeights` keeps every weight positive:
+ * zero-weight files would all tie onto the one lightest shard, which is how one shard drew 57
+ * barrels and a 3,779-test related set. Without `mutants` only the file cap applies.
  */
 export function packShards(weights, total, mutants) {
   assertShardTotal(total);

@@ -26,9 +26,9 @@ export default function SetupGuide({ otpauthUri, secret }: SetupGuideProps): JSX
         rowSx={styles.stepRowWithInfo}
         action={<KeyInfoTooltip />}
       >
-        {secret !== null && (
+        {secret !== null ? (
           <KeyBlock secret={secret} copyLabel={t('settings.two_factor.setup.copy_backup_key')} />
-        )}
+        ) : null}
       </StepItem>
     </Box>
   );

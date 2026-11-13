@@ -39,19 +39,25 @@ export default class DemoSessionIssuer {
 
   reusableToken() {
     if (!existsSync(this.generatedPath)) return null;
-    const body = JSON.parse(readFileSync(this.generatedPath, 'utf8')).routes[0].responses[0].body;
-    const token = JSON.parse(body).data.signInUser.user.accessToken;
+    const [response] = JSON.parse(readFileSync(this.generatedPath, 'utf8')).routes[0].responses;
+    if (!response.rules.some((rule) => rule.value === this.demo.email)) return null;
+    const token = JSON.parse(response.body).data.signInUser.user.accessToken;
     return this.secondsRemaining(token) > MINIMUM_REMAINING_SECONDS ? token : null;
   }
 
-  async issueToken() {
+  async createdDemoUser() {
     const { email, password, name } = this.demo;
-    await this.graphql(CREATE_USER, {
+    const created = await this.graphql(CREATE_USER, {
       email,
       initials: name,
       password,
       clientMutationId: randomUUID(),
     });
+    return typeof created.data?.createUser?.user?.id === 'string';
+  }
+
+  async issueToken() {
+    const { email, password } = this.demo;
     const signIn = await this.graphql(SIGN_IN_USER, {
       email,
       password,
@@ -76,7 +82,7 @@ export default class DemoSessionIssuer {
   }
 
   async run() {
-    const reused = this.reusableToken();
+    const reused = (await this.createdDemoUser()) ? null : this.reusableToken();
     this.writeEnvironment(reused ?? (await this.issueToken()));
     const verb = reused === null ? 'Issued' : 'Reused';
     return `${verb} the demo session token for ${this.demo.email} (${this.generatedPath})`;

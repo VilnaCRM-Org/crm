@@ -96,11 +96,12 @@ describe('useKeyInfoTooltip', () => {
 
   it('opens on a tap and stays open when tapped again', () => {
     const { result } = setup();
+    expect(result.current.open).toBe(false);
 
-    act(() => result.current.handlers.onMouseEnter());
     act(() => result.current.handlers.onClick());
-    act(() => result.current.handlers.onClick());
+    expect(result.current.open).toBe(true);
 
+    act(() => result.current.handlers.onClick());
     expect(result.current.open).toBe(true);
   });
 

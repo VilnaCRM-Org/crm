@@ -89,9 +89,22 @@ export interface SavedCheckboxProps {
   readonly onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
-export type ConfirmationFormProps<T extends FieldValues> = Omit<
+export type ConfirmationFormProps<T extends FieldValues> = Pick<
   UIFormProps<T>,
-  'children' | 'isSubmitting' | 'titleComponent' | 'footer'
+  | 'onSubmit'
+  | 'defaultValues'
+  | 'error'
+  | 'errorAction'
+  | 'errorOccurrence'
+  | 'submitRef'
+  | 'title'
+  | 'titleRef'
+  | 'subtitle'
+  | 'showTitle'
+  | 'showSubtitle'
+  | 'submitLabel'
+  | 'submittingLabel'
+  | 'submitBlockedReason'
 >;
 
 export type DisableFormProps = ConfirmationFormProps<TwoFactorDto>;

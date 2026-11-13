@@ -41,7 +41,15 @@ describe('StepItem', () => {
       </ol>
     );
 
-    expect(screen.getByRole('listitem')).toHaveTextContent('3ЗбережітьДіяВміст');
+    const item = screen.getByRole('listitem');
+    const [row, body] = within(item).getAllByRole('generic');
+    const action = screen.getByRole('button', { name: 'Дія' });
+    const content = screen.getByText('Вміст');
+    expect(item).toHaveTextContent('3ЗбережітьДіяВміст');
+    expect(row).toContainElement(action);
+    expect(row).not.toContainElement(content);
+    expect(body).toContainElement(content);
+    expect(body).not.toContainElement(action);
     expect(screen.getByRole('paragraph')).toHaveTextContent(/^Збережіть$/);
   });
 

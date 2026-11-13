@@ -36,6 +36,7 @@ const pointerDownOn = (target: EventTarget): void => {
 };
 
 afterEach(() => {
+  jest.restoreAllMocks();
   document.body.innerHTML = '';
 });
 
@@ -117,7 +118,6 @@ describe('useKeyInfoDismissal', () => {
     expect(remove).toHaveBeenCalledWith('pointerdown', expect.any(Function));
     expect(onEscape).not.toHaveBeenCalled();
     expect(onOutside).not.toHaveBeenCalled();
-    remove.mockRestore();
   });
 
   it('starts listening when it opens', () => {

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
+import observabilityCore from '@/services/observability/observability-core';
 import type { AuthProviderLoader } from '@auth/stores';
 import authSessionProvider from '@auth/stores/auth-session-provider';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
@@ -12,8 +13,9 @@ import type { SignInRun } from '@auth/types/sign-in/sign-in-run';
 
 const LOAD_FAILURE: AuthError = {
   kind: 'network',
-  displayMessage: 'Failed to load the authentication service. Please try again.',
+  displayMessage: 'sign_in.errors.transient',
   retryable: true,
+  reason: 'transient',
 };
 
 const START: AuthStatePatch = { loginLoading: true };
@@ -25,7 +27,10 @@ function signInRunner(loader: AuthProviderLoader): SignInRun {
 
   return async (dto: SignInDto, signal: AbortSignal): Promise<void> => {
     useAuthStore.setState(START);
-    const processor = await processorLoader.load().catch(() => null);
+    const processor = await processorLoader.load().catch((error: unknown) => {
+      observabilityCore.captureError(error, { source: 'auth:sign-in-load' });
+      return null;
+    });
     const context = {
       loader,
       store: useAuthStore,

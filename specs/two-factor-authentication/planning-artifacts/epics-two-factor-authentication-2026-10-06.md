@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-12
+revised: 2026-11-13
 iteration: 4
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -56,8 +56,9 @@ revisions:
 # Epics and stories: two-factor authentication for the user module
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27,
-2026-11-03 (owner decision: the `twoFactorAuth` flag removed) and 2026-11-10 (the owner decisions of
-2026-11-04 and 2026-11-05 marked in Stories 2.6, 2.7, 3.4, 3.6, 4.1, 4.2 and 4.4) **Feature:**
+2026-11-03 (owner decision: the `twoFactorAuth` flag removed), 2026-11-10 (the owner decisions of
+2026-11-04 and 2026-11-05 marked in Stories 2.6, 2.7, 3.4, 3.6, 4.1, 4.2 and 4.4) and 2026-11-13
+(UX-DR-1 tablet cells amended, FR-45) **Feature:**
 `two-factor-authentication`
 
 > **Owner decisions of 2026-11-04 (challenge page as drawn, auto-submit, Figma card), noted
@@ -408,8 +409,9 @@ Derived from the architecture and from the repository gates this stage re-read:
   at most 49 px wide (`flex: 1 1 0`, `min-width: 0`), inside the content box down to 320 px
   (§6.11). The tablet cells (about 86 × 130 in `72:4882`) are a recorded deviation (Follow-up 5.4).
   Amended 2026-11-13 (gate finding, FR-45): the FR-14 supersession of 2026-11-04 adopted the
-  tablet cells, so they are no longer a deviation: from `md` to just below `xl` the cells are a
-  sixth of the content box less the 8 px gaps (about 86 px wide) and 130 px tall.
+  tablet cells, so they are no longer a deviation, and the 64 × 86 range above is superseded for
+  `md` to just below `xl`: in that range the cells are a sixth of the content box less the 8 px
+  gaps (about 86 px wide) and 130 px tall, and 64 × 86 holds from `xl` (1440 px) up only.
 - UX-DR-2: settings frames (misnamed "Помилка 404"): setup `313:10242` / `313:10480` /
   `313:10606`, connected `315:11502` / `315:12300` / `318:13133`, QR `315:11289`, key chip
   `315:11309`.
@@ -2655,7 +2657,8 @@ So that the design of record matches what ships.
   errors, busy and disabled states, both notices and the status headings of the off and on views.
 - Given the NFR-6 colours, when the request is filed, then it asks to adopt them as tokens and to
   confirm the 8 / 4 px cell gaps and the 64 × 86 tablet cells over the about 86 × 130 cells of
-  `72:4882`.
+  `72:4882`. Superseded 2026-11-13 for the tablet cells: the shipped tablet cells are the drawn
+  86 × 130 (UX-DR-1), so only the gaps remain to confirm.
 - Given the copy, when the request is filed, then it lists the Ukrainian corrections and the
   translated Russian settings copy (D12).
 

@@ -56,7 +56,9 @@ export class SignInSubmitProcessor {
     if (signal.aborted || (!result.ok && result.error.aborted)) return;
     await context.loader
       .resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals)
-      .then((signals) => signals.loginSettled(result))
+      .then((signals) => {
+        if (!signal.aborted) signals.loginSettled(result);
+      })
       .catch(() => undefined);
   }
 

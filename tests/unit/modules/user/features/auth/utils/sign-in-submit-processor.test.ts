@@ -301,6 +301,8 @@ describe('SignInSubmitProcessor', () => {
 
     expect(useAuthStore.getState()).toMatchObject({ token, recoveryCodesRemaining });
     expect(clearUser).not.toHaveBeenCalled();
+    expect(s.resolve).toHaveBeenCalledTimes(1);
+    expect(s.loginSettled).not.toHaveBeenCalled();
   });
 
   it('writes the failure as loginError and stops loading', async () => {
@@ -331,6 +333,22 @@ describe('SignInSubmitProcessor', () => {
     });
     expect(s.resolve).toHaveBeenCalledTimes(1);
     expect(s.loginSettled).not.toHaveBeenCalled();
+  });
+
+  it('records nothing when the sign-in is aborted while the signals load', async () => {
+    const s = stubs({ ok: false, error: invalid });
+    const controller = new AbortController();
+    const loginSettled = jest.fn();
+    s.resolve.mockImplementation((token: symbol) => {
+      if (token === AUTH_TOKENS.GraphQLSignInProvider) return Promise.resolve({ login: s.login });
+      controller.abort();
+      return Promise.resolve({ loginSettled });
+    });
+
+    await runWith(s, dto(), controller.signal);
+
+    expect(s.resolve).toHaveBeenNthCalledWith(2, AUTH_TOKENS.AuthSecuritySignals);
+    expect(loginSettled).not.toHaveBeenCalled();
   });
 
   it('hands the settled result to the security signals once, unless aborted', async () => {

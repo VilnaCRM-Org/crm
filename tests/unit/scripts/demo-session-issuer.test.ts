@@ -107,6 +107,10 @@ function harness(answers: readonly unknown[], templatePath?: string): Harness {
   return { issuer, calls, demo, generatedPath, fetch };
 }
 
+const existing: unknown = { data: { createUser: null }, errors: [{ message: 'already exists' }] };
+
+const created: unknown = { data: { createUser: { user: { id: '01JB' } } } };
+
 const signedIn = (accessToken: unknown): unknown => ({
   data: { signInUser: { user: { success: true, twoFactorEnabled: false, accessToken } } },
 });
@@ -131,21 +135,46 @@ describe('DemoSessionIssuer', () => {
   });
 
   describe('run', () => {
-    it('reuses a generated token with more than an hour left, calling nothing', async () => {
-      const { issuer, fetch, demo, generatedPath } = harness([]);
+    it('reuses a token with more than an hour left once the demo user already exists', async () => {
+      const { issuer, calls, demo, generatedPath } = harness([existing]);
       const token = jwtExpiringIn(3601);
       issuer.writeEnvironment(token);
 
       const message = await issuer.run();
 
-      expect(fetch).not.toHaveBeenCalled();
+      expect(calls).toHaveLength(1);
+      expect(calls[0]?.body.query).toContain('mutation CreateUser');
       expect(tokenIn(generatedPath)).toBe(token);
       expect(message).toBe(`Reused the demo session token for ${demo.email} (${generatedPath})`);
     });
 
+    it('issues a new token when the demo user had to be created again', async () => {
+      const fresh = jwtExpiringIn(86_400);
+      const { issuer, calls, generatedPath } = harness([created, signedIn(fresh)]);
+      issuer.writeEnvironment(jwtExpiringIn(86_400 * 2));
+
+      const message = await issuer.run();
+
+      expect(calls).toHaveLength(2);
+      expect(tokenIn(generatedPath)).toBe(fresh);
+      expect(message.startsWith('Issued the demo session token for ')).toBe(true);
+    });
+
+    it('issues a new token when the generated one belongs to another demo e-mail', async () => {
+      const fresh = jwtExpiringIn(86_400);
+      const { issuer, calls, demo, generatedPath } = harness([existing, signedIn(fresh)]);
+      issuer.writeEnvironment(jwtExpiringIn(86_400 * 2));
+      writeFileSync(generatedPath, generatedFile(jwtExpiringIn(86_400 * 2), buildEmail()));
+
+      await issuer.run();
+
+      expect(calls).toHaveLength(2);
+      expect(readFileSync(generatedPath, 'utf8')).toBe(generatedFile(fresh, demo.email));
+    });
+
     it('issues a new token when the generated one has an hour or less left', async () => {
       const fresh = jwtExpiringIn(86_400);
-      const { issuer, calls, generatedPath } = harness([{ data: {} }, signedIn(fresh)]);
+      const { issuer, calls, generatedPath } = harness([existing, signedIn(fresh)]);
       issuer.writeEnvironment(jwtExpiringIn(3600));
 
       const message = await issuer.run();

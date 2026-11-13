@@ -135,7 +135,10 @@ sidebar and in the mobile drawer, whose list sits in its own `<nav>`
 active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
 It does not conform to WCAG 2.1 AA: SC 1.4.3 for the label and SC 1.4.11 for the icon-only current
 rail row. The owner re-confirmed keeping it on 2026-11-09; it is tracked in #276.
-The twelfth is the two-factor challenge's "Назад" (`#auth-form-card > button.MuiButton-text`).
+The twelfth is the two-factor challenge's "Назад" (`#auth-form-card > button.MuiButton-text`):
+the same selector the ninth lists for the recovery cards' button-form back control, since both
+render `CardBackControl`. It stays a separate entry only so the challenge's owner decision of
+2026-11-04 carries its own reason; removing either entry leaves the challenge covered.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),

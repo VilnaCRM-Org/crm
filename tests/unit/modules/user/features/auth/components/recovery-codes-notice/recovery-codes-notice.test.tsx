@@ -4,13 +4,18 @@ import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
 import RecoveryCodesNotice from '@auth/components/recovery-codes-notice';
 import createCodesNoticeLocaleI18n from '@tests/unit/utils/create-codes-notice-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 type Language = 'uk' | 'en';
+
+function SettingsPage(): JSX.Element {
+  const { state } = useLocation();
+  return <p>settings page {JSON.stringify(state)}</p>;
+}
 
 const wrapperFor = (language: Language): ((props: { children: ReactNode }) => JSX.Element) => {
   function Wrapper({ children }: { children: ReactNode }): JSX.Element {
@@ -19,7 +24,7 @@ const wrapperFor = (language: Language): ((props: { children: ReactNode }) => JS
         <MemoryRouter initialEntries={['/']}>
           <Routes>
             <Route path="/" element={<main>{children}</main>} />
-            <Route path="/settings" element={<p>settings page</p>} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </MemoryRouter>
       </I18nextProvider>
@@ -80,7 +85,7 @@ describe('RecoveryCodesNotice', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Залишився 1 резервний код.');
   });
 
-  it('links to /settings client-side and dismisses', async () => {
+  it('links to /settings client-side with focus-main arrival state, and dismisses', async () => {
     const onDismiss = jest.fn();
     renderNotice(1, 'uk', onDismiss);
     const link = screen.getByRole('link', { name: 'Відкрити налаштування' });
@@ -89,7 +94,7 @@ describe('RecoveryCodesNotice', () => {
     await userEvent.click(link);
 
     expect(onDismiss).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('settings page')).toBeInTheDocument();
+    expect(screen.getByText('settings page {"focusMain":true}')).toBeInTheDocument();
   });
 
   it('dismisses with the compact outlined pill close button', async () => {

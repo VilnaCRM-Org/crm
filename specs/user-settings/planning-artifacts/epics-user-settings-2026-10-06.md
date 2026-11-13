@@ -61,6 +61,8 @@ architecture's, and `U`, `D`, `R` and `P` ids come from the run's decision recor
 operation the page uses (`users`, `updateUser`, `resendEmailToUser`) is in the pinned v2.8.0
 schema (D5), so no story waits for user-service: the page runs against the browser-lane stubs,
 msw and a stateless local Apollo mock, behind the `userSettings` flag, which ships off (U5).
+Superseded 2026-11-03: the owner removed the flag, so the page is an ordinary protected route in
+every environment ("No flag" in the owner decisions above).
 
 `settings/` below means `src/modules/user/features/settings/`, `@auth/` means
 `src/modules/user/features/auth/` and `user/` means `src/modules/user/`.

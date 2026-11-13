@@ -469,7 +469,7 @@ describe('mutation shard slicing', () => {
       expect(shards.flat().sort()).toEqual([...weights.keys()].sort());
     });
 
-    it('falls back to the lightest shard when no shard has room for the file', () => {
+    it('falls back to the shard holding the fewest mutants when no shard has room', () => {
       const one = new Map([
         ['a.ts', 5],
         ['b.ts', 1],
@@ -480,6 +480,49 @@ describe('mutation shard slicing', () => {
       ]);
 
       expect(packShards(one, 2, mutants)).toEqual([['a.ts'], ['b.ts']]);
+    });
+
+    it('overshoots the mutant cap on the shard with the fewest mutants, not the lightest', () => {
+      const weights = new Map([
+        ['a.ts', 100],
+        ['b.ts', 10],
+        ['c.ts', 5],
+      ]);
+      const mutants = new Map([
+        ['a.ts', 1],
+        ['b.ts', 50],
+        ['c.ts', 60],
+      ]);
+
+      expect(packShards(weights, 2, mutants)).toEqual([['a.ts', 'c.ts'], ['b.ts']]);
+    });
+
+    it('keeps an overshooting file off a shard already at the file cap', () => {
+      const weights = new Map([
+        ['a.ts', 6],
+        ['b.ts', 2],
+        ['c.ts', 3],
+        ['d.ts', 2],
+        ['e.ts', 2],
+        ['f.ts', 1],
+        ['g.ts', 3],
+      ]);
+      const mutants = new Map([
+        ['a.ts', 5],
+        ['b.ts', 2],
+        ['c.ts', 7],
+        ['d.ts', 1],
+        ['e.ts', 1],
+        ['f.ts', 3],
+        ['g.ts', 7],
+      ]);
+
+      expect(packShards(weights, 4, mutants)).toEqual([
+        ['a.ts', 'f.ts'],
+        ['c.ts'],
+        ['g.ts'],
+        ['b.ts', 'd.ts', 'e.ts'],
+      ]);
     });
 
     it('degrades to a single shard holding everything', () => {

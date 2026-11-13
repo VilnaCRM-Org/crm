@@ -8,6 +8,7 @@ import UIShellContent from '@/components/ui-shell-content';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import ROUTE_PATHS from '@/routes/route-paths';
+import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import useRecoveryNoticeMessage from '@auth/hooks/use-recovery-notice-message';
 import type { RecoveryCodesNoticeProps } from '@auth/types/two-factor/recovery-codes-notice';
 
@@ -16,6 +17,8 @@ import uk from './i18n/uk.json';
 import styles from './styles';
 
 lazyCatalogLoader.register(i18n, { en, uk });
+
+const FOCUS_ON_ARRIVAL: RedirectNavigationState = { focusMain: true };
 
 export default function RecoveryCodesNotice({
   count,
@@ -31,7 +34,13 @@ export default function RecoveryCodesNotice({
           {message}
         </Box>
         <Box sx={styles.actions}>
-          <Box component={Link} to={ROUTE_PATHS.settings} onClick={onDismiss} sx={styles.link}>
+          <Box
+            component={Link}
+            to={ROUTE_PATHS.settings}
+            state={FOCUS_ON_ARRIVAL}
+            onClick={onDismiss}
+            sx={styles.link}
+          >
             {t('recovery_codes_notice.open_settings')}
           </Box>
           <UIButton type="button" variant="outlinedPill" size="small" onClick={onDismiss}>

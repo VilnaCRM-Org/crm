@@ -347,14 +347,17 @@ per related logic test and 0.29 s per related component test against a fixed 75 
 50 s residual. It is not rounded: a power-of-two step once weighed the scrubber 29% light, and a
 repack costs the shards only a cold run. A load weight cannot see how long the covering tests
 themselves take, nor the mutants that time out (each waits out Stryker's timeout window and restarts
-its test runner), so the packing also caps every shard at 1.05x the mean runnable mutants: a shard
-that drew 257 mutants of cheap-looking files whose page tests type through a form met the kill
-switch while its weight sat near the minimum. The packing puts the heaviest file first onto the
-lightest shard that stays under that cap, the lightest of all when none does, ties broken by
-code-unit path order. Counting the whole scope takes about 4 s, so every shard job and the merge job
+its test runner), so the packing also aims to keep every shard within 1.05x the mean runnable
+mutants: a shard that drew 257 mutants of cheap-looking files whose page tests type through a form
+met the kill switch while its weight sat near the minimum. The packing puts the heaviest file first
+onto the lightest shard that stays under both that mutant target and the file cap below, ties
+broken by code-unit path order. When no shard has room for a file's mutants, the file goes to the
+shard under the file cap that holds the fewest mutants (the lighter load, then the lower index,
+breaking ties), so the 1.05x figure is a target the fallback can overshoot, never a guarantee.
+Counting the whole scope takes about 4 s, so every shard job and the merge job
 count at run time and derive the same packing from the same commit; no weight file is committed, so
 none can go stale. At 562 files the scope holds 505 sharded files; 57 files run in no shard. The 63
-shards carry 77 to 166 runnable mutants (mean 158) and 2,080 to 3,229 weight units, except
+shards carry 80 to 166 runnable mutants (mean 158) and 2,237 to 3,189 weight units, except
 `ui-form/styles.ts`, alone at 5,394. Weighing by scored mutants alone had packed that scrubber's 103
 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
 `lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
@@ -398,7 +401,9 @@ out, while every other shard but one finished inside 12 min. Both sat at the 1.0
 count, not a hang, was again the cost. The mutant cap alone left the light shards to absorb a pile
 of small files, so the file-spread check (no shard over twice the mean file count) passed or failed
 by chance as files changed: 63 failed it once a later commit added files. The packing therefore also
-caps every shard at twice the mean file count, so the spread holds by construction.
+caps every shard at twice the mean file count. That cap is a hard bound rather than a target:
+`total` shards at the cap always seat every sharded file, so the mutant fallback never has to
+breach it, and the spread holds by construction.
 
 ### Honest mutant classification (issue #171)
 
@@ -533,7 +538,7 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a seventeen
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 561 files; not all of them produce scored mutants — the 57 unsharded ones hold no
+mutate scope is 562 files; not all of them produce scored mutants — the 57 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 

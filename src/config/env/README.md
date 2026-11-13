@@ -148,8 +148,10 @@ Inactive, `match`, `signIn` and `restore` return `null` and nothing is written. 
 wrapped, so a browser that refuses storage simply gets no persistence. The location and the
 storage are constructor parameters defaulting to `globalThis`, so tests drive the host without
 touching globals. The auth module's composition root registers the singleton by value under
-`AUTH_TOKENS.SandboxDemoSessionProvider`; `AuthStoreActions.login` asks it before the repository
-unless the login's signal is already aborted. The reviewer instructions are in
+`AUTH_TOKENS.SandboxDemoSessionProvider`; the sign-in submit path asks it before resolving the
+sign-in provider: `SignInSubmitProcessor.signInDemo` in
+`src/modules/user/features/auth/utils/sign-in-submit-processor.ts` short-circuits to the demo
+session unless the sign-in's signal is already aborted. The reviewer instructions are in
 [CONTRIBUTING.md](../../../CONTRIBUTING.md#pull-request-sandboxes-and-the-demo-login).
 
 ## Adding a variable

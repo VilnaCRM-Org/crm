@@ -219,6 +219,20 @@ describe('useChallengeSubmit', () => {
     });
   });
 
+  it('still navigates and resolves the result when recording the signal throws', async () => {
+    const h = harness();
+    h.challengeSettled.mockImplementation(() => {
+      throw new Error('telemetry down');
+    });
+    h.completeChallenge.mockResolvedValue(failed('locked'));
+
+    const { outcome } = await submit(h.deps);
+
+    expect(outcome).toEqual(failed('locked'));
+    expect(h.challengeSettled).toHaveBeenCalledTimes(1);
+    expect(h.navigate).toHaveBeenCalledTimes(1);
+  });
+
   it('submits with the deps of the latest render', async () => {
     const initial = harness();
     const latest = harness({ pathname: '/deals', search: '', hash: '' });

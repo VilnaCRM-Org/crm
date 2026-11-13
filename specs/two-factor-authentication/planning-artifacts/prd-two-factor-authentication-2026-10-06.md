@@ -4,7 +4,7 @@ workflowType: prd
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-04
+revised: 2026-11-13
 iteration: 10
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -977,7 +977,12 @@ announced. Focus moves to the `h3`. The QR and the key are never written to the 
 card, the URL, storage, the cache or logs.
 
 Superseded 2026-11-04 in part (owner decision, Figma card): the setup heading is "Налаштуйте 2FA",
-not "Налаштуйте двофакторну автентифікацію".
+the card's level-2 header beside the authenticator logo, not a separate `h3` "Налаштуйте
+двофакторну автентифікацію", and focus moves to that header. The outlined "Скопіювати ключ" button
+is replaced by an icon-only copy control beside the key chip, named "Скопіювати ключ" in step 2
+and "Скопіювати резервний ключ" beside the second chip in step 3; the copy, its announcement and
+the fallback below are unchanged. The criteria are kept as the record of the plan as approved;
+architecture §6.10's amendment and Story 3.4 carry the same decision.
 
 - Given a resolved setup with the mock secret, when it settles, then the QR decodes back to the
   exact `otpauthUri` (unit test with a decoder) and the chip shows the secret in groups of four.

@@ -21,7 +21,7 @@ DOCKERFILE
 #!/usr/bin/env bash
 printf 'docker %s\n' "$*" >> "${COMMAND_LOG:?}"
 if [ "$1" = image ] && [ "$2" = inspect ]; then
-  [ -n "${FAKE_IMAGE_PRESENT:-}" ]
+  [ "$3" = user-service-local-php ] && [ -n "${FAKE_IMAGE_PRESENT:-}" ]
   exit
 fi
 if [ "$1" = build ]; then
@@ -34,7 +34,7 @@ STUB
 }
 
 run_start() {
-  run sh "$PROJECT_ROOT/scripts/local-stack/start.sh"
+  run "$PROJECT_ROOT/scripts/local-stack/start.sh"
 }
 
 @test "local stack start fails fast when user-service is not cloned" {

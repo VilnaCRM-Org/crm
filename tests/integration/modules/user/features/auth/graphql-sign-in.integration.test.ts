@@ -11,7 +11,7 @@ import GraphQLSignInTransformer from '@auth/transformers/graphql-sign-in-transfo
 import type { SignInResult } from '@auth/types/two-factor/sign-in';
 import { buildEmail, buildPassword, buildPendingSessionId, buildToken } from '@tests/builders';
 
-import server from '../../../../mocks/server';
+import server, { userServiceGraphql } from '../../../../mocks/server';
 import { answerSignIn } from '../../../../mocks/sign-in-operations';
 
 const provider = container.resolve<GraphQLSignInProvider>(AUTH_TOKENS.GraphQLSignInProvider);
@@ -235,14 +235,37 @@ describe('GraphQL sign-in through the container (integration)', () => {
   });
 
   it('aborts a request in flight', async () => {
-    answerSignIn((): Response => HttpResponse.error());
+    let arrived: () => void = () => undefined;
+    const received = new Promise<void>((resolve) => {
+      arrived = resolve;
+    });
+    server.use(
+      userServiceGraphql.mutation('SignInUser', async ({ request }) => {
+        arrived();
+        await new Promise<void>((resolve) => {
+          request.signal.addEventListener('abort', () => resolve());
+          setTimeout(resolve, 250);
+        });
+        return payload({
+          success: true,
+          twoFactorEnabled: false,
+          accessToken: buildToken(),
+          pendingSessionId: null,
+        });
+      })
+    );
     const controller = new AbortController();
     const pending = provider.login(dto(), controller.signal);
-    controller.abort();
+    await received;
 
+    controller.abort();
     const result = await pending;
 
-    expect(errorOf(result)).toEqual(expect.objectContaining({ retryable: expect.any(Boolean) }));
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
+    });
+    expect(write).not.toHaveBeenCalled();
   });
 
   it('resolves null from the repository when the server answers no data and no error', async () => {

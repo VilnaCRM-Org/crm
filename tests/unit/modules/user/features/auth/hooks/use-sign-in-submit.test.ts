@@ -4,6 +4,7 @@ import * as React from 'react';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import observabilityCore from '@/services/observability/observability-core';
 import useSignInSubmit from '@auth/hooks/use-sign-in-submit';
 import type { AuthProviderLoader } from '@auth/stores';
 import authSessionProvider from '@auth/stores/auth-session-provider';
@@ -16,8 +17,9 @@ import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const LOAD_FAILURE: AuthError = {
   kind: 'network',
-  displayMessage: 'Failed to load the authentication service. Please try again.',
+  displayMessage: 'sign_in.errors.transient',
   retryable: true,
+  reason: 'transient',
 };
 
 const invalid: AuthError = {
@@ -165,6 +167,17 @@ describe('useSignInSubmit', () => {
 
     expect(run).not.toHaveBeenCalled();
   });
+
+  it('reports a processor chunk that failed to load to observability', async () => {
+    const failure = new Error('chunk');
+    jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(failure);
+    const captureError = jest.spyOn(observabilityCore, 'captureError').mockReturnValue(undefined);
+
+    await runWith(stubs());
+
+    expect(captureError).toHaveBeenCalledTimes(1);
+    expect(captureError).toHaveBeenCalledWith(failure, { source: 'auth:sign-in-load' });
+  });
 });
 
 describe('useSignInSubmit constants loaded inside the test', () => {
@@ -213,8 +226,9 @@ describe('useSignInSubmit constants loaded inside the test', () => {
     expect(store.getState().loginLoading).toBe(false);
     expect(store.getState().loginError).toStrictEqual({
       kind: 'network',
-      displayMessage: 'Failed to load the authentication service. Please try again.',
+      displayMessage: 'sign_in.errors.transient',
       retryable: true,
+      reason: 'transient',
     });
   });
 

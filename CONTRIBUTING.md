@@ -412,8 +412,10 @@ user with a token, and every other operation reaches user-service. A made-up tok
 because user-service verifies an RS256 signature and a live session. So
 `scripts/local-stack/issue-demo-session.mjs` creates `demo@vilnacrm.com`, signs in for real, and
 writes that token into the gitignored `docker/local-stack/generated/sign-in.json`. It reuses the
-token until an hour before it expires, and the start script raises its lifetime to 30 days through
-the clone's gitignored `.env.local`.
+token until an hour before it expires, as long as the file was written for the same demo e-mail and
+the demo user already existed (a wiped user-service database recreates the user, so a new token is
+issued), and the start script raises its lifetime to 30 days through the clone's gitignored
+`.env.local`.
 
 What that means when you test by hand:
 
@@ -504,8 +506,10 @@ makes Jest load each test file related to the mutated file, about 150 ms apiece 
 test in it is filtered out, so `scripts/ci/mutation-related-tests.mjs` counts those files the way
 Jest finds them for Stryker, and the factor is 4 + the related logic tests + 3 x the related
 component tests (fitted to measured shard times). Because no load weight sees slow covering tests
-or timeouts, no shard may also hold more than 1.05x the mean runnable mutants. Packing by scored
-mutants alone had put a 37- and a 111-related-test file in shards
+or timeouts, shards also aim to stay within 1.05x the mean runnable mutants; when no shard has room
+for a file's mutants, the file goes to the shard holding the fewest mutants among those under the
+file cap, so the target can be overshot. The file cap (twice the mean file count per shard) always
+holds. Packing by scored mutants alone had put a 37- and a 111-related-test file in shards
 that ran an estimated 22 and 29 minutes cold. A file with no runnable mutant (a barrel, a token
 module) goes to no shard, so its whole-suite related-test set no longer lands on one shard.
 Every shard job and the merge job count each file's

@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import Guide from '@/modules/user/features/settings/components/two-factor-settings/setup-guide';
 import { buildOtpauthUri, buildTotpSecret } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>{children}</I18nextProvider>;
@@ -61,5 +62,8 @@ describe('SetupGuide', () => {
 
     expect(screen.queryByRole('button', { name: /Скопіювати/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('code')).not.toBeInTheDocument();
+    const save = stepsOf()[2];
+    assertInstanceOf(save, HTMLElement);
+    expect(within(save).getAllByRole('generic')).toHaveLength(2);
   });
 });
