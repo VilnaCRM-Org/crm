@@ -89,7 +89,31 @@ const configCallsIn = (source: string): string[] =>
     )
   );
 
-const isQuiet = (args: string): boolean => /\bquiet\s*:\s*true\b/u.test(args);
+const OPENERS = new Set(['{', '(', '[']);
+const CLOSERS = new Set(['}', ')', ']']);
+
+/**
+ * The options object's own properties only: comments go, string literals are emptied, and
+ * everything nested inside a deeper object, call or array is dropped, so a `quiet: true` in a
+ * comment, a string or a nested object does not count.
+ */
+const topLevelOptions = (args: string): string => {
+  const code = args
+    .replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/gu, '')
+    .replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/gu, '""');
+  let depth = 0;
+  return Array.from(code)
+    .filter((character) => {
+      depth += OPENERS.has(character) ? 1 : 0;
+      const kept = depth <= 1;
+      depth -= CLOSERS.has(character) ? 1 : 0;
+      return kept;
+    })
+    .join('');
+};
+
+const isQuiet = (args: string): boolean =>
+  /^\s*\{/u.test(args) && /[{,]\s*quiet\s*:\s*true\s*[,}]/u.test(topLevelOptions(args));
 
 const repositoryCalls = (): { file: string; args: string }[] =>
   trackedSources()
@@ -133,6 +157,10 @@ describe('dotenv loads quietly (dotenv 18)', () => {
     ['a renamed import', "import { config as load } from 'dotenv';\nload();"],
     ['a destructured require', "const { config: load } = require('dotenv');\nload({});"],
     ['a default-plus-named import', "import dotenv, { config } from 'dotenv';\nconfig();"],
+    ['quiet only in a comment', "dotenv.config({ path: '.env' /* quiet: true */ });"],
+    ['quiet only in a string', "dotenv.config({ path: 'quiet: true' });"],
+    ['quiet only in a nested object', 'dotenv.config({ processEnv: { quiet: true } });'],
+    ['quiet set to false', 'dotenv.config({ quiet: false });'],
   ])('flags %s', (_case, source) => {
     const calls = configCallsIn(source);
 
