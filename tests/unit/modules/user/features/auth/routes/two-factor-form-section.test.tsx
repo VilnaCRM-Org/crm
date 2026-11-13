@@ -392,6 +392,21 @@ describe('TwoFactorFormSection', () => {
       ).not.toBeInTheDocument();
     });
 
+    it('drops a recovery format error when returning to the cells', async () => {
+      mount();
+      await openRecovery();
+      await submitRecovery('abc-123');
+      await screen.findByText('Введіть резервний код у форматі XXXX-XXXX');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Використати код із застосунку' }));
+
+      await waitFor(() => expect(cells()).toHaveLength(6));
+      cells().forEach((cell) => expect(cell).not.toHaveAttribute('aria-invalid', 'true'));
+      expect(
+        screen.queryByText('Введіть резервний код у форматі XXXX-XXXX')
+      ).not.toBeInTheDocument();
+    });
+
     it('completes with a recovery code and writes the token', async () => {
       const token = buildToken();
       const code = buildRecoveryCode();

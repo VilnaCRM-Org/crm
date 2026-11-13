@@ -365,6 +365,22 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await expect(recoveryFieldOf(page)).toHaveCount(0);
   });
 
+  test('switching back after a recovery format error leaves the cells valid', async ({ page }) => {
+    const challenge = await stubChallenge(page);
+    await signInToChallenge(page, credentials);
+    await recoveryToggleOf(page).click();
+    await recoveryFieldOf(page).fill('abc-123');
+    await confirmButtonOf(page).click();
+    await expect(page.getByText(challengeText.recoveryFormat)).toBeVisible();
+
+    await authenticatorToggleOf(page).click();
+
+    await expect(codeCellsOf(page)).toHaveCount(6);
+    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(0);
+    await expect(page.getByText(challengeText.recoveryFormat)).toHaveCount(0);
+    expect(challenge.count()).toBe(0);
+  });
+
   for (const row of TOGGLE_ROWS) {
     test(`the mode toggle shows the link outline when tabbed to in ${row.mode} mode`, async ({
       page,

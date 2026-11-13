@@ -33,3 +33,26 @@ export const CreateUserResultSchema = z
       .nullish(),
   })
   .nullish();
+
+const SignInUserNodeSchema = z.object({
+  twoFactorEnabled: z.boolean().nullish(),
+  accessToken: z.string().nullish(),
+  pendingSessionId: z.string().nullish(),
+});
+
+export const SignInUserResultSchema = z
+  .object({
+    signInUser: z.object({ user: SignInUserNodeSchema.nullish() }).nullish(),
+  })
+  .nullish();
+
+const CompleteTwoFactorUserNodeSchema = z.object({
+  accessToken: z.string().nullish(),
+  recoveryCodesRemaining: z.number().int().nonnegative().nullish(),
+});
+
+export const CompleteTwoFactorUserResultSchema = z
+  .object({
+    completeTwoFactorUser: z.object({ user: CompleteTwoFactorUserNodeSchema.nullish() }).nullish(),
+  })
+  .nullish();

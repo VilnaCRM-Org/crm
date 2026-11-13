@@ -1,6 +1,5 @@
 import { injectable } from 'tsyringe';
 
-import type { CompleteTwoFactorUserMutation, SignInUserMutation } from '@/api/generated/graphql';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type {
   UserServiceFailure,
@@ -13,6 +12,10 @@ import type {
   ChallengeResult,
 } from '@auth/types/two-factor/challenge';
 import type { SignInResult } from '@auth/types/two-factor/sign-in';
+import {
+  CompleteTwoFactorUserResultSchema,
+  SignInUserResultSchema,
+} from '@auth/utils/response-schemas';
 
 const ABORTED_ERROR: AuthError = {
   kind: 'network',
@@ -86,11 +89,8 @@ const SERVER_CHALLENGE_FAILURE: ChallengeFailedOutcome = { kind: 'failed', reaso
 
 @injectable()
 export default class GraphQLSignInTransformer {
-  public toSignInResult(
-    payload: SignInUserMutation | null | undefined,
-    dto: SignInDto
-  ): SignInResult {
-    const data = payload?.signInUser?.user;
+  public toSignInResult(payload: unknown, dto: SignInDto): SignInResult {
+    const data = SignInUserResultSchema.safeParse(payload).data?.signInUser?.user;
     const email = dto.email.toLowerCase();
     if (data?.twoFactorEnabled === true && data.pendingSessionId) {
       return {
@@ -110,10 +110,9 @@ export default class GraphQLSignInTransformer {
     return { ok: false, error };
   }
 
-  public toChallengeResult(
-    payload: CompleteTwoFactorUserMutation | null | undefined
-  ): ChallengeResult {
-    const data = payload?.completeTwoFactorUser?.user;
+  public toChallengeResult(payload: unknown): ChallengeResult {
+    const data =
+      CompleteTwoFactorUserResultSchema.safeParse(payload).data?.completeTwoFactorUser?.user;
     if (!data?.accessToken) return SERVER_CHALLENGE_FAILURE;
     return {
       kind: 'completed',

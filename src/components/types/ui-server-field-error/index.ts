@@ -13,9 +13,12 @@ export interface ServerFieldErrorProps {
   focus?: boolean | undefined;
 }
 
-export interface ServerFieldErrorForm {
-  readonly setError: UseFormSetError<FieldValues>;
-  readonly setFocus: UseFormSetFocus<FieldValues>;
+export interface ServerFieldErrorClearForm {
   readonly clearErrors: UseFormClearErrors<FieldValues>;
   readonly getFieldState: UseFormGetFieldState<FieldValues>;
+}
+
+export interface ServerFieldErrorForm extends ServerFieldErrorClearForm {
+  readonly setError: UseFormSetError<FieldValues>;
+  readonly setFocus: UseFormSetFocus<FieldValues>;
 }

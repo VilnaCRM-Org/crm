@@ -85,6 +85,57 @@ describe('GraphQLSignInTransformer.toChallengeResult', () => {
   });
 });
 
+describe('GraphQLSignInTransformer.toChallengeResult schema', () => {
+  const loadTransformer = async (): Promise<GraphQLSignInTransformer> => {
+    const Loaded = await loadIsolated(
+      async () => (await import('@auth/transformers/graphql-sign-in-transformer')).default
+    );
+    return new Loaded();
+  };
+
+  const node = (fields: object): object => ({
+    completeTwoFactorUser: { user: { twoFactorEnabled: true, ...fields } },
+  });
+
+  it.each<[string, unknown]>([
+    ['a numeric token', node({ accessToken: 42 })],
+    ['an object token', node({ accessToken: { value: buildToken() } })],
+    [
+      'a string recoveryCodesRemaining',
+      node({ accessToken: buildToken(), recoveryCodesRemaining: '2' }),
+    ],
+    [
+      'a negative recoveryCodesRemaining',
+      node({ accessToken: buildToken(), recoveryCodesRemaining: -1 }),
+    ],
+    [
+      'a fractional recoveryCodesRemaining',
+      node({ accessToken: buildToken(), recoveryCodesRemaining: 1.5 }),
+    ],
+    ['a string user', { completeTwoFactorUser: { user: 'user' } }],
+    ['a string completion', { completeTwoFactorUser: 'done' }],
+    ['a string payload', 'payload'],
+  ])('turns %s into the server failure', async (_label, payload) => {
+    const loaded = await loadTransformer();
+
+    expect(loaded.toChallengeResult(payload)).toEqual({ kind: 'failed', reason: 'server' });
+  });
+
+  it('parses a valid completion inside the test', async () => {
+    const loaded = await loadTransformer();
+    const token = buildToken();
+
+    expect(
+      loaded.toChallengeResult(node({ accessToken: token, recoveryCodesRemaining: 3 }))
+    ).toEqual({ kind: 'completed', token, recoveryCodesRemaining: 3 });
+    expect(loaded.toChallengeResult(node({ accessToken: token }))).toEqual({
+      kind: 'completed',
+      token,
+      recoveryCodesRemaining: null,
+    });
+  });
+});
+
 describe('GraphQLSignInTransformer.toChallengeFailure', () => {
   const transformer = new GraphQLSignInTransformer();
 

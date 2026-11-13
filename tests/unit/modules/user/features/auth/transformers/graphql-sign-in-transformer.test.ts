@@ -112,6 +112,55 @@ describe('GraphQLSignInTransformer.toSignInResult', () => {
     });
   });
 
+  const node = (fields: object): object => ({
+    signInUser: { user: { success: true, ...fields } },
+  });
+
+  it.each<[string, unknown]>([
+    ['a numeric token', node({ twoFactorEnabled: false, accessToken: 42 })],
+    ['an object token', node({ twoFactorEnabled: false, accessToken: { value: buildToken() } })],
+    ['a numeric pending session', node({ twoFactorEnabled: true, pendingSessionId: 7 })],
+    [
+      'an object pending session',
+      node({ twoFactorEnabled: true, pendingSessionId: { id: buildPendingSessionId() } }),
+    ],
+    ['a string 2FA flag', node({ twoFactorEnabled: 'false', accessToken: buildToken() })],
+    [
+      'a numeric 2FA flag',
+      node({ twoFactorEnabled: 1, pendingSessionId: buildPendingSessionId() }),
+    ],
+    ['a string user', { signInUser: { user: 'user' } }],
+    ['a string signInUser', { signInUser: 'signed-in' }],
+    ['a string payload', 'payload'],
+  ])('turns %s into the transient server failure', async (_name, payload) => {
+    const loaded = await loadTransformer();
+
+    expect(loaded.toSignInResult(payload, dto)).toEqual({
+      ok: false,
+      error: {
+        kind: 'server',
+        displayMessage: 'sign_in.errors.transient',
+        retryable: true,
+        reason: 'transient',
+      },
+    });
+  });
+
+  it('parses a valid session and challenge payload inside the test', async () => {
+    const loaded = await loadTransformer();
+    const token = buildToken();
+    const pendingSessionId = buildPendingSessionId();
+    const email = dto.email.toLowerCase();
+
+    expect(
+      loaded.toSignInResult(node({ twoFactorEnabled: false, accessToken: token }), dto)
+    ).toEqual({ ok: true, value: { kind: 'session', email, token } });
+    expect(loaded.toSignInResult(node({ twoFactorEnabled: true, pendingSessionId }), dto)).toEqual({
+      ok: true,
+      value: { kind: 'challenge', email, pendingSessionId },
+    });
+  });
+
   it('prefers the pending session when 2FA is on, even with a token present', () => {
     const pendingSessionId = buildPendingSessionId();
 

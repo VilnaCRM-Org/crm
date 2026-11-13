@@ -7,12 +7,17 @@ import useServerFieldError from '@/components/ui-server-field-error/use-server-f
 
 interface Values {
   email: string;
+  backupEmail: string;
 }
+
+type FieldName = keyof Values;
 
 interface HarnessProps {
   readonly message: string | null;
   readonly occurrence?: number | undefined;
   readonly focus?: boolean | undefined;
+  readonly name?: FieldName | undefined;
+  readonly mounted?: boolean | undefined;
 }
 
 const captured: { form: UseFormReturn<Values> | null } = { form: null };
@@ -22,22 +27,45 @@ function form(): UseFormReturn<Values> {
   return captured.form;
 }
 
-function Consumer({ message, occurrence = 0, focus }: HarnessProps): null {
-  useServerFieldError({ name: 'email', message, occurrence, focus });
+function Consumer({ message, occurrence = 0, focus, name = 'email' }: HarnessProps): null {
+  useServerFieldError({ name, message, occurrence, focus });
   return null;
 }
 
-function Harness({ message, occurrence, focus }: HarnessProps): JSX.Element {
-  const methods = useForm<Values>({ defaultValues: { email: '' } });
+function Harness({ message, occurrence, focus, name, mounted = true }: HarnessProps): JSX.Element {
+  const methods = useForm<Values>({ defaultValues: { email: '', backupEmail: '' } });
   captured.form = methods;
-  const { ref, name, onChange, onBlur } = methods.register('email');
+  const email = methods.register('email');
   return (
     <FormProvider {...methods}>
       <label htmlFor="email">Email</label>
-      <input id="email" ref={ref} name={name} onChange={onChange} onBlur={onBlur} />
-      <Consumer message={message} occurrence={occurrence} focus={focus} />
+      <input
+        id="email"
+        ref={email.ref}
+        name={email.name}
+        onChange={email.onChange}
+        onBlur={email.onBlur}
+      />
+      {mounted ? (
+        <Consumer message={message} occurrence={occurrence} focus={focus} name={name} />
+      ) : null}
     </FormProvider>
   );
+}
+
+function harnessOf({ message, name, mounted }: HarnessProps): JSX.Element {
+  return <Harness message={message} focus={false} name={name} mounted={mounted} />;
+}
+
+function renderConsumer(props: HarnessProps): {
+  readonly update: (next: HarnessProps) => void;
+} {
+  const view = render(harnessOf(props));
+  return {
+    update: (next: HarnessProps): void => {
+      view.rerender(harnessOf(next));
+    },
+  };
 }
 
 function renderWith(
@@ -155,6 +183,46 @@ describe('useServerFieldError', () => {
 
     expect(form().getFieldState('email').error).toEqual(
       expect.objectContaining({ type: 'validate', message: 'Bad value' })
+    );
+  });
+
+  it('clears its own server error when it unmounts', () => {
+    const { update } = renderConsumer({ message: 'Not a valid address' });
+
+    update({ message: 'Not a valid address', mounted: false });
+
+    expect(form().getFieldState('email').error).toBeUndefined();
+  });
+
+  it('keeps an error another rule set when it unmounts', () => {
+    const { update } = renderConsumer({ message: null });
+    act(() => {
+      form().setError('email', { type: 'validate', message: 'Bad value' });
+    });
+
+    update({ message: null, mounted: false });
+
+    expect(form().getFieldState('email').error).toEqual(
+      expect.objectContaining({ type: 'validate', message: 'Bad value' })
+    );
+  });
+
+  it('unmounts cleanly when the field carries no error', () => {
+    const { update } = renderConsumer({ message: null });
+
+    update({ message: null, mounted: false });
+
+    expect(form().getFieldState('email').error).toBeUndefined();
+  });
+
+  it('clears the server error it set on the previous field when the name changes', () => {
+    const { update } = renderConsumer({ message: 'Not a valid address', name: 'email' });
+
+    update({ message: 'Not a valid address', name: 'backupEmail' });
+
+    expect(form().getFieldState('email').error).toBeUndefined();
+    expect(form().getFieldState('backupEmail').error).toEqual(
+      expect.objectContaining({ type: 'server', message: 'Not a valid address' })
     );
   });
 });
