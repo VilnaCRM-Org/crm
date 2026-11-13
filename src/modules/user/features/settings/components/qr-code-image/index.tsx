@@ -3,13 +3,15 @@ import qrcode from 'qrcode-generator';
 import { useMemo } from 'react';
 import type { JSX } from 'react';
 
+import { customColors, paletteColors } from '@/styles/colors';
+
 import type { QrCodeImageProps, QrModuleMatrix } from '../../types/components/qr-code-image';
 
 import styles from './styles';
 
 const QUIET_ZONE = 4;
-const INK = '#1A1C1E';
-const PAPER = '#FFFFFF';
+const INK = customColors.text.dark;
+const PAPER = paletteColors.background.default;
 
 function encode(value: string): QrModuleMatrix {
   const code = qrcode(0, 'M');

@@ -29,7 +29,7 @@ const BANNER_BY_REASON = new Map<ChallengeFailureReason, TwoFactorBannerCode>([
 ]);
 
 const SHORT_DIGITS = /^\d{0,5}$/;
-const WHITESPACE = /\s+/g;
+const WHITESPACE = /\s/g;
 
 export function fieldErrorOf(raw: string, mode: ChallengeView['mode']): TwoFactorFieldError {
   const compact = raw.replace(WHITESPACE, '');

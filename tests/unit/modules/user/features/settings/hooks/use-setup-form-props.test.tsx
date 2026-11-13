@@ -1,9 +1,12 @@
 import { renderHook } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useSetupFormProps from '@/modules/user/features/settings/hooks/use-setup-form-props';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 import { panelProps, viewState } from '../components/two-factor-settings/render-panel';
 
@@ -69,5 +72,25 @@ describe('useSetupFormProps', () => {
     (result.current.titleRef as (element: HTMLElement | null) => void)(node);
 
     expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('evaluates the setup copy in a hook loaded inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@/modules/user/features/settings/hooks/use-setup-form-props')).default;
+    });
+    const i18n = createSettingsLocaleI18n('uk', ['en']);
+
+    const { result } = renderHook(() => fresh(panelProps()), { wrapper });
+
+    expect(result.current).toMatchObject({
+      title: i18n.t('settings.two_factor.setup.title'),
+      subtitle: i18n.t('settings.two_factor.setup.subtitle'),
+      submitLabel: 'Підтвердити',
+      submittingLabel: 'Перевірка…',
+    });
+    expect(result.current.title).not.toBe('settings.two_factor.setup.title');
+    expect(result.current.subtitle).not.toBe('settings.two_factor.setup.subtitle');
   });
 });
