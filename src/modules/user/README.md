@@ -767,9 +767,11 @@ The page follows the three frames and the owner decisions of 2026-11-04: the sha
 Authenticator" and a row of six cells above "Підтвердити". The cells keep the frames' states: a
 `#E1E7EA` rest border, a visible `#D0D4D8` placeholder digit, and a focused cell marked by a soft
 shadow and the caret with no outline. Focus lands on the first cell on arrival, and the sixth
-digit submits the code by itself. The cells are 64 × 86 px with an 8 px gap from the `md`
-breakpoint up and at most 49 × 64 px with a 4 px gap below it, so the card keeps the sign-in
-card's width; the 1024 frame's 86 × 130 px cells are not copied.
+digit submits the code by itself. From the `md` breakpoint to just below `xl` the cells copy the
+1024 frame: a sixth of the content box less the 8 px gaps (about 86 px wide) and 130 px tall, as
+the FR-14 supersession of 2026-11-04 requires. From `xl` up they are 64 × 86 px with an 8 px gap,
+and below `md` at most 49 × 64 px with a 4 px gap, so the phone card keeps the sign-in card's
+width.
 
 The contrast and focus-indicator gaps these states leave, the "Назад" exception and the WCAG 3.2.2
 gap of the auto-submit are recorded, with their owner decisions, in

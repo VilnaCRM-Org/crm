@@ -407,6 +407,9 @@ Derived from the architecture and from the repository gates this stage re-read:
   the card's content box; below `md` the six cells share the row with a 4 px gap, 64 px tall and
   at most 49 px wide (`flex: 1 1 0`, `min-width: 0`), inside the content box down to 320 px
   (§6.11). The tablet cells (about 86 × 130 in `72:4882`) are a recorded deviation (Follow-up 5.4).
+  Amended 2026-11-13 (gate finding, FR-45): the FR-14 supersession of 2026-11-04 adopted the
+  tablet cells, so they are no longer a deviation: from `md` to just below `xl` the cells are a
+  sixth of the content box less the 8 px gaps (about 86 px wide) and 130 px tall.
 - UX-DR-2: settings frames (misnamed "Помилка 404"): setup `313:10242` / `313:10480` /
   `313:10606`, connected `315:11502` / `315:12300` / `318:13133`, QR `315:11289`, key chip
   `315:11309`.
