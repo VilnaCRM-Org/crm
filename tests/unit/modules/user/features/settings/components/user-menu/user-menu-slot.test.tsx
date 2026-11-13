@@ -10,6 +10,7 @@ import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import { buildFullName } from '@tests/builders';
+import { getMonogramAvatar } from '@tests/unit/utils/monogram-avatars';
 import renderShell from '@tests/unit/utils/render-shell';
 import { inertSession } from '@tests/unit/utils/session-outlet';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
@@ -120,7 +121,7 @@ describe('UserMenuSlot', () => {
 
     expect(chip).toHaveFocus();
     const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
-    expect(container).toHaveTextContent(identity.monogram);
+    expect(getMonogramAvatar(identity.monogram, container)).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('keeps the same chip mounted across the chunk resolving and signs out from it', async () => {

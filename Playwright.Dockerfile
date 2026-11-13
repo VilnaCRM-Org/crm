@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/playwright:v1.63.0-jammy@sha256:167d0506cfbe3c294fb214b2d11737326eeee028aa611fa1ba538e5057675847
+FROM mcr.microsoft.com/playwright:v1.65.0-jammy@sha256:5a8620d70618963ec6628dd77cc25ec6a4b232e26c4a41241a8c1def04e2dc04
 
-ARG BUN_VERSION=1.3.5
-ARG UBUNTU_SNAPSHOT=20260925T000000Z
+ARG BUN_VERSION=1.4.4
+ARG UBUNTU_SNAPSHOT=20261110T000000Z
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -12,7 +12,7 @@ RUN for suite in jammy jammy-updates jammy-security; do \
     && echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
     && apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     bash=5.1-6ubuntu1.1 \
-    curl=7.81.0-1ubuntu1.29 \
+    curl=7.81.0-1ubuntu1.30 \
     g++=4:11.2.0-1ubuntu1 \
     make=4.3-4.1build1 \
     python3=3.10.6-1~22.04.1 \

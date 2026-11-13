@@ -87,7 +87,7 @@ const config: Config = {
       '/node_modules/(?!',
       '@faker-js/|msw/|@mswjs/|@bundled-es-modules/|until-async/|rettime/|',
       'outvariant/|strict-event-emitter/|headers-polyfill/|is-node-process/|@open-draft/|',
-      '@vilnacrm/ui-toolkit/',
+      '@vilnacrm/ui-toolkit/|uuid/',
       ')',
     ].join(''),
     '\\.pnp\\.[^\\/]+$',

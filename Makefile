@@ -42,6 +42,9 @@ LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
 # Alpine 3.21 package pins (verified 2026-01-05); update when base image bumps
 CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
+# The prod image runs on serve-base (Alpine 3.24), not the dev image's Node Alpine 3.21 base, so the
+# Lighthouse DIND install into it needs that branch's versions.
+PROD_CHROMIUM_APK_PACKAGES  = chromium=156.0.8078.79-r0 font-freefont=20120503-r4 freetype=2.14.3-r0 harfbuzz=13.2.1-r0 nss=3.124-r0 npm=11.12.1-r0
 # Evaluate once: recursive shell variables interact with the global export above.
 LHCI_DIND_CLI_VERSION       := $(shell sed -n 's/^[[:space:]]*"@lhci\/cli": \["@lhci\/cli@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
 DOTENV_EXPAND_DIND_VERSION  := $(shell sed -n 's/^[[:space:]]*"dotenv-expand": \["dotenv-expand@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
@@ -494,8 +497,8 @@ fmt-qlty: ## This command executes Qlty formatting
 lint-eslint: ## This command executes ESLint
 	$(BUNX) eslint .
 
-lint-tsc: ## This command executes Typescript linter
-	$(BUNX) tsc
+lint-tsc: ## Type-check the repository with bun check (ADR-003)
+	$(BUN) check
 
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
@@ -1026,7 +1029,7 @@ build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
 
 install-chromium-lhci: ## Install Chromium and LHCI tooling for Lighthouse CI in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c 'set -e; LHCI_VERSION="$(LHCI_DIND_CLI_VERSION)"; DOTENV_EXPAND_VERSION="$(DOTENV_EXPAND_DIND_VERSION)"; DOTENV_VERSION="$(DOTENV_DIND_VERSION)"; [ -n "$$LHCI_VERSION" ] || { echo "Missing @lhci/cli version in bun.lock" >&2; exit 1; }; [ -n "$$DOTENV_EXPAND_VERSION" ] || { echo "Missing dotenv-expand version in bun.lock" >&2; exit 1; }; [ -n "$$DOTENV_VERSION" ] || { echo "Missing dotenv version in bun.lock" >&2; exit 1; }; apk add --no-cache $(CHROMIUM_APK_PACKAGES) npm; npm install -g --prefix /usr/local "@lhci/cli@$$LHCI_VERSION" "dotenv-expand@$$DOTENV_EXPAND_VERSION" "dotenv@$$DOTENV_VERSION"'
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c 'set -e; LHCI_VERSION="$(LHCI_DIND_CLI_VERSION)"; DOTENV_EXPAND_VERSION="$(DOTENV_EXPAND_DIND_VERSION)"; DOTENV_VERSION="$(DOTENV_DIND_VERSION)"; [ -n "$$LHCI_VERSION" ] || { echo "Missing @lhci/cli version in bun.lock" >&2; exit 1; }; [ -n "$$DOTENV_EXPAND_VERSION" ] || { echo "Missing dotenv-expand version in bun.lock" >&2; exit 1; }; [ -n "$$DOTENV_VERSION" ] || { echo "Missing dotenv version in bun.lock" >&2; exit 1; }; apk add --no-cache $(PROD_CHROMIUM_APK_PACKAGES); npm install -g --prefix /usr/local "@lhci/cli@$$LHCI_VERSION" "dotenv-expand@$$DOTENV_EXPAND_VERSION" "dotenv@$$DOTENV_VERSION"'
 
 test-chromium: ## Test Chromium installation in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"
@@ -1105,7 +1108,7 @@ run-eslint-tests-dind: ## Run ESLint in temp container for dind
 
 run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" bun x tsc
+	docker exec "$(TEMP_CONTAINER_NAME)" bun check
 
 run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi

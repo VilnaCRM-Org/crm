@@ -81,7 +81,7 @@ EditorConfig, markdownlint and Playwright extensions with format-on-save. Its
 before compose starts, the two steps any `make` invocation would otherwise do for you.
 
 Inside the container the workspace is `/app` and `node_modules` is the named volume, so run
-the tools directly — `bun x jest`, `bun x eslint .`, `bun x tsc --noEmit`, `bun x prettier`
+the tools directly — `bun x jest`, `bun x eslint .`, `bun check`, `bun x prettier`
 — rather than through `make`: the Docker-backed targets (`make lint`, `make test-unit-all`,
 `make lint-metrics`, the browser suites) shell out to `docker compose exec`, which needs the
 host's Docker socket. Run those from a host terminal against the same containers, exactly as
@@ -421,7 +421,7 @@ off the test path so the unit fetch-stub and the integration MSW server never co
 excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
 text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
 type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
-CI runners are 2-core, so parallelism comes from the shard count (currently 48), not from Stryker's
+CI runners are 2-core, so parallelism comes from the shard count (currently 52), not from Stryker's
 in-process concurrency.
 
 **Every mutant is classified on its merits.** A score is only worth enforcing when each status was
@@ -439,7 +439,7 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 48-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 52-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
 **scored-mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed
 by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
@@ -467,7 +467,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 48-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 52-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -491,10 +491,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=48  # repeat for 1..47
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=52  # repeat for 1..51
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=48 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=48
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=52 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=52
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and
@@ -871,7 +871,7 @@ reverted on its own. `open-pull-requests-limit` is 10 for `bun` (the grouped min
 request takes one slot and each pending major takes one) and 5 for `github-actions` and
 `docker`.
 
-Two updates are declined standing, as `ignore` entries in `.github/dependabot.yml`, so they
+Four updates are declined standing, as `ignore` entries in `.github/dependabot.yml`, so they
 stop reopening:
 
 - `dotenv-expand` 1000 and later. That release runs command substitution (`$(…)`) and decrypts
@@ -881,6 +881,12 @@ stop reopening:
 - The Node 25 base image. Node 25 is an odd, non-LTS line that reached end of life on
   2026-06-01; the image, `.nvmrc` and `engines.node` move together to the next LTS line through
   the major-version playbook instead.
+- `typescript` 7 and later. TypeScript 7's package no longer exposes the compiler API that
+  `ts-jest` and the Stryker checker call, and `typescript-eslint` accepts only `<6.1.0`, so the
+  package stays on 5.x and `bun check` does the fast type-check
+  ([ADR-003](docs/adr/003-rust-javascript-toolchain.md)). Lift the entry when both support it.
+- `@types/node` 25 and later. The types track the Node engine (24), not npm `latest`; they move
+  with `.nvmrc`, `engines.node` and the base image through the major-version playbook.
 
 Dependabot has no equivalent of Renovate's `lockFileMaintenance`, so `bun.lock` is never
 re-resolved against unchanged ranges on its own. Refresh it deliberately when transitive

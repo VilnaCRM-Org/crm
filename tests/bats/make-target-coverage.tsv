@@ -24,7 +24,7 @@ format	bats	tests/bats/makefile_targets.bats	Validated as the combined Prettier 
 fmt-prettier	bats	tests/bats/makefile_targets.bats	Validated as the direct Prettier formatting command.
 fmt-qlty	bats	tests/bats/makefile_targets.bats	Validated as the direct Qlty formatting command.
 lint-eslint	bats	tests/bats/makefile_targets.bats	Validated as the direct ESLint command.
-lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct TypeScript check command.
+lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct bun check type-check command.
 lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown lint command.
 lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
 lint-dup	bats	tests/bats/makefile_targets.bats	Validated as the direct jscpd copy/paste duplication command.

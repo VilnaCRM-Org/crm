@@ -219,6 +219,39 @@ describe('mutation shard slicing', () => {
     }
   });
 
+  it('states the same current shard count wherever the docs name it', () => {
+    const CURRENT_COUNT = new RegExp(
+      [
+        String.raw`(\d+)-way\s+(?:sharded\s+)?matrix`,
+        String.raw`(\d+)-way\s+shard\s+count`,
+        String.raw`the\s+(\d+)\s+shards\s+carry`,
+        String.raw`(\d+)\s+shards\s+keep`,
+        String.raw`shard count \(currently (\d+)\)`,
+        String.raw`(\d+)\s+runners`,
+        String.raw`Weekly cold, (\d+)-shard`,
+      ].join('|'),
+      'gu'
+    );
+    const stated = [
+      'CLAUDE.md',
+      'CONTRIBUTING.md',
+      'AGENTS.md',
+      'README.md',
+      'docs/governance/branch-protection.md',
+    ].flatMap((doc) =>
+      Array.from(
+        fs.readFileSync(path.join(projectRoot, doc), 'utf8').matchAll(CURRENT_COUNT),
+        (match) => ({
+          doc,
+          count: Number(match.slice(1).find((group) => group !== undefined)),
+        })
+      )
+    );
+
+    expect(stated.length).toBeGreaterThanOrEqual(9);
+    expect(stated.filter(({ count }) => count !== TOTAL)).toEqual([]);
+  });
+
   it('accounts for the whole mutate scope once, in a shard or in the unsharded list', () => {
     const sharded = packed.shards.flat();
     expect(packed.shards).toHaveLength(TOTAL);

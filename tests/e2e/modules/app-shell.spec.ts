@@ -404,6 +404,23 @@ test.describe('App shell on desktop (issue #362)', () => {
     );
   });
 
+  test('paints the decorative monogram as generated content outside the chip name', async ({
+    page,
+  }) => {
+    await openProtected(page, ROUTE_PATHS.home);
+    const avatar = chipOf(page).locator('[data-monogram]');
+
+    await expect(chipOf(page)).toHaveAccessibleName(
+      `${PROFILE_NODE.initials}, ${shellText.userMenu}`
+    );
+    await expect(avatar).toHaveAttribute('data-monogram', 'ОП');
+    await expect(avatar).toHaveAttribute('aria-hidden', 'true');
+    await expect(avatar).toHaveText('');
+    expect(await avatar.evaluate((node) => getComputedStyle(node, '::before').content)).toBe(
+      '"ОП"'
+    );
+  });
+
   test('lists My profile, Settings and Sign out in the menu', async ({ page }) => {
     await openProtected(page, ROUTE_PATHS.home);
     await openChipMenu(page);

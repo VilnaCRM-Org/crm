@@ -6,7 +6,7 @@ import dotenvExpand from 'dotenv-expand';
 import type * as Transport from 'winston/lib/winston/transports';
 import { createLogger, Logger, format, transports } from 'winston';
 
-dotenvExpand.expand(dotenv.config());
+dotenvExpand.expand(dotenv.config({ quiet: true }));
 
 const loggers: Map<string, Logger> = new Map();
 

@@ -7,14 +7,25 @@ const readFile = (filePath: string): string =>
   fs.readFileSync(path.resolve(__dirname, '..', '..', '..', filePath), 'utf-8');
 
 describe('Bun migration tooling expectations', () => {
-  it('Dockerfile installs bun v1.3.5 with built-in bunx', () => {
+  it('Dockerfile installs bun v1.4.4 with built-in bunx', () => {
     const dockerfile = readFile('Dockerfile');
 
-    expect(dockerfile).toContain('ARG BUN_VERSION=1.3.5');
+    expect(dockerfile).toContain('ARG BUN_VERSION=1.4.4');
     expect(dockerfile).toContain('install-bun "${BUN_VERSION}"');
     expect(dockerfile).not.toContain('bun.sh/install');
     expect(dockerfile).not.toContain('ln -sf /root/.bun/bin/bunx');
     expect(dockerfile).toContain('ENV PATH="/root/.bun/bin:$PATH"');
+  });
+
+  it('pins one Bun version in packageManager, engines.bun and .bun-version', () => {
+    const manifest = JSON.parse(readFile('package.json')) as {
+      packageManager: string;
+      engines: { bun: string };
+    };
+
+    expect(manifest.packageManager).toBe('bun@1.4.4');
+    expect(manifest.engines.bun).toBe('>=1.4.4');
+    expect(readFile('.bun-version').trim()).toBe('1.4.4');
   });
 
   it('dev docker-compose uses bun to start the app', () => {

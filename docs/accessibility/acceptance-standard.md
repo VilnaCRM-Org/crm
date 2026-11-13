@@ -162,6 +162,45 @@ rule tests non-text contrast. Hover, the current rail row and focus indicators a
 fix, as are the icons of expanded rows, which sit beside a visible label. See
 [the shell README, DV-15](../../src/components/ui-app-shell/README.md#dv-15-the-icon-only-shell-glyphs-reach-31-owner-decision-2026-11-09).
 
+### The user-menu avatar monogram and WCAG 2.5.3 (deviation, 2026-11-13)
+
+axe 4.14 runs `label-content-name-mismatch` under the `wcag21a` tag, and it collects the visible
+text of a control without leaving out `aria-hidden` content. The user-menu chip draws the user's
+initials in an `aria-hidden` avatar, so axe read "ОП Олена Петренко" as the chip's visible label
+and failed it against the accessible name "Олена Петренко, Меню користувача" on every protected
+page (pull request #387).
+
+SC 2.5.3 Label in Name requires the text of a control's visible label to be contained in its
+accessible name. "ОП" is not in "Олена Петренко, Меню користувача", so the chip conforms only if
+the initials are not label text. This record reads them as part of the avatar graphic, a stand-in
+for a profile picture: on desktop and tablet the label is the full name beside them, which the
+accessible name starts with, and on mobile the chip shows only the avatar, so it is an icon-only
+control named after the signed-in user. That is a reading, not a settled result. An auditor who
+counts the initials as visible label text would find a 2.5.3 failure on the mobile chip, and on
+desktop, where the label would then read "ОП Олена Петренко".
+
+It is therefore recorded as a deviation, not as conformance. Pull request #387 accepted it on the
+accessibility lead's review, and it stays open to the product owner, who can choose the conforming
+alternative instead:
+
+- **Chosen:** the avatar paints the initials as CSS generated content
+  (`::before { content: attr(data-monogram) }`) on its `aria-hidden` box. They are no longer DOM
+  text, so neither axe nor assistive technology reads them, and screen readers announce the name
+  once. This is not an `A11Y_EXCEPTIONS` entry: the rule still runs unchanged on every node.
+- **Conforming alternative:** start the accessible name with the initials
+  ("ОП, Олена Петренко, Меню користувача") and keep them as a DOM text node. Every reading of
+  2.5.3 is then met, and speech input matches "ОП", at the cost of screen readers announcing the
+  initials before the name. It changes the `user_menu.button_named` string in both locales and
+  every test that asserts the chip's name.
+
+- `tests/e2e/modules/app-shell.spec.ts` asserts in a real browser that the chip keeps its name,
+  that the avatar stays `aria-hidden` with no text node, and that it paints the monogram through
+  `::before`.
+- `tests/unit/modules/user/features/settings/components/user-menu/user-avatar.test.tsx` asserts
+  there is no text node and that `data-monogram` is left off when there are no initials.
+- Known residual: on mobile, a speech-input user who says the initials gets no match, as with any
+  icon-only button; Voice Control's "show names" and "show numbers" still reach the chip.
+
 ## Adding coverage
 
 - **A new `UI*` component**: add a row to `componentCases` in

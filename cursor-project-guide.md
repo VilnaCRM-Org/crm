@@ -237,7 +237,7 @@ git push                   # Push all changes
 
 ### Environment Requirements
 
-- **Node.js**: >=24.8.0 (enforced via engineStrict)
+- **Node.js**: >=24.11.0 (enforced via engineStrict)
 - **pnpm**: >=9
 - **Docker**: Latest stable version (for containerized development)
 

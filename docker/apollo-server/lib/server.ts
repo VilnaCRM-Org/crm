@@ -10,7 +10,7 @@ import { loadTypeDefs } from './schema-loader';
 import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdown-functions';
 import type { SchemaSource } from './types';
 
-const env: DotenvConfigOutput = dotenv.config();
+const env: DotenvConfigOutput = dotenv.config({ quiet: true });
 dotenvExpand.expand(env);
 
 export type ApolloServerInstance = ApolloServer<BaseContext> | undefined;

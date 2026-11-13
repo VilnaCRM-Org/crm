@@ -21,7 +21,7 @@ write_lock() {
 {
   "lockfileVersion": 1,
   "packages": {
-    "ok": ["ok@1.0.0", "https://registry.npmjs.org/ok/-/ok-1.0.0.tgz"]
+    "ok": ["ok@1.0.0", "https://registry.npmjs.org/ok/-/ok-1.0.0.tgz", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -35,7 +35,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "foo": ["foo@1.0.0", "https://evil.example/foo-1.0.0.tgz"]
+    "foo": ["foo@1.0.0", "https://evil.example/foo-1.0.0.tgz", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -49,7 +49,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "bar": ["bar@github:evil/bar#deadbeef"]
+    "bar": ["bar@github:evil/bar#deadbeef", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -63,7 +63,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "baz": ["baz@1.0.0", "https://registry.npmjs.org.evil.com/baz-1.0.0.tgz"]
+    "baz": ["baz@1.0.0", "https://registry.npmjs.org.evil.com/baz-1.0.0.tgz", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -76,7 +76,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "foo": ["foo@1.0.0", "https:\/\/evil.example\/foo-1.0.0.tgz"]
+    "foo": ["foo@1.0.0", "https:\/\/evil.example\/foo-1.0.0.tgz", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -90,7 +90,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "foo": ["foo@1.0.0", "\u0068ttps://evil.example/foo-1.0.0.tgz"]
+    "foo": ["foo@1.0.0", "\u0068ttps://evil.example/foo-1.0.0.tgz", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -104,7 +104,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "bar": ["bar@github:evil\/bar#deadbeef"]
+    "bar": ["bar@github:evil\/bar#deadbeef", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -117,7 +117,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "baz": ["baz@git+ssh://git@github.com/evil/baz.git#deadbeef"]
+    "baz": ["baz@git+ssh://git@github.com/evil/baz.git#deadbeef", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -130,7 +130,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "baz": ["baz@git@github.com:evil/baz.git#deadbeef"]
+    "baz": ["baz@git@github.com:evil/baz.git#deadbeef", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -143,7 +143,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "qux": ["qux@git://github.com/evil/qux.git#deadbeef"]
+    "qux": ["qux@git://github.com/evil/qux.git#deadbeef", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="]
   }
 }
 EOF
@@ -184,7 +184,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }],
+    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
@@ -198,7 +198,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/evil-org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/evil-org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
@@ -219,7 +219,7 @@ EOF
     },
   },
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0-evil.tgz", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0-evil.tgz", { "peerDependencies": {} }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
@@ -234,7 +234,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com.evil.example/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com.evil.example/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": {} }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
@@ -248,7 +248,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@github:VilnaCRM-Org/ui-toolkit#v0.8.0", { "peerDependencies": {} }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@github:VilnaCRM-Org/ui-toolkit#v0.8.0", { "peerDependencies": {} }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
@@ -262,7 +262,7 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "tarball": "https://evil.example/ui-toolkit.tgz" }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "tarball": "https://evil.example/ui-toolkit.tgz" }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
@@ -283,15 +283,134 @@ EOF
     },
   },
   "packages": {
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": { "react": "^19.0.0" } }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.8.0/vilnacrm-ui-toolkit-0.8.0.tgz", { "peerDependencies": { "react": "^19.0.0" } }, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
 
-    "ok": ["ok@1.0.0", "", {}, "https://registry.npmjs.org/ok/-/ok-1.0.0.tgz"],
+    "ok": ["ok@1.0.0", "https://registry.npmjs.org/ok/-/ok-1.0.0.tgz", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
   }
 }
 EOF
   run sh "$SCRIPT" "$FIX/toolkit-sanctioned.lock"
   [ "$status" -eq 0 ]
   [[ "$output" == *"all resolutions on allowed registries"* ]]
+}
+
+@test "a well-formed sha512 integrity value passes (exit 0)" {
+  write_lock integrity-well-formed.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, "sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw=="],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-well-formed.lock"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"all resolutions on allowed registries"* ]]
+}
+
+@test "an over-long sha512 integrity value is rejected (ADR-003 malformed case, exit 1)" {
+  write_lock integrity-too-long.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-too-long.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Malformed integrity values"* ]]
+  [[ "$output" == *"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="* ]]
+}
+
+@test "a truncated sha512 integrity value is rejected (exit 1)" {
+  write_lock integrity-truncated.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-truncated.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Malformed integrity values"* ]]
+  [[ "$output" == *"sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="* ]]
+}
+
+@test "a sha1 integrity value is rejected as a weaker algorithm (exit 1)" {
+  write_lock integrity-sha1.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, "sha1-AAAAAAAAAAAAAAAAAAAAAAAAAA="],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-sha1.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Malformed integrity values"* ]]
+  [[ "$output" == *"sha1-AAAAAAAAAAAAAAAAAAAAAAAAAA="* ]]
+}
+
+@test "an empty integrity value is rejected by its tuple position (exit 1)" {
+  write_lock integrity-empty.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, ""],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-empty.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Malformed integrity values"* ]]
+  [[ "$output" == *'""'* ]]
+}
+
+@test "an integrity value with no sha prefix is rejected by its tuple position (exit 1)" {
+  write_lock integrity-garbage.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, "garbage"],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-garbage.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Malformed integrity values"* ]]
+  [[ "$output" == *'"garbage"'* ]]
+}
+
+@test "a bare sha512 integrity value is rejected by its tuple position (exit 1)" {
+  write_lock integrity-bare.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}, "sha512"],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-bare.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Malformed integrity values"* ]]
+  [[ "$output" == *'"sha512"'* ]]
+}
+
+@test "a package tuple with no integrity value is rejected (exit 1)" {
+  write_lock integrity-missing.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "ok": ["ok@1.0.0", "", {}],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/integrity-missing.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Package entries without an integrity value"* ]]
+  [[ "$output" == *'"ok"'* ]]
 }
 
 @test "make lint-lockfile passes on the real repository bun.lock" {

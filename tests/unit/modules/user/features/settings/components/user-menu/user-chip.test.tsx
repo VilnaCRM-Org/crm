@@ -6,6 +6,7 @@ import UserChip from '@/modules/user/features/settings/components/user-menu/user
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import { buildFullName } from '@tests/builders';
 import buildUserMenuState from '@tests/unit/utils/build-user-menu-state';
+import { getMonogramAvatar } from '@tests/unit/utils/monogram-avatars';
 import renderShell from '@tests/unit/utils/render-shell';
 
 const identity = new UserDisplayNameMapper().fromFullName(buildFullName());
@@ -105,7 +106,7 @@ describe('UserChip', () => {
     expect(screen.queryByText(identity.displayName)).not.toBeInTheDocument();
     expect(container).not.toContainHTML('focusable="false"');
     expect(screen.getByRole('button')).toHaveStyle({ width: '44px', height: '44px' });
-    expect(screen.getByText(identity.monogram)).toHaveStyle({ width: '40px', height: '40px' });
+    expect(getMonogramAvatar(identity.monogram)).toHaveStyle({ width: '40px', height: '40px' });
   });
 
   it('draws an empty avatar on mobile when the identity is unknown', () => {

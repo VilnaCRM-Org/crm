@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
 import UserAvatar from '@/modules/user/features/settings/components/user-menu/user-avatar';
+import { getMonogramAvatar, monogramAvatars } from '@tests/unit/utils/monogram-avatars';
 
 describe('UserAvatar', () => {
   it.each([
@@ -10,7 +11,7 @@ describe('UserAvatar', () => {
   ] as const)('draws the %s monogram in a %s disc at %s', (size, box, fontSize) => {
     render(<UserAvatar monogram="ЄМ" size={size} />);
 
-    expect(screen.getByText('ЄМ')).toHaveStyle({
+    expect(getMonogramAvatar('ЄМ')).toHaveStyle({
       width: box,
       height: box,
       fontSize,
@@ -23,7 +24,15 @@ describe('UserAvatar', () => {
   it('hides the monogram from assistive technology', () => {
     render(<UserAvatar monogram="ЄМ" size="chip" />);
 
-    expect(screen.getByText('ЄМ')).toHaveAttribute('aria-hidden', 'true');
+    expect(getMonogramAvatar('ЄМ')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('paints the monogram as generated content, never as a text node a label would count', () => {
+    const { container } = render(<UserAvatar monogram="ЄМ" size="chip" />);
+
+    expect(container).toHaveTextContent(/^$/u);
+    expect(screen.queryByText('ЄМ')).not.toBeInTheDocument();
+    expect(getMonogramAvatar('ЄМ')).not.toContainHTML('PersonOutlinedIcon');
   });
 
   it.each(['chip', 'avatar'] as const)(
@@ -32,6 +41,8 @@ describe('UserAvatar', () => {
       const { container } = render(<UserAvatar monogram="" size={size} />);
 
       expect(container).toContainHTML('data-testid="PersonOutlinedIcon"');
+      expect(container).not.toContainHTML('data-monogram');
+      expect(monogramAvatars('')).toEqual([]);
       expect(screen.queryByText(/\S/u)).not.toBeInTheDocument();
     }
   );

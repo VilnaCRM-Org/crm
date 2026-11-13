@@ -26,7 +26,8 @@ describe('useAvatarCopy', () => {
 
     expect(onAvatar).toHaveBeenCalledTimes(1);
     const avatar = paint(lastCopy(onAvatar));
-    expect(avatar).toHaveTextContent('ОП');
+    expect(avatar).toHaveAttribute('data-monogram', 'ОП');
+    expect(avatar).toHaveTextContent(/^$/u);
     expect(avatar).toHaveAttribute('aria-hidden', 'true');
     expect(avatar).not.toHaveAttribute('tabindex');
     expect(avatar).toHaveStyle({
@@ -59,7 +60,7 @@ describe('useAvatarCopy', () => {
 
     expect(onAvatar).toHaveBeenCalledTimes(3);
     expect(onAvatar.mock.calls[1]).toEqual([null]);
-    expect(paint(lastCopy(onAvatar))).toHaveTextContent('ОП');
+    expect(paint(lastCopy(onAvatar))).toHaveAttribute('data-monogram', 'ОП');
   });
 
   it('publishes once across re-renders that keep the monogram', () => {

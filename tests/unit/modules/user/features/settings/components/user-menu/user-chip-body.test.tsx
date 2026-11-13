@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import UserChipBody from '@/modules/user/features/settings/components/user-menu/user-chip-body';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import { buildFullName } from '@tests/builders';
+import { getMonogramAvatar } from '@tests/unit/utils/monogram-avatars';
 
 const identity = new UserDisplayNameMapper().fromFullName(buildFullName());
 
@@ -11,7 +12,7 @@ describe('UserChipBody', () => {
   it('draws the monogram, the name and a decorative caret', () => {
     const { container } = render(<UserChipBody layout="desktop" identity={identity} />);
 
-    expect(screen.getByText(identity.monogram)).toHaveStyle({ width: '32px', height: '32px' });
+    expect(getMonogramAvatar(identity.monogram)).toHaveStyle({ width: '32px', height: '32px' });
     expect(screen.getByText(identity.displayName)).toHaveStyle({ left: '49px', top: '13px' });
     expect(container).toContainHTML('aria-hidden="true" focusable="false"');
   });
@@ -22,7 +23,7 @@ describe('UserChipBody', () => {
   ] as const)('pins the %s avatar box absolutely at %s,%s', (layout, left, top) => {
     render(<UserChipBody layout={layout} identity={identity} />);
 
-    const avatar = screen.getByText(identity.monogram);
+    const avatar = getMonogramAvatar(identity.monogram);
     const frame = screen
       .getAllByRole('generic')
       .filter((box) => box !== avatar && box.contains(avatar))
