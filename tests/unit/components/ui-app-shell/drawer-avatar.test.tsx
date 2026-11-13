@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event';
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import { buildFullName } from '@tests/builders';
-import { getMonogramAvatar, monogramAvatars } from '@tests/unit/utils/monogram-avatars';
 import renderAppShell from '@tests/unit/utils/render-app-shell';
 import settleTransitions from '@tests/unit/utils/settle-transitions';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
@@ -45,10 +44,12 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
       identity: IDENTITY,
     });
     await renderAppShell({ path: '/', width: MOBILE, page: PAGE });
-    await screen.findByRole('button', { name: `${IDENTITY.displayName}, Меню користувача` });
+    await screen.findByRole('button', {
+      name: `${IDENTITY.monogram}, ${IDENTITY.displayName}, Меню користувача`,
+    });
 
     const dialog = await openDrawer();
-    const copy = getMonogramAvatar(IDENTITY.monogram, dialog);
+    const copy = within(dialog).getByText(IDENTITY.monogram);
 
     expect(copy).toHaveAttribute('aria-hidden', 'true');
     expect(isInaccessible(copy)).toBe(true);
@@ -68,6 +69,6 @@ describe('the drawer header avatar copy in the assembled shell (issue #362, F4)'
     const dialog = await openDrawer();
 
     expect(dialog).toContainHTML('PersonOutlinedIcon');
-    expect(monogramAvatars(IDENTITY.monogram, dialog)).toEqual([]);
+    expect(within(dialog).queryByText(IDENTITY.monogram)).not.toBeInTheDocument();
   });
 });

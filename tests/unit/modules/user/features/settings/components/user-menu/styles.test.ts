@@ -167,7 +167,6 @@ describe('user menu styles', () => {
         fontFamily: 'Golos',
         fontWeight: 700,
         lineHeight: 1,
-        '&[data-monogram]::before': { content: 'attr(data-monogram)' },
       },
       sizes: {
         chip: {

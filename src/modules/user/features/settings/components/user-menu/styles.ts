@@ -117,7 +117,6 @@ export default {
       fontFamily: 'Golos',
       fontWeight: 700,
       lineHeight: 1,
-      '&[data-monogram]::before': { content: 'attr(data-monogram)' },
     },
     sizes: {
       chip: { width: '32px', height: '32px', fontSize: '12px' },

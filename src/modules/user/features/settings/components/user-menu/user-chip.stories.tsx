@@ -24,7 +24,8 @@ const meta: Meta<typeof UserChip> = {
           'The menu button: the 32 px monogram, the display name in a 121 px (138 px tablet) ' +
           'box that ends in an ellipsis, and a decorative down-pointing caret that does not ' +
           'rotate when the menu opens. On mobile it is the 40 px avatar alone in a 44 px ' +
-          'target. Its name is the display name followed by "User menu".',
+          'target. Its name starts with the initials it shows, then the display name and ' +
+          '"User menu" (WCAG 2.5.3 Label in Name).',
       },
       story: { inline: false },
     },

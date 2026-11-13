@@ -2,6 +2,7 @@ import type { Locator, Page, Request } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   type StubbedProfile,
   stubProfile,
@@ -354,7 +355,7 @@ test.describe('App shell on desktop (issue #362)', () => {
     const stub = await openProtected(page, ROUTE_PATHS.home);
     await expect.poll(() => stub.count('CurrentUser')).toBe(1);
     await expect(chipOf(page)).toHaveAccessibleName(
-      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
     );
     await page.evaluate(async () => {
       await document.fonts.ready;
@@ -400,24 +401,18 @@ test.describe('App shell on desktop (issue #362)', () => {
     await openProtected(page, ROUTE_PATHS.home);
 
     await expect(chipOf(page)).toHaveAccessibleName(
-      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
     );
   });
 
-  test('paints the decorative monogram as generated content outside the chip name', async ({
+  test('starts the chip name with the initials it shows (WCAG 2.5.3 Label in Name)', async ({
     page,
   }) => {
     await openProtected(page, ROUTE_PATHS.home);
-    const avatar = chipOf(page).locator('[data-monogram]');
 
+    await expect(chipOf(page).getByText(PROFILE_MONOGRAM, { exact: true })).toBeVisible();
     await expect(chipOf(page)).toHaveAccessibleName(
-      `${PROFILE_NODE.initials}, ${shellText.userMenu}`
-    );
-    await expect(avatar).toHaveAttribute('data-monogram', 'ОП');
-    await expect(avatar).toHaveAttribute('aria-hidden', 'true');
-    await expect(avatar).toHaveText('');
-    expect(await avatar.evaluate((node) => getComputedStyle(node, '::before').content)).toBe(
-      '"ОП"'
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
     );
   });
 

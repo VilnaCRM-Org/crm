@@ -10,7 +10,6 @@ import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/
 import currentUserSource from '@/modules/user/features/settings/utils/current-user-source';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import { buildFullName } from '@tests/builders';
-import { getMonogramAvatar } from '@tests/unit/utils/monogram-avatars';
 import renderShell from '@tests/unit/utils/render-shell';
 import { inertSession } from '@tests/unit/utils/session-outlet';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
@@ -99,9 +98,15 @@ describe('UserMenuSlot', () => {
     const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
     expect(settingsItem).toHaveFocus();
     await resolveChunk();
-    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+    await screen.findByRole('button', {
+      name: `${identity.monogram}, ${identity.displayName}, User menu`,
+    });
 
-    expect(screen.getByRole('button', { name: `${identity.displayName}, User menu` })).toBe(chip);
+    expect(
+      screen.getByRole('button', {
+        name: `${identity.monogram}, ${identity.displayName}, User menu`,
+      })
+    ).toBe(chip);
     expect(chip).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toBe(settingsItem);
     expect(settingsItem).toHaveFocus();
@@ -117,11 +122,13 @@ describe('UserMenuSlot', () => {
     act(() => chip.focus());
 
     await resolveChunk();
-    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+    await screen.findByRole('button', {
+      name: `${identity.monogram}, ${identity.displayName}, User menu`,
+    });
 
     expect(chip).toHaveFocus();
     const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
-    expect(getMonogramAvatar(identity.monogram, container)).toHaveAttribute('aria-hidden', 'true');
+    expect(container).toHaveTextContent(identity.monogram);
   });
 
   it('keeps the same chip mounted across the chunk resolving and signs out from it', async () => {
@@ -217,14 +224,18 @@ describe('UserMenuSlot', () => {
       </>
     );
     await resolveChunk();
-    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+    await screen.findByRole('button', {
+      name: `${identity.monogram}, ${identity.displayName}, User menu`,
+    });
 
     mockRead.mockResolvedValueOnce({ kind: 'failed', reason: 'session_ended' });
     await user.click(screen.getByRole('button', { name: 'Go to settings' }));
 
     await waitFor(() =>
       expect(
-        screen.queryByRole('button', { name: `${identity.displayName}, User menu` })
+        screen.queryByRole('button', {
+          name: `${identity.monogram}, ${identity.displayName}, User menu`,
+        })
       ).not.toBeInTheDocument()
     );
     expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();

@@ -360,10 +360,11 @@ each allowed up to the 15-minute kill switch. A cold run at 44, which keeps the 
 the same 139 weight units, still met the kill switch on two shards at 222 of 226 and 236 of 237
 tested, each with six timed-out mutants, while the cold 48-shard run's slowest shard took 12.6 min.
 Weight does not predict timed-out mutants, so the count stayed at 48. It went from 48 to 52 when
-the Bun 1.4 upgrade (#387) added three mutants to `user-avatar.tsx` and the repacked cold shard 4
-drew `routes/registry.ts`, `session-correlation.ts`, `pii-scrubber.ts` and `error-handler.ts`
-together: balanced by weight (125 units) but not by test cost, it met the kill switch at 179 and
-186 of 191 tested on two runs. At 52 those four files land in four different shards.
+a change during the Bun 1.4 upgrade (#387) added three mutants to `user-avatar.tsx` (later
+reverted) and the repacked cold shard 4 drew `routes/registry.ts`, `session-correlation.ts`,
+`pii-scrubber.ts` and `error-handler.ts` together: balanced by weight (125 units) but not by test
+cost, it met the kill switch at 179 and 186 of 191 tested on two runs. At 52 those four files land
+in four different shards.
 
 ### Honest mutant classification (issue #171)
 
