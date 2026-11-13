@@ -129,10 +129,42 @@ describe('user module composition root', () => {
     );
   });
 
-  it('binds the registration api and no REST login', () => {
+  it('binds the registration api and declares exactly the module tokens', () => {
     expectAllRegistered(registeredContainer(), API_TOKENS);
-    expect(AUTH_TOKENS).not.toHaveProperty('LoginAPI');
-    expect(AUTH_TOKENS).not.toHaveProperty('LoginResponseMapper');
+    expect(Object.keys(AUTH_TOKENS).sort()).toEqual([
+      'ApiErrorFactory',
+      'ApiStatusErrorFactory',
+      'ApolloClient',
+      'AuthErrorHandler',
+      'AuthRepository',
+      'AuthRepositoryDeps',
+      'AuthRequestErrors',
+      'AuthSecuritySignals',
+      'AuthStore',
+      'AuthStoreActionsDeps',
+      'AuthUiErrorMapper',
+      'FieldViolationParser',
+      'GraphQLProfileRepository',
+      'GraphQLProfileTransformer',
+      'GraphQLSignInProvider',
+      'GraphQLSignInRepository',
+      'GraphQLSignInTransformer',
+      'GraphQLTwoFactorSettingsRepository',
+      'GraphQLTwoFactorSettingsTransformer',
+      'GraphQLUrl',
+      'PasswordRecoveryProvider',
+      'PasswordRecoveryRepository',
+      'PasswordRecoveryTransformer',
+      'ProfileProvider',
+      'RegistrationAPI',
+      'RegistrationResponseMapper',
+      'SandboxDemoSessionProvider',
+      'SessionLinkDeps',
+      'SessionLinkFactory',
+      'TwoFactorSettingsProvider',
+      'UserDisplayNameMapper',
+      'UserServiceErrorTransformer',
+    ]);
   });
 
   it('binds the auth repository and its dependency bundle', () => {

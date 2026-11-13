@@ -736,7 +736,7 @@ load leaves the retryable load error. `useRecoveryRun` loads `AUTH_TOKENS` for t
 password-recovery pages through a `ChunkRetryLoader` it also builds once per mount in a `useState`
 initializer. The provider calls the transport-only
 `GraphQLSignInRepository` and translates through `GraphQLSignInTransformer` and
-`UserServiceErrorTransformer`. `LoginAPI`, `api-config.ts`, `LoginResponseMapper` and
+`UserServiceErrorTransformer`. The REST login client, its API config, its response mapper and
 `AuthRepositoryImpl.login` are deleted; registration (`createUser`) and logout are unchanged.
 Production sign-in has no backend until user-service ships `signInUser`, exactly as the REST
 placeholder had none.

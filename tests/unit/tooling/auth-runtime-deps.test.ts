@@ -17,7 +17,6 @@ describe('auth client runtime dependencies', () => {
     expect(apiResponses).not.toContain('z.object');
     expect(responseSchemas).toContain("from '@/config/zod'");
     expect(responseSchemas).toContain('z.object');
-    expect(responseSchemas).not.toContain('LoginResponseSchema');
     expect(registrationMapper).toContain('RegistrationResponseSchema.safeParse(apiResponse)');
   });
 

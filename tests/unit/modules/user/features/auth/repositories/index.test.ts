@@ -13,7 +13,15 @@ describe('auth repositories barrel', () => {
     expect(typeof repositories.RegistrationAPI).toBe('function');
   });
 
-  it('no longer exports the REST login client', () => {
-    expect(repositories).not.toHaveProperty('LoginAPI');
+  it('exports exactly the public classes of the auth repositories module', () => {
+    expect(Object.keys(repositories).sort()).toEqual([
+      'ApiErrorFactory',
+      'ApiStatusErrorFactory',
+      'AuthErrorFactory',
+      'BaseAPI',
+      'GraphQLPasswordRecoveryRepository',
+      'GraphQLSignInRepository',
+      'RegistrationAPI',
+    ]);
   });
 });
