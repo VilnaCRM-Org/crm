@@ -112,6 +112,7 @@ export default {
     [SETTINGS_DESKTOP]: { marginTop: '0.3125rem' },
   },
   footerButton: { marginTop: '0.75rem' },
+  reauthButton: { color: customColors.text.dark },
   reauthMessage: {
     margin: '0 0 1rem',
     fontFamily: 'Inter',

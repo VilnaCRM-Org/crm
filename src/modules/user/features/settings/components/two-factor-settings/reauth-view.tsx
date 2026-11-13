@@ -18,7 +18,12 @@ export default function ReauthView({ callbacks }: TwoFactorSettingsProps): JSX.E
       <Box component="p" ref={focusOnMount} tabIndex={-1} sx={styles.reauthMessage}>
         {t('settings.two_factor.reauth.message')}
       </Box>
-      <UIButton type="button" variant="outlinedPill" onClick={callbacks.signInAgain}>
+      <UIButton
+        type="button"
+        variant="outlinedPill"
+        onClick={callbacks.signInAgain}
+        sx={styles.reauthButton}
+      >
         {t('settings.two_factor.reauth.sign_in')}
       </UIButton>
     </>

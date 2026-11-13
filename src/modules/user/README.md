@@ -1018,7 +1018,7 @@ digits or `XXXX-XXXX` (the hook normalises it) and shows the format or wrong-cod
 the views through `ArrivalContext`, so the plain on view takes focus on its heading only when a
 transition (done, setup 409) brought the user there and never on first render. A regenerate refused
 for a stale sign-in shows the re-authentication message, focused, with an outlined pill "Увійти
-знову" (text `#1B2327`, the kit token) that runs the outlet `signOut` as
+знову" (text `#1A1C1E`, NFR-6) that runs the outlet `signOut` as
 `callbacks.signInAgain`; the section never ends a session on its own.
 
 ### The low recovery codes notice

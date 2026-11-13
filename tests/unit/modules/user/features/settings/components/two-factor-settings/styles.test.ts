@@ -116,6 +116,7 @@ describe('two-factor settings styles', () => {
         '@media (min-width:1025px)': { marginTop: '0.3125rem' },
       },
       footerButton: { marginTop: '0.75rem' },
+      reauthButton: { color: '#1A1C1E' },
       reauthMessage: {
         margin: '0 0 1rem',
         fontFamily: 'Inter',
