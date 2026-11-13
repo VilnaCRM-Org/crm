@@ -45,14 +45,31 @@ const trackedSources = (): string[] => walkSources('').filter((file) => file !==
 const escape = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 
 /**
- * Every name `config` is reachable under: `dotenv.config`, `require('dotenv').config`, and the
- * local bindings of `import { config [as x] } from 'dotenv'` and
- * `const { config[: x] } = require('dotenv')`.
+ * Every name `config` is reachable under: `require('dotenv').config`, `<module>.config` for each
+ * local name of the module (`import X from`, `import X, { … } from`, `import * as X from`,
+ * `const X = require(…)`, `import X = require(…)`, and `dotenv` itself), and the local bindings
+ * of `import { config [as x] } from 'dotenv'` and `const { config[: x] } = require('dotenv')`.
  */
+const MODULE_BINDINGS = [
+  /import\s+(?!type\b)([\w$]+)\s*(?:,\s*\{[^}]*\})?\s*from\s*['"]dotenv['"]/gu,
+  /import\s*\*\s*as\s+([\w$]+)\s+from\s*['"]dotenv['"]/gu,
+  /(?:const|let|var)\s+([\w$]+)\s*=\s*require\(\s*['"]dotenv['"]\s*\)/gu,
+  /import\s+([\w$]+)\s*=\s*require\(\s*['"]dotenv['"]\s*\)/gu,
+];
+
+const moduleNamesIn = (source: string): string[] => [
+  'dotenv',
+  ...MODULE_BINDINGS.flatMap((pattern) =>
+    Array.from(source.matchAll(pattern), (match) => match[1] ?? '').filter((name) => name !== '')
+  ),
+];
+
 const calleesIn = (source: string): string[] => {
   const callees = [
-    String.raw`\bdotenv\.config`,
     String.raw`require\(\s*['"]dotenv['"]\s*\)\.config`,
+    ...moduleNamesIn(source).map(
+      (name) => String.raw`(?<![\w.$])` + escape(name) + String.raw`\.config`
+    ),
   ];
   const bindings = [
     ...source.matchAll(
@@ -157,6 +174,10 @@ describe('dotenv loads quietly (dotenv 18)', () => {
     ['a renamed import', "import { config as load } from 'dotenv';\nload();"],
     ['a destructured require', "const { config: load } = require('dotenv');\nload({});"],
     ['a default-plus-named import', "import dotenv, { config } from 'dotenv';\nconfig();"],
+    ['a renamed default import', "import env from 'dotenv';\nenv.config();"],
+    ['a namespace import', "import * as env from 'dotenv';\nenv.config({ path: '.env' });"],
+    ['a renamed require', "const env = require('dotenv');\nenv.config();"],
+    ['an import-equals require', "import env = require('dotenv');\nenv.config();"],
     ['quiet only in a comment', "dotenv.config({ path: '.env' /* quiet: true */ });"],
     ['quiet only in a string', "dotenv.config({ path: 'quiet: true' });"],
     ['quiet only in a nested object', 'dotenv.config({ processEnv: { quiet: true } });'],
