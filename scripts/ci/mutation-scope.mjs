@@ -200,6 +200,7 @@ const COMPONENT_TEST_LOADS = 3;
  * bounds what that blind spot can add.
  */
 const MUTANT_CAP_OVER_MEAN = 1.05;
+const FILE_CAP_OVER_MEAN = 2;
 
 /**
  * What one mutant of a file costs its shard, in logic-test loads: the run overhead plus every
@@ -237,10 +238,18 @@ function mutantCap(mutants, total) {
   return Math.ceil((MUTANT_CAP_OVER_MEAN * sum) / total);
 }
 
-function targetShard(loads, held, room) {
+function fileCap(fileCount, total) {
+  return Math.max(1, Math.floor((FILE_CAP_OVER_MEAN * fileCount) / total));
+}
+
+function fits(held, files, i, room) {
+  return held[i] + room <= held.cap && files[i] < files.cap;
+}
+
+function targetShard(loads, held, room, files) {
   let target = -1;
   for (let i = 0; i < loads.length; i += 1) {
-    if (held[i] + room <= held.cap && (target < 0 || loads[i] < loads[target])) target = i;
+    if (fits(held, files, i, room) && (target < 0 || loads[i] < loads[target])) target = i;
   }
   return target < 0 ? lightestShard(loads) : target;
 }
@@ -262,6 +271,7 @@ export function packShards(weights, total, mutants) {
   const shards = Array.from({ length: total }, () => []);
   const loads = new Array(total).fill(0);
   const held = Object.assign(new Array(total).fill(0), { cap: mutantCap(mutants, total) });
+  const files = Object.assign(new Array(total).fill(0), { cap: fileCap(weights.size, total) });
 
   // Code-unit ordering, not localeCompare: the tiebreak decides which shard a file lands in, and
   // each shard carries its own incremental cache, so it has to agree across every machine's locale.
@@ -271,10 +281,11 @@ export function packShards(weights, total, mutants) {
 
   for (const { file, weight } of heaviestFirst) {
     const count = mutants?.get(file) ?? 0;
-    const target = targetShard(loads, held, count);
+    const target = targetShard(loads, held, count, files);
     shards[target].push(file);
     loads[target] += weight;
     held[target] += count;
+    files[target] += 1;
   }
 
   return shards.map((files) => files.sort(byPath));

@@ -395,8 +395,10 @@ went from 56 to 63 on 2026-11-11, when the cold run the 60 s `timeoutMS` forced 
 on shards 12 and 22 after each had scored all 187 of its mutants with no survivor: shard 22 (no
 timed-out mutant) spent 3.9 min starting and 11 min mutating, shard 12 4.5 and 10 with three timed
 out, while every other shard but one finished inside 12 min. Both sat at the 1.05x cap, so the
-count, not a hang, was again the cost. It stopped at 63 because the file-spread check (no shard
-over twice the mean file count) fails from 64 up: the cap then leaves a 16-file pile of small files.
+count, not a hang, was again the cost. The mutant cap alone left the light shards to absorb a pile
+of small files, so the file-spread check (no shard over twice the mean file count) passed or failed
+by chance as files changed: 63 failed it once a later commit added files. The packing therefore also
+caps every shard at twice the mean file count, so the spread holds by construction.
 
 ### Honest mutant classification (issue #171)
 

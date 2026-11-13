@@ -459,6 +459,16 @@ describe('mutation shard slicing', () => {
       expect(packShards(weights, 2, mutants)).toEqual([['a.ts', 'c.ts'], ['b.ts']]);
     });
 
+    it('stops piling cheap files on one shard at twice the mean file count', () => {
+      const tiny = Array.from({ length: 10 }, (_unused, index) => [`t${index}.ts`, 1] as const);
+      const weights = new Map([['a.ts', 100], ['b.ts', 100], ...tiny]);
+
+      const shards = packShards(weights, 3);
+
+      expect(shards.map((files) => files.length)).toEqual([2, 2, 8]);
+      expect(shards.flat().sort()).toEqual([...weights.keys()].sort());
+    });
+
     it('falls back to the lightest shard when no shard has room for the file', () => {
       const one = new Map([
         ['a.ts', 5],
