@@ -265,6 +265,7 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     '@/modules/user/lib/api-errors/../../store/response-mapper',
     '@/config/env/../../services/observability/observability-core',
     '@auth/types/../repositories/registration-api',
+    '@/config/api-config',
     '@/config/api-config-builder',
     '@/config/environment',
     '@/routes/route-paths-extra',
@@ -283,7 +284,6 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
   ];
 
   const allowed = [
-    '@/config/api-config',
     '@/config/env',
     '@/config/env/raw-env',
     '@/routes/route-paths',
@@ -430,11 +430,10 @@ describe('DI collaborator gate — the real ESLint selectors compile and match (
 
   it('accepts the contract and data modules on the allowlist', () => {
     const allowlisted = [
-      "import API_ENDPOINTS from '@/config/api-config';",
       "import HTTP_TOKENS from './tokens';",
       "import BaseAPI from './base-api';",
       "import CREATE_USER from './create-user-mutation';",
-      "import { LoginResponseSchema } from '@auth/utils/response-schemas';",
+      "import { RegistrationResponseSchema } from '@auth/utils/response-schemas';",
       "import { ApiError } from '@/modules/user/lib/api-errors';",
       "import { HttpError } from '@/services/https-client/http-error';",
       "import Contract from '@/services/types/observability/observability';",

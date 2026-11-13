@@ -9,6 +9,7 @@ import type {
 export interface ServerFieldErrorProps {
   name: string;
   message: string | null;
+  occurrence: number;
   focus?: boolean | undefined;
 }
 

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
 import type { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
@@ -17,7 +18,7 @@ const setUp = (): {
     confirmReset: jest.fn().mockResolvedValue(undefined),
   } as unknown as jest.Mocked<GraphQLPasswordRecoveryRepository>;
   const transformer = new PasswordRecoveryTransformer();
-  const errors = new UserServiceErrorTransformer();
+  const errors = new UserServiceErrorTransformer(new FieldViolationParser());
   return {
     provider: new PasswordRecoveryProvider(repository, transformer, errors),
     repository,

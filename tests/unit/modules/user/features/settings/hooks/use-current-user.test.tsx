@@ -18,7 +18,12 @@ const mockRead = jest.fn<Promise<CurrentUserReadOutcome>, [ProtectedSession, Abo
 
 const session: ProtectedSession = { token: () => null, end: () => undefined };
 
-const context: ProtectedSessionContext = { signOut: () => undefined, session };
+const context: ProtectedSessionContext = {
+  signOut: () => undefined,
+  session,
+  twoFactorStatus: 'unknown',
+  setTwoFactorStatus: () => undefined,
+};
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <MemoryRouter initialEntries={['/']}>

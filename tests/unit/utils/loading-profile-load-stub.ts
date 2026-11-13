@@ -4,7 +4,6 @@ export default function useLoadingProfileLoadStub(): ReturnType<typeof useProfil
   return {
     status: 'loading',
     user: null,
-    version: 0,
     refocus: false,
     retry: (): undefined => undefined,
     adoption: {

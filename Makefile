@@ -82,6 +82,7 @@ PLAYWRIGHT_AUDIT_CMD        = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec
 
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
+DOCKER_COMPOSE_LOCAL_STACK_FILE = -f docker-compose.local-stack.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
 MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
@@ -573,6 +574,7 @@ lint-compose: ## Validate every compose file combination the repo starts (issue 
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) \
 		$(COMMON_HEALTHCHECKS_FILE) config -q
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_LOCAL_STACK_FILE) config -q
 
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
 	sh scripts/ci/check-lockfile-registries.sh
@@ -843,6 +845,13 @@ create-network: ## Create the external Docker network if it doesn't exist
 start-prod: create-network ## Build image and start container in production mode
 	# Keep production-like workflows idempotent by reusing any already-running services.
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate $(PROD_START_SERVICES) && make wait-for-prod-health && make wait-for-mockoon
+
+.PHONY: start-local-stack stop-local-stack
+start-local-stack: ## Run the SPA against a real user-service at http://vilnacrm.localhost
+	./scripts/local-stack/start.sh
+
+stop-local-stack: ## Stop the gateway, the sign-in mock and the dev server of the local stack
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_LOCAL_STACK_FILE) down
 
 start-prod-clean: create-network ## Force rebuild and recreate all test containers
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build $(PROD_START_SERVICES) && make wait-for-prod-health && make wait-for-mockoon

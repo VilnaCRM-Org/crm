@@ -1,4 +1,5 @@
 export interface UIOfflineNoticeProps {
   online: boolean;
-  id?: string;
+  id?: string | undefined;
+  live?: boolean;
 }

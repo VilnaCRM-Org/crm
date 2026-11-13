@@ -14,9 +14,14 @@ export const text = {
   loading: t('settings.profile.loading'),
   name: t('settings.profile.full_name'),
   email: t('sign_up.form.email_input.label'),
+  namePassword: t('settings.profile.full_name_password'),
+  emailPassword: t('settings.profile.email_password'),
   currentPassword: t('settings.profile.current_password'),
   newPassword: t('settings.profile.new_password'),
   save: t('settings.profile.save'),
+  saveName: t('settings.profile.save_name'),
+  saveEmail: t('settings.profile.save_email'),
+  clear: t('settings.profile.clear'),
   noChanges: t('settings.profile.no_changes'),
   unconfirmed: t('settings.profile.email_unconfirmed'),
   resend: t('settings.profile.resend'),
@@ -36,12 +41,22 @@ export const text = {
 
 export const nameField = (page: Page): Locator => page.getByLabel(text.name, { exact: true });
 export const emailField = (page: Page): Locator => page.getByLabel(text.email, { exact: true });
+export const namePasswordField = (page: Page): Locator =>
+  page.getByLabel(text.namePassword, { exact: true });
+export const emailPasswordField = (page: Page): Locator =>
+  page.getByLabel(text.emailPassword, { exact: true });
 export const currentPasswordField = (page: Page): Locator =>
   page.getByLabel(text.currentPassword, { exact: true });
 export const newPasswordField = (page: Page): Locator =>
   page.getByLabel(text.newPassword, { exact: true });
 export const saveButton = (page: Page): Locator =>
   page.getByRole('button', { name: text.save, exact: true });
+export const saveNameButton = (page: Page): Locator =>
+  page.getByRole('button', { name: text.saveName, exact: true });
+export const saveEmailButton = (page: Page): Locator =>
+  page.getByRole('button', { name: text.saveEmail, exact: true });
+export const clearButtonOf = (field: Locator): Locator =>
+  field.locator('xpath=ancestor::form').getByRole('button', { name: text.clear, exact: true });
 
 export const toastClose = (page: Page): Locator =>
   page.getByRole('button', { name: text.toastClose, exact: true });
@@ -84,14 +99,42 @@ export async function fillCurrentPassword(page: Page, password: string): Promise
 
 export async function editName(page: Page, fullName: string, password: string): Promise<void> {
   await fillInput(nameField(page), fullName);
+  await fillInput(namePasswordField(page), password);
+}
+
+export async function saveEditedName(
+  page: Page,
+  fullName: string,
+  password: string
+): Promise<void> {
+  await editName(page, fullName, password);
+  await saveNameButton(page).click();
+}
+
+export async function editEmail(page: Page, email: string, password: string): Promise<void> {
+  await fillInput(emailField(page), email);
+  await fillInput(emailPasswordField(page), password);
+}
+
+export async function saveEditedEmail(page: Page, email: string, password: string): Promise<void> {
+  await editEmail(page, email, password);
+  await saveEmailButton(page).click();
+}
+
+export async function editPassword(
+  page: Page,
+  password: string,
+  newPassword: string
+): Promise<void> {
   await fillCurrentPassword(page, password);
+  await fillInput(newPasswordField(page), newPassword);
 }
 
 export async function expectToastsInOrder(page: Page, messages: string[]): Promise<void> {
   const escaped = messages.map((message) => message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const toasts = shownToasts(page).getByText(new RegExp(`^(${escaped.join('|')})$`));
   await expect(toasts).toHaveText(messages);
-  await expect(page.getByRole('status').filter({ hasText: messages.join(' ') })).toBeAttached();
+  await expect(page.getByRole('status').filter({ hasText: messages.at(-1) ?? '' })).toBeAttached();
 }
 
 export function expectOnlyAllowedOrigins(
@@ -105,9 +148,6 @@ export function expectOnlyAllowedOrigins(
   expect(originsOf(calls.map((call) => call.url)).filter((o) => o !== graphqlOrigin)).toEqual([]);
   expect(originsOf(urls).filter((origin) => !permitted.includes(origin))).toEqual([]);
 }
-
-export const configuredRestOrigin = (documentUrl: string): string =>
-  configuredOrigin(process.env.REACT_APP_MOCKOON_URL, documentUrl);
 
 export function expectNoPersonalDataInUrls(urls: readonly string[], secrets: string[]): void {
   const decoded = urls.map((url) => decodeURIComponent(url));

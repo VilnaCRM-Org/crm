@@ -34,6 +34,11 @@ correction below) and 2026-11-05 (FR/NFR reconciliation) **Feature:** `user-sett
 >   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
+> - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
+>   flag (b0a6747d) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
+>   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
+>   off" row, scenario or criterion describes a state no build reaches.
 > - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
 >   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
 >   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,
@@ -56,6 +61,8 @@ architecture's, and `U`, `D`, `R` and `P` ids come from the run's decision recor
 operation the page uses (`users`, `updateUser`, `resendEmailToUser`) is in the pinned v2.8.0
 schema (D5), so no story waits for user-service: the page runs against the browser-lane stubs,
 msw and a stateless local Apollo mock, behind the `userSettings` flag, which ships off (U5).
+Superseded 2026-11-03: the owner removed the flag, so the page is an ordinary protected route in
+every environment ("No flag" in the owner decisions above).
 
 `settings/` below means `src/modules/user/features/settings/`, `@auth/` means
 `src/modules/user/features/auth/` and `user/` means `src/modules/user/`.
@@ -1606,7 +1613,7 @@ unit and page tests with the `AUTH_TOKENS.ProfileProvider` token mocked.
 **Acceptance Criteria:**
 
 - Given only the name changed and the Save succeeds, when it settles, then "Зміни збережено" shows, is announced once through the status region while focus stays on "Зберегти зміни", the header and the field show the payload's name, both password fields are empty and the form is pristine.
-- Given only the e-mail changed and the Save succeeds, when it settles, then "Ми надіслали посилання для підтвердження на нову адресу" shows and the payload's `confirmed: false` is adopted; with all three changed, three toasts show in the order name, e-mail, password as one utterance, and an immediate second Save sends nothing.
+- Given only the e-mail changed and the Save succeeds, when it settles, then "Ми надіслали посилання для підтвердження на нову адресу" shows and the payload's `confirmed: false` is adopted; with all three changed, three toasts show in the order name, e-mail, password as one utterance, and an immediate second Save sends nothing. Superseded 2026-11-05 (owner decision, PRD): the profile card is three per-section forms (full name, e-mail, password), each with its own password field, Save, `UpdateUser` and toast.
 - Given a 422 violation on `email` with the uniqueness message, or no `extensions` and the message `email: This email address is already registered`, when it settles, then the e-mail field shows "Електронна адреса вже використовується" and takes focus.
 - Given violations on `initials` and `newPassword`, when they settle, then the name field shows "Будь ласка, введіть повне ім’я у правильному форматі", the new-password field shows "Пароль не відповідає вимогам. Перевірте правила нижче" from `settings.errors.new_password_rejected`, and focus is on the name field, first in DOM order; a violation list with an unknown path shows "Не вдалося зберегти зміни. Спробуйте пізніше." and no field error.
 - Given "Old password is invalid" with no `extensions`, or its Ukrainian text, when it settles, then "Поточний пароль" shows "Неправильний поточний пароль", takes focus and the other fields keep their values; an unknown message carrying `FORBIDDEN` shows the generic toast instead.
@@ -1756,7 +1763,7 @@ of #315's per-spec helpers, which stay where they are),
 
 - Given the seeded token, when `/settings` opens through the home link, then no document load happens, `main` has focus, the title, `h1` and skeleton show, then the card with the stubbed user, and exactly one `CurrentUser` request carrying `Authorization: Bearer` was sent.
 - Given a name change with the current password, when Save runs, then one `UpdateUser` was sent with input keys exactly `id`, `password`, `initials` and `clientMutationId`, "Зміни збережено" shows, the header updates and both password fields are empty.
-- Given an e-mail change, when Save runs, then its toast and the unconfirmed row show; when "Надіслати повторно" runs, then one `ResendEmailToUser` was sent and its toast shows; with all three aspects changed, three toasts show in the order name, e-mail, password.
+- Given an e-mail change, when Save runs, then its toast and the unconfirmed row show; when "Надіслати повторно" runs, then one `ResendEmailToUser` was sent and its toast shows; with all three aspects changed, three toasts show in the order name, e-mail, password. Superseded 2026-11-05 (owner decision, PRD): each of the three per-section forms saves with its own `UpdateUser` and shows its own toast.
 - Given a message-only wrong-password answer, a 422 taken-e-mail answer, an HTTP 429 and an HTTP 503 followed by "Спробувати ще раз", when each settles, then the field error or toast of FR-16 to FR-18 shows and the retry sends exactly one new `UpdateUser`.
 - Given the browser offline, when Save is activated, then it is disabled and nothing is sent; with only the current password typed, Save sends nothing and the no-change status shows.
 - Given a failed read, when "Спробувати ще раз" runs, then one new `CurrentUser` is sent and the card renders.

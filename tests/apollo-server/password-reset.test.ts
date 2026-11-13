@@ -17,6 +17,7 @@ import {
   REQUEST_RESET,
   type SingleBody,
 } from './mock-schema-fixtures';
+import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
 
 const PENDING_EXTENSION = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'api', 'contracts', 'pending', 'password-reset.graphql'),
@@ -38,7 +39,12 @@ const startServer = async (
   serverResolvers: typeof resolvers = resolvers
 ): Promise<ApolloServer> => {
   const server = new ApolloServer({
-    typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION],
+    typeDefs: [
+      PINNED_SDL_FIXTURE,
+      PROFILE_SDL_FIXTURE,
+      PENDING_EXTENSION,
+      ...TWO_FACTOR_SDL_FIXTURES,
+    ],
     resolvers: serverResolvers,
     formatError,
   });

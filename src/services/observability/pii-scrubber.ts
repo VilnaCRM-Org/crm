@@ -1,5 +1,7 @@
 import type { SentryEvent } from '@/services/types/observability/sentry';
 
+import PiiTextScrubber from './pii-text-scrubber';
+
 export class PiiScrubber {
   private readonly deniedFragments: readonly string[] = [
     'password',
@@ -10,23 +12,20 @@ export class PiiScrubber {
     'apikey',
     'email',
     'initials',
+    'pendingsession',
+    'twofactorcode',
+    'recoverycode',
+    'otpauth',
   ];
 
-  private readonly patterns: readonly RegExp[] = [
-    /[^\s@]+@[^\s@]+\.[^\s@]+/g,
-    /bearer\s+[\w.\-~+/]+=*/gi,
-    /eyJ[\w-]+\.[\w-]+\.[\w-]+/g,
-    /(?<=token=)[^&#\s]+/gi,
-    /(?<=token%3d)(?:(?!%26|%23)[^&#\s])+/gi,
-    /(?<="[\w-]*(?:token|password)"\s*:\s*")(?:\\.|[^"\\])+/gi,
-  ];
+  private readonly text = new PiiTextScrubber();
 
   public scrub(event: SentryEvent): SentryEvent {
     return this.redact(event) as SentryEvent;
   }
 
   private redact(value: unknown): unknown {
-    if (typeof value === 'string') return this.redactString(value);
+    if (typeof value === 'string') return this.text.scrub(value);
     if (Array.isArray(value)) return value.map((item) => this.redact(item));
     if (!this.isRecord(value)) return value;
     return this.redactRecord(value);
@@ -36,7 +35,7 @@ export class PiiScrubber {
     const result: Record<string, unknown> = {};
     for (const key of Object.keys(record)) {
       if (!this.isDeniedKey(key)) {
-        result[this.redactString(key)] = this.redact(record[key]);
+        result[this.text.scrub(key)] = this.redact(record[key]);
       }
     }
     return result;
@@ -45,10 +44,6 @@ export class PiiScrubber {
   private isDeniedKey(key: string): boolean {
     const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
     return this.deniedFragments.some((fragment) => normalized.includes(fragment));
-  }
-
-  private redactString(value: string): string {
-    return this.patterns.reduce((text, pattern) => text.replace(pattern, '[redacted]'), value);
   }
 
   private isRecord(value: unknown): value is Record<string, unknown> {

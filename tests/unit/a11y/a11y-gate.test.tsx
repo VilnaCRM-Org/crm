@@ -65,8 +65,8 @@ describe('the exception allowlist', () => {
     }
   });
 
-  it('holds the eleven reviewed entries, one being the current navigation row (X-1)', () => {
-    expect(A11Y_EXCEPTIONS).toHaveLength(11);
+  it('holds the twelve reviewed entries, one being the current navigation row (X-1)', () => {
+    expect(A11Y_EXCEPTIONS).toHaveLength(12);
     expect(A11Y_EXCEPTIONS.map(({ ruleId }) => ruleId)).toEqual(
       A11Y_EXCEPTIONS.map(() => 'color-contrast')
     );
@@ -131,5 +131,71 @@ describe('the exception allowlist', () => {
     );
 
     expect(filtered.violations).toEqual([violation('button-name', '#any')]);
+  });
+
+  describe('a target axe shares between several elements', () => {
+    const contained: A11yException[] = [
+      {
+        ruleId: 'color-contrast',
+        selector: 'button.MuiButton-contained',
+        reason: 'fixture entry with an adequately long reason',
+        trackingUrl: 'https://github.com/VilnaCRM-Org/crm/issues/1',
+      },
+    ];
+
+    const renderSharedTarget = (): HTMLElement =>
+      render(
+        <div>
+          <button type="button" id="plain" className="shared">
+            Plain
+          </button>
+          <button type="button" id="contained" className="shared MuiButton-contained">
+            Contained
+          </button>
+        </div>
+      ).container;
+
+    const sharedNode = (id: string): { target: string[]; xpath: string[] } => ({
+      target: ['.shared'],
+      xpath: [`//button[@id="${id}"]`],
+    });
+
+    it('excepts the element its xpath addresses, not the first match of the target', async () => {
+      const filtered = await applyA11yExceptions(
+        { violations: [{ id: 'color-contrast', nodes: [sharedNode('contained')] }] },
+        domElementMatcher(renderSharedTarget()),
+        contained
+      );
+
+      expect(filtered.violations).toEqual([]);
+    });
+
+    it('keeps a node whose xpath addresses an element no exception covers', async () => {
+      const node = sharedNode('plain');
+
+      const filtered = await applyA11yExceptions(
+        { violations: [{ id: 'color-contrast', nodes: [node] }] },
+        domElementMatcher(renderSharedTarget()),
+        contained
+      );
+
+      expect(filtered.violations).toEqual([{ id: 'color-contrast', nodes: [node] }]);
+    });
+
+    it('resolves the xpath inside a Document root, not the global document', async () => {
+      const scanned = document.implementation.createHTMLDocument('scanned');
+      const button = scanned.createElement('button');
+      button.id = 'contained';
+      button.className = 'shared MuiButton-contained';
+      scanned.body.append(button);
+
+      const filtered = await applyA11yExceptions(
+        { violations: [{ id: 'color-contrast', nodes: [sharedNode('contained')] }] },
+        domElementMatcher(scanned),
+        contained
+      );
+
+      expect(filtered.violations).toEqual([]);
+    });
   });
 });

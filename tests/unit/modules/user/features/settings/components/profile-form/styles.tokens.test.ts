@@ -58,6 +58,7 @@ describe('profile form styles', () => {
     expect(shared.SETTINGS_PILL).toEqual(PILL);
     expect(shared.SETTINGS_PILL_FROM_TABLET).toEqual(PILL_FROM_TABLET);
     expect(shared.SETTINGS_OUTLINED_PILL).toEqual(OUTLINED_PILL);
+    expect(shared.SETTINGS_SUBMIT_WIDTH_RESET).toEqual({ '&&': { minWidth: 0 } });
   });
 
   it('draws the Clear pill outlined with a #969B9D border and #1A1C1E text', async () => {

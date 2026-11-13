@@ -1,11 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const mockRead = jest.fn();
@@ -25,10 +27,17 @@ jest.mock('@/providers/di', () => ({
   useService: (): object => mockProvider,
 }));
 
+const waitForFocusRipple = (): Promise<void> =>
+  waitFor(() => expect(document.body).toContainHTML('MuiTouchRipple-ripplePulsate'));
+
 const page = (): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
     <main>
-      <UserProfile />
+      <MemoryRouter>
+        <SessionOutlet>
+          <UserProfile />
+        </SessionOutlet>
+      </MemoryRouter>
     </main>
   </I18nextProvider>
 );
@@ -41,7 +50,7 @@ const openAndEdit = async (): Promise<void> => {
   render(page());
   await screen.findByRole('heading', { level: 2, name: 'Особисті дані' });
   await userEvent.type(screen.getByLabelText('E-mail'), '.ua');
-  await userEvent.type(screen.getByLabelText('Поточний пароль'), 'abc');
+  await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
 };
 
 describe('settings page states accessibility', () => {
@@ -54,7 +63,7 @@ describe('settings page states accessibility', () => {
     mockUpdate.mockResolvedValue({ kind: 'ok', user: buildUserEntity() });
     await openAndEdit();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
 
     await expectNoA11yViolations(document.body);
@@ -64,8 +73,9 @@ describe('settings page states accessibility', () => {
     mockUpdate.mockResolvedValue({ kind: 'failed', reason: 'transient' });
     await openAndEdit();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     await screen.findByRole('button', { name: 'Спробувати ще раз' });
+    await waitForFocusRipple();
 
     await expectNoA11yViolations(document.body);
   });
@@ -77,7 +87,7 @@ describe('settings page states accessibility', () => {
     });
     await openAndEdit();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Зберегти зміни' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти пошту' }));
     await screen.findByText('Неправильний поточний пароль');
 
     await expectNoA11yViolations(document.body);

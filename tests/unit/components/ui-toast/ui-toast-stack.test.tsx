@@ -27,7 +27,7 @@ const failure = (message: string): ToastDraft => ({ tone: 'error', message });
 
 const set = (...items: ToastDraft[]): ToastDraftSet => ({ items });
 
-type ReturnTarget = 'enabled' | 'disabled' | 'detached' | 'none';
+type ReturnTarget = 'enabled' | 'disabled' | 'detached' | 'hidden' | 'none';
 
 type ShowDrafts = (drafts: ToastDraftSet) => void;
 
@@ -65,7 +65,12 @@ function Page({
         Налаштування
       </h1>
       {returnTarget === 'none' ? null : (
-        <button ref={saveRef} type="button" disabled={returnTarget === 'disabled'}>
+        <button
+          ref={saveRef}
+          type="button"
+          disabled={returnTarget === 'disabled'}
+          style={returnTarget === 'hidden' ? { display: 'none' } : {}}
+        >
           Зберегти зміни
         </button>
       )}
@@ -272,6 +277,16 @@ describe('UIToastStack', () => {
 
       expect(heading()).toHaveFocus();
       expect(document.body).not.toHaveFocus();
+    });
+
+    it('moves focus to the fallback when the return target is display none', async () => {
+      const show = mountPage({ returnTarget: 'hidden', withFallback: true });
+      show(set(success('Перше')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(heading()).toHaveFocus();
+      expect(closeButtons()).toHaveLength(0);
     });
 
     it('moves focus to the fallback when the return target is not in the document', async () => {

@@ -9,6 +9,7 @@ import { I18nextProvider } from 'react-i18next';
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import CreateNewPasswordForm from '@auth/components/create-new-password/create-new-password-form';
 import type { CreateNewPasswordFormProps } from '@auth/types/password-recovery/components';
+import type { RecoveryFailure } from '@auth/types/password-recovery/outcome';
 import { buildResetToken } from '@tests/builders';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
@@ -48,6 +49,7 @@ const formFor = (props: CreateNewPasswordFormProps): JSX.Element => (
     onSubmit={props.onSubmit}
     onDismissFailure={props.onDismissFailure}
     failure={props.failure}
+    failureOccurrence={props.failureOccurrence}
     isSubmitting={props.isSubmitting}
   />
 );
@@ -58,6 +60,7 @@ const mountForm = (overrides: Partial<CreateNewPasswordFormProps> = {}): Mounted
     onSubmit: jest.fn().mockResolvedValue(undefined),
     onDismissFailure: jest.fn(),
     failure: null,
+    failureOccurrence: 0,
     isSubmitting: false,
     ...overrides,
   };
@@ -131,6 +134,7 @@ describe('CreateNewPasswordForm', () => {
         onSubmit={jest.fn()}
         onDismissFailure={jest.fn()}
         failure={null}
+        failureOccurrence={0}
         isSubmitting={false}
       />,
       { wrapper: Wrapper }
@@ -278,6 +282,23 @@ describe('CreateNewPasswordForm', () => {
     ).toBeInTheDocument();
     expect(newPassword()).toHaveFocus();
     expect(screen.getByRole('list')).toBeVisible();
+  });
+
+  it('puts the policy rejection back on a second identical rejection', async () => {
+    const failure: RecoveryFailure = { reason: 'policy_rejected', retryable: false };
+    const message = 'Пароль не відповідає вимогам. Перевірте правила нижче';
+    const { rerenderWith } = mountForm();
+    await userEvent.type(newPassword(), VALID);
+    await userEvent.type(confirmation(), VALID);
+    rerenderWith({ failure, failureOccurrence: 1 });
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    await userEvent.click(submit());
+    await waitFor(() => expect(newPassword()).toHaveAttribute('aria-invalid', 'false'));
+
+    rerenderWith({ failure, failureOccurrence: 2 });
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(newPassword()).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('shows the busy state while submitting', () => {

@@ -12,17 +12,23 @@ import {
   type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
+  clearButtonOf,
   currentPasswordField,
-  editName,
+  editPassword,
   emailField,
   expectSuccessToast,
   fillCurrentPassword,
   nameField,
+  namePasswordField,
   newPasswordField,
   saveButton,
+  saveEditedEmail,
+  saveEditedName,
+  saveEmailButton,
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import { startOf } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -30,16 +36,15 @@ import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
 const NEW_NAME = buildFullName();
 const password = buildPassword();
-const MAIN_CONTROLS_WITH_ONE_TOAST = 10;
+const newPassword = buildPassword();
+const VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST = 11;
 
-const clearLabel: string = t('settings.profile.clear');
 const closeLabel: string = t('ui_toast.close');
 const showPasswordLabel: string = t('auth.password.show');
 const privacyLabel: string = t('footer.privacy');
 const termsLabel: string = t('footer.usage_policy');
 
-const clearButton = (page: Page): Locator =>
-  page.getByRole('button', { name: clearLabel, exact: true });
+const clearButton = (page: Page): Locator => clearButtonOf(currentPasswordField(page));
 const toggles = (page: Page): Locator => page.getByRole('button', { name: showPasswordLabel });
 const resendButton = (page: Page): Locator =>
   page.getByRole('button', { name: text.resend, exact: true });
@@ -53,9 +58,14 @@ async function openSettings(page: Page, stub: Promise<StubbedProfile>): Promise<
 }
 
 async function saveName(page: Page): Promise<void> {
-  await editName(page, NEW_NAME, password);
-  await saveButton(page).click();
+  await saveEditedName(page, NEW_NAME, password);
   await expectSuccessToast(page, text.saved);
+}
+
+async function savePassword(page: Page): Promise<void> {
+  await editPassword(page, password, newPassword);
+  await saveButton(page).click();
+  await expectSuccessToast(page, text.passwordChanged);
 }
 
 test.describe('Settings keyboard contract (issue #330)', () => {
@@ -63,7 +73,9 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await signInToSettings(page);
   });
 
-  test('Tab visits the form, the toast and the footer in reading order', async ({ page }) => {
+  test('Tab visits the form, two-factor, the toast and the footer in reading order', async ({
+    page,
+  }) => {
     await openSettings(
       page,
       stubProfile(page, {
@@ -85,6 +97,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       { locator: toggles(page).nth(1), visibleFocus: true },
       { locator: saveButton(page), visibleFocus: true },
       { locator: clearButton(page), visibleFocus: true },
+      { locator: startOf(page), visibleFocus: true },
       { locator: page.getByRole('button', { name: closeLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: privacyLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: termsLabel }), visibleFocus: true },
@@ -104,8 +117,11 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await saveName(page);
 
     await expect(
-      page.getByRole('main').locator('a[href], button:not([disabled]), input:not([type="hidden"])')
-    ).toHaveCount(MAIN_CONTROLS_WITH_ONE_TOAST);
+      page
+        .getByRole('main')
+        .locator('a[href], button:not([disabled]), input:not([type="hidden"])')
+        .filter({ visible: true })
+    ).toHaveCount(VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST);
   });
 
   test('Space on an eye toggle shows the password', async ({ page }) => {
@@ -121,17 +137,27 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     const stub = await openSettings(page, stubProfile(page));
 
     await fillInput(nameField(page), NEW_NAME);
-    await fillCurrentPassword(page, password);
-    await currentPasswordField(page).press('Enter');
+    await fillInput(namePasswordField(page), password);
+    await namePasswordField(page).press('Enter');
 
     await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
-  test('focus returns to Save once a save settles', async ({ page }) => {
+  test('focus moves to the name input once a name save settles, because its Save hid', async ({
+    page,
+  }) => {
     await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
 
     await saveName(page);
+
+    await expect(nameField(page)).toBeFocused();
+  });
+
+  test('focus returns to the password Save once a password save settles', async ({ page }) => {
+    await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
+
+    await savePassword(page);
 
     await expect(saveButton(page)).toBeFocused();
   });
@@ -146,14 +172,12 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       })
     );
 
-    await fillInput(emailField(page), buildEmail());
-    await fillCurrentPassword(page, password);
-    await saveButton(page).click();
+    await saveEditedEmail(page, buildEmail(), password);
 
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
     await expect(emailField(page)).toBeFocused();
 
-    await saveButton(page).click();
+    await saveEmailButton(page).click();
 
     await expect.poll(() => stub.count('UpdateUser')).toBe(2);
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
@@ -177,20 +201,47 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await expect(toggles(page)).toHaveCount(2);
   });
 
-  test('Clear keeps focus on itself and restores the loaded values', async ({ page }) => {
+  test('the password Clear keeps focus on itself and empties both fields', async ({ page }) => {
     await openSettings(page, stubProfile(page));
-    await fillInput(nameField(page), NEW_NAME);
+    await fillCurrentPassword(page, password);
 
     await clearButton(page).focus();
     await page.keyboard.press('Enter');
 
     await expect(clearButton(page)).toBeFocused();
-    await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
+    await expect(currentPasswordField(page)).toHaveValue('');
   });
 
-  test('closing the last toast returns focus to Save', async ({ page }) => {
+  test('the name Clear restores the loaded value and moves focus to the input', async ({
+    page,
+  }) => {
+    await openSettings(page, stubProfile(page));
+    await fillInput(nameField(page), NEW_NAME);
+
+    await clearButtonOf(nameField(page)).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(nameField(page)).toBeFocused();
+    await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
+    await expect(namePasswordField(page)).toHaveCount(0);
+  });
+
+  test('closing the last toast of a name save returns focus to the name input', async ({
+    page,
+  }) => {
     await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
     await saveName(page);
+
+    await toastClose(page).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(toastClose(page)).toHaveCount(0);
+    await expect(nameField(page)).toBeFocused();
+  });
+
+  test('closing the last toast of a password save returns focus to its Save', async ({ page }) => {
+    await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
+    await savePassword(page);
 
     await toastClose(page).focus();
     await page.keyboard.press('Enter');
@@ -202,8 +253,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
   test('an ended session leaves focus on main of the sign-in page', async ({ page }) => {
     await openSettings(page, stubProfile(page, { UpdateUser: [replyWithEndedSession] }));
 
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
 
     await expect(page).toHaveURL(/\/sign-in$/);
     await expect(page.getByRole('main')).toBeFocused();

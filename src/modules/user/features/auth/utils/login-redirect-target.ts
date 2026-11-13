@@ -15,7 +15,7 @@ class LoginRedirectTarget {
     if (!pathname.startsWith('/') || pathname.startsWith('//') || pathname.includes('\\')) {
       return false;
     }
-    return pathname !== ROUTE_PATHS.signIn;
+    return pathname !== ROUTE_PATHS.signIn && pathname !== ROUTE_PATHS.twoFactorChallenge;
   }
 
   private part(value: unknown): string {

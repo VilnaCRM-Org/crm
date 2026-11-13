@@ -11,6 +11,7 @@ function DismissingResetPasswordForm({
   defaultValues,
   onSubmit,
   failure: initialFailure,
+  failureOccurrence,
   isSubmitting,
   focusTitle,
 }: ResetPasswordFormProps): JSX.Element {
@@ -23,6 +24,7 @@ function DismissingResetPasswordForm({
       onSubmit={onSubmit}
       onDismissFailure={dismiss}
       failure={failure}
+      failureOccurrence={failureOccurrence}
       isSubmitting={isSubmitting}
       focusTitle={focusTitle}
     />
@@ -47,6 +49,7 @@ const meta: Meta<typeof ResetPasswordForm> = {
       onSubmit={args.onSubmit}
       onDismissFailure={args.onDismissFailure}
       failure={args.failure}
+      failureOccurrence={args.failureOccurrence}
       isSubmitting={args.isSubmitting}
       focusTitle={args.focusTitle}
     />
@@ -56,6 +59,7 @@ const meta: Meta<typeof ResetPasswordForm> = {
     onSubmit: resolved,
     onDismissFailure: (): undefined => undefined,
     failure: null,
+    failureOccurrence: 0,
     isSubmitting: false,
     focusTitle: false,
   },

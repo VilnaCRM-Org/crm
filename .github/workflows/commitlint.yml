@@ -15,7 +15,9 @@ jobs:
   commitlint:
     name: conventional commit contract
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Linting costs about 1.4 s a commit, and a branch whose base was squash-merged still
+    # carries every commit of that base, so a stacked pull request can hold 500 of them.
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -50,11 +52,14 @@ jobs:
       - name: Lint every commit in the pull request
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # The pull request's own base, not main: a pull request stacked on another branch
+          # lints only its own commits, which its squash merge writes onto that base.
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
           # Bot detection asks GitHub whether it signed the commit, so the step needs a token
           # and the repository to ask about. Read-only: the job declares `contents: read`.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_PROVENANCE_REPO: ${{ github.repository }}
         run: |
-          git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
-          range_from="$(git merge-base origin/main "$HEAD_SHA")"
+          git fetch --no-tags --quiet origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          range_from="$(git merge-base "origin/${BASE_REF}" "$HEAD_SHA")"
           make lint-commit-range COMMIT_RANGE_FROM="$range_from" COMMIT_RANGE_TO="$HEAD_SHA"

@@ -19,9 +19,13 @@ function useOfflineFocus(
 }
 
 // Everything a form needs to disable its submit while offline and describe the reason.
-export default function useOfflineSubmit(external?: FocusReturnTarget): OfflineSubmit {
+export default function useOfflineSubmit(
+  external: FocusReturnTarget | undefined,
+  noticeShown: boolean
+): OfflineSubmit {
   const online = useConnectivity();
-  const noticeId = useId();
+  const id = useId();
+  const noticeId = noticeShown ? id : undefined;
   const noticeRef = useRef<HTMLSpanElement>(null);
   const ownRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   const submitRef = external ?? ownRef;

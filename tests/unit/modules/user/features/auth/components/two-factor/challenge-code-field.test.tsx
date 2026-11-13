@@ -1,0 +1,187 @@
+import '@testing-library/jest-dom';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import * as React from 'react';
+import type { JSX } from 'react';
+import * as ReactHookForm from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
+import * as ReactI18next from 'react-i18next';
+import { I18nextProvider } from 'react-i18next';
+
+import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
+import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
+import ChallengeCodeField from '@auth/components/two-factor/challenge-code-field';
+import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
+import { buildTotpCode } from '@tests/builders';
+import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+
+const RESTING: TwoFactorChallengeState = {
+  mode: 'totp',
+  value: '',
+  fieldError: null,
+  banner: null,
+  bannerOccurrence: 0,
+  focusRequest: 0,
+  isSubmitting: false,
+};
+
+function Harness({
+  state,
+  onComplete = jest.fn(),
+}: {
+  state: TwoFactorChallengeState;
+  onComplete?: () => void;
+}): JSX.Element {
+  const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
+  return (
+    <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>
+      <FormProvider {...methods}>
+        <ChallengeCodeField state={state} onComplete={onComplete} />
+        <p aria-label="value">{methods.watch('twoFactorCode')}</p>
+      </FormProvider>
+    </I18nextProvider>
+  );
+}
+
+const FIELD_ERROR_TEXTS: readonly [TwoFactorFieldError, string][] = [
+  ['incomplete', 'Введіть усі 6 цифр коду'],
+  ['format', 'Код має складатися лише з шести цифр'],
+  [
+    'invalid_code',
+    'Невірний код. Перевірте, чи правильно встановлено час на телефоні, і спробуйте ще раз.',
+  ],
+];
+
+const cells = (): HTMLInputElement[] => screen.getAllByRole('textbox');
+const stored = (): string => screen.getByLabelText('value').textContent ?? '';
+
+describe('ChallengeCodeField', () => {
+  it('renders six cells named by position and a group named by the code label', () => {
+    render(<Harness state={RESTING} />);
+
+    expect(screen.getByRole('group', { name: 'Код підтвердження' })).toBeInTheDocument();
+    expect(cells().map((cell) => cell.getAttribute('aria-label'))).toEqual([
+      'Цифра 1 з 6',
+      'Цифра 2 з 6',
+      'Цифра 3 з 6',
+      'Цифра 4 з 6',
+      'Цифра 5 з 6',
+      'Цифра 6 з 6',
+    ]);
+  });
+
+  it.each(FIELD_ERROR_TEXTS)(
+    'shows the %s text and marks every cell invalid',
+    (fieldError, text) => {
+      render(<Harness state={{ ...RESTING, fieldError }} />);
+
+      expect(screen.getByText(text)).toBeInTheDocument();
+      cells().forEach((cell) => expect(cell).toHaveAttribute('aria-invalid', 'true'));
+    }
+  );
+
+  it('shows no error text and no invalid mark without a field error', () => {
+    render(<Harness state={RESTING} />);
+
+    FIELD_ERROR_TEXTS.forEach(([, text]) =>
+      expect(screen.queryByText(text)).not.toBeInTheDocument()
+    );
+    cells().forEach((cell) => expect(cell).not.toHaveAttribute('aria-invalid', 'true'));
+  });
+
+  it('locks the cells while a request is in flight', () => {
+    render(<Harness state={{ ...RESTING, isSubmitting: true }} />);
+
+    cells().forEach((cell) => expect(cell).toHaveAttribute('aria-disabled', 'true'));
+  });
+
+  it('keeps typed digits when the value prop stays empty and nothing was requested', async () => {
+    render(<Harness state={RESTING} />);
+
+    await userEvent.type(cells()[0] as HTMLInputElement, '123');
+
+    expect(stored()).toBe('123');
+  });
+
+  it('clears the stored code when the hook value is empty after a wrong code', async () => {
+    const code = buildTotpCode();
+    const view = render(<Harness state={{ ...RESTING, value: code }} />);
+    await userEvent.type(cells()[0] as HTMLInputElement, code);
+    expect(stored()).toBe(code);
+
+    view.rerender(<Harness state={{ ...RESTING, value: '', fieldError: 'invalid_code' }} />);
+
+    await waitFor(() => expect(stored()).toBe(''));
+  });
+
+  it('clears the stored code on a new focus request while the hook value stays empty', async () => {
+    const code = buildTotpCode();
+    const view = render(<Harness state={RESTING} />);
+    await userEvent.type(cells()[0] as HTMLInputElement, code);
+    expect(stored()).toBe(code);
+
+    view.rerender(<Harness state={{ ...RESTING, fieldError: 'invalid_code', focusRequest: 1 }} />);
+
+    await waitFor(() => expect(stored()).toBe(''));
+    await waitFor(() => cells().forEach((cell) => expect(cell).toHaveValue('')));
+  });
+
+  it('keeps typed digits when a focus is requested for a non-empty value', async () => {
+    const view = render(<Harness state={{ ...RESTING, value: '12' }} />);
+    await userEvent.type(cells()[0] as HTMLInputElement, '12');
+
+    view.rerender(
+      <Harness state={{ ...RESTING, value: '12', fieldError: 'incomplete', focusRequest: 1 }} />
+    );
+
+    await waitFor(() => expect(cells()[2]).toHaveFocus());
+    expect(stored()).toBe('12');
+  });
+
+  it('focuses the first cell on arrival, before any focus request', async () => {
+    render(<Harness state={RESTING} />);
+
+    await waitFor(() => expect(cells()[0]).toHaveFocus());
+  });
+
+  it('focuses the first empty cell once a focus is requested', async () => {
+    const view = render(<Harness state={RESTING} />);
+    await userEvent.type(cells()[0] as HTMLInputElement, '12');
+
+    view.rerender(<Harness state={{ ...RESTING, focusRequest: 1 }} />);
+
+    await waitFor(() => expect(cells()[2]).toHaveFocus());
+  });
+});
+
+describe('ChallengeCodeField error table loaded inside the test', () => {
+  it.each(FIELD_ERROR_TEXTS)('shows the %s text', async (fieldError, text) => {
+    const Loaded = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-hook-form', () => ReactHookForm);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@auth/components/two-factor/challenge-code-field')).default;
+    });
+    function LoadedHarness(): JSX.Element {
+      const methods = useForm<TwoFactorDto>({ defaultValues: { twoFactorCode: '' } });
+      return (
+        <I18nextProvider i18n={createTwoFactorLocaleI18n('uk')}>
+          <FormProvider {...methods}>
+            <Loaded state={{ ...RESTING, fieldError }} onComplete={jest.fn()} />
+          </FormProvider>
+        </I18nextProvider>
+      );
+    }
+
+    render(<LoadedHarness />);
+
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    expect(cells().map((cell) => cell.getAttribute('aria-label'))).toStrictEqual(
+      [1, 2, 3, 4, 5, 6].map((position) => `Цифра ${position} з 6`)
+    );
+    FIELD_ERROR_TEXTS.filter(([key]) => key !== fieldError).forEach(([, other]) =>
+      expect(screen.queryByText(other)).not.toBeInTheDocument()
+    );
+  });
+});

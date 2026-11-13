@@ -1,0 +1,7 @@
+mutation RegenerateRecoveryCodesUser($input: regenerateRecoveryCodesUserInput!) {
+  regenerateRecoveryCodesUser(input: $input) {
+    user {
+      recoveryCodes
+    }
+  }
+}

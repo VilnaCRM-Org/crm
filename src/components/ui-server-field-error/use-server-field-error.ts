@@ -18,10 +18,18 @@ function syncServerError(
   }
 }
 
-export default function useServerFieldError({ name, message, focus }: ServerFieldErrorProps): void {
+export default function useServerFieldError({
+  name,
+  message,
+  occurrence,
+  focus,
+}: ServerFieldErrorProps): void {
   const { setError, setFocus, clearErrors, getFieldState } = useFormContext();
 
   useEffect(() => {
-    syncServerError({ setError, setFocus, clearErrors, getFieldState }, { name, message, focus });
-  }, [message, name, focus, setError, setFocus, clearErrors, getFieldState]);
+    syncServerError(
+      { setError, setFocus, clearErrors, getFieldState },
+      { name, message, occurrence, focus }
+    );
+  }, [message, occurrence, name, focus, setError, setFocus, clearErrors, getFieldState]);
 }

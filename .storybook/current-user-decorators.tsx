@@ -9,6 +9,8 @@ import { noop } from './story-callbacks';
 export const storySession: ProtectedSessionContext = {
   signOut: noop,
   session: { token: () => 'story-session-token', end: noop },
+  twoFactorStatus: 'unknown',
+  setTwoFactorStatus: noop,
 };
 
 function currentUserAnswer(fullName: string): Response {

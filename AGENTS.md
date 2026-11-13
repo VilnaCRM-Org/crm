@@ -226,8 +226,9 @@ runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL 
 `RegistrationAPI`) — data is parsed, never cast.
 
 - **Which transport?** GraphQL (Apollo) for user/account **domain-graph** reads and mutations;
-  REST (`HttpsClient`) for non-graph endpoints (login/token, health, files). When both expose
-  the same resource, the write goes through GraphQL and the token/session concern through REST.
+  REST (`HttpsClient`) for non-graph endpoints (health, files). Sign-in and the two-factor
+  operations are GraphQL mutations; no REST login exists. When both expose the same resource,
+  GraphQL wins.
 - **Generated files are build output** — never hand-edit `src/api/generated/**`; change the
   spec/operation and rerun `make codegen`. They are excluded from every source gate via the gate
   configs, never with suppressions. CI (`static testing`) runs `make codegen-check` and fails on
@@ -243,10 +244,12 @@ Every user-facing string is a translated key, and every key exists in **both** l
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
 `src/i18n/localization.json` is the merge of every **eager** catalog, produced by
 `scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
-regenerates it. The seven catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
 (password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
-`coming_soon.*` and the user menu `user_menu.*`) are left out of it and registered by their owning
-chunk; a key in one of them resolves only in the files its `owners` list names.
+`coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
+`auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
+`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+key in one of them resolves only in the files its `owners` list names.
 
 - **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
   `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a
@@ -324,7 +327,6 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildCredentials(overrides?)` → `{ email, password }` (`SignInDto` from `@/modules/user`).
 - `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
 - `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
-- `buildLoginResponse(overrides?)` → `{ token }`.
 - `buildResetToken()` → a 32-character alphanumeric password-reset token.
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
@@ -360,7 +362,7 @@ FAKER_SEED=12345 make test-unit-client
 
 Determinism keeps visual snapshots stable. The shared integration mock server
 (`tests/integration/mocks/server.ts`) exposes its generated defaults
-(`defaultLoginResponse`, `defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
+(`defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
 against those exports rather than literals.
 
 ### When NOT to use a builder
@@ -810,7 +812,7 @@ class Service {}
 class ApiErrorFactory {}
 class EmailValidator {}
 class ApiErrorGuard {}
-class LoginResponseMapper {}
+class RegistrationResponseMapper {}
 class FetchHttpsClient {}
 ```
 
@@ -941,7 +943,7 @@ that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails con
 Container start fails on two flag shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*`
 name that matches no declared flag, and a declared flag whose value is not exactly `true` or
 `false`. The user settings page (issue #330), its three coming-soon sub-pages and their app-shell
-entry points (issue #362) ship without a flag.
+entry points (issue #362), and the page's two-factor section (issue #331) ship without a flag.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -1006,7 +1008,7 @@ register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If 
 only an annotation, make it `import type` (issue #88).
 
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
-`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`reflect-metadata`, token modules, config data (`@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
 `error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
 module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).

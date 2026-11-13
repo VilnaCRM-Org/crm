@@ -53,7 +53,10 @@ function ConfirmPasswordField(): JSX.Element {
   );
 }
 
-function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX.Element {
+function CreateNewPasswordFields({
+  failure,
+  failureOccurrence,
+}: CreateNewPasswordFieldsProps): JSX.Element {
   const { t } = useTranslation();
   const policyRejected =
     failure?.reason === 'policy_rejected' ? t('password_reset.errors.policy_rejected') : null;
@@ -74,7 +77,11 @@ function CreateNewPasswordFields({ failure }: CreateNewPasswordFieldsProps): JSX
       />
       <UIPasswordPolicyRules id={RULES_ID} name="newPassword" evaluate={evaluateNewPassword} />
       <ConfirmPasswordField />
-      <UIServerFieldError name="newPassword" message={policyRejected} />
+      <UIServerFieldError
+        name="newPassword"
+        message={policyRejected}
+        occurrence={failureOccurrence}
+      />
       <ConfirmationRecheck />
     </>
   );
@@ -85,6 +92,7 @@ export default function CreateNewPasswordForm({
   onSubmit,
   onDismissFailure,
   failure,
+  failureOccurrence,
   isSubmitting,
 }: CreateNewPasswordFormProps): JSX.Element {
   const { t } = useTranslation();
@@ -103,7 +111,7 @@ export default function CreateNewPasswordForm({
       submitSpacing="tight"
       subtitle={t('password_reset.body')}
     >
-      <CreateNewPasswordFields failure={failure} />
+      <CreateNewPasswordFields failure={failure} failureOccurrence={failureOccurrence} />
     </UIForm>
   );
 }

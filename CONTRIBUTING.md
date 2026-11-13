@@ -166,6 +166,9 @@ printf 'feat(#123): add a thing (#456)\n' | make lint-commit-message
 make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" COMMIT_RANGE_TO=HEAD
 ```
 
+The range starts at the merge base with the pull request's own base branch, so for a pull
+request stacked on another branch, replace `origin/main` with that branch.
+
 Do not relax `commitlint.config.js` to make a header pass — it is the contract the release
 pipeline parses.
 
@@ -375,6 +378,59 @@ The dev container starts Mailpit too and forwards port 8025. The test stack
 (`docker-compose.test.yml`) runs no Mailpit, so the browser suites keep the
 stateless mock and stub GraphQL where they need a specific answer.
 
+### Local stack with the real user-service
+
+`make start` answers GraphQL from the Apollo mock, which accepts any password. To see a real
+password change, `make start-local-stack` runs the SPA against a real user-service at
+<http://vilnacrm.localhost>:
+
+```bash
+git clone git@github.com:VilnaCRM-Org/user-service.git ../user-service
+make start-local-stack
+make stop-local-stack
+```
+
+Set `USER_SERVICE_DIR` when the clone is elsewhere, which includes running from a worktree. Port 80
+has to be free, because the gateway binds it. `stop-local-stack` leaves user-service running; stop
+it with `docker compose down` from its own directory, using
+`COMPOSE_PROJECT_NAME=user-service-local`.
+
+Three containers from `docker-compose.local-stack.yml` sit in front of user-service, which is why
+the browser sees one origin:
+
+| Path            | Goes to                                |
+| --------------- | -------------------------------------- |
+| `/api/graphql`  | Mockoon, which proxies to user-service |
+| Everything else | The rsbuild dev server, including HMR  |
+
+The one origin avoids CORS: user-service rejects the `X-Request-Id` and `X-Correlation-Id`
+preflight (user-service #514). `.localhost` needs no `/etc/hosts` entry and browsers treat it as a
+secure context, which a `.local` name is not.
+
+**Mockoon provides the sign-in token.** `sign-in.template.json` answers `SignInUser` for the demo
+user with a token, and every other operation reaches user-service. A made-up token would not work,
+because user-service verifies an RS256 signature and a live session. So
+`scripts/local-stack/issue-demo-session.mjs` creates `demo@vilnacrm.com`, signs in for real, and
+writes that token into the gitignored `docker/local-stack/generated/sign-in.json`. It reuses the
+token until an hour before it expires, as long as the file was written for the same demo e-mail and
+the demo user already existed (a wiped user-service database recreates the user, so a new token is
+issued), and the start script raises its lifetime to 30 days through the clone's gitignored
+`.env.local`.
+
+What that means when you test by hand:
+
+- The sign-in page accepts **any** password for the demo user, because Mockoon answers it. Every
+  other address signs in against user-service.
+- Settings is real. Each save sends the current password, and user-service rejects a wrong one.
+  After a password change the old password stops working there and the new one starts.
+- Changing the password keeps this session, because user-service revokes only the other sessions.
+- To issue a new token after changing the demo password, delete the generated file and run
+  `LOCAL_DEMO_PASSWORD=<new password> make start-local-stack`.
+
+The start script builds the user-service image without its DocumentDB CA bundle step. That file
+secures AWS connections, which a local Mongo never makes, and its pinned digest fails whenever AWS
+rotates the bundle (user-service #503). user-service's tracked files are left unchanged.
+
 ### The browser security-header gate
 
 Every production response carries the header baseline — `Content-Security-Policy`,
@@ -421,7 +477,7 @@ off the test path so the unit fetch-stub and the integration MSW server never co
 excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
 text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
 type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
-CI runners are 2-core, so parallelism comes from the shard count (currently 48), not from Stryker's
+CI runners are 2-core, so parallelism comes from the shard count (currently 63), not from Stryker's
 in-process concurrency.
 
 **Every mutant is classified on its merits.** A score is only worth enforcing when each status was
@@ -439,15 +495,24 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 48-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 63-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
-**scored-mutant count** (heaviest file to the lightest shard), not sliced round-robin and not packed
+**mutant-run cost** (heaviest file to the lightest shard), not sliced round-robin and not packed
 by file size, because the run costs whatever its slowest shard costs: round-robin left one shard
-carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 253 mutants
-against a mean of 166. A static mutant (outside every function and instance property initializer,
-which `ignoreStatic` never runs) does not count, a file whose mutants are all static weighs 1, and
-a file with no runnable mutant (a barrel, a token module) goes to no shard, so its whole-suite
-related-test set no longer lands on one shard. Every shard job and the merge job count each file's
+carrying 1.54x the mean load, and at 30 shards a size packing still left one holding 485 mutants
+against a mean of 308. A file weighs its runnable mutants plus one for the dry run, times a fan-out
+factor: every mutant run
+makes Jest load each test file related to the mutated file, about 150 ms apiece even when every
+test in it is filtered out, so `scripts/ci/mutation-related-tests.mjs` counts those files the way
+Jest finds them for Stryker, and the factor is 4 + the related logic tests + 3 x the related
+component tests (fitted to measured shard times). Because no load weight sees slow covering tests
+or timeouts, shards also aim to stay within 1.05x the mean runnable mutants; when no shard has room
+for a file's mutants, the file goes to the shard holding the fewest mutants among those under the
+file cap, so the target can be overshot. The file cap (twice the mean file count per shard) always
+holds. Packing by scored mutants alone had put a 37- and a 111-related-test file in shards
+that ran an estimated 22 and 29 minutes cold. A file with no runnable mutant (a barrel, a token
+module) goes to no shard, so its whole-suite related-test set no longer lands on one shard.
+Every shard job and the merge job count each file's
 mutants at run time with the instrumenter the pinned Stryker core resolves (about 4 s for the whole
 scope), so they all derive the same packing from the same commit; the merge fails if a sharded file
 is missing from its owner's report.
@@ -467,7 +532,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 48-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 63-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -491,10 +556,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=48  # repeat for 1..47
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=63  # repeat for 1..62
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=48 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=48
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=63 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=63
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and

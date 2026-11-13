@@ -35,27 +35,30 @@ function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   );
 }
 
+const formElement = (props: ResetPasswordFormProps): JSX.Element => (
+  <ResetPasswordForm
+    defaultValues={props.defaultValues}
+    onSubmit={props.onSubmit}
+    onDismissFailure={props.onDismissFailure}
+    failure={props.failure}
+    failureOccurrence={props.failureOccurrence}
+    isSubmitting={props.isSubmitting}
+    focusTitle={props.focusTitle}
+  />
+);
+
 const mountForm = (overrides: Partial<ResetPasswordFormProps> = {}): ResetPasswordFormProps => {
   const props: ResetPasswordFormProps = {
     defaultValues: { email: '' },
     onSubmit: jest.fn().mockResolvedValue(undefined),
     onDismissFailure: jest.fn(),
     failure: null,
+    failureOccurrence: 0,
     isSubmitting: false,
     focusTitle: false,
     ...overrides,
   };
-  render(
-    <ResetPasswordForm
-      defaultValues={props.defaultValues}
-      onSubmit={props.onSubmit}
-      onDismissFailure={props.onDismissFailure}
-      failure={props.failure}
-      isSubmitting={props.isSubmitting}
-      focusTitle={props.focusTitle}
-    />,
-    { wrapper: Wrapper }
-  );
+  render(formElement(props), { wrapper: Wrapper });
   return props;
 };
 
@@ -170,6 +173,29 @@ describe('ResetPasswordForm', () => {
     ).toBeInTheDocument();
     expect(emailField()).toHaveAttribute('aria-invalid', 'true');
     expect(emailField()).toHaveFocus();
+  });
+
+  it('puts the server e-mail error back on a second identical rejection', async () => {
+    const failure: RecoveryFailure = { reason: 'invalid_email', retryable: false };
+    const props: ResetPasswordFormProps = {
+      defaultValues: { email: buildEmail() },
+      onSubmit: jest.fn().mockResolvedValue(undefined),
+      onDismissFailure: jest.fn(),
+      failure,
+      failureOccurrence: 1,
+      isSubmitting: false,
+      focusTitle: false,
+    };
+    const { rerender } = render(formElement(props), { wrapper: Wrapper });
+    const message = 'Перевірте адресу електронної пошти та спробуйте ще раз';
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    await userEvent.click(submit());
+    await waitFor(() => expect(emailField()).toHaveAttribute('aria-invalid', 'false'));
+
+    rerender(formElement({ ...props, failureOccurrence: 2 }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(emailField()).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('refills the field and focuses the heading when re-entered from the sent step', () => {

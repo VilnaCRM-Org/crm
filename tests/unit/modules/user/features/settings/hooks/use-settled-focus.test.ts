@@ -2,42 +2,75 @@ import { renderHook } from '@testing-library/react';
 
 import useSettledFocus from '@/modules/user/features/settings/hooks/use-settled-focus';
 
-const buttonRef = (focus: jest.Mock): { current: HTMLButtonElement } => ({
-  current: { focus } as unknown as HTMLButtonElement,
-});
+type SettledFocusOptions = Parameters<typeof useSettledFocus>[0];
+type ProfileFormState = SettledFocusOptions['state'];
+type ProfileSection = SettledFocusOptions['section'];
 
-const saveForm = (): {
-  form: HTMLFormElement;
-  field: HTMLInputElement;
-  save: HTMLButtonElement;
-} => {
+interface Mounted {
+  readonly form: HTMLFormElement;
+  readonly input: HTMLInputElement;
+  readonly other: HTMLInputElement;
+  readonly save: HTMLButtonElement;
+  readonly outside: HTMLButtonElement;
+}
+
+const mountForm = (section: ProfileSection): Mounted => {
   const form = document.createElement('form');
-  const field = document.createElement('input');
+  const input = document.createElement('input');
+  input.id = section;
+  const other = document.createElement('input');
   const save = document.createElement('button');
-  form.append(field, save);
-  document.body.append(form);
-  return { form, field, save };
+  const outside = document.createElement('button');
+  form.append(input, other, save);
+  document.body.append(form, outside);
+  return { form, input, other, save, outside };
 };
 
-const NO_HEADING = { current: null };
+const stateOf = (settled: number, lastSettleSaved = false): ProfileFormState => ({
+  fieldErrors: { items: [] },
+  noChanges: false,
+  noChangesMarked: false,
+  settled,
+  saved: 0,
+  lastSettleSaved,
+  cleared: 0,
+  attempts: 0,
+});
+
+const optionsOf = (
+  section: ProfileSection,
+  button: HTMLButtonElement | null,
+  heading: HTMLElement | null = null
+): Omit<SettledFocusOptions, 'state'> => ({
+  section,
+  buttonRef: { current: button },
+  saveRef: { current: null },
+  headingRef: { current: heading },
+});
 
 describe('useSettledFocus', () => {
-  it('leaves focus alone before any save settled', () => {
-    const focus = jest.fn();
-
-    renderHook(() => useSettledFocus(0, buttonRef(focus), NO_HEADING));
-
-    expect(focus).not.toHaveBeenCalled();
+  afterEach(() => {
+    document.body.replaceChildren();
   });
 
-  it('focuses the save button once per settled save', () => {
-    const focus = jest.fn();
-    const saveRef = buttonRef(focus);
+  it('leaves focus and the save ref alone before any save settled', () => {
+    const { save, other } = mountForm('fullName');
+    const options = optionsOf('fullName', save);
+    other.focus();
+
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(0, true) }));
+
+    expect(other).toHaveFocus();
+    expect(options.saveRef.current).toBeNull();
+  });
+
+  it('focuses Save once per settled save', () => {
+    const { save } = mountForm('password');
+    const focus = jest.spyOn(save, 'focus');
+    const options = optionsOf('password', save);
     const { rerender } = renderHook(
-      ({ settled }) => useSettledFocus(settled, saveRef, NO_HEADING),
-      {
-        initialProps: { settled: 0 },
-      }
+      ({ settled }) => useSettledFocus({ ...options, state: stateOf(settled) }),
+      { initialProps: { settled: 0 } }
     );
 
     rerender({ settled: 1 });
@@ -47,88 +80,109 @@ describe('useSettledFocus', () => {
     expect(focus).toHaveBeenCalledTimes(2);
   });
 
-  it('focuses the save button when focus fell to the page body during the save', () => {
-    const focus = jest.fn();
-    const saveRef = buttonRef(focus);
-    const { rerender } = renderHook(
-      ({ settled }) => useSettledFocus(settled, saveRef, NO_HEADING),
-      {
-        initialProps: { settled: 0 },
-      }
-    );
+  it.each(['fullName', 'email'] as const)(
+    'moves focus to the %s input after a successful save, because its Save hid',
+    (section) => {
+      const { save, input } = mountForm(section);
+      const options = optionsOf(section, save);
 
-    expect(document.body).toHaveFocus();
-    rerender({ settled: 1 });
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1, true) }));
 
-    expect(focus).toHaveBeenCalledTimes(1);
-  });
+      expect(input).toHaveFocus();
+      expect(options.saveRef.current).toBe(input);
+    }
+  );
 
-  it('leaves focus on a control the user moved to while the save was in flight', () => {
-    const focus = jest.fn();
-    const saveRef = buttonRef(focus);
-    const field = document.createElement('input');
-    document.body.append(field);
-    const { rerender } = renderHook(
-      ({ settled }) => useSettledFocus(settled, saveRef, NO_HEADING),
-      {
-        initialProps: { settled: 0 },
-      }
-    );
+  it.each(['fullName', 'email'] as const)(
+    'keeps the %s Save focused and in the save ref after a failed save',
+    (section) => {
+      const { save } = mountForm(section);
+      const options = optionsOf(section, save);
 
-    field.focus();
-    rerender({ settled: 1 });
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1, false) }));
 
-    expect(focus).not.toHaveBeenCalled();
-    expect(field).toHaveFocus();
-    field.remove();
+      expect(save).toHaveFocus();
+      expect(options.saveRef.current).toBe(save);
+    }
+  );
+
+  it('keeps the password Save focused after a successful save, because it never hides', () => {
+    const { save } = mountForm('password');
+    const options = optionsOf('password', save);
+
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1, true) }));
+
+    expect(save).toHaveFocus();
+    expect(options.saveRef.current).toBe(save);
   });
 
   it('moves focus to Save from a field of the same form, as after Enter', () => {
-    const { form, field, save } = saveForm();
-    const { rerender } = renderHook(
-      ({ settled }) => useSettledFocus(settled, { current: save }, NO_HEADING),
-      {
-        initialProps: { settled: 0 },
-      }
-    );
-    field.focus();
+    const { save, other } = mountForm('fullName');
+    const options = optionsOf('fullName', save);
+    other.focus();
 
-    rerender({ settled: 1 });
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
 
     expect(save).toHaveFocus();
-    form.remove();
   });
 
-  it('stays on a field of the form while no save has settled', () => {
-    const { form, field, save } = saveForm();
-    field.focus();
+  it('leaves focus on a control outside the form but still records the target', () => {
+    const { save, input, outside } = mountForm('email');
+    const options = optionsOf('email', save);
+    outside.focus();
 
-    renderHook(() => useSettledFocus(0, { current: save }, NO_HEADING));
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1, true) }));
 
-    expect(field).toHaveFocus();
-    form.remove();
+    expect(outside).toHaveFocus();
+    expect(options.saveRef.current).toBe(input);
   });
 
-  it('does nothing when the save button is not mounted', () => {
-    const saveRef = { current: null };
-    const { rerender } = renderHook(
-      ({ settled }) => useSettledFocus(settled, saveRef, NO_HEADING),
-      {
-        initialProps: { settled: 0 },
-      }
-    );
+  it('leaves focus on the page body and clears the ref when the Save is not mounted', () => {
+    const options = optionsOf('password', null);
 
-    expect(() => rerender({ settled: 1 })).not.toThrow();
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
+
+    expect(document.body).toHaveFocus();
+    expect(options.saveRef.current).toBeNull();
   });
 
-  describe('when Save is disabled as the Save settles', () => {
-    const offlineForm = (): {
-      form: HTMLFormElement;
-      field: HTMLInputElement;
-      save: HTMLButtonElement;
-      heading: HTMLElement;
-    } => {
-      const parts = saveForm();
+  it('leaves focus on a focused control when the Save is not mounted', () => {
+    const { outside } = mountForm('password');
+    const options = optionsOf('password', null);
+    outside.focus();
+
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
+
+    expect(outside).toHaveFocus();
+  });
+
+  it('leaves focus on a control when the Save belongs to no form', () => {
+    const { outside } = mountForm('password');
+    const detached = document.createElement('button');
+    const focus = jest.spyOn(detached, 'focus');
+    const options = optionsOf('password', detached);
+    outside.focus();
+
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
+
+    expect(outside).toHaveFocus();
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('records no target when the saved input is gone', () => {
+    const { save, input } = mountForm('fullName');
+    input.remove();
+    const options = optionsOf('fullName', save);
+
+    renderHook(() => useSettledFocus({ ...options, state: stateOf(1, true) }));
+
+    expect(document.body).toHaveFocus();
+    expect(options.saveRef.current).toBeNull();
+  });
+
+  describe('when Save is disabled as the save settles', () => {
+    const offlineForm = (): Mounted & { readonly heading: HTMLElement } => {
+      const parts = mountForm('fullName');
       parts.save.disabled = true;
       const heading = document.createElement('h1');
       heading.tabIndex = -1;
@@ -137,48 +191,51 @@ describe('useSettledFocus', () => {
     };
 
     it('moves focus from the page body to the heading', () => {
-      const { form, save, heading } = offlineForm();
+      const { save, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
 
-      renderHook(() => useSettledFocus(1, { current: save }, { current: heading }));
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
 
       expect(heading).toHaveFocus();
-      form.remove();
-      heading.remove();
+      expect(options.saveRef.current).toBe(save);
     });
 
     it('leaves focus on a field the user is still in', () => {
-      const { form, field, save, heading } = offlineForm();
-      field.focus();
+      const { save, other, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
+      other.focus();
 
-      renderHook(() => useSettledFocus(1, { current: save }, { current: heading }));
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
 
-      expect(field).toHaveFocus();
-      form.remove();
-      heading.remove();
+      expect(other).toHaveFocus();
     });
 
     it('does nothing before any save settled', () => {
-      const { form, save, heading } = offlineForm();
+      const { save, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
 
-      renderHook(() => useSettledFocus(0, { current: save }, { current: heading }));
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(0) }));
 
       expect(heading).not.toHaveFocus();
-      form.remove();
-      heading.remove();
     });
 
     it('stays on the body without a heading to move to', () => {
-      const { form, save, heading } = offlineForm();
+      const { save } = offlineForm();
+      const options = optionsOf('fullName', save);
 
-      renderHook(() => useSettledFocus(1, { current: save }, NO_HEADING));
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1) }));
 
       expect(document.body).toHaveFocus();
-      form.remove();
-      heading.remove();
     });
-  });
 
-  it('does not throw when the form is not mounted', () => {
-    expect(() => renderHook(() => useSettledFocus(1, { current: null }, NO_HEADING))).not.toThrow();
+    it('still prefers the text input after a successful save, which is never disabled', () => {
+      const { save, input, heading } = offlineForm();
+      const options = optionsOf('fullName', save, heading);
+
+      renderHook(() => useSettledFocus({ ...options, state: stateOf(1, true) }));
+
+      expect(input).toHaveFocus();
+      expect(heading).not.toHaveFocus();
+    });
   });
 });

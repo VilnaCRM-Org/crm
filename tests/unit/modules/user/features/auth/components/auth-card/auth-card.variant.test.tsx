@@ -3,9 +3,12 @@ import { render, screen } from '@testing-library/react';
 
 import AuthCard from '@auth/components/auth-card';
 
-jest.mock('@auth/components/reset-password/styles', () => ({
+jest.mock('@auth/components/auth-card/styles', () => ({
   __esModule: true,
-  default: { recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' } },
+  default: {
+    recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' },
+    challengeCard: { borderBottomColor: 'rgb(4, 5, 6)' },
+  },
 }));
 
 const cardOf = (): HTMLElement => {
@@ -38,5 +41,36 @@ describe('AuthCard recovery variant', () => {
 
     expect(cardOf()).not.toHaveStyle({ borderTopColor: 'rgb(1, 2, 3)' });
     expect(cardOf()).toHaveStyle({ paddingBottom: '1.3125rem' });
+  });
+});
+
+describe('AuthCard challenge variant', () => {
+  it('adds the challenge card styles and not the recovery ones', () => {
+    render(
+      <AuthCard variant="challenge">
+        <h1>Card heading</h1>
+      </AuthCard>
+    );
+
+    expect(cardOf()).toHaveStyle({ borderBottomColor: 'rgb(4, 5, 6)' });
+    expect(cardOf()).not.toHaveStyle({ borderTopColor: 'rgb(1, 2, 3)' });
+  });
+
+  it('keeps the challenge styles off the recovery variant and off a plain card', () => {
+    const { unmount } = render(
+      <AuthCard variant="recovery">
+        <h1>Card heading</h1>
+      </AuthCard>
+    );
+    expect(cardOf()).not.toHaveStyle({ borderBottomColor: 'rgb(4, 5, 6)' });
+    unmount();
+
+    render(
+      <AuthCard page="signIn">
+        <h1>Card heading</h1>
+      </AuthCard>
+    );
+
+    expect(cardOf()).not.toHaveStyle({ borderBottomColor: 'rgb(4, 5, 6)' });
   });
 });

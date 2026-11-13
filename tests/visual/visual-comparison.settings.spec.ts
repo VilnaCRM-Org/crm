@@ -13,11 +13,15 @@ import {
 import {
   currentPasswordField,
   emailField,
+  emailPasswordField,
   expectErrorToast,
   expectToastsInOrder,
   nameField,
+  namePasswordField,
   newPasswordField,
   saveButton,
+  saveEmailButton,
+  saveNameButton,
   text,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -61,7 +65,9 @@ async function scrollToTop(page: Page): Promise<void> {
 
 async function fillEveryAspect(page: Page): Promise<void> {
   await nameField(page).fill(NEW_NAME);
+  await namePasswordField(page).fill(PASSWORD);
   await emailField(page).fill(NEW_EMAIL);
+  await emailPasswordField(page).fill(PASSWORD);
   await currentPasswordField(page).fill(PASSWORD);
   await newPasswordField(page).fill(NEW_PASSWORD);
 }
@@ -86,25 +92,36 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
     });
 
     test(`[settings] field errors ${screen.name}`, async ({ page }) => {
-      const message = [
-        'initials: Bad name',
-        'email: This email address is already registered',
-        'newPassword: Too weak',
-      ].join('\n');
-      await openSettings(page, screen, { UpdateUser: [replyWithGraphQLError(message, 422)] });
+      await openSettings(page, screen, {
+        UpdateUser: [
+          replyWithGraphQLError('initials: Bad name', 422),
+          replyWithGraphQLError('email: This email address is already registered', 422),
+          replyWithGraphQLError('newPassword: Too weak', 422),
+        ],
+      });
       await expectResting(page);
       await fillEveryAspect(page);
-      await saveButton(page).click();
+      await saveNameButton(page).click();
+      await expect(nameField(page)).toHaveAttribute('aria-invalid', 'true');
+      await saveEmailButton(page).click();
       await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
+      await saveButton(page).click();
+      await expect(newPasswordField(page)).toHaveAttribute('aria-invalid', 'true');
 
       await takeSettingsSnapshot(page, screen, 'field-errors');
     });
 
     test(`[settings] success toasts ${screen.name}`, async ({ page }) => {
       const saved = replyWithSaved({ initials: NEW_NAME, email: NEW_EMAIL, confirmed: false });
-      await openSettings(page, screen, { UpdateUser: [saved] });
+      await openSettings(page, screen, {
+        UpdateUser: [replyWithSaved({ initials: NEW_NAME }), saved, saved],
+      });
       await expectResting(page);
       await fillEveryAspect(page);
+      await saveNameButton(page).click();
+      await expect(saveNameButton(page)).toBeHidden();
+      await saveEmailButton(page).click();
+      await expect(saveEmailButton(page)).toBeHidden();
       await saveButton(page).click();
       await expectToastsInOrder(page, [text.saved, text.emailSent, text.passwordChanged]);
 
@@ -116,8 +133,8 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await openSettings(page, screen, { UpdateUser: [replyWithStatus(503)] });
       await expectResting(page);
       await nameField(page).fill(NEW_NAME);
-      await currentPasswordField(page).fill(PASSWORD);
-      await saveButton(page).click();
+      await namePasswordField(page).fill(PASSWORD);
+      await saveNameButton(page).click();
       await expectErrorToast(page, text.transient);
 
       await scrollToTop(page);

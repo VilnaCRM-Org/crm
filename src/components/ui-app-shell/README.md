@@ -10,14 +10,14 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   loads with `ProtectedRoute` in the `protected-layout` chunk, never on a public page (see
   `src/routes/README.md`), and hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid
   and renders `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky
-  header slot and, from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where
+  header slot and, from 768 px, a 250 px navigation column (251 px from 768 to 1439 px, where
   the loaded sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the
   frame receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
   `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
   public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
   failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
   1440 px. The sidebar breakpoint is a number in
-  `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the frame cannot
+  `app-layout.styles.ts`, pinned by test to the toolkit's `md` (768), because the frame cannot
   import `@/components/ui-breakpoints` without pulling the toolkit into `protected-layout`.
 - **The grid places items by line, not by area name.** A sticky element is limited to its grid
   area, so the header slot spans every row (`grid-row: 1 / -1`, `align-self: start`, 64 px tall)
@@ -54,12 +54,19 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 
 ## Layouts
 
-`useShellLayout()` returns `'mobile'` below 1024 px, `'tablet'` from 1024 to 1439 px and
-`'desktop'` from 1440 px. It reads the two breakpoints from the crm scale (`lg`, `xl`) through
-`useMediaQuery` with `noSsr`, so the first render is already the right layout. The Figma values
+`useShellLayout()` returns `'mobile'` below 768 px, `'tablet'` from 768 to 1439 px and
+`'desktop'` from 1440 px. Tablets get the sidebar as desktops do and phones get a full-screen
+drawer; that is a product decision over the Figma frames, which draw a 313 px drawer up to 1023 px
+(owner decision of 2026-11-05, confirmed 2026-11-10; see the
+[PRD amendment](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md)).
+The sidebar remembers whether it is collapsed in `localStorage` under `crm.sidebar.collapsed`:
+`use-sidebar-collapse.ts` keeps one `SidebarCollapseSource` (`sidebar-collapse-source.ts`) per
+mount, which falls back to expanded when storage cannot be read and ignores a failed write.
+The hook reads the two breakpoints from the crm scale (`md`, `xl`) through
+`useMediaQuery` with `noSsr`, so the first render is already the right layout. The values
 are pinned by test rather than duplicated as constants: `use-shell-layout.test.ts` asserts the
-layout at 1023, 1024, 1439 and 1440 px, and `app-layout.styles.tokens.test.ts` holds the frame's
-numeric 1024 and 1440 equal to the same `lg` and `xl`. A toolkit change to either value therefore
+layout at 767, 768, 1439 and 1440 px, and `app-layout.styles.tokens.test.ts` holds the frame's
+numeric 768 and 1440 equal to the same `md` and `xl`. A toolkit change to either value therefore
 fails both tests instead of moving the shell or splitting it from the frame.
 
 ## Header
@@ -239,16 +246,20 @@ What Figma leaves open, and how it was built:
 
 ## Mobile drawer
 
-Below 1024 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
+Below 768 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
 transparent target around the 24 px glyph at 336,16) and `UINavigationDrawer` opens a modal dialog
 named "Main navigation". It is MUI's `Modal`, so the focus trap, the hidden page (the app root,
 banner, main and footer lose their roles), the scroll lock and Escape are MUI's; no `inert`, `:has()`
 or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies of the logo, bell,
-list and avatar and the one operable `x-close` button, and a 313×622 panel at 62,56 with the
-disabled drawer search and the same `UINavigationList` as the sidebar in 60 px rows (the Settings
-header is 48 px while the group is open, as drawn). The panel slides in over 200 ms and the scrim
-fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0
-(`useDrawerMotion`).
+list and avatar and the one operable `x-close` button, and a panel under that header that spans the
+whole viewport width down to the bottom edge with no shadow, holding the disabled drawer search and
+the same `UINavigationList` as the sidebar in 60 px rows (the Settings header is 48 px while the
+group is open, as drawn). Both the 768 px breakpoint and the viewport-wide panel are the owner
+decision of 2026-11-05, confirmed 2026-11-10 (see the amendment banner of
+[the app-shell PRD](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md));
+until then the drawer served everything below 1024 px as a 313×622 panel at 62,56,
+as the Figma frame draws it. The panel slides in over 200 ms and the scrim fades in over 200 ms;
+under `prefers-reduced-motion: reduce` both durations are 0 (`useDrawerMotion`).
 
 Focus: the close button takes focus on open. Escape, the close button, a tap anywhere outside the
 panel (the scrim, the untinted footer, or the header outside the close button) close the drawer and
@@ -280,6 +291,10 @@ closes the drawer and runs `signOut` once.
 | P-44 Sign out row   | 62,613, 314×54         | 62,613, 313×54      | pass      |
 | drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
 | scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
+
+The P-34 panel, P-36 first-row and P-44 Sign out rows were measured before the owner decision of
+2026-11-05: the panel now starts at 0,56 and spans the viewport, so the 62 px x offset of those
+three rows no longer applies.
 
 The scrim row compares the rule, not a y value: Figma's 375×812 drawer frame puts the footer top
 at y 772, and `/boards` at 375×812 puts it at 604.4, and in both the scrim ends there.

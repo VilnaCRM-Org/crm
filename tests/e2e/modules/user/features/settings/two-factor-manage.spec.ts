@@ -1,0 +1,371 @@
+import type { Page } from '@playwright/test';
+
+import { buildCredentials, buildTotpCode } from '@tests/builders';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
+import { expect, test } from '@tests/e2e/utils/fixtures';
+import { submitSignIn, typeCode as typeChallengeCode } from '@tests/e2e/utils/reach-challenge';
+import { stubChallenge, stubSignIn } from '@tests/e2e/utils/two-factor-responses';
+import {
+  NEW_RECOVERY_CODES,
+  RECOVERY_CODES,
+  SETUP_SECRET,
+  SETUP_URI,
+  stubConfirm,
+  stubDisable,
+  stubRegenerate,
+  stubSetup,
+} from '@tests/e2e/utils/two-factor-settings-responses';
+
+import { replyWithEndedSession, signInToSettings, stubProfile } from './utils/profile-stub';
+import {
+  cancelOf,
+  codeListOf,
+  codesHeadingOf,
+  disableFieldOf,
+  disableHeadingOf,
+  disableSubmitOf,
+  enableTwoFactor,
+  errorBannerOf,
+  openDisableOf,
+  openRegenerateOf,
+  reauthSignInOf,
+  regenerateHeadingOf,
+  regenerateSubmitOf,
+  sectionOf,
+  startOf,
+  statusHeadingOf,
+  twoFactorText,
+} from './utils/two-factor-page';
+
+const SETTINGS_URL = '/settings';
+const credentials = buildCredentials();
+const CODE = buildTotpCode();
+const RETYPED_CODE = buildTotpCode();
+const SECRETS = {
+  secret: SETUP_SECRET,
+  uri: SETUP_URI,
+  code: RECOVERY_CODES[0] ?? '',
+  fresh: NEW_RECOVERY_CODES[0] ?? '',
+};
+const SHARED_RING = { style: 'solid', width: '2px', color: 'rgb(64, 65, 66)' } as const;
+
+async function expectAnnouncedOnce(page: Page, heading: string): Promise<void> {
+  await expect(sectionOf(page).getByRole('status').filter({ hasText: heading })).toHaveCount(0);
+  await expect(sectionOf(page).getByRole('alert').filter({ hasText: heading })).toHaveCount(0);
+}
+
+async function expectEndedSessionFrom(page: Page, origin: string): Promise<void> {
+  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page.getByText(twoFactorText.sessionEnded)).toBeVisible();
+  const from = await page.evaluate(
+    () => (window.history.state as { usr?: { from?: { pathname?: string } } }).usr?.from?.pathname
+  );
+  expect(from).toBe(origin);
+  await expectNoSecrets(page, SECRETS);
+  await expect(sectionOf(page)).toHaveCount(0);
+  await expect(page.getByRole('alert').filter({ hasText: twoFactorText.transient })).toHaveCount(0);
+  await expect(page.getByRole('alert').filter({ hasText: twoFactorText.rateLimited })).toHaveCount(
+    0
+  );
+}
+
+test.describe('Turning two-factor off and regenerating codes (issue #331)', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
+    await stubProfile(page);
+    await stubSetup(page);
+    await stubConfirm(page);
+    await page.goto(SETTINGS_URL);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await expectNoSecrets(page, SECRETS);
+  });
+
+  test('offers the two outlined buttons by name, in that order', async ({ page }) => {
+    await enableTwoFactor(page);
+
+    await page.keyboard.press('Tab');
+    await expect(openDisableOf(page)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(openRegenerateOf(page)).toBeFocused();
+  });
+
+  test.describe('disable', () => {
+    test('opens the confirmation with focus on its title and one labelled field', async ({
+      page,
+    }) => {
+      await enableTwoFactor(page);
+
+      await openDisableOf(page).click();
+
+      await expect(disableHeadingOf(page)).toBeFocused();
+      await expect(sectionOf(page).getByText(twoFactorText.disableDescription)).toBeVisible();
+      await expect(disableFieldOf(page)).toBeVisible();
+      await expect(disableFieldOf(page)).not.toHaveAttribute('placeholder', /.+/);
+      await expect(disableSubmitOf(page)).toBeVisible();
+      await expect(cancelOf(page)).toBeVisible();
+    });
+
+    test('sends 123456 as it is and abcd-2345 as ABCD-2345', async ({ page }) => {
+      const disable = await stubDisable(page, ['invalid_code', 'invalid_code']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill('123456');
+      await disableSubmitOf(page).click();
+      await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
+      await disableFieldOf(page).fill('abcd-2345');
+      await disableSubmitOf(page).click();
+
+      await expect.poll(() => disable.count()).toBe(2);
+      expect(disable.calls[0]?.variables).toMatchObject({ input: { twoFactorCode: '123456' } });
+      expect(disable.calls[1]?.variables).toMatchObject({ input: { twoFactorCode: 'ABCD-2345' } });
+      await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    test('refuses two malformed values in a row with the text each time and sends nothing', async ({
+      page,
+    }) => {
+      const disable = await stubDisable(page);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill('12345');
+      await disableSubmitOf(page).click();
+      await expect(sectionOf(page).getByText(twoFactorText.formatError)).toBeVisible();
+      await disableFieldOf(page).fill('1234567');
+      await disableSubmitOf(page).click();
+
+      await expect(sectionOf(page).getByText(twoFactorText.formatError)).toBeVisible();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+      expect(disable.count()).toBe(0);
+    });
+
+    test('shows the wrong-code text with aria-invalid and focus in the field', async ({ page }) => {
+      await stubDisable(page, ['invalid_code']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+
+      await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+      await expect(disableFieldOf(page)).toBeFocused();
+    });
+
+    test('keeps the field outline at 3:1 at rest, on hover and on focus, red in error', async ({
+      page,
+    }) => {
+      await stubDisable(page, ['invalid_code']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+      const outline = disableFieldOf(page).locator('xpath=..').locator('fieldset');
+
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(128, 135, 138)');
+      await expect(outline).toHaveCSS('border-top-width', '1px');
+      await disableFieldOf(page).hover();
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(128, 135, 138)');
+      await disableFieldOf(page).focus();
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(26, 28, 30)');
+      await expect(outline).toHaveCSS('border-top-width', '2px');
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+      await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
+      await expect(disableFieldOf(page)).toHaveAccessibleDescription(twoFactorText.invalidCode);
+      await disableFieldOf(page).focus();
+      await expect(outline).toHaveCSS('border-top-color', 'rgb(220, 57, 57)');
+      await expect(outline).toHaveCSS('border-top-width', '2px');
+    });
+
+    test('turns off, shows the off view with its status heading and no codes', async ({ page }) => {
+      await stubDisable(page);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+
+      await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
+      await expectAnnouncedOnce(page, twoFactorText.statusDisabled);
+      await expect(startOf(page)).toBeVisible();
+      await expectNoSecrets(page, SECRETS);
+    });
+
+    test('shows the already-off heading when 2FA turns out not to be enabled', async ({ page }) => {
+      await stubDisable(page, ['not_enabled']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+
+      await expect(statusHeadingOf(page, twoFactorText.statusAlreadyOff)).toBeFocused();
+      await expectAnnouncedOnce(page, twoFactorText.statusAlreadyOff);
+    });
+
+    test('ends the session on a transport 401 with no banner in the section', async ({ page }) => {
+      await stubDisable(page, [replyWithEndedSession]);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+
+      await expectEndedSessionFrom(page, SETTINGS_URL);
+    });
+  });
+
+  test.describe('regenerate', () => {
+    test('opens the confirmation and replaces the codes with eight new ones', async ({ page }) => {
+      const regenerate = await stubRegenerate(page);
+      await enableTwoFactor(page);
+
+      await openRegenerateOf(page).click();
+      await expect(regenerateHeadingOf(page)).toBeFocused();
+      await expect(sectionOf(page).getByText(twoFactorText.regenerateDescription)).toBeVisible();
+      await regenerateSubmitOf(page).click();
+
+      await expect(codesHeadingOf(page)).toBeFocused();
+      await expect(codeListOf(page).getByRole('listitem')).toHaveText([...NEW_RECOVERY_CODES]);
+      expect(regenerate.count()).toBe(1);
+      await expectNoSecrets(page, SECRETS);
+    });
+
+    test('shows the re-authentication message and signs in again back to settings', async ({
+      page,
+    }) => {
+      await stubRegenerate(page, ['reauth_required']);
+      await stubSignIn(page, ['challenge']);
+      await stubChallenge(page);
+      await enableTwoFactor(page);
+      await openRegenerateOf(page).click();
+
+      await regenerateSubmitOf(page).click();
+      await expect(sectionOf(page).getByText(twoFactorText.reauthMessage)).toBeFocused();
+      await reauthSignInOf(page).click();
+
+      await expect(page).toHaveURL(/\/sign-in$/);
+      await expect(page.getByText(twoFactorText.sessionEnded)).toHaveCount(0);
+      await expectNoSecrets(page, SECRETS);
+      await submitSignIn(page, credentials);
+      await expectNoSecrets(page, SECRETS);
+      await typeChallengeCode(page, CODE);
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(new RegExp(`${SETTINGS_URL}$`));
+      await expectNoSecrets(page, SECRETS);
+    });
+
+    test('ends the session on a transport 401 with no banner in the section', async ({ page }) => {
+      await stubRegenerate(page, [replyWithEndedSession]);
+      await enableTwoFactor(page);
+      await openRegenerateOf(page).click();
+
+      await regenerateSubmitOf(page).click();
+
+      await expectEndedSessionFrom(page, SETTINGS_URL);
+    });
+  });
+
+  test.describe('cancelling', () => {
+    test('returns focus to the disable button after Скасувати', async ({ page }) => {
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await cancelOf(page).click();
+
+      await expect(openDisableOf(page)).toBeFocused();
+    });
+
+    test('returns focus to the regenerate button after Escape', async ({ page }) => {
+      await enableTwoFactor(page);
+      await openRegenerateOf(page).click();
+      await expect(regenerateHeadingOf(page)).toBeFocused();
+
+      await page.keyboard.press('Escape');
+
+      await expect(openRegenerateOf(page)).toBeFocused();
+      await expect(regenerateHeadingOf(page)).toHaveCount(0);
+    });
+  });
+
+  test.describe('failures', () => {
+    test('shows the rate-limited banner on disable without Retry or a resend', async ({ page }) => {
+      const disable = await stubDisable(page, ['rate_limited']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+
+      await expect(sectionOf(page).getByRole('alert')).toHaveText(twoFactorText.rateLimited);
+      await expect(errorBannerOf(page, twoFactorText.rateLimited)).toBeFocused();
+      await expect(sectionOf(page).getByRole('button', { name: twoFactorText.retry })).toHaveCount(
+        0
+      );
+      await expect(disableFieldOf(page)).toHaveValue(CODE);
+      expect(disable.count()).toBe(1);
+    });
+
+    test('retries a transient disable failure with the code as it is now', async ({ page }) => {
+      const disable = await stubDisable(page, ['unavailable', 'disabled']);
+      await enableTwoFactor(page);
+      await openDisableOf(page).click();
+      await disableFieldOf(page).fill(CODE);
+      await disableSubmitOf(page).click();
+      await expect(
+        sectionOf(page).getByRole('alert').filter({ hasText: twoFactorText.transient })
+      ).toBeVisible();
+
+      await disableFieldOf(page).fill(RETYPED_CODE);
+      await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
+
+      await expect(statusHeadingOf(page, twoFactorText.statusDisabled)).toBeFocused();
+      expect(disable.count()).toBe(2);
+      expect(disable.calls[1]?.variables['input']).toMatchObject({ twoFactorCode: RETYPED_CODE });
+    });
+
+    test('retries a transient regenerate failure exactly once more', async ({ page }) => {
+      const regenerate = await stubRegenerate(page, ['unavailable', 'regenerated']);
+      await enableTwoFactor(page);
+      await openRegenerateOf(page).click();
+      await regenerateSubmitOf(page).click();
+      await expect(errorBannerOf(page, twoFactorText.transient)).toBeFocused();
+      expect(regenerate.count()).toBe(1);
+
+      await sectionOf(page).getByRole('button', { name: twoFactorText.retry }).click();
+
+      await expect(codesHeadingOf(page)).toBeFocused();
+      expect(regenerate.count()).toBe(2);
+    });
+  });
+
+  test('shows the shared focus ring on the new outlined controls reached with Tab', async ({
+    page,
+  }) => {
+    await stubRegenerate(page, ['reauth_required']);
+    await enableTwoFactor(page);
+    await page.keyboard.press('Tab');
+
+    await expect(openDisableOf(page)).toHaveCSS('outline-style', SHARED_RING.style);
+    await expect(openDisableOf(page)).toHaveCSS('outline-width', SHARED_RING.width);
+    await expect(openDisableOf(page)).toHaveCSS('outline-color', SHARED_RING.color);
+    await openRegenerateOf(page).click();
+    await expect(regenerateHeadingOf(page)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(regenerateSubmitOf(page)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(cancelOf(page)).toBeFocused();
+    await expect(cancelOf(page)).toHaveCSS('outline-width', SHARED_RING.width);
+    await expect(cancelOf(page)).toHaveCSS('outline-color', SHARED_RING.color);
+    await regenerateSubmitOf(page).click();
+    await expect(sectionOf(page).getByText(twoFactorText.reauthMessage)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(reauthSignInOf(page)).toBeFocused();
+    await expect(reauthSignInOf(page)).toHaveCSS('outline-width', SHARED_RING.width);
+    await expect(reauthSignInOf(page)).toHaveCSS('outline-color', SHARED_RING.color);
+  });
+});

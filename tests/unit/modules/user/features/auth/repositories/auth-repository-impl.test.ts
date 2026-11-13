@@ -1,15 +1,13 @@
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
-import { buildEmail, buildFullName, buildPassword, buildToken, buildUserId } from '@tests/builders';
+import { buildEmail, buildFullName, buildPassword, buildUserId } from '@tests/builders';
 import { assertError } from '@tests/utils/assert-result';
 
 const ok = <T>(value: T): { ok: true; value: T } => ({ ok: true as const, value });
 
 const makeDeps = (): AuthRepositoryDeps =>
   ({
-    loginAPI: { login: jest.fn() },
     registrationAPI: { register: jest.fn() },
-    loginResponseMapper: { map: jest.fn() },
     registrationResponseMapper: { map: jest.fn() },
     authUiErrorMapper: { map: jest.fn() },
     abortDetector: { isAbortError: jest.fn().mockReturnValue(false) },
@@ -19,67 +17,31 @@ const makeDeps = (): AuthRepositoryDeps =>
   }) as unknown as AuthRepositoryDeps;
 
 describe('AuthRepositoryImpl', () => {
-  it('returns an AuthSession on successful login', async () => {
-    const deps = makeDeps();
-    const credentials = { email: buildEmail(), password: buildPassword() };
-    const token = buildToken();
-    const apiResponse = { token };
-    (deps.loginAPI.login as jest.Mock).mockResolvedValue(apiResponse);
-    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue(
-      ok({ token, email: credentials.email })
-    );
-    const repo = new AuthRepositoryImpl(deps);
+  it('exposes no REST login', () => {
+    const repo = new AuthRepositoryImpl(makeDeps());
 
-    const result = await repo.login(credentials);
-
-    expect(deps.loginAPI.login).toHaveBeenCalledWith(credentials, { signal: undefined });
-    expect(deps.loginResponseMapper.map).toHaveBeenCalledWith(apiResponse, credentials.email);
-    expect(result).toEqual({ ok: true, value: { email: credentials.email, token } });
-  });
-
-  it('maps transport errors to a structured AuthError', async () => {
-    const deps = makeDeps();
-    (deps.loginAPI.login as jest.Mock).mockRejectedValue(new Error('network'));
-    (deps.authUiErrorMapper.map as jest.Mock).mockReturnValue({
-      displayMessage: 'Boom',
-      retryable: true,
-    });
-    const repo = new AuthRepositoryImpl(deps);
-
-    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
-
-    assertError(result);
-    expect(result.error.displayMessage).toBe('Boom');
+    expect(repo).not.toHaveProperty('login');
   });
 
   it('flags aborts without UI mapping', async () => {
     const deps = makeDeps();
-    (deps.loginAPI.login as jest.Mock).mockRejectedValue(new DOMException('aborted', 'AbortError'));
+    (deps.registrationAPI.register as jest.Mock).mockRejectedValue(
+      new DOMException('aborted', 'AbortError')
+    );
     (deps.abortDetector.isAbortError as jest.Mock).mockReturnValue(true);
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
+    const result = await repo.register({
+      email: buildEmail(),
+      password: buildPassword(),
+      fullName: buildFullName(),
+    });
 
     expect(result).toEqual({
       ok: false,
       error: { kind: 'network', displayMessage: '', retryable: false, aborted: true },
     });
     expect(deps.authUiErrorMapper.map).not.toHaveBeenCalled();
-  });
-
-  it('returns mapped error when login response is not ok', async () => {
-    const deps = makeDeps();
-    (deps.loginAPI.login as jest.Mock).mockResolvedValue({});
-    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue({
-      ok: false,
-      error: { displayMessage: 'Bad credentials', retryable: false },
-    });
-    const repo = new AuthRepositoryImpl(deps);
-
-    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
-
-    assertError(result);
-    expect(result.error.displayMessage).toBe('Bad credentials');
   });
 
   it('returns a SafeUserInfo on successful register', async () => {

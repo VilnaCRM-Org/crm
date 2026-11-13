@@ -29,7 +29,12 @@ describe('user profile page styles', () => {
           marginInline: 'auto',
         },
       },
-      header: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+      header: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+        '@media (min-width:768px) and (max-width:1439.95px)': { textAlign: 'center' },
+      },
       profileColumn: {
         display: 'flex',
         flexDirection: 'column',

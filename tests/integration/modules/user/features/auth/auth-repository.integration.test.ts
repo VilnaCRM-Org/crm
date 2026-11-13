@@ -8,7 +8,7 @@ describe('AuthRepository DI wiring (integration)', () => {
   it('resolves a working AuthRepository from the container', () => {
     const repo = container.resolve<AuthRepository>(AUTH_TOKENS.AuthRepository);
 
-    expect(typeof repo.login).toBe('function');
+    expect(repo).not.toHaveProperty('login');
     expect(typeof repo.register).toBe('function');
   });
 });

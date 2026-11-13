@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { HttpResponse } from 'msw';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
@@ -18,10 +19,17 @@ import {
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
 import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 
 const NAME = 'Ваше ПІБ';
+const EMAIL = 'E-mail';
+const NAME_PASSWORD = 'Пароль для зміни імені';
+const EMAIL_PASSWORD = 'Пароль для зміни пошти';
 const CURRENT = 'Поточний пароль';
 const NEW = 'Новий пароль';
+const SAVE_NAME = 'Зберегти ім’я';
+const SAVE_EMAIL = 'Зберегти пошту';
+const SAVE_PASSWORD = 'Зберегти зміни';
 const SAVED = 'Зміни збережено';
 const EMAIL_SENT = 'Ми надіслали посилання для підтвердження на нову адресу';
 const PASSWORD_CHANGED = 'Ви успішно змінили пароль';
@@ -32,6 +40,8 @@ const RETRY = 'Спробувати ще раз';
 const NEW_EMAIL = buildEmail();
 const NEW_NAME = buildFullName();
 const NEW_PASSWORD = buildPassword();
+const ENTERED_PASSWORD = buildPassword();
+const KEPT_PASSWORD = buildPassword();
 const TAKEN_EMAIL = buildEmail();
 
 const loaded = buildUserNode({
@@ -54,7 +64,11 @@ const mount = async (): Promise<void> => {
   render(
     <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>
       <main>
-        <UserProfile />
+        <MemoryRouter>
+          <SessionOutlet>
+            <UserProfile />
+          </SessionOutlet>
+        </MemoryRouter>
       </main>
     </I18nextProvider>
   );
@@ -63,7 +77,7 @@ const mount = async (): Promise<void> => {
 
 const field = (label: string): HTMLInputElement => screen.getByLabelText(label) as HTMLInputElement;
 
-const saveButton = (): HTMLElement => screen.getByRole('button', { name: 'Зберегти зміни' });
+const saveButton = (name = SAVE_NAME): HTMLElement => screen.getByRole('button', { name });
 
 const typeInto = async (label: string, text: string): Promise<void> => {
   await userEvent.type(field(label), text);
@@ -74,13 +88,32 @@ const editName = async (): Promise<void> => {
   await typeInto(NAME, NEW_NAME);
 };
 
+const editEmail = async (email = NEW_EMAIL): Promise<void> => {
+  await userEvent.clear(field(EMAIL));
+  await typeInto(EMAIL, email);
+};
+
 const submitWith = async (
-  answer: () => Response
+  answer: () => Response,
+  password = NAME_PASSWORD,
+  save = SAVE_NAME
 ): Promise<ReturnType<typeof answerProfileOperation>> => {
   const answered = answerProfileOperation('UpdateUser', { respond: answer });
-  await typeInto(CURRENT, 'abc');
-  await userEvent.click(saveButton());
+  await typeInto(password, ENTERED_PASSWORD);
+  await userEvent.click(saveButton(save));
   return answered;
+};
+
+const submitEmailWith = (
+  answer: () => Response
+): Promise<ReturnType<typeof answerProfileOperation>> =>
+  submitWith(answer, EMAIL_PASSWORD, SAVE_EMAIL);
+
+const submitPasswordWith = async (
+  answer: () => Response
+): Promise<ReturnType<typeof answerProfileOperation>> => {
+  await typeInto(NEW, NEW_PASSWORD);
+  return submitWith(answer, CURRENT, SAVE_PASSWORD);
 };
 
 const TOAST_TEXT = /Зміни збережено|Ми надіслали|Ви успішно|Не вдалося зберегти|Забагато/;
@@ -111,11 +144,11 @@ describe('settings page save outcomes (page)', () => {
     useConnectivityStore.setState({ online: true });
   });
 
-  it('saves a name: one toast announced once, focus on Save, payload shown', async () => {
+  it('saves a name: one toast announced once, focus on the input, payload shown', async () => {
     await mount();
     await editName();
     answerProfileOperation('UpdateUser', { respond: () => saved({ initials: NEW_NAME }) });
-    await typeInto(CURRENT, 'abc');
+    await typeInto(NAME_PASSWORD, ENTERED_PASSWORD);
 
     await userEvent.click(saveButton());
 
@@ -125,38 +158,71 @@ describe('settings page save outcomes (page)', () => {
       .getAllByRole('status')
       .filter((node) => node.textContent?.includes(SAVED));
     expect(regions).toHaveLength(1);
-    await waitFor(() => expect(saveButton()).toHaveFocus());
+    await waitFor(() => expect(field(NAME)).toHaveFocus());
     expect(screen.getByText(NEW_NAME)).toBeVisible();
     expect(field(NAME)).toHaveValue(NEW_NAME);
-    expect(field(CURRENT)).toHaveValue('');
-    expect(field(NEW)).toHaveValue('');
+    expect(screen.queryByLabelText(NAME_PASSWORD)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: SAVE_NAME })).not.toBeInTheDocument();
   });
 
   it('saves an e-mail and shows the confirmation-link toast', async () => {
     await mount();
-    await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', NEW_EMAIL);
+    await editEmail();
 
-    await submitWith(() => saved({ email: NEW_EMAIL, confirmed: false }));
+    await submitEmailWith(() => saved({ email: NEW_EMAIL, confirmed: false }));
 
     expect(await screen.findByText(EMAIL_SENT)).toBeVisible();
-    expect(field('E-mail')).toHaveValue(NEW_EMAIL);
+    expect(field(EMAIL)).toHaveValue(NEW_EMAIL);
+    await waitFor(() => expect(field(EMAIL)).toHaveFocus());
   });
 
-  it('shows three toasts in order as one utterance and sends one request', async () => {
+  it('saves a password, empties the form and keeps focus on its Save', async () => {
+    await mount();
+
+    await submitPasswordWith(() => saved());
+
+    expect(await screen.findByText(PASSWORD_CHANGED)).toBeVisible();
+    await waitFor(() => expect(saveButton(SAVE_PASSWORD)).toHaveFocus());
+    expect(field(CURRENT)).toHaveValue('');
+    expect(field(NEW)).toHaveValue('');
+  });
+
+  it('sends one request when Save is activated twice before the answer', async () => {
     await mount();
     await editName();
-    await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', NEW_EMAIL);
-    await typeInto(NEW, NEW_PASSWORD);
+    let release = (): void => undefined;
     const answered = answerProfileOperation('UpdateUser', {
-      delayMs: 30,
-      respond: () => saved({ initials: NEW_NAME, email: NEW_EMAIL }),
+      until: new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+      respond: () => saved({ initials: NEW_NAME }),
     });
-    await typeInto(CURRENT, 'abc');
+    await typeInto(NAME_PASSWORD, ENTERED_PASSWORD);
 
     await userEvent.click(saveButton());
     fireEvent.click(saveButton());
+    await waitFor(() => expect(answered).toHaveLength(1));
+    release();
+
+    await waitFor(() => expect(toastTexts()).toHaveLength(1));
+    expect(answered).toHaveLength(1);
+  });
+
+  it('stacks one toast per save in order and keeps the drafts of the other forms', async () => {
+    await mount();
+    await editEmail();
+    await typeInto(NEW, NEW_PASSWORD);
+    await typeInto(CURRENT, KEPT_PASSWORD);
+    await editName();
+
+    const name = await submitWith(() => saved({ initials: NEW_NAME }));
+    await waitFor(() => expect(toastTexts()).toHaveLength(1));
+    expect(field(EMAIL)).toHaveValue(NEW_EMAIL);
+    expect(field(NEW)).toHaveValue(NEW_PASSWORD);
+    expect(field(CURRENT)).toHaveValue(KEPT_PASSWORD);
+    await submitEmailWith(() => saved({ initials: NEW_NAME, email: NEW_EMAIL }));
+    await waitFor(() => expect(toastTexts()).toHaveLength(2));
+    await userEvent.click(saveButton(SAVE_PASSWORD));
 
     await waitFor(() => expect(toastTexts()).toHaveLength(3));
     expect(toastTexts().map((text) => text.replace(/\s+/g, ' '))).toEqual([
@@ -164,17 +230,7 @@ describe('settings page save outcomes (page)', () => {
       expect.stringContaining(EMAIL_SENT),
       expect.stringContaining(PASSWORD_CHANGED),
     ]);
-    const utterance = screen
-      .getAllByRole('status')
-      .map((node) => node.textContent ?? '')
-      .find((text) => text.includes(PASSWORD_CHANGED));
-    expect(utterance?.replace('\u200b', '')).toBe(`${SAVED} ${EMAIL_SENT} ${PASSWORD_CHANGED}`);
-    expect(answered).toHaveLength(1);
-
-    await userEvent.click(saveButton());
-
-    expect(await screen.findByText(/Немає змін для збереження/)).toBeInTheDocument();
-    expect(answered).toHaveLength(1);
+    expect(name).toHaveLength(1);
   });
 
   it.each([
@@ -186,33 +242,40 @@ describe('settings page save outcomes (page)', () => {
     ['the Ukrainian message', { message: 'email: Ця email-адреса вже зареєстрована' }],
   ])('shows the e-mail taken error on the e-mail field for %s', async (_name, error) => {
     await mount();
-    await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', TAKEN_EMAIL);
+    await editEmail(TAKEN_EMAIL);
 
-    await submitWith(() => graphQLError(error));
+    await submitEmailWith(() => graphQLError(error));
 
     expect(await screen.findByText('Електронна адреса вже використовується')).toBeVisible();
-    await waitFor(() => expect(field('E-mail')).toHaveFocus());
-    expect(field('E-mail')).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(field(EMAIL)).toHaveFocus());
+    expect(field(EMAIL)).toHaveAttribute('aria-invalid', 'true');
   });
 
-  it('shows the name and new-password errors and focuses the name first', async () => {
+  it('shows the name error on the name and focuses it', async () => {
     await mount();
     await editName();
-    await typeInto(NEW, NEW_PASSWORD);
 
     await submitWith(() =>
-      graphQLError({
-        message: 'newPassword: Too weak\ninitials: Bad name',
-        extensions: { status: 422 },
-      })
+      graphQLError({ message: 'initials: Bad name', extensions: { status: 422 } })
     );
 
     expect(
       await screen.findByText('Будь ласка, введіть повне ім’я у правильному форматі')
     ).toBeVisible();
-    expect(screen.getByText('Пароль не відповідає вимогам. Перевірте правила нижче')).toBeVisible();
     await waitFor(() => expect(field(NAME)).toHaveFocus());
+  });
+
+  it('shows the new-password error on the new password and focuses it', async () => {
+    await mount();
+
+    await submitPasswordWith(() =>
+      graphQLError({ message: 'newPassword: Too weak', extensions: { status: 422 } })
+    );
+
+    expect(
+      await screen.findByText('Пароль не відповідає вимогам. Перевірте правила нижче')
+    ).toBeVisible();
+    await waitFor(() => expect(field(NEW)).toHaveFocus());
   });
 
   it('shows the generic toast and no field error for a list with an unknown path', async () => {
@@ -233,16 +296,24 @@ describe('settings page save outcomes (page)', () => {
   it.each([
     ['its English text', 'Old password is invalid'],
     ['its Ukrainian text', 'Старий пароль невірний'],
-  ])('shows the wrong-password error on the current password for %s', async (_name, message) => {
+  ])('shows the wrong-password error on the name password for %s', async (_name, message) => {
     await mount();
     await editName();
-    await typeInto(NEW, NEW_PASSWORD);
 
     await submitWith(() => graphQLError({ message }));
 
     expect(await screen.findByText('Неправильний поточний пароль')).toBeVisible();
-    await waitFor(() => expect(field(CURRENT)).toHaveFocus());
+    await waitFor(() => expect(field(NAME_PASSWORD)).toHaveFocus());
     expect(field(NAME)).toHaveValue(NEW_NAME);
+  });
+
+  it('shows the wrong-password error on the current password of the password form', async () => {
+    await mount();
+
+    await submitPasswordWith(() => graphQLError({ message: 'Old password is invalid' }));
+
+    expect(await screen.findByText('Неправильний поточний пароль')).toBeVisible();
+    await waitFor(() => expect(field(CURRENT)).toHaveFocus());
     expect(field(NEW)).toHaveValue(NEW_PASSWORD);
   });
 
@@ -286,7 +357,7 @@ describe('settings page save outcomes (page)', () => {
   it.each([
     ['a 503', (): Response => new HttpResponse(null, { status: 503 })],
     ['no answer', (): Response => HttpResponse.error()],
-  ])('offers a retry for %s that submits once more and leaves focus on Save', async (_n, fail) => {
+  ])('offers a retry for %s that submits once more and ends on the input', async (_n, fail) => {
     await mount();
     await editName();
     let sent = 0;
@@ -296,7 +367,7 @@ describe('settings page save outcomes (page)', () => {
         return sent === 1 ? fail() : saved({ initials: NEW_NAME });
       },
     });
-    await typeInto(CURRENT, 'abc');
+    await typeInto(NAME_PASSWORD, ENTERED_PASSWORD);
     await userEvent.click(saveButton());
     expect(await screen.findByText(TRANSIENT)).toBeVisible();
 
@@ -305,7 +376,7 @@ describe('settings page save outcomes (page)', () => {
     await waitFor(() => expect(answered).toHaveLength(2));
     await waitFor(() => expect(toastTexts()).toEqual([expect.stringContaining(SAVED)]));
     expect(screen.queryByText(TRANSIENT)).not.toBeInTheDocument();
-    await waitFor(() => expect(saveButton()).toHaveFocus());
+    await waitFor(() => expect(field(NAME)).toHaveFocus());
   });
 
   it('sends nothing when the retry is activated while offline', async () => {
@@ -341,33 +412,43 @@ describe('settings page save outcomes (page)', () => {
 
   it('clears a server field error when its field is edited next', async () => {
     await mount();
-    await userEvent.clear(field('E-mail'));
-    await typeInto('E-mail', TAKEN_EMAIL);
-    await submitWith(() =>
+    await editEmail(TAKEN_EMAIL);
+    await submitEmailWith(() =>
       graphQLError({ message: 'email: This email address is already registered' })
     );
     await screen.findByText('Електронна адреса вже використовується');
 
-    await userEvent.type(field('E-mail'), 'x');
+    await userEvent.type(field(EMAIL), 'x');
 
     await waitFor(() =>
       expect(screen.queryByText('Електронна адреса вже використовується')).not.toBeInTheDocument()
     );
   });
 
-  it('keeps toasts through Clear and returns focus to Save on the last close', async () => {
+  it('keeps toasts through Clear and returns focus to the password Save on close', async () => {
+    await mount();
+    await submitPasswordWith(() => saved());
+    await screen.findByRole('button', { name: 'Закрити сповіщення' });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
+    expect(toastTexts()).toHaveLength(1);
+    expect(field(NAME)).toHaveValue(loaded.initials);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
+
+    expect(toastTexts()).toHaveLength(0);
+    expect(saveButton(SAVE_PASSWORD)).toHaveFocus();
+  });
+
+  it('returns focus to the name input on the last close, because its Save hid', async () => {
     await mount();
     await editName();
     await submitWith(() => saved({ initials: NEW_NAME }));
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
-    expect(toastTexts()).toHaveLength(1);
-    expect(field(NAME)).toHaveValue(NEW_NAME);
-
     await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
 
     expect(toastTexts()).toHaveLength(0);
-    expect(saveButton()).toHaveFocus();
+    expect(field(NAME)).toHaveFocus();
   });
 });

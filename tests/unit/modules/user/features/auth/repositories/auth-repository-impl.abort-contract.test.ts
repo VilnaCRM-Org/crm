@@ -1,6 +1,6 @@
 import type AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
-import { buildCredentials, buildToken, buildUser } from '@tests/builders';
+import { buildUser } from '@tests/builders';
 import { assertError } from '@tests/utils/assert-result';
 
 const ABORTED_ERROR_SHAPE = {
@@ -12,9 +12,7 @@ const ABORTED_ERROR_SHAPE = {
 
 const makeDeps = (): AuthRepositoryDeps =>
   ({
-    loginAPI: { login: jest.fn().mockResolvedValue({}) },
     registrationAPI: { register: jest.fn().mockResolvedValue({}) },
-    loginResponseMapper: { map: jest.fn() },
     registrationResponseMapper: { map: jest.fn() },
     authUiErrorMapper: { map: jest.fn() },
     abortDetector: { isAbortError: jest.fn().mockReturnValue(false) },
@@ -32,23 +30,7 @@ describe('AuthRepositoryImpl abort contract', () => {
     jest.resetModules();
   });
 
-  it('returns the pinned aborted AuthError when login is aborted', async () => {
-    const deps = makeDeps();
-    (deps.loginAPI.login as jest.Mock).mockRejectedValue(new Error('aborted'));
-    (deps.abortDetector.isAbortError as jest.Mock).mockReturnValue(true);
-    const repository = await loadRepository(deps);
-
-    const result = await repository.login(buildCredentials());
-
-    expect(result).toEqual({ ok: false, error: ABORTED_ERROR_SHAPE });
-    assertError(result);
-    expect(result.error.displayMessage).toBe('');
-    expect(result.error.retryable).toBe(false);
-    expect(result.error.aborted).toBe(true);
-    expect(result.error.kind).toBe('network');
-  });
-
-  it('returns the same pinned aborted AuthError when registration is aborted', async () => {
+  it('returns the pinned aborted AuthError when registration is aborted', async () => {
     const deps = makeDeps();
     (deps.registrationAPI.register as jest.Mock).mockRejectedValue(new Error('aborted'));
     (deps.abortDetector.isAbortError as jest.Mock).mockReturnValue(true);
@@ -65,14 +47,14 @@ describe('AuthRepositoryImpl abort contract', () => {
 
   it('keeps the aborted error distinct from a mapped transport error', async () => {
     const deps = makeDeps();
-    (deps.loginAPI.login as jest.Mock).mockRejectedValue(new Error('boom'));
+    (deps.registrationAPI.register as jest.Mock).mockRejectedValue(new Error('boom'));
     (deps.authUiErrorMapper.map as jest.Mock).mockReturnValue({
       displayMessage: 'Something went wrong',
       retryable: true,
     });
     const repository = await loadRepository(deps);
 
-    const result = await repository.login(buildCredentials());
+    const result = await repository.register(buildUser());
 
     expect(result).toEqual({
       ok: false,
@@ -80,21 +62,6 @@ describe('AuthRepositoryImpl abort contract', () => {
     });
     assertError(result);
     expect(result.error.aborted).toBeUndefined();
-  });
-
-  it('forwards the caller abort signal to the login API', async () => {
-    const deps = makeDeps();
-    const credentials = buildCredentials();
-    const controller = new AbortController();
-    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue({
-      ok: true,
-      value: { email: credentials.email, token: buildToken() },
-    });
-    const repository = await loadRepository(deps);
-
-    await repository.login(credentials, controller.signal);
-
-    expect(deps.loginAPI.login).toHaveBeenCalledWith(credentials, { signal: controller.signal });
   });
 
   it('forwards the caller abort signal to the registration API', async () => {

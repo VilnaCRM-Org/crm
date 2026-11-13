@@ -37,6 +37,28 @@ describe('UILinkButton', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  it('is described by the element the caller names, and by nothing otherwise', () => {
+    const { rerender } = render(
+      <>
+        <span id="why">Offline</span>
+        <UILinkButton onClick={jest.fn()} describedBy="why">
+          {label}
+        </UILinkButton>
+      </>
+    );
+
+    expect(screen.getByRole('button', { name: label })).toHaveAccessibleDescription('Offline');
+
+    rerender(
+      <>
+        <span id="why">Offline</span>
+        <UILinkButton onClick={jest.fn()}>{label}</UILinkButton>
+      </>
+    );
+
+    expect(screen.getByRole('button', { name: label })).not.toHaveAttribute('aria-describedby');
+  });
+
   it('draws the link look and lets the caller add layout through sx', () => {
     render(
       <UILinkButton onClick={jest.fn()} sx={{ minHeight: '1.5rem' }}>

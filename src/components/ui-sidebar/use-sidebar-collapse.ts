@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 
 import type {
   SidebarCollapse,
@@ -6,7 +6,11 @@ import type {
   SidebarCollapseState,
 } from '@/components/types/ui-sidebar';
 
-const INITIAL: SidebarCollapseState = { collapsed: false, revealing: false };
+import SidebarCollapseSource from './sidebar-collapse-source';
+
+function initial(source: SidebarCollapseSource): SidebarCollapseState {
+  return { collapsed: source.read(), revealing: false };
+}
 
 function next(state: SidebarCollapseState, event: SidebarCollapseEvent): SidebarCollapseState {
   if (event.type === 'animationend') return { ...state, revealing: false };
@@ -14,6 +18,12 @@ function next(state: SidebarCollapseState, event: SidebarCollapseEvent): Sidebar
 }
 
 export default function useSidebarCollapse(): SidebarCollapse {
-  const [state, step] = useReducer(next, INITIAL);
+  const [source] = useState(() => new SidebarCollapseSource());
+  const [state, step] = useReducer(next, source, initial);
+
+  useEffect(() => {
+    source.write(state.collapsed);
+  }, [source, state.collapsed]);
+
   return { ...state, step };
 }

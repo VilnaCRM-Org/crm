@@ -52,10 +52,13 @@ describe('commitlint CI gate (issue #184)', () => {
     }
   });
 
-  it('lints the pull request commit range against the merge base', () => {
+  it('lints the pull request commit range against the merge base with its own base branch', () => {
     const rangeStep = stepFor('make lint-commit-range');
 
-    expect(rangeStep?.run).toContain('git merge-base origin/main "$HEAD_SHA"');
+    expect(rangeStep?.run).toContain('git merge-base "origin/${BASE_REF}" "$HEAD_SHA"');
+    expect(rangeStep?.run).not.toContain('origin/main');
+    expect(rangeStep?.env?.BASE_REF).toBe('${{ github.event.pull_request.base.ref }}');
+    expect(rangeStep?.run).not.toContain('${{');
     expect(rangeStep?.if).toBeUndefined();
   });
 

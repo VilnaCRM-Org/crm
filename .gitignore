@@ -86,3 +86,4 @@ tests/unit/__discovery_probe__.*
 /.secret-scan-control/
 /.scan-image.tar
 /sbom/
+/docker/local-stack/generated/

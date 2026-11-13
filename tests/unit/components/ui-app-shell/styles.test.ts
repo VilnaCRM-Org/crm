@@ -55,7 +55,7 @@ describe('app shell styles', () => {
 
     expect(layoutStyles.navPlaceholder.width).toBe('250px');
     expect(
-      layoutStyles.navPlaceholder['@media (min-width:1024px) and (max-width:1439.95px)'].width
+      layoutStyles.navPlaceholder['@media (min-width:768px) and (max-width:1439.95px)'].width
     ).toBe(`${13 + 238}px`);
     expect(styles.nav.desktop.paddingLeft).toBe('12px');
   });

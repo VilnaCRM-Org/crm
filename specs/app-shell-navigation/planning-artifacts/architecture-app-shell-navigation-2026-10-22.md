@@ -41,7 +41,9 @@ failed chip re-read; each change is marked in place as a dated amendment or owne
 2026-11-04: the settings page centred, DV-12; 2026-11-05: reconciliation with shipped code;
 2026-11-06: the drawer and menu primitives, §8 A and the chip's `session_ended` causes, and the
 owner-approved `auth-page-vendors` cache group; 2026-11-09: the shipped `useGroupDisclosure()` API,
-the frame's grid placement and the navigation-items test row)
+the frame's grid placement and the navigation-items test row; owner decisions of 2026-11-05,
+confirmed 2026-11-10: the sidebar from 768 px, the full-screen drawer, the centred tablet header
+title and the persisted rail)
 **Feature:** `app-shell-navigation`
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `userSettings` runtime flag,
@@ -71,6 +73,19 @@ the frame's grid placement and the navigation-items test row)
 > and §12.2. The drawer is MUI `Modal` plus `Slide`, with `useDrawerFocus` returning focus. An outside
 > click on the menu lands on a backdrop `Box`, not `ClickAwayListener`. `ShellFailureHandler` lives in
 > `src/routes/types/shell-slot.ts`. On the chip's read, only a transport 401 ends the session.
+
+> **Owner decision of 2026-11-05 (sidebar from 768 px, full-screen drawer, persisted rail),
+> confirmed 2026-11-10.** After the owner's hand test of #377 the owner asked for four shell
+> changes, which land in #377: the sidebar shows from 768 px instead of 1024, so the frame, AD-2 and
+> `useShellLayout` key on the toolkit's `md` (768) and `xl` (1440), not `lg`; the mobile drawer is
+> full-screen with no shadow; the tablet header title is centred; and the sidebar's collapsed state
+> persists across reloads in `localStorage` under `crm.sidebar.collapsed`
+> (`src/components/ui-sidebar/use-sidebar-collapse.ts`). On 2026-11-10 the owner confirmed that
+> persistence stays. The tests that pin the breakpoint are `use-shell-layout.test.ts` (767, 768,
+> 1439, 1440) and `app-layout.styles.tokens.test.ts`; see the
+> [shell README, "Layouts"](../../../src/components/ui-app-shell/README.md#layouts) and the matching
+> owner decision in the PRD. §3.3, AD-2, §5.2 and §5.4a carry dated notes; the text they amend is
+> kept as the record of the plan as approved.
 
 > **Owner decision of 2026-11-06 (`auth-page-vendors` cache group approved).** The owner approved
 > `authPageVendorsCacheGroup` (`scripts/auth-forms-chunk-group.ts`, wired in `rsbuild.config.ts`). It
@@ -342,6 +357,9 @@ width and `<main>` follows it without the frame knowing the rail state. Sticky h
 follow OQ-22 and OQ-21 resolutions (UX §4.3). The tablet panel's 13 px offset (research §3.4) is a
 padding of the loaded panel; every offset is measured at the 0 px tolerance of UX §10.1 (NFR-22).
 
+Amended 2026-11-05 (owner decision, confirmed 2026-11-10): the two ranges are below 768 and 768 and
+wider; the sidebar breakpoint is the toolkit's `md`.
+
 Amended 2026-11-06 (frame description, reconciliation with `src/components/layouts/app-layout.styles.ts`).
 §2.1's "areas `header`, `nav`, `main`, `footer`", this section's table and the §8 A styles row
 ("frame areas") describe named grid areas with `auto 1fr` columns. The shipped frame has no named
@@ -476,7 +494,8 @@ sidebar breakpoint is a number in `app-layout.styles.ts` because the eager path 
 `@/components/ui-breakpoints`: its default export is `crmBreakpointsTheme`, built with MUI
 `createTheme` (`node_modules/@vilnacrm/ui-toolkit/build/chunks/chunk-JNAIMIR6.mjs`; research §8.1).
 A direct test pins the number to `breakpointsTheme.breakpoints.values.lg` (1024, OQ-5 resolved), so
-the eager CSS and the lazy `useShellLayout` cannot disagree.
+the eager CSS and the lazy `useShellLayout` cannot disagree. Amended 2026-11-05 (owner decision,
+confirmed 2026-11-10): the number is 768 and the test pins it to `md`, not `lg`.
 _Rejected:_ a new named export of `crmBreakpointValues` from the seam: the seam module also
 re-exports the theme, and whether Rspack drops `chunk-JNAIMIR6` from the entry is unverified; a new
 toolkit export is also an owner-adopted surface (`docs/ui-toolkit.md`, "Theme subpath").
@@ -489,6 +508,9 @@ already correct, no flash) over `crmBreakpointsTheme` values (`lg` 1024, `xl` 14
 `chunk-573233SA.mjs`). Under OQ-5 (resolved): mobile below 1024, tablet 1024-1439, desktop from 1440.
 Rendering below the breakpoint mounts no sidebar, so exactly one navigation landmark exists at a
 time (FR-13.5 E). Unit tests cover 1023, 1024, 1025, 1439 and 1440 (R-11).
+
+Amended 2026-11-05 (owner decision, confirmed 2026-11-10): the hook reads `md` (768) and `xl` (1440):
+mobile below 768, tablet 768-1439, desktop from 1440, asserted at 767, 768, 1439 and 1440.
 
 ### 5.3 Navigation items as data (AD-4)
 
@@ -539,7 +561,9 @@ still drops on the next pathname change.
 
 _Rejected:_ a disclosure on the Settings link itself (one control both navigating and toggling
 breaks FR-8.1 N), and persisting the state per viewer (not asked; OQ-4's "not persisted" applies
-to the shell's toggles alike).
+to the shell's toggles alike). Amended 2026-11-05 (owner decision, confirmed 2026-11-10): OQ-4's
+"not persisted" no longer applies to the sidebar's collapse, which persists under
+`crm.sidebar.collapsed`; the Settings group's disclosure is still not persisted.
 
 ### 5.5 Drawer (AD-6)
 

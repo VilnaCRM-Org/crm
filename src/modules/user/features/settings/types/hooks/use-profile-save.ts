@@ -15,7 +15,7 @@ export interface ProfileEditContext {
   readonly user: UserEntity;
   readonly adoption: UserEntityAdoption;
   readonly toasts: ToastQueue;
-  readonly saveRef: RefObject<HTMLButtonElement | null>;
+  readonly saveRef: RefObject<HTMLElement | null>;
   readonly headingRef: RefObject<HTMLElement | null>;
 }
 
@@ -25,9 +25,15 @@ export interface ProfileSave {
   readonly state: ProfileFormState;
   readonly isSubmitting: boolean;
   readonly changes: ProfileChangeDetector;
+  readonly buttonRef: RefObject<HTMLButtonElement | null>;
   readonly save: (values: ProfileFormValues) => void;
   readonly clear: () => void;
   readonly block: () => void;
+}
+
+export interface SaveTarget {
+  readonly buttonRef: RefObject<HTMLButtonElement | null>;
+  readonly remember: () => void;
 }
 
 export interface NoChangesAction {
@@ -45,6 +51,7 @@ export interface PendingSaveAction {
 
 export interface SettledSaveAction {
   readonly type: 'settled';
+  readonly saved: boolean;
 }
 
 export interface ClearSaveAction {

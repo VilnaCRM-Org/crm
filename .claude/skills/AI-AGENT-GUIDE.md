@@ -284,8 +284,8 @@ When writing or editing a class in a logic directory (`src/services/**`,
   that area's `di.ts` composition root (issue #109), and `@inject(TOKENS.X)` it.
 - If an import is used **only** as a type, make it `import type` (issue #88).
 - Allowed non-type value imports: the base class you `extend`, `tsyringe` /
-  `reflect-metadata`, token modules, config data (`@/config/api-config`,
-  `@/config/env`, `@/routes/route-paths`), domain and transport error classes,
+  `reflect-metadata`, token modules, config data (`@/config/env`,
+  `@/routes/route-paths`), domain and transport error classes,
   constant maps (`response-messages`, `error-codes`), runtime data contracts
   (`response-schemas`, `*-mutation` / `*-query`), the module/feature public
   barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).

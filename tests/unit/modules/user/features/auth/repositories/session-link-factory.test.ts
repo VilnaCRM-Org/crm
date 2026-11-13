@@ -3,6 +3,7 @@ import type { StoreApi } from 'zustand';
 
 import type { SandboxDemoSessionProvider } from '@/config/env/sandbox-demo-session-provider';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
 import type { AuthState } from '@auth/types/auth-store';
@@ -41,7 +42,7 @@ const harness = (session: SessionBox, terminal: ApolloLink | null = null): Harne
     signedOut,
     sandboxDemoSession: { signOut } as unknown as SandboxDemoSessionProvider,
     observability: { clearUser } as unknown as ObservabilityService,
-    errors: new UserServiceErrorTransformer(),
+    errors: new UserServiceErrorTransformer(new FieldViolationParser()),
   });
   const recorder = new ApolloLink((operation) => {
     headers.push(operation.getContext().headers as Record<string, string> | undefined);
@@ -146,15 +147,18 @@ describe('SessionLinkFactory', () => {
     expect(setState).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves the session alone when an anonymous operation is answered with 401', async () => {
-    const { link, clearUser, signOut, setState } = harness({ token: buildToken() }, unauthorized);
+  it.each(['ConfirmPasswordReset', 'SignInUser', 'CompleteTwoFactorUser'])(
+    'leaves the session alone when %s is answered with 401',
+    async (name) => {
+      const { link, clearUser, signOut, setState } = harness({ token: buildToken() }, unauthorized);
 
-    await send(link, 'ConfirmPasswordReset');
+      await send(link, name);
 
-    expect(clearUser).not.toHaveBeenCalled();
-    expect(signOut).not.toHaveBeenCalled();
-    expect(setState).not.toHaveBeenCalled();
-  });
+      expect(clearUser).not.toHaveBeenCalled();
+      expect(signOut).not.toHaveBeenCalled();
+      expect(setState).not.toHaveBeenCalled();
+    }
+  );
 
   it("leaves a newer session alone when a 401 answers an earlier token's request", async () => {
     const session: SessionBox = { token: buildToken() };

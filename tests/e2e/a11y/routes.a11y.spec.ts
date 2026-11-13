@@ -1,16 +1,17 @@
 import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { buildResetToken } from '@tests/builders';
+import { buildCredentials, buildResetToken } from '@tests/builders';
 import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { chipOf, openChipMenu, sidebarOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { signInToChallenge } from '@tests/e2e/utils/reach-challenge';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
+import expectNoPositiveTabindex from '@tests/utils/a11y/expect-no-positive-tabindex';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const UNKNOWN_PATH = '/definitely-not-a-route';
-const POSITIVE_TABINDEX = '[tabindex]:not([tabindex="0"]):not([tabindex="-1"])';
 
 interface RouteScan {
   key: keyof typeof ROUTE_PATHS;
@@ -18,6 +19,7 @@ interface RouteScan {
   query?: () => string;
   ready: string;
   prepare?: (page: Page) => Promise<void>;
+  open?: (page: Page) => Promise<void>;
   rendered: (page: Page) => Promise<void>;
 }
 
@@ -47,7 +49,7 @@ const shellScan = (key: RouteScan['key'], ready = 'main h1'): RouteScan => ({
 
 const routeScans: readonly RouteScan[] = [
   shellScan('home'),
-  shellScan('settings', 'main form button[type="submit"]'),
+  shellScan('settings', 'main form button[type="submit"]:visible'),
   shellScan('boards'),
   shellScan('products'),
   shellScan('orders'),
@@ -66,6 +68,13 @@ const routeScans: readonly RouteScan[] = [
     key: 'signUp',
     path: ROUTE_PATHS.signUp,
     ready: 'form button[type="submit"]',
+    rendered: expectFooterRendered,
+  },
+  {
+    key: 'twoFactorChallenge',
+    path: ROUTE_PATHS.twoFactorChallenge,
+    ready: 'form button[type="submit"]',
+    open: openChallenge,
     rendered: expectFooterRendered,
   },
   {
@@ -96,9 +105,14 @@ const routeScans: readonly RouteScan[] = [
   { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1', rendered: expectFooterRendered },
 ];
 
+async function openChallenge(page: Page): Promise<void> {
+  await signInToChallenge(page, buildCredentials());
+}
+
 async function openRoute(page: Page, scan: RouteScan): Promise<void> {
   await scan.prepare?.(page);
-  await page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' });
+  await (scan.open?.(page) ??
+    page.goto(`${scan.path}${scan.query?.() ?? ''}`, { waitUntil: 'domcontentloaded' }));
   await expect(page.locator(scan.ready).first()).toBeVisible();
   await scan.rendered(page);
 }
@@ -116,7 +130,7 @@ test.describe('WCAG 2.1 AA route scans (issue #118)', () => {
     test(`${scan.key} (${scan.path}) declares no positive tabindex`, async ({ page }) => {
       await openRoute(page, scan);
 
-      await expect(page.locator(POSITIVE_TABINDEX)).toHaveCount(0);
+      await expectNoPositiveTabindex(page);
     });
   }
 

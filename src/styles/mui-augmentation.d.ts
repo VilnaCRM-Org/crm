@@ -1,3 +1,4 @@
+import '@mui/material/Button';
 import '@mui/material/styles';
 
 import type { CustomColors } from '@/styles/types/colors';
@@ -15,5 +16,11 @@ declare module '@mui/material/styles' {
     customFonts?: {
       inter?: string;
     };
+  }
+}
+
+declare module '@mui/material/Button' {
+  interface ButtonPropsVariantOverrides {
+    outlinedPill: true;
   }
 }

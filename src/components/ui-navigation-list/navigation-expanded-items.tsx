@@ -28,11 +28,7 @@ export default function NavigationExpandedItems({
             disclosure={disclosure}
           />
         ) : (
-          <Box
-            component="li"
-            key={item.id}
-            sx={layout === 'drawer' ? styles.itemDrawer : styles.item}
-          >
+          <Box component="li" key={item.id} sx={styles.item}>
             <NavigationRow
               layout={layout}
               variant="item"

@@ -12,6 +12,7 @@ import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
 import SettingsGrid from '../../components/settings-grid';
 import SocialNetworks from '../../components/social-networks';
+import TwoFactorSettings from '../../components/two-factor-settings';
 import UserProfileSettings from '../../components/user-profile-settings';
 import useProfileLoad from '../../hooks/use-profile-load';
 import en from '../../i18n/en.json';
@@ -52,7 +53,7 @@ export default function UserProfile(): JSX.Element {
   usePageTitle('settings.title');
   const load = useProfileLoad();
   const toasts = useToastQueue();
-  const saveRef = useRef<HTMLButtonElement>(null);
+  const saveRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLElement>(null);
 
   return (
@@ -64,7 +65,6 @@ export default function UserProfile(): JSX.Element {
             <UserProfileSettings
               status={load.status}
               user={load.user}
-              version={load.version}
               refocus={load.refocus}
               retry={load.retry}
               adoption={load.adoption}
@@ -74,6 +74,7 @@ export default function UserProfile(): JSX.Element {
             />
             <SocialNetworks />
           </Box>
+          <TwoFactorSettings />
         </SettingsGrid>
       </Box>
       <SettingsToasts queue={toasts} saveRef={saveRef} headingRef={headingRef} />

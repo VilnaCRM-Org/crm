@@ -172,6 +172,10 @@ more project names.
   under "Known gaps" in `src/components/ui-app-shell/README.md`. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
+  `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
+  the sign-in challenge in both modes and for enrolling, turning two-factor off and regenerating the
+  codes: 44 px cells, fields and submits, 24 px small controls, no overflow at 320, 390 and 412 px,
+  every pin cell inside its card at 320 to 767 px, and the empty submit and reduced-motion checks.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up`, the
   two password recovery pages (`/password-recovery`, `/password-reset`), the three error pages
   (404, `/forbidden`, `/server-error`), `/settings` and the eight coming-soon pages inside the app
@@ -288,7 +292,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-48-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+63-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -316,54 +320,95 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 48-way shard count rather than
+These keep the run affordable — parallelism comes from the 63-way shard count rather than
 Stryker's in-process concurrency.
 
-**Shards are packed by scored-mutant count.** `scripts/ci/mutation-scope.mjs` counts each file's
+**Shards are packed by mutant-run cost.** `scripts/ci/mutation-scope.mjs` counts each file's
 mutants with the instrumenter the pinned `@stryker-mutator/core` resolves, under the options Stryker
 uses when the config sets no `mutator` or `ignorers` (the config test pins that), and leaves out the
 mutants a `Stryker disable` directive already reports `Ignored`. A file with no mutant left goes
 to **no shard**: the barrels, token modules and route maps hold nothing to score, yet each one
 handed its shard a `findRelatedTests` set of the whole suite (one cold shard drew 57 of them, a
-3,779-test dry run, and timed out). Every other file is weighed by its **scored** mutants: a mutant
-outside every function body and instance property initializer runs on import, which
-`ignoreStatic` reports `Ignored` without running, so it costs nothing and does not count; a file
-whose mutants are all static weighs 1, its dry run. The packing then puts the heaviest file first
-onto the lightest shard, ties broken by code-unit path order. Counting the whole scope takes about
-4 s, so every shard job and the merge job count at run time and derive the same packing from the
-same commit; no weight file is committed, so none can go stale. At 450 files the scope holds
-402 sharded files; 48 files run in no shard. Their packing weight is 5,968, the scored mutants plus
-the floor of 1 that each all-static file adds, so the 48 shards carry 124 to 139 weight units and 1
-to 9 files each. File size was a poor proxy for
-that load: under the 30-shard size packing a cold shard 11 drew 253 mutants and met the 15-minute
-kill switch before it finished, while this scope packed by counted mutants carries 198 to 199
-units per shard at 30.
+3,779-test dry run, and timed out). Every other file is weighed by its **runnable** mutants plus one
+for the dry run, times a **fan-out factor**, because a cold shard runs every runnable mutant (the
+static ones a test loads inside its own body included) and each mutant run makes Jest load every
+test file related to the mutated file, its setup and its imports, even when the coverage-derived
+name filter skips every test in it. That load, about 150 ms per file, dwarfs the few milliseconds
+the test bodies take.
+[`scripts/ci/mutation-related-tests.mjs`](scripts/ci/mutation-related-tests.mjs) counts those files
+the way Jest finds them for Stryker: it extracts dependencies like Jest's default extractor (`import
+type` and `jest.mock` are not dependencies) and walks only through files inside the roots Stryker
+hands Jest, the two test roots plus the mutated file's directory.
+`tests/unit/tooling/mutation-related-tests.test.ts` pins the rules on a fixture tree and holds the
+count equal to `jest --listTests --findRelatedTests` on real files. The factor is 4 + the related
+logic (`.ts`) tests + 3 x the related component (`.tsx`) tests, in logic-test loads: fitted on
+2026-11-10 to 39 cold shards of one 48-shard run, which measured about 0.3 s per mutant run, 0.09 s
+per related logic test and 0.29 s per related component test against a fixed 75 s per shard, with a
+50 s residual. It is not rounded: a power-of-two step once weighed the scrubber 29% light, and a
+repack costs the shards only a cold run. A load weight cannot see how long the covering tests
+themselves take, nor the mutants that time out (each waits out Stryker's timeout window and restarts
+its test runner), so the packing also aims to keep every shard within 1.05x the mean runnable
+mutants: a shard that drew 257 mutants of cheap-looking files whose page tests type through a form
+met the kill switch while its weight sat near the minimum. The packing puts the heaviest file first
+onto the lightest shard that stays under both that mutant target and the file cap below, ties
+broken by code-unit path order. When no shard has room for a file's mutants, the file goes to the
+shard under the file cap that holds the fewest mutants (the lighter load, then the lower index,
+breaking ties), so the 1.05x figure is a target the fallback can overshoot, never a guarantee.
+Counting the whole scope takes about 4 s, so every shard job and the merge job
+count at run time and derive the same packing from the same commit; no weight file is committed, so
+none can go stale. At 562 files the scope holds 505 sharded files; 57 files run in no shard. The 63
+shards carry 80 to 166 runnable mutants (mean 158) and 2,237 to 3,189 weight units, except
+`ui-form/styles.ts`, alone at 5,394. Weighing by scored mutants alone had packed that scrubber's 103
+mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
+`lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
+minutes cold, while 45 of the 48 shards finished an incremental run in about a minute. A file is the
+unit a shard cannot split, so a file that alone outgrows the kill switch is split by responsibility,
+as the scrubber was twice: its free-text patterns moved to `PiiTextScrubber`, and when that file
+alone still took 14.6 minutes cold, its two-factor patterns moved to `TwoFactorTextScrubber` (47 and
+60 mutants). The cap binds the same way: at 63 shards it fell to 166, under the 177 runnable
+mutants `user-service-error-transformer.ts` held alone, so its field-violation parsing moved to an
+injected `FieldViolationParser`. File size was a poor proxy too: under the 30-shard size packing a
+cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
-workflows' count passes 240 mutants, so scope growth reddens a unit test before a shard meets the
-kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
+workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard meets
+the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
 cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
-touching one area can therefore land most of its re-run cost in a single shard; 48 shards keep that
+touching one area can therefore land most of its re-run cost in a single shard; 63 shards keep that
 hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
 it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
 to 30 when the password-recovery files repacked the split so a cold shard 6 drew 443 mutants (the
 next heaviest drew 291) and hit the kill switch at 250 tested; the same size packing at 30 capped
 the heaviest shard at 240. It went from 30 to 40, with the switch to mutant weighting, when that
-cold shard 11 kept meeting the kill switch. It went from 40 to 48 when a cold shard 32 (11 files,
-250 mutants) met the kill switch at 247 tested on two runs in a row; the two-factor branch (#331)
-takes the same count, so the two stay in lock-step. On 2026-11-09 the owner asked for fewer shards,
+cold shard 11 kept meeting the kill switch and the two-factor files grew the scope until most cold
+shards hit it. It went from 40 to 48 when a cold shard 32 (11 files, 250 mutants) met the kill
+switch at 247 tested on two runs in a row; the app shell (#362) and two-factor (#331) branches take
+the same count, so the two stay in lock-step. On 2026-11-09 the owner asked for fewer shards,
 each allowed up to the 15-minute kill switch. A cold run at 44, which keeps the heaviest shard at
 the same 139 weight units, still met the kill switch on two shards at 222 of 226 and 236 of 237
 tested, each with six timed-out mutants, while the cold 48-shard run's slowest shard took 12.6 min.
-Weight does not predict timed-out mutants, so the count stays at 48.
+Weight does not predict timed-out mutants, so the count stayed at 48. It went from 48 to 56 on
+2026-11-10, at the owner's choice, when a fully cold run (the `timeoutMS` change invalidated every
+cache) met the kill switch on shards 9 and 20 at about 206 runnable mutants per shard; shard 20
+stopped at 176 of 214 tested with no timed-out mutant, so the cost was the count, not a hang. It
+went from 56 to 63 on 2026-11-11, when the cold run the 60 s `timeoutMS` forced met the kill switch
+on shards 12 and 22 after each had scored all 187 of its mutants with no survivor: shard 22 (no
+timed-out mutant) spent 3.9 min starting and 11 min mutating, shard 12 4.5 and 10 with three timed
+out, while every other shard but one finished inside 12 min. Both sat at the 1.05x cap, so the
+count, not a hang, was again the cost. The mutant cap alone left the light shards to absorb a pile
+of small files, so the file-spread check (no shard over twice the mean file count) passed or failed
+by chance as files changed: 63 failed it once a later commit added files. The packing therefore also
+caps every shard at twice the mean file count. That cap is a hard bound rather than a target:
+`total` shards at the cap always seat every sharded file, so the mutant fallback never has to
+breach it, and the spread holds by construction.
 
 ### Honest mutant classification (issue #171)
 
 A mutation score is only worth enforcing if every mutant is classified for the reason the status
-claims. Three settings in `stryker.config.mjs` keep that true, and
+claims. Four settings in `stryker.config.mjs` keep that true, and
 `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of them regresses:
 
 - **`checkers: ['typescript']`** (plugin `@stryker-mutator/typescript-checker`, pinned to the same
@@ -397,6 +442,18 @@ claims. Three settings in `stryker.config.mjs` keep that true, and
   25,584 to 194,773 (7.6×, 9× for the median file), which would push shards past the 15-minute
   kill switch and bring back the `Timeout` inflation above. Take it only with the shard
   wall-clock re-measured and the shard count raised first.
+- **`timeoutMS: 60000`.** Stryker calls a mutant run a hang when it outlasts this allowance plus
+  `timeoutFactor` times the covering tests' net time, and the net time leaves out the cost of
+  loading every related test file, which a high fan-out file pays on each run. At the default
+  5 s a CI runner timed out 98 of the 103 `pii-text-scrubber.ts` mutants and 36 of the 86
+  `ui-form/styles.ts` ones, every one of them killed by an assertion on a laptop, so they were
+  scored `Timeout` without a reason and each killed and restarted its test runner, which is what
+  pushed those shards to the kill switch. 20 s covered those two files but not
+  `lazy-catalog-loader.ts`, whose seven mutants each load 106 related component tests: at 20 s the
+  cold 56-shard runs scored six of them `Timeout` and restarted a runner for each, and on
+  2026-11-11 that cost alone held shard 5 at 102 of 103 tested when the kill switch fired. 60 s
+  lets those runs finish and score on their assertions; a real hang now costs 60 s, and there are
+  few of those.
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
 independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
@@ -438,16 +495,17 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Fifteen directives are annotated today, at two mutators. Fourteen are `ArrayDeclaration` on a
+Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
 React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
-- `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
-  `authActions` module singleton and `loginControllersRef` is a `useRef` box, so neither identity
-  ever changes and an emptied list memoizes exactly the same callback.
+- `use-login-submitter.ts` annotates `[run, loginControllersRef]`: `run` is the `SignInRun` that
+  `useSignInSubmit` holds in a `useState` initializer, built once on mount and never set again,
+  and `loginControllersRef` is a `useRef` box, so neither identity ever changes and an emptied
+  list memoizes exactly the same callback.
 - `use-login-submitter.ts` also annotates `[login]` on `handleLogin`: `login` is that same
   memoized callback, so its identity never changes either.
 - `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
@@ -456,12 +514,18 @@ and each is equivalent for a reason worth stating separately:
   the token is a module constant; `src/modules/user/config/di.ts` binds it with
   `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
   therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
+- `challenge-code-field.tsx` (issue #331) annotates `[setFocus]` on the effect that focuses the
+  code field when the challenge mounts. `setFocus` comes from `useFormContext`, and react-hook-form
+  hands out one `setFocus` per form for the form's whole lifetime, so an emptied list runs the
+  effect exactly once, as `[setFocus]` does. jsdom shows no focus from that call, while the e2e
+  spec pins the first cell focused on arrival, so only a test that fakes a changing `setFocus`
+  could tell the two apart.
 
 Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The fifteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -470,11 +534,11 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a sixteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 450 files; not all of them produce scored mutants — the 48 unsharded ones hold no
+mutate scope is 562 files; not all of them produce scored mutants — the 57 unsharded ones hold no
 runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
 mutants are static is skipped by `ignoreStatic`.
 
@@ -607,7 +671,7 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries eleven `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries twelve `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
 text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
@@ -615,7 +679,9 @@ in-card link buttons "До входу" and "Запросити нове поси
 issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
 decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
 owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
-on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362), tracked in
+on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362, and the
+two-factor challenge's "Назад" back control in the Figma `#969B9D` at 2.81:1 by the owner's
+decision of 2026-11-04, issue #331), tracked in
 issue #276 and deleted when it closes. Each entry is a known WCAG 2.1 AA non-conformance kept by owner
 decision, not a pass; the owner re-confirmed the current navigation row on 2026-11-09.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
@@ -1130,7 +1196,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 48-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 63-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1847,11 +1913,13 @@ key on `/sign-up`. The owners are the two recovery route folders, the recovery c
 `routes/index.ts`, whose `meta.titleKey` is data no eager code translates (each page sets its title
 through `usePageTitle` after its module has registered the catalog). The settings catalog
 (issue #330) is owned the same way: `settings/routes/user-profile/`, the module that registers it,
-the six settings `components/` folders that page renders (`change-password`, `profile-form`,
-`profile-header`, `settings-grid`, `social-networks` and `user-profile-settings`), the eight
-`hooks/` files that own settings translations (`use-blur-hold`, `use-email-resend`, `use-email-row`,
-`use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`, `use-profile-save` and
-`use-settled-focus`), and the settings route contract `routes/index.ts` for
+the seven settings `components/` folders that page renders (`change-password`, `profile-form`,
+`profile-header`, `settings-grid`, `social-networks`, `two-factor-settings` and
+`user-profile-settings`), the twelve `hooks/` files that own settings translations (`use-blur-hold`,
+`use-codes-form-props`, `use-disable-form-props`, `use-email-resend`, `use-email-row`,
+`use-profile-form-model`, `use-profile-form-rules`, `use-profile-load`, `use-profile-save`,
+`use-regenerate-form-props`, `use-settled-focus` and `use-setup-form-props`),
+and the settings route contract `routes/index.ts` for
 its `meta.titleKey`; the user-menu folder and the shell hooks beside those files (`use-current-user`,
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
 protected page, before the settings catalog is registered, so they own no settings key; the
@@ -1862,7 +1930,14 @@ label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are
 way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
 `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
 copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
-`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. Adding an owner is a
+`settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. The two catalogs of
+two-factor sign-in (issue #331) follow suit: the challenge copy (`two_factor.*`) is owned by
+`auth/routes/two-factor`, `auth/components/two-factor`, the challenge hooks that name its keys
+(`use-challenge-banner.ts`, `use-challenge-copy.ts`) and the auth route contract `routes/index.ts`
+for its `meta.titleKey`; the low-codes notice copy (`recovery_codes_notice.*`) by
+`auth/components/recovery-codes-notice` and `auth/hooks/use-recovery-notice-message.ts`. The
+sign-in notices the challenge sends back (`sign_in.notices.two_factor_expired`,
+`sign_in.notices.account_locked`) stay eager, because `/sign-in` renders them. Adding an owner is a
 reviewed policy edit and must name a file only the registering routes import. A policy entry that
 names no discovered catalog folder, or an owner path that does not exist, fails (`[lazy-catalog]`),
 and an unreadable or malformed policy fails the run before any check.
@@ -2385,7 +2460,7 @@ class Service {}
 class ApiErrorFactory {} // repositories/api-error-factory.ts
 class EmailValidator {} // user/lib/validations/email.ts
 class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
-class LoginResponseMapper {} // store/login-response-mapper.ts
+class RegistrationResponseMapper {} // store/registration-response-mapper.ts
 class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
 ```
 
@@ -2419,7 +2494,7 @@ given a suffix. Each selector has a must-fail fixture in `scripts/ci/eslint-gate
 `Linter` against banned, bare, unsuffixed, abstract-`Base*`, and approved names.
 
 **Honest limitation.** This is a **naming** gate, not a **role-correctness** gate. It catches
-`AuthManager` and a bare `Service`; it cannot tell whether a class named `LoginResponseMapper`
+`AuthManager` and a bare `Service`; it cannot tell whether a class named `RegistrationResponseMapper`
 also quietly does HTTP, or whether `ThingProcessor` hides a meaningless noun. Role ↔ name
 truthfulness is semantic and stays an agent rule plus a review-gate concern. Classes inside
 `use-*.ts` hook files (`AuthTokenStore`, `AsyncListLoader`) sit outside the `src/**/*.ts` scope
@@ -2440,9 +2515,9 @@ This is the next step after #89/#100: those made every behavioral unit an instan
 class; this governs _how those classes obtain each other_. A hard-wired collaborator resists
 substitution in tests, so the class only _looks_ injectable.
 
-`src/modules/user/features/auth/repositories/login-api.ts` is the exemplar — `HttpsClient` and
-`ApiErrorFactory` arrive via `@inject(TOKENS.X)`, and its remaining value imports are exactly the
-allowed carve-outs.
+`src/modules/user/features/auth/repositories/graphql-sign-in-repository.ts` is the exemplar — the
+Apollo client arrives via `@inject(AUTH_TOKENS.ApolloClient)`, and its remaining value imports are
+exactly the allowed carve-outs.
 
 **Allowed value imports inside a logic class:**
 
@@ -2452,7 +2527,7 @@ allowed carve-outs.
 | `extends` base class | `BaseAPI` — inheritance cannot be injected                           |
 | DI mechanism         | `tsyringe`, `reflect-metadata`                                       |
 | DI tokens            | `**/tokens.ts`                                                       |
-| Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
+| Config data          | `@/config/env`, `@/routes/route-paths`                               |
 | Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
 | Constant maps        | `response-messages`, `error-codes`                                   |
 | Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` / `*-query.ts`       |
@@ -2517,7 +2592,8 @@ Three different things are outside the gate, and the distinction matters when yo
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
-  correlation-id / sentry-client / sentry-config / pii-scrubber / web-vitals leaves, the
+  correlation-id / sentry-client / sentry-config / pii-scrubber / pii-text-scrubber / web-vitals
+  leaves, the
   app-shell session (`auth-session-provider`) and the chip's current-user read
   (`current-user-client`, `current-user-source`, issue #362).
 
@@ -2555,7 +2631,7 @@ import { Button } from '@/components/ui-button';
 import { CommentsList } from './comments-list';
 
 // Within the Auth feature (any depth): use the @auth alias
-import { LoginAPI } from '@auth/repositories';
+import { GraphQLSignInRepository } from '@auth/repositories';
 ```
 
 In addition to the project-wide `@/`, the Auth feature has its own scoped
@@ -2649,6 +2725,8 @@ to a non-empty value fails container start with `Known flags: (none).` and must 
 settings page (issue #330), its three coming-soon sub-pages and their app-shell entry points
 (issue #362) ship without a flag: the four routes are registered in every environment, the
 sidebar and the drawer always link to all four, and the user menu always links to `/settings`.
+The two-factor section of `/settings` (issue #331) is not flagged either: the page always renders
+it.
 
 **Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
 [`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
@@ -2758,7 +2836,7 @@ verified in CI.
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
   owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
   for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
-  lazy catalog adds no loader class. Seven lazy catalogs exist today: the password-recovery copy
+  lazy catalog adds no loader class. Nine lazy catalogs exist today: the password-recovery copy
   (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
@@ -2769,9 +2847,16 @@ verified in CI.
   `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
   `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
   `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
-  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; and the user-menu
+  `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; the user-menu
   copy (`user_menu.*`), owned by `src/modules/user/features/settings/components/user-menu/` and
-  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates. The recovery keys were
+  registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates; the two-factor challenge
+  copy (`two_factor.*`, issue #331), owned by
+  `src/modules/user/features/auth/routes/two-factor-catalog/` and registered when the
+  `two-factor-challenge` route module evaluates; and the low-codes notice copy
+  (`recovery_codes_notice.*`), owned by
+  `src/modules/user/features/auth/components/recovery-codes-notice/` and registered when the lazy
+  `RecoveryCodesNotice` chunk evaluates. Those two were 3,749 B of the minified merged catalog
+  (about 0.9 KB gzip) on every page. The recovery keys were
   3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
   raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
   does not restore the `/sign-in` headroom (that base already scored a median of about 0.8375
@@ -2781,7 +2866,9 @@ verified in CI.
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
   use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
   `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
-  user-menu catalog, and coming-soon tests `createComingSoonLocaleI18n`), so a lazy key leaking into
+  user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor challenge tests
+  `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card back control
+  reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key leaking into
   an eager page renders raw in that page's tests too. Storybook's preview and the e2e
   `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
   JSON files) keep the copy available for every story and spec.
@@ -3234,7 +3321,7 @@ replaces.
 
 8. **Test data — Faker builders (issue #101)**: Tests generate arbitrary user/auth domain
    data (emails, names, passwords, ids, tokens) with `@faker-js/faker` via shared builders in
-   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`, `buildLoginResponse`,
+   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`,
    `buildCreateUserInput`, `buildGraphqlUser`, …), imported through the `@tests/*` alias.
    Builders return domain-valid data by construction and take an `overrides` object. Faker is
    seeded deterministically (`seedFaker()` in each runner's setup; default `DEFAULT_FAKER_SEED`,
@@ -3301,7 +3388,7 @@ replaces.
 
     | Call site                                   | Event                                 |
     | ------------------------------------------- | ------------------------------------- |
-    | `AuthSecuritySignals` (login)               | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (login, challenge)    | `auth_failure` / `auth_failure_burst` |
     | `AuthSecuritySignals` (registration)        | `auth_failure` / `auth_failure_burst` |
     | `HttpErrorResponseParser` (401 / 403)       | `unauthorized_response`               |
     | `UIErrorBoundary` (`app` / `auth`)          | `error_boundary_catch`                |
@@ -3396,7 +3483,7 @@ replaces.
     `no-await-in-loop` is an error, each attempt handed the budget that is left, giving up when
     the next wait would leave under 250 ms, and a caller abort mid-wait rejecting at once. The
     client retries `GET`/`PUT`/`DELETE` by default; a `POST`/`PATCH` needs `RequestConfig.retry:
-true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a create in**:
+true` (no caller opts in today; a token issue would be the one safe case). **Never opt a create in**:
     `RegistrationAPI` gets the deadline only, because API Platform merely echoes
     `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
     telemetry; only the final failure reaches the observability boundary.

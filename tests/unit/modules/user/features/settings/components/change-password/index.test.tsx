@@ -18,6 +18,8 @@ const NEW_PASSWORD = buildPassword();
 const VALUES: ProfileFormValues = {
   fullName: 'Олена Петренко',
   email: 'olena@example.com',
+  fullNamePassword: '',
+  emailPassword: '',
   currentPassword: '',
   newPassword: '',
 };
@@ -53,6 +55,7 @@ const subject = (busy = false): JSX.Element => (
 jest.mock('@/i18n', () => ({ __esModule: true, default: { addResourceBundle: jest.fn() } }));
 
 const HIDDEN = { position: 'absolute', width: '1px', height: '1px' };
+const HINT = 'Введіть новий пароль, щоб замінити поточний.';
 
 const mountSection = (): ReturnType<typeof userEvent.setup> => {
   render(subject(), {
@@ -82,9 +85,7 @@ describe('ChangePassword rule list at rest', () => {
     mountSection();
 
     expect(screen.getByRole('list')).toHaveStyle(HIDDEN);
-    expect(
-      screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
-    ).toHaveStyle(HIDDEN);
+    expect(screen.getByText(HINT)).toHaveStyle(HIDDEN);
   });
 
   it('shows the rules while the empty new password has focus, then for 200 ms after', async () => {
@@ -160,9 +161,7 @@ describe('ChangePassword', () => {
       'Введіть пароль'
     );
     expect(screen.getByLabelText('Новий пароль')).toHaveAttribute('placeholder', 'Створіть пароль');
-    expect(
-      screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
-    ).toBeInTheDocument();
+    expect(screen.getByText(HINT)).toBeInTheDocument();
   });
 
   it('describes the new password by the hint and the rule list, the current one by neither', () => {
@@ -174,9 +173,7 @@ describe('ChangePassword', () => {
     expect(describedBy.split(' ')).toEqual(
       expect.arrayContaining(['new-password-hint', 'new-password-rules'])
     );
-    expect(
-      screen.getByText('Необов’язково. Залиште порожнім, щоб не змінювати пароль.')
-    ).toHaveAttribute('id', 'new-password-hint');
+    expect(screen.getByText(HINT)).toHaveAttribute('id', 'new-password-hint');
     expect(screen.getByRole('list')).toHaveAttribute('id', 'new-password-rules');
     expect(screen.getByLabelText('Поточний пароль')).not.toHaveAttribute('aria-describedby');
   });

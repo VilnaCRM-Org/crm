@@ -14,16 +14,18 @@ export class SandboxDemoSessionProvider {
 
   constructor(private readonly host: SandboxDemoHost = globalThis) {}
 
+  public match(credentials: SandboxDemoCredentials): SandboxDemoSession | null {
+    return this.isActive() &&
+      credentials.email === this.session.email &&
+      credentials.password === 'Demo1234'
+      ? this.session
+      : null;
+  }
+
   public signIn(credentials: SandboxDemoCredentials): SandboxDemoSession | null {
-    if (
-      !this.isActive() ||
-      credentials.email !== this.session.email ||
-      credentials.password !== 'Demo1234'
-    ) {
-      return null;
-    }
-    this.persist(this.session.email);
-    return this.session;
+    const session = this.match(credentials);
+    if (session !== null) this.persist(session.email);
+    return session;
   }
 
   public restore(): SandboxDemoSession | null {

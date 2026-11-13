@@ -8,6 +8,14 @@ const parser = new ResponseParser();
 const ok = (body: unknown, status = 200): ReturnType<typeof parser.parse> =>
   parser.parse({ status, text: JSON.stringify(body) });
 
+const loadParser = async (): Promise<ResponseParser> => {
+  const Parser = await loadIsolated(
+    async () =>
+      (await import('@/modules/user/features/settings/utils/current-user-response-parser')).default
+  );
+  return new Parser();
+};
+
 const userBody = (initials: string): unknown => ({
   data: { users: { edges: [{ node: buildUserNode({ initials }) }] } },
 });
@@ -147,5 +155,39 @@ describe('CurrentUserResponseParser', () => {
       kind: 'failed',
       reason: 'unavailable',
     });
+  });
+
+  it('reads only extension status 401 as denied, with a freshly loaded parser', async () => {
+    const loaded = await loadParser();
+
+    expect(
+      loaded.parse({
+        status: 200,
+        text: JSON.stringify({
+          errors: [{ message: 'Unauthorized', extensions: { status: 401 } }],
+        }),
+      })
+    ).toMatchObject({ kind: 'failed', reason: 'denied' });
+    expect(
+      loaded.parse({
+        status: 200,
+        text: JSON.stringify({ errors: [{ message: 'Access Denied.' }] }),
+      })
+    ).toMatchObject({ kind: 'failed', reason: 'unavailable' });
+  });
+
+  it.each([
+    [
+      'GraphQL errors',
+      JSON.stringify({ errors: [{ message: 'Internal server error' }] }),
+      'The CurrentUser query returned GraphQL errors',
+    ],
+    ['an unparseable body', '<html>', 'Failed to parse JSON response'],
+    ['a body that is not a user', '{}', 'Response did not match the expected schema'],
+  ])('words the failure for %s with a freshly loaded parser', async (_name, text, message) => {
+    const loaded = await loadParser();
+    const parsed = loaded.parse({ status: 200, text });
+
+    expect(parsed.kind === 'failed' && parsed.error.message).toBe(message);
   });
 });

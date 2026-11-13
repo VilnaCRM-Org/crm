@@ -36,6 +36,11 @@ inputDocuments:
 >   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
+> - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
+>   flag (b0a6747d) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
+>   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
+>   off" row, scenario or criterion describes a state no build reaches.
 > - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
 >   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
 >   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,

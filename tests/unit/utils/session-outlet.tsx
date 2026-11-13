@@ -22,7 +22,12 @@ export default function SessionOutlet({
   session = inertSession,
   signOut = (): void => undefined,
 }: SessionOutletProps): JSX.Element {
-  const context: ProtectedSessionContext = { signOut, session };
+  const context: ProtectedSessionContext = {
+    signOut,
+    session,
+    twoFactorStatus: 'unknown',
+    setTwoFactorStatus: () => undefined,
+  };
 
   return (
     <Routes>
