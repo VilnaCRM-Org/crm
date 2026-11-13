@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-11-11
 feature: notification-visibility-variants
-issue: none
+issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'architect, autonomous run'
 inputDocuments:
   - specs/notification-visibility-variants/planning-artifacts/run-summary-notification-visibility-variants-2026-11-11.md
@@ -36,7 +36,8 @@ inputDocuments:
 # Architecture: notification visibility variants
 
 **Author:** architect, autonomous run **Date:** 2026-11-11 **Feature:**
-`notification-visibility-variants` **Issue:** none (no issue or PR until the owner approves, MA-4)
+`notification-visibility-variants` **Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391),
+planning pull request #392 (no code is committed or pushed until the owner approves, MA-4)
 
 Predecessors: the [run summary](./run-summary-notification-visibility-variants-2026-11-11.md)
 (binding; later blocks supersede earlier ones), the
@@ -263,8 +264,10 @@ adapter (FR-3).
 
   All four resolve on a microtask; nothing touches storage or the network.
 
-- **Seed (P-2, PRD readiness amendment 11):** a module-private
-  `const NOTIFICATION_SEED: NotificationRecordSet` in the **same file**. Three `success` rows at
+- **Seed (P-2, PRD readiness amendment 11):** a named data export
+  `export const NOTIFICATION_SEED: NotificationRecordSet` in the **same file**, frozen, with no
+  function-valued member (so the #100/#180 gate does not apply, and the file's default export keeps
+  `import/prefer-default-export` quiet; A-33). Three `success` rows at
   fixed instants with three **feature-owned** keys in the notifications catalog, whose `uk` and
   `en` texts equal the shipped `settings.toasts.password_changed`, `email_sent` and `saved` texts
   (no new wording):
@@ -277,7 +280,9 @@ adapter (FR-3).
 
 - **Instance:** the file ends with
   `export default new InMemoryNotificationRepository(NOTIFICATION_SEED)` and also exports the class
-  by name for tests.
+  and the seed by name, for the tests and for the Storybook decorator
+  `withFreshNotificationRepository` (§12.2), which imports both from this module. `.storybook/` is
+  outside every `from: ^src/` dependency-cruiser rule, so that import needs no exemption.
 
 > Assumption: the seed lives in the adapter's own file. The adapter is in a gated `repositories/`
 > folder (`config/di-collaborator-policy.js:43-49`), so a value import of a separate fixture module
@@ -322,7 +327,7 @@ previous.revision`), never against a revision the hook remembers, and `clear()` 
   `{ records, unread, markAllRead, refresh }` and refreshes on mount, on each revision and after
   `markAllRead`. `BellNotifications` calls it under every style, so the badge and the count
   description are current on every protected page; the panel receives `records` and
-  `markAllRead` as props.
+  `markAllRead` as props and maps the records to views itself (§5.2, "View mapping").
 - `useBellDisclosure(layout: ShellLayout): BellDisclosure` mirrors `use-user-menu.ts` (settings)
   for route close, layout close, Escape and Tab-out, and closes on a document `pointerdown`
   outside the bell wrapper with no backdrop (§10). It runs under every style. `show()` calls the
@@ -585,7 +590,16 @@ Every selector returns a stored field, so identities are stable and no `useShall
 
 **View mapping.** `src/hooks/use-notification-views.ts` maps a `ShownNotificationSet` to the
 display-ready `NotificationViewSet` the presentational renderers take: `message` and
-`action.label` translated, `time` only when a time key is passed. Renderers never see keys.
+`action.label` translated, `time` only when a time key is passed, and `id` stringified
+(`String(item.id)`), because `NotificationView.id` is a `string` (§11.3) and `ShownNotification.id`
+stays numeric. Renderers never see keys.
+
+`NotificationHistoryPanel` does not use this hook, because it receives `NotificationRecord`s, not
+shown items. It maps them itself into the same `NotificationView` shape: `id: record.id` (already a
+string, so the read flags key on it), `kind: record.kind`, `message: t(record.messageKey)` and
+`time: t('notification_center.time', { value: record.createdAt })`, formatted by the locale
+formatter, and the read flag comes from `record.read`. A record has no action, so a history view
+carries none.
 
 ### 5.3 Settings wiring (FR-25, FR-26)
 
@@ -678,11 +692,13 @@ under every style (owner decision 2026-11-12, A-23).
   `notifications` slot is passed (a shell with no notifications module, the header stories); with
   a slot it renders the slot node, under every style, in the same cluster position inside a
   fixed-size `BellSlotFrame` (the `UserSlotFrame` precedent), so loading never shifts the cluster.
-  `BellNotifications` composes the enabled bell (`HeaderIconButton` with `disclosure`), the alert
-  `HeaderBadge`, the count description and `UINotificationHistoryFrame`, the panel's host element,
-  whose content is the lazy `NotificationHistoryPanel` once the bell has been opened (A-25).
+  `BellNotifications` composes the enabled bell (`HeaderIconButton` with `disclosure` and the
+  unread `count`; the button itself draws the alert badge inside its box and owns the one count
+  description, so `BellNotifications` renders no badge or hidden text of its own, A-32) and
+  `UINotificationHistoryFrame`, the panel's host element, whose content is the lazy
+  `NotificationHistoryPanel` once the bell has been opened (A-25).
 - **C:** under `bell` only, `BellNotifications` also renders the lazy `BellOutcomeNotice`, which
-  draws `UIBellNotice` over the shown items (A-24).
+  draws `UIBellNotice` over the shown items (A-24), inside its own `Suspense` (A-31).
 
 ### 6.3 The shell slot (AD-8)
 
@@ -734,8 +750,12 @@ registers the `notification_center` catalog at module evaluation, and renders tw
   exists before the first open. When its loader gives up it reports
   `onChunkFailure('app-shell:notifications-history', error)` and the host stays empty;
 - the merged card `BellOutcomeNotice` (through `bell-outcome-notice-loader.ts`, chunk
-  `notifications-notice`), only when `useNotificationSurface('header')` is true. It suspends to the
-  factory's boundary below like the slot chunk does; on a final failure it reports
+  `notifications-notice`), only when `useNotificationSurface('header')` is true. It sits in its
+  own `Suspense` inside `BellNotifications`, whose fallback is a fixed-size empty `aria-hidden` box
+  (`0 × 0`, never `null`, so the Suspense-fallback gate passes). The enabled bell, the badge and
+  `NotificationsShellSlot` with its recorder therefore never suspend on this chunk: there is no
+  two-chunk waterfall before the bell paints under `bell`, and an outcome raised while the chunk
+  loads is recorded and counted (FR-5, A-31, readiness R3-02). On a final failure it reports
   `onChunkFailure('app-shell:notifications-notice', error)` and renders `null`, and the bell keeps
   working. Under `toast` and `inline` its loader is never called.
 
@@ -743,9 +763,10 @@ The slot declares no `Suspense` of its own: the header renders it inside `BellSl
 fixed-size box whose own `Suspense` fallback is the bell-sized `aria-hidden` placeholder (§11.3).
 In the composed shell the slot is rendered through `ShellSlotFactory.create`
 (`src/routes/shell-slot-factory.ts`), which wraps every slot in its own `Suspense` with an
-`aria-hidden` `span` fallback, so that inner boundary is the one that catches the slot chunk and
-the notice chunk; the frame keeps its size and both fallbacks are invisible and `aria-hidden`. The
-frame's placeholder covers an empty child or a slot rendered directly in the frame (the stories).
+`aria-hidden` `span` fallback, so that inner boundary is the one that catches the slot chunk, and
+only the slot chunk: the notice chunk is caught by `BellNotifications`' own boundary above (A-31);
+the frame keeps its size and every fallback is invisible and `aria-hidden`. The
+frame's placeholder covers an empty frame or a lazily loaded slot rendered outside `ShellSlotFactory`; a statically rendered slot never suspends (A-22, A-31), only its lazily loaded children do, each to its own boundary.
 While `notifications-shell` loads, the frame shows the empty bell-sized box under every style; the
 disabled bell is not drawn in its place (A-23). No second placeholder component exists (readiness
 M-15, R2-03).
@@ -755,10 +776,14 @@ M-15, R2-03).
 > is one deferred chunk on every protected page, `/` included (estimate ≈ 4.5 kB gzip: recorder,
 > adapter, seed, the bell connector, the disclosure, the panel host, the catalog and two loaders).
 > If Lighthouse on `/` regresses in any category, the fallback is PRD amendment item 31's: the
-> count read and the enabled bell stay; what is not needed to paint them (the disclosure handlers
-> and the panel-only strings, in a second lazy catalog owned by the panel) moves into
-> `notifications-history`; anything weaker, such as recording only under `bell` or dropping the
-> badge under `toast` and `inline`, needs the owner's acceptance (§19, concern 2, as superseded).
+> count read, the enabled bell and the disclosure state that opens the panel (`onToggle` and
+> `visited`) stay, so the first click still mounts the panel; what is not needed to paint the bell
+> or open the panel (the in-panel key handler, the outside-click handler and the panel-only
+> `notification_center.history.*` strings, in a second lazy catalog owned by the panel's file)
+> moves into `notifications-history`. That catalog entry is the one conditional policy edit the
+> epics' definition of done allows, and only under this fallback (readiness R3-09). Anything
+> weaker, such as recording only under `bell` or dropping the badge under `toast` and `inline`,
+> needs the owner's acceptance (§19, concern 2, as superseded).
 
 ### 6.4 Chunk map (NFR-11, NFR-12)
 
@@ -766,7 +791,7 @@ M-15, R2-03).
 | --------------------------- | ---------------------------- | ------------------------------------------- | --------- |
 | eager `index`               | every page                   | choice guard, style list                    | ≤ 0.5 kB  |
 | `settings`                  | `/settings`                  | port, outlet, slot, A, B, content           | ≈ +4 kB   |
-| `ui-app-shell`              | protected pages              | surface hook, `BellSlotFrame`, disclosure   | ≈ +0.6 kB |
+| `ui-app-shell`              | protected pages              | `BellSlotFrame`, disclosure, badge tone     | ≈ +0.6 kB |
 | `protected-layout`          | protected pages              | two-slot factory and loader                 | ≈ +0.1 kB |
 | `notifications-shell` new   | protected, every style       | recorder, adapter + seed, bell, badge, host | ≈ 4.5 kB  |
 | `notifications-history` new | first bell open, every style | panel content, history views                | ≈ 2.5 kB  |
@@ -775,7 +800,8 @@ M-15, R2-03).
 
 `notifications-shell` includes the `notification_center` catalog (both locales) and the two lazy
 loaders; the `HeaderIconButton` disclosure and the alert badge tone live in `ui-app-shell` with the
-rest of the header. On `/` the loaded chunk set is `main`'s plus `notifications-shell` under every
+rest of the header. The surface hook `useNotificationSurface` ships in `settings` and in
+`notifications-shell`; after A-23 the header itself reads no style (readiness R3-11). On `/` the loaded chunk set is `main`'s plus `notifications-shell` under every
 style and `notifications-notice` under `bell`; `notifications-history` joins it only after the bell
 is opened (PRD amendment item 31). The store module is shared by `settings` and
 `notifications-shell`; Rspack evaluates a module once per runtime, so there is one store instance.
@@ -1005,7 +1031,6 @@ flowchart LR
   BNotice --> Notice
   Outlet --> Views
   Slot --> Views
-  Panel --> Views
   BNotice --> Views
 ```
 
@@ -1221,9 +1246,11 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
   button. The disabled bell, drawn only by a header with no notifications slot, is unchanged.
   Focus ring 2 px `#1A1C1E`, offset 2. `HeaderBadge` gains `tone: 'muted' | 'alert'`; `alert`
   is a `#D63333` fill with white 12 px text, drawn on desktop and tablet only (P-8). The mobile
-  drawer's `aria-hidden` drawn copy of the header bell (`mobile-navigation.tsx`) draws the same
-  enabled glyph colour `#1A1C1E` when a notifications slot is present, so the drawn header matches
-  the real one; it stays non-interactive (A-29).
+  drawer's `aria-hidden` drawn copy of the header bell (`DrawerHeaderCopies` in
+  `src/components/ui-navigation-drawer/drawer-header-copies.tsx`, reached through `DrawerHeader`
+  and styled at `ui-navigation-drawer/styles.ts:50`; `ui-app-header/mobile-navigation.tsx` only
+  forwards the flag) draws the same enabled glyph colour `#1A1C1E` when a notifications slot is
+  present, so the drawn header matches the real one; it stays non-interactive (A-29).
 - **History panel (every style).** The host `UINotificationHistoryFrame` (shell chunk) owns the
   `id`, `hidden` and the geometry below; the content `UINotificationHistory` (panel chunk) fills
   it. The caret-card geometry at every shell layout, width
@@ -1276,8 +1303,8 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
 
 "Close, Save, `h1`" means: the next or previous close button, then Save, then the `h1` while Save
 is disabled. A and C dismiss through the focus hook before activating Retry; B moves focus to Save,
-withdraws the block and then activates Retry, so focus never falls to `body`. C's panel is a `div`
-with an `h2` and a `ul`, with no `role` attribute.
+withdraws the block and then activates Retry, so focus never falls to `body`. The history panel
+of every style is a `div` with an `h2` and a `ul`, with no `role` attribute.
 
 **The bell disclosure (P-7).** Under every style, `HeaderIconButton` gains an optional `disclosure`
 prop (`HeaderDisclosure { expanded; controls; describedBy; onToggle }`). The button is then enabled
@@ -1285,7 +1312,12 @@ with `aria-expanded` and `aria-controls` set to the panel id; the panel host
 `UINotificationHistoryFrame` is always rendered (in the shell chunk) and `hidden` while closed, so
 the reference always resolves, even before the panel chunk has loaded. Its name stays
 "Сповіщення"; its description is the unread-count hidden text
-(`notification_center.bell.unread_count_one|few|many|other`), or none at zero. Behaviour, in
+(`notification_center.bell.unread_count_one|few|many|other`), or none at zero. With `disclosure`
+the button also takes the unread `count`, draws its own internal `HeaderBadge` with
+`tone="alert"`, and is described only by the `describedBy` text, which `BellNotifications`
+translates and the button renders in its own `HeaderHiddenText`; neither «Ще недоступно» nor the
+button's `app_shell.notifications.count` text applies, so exactly one badge and one description
+exist (A-32, readiness R3-03). Behaviour, in
 `useBellDisclosure`, mirroring `use-user-menu.ts`:
 
 - Enter and Space toggle it (a native button); a raised outcome never opens it; opening hides the
@@ -1331,11 +1363,15 @@ drawn) and the user chip; the existing shell keyboard contracts gain that stop (
 - `ToastIcon`: moved and renamed `NotificationIcon` in `ui-notification-content`.
 - `use-toast-focus.ts`, `use-stack-clearance.ts`: take the new set types and
   `NotificationFocusReturn`.
-- `HeaderIconButton`: optional `disclosure` (the enabled bell). `HeaderBadge`: `tone`.
+- `HeaderIconButton`: optional `disclosure` (the enabled bell), which with `count` draws the
+  alert badge and owns the one count description (A-32). `HeaderBadge`: `tone`.
 - `UIAppHeader`, `UIAppShell`, `AppLayout`, `AppLayoutFrame`: the `notifications` slot
   pass-through; the header draws the disabled bell only when no slot is passed.
-- `MobileNavigation` (`ui-app-header/mobile-navigation.tsx`): the drawn bell copy takes the
-  enabled glyph colour when a notifications slot is present (A-29).
+- `UINavigationDrawer`, `DrawerHeader` and `DrawerHeaderCopies`
+  (`src/components/ui-navigation-drawer/{index.tsx,drawer-header.tsx,drawer-header-copies.tsx,styles.ts}`
+  and `src/components/types/ui-navigation-drawer/`): the drawn bell copy takes the enabled glyph
+  colour when a notifications slot is present (A-29); `MobileNavigation`
+  (`ui-app-header/mobile-navigation.tsx`) only forwards the flag (readiness R3-05).
 - `app-layout.styles.ts`, `use-sticky-focus-clearance.ts`: `--app-top-overhang`.
 - `ShellSlotFactory`, route composer, validator and protected-layout loader: two slot keys.
 
@@ -1365,7 +1401,7 @@ B's anchor connector; `UIInlineStatus` is B; `UIBellNotice` is C's merged card a
 `UINotificationHistoryFrame` is the panel's host (id, `hidden`, geometry) and
 `UINotificationHistory` its presentational content, both common to every style;
 `BellNotifications` is the bell connector of every style (bell, badge, description, disclosure,
-host); `NotificationHistoryPanel` is the lazy panel connector (records to views, mark-all-read);
+host); `NotificationHistoryPanel` is the lazy panel connector (it maps records to views itself and does not use `useNotificationViews`; mark-all-read);
 `BellOutcomeNotice` is C's lazy merged-card connector.
 
 Hooks added with them: `src/components/ui-inline-status/use-inline-reveal.ts`,
@@ -1387,13 +1423,16 @@ registered at runtime by `BellNotifications` (`features/notifications/components
 so it ships in `notifications-shell` and is registered on every protected page under every style,
 before the panel or the notice (both under the same `components/` owner) translates a record; it
 stays one catalog (A-27). The catalog
-first lands with the seed keys (the adapter file is its first owner); the bell and panel strings
-(shown under every style) and the `components/` owner follow with `BellNotifications`. Both catalogs are added to `config/i18n-catalog-policy.json`,
+first lands with the seed keys (the adapter file is its first owner); the panel and time strings
+(shown under every style) and the `components/` owner follow with the two lazy children (epics
+Story 2.11), and the count strings and the runtime registration with `BellNotifications` (epics
+Story 2.12). Both catalogs are added to `config/i18n-catalog-policy.json`,
 `.storybook/preview.tsx` and the pinned list in `tests/unit/scripts/localization-generator.test.js`.
 
 **Types.** Prop types live in `src/components/types/<component>/` and
 `features/notifications/types/` (type-only files). The display types are
-`NotificationView { id; kind; message; action?: NotificationViewAction; time?: string }`,
+`NotificationView { id: string; kind; message; action?: NotificationViewAction; time?: string }`
+(`id` is a `string`: record ids are strings and `useNotificationViews` stringifies the numeric shown id),
 `NotificationViewSet` and `NotificationViewAction { label; onActivate }`.
 
 ## 12. Storybook comparison (FR-28, FR-29)
@@ -1436,7 +1475,8 @@ with a frozen clock for stable times. The history and the badge of every style c
 real in-memory adapter class,
 but never from the module singleton: the `withFreshNotificationRepository(seed?)` decorator in
 `.storybook/notification-story-decorators.tsx` gives each story its own
-`new InMemoryNotificationRepository(seed ?? NOTIFICATION_SEED)` behind the
+`new InMemoryNotificationRepository(seed ?? NOTIFICATION_SEED)` (class and seed imported by name
+from the adapter's module, §3.3, A-33) behind the
 `useNotificationRepository` seam (a story-level substitution of that hook module) and discards it
 after the story. Canvas navigation in the published Storybook reuses one preview iframe
 (`inline = false` isolates docs pages only), so a shared singleton would let the badge count,
@@ -1470,13 +1510,17 @@ That story cannot render the header slot, so C's real-page review is the running
 
 **Isolation.** Every story file that writes the global `#app-runtime-config` block or the
 module-level outlet store (the outlet, slot, `BellNotifications`, `NotificationsShellSlot`,
-`NotificationHistoryPanel`, `BellOutcomeNotice` and comparison stories) sets `parameters.docs.story.inline = false`, so a docs page renders each
+`BellOutcomeNotice` and comparison stories) sets `parameters.docs.story.inline = false`, so a
+docs page renders each
 story in its own iframe and one story's style or raised outcomes never bleed into the next. The
 shared decorators live in `.storybook/notification-story-decorators.tsx`
 (`withNotificationStyle(style)`, `withRaisedNotifications(drafts)`, and, from the story that first
 needs an adapter, `withFreshNotificationRepository(seed?)`), and every call name joins
 `SHARED_STATE_STUB_CALLS` in `tests/unit/tooling/storybook-provider-story-isolation.test.ts`,
-which then asserts `inline: false` on every file that uses them (readiness M-06).
+which then asserts `inline: false` on every file that uses them (readiness M-06). The
+`NotificationHistoryPanel` stories pass fixed rows as args and use no decorator, because the panel
+receives its records from `BellNotifications`, so they write no shared state and are not in that
+list (epics Story 2.11).
 
 **Axe.** There is no Storybook a11y addon. `tests/unit/a11y/notification-comparison.a11y.test.tsx`
 renders every comparison story through `composeStories` and runs `expectNoA11yViolations`, which
@@ -1519,7 +1563,7 @@ CI.
 - **Tooling:** `performance-serving.test.ts` (the `ui_notification` and `notification_center`
   catalogs out of the eager set; slot loaders are `webpackChunkName` `import()` calls);
   `scripts/localization-generator.test.js` (the pinned lazy-catalog list); the depcruise fixture;
-  `storybook-provider-story-isolation.test.ts` (the two notification decorators).
+  `storybook-provider-story-isolation.test.ts` (the three notification decorators).
 - **a11y (jsdom):** `a11y/ui-toast.a11y.test.tsx` kept; new `ui-inline-status`, `ui-bell-notice`,
   `ui-notification-history` (host and content) and `notification-comparison` tests;
   `settings-page-states` per style; the composed header with the enabled bell under each style.
@@ -1547,16 +1591,30 @@ the outlet regions. Coverage stays 100 % over `src`.
   mark-all-read clearing it, Escape, outside click, Tab out, route close, the transient surface left
   alone under `toast` and `inline`, and no network request.
 - **Existing shell specs** that assert the disabled, inert bell change once the registry carries the
-  notifications slot (epics Story 3.4): `tests/e2e/modules/app-shell.spec.ts` (the "disabled
-  search, bell and list" test keeps the search and the list), `tests/e2e/mobile/app-shell-touch.spec.ts`
-  (the bell leaves the inert-tap test and the recorded 40 px gap; it is measured at 44 px), and the
-  keyboard contracts `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` and
-  `home-keyboard.a11y.spec.ts`, whose header stops gain the bell before the chip.
+  notifications slot (epics Story 3.4):
+  - `tests/e2e/modules/app-shell.spec.ts`: the "disabled search, bell and list" test (`:353-377`)
+    keeps the search and the list, and "renders no badge on …" (`:379-395`) becomes "renders the
+    seed badge on …" (the bell described by «1 непрочитане сповіщення», the badge reading 1 on
+    desktop and tablet, the tasks button still «Ще недоступно»);
+  - `tests/e2e/mobile/app-shell-touch.spec.ts`: the bell leaves the inert-tap test (`:301-322`)
+    and the recorded 40 px gap, and joins both of the spec's own `expectTapArea` tests (`:271-299`
+    and, at 320 px, `:368-378`), an `elementFromPoint` probe around the centre, at 44 px;
+  - `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts`, four cases: `sidebarStops` (`:47-62`), the
+    rail's Shift+Tab (`:97-104`), one Tab from the logo (`:132-147`) and the mobile order
+    (`:298-306`) gain the bell between the logo and the chip. `home-keyboard.a11y.spec.ts` is
+    unchanged: its tab orders start at the sidebar Sign out and hold no header stop;
+  - `tests/e2e/utils/app-shell.ts`: `expectShellReady` also waits for the enabled bell.
+
+  The visual helpers wait the same way (epics Story 4.6): `tests/visual/stabilize-page.ts`, on a
+  page rendered in the shell, and the app-shell spec's `openShell` wait for the enabled bell
+  (`aria-expanded="false"`) and, on desktop and tablet, the expected badge text, so a capture never
+  races the bell's chunk or the badge's async `list()` (readiness R3-06, R3-08).
+
 - **Helper:** `utils/settings-page.ts` gains `outcomeSurface(page, style)`: the toast stack (the
   parent of a close button), the `form` element, or the `banner` landmark; outcomes are found by
   text inside it, never by `data-testid`.
 - **Clearance:** 320 × 256 and the three sizes, one and three outcomes, tabbing through every
-  control (NFR-4), including the open panel's controls beside three toasts under `toast` (K14).
+  control (NFR-4), including the open panel's controls beside three toasts under `toast` (K13).
 - **Mobile lane:** `tests/e2e/mobile/settings-touch.spec.ts` per style: 44 px for close, Retry,
   the bell and mark-all-read (the bell and mark-all-read under every style); no horizontal overflow
   at 320.
@@ -1701,8 +1759,12 @@ focus; the e2e asserts that Save keeps focus.
 
 K2a: Lighthouse runs on `/` under the default `toast`, which now paints the enabled bell and
 the badge from `notifications-shell`. If a category regresses, PRD amendment item 31's fallback
-applies: the count read and the bell stay, the disclosure handlers and panel-only strings move to
-`notifications-history`; anything weaker needs the owner. K6a: the 243 re-recorded baselines are
+applies: the count read, the bell, `onToggle` and `visited` stay, so the first click still opens
+the panel; the in-panel key and outside-click handlers and the panel-only strings (the one
+conditional catalog entry) move to `notifications-history`; anything weaker needs the owner. The
+measure is every Lighthouse category floor and the `error`-level `resource-summary:script:size`
+and `resource-summary:total:size` assertions on `/`, against the unchanged `lighthouse.*` values of
+`config/performance-budget.json` (readiness R3-09). K6a: the 243 re-recorded baselines are
 expected to differ only inside the header's bell box (and, in the drawer captures, its drawn
 copy); the reviewer reads the CI diff images per spec and engine and stops on any diff outside
 that box, and the changed-PNG list must equal NFR-15's 285 names exactly. K13a: if a focused panel
@@ -1712,38 +1774,41 @@ that hides a toast.
 
 ## 17. Assumptions added by this stage
 
-| Id   | Decision (short)                                                               | §        |
-| ---- | ------------------------------------------------------------------------------ | -------- |
-| A-1  | Port in `src/lib` and `src/hooks`, adapter in the feature                      | 2        |
-| A-2  | Seed in the adapter's own file (no exemption entry)                            | 3.3      |
-| A-3  | Records and drafts carry i18n keys, not text                                   | 3.3, 5.1 |
-| A-4  | Shell hooks read the adapter through a hook seam, not `useService`             | 3.4      |
-| A-5  | Registrar is a feature-root `di.ts` with one aggregator entry                  | 4        |
-| A-6  | The token is kept with no runtime consumer                                     | 4        |
-| A-7  | The announcer is page-level, inside `UINotificationOutlet`                     | 5.4      |
-| A-8  | The shell slot is mounted under every style, so all are recorded and counted   | 6.3      |
-| A-9  | The built-image check rides the `security headers` boot                        | 7.4      |
-| A-10 | `[no-adr]`; ADR-003 only if reviewers ask                                      | 7.6      |
-| A-11 | B and C use the most severe tone for the shared edge                           | 9.4, 9.5 |
-| A-12 | Under `bell`, opening calls `dismissAll()`; the card does not return (A-26)    | 5.2, 8.3 |
-| A-13 | No count description at zero unread                                            | 10       |
-| A-14 | Comparison stories use a shared frame; axe via `composeStories`                | 12       |
-| A-15 | Motion: A 180 ms slide and fade, B 160 ms fade, C 180 ms drop                  | 9        |
-| A-16 | C's card height is capped at `max(4rem, 50dvh - 4rem)`                         | 9.5      |
-| A-17 | Seed uses feature-owned `notification_center.seed.*` keys (revised 2026-11-12) | 3.3      |
-| A-18 | Choices read through `AppConfigChoiceGuard`, not a new source method           | 7.1      |
-| A-19 | Outside click is a document `pointerdown`; no backdrop                         | 10       |
-| A-20 | The mobile bell is a 44 px box by negative margin, not `::before`              | 9.5      |
-| A-21 | `clear()` keeps the counters; the recorder keys on `(state, prev)`             | 3.4, 5.2 |
-| A-22 | No `BellPlaceholder`; the slot suspends to the factory's boundary in the frame | 6.3      |
-| A-23 | Bell, badge, count, history under every style; disabled bell only with no slot | 6.2, 6.3 |
-| A-24 | Three chunks: shell (bell, badge), history (first open), notice (`bell` only)  | 6.4      |
-| A-25 | Panel host in the shell chunk; content lazy from the first open; no prefetch   | 6.3, 10  |
-| A-26 | `show()` calls `dismissAll()` only under `bell`; A and B lose nothing on open  | 3.4, 10  |
-| A-27 | One `notification_center` catalog, registered in `notifications-shell`         | 11.3     |
-| A-28 | 285 changed PNGs: 243 shell baselines re-recorded, 42 new; no header captures  | 13.3     |
-| A-29 | The drawer's drawn bell copy takes the enabled glyph colour                    | 9.5      |
-| A-30 | Comparison adds `<Style>HistoryOpen` per style: 43 stories                     | 12.2     |
+| Id   | Decision (short)                                                                          | §        |
+| ---- | ----------------------------------------------------------------------------------------- | -------- |
+| A-1  | Port in `src/lib` and `src/hooks`, adapter in the feature                                 | 2        |
+| A-2  | Seed in the adapter's own file (no exemption entry)                                       | 3.3      |
+| A-3  | Records and drafts carry i18n keys, not text                                              | 3.3, 5.1 |
+| A-4  | Shell hooks read the adapter through a hook seam, not `useService`                        | 3.4      |
+| A-5  | Registrar is a feature-root `di.ts` with one aggregator entry                             | 4        |
+| A-6  | The token is kept with no runtime consumer                                                | 4        |
+| A-7  | The announcer is page-level, inside `UINotificationOutlet`                                | 5.4      |
+| A-8  | The shell slot is mounted under every style, so all are recorded and counted              | 6.3      |
+| A-9  | The built-image check rides the `security headers` boot                                   | 7.4      |
+| A-10 | `[no-adr]`; ADR-003 only if reviewers ask                                                 | 7.6      |
+| A-11 | B and C use the most severe tone for the shared edge                                      | 9.4, 9.5 |
+| A-12 | Under `bell`, opening calls `dismissAll()`; the card does not return (A-26)               | 5.2, 8.3 |
+| A-13 | No count description at zero unread                                                       | 10       |
+| A-14 | Comparison stories use a shared frame; axe via `composeStories`                           | 12       |
+| A-15 | Motion: A 180 ms slide and fade, B 160 ms fade, C 180 ms drop                             | 9        |
+| A-16 | C's card height is capped at `max(4rem, 50dvh - 4rem)`                                    | 9.5      |
+| A-17 | Seed uses feature-owned `notification_center.seed.*` keys (revised 2026-11-12)            | 3.3      |
+| A-18 | Choices read through `AppConfigChoiceGuard`, not a new source method                      | 7.1      |
+| A-19 | Outside click is a document `pointerdown`; no backdrop                                    | 10       |
+| A-20 | The mobile bell is a 44 px box by negative margin, not `::before`                         | 9.5      |
+| A-21 | `clear()` keeps the counters; the recorder keys on `(state, prev)`                        | 3.4, 5.2 |
+| A-22 | No `BellPlaceholder`; a static slot never suspends, its lazy children have own boundaries | 6.3      |
+| A-23 | Bell, badge, count, history under every style; disabled bell only with no slot            | 6.2, 6.3 |
+| A-24 | Three chunks: shell (bell, badge), history (first open), notice (`bell` only)             | 6.4      |
+| A-25 | Panel host in the shell chunk; content lazy from the first open; no prefetch              | 6.3, 10  |
+| A-26 | `show()` calls `dismissAll()` only under `bell`; A and B lose nothing on open             | 3.4, 10  |
+| A-27 | One `notification_center` catalog, registered in `notifications-shell`                    | 11.3     |
+| A-28 | 285 changed PNGs: 243 shell baselines re-recorded, 42 new; no header captures             | 13.3     |
+| A-29 | The drawer's drawn bell copy takes the enabled glyph colour                               | 9.5      |
+| A-30 | Comparison adds `<Style>HistoryOpen` per style: 43 stories                                | 12.2     |
+| A-31 | The lazy notice has its own non-null `Suspense`; nothing above it suspends                | 6.2, 6.3 |
+| A-32 | With `disclosure`, `HeaderIconButton` owns the alert badge and one description            | 6.2, 10  |
+| A-33 | `NOTIFICATION_SEED` is a named, frozen data export of the adapter module                  | 3.3      |
 
 ## 18. Open questions
 

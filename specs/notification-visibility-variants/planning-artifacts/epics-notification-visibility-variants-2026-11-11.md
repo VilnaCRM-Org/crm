@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 project_name: crm
 date: 2026-11-11
 feature: notification-visibility-variants
-issue: none
+issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm + sm, autonomous run'
 inputDocuments:
   - specs/notification-visibility-variants/planning-artifacts/run-summary-notification-visibility-variants-2026-11-11.md
@@ -19,7 +19,8 @@ inputDocuments:
 # Epics and stories: notification visibility variants
 
 **Author:** pm + sm, autonomous run **Date:** 2026-11-11 **Feature:**
-`notification-visibility-variants` **Issue:** none (no issue or PR until the owner approves, MA-4)
+`notification-visibility-variants` **Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391),
+planning pull request #392 (no code is committed or pushed until the owner approves, MA-4)
 
 Predecessors: the [run summary](./run-summary-notification-visibility-variants-2026-11-11.md)
 (binding; later blocks supersede earlier ones), the
@@ -27,13 +28,13 @@ Predecessors: the [run summary](./run-summary-notification-visibility-variants-2
 P-1..13) **as amended** (the amendment blocks after its intro record architecture §19, readiness
 iterations 1 and 2, and the owner decision of 2026-11-12 that the unread count shows under every
 style, items 21–36), and the [architecture](./architecture-notification-visibility-variants-2026-11-11.md)
-(AD-1..12, A-1..A-30, §2–§15). The style follows the
+(AD-1..12, A-1..A-33, §2–§15). The style follows the
 [user-settings epics](../../user-settings/planning-artifacts/epics-user-settings-2026-10-06.md).
 
 ## Overview
 
 This document decomposes the amended PRD (the authoritative _what_) and the architecture (the
-authoritative _how_) into four epics, 35 stories and two follow-ups. Requirement ids are the
+authoritative _how_) into four epics, 36 stories and two follow-ups. Requirement ids are the
 PRD's, section references (`§n`) are the architecture's, and `R`, `MA`, `O`, `P` and `A` ids come
 from the decision record. No story waits for user-service: the only repository implementation is
 the client-side in-memory adapter (MA-5), and #526 and #527 are never called.
@@ -91,10 +92,17 @@ file at most 10 functions, 6 closures and 120 LLOC; per function at most 10 LLOC
 > (every style) take translated text only, as every renderer does (§5.2, "Renderers never see
 > keys"). The bell and panel strings of PRD §13, shown under every style, live in the feature's
 > lazy catalog under `notification_center.*` (§11.3), registered at runtime by
-> `BellNotifications` in `notifications-shell`, so `BellNotifications` and
-> `NotificationHistoryPanel` (Story 2.11) translate the panel heading, the mark-all-read label,
-> the unread mark, the empty line and the bell description and pass them down as typed copy props.
-> `src/components/**` therefore registers no feature catalog.
+> `BellNotifications` in `notifications-shell`, so `NotificationHistoryPanel` (Story 2.11)
+> translates the panel heading, the mark-all-read label, the unread mark and the empty line, and
+> `BellNotifications` (Story 2.12) translates the bell's count description; both pass them down as
+> typed copy props. `src/components/**` therefore registers no feature catalog.
+
+> Assumption (readiness iteration 3, R3-01): the bell connector of every style is three stories,
+> not one. Story 2.11 builds the two lazy children (`NotificationHistoryPanel`,
+> `BellOutcomeNotice`) with their loaders, Story 2.12 builds `BellNotifications` over them, and
+> Story 2.13 builds the shell slot. Each lazy child is its own module behind its own loader, so it
+> lands and is tested before the connector that mounts it; until Story 2.12 registers the feature
+> catalog at runtime, the children's tests translate through a test helper.
 
 > Assumption: `BellSlotFrame` (Story 2.8) has exactly the box of the bell it replaces at each
 > shell layout and holds, under every style, the slot's enabled bell (owner decision 2026-11-12,
@@ -190,7 +198,11 @@ Each story's own criteria add to these; a story is not done until all of them ho
   to make a run pass. The only reviewed catalog-policy edits are the two new lazy entries
   (`features/notifications`, Story 1.5, which Story 2.11 extends with a `components` owner;
   `components/ui-notification-content`, Story 2.2) and the removal of the `components/ui-toast`
-  entry (Story 2.3); no other catalog gains an owner. Each one also updates the pinned list in
+  entry (Story 2.3); no other catalog gains an owner. One further entry is conditional and
+  allowed only under PRD amendment item 31's Lighthouse fallback, applied by Story 3.4: a second
+  lazy catalog owned by `NotificationHistoryPanel`'s file, which takes the panel-only
+  `notification_center.history.*` keys out of the feature catalog into `notifications-history`;
+  if the fallback is not applied, it does not exist. Each one also updates the pinned list in
   `tests/unit/scripts/localization-generator.test.js:182-190` in the same story. No `eslint-disable`, `@ts-ignore`,
   `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`, `.fixme`, `waitForTimeout`,
   conditional `expect`, `A11Y_EXCEPTIONS` entry or `data-testid`; no inline comments beyond a
@@ -242,64 +254,64 @@ Each story's own criteria add to these; a story is not done until all of them ho
 
 ## FR and NFR Coverage Map
 
-| Requirement | Stories                               |
-| ----------- | ------------------------------------- |
-| FR-1        | 1.5, 1.6, 1.7                         |
-| FR-2        | 1.5, 1.7                              |
-| FR-3        | 1.5                                   |
-| FR-4        | 1.5, 1.6, 4.2                         |
-| FR-5        | 1.1, 1.2, 1.8, 3.4                    |
-| FR-6        | 2.9, 3.1, 4.5                         |
-| FR-7        | 1.5, 1.6, 1.7, 4.9                    |
-| FR-8        | 1.3, 1.4                              |
-| FR-9        | 1.3, 4.7                              |
-| FR-10       | 1.3                                   |
-| FR-11       | 1.4, 2.11, 2.12, 3.4, 4.2, 4.3        |
-| FR-12       | 2.3                                   |
-| FR-13       | 2.3, 3.1, 4.4                         |
-| FR-14       | 2.3                                   |
-| FR-15       | 2.4, 2.10, 3.2                        |
-| FR-16       | 1.1, 2.4, 2.10, 3.2                   |
-| FR-17       | 2.4, 3.2                              |
-| FR-18       | 2.5, 4.6                              |
-| FR-19       | 2.5, 4.4                              |
-| FR-20       | 2.2, 2.5, 2.11                        |
-| FR-21       | 2.5, 4.4                              |
-| FR-22       | 2.7, 2.11, 3.3, 3.4, 4.3, 4.5         |
-| FR-23       | 2.7, 2.11, 3.4, 4.3                   |
-| FR-24       | 1.9, 2.6, 2.11, 4.3, 4.4              |
-| FR-25       | 3.1                                   |
-| FR-26       | 3.1, 3.2                              |
-| FR-27       | 2.9, 3.1, 3.4                         |
-| FR-28       | 2.1–2.12 (component stories), 4.1     |
-| FR-29       | 4.1                                   |
-| FR-30       | 4.2, 4.5, 4.6, 4.7                    |
-| FR-31       | 4.8                                   |
-| FR-32       | Follow-up 5.1                         |
-| FR-33       | Follow-up 5.2                         |
-| FR-34       | 1.3, 1.5, 3.3, 4.9                    |
-| NFR-1       | 1.1, 1.2, 2.9, 3.1, 4.2, 4.5          |
-| NFR-2       | 2.3, 2.5, 2.10, 2.11, 3.1, 4.5        |
-| NFR-3       | 1.1, 1.5, 2.3, 2.4, 2.5, 2.11         |
-| NFR-4       | 2.3, 2.5, 3.1, 4.4                    |
-| NFR-5       | 2.2, 2.3, 2.4, 2.5, 2.6, 2.7          |
-| NFR-6       | 2.3, 2.4, 2.5, 4.6                    |
-| NFR-7       | 2.2, 2.3, 2.4, 2.5, 2.6, 2.7          |
-| NFR-8       | 2.2, 2.4, 2.5, 2.6, 2.7, 4.4          |
-| NFR-9       | 1.9, 2.7, 2.11, 3.4, 4.3, 4.5         |
-| NFR-10      | Epic 2 jest-axe, 4.1, 4.4, 4.5        |
-| NFR-11      | 3.4, 4.10                             |
-| NFR-12      | 1.3, 1.6, 2.11, 2.12, 3.4, 4.2, 4.10  |
-| NFR-13      | 3.4, 4.10                             |
-| NFR-14      | 4.6, every story (DoD)                |
-| NFR-15      | 2.3, 3.4, 4.6                         |
-| NFR-16      | every logic story (DoD), 4.10         |
-| NFR-17      | every story (DoD), 1.6, 2.2, 4.10     |
-| NFR-18      | every story (DoD), 1.1, 1.5, 1.7      |
-| NFR-19      | 1.5, 2.2, 2.3, 2.11                   |
-| NFR-20      | 1.1, 1.2, 2.3, 4.2, every story (DoD) |
-| NFR-21      | 1.5, 1.8, 3.4                         |
-| NFR-22      | 3.3, 4.10                             |
+| Requirement | Stories                                            |
+| ----------- | -------------------------------------------------- |
+| FR-1        | 1.5, 1.6, 1.7                                      |
+| FR-2        | 1.5, 1.7                                           |
+| FR-3        | 1.5                                                |
+| FR-4        | 1.5, 1.6, 4.2                                      |
+| FR-5        | 1.1, 1.2, 1.8, 2.13, 3.4                           |
+| FR-6        | 2.9, 3.1, 4.5                                      |
+| FR-7        | 1.5, 1.6, 1.7, 4.9                                 |
+| FR-8        | 1.3, 1.4                                           |
+| FR-9        | 1.3, 4.7                                           |
+| FR-10       | 1.3                                                |
+| FR-11       | 1.4, 2.11, 2.12, 2.13, 3.4, 4.2, 4.3               |
+| FR-12       | 2.3                                                |
+| FR-13       | 2.3, 3.1, 4.4                                      |
+| FR-14       | 2.3                                                |
+| FR-15       | 2.4, 2.10, 3.2, 4.2                                |
+| FR-16       | 1.1, 2.4, 2.10, 3.2                                |
+| FR-17       | 2.4, 3.2                                           |
+| FR-18       | 2.5, 2.11, 4.6                                     |
+| FR-19       | 2.5, 2.11, 4.4                                     |
+| FR-20       | 2.2, 2.5, 2.11, 2.12                               |
+| FR-21       | 2.5, 2.11, 4.4                                     |
+| FR-22       | 2.7, 2.8, 2.12, 2.13, 3.3, 3.4, 4.1, 4.3, 4.5, 4.6 |
+| FR-23       | 1.9, 2.7, 2.12, 2.13, 3.4, 4.1, 4.2, 4.3, 4.6      |
+| FR-24       | 1.9, 2.6, 2.11, 2.12, 4.3, 4.4                     |
+| FR-25       | 3.1                                                |
+| FR-26       | 3.1, 3.2                                           |
+| FR-27       | 2.9, 3.1, 3.4                                      |
+| FR-28       | 2.1–2.13 (component stories), 4.1                  |
+| FR-29       | 4.1                                                |
+| FR-30       | 4.2, 4.5, 4.6, 4.7                                 |
+| FR-31       | 4.8                                                |
+| FR-32       | Follow-up 5.1                                      |
+| FR-33       | Follow-up 5.2                                      |
+| FR-34       | 1.3, 1.5, 3.3, 4.9                                 |
+| NFR-1       | 1.1, 1.2, 2.9, 3.1, 4.2, 4.5                       |
+| NFR-2       | 2.3, 2.5, 2.10, 2.12, 3.1, 4.5                     |
+| NFR-3       | 1.1, 1.5, 2.3, 2.4, 2.5, 2.11, 2.12                |
+| NFR-4       | 2.3, 2.5, 3.1, 4.4                                 |
+| NFR-5       | 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7                  |
+| NFR-6       | 2.3, 2.4, 2.5, 4.6                                 |
+| NFR-7       | 2.2, 2.3, 2.4, 2.5, 2.6, 2.7                       |
+| NFR-8       | 2.2, 2.4, 2.5, 2.6, 2.7, 4.4                       |
+| NFR-9       | 1.9, 2.7, 2.12, 3.4, 4.3, 4.5                      |
+| NFR-10      | Epic 2 jest-axe, 4.1, 4.4, 4.5                     |
+| NFR-11      | 3.4, 4.10                                          |
+| NFR-12      | 1.3, 1.6, 2.11, 2.12, 2.13, 3.4, 4.2, 4.10         |
+| NFR-13      | 3.4, 4.10                                          |
+| NFR-14      | 4.6, every story (DoD)                             |
+| NFR-15      | 2.3, 2.8, 3.4, 4.6                                 |
+| NFR-16      | every logic story (DoD), 4.10                      |
+| NFR-17      | every story (DoD), 1.6, 2.2, 4.10                  |
+| NFR-18      | every story (DoD), 1.1, 1.5, 1.7                   |
+| NFR-19      | 1.5, 2.2, 2.3, 2.11, 2.12                          |
+| NFR-20      | 1.1, 1.2, 2.3, 4.2, every story (DoD)              |
+| NFR-21      | 1.5, 1.8, 3.4                                      |
+| NFR-22      | 3.3, 4.9, 4.10                                     |
 
 Every FR-1..FR-34 and NFR-1..NFR-22 appears in at least one row; FR-32 and FR-33 are covered only
 by follow-ups, by design (P-13).
@@ -347,8 +359,9 @@ So that every variant renders the same state and today's announcement behaviour 
 `NotificationKind`, `NotificationMessageKey`, `NotificationAnchor`, `NotificationActivate`,
 `NotificationAction`, `NotificationDraft(Set)`, `ShownNotification(Set)`,
 `NotificationAnnouncement`, `NotificationInlineBatch(Set)`, `NotificationFocusReturn`,
-`NotificationOutletState`, `NotificationTranslate`, `NotificationClock`, `NotificationView`,
-`NotificationViewAction`, `NotificationViewSet`), `lib/notifications/cleared-notification-outlet.ts`
+`NotificationOutletState`, `NotificationTranslate`, `NotificationClock`, `NotificationView`
+(`id: string`, so a shown item's numeric id is stringified by Story 1.2's hook and a record's string id
+fits unchanged), `NotificationViewAction`, `NotificationViewSet`), `lib/notifications/cleared-notification-outlet.ts`
 (NEW: the frozen `CLEARED_NOTIFICATION_OUTLET` initial value, if the store file would otherwise
 hold logic), `lib/notifications/use-notification-outlet-store.ts` (NEW: `create<…>()(…)`, root
 import, no middleware), `lib/notifications/notification-outlet-actions.ts` (NEW:
@@ -374,7 +387,7 @@ claim; adding a rule instead needs its own must-fail fixture), `make lint-metric
 - Given `publishFocus({ primary, fallback })`, when the state is read, then `focus` holds both refs; `clear()` resets it to `null`.
 - Given fake timers advanced by ten minutes after a raise, when the state is read, then every item is still shown (NFR-3: no timer exists in the store or the actions).
 - Given `resetClientStores()`, when it runs between tests, then the outlet store is back to its initial value.
-- Given the type files, when `make lint-eslint` and `make lint-deps` run, then they hold only type-level constructs and every boundary shape is a named interface or a set (TB-1); and given every source file under `src/lib/notifications/`, when `import-graph.test.ts` runs, then no import specifier (value or type) reaches `@/modules`, `@/components`, `@/hooks`, `@/providers` or `@/services` (readiness R2-11: the isolation is owned by this test, not by dependency-cruiser).
+- Given the type files, when `make lint-eslint` and `make lint-deps` run, then they hold only type-level constructs and every boundary shape is a named interface or a set (TB-1), `NotificationView.id` is a `string` while `ShownNotification.id` stays a `number` (readiness R4-01); and given every source file under `src/lib/notifications/`, when `import-graph.test.ts` runs, then no import specifier (value or type) reaches `@/modules`, `@/components`, `@/hooks`, `@/providers` or `@/services` (readiness R2-11: the isolation is owned by this test, not by dependency-cruiser).
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors, the initial value loaded through `isolated-module.ts`.
 - Not applicable: i18n (no key; the translate function is injected), visual (no rendering), a11y rendering (covered by the outlet in Story 2.9).
 
@@ -393,7 +406,7 @@ mapping").
 `new NotificationOutletActions(useNotificationOutletStore, Date.now)`, returns a stable
 `NotificationsPort` of `raise`, `dismiss`, `dismissAll`, `withdraw`; binds `t`),
 `src/hooks/use-shown-notifications.ts`, `use-inline-batch.ts`, `use-notification-announcement.ts`,
-`use-notification-focus.ts`, `use-notification-views.ts` (NEW), `src/hooks/types/notifications-port.ts`
+`use-notification-focus.ts`, `use-notification-views.ts` (NEW: maps shown items only; the view `id` is `String(item.id)`), `src/hooks/types/notifications-port.ts`
 (NEW, type-only: `NotificationsPort`, the views hook's options), tests under `tests/unit/hooks/`.
 
 **Gates:** DoD local gates; `make lint-metrics`; `react-hooks/exhaustive-deps` without
@@ -405,7 +418,7 @@ suppression.
 - Given `jest.setSystemTime` fixed, when `raise` runs through the hook, then every shown item's `raisedAt` equals that instant.
 - Given `useShownNotifications`, `useNotificationAnnouncement` and `useNotificationFocus`, when an unrelated field of the store changes, then each returns the identical object it returned before (no `useShallow`, every selector returns a stored field).
 - Given `useInlineBatch('primary')` and a store with batches for `primary` and `email`, when it is read, then it returns only the latest `primary` batch's shown items as a `ShownNotificationSet`, memoised on `shown` and `inline`, and an empty set when the anchor has no batch or its items were dismissed.
-- Given `useNotificationViews(set)` with and without a time key, when it maps, then `message` and `action.label` are translated, `time` is present only when a time key is passed (through `{{value, datetime}}`, no raw `Intl`), and renderers receive no message key.
+- Given `useNotificationViews(set)` with and without a time key, when it maps, then each view's `id` is the shown item's numeric id as a string, `message` and `action.label` are translated, `time` is present only when a time key is passed (through `{{value, datetime}}`, no raw `Intl`), and renderers receive no message key.
 - Given `uk` and `en`, when a view is mapped for `settings.toasts.saved`, then the text equals «Зміни збережено» and "Changes saved" respectively (copy unchanged).
 - Given the hook tests, when they run under the console gate, then no `act()` warning or other console output appears.
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
@@ -516,8 +529,10 @@ So that every variant records into one history, nothing calls a back end, and ex
 **Files:** `features/notifications/types/notification-record.ts`, `notification-repository.ts`
 (NEW, type-only; import only port types with `import type`),
 `features/notifications/repositories/in-memory-notification-repository.ts` (NEW:
-`InMemoryNotificationRepository`, the module-private `NOTIFICATION_SEED`, and
-`export default new InMemoryNotificationRepository(NOTIFICATION_SEED)`),
+`InMemoryNotificationRepository` exported by name, `NOTIFICATION_SEED` exported by name as a
+frozen `NotificationRecordSet` data value (no function-valued member, so the #100/#180 gate does
+not apply, and the file keeps a default export, so `import/prefer-default-export` does not fire;
+readiness R3-04), and `export default new InMemoryNotificationRepository(NOTIFICATION_SEED)`),
 `features/notifications/repositories/index.ts` (NEW barrel), `features/notifications/index.ts`
 (NEW: types-only public barrel), `features/notifications/i18n/{en,uk}.json` (NEW lazy catalog,
 top-level namespace `notification_center`: `notification_center.seed.password_changed`,
@@ -535,7 +550,7 @@ key invariant, the extraction rule and checklist), `tests/builders/notification-
 `tests/unit/modules/user/features/notifications/repositories/`, and
 `tests/unit/modules/user/features/notifications/i18n/seed-copy.test.ts` (NEW: imports both feature
 and settings catalogs, readiness R2-09). `BellNotifications` registers the
-catalog at runtime (Story 2.11); until then the seed keys are data that nothing translates.
+catalog at runtime (Story 2.12); until then the seed keys are data that nothing translates.
 
 **Gates:** DoD local gates; `make lint-deps` (`injectable-classes-no-value-imports` with only
 `import type` lines, no `EXEMPT_RENDER_PATH_FILES` entry), `make lint-i18n`, `make lint-docs`,
@@ -546,11 +561,12 @@ catalog at runtime (Story 2.11); until then the seed keys are data that nothing 
 - Given a fresh `InMemoryNotificationRepository(NOTIFICATION_SEED)`, when `list()` resolves, then it returns the seed newest first, all `kind: 'success'`: `seed-1` `notification_center.seed.password_changed` unread at `2026-11-10T09:15:00Z`, `seed-2` `notification_center.seed.email_sent` read at `2026-11-09T16:40:00Z`, `seed-3` `notification_center.seed.saved` read at `2026-11-08T11:05:00Z`, and `countUnread()` resolves 1 (PRD readiness amendments 11 and 18).
 - Given `record` of a set of three drafts with one `createdAt`, when it resolves, then it returns three unread records with ids `notification-1..3`, and `list()` now starts with them, stable in insertion order for equal instants (FR-3).
 - Given three unread entries, when `markAllRead()` resolves, then `countUnread()` is 0 and every listed record has `read: true`.
+- Given the adapter module, when its exports are read, then it exports the default instance, the `InMemoryNotificationRepository` class and `NOTIFICATION_SEED` by name, the seed is frozen (`Object.isFrozen`), and a fresh `InMemoryNotificationRepository(NOTIFICATION_SEED)` lists the same rows as the default instance before any write, so the tests and the Story 2.12 Storybook decorator import one seed (readiness R3-04).
 - Given every operation, when it is called, then it resolves on a microtask; a spy on `fetch`, `XMLHttpRequest`, `localStorage` and `sessionStorage` records no call (FR-4, NFR-21).
 - Given two new repository instances in one test, when one records, then the other's list is unchanged (instance-held state; a reload re-seeds, FR-4).
 - Given a record, when its fields are inspected, then it holds only `id`, `kind`, `messageKey`, `createdAt` and `read`, no e-mail, name, password, token or user id and no action (NFR-21).
 - Given fake timers advanced ten minutes, when the history is listed, then nothing was marked read or removed (NFR-3).
-- Given `uk` and `en`, when `make lint-i18n` runs, then the three seed literals, which the repository file binds to `messageKey` (so the `*Key` binding rule reads them as key references), resolve against the notifications feature catalog, whose owner entry names that repository file inside the notifications feature folder (Story 1.5 therefore introduces the feature catalog with these three keys; Story 2.11 adds the remaining `notification_center.*` copy to the same catalog); the three keys exist in both lazy catalog files with texts equal to `settings.toasts.password_changed`, `email_sent` and `saved` («Ви успішно змінили пароль» / "You have changed your password", «Ми надіслали посилання для підтвердження на нову адресу» / "We sent a confirmation link to the new address", «Зміни збережено» / "Changes saved"), the adapter file resolves them as an owner, no `[lazy-key-scope]` or `[undefined-key]` finding is reported, and the eager `localization.json` key set equals `main`'s.
+- Given `uk` and `en`, when `make lint-i18n` runs, then the three seed literals, which the repository file binds to `messageKey` (so the `*Key` binding rule reads them as key references), resolve against the notifications feature catalog, whose owner entry names that repository file inside the notifications feature folder (Story 1.5 therefore introduces the feature catalog with these three keys; Stories 2.11 and 2.12 add the remaining `notification_center.*` copy to the same catalog); the three keys exist in both lazy catalog files with texts equal to `settings.toasts.password_changed`, `email_sent` and `saved` («Ви успішно змінили пароль» / "You have changed your password", «Ми надіслали посилання для підтвердження на нову адресу» / "We sent a confirmation link to the new address", «Зміни збережено» / "Changes saved"), the adapter file resolves them as an owner, no `[lazy-key-scope]` or `[undefined-key]` finding is reported, and the eager `localization.json` key set equals `main`'s.
 - Given the notifications feature catalog and the settings catalog (`settings.toasts.*`) imported side by side, when `seed-copy.test.ts` runs, then for each of `notification_center.seed.password_changed`, `.email_sent` and `.saved` the `uk` text equals `settings.toasts.password_changed`, `email_sent` and `saved` respectively in `uk`, and the `en` text equals the `en` counterpart, so a later copy change in the settings catalog turns the test red until the seed follows (`make lint-i18n` does not compare texts; readiness R2-09).
 - Given `config/i18n-catalog-policy.json`, when it is diffed against `main`, then the settings catalog entry and its owners are unchanged and the only additions are the `notifications/i18n` entry and its one owner.
 - Given the localization-generator test, when it runs, then its pinned `lazyCatalogs[].catalog` list holds `modules/user/features/notifications/i18n` in policy order and passes; `performance-serving.test.ts` keeps `notification_center` out of the eager set.
@@ -709,7 +725,7 @@ tests.
 - Given a raise while closed, when the store updates, then `expanded` stays `false` (a raised outcome never opens it, FR-22).
 - Given the hook tests, when they run under the console gate, then no `act()` warning appears (every async refresh awaited).
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
-- Not applicable: i18n (strings arrive in Story 2.11), visual, rendering a11y (Story 2.11 pins the rendered disclosure).
+- Not applicable: i18n (strings arrive in Stories 2.11 and 2.12), visual, rendering a11y (Story 2.12 pins the rendered disclosure).
 
 ## Epic 2: Components
 
@@ -954,12 +970,14 @@ closed so `aria-controls` always resolves even before the panel chunk loads, the
 geometry, and a `children` slot; no `role`), `src/components/ui-notification-history/index.tsx`
 (NEW: `UINotificationHistory`, the content: an `h2`, a `ul` of rows, an empty-state line and the
 mark-all-read text button; no `role`), `styles.ts` (NEW), `src/components/types/ui-notification-history/index.ts`
-(NEW: the frame props, rows as a `NotificationViewSet` plus read flags, a typed copy prop,
+(NEW: the frame props, rows as a `NotificationViewSet` plus read flags keyed by the view's string `id`, a typed copy prop,
 handlers), `history-frame.stories.tsx` (NEW: `Closed`, `OpenWithContent`, `OpenLoading` with the
 deferred `RouteFallback`), `ui-notification-history.stories.tsx` (NEW: `Seeded`, `AllRead`,
 `Empty`), tests and `tests/unit/a11y/ui-notification-history.a11y.test.tsx`.
 
-**Gates:** DoD local gates; `make lint-metrics`.
+**Gates:** DoD local gates; `make lint-metrics`; the Figma design gate through the Figma MCP on
+`377:18485` (the panel and the enabled bell) and the shell header frames; an unreachable MCP
+reports `BLOCKED`, never skips (readiness R3-10).
 
 **Acceptance Criteria:**
 
@@ -987,7 +1005,11 @@ So that I can open the history with Enter or Space and hear the count on every l
 "Enabled bell", §10, P-8, A-13; PRD amendment concern 5).
 
 **Files:** `src/components/ui-app-header/header-icon-button.tsx` (MODIFY: optional `disclosure`
-prop `{ expanded, controls, describedBy, onToggle }`; without it, unchanged and disabled),
+prop `{ expanded, controls, describedBy, onToggle }`; with it the button is enabled, its existing
+`count` prop feeds its own internal `HeaderBadge` with `tone="alert"`, and its one description is
+`describedBy`, the translated count text, rendered in its own `HeaderHiddenText`; neither the
+«Ще недоступно» status nor its own `app_shell.notifications.count` text is rendered then;
+without `disclosure`, unchanged and disabled; readiness R3-03),
 `header-badge.tsx` (MODIFY: `tone: 'muted' | 'alert'`), `styles.ts` (MODIFY: enabled look, hover,
 focus ring, the mobile enabled bell as a 44 × 44 box with `margin: -10px` (the toast close and
 Retry pattern, `ui-toast/styles.ts:17-31`), alert badge, forced-colors badge border),
@@ -995,12 +1017,15 @@ Retry pattern, `ui-toast/styles.ts:17-31`), alert badge, forced-colors badge bor
 `header-icon-button.stories.tsx` (MODIFY: `BellEnabled`, `BellExpanded`, `BellWithUnread`),
 `header-badge.stories.tsx` (MODIFY: `Alert`), tests.
 
-**Gates:** DoD local gates; `make lint-metrics`.
+**Gates:** DoD local gates; `make lint-metrics`; the Figma design gate through the Figma MCP on
+`377:18485` (the panel and the enabled bell) and the shell header frames, including the bell
+variant `451:26214`; an unreachable MCP reports `BLOCKED`, never skips (readiness R3-10).
 
 **Acceptance Criteria:**
 
 - Given no `disclosure`, when the bell renders, then it is natively `disabled`, named "Сповіщення" and described by «Ще недоступно» exactly as on `main` (the state a header with no notifications slot keeps, architecture A-23), and the tasks button is unchanged.
-- Given a `disclosure` with `expanded: false`, when the bell renders, then it is enabled, has `aria-expanded="false"` and `aria-controls` equal to `controls`, keeps the name "Сповіщення", and is described by `describedBy` (the unread-count text) on desktop, tablet and mobile; with no `describedBy` it has no description (A-13).
+- Given a `disclosure` with `expanded: false`, when the bell renders, then it is enabled, has `aria-expanded="false"` and `aria-controls` equal to `controls`, keeps the name "Сповіщення", and its accessible description is exactly the `describedBy` text (the unread-count text), rendered in the button's own visually hidden text, on desktop, tablet and mobile; with no `describedBy` it has no description (A-13).
+- Given a `disclosure` with `describedBy` "4 unread notifications" and `count` 4, when the bell renders on desktop and tablet, then exactly one badge exists, inside the button, with the alert tone and reading 4, and exactly one description applies: neither «Ще недоступно» nor the `app_shell.notifications.count` text is rendered or referenced by `aria-describedby`; on mobile no badge is drawn and the same single description applies (readiness R3-03, architecture A-32).
 - Given the enabled bell focused, when Enter or Space is pressed, then `onToggle` runs once (native button).
 - Given the enabled bell, when the styles are read, then desktop is 48 px and tablet 52 px round with a white fill, glyph `#1A1C1E` (17.09:1 on white), hover fill `#F4F5F6`, `cursor: pointer`, a 2 px `#1A1C1E` focus ring at offset 2, and on mobile the button itself has `min-width` and `min-height` `2.75rem` with `margin: -0.625rem` around a centred 24 px glyph, so its own box is 44 × 44 while its layout footprint stays 24 × 24 and it ends 6 px short of the tasks button; no `::before` hit area exists (architecture §9.5, A-20, readiness F-04).
 - Given the disabled bell (no `disclosure`) on mobile, when the styles are read, then they equal `main`'s (24 px box, no negative margin), so a header with no notifications slot is unchanged.
@@ -1008,7 +1033,7 @@ Retry pattern, `ui-toast/styles.ts:17-31`), alert badge, forced-colors badge bor
 - Given every new story, when jest-axe runs, then there are zero violations and the story-coverage test passes.
 - Given the change, when the visual job runs in CI, then every header baseline is unchanged (no caller passes `disclosure` yet).
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
-- Not applicable: new i18n keys (the description text is passed in by Story 2.11).
+- Not applicable: new i18n keys (the description text is passed in by Story 2.12).
 
 ### Story 2.8: Add BellSlotFrame, a fixed-size frame for the bell slot
 
@@ -1060,7 +1085,7 @@ style; under `toast` the A branch arrives in Story 3.1; `parameters.docs.story.i
 `.storybook/notification-story-decorators.tsx` (NEW: `withNotificationStyle(style)` writes the
 `#app-runtime-config` block and restores it after the story, `withRaisedNotifications(drafts)`
 resets the store and raises through `NotificationOutletActions`; the adapter-isolation decorator
-`withFreshNotificationRepository` arrives with Story 2.11, the first story that renders an
+`withFreshNotificationRepository` arrives with Story 2.12, the first story that renders an
 adapter, readiness R2-08),
 `tests/unit/tooling/storybook-provider-story-isolation.test.ts` (MODIFY: both decorator calls join
 `SHARED_STATE_STUB_CALLS`, and the expected file list gains every story file that uses them),
@@ -1113,111 +1138,171 @@ the store's primary focus target, calls `withdraw(anchor)`, then activates the a
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys.
 
-### Story 2.11: Build BellNotifications, the bell connector of every style, with its two lazy children
+### Story 2.11: Build NotificationHistoryPanel and BellOutcomeNotice, the bell's two lazy children
 
-As a user under any style,
-I want the enabled bell with its badge and history, and under `bell` the merged card as well,
-So that every outcome is counted at the bell, the history explains it, and only C draws a card there.
+As a user who opens the bell under any style, and who under `bell` sees outcomes at the bell,
+I want the history panel's content and the merged card delivered as their own lazy modules,
+So that no page downloads them before they are needed and each one fails on its own without breaking the bell.
 
-**Dependencies:** dependent on Story 1.2, Story 1.4, Story 1.9, Story 2.5, Story 2.6, Story 2.7, Story 2.9
+**Dependencies:** dependent on Story 1.2, Story 1.4, Story 1.9, Story 2.5, Story 2.6, Story 2.9
 
-**Requirements:** FR-11, FR-20 (C's rows), FR-22, FR-23, FR-24 (as amended 2026-11-12: the bell,
-the badge and the history under every style, PRD amendment items 22–26), NFR-2, NFR-3, NFR-9,
-NFR-12, NFR-19 (architecture §6.2, §6.3, §6.4, §8.3, §10, AD-9, P-9, A-12, A-13, A-23 to A-27).
+**Requirements:** FR-11 (the notice chunk under `bell` only), FR-18, FR-19, FR-21 (the merged card
+on desktop and the caret card on tablet and mobile, with their stickiness), FR-20 (C's rows), FR-24
+(the panel content, every style), NFR-3, NFR-12, NFR-19 (architecture §6.3, §6.4, §11.3, A-24, A-25, A-27;
+PRD amendment items 26 and 31; readiness R3-01).
 
-**Files:** `features/notifications/components/bell-notifications.tsx` (NEW, imported statically by
-the shell slot, so it ships in `notifications-shell` under every style: the enabled
-`HeaderIconButton` with `disclosure`, `HeaderBadge tone="alert"` with the unread count, the count
-description, `useNotificationHistory`, `useBellDisclosure` (no backdrop or overlay of any kind),
-the `UINotificationHistoryFrame` host with a `Suspense` whose fallback is `RouteFallback` around
-the lazy `NotificationHistoryPanel`, mounted only once `visited` is `true`, the lazy
-`BellOutcomeNotice` only while `useNotificationSurface('header')` is true, and
-`lazyCatalogLoader.register(i18n, { en, uk })` for the feature catalog at module evaluation; split
-hooks or helpers out first if the rca caps are reached),
-`features/notifications/components/notification-history-panel.tsx` (NEW, chunk
-`notifications-history`: maps the records with
-`useNotificationViews(…, 'notification_center.time')` and renders `UINotificationHistory` with the
-translated copy and `markAllRead`), `notification-history-panel-loader.ts` (NEW:
-`ChunkRetryLoader` over a `webpackChunkName: "notifications-history"` dynamic `import()`),
+**Files:** `features/notifications/components/notification-history-panel.tsx` (NEW, chunk
+`notifications-history`: maps the `NotificationRecord`s it receives to `NotificationView`s
+itself and does not use `useNotificationViews` (that hook maps shown items): `id: record.id`
+(a string), `kind: record.kind`, `message: t(record.messageKey)`, `time: t('notification_center.time', { value: record.createdAt })` through the locale formatter, and the read flag
+from `record.read`; it renders `UINotificationHistory` with the translated heading, mark-all-read, unread and empty copy and the `onMarkAllRead` handler it
+receives; it reads no repository of its own), `notification-history-panel-loader.ts` (NEW:
+`NotificationHistoryPanelLoader`, one `ChunkRetryLoader` over a
+`webpackChunkName: "notifications-history"` dynamic `import()`; `load(report)` calls
+`report('app-shell:notifications-history', error)` once on a final failure and resolves to an
+empty component, the `ShellSlotFactory` pattern of `src/routes/shell-slot-factory.ts`),
 `features/notifications/components/bell-outcome-notice.tsx` (NEW, chunk `notifications-notice`,
-`bell` only: `UIBellNotice` over `useNotificationViews(useShownNotifications(), 'notification_center.time')`,
-closing through the port), `bell-outcome-notice-loader.ts` (NEW: `ChunkRetryLoader` over a
-`webpackChunkName: "notifications-notice"` dynamic `import()`),
-`features/notifications/types/components.ts` (NEW: `BellNotificationsProps`,
-`NotificationHistoryPanelProps`, `BellOutcomeNoticeProps`),
+`bell` only: `UIBellNotice` over
+`useNotificationViews(useShownNotifications(), 'notification_center.time')`, closing and Retry
+through the port), `bell-outcome-notice-loader.ts` (NEW: `BellOutcomeNoticeLoader`, the same
+shape over `webpackChunkName: "notifications-notice"`, reporting
+`'app-shell:notifications-notice'`), `features/notifications/types/components.ts` (NEW:
+`NotificationHistoryPanelProps`, `BellOutcomeNoticeProps` and the two loaders' module types),
 `features/notifications/i18n/{en,uk}.json` (MODIFY, append to the Story 1.5 catalog under the
 top-level namespace `notification_center` (not `notifications`, which the eager catalog uses,
 readiness M-12): the PRD §13 strings `notification_center.history.heading`, `.mark_all_read`,
-`.unread`, `.empty`, `notification_center.bell.unread_count_one|few|many|other` and
-`notification_center.time` (`{{value, datetime}}`)), `config/i18n-catalog-policy.json` (MODIFY:
-the `modules/user/features/notifications/i18n` entry gains the owner
-`modules/user/features/notifications/components`), `bell-notifications.stories.tsx` (NEW:
-`ToastClosed`, `InlineClosed`, `BellClosed`, each showing the enabled bell with the seed badge,
-`BellWithNotice`, `HistoryOpen`, `AfterMarkAllRead`, `DesktopShell`, `MobileShell`),
-`notification-history-panel.stories.tsx` and `bell-outcome-notice.stories.tsx` (NEW), all through
-the Story 2.9 decorators, each with a fresh adapter from `withFreshNotificationRepository`
-(readiness R2-08), and each file with `parameters.docs.story.inline = false`,
-`.storybook/notification-story-decorators.tsx` (MODIFY: adds `withFreshNotificationRepository(seed?)`,
-which gives each story its own `new InMemoryNotificationRepository(seed ?? NOTIFICATION_SEED)`
-behind the `useNotificationRepository` seam and discards it after the story, readiness R2-08),
+`.unread`, `.empty` and `notification_center.time` (`{{value, datetime}}`)),
+`config/i18n-catalog-policy.json` (MODIFY: the `modules/user/features/notifications/i18n` entry
+gains the owner `modules/user/features/notifications/components`),
+`notification-history-panel.stories.tsx` (NEW: `Seeded`, `AllRead`, `Empty`, the rows passed as
+fixed literal args, with no notification decorator, so the file writes no shared state),
+`bell-outcome-notice.stories.tsx` (NEW: `DesktopOneRow`, `DesktopThreeRows`, `TabletCaret`,
+`MobileCaret`, `TransientError`, through `withNotificationStyle('bell')` and
+`withRaisedNotifications` from Story 2.9, with `parameters.docs.story.inline = false`),
 `tests/unit/tooling/storybook-provider-story-isolation.test.ts` (MODIFY: the expected file list
-gains the three story files, and the new decorator's call name joins `SHARED_STATE_STUB_CALLS`,
-readiness R2-01), `tests/unit/tooling/performance-serving.test.ts` (MODIFY: the two loaders), tests.
+gains `bell-outcome-notice.stories.tsx`, readiness R2-01),
+`tests/unit/tooling/performance-serving.test.ts` (MODIFY: the two loaders and their chunk names),
+`tests/unit/utils/create-notification-center-locale-i18n.ts` (NEW: `createLocaleI18n` plus
+`lazyCatalogLoader.register` of the feature catalog, the `create-toast-locale-i18n.ts` pattern;
+the panel and notice tests translate through it, because the runtime registration arrives with
+`BellNotifications` in Story 2.12), tests under
+`tests/unit/modules/user/features/notifications/components/`.
 
-**Gates:** DoD local gates; `make lint-i18n`, `make lint-deps` (`no-components-to-repositories`,
-`components-no-direct-injectable-import`: the adapter only through hooks), `make lint-metrics`, the
-Suspense-fallback ESLint gate.
+**Gates:** DoD local gates; `make lint-i18n`, `make lint-deps` (`no-components-to-repositories`:
+neither component nor loader imports the adapter), `make lint-metrics`.
 
 **Acceptance Criteria:**
 
-- Given each of `toast`, `inline` and `bell` with the seeded adapter, when `BellNotifications` renders, then the bell is enabled with `aria-expanded="false"`, its `aria-controls` names the present and `hidden` history host, the badge reads 1 on desktop and tablet, and the bell is described by «1 непрочитане сповіщення» ("1 unread notification") on every layout.
-- Given `toast`, when a recorded raise of three successes refreshes the history, then the badge goes from 1 to 4 and the description is «4 непрочитані сповіщення» (`uk` few) / "4 unread notifications" (FR-23 as amended).
-- Given `inline`, when a recorded raise of three successes refreshes the history, then the badge goes from 1 to 4 with the same description; under `bell` the same; with 5 unread the description is «5 непрочитаних сповіщень» (`uk` many).
-- Given each style and the badge at 4, when mark-all-read resolves, then the badge is gone and the bell has no count description (A-13).
-- Given each style before the first open, when the component renders and outcomes are raised, then the panel loader has not been called; when the bell is opened with Enter, then it is called once, the host shows the deferred `RouteFallback` until the panel resolves, and closing and reopening calls it no more (architecture A-25).
-- Given `toast` or `inline`, when the component renders and outcomes are raised, then the notice loader is never called and no `UIBellNotice` exists in the tree (FR-11 as amended).
-- Given `bell` and a raise while closed, when the store updates, then the notice shows the shown rows with their times, `aria-expanded` stays `false` and focus does not move (FR-22).
-- Given `toast` or `inline` and a raise while closed, when the store updates, then `aria-expanded` stays `false`, focus does not move and the badge counts the raise.
-- Given `bell` and the bell activated with Enter, when the panel opens, then `aria-expanded` is `true`, the notice is hidden (`dismissAll`, P-9), the panel lists the seed and the document's outcomes newest first, and the unread row exposes «Непрочитане» in text (FR-24).
-- Given `toast` with shown toasts and given `inline` with a shown block, when the bell is activated with Enter, then the panel opens and lists those outcomes first as unread, and the store's `shown` and `inline` are unchanged (PRD amendment item 25, architecture A-26).
-- Given the open panel under each style, when Escape is pressed, then it closes and focus is on the bell; when a `pointerdown` lands on a page control outside the bell wrapper or focus tabs past the last control, then it closes and the component moves no focus; the rendered tree holds no backdrop, overlay or `position: fixed; inset: 0` element (FR-24 as amended, PRD readiness amendment 8).
-- Given an isolated module load (`jest.isolateModulesAsync`) of `@/i18n`, with a fresh i18n instance created by the test helper that holds only the eager catalog, and of `BellNotifications`, with no settings route module imported and the settings catalog never registered, when the panel opens under the default style, then `BellNotifications` has registered the feature catalog on that instance at module evaluation, each seed row shows its `uk` text and no row shows a raw `notification_center.` or `settings.` key; the three rows read «Ви успішно змінили пароль», «Ми надіслали посилання для підтвердження на нову адресу» and «Зміни збережено» in `uk` (and the shipped `en` texts in `en`), and no row text equals or contains a raw key (architecture A-17 revised, PRD readiness amendment 18).
-- Given the module evaluated, when `i18n.t('notification_center.history.heading')` is read, then it returns «Сповіщення» / "Notifications" (the feature catalog is registered at runtime by `BellNotifications`, readiness M-12).
-- Given `bell` and a row closed in the notice, when the history is opened, then that row is still listed unread (FR-20).
-- Given the row times in `uk` and `en`, when they render in the notice and the panel, then they go through the registered `datetime` formatter (no raw `Intl`; `make lint-eslint` passes) and no live region contains a time.
-- Given fake timers advanced ten minutes, when the bell is read, then nothing closed, hid or was marked read (NFR-3).
-- Given `uk` and `en`, when `make lint-i18n` runs, then every new `notification_center.*` key exists in both with the CLDR plural families (`uk` one/few/many/other, `en` one/other), no key sits under `notifications.*`, the `components` owner resolves, and the eager key set equals `main`'s.
+- Given `NotificationHistoryPanel` with the seed's three records and an i18n instance from `createNotificationCenterLocaleI18n`, when it renders in `uk`, then the `h2` reads «Сповіщення», the rows read «Ви успішно змінили пароль», «Ми надіслали посилання для підтвердження на нову адресу» and «Зміни збережено» newest first, only the first exposes «Непрочитане», and no row shows a raw `notification_center.` or `settings.` key; in `en` the heading reads "Notifications" and the rows read the shipped `en` texts; each row's view `id` is its record's string id, the unread mark follows `record.read` of that id, and the panel imports neither `useNotificationViews` nor `ShownNotificationSet` (readiness R4-01).
+- Given the panel with records, when «Позначити всі прочитаними» is activated, then the received `onMarkAllRead` runs once; given an empty record set, when the panel renders, then the `notification_center.history.empty` text shows and no list item exists.
+- Given `BellOutcomeNotice` under `bell` and a raise of three successes, when it renders on the desktop, tablet and mobile shell layouts, then `UIBellNotice` shows the three shown rows with their times, as the merged card on desktop and the caret card on tablet and mobile, and `document.activeElement` is unchanged.
+- Given a row closed in the notice, when the store and the adapter are read, then the item has left `shown`, its repository record is still unread and `markAllRead` was not called (closing never marks read, FR-20).
+- Given a transient error with Retry in the notice, when Retry is activated, then the row is dismissed through the port before the action runs once, and focus never falls to `body`.
+- Given the row times in `uk` and `en`, when they render in the notice and the panel, then they go through the registered `datetime` formatter via `notification_center.time` (no raw `Intl`; `make lint-eslint` passes) and no live region contains a time.
+- Given fake timers advanced ten minutes, when the notice is read, then every row is still shown and nothing was marked read (NFR-3).
+- Given each loader, when `load` is called twice, then its dynamic `import()` runs once, and a first chunk-load error is re-imported once before the loader settles (`ChunkRetryLoader`).
+- Given the `notifications-history` import failing twice, when `NotificationHistoryPanelLoader.load(report)` settles, then `report('app-shell:notifications-history', error)` is called once and the loader resolves to a component that renders nothing, with no console output.
+- Given the `notifications-notice` import failing twice, when `BellOutcomeNoticeLoader.load(report)` settles, then `report('app-shell:notifications-notice', error)` is called once and the resolved component renders `null`, with no console output.
 - Given `performance-serving.test.ts`, when it runs, then `NotificationHistoryPanel` is reached only through a `webpackChunkName: "notifications-history"` dynamic `import()`, `BellOutcomeNotice` only through `webpackChunkName: "notifications-notice"`, no `notifications-bell` chunk name exists, and neither import graph holds tsyringe, a composition root, Apollo or zod (NFR-12).
-- Given the panel chunk failing twice after the first open, when its loader gives up, then `onChunkFailure('app-shell:notifications-history', error)` is called once, the host stays empty and the bell and badge keep working, with no console output.
-- Given `bell` and the notice chunk failing twice, when its loader gives up, then `onChunkFailure('app-shell:notifications-notice', error)` is called once and the notice renders `null` while the bell keeps working, with no console output.
-- Given the three new story files, when the isolation test's exact expected file list is read, then it includes each of them, so the test stays green (readiness R2-01).
-- Given two `BellNotifications` stories rendered one after the other in the same document, when the first marked all rows read and the second then renders, then the second shows the unmodified seed (badge 1, one unread row), because each story got a fresh adapter (readiness R2-08).
+- Given `uk` and `en`, when `make lint-i18n` runs, then the five new keys exist in both locales, no key sits under `notifications.*`, the `components` owner resolves the panel's and the notice's keys with no `[lazy-key-scope]` finding, the policy entry differs from Story 1.5's only by that owner, and the eager key set equals `main`'s.
+- Given `bell-outcome-notice.stories.tsx`, when the isolation test runs, then its exact expected file list includes the file and it asserts `inline: false`; `notification-history-panel.stories.tsx` uses no notification decorator and is not in that list (readiness R2-01).
+- Given every story, when jest-axe runs, then there are zero violations and the story-coverage test passes.
+- Given the change, when the visual job runs in CI, then every baseline is unchanged (nothing mounts either child yet).
+- Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
+
+> Assumption (readiness iteration 3): the panel receives its records and `onMarkAllRead` from
+> `BellNotifications` instead of reading the history hook itself, because `BellNotifications`
+> already reads the history for the badge. A second read in the panel would refresh the adapter
+> twice per revision. The panel's stories therefore pass fixed rows as args and need neither an
+> adapter nor a notification decorator.
+
+### Story 2.12: Build BellNotifications, the bell connector of every style
+
+As a user under any style,
+I want the enabled bell with its count and history, and under `bell` the merged card beside it,
+So that every outcome is counted at the bell, the history explains it, and only C draws a card there.
+
+**Dependencies:** dependent on Story 1.4, Story 1.9, Story 2.6, Story 2.7, Story 2.9, Story 2.11
+
+**Requirements:** FR-11, FR-20 (C's rows), FR-22, FR-23, FR-24 (as amended 2026-11-12: the bell,
+the badge and the history under every style, PRD amendment items 22–26), NFR-2, NFR-3, NFR-9,
+NFR-12, NFR-19 (architecture §6.2, §6.3, §6.4, §8.3, §10, AD-9, P-9, A-12, A-13, A-23 to A-27,
+A-31, A-32; readiness R3-01 to R3-03).
+
+**Files:** `features/notifications/components/bell-notifications.tsx` (NEW, imported statically by
+the shell slot, so it ships in `notifications-shell` under every style: the enabled
+`HeaderIconButton` with `disclosure` and the unread `count`, which draws its own alert badge and
+its own single count description (Story 2.7), so this component renders no `HeaderBadge` and no
+hidden text of its own; `useNotificationHistory(revision)` and `useBellDisclosure` (no backdrop
+or overlay of any kind); the `UINotificationHistoryFrame` host with a `Suspense` whose fallback is
+`RouteFallback` around the lazy `NotificationHistoryPanel` (Story 2.11), mounted only once
+`visited` is `true`; the lazy `BellOutcomeNotice` (Story 2.11) only while
+`useNotificationSurface('header')` is true, inside its own `Suspense` whose fallback is a
+fixed-size empty `aria-hidden` box (`0 × 0`, never `null`, so the Suspense-fallback gate passes),
+so the bell and the badge never suspend on the notice chunk (readiness R3-02); and
+`lazyCatalogLoader.register(i18n, { en, uk })` for the feature catalog at module evaluation; split
+hooks or helpers out first if the rca caps are reached), `features/notifications/types/components.ts`
+(MODIFY: `BellNotificationsProps`), `features/notifications/i18n/{en,uk}.json` (MODIFY, append:
+`notification_center.bell.unread_count_one|few|many|other`), `bell-notifications.stories.tsx`
+(NEW: `ToastClosed`, `InlineClosed`, `BellClosed`, each showing the enabled bell with the seed
+badge, `BellWithNotice`, `HistoryOpen`, `AfterMarkAllRead`, `DesktopShell`, `MobileShell`, through
+the Story 2.9 decorators, each with a fresh adapter from `withFreshNotificationRepository`
+(readiness R2-08) and `parameters.docs.story.inline = false`),
+`.storybook/notification-story-decorators.tsx` (MODIFY: adds `withFreshNotificationRepository(seed?)`,
+which gives each story its own `new InMemoryNotificationRepository(seed ?? NOTIFICATION_SEED)`,
+both imported by name from the adapter module (Story 1.5, readiness R3-04), behind the
+`useNotificationRepository` seam, and discards it after the story, readiness R2-08),
+`tests/unit/tooling/storybook-provider-story-isolation.test.ts` (MODIFY: the expected file list
+gains `bell-notifications.stories.tsx`, and the new decorator's call name joins
+`SHARED_STATE_STUB_CALLS`, readiness R2-01), tests.
+
+**Gates:** DoD local gates; `make lint-i18n`, `make lint-deps` (`no-components-to-repositories`,
+`components-no-direct-injectable-import`: the adapter only through hooks), `make lint-metrics`, the
+Suspense-fallback ESLint gate (both boundaries have a non-null fallback).
+
+**Acceptance Criteria:**
+
+- Given each of `toast`, `inline` and `bell` with the seeded adapter, when `BellNotifications` renders, then the bell is enabled with `aria-expanded="false"`, its `aria-controls` names the present and `hidden` history host, on desktop and tablet exactly one badge exists, inside the button, reading 1, and on every layout the bell has exactly one description, «1 непрочитане сповіщення» ("1 unread notification"), with neither «Ще недоступно» nor an `app_shell.notifications.count` text in the tree (readiness R3-03).
+- Given each style, when a recorded raise of three successes refreshes the history, then the badge goes from 1 to 4 and the description is «4 непрочитані сповіщення» (`uk` few) / "4 unread notifications"; with 5 unread it is «5 непрочитаних сповіщень» (`uk` many) (FR-23 as amended).
+- Given each style and the badge at 4, when mark-all-read resolves, then the badge is gone and the bell has no count description (A-13).
+- Given each style before the first open, when the component renders and outcomes are raised, then the panel loader has not been called; when the bell is opened with Enter, then it is called once, the host shows the deferred `RouteFallback` until the panel resolves, and closing and reopening calls it no more (architecture A-25); under `toast` and `inline` the notice loader is never called and no `UIBellNotice` exists in the tree (FR-11 as amended).
+- Given `bell` with the notice loader still pending, when the component renders and the `revision` it receives grows after a recorded raise, then the enabled bell and the badge are rendered (nothing above the notice suspends), the badge moves from 1 to 2, and the notice's own boundary shows only its empty `aria-hidden` box (readiness R3-02).
+- Given each style and a raise while closed, when the store updates, then `aria-expanded` stays `false`, focus does not move and the badge counts the raise; under `bell` the notice also shows the shown rows with their times (FR-22).
+- Given each style and the bell activated with Enter, when the panel opens, then `aria-expanded` is `true` and the panel lists the seed and the document's outcomes newest first, unread rows exposing «Непрочитане» in text; under `bell` the notice is hidden (`dismissAll`, P-9); under `toast` and `inline` the store's `shown` and `inline` are unchanged (PRD amendment item 25, architecture A-26).
+- Given the open panel under each style, when Escape is pressed, then it closes and focus is on the bell; when a `pointerdown` lands on a page control outside the bell wrapper or focus tabs past the last control, then it closes and the component moves no focus; the rendered tree holds no backdrop, overlay or `position: fixed; inset: 0` element (FR-24 as amended, PRD readiness amendment 8).
+- Given an isolated module load (`jest.isolateModulesAsync`) of `@/i18n`, with a fresh i18n instance created by the test helper that holds only the eager catalog, and of `BellNotifications`, with no settings route module imported and the settings catalog never registered, when the panel opens under the default style, then `BellNotifications` has registered the feature catalog on that instance at module evaluation, `i18n.t('notification_center.history.heading')` returns «Сповіщення» / "Notifications", and the three seed rows read «Ви успішно змінили пароль», «Ми надіслали посилання для підтвердження на нову адресу» and «Зміни збережено» in `uk` (the shipped `en` texts in `en`), no row text containing a raw `notification_center.` or `settings.` key (architecture A-17 revised, PRD readiness amendment 18, readiness M-12).
+- Given `bell` and a row closed in the notice, when the history is opened, then that row is still listed unread (FR-20); given fake timers advanced ten minutes, when the bell is read, then nothing closed, hid or was marked read (NFR-3).
+- Given either child's loader resolving to its empty component after a reported failure (Story 2.11), when the bell is used, then the history host stays empty or the notice renders nothing, and the bell and the badge keep working, with no console output.
+- Given `uk` and `en`, when `make lint-i18n` runs, then the four `notification_center.bell.unread_count_*` keys exist with the CLDR plural families (`uk` one/few/many/other, `en` one/other), they resolve through the `components` owner, and the eager key set equals `main`'s.
+- Given `bell-notifications.stories.tsx`, when the isolation test runs, then its exact expected file list includes the file and `SHARED_STATE_STUB_CALLS` holds `withFreshNotificationRepository`; given two of its stories rendered one after the other in the same document, when the first marked all rows read and the second then renders, then the second shows the unmodified seed (badge 1, one unread row), because each story got a fresh adapter (readiness R2-01, R2-08).
 - Given every story, when jest-axe runs, then there are zero violations and the story-coverage test passes.
 - Given the change, when the visual job runs in CI, then every baseline is unchanged (the shell does not mount it yet).
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 
-### Story 2.12: Build NotificationsShellSlot, the always-mounted shell slot with the bell
+### Story 2.13: Build NotificationsShellSlot, the always-mounted shell slot with the bell
 
 As every protected page under every style,
 I want one slot that records outcomes and renders the enabled bell with its badge,
 So that the history is complete and counted whatever the style, and `/` loads only this chunk until the bell is opened.
 
-**Dependencies:** dependent on Story 1.4, Story 1.8, Story 2.8, Story 2.9, Story 2.11
+**Dependencies:** dependent on Story 1.4, Story 1.8, Story 2.8, Story 2.9, Story 2.12
 
 **Requirements:** FR-5, FR-11, FR-22, FR-23 (every style), NFR-12 (architecture §6.3, §6.4, AD-8,
-AD-9, A-8, A-23, A-24; PRD amendment items 26 and 31).
+AD-9, A-8, A-23, A-24, A-31; PRD amendment items 26 and 31).
 
 **Files:** `features/notifications/components/notifications-shell-slot.tsx` (NEW: calls
-`useNotificationRecorder(onChunkFailure)` and renders `BellNotifications` (a static import) under
-every style, passing the shell `layout` and `onChunkFailure`; it declares no `Suspense` of its own,
-so in the composed shell it suspends to the `Suspense` that `ShellSlotFactory.create` wraps around
-every slot, inside the fixed-size `BellSlotFrame`, and rendered directly in the frame it suspends
-to the frame's bell-sized placeholder (Story 2.8); no `BellPlaceholder` component exists,
-readiness M-15 and R2-03), `features/notifications/types/components.ts` (MODIFY:
-`NotificationsShellSlotProps` over `ShellSlotProps`), `notifications-shell-slot.stories.tsx` (NEW:
-one story per style, each rendered inside `BellSlotFrame` through the Story 2.9 decorators and
-each showing the enabled bell with the seed badge, with a fresh adapter from
-`withFreshNotificationRepository` (readiness R2-08), and with `parameters.docs.story.inline = false`),
+`useNotificationRecorder(onChunkFailure)` and renders `BellNotifications` (a static import, Story
+2.12) under every style, passing the shell `layout`, the recorder's revision and
+`onChunkFailure`; it declares no `Suspense` of its own: in the composed shell the `Suspense` that
+`ShellSlotFactory.create` wraps around every slot awaits its chunk, inside the fixed-size
+`BellSlotFrame`, and after A-31 a statically rendered slot never suspends, only its lazily loaded
+children do, each to its own boundary; the frame's bell-sized placeholder (Story 2.8) covers an
+empty frame or a lazily loaded slot rendered outside `ShellSlotFactory`; no `BellPlaceholder` component exists, readiness M-15 and R2-03),
+`features/notifications/types/components.ts` (MODIFY: `NotificationsShellSlotProps` over
+`ShellSlotProps`), `notifications-shell-slot.stories.tsx` (NEW: one story per style, each rendered
+inside `BellSlotFrame` through the Story 2.9 decorators and each showing the enabled bell with the
+seed badge, with a fresh adapter from `withFreshNotificationRepository` (Story 2.12, readiness
+R2-08), and with `parameters.docs.story.inline = false`),
 `tests/unit/tooling/storybook-provider-story-isolation.test.ts` (MODIFY: the expected file list
 gains `notifications-shell-slot.stories.tsx`, readiness R2-01), tests.
 
@@ -1227,8 +1312,9 @@ gains `notifications-shell-slot.stories.tsx`, readiness R2-01), tests.
 **Acceptance Criteria:**
 
 - Given each of `toast`, `inline` and `bell`, when the slot renders inside `BellSlotFrame` and one outcome is raised, then the enabled bell renders, the outcome is recorded once, and the badge goes from 1 to 2 on desktop and tablet (FR-23 as amended).
+- Given `bell` with the notice loader still pending, when one outcome is raised, then it is recorded once and the badge goes from 1 to 2 before the notice chunk resolves, because neither the slot nor the bell suspends on that chunk (FR-5, readiness R3-02).
 - Given `toast` or `inline`, when the slot renders and outcomes are raised, then the notice loader is never called and the panel loader is not called before the bell is opened (FR-11 as amended).
-- Given the slot rendered inside `BellSlotFrame` while its chunk is pending, when the frame renders, then the frame's placeholder shows at the bell's size under every style and no disabled bell is drawn in its place (architecture A-23); the slot file contains no `Suspense` and no null fallback; in the composed shell the `Suspense` of `ShellSlotFactory.create` (an `aria-hidden` `span` fallback) catches the slot chunk and, under `bell`, the notice chunk (readiness R2-03).
+- Given the slot rendered inside `BellSlotFrame` while its chunk is pending, when the frame renders, then the frame's placeholder shows at the bell's size under every style and no disabled bell is drawn in its place (architecture A-23); the slot file contains no `Suspense` and no null fallback; in the composed shell the `Suspense` of `ShellSlotFactory.create` (an `aria-hidden` `span` fallback) catches the slot chunk only, and the notice chunk is caught by the boundary `BellNotifications` owns (Story 2.12; readiness R2-03 and R3-02).
 - Given a rejecting record, when an outcome is raised, then `onChunkFailure('app-shell:notifications-record', error)` is called and nothing else changes (FR-5 as amended).
 - Given the new story file, when the isolation test's exact expected file list is read, then it includes `notifications-shell-slot.stories.tsx`, so the test stays green (readiness R2-01).
 - Given every story, when jest-axe runs, then there are zero violations and the story-coverage test passes.
@@ -1391,9 +1477,14 @@ module per slot key), `src/routes/protected-layout-loader.ts`, `src/routes/types
 `src/components/ui-app-header/index.tsx`, `src/components/types/ui-app-header/*` (MODIFY: pass
 `notifications` through; under every style the header renders the slot inside `BellSlotFrame`
 when a notifications slot is passed and the disabled `HeaderIconButton` only when none is,
-architecture A-23), `src/components/ui-app-header/mobile-navigation.tsx` (MODIFY: the drawer's
-`aria-hidden` drawn bell copy takes the enabled glyph colour `#1A1C1E` when a notifications slot is
-passed, architecture A-29),
+architecture A-23), `src/components/ui-navigation-drawer/{index.tsx,drawer-header.tsx,drawer-header-copies.tsx,styles.ts}`
+(MODIFY: a flag reaches `DrawerHeaderCopies` through `UINavigationDrawer` and `DrawerHeader`, and
+with it the drawer's `aria-hidden` drawn bell copy takes the enabled glyph colour `#1A1C1E`
+instead of today's `#D0D4D8` glyph style at `ui-navigation-drawer/styles.ts:50`, when a
+notifications slot is passed, architecture A-29), `src/components/types/ui-navigation-drawer/*`
+(MODIFY: the flag), their stories and tests under `tests/unit/components/ui-navigation-drawer/`,
+`tests/unit/a11y/ui-navigation-drawer.a11y.test.tsx`, `src/components/ui-app-header/mobile-navigation.tsx`
+(MODIFY: only forwards the flag to `UINavigationDrawer`; readiness R3-05),
 `src/routes/README.md`, `src/components/ui-app-shell/README.md` (MODIFY: two slot keys), route,
 layout and header tests and stories.
 
@@ -1420,7 +1511,7 @@ As a user on any protected page,
 I want the notifications feature plugged into the shell,
 So that outcomes are recorded and counted at the bell under every style and, under `bell`, also appear there.
 
-**Dependencies:** dependent on Story 2.12, Story 3.2, Story 3.3
+**Dependencies:** dependent on Story 2.13, Story 3.2, Story 3.3
 
 **Requirements:** FR-5, FR-11, FR-22, FR-23, FR-27, NFR-9, NFR-11, NFR-12, NFR-13, NFR-15,
 NFR-21 (architecture §6.3, §6.4, §13.2, §13.3 "Existing shell specs", A-23, A-24, A-28; PRD
@@ -1436,19 +1527,37 @@ composed header through the registry (MODIFY: they now see the enabled bell). Th
 specs that assert the disabled, inert bell change in this story, because the registry now carries
 the slot under every style (architecture §13.3, K12):
 
-- `tests/e2e/modules/app-shell.spec.ts:353-394` (MODIFY: the "disabled search, bell and list"
+- `tests/e2e/modules/app-shell.spec.ts:353-377` (MODIFY: the "disabled search, bell and list"
   test keeps the search and the list; the bell is asserted enabled, `aria-expanded="false"`,
-  described by the seed count);
+  described by the seed count «1 непрочитане сповіщення»);
+- `tests/e2e/modules/app-shell.spec.ts:379-395` (MODIFY: "renders no badge on …" becomes "renders
+  the seed badge on …" over the same four paths: the bell is described by «1 непрочитане
+  сповіщення», the badge reads 1 on desktop and tablet, and the tasks button stays described by
+  «Ще недоступно»; the digit-free `banner` assertion goes);
 - `tests/e2e/mobile/app-shell-touch.spec.ts:301-322` (MODIFY: the bell leaves the inert-tap test,
-  which keeps the list, and is measured by `expectTouchTarget` at 44 × 44);
-- `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` and `tests/e2e/a11y/home-keyboard.a11y.spec.ts`
-  (MODIFY: every header tab order gains the bell between the logo or search and the chip);
-- `src/components/ui-app-shell/README.md:449-450` (MODIFY: the bell leaves the "disabled bell and
-  list" known gap; the list stays).
+  which keeps the list), and both of the spec's own `expectTapArea` tests, `:271-299` (the
+  header, drawer and menu controls) and `:368-378` (at 320 px), gain the bell; `expectTapArea` is
+  the spec's `elementFromPoint` probe around the centre, not `expectTouchTarget`, which Story 4.4
+  uses on the settings specs;
+- `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` (MODIFY, four cases): `sidebarStops`
+  (`:47-62`, used at `:74` and `:112`) gains the bell between the logo and the chip; the rail's
+  Shift+Tab (`:97-104`) goes chip, bell, logo; one Tab from the logo (`:132-147`) lands on the
+  bell and a second on the chip; the mobile order (`:298-306`) becomes logo, bell, chip, burger.
+  `tests/e2e/a11y/home-keyboard.a11y.spec.ts` is not changed: its tab orders start at the sidebar
+  Sign out (`:33`, `:67-77`) and hold no header stop;
+- `tests/e2e/utils/app-shell.ts` (MODIFY: `expectShellReady` also expects the enabled bell,
+  `aria-expanded="false"`, so every spec that waits for the shell waits for the bell's chunk too,
+  readiness R3-08);
+- `src/components/ui-app-shell/README.md` (MODIFY, three passages): `:67-73`, the header
+  paragraph, says the bell is enabled whenever the notifications slot is registered, its count
+  and alert badge `#D63333` come from the slot, and the search and the tasks button stay disabled
+  and described by "Not available yet"; `:116-122`, the DV-14 choice, keeps the disabled-variant
+  `#D0D4D8` badge for the disabled buttons only and records that the enabled bell draws the alert
+  badge; `:449-450`, the known gap, keeps only the disabled list (readiness R3-07).
 
 **Gates:** DoD local gates; `make lint-deps` (`no-routes-import-feature-internals`: the registry
-imports `routes/index` only), `make check-e2e-route-coverage` (no new route key); ADR-drift
-surface (`registry.ts`) covered by the `[no-adr]` line.
+imports `routes/index` only), `make lint-docs` (the app-shell README), `make check-e2e-route-coverage`
+(no new route key); ADR-drift surface (`registry.ts`) covered by the `[no-adr]` line.
 
 **Acceptance Criteria:**
 
@@ -1460,10 +1569,11 @@ surface (`registry.ts`) covered by the `[no-adr]` line.
 - Given the integration test under `toast` and under `inline`, when a combined three-success save is raised and recorded, then the composed header's badge goes from 1 to 4 and mark-all-read clears it (FR-23 as amended).
 - Given the composed shell under each style, when any protected page renders, then the header holds the enabled bell inside `BellSlotFrame` and no disabled bell (FR-22 as amended).
 - Given the bundle-size report in CI, when it compares with `main`, then the auth chunks change by 0 B gzip, the eager entrypoint by ≤ 1 kB, `notifications-shell` is about 4.5 kB, `notifications-history` about 2.5 kB, `notifications-notice` about 3.5 kB, no `notifications-bell` chunk exists and the `user-menu` chunk is unchanged, and no budget in `config/performance-budget.json` is breached (NFR-11, NFR-12 as amended) (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given the performance workflow in CI, when it audits `/` under the default style, which now paints the enabled bell and the badge, then every Lighthouse category meets the floors (0.95 desktop, 0.84 median-of-three mobile) (NFR-13) (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given a Lighthouse regression on `/` caused by `notifications-shell`, when it is measured, then the story applies PRD amendment item 31's fallback (the count read and the bell stay; the disclosure handlers and the panel-only strings move to `notifications-history`) and, if `/` still regresses, stops and reports to the owner; anything weaker (recording only under `bell`, dropping the badge or the enabled bell under `toast` or `inline`) ships only with the owner's acceptance, never by editing a floor (verified at QA / finish-PR stage, not in a local Ralph run).
+- Given the performance workflow in CI, when it audits `/` under the default style, which now paints the enabled bell and the badge, then every Lighthouse category meets its configured `minScore` in `lighthouserc.desktop.js` and `lighthouserc.mobile.js` (unchanged) and the `error`-level `resource-summary:script:size` and `resource-summary:total:size` assertions on `/` pass in both presets against the unchanged `lighthouse.scriptSizeBytes` (265 000) and `lighthouse.totalSizeBytes` (480 000) of `config/performance-budget.json` (NFR-11, NFR-13; readiness R3-09) (verified at QA / finish-PR stage, not in a local Ralph run).
+- Given a Lighthouse regression on `/` caused by `notifications-shell`, when it is measured, then the story applies PRD amendment item 31's fallback: the count read, the enabled bell, `onToggle` and `visited` stay in `notifications-shell`, so the first click still opens the panel; only the in-panel key handler, the outside-click handler and the panel-only `notification_center.history.*` strings move to `notifications-history`, the strings in the one conditional catalog entry the DoD allows; if `/` still regresses, the story stops and reports to the owner; anything weaker (recording only under `bell`, dropping the badge or the enabled bell under `toast` or `inline`) ships only with the owner's acceptance, never by editing a floor (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the existing shell browser specs listed above in CI, when they run, then they pass with the bell enabled under the default style and the search and the list still inert (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given the CI visual job, when it runs, then the 243 protected-page baselines of PRD amendment item 32 differ, each only in the header's bell (the enabled glyph, and on desktop and tablet the badge), and every public-page baseline is unchanged; they are re-recorded from the CI artifact in Story 4.6, never locally.
+- Given the CI visual job, when it runs, then the 243 protected-page baselines of PRD amendment item 32 differ, each inside the header's bell box (the enabled glyph, and on desktop and tablet the badge) or, in the mobile drawer captures, inside the drawn bell copy, plus the settings captures' own toast changes of Story 2.3, and every public-page baseline is unchanged; they are re-recorded from the CI artifact in Story 4.6, never locally (readiness R3-11).
+- Given the app-shell README, when `make lint-docs` runs, then it passes, and no passage describes the bell as disabled, its count as passed only by stories or its badge as the disabled `#D0D4D8` while the notifications slot is registered (readiness R3-07).
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys; recording baselines (Story 4.6 records every changed capture).
 
@@ -1497,7 +1607,7 @@ architecture A-30),
 decorator that writes the `#app-runtime-config` block, resets the store and raises through
 `new NotificationOutletActions(useNotificationOutletStore, FIXED_CLOCK)` (the Story 2.9
 `.storybook/notification-story-decorators.tsx`, extended with the frozen clock; every story also
-goes through `withFreshNotificationRepository` from Story 2.11, so each one renders against its
+goes through `withFreshNotificationRepository` from Story 2.12, so each one renders against its
 own `new InMemoryNotificationRepository(seed)` and the badge, history and read state never drift
 with canvas navigation order, readiness R2-08),
 `tests/unit/tooling/storybook-provider-story-isolation.test.ts` (MODIFY: the comparison file joins
@@ -1666,7 +1776,14 @@ So that the visual gate guards all three variants and the bell of every style wi
 capture per style compared against that style's **resting** baseline name, so it adds no PNG of
 its own, readiness M-08), `tests/visual/visual-comparison.app-shell.spec.ts` (MODIFY: one
 `history open` capture at the `desktop` and `mobile` sizes of `notFoundScreens` under the default
-style, with `freezeClock` before the page loads), and the baseline PNGs from the CI artifact:
+style, with `freezeClock` before the page loads), `tests/visual/stabilize-page.ts` (MODIFY: on a
+page rendered in the app shell it also waits for the enabled bell, `aria-expanded="false"`, and on
+the desktop and tablet layouts for the badge reading 1, so `visual-comparison.spec.ts`, the
+coming-soon specs and the mobile specs, which this story does not otherwise edit, never capture
+the bell's placeholder frame; a public page has no shell bell and keeps today's waits), the
+app-shell spec's `openShell` (MODIFY: the same wait after the chip's name), the settings captures
+after a save (MODIFY: they wait for the badge's recorded count before the capture; readiness
+R3-08), and the baseline PNGs from the CI artifact:
 
 - 243 re-recorded protected-page baselines, every file in the snapshot folders of
   `visual-comparison.spec.ts` (39), `visual-comparison.app-shell.spec.ts` (15),
@@ -1684,6 +1801,7 @@ changed-PNG list.
 - Given the PR's changed PNG list, when it is read, then it contains exactly the 285 files named above (243 re-recorded, 42 new) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given each of the 243 re-recorded baselines, when its CI diff image against `main` is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the settings `success-toasts` and `transient-toast` captures under the default style, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
+- Given any protected-page capture in the seven re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).
 - Given `make test-visual` in CI after the baselines are committed, when it runs, then every capture equals its baseline, including every capture outside the list against `main` (NFR-14) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the captures, when they are taken, then timestamps are deterministic through `freezeClock` and the fixed seed, never masked.
 - Given `bell` at 1440 × 900, when the merged shape is captured, then its outer edge is within 2 px of the Figma extent 1087–1366 × 8–125 (FR-18), measured in the spec from the bounding box.
@@ -1838,7 +1956,7 @@ bundle-size report, `make check-adr-drift`, `gate ratchet`.
 - Given the merged mutation gate, when it runs, then it reports 100 with zero survivors across every new or changed file, the only annotations being empty hook dependency arrays with the existing proof wording.
 - Given coverage in unit and integration, when it runs, then every metric is 100 over `src`.
 - Given `make lint`, when it runs, then ESLint (errors and warnings), `tsc`, dependency-cruiser, jscpd, rca metrics, markdownlint, i18n, docs, compose, lockfile and licenses all report zero findings, with no new allowlist or exemption entry.
-- Given the bundle-size report and the performance workflow, when they run, then no budget is breached and every Lighthouse URL meets 0.95 desktop and 0.84 mobile under the default style.
+- Given the bundle-size report and the performance workflow, when they run, then no budget is breached and every Lighthouse URL meets each category's configured `minScore` in the lighthouserc files (unchanged) under the default style.
 - Given `make check-adr-drift`, when it runs, then it passes through the `[no-adr]` line and the line states the reason (NFR-22).
 - Given the FR/NFR review gate, when it runs over this bundle, then every FR-1..FR-31 and FR-34 and every NFR-1..NFR-22 is PASS, and FR-32 and FR-33 are reported as follow-ups pending the team lead's pick (verified at QA / finish-PR stage, not in a local Ralph run).
 
@@ -1949,12 +2067,13 @@ and `dismissAll()`; the bell stays enabled with no setting.
 | 2.8   | none                                   | yes          |
 | 2.9   | 1.2                                    | no           |
 | 2.10  | 1.2, 1.4, 2.4, 2.9                     | no           |
-| 2.11  | 1.2, 1.4, 1.9, 2.5, 2.6, 2.7, 2.9      | no           |
-| 2.12  | 1.4, 1.8, 2.8, 2.9, 2.11               | no           |
+| 2.11  | 1.2, 1.4, 1.9, 2.5, 2.6, 2.9           | no           |
+| 2.12  | 1.4, 1.9, 2.6, 2.7, 2.9, 2.11          | no           |
+| 2.13  | 1.4, 1.8, 2.8, 2.9, 2.12               | no           |
 | 3.1   | 1.2, 1.4, 2.3, 2.9                     | no           |
 | 3.2   | 2.10, 3.1                              | no           |
 | 3.3   | 1.4, 1.8, 2.8                          | no           |
-| 3.4   | 2.12, 3.2, 3.3                         | no           |
+| 3.4   | 2.13, 3.2, 3.3                         | no           |
 | 4.1   | 3.4                                    | no           |
 | 4.2   | 3.4                                    | no           |
 | 4.3   | 4.2                                    | no           |
@@ -1983,10 +2102,11 @@ their heavy checks run sequentially, and every heavy suite stays in CI.
 | 4    | 1.8, 1.9, 2.10, 3.1               | waves 1–3          |
 | 5    | 2.11, 3.2, 3.3                    | waves 1–4          |
 | 6    | 2.12                              | wave 5 (2.11)      |
-| 7    | 3.4                               | wave 6 (2.12), 5   |
-| 8    | 4.1, 4.2, 4.9                     | wave 7 (3.4)       |
-| 9    | 4.3, 4.4, 4.5, 4.6, 4.8           | wave 8 (4.2)       |
-| 10   | 4.10                              | waves 8–9          |
+| 7    | 2.13                              | wave 6 (2.12)      |
+| 8    | 3.4                               | wave 7 (2.13), 5   |
+| 9    | 4.1, 4.2, 4.9                     | wave 8 (3.4)       |
+| 10   | 4.3, 4.4, 4.5, 4.6, 4.8           | wave 9 (4.2)       |
+| 11   | 4.10                              | waves 9–10         |
 | —    | Follow-up 5.1, then 5.2 (BLOCKED) | the team lead, 5.1 |
 
 Shared files inside one wave, merged append-only:
@@ -1997,22 +2117,25 @@ Shared files inside one wave, merged append-only:
 - wave 3: 2.3 edits the same four files (removal of the `ui-toast` entry), so it rebases on wave
   2;
 - wave 5: 2.11 edits the policy again (the `components` owner of the `notification_center`
-  entry);
-- waves 3 to 6: `tests/unit/tooling/storybook-provider-story-isolation.test.ts` gains one expected
+  entry) and appends the history and time keys to the feature catalog; 2.12 appends the count
+  keys in wave 6, after it;
+- waves 3 to 7: `tests/unit/tooling/storybook-provider-story-isolation.test.ts` gains one expected
   story file per story that uses the notification decorators (2.9 wave 3, 2.10 and 3.1 wave 4,
-  2.11 wave 5, 2.12 wave 6), and 2.11 adds the `withFreshNotificationRepository` call name; every
-  one of them depends on 2.9, which creates the decorators, so no story waits on a later wave
-  (readiness R2-01);
+  2.11 wave 5, 2.12 wave 6, 2.13 wave 7), and 2.12 adds the `withFreshNotificationRepository`
+  call name; every one of them depends on 2.9, which creates the decorators, so no story waits on
+  a later wave (readiness R2-01);
 - wave 1: 2.7 and 2.8 both edit `src/components/ui-app-header/styles.ts` and the
   `src/components/types/ui-app-header/` types;
 - wave 5: 3.2 and 3.3 both edit stories or tests that render `/settings` inside the shell; 3.3
   owns the header, 3.2 owns the profile form;
-- wave 7: 3.4 rewrites the existing shell browser specs that assert the disabled bell
-  (`app-shell.spec.ts`, `app-shell-touch.spec.ts`, `app-shell-keyboard.a11y.spec.ts`,
-  `home-keyboard.a11y.spec.ts`); 4.4 and 4.5 extend some of the same files in wave 9 and rebase
-  on it.
+- wave 8: 3.4 rewrites the existing shell browser specs that assert the disabled bell
+  (`app-shell.spec.ts`, `app-shell-touch.spec.ts`, `app-shell-keyboard.a11y.spec.ts`) and the
+  shared `expectShellReady`; 4.4 and 4.5 in wave 10 edit the settings specs
+  (`settings-touch.spec.ts`, `settings-states.a11y.spec.ts`, `settings-keyboard.a11y.spec.ts`),
+  not these files, and 4.6 in wave 10 edits the visual helpers (readiness R3-06).
 
-The critical path is 1.1 → 1.5 → 1.6 → 1.9 → 2.11 → 2.12 → 3.4 → 4.2 → 4.6 → 4.10 (ten stories).
+The critical path is 1.1 → 1.5 → 1.6 → 1.9 → 2.11 → 2.12 → 2.13 → 3.4 → 4.2 → 4.6 → 4.10 (eleven
+stories).
 
 ## Points for the owners
 
@@ -2022,8 +2145,10 @@ The critical path is 1.1 → 1.5 → 1.6 → 1.9 → 2.11 → 2.12 → 3.4 → 4
   from CI (285 changed PNGs: 243 re-recorded, 42 new; Story 4.6), and the existing shell browser
   specs that asserted the disabled bell are rewritten in Story 3.4.
 - **Lighthouse fallback on `/`.** If `/` regresses, Story 3.4 first applies PRD amendment item
-  31's fallback (the count read and the bell stay; the disclosure handlers and the panel-only
-  strings move into `notifications-history`) and then stops and reports; anything weaker, such as
+  31's fallback (the count read, the bell, `onToggle` and `visited` stay, so the first click
+  still opens the panel; the in-panel key and outside-click handlers and the panel-only strings
+  move into `notifications-history`, the strings through the one conditional catalog entry the
+  DoD names) and then stops and reports; anything weaker, such as
   recording only under `bell` or dropping the badge under `toast` and `inline`, needs your
   acceptance (architecture §18 owner Q2).
 - **The unused DI token.** Kept and pinned by Story 1.6's identity test (amendment concern 3);

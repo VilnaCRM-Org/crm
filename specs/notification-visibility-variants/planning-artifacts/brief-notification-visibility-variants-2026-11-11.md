@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-11-11
 feature: notification-visibility-variants
-issue: none
+issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'analyst, autonomous run'
 inputDocuments:
   - specs/notification-visibility-variants/planning-artifacts/run-summary-notification-visibility-variants-2026-11-11.md
@@ -14,6 +14,17 @@ inputDocuments:
   - src/modules/user/features/settings/i18n/uk.json
   - src/modules/user/features/settings/i18n/en.json
 ---
+
+> **Superseded in part; read this brief as context only.** Two owner decisions recorded in the
+> [run summary](./run-summary-notification-visibility-variants-2026-11-11.md) override parts of
+> it. The decision of **2026-11-11** places notifications in the user module as the feature
+> `src/modules/user/features/notifications/`, behind a repository with a client-side mock. The
+> decision of **2026-11-12** shows the enabled bell, the unread count, its description and the
+> history panel under **every** style (`toast`, `inline` and `bell`), not only under `bell`. Where
+> this brief keeps the bell disabled under variants A and B, lists the count as a non-goal for
+> them, or removes the bell with C, the PRD's amendment blocks govern: the
+> [PRD](./prd-notification-visibility-variants-2026-11-11.md) items 21–36 (the 2026-11-12
+> decision) and item 31 (the Lighthouse fallback on `/`).
 
 # Product Brief: three notification variants that are clearly seen
 

@@ -4,7 +4,7 @@ workflowType: prd
 project_name: crm
 date: 2026-11-11
 feature: notification-visibility-variants
-issue: none
+issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm, autonomous run'
 inputDocuments:
   - specs/notification-visibility-variants/planning-artifacts/run-summary-notification-visibility-variants-2026-11-11.md
@@ -17,7 +17,8 @@ inputDocuments:
 # PRD: notification visibility variants
 
 **Author:** pm, autonomous run **Date:** 2026-11-11 **Feature:** `notification-visibility-variants`
-**Issue:** none (task description; no GitHub issue or PR until the owner approves)
+**Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391), planning pull request #392 (no
+code is committed or pushed until the owner approves)
 
 Predecessors: the [run summary](./run-summary-notification-visibility-variants-2026-11-11.md)
 (binding decisions; later blocks supersede earlier ones), the
@@ -303,9 +304,15 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     `notifications-bell` chunk exists). Lighthouse is measured on `/` under the default `toast`,
 >     which now paints the enabled bell and the badge. **Fallback if Lighthouse on `/` regresses**
 >     (this replaces amendment item 2's fallback): the badge's count read and the enabled bell stay
->     in `notifications-shell` under every style; what is not needed to paint them (the disclosure
->     handlers and the panel-only strings, in a second lazy catalog owned by the panel) moves into
->     `notifications-history`, which stays on first open and is never prefetched. Anything weaker
+>     in `notifications-shell` under every style, with the disclosure state that opens the panel
+>     (`onToggle` and `visited`, so the first click still opens it); what is not needed to paint
+>     the bell or open the panel (the in-panel key handler, the outside-click handler and the
+>     panel-only strings, in a second lazy catalog owned by the panel, the one conditional catalog
+>     entry the epics' definition of done allows, and only under this fallback) moves into
+>     `notifications-history`, which stays on first open and is never prefetched. The measure on
+>     `/` is every Lighthouse category floor and the `error`-level `resource-summary:script:size`
+>     and `resource-summary:total:size` assertions against the unchanged budgets (readiness
+>     iteration 3, R3-09). Anything weaker
 >     (dropping the badge or the enabled bell under `toast` or `inline`, recording only under
 >     `bell`, or deferring the shell slot past load so the badge paints late) needs the owner's
 >     acceptance before it ships, and no floor is ever edited.

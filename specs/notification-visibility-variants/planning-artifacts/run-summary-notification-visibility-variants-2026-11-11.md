@@ -4,7 +4,7 @@ workflowType: autonomous-planning
 project_name: crm
 date: 2026-11-11
 feature: notification-visibility-variants
-issue: none (task description; no GitHub issue requested)
+issue: https://github.com/VilnaCRM-Org/crm/issues/391
 ---
 
 # Run summary: notification visibility variants
@@ -225,26 +225,6 @@ where they differ.
 > user-menu slot does not load it. Runtime records keep `settings.toasts.*` keys, because they are
 > only raised on `/settings`, which has registered that catalog for the rest of the page's life.
 
-## Outcome
-
-Readiness PASS at iteration 2 of 5. 4 epics, 35 stories, 2 blocked follow-ups.
-
-Open questions for the owner and the designer, each with a recorded default:
-
-- **R3, review path.** Default: the published Storybook plus
-  `make start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=<value>`. Open: whether the PR sandbox
-  runs the container entrypoint.
-- **Design questions.** A and B have no Figma frame. C's tablet and mobile fall back to a caret
-  card. The bell is disabled in the app but drawn enabled in Figma. No mobile badge is drawn
-  (P-8).
-- **Lighthouse on `/`.** If the notifications shell chunk regresses it, the fallback is to record
-  outcomes only under `bell`, and that needs the owner's acceptance.
-
-Recommended next step: the owner reviews the bundle and approves a commit. Then run
-`/fe-sdlc-implement` (bmalph with `_bmad/config.yaml` pointed at this bundle), and give the
-published Storybook to the team lead to pick a variant. Follow-ups 5.1 and 5.2 stay blocked until
-that pick.
-
 ## Owner decision, 2026-11-12: the unread count under all three variants
 
 > **Owner decision (2026-11-12, supersedes research R8, PRD MA-6, P-5 and the bell-only scope of
@@ -264,3 +244,59 @@ that pick.
 >   all app-shell visual baselines are re-recorded from CI, never locally.
 > - **Removal.** The follow-up that deletes the two styles not chosen keeps the bell, the badge, the
 >   history and the notifications feature, whichever variant wins.
+
+## After the 2026-11-12 owner decision
+
+| Phase         | BMAD command                   | Artifact                                                              | Rounds                                                                 |
+| ------------- | ------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Amendment     | owner decision fold-in         | PRD amendment items 21–36, architecture A-23 to A-30, epics           | 1, restarted once after the session ended                              |
+| Readiness     | `implementation-readiness`     | `readiness-notification-visibility-variants-2026-11-11.md`            | iteration 3: FAIL (0 blocker, 1 major: Story 2.11 too large; 11 minor) |
+| Correction    | readiness iteration 3 fix pass | epics (2.11 split into 2.11 to 2.13), architecture, PRD, brief banner | 1                                                                      |
+| Readiness     | `implementation-readiness`     | `readiness-notification-visibility-variants-2026-11-11.md`            | iteration 4: **PASS** (0 blocker, 0 major, 5 minor)                    |
+| Minor fold-in | readiness iteration 4 minors   | epics, architecture                                                   | 1 (R4-01 to R4-04; R4-05 is historical text, noted)                    |
+
+> Assumption (main agent, readiness iteration 3): Story 2.11 is split into three stories, as the
+> review proposes. `HeaderIconButton` owns the badge and the count description, so its disclosure
+> mode takes `count` and an alert `tone` and only one description applies (R3-03). The `/`
+> Lighthouse check asserts the script and total `resource-summary` sizes as well as the score. Any
+> fallback weaker than "the badge stays, the panel chunk is deferred" needs the owner.
+
+> Assumption (main agent, readiness iteration 4): `NotificationHistoryPanel` maps repository
+> records to views itself, and `NotificationView.id` is a `string` (R4-01). The type is fixed
+> before wave 1, so no renderer has to change later.
+
+## Outcome
+
+Readiness PASS at iteration 4 of 5. The bundle has 4 epics, 36 stories and 2 blocked follow-ups,
+with 285 visual baselines expected to change (243 re-recorded, 42 new), all recorded from CI.
+Issue #391; draft PR #392.
+
+Scope: three transient outcome surfaces, selected by `notificationStyle`:
+
+- A, the toast;
+- B, the inline status;
+- C, the card merged with the bell.
+
+Under every style, the header bell is enabled and shows the unread badge, and opens the history
+with "mark all read". The notifications feature lives in the user module behind an in-memory
+mock repository.
+
+Open questions for the owner and the designer, each with a recorded default:
+
+- **Review path (R3).** Default: the published Storybook plus
+  `make start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=<value>`. Open: whether the PR sandbox
+  runs the container entrypoint.
+- **Design.**
+  - A and B have no Figma frame.
+  - C's tablet and mobile fall back to a caret card.
+  - The enabled bell's look and the badge cap now apply under every style.
+  - No mobile badge is drawn (P-8).
+  - The drawer's drawn bell copy takes the enabled colour (A-29).
+  - The open panel sits beside three toasts at 320 × 256 (K13).
+- **Lighthouse on `/`.** The default style now paints the enabled bell and the badge there. The
+  fallback keeps the badge and defers the panel chunk. Anything weaker needs the owner: recording
+  only under `bell`, dropping the badge under `toast` and `inline`, or painting the badge late.
+
+Recommended next step: review PR #392. Then run `/fe-sdlc-implement`, with bmalph's
+`_bmad/config.yaml` pointed at this bundle. Give the published Storybook to the team lead to pick
+a variant. Follow-ups 5.1 and 5.2 stay blocked until that pick.

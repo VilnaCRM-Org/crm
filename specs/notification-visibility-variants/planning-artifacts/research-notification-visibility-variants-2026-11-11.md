@@ -4,7 +4,7 @@ workflowType: research
 project_name: crm
 date: 2026-11-11
 feature: notification-visibility-variants
-issue: none
+issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'analyst, autonomous run'
 inputDocuments:
   - specs/notification-visibility-variants/planning-artifacts/run-summary-notification-visibility-variants-2026-11-11.md
