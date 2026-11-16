@@ -6,6 +6,7 @@ import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign
 import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 
 import {
+  PROFILE_NODE,
   replyWithEndedSession,
   signInToSettings,
   stubProfile,
@@ -13,9 +14,12 @@ import {
   type StubbedProfile,
 } from './utils/profile-stub';
 import {
+  emailPasswordField,
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
+  nameField,
+  namePasswordField,
   openLoadedSettings,
   saveEditedName,
   text,
@@ -67,6 +71,9 @@ test.describe('Settings session end (issue #330)', () => {
 
     await expect(page).toHaveURL('/settings');
     await expect(page.getByRole('heading', { level: 1, name: text.heading })).toBeVisible();
+    await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
+    await expect(namePasswordField(page)).toHaveCount(0);
+    await expect(emailPasswordField(page)).toHaveCount(0);
     await expectEveryPasswordFieldEmpty(page);
   });
 
