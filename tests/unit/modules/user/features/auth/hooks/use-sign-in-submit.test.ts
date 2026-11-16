@@ -4,7 +4,6 @@ import * as React from 'react';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import observabilityCore from '@/services/observability/observability-core';
 import useSignInSubmit from '@auth/hooks/use-sign-in-submit';
 import type { AuthProviderLoader } from '@auth/stores';
 import authSessionProvider from '@auth/stores/auth-session-provider';
@@ -40,7 +39,8 @@ const stubs = (): Stubs => {
   const resolve = jest.fn((token: symbol) =>
     Promise.resolve(token === AUTH_TOKENS.GraphQLSignInProvider ? { login } : { loginSettled })
   );
-  return { loader: { resolve } as unknown as AuthProviderLoader, login };
+  const reportLoadFailure = jest.fn();
+  return { loader: { resolve, reportLoadFailure } as unknown as AuthProviderLoader, login };
 };
 
 const dto = (): { email: string; password: string } => ({
@@ -171,12 +171,12 @@ describe('useSignInSubmit', () => {
   it('reports a processor chunk that failed to load to observability', async () => {
     const failure = new Error('chunk');
     jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(failure);
-    const captureError = jest.spyOn(observabilityCore, 'captureError').mockReturnValue(undefined);
+    const stubbed = stubs();
 
-    await runWith(stubs());
+    await runWith(stubbed);
 
-    expect(captureError).toHaveBeenCalledTimes(1);
-    expect(captureError).toHaveBeenCalledWith(failure, { source: 'auth:sign-in-load' });
+    expect(stubbed.loader.reportLoadFailure).toHaveBeenCalledTimes(1);
+    expect(stubbed.loader.reportLoadFailure).toHaveBeenCalledWith(failure);
   });
 });
 

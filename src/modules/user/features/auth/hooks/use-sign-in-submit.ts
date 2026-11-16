@@ -3,7 +3,6 @@ import { useState } from 'react';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
-import observabilityCore from '@/services/observability/observability-core';
 import type { AuthProviderLoader } from '@auth/stores';
 import authSessionProvider from '@auth/stores/auth-session-provider';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
@@ -28,7 +27,7 @@ function signInRunner(loader: AuthProviderLoader): SignInRun {
   return async (dto: SignInDto, signal: AbortSignal): Promise<void> => {
     useAuthStore.setState(START);
     const processor = await processorLoader.load().catch((error: unknown) => {
-      observabilityCore.captureError(error, { source: 'auth:sign-in-load' });
+      loader.reportLoadFailure(error);
       return null;
     });
     const context = {

@@ -90,6 +90,10 @@ export class AuthProviderLoader {
     }
   }
 
+  public reportLoadFailure(error: unknown): void {
+    observabilityCore.captureError(error, { source: 'auth:sign-in-load' });
+  }
+
   private async loadContainer(): Promise<DependencyContainer> {
     try {
       const { default: container } = await this.container.load();
