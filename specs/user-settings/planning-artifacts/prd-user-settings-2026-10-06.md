@@ -600,7 +600,9 @@ user is still in keeps focus.
 
 > **Amended 2026-11-16** (owner decision of 2026-11-05, as shipped): each section has its own
 > "Очистити". In the full-name and e-mail sections it appears with that section's Save once the
-> section changes; the password section shows it with its Save.
+> section changes; the password section shows it with its Save. Restoring a full-name or e-mail
+> section leaves it unchanged, so its "Очистити" collapses with the password field and Save, and
+> focus moves to that section's input; in the password section focus stays on "Очистити".
 
 "Очистити" restores the last loaded name and e-mail, empties and re-masks both password fields,
 removes every field error and the no-change status, and sends nothing. It never blanks a field,
