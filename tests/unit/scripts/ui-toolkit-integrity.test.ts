@@ -132,6 +132,17 @@ describe('UiToolkitIntegrityVerifier pass', () => {
     );
     expect(result.stderr).toBe('');
   });
+
+  it('accepts the root .bun-tag Bun 1.4 writes without hashing or reading it', () => {
+    const tag = `${PACKAGE_ROOT}/.bun-tag`;
+    const result = runVerifier({ ...repository('0.5.0'), [tag]: 'bun install tag' });
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      'ui-toolkit integrity: OK (v0.5.0, 3 artifacts verified, 0 extra files)\n'
+    );
+    expect(result.readFile.mock.calls.map(([path]) => path)).not.toContain(tag);
+  });
 });
 
 describe('UiToolkitIntegrityVerifier [manifest] group', () => {
@@ -367,6 +378,8 @@ describe('UiToolkitIntegrityVerifier [extra] group', () => {
   it.each([
     ['an unlisted root file', 'index.js'],
     ['a nested node_modules/ file', 'node_modules/left-pad/index.js'],
+    ['another root dotfile', '.npmrc'],
+    ['a .bun-tag below the package root', 'build/.bun-tag'],
   ])('fails %s across the whole package root', (_label, relativePath) => {
     const files = { ...repository('0.5.0'), [`${PACKAGE_ROOT}/${relativePath}`]: 'extra' };
     const result = runVerifier(files);
