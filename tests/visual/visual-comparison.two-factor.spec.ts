@@ -41,6 +41,7 @@ const homeHeading: string = t('home.heading');
 const lowCodesNotice: string = t('recovery_codes_notice.remaining', { count: 1 });
 
 async function takeTwoFactorSnapshot(page: Page, screen: ScreenSize, name: string): Promise<void> {
+  await page.mouse.move(0, 0);
   await page.evaluate(() => window.scrollTo(0, 0));
   await takeStableSnapshot(page, `${currentLanguage}_two-factor-${name}_${screen.name}.png`);
 }
