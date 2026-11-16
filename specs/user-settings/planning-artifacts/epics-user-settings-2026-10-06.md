@@ -3,7 +3,7 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-16
 iteration: 7
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -1571,6 +1571,9 @@ and working with the plain `PasswordChange`),
 - Given an empty new password and a changed name, when Save runs, then the input has no `newPassword` and no rule error shows; with `Pa1` typed, only the length rule of `UIPasswordPolicyRules` is unmet; with `Пароль123`, Save shows the shared uppercase message, focuses the field and sends nothing, because `useProfileFormRules` wraps `passwordValidator.create(t)` so that an empty or whitespace-only value passes (the field is optional) and any other value gets the per-rule message, not #315's `createChecklistGate`; the field's `aria-describedby` names the hint "Необов’язково. Залиште порожнім, щоб не змінювати пароль." and the rule list. Amended 2026-10-21 (product owner, matching Figma): the hint is visually hidden but stays in `aria-describedby`; the rule list renders only while the field has focus or a value, and after an empty field blurs it stays 200 ms more (`useBlurHold`, `RULES_COLLAPSE_DELAY_MS`) so a click on Save that starts the blur lands before Save moves; a new password equal to the current one is refused once the policy passes (`settings.errors.new_password_same`), and the new-password rule re-validates when the current password changes. The optional state is announced but not shown visually, the owner's recorded trade-off.
 - Given Save, when it runs, then the button is disabled with the spinner and keeps the name "Зберегти зміни", the form has `aria-busy`, "Збереження…" is announced, Enter in any field submits, and offline the button is disabled and described by the offline notice.
 - Given a settled Save that adopts or ends in a toast, when it settles, then focus is on "Зберегти зміни" (amended 2026-11-05, FR-12: unless Save is disabled as it settles, when focus on `body` moves to the `h1` and a field the user is still in keeps focus); a Save that ends in field errors focuses the first field in error in DOM order with `aria-invalid="true"`; a successful retry of a failed read focuses `h2` "Особисті дані", which has `tabIndex={-1}` (when that heading is the `UIForm` title, #315's `titleRef` `RefCallback<HTMLElement>` focuses it instead of a second hand-rolled ref).
+  Amended 2026-11-16 (FR-12, FR-13): in the full-name and e-mail sections the password field,
+  the section's Save and "Очистити" appear once that section changes; a successful save collapses
+  them and focus goes to the section's input; a save that does not succeed keeps them open.
 - Given a Save adoption, when the form's `key` changes, then the form reads the new defaults, both password fields are empty and the form is pristine; a resend's `confirm` never changes the `key`.
 - Given edited fields, typed passwords and field errors, when "Очистити" is activated, then the fields hold the last loaded values, both password fields are empty and masked, no field has `aria-invalid`, the no-change status is cleared, nothing is sent and focus stays on it; during a Save it is `aria-disabled="true"` and does nothing.
 - Given the Save and "Очистити" pills, when their styles and axe are read, then Save stays under the existing exception of issue #276, "Очистити" is outlined with label `#1A1C1E` (17.09:1) and border `#969B9D`, `A11Y_EXCEPTIONS` gains nothing (superseded 2026-10-21 for the page: it gains the one scoped `#settings-greeting` entry; the two pills still add none), and both have a 44 CSS px minimum height on mobile (measured in Story 4.3).

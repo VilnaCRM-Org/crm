@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-16
 iteration: 7
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -588,7 +588,19 @@ user is still in keeps focus.
 > Assumption: focus returns to "Зберегти зміни", the control that started the action, because the
 > native busy state disables it and would otherwise drop focus to `body`.
 
+> **Amended 2026-11-16** (gate finding; the shipped form of the owner decision of 2026-11-05): the
+> full-name and e-mail sections show their password field, their Save ("Зберегти ім’я",
+> "Зберегти пошту") and "Очистити" only once that section's value changes. A save that succeeds
+> collapses them and focus goes to the section's input, because the Save it would return to is
+> gone; the toast stack returns focus to the Save, or to the input when its Save hid. A save that
+> does not succeed keeps the section open under the focus rules above. The password section keeps
+> its Save shown, so this criterion applies to it unchanged.
+
 #### FR-13 — Clear
+
+> **Amended 2026-11-16** (owner decision of 2026-11-05, as shipped): each section has its own
+> "Очистити". In the full-name and e-mail sections it appears with that section's Save once the
+> section changes; the password section shows it with its Save.
 
 "Очистити" restores the last loaded name and e-mail, empties and re-masks both password fields,
 removes every field error and the no-change status, and sends nothing. It never blanks a field,
