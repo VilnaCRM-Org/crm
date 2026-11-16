@@ -242,4 +242,16 @@ describe('AuthProviderLoader load failure', () => {
     expect(capture).toHaveBeenCalledTimes(1);
     expect(capture).toHaveBeenCalledWith(caught, { source: 'auth:provider-resolve' });
   });
+
+  it('reports a sign-in chunk load failure once under sign-in-load', async () => {
+    const observability = (await import('@/services/observability/observability-core')).default;
+    const capture = jest.spyOn(observability, 'captureError').mockImplementation(() => undefined);
+    const { AuthProviderLoader: Loader } = await import('@auth/stores');
+    const failure = new Error('sign-in processor chunk failed');
+
+    new Loader().reportLoadFailure(failure);
+
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:sign-in-load' });
+  });
 });
