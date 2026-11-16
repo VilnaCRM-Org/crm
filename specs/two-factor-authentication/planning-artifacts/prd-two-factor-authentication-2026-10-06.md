@@ -111,8 +111,8 @@ split, the shell from 768 px) and 2026-11-10 (the 2026-11-04 decisions marked wh
 > **Amended 2026-11-10 (gate finding; owner decisions of 2026-11-04).** The three 2026-11-04 blocks
 > below named FR-14, FR-15, FR-16, FR-27 and FR-28 only. The same decisions also supersede Goal 4's
 > "without a new accessibility exception", §4's journey steps 2 and 3, FR-23's "real anchor",
-> FR-40's time note, NFR-5's exception count and back-link criterion, three NFR-6 rows and the cell
-> placeholder, NFR-8's arrival focus, NFR-9's ring on the pin cells, NFR-13's "no new
+> FR-40's time note and authenticator subtitle, NFR-5's exception count and back-link criterion, three NFR-6 rows and the cell
+> placeholder, NFR-8's arrival focus, NFR-9's ring on the pin cells and its setup order, NFR-13's "no new
 > `A11Y_EXCEPTIONS` entry" and §10 assumption 15. Each carries a dated "superseded" mark; the text
 > is kept as the record of the plan as approved. The challenge's grey "Назад" is the owner-accepted
 > exception `#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`
@@ -1237,7 +1237,9 @@ New strings (key names are the architecture's):
 
 - challenge title and `h1`: "Двофакторна автентифікація" — "Two-factor authentication"
 - authenticator subtitle: "Введіть шестизначний код із застосунку Google Authenticator." — "Enter
-  the six-digit code from Google Authenticator."
+  the six-digit code from Google Authenticator." Superseded 2026-11-04 (owner decision, challenge
+  page as drawn): the shipped subtitle is the Figma string "Перевірте додаток Google
+  Authenticator" — "Check the Google Authenticator app".
 - time note: "Код можна ввести протягом 5 хвилин після входу." — "You can enter the code within 5
   minutes of signing in." Superseded 2026-11-04 (owner decision, challenge page as drawn): the
   five-minute note is gone, so the challenge renders no time note.
@@ -1588,7 +1590,9 @@ Both routes are completable with the keyboard only, asserted with the shared tab
   advances focus, and the arrow keys and Backspace move between cells as it provides.
 - Challenge, recovery mode: back-to-main → "Назад" → "Резервний код" → "Підтвердити" →
   "Використати код із застосунку" → footer links.
-- Settings, off: "Почати налаштування"; setup: "Скопіювати ключ" → cells 1 to 6 → "Підтвердити";
+- Settings, off: "Почати налаштування"; setup: "Скопіювати ключ" → cells 1 to 6 → "Підтвердити"
+  (superseded 2026-11-04, owner decision for the Figma card: the setup order is "Скопіювати ключ"
+  → "Навіщо зберігати ключ" → "Скопіювати резервний ключ" → cells 1 to 6 → "Підтвердити");
   codes: "Скопіювати коди" → checkbox (Space toggles) → "Готово"; on: "Вимкнути" → "Створити нові
   резервні коди"; disable: field → "Вимкнути" → "Скасувати"; regenerate: "Створити коди" →
   "Скасувати"; re-authentication: "Увійти знову".
