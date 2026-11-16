@@ -51,6 +51,7 @@ revisions:
   - '2026-11-10: owner decision; the collapsed sidebar state stays persisted in localStorage'
   - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one AR-2
     exception'
+  - '2026-11-13: gate finding; Story 2.7 and UX-DR-1 adopt the 130 px tablet challenge cells'
 ---
 
 # Epics and stories: two-factor authentication for the user module
@@ -1672,6 +1673,9 @@ the focused `tests/unit/tooling/auth-forms-chunk-group.test.ts`; CI `make test-e
 - Given the 1440, 1024 and 375 px viewports, when the card is measured, then its width equals the
   sign-in card's, the cell gap is 8, 8 and 4 px and the height 86, 86 and 64 px; at 320, 360, 600
   and 767 px every cell lies inside the card's content box with no horizontal overflow.
+  Amended 2026-11-13 (gate finding, FR-45): from `md` to just below `xl` the cells are a sixth of
+  the content box less the 8 px gaps (about 86 px wide) and 130 px tall, so the 1024 px height is
+  130 px, not 86 px.
 - Given every step of the e2e spec, when `expectNoSecrets` runs with the session id, the code and
   the token, then none appears in the URL, `history.state`, storage or the title.
 - Given the route scan in three engines behind a stubbed sign-in, when it runs, then axe reports
@@ -1681,7 +1685,8 @@ the focused `tests/unit/tooling/auth-forms-chunk-group.test.ts`; CI `make test-e
   violation; the form has a story and every `two_factor.*` key exists in uk and en.
 - Given `figma-design-check` against `72:4846`, `72:4882` and `72:4918`, when it runs before UI
   code, then the D1 deviations, the tablet cell size and the NFR-6 overrides are recorded for
-  Follow-up 5.4; an unreachable MCP reports `BLOCKED`.
+  Follow-up 5.4; an unreachable MCP reports `BLOCKED`. Amended 2026-11-13 (gate finding, FR-45):
+  the tablet cells copy the 1024 frame, so the tablet cell size is no longer a deviation.
 - Given the form, when its types are read, then it is a `UIForm<TwoFactorDto>` taking the named
   `TwoFactorChallengeProps` of Story 2.6 (TB-2, NFR-21).
 - Given the change, when the bundle-size report runs, then the eager entry grows by under 1 kB
