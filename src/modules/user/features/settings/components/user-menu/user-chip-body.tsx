@@ -14,7 +14,7 @@ export default function UserChipBody({ layout, identity }: UserChipBodyProps): J
     <>
       <Box sx={{ position: 'absolute', ...styles.avatar.chip[layout] }}>
         <UserAvatar monogram={identity?.monogram ?? ''} size="chip" />
-      </Box>
+      </Box>{' '}
       <UserChipName layout={layout} name={identity?.displayName} />
       <Box component={CaretIcon} aria-hidden="true" focusable="false" sx={styles.caret[layout]} />
     </>

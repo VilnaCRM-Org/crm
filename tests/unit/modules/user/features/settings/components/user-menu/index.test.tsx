@@ -54,7 +54,7 @@ describe('UserMenu', () => {
     expect(chip()).toHaveAccessibleName(
       `${identity.monogram}, ${identity.displayName}, Меню користувача`
     );
-    expect(chip()).toHaveTextContent(`${identity.monogram}${identity.displayName}`);
+    expect(chip()).toHaveTextContent(`${identity.monogram} ${identity.displayName}`);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
