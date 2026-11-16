@@ -78,3 +78,21 @@ export const Error: Story = {
 };
 
 export const Disabled: Story = { args: { initialCode: '123456', disabled: true } };
+
+export const Focused: Story = {
+  play: ({ canvasElement }) => {
+    canvasElement.querySelector('input')?.focus();
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The first cell holds focus: its digit turns #1A1C1E and it draws no outline, only ' +
+          'the soft toolkit shadow and the caret. This falls short of WCAG 1.4.11 (it stays ' +
+          'visible under 2.4.7); the owner accepted it on 2026-11-04, see ' +
+          'docs/accessibility/acceptance-standard.md, "Current exceptions". The story focuses ' +
+          'it on load.',
+      },
+    },
+  },
+};

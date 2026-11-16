@@ -292,9 +292,9 @@ closes the drawer and runs `signOut` once.
 | drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
 | scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
 
-The P-34 panel, P-36 first-row and P-44 Sign out rows were measured before the owner decision of
-2026-11-05: the panel now starts at 0,56 and spans the viewport, so the 62 px x offset of those
-three rows no longer applies.
+The P-34 panel, P-35 search, P-36 first-row and P-44 Sign out rows were measured before the owner
+decision of 2026-11-05: the panel now starts at 0,56 and spans the viewport, so the 62 px x offset
+of those four rows and the 293 px search width no longer apply.
 
 The scrim row compares the rule, not a y value: Figma's 375×812 drawer frame puts the footer top
 at y 772, and `/boards` at 375×812 puts it at 604.4, and in both the scrim ends there.
@@ -312,13 +312,13 @@ both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15
 `rgb(26, 28, 30)`; the copy sits under `aria-hidden`, holds no focusable element, and the page made
 one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
 
-At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
+At 320 px the header insets are 8 px; the burger and close targets
 stay 44×44 there: both share `edgeButtonStyles.target`, which below 375 px trims the right extension
 to the 8 px inset and gives the 2 px to the left (12 px), so the glyph does not move, the page does
 not scroll sideways and the burger stays clear of the avatar target. Below 375 px their focus ring is
 drawn inside the button (`outline-offset: -2px`), so the 8 px inset never clips it at the viewport's
-right edge. The Sign out row is 314 px wide
-in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
+right edge. The full-screen panel of the 2026-11-05 decision spans the viewport there too, so the
+313 px panel width and the Sign out row it clipped to 313 px no longer apply.
 
 What Figma leaves open, and how it was built:
 
