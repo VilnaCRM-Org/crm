@@ -80,7 +80,10 @@ inputDocuments:
 > - **Explicit submit.** §8.1 item 5 ("no auto-submit"). By the owner decision of 2026-11-04 (D6
 >   reversed) the sign-in challenge submits on its sixth digit; the setup card's confirm step
 >   keeps its button.
-> - **No new accessibility exception.** §7.1 risk 7 ("no new `A11Y_EXCEPTIONS` entry"). By the
+> - **No new accessibility exception.** §7.1 risk 7 ("no new `A11Y_EXCEPTIONS` entry"), §4.3's
+>   assumption that the seam adds its own focus indicator and border, §4.5's "No new entry is
+>   added" with its compliant card-link colour, §8.1 item 10 (a 3:1 focus indicator and borders,
+>   focus on arrival, compliant "Назад" colours, no new axe exceptions) and §8.3 assumption 3. By the
 >   owner decision of 2026-11-04 the grey "Назад" is the owner-accepted exception
 >   `#auth-form-card > button.MuiButton-text`, and the pin cells draw no focus outline; the cell
 >   states and the auto-submit gap are recorded in `docs/accessibility/acceptance-standard.md`,

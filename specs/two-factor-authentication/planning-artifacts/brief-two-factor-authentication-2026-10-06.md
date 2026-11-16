@@ -43,6 +43,14 @@ inputDocuments:
 >   the grey "Назад" is the owner-accepted exception `#auth-form-card > button.MuiButton-text`
 >   in `tests/utils/a11y/axe-config.ts`, and the cell states and the auto-submit's WCAG 3.2.2 gap
 >   are recorded in `docs/accessibility/acceptance-standard.md`, "Current exceptions".
+> - **Challenge page as drawn (2026-11-04).** §3 Taras's job and his steps 2 and 3 (focus on the
+>   card heading, "press confirm", "Presses Підтвердити"), §7 item 5 (moving "Назад" off `#969B9D`,
+>   cell borders of at least 3:1 and a visible focus indicator), §8 "Reuse UiPinInput" ("with
+>   accessibility overrides") and §9 risk 5 ("never by an axe exception"). The challenge takes the
+>   frames as drawn: focus lands on the first cell, the sixth digit submits, "Назад" stays
+>   `#969B9D` as the owner-accepted exception `#auth-form-card > button.MuiButton-text`, and the
+>   cell states are recorded in `docs/accessibility/acceptance-standard.md`, "Current exceptions",
+>   as the PRD's 2026-11-10 amendment records.
 
 Predecessor: [research](./research-two-factor-authentication-2026-10-06.md) (Miro intent, the
 user-service contract on `main`, the Figma inventory, the crm code map, risks and mock drift).
