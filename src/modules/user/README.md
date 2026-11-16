@@ -773,6 +773,13 @@ the FR-14 supersession of 2026-11-04 requires. From `xl` up they are 64 × 86 px
 and below `md` at most 49 × 64 px with a 4 px gap, so the phone card keeps the sign-in card's
 width.
 
+The title wraps instead of holding one line (2026-11-16, gate finding under WCAG 1.4.12 and
+1.4.10). The frames draw it on one line, but their string is the shorter misspelled "Двухфакторна
+аунтефікація"; the shipped "Двофакторна автентифікація" already ran past its box at 375 px and at
+1440 px under the old `nowrap`, and user text spacing pushed it off the card. The heading now uses
+`text-wrap: balance` with `overflow-wrap: break-word`, so it takes two balanced lines at 375 px and
+from 1440 px up and stays on one line where it fits; a text-spacing spec pins it.
+
 The contrast and focus-indicator gaps these states leave, the "Назад" exception and the WCAG 3.2.2
 gap of the auto-submit are recorded, with their owner decisions, in
 [`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md).
