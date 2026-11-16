@@ -12,9 +12,12 @@ import type { TwoFactorFieldError } from '@/modules/user/types/two-factor/code';
 import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 import RecoveryCodeField from '@auth/components/two-factor/recovery-code-field';
 import type { TwoFactorChallengeState } from '@auth/types/two-factor/challenge-view';
+import { buildRecoveryCode } from '@tests/builders';
 import createTwoFactorLocaleI18n from '@tests/unit/utils/create-two-factor-locale-i18n';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+
+const TYPED_CODE = buildRecoveryCode();
 
 const RESTING: TwoFactorChallengeState = {
   mode: 'recovery',
@@ -78,9 +81,9 @@ describe('RecoveryCodeField', () => {
   it('stores what the user types', async () => {
     render(<Harness state={RESTING} />);
 
-    await userEvent.type(field(), 'abcd2345');
+    await userEvent.type(field(), TYPED_CODE);
 
-    expect(stored()).toBe('abcd2345');
+    expect(stored()).toBe(TYPED_CODE);
   });
 
   it('locks the field while a request is in flight', () => {
@@ -121,7 +124,7 @@ describe('RecoveryCodeField', () => {
 
   it('empties the field and focuses it after a wrong code', async () => {
     const view = render(<Harness state={RESTING} />);
-    await userEvent.type(field(), 'abcd2345');
+    await userEvent.type(field(), TYPED_CODE);
 
     view.rerender(<Harness state={{ ...RESTING, fieldError: 'invalid_code', focusRequest: 1 }} />);
 

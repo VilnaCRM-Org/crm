@@ -4,8 +4,11 @@ import * as React from 'react';
 import useChallengeView, { fieldErrorOf } from '@auth/hooks/use-challenge-view';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
 import type { ChallengeAction } from '@auth/types/two-factor/challenge-view';
-import { buildToken } from '@tests/builders';
+import { buildRecoveryCode, buildToken, buildTotpCode } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
+
+const CODE = buildTotpCode();
+const RECOVERY_CODE = buildRecoveryCode();
 
 const failed = (reason: ChallengeFailureReason): ChallengeResult => ({ kind: 'failed', reason });
 
@@ -37,12 +40,12 @@ describe('useChallengeView', () => {
       result,
       { type: 'rejected', value: '12', fieldError: 'incomplete' },
       { type: 'settled', result: failed('network') },
-      { type: 'submitted', value: '123456' }
+      { type: 'submitted', value: CODE }
     );
 
     expect(result.current.view).toEqual({
       mode: 'totp',
-      value: '123456',
+      value: CODE,
       fieldError: null,
       banner: 'transient',
       bannerOccurrence: 1,
@@ -54,9 +57,9 @@ describe('useChallengeView', () => {
     const { result } = setUp();
     dispatchAll(
       result,
-      { type: 'submitted', value: '123456' },
+      { type: 'submitted', value: CODE },
       { type: 'settled', result: failed('network') },
-      { type: 'submitted', value: '123456' },
+      { type: 'submitted', value: CODE },
       { type: 'settled', result: failed('rate_limited') }
     );
 
@@ -84,9 +87,9 @@ describe('useChallengeView', () => {
     dispatchAll(
       result,
       { type: 'switched' },
-      { type: 'submitted', value: 'ABCD-2345' },
+      { type: 'submitted', value: RECOVERY_CODE },
       { type: 'settled', result: failed('server') },
-      { type: 'submitted', value: 'ABCD-2345' },
+      { type: 'submitted', value: RECOVERY_CODE },
       { type: 'settled', result: failed('invalid_code') }
     );
 
@@ -108,13 +111,13 @@ describe('useChallengeView', () => {
     const { result } = setUp();
     dispatchAll(
       result,
-      { type: 'submitted', value: '123456' },
+      { type: 'submitted', value: CODE },
       { type: 'settled', result: failed(reason) }
     );
 
     expect(result.current.view).toEqual({
       mode: 'totp',
-      value: '123456',
+      value: CODE,
       fieldError: null,
       banner,
       bannerOccurrence: 1,
@@ -129,7 +132,7 @@ describe('useChallengeView', () => {
     null,
   ])('ignores the settled result %j', (settled) => {
     const { result } = setUp();
-    dispatchAll(result, { type: 'submitted', value: '123456' });
+    dispatchAll(result, { type: 'submitted', value: CODE });
     const before = result.current.view;
 
     dispatchAll(result, { type: 'settled', result: settled });
@@ -141,7 +144,7 @@ describe('useChallengeView', () => {
     const { result } = setUp();
     dispatchAll(
       result,
-      { type: 'submitted', value: '123456' },
+      { type: 'submitted', value: CODE },
       { type: 'settled', result: failed('network') },
       { type: 'rejected', value: '1', fieldError: 'incomplete' }
     );
@@ -222,7 +225,7 @@ describe('useChallengeView tables loaded inside the test', () => {
   ] as const)('raises the banner for %s as %s', async (reason, banner) => {
     const { default: loaded } = await loadView();
     const { result } = renderHook(() => loaded());
-    act(() => result.current.dispatch({ type: 'submitted', value: '123456' }));
+    act(() => result.current.dispatch({ type: 'submitted', value: CODE }));
 
     act(() => result.current.dispatch({ type: 'settled', result: failed(reason) }));
 
@@ -230,7 +233,7 @@ describe('useChallengeView tables loaded inside the test', () => {
     expect(result.current.view.banner).toBe(banner);
     expect(result.current.view.bannerOccurrence).toBe(raised ? 1 : 0);
     expect(result.current.view.fieldError).toBe(reason === 'invalid_code' ? 'invalid_code' : null);
-    expect(result.current.view.value).toBe(reason === 'invalid_code' ? '' : '123456');
+    expect(result.current.view.value).toBe(reason === 'invalid_code' ? '' : CODE);
   });
 
   it.each(['', '1', '12345', ' 1 2 3 4 5 ', '\t99', '1\n2 3\t4 5', '\u00a012345'])(
