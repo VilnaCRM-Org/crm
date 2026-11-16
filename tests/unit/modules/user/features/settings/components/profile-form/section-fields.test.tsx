@@ -2,9 +2,9 @@ import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
-import type { ComponentProps, JSX, ReactNode } from 'react';
+import { type ComponentProps, type JSX, type ReactNode, useEffect } from 'react';
 import * as ReactHookForm from 'react-hook-form';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
@@ -16,6 +16,7 @@ import passwordValidator from '@/modules/user/lib/validations/password';
 import { buildEmail, buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import loadIsolated from '@tests/unit/utils/isolated-module';
+import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 type ProfileSectionFieldsProps = ComponentProps<typeof SectionFields>;
 
@@ -108,6 +109,14 @@ function Frame({ children }: { children: ReactNode }): JSX.Element {
   );
 }
 
+function ServerError({ name, message }: { name: keyof ProfileFormValues; message: string }): null {
+  const { setError } = useFormContext<ProfileFormValues>();
+  useEffect(() => {
+    setError(name, { type: 'server', message });
+  }, [setError, name, message]);
+  return null;
+}
+
 interface Options {
   readonly save?: ProfileSave;
   readonly entity?: typeof user;
@@ -135,6 +144,15 @@ const loadFreshSectionFields = (): Promise<typeof SectionFields> =>
     return (await import('@/modules/user/features/settings/components/profile-form/section-fields'))
       .default;
   });
+
+const ENTERED = buildPassword();
+const WRONG_PASSWORD = 'Неправильний поточний пароль';
+
+const ERROR_FIELDS = [
+  ['fullName', 'fullName'],
+  ['email', 'email'],
+  ['password', 'newPassword'],
+] as const;
 
 const field = (label: string): HTMLInputElement => screen.getByLabelText(label) as HTMLInputElement;
 
@@ -360,5 +378,56 @@ describe('SectionFields', () => {
       expect(hintOf()).toHaveAttribute('id', 'email-save-hint');
       expect(field(EMAIL)).toHaveAttribute('aria-describedby', 'email-save-hint email-status');
     });
+  });
+
+  describe('accessibility', () => {
+    it.each(['fullName', 'email', 'password'] as const)(
+      'has no violation in the %s section at rest',
+      async (section) => {
+        const { container } = render(fieldsOf(section), { wrapper: Frame });
+
+        await expectNoA11yViolations(container);
+      }
+    );
+
+    it.each([
+      ['fullName', NAME, 'x'],
+      ['email', EMAIL, '.ua'],
+    ] as const)('has no violation in the revealed %s section', async (section, label, edit) => {
+      const { container } = render(fieldsOf(section), { wrapper: Frame });
+      await userEvent.type(field(label), edit);
+
+      await expectNoA11yViolations(container);
+    });
+
+    it.each([
+      ['fullName', NAME, 'x'],
+      ['email', EMAIL, '.ua'],
+      ['password', CURRENT, ENTERED],
+    ] as const)('has no violation in the busy %s section', async (section, label, edit) => {
+      const view = render(fieldsOf(section), { wrapper: Frame });
+      await userEvent.type(field(label), edit);
+
+      view.rerender(fieldsOf(section, { save: saveOf({ isSubmitting: true }) }));
+
+      expect(field(label)).toHaveAttribute('readonly');
+      await expectNoA11yViolations(view.container);
+    });
+
+    it.each(ERROR_FIELDS)(
+      'has no violation in the %s section with a field error',
+      async (section, name) => {
+        const { container } = render(
+          <>
+            <ServerError name={name} message={WRONG_PASSWORD} />
+            {fieldsOf(section)}
+          </>,
+          { wrapper: Frame }
+        );
+
+        expect(await screen.findByText(WRONG_PASSWORD)).toBeInTheDocument();
+        await expectNoA11yViolations(container);
+      }
+    );
   });
 });

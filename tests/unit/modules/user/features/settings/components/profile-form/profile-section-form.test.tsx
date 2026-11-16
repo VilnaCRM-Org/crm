@@ -14,6 +14,7 @@ import { buildEmail, buildFullName, buildPassword, buildUserEntity } from '@test
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import loadIsolated from '@tests/unit/utils/isolated-module';
+import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 type ProfileSectionFormProps = ComponentProps<typeof Form>;
@@ -149,6 +150,49 @@ const REVEALS: Record<ProfileSection, () => Promise<void>> = {
   fullName: revealName,
   email: revealEmail,
   password: revealPassword,
+};
+
+type A11yState = 'resting' | 'revealed' | 'busy' | 'field error';
+
+const A11Y_STATES: readonly A11yState[] = ['resting', 'revealed', 'busy', 'field error'];
+
+const A11Y_SECTIONS = [
+  ['fullName', SAVE_NAME, NAME_PASSWORD],
+  ['email', SAVE_EMAIL, EMAIL_PASSWORD],
+  ['password', SAVE, CURRENT],
+] as const;
+
+const A11Y_CASES = A11Y_SECTIONS.flatMap(([section, saveLabel, passwordLabel]) =>
+  A11Y_STATES.map((state) => [section, state, saveLabel, passwordLabel] as const)
+);
+
+const submit = async (saveLabel: string): Promise<void> => {
+  await userEvent.click(screen.getByRole('button', { name: saveLabel }));
+};
+
+const A11Y_DRIVERS: Record<
+  A11yState,
+  (section: ProfileSection, saveLabel: string, passwordLabel: string) => Promise<void>
+> = {
+  resting: async () => undefined,
+  revealed: async (section) => {
+    await REVEALS[section]();
+  },
+  busy: async (section, saveLabel) => {
+    mockUpdate.mockReturnValue(new Promise(() => undefined));
+    await REVEALS[section]();
+    await submit(saveLabel);
+    await waitFor(() => expect(screen.getByRole('button', { name: saveLabel })).toBeDisabled());
+  },
+  'field error': async (section, saveLabel, passwordLabel) => {
+    mockUpdate.mockResolvedValue(
+      invalidWith({ field: 'currentPassword', reason: 'password_wrong' })
+    );
+    await REVEALS[section]();
+    await submit(saveLabel);
+    expect(await screen.findByText(WRONG_PASSWORD)).toBeInTheDocument();
+    await waitFor(() => expect(field(passwordLabel)).toHaveAttribute('aria-invalid', 'true'));
+  },
 };
 
 describe('ProfileSectionForm', () => {
@@ -575,6 +619,18 @@ describe('ProfileSectionForm', () => {
       expect(noticeHolder()).toHaveAttribute('role', 'status');
       expect(screen.getByRole('button', { name: SAVE })).toBeDisabled();
     });
+  });
+
+  describe('accessibility', () => {
+    it.each(A11Y_CASES)(
+      'has no accessibility violation in the %s section, %s',
+      async (section, state, saveLabel, passwordLabel) => {
+        const { container } = render(sectionForm(section), { wrapper });
+        await A11Y_DRIVERS[state](section, saveLabel, passwordLabel);
+
+        await expectNoA11yViolations(container);
+      }
+    );
   });
 
   describe('three forms side by side', () => {
