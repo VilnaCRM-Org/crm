@@ -16,6 +16,7 @@ import {
   currentPasswordField,
   editPassword,
   emailField,
+  expectEveryPasswordFieldEmpty,
   expectSuccessToast,
   fillCurrentPassword,
   nameField,
@@ -203,13 +204,15 @@ test.describe('Settings keyboard contract (issue #330)', () => {
 
   test('the password Clear keeps focus on itself and empties both fields', async ({ page }) => {
     await openSettings(page, stubProfile(page));
-    await fillCurrentPassword(page, password);
+    await editPassword(page, password, newPassword);
 
     await clearButton(page).focus();
     await page.keyboard.press('Enter');
 
     await expect(clearButton(page)).toBeFocused();
-    await expect(currentPasswordField(page)).toHaveValue('');
+    await expectEveryPasswordFieldEmpty(page);
+    await expect(currentPasswordField(page)).toHaveAttribute('type', 'password');
+    await expect(newPasswordField(page)).toHaveAttribute('type', 'password');
   });
 
   test('the name Clear restores the loaded value and moves focus to the input', async ({

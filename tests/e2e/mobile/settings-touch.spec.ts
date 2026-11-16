@@ -169,6 +169,12 @@ test.describe('Settings on touch devices (issue #330)', () => {
       page.getByRole('button', { name: text.tryAgain, exact: true }),
       'toast retry'
     );
+
+    await typeByTap(emailField(page), buildEmail());
+
+    await expectTouchTarget(emailPasswordField(page), 'e-mail password field');
+    await expectTouchTarget(saveEmailButton(page), 'e-mail Save');
+    await expectTouchTarget(clearButtonOf(emailField(page)), 'e-mail Clear');
   });
 
   test('has no horizontal overflow at the device width or at 320 px', async ({ page }) => {
