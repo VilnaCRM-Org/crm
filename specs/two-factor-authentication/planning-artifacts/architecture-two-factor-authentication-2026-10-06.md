@@ -1279,6 +1279,12 @@ and `useAuthStore`, as the challenge hook does, and the loader stays container-f
 (`tests/unit/tooling/paint-path-graph.test.ts`). `zustand` itself is on the paint path from chore
 `zustand-client-state`, which measures the paint budget; this feature adds no store.
 
+> Amended 2026-11-16 (gate finding; owner amendment of 2026-11-10, §19.1): the sign-in hook does
+> not import the token module. It value-imports `ChunkRetryLoader`, the sandbox demo-session and
+> auth-session providers, and `useAuthStore` with `CLEARED_AUTH_STATE`; `AUTH_TOKENS` reaches only
+> the lazily loaded `SignInSubmitProcessor`, so the tokens stay off the `/sign-in` form chunk, as
+> `tests/unit/tooling/performance-serving.test.ts` pins.
+
 GraphQL sign-in failures carry an i18n reason. `AuthError` (`auth-error.ts:9-16`) gains
 `readonly reason?: SignInFailureReason` (`invalid_credentials`, `locked`, `rate_limited`,
 `transient`). `useLoginSubmitter` renders `t('sign_in.errors.<reason>')` when `reason` is set,
