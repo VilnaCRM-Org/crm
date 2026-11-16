@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/playwright:v1.65.0-jammy@sha256:5a8620d70618963ec6628dd77cc25ec6a4b232e26c4a41241a8c1def04e2dc04
 
 ARG BUN_VERSION=1.4.4
-ARG UBUNTU_SNAPSHOT=20261110T000000Z
+ARG UBUNTU_SNAPSHOT=20261020T000000Z
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
