@@ -2290,6 +2290,11 @@ Amended 2026-11-11 (gate finding): a ninth new class, `FieldViolationParser` (`P
 method, no constructor arguments), and a seventh new symbol, `AUTH_TOKENS.FieldViolationParser`; see
 §6.8.
 
+Amended 2026-11-11 (mutation-shard cap): two more new classes, `PiiTextScrubber` and
+`TwoFactorTextScrubber` (`Scrubber`, one public `scrub` method each, no token), split out of
+`PiiScrubber` so each file fits one mutation shard. `PiiScrubber` holds a `PiiTextScrubber`, which
+holds a `TwoFactorTextScrubber` and applies its 2FA patterns first (§7.2).
+
 **Removed from the earlier plan:** `TwoFactorChallengeActions` and its `AuthStateActions`
 interface (the hook calls the provider through the loader, §6.3), the `SignInProvider` Strategy
 and its legacy REST implementation, `SessionLinkFactory` as a class this bundle might build (it
@@ -2314,7 +2319,8 @@ Changed (nine):
   Amended 2026-11-11: its constructor now takes the injected `FieldViolationParser`, which owns the
   input-property step (§6.8); this is the one change to the transformer beyond appended rows.
 - `LoginRedirectTarget` — rejects the challenge path.
-- `PiiScrubber` — four fragments, one pattern.
+- `PiiScrubber` — four fragments, one pattern. Amended 2026-11-11: its free-text patterns moved to
+  `PiiTextScrubber`, and the 2FA patterns to `TwoFactorTextScrubber`, which runs first (§7.1).
 - `UserModuleRegistrar` (`di.ts:31-112`) — six `registerSingleton` calls folded into the
   existing steps and the two REST registrations removed; the `AuthStoreActionsDeps` closure is
   unchanged; nine functions and no new closure.
@@ -3225,6 +3231,8 @@ User module, code level (`miro/20`, `miro/21`):
   which calls `useTwoFactorSettings()` itself.
 - `2FASettings` → `2FADTOSettingsEntity [type]` → the `settings` prop, a
   `TwoFactorSettingsEntity`.
+- `PiiTextScrubber` and `TwoFactorTextScrubber` (amended 2026-11-11, §7.1) sit inside the
+  observability boundary's `PiiScrubber`, outside the user-module board, and add no element or edge.
 - The board has no element below `[Transformer]`; `FieldViolationParser` (amended 2026-11-11, §6.8)
   is part of the `UserServiceErrorTransformer` box, injected into it, and adds no layer or edge.
 

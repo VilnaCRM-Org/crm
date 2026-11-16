@@ -365,7 +365,10 @@ Derived from the architecture and from the repository gates this stage re-read:
 - AR-4 (§7.3): every interface and alias lives in a type-only file under a `types/` folder.
 - AR-5 (§7.1): new classes use the approved suffixes `Repository`, `Transformer`, `Provider` and
   `Normalizer`; this bundle edits no naming policy. Since the 2026-11-10 owner amendment to AR-2,
-  `SignInSubmitProcessor` also uses the policy's existing `Processor` suffix.
+  `SignInSubmitProcessor` also uses the policy's existing `Processor` suffix. Amended 2026-11-16:
+  `FieldViolationParser` uses the policy's existing `Parser` suffix, and `PiiTextScrubber` and
+  `TwoFactorTextScrubber` its existing `Scrubber` suffix (`config/class-naming-policy.js`); the
+  bundle still edits no naming policy.
 - AR-6 (§6.5): one-time navigation markers (`focusMain`, `notice`) are cleared only by
   `useArrivalFocus`, in one history replace.
 - AR-7: the integration suite's 100% threshold binds every `src` file an integration test loads;
@@ -788,6 +791,11 @@ e-mail pattern first. `tests/builders/` holds `app-config`, `auth`, `credentials
 - Given `patterns`, when it is read, then the otpauth pattern is its first entry, before the
   e-mail pattern, and `"otpauth://totp/VilnaCRM:a@b.c?secret=ABC" next` scrubs to
   `"[redacted]" next`; ESLint `security/detect-unsafe-regex` passes without suppression.
+  Amended 2026-11-11 (mutation-shard cap): the scrubber ships as three classes. `PiiScrubber`
+  (`pii-scrubber.ts`) walks the event and denies the fragments; it holds a `PiiTextScrubber`
+  (`pii-text-scrubber.ts`) for the free-text patterns, which holds a `TwoFactorTextScrubber`
+  (`two-factor-text-scrubber.ts`) for the otpauth and labelled 2FA patterns and applies them
+  first. This criterion therefore reads: `TwoFactorTextScrubber` runs before the e-mail pattern.
 - Given a v4 UUID correlation id and an ordinary six-digit number in free text, when they are
   scrubbed, then both are unchanged.
 - Given the builders under the seeded Faker, when they are called, then `buildTotpCode` returns
@@ -883,7 +891,8 @@ rows), `src/modules/user/types/user-service/user-service-failure.ts` (MODIFY: ap
 - Given the changed and new types, when the chore #332 gate runs, then it reports nothing;
   `unknown` appears only as the `error` parameter of `normalize`, and the four code unions are
   named literal unions shared by both features (NFR-21).
-- Given the two classes against architecture §19, when compared, then the transformer is the
+- Given the two classes (amended 2026-11-11: three, with `FieldViolationParser` the transformer's
+  injected violation step) against architecture §19, when compared, then the transformer is the
   module-shared [Transformer] the two Data providers call, the normalizer is a helper inside React
   hook, `TwoFactorDto` is the board's `2FADTO [type]`, and no class carries a `Controller`,
   `Service` or `Handler` suffix (NFR-22).
