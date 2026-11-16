@@ -2,6 +2,7 @@ import { useReducer } from 'react';
 
 import type {
   TwoFactorBannerCode,
+  TwoFactorCodeKind,
   TwoFactorFieldError,
 } from '@/modules/user/types/two-factor/code';
 import type { ChallengeFailureReason, ChallengeResult } from '@auth/types/two-factor/challenge';
@@ -31,7 +32,7 @@ const BANNER_BY_REASON = new Map<ChallengeFailureReason, TwoFactorBannerCode>([
 const SHORT_DIGITS = /^\d{0,5}$/;
 const WHITESPACE = /\s/g;
 
-export function fieldErrorOf(raw: string, mode: ChallengeView['mode']): TwoFactorFieldError {
+export function fieldErrorOf(raw: string, mode: TwoFactorCodeKind): TwoFactorFieldError {
   const compact = raw.replace(WHITESPACE, '');
   return mode === 'totp' && SHORT_DIGITS.test(compact) ? 'incomplete' : 'format';
 }

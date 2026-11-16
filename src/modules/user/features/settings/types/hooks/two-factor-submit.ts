@@ -1,3 +1,5 @@
+import type { SubmitHandler } from 'react-hook-form';
+
 import type { AbortableRun } from '@/hooks/types/use-abortable-submit';
 import type TwoFactorCodeNormalizer from '@/modules/user/lib/two-factor-code-normalizer';
 import type {
@@ -20,6 +22,8 @@ import type {
   TwoFactorDisable,
   TwoFactorSetup,
 } from './two-factor-operations';
+
+export type TwoFactorCodeSubmit = SubmitHandler<TwoFactorDto>;
 
 export interface SettledSubmitOptions<TInput> {
   readonly run: AbortableRun<TInput, TwoFactorSettingsOutcome>;

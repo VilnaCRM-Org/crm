@@ -4,6 +4,7 @@ import type { TwoFactorDto } from '@/modules/user/types/user/two-factor-dto';
 
 import type { ConfirmationFormProps } from '../types/components/two-factor-settings';
 import type { ConfirmationCopy } from '../types/hooks/confirmation-copy';
+import type { TwoFactorCodeSubmit } from '../types/hooks/two-factor-submit';
 import type { TwoFactorSettingsProps } from '../types/two-factor/settings-view';
 
 import useConfirmationShell from './use-confirmation-shell';
@@ -12,7 +13,7 @@ const DEFAULT_VALUES = { twoFactorCode: '' };
 
 export default function useCodeFormProps(
   props: TwoFactorSettingsProps,
-  onSubmit: ConfirmationFormProps<TwoFactorDto>['onSubmit'],
+  onSubmit: TwoFactorCodeSubmit,
   copy: ConfirmationCopy
 ): ConfirmationFormProps<TwoFactorDto> {
   const { t } = useTranslation();

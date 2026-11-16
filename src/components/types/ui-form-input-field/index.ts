@@ -18,6 +18,8 @@ export type FieldRules<T extends FieldValues> = Omit<
 
 export type FormTextFieldInputSlotProps = Pick<OutlinedInputProps, 'endAdornment' | 'readOnly'>;
 
+export type FormTextFieldChangeHandler = OutlinedInputProps['onChange'];
+
 export interface FormTextFieldSlotProps {
   input?: FormTextFieldInputSlotProps | undefined;
   htmlInput?: InputBaseComponentProps | undefined;
@@ -42,7 +44,7 @@ export interface FormTextFieldProps extends Pick<
 > {
   helperText?: string | undefined;
   label?: string | undefined;
-  onChange?: OutlinedInputProps['onChange'] | undefined;
+  onChange?: FormTextFieldChangeHandler | undefined;
   slotProps?: FormTextFieldSlotProps | undefined;
 }
 
