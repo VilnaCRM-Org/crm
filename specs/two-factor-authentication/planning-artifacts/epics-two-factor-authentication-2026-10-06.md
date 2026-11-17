@@ -4,7 +4,7 @@ workflowType: epics-and-stories
 stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-13
+revised: 2026-11-17
 iteration: 4
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -51,7 +51,12 @@ revisions:
   - '2026-11-10: owner decision; the collapsed sidebar state stays persisted in localStorage'
   - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one AR-2
     exception'
+  - '2026-11-11: gate finding; Story 1.3 scrubber split, Story 1.4 FieldViolationParser, Story 2.2
+    sign-in patch and Story 4.2 ring amended'
+  - '2026-11-12: gate finding; FR-9 and FR-10, a sign-in ends any earlier session'
   - '2026-11-13: gate finding; Story 2.7 and UX-DR-1 adopt the 130 px tablet challenge cells'
+  - '2026-11-16: gate finding; AR-5 Parser and Scrubber suffixes'
+  - '2026-11-17: gate finding; shipped spec paths noted in Stories 3.4, 3.5, 4.3 and 4.4'
 ---
 
 # Epics and stories: two-factor authentication for the user module
@@ -59,7 +64,8 @@ revisions:
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27,
 2026-11-03 (owner decision: the `twoFactorAuth` flag removed), 2026-11-10 (the owner decisions of
 2026-11-04 and 2026-11-05 marked in Stories 2.6, 2.7, 3.4, 3.6, 4.1, 4.2 and 4.4) and 2026-11-13
-(UX-DR-1 tablet cells amended, FR-45) **Feature:**
+(UX-DR-1 tablet cells amended, FR-45), 2026-11-11, 2026-11-12, 2026-11-16 and 2026-11-17 (gate
+findings, see `revisions`) **Feature:**
 `two-factor-authentication`
 
 > **Owner decisions of 2026-11-04 (challenge page as drawn, auto-submit, Figma card), noted
@@ -2130,6 +2136,9 @@ second `SettingsGrid` child while `useFeatureFlag('twoFactorAuth')` is on),
 `tests/e2e/modules/user/features/settings/two-factor-enrolment.spec.ts` (NEW),
 `tests/e2e/route-coverage.tsv` (MODIFY), unit tests with jest-axe.
 
+Code facts (shipped 2026-11-17): the enrolment spec landed as
+`tests/e2e/modules/user/features/settings/two-factor-settings.spec.ts`.
+
 **Gates:** DoD local gates; `make lint-i18n`, `make check-e2e-route-coverage`, `make lint-docs`;
 CI `make test-e2e`, the bundle-size report.
 
@@ -2223,6 +2232,9 @@ itself. Settings copy is lazy, so `src/i18n/localization.json` does not change h
 `confirm-view.tsx`, `reauth-view.tsx` and their stories (NEW), `settings/i18n/{uk,en}.json`
 (MODIFY), `tests/e2e/modules/user/features/settings/two-factor-management.spec.ts` (NEW),
 `tests/e2e/route-coverage.tsv` (MODIFY), unit tests with jest-axe.
+
+Code facts (shipped 2026-11-17): the management spec landed as
+`tests/e2e/modules/user/features/settings/two-factor-manage.spec.ts`.
 
 **Gates:** DoD local gates; `make lint-i18n`, `make check-e2e-route-coverage`; CI `make test-e2e`.
 
@@ -2487,6 +2499,10 @@ So that the feature works where many people manage their accounts.
 **Files:** `tests/e2e/mobile/two-factor-touch.spec.ts` (NEW), `tests/e2e/route-coverage.tsv`
 (MODIFY).
 
+Code facts (shipped 2026-11-17): the touch lane landed as two specs,
+`tests/e2e/mobile/two-factor-challenge-touch.spec.ts` and
+`tests/e2e/mobile/two-factor-settings-touch.spec.ts`.
+
 **Gates:** DoD local gates; `make check-e2e-route-coverage`; CI mobile lane inside
 `make test-e2e`.
 
@@ -2525,6 +2541,10 @@ So that a later pixel regression on 2FA fails CI.
 `tests/visual/visual-comparison.settings-two-factor.spec.ts` (NEW), `tests/visual/constants.ts`,
 `tests/visual/mobile/auth.spec.ts` (MODIFY), the new snapshot folders (from the CI artifact),
 `tests/e2e/route-coverage.tsv` (MODIFY).
+
+Code facts (shipped 2026-11-17): the two visual specs landed as one,
+`tests/visual/visual-comparison.two-factor.spec.ts`, with the device shots in
+`tests/visual/mobile/two-factor.spec.ts`.
 
 **Gates:** DoD local gates; `make check-e2e-route-coverage`; CI `make test-visual`.
 
