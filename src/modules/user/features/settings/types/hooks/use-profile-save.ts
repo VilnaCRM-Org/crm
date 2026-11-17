@@ -1,5 +1,4 @@
-import type { TFunction } from 'i18next';
-import type { Dispatch, RefObject } from 'react';
+import type { RefObject } from 'react';
 
 import type { ToastQueue } from '@/components/types/ui-toast';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
@@ -31,8 +30,12 @@ export interface ProfileSave {
   readonly block: () => void;
 }
 
-export interface SaveTarget {
+export interface SectionTargets {
   readonly buttonRef: RefObject<HTMLButtonElement | null>;
+  readonly focusRef: RefObject<HTMLElement | null>;
+}
+
+export interface SaveTarget extends SectionTargets {
   readonly remember: () => void;
 }
 
@@ -69,9 +72,3 @@ export type ProfileFormAction =
   | SettledSaveAction
   | ClearSaveAction
   | BlockedSaveAction;
-
-export interface SaveSettleContext {
-  readonly props: ProfileEditContext;
-  readonly t: TFunction;
-  readonly dispatch: Dispatch<ProfileFormAction>;
-}

@@ -317,7 +317,9 @@ describe('useProfileSave', () => {
 
       expect(adopt).toHaveBeenCalledWith(entity);
       expect(show).toHaveBeenCalledTimes(1);
-      expect(show).toHaveBeenCalledWith({ items: [{ tone: 'success', message }] });
+      expect(show).toHaveBeenCalledWith({
+        items: [{ tone: 'success', message, returnFocusRef: expect.anything() }],
+      });
       expect(result.current.state.settled).toBe(1);
       expect(result.current.state.saved).toBe(1);
       expect(result.current.state.lastSettleSaved).toBe(true);
@@ -495,6 +497,50 @@ describe('useProfileSave', () => {
     expect(result.current.state.settled).toBe(1);
   });
 
+  it('retries its own section after another section took the save ref', async () => {
+    const parts = harness();
+    const { show, click } = parts;
+    const other = document.createElement('button');
+    const otherClick = jest.spyOn(other, 'click');
+    mockUpdate.mockResolvedValue(failedOutcome('transient'));
+    const { result } = mountSave(parts);
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+    parts.props.saveRef.current = other;
+
+    const [drafts] = show.mock.calls[0] as [
+      { items: Array<{ action?: { onActivate: () => void } }> },
+    ];
+    drafts.items[0]?.action?.onActivate();
+
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(otherClick).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['fails', failedOutcome('transient'), 'button'],
+    ['succeeds', okOutcome(), 'input'],
+  ] as const)(
+    'hands the toast its own section target when a name save %s',
+    async (_name, outcome, owner) => {
+      const parts = harness();
+      mockUpdate.mockResolvedValue(outcome);
+      const { result } = mountSave(parts);
+      await act(async () => {
+        result.current.save(nameChange());
+      });
+      parts.props.saveRef.current = document.createElement('button');
+
+      const [drafts] = parts.show.mock.calls[0] as [
+        { items: Array<{ returnFocusRef?: { current: HTMLElement | null } }> },
+      ];
+
+      expect(drafts.items).toHaveLength(1);
+      expect(drafts.items[0]?.returnFocusRef?.current).toBe(parts[owner]);
+    }
+  );
+
   it('lets the transient retry do nothing once the save button is gone', async () => {
     const { props, show } = harness();
     mockUpdate.mockResolvedValue(failedOutcome('transient'));
@@ -527,7 +573,7 @@ describe('useProfileSave', () => {
     });
 
     expect(show).toHaveBeenCalledWith({
-      items: [{ tone: 'error', message, action: undefined }],
+      items: [{ tone: 'error', message, action: undefined, returnFocusRef: expect.anything() }],
     });
     expect(result.current.state.settled).toBe(1);
   });
@@ -701,7 +747,9 @@ describe('useProfileSave', () => {
       });
 
       expect(show).toHaveBeenCalledTimes(1);
-      expect(show.mock.calls[0]?.[0]).toEqual({ items: [{ tone: 'success', message: key }] });
+      expect(show.mock.calls[0]?.[0]).toEqual({
+        items: [{ tone: 'success', message: key, returnFocusRef: expect.anything() }],
+      });
     });
 
     it.each([

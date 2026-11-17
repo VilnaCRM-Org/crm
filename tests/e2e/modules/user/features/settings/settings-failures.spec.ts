@@ -98,6 +98,50 @@ test.describe('Settings save failures (issue #330)', () => {
     expect(stub.count('UpdateUser')).toBe(2);
   });
 
+  test('retries the failed name save, not an e-mail saved after it', async ({ page }) => {
+    const newEmail = buildEmail();
+    stub = await stubProfile(page, {
+      UpdateUser: [
+        replyWithStatus(503),
+        replyWithSaved({ email: newEmail, confirmed: false }),
+        replyWithSaved({ initials: NEW_NAME, email: newEmail, confirmed: false }),
+      ],
+    });
+    await openLoadedSettings(page);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectErrorToast(page, text.transient);
+    await saveEditedEmail(page, newEmail, password);
+    await expectSuccessToast(page, text.emailSent);
+
+    await page.getByRole('button', { name: text.tryAgain, exact: true }).click();
+
+    await expectSuccessToast(page, text.saved);
+    const updates = stub.calls.filter((call) => call.operation === 'UpdateUser');
+    expect(updates).toHaveLength(3);
+    expect(updates[2]?.variables['input']).toMatchObject({ initials: NEW_NAME });
+    expect(updates[2]?.variables['input']).not.toHaveProperty('email');
+  });
+
+  test('returns focus to the name Save when its failure toast closes last', async ({ page }) => {
+    stub = await stubProfile(page, {
+      UpdateUser: [replyWithStatus(503), replyWithSaved({ email: buildEmail() })],
+    });
+    await openLoadedSettings(page);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectErrorToast(page, text.transient);
+    await saveEditedEmail(page, buildEmail(), password);
+    await expectSuccessToast(page, text.emailSent);
+    const close = page.getByRole('button', { name: text.toastClose });
+
+    await close.last().click();
+    await expect(close).toHaveCount(1);
+    await expect(close).toBeFocused();
+    await close.click();
+
+    await expect(close).toHaveCount(0);
+    await expect(saveNameButton(page)).toBeFocused();
+  });
+
   test('moves focus to the heading when a Save settles offline', async ({ page, context }) => {
     const gate = holdReply(replyWithStatus(503));
     stub = await stubProfile(page, { UpdateUser: [gate.reply] });

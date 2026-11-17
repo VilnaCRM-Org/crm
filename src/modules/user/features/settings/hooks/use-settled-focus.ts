@@ -14,7 +14,7 @@ function settledTarget(
 }
 
 export default function useSettledFocus(options: SettledFocusOptions): void {
-  const { state, section, buttonRef, saveRef, headingRef } = options;
+  const { state, section, buttonRef, saveRef, focusRef, headingRef } = options;
   const { settled, lastSettleSaved } = state;
 
   useLayoutEffect(() => {
@@ -23,6 +23,7 @@ export default function useSettledFocus(options: SettledFocusOptions): void {
     const collapsed = lastSettleSaved && section !== 'password';
     const target = collapsed ? document.getElementById(section) : button;
     saveRef.current = target;
+    focusRef.current = target;
     settledTarget(target, button?.form, headingRef.current)?.focus();
-  }, [settled, lastSettleSaved, section, buttonRef, saveRef, headingRef]);
+  }, [settled, lastSettleSaved, section, buttonRef, saveRef, focusRef, headingRef]);
 }

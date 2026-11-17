@@ -379,6 +379,50 @@ describe('settings page save outcomes (page)', () => {
     await waitFor(() => expect(field(NAME)).toHaveFocus());
   });
 
+  const failNameThenSaveEmail = async (): Promise<ReturnType<typeof answerProfileOperation>> => {
+    await editName();
+    await editEmail();
+    const replies = [
+      (): Response => new HttpResponse(null, { status: 503 }),
+      (): Response => saved({ email: NEW_EMAIL, confirmed: false }),
+      (): Response => saved({ initials: NEW_NAME, email: NEW_EMAIL, confirmed: false }),
+    ];
+    const answered = await submitWith(() => (replies.shift() ?? saved)());
+    await waitFor(() => expect(toastTexts()).toEqual([expect.stringContaining(TRANSIENT)]));
+    await typeInto(EMAIL_PASSWORD, ENTERED_PASSWORD);
+    await userEvent.click(saveButton(SAVE_EMAIL));
+    await waitFor(() => expect(toastTexts()).toHaveLength(2));
+    expect(toastTexts()[1]).toContain(EMAIL_SENT);
+    return answered;
+  };
+
+  it('retries the name save, not the e-mail saved after it', async () => {
+    await mount();
+    const answered = await failNameThenSaveEmail();
+
+    await userEvent.click(screen.getByRole('button', { name: RETRY }));
+
+    await waitFor(() => expect(answered).toHaveLength(3));
+    const retried = answered[2]?.variables['input'] as Record<string, unknown>;
+    expect(retried).toMatchObject({ initials: NEW_NAME });
+    expect(retried).not.toHaveProperty('email');
+    expect(answered[1]?.variables['input']).toHaveProperty('email', NEW_EMAIL);
+    await waitFor(() => expect(toastTexts().join(' ')).not.toContain(TRANSIENT));
+  });
+
+  it('returns focus to the name Save when the name toast closes after an e-mail save', async () => {
+    await mount();
+    await failNameThenSaveEmail();
+    const [nameClose, emailClose] = screen.getAllByRole('button', { name: 'Закрити сповіщення' });
+
+    await userEvent.click(emailClose as HTMLElement);
+    expect(nameClose).toHaveFocus();
+    await userEvent.click(nameClose as HTMLElement);
+
+    expect(toastTexts()).toHaveLength(0);
+    expect(saveButton()).toHaveFocus();
+  });
+
   it('sends nothing when the retry is activated while offline', async () => {
     await mount();
     await editName();

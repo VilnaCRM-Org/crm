@@ -269,6 +269,23 @@ describe('UIToastStack', () => {
       expect(closeButtons()).toHaveLength(0);
     });
 
+    it.each([
+      ['to the target a toast names, over the page return target', 'block', 'own'],
+      ['to the fallback, not the page return target, when the named target hid', 'none', 'heading'],
+    ] as const)('moves focus %s', async (_name, display, expected) => {
+      const own = document.createElement('button');
+      own.style.display = display;
+      document.body.append(own);
+      const show = mountPage({ withFallback: true });
+      show(set({ ...failure('Не вдалося'), returnFocusRef: { current: own } }));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(expected === 'own' ? own : heading()).toHaveFocus();
+      expect(saveButton()).not.toHaveFocus();
+      own.remove();
+    });
+
     it('moves focus to the fallback when the return target is disabled', async () => {
       const show = mountPage({ returnTarget: 'disabled', withFallback: true });
       show(set(success('Перше')));

@@ -45,6 +45,7 @@ const optionsOf = (
   section,
   buttonRef: { current: button },
   saveRef: { current: null },
+  focusRef: { current: null },
   headingRef: { current: heading },
 });
 
@@ -62,6 +63,7 @@ describe('useSettledFocus', () => {
 
     expect(other).toHaveFocus();
     expect(options.saveRef.current).toBeNull();
+    expect(options.focusRef.current).toBeNull();
   });
 
   it('focuses Save once per settled save', () => {
@@ -90,6 +92,7 @@ describe('useSettledFocus', () => {
 
       expect(input).toHaveFocus();
       expect(options.saveRef.current).toBe(input);
+      expect(options.focusRef.current).toBe(input);
     }
   );
 
@@ -103,6 +106,7 @@ describe('useSettledFocus', () => {
 
       expect(save).toHaveFocus();
       expect(options.saveRef.current).toBe(save);
+      expect(options.focusRef.current).toBe(save);
     }
   );
 

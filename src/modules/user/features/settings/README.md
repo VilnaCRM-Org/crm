@@ -47,7 +47,7 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
   shows the name-less chip,
   and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
   caller aborted the read. The settings page itself still reads through `ProfileProvider`.
-- `hooks/` — `useProfileLoad`, `useProfileSave`, `useEmailResend`, `useEmailRow`,
+- `hooks/` — `useProfileLoad`, `useProfileSave`, `useSaveSettle`, `useEmailResend`, `useEmailRow`,
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useSectionReveal`,
   `useCollapseFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
@@ -217,6 +217,12 @@ name or e-mail save succeeded and hid its Save. When Save is itself disabled as 
 the connection dropped during the Save, focus that fell to the page body moves to the `h1`, the same
 fallback closing a toast uses, and a field the user is still in keeps focus. `useCollapseFocus`
 does the same for a Clear that removes itself.
+
+Every Save toast belongs to the section that sent it (`useSaveSettle`). Its `returnFocusRef` is that
+section's own settled target, so closing the last toast returns focus to that form's Save, or to
+its text input when the Save hid, and to the `h1` when that control cannot take focus, never to a
+section that saved later. The transient-failure "Спробувати ще раз" clicks the Save of the section
+that failed, so a name failure followed by an e-mail save retries the name alone.
 
 Each section sends only its own field and its own password (`ProfileChangeDetector.detect`), and a
 form remounts only on its own successful save (`key=saved`), so a draft in another form survives.

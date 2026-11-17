@@ -31,10 +31,12 @@ function dismissTarget(
 ): HTMLElement | null | undefined {
   const { items } = options.toasts;
   const index = items.findIndex((toast) => toast.id === id);
-  if (index < 0) return undefined;
+  const closing = items[index];
+  if (closing === undefined) return undefined;
+  const returnTo = closing.returnFocusRef ?? options.returnFocusRef;
   return (
     closeOf(buttons, items[index + 1] ?? items[index - 1]) ??
-    focusable(options.returnFocusRef.current) ??
+    focusable(returnTo.current) ??
     options.fallbackFocusRef?.current
   );
 }
