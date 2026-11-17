@@ -30,6 +30,7 @@ export default {
     lineHeight: '1.5rem',
     color: paletteColors.primary.linkText,
     textDecoration: 'underline',
+    textDecorationColor: 'currentColor',
     ...focusVisibleRing,
   },
 } as const;

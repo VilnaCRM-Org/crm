@@ -37,6 +37,7 @@ describe('recovery codes notice styles', () => {
         lineHeight: '1.5rem',
         color: '#0074B5',
         textDecoration: 'underline',
+        textDecorationColor: 'currentColor',
         ...FOCUS_RING,
       },
     });
