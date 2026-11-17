@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { buildRecoveryCode, buildTotpCode } from '@tests/builders';
 import {
   PROFILE_NODE,
   stubProfile,
@@ -35,8 +36,8 @@ import { currentLanguage, notFoundScreens, type ScreenSize, screenSizes } from '
 import { openChallenge, openTwoFactorSettings } from './open-two-factor';
 import takeStableSnapshot from './take-stable-snapshot';
 
-const CODE = '123456';
-const RECOVERY_CODE = 'ABCD-2345';
+const CODE = buildTotpCode();
+const RECOVERY_CODE = buildRecoveryCode();
 const homeHeading: string = t('home.heading');
 const lowCodesNotice: string = t('recovery_codes_notice.remaining', { count: 1 });
 
