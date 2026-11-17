@@ -218,8 +218,9 @@ record the judgment calls. The corrections:
    anonymous set is `CreateUser`, `RequestPasswordReset`, `ConfirmPasswordReset`, `SignInUser`,
    `CompleteTwoFactorUser`; session end also calls `sandboxDemoSession.signOut()`),
    `RouteFlagGate` (`src/routes/route-flag-gate.tsx`, scalar `flag` on `RouteCommon`),
-   `paletteColors.error.text` `#C62828` (`src/styles/colors.ts`), the `UIForm` `footer`, the
-   toast primitive, and `settings/utils/response-schemas.ts` with its
+   `paletteColors.error.text` `#C62828` (`src/styles/colors.ts`; `#D63333` since the 2026-11-02
+   owner decision), the `UIForm` `footer`, the toast primitive, and
+   `settings/utils/response-schemas.ts` with its
    `EXEMPT_RENDER_PATH_FILES` entry (`config/di-collaborator-policy.js:180`). The local mock reads
    no token and throws no 401 (`docker/apollo-server/lib/server.ts` context returns `{}`).
 5. **No `twoFactorAuth` flag yet.** `FeatureFlag` is `'userSettings'` alone
@@ -1877,7 +1878,8 @@ Superseded 2026-11-04 (owner decision, challenge as drawn): "Назад" is `Car
 `onClick`, a `button`, in the Figma `#969B9D` (2.81:1), and it matches the owner-accepted entry
 `#auth-form-card > button.MuiButton-text` in `tests/utils/a11y/axe-config.ts`.
 Error text uses #330's `paletteColors.error.text` (`#C62828`) through the shared banner and field
-error.
+error. Superseded 2026-11-02 (owner decision, field-error colour, #330): the token ships `#D63333`,
+4.79:1 on `#FFFFFF` and 4.63:1 on `#FBFBFB`.
 
 Code facts (reconciled 2026-10-27): `UIForm` (`src/components/ui-form/index.tsx`) arrives with
 `titleRef`, `notice`, `footer`, `submitRef`, `submitSx`, `submitSpacing` and `onInvalid`, but no
@@ -2965,8 +2967,8 @@ builds a copy.
   step with its five rows; `settings/utils/response-schemas.ts` with its
   `EXEMPT_RENDER_PATH_FILES` entry; the `'session_ended'` `ArrivalNotice` member and the
   `ProtectedRoute` rule that sets it; the `UIForm` `footer`; `paletteColors.error.text`
-  (`#C62828`); `UIToast` (not used here). The mock reads no token, as #330's does; every 401/403
-  branch comes from msw and `page.route`.
+  (`#C62828`; `#D63333` since the 2026-11-02 owner decision); `UIToast` (not used here). The mock
+  reads no token, as #330's does; every 401/403 branch comes from msw and `page.route`.
 - **Appended by this bundle to an owner's piece, one line or row each:** the 2FA rows of
   `UserServiceErrorTransformer` (§6.8); `'two_factor_expired'` and `'account_locked'` in
   `ArrivalNotice` (§6.5); the four 2FA schemas in #330's `settings/utils/response-schemas.ts`

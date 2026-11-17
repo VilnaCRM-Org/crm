@@ -1546,6 +1546,11 @@ keeps `UIButton`'s default text variant, which paints the palette-less theme's `
 border (`#D0D4D8`, 1.49:1) and placeholder (`#969B9D`, 2.81:1) stay pre-existing defects outside
 this feature: a separate crm issue candidate (§11).
 
+Superseded 2026-11-02 (owner decision, field-error colour, #330): `paletteColors.error.text`
+ships `#D63333`, the value #315 chose for the banner, at 4.79:1 on `#FFFFFF` and 4.63:1 on
+`#FBFBFB`, so the 4.5:1 text bar still holds. The table's error-text row and the `#C62828` above
+record the plan as approved.
+
 > Assumption: one non-text grey (`#80878A`) is introduced for every 2FA border instead of the
 > darker `#57595B`, to stay closest to the Figma weight while clearing 3:1 with margin; the
 > designer follow-up may replace it with any token at or above 3:1.
@@ -2062,7 +2067,9 @@ Consolidated from the predecessors and this stage:
 6. Regeneration asks for one confirmation (FR-33).
 7. No settings security signal and no success events (FR-38).
 8. No value pattern for recovery or six-digit codes in the scrubber (FR-39).
-9. One new non-text grey `#80878A`; the error-text red `#C62828` is #330's (NFR-6).
+9. One new non-text grey `#80878A`; the error-text red `#C62828` is #330's (NFR-6). Superseded
+   2026-11-02 (owner decision, field-error colour, #330): the red ships `#D63333`, 4.79:1 on
+   `#FFFFFF` and 4.63:1 on `#FBFBFB`.
 10. Unknown `401` on completion means an expired session (research §3.5). On a settings mutation
     an unclaimed `401` and "Access Denied." are a session end (FR-34, accepted risk).
 11. Recovery codes are accepted in any case and with or without the hyphen (brief §11).
