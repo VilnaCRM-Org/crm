@@ -507,7 +507,7 @@ a row names a workflow that does not exist.
 
 | Workflow                                | What it enforces                                 |
 | --------------------------------------- | ------------------------------------------------ |
-| `mutation testing (scheduled full)`     | Weekly cold, 52-shard Stryker baseline           |
+| `mutation testing (scheduled full)`     | Weekly cold, 56-shard Stryker baseline           |
 | `security testing`                      | Weekly CodeQL re-scan and the `main` baseline    |
 | `supply-chain security`                 | Weekly full-tree dependency audit to an issue    |
 | `sbom`                                  | SBOMs attached after release, tracked on failure |
