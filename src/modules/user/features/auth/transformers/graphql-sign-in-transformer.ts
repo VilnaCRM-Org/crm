@@ -1,5 +1,6 @@
 import { injectable } from 'tsyringe';
 
+import type { CompleteTwoFactorUserMutation, SignInUserMutation } from '@/api/generated/graphql';
 import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type {
   UserServiceFailure,
@@ -89,7 +90,10 @@ const SERVER_CHALLENGE_FAILURE: ChallengeFailedOutcome = { kind: 'failed', reaso
 
 @injectable()
 export default class GraphQLSignInTransformer {
-  public toSignInResult(payload: unknown, dto: SignInDto): SignInResult {
+  public toSignInResult(
+    payload: SignInUserMutation | null | undefined,
+    dto: SignInDto
+  ): SignInResult {
     const data = SignInUserResultSchema.safeParse(payload).data?.signInUser?.user;
     const email = dto.email.toLowerCase();
     if (data?.twoFactorEnabled === true && data.pendingSessionId) {
@@ -110,7 +114,9 @@ export default class GraphQLSignInTransformer {
     return { ok: false, error };
   }
 
-  public toChallengeResult(payload: unknown): ChallengeResult {
+  public toChallengeResult(
+    payload: CompleteTwoFactorUserMutation | null | undefined
+  ): ChallengeResult {
     const data =
       CompleteTwoFactorUserResultSchema.safeParse(payload).data?.completeTwoFactorUser?.user;
     if (!data?.accessToken) return SERVER_CHALLENGE_FAILURE;

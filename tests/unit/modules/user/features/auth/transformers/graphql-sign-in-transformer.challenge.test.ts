@@ -93,11 +93,11 @@ describe('GraphQLSignInTransformer.toChallengeResult schema', () => {
     return new Loaded();
   };
 
-  const node = (fields: object): object => ({
-    completeTwoFactorUser: { user: { twoFactorEnabled: true, ...fields } },
-  });
+  const wire = (value: unknown): CompleteTwoFactorUserMutation => JSON.parse(JSON.stringify(value));
+  const node = (fields: object): CompleteTwoFactorUserMutation =>
+    wire({ completeTwoFactorUser: { user: { twoFactorEnabled: true, ...fields } } });
 
-  it.each<[string, unknown]>([
+  it.each<[string, CompleteTwoFactorUserMutation]>([
     ['a numeric token', node({ accessToken: 42 })],
     ['an object token', node({ accessToken: { value: buildToken() } })],
     [
@@ -112,9 +112,9 @@ describe('GraphQLSignInTransformer.toChallengeResult schema', () => {
       'a fractional recoveryCodesRemaining',
       node({ accessToken: buildToken(), recoveryCodesRemaining: 1.5 }),
     ],
-    ['a string user', { completeTwoFactorUser: { user: 'user' } }],
-    ['a string completion', { completeTwoFactorUser: 'done' }],
-    ['a string payload', 'payload'],
+    ['a string user', wire({ completeTwoFactorUser: { user: 'user' } })],
+    ['a string completion', wire({ completeTwoFactorUser: 'done' })],
+    ['a string payload', wire('payload')],
   ])('turns %s into the server failure', async (_label, payload) => {
     const loaded = await loadTransformer();
 

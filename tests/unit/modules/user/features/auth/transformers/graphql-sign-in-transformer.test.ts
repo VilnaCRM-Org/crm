@@ -112,11 +112,11 @@ describe('GraphQLSignInTransformer.toSignInResult', () => {
     });
   });
 
-  const node = (fields: object): object => ({
-    signInUser: { user: { success: true, ...fields } },
-  });
+  const wire = (value: unknown): SignInUserMutation => JSON.parse(JSON.stringify(value));
+  const node = (fields: object): SignInUserMutation =>
+    wire({ signInUser: { user: { success: true, ...fields } } });
 
-  it.each<[string, unknown]>([
+  it.each<[string, SignInUserMutation]>([
     ['a numeric token', node({ twoFactorEnabled: false, accessToken: 42 })],
     ['an object token', node({ twoFactorEnabled: false, accessToken: { value: buildToken() } })],
     ['a numeric pending session', node({ twoFactorEnabled: true, pendingSessionId: 7 })],
@@ -129,9 +129,9 @@ describe('GraphQLSignInTransformer.toSignInResult', () => {
       'a numeric 2FA flag',
       node({ twoFactorEnabled: 1, pendingSessionId: buildPendingSessionId() }),
     ],
-    ['a string user', { signInUser: { user: 'user' } }],
-    ['a string signInUser', { signInUser: 'signed-in' }],
-    ['a string payload', 'payload'],
+    ['a string user', wire({ signInUser: { user: 'user' } })],
+    ['a string signInUser', wire({ signInUser: 'signed-in' })],
+    ['a string payload', wire('payload')],
   ])('turns %s into the transient server failure', async (_name, payload) => {
     const loaded = await loadTransformer();
 
