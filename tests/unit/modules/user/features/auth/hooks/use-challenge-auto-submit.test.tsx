@@ -49,7 +49,7 @@ describe('useChallengeAutoSubmit', () => {
   it('submits a pasted code that arrives all at once', () => {
     const { form, onComplete } = mount();
 
-    enter(form(), '654321');
+    enter(form(), buildTotpCode());
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });

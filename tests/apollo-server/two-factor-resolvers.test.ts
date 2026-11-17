@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { ApolloServer } from '@apollo/server';
 
-import { buildClientMutationId, buildEmail, buildPassword } from '@tests/builders';
+import { buildClientMutationId, buildEmail, buildPassword, buildTotpCode } from '@tests/builders';
 
 import { formatError } from '../../docker/apollo-server/lib/format-error';
 import { resolvers } from '../../docker/apollo-server/lib/resolvers';
@@ -365,7 +365,10 @@ describe('2FA operations on the stateless mock', () => {
     it('answers the eight fixed recovery codes for a TOTP code', async () => {
       const clientMutationId = buildClientMutationId();
 
-      const result = await execute(server, CONFIRM, { twoFactorCode: '654321', clientMutationId });
+      const result = await execute(server, CONFIRM, {
+        twoFactorCode: buildTotpCode(),
+        clientMutationId,
+      });
 
       expect(result.errors).toBeUndefined();
       expect(result.data).toEqual({
