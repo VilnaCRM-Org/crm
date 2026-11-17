@@ -44,7 +44,7 @@ CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
 CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
 # The prod image runs on serve-base (Alpine 3.24), not the dev image's Node Alpine 3.21 base, so the
 # Lighthouse DIND install into it needs that branch's versions.
-PROD_CHROMIUM_APK_PACKAGES  = chromium=156.0.8078.79-r0 font-freefont=20120503-r4 freetype=2.14.3-r0 harfbuzz=13.2.1-r0 nss=3.124-r0 npm=11.12.1-r0
+PROD_CHROMIUM_APK_PACKAGES  = chromium=156.0.8078.79-r0 font-freefont=20120503-r4 freetype=2.14.3-r0 harfbuzz=13.2.1-r0 nss=3.133-r0 npm=11.12.1-r0
 # Evaluate once: recursive shell variables interact with the global export above.
 LHCI_DIND_CLI_VERSION       := $(shell sed -n 's/^[[:space:]]*"@lhci\/cli": \["@lhci\/cli@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
 DOTENV_EXPAND_DIND_VERSION  := $(shell sed -n 's/^[[:space:]]*"dotenv-expand": \["dotenv-expand@\([^"]*\)".*/\1/p' bun.lock | head -n 1)

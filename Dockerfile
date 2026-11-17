@@ -16,7 +16,7 @@ RUN apk add --no-cache \
     curl=${CURL_VERSION} \
     g++=14.2.0-r4 \
     git=2.47.3-r0 \
-    jq=1.7.1-r0 \
+    jq=1.8.2-r0 \
     make=4.4.1-r2 \
     python3=3.12.16-r0 && \
     if [ "$INSTALL_CHROMIUM" = "true" ] || [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
