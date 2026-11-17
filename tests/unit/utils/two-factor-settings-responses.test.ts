@@ -1,4 +1,4 @@
-import { buildTotpCode } from '@tests/builders';
+import { buildToken, buildTotpCode } from '@tests/builders';
 
 import {
   CONFIRM_REPLIES,
@@ -30,11 +30,12 @@ interface FakeRoute {
 }
 
 const ENDPOINT = 'http://localhost:4000/graphql';
+const AUTHORIZATION = `Bearer ${buildToken()}`;
 
 const fakeRoute = (operationName: string, variables: unknown = {}): FakeRoute => ({
   request: () => ({
     postDataJSON: () => ({ operationName, variables }),
-    headers: () => ({ authorization: 'Bearer seeded' }),
+    headers: () => ({ authorization: AUTHORIZATION }),
     url: () => ENDPOINT,
   }),
   fulfill: jest.fn().mockResolvedValue(undefined),
@@ -142,7 +143,7 @@ describe('stubSetup', () => {
     await handler(other);
 
     expect(stub.count()).toBe(1);
-    expect(stub.calls).toEqual([{ variables, authorization: 'Bearer seeded', url: ENDPOINT }]);
+    expect(stub.calls).toEqual([{ variables, authorization: AUTHORIZATION, url: ENDPOINT }]);
     expect(setup.fallback).not.toHaveBeenCalled();
     expect(other.fallback).toHaveBeenCalledTimes(1);
     expect(other.fulfill).not.toHaveBeenCalled();
