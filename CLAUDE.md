@@ -749,6 +749,16 @@ already ships, and `apt-get install` refuses that downgrade. The `debian` base r
 snapshot as a comment in `/etc/apt/sources.list.d/debian.sources`, which is a good floor.
 Dependabot does not move either ARG.
 
+**The Playwright stage installs only what its base image lacks** (`make` and `unzip`; `bash` and
+`python3` are pinned at the versions the base already ships) and no compiler: no dependency builds
+a native addon, so `bun install --frozen-lockfile` needs none. That keeps it on the
+`20250925T000000Z` snapshot every branch uses, so the files are warm. Moving to the Playwright 1.65
+base, a newer snapshot downloaded at 120–210 kB/s from CI, spent 10–14 minutes of the build in
+`apt-get` and timed out every Playwright job (#387), while the warm snapshot serves the same bytes
+at several MB/s. A snapshot older than the base still cannot install a package that depends on a
+library the base ships newer (`g++` on `libc6`), so add a package here only after checking
+`apt-get install` against the base image, and bump the snapshot only when that check needs it.
+
 `tests/unit/tooling/image-hardening.test.ts` fails when an apt stage reaches `apt-get update`
 without rewriting its sources to a snapshot host built from a `*_SNAPSHOT` ARG, when a package is
 installed without an exact version, and when the suite codename stops matching the base image
