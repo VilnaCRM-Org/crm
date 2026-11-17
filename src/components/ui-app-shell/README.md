@@ -15,8 +15,8 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   frame receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
   `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
   public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
-  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
-  1440 px. The sidebar breakpoint is a number in
+  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 768, 1024
+  and 1440 px. The sidebar breakpoint is a number in
   `app-layout.styles.ts`, pinned by test to the toolkit's `md` (768), because the frame cannot
   import `@/components/ui-breakpoints` without pulling the toolkit into `protected-layout`.
 - **The grid places items by line, not by area name.** A sticky element is limited to its grid
@@ -401,28 +401,33 @@ Figma's 92 / 180 / 232 stack the items.
 Measured in Chromium on the 3004 dev server with `getBoundingClientRect()`, session restored from the
 sandbox demo marker.
 
-| Row                         | Width           | Figma          | Measured            | Result |
-| --------------------------- | --------------- | -------------- | ------------------- | ------ |
-| header                      | all             | 64 px tall     | 0,0 w×64            | pass   |
-| sidebar panel               | 1440            | 12,74 238×791  | 12,74 238×791       | pass   |
-| sidebar panel (fits 900 px) | 1024            | 13,74 238 wide | 13,74 238 wide      | pass   |
-| `<main>` left edge          | 1440            | 250            | 250                 | pass   |
-| `<main>` left edge          | 1024            | 251            | 251                 | pass   |
-| `/settings` title left edge | 1440            | 262            | 262                 | pass   |
-| `/settings` title left edge | 1024            | 263            | 263                 | pass   |
-| `/settings` title left edge | 375             | unchanged 15   | 15                  | pass   |
-| `/` title left edge         | 1440            | 262            | 262                 | pass   |
-| `/` title left edge         | 1024            | 263            | 263                 | pass   |
-| `/` title left edge         | 375             | unchanged 15   | 15                  | pass   |
-| horizontal overflow         | 1440, 1024, 375 | none           | scrollWidth = width | pass   |
+| Row                         | Width          | Figma          | Measured            | Result |
+| --------------------------- | -------------- | -------------- | ------------------- | ------ |
+| header                      | all            | 64 px tall     | 0,0 w×64            | pass   |
+| sidebar panel               | 1440           | 12,74 238×791  | 12,74 238×791       | pass   |
+| sidebar panel (fits 900 px) | 1024           | 13,74 238 wide | 13,74 238 wide      | pass   |
+| `<main>` left edge          | 1440           | 250            | 250                 | pass   |
+| `<main>` left edge          | 1024           | 251            | 251                 | pass   |
+| `/settings` title left edge | 1440           | 262            | 262                 | pass   |
+| `/settings` title left edge | 1024           | 263            | 263                 | pass   |
+| `/settings` title left edge | 768, 900, 1023 | 263            | 263                 | pass   |
+| `/settings` title left edge | 375            | unchanged 15   | 15                  | pass   |
+| `/` title left edge         | 1440           | 262            | 262                 | pass   |
+| `/` title left edge         | 1024           | 263            | 263                 | pass   |
+| `/` title left edge         | 768, 900, 1023 | 263            | 263                 | pass   |
+| `/` title left edge         | 375            | unchanged 15   | 15                  | pass   |
+| horizontal overflow         | 1440 to 375    | none           | scrollWidth = width | pass   |
 
 The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, which put the title at x 283 and
 x 374. Both pages now render inside the shared `UIShellContent`
-(`src/components/ui-shell-content/`), whose insets are 15 px, 26 px from 768 px and 12 px from
-1024 px, so the title starts 12 px from the sidebar; below 1024 px those are the toolkit
-container's own 15 px and 26 px, so the mobile and small-tablet insets are unchanged. The `/` rows
-were measured by `tests/e2e/modules/home.spec.ts` on the 3004 dev server (sidebar expanded). The
-tablet
+(`src/components/ui-shell-content/`), whose insets are 15 px below 768 px and 12 px from 768 px,
+where the sidebar appears (OQ-5, amended 2026-11-05: tablet metrics apply from 768 to 1439), so the
+title starts 12 px from the sidebar at every width that has one. Figma draws the tablet shell only
+at 1024 (`377:20163`: content 12 px from its frame edge), so 768 to 1023 follow that rule; with the
+expanded 238 px panel `main` starts at 251 and the title at 263 there. Below 768 px the 15 px inset
+is the toolkit container's own, so the mobile inset is unchanged. The `/` rows, including 768, 900
+and 1023 and the overflow check, are measured by `tests/e2e/modules/home.spec.ts` (sidebar
+expanded); the 768 to 1023 rows were read on the 3002 worktree dev server on 2026-11-17. The tablet
 panel's height is the viewport minus 86 px by design (UX 4.3), not the drawn 1142 px, so it is not a
 row. With the viewport 500 px tall and the page scrolled 300 px, the header stays at top 0 and the
 sidebar at top 74.

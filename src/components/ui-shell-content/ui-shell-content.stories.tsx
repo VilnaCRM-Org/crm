@@ -22,8 +22,8 @@ const meta: Meta<typeof UIShellContent> = {
       description: {
         component:
           'The content container of a page inside the app shell: full width, with 15 px side ' +
-          'insets on mobile, 26 px from 768 px and 12 px from 1024 px, where the sidebar sits ' +
-          'beside it, so page content starts 12 px from the sidebar. It adds no landmark; ' +
+          'insets on mobile and 12 px from 768 px, where the sidebar sits beside it, so page ' +
+          'content starts 12 px from the sidebar. It adds no landmark; ' +
           'AppLayout owns `<main>`. The settings and home pages render inside it.',
       },
       story: { inline: false },
