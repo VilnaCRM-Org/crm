@@ -3,7 +3,7 @@ import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { TwoFactorPanel } from '@/modules/user/features/settings/components/two-factor-settings';
-import { buildTotpCode } from '@tests/builders';
+import { buildRecoveryCode, buildTotpCode } from '@tests/builders';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 import { EMPTY_SETTINGS, panelProps, renderPanel, viewState } from './render-panel';
@@ -120,18 +120,21 @@ describe('the disable view', () => {
     expect(submit.compareDocumentPosition(cancel)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it.each(['123456', 'abcd-2345'])('hands the typed value %s to disable once', async (typed) => {
-    const props = withView(viewState('disable'));
-    renderPanel(props);
+  it.each([buildTotpCode(), buildRecoveryCode()])(
+    'hands the typed value %s to disable once',
+    async (typed) => {
+      const props = withView(viewState('disable'));
+      renderPanel(props);
 
-    await userEvent.type(screen.getByRole('textbox', { name: 'Код підтвердження' }), typed);
-    await userEvent.click(screen.getByRole('button', { name: 'Вимкнути' }));
+      await userEvent.type(screen.getByRole('textbox', { name: 'Код підтвердження' }), typed);
+      await userEvent.click(screen.getByRole('button', { name: 'Вимкнути' }));
 
-    expect(props.callbacks.disable).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(props.callbacks.disable).mock.calls[0]?.[0]).toEqual({
-      twoFactorCode: typed,
-    });
-  });
+      expect(props.callbacks.disable).toHaveBeenCalledTimes(1);
+      expect(jest.mocked(props.callbacks.disable).mock.calls[0]?.[0]).toEqual({
+        twoFactorCode: typed,
+      });
+    }
+  );
 
   it.each([
     ['format', 'Введіть 6 цифр або резервний код у форматі XXXX-XXXX'],

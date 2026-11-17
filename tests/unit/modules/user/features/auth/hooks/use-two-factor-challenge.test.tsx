@@ -161,12 +161,14 @@ describe('useTwoFactorChallenge', () => {
 
   it('sends the normalised six digits once and keeps what was typed', async () => {
     const view = setUp();
+    const code = buildTotpCode();
+    const typed = ` ${code.slice(0, 3)} ${code.slice(3)} `;
 
-    await submitCode(view, ' 123 456 ');
+    await submitCode(view, typed);
 
     expect(mockSubmit).toHaveBeenCalledTimes(1);
-    expect(mockSubmit).toHaveBeenCalledWith({ twoFactorCode: '123456' });
-    expect(view.result.current.state.value).toBe(' 123 456 ');
+    expect(mockSubmit).toHaveBeenCalledWith({ twoFactorCode: code });
+    expect(view.result.current.state.value).toBe(typed);
     expect(view.result.current.state.fieldError).toBeNull();
   });
 

@@ -4,6 +4,7 @@ import * as React from 'react';
 import useTwoFactorSetup from '@/modules/user/features/settings/hooks/use-two-factor-setup';
 import {
   buildOtpauthUri,
+  buildRecoveryCode,
   buildRecoveryCodeSet,
   buildTotpCode,
   buildTotpSecret,
@@ -376,7 +377,7 @@ describe('useTwoFactorSetup plans loaded inside the test', () => {
     const { utils, provider } = await mountLoaded(setupView);
     provider.confirm.mockResolvedValue(failed('network'));
 
-    await act(async () => utils.result.current.confirm({ twoFactorCode: 'ABCD-2345' }));
+    await act(async () => utils.result.current.confirm({ twoFactorCode: buildRecoveryCode() }));
 
     expect(provider.confirm).not.toHaveBeenCalled();
   });

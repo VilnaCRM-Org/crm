@@ -1,4 +1,4 @@
-import { buildCredentials, buildToken } from '@tests/builders';
+import { buildCredentials, buildToken, buildTotpCode } from '@tests/builders';
 
 import {
   CHALLENGE_ACCESS_TOKEN,
@@ -336,7 +336,7 @@ describe('stubChallenge', () => {
 
   it('records only CompleteTwoFactorUser calls and passes SignInUser on', async () => {
     const { handler, stub } = await registerChallenge();
-    const variables = { input: { twoFactorCode: '123456' } };
+    const variables = { input: { twoFactorCode: buildTotpCode() } };
     const signIn = fakeRoute(signInBody());
 
     await handler(fakeRoute(challengeBody(variables)));

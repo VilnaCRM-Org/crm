@@ -106,7 +106,7 @@ describe('TwoFactorChallengeForm', () => {
   it('does not auto-submit in recovery mode', async () => {
     const { handlers } = mount({ mode: 'recovery' });
 
-    await userEvent.type(screen.getByRole('textbox'), '123456');
+    await userEvent.type(screen.getByRole('textbox'), buildTotpCode());
 
     expect(handlers.submit).not.toHaveBeenCalled();
   });

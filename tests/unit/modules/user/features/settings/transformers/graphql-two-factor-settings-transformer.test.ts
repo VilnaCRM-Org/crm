@@ -5,7 +5,12 @@ import type {
   UserServiceFailure,
   UserServiceFailureReason,
 } from '@/modules/user/types/user-service/user-service-failure';
-import { buildOtpauthUri, buildRecoveryCodeSet, buildTotpSecret } from '@tests/builders';
+import {
+  buildOtpauthUri,
+  buildRecoveryCode,
+  buildRecoveryCodeSet,
+  buildTotpSecret,
+} from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const isolatedTransformer = (): Promise<GraphQLTwoFactorSettingsTransformer> =>
@@ -28,6 +33,7 @@ const codesOf = (set: ReturnType<typeof buildRecoveryCodeSet>): string[] =>
 
 describe('GraphQLTwoFactorSettingsTransformer', () => {
   const transformer = new GraphQLTwoFactorSettingsTransformer();
+  const code = buildRecoveryCode();
 
   describe('toSetupOutcome', () => {
     it('hands the URI and secret back with status disabled and no codes', () => {
@@ -75,14 +81,14 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
 
     it('accepts a single non-empty code', () => {
       expect(
-        transformer[method]({ [field]: { user: { recoveryCodes: ['ABCD-2345'] } } } as never)
+        transformer[method]({ [field]: { user: { recoveryCodes: [code] } } } as never)
       ).toEqual({
         kind: 'changed',
         settings: {
           status: 'enabled',
           otpauthUri: null,
           secret: null,
-          recoveryCodes: { items: [{ value: 'ABCD-2345' }] },
+          recoveryCodes: { items: [{ value: code }] },
         },
       });
     });
@@ -90,9 +96,9 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
     it.each([
       ['an empty list', []],
       ['a blank code', ['']],
-      ['a blank code among valid ones', ['ABCD-2345', '']],
-      ['a string', 'ABCD-2345'],
-      ['an object', { 0: 'ABCD-2345' }],
+      ['a blank code among valid ones', [code, '']],
+      ['a string', code],
+      ['an object', { 0: code }],
       ['numbers', [1, 2]],
       ['null', null],
     ])('fails with the server reason for recovery codes given as %s', (_name, recoveryCodes) => {

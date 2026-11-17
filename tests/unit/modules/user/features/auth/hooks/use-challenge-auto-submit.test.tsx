@@ -34,11 +34,12 @@ const enter = (form: UseFormReturn<TwoFactorDto>, value: string): void => {
 describe('useChallengeAutoSubmit', () => {
   it('submits once when the value reaches six digits', () => {
     const { form, onComplete, rerender } = mount();
+    const code = buildTotpCode();
 
-    enter(form(), '12345');
+    enter(form(), code.slice(0, 5));
     expect(onComplete).not.toHaveBeenCalled();
 
-    enter(form(), '123456');
+    enter(form(), code);
     expect(onComplete).toHaveBeenCalledTimes(1);
 
     rerender();
@@ -54,19 +55,21 @@ describe('useChallengeAutoSubmit', () => {
   });
 
   it('does not submit a complete value that was already there on mount', () => {
-    const { onComplete } = mount('123456');
+    const { onComplete } = mount(buildTotpCode());
 
     expect(onComplete).not.toHaveBeenCalled();
   });
 
   it('submits again only after the code is edited and completed again', () => {
     const { form, onComplete } = mount();
-    enter(form(), '123456');
+    const code = buildTotpCode();
+    const lastDigit = Number(code.slice(5));
+    enter(form(), code);
 
-    enter(form(), '12345');
+    enter(form(), code.slice(0, 5));
     expect(onComplete).toHaveBeenCalledTimes(1);
 
-    enter(form(), '123457');
+    enter(form(), `${code.slice(0, 5)}${(lastDigit + 1) % 10}`);
     expect(onComplete).toHaveBeenCalledTimes(2);
   });
 

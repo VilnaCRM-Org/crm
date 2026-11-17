@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import UIPinInput from '@/components/ui-pin-input';
+import { buildTotpCode } from '@tests/builders';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 interface CodeValues {
@@ -38,11 +39,13 @@ function PinState({ code, error, helperText, disabled }: StateProps): JSX.Elemen
 }
 
 describe('UIPinInput accessibility', () => {
+  const code = buildTotpCode();
+
   it.each([
     ['resting', { code: '' }],
-    ['filled', { code: '123456' }],
+    ['filled', { code }],
     ['error', { code: '12', error: true, helperText: 'Невірний код. Спробуйте ще раз.' }],
-    ['disabled', { code: '123456', disabled: true }],
+    ['disabled', { code, disabled: true }],
   ] as const)('has no axe violation in the %s state', async (_state, props) => {
     const { container } = render(
       <PinState

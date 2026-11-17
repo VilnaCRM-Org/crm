@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { buildCredentials, buildTotpCode } from '@tests/builders';
+import { buildCredentials, buildRecoveryCode, buildTotpCode } from '@tests/builders';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect, test } from '@tests/e2e/utils/fixtures';
 import { submitSignIn, typeCode as typeChallengeCode } from '@tests/e2e/utils/reach-challenge';
@@ -107,20 +107,26 @@ test.describe('Turning two-factor off and regenerating codes (issue #331)', () =
       await expect(cancelOf(page)).toBeVisible();
     });
 
-    test('sends 123456 as it is and abcd-2345 as ABCD-2345', async ({ page }) => {
+    test('sends an app code as it is and a lower-case recovery code upper-cased', async ({
+      page,
+    }) => {
+      const appCode = buildTotpCode();
+      const recoveryCode = buildRecoveryCode();
       const disable = await stubDisable(page, ['invalid_code', 'invalid_code']);
       await enableTwoFactor(page);
       await openDisableOf(page).click();
 
-      await disableFieldOf(page).fill('123456');
+      await disableFieldOf(page).fill(appCode);
       await disableSubmitOf(page).click();
       await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
-      await disableFieldOf(page).fill('abcd-2345');
+      await disableFieldOf(page).fill(recoveryCode.toLowerCase());
       await disableSubmitOf(page).click();
 
       await expect.poll(() => disable.count()).toBe(2);
-      expect(disable.calls[0]?.variables).toMatchObject({ input: { twoFactorCode: '123456' } });
-      expect(disable.calls[1]?.variables).toMatchObject({ input: { twoFactorCode: 'ABCD-2345' } });
+      expect(disable.calls[0]?.variables).toMatchObject({ input: { twoFactorCode: appCode } });
+      expect(disable.calls[1]?.variables).toMatchObject({
+        input: { twoFactorCode: recoveryCode },
+      });
       await expect(sectionOf(page).getByText(twoFactorText.invalidCode)).toBeVisible();
       await expect(disableFieldOf(page)).toHaveAttribute('aria-invalid', 'true');
     });

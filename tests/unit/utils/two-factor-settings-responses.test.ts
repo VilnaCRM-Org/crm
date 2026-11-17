@@ -1,3 +1,5 @@
+import { buildTotpCode } from '@tests/builders';
+
 import {
   CONFIRM_REPLIES,
   DISABLE_REPLIES,
@@ -134,7 +136,7 @@ describe('stubSetup', () => {
     const { handler, stub } = await registerSetup();
     const variables = { input: { clientMutationId: 'setup-1' } };
     const setup = fakeRoute('SetupTwoFactorUser', variables);
-    const other = fakeRoute('ConfirmTwoFactorUser', { input: { twoFactorCode: '123456' } });
+    const other = fakeRoute('ConfirmTwoFactorUser', { input: { twoFactorCode: buildTotpCode() } });
 
     await handler(setup);
     await handler(other);
@@ -170,7 +172,7 @@ describe('stubSetup', () => {
 describe('stubConfirm', () => {
   it('answers confirm with the eight recovery codes by default', async () => {
     const { handler } = await registerConfirm();
-    const call = fakeRoute('ConfirmTwoFactorUser', { input: { twoFactorCode: '123456' } });
+    const call = fakeRoute('ConfirmTwoFactorUser', { input: { twoFactorCode: buildTotpCode() } });
 
     await handler(call);
 
@@ -253,7 +255,7 @@ const registerRegenerate = async (
 describe('stubDisable', () => {
   it('answers disable with success and passes other operations on', async () => {
     const { handler } = await registerDisable();
-    const call = fakeRoute('DisableTwoFactorUser', { input: { twoFactorCode: '123456' } });
+    const call = fakeRoute('DisableTwoFactorUser', { input: { twoFactorCode: buildTotpCode() } });
     const other = fakeRoute('RegenerateRecoveryCodesUser');
 
     await handler(call);
