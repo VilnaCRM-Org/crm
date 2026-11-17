@@ -746,9 +746,11 @@ installs; apt authenticates the archive by signature, not by transport.
 **Bumping a snapshot** is one reviewed edit per image: set the ARG to a newer
 `YYYYMMDDTHHMMSSZ`, then re-pin each package to the candidate that snapshot serves — run
 `apt-get update && apt-cache policy <pkg>` in the base image with the snapshot sources, or read
-the `Packages` index under `<snapshot>/dists/<suite>/main/binary-amd64/`. Bump it whenever the base
-image moves as well: a snapshot older than the base can pin a package below the version the base
-already ships, and `apt-get install` refuses that downgrade. The `debian` base records its own build
+the `Packages` index under `<snapshot>/dists/<suite>/main/binary-amd64/`. Re-check it whenever the
+base image moves: a snapshot older than the base can pin a package below the version the base
+already ships, or offer one whose dependencies the base has outgrown, and `apt-get install`
+refuses both. Bump the snapshot only when that check fails, because a snapshot no other job reads
+downloads slowly from CI (see the Playwright stage below). The `debian` base records its own build
 snapshot as a comment in `/etc/apt/sources.list.d/debian.sources`, which is a good floor.
 Dependabot does not move either ARG.
 
@@ -759,8 +761,9 @@ a native addon, so `bun install --frozen-lockfile` needs none. That keeps it on 
 base, a newer snapshot downloaded at 120–210 kB/s from CI, spent 10–14 minutes of the build in
 `apt-get` and timed out every Playwright job (#387), while the warm snapshot serves the same bytes
 at several MB/s. A snapshot older than the base still cannot install a package that depends on a
-library the base ships newer (`g++` on `libc6`), so add a package here only after checking
-`apt-get install` against the base image, and bump the snapshot only when that check needs it.
+library the base ships newer (`g++` on `libc6`), so add a package here only after running that
+`apt-get install` check against the base image. #387 moved the base to Playwright 1.65 and kept
+this snapshot under the rule above: the check passes for every package the stage still installs.
 
 `tests/unit/tooling/image-hardening.test.ts` fails when an apt stage reaches `apt-get update`
 without rewriting its sources to a snapshot host built from a `*_SNAPSHOT` ARG, when a package is
