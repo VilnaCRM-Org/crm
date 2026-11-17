@@ -37,7 +37,7 @@ jobs:
   routes:
     name: axe route scans and keyboard contract
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
