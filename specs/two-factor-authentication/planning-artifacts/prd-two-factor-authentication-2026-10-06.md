@@ -109,7 +109,8 @@ split, the shell from 768 px) and 2026-11-10 (the 2026-11-04 decisions marked wh
 > decisions; FR-25 and NFR-15 carry dated notes and are kept as the record of the plan as approved.
 
 > **Amended 2026-11-10 (gate finding; owner decisions of 2026-11-04).** The three 2026-11-04 blocks
-> below named FR-14, FR-15, FR-16, FR-27 and FR-28 only. The same decisions also supersede Goal 4's
+> below named FR-14, FR-15, FR-16, FR-27 and FR-28 only. The same decisions also supersede §3's D6,
+> the §7 trace row for zero new exceptions, Goal 4's
 > "without a new accessibility exception", §4's journey steps 2 and 3, FR-23's "real anchor",
 > FR-40's time note and authenticator subtitle, NFR-5's exception count and back-link criterion, three NFR-6 rows and the cell
 > placeholder, NFR-8's arrival focus, NFR-9's ring on the pin cells and its setup order, NFR-13's "no new
@@ -327,7 +328,8 @@ Binding, from the decisions file; the architecture and epics stages treat them a
   a notice; no client countdown.
 - **D5 / D5' code input:** reuse ui-toolkit `UiPinInput` through a crm seam with accessibility
   overrides and per-cell labels; manual NVDA and VoiceOver evidence.
-- **D6:** no auto-submit on the sixth digit.
+- **D6:** no auto-submit on the sixth digit. Superseded 2026-11-04 (owner decision, auto-submit): D6
+  is reversed; the sign-in challenge submits on its sixth digit, typed or pasted.
 - **D7 / D8 / D8' settings:** the 2FA card is one section of the protected `/settings` page that
   the User Settings bundle builds (#330, ADR-021, which lands first); start button before
   setup; QR rendered on the client; confirm; recovery codes once; disable with a code; regenerate
@@ -1961,18 +1963,18 @@ its registration and logout are unchanged. There is no REST data path.
 
 ### Brief goals and measures
 
-| Brief goal or measure                             | Requirements                     |
-| ------------------------------------------------- | -------------------------------- |
-| Goal 1: end-to-end flows in the test stack        | FR-1, FR-3-FR-6, FR-8-FR-37      |
-| Goal 2: GraphQL sign-in, section by configuration | FR-6, FR-7, FR-8, FR-42          |
-| Goal 3: nothing leaks                             | FR-10, FR-36, FR-39, NFR-1-NFR-4 |
-| Goal 4: WCAG 2.1 AA and every floor               | NFR-5-NFR-15                     |
-| No REST login remains                             | FR-8                             |
-| Every branch tested (msw and route stubs)         | FR-4, FR-5                       |
-| Zero `cache.write` of secrets                     | NFR-2                            |
-| Zero new `A11Y_EXCEPTIONS`                        | NFR-5                            |
-| Eager growth under 1 kB gzip (one key and entry)  | NFR-11                           |
-| Route-coverage rows for the challenge key         | FR-45                            |
+| Brief goal or measure                                              | Requirements                     |
+| ------------------------------------------------------------------ | -------------------------------- |
+| Goal 1: end-to-end flows in the test stack                         | FR-1, FR-3-FR-6, FR-8-FR-37      |
+| Goal 2: GraphQL sign-in, section by configuration                  | FR-6, FR-7, FR-8, FR-42          |
+| Goal 3: nothing leaks                                              | FR-10, FR-36, FR-39, NFR-1-NFR-4 |
+| Goal 4: WCAG 2.1 AA and every floor                                | NFR-5-NFR-15                     |
+| No REST login remains                                              | FR-8                             |
+| Every branch tested (msw and route stubs)                          | FR-4, FR-5                       |
+| Zero `cache.write` of secrets                                      | NFR-2                            |
+| One owner-accepted `A11Y_EXCEPTIONS` entry (superseded 2026-11-04) | NFR-5                            |
+| Eager growth under 1 kB gzip (one key and entry)                   | NFR-11                           |
+| Route-coverage rows for the challenge key                          | FR-45                            |
 
 ## 8. External dependencies
 
