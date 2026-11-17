@@ -34,6 +34,13 @@ inputDocuments:
 >   [No feature flag for the two-factor section](../../../src/modules/user/README.md#no-feature-flag-for-the-two-factor-section)).
 >   "Outcome" cited `docs/feature-flags.md`, "`twoFactorAuth`", which no longer documents the
 >   flag; it now cites that README section.
+>
+> - **Challenge page as drawn (2026-11-04).** "Open questions, warnings and blockers" (the toolkit
+>   selector-specificity risk, "check the ring and border in a browser") and the Story 2.1 mapping
+>   note ("focus ring and border grey"). The challenge takes the frames as drawn: the pin cells keep
+>   Figma's states with no focus outline, only the soft shadow and the caret, and "Назад" stays
+>   `#969B9D` as the owner-accepted exception `#auth-form-card > button.MuiButton-text`; both are
+>   recorded in `docs/accessibility/acceptance-standard.md`, "Current exceptions".
 
 ## Task framing
 
