@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 
 import useKeyInfoTooltip from '@/modules/user/features/settings/hooks/use-key-info-tooltip';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const setup = (): {
   result: { current: ReturnType<typeof useKeyInfoTooltip> };
@@ -141,5 +143,27 @@ describe('useKeyInfoTooltip', () => {
     expect(keydown).toBeInstanceOf(Function);
     expect(removed).toHaveBeenCalledWith('keydown', keydown);
     expect(removed).toHaveBeenCalledWith('pointerdown', pointerdown);
+  });
+});
+
+describe('useKeyInfoTooltip loaded inside the test', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('starts at rest: closed, opens on hover and reopens after it ends', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      return (await import('@/modules/user/features/settings/hooks/use-key-info-tooltip')).default;
+    });
+    const { result } = renderHook(() => fresh());
+
+    expect(result.current.open).toBe(false);
+    act(() => result.current.handlers.onMouseEnter());
+    expect(result.current.open).toBe(true);
+    act(() => result.current.handlers.onMouseLeave());
+    expect(result.current.open).toBe(false);
+    act(() => result.current.handlers.onFocus());
+    expect(result.current.open).toBe(true);
   });
 });
