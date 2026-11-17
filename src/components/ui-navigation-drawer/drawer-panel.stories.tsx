@@ -14,17 +14,20 @@ const meta: Meta<typeof DrawerPanel> = {
   args: { items: storyItems, signOut: noop, onNavigate: noop },
   decorators: [
     (Story): JSX.Element => (
-      <div style={{ width: 313, height: 622, background: '#FFFFFF' }}>
+      <div style={{ width: '100%', minHeight: '100vh', background: '#FFFFFF' }}>
         <Story />
       </div>
     ),
   ],
   parameters: {
+    layout: 'fullscreen',
     docs: {
       description: {
         component:
-          'The content of the 313×622 panel: the disabled drawer search at 10,13 and one ' +
-          "navigation with the sidebar's list in 60 px rows, ending with Sign out on a top border.",
+          'The content of the drawer panel, which spans the whole viewport width below 768 px ' +
+          '(owner decision of 2026-11-05, over the 313×622 Figma panel): the disabled drawer ' +
+          "search at 10,13 and one navigation with the sidebar's list in 60 px rows, ending " +
+          'with Sign out on a top border.',
       },
       story: { inline: false },
     },
@@ -38,3 +41,13 @@ type Story = StoryObj<typeof DrawerPanel>;
 export const OnHome: Story = { decorators: [withMemoryRouter('/')] };
 
 export const OnSettings: Story = { decorators: [withMemoryRouter('/settings')] };
+
+export const OnSmallPhone: Story = {
+  decorators: [withMemoryRouter('/settings')],
+  globals: { viewport: { value: 'xs', isRotated: false } },
+};
+
+export const OnLargePhone: Story = {
+  decorators: [withMemoryRouter('/settings')],
+  globals: { viewport: { value: 'sm', isRotated: false } },
+};
