@@ -39,4 +39,4 @@ fi
 node scripts/local-stack/issue-demo-session.mjs
 docker compose -f docker-compose.local-stack.yml up --detach --build
 
-echo 'Open http://vilnacrm.localhost and sign in as demo@vilnacrm.com'
+echo "Open http://vilnacrm.localhost and sign in as ${LOCAL_DEMO_EMAIL:-local-demo@vilnacrm.com}"

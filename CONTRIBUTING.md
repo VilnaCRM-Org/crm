@@ -410,7 +410,8 @@ secure context, which a `.local` name is not.
 **Mockoon provides the sign-in token.** `sign-in.template.json` answers `SignInUser` for the demo
 user with a token, and every other operation reaches user-service. A made-up token would not work,
 because user-service verifies an RS256 signature and a live session. So
-`scripts/local-stack/issue-demo-session.mjs` creates `demo@vilnacrm.com`, signs in for real, and
+`scripts/local-stack/issue-demo-session.mjs` creates `local-demo@vilnacrm.com` (password
+`Local1234`; `LOCAL_DEMO_EMAIL` and `LOCAL_DEMO_PASSWORD` override both), signs in for real, and
 writes that token into the gitignored `docker/local-stack/generated/sign-in.json`. It reuses the
 token until an hour before it expires, as long as the file was written for the same demo e-mail and
 the demo user already existed (a wiped user-service database recreates the user, so a new token is
@@ -421,6 +422,9 @@ What that means when you test by hand:
 
 - The sign-in page accepts **any** password for the demo user, because Mockoon answers it. Every
   other address signs in against user-service.
+- The local demo account is deliberately not the sandbox demo (`demo@vilnacrm.com` / `Demo1234`):
+  a development build accepts that pair without any request, so its fake token would reach the
+  real user-service and end the session on the first settings call.
 - Settings is real. Each save sends the current password, and user-service rejects a wrong one.
   After a password change the old password stops working there and the new one starts.
 - Changing the password keeps this session, because user-service revokes only the other sessions.
