@@ -772,13 +772,17 @@ a static import of the container, Apollo, zod or tsyringe
 challenge hook box; `AuthSecuritySignals` inside the two hook boxes, the two places that write
 the token.
 
-Amended 2026-11-11 (owner amendment of 2026-11-10, §19.1): on sign-in the dotted edge into the
-Data provider leaves `SignInSubmitProcessor`, drawn inside the sign-in hook box. `useSignInSubmit`
-writes the loading state, imports the processor on the first submit through a `ChunkRetryLoader`
-built in its `useState` initializer, and hands it the `SignInSubmitContext` (loader, store, demo
-session); the processor resolves the provider, writes the token or the pending session and calls
-`AuthSecuritySignals`. The hook itself writes only the loading state and, when the processor or
-the provider cannot load, the retryable load error.
+Amended 2026-11-11 (owner amendment of 2026-11-10, §19.1): on sign-in the dotted edge into the Data
+provider leaves `SignInSubmitProcessor`, drawn inside the sign-in hook box. `useSignInSubmit` writes
+the loading state, imports the processor on the first submit through a `ChunkRetryLoader` built in
+its `useState` initializer, and hands it the `SignInSubmitContext` (loader, store, demo session);
+the processor resolves the provider, writes the token or the pending session and calls
+`AuthSecuritySignals`. The hook itself writes only the loading state and, when the processor or the
+provider cannot load, the retryable load error. Amended 2026-11-16 (gate finding): the "(loader,
+store, demo session)" above is the plan as approved; `SignInSubmitContext` carries five members:
+`loader`, `store` and `demoSession`, plus `session` (the held session's `token()` and `signOut()`,
+run before a new session or a challenge is written) and `signedOut` (the cleared signed-out state
+each outcome writes over), both added by the 2026-11-12 amendments in §6.1.
 
 ### 3.4 L3 stack: the 2FA section (settings feature, below the route code split)
 
@@ -2296,6 +2300,15 @@ Amended 2026-11-11 (mutation-shard cap): two more new classes, `PiiTextScrubber`
 `TwoFactorTextScrubber` (`Scrubber`, one public `scrub` method each, no token), split out of
 `PiiScrubber` so each file fits one mutation shard. `PiiScrubber` holds a `PiiTextScrubber`, which
 holds a `TwoFactorTextScrubber` and applies its 2FA patterns first (§7.2).
+
+Amended 2026-11-16 (gate finding, AR-5): the suffix list above also includes `Parser`
+(`FieldViolationParser`) and `Scrubber` (`PiiTextScrubber`, `TwoFactorTextScrubber`), both already
+in `config/class-naming-policy.js`, so the bundle still edits no naming policy (epics AR-5). The
+"(loader, store, demo session)" of the `SignInSubmitProcessor` entry is the plan as approved:
+`SignInSubmitContext` carries five members: `loader`, `store` and `demoSession`, plus
+`session` (the held session's `token()` and `signOut()`, run before a new session or a challenge
+is written) and `signedOut` (the cleared signed-out state each outcome writes over), both added by
+the 2026-11-12 amendments in §6.1.
 
 **Removed from the earlier plan:** `TwoFactorChallengeActions` and its `AuthStateActions`
 interface (the hook calls the provider through the loader, §6.3), the `SignInProvider` Strategy
