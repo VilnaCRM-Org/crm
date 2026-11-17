@@ -148,14 +148,14 @@ The `commitlint` workflow closes both holes on every pull request. It lints:
   `commitlint.config.js`. The repository uses `squash_merge_commit_title=COMMIT_OR_PR_TITLE`, so a
   single-commit pull request lands that **commit's** header instead; that path is covered by the
   commit check below, which lints it against the same strict config;
-- every commit between the merge base with `main` and the PR head. Human commits get the same
-  strict config; a commit falls back to `commitlint.bot.config.js` only when GitHub reports it
-  signature-verified, its author identity a bot, and its committer an identity only GitHub
-  writes (`web-flow`, or the app account). The bot config drops `check-task-number-rule` and adds
-  one narrow ignore for the `Compressed Images` header that `calibreapp/image-actions` writes.
-  That ignore matches on message text, but it is only ever reached for a commit GitHub itself
-  wrote, so a human cannot reach it by copying the header — nor by signing a commit they authored
-  under a bot's noreply address, since the signature attests the committer, not the author.
+- every commit between the merge base with the pull request's base branch and the PR head. Human
+  commits get the same strict config; a commit falls back to `commitlint.bot.config.js` only when
+  GitHub reports it signature-verified, its author identity a bot, and its committer an identity
+  only GitHub writes (`web-flow`, or the app account). The bot config drops `check-task-number-rule`
+  and adds one narrow ignore for the `Compressed Images` header that `calibreapp/image-actions`
+  writes. That ignore matches on message text, but it is only ever reached for a commit GitHub
+  itself wrote, so a human cannot reach it by copying the header — nor by signing a commit they
+  authored under a bot's noreply address, since the signature attests the committer, not the author.
 
 Fix a red check by editing the pull request title in the web UI (title failure) or by rewording
 and force-pushing (`git rebase -i` + `git push --force-with-lease`, commit failure). Reproduce
@@ -167,7 +167,7 @@ make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" CO
 ```
 
 The range starts at the merge base with the pull request's own base branch, so for a pull
-request stacked on another branch, replace `origin/main` with that branch.
+request stacked on another branch, replace `origin/main` with `origin/<that branch>`.
 
 Do not relax `commitlint.config.js` to make a header pass — it is the contract the release
 pipeline parses.

@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-13
-iteration: 8
+revised: 2026-11-17
+iteration: 21
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'architect (Winston), autonomous run'
@@ -69,22 +69,28 @@ revisions:
     §19.3; its loader and the challenge form-section loader are no longer module-level instances'
   - '2026-11-11: gate finding; §6.1 the sign-in start patch keeps loginError until the run
     settles, and the aborted run clears it only when the processor did not resolve the provider'
-  - '2026-11-11: gate finding; the transformer's input-property step moved to an injected
-    FieldViolationParser (§6.8, §7.1, §7.2, §19.2): nine new classes, seven new tokens'
+  - "2026-11-11: gate finding; the transformer's input-property step moved to an injected
+    FieldViolationParser (§6.8, §7.1, §7.2, §19.2): nine new classes, seven new tokens"
   - '2026-11-12: gate finding, FR-10; §6.1 a challenge ends an earlier session: the patch is the
     cleared signed-out state plus the pending session and e-mail, after the logout path when a
     token was held'
   - '2026-11-12: gate finding, FR-37, FR-9; §6.1 a session sign-in over a held session also ends
     it first: the logout path runs, then the cleared signed-out state plus the new session is
     written; the sandbox demo is matched, the earlier session ended, then the demo remembered'
+  - '2026-11-13: §6.16 the local mock throws only BAD_USER_INPUT; a 401 comes from msw and routes'
+  - '2026-11-16: gate finding; §6.1 sign-in hook imports corrected, the scrubber split and the
+    Parser and Scrubber suffixes (AR-5)'
+  - '2026-11-17: the error-text red marked superseded, the sign-in context listed in full, the
+    §6.1 import paragraph marked; the flag-removal commit cited as 62ddc565'
 ---
 
 # Architecture: two-factor authentication for the user module
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-27, 2026-11-03
 (owner decision: the `twoFactorAuth` flag removed), 2026-11-04 (owner decisions: the challenge as
-drawn, auto-submit, the Figma card) and 2026-11-05 (owner decisions: the profile forms split, the
-shell from 768 px) **Feature:** `two-factor-authentication`
+drawn, auto-submit, the Figma card), 2026-11-05 (owner decisions: the profile forms split, the
+shell from 768 px) and 2026-11-10 to 2026-11-17 (an owner decision and gate findings, see
+`revisions`) **Feature:** `two-factor-authentication`
 
 > **Owner decisions of 2026-11-04 (challenge as drawn, auto-submit, Figma card), noted
 > 2026-11-10.** The PRD's three 2026-11-04 blocks record them; this document follows them. The
@@ -109,7 +115,7 @@ shell from 768 px) **Feature:** `two-factor-authentication`
 > 2026-11-10). See the PRD's 2026-11-05 block.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
-> flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
+> flag (62ddc565), together with #330's `userSettings`: `/settings` always renders the two-factor
 > section, in every environment (`src/modules/user/README.md`, "No feature flag for the two-factor
 > section"). Every condition below that reads "while `twoFactorAuth` is on" now always holds, and
 > every "`twoFactorAuth` off" row, scenario or acceptance criterion describes a state no build
@@ -1283,6 +1289,9 @@ No tsyringe, Apollo or zod reaches the paint chunk: the hook value-imports only 
 and `useAuthStore`, as the challenge hook does, and the loader stays container-free
 (`tests/unit/tooling/paint-path-graph.test.ts`). `zustand` itself is on the paint path from chore
 `zustand-client-state`, which measures the paint budget; this feature adds no store.
+Superseded 2026-11-17 (the amendment below, for the sign-in hook): "the hook value-imports only
+the token module and `useAuthStore`" no longer describes `useSignInSubmit`, which imports no token
+module; the amendment below is the authoritative import list. The challenge hook is unchanged.
 
 > Amended 2026-11-16 (gate finding; owner amendment of 2026-11-10, §19.1): the sign-in hook does
 > not import the token module. It value-imports `ChunkRetryLoader`, the sandbox demo-session and

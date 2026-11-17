@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-16
-iteration: 7
+revised: 2026-11-17
+iteration: 9
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -20,7 +20,9 @@ inputDocuments:
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
 2026-10-16, amended 2026-10-19, 2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma
-correction below) and 2026-11-05 (FR/NFR reconciliation) **Feature:** `user-settings`
+correction below), 2026-11-05 (FR/NFR reconciliation), 2026-11-16 (Stories 3.4 and 4.4, the
+per-section reveal and collapse) and 2026-11-17 (Story 3.5's focus criteria marked; the
+flag-removal commit cited as 62ddc565) **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -35,7 +37,7 @@ correction below) and 2026-11-05 (FR/NFR reconciliation) **Feature:** `user-sett
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
 > - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
->   flag (b0a6747d) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   flag (62ddc565) with `userSettings`: `/settings` always renders the two-factor section, in every
 >   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
 >   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
 >   off" row, scenario or criterion describes a state no build reaches.
@@ -1615,7 +1617,7 @@ unit and page tests with the `AUTH_TOKENS.ProfileProvider` token mocked.
 
 **Acceptance Criteria:**
 
-- Given only the name changed and the Save succeeds, when it settles, then "Зміни збережено" shows, is announced once through the status region while focus stays on "Зберегти зміни", the header and the field show the payload's name, both password fields are empty and the form is pristine.
+- Given only the name changed and the Save succeeds, when it settles, then "Зміни збережено" shows, is announced once through the status region while focus stays on "Зберегти зміни", the header and the field show the payload's name, both password fields are empty and the form is pristine. Amended 2026-11-17 (FR-12, carrying its 2026-11-16 amendment into this story): the name section's Save is "Зберегти ім’я", and a successful save collapses the section, so focus goes to the full-name input; the e-mail section works the same way with "Зберегти пошту", and only the password section keeps focus on its Save.
 - Given only the e-mail changed and the Save succeeds, when it settles, then "Ми надіслали посилання для підтвердження на нову адресу" shows and the payload's `confirmed: false` is adopted; with all three changed, three toasts show in the order name, e-mail, password as one utterance, and an immediate second Save sends nothing. Superseded 2026-11-05 (owner decision, PRD): the profile card is three per-section forms (full name, e-mail, password), each with its own password field, Save, `UpdateUser` and toast.
 - Given a 422 violation on `email` with the uniqueness message, or no `extensions` and the message `email: This email address is already registered`, when it settles, then the e-mail field shows "Електронна адреса вже використовується" and takes focus.
 - Given violations on `initials` and `newPassword`, when they settle, then the name field shows "Будь ласка, введіть повне ім’я у правильному форматі", the new-password field shows "Пароль не відповідає вимогам. Перевірте правила нижче" from `settings.errors.new_password_rejected`, and focus is on the name field, first in DOM order; a violation list with an unknown path shows "Не вдалося зберегти зміни. Спробуйте пізніше." and no field error.
@@ -1623,7 +1625,7 @@ unit and page tests with the `AUTH_TOKENS.ProfileProvider` token mocked.
 - Given an HTTP 429, when it settles, then "Забагато спроб. Спробуйте пізніше." shows with no action; no answer, the deadline or a 5xx shows "Не вдалося зберегти зміни. Перевірте з’єднання та спробуйте ще раз." with "Спробувати ще раз", whose activation removes the toast, submits once through the form's own validation and leaves focus on "Зберегти зміни".
 - Given the transient toast and the browser offline, when "Спробувати ще раз" is activated, then nothing is sent, because the action clicks the disabled Save instead of calling `requestSubmit()`, which would ignore the disabled state (must-fail).
 - Given `session_ended`, when it settles, then no toast and no field error show and nothing is sent again.
-- Given a server field error, when its field is next edited, then the error clears; "Очистити" never dismisses a toast; and closing the last toast puts focus on "Зберегти зміни".
+- Given a server field error, when its field is next edited, then the error clears; "Очистити" never dismisses a toast; and closing the last toast puts focus on "Зберегти зміни" (amended 2026-11-17, FR-12: the toast returns focus to the Save of the section that sent it, or to that section's input when a successful save hid the Save).
 - Given the page, when it renders, then the toast stack is its last child inside `main`, after both sections and before the footer, and `UserProfileSettingsProps` carries the queue as a `ToastQueue`.
 - Given jest-axe, when the page renders with toasts and with field errors, then there is no violation; the catalogs pass `make lint-i18n`.
 - Given the change, when the DoD gates run, then ESLint (the TB-1 selectors included), `tsc`, dependency-cruiser, jscpd and `make lint-metrics` report nothing, unit coverage stays at 100%, Stryker reports zero survivors and no existing visual baseline changes.

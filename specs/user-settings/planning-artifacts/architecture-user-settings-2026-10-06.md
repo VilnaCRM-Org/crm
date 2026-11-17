@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-17
 iteration: 8
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -20,8 +20,8 @@ inputDocuments:
 # Architecture: user settings for the user module
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
-2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below) and 2026-11-05
-(FR/NFR reconciliation) **Feature:**
+2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below), 2026-11-05
+(FR/NFR reconciliation) and 2026-11-17 (the flag-removal commit cited as 62ddc565) **Feature:**
 `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -37,7 +37,7 @@ inputDocuments:
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
 > - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
->   flag (b0a6747d) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   flag (62ddc565) with `userSettings`: `/settings` always renders the two-factor section, in every
 >   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
 >   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
 >   off" row, scenario or criterion describes a state no build reaches.

@@ -111,10 +111,12 @@ Built here:
   `setTwoFactorStatus` on `ProtectedOutletContext`, which `ProtectedRoute` provides and through
   which the card reads and records the account's two-factor status.
 
-Two-factor authentication (#331) imports these rather than rebuilding them (architecture §15.3):
-`SessionLinkFactory`, the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the
-`error.text` token and the `session_ended` notice. The card reuses `UserServiceErrorTransformer`
-through `TwoFactorSettingsProvider` and signs the user out through the outlet `signOut`.
+Two-factor authentication (#331) reuses these rather than rebuilding them (architecture §15.3):
+it imports the `UserProfile` shell and its grid slot, the `UIForm` `footer` slot, the `error.text`
+token and the `session_ended` notice, and it reaches the `SessionLinkFactory` link only through the
+Apollo client the user module's composition root injects into its repository; no two-factor file
+imports `SessionLinkFactory`. The card reuses `UserServiceErrorTransformer` through
+`TwoFactorSettingsProvider` and signs the user out through the outlet `signOut`.
 
 ## Page tree
 

@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-16
-iteration: 7
+revised: 2026-11-17
+iteration: 9
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -17,7 +17,9 @@ inputDocuments:
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
 2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below),
-2026-11-05 (FR/NFR reconciliation, and the owner decision that splits the profile card)
+2026-11-05 (FR/NFR reconciliation, and the owner decision that splits the profile card),
+2026-11-16 (FR-12 and FR-13, the shipped per-section reveal and collapse) and 2026-11-17 (FR-13's
+focus sentence marked and a collapse criterion added; the flag-removal commit cited as 62ddc565)
 **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -33,7 +35,7 @@ inputDocuments:
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
 > - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
->   flag (b0a6747d) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   flag (62ddc565) with `userSettings`: `/settings` always renders the two-factor section, in every
 >   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
 >   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
 >   off" row, scenario or criterion describes a state no build reaches.
@@ -607,12 +609,18 @@ user is still in keeps focus.
 "Очистити" restores the last loaded name and e-mail, empties and re-masks both password fields,
 removes every field error and the no-change status, and sends nothing. It never blanks a field,
 never dismisses a toast and is inert during a Save. It is outlined, its label reaches 4.5:1 and
-is never the primary blue (D15); focus stays on it.
+is never the primary blue (D15); focus stays on it. Superseded 2026-11-17 (owner decision of
+2026-11-05, as shipped; the amendment above): focus stays on "Очистити" only in the password
+section; in the full-name and e-mail sections the restored section collapses and focus moves to
+its input.
 
 - Given edited fields, typed passwords and field errors, when "Очистити" is activated, then the
   fields hold the last loaded values, both password fields are empty and masked, no field has
   `aria-invalid`, and nothing is sent.
 - Given a saved new name, when "Очистити" is activated, then the field holds the new name.
+- Given an edited full name or e-mail, when that section's "Очистити" is activated, then the
+  section's password field, Save and "Очистити" collapse and focus is on the section's input
+  (added 2026-11-17).
 
 ### 5.4 Outcomes
 

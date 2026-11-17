@@ -145,12 +145,13 @@ browser Back) shows the route rule again. The handle collapses the panel to the 
 76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
 Hover and focus are tracked apart, so the tooltip stays while either holds: the pointer leaving a
 row that keeps focus, or focus leaving a row the pointer still covers, does not hide it. While a
-tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
-a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
-is persisted. Sign-out runs through the `useSignOut` latch the protected route provides: while a
-sign-out is pending, a second activation of any sign-out control (sidebar, drawer or user menu)
-does nothing, and a sign-out whose auth-store chunk fails to load releases the latch, so the
-control can be activated again.
+tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so a
+tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Only the
+collapsed state is persisted, in `localStorage` under `crm.sidebar.collapsed` (see "Layouts"); the
+Settings group's chevron toggle and the tooltips are not. Sign-out runs through the `useSignOut`
+latch the protected route provides: while a sign-out is pending, a second activation of any sign-out
+control (sidebar, drawer or user menu) does nothing, and a sign-out whose auth-store chunk fails to
+load releases the latch, so the control can be activated again.
 
 ### Measured against Figma (sidebar)
 

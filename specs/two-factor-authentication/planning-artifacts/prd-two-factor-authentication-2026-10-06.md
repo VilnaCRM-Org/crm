@@ -4,8 +4,8 @@ workflowType: prd
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-13
-iteration: 10
+revised: 2026-11-17
+iteration: 17
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -85,6 +85,11 @@ revisions:
     NFR-9, NFR-13 and §10'
   - '2026-11-10: owner decision; the lazily loaded SignInSubmitProcessor is the one NFR-22
     exception'
+  - '2026-11-12: gate finding; FR-9 and FR-10, a sign-in ends any earlier session'
+  - '2026-11-13: FR-28 marked; the setup card heads with its level-2 header, icon-only copy'
+  - '2026-11-16: the FR-40 authenticator subtitle and the NFR-9 setup order marked superseded'
+  - '2026-11-17: D6, the §7 exception row (its original wording restored) and the error-text red
+    marked; the flag-removal commit cited as 62ddc565'
 ---
 
 # PRD: two-factor authentication for the user module
@@ -92,7 +97,8 @@ revisions:
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, 2026-11-03 (owner
 decision: the `twoFactorAuth` flag removed), 2026-11-04 (owner decisions: the Figma card, the
 challenge page as drawn, auto-submit), 2026-11-05 (owner decisions: the settings profile forms
-split, the shell from 768 px) and 2026-11-10 (the 2026-11-04 decisions marked where they apply)
+split, the shell from 768 px), 2026-11-10 (the 2026-11-04 decisions marked where they apply),
+2026-11-12, 2026-11-13, 2026-11-16 and 2026-11-17 (gate findings and supersession marks)
 **Feature:** `two-factor-authentication`
 
 > **Owner decisions of 2026-11-05 (from the owner's hand test of #377).** Both land in #377, not in
@@ -146,7 +152,7 @@ split, the shell from 768 px) and 2026-11-10 (the 2026-11-04 decisions marked wh
 > settings README, "The two-factor card", records the measurements and the deviations.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
-> flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
+> flag (62ddc565), together with #330's `userSettings`: `/settings` always renders the two-factor
 > section, in every environment (`src/modules/user/README.md`, "No feature flag for the two-factor
 > section"). Every condition below that reads "while `twoFactorAuth` is on" now always holds, and
 > every "`twoFactorAuth` off" row, scenario or acceptance criterion describes a state no build
@@ -1968,18 +1974,18 @@ its registration and logout are unchanged. There is no REST data path.
 
 ### Brief goals and measures
 
-| Brief goal or measure                                              | Requirements                     |
-| ------------------------------------------------------------------ | -------------------------------- |
-| Goal 1: end-to-end flows in the test stack                         | FR-1, FR-3-FR-6, FR-8-FR-37      |
-| Goal 2: GraphQL sign-in, section by configuration                  | FR-6, FR-7, FR-8, FR-42          |
-| Goal 3: nothing leaks                                              | FR-10, FR-36, FR-39, NFR-1-NFR-4 |
-| Goal 4: WCAG 2.1 AA and every floor                                | NFR-5-NFR-15                     |
-| No REST login remains                                              | FR-8                             |
-| Every branch tested (msw and route stubs)                          | FR-4, FR-5                       |
-| Zero `cache.write` of secrets                                      | NFR-2                            |
-| One owner-accepted `A11Y_EXCEPTIONS` entry (superseded 2026-11-04) | NFR-5                            |
-| Eager growth under 1 kB gzip (one key and entry)                   | NFR-11                           |
-| Route-coverage rows for the challenge key                          | FR-45                            |
+| Brief goal or measure                                                        | Requirements                     |
+| ---------------------------------------------------------------------------- | -------------------------------- |
+| Goal 1: end-to-end flows in the test stack                                   | FR-1, FR-3-FR-6, FR-8-FR-37      |
+| Goal 2: GraphQL sign-in, section by configuration                            | FR-6, FR-7, FR-8, FR-42          |
+| Goal 3: nothing leaks                                                        | FR-10, FR-36, FR-39, NFR-1-NFR-4 |
+| Goal 4: WCAG 2.1 AA and every floor                                          | NFR-5-NFR-15                     |
+| No REST login remains                                                        | FR-8                             |
+| Every branch tested (msw and route stubs)                                    | FR-4, FR-5                       |
+| Zero `cache.write` of secrets                                                | NFR-2                            |
+| Zero new `A11Y_EXCEPTIONS` (superseded 2026-11-04: one owner-accepted entry) | NFR-5                            |
+| Eager growth under 1 kB gzip (one key and entry)                             | NFR-11                           |
+| Route-coverage rows for the challenge key                                    | FR-45                            |
 
 ## 8. External dependencies
 

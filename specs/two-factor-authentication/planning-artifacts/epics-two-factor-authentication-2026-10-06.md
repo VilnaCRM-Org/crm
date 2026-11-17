@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
 revised: 2026-11-17
-iteration: 4
+iteration: 17
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -57,6 +57,8 @@ revisions:
   - '2026-11-13: gate finding; Story 2.7 and UX-DR-1 adopt the 130 px tablet challenge cells'
   - '2026-11-16: gate finding; AR-5 Parser and Scrubber suffixes'
   - '2026-11-17: gate finding; shipped spec paths noted in Stories 3.4, 3.5, 4.3 and 4.4'
+  - '2026-11-17: Story 1.4 names FieldViolationParser in Files and the class check, Story 2.2
+    demo resolve wording; the flag-removal commit cited as 62ddc565'
 ---
 
 # Epics and stories: two-factor authentication for the user module
@@ -87,7 +89,7 @@ findings, see `revisions`) **Feature:**
 > 3.6, 4.1 and 4.4 that say the shell or an existing baseline is unchanged carry dated notes.
 
 > **Owner decision of 2026-11-03 (flag removed).** The owner removed the `twoFactorAuth` runtime
-> flag (b0a6747d), together with #330's `userSettings`: `/settings` always renders the two-factor
+> flag (62ddc565), together with #330's `userSettings`: `/settings` always renders the two-factor
 > section, in every environment (`src/modules/user/README.md`, "No feature flag for the two-factor
 > section"). Every condition below that reads "while `twoFactorAuth` is on" now always holds, and
 > every "`twoFactorAuth` off" row, scenario or acceptance criterion describes a state no build
@@ -856,7 +858,12 @@ rows), `src/modules/user/types/user-service/user-service-failure.ts` (MODIFY: ap
 `@injectable()`), `src/modules/user/types/user/two-factor-dto.ts` (NEW: `TwoFactorDto`),
 `src/modules/user/index.ts` (MODIFY: type re-export), `src/modules/user/types/two-factor/code.ts`
 (NEW: `TwoFactorCodeKind`, `TwoFactorCodeAcceptance`, `TwoFactorFieldError`,
-`TwoFactorBannerCode`), unit tests and the transformer's integration test (MODIFY).
+`TwoFactorBannerCode`), unit tests and the transformer's integration test (MODIFY). Amended
+2026-11-17 (the 2026-11-11 amendment above):
+`src/modules/user/transformers/field-violation-parser.ts` (NEW: `FieldViolationParser`,
+`@injectable()`, registered under `AUTH_TOKENS.FieldViolationParser` in
+`src/modules/user/config/{di,tokens}.ts`) and its unit test
+`tests/unit/modules/user/transformers/field-violation-parser.test.ts`.
 
 **Gates:** DoD local gates; `make lint-eslint`, `make lint-deps`, `make lint-metrics`; the focused
 `tests/unit/tooling/di-collaborator-gate.test.ts`.
@@ -901,7 +908,10 @@ rows), `src/modules/user/types/user-service/user-service-failure.ts` (MODIFY: ap
   injected violation step) against architecture §19, when compared, then the transformer is the
   module-shared [Transformer] the two Data providers call, the normalizer is a helper inside React
   hook, `TwoFactorDto` is the board's `2FADTO [type]`, and no class carries a `Controller`,
-  `Service` or `Handler` suffix (NFR-22).
+  `Service` or `Handler` suffix (NFR-22). Amended 2026-11-17: the lead-in names three classes,
+  the transformer, the normalizer and `FieldViolationParser`; the parser is part of the
+  `UserServiceErrorTransformer` box, injected into it, and adds no layer or edge (architecture
+  §19.2, amended 2026-11-11).
 
 ### Story 1.5: Keep the known 2FA status in AuthState and share it through the outlet context
 
@@ -1183,7 +1193,9 @@ lists 27 symbols, the settings ones among them.
   Amended 2026-11-11 (gate finding): no request happens and the provider is not resolved, but
   `SignInSubmitProcessor` then resolves `AuthSecuritySignals` through the loader and records the
   demo result with `loginSettled`, as it does for a live sign-in (architecture, "Code facts
-  (Story 2.2 step B)", amendment of 2026-11-11).
+  (Story 2.2 step B)", amendment of 2026-11-11). Superseded 2026-11-17 (wording): the
+  criterion's "no loader resolve" reads "no resolve of `GraphQLSignInProvider`"; the loader still
+  resolves `AuthSecuritySignals` once.
 - Given a `session` outcome, when the run settles, then one `useAuthStore.setState` writes
   `loginLoading: false`, `loginError: null`, the e-mail, the token and
   `twoFactorStatus: 'disabled'`, `LoginForm` shows #315's success card, and no refresh token

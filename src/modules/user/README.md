@@ -1035,8 +1035,9 @@ for a stale sign-in shows the re-authentication message, focused, with an outlin
 (`UIButton variant="outlinedPill" size="small"`) "Закрити сповіщення" with border `#80878A` and
 text `#1B2327`, and the shared `2px #404142` focus ring. Every outlined pill of the 2FA surfaces
 is that declared `UIButton` variant: its look lives in `src/components/ui-button/theme.ts`, and
-the features add only layout (the on view's per-breakpoint height and padding, the footer's top
-margin).
+the features add layout (the on view's per-breakpoint height and padding, the footer's top
+margin) and one type override: the on view's two pills (`actionButton`) set their font per
+breakpoint, weight 600 at 18 px on tablet and 500 at 15 px on desktop.
 
 **Behaviour.** A challenge that completed with a recovery code and reported two or fewer remaining
 codes leaves that number in the auth store. `ProtectedRoute` reads it through
