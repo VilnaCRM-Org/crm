@@ -181,6 +181,7 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
   });
 
   test('keeps the setup controls tappable', async ({ page }) => {
+    await expectTouchTarget(startOf(page), 'Почати налаштування');
     await openSetup(page);
 
     await expect(codeCellsOf(page)).toHaveCount(CELL_COUNT);
