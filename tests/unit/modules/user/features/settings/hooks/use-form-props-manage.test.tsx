@@ -36,6 +36,24 @@ describe('useDisableFormProps', () => {
     });
   });
 
+  it('evaluates the disable copy in a hook loaded inside the test', async () => {
+    const fresh = await loadIsolated(async () => {
+      jest.doMock('react', () => React);
+      jest.doMock('react-i18next', () => ReactI18next);
+      return (await import('@/modules/user/features/settings/hooks/use-disable-form-props'))
+        .default;
+    });
+
+    const { result } = renderHook(() => fresh(panelProps()), { wrapper });
+
+    expect(result.current).toMatchObject({
+      title: 'Вимкнути двофакторну автентифікацію',
+      subtitle: 'Введіть код із застосунку або резервний код.',
+      submitLabel: 'Вимкнути',
+      submittingLabel: 'Вимикаємо…',
+    });
+  });
+
   it('maps the banners, carries their occurrence and the submit ref, and focuses the title', () => {
     const props = panelProps({
       view: viewState('disable', { banner: 'transient', bannerOccurrence: 2 }),
