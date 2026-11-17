@@ -13,7 +13,8 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
   toast queue.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
-  (`ProfileSectionForm`, `SectionFields`, `ClearButton`, `EmailStatusRow`), `change-password`,
+  (`ProfileSectionForm`, `SectionFields` with its `EmailField` and `EmailStatus`, `ClearButton`,
+  `EmailStatusRow`), `change-password`,
   `settings-grid`, `social-networks`, `two-factor-settings` (the two-factor card, issue #331),
   `qr-code-image` (the setup QR code, drawn as one inline SVG path) and `user-menu` (the
   app-shell chip and menu, issue #362, with its own lazy `user_menu.*` catalog).
@@ -227,15 +228,16 @@ that failed, so a name failure followed by an e-mail save retries the name alone
 Each section sends only its own field and its own password (`ProfileChangeDetector.detect`), and a
 form remounts only on its own successful save (`key=saved`), so a draft in another form survives.
 `ProfileSectionForm` calls one compose hook, `useProfileFormModel`, which calls `useProfileSave` and
-`useProfileFormRules`; `EmailFields` calls `useEmailRow` (over `useEmailResend`); all take the
-hook-owned `ProfileEditContext`. A resend that settles after a Save changed the address has no visible
-effect: before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the
-e-mail it was issued for, which `adopt` answers synchronously (a ref written before the dispatch),
-so even a resend that settles before React commits the adopted entity is dropped. The reducer's
-`confirm` still carries the e-mail as a second guard. Save is never held by a resend. A Save for the
-unchanged address that succeeds while a resend is in flight moves `adoption.revision()` on, so the
-resend still shows its toast, because the link was sent, but drops its older `confirmed` flag. A
-failed Save adopts nothing, so the revision stays and the resend applies its confirmation.
+`useProfileFormRules`; `EmailStatus` (in `section-fields.tsx`, under `EmailField`) calls
+`useEmailRow` (over `useEmailResend`) and renders `EmailStatusRow`; all take the hook-owned
+`ProfileEditContext`. A resend that settles after a Save changed the address has no visible effect:
+before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the e-mail it was
+issued for, which `adopt` answers synchronously (a ref written before the dispatch), so even a
+resend that settles before React commits the adopted entity is dropped. The reducer's `confirm`
+still carries the e-mail as a second guard. Save is never held by a resend. A Save for the unchanged
+address that succeeds while a resend is in flight moves `adoption.revision()` on, so the resend
+still shows its toast, because the link was sent, but drops its older `confirmed` flag. A failed
+Save adopts nothing, so the revision stays and the resend applies its confirmation.
 
 ## Figma parity
 
