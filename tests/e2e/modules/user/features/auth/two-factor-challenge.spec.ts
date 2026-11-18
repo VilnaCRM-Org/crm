@@ -211,12 +211,20 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await typeCode(page, CODE);
 
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
-    await expect(page.getByText(challengeText.expiredNotice)).toHaveCount(1);
+    await expect(
+      page.getByRole('status').filter({ hasText: challengeText.expiredNotice })
+    ).toHaveCount(1);
     await expect(page.getByRole('main')).toBeFocused();
+    await expect(page.getByPlaceholder(t('sign_in.form.email_input.placeholder'))).toHaveValue('');
     await expectNoSecrets(page, secrets);
 
     await page.reload({ waitUntil: 'domcontentloaded' });
 
+    await expect(page.getByText(challengeText.expiredNotice)).toHaveCount(0);
+
+    await page.goBack();
+
+    await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();
     await expect(page.getByText(challengeText.expiredNotice)).toHaveCount(0);
   });
 
