@@ -100,11 +100,11 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     const challenge = await stubChallenge(page);
     await signInToChallenge(page, credentials);
 
-    await page.goBack();
+    await page.evaluate(() => window.history.back());
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
     await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();
 
-    await page.goForward();
+    await page.evaluate(() => window.history.forward());
 
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
     await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();
@@ -123,7 +123,7 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
       page.getByRole('main').getByRole('heading', { level: 1, name: homeHeading })
     ).toBeVisible();
 
-    await page.goBack();
+    await page.evaluate(() => window.history.back());
 
     await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.signIn}$`));
     await expect(page.getByRole('heading', { level: 1, name: t('sign_in.title') })).toBeVisible();

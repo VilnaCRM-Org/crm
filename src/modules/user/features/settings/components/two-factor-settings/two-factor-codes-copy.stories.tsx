@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-webpack5';
 import { createRef, type JSX } from 'react';
 
 import { withAcceptingClipboard, withRefusingClipboard } from '@stories/clipboard-decorators';
@@ -44,24 +44,23 @@ const renderCodesCopy = (): JSX.Element => (
 
 export const Copy: Story = { render: renderCodesCopy };
 
-export const Copied: Story = {
+const copyResultStory = (decorator: Decorator, expected: string, story: string): Story => ({
   render: renderCodesCopy,
-  decorators: [withAcceptingClipboard()],
-  play: async ({ canvasElement, userEvent }) => {
+  decorators: [decorator],
+  play: async ({ canvasElement, userEvent }): Promise<void> => {
     const copy = canvasElement.querySelector<HTMLButtonElement>('button');
     if (copy !== null) await userEvent.click(copy);
-    await waitForText(canvasElement, CODES_COPIED);
+    await waitForText(canvasElement, expected);
   },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'The codes were copied: "Коди скопійовано" shows above the unchanged button for 3 s ' +
-          'and fades out over 0.4 s (at once with reduced motion); the live region announces it.',
-      },
-    },
-  },
-};
+  parameters: { docs: { description: { story } } },
+});
+
+export const Copied: Story = copyResultStory(
+  withAcceptingClipboard(),
+  CODES_COPIED,
+  'The codes were copied: "Коди скопійовано" shows above the unchanged button for 3 s ' +
+    'and fades out over 0.4 s (at once with reduced motion); the live region announces it.'
+);
 
 export const CopiedNotice: Story = {
   render: () => <CopiedLine text={CODES_COPIED} />,
@@ -76,21 +75,9 @@ export const CopiedNotice: Story = {
   },
 };
 
-export const CopyFailed: Story = {
-  render: renderCodesCopy,
-  decorators: [withRefusingClipboard()],
-  play: async ({ canvasElement, userEvent }) => {
-    const copy = canvasElement.querySelector<HTMLButtonElement>('button');
-    if (copy !== null) await userEvent.click(copy);
-    await waitForText(canvasElement, CODES_COPY_FAILED);
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'The clipboard refuses the write: the manual instruction shows above the button until ' +
-          'the next copy and is announced through the live region.',
-      },
-    },
-  },
-};
+export const CopyFailed: Story = copyResultStory(
+  withRefusingClipboard(),
+  CODES_COPY_FAILED,
+  'The clipboard refuses the write: the manual instruction shows above the button until ' +
+    'the next copy and is announced through the live region.'
+);

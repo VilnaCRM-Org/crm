@@ -38,7 +38,7 @@ describe('related tests a mutant run loads', () => {
 
   write(
     'tsconfig.paths.json',
-    JSON.stringify({ compilerOptions: { paths: { '@/*': ['src/*'], '@tests/*': ['tests/*'] } } })
+    JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'], '@tests/*': ['tests/*'] } } })
   );
   write('src/area/target.ts', 'export const target = 1;\n');
   write('src/area/sibling.ts', "import { target } from './target';\nexport const s = target;\n");

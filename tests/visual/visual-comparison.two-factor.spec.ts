@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildRecoveryCode, buildTotpCode } from '@tests/builders';
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -117,7 +118,9 @@ test.describe.parallel('Two-factor visual tests (issue #331)', () => {
       await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.home}$`));
       await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
       await expect(page.getByRole('status').filter({ hasText: lowCodesNotice })).toBeVisible();
-      await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
+      await expect(chipOf(page)).toHaveAccessibleName(
+        new RegExp(`^${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}`, 'u')
+      );
 
       await takeTwoFactorSnapshot(page, screen, 'low-codes-notice');
     });

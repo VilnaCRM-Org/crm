@@ -23,14 +23,25 @@ const readFile = (relativePath: string): string =>
 
 const readJson = <T>(relativePath: string): T => JSON.parse(readFile(relativePath)) as T;
 
+const WRAPPER_GUARDS: ReadonlyArray<(node: ts.Node) => boolean> = [
+  ts.isParenthesizedExpression,
+  ts.isAsExpression,
+  ts.isSatisfiesExpression,
+  ts.isNonNullExpression,
+  ts.isTypeAssertionExpression,
+];
+
+const isWrapperExpression = (
+  node: ts.Expression
+): node is
+  | ts.ParenthesizedExpression
+  | ts.AsExpression
+  | ts.SatisfiesExpression
+  | ts.NonNullExpression
+  | ts.TypeAssertion => WRAPPER_GUARDS.some((guard) => guard(node));
+
 const unwrapExpression = (node: ts.Expression): ts.Expression =>
-  ts.isParenthesizedExpression(node) ||
-  ts.isAsExpression(node) ||
-  ts.isSatisfiesExpression(node) ||
-  ts.isNonNullExpression(node) ||
-  ts.isTypeAssertionExpression(node)
-    ? unwrapExpression(node.expression)
-    : node;
+  isWrapperExpression(node) ? unwrapExpression(node.expression) : node;
 
 const constructsChunkRetryLoader = (node: ts.Expression | undefined): boolean => {
   const inner = node === undefined ? undefined : unwrapExpression(node);

@@ -120,7 +120,7 @@ test.describe('Low recovery codes notice (issue #331)', () => {
 
     await sidebarOf(page).getByRole('link', { name: boards, exact: true }).click();
     await expect(page).toHaveURL(/\/boards$/);
-    await page.goBack();
+    await page.evaluate(() => window.history.back());
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { level: 1, name: homeHeading })).toBeVisible();
 

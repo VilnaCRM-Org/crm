@@ -79,7 +79,7 @@ function loadAliases() {
   const { paths } = JSON.parse(fs.readFileSync('tsconfig.paths.json', 'utf8')).compilerOptions;
   return Object.entries(paths).map(([alias, [target]]) => ({
     prefix: alias.replace(/\*$/, ''),
-    target: target.replace(/\*$/, ''),
+    target: path.posix.normalize(target.replace(/\*$/, '')),
     wildcard: alias.endsWith('*'),
   }));
 }
