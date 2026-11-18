@@ -20,9 +20,10 @@ This template is used for all VilnaCRM microservices.
 - **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
-  Bun is used only to manage dependencies using `bun.lock`.
-- **Node**: >=24.8.0 (enforced via engineStrict); `@types/node` tracks the same major
+- **Package Manager**: Bun (required, version >=1.4.4). Bun manages dependencies through
+  `bun.lock` and type-checks with `bun check` (`make lint-tsc`, ADR-003); Node.js remains the
+  runtime for the app tooling, Jest and `serve`.
+- **Node**: >=24.11.0 (enforced via engineStrict); `@types/node` tracks the same major
 - **Testing**: Jest 30 (jsdom 26), Testing Library 16, msw 2, Playwright
 
 ## Development Environment
@@ -816,11 +817,24 @@ installs; apt authenticates the archive by signature, not by transport.
 **Bumping a snapshot** is one reviewed edit per image: set the ARG to a newer
 `YYYYMMDDTHHMMSSZ`, then re-pin each package to the candidate that snapshot serves — run
 `apt-get update && apt-cache policy <pkg>` in the base image with the snapshot sources, or read
-the `Packages` index under `<snapshot>/dists/<suite>/main/binary-amd64/`. Bump it whenever the base
-image moves as well: a snapshot older than the base can pin a package below the version the base
-already ships, and `apt-get install` refuses that downgrade. The `debian` base records its own build
+the `Packages` index under `<snapshot>/dists/<suite>/main/binary-amd64/`. Re-check it whenever the
+base image moves: a snapshot older than the base can pin a package below the version the base
+already ships, or offer one whose dependencies the base has outgrown, and `apt-get install`
+refuses both. Bump the snapshot only when that check fails, because a snapshot no other job reads
+downloads slowly from CI (see the Playwright stage below). The `debian` base records its own build
 snapshot as a comment in `/etc/apt/sources.list.d/debian.sources`, which is a good floor.
 Dependabot does not move either ARG.
+
+**The Playwright stage installs only what its base image lacks** (`make` and `unzip`; `bash` and
+`python3` are pinned at the versions the base already ships) and no compiler: no dependency builds
+a native addon, so `bun install --frozen-lockfile` needs none. That keeps it on the
+`20250925T000000Z` snapshot every branch uses, so the files are warm. Moving to the Playwright 1.65
+base, a newer snapshot downloaded at 120–210 kB/s from CI, spent 10–14 minutes of the build in
+`apt-get` and timed out every Playwright job (#387), while the warm snapshot serves the same bytes
+at several MB/s. A snapshot older than the base still cannot install a package that depends on a
+library the base ships newer (`g++` on `libc6`), so add a package here only after running that
+`apt-get install` check against the base image. #387 moved the base to Playwright 1.65 and kept
+this snapshot under the rule above: the check passes for every package the stage still installs.
 
 `tests/unit/tooling/image-hardening.test.ts` fails when an apt stage reaches `apt-get update`
 without rewriting its sources to a snapshot host built from a `*_SNAPSHOT` ARG, when a package is
@@ -953,23 +967,23 @@ tracking issue the week its fix ships.
 **The deployable image ships no package manager.** The runtime base was `node:alpine`, whose
 bundled npm and its `node_modules` were the bulk of the image findings, and the `dockerfile
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
-base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
-`serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
+base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.7` in a throwaway
+`serve-tools` stage (`node:24.11.0-alpine3.21`) and builds `serve-base`
+`FROM mirror.gcr.io/library/alpine:3.24` — pinned `curl`, `libgcc`, `libstdc++`, and
 `libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `serve@14.2.6` pins `compression@1.8.1` exactly, which
+`/usr/local/lib/node_modules/serve` tree. `serve@14.2.7` pins `compression@1.8.1` exactly, which
 carries CVE-2026-87776, so the `serve-tools` stage sets `dependencies.compression` to `1.8.2` in
 the installed package and re-runs a production-only `npm install`; drop that step once a `serve`
 release ships the fix. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
-`serve@14.2.6` pins `compression` exactly at 1.8.1 (CVE-2026-87776, fixed in 1.8.2), so the
+`serve@14.2.7` pins `compression` exactly at 1.8.1 (CVE-2026-87776, fixed in 1.8.2), so the
 same stage rewrites that one dependency of the installed `serve` and reinstalls its production
 tree; drop the repin once a `serve` release depends on a fixed `compression`.
 `NO_UPDATE_CHECK=1` stops `serve` from contacting the npm registry at container start, and the
-`serve` bump (`14.2.0` → `14.2.6`) negotiates Brotli where the client accepts it, so measured
+`serve` bump (`14.2.0` → `14.2.7`) negotiates Brotli where the client accepts it, so measured
 transfer sizes can only shrink against the Lighthouse resource budgets.
 
 **The `dependencies` map is what the blocking scan scores.** `@apollo/server`,
@@ -1233,7 +1247,7 @@ raising any major.
 
 Two constraints in this repository are easy to trip over:
 
-- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.8.0`, so
+- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.11.0`, so
   the types stay on the 24 line; a newer major would make type-checking describe a runtime the
   project does not run.
 - **The test runner moves as a set.** `jest`, `jest-environment-jsdom`, `@types/jest`,

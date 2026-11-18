@@ -1,7 +1,7 @@
 {
   "user_menu": {
     "button": "User menu",
-    "button_named": "{{name}}, User menu",
+    "button_named": "{{monogram}}, {{name}}, User menu",
     "my_profile": "My profile",
     "settings": "Settings",
     "sign_out": "Sign out"

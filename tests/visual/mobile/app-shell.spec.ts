@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -24,7 +25,9 @@ async function openShell(page: Page, path: string): Promise<void> {
   await seedPreloadedAuthToken(page);
   await stubProfile(page);
   await stabilizePage(page, path);
-  await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
+  await expect(chipOf(page)).toHaveAccessibleName(
+    new RegExp(`^${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}`, 'u')
+  );
 }
 
 const OVERLAY_SNAPSHOT_OPTIONS = { ...MOBILE_SNAPSHOT_OPTIONS, fullPage: false } as const;

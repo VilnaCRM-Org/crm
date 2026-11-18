@@ -81,7 +81,7 @@ EditorConfig, markdownlint and Playwright extensions with format-on-save. Its
 before compose starts, the two steps any `make` invocation would otherwise do for you.
 
 Inside the container the workspace is `/app` and `node_modules` is the named volume, so run
-the tools directly — `bun x jest`, `bun x eslint .`, `bun x tsc --noEmit`, `bun x prettier`
+the tools directly — `bun x jest`, `bun x eslint .`, `bun check`, `bun x prettier`
 — rather than through `make`: the Docker-backed targets (`make lint`, `make test-unit-all`,
 `make lint-metrics`, the browser suites) shell out to `docker compose exec`, which needs the
 host's Docker socket. Run those from a host terminal against the same containers, exactly as
@@ -959,7 +959,7 @@ reverted on its own. `open-pull-requests-limit` is 10 for `bun` (the grouped min
 request takes one slot and each pending major takes one) and 5 for `github-actions` and
 `docker`.
 
-Two updates are declined standing, as `ignore` entries in `.github/dependabot.yml`, so they
+Four updates are declined standing, as `ignore` entries in `.github/dependabot.yml`, so they
 stop reopening:
 
 - `dotenv-expand` 1000 and later. That release runs command substitution (`$(…)`) and decrypts
@@ -969,6 +969,12 @@ stop reopening:
 - The Node 25 base image. Node 25 is an odd, non-LTS line that reached end of life on
   2026-06-01; the image, `.nvmrc` and `engines.node` move together to the next LTS line through
   the major-version playbook instead.
+- `typescript` 7 and later. TypeScript 7's package no longer exposes the compiler API that
+  `ts-jest` and the Stryker checker call, and `typescript-eslint` accepts only `<6.1.0`, so the
+  package stays on 5.x and `bun check` does the fast type-check
+  ([ADR-003](docs/adr/003-rust-javascript-toolchain.md)). Lift the entry when both support it.
+- `@types/node` 25 and later. The types track the Node engine (24), not npm `latest`; they move
+  with `.nvmrc`, `engines.node` and the base image through the major-version playbook.
 
 Dependabot has no equivalent of Renovate's `lockFileMaintenance`, so `bun.lock` is never
 re-resolved against unchanged ranges on its own. Refresh it deliberately when transitive

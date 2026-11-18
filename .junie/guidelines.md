@@ -4,8 +4,8 @@ This document provides essential information for developers working on this Reac
 
 ## Prerequisites
 
-- **Node.js**: >=20.0.0 (enforced by `engines` in package.json)
-- **Package Manager**: Bun >=1.3.5 (pinned via `.bun-version`)
+- **Node.js**: >=24.11.0 (enforced by `engines` in package.json, pinned in `.nvmrc`)
+- **Package Manager**: Bun >=1.4.4 (pinned via `.bun-version`)
 - **Docker**: Required for containerized development environment
 - **Docker Compose**: For orchestrating development services
 
@@ -165,7 +165,7 @@ make lint
 
 # Individual linters
 make lint-eslint    # ESLint with Airbnb + TypeScript rules
-make lint-tsc       # TypeScript compiler checks
+make lint-tsc       # Type-check with bun check (ADR-003)
 make lint-md        # Markdown linting
 
 # Code formatting
@@ -305,7 +305,7 @@ make lighthouse-mobile     # Mobile performance audit
 
 ### 4. Build Issues
 
-- Verify Node.js version matches requirements (>=20.0.0)
+- Verify Node.js version matches requirements (>=24.11.0, see `.nvmrc`)
 - Check TypeScript compilation with `make lint-tsc`
 - Review ESLint errors with `make lint-eslint`
 
