@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  existsSync,
+  fchmodSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname } from 'node:path';
 
 const MINIMUM_REMAINING_SECONDS = 3600;
@@ -85,8 +93,13 @@ export default class DemoSessionIssuer {
       .replaceAll('__ACCESS_TOKEN__', token)
       .replaceAll('__DEMO_EMAIL__', this.demo.email);
     mkdirSync(dirname(this.generatedPath), { recursive: true });
-    if (existsSync(this.generatedPath)) chmodSync(this.generatedPath, 0o600);
-    writeFileSync(this.generatedPath, environment, { mode: 0o600 });
+    const descriptor = openSync(this.generatedPath, 'w', 0o600);
+    try {
+      fchmodSync(descriptor, 0o600);
+      writeFileSync(descriptor, environment);
+    } finally {
+      closeSync(descriptor);
+    }
   }
 
   async run() {
