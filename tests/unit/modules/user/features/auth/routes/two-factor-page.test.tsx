@@ -10,6 +10,7 @@ import {
   RouterProvider,
   Routes,
   useLocation,
+  useNavigationType,
 } from 'react-router';
 
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
@@ -40,7 +41,8 @@ jest.mock('@auth/components/recovery-page-layout', () => ({
 
 function Probe(): JSX.Element {
   const { pathname, search, state } = useLocation();
-  return <p>{`${pathname}${search}|${JSON.stringify(state)}`}</p>;
+  const navigationType = useNavigationType();
+  return <p>{`${pathname}${search}|${JSON.stringify(state)}|${navigationType}`}</p>;
 }
 
 const mount = (state: object | null = null): ReturnType<typeof render> =>
@@ -76,7 +78,7 @@ describe('TwoFactorChallenge page', () => {
     async (state) => {
       mount(state);
 
-      expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null`)).toBeInTheDocument();
+      expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null|REPLACE`)).toBeInTheDocument();
       expect(mockLoadSection).not.toHaveBeenCalled();
       expect(mockLayout).not.toHaveBeenCalled();
     }
@@ -87,7 +89,7 @@ describe('TwoFactorChallenge page', () => {
 
     mount();
 
-    expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null`)).toBeInTheDocument();
+    expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null|REPLACE`)).toBeInTheDocument();
   });
 
   it('renders nothing and proceeds to the from target when the challenge completes', async () => {
@@ -132,7 +134,9 @@ describe('TwoFactorChallenge page', () => {
 
     act(() => useAuthStore.setState({ pendingSessionId: null, token: buildToken() }));
 
-    expect(await screen.findByText(`${ROUTE_PATHS.home}|{"focusMain":true}`)).toBeInTheDocument();
+    expect(
+      await screen.findByText(`${ROUTE_PATHS.home}|{"focusMain":true}|REPLACE`)
+    ).toBeInTheDocument();
   });
 
   it('goes straight to the from target without passing through sign-in on completion', async () => {
@@ -155,7 +159,7 @@ describe('TwoFactorChallenge page', () => {
 
     act(() => useAuthStore.setState({ pendingSessionId: null, token: buildToken() }));
 
-    expect(await screen.findByText('/deals|{"focusMain":true}')).toBeInTheDocument();
+    expect(await screen.findByText('/deals|{"focusMain":true}|REPLACE')).toBeInTheDocument();
     expect(visited).toEqual(['/deals']);
   });
 
@@ -166,7 +170,7 @@ describe('TwoFactorChallenge page', () => {
 
     act(() => useAuthStore.setState({ pendingSessionId: null }));
 
-    expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null`)).toBeInTheDocument();
+    expect(await screen.findByText(`${ROUTE_PATHS.signIn}|null|REPLACE`)).toBeInTheDocument();
   });
 
   it('proceeds to the home route when the challenge arrived without a from target', async () => {
@@ -176,6 +180,8 @@ describe('TwoFactorChallenge page', () => {
 
     act(() => useAuthStore.setState({ pendingSessionId: null, token: buildToken() }));
 
-    expect(await screen.findByText(`${ROUTE_PATHS.home}|{"focusMain":true}`)).toBeInTheDocument();
+    expect(
+      await screen.findByText(`${ROUTE_PATHS.home}|{"focusMain":true}|REPLACE`)
+    ).toBeInTheDocument();
   });
 });
