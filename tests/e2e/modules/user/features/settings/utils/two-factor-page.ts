@@ -121,10 +121,23 @@ export async function typeCode(page: Page, code: string): Promise<void> {
   await page.keyboard.type(code);
 }
 
+export async function expectNoSetupSecrets(page: Page): Promise<void> {
+  await expectNoSecrets(page, { secret: SETUP_SECRET, uri: SETUP_URI });
+}
+
+export async function expectNoCodesSecrets(page: Page, typed: string): Promise<void> {
+  await expectNoSecrets(page, {
+    secret: SETUP_SECRET,
+    uri: SETUP_URI,
+    typed,
+    ...Object.fromEntries(RECOVERY_CODES.map((code, index) => [`code${index}`, code])),
+  });
+}
+
 export async function openSetup(page: Page): Promise<void> {
   await startOf(page).click();
   await expect(setupHeadingOf(page)).toBeFocused();
-  await expectNoSecrets(page, { secret: SETUP_SECRET, uri: SETUP_URI });
+  await expectNoSetupSecrets(page);
 }
 
 const SETUP_CODE = buildTotpCode();
@@ -134,12 +147,7 @@ export async function reachCodes(page: Page): Promise<void> {
   await typeCode(page, SETUP_CODE);
   await confirmOf(page).click();
   await expect(codesHeadingOf(page)).toBeFocused();
-  await expectNoSecrets(page, {
-    secret: SETUP_SECRET,
-    uri: SETUP_URI,
-    typed: SETUP_CODE,
-    ...Object.fromEntries(RECOVERY_CODES.map((code, index) => [`code${index}`, code])),
-  });
+  await expectNoCodesSecrets(page, SETUP_CODE);
 }
 
 export async function stubClipboard(page: Page, mode: 'works' | 'missing'): Promise<void> {

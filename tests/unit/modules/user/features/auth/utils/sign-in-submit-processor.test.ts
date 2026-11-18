@@ -560,7 +560,7 @@ describe('SignInSubmitProcessor', () => {
     it('sends other credentials to the provider', async () => {
       const s = stubs({ ok: false, error: invalid });
 
-      await runWith(s, { email: DEMO.email, password: 'Wrong123' });
+      await runWith(s, { email: DEMO.email, password: buildPassword() });
 
       expect(s.login).toHaveBeenCalledTimes(1);
     });

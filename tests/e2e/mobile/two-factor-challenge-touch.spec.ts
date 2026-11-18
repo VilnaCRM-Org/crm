@@ -59,6 +59,7 @@ async function reachChallengeByTap(page: Page): Promise<void> {
   await page.locator('button', { hasText: signIn.submitLabel }).tap();
   await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
   await expect(challengeHeadingOf(page)).toBeVisible();
+  await expectNoSecrets(page, { sessionId: secrets.sessionId, password: secrets.password });
 }
 
 async function tapCode(page: Page, code: string): Promise<void> {

@@ -32,6 +32,8 @@ import {
   statusHeadingOf,
   stubClipboard,
   twoFactorText,
+  expectNoCodesSecrets,
+  expectNoSetupSecrets,
 } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
@@ -85,9 +87,11 @@ async function tapSavedAndDone(page: Page): Promise<void> {
 async function enrolByTap(page: Page): Promise<void> {
   await startOf(page).tap();
   await expect(codeCellsOf(page)).toHaveCount(CELL_COUNT);
+  await expectNoSetupSecrets(page);
   await tapCode(page, CODE);
   await confirmOf(page).tap();
   await expect(codesHeadingOf(page)).toBeVisible();
+  await expectNoCodesSecrets(page, CODE);
   await tapSavedAndDone(page);
 }
 
