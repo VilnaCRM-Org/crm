@@ -35,13 +35,13 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
   const transformer = new GraphQLTwoFactorSettingsTransformer();
   const code = buildRecoveryCode();
 
-  describe('toSetupOutcome', () => {
+  describe('toEnrolmentOutcome', () => {
     it('hands the URI and secret back with status disabled and no codes', () => {
       const otpauthUri = buildOtpauthUri();
       const secret = buildTotpSecret();
 
       expect(
-        transformer.toSetupOutcome({ setupTwoFactorUser: { user: { otpauthUri, secret } } })
+        transformer.toEnrolmentOutcome({ setupTwoFactorUser: { user: { otpauthUri, secret } } })
       ).toEqual({
         kind: 'changed',
         settings: { status: 'disabled', otpauthUri, secret, recoveryCodes: null },
@@ -61,66 +61,67 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
         { setupTwoFactorUser: { user: { otpauthUri: '', secret: buildTotpSecret() } } },
       ],
     ])('fails with the server reason for %s', (_name, payload) => {
-      expect(transformer.toSetupOutcome(payload)).toEqual(SERVER);
+      expect(transformer.toEnrolmentOutcome(payload)).toEqual(SERVER);
     });
   });
 
-  describe.each([
-    ['toConfirmOutcome', 'confirmTwoFactorUser'],
-    ['toRegenerateOutcome', 'regenerateRecoveryCodesUser'],
-  ] as const)('%s', (method, field) => {
-    it('turns the strings into a RecoveryCodeSet in response order with status enabled', () => {
-      const set = buildRecoveryCodeSet();
-      const payload = { [field]: { user: { recoveryCodes: codesOf(set) } } };
+  describe.each(['confirmTwoFactorUser', 'regenerateRecoveryCodesUser'] as const)(
+    'toRecoveryCodesOutcome for %s',
+    (field) => {
+      const method = 'toRecoveryCodesOutcome';
+      it('turns the strings into a RecoveryCodeSet in response order with status enabled', () => {
+        const set = buildRecoveryCodeSet();
+        const payload = { [field]: { user: { recoveryCodes: codesOf(set) } } };
 
-      expect(transformer[method](payload as never)).toEqual({
-        kind: 'changed',
-        settings: { status: 'enabled', otpauthUri: null, secret: null, recoveryCodes: set },
+        expect(transformer[method](payload as never)).toEqual({
+          kind: 'changed',
+          settings: { status: 'enabled', otpauthUri: null, secret: null, recoveryCodes: set },
+        });
       });
-    });
 
-    it('accepts a single non-empty code', () => {
-      expect(
-        transformer[method]({ [field]: { user: { recoveryCodes: [code] } } } as never)
-      ).toEqual({
-        kind: 'changed',
-        settings: {
-          status: 'enabled',
-          otpauthUri: null,
-          secret: null,
-          recoveryCodes: { items: [{ value: code }] },
-        },
+      it('accepts a single non-empty code', () => {
+        expect(
+          transformer[method]({ [field]: { user: { recoveryCodes: [code] } } } as never)
+        ).toEqual({
+          kind: 'changed',
+          settings: {
+            status: 'enabled',
+            otpauthUri: null,
+            secret: null,
+            recoveryCodes: { items: [{ value: code }] },
+          },
+        });
       });
-    });
 
-    it.each([
-      ['an empty list', []],
-      ['a blank code', ['']],
-      ['a blank code among valid ones', [code, '']],
-      ['a string', code],
-      ['an object', { 0: code }],
-      ['numbers', [1, 2]],
-      ['null', null],
-    ])('fails with the server reason for recovery codes given as %s', (_name, recoveryCodes) => {
-      expect(transformer[method]({ [field]: { user: { recoveryCodes } } } as never)).toEqual(
-        SERVER
-      );
-    });
+      it.each([
+        ['an empty list', []],
+        ['a blank code', ['']],
+        ['a blank code among valid ones', [code, '']],
+        ['a string', code],
+        ['an object', { 0: code }],
+        ['numbers', [1, 2]],
+        ['null', null],
+      ])('fails with the server reason for recovery codes given as %s', (_name, recoveryCodes) => {
+        expect(transformer[method]({ [field]: { user: { recoveryCodes } } } as never)).toEqual(
+          SERVER
+        );
+      });
 
-    it.each([
-      ['null data', null],
-      ['undefined data', undefined],
-      ['a null payload', { [field]: null }],
-      ['a null user', { [field]: { user: null } }],
-    ])('fails with the server reason for %s', (_name, payload) => {
-      expect(transformer[method](payload as never)).toEqual(SERVER);
-    });
-  });
+      it.each([
+        ['null data', null],
+        ['undefined data', undefined],
+        ['a null payload', { [field]: null }],
+        ['a null user', { [field]: { user: null } }],
+      ])('fails with the server reason for %s', (_name, payload) => {
+        expect(transformer[method](payload as never)).toEqual(SERVER);
+      });
+    }
+  );
 
-  describe('toDisableOutcome', () => {
+  describe('toDisabledOutcome', () => {
     it('gives status disabled with every secret and code null', () => {
       expect(
-        transformer.toDisableOutcome({ disableTwoFactorUser: { user: { success: true } } })
+        transformer.toDisabledOutcome({ disableTwoFactorUser: { user: { success: true } } })
       ).toEqual({
         kind: 'changed',
         settings: { status: 'disabled', otpauthUri: null, secret: null, recoveryCodes: null },
@@ -135,11 +136,11 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
       ['undefined data', undefined],
       ['a success flag given as a string', { disableTwoFactorUser: { user: { success: 'true' } } }],
     ])('fails with the server reason for %s', (_name, payload) => {
-      expect(transformer.toDisableOutcome(payload as never)).toEqual(SERVER);
+      expect(transformer.toDisabledOutcome(payload as never)).toEqual(SERVER);
     });
   });
 
-  describe('toFailure', () => {
+  describe('toFailureOutcome', () => {
     it.each([
       ['already_enabled', 'already_enabled'],
       ['not_enabled', 'not_enabled'],
@@ -161,7 +162,10 @@ describe('GraphQLTwoFactorSettingsTransformer', () => {
     ] as const)('maps the %s failure to the %s reason', async (reason, expected) => {
       const loaded = await isolatedTransformer();
 
-      expect(loaded.toFailure(failure(reason))).toEqual({ kind: 'failed', reason: expected });
+      expect(loaded.toFailureOutcome(failure(reason))).toEqual({
+        kind: 'failed',
+        reason: expected,
+      });
     });
   });
 

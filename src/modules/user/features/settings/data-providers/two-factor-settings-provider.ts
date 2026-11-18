@@ -21,28 +21,29 @@ export default class TwoFactorSettingsProvider {
 
   public setup(signal: AbortSignal): Promise<TwoFactorSettingsOutcome> {
     return this.settle(
-      async () => this.transformer.toSetupOutcome(await this.repository.setup(signal)),
+      async () => this.transformer.toEnrolmentOutcome(await this.repository.setup(signal)),
       signal
     );
   }
 
   public confirm(dto: TwoFactorDto, signal: AbortSignal): Promise<TwoFactorSettingsOutcome> {
     return this.settle(
-      async () => this.transformer.toConfirmOutcome(await this.repository.confirm(dto, signal)),
+      async () =>
+        this.transformer.toRecoveryCodesOutcome(await this.repository.confirm(dto, signal)),
       signal
     );
   }
 
   public disable(dto: TwoFactorDto, signal: AbortSignal): Promise<TwoFactorSettingsOutcome> {
     return this.settle(
-      async () => this.transformer.toDisableOutcome(await this.repository.disable(dto, signal)),
+      async () => this.transformer.toDisabledOutcome(await this.repository.disable(dto, signal)),
       signal
     );
   }
 
   public regenerate(signal: AbortSignal): Promise<TwoFactorSettingsOutcome> {
     return this.settle(
-      async () => this.transformer.toRegenerateOutcome(await this.repository.regenerate(signal)),
+      async () => this.transformer.toRecoveryCodesOutcome(await this.repository.regenerate(signal)),
       signal
     );
   }
@@ -54,7 +55,7 @@ export default class TwoFactorSettingsProvider {
     try {
       return await run();
     } catch (caught) {
-      return this.transformer.toFailure(this.errors.normalize(caught, signal));
+      return this.transformer.toFailureOutcome(this.errors.normalize(caught, signal));
     }
   }
 }

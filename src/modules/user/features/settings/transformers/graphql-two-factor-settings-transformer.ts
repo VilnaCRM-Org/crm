@@ -53,7 +53,7 @@ const DISABLED: TwoFactorSettingsEntity = {
 
 @injectable()
 export default class GraphQLTwoFactorSettingsTransformer {
-  public toSetupOutcome(
+  public toEnrolmentOutcome(
     payload: SetupTwoFactorUserMutation | null | undefined
   ): TwoFactorSettingsOutcome {
     const parsed = SetupTwoFactorResultSchema.safeParse(payload);
@@ -62,21 +62,20 @@ export default class GraphQLTwoFactorSettingsTransformer {
     return this.changed({ ...DISABLED, otpauthUri: user.otpauthUri, secret: user.secret });
   }
 
-  public toConfirmOutcome(
-    payload: ConfirmTwoFactorUserMutation | null | undefined
+  public toRecoveryCodesOutcome(
+    payload: ConfirmTwoFactorUserMutation | RegenerateRecoveryCodesUserMutation | null | undefined
   ): TwoFactorSettingsOutcome {
-    const parsed = ConfirmTwoFactorResultSchema.safeParse(payload);
-    return this.enabledWith(parsed.success ? parsed.data?.confirmTwoFactorUser?.user : null);
+    const confirmed = ConfirmTwoFactorResultSchema.safeParse(payload);
+    if (confirmed.success && confirmed.data) {
+      return this.enabledWith(confirmed.data.confirmTwoFactorUser?.user);
+    }
+    const regenerated = RegenerateRecoveryCodesResultSchema.safeParse(payload);
+    return this.enabledWith(
+      regenerated.success ? regenerated.data?.regenerateRecoveryCodesUser?.user : null
+    );
   }
 
-  public toRegenerateOutcome(
-    payload: RegenerateRecoveryCodesUserMutation | null | undefined
-  ): TwoFactorSettingsOutcome {
-    const parsed = RegenerateRecoveryCodesResultSchema.safeParse(payload);
-    return this.enabledWith(parsed.success ? parsed.data?.regenerateRecoveryCodesUser?.user : null);
-  }
-
-  public toDisableOutcome(
+  public toDisabledOutcome(
     payload: DisableTwoFactorUserMutation | null | undefined
   ): TwoFactorSettingsOutcome {
     const parsed = DisableTwoFactorResultSchema.safeParse(payload);
@@ -84,7 +83,7 @@ export default class GraphQLTwoFactorSettingsTransformer {
     return user?.success === true ? this.changed(DISABLED) : SERVER_FAILURE;
   }
 
-  public toFailure(failure: UserServiceFailure): TwoFactorSettingsFailedOutcome {
+  public toFailureOutcome(failure: UserServiceFailure): TwoFactorSettingsFailedOutcome {
     const reason = FAILURE_REASONS.get(failure.reason);
     return reason === undefined ? SERVER_FAILURE : { kind: 'failed', reason };
   }

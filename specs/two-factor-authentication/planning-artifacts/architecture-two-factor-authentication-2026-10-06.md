@@ -1037,7 +1037,7 @@ sequenceDiagram
     API-->>R: Apollo error
     R-->>P: rethrows
     P->>P: UserServiceErrorTransformer.normalize(unknown, AbortSignal) → UserServiceFailure
-    P->>T: toFailureOutcome(TwoFactorSettingsOperation setup, UserServiceFailure)
+    P->>T: toFailureOutcome(UserServiceFailure)
     T-->>P: TwoFactorSettingsFailedOutcome already_enabled
     P-->>H: TwoFactorSettingsFailedOutcome
     H->>K: view on + TwoFactorStatusCode already_on, recordStatus(TwoFactorStatus enabled)
@@ -2111,6 +2111,9 @@ The board's L3 stack, one class per box (§3.4), registered in the user module c
   `toDisabledOutcome(DisableTwoFactorUserMutation)` returns status `disabled`; a payload failing
   its schema becomes the `server` failure. `toFailureOutcome(TwoFactorSettingsOperation,
 UserServiceFailure)` applies the §8 settings rows from one module-level table.
+  Amended 2026-11-18 (gate finding): `toFailureOutcome` takes the `UserServiceFailure` alone. Every
+  §8 settings reason maps to one outcome whatever the operation that produced it, so the operation
+  argument would select nothing; the sequence diagram shows the one-argument call.
 - **`TwoFactorSettingsProvider` [Data provider]** is what the hooks see
   (`AUTH_TOKENS.TwoFactorSettingsProvider`): `setup`, `confirm`, `disable` and `regenerate`, each
   resolving a `TwoFactorSettingsOutcome`. Each calls the repository, hands the payload to the

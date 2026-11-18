@@ -1,11 +1,12 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import type { SignInOutcome } from '@tests/e2e/utils/two-factor-responses';
-import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
+import { SIGN_IN_PENDING_SESSION_ID, stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 
 export const challengeText = {
   title: t('two_factor.title'),
@@ -86,4 +87,8 @@ export async function signInToChallenge(
   await submitSignIn(page, credentials);
   await expect(page).toHaveURL(new RegExp(`${ROUTE_PATHS.twoFactorChallenge}$`));
   await expect(challengeHeadingOf(page)).toBeVisible();
+  await expectNoSecrets(page, {
+    sessionId: SIGN_IN_PENDING_SESSION_ID,
+    password: credentials.password,
+  });
 }
