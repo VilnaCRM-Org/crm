@@ -27,6 +27,7 @@ const STATUS = 'E-mail не підтверджено';
 
 const NEW_EMAIL = buildEmail();
 const ENTERED_PASSWORD = buildPassword();
+const CURRENT_PASSWORD = buildPassword();
 
 const unconfirmed = buildUserNode({
   id: buildUserIri(),
@@ -157,7 +158,7 @@ describe('settings page e-mail resend (page)', () => {
     await mount();
     await userEvent.type(screen.getByLabelText('Ваше ПІБ'), ' Іванівна');
     await userEvent.type(screen.getByLabelText('Пароль для зміни імені'), ENTERED_PASSWORD);
-    await userEvent.type(screen.getByLabelText('Поточний пароль'), 'def');
+    await userEvent.type(screen.getByLabelText('Поточний пароль'), CURRENT_PASSWORD);
     answerResend(() => resendPayload(false));
 
     await userEvent.click(resendLink());
@@ -165,7 +166,7 @@ describe('settings page e-mail resend (page)', () => {
     await screen.findByText(RESENT);
     expect(screen.getByLabelText('Ваше ПІБ')).toHaveValue(`${unconfirmed.initials} Іванівна`);
     expect(screen.getByLabelText('Пароль для зміни імені')).toHaveValue(ENTERED_PASSWORD);
-    expect(screen.getByLabelText('Поточний пароль')).toHaveValue('def');
+    expect(screen.getByLabelText('Поточний пароль')).toHaveValue(CURRENT_PASSWORD);
     expect(resendLink()).toHaveFocus();
   });
 

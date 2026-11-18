@@ -468,8 +468,9 @@ describe('ProfileForm', () => {
     [NAME, NAME_PASSWORD].forEach((label) => {
       expect(field(label)).not.toHaveAttribute('readonly');
     });
-    await userEvent.type(field(NAME_PASSWORD), 'def');
-    expect(field(NAME_PASSWORD)).toHaveValue(`${ENTERED_PASSWORD}def`);
+    const more = buildPassword();
+    await userEvent.type(field(NAME_PASSWORD), more);
+    expect(field(NAME_PASSWORD)).toHaveValue(`${ENTERED_PASSWORD}${more}`);
     expect(adopt).not.toHaveBeenCalled();
   });
 
