@@ -30,7 +30,7 @@ export default meta;
 type Story = StoryObj<typeof CopyButton>;
 
 const CODES_COPIED = 'Коди скопійовано';
-const CODES_COPY_FAILED = 'Не вдалося скопіювати. Виділіть коди і скопіюйте вручну.';
+const CODES_COPY_FAILED = 'Не вдалося. Виділіть коди вручну.';
 
 const renderCodesCopy = (): JSX.Element => (
   <CopyButton

@@ -99,7 +99,7 @@ describe('TwoFactorPanel accessibility', () => {
     ['copied', 'Коди скопійовано', jest.fn().mockResolvedValue(undefined)],
     [
       'failed',
-      'Не вдалося скопіювати. Виділіть коди і скопіюйте вручну.',
+      'Не вдалося. Виділіть коди вручну.',
       jest.fn().mockRejectedValue(new Error('refused')),
     ],
   ] as const)('has no violation in the codes view with the %s line', async (_, line, writeText) => {

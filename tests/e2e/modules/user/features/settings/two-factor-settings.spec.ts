@@ -282,6 +282,26 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(copyLineOf(page, twoFactorText.codesCopied)).toHaveCount(0);
     });
 
+    test('keeps the manual-copy line on one line at 320 px, so the button does not move', async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 320, height: 800 });
+      await stubClipboard(page, 'missing');
+      await stubSetup(page);
+      await stubConfirm(page);
+      await page.goto(SETTINGS_URL);
+      await reachCodes(page);
+      const pageTopOf = (locator: Locator): Promise<number> =>
+        locator.evaluate((node) => node.getBoundingClientRect().top + window.scrollY);
+      const before = await pageTopOf(copyCodesOf(page));
+
+      await copyCodesOf(page).click();
+
+      const line = await copyLineOf(page, twoFactorText.codesCopyFailed).boundingBox();
+      expect(line?.height).toBeLessThanOrEqual(16);
+      expect(await pageTopOf(copyCodesOf(page))).toBe(before);
+    });
+
     test('outlines the box in #80878A, keeps the hover edge dark and fills it #0074B5', async ({
       page,
     }) => {

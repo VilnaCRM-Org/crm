@@ -11,7 +11,7 @@ import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 const LABEL = 'Скопіювати коди';
 const COPIED = 'Коди скопійовано';
-const FAILED = 'Не вдалося скопіювати. Виділіть коди і скопіюйте вручну.';
+const FAILED = 'Не вдалося. Виділіть коди вручну.';
 
 function Wrapper({ children }: { children: ReactNode }): JSX.Element {
   return (

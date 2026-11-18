@@ -1312,6 +1312,9 @@ New strings (key names are the architecture's):
 - copy failed: "Не вдалося скопіювати. Виділіть ключ і скопіюйте вручну." — "Copying failed.
   Select the key and copy it manually."; codes variant: "Не вдалося скопіювати. Виділіть коди і
   скопіюйте вручну." — "Copying failed. Select the codes and copy them manually."
+  Amended 2026-11-18 (owner decision, copy feedback): the codes variant ships as "Не вдалося.
+  Виділіть коди вручну." — "Copy failed. Select the codes manually.", so the line above the button
+  fits on one line down to 320 px.
 - confirm field: "Код із застосунку" — "Code from the app"; note: "Після підтвердження всі інші
   ваші сеанси буде завершено." — "After confirmation, all your other sessions will be signed
   out."

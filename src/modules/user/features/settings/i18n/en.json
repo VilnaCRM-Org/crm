@@ -91,7 +91,7 @@
         "list_label": "Recovery codes",
         "copy": "Copy codes",
         "copied": "Codes copied",
-        "copy_failed": "Copying failed. Select the codes and copy them manually.",
+        "copy_failed": "Copy failed. Select the codes manually.",
         "saved": "I have saved the codes somewhere safe",
         "done": "Done",
         "submitting": "Finishing…",
