@@ -14,7 +14,7 @@ before proposing any change, and follow every `.claude/skills/*/SKILL.md` that m
 - tsyringe with `reflect-metadata` for dependency injection.
 - i18next v26 with react-i18next; `uk` is the main language, `en` the fallback.
 - RSBuild (Rspack) for the build; Apollo Server as the local GraphQL mock; Mockoon for E2E.
-- Bun (>= 1.3.5) manages dependencies through `bun.lock`; Node >= 24.8 is the runtime.
+- Bun (>= 1.4.4) manages dependencies through `bun.lock`; Node >= 24.11 is the runtime.
 - Jest 30, Testing Library, and msw for unit and integration tests; Playwright for E2E and
   visual regression; Stryker for mutation testing.
 
@@ -169,7 +169,7 @@ coordinated by a hook, not a class.
 
 ## Quality gates
 
-`make lint` runs ESLint, `tsc`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
+`make lint` runs ESLint, `bun check`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
 at 70 tokens), the rust-code-analysis metrics policy (cyclomatic above 10, cognitive above 15,
 more than 3 arguments, or more than 10 function LLOC fail the build), i18n parity, the docs
 gates, the license allowlist, the lockfile provenance gate (the npm registry plus one pinned

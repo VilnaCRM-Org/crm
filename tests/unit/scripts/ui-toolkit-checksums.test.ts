@@ -435,11 +435,29 @@ describe('UiToolkitChecksumsBuilder against the verified tarball', () => {
       { ...installed('0.6.0'), 'build/extra.mjs': 'export {};' },
       'build/extra.mjs is installed but not in the release tarball',
     ],
+    [
+      'a .bun-tag below the package root',
+      { ...installed('0.6.0'), 'build/.bun-tag': 'bun install tag' },
+      'build/.bun-tag is installed but not in the release tarball',
+    ],
   ])('refuses %s as [install] and leaves the manifest unchanged', async (_label, tree, detail) => {
     const result = await runAgainst(tree, ASSET_BYTES);
 
     expectRefusal(result, 'install');
     expect(result.stderr).toBe(refusedWith(detail));
+  });
+
+  it('accepts the root .bun-tag Bun 1.4 writes and records no digest for it', async () => {
+    const result = await runAgainst(
+      { ...installed('0.6.0'), '.bun-tag': 'bun install tag' },
+      ASSET_BYTES
+    );
+
+    expect(result.code).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(writtenManifest(result.writeFile).artifacts).not.toContainEqual(
+      expect.objectContaining({ path: '.bun-tag' })
+    );
   });
 
   it('writes digests from the tarball, honouring pax paths and skipping non-files', async () => {

@@ -57,7 +57,7 @@ const config: StorybookConfig = {
               ],
               plugins: [
                 resolvePackage('babel-plugin-transform-typescript-metadata'),
-                [resolvePackage('@babel/plugin-proposal-decorators'), { legacy: true }],
+                [resolvePackage('@babel/plugin-proposal-decorators'), { version: 'legacy' }],
               ],
             },
           },

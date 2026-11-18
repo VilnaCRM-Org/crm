@@ -25,6 +25,10 @@ updates:
     ignore:
       - dependency-name: 'dotenv-expand'
         versions: ['>=1000.0.0']
+      - dependency-name: 'typescript'
+        versions: ['>=7.0.0']
+      - dependency-name: '@types/node'
+        versions: ['>=25.0.0']
 
   - package-ecosystem: 'github-actions'
     directory: '/'

@@ -55,7 +55,9 @@ describe('UserChip', () => {
     const { rerender } = renderShell(
       <UserChip layout="desktop" identity={identity} menu={buildUserMenuState()} menuId="m" />
     );
-    expect(screen.getByRole('button')).toHaveAccessibleName(`${identity.displayName}, User menu`);
+    expect(screen.getByRole('button')).toHaveAccessibleName(
+      `${identity.monogram}, ${identity.displayName}, User menu`
+    );
 
     rerender(<UserChip layout="desktop" identity={null} menu={buildUserMenuState()} menuId="m" />);
     expect(screen.getByRole('button')).toHaveAccessibleName('User menu');

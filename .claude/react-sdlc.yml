@@ -9,7 +9,7 @@ framework:
   router: react-router
   bundler: rsbuild
   package_manager: bun
-  runtime: '24.8.0'
+  runtime: '24.11.0'
   i18n: react-i18next
   graphql_mock: apollo-server
 architecture:
