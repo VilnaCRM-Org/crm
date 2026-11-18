@@ -6,7 +6,7 @@ import type {
   TwoFactorPayload,
   TwoFactorPayloadData,
 } from './types';
-import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
+import { isValidEmail, MAX_EMAIL_LENGTH, rejectFieldViolation } from './violations';
 
 const TOTP_CODE_REGEX = /^\d{6}$/u;
 const RECOVERY_CODE_REGEX = /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/u;
@@ -54,12 +54,12 @@ const twoFactorPayload = (
 });
 
 const rejectBlank = (property: string, value: string): void => {
-  if (value.trim() === '') rejectViolation(property, 'This value should not be blank.');
+  if (value.trim() === '') rejectFieldViolation(property, 'This value should not be blank.');
 };
 
 const rejectMalformedCode = (code: string, shapes: readonly RegExp[]): void => {
   if (!shapes.some((shape) => shape.test(code))) {
-    rejectViolation('twoFactorCode', 'This value is not a valid two-factor code.');
+    rejectFieldViolation('twoFactorCode', 'This value is not a valid two-factor code.');
   }
 };
 
@@ -73,7 +73,7 @@ export const twoFactorResolvers = {
       { input }: { input: SignInUserInput }
     ): Promise<TwoFactorPayload> => {
       if (input.email.length > MAX_EMAIL_LENGTH || !isValidEmail(input.email)) {
-        rejectViolation('email', 'This value is not a valid email address.');
+        rejectFieldViolation('email', 'This value is not a valid email address.');
       }
       rejectBlank('password', input.password);
       return twoFactorPayload(

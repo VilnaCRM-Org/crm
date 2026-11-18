@@ -43,6 +43,11 @@ const CODE_VIOLATION = 'twoFactorCode: This value is not a valid two-factor code
 const PASSWORD_VIOLATION = 'password: This value should not be blank.';
 const PENDING_SESSION_VIOLATION = 'pendingSessionId: This value should not be blank.';
 
+const violationExtensions = (violation: string): Record<string, unknown> => {
+  const [path = '', message = ''] = violation.split(': ');
+  return { code: 'BAD_USER_INPUT', status: 422, violations: [{ path, message }] };
+};
+
 const execute = async (
   server: ApolloServer,
   query: string,
@@ -64,7 +69,7 @@ const expectCodeViolation = async (
 
   expect(result.errors).toHaveLength(1);
   expect(result.errors?.[0]?.message).toBe(CODE_VIOLATION);
-  expect(result.errors?.[0]?.extensions).toMatchObject({ code: 'BAD_USER_INPUT', status: 422 });
+  expect(result.errors?.[0]?.extensions).toMatchObject(violationExtensions(CODE_VIOLATION));
   expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
 };
 
@@ -239,10 +244,7 @@ describe('2FA operations on the stateless mock', () => {
 
       expect(result.errors).toHaveLength(1);
       expect(result.errors?.[0]?.message).toBe(EMAIL_VIOLATION);
-      expect(result.errors?.[0]?.extensions).toMatchObject({
-        code: 'BAD_USER_INPUT',
-        status: 422,
-      });
+      expect(result.errors?.[0]?.extensions).toMatchObject(violationExtensions(EMAIL_VIOLATION));
       expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
     });
 
@@ -255,10 +257,9 @@ describe('2FA operations on the stateless mock', () => {
 
         expect(result.errors).toHaveLength(1);
         expect(result.errors?.[0]?.message).toBe(PASSWORD_VIOLATION);
-        expect(result.errors?.[0]?.extensions).toMatchObject({
-          code: 'BAD_USER_INPUT',
-          status: 422,
-        });
+        expect(result.errors?.[0]?.extensions).toMatchObject(
+          violationExtensions(PASSWORD_VIOLATION)
+        );
         expect(result.data).toEqual({ signInUser: null });
         expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
       }
@@ -315,10 +316,9 @@ describe('2FA operations on the stateless mock', () => {
 
         expect(result.errors).toHaveLength(1);
         expect(result.errors?.[0]?.message).toBe(PENDING_SESSION_VIOLATION);
-        expect(result.errors?.[0]?.extensions).toMatchObject({
-          code: 'BAD_USER_INPUT',
-          status: 422,
-        });
+        expect(result.errors?.[0]?.extensions).toMatchObject(
+          violationExtensions(PENDING_SESSION_VIOLATION)
+        );
         expect(result.data).toEqual({ completeTwoFactorUser: null });
         expect(consoleError).toHaveBeenCalledWith('GraphQL Error:', expect.anything());
       }

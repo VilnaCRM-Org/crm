@@ -22,3 +22,13 @@ export const rejectViolation = (property: string, reason: string): never => {
     extensions: { code: 'BAD_USER_INPUT', status: 422 },
   });
 };
+
+export const rejectFieldViolation = (property: string, reason: string): never => {
+  throw new GraphQLError(`${property}: ${reason}`, {
+    extensions: {
+      code: 'BAD_USER_INPUT',
+      status: 422,
+      violations: [{ path: property, message: reason }],
+    },
+  });
+};
