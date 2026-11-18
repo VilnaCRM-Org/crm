@@ -10,9 +10,17 @@ ARG OPENAPI_SPEC_SHA256=3e5cfa1337f87cc1806fe06048728b0140f1d00d0f87312e4dd67245
 
 ADD https://raw.githubusercontent.com/VilnaCRM-Org/user-service/v2.8.0/.github/openapi-spec/spec.yaml /app/data.yaml
 
-RUN echo "${OPENAPI_SPEC_SHA256}  /app/data.yaml" | sha256sum -c -
+RUN echo "${OPENAPI_SPEC_SHA256}  /app/data.yaml" | sha256sum -c - \
+    && mockoon-cli import --input /app/data.yaml --output /app/base.json
+
+# Social OAuth routes the pinned spec predates, merged at container start (specs/social-sign-in).
+COPY scripts/mockoon-social-oauth.js /app/mockoon-social-oauth.js
+COPY scripts/docker/mockoon-entrypoint.sh /app/mockoon-entrypoint.sh
+
+ENV MOCKOON_OAUTH_MODE=mock \
+    MOCKOON_SPA_ORIGIN=http://localhost:3000
 
 # The probe docker-compose.yml runs, carried by the image (issue #139).
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 CMD ["wget", "-q", "-O", "/dev/null", "http://localhost:8080/api/users"]
 
-CMD ["mockoon-cli", "start", "--data", "/app/data.yaml", "--port", "8080"]
+CMD ["sh", "/app/mockoon-entrypoint.sh"]

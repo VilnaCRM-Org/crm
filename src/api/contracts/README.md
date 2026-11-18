@@ -116,6 +116,29 @@ means removing its file; the two resolvers stay. Deleting the last one removes t
 also removes the `codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending folder read in
 `schema-loader.ts`: the mock refuses to start without the folder it was told to read.
 
+### Pending REST operations
+
+The pending folder is GraphQL-only: codegen and the Apollo mock read it, and nothing reads an
+OpenAPI file there. A REST operation the pinned `OPENAPI_SPEC_VERSION` lacks is therefore pending
+in two places instead, and both go when the pin bump brings the operation in:
+
+- its response contract is a hand-written zod schema in the feature's `response-schemas.ts`,
+  the same boundary every REST body passes through;
+- its local answers come from the Mockoon social OAuth overlay (`docker/mockoon/`), because a
+  Mockoon instance built from the pinned spec has no route for it.
+
+Social sign-in (`specs/social-sign-in/`):
+
+- **Operations:** `GET /api/auth/social/{provider}` and
+  `GET /api/auth/social/{provider}/callback`.
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** `VilnaCRM-Org/user-service@a95c1e85` (`.github/openapi-spec/spec.yaml`
+  on `main`).
+- **Contract:** `SocialCallbackResponseSchema` and `SocialAuthProblemSchema` in
+  `src/modules/user/features/auth/utils/response-schemas.ts`.
+- **Removed by:** the contract pin bump to the first user-service release that declares both
+  operations, which switches the schemas to the generated `openapi.ts` types.
+
 ## Semantic breaking-change gate (issue #177)
 
 `make codegen-check` is **syntactic**: it proves the pins agree and that `src/api/generated/**`

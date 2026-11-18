@@ -62,6 +62,7 @@ export default class FetchHttpsClient implements HttpsClient {
     const deadline = this.deps.deadlines.create(config.signal, timeoutMs);
     const requestInit = this.deps.requestConfigBuilder.create(method, body, config.headers);
     requestInit.signal = deadline.signal;
+    if (config.credentials !== undefined) requestInit.credentials = config.credentials;
     try {
       const response = await fetch(url, requestInit);
       return await this.deps.responseProcessor.process<R>(response, config.schema);

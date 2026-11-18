@@ -15,13 +15,15 @@ export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 // (never cast) at the boundary; `signal`/`headers` are optional transport concerns.
 // `timeoutMs` overrides the configured request deadline, and `retry` overrides the default
 // retry decision (idempotent methods only) — opt a semantically idempotent POST in, or an
-// idempotent method out (issue #147).
+// idempotent method out (issue #147). `credentials` is forwarded to `fetch` only when set, so a
+// cross-origin request carries cookies only when its caller asks for them.
 export interface RequestConfig<R> {
   schema: ZodType<R>;
   signal?: AbortSignal | undefined;
   headers?: RequestHeaders;
   timeoutMs?: number;
   retry?: boolean;
+  credentials?: RequestCredentials | undefined;
 }
 
 export interface HttpsClient {

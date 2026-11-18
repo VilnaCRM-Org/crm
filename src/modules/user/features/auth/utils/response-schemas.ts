@@ -35,3 +35,18 @@ export const CreateUserResultSchema = z
       .nullish(),
   })
   .nullish();
+
+// GET /api/auth/social/{provider}/callback (user-service, not in the pinned v2.8.0 spec yet; see
+// src/api/contracts/README.md, "Pending REST operations"). The body is a union on `2fa_enabled`:
+// a direct sign-in carries the access token, a 2FA account carries the pending session instead.
+// `refresh_token` is not read by this client, so it is not declared and the parse drops it.
+export const SocialCallbackResponseSchema = z.discriminatedUnion('2fa_enabled', [
+  z.object({ '2fa_enabled': z.literal(false), access_token: z.string().min(1) }),
+  z.object({ '2fa_enabled': z.literal(true), pending_session_id: z.string().min(1) }),
+]);
+
+// The RFC 7807 body both social endpoints answer with; `error_code` selects the message.
+export const SocialAuthProblemSchema = z.object({
+  status: z.number().int(),
+  error_code: z.string().min(1),
+});
