@@ -3,6 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 
+import * as ts from 'typescript';
+
 import {
   AUTH_FORM_CHUNKS,
   AUTH_PAGE_CHUNKS,
@@ -20,6 +22,38 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 const readJson = <T>(relativePath: string): T => JSON.parse(readFile(relativePath)) as T;
+
+const unwrapExpression = (node: ts.Expression): ts.Expression =>
+  ts.isParenthesizedExpression(node) ||
+  ts.isAsExpression(node) ||
+  ts.isSatisfiesExpression(node) ||
+  ts.isNonNullExpression(node) ||
+  ts.isTypeAssertionExpression(node)
+    ? unwrapExpression(node.expression)
+    : node;
+
+const constructsChunkRetryLoader = (node: ts.Expression | undefined): boolean => {
+  const inner = node === undefined ? undefined : unwrapExpression(node);
+  return (
+    inner !== undefined &&
+    ts.isNewExpression(inner) &&
+    ts.isIdentifier(inner.expression) &&
+    inner.expression.text === 'ChunkRetryLoader'
+  );
+};
+
+const moduleLevelChunkLoadersOf = (source: string): string[] =>
+  ts
+    .createSourceFile('probe.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
+    .statements.flatMap((statement) => {
+      if (ts.isExportAssignment(statement)) {
+        return constructsChunkRetryLoader(statement.expression) ? ['default'] : [];
+      }
+      if (!ts.isVariableStatement(statement)) return [];
+      return statement.declarationList.declarations
+        .filter((declaration) => constructsChunkRetryLoader(declaration.initializer))
+        .map((declaration) => declaration.name.getText());
+    });
 
 // Static value-level module edges only: `import type` and an all-`type` specifier list are
 // erased, and `import()` is a chunk boundary.
@@ -364,6 +398,7 @@ describe('performance serving config', () => {
         'src/modules/user/features/auth/stores/auth-store-selectors.ts',
         'src/modules/user/features/auth/stores/use-auth-store.ts',
         'src/modules/user/features/auth/stores/use-auth-token.ts',
+        'src/modules/user/features/auth/stores/use-failure-capture.ts',
         'src/modules/user/features/auth/stores/use-sign-out.ts',
       ],
     ],
@@ -679,14 +714,40 @@ describe('performance serving config', () => {
       '  const processorLoader = new ChunkRetryLoader(\n' +
         "    () => import('@auth/utils/sign-in-submit-processor')\n  );"
     );
-    expect(signInSubmit).not.toMatch(/^(export )?const \w+ = new ChunkRetryLoader/m);
+    expect(moduleLevelChunkLoadersOf(signInSubmit)).toEqual([]);
     expect(recoveryRun).toContain(
       '  const [tokensLoader] = useState(\n' +
         "    () => new ChunkRetryLoader(() => import('@/modules/user/config/tokens'))\n  );"
     );
-    expect(recoveryRun).not.toMatch(/^(export )?const \w+ = new ChunkRetryLoader/m);
+    expect(moduleLevelChunkLoadersOf(recoveryRun)).toEqual([]);
     expect(staticImportsOf(signInSubmit)).not.toContain('@/modules/user/config/tokens');
     expect(staticImportsOf(recoveryRun)).not.toContain('@/modules/user/config/tokens');
+  });
+
+  it('finds every module-level chunk-retry loader shape and ignores one built per mount', () => {
+    const source = [
+      "const plain = new ChunkRetryLoader(() => import('./a'));",
+      "export const typed: ChunkRetryLoader<Module> = new ChunkRetryLoader(() => import('./b'));",
+      'let multiline =',
+      '  new ChunkRetryLoader(',
+      "    () => import('./c')",
+      '  );',
+      "const cast = (new ChunkRetryLoader(() => import('./d')) as Loader);",
+      "export default new ChunkRetryLoader(() => import('./e'));",
+      'export function useLoader(): Loader {',
+      "  const local = new ChunkRetryLoader(() => import('./f'));",
+      '  return local;',
+      '}',
+      "const other = new OtherLoader(() => import('./g'));",
+    ].join('\n');
+
+    expect(moduleLevelChunkLoadersOf(source)).toEqual([
+      'plain',
+      'typed',
+      'multiline',
+      'cast',
+      'default',
+    ]);
   });
 
   it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {

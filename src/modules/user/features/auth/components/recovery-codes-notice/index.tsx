@@ -22,6 +22,10 @@ export default function RecoveryCodesNotice({
 }: RecoveryCodesNoticeProps): JSX.Element {
   const { t } = useTranslation();
   const message = useRecoveryNoticeMessage(count);
+  const dismiss = (): void => {
+    document.querySelector<HTMLElement>('main[tabindex="-1"]')?.focus();
+    onDismiss();
+  };
 
   return (
     <UIShellContent>
@@ -31,7 +35,7 @@ export default function RecoveryCodesNotice({
         </Box>
         <Box sx={styles.actions}>
           <OpenSettingsLink onDismiss={onDismiss} />
-          <UIButton type="button" variant="outlinedPill" size="small" onClick={onDismiss}>
+          <UIButton type="button" variant="outlinedPill" size="small" onClick={dismiss}>
             {t('recovery_codes_notice.dismiss')}
           </UIButton>
         </Box>

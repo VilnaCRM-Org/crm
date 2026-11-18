@@ -163,8 +163,9 @@ describe('RegistrationErrorView', () => {
     expect(retry).toHaveFocus();
 
     rerender(view(ERROR_TEXT, true));
-    rerender(view('Network unavailable', true));
+    rerender(view('Network unavailable', false));
 
+    expect(await screen.findByRole('alert')).toHaveTextContent(/^Network unavailable$/);
     expect(retry).toHaveFocus();
   });
 

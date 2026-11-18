@@ -81,15 +81,15 @@ export const OutlinedPill: Story = {
 
 export const OutlinedPillFocusVisible: Story = {
   args: { variant: 'outlinedPill', children: 'Скопіювати коди' },
-  play: ({ canvasElement }) => {
-    canvasElement.querySelector('button')?.focus();
+  play: async ({ userEvent }) => {
+    await userEvent.tab();
   },
   parameters: {
     docs: {
       description: {
         story:
           'Keyboard focus draws the shared 2 px `#404142` ring, offset by 2 px; the story ' +
-          'focuses the button on load.',
+          'tabs to the button on load so `:focus-visible` matches.',
       },
     },
   },

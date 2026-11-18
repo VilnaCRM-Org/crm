@@ -108,6 +108,39 @@ describe('RecoveryCodesNotice', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  it('moves focus to the page main before the dismissed notice unmounts', async () => {
+    const onDismiss = jest.fn(() => {
+      expect(screen.getByRole('main', { name: 'page' })).toHaveFocus();
+    });
+    render(
+      <I18nextProvider i18n={createCodesNoticeLocaleI18n('uk')}>
+        <MemoryRouter>
+          <main tabIndex={-1} aria-label="page">
+            <RecoveryCodesNotice count={1} onDismiss={onDismiss} />
+          </main>
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
+
+    const main = screen.getByRole('main', { name: 'page' });
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveReturned();
+    expect(main).toHaveFocus();
+  });
+
+  it('still dismisses when the page has no focusable main', async () => {
+    const onDismiss = jest.fn();
+    renderNotice(1, 'uk', onDismiss);
+    const button = screen.getByRole('button', { name: 'Закрити сповіщення' });
+
+    await userEvent.click(button);
+
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(button).toHaveFocus();
+  });
+
   it('reaches the link and the button in that order with Tab', async () => {
     renderNotice(1);
 

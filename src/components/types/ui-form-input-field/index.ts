@@ -61,7 +61,11 @@ export interface CustomTextFieldOwnProps<T extends FieldValues> {
   name: Path<T>;
 }
 
-export type CustomTextField<T extends FieldValues> = FormTextFieldProps &
+export type ControllerOwnedTextFieldProp = 'error' | 'inputRef' | 'onBlur' | 'onChange' | 'value';
+
+export type CallerTextFieldProps = Omit<FormTextFieldProps, ControllerOwnedTextFieldProp>;
+
+export type CustomTextField<T extends FieldValues> = CallerTextFieldProps &
   CustomTextFieldOwnProps<T>;
 
 export type ForwardedTextFieldProps<T extends FieldValues> = Omit<

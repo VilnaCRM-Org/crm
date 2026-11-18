@@ -3,6 +3,7 @@ import { createRef } from 'react';
 
 import { withRefusingClipboard } from '@stories/clipboard-decorators';
 import { OTPAUTH_URI, SECRET } from '@stories/two-factor-story-fixtures';
+import waitForText from '@stories/wait-for-text';
 
 import CopyButton from './copy-button';
 import KeyBlock from './key-block';
@@ -66,8 +67,12 @@ export const KeyWithCopy: Story = {
 export const KeyWithCopyFailed: Story = {
   render: () => <KeyBlock secret={SECRET} copyLabel="Скопіювати ключ" />,
   decorators: [withRefusingClipboard()],
-  play: ({ canvasElement }) => {
-    canvasElement.querySelector<HTMLButtonElement>('button[aria-label="Скопіювати ключ"]')?.click();
+  play: async ({ canvasElement, userEvent }) => {
+    const copy = canvasElement.querySelector<HTMLButtonElement>(
+      'button[aria-label="Скопіювати ключ"]'
+    );
+    if (copy !== null) await userEvent.click(copy);
+    await waitForText(canvasElement, 'Не вдалося скопіювати. Виділіть ключ і скопіюйте вручну.');
   },
   parameters: {
     docs: {

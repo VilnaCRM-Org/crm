@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useLocation } from 'react-router';
+import { matchPath, useLocation } from 'react-router';
 
 import RouteFallback from '@/components/route-fallback';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
@@ -15,7 +15,9 @@ import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 import ROUTE_PATHS from '@/routes/route-paths';
 import useAuthStore from '@auth/stores/use-auth-store';
+import useFailureCapture from '@auth/stores/use-failure-capture';
 import type { AuthState, AuthStatePatch } from '@auth/types/auth-store';
+import type { FailureCapture } from '@auth/types/failure-capture';
 import type { RecoveryCodesNoticeProps } from '@auth/types/two-factor/recovery-codes-notice';
 
 function NoticeUnavailable(): null {
@@ -27,7 +29,7 @@ const dismiss = (): void => {
   useAuthStore.setState(patch);
 };
 
-function lazyNotice(): ComponentType<RecoveryCodesNoticeProps> {
+function lazyNotice(capture: FailureCapture): ComponentType<RecoveryCodesNoticeProps> {
   const loader = new ThemedChunkLoader<RecoveryCodesNoticeProps>(
     new ChunkRetryLoader(
       () =>
@@ -37,13 +39,19 @@ function lazyNotice(): ComponentType<RecoveryCodesNoticeProps> {
     ),
     muiThemeShellLoader
   );
-  return lazy(() => loader.load().catch(() => ({ default: NoticeUnavailable })));
+  return lazy(() =>
+    loader.load().catch((error: unknown) => {
+      capture(error);
+      return { default: NoticeUnavailable };
+    })
+  );
 }
 
 export default function useRecoveryCodesBanner(): ReactNode {
   const remaining = useAuthStore((state: AuthState) => state.recoveryCodesRemaining);
-  const onSettings = useLocation().pathname === ROUTE_PATHS.settings;
-  const [Notice] = useState(lazyNotice);
+  const onSettings = matchPath(ROUTE_PATHS.settings, useLocation().pathname) !== null;
+  const capture = useFailureCapture('auth:recovery-notice-load');
+  const [Notice] = useState(() => lazyNotice(capture));
 
   useEffect(() => {
     if (onSettings && remaining !== null) dismiss();

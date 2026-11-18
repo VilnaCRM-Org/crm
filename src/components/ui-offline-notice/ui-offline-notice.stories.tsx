@@ -55,7 +55,10 @@ export const Inline: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'The offline copy without a status role, described by the submit button it blocks.',
+        story:
+          'The standalone offline copy without a status role. Inside a form the submit button ' +
+          'it blocks points `aria-describedby` at it; see `UIForm/OfflineNoticeInline` for ' +
+          'that wiring.',
       },
     },
   },

@@ -1,3 +1,4 @@
+import type { CompleteTwoFactorUserMutation, SignInUserMutation } from '@/api/generated/graphql';
 import {
   buildEmail,
   buildFullName,
@@ -81,6 +82,22 @@ describe('auth response schemas', () => {
   });
 
   describe('SignInUserResultSchema', () => {
+    it('accepts the generated SignInUserMutation shape (contract parity)', async () => {
+      const { SignInUserResultSchema } = await import('@auth/utils/response-schemas');
+      const sample: SignInUserMutation = {
+        signInUser: {
+          user: {
+            success: true,
+            twoFactorEnabled: true,
+            accessToken: null,
+            pendingSessionId: buildPendingSessionId(),
+          },
+        },
+      };
+
+      expect(SignInUserResultSchema.safeParse(sample).success).toBe(true);
+    });
+
     it('keeps the three fields the sign-in outcome reads and drops the rest', async () => {
       const { SignInUserResultSchema } = await import('@auth/utils/response-schemas');
       const accessToken = buildToken();
@@ -120,6 +137,17 @@ describe('auth response schemas', () => {
   });
 
   describe('CompleteTwoFactorUserResultSchema', () => {
+    it('accepts the generated CompleteTwoFactorUserMutation shape (contract parity)', async () => {
+      const { CompleteTwoFactorUserResultSchema } = await import('@auth/utils/response-schemas');
+      const sample: CompleteTwoFactorUserMutation = {
+        completeTwoFactorUser: {
+          user: { twoFactorEnabled: true, accessToken: buildToken(), recoveryCodesRemaining: 3 },
+        },
+      };
+
+      expect(CompleteTwoFactorUserResultSchema.safeParse(sample).success).toBe(true);
+    });
+
     it('keeps the token and the remaining recovery-code count', async () => {
       const { CompleteTwoFactorUserResultSchema } = await import('@auth/utils/response-schemas');
       const accessToken = buildToken();

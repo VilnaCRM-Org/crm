@@ -12,11 +12,21 @@ import type {
 
 const HOLDS_FOCUS = ':focus, :focus ~ *';
 
+function rendered(element: HTMLElement): boolean {
+  let node: Element | null = element;
+  while (node !== null) {
+    if (window.getComputedStyle(node).display === 'none') return false;
+    node = node.parentElement;
+  }
+  return window.getComputedStyle(element).visibility !== 'hidden';
+}
+
 function focusable(element: HTMLElement | null): HTMLElement | null {
   const usable =
     element?.isConnected &&
     !element.matches(':disabled') &&
-    window.getComputedStyle(element).display !== 'none';
+    element.closest('[inert]') === null &&
+    rendered(element);
   return usable ? element : null;
 }
 

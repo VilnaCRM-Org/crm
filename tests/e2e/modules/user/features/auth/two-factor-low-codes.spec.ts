@@ -114,8 +114,9 @@ test.describe('Low recovery codes notice (issue #331)', () => {
   test('is dismissed by the close button and stays gone on another page', async ({ page }) => {
     await landWith(page, 2);
 
-    await page.getByRole('button', { name: dismiss }).click();
+    await page.getByRole('button', { name: dismiss }).press('Enter');
     await expect(page.getByRole('button', { name: dismiss })).toHaveCount(0);
+    await expect(page.getByRole('main')).toBeFocused();
 
     await sidebarOf(page).getByRole('link', { name: boards, exact: true }).click();
     await expect(page).toHaveURL(/\/boards$/);

@@ -9,6 +9,7 @@ import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
 import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
 import toastEn from '@/components/ui-toast/i18n/en.json';
 import toastUk from '@/components/ui-toast/i18n/uk.json';
+import SidebarCollapseSource from '@/components/ui-sidebar/sidebar-collapse-source';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import userMenuEn from '@/modules/user/features/settings/components/user-menu/i18n/en.json';
 import userMenuUk from '@/modules/user/features/settings/components/user-menu/i18n/uk.json';
@@ -97,6 +98,9 @@ const preview: Preview = {
   },
   initialGlobals: {
     viewport: { value: 'lg', isRotated: false },
+  },
+  beforeEach: () => {
+    new SidebarCollapseSource().write(false);
   },
   loaders: [
     async () => {

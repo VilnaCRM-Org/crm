@@ -5,6 +5,7 @@ import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, useNavigate } from 'react-router';
 
+import observabilityCore from '@/services/observability/observability-core';
 import useRecoveryCodesBanner from '@auth/hooks/use-recovery-codes-banner';
 import useAuthStore from '@auth/stores/use-auth-store';
 import testI18n from '@tests/i18n/test-i18n';
@@ -130,6 +131,23 @@ describe('useRecoveryCodesBanner', () => {
     expect(mockLoad).not.toHaveBeenCalled();
   });
 
+  it.each(['/settings/', '/Settings', '/SETTINGS/'])(
+    'treats %s as the settings page the router renders there',
+    (path) => {
+      mount(1, path);
+
+      expect(screen.getByRole('region', { name: 'banner' })).toBeEmptyDOMElement();
+      expect(useAuthStore.getState().recoveryCodesRemaining).toBeNull();
+    }
+  );
+
+  it('keeps the notice on a settings sub-page', async () => {
+    mount(1, '/settings/integrations');
+
+    expect(await screen.findByRole('button', { name: 'notice:1' })).toBeInTheDocument();
+    expect(useAuthStore.getState().recoveryCodesRemaining).toBe(1);
+  });
+
   it('writes nothing to the store on /settings when there is no count to clear', async () => {
     mount(null, '/settings');
     const setState = jest.spyOn(useAuthStore, 'setState');
@@ -171,15 +189,21 @@ describe('useRecoveryCodesBanner', () => {
   });
 
   it('shows nothing, and does not break the page, when the chunk cannot be loaded', async () => {
-    mockLoad.mockRejectedValue(new Error('chunk failed'));
+    const failure = new Error('chunk failed');
+    const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
+    mockLoad.mockRejectedValue(failure);
     mount(1);
 
     const banner = screen.getByRole('region', { name: 'banner' });
     await waitFor(() => expect(banner).toBeEmptyDOMElement());
     expect(mockLoad).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:recovery-notice-load' });
+    capture.mockRestore();
   });
 
   it('asks the loader again on the next mount after a failed load', async () => {
+    const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
     mockLoad.mockRejectedValueOnce(new Error('chunk failed'));
     const { unmount } = mount(1);
     const banner = screen.getByRole('region', { name: 'banner' });
@@ -190,5 +214,6 @@ describe('useRecoveryCodesBanner', () => {
 
     expect(await screen.findByRole('button', { name: 'notice:1' })).toBeInTheDocument();
     expect(mockLoad).toHaveBeenCalledTimes(2);
+    capture.mockRestore();
   });
 });

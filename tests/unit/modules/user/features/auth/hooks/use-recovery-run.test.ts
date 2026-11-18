@@ -4,6 +4,7 @@ import * as React from 'react';
 import type { AbortableRun } from '@/hooks/types/use-abortable-submit';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import observabilityCore from '@/services/observability/observability-core';
 import useRecoveryRun from '@auth/hooks/use-recovery-run';
 import type { AuthProviderLoader } from '@auth/stores';
 import type { RecoveryProviderStep } from '@auth/types/password-recovery/state';
@@ -48,6 +49,7 @@ describe('useRecoveryRun', () => {
   });
 
   it('maps a rejected provider load to a retryable network failure', async () => {
+    const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
     const loader = {
       resolve: jest.fn().mockRejectedValue(new Error('chunk failed')),
     } as unknown as AuthProviderLoader;
@@ -59,10 +61,13 @@ describe('useRecoveryRun', () => {
       failure: { reason: 'network', retryable: true },
     });
     expect(step).not.toHaveBeenCalled();
+    expect(capture).not.toHaveBeenCalled();
   });
 
   it('maps a token module that fails to load to the same failure, resolving nothing', async () => {
-    jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(new Error('chunk failed'));
+    const failure = new Error('chunk failed');
+    const capture = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
+    jest.spyOn(ChunkRetryLoader.prototype, 'load').mockRejectedValueOnce(failure);
     const loader = providerLoader({});
     const step = echoStep();
     const { result } = renderHook(() => useRecoveryRun(loader, step));
@@ -73,6 +78,8 @@ describe('useRecoveryRun', () => {
     });
     expect(loader.resolve).not.toHaveBeenCalled();
     expect(step).not.toHaveBeenCalled();
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:recovery-load' });
   });
 
   it('builds one token loader per mount and reuses it across that mount', async () => {

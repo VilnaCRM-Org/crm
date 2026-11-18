@@ -7,18 +7,24 @@ const refusingClipboard = {
   },
 };
 
+export function useRefusingClipboard(): void {
+  useLayoutEffect(() => {
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: refusingClipboard,
+    });
+
+    return (): void => {
+      if (original === undefined) Reflect.deleteProperty(navigator, 'clipboard');
+      else Object.defineProperty(navigator, 'clipboard', original);
+    };
+  }, []);
+}
+
 export function withRefusingClipboard(): Decorator {
   return function RefusingClipboardDecorator(Story): JSX.Element {
-    useLayoutEffect(() => {
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: refusingClipboard,
-      });
-
-      return (): void => {
-        Reflect.deleteProperty(navigator, 'clipboard');
-      };
-    }, []);
+    useRefusingClipboard();
     return <Story />;
   };
 }
