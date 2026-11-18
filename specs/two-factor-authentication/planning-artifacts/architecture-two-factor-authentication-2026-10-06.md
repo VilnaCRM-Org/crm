@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-17
+revised: 2026-11-18
 iteration: 21
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
@@ -2319,7 +2319,8 @@ Bun toolchain merge both files ran their cold mutation shards past the 15-minute
 split, each part packs into its own shard, and the shard count and the cap are unchanged.
 
 Amended 2026-11-16 (gate finding, AR-5): the suffix list above also includes `Parser`
-(`FieldViolationParser`) and `Scrubber` (`PiiTextScrubber`, `TwoFactorTextScrubber`), both already
+(`FieldViolationParser`) and `Scrubber` (`PiiTextScrubber`, `TwoFactorTextScrubber` and, from the
+2026-11-18 amendment, `TokenTextScrubber`), both already
 in `config/class-naming-policy.js`, so the bundle still edits no naming policy (epics AR-5). The
 "(loader, store, demo session)" of the `SignInSubmitProcessor` entry is the plan as approved:
 `SignInSubmitContext` carries five members: `loader`, `store` and `demoSession`, plus
@@ -2353,6 +2354,8 @@ Changed (nine):
 - `LoginRedirectTarget` — rejects the challenge path.
 - `PiiScrubber` — four fragments, one pattern. Amended 2026-11-11: its free-text patterns moved to
   `PiiTextScrubber`, and the 2FA patterns to `TwoFactorTextScrubber`, which runs first (§7.1).
+  Amended 2026-11-18: the token and secret patterns moved on to `TokenTextScrubber`, which
+  `PiiTextScrubber` applies last (§7.1).
 - `UserModuleRegistrar` (`di.ts:31-112`) — six `registerSingleton` calls folded into the
   existing steps and the two REST registrations removed; the `AuthStoreActionsDeps` closure is
   unchanged; nine functions and no new closure.
@@ -3263,8 +3266,9 @@ User module, code level (`miro/20`, `miro/21`):
   which calls `useTwoFactorSettings()` itself.
 - `2FASettings` → `2FADTOSettingsEntity [type]` → the `settings` prop, a
   `TwoFactorSettingsEntity`.
-- `PiiTextScrubber` and `TwoFactorTextScrubber` (amended 2026-11-11, §7.1) sit inside the
-  observability boundary's `PiiScrubber`, outside the user-module board, and add no element or edge.
+- `PiiTextScrubber`, `TwoFactorTextScrubber` (amended 2026-11-11, §7.1) and `TokenTextScrubber`
+  (amended 2026-11-18, §7.1) sit inside the observability boundary's `PiiScrubber`, outside the
+  user-module board, and add no element or edge.
 - The board has no element below `[Transformer]`; `FieldViolationParser` (amended 2026-11-11, §6.8)
   is part of the `UserServiceErrorTransformer` box, injected into it, and adds no layer or edge.
 

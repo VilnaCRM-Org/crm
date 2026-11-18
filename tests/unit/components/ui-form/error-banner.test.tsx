@@ -5,6 +5,7 @@ import type { JSX } from 'react';
 
 import type { FocusReturnHandlers } from '@/components/types/ui-form';
 import ErrorBanner from '@/components/ui-form/error-banner';
+import { styleRulesFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const ERROR_TEXT = 'Request failed';
@@ -66,5 +67,21 @@ describe('ErrorBanner', () => {
     const { container } = render(<Harness focusReturn={handlers()} />);
 
     await expectNoA11yViolations(container);
+  });
+
+  it('gives the Retry the shared keyboard ring, not the link-button one', () => {
+    render(
+      <ErrorBanner
+        error={ERROR_TEXT}
+        focusReturn={handlers()}
+        action={{ label: 'Retry', onClick: jest.fn() }}
+      />
+    );
+
+    const rings = styleRulesFor(screen.getByRole('button', { name: 'Retry' }), ':focus-visible');
+    const ring = rings.at(-1);
+
+    expect(ring?.outline).toBe('2px solid #404142');
+    expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
   });
 });

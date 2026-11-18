@@ -286,6 +286,24 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     });
   });
 
+  test('the 503 Retry takes the shared keyboard ring', async ({ page }) => {
+    await stubChallenge(page, ['unavailable']);
+    await signInToChallenge(page, credentials);
+    await typeCode(page, CODE);
+    await expect(
+      page.getByRole('alert').filter({ hasText: challengeText.transient })
+    ).toBeVisible();
+
+    await page.keyboard.press('Tab');
+
+    const retry = challengeRetryOf(page);
+    await expect(retry).toBeFocused();
+    await expect(retry).toHaveCSS('outline-style', 'solid');
+    await expect(retry).toHaveCSS('outline-width', '2px');
+    await expect(retry).toHaveCSS('outline-color', 'rgb(64, 65, 66)');
+    await expect(retry).toHaveCSS('outline-offset', '2px');
+  });
+
   test('Назад during a request aborts it and leaves no banner on /sign-in', async ({ page }) => {
     let release: () => void = () => undefined;
     const held = new Promise<void>((resolve) => {

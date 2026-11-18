@@ -5,6 +5,7 @@ import type { ErrorBannerProps } from '@/components/types/ui-form';
 import styles from '@/components/ui-form/styles';
 import UILinkButton from '@/components/ui-link-button';
 import UITypography from '@/components/ui-typography';
+import { focusVisibleRing } from '@/styles/focus-ring';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 export default function ErrorBanner({
@@ -34,6 +35,7 @@ export default function ErrorBanner({
           onClick={action.onClick}
           unavailable={unavailable}
           describedBy={unavailableReasonId}
+          sx={focusVisibleRing}
         >
           {action.label}
         </UILinkButton>
