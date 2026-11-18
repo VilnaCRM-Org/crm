@@ -4,8 +4,8 @@ workflowType: prd
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-17
-iteration: 17
+revised: 2026-11-18
+iteration: 18
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -90,6 +90,8 @@ revisions:
   - '2026-11-16: the FR-40 authenticator subtitle and the NFR-9 setup order marked superseded'
   - '2026-11-17: D6, the §7 exception row (its original wording restored) and the error-text red
     marked; the flag-removal commit cited as 62ddc565'
+  - '2026-11-18: owner decision on copy feedback: FR-30 line above the codes button, the shorter
+    FR-40 codes failure text, NFR-10 marked for its fade'
 ---
 
 # PRD: two-factor authentication for the user module
@@ -98,7 +100,8 @@ revisions:
 decision: the `twoFactorAuth` flag removed), 2026-11-04 (owner decisions: the Figma card, the
 challenge page as drawn, auto-submit), 2026-11-05 (owner decisions: the settings profile forms
 split, the shell from 768 px), 2026-11-10 (the 2026-11-04 decisions marked where they apply),
-2026-11-12, 2026-11-13, 2026-11-16 and 2026-11-17 (gate findings and supersession marks)
+2026-11-12, 2026-11-13, 2026-11-16 and 2026-11-17 (gate findings and supersession marks),
+2026-11-18 (owner decision: the codes copy feedback)
 **Feature:** `two-factor-authentication`
 
 > **Owner decisions of 2026-11-05 (from the owner's hand test of #377).** Both land in #377, not in
@@ -1637,6 +1640,9 @@ ring with `toHaveCSS` after keyboard focus; jsdom cannot compute it. Enter submi
 inline confirmation acts as "Скасувати".
 
 ### NFR-10 — Motion and touch
+
+> Superseded 2026-11-18 in part (owner decision, copy feedback): the codes copy line fades out over
+> 0.4 s after 3 s, and is removed at once under `prefers-reduced-motion: reduce` (FR-30).
 
 No new animation; any transition between card states is instant under
 `prefers-reduced-motion: reduce`; nothing auto-scrolls smoothly. On both mobile projects
