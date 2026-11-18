@@ -8,6 +8,9 @@ import expectNoPositiveTabindex from './expect-no-positive-tabindex';
  * element declares a positive `tabindex`.
  */
 export default async function expectCleanScan(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
   await expectNoAxeViolations(page);
   await expectNoPositiveTabindex(page);
 }
