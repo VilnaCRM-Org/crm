@@ -49,6 +49,16 @@ describe('AuthSecuritySignals', () => {
     expect(recorder.authFailure).not.toHaveBeenCalled();
   });
 
+  it('tags an opaque session identity when a social sign-in completes', () => {
+    const observability = buildObservability();
+    const recorder = buildRecorder();
+
+    new AuthSecuritySignals(recorder, observability).signedIn();
+
+    expect((observability.setUser as jest.Mock).mock.calls[0][0].id).toHaveLength(36);
+    expect(recorder.authFailure).not.toHaveBeenCalled();
+  });
+
   it('emits an auth_failure for a rejected login result', () => {
     const recorder = buildRecorder();
 

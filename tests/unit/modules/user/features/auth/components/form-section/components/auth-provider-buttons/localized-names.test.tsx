@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
-import urlBuilder from '@/utils/url-builder';
+import API_ENDPOINTS from '@/config/api-config';
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
 import browserNavigator from '@auth/utils/browser-navigator';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
@@ -18,16 +18,6 @@ jest.mock('@/assets/icons/social/facebook-color.svg', mockSvgModule);
 jest.mock('@/assets/icons/social/twitter-color.svg', mockSvgModule);
 
 const PROVIDER_LABELS = ['Google', 'Facebook', 'GitHub', 'Twitter'];
-const OAUTH_BASE_URL = 'https://oauth.vilnacrm.test';
-
-// `urlBuilder.build` returns its argument unchanged when no base URL resolves, so asserting the
-// bare endpoint would pass whether or not the endpoint was ever built. Stub the base instead.
-function stubEndpointBuilder(): jest.SpyInstance {
-  return jest
-    .spyOn(urlBuilder, 'build')
-    .mockImplementation((endpoint: string) => `${OAUTH_BASE_URL}${endpoint}`);
-}
-
 afterEach(() => {
   jest.restoreAllMocks();
 });
@@ -41,28 +31,20 @@ describe('AuthProviderButtons against the real i18n catalogue', () => {
   });
 
   it('navigates to the provider auth endpoint on click', () => {
-    const buildSpy = stubEndpointBuilder();
-    const openSpy = jest
-      .spyOn(browserNavigator, 'openInNewTab')
-      .mockImplementation(() => undefined);
+    const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
     renderWithProviders(<AuthProviderButtons />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
 
-    expect(buildSpy).toHaveBeenCalledWith('/auth/google');
-    expect(openSpy).toHaveBeenCalledWith(`${OAUTH_BASE_URL}/auth/google`);
+    expect(assign).toHaveBeenCalledWith(`${API_ENDPOINTS.SOCIAL_AUTH}/google`);
   });
 
   it('uses the provider key, not its display label, in the endpoint', () => {
-    const buildSpy = stubEndpointBuilder();
-    const openSpy = jest
-      .spyOn(browserNavigator, 'openInNewTab')
-      .mockImplementation(() => undefined);
+    const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
     renderWithProviders(<AuthProviderButtons />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue with GitHub' }));
 
-    expect(buildSpy).toHaveBeenCalledWith('/auth/github');
-    expect(openSpy).toHaveBeenCalledWith(`${OAUTH_BASE_URL}/auth/github`);
+    expect(assign).toHaveBeenCalledWith(`${API_ENDPOINTS.SOCIAL_AUTH}/github`);
   });
 });

@@ -10,6 +10,7 @@ const EXPECTED_ROUTE_PATHS: ReadonlyArray<readonly [string, string]> = [
   ['signIn', '/sign-in'],
   ['passwordRecovery', '/password-recovery'],
   ['passwordReset', '/password-reset'],
+  ['socialCallback', '/auth/callback/:provider'],
   ['settings', '/settings'],
   ['forbidden', '/forbidden'],
   ['serverError', '/server-error'],

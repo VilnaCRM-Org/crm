@@ -116,6 +116,7 @@ check-storybook-static|node scripts/ci/check-storybook-static.mjs storybook-stat
 update|docker compose exec -T dev bun update|
 check-node-version|docker compose exec -T dev node check-node-version.js|
 pr-comments|get-pr-comments.sh|
+mockoon-restart|docker compose up -d --force-recreate --no-deps mockoon|
 down|docker compose down --remove-orphans|
 sh|docker compose exec dev sh|
 ps|docker compose ps|

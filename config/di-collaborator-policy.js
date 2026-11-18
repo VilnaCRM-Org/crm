@@ -181,6 +181,24 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'The settings zod response-contract module; declares schemas consumed as data.',
   },
   {
+    path: 'src/modules/user/features/auth/utils/social-callback-view-mapper.ts',
+    reason:
+      'Container-free decision table of the social callback page; it composes the provider guard ' +
+      'and the destination source off the container (specs/social-sign-in).',
+  },
+  {
+    path: 'src/modules/user/features/auth/utils/social-sign-in-navigator.ts',
+    reason:
+      'Container-free navigator the provider buttons call on the paint path; it composes the ' +
+      'browser navigator and the destination source off the container (specs/social-sign-in).',
+  },
+  {
+    path: 'src/modules/user/features/auth/utils/social-sign-in-destination-source.ts',
+    reason:
+      'Container-free sessionStorage source the provider buttons write on the paint path; it ' +
+      'composes the loginRedirectTarget validator off the container (specs/social-sign-in).',
+  },
+  {
     path: 'src/modules/user/features/auth/utils/map-registration-error.ts',
     reason: 'Container-free registration-error mapper singleton on the render path.',
   },

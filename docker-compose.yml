@@ -30,6 +30,14 @@ services:
       dockerfile: Mockoon.Dockerfile
     ports:
       - '${MOCKOON_PORT:-8080}:8080'
+    environment:
+      # Social sign-in overlay (specs/social-sign-in); keys documented in .env.example.
+      - MOCKOON_OAUTH_MODE=${OAUTH_MODE:-mock}
+      - MOCKOON_SPA_ORIGIN=${OAUTH_SPA_ORIGIN:-http://localhost:3000}
+      - MOCKOON_OAUTH_GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID-}
+      - MOCKOON_OAUTH_GITHUB_CLIENT_ID=${OAUTH_GITHUB_CLIENT_ID-}
+      - MOCKOON_OAUTH_FACEBOOK_CLIENT_ID=${OAUTH_FACEBOOK_CLIENT_ID-}
+      - MOCKOON_OAUTH_TWITTER_CLIENT_ID=${OAUTH_TWITTER_CLIENT_ID-}
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'wget', '-q', 'http://localhost:8080/api/users', '-O', '-']

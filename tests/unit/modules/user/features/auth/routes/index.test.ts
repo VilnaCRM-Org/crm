@@ -14,7 +14,7 @@ describe('auth route contract', () => {
     expect((await loadAuthRoutes()).id).toBe('user.auth');
   });
 
-  it('declares exactly the sign-up, sign-in and both recovery routes, in that order', async () => {
+  it('declares the sign-up, sign-in, recovery and social callback routes, in order', async () => {
     const { routes } = await loadAuthRoutes();
 
     expect(routes.map((route) => route.path)).toEqual([
@@ -22,6 +22,7 @@ describe('auth route contract', () => {
       ROUTE_PATHS.signIn,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
+      ROUTE_PATHS.socialCallback,
     ]);
   });
 
@@ -33,13 +34,20 @@ describe('auth route contract', () => {
       { titleKey: 'sign_in.title' },
       { titleKey: 'password_recovery.title' },
       { titleKey: 'password_reset.title' },
+      { titleKey: 'auth.social.callback_title' },
     ]);
   });
 
   it('leaves every route public and lazily loaded', async () => {
     const { routes } = await loadAuthRoutes();
 
-    expect(routes.map((route) => route.guard)).toEqual(['public', 'public', 'public', 'public']);
+    expect(routes.map((route) => route.guard)).toEqual([
+      'public',
+      'public',
+      'public',
+      'public',
+      'public',
+    ]);
     routes.forEach((route) => {
       expect(typeof route.load).toBe('function');
     });

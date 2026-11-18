@@ -1,6 +1,6 @@
-import type UrlBuilder from '@/utils/url-builder';
 import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
 import type BrowserNavigator from '@auth/utils/browser-navigator';
+import type SocialSignInDestinationSource from '@auth/utils/social-sign-in-destination-source';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
@@ -8,12 +8,13 @@ jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'sv
 jest.mock('@/assets/icons/social/google-color.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/icons/social/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
 
-const OAUTH_BASE_URL = 'https://oauth.vilnacrm.test';
+const ROUTER_STATE = { from: { pathname: '/settings', search: '', hash: '' } };
 
 interface IsolatedProviders {
   providers: ReadonlyArray<OAuthProvider>;
-  urlBuilder: typeof UrlBuilder;
+  socialAuthBase: string;
   browserNavigator: typeof BrowserNavigator;
+  destination: typeof SocialSignInDestinationSource;
 }
 
 // The provider table is a module-level literal, so it is only evaluated inside the test when the
@@ -21,13 +22,19 @@ interface IsolatedProviders {
 // spies below would sit on different singletons than the ones the handler calls.
 function loadProviders(): Promise<IsolatedProviders> {
   return loadIsolated(async () => {
-    const urlBuilder = (await import('@/utils/url-builder')).default;
+    const socialAuthBase = (await import('@/config/api-config')).default.SOCIAL_AUTH;
     const browserNavigator = (await import('@auth/utils/browser-navigator')).default;
-    const providers = (
+    const destination = (await import('@auth/utils/social-sign-in-destination-source')).default;
+    const oauthProviders = (
       await import('@auth/components/form-section/components/auth-provider-buttons/oauth-providers')
-    ).default.items;
+    ).default;
 
-    return { providers, urlBuilder, browserNavigator };
+    return {
+      providers: oauthProviders.list(ROUTER_STATE).items,
+      socialAuthBase,
+      browserNavigator,
+      destination,
+    };
   });
 }
 
@@ -64,27 +71,26 @@ describe('oauthProviders', () => {
     });
   });
 
-  // The base URL is stubbed rather than inherited from the environment: `urlBuilder.build` returns
-  // its argument unchanged when no base resolves, which would let the assertion below pass without
-  // the endpoint ever being built.
   it.each([
     ['Google', 'google'],
     ['GitHub', 'github'],
     ['Facebook', 'facebook'],
     ['Twitter', 'twitter'],
-  ])('opens the %s authorization endpoint in an isolated tab', async (label, key) => {
-    const { providers, urlBuilder, browserNavigator } = await loadProviders();
-    const buildSpy = jest
-      .spyOn(urlBuilder, 'build')
-      .mockImplementation((endpoint: string) => `${OAUTH_BASE_URL}${endpoint}`);
-    const openSpy = jest
-      .spyOn(browserNavigator, 'openInNewTab')
-      .mockImplementation(() => undefined);
+  ])(
+    'saves the destination and sends %s through the social initiate endpoint',
+    async (label, key) => {
+      const { providers, socialAuthBase, browserNavigator, destination } = await loadProviders();
+      const save = jest.spyOn(destination, 'save').mockImplementation(() => undefined);
+      const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
 
-    providerFor(providers, label).onClick();
+      providerFor(providers, label).onClick();
 
-    expect(buildSpy).toHaveBeenCalledWith(`/auth/${key}`);
-    expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy).toHaveBeenCalledWith(`${OAUTH_BASE_URL}/auth/${key}`);
-  });
+      expect(save).toHaveBeenCalledWith(ROUTER_STATE);
+      expect(assign).toHaveBeenCalledTimes(1);
+      expect(assign).toHaveBeenCalledWith(`${socialAuthBase}/${key}`);
+      expect(save.mock.invocationCallOrder[0]).toBeLessThan(
+        assign.mock.invocationCallOrder[0] ?? 0
+      );
+    }
+  );
 });

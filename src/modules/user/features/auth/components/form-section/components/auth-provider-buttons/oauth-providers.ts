@@ -2,9 +2,8 @@ import { ReactComponent as Facebook } from '@/assets/icons/social/facebook-color
 import { ReactComponent as GitHub } from '@/assets/icons/social/github-color.svg';
 import { ReactComponent as Google } from '@/assets/icons/social/google-color.svg';
 import { ReactComponent as Twitter } from '@/assets/icons/social/twitter-color.svg';
-import urlBuilder from '@/utils/url-builder';
 import type { OAuthProviderList } from '@auth/types/auth-provider-buttons/oauth-providers';
-import browserNavigator from '@auth/utils/browser-navigator';
+import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 
 const PROVIDERS = [
   { key: 'google', label: 'Google', SvgComponent: Google },
@@ -14,21 +13,17 @@ const PROVIDERS = [
 ] as const;
 
 class OAuthProviders {
-  public list(): OAuthProviderList {
+  public list(routerState: unknown): OAuthProviderList {
     return {
       items: PROVIDERS.map((p) => ({
         label: p.label,
         SvgComponent: p.SvgComponent,
-        onClick: () => this.signInWithProvider(p.key),
+        onClick: () => socialSignInNavigator.start(p.key, routerState),
       })),
     };
   }
-
-  private signInWithProvider(service: (typeof PROVIDERS)[number]['key']): void {
-    browserNavigator.openInNewTab(urlBuilder.build(`/auth/${encodeURIComponent(service)}`));
-  }
 }
 
-const oauthProviders = new OAuthProviders().list();
+const oauthProviders = new OAuthProviders();
 
 export default oauthProviders;

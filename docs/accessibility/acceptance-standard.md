@@ -100,7 +100,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Eleven `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Twelve `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -133,6 +133,11 @@ entry of the app shell (issue #362): the active row, group-header label and sub-
 sidebar and in the mobile drawer, whose list sits in its own `<nav>`
 (`nav a[aria-current="page"]` and `nav a[aria-current="page"] > span`), which render the Figma
 active `#0399ED` on the 10% `#1EAEFF` tint at 2.8:1, a value the product owner accepted (OQ-14).
+The twelfth covers the primary action of the social sign-in callback page
+(`#social-sign-in-actions > .MuiButton-contained`, specs/social-sign-in): "Спробувати ще раз", or
+"Повернутися до входу" when it is the only action, white on `#1EAEFF` at 2.45:1, the same
+design-owned debt as the submit button; the secondary text-variant link beside it uses the
+accessible `#0074B5` (5.04:1) and needs no entry.
 It does not conform to WCAG 2.1 AA: SC 1.4.3 for the label and SC 1.4.11 for the icon-only current
 rail row. The owner re-confirmed keeping it on 2026-11-09; it is tracked in #276.
 

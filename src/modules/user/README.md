@@ -722,3 +722,23 @@ module grows:
    add a bare alias like `@auth` in `tsconfig.paths.json`, `jest.config.ts`,
    and `rsbuild.config.ts`.
 4. Run `make lint-deps` and iterate until green. Never weaken a rule.
+
+## Social sign-in decisions
+
+The Google, GitHub, Facebook and Twitter/X buttons start the user-service social OAuth flow in
+the same tab, and `/auth/callback/:provider` relays the provider's code and state back to
+user-service ([ADR-004](../../../docs/adr/004-social-sign-in-spa-callback-relay.md), planning in
+`specs/social-sign-in/`).
+
+- **Layers.** `useSocialCallback` (hook) → `SocialSignInProvider` (data provider, resolved through
+  `AuthProviderLoader`) → `SocialSignInRepository` (REST) with `SocialSignInTransformer`
+  mapping each RFC 7807 `error_code` to a `SocialSignInErrorKind`. The provider writes the access
+  token into `useAuthStore` exactly like a password sign-in; the refresh token is not read.
+- **Paint path.** The buttons only add a `sessionStorage` write and `socialSignInNavigator`; the
+  page, hook, repository and schemas load with the `social-callback` chunk.
+- **Single use.** The relay is never retried and is shared per `state`, so StrictMode's repeated
+  effect cannot spend the code twice; "Try again" starts a new round trip.
+- **Destination.** The page a protected route sent the user from survives the round trip in
+  `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
+- **2FA.** A `pending_session_id` answer shows "finish with your email and password" until the
+  2FA challenge route (PR #377) exists.

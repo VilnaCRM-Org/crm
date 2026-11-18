@@ -14,3 +14,12 @@ export interface SocialSignInErrorRow {
 export type SocialSignInErrorTable = {
   readonly [Kind in SocialSignInErrorKind]: SocialSignInErrorRow;
 };
+
+export interface SocialSignInErrorMessageProps {
+  readonly messageKey: string;
+  readonly providerLabel: string;
+}
+
+export interface SocialSignInErrorActionsProps {
+  readonly onRetry: (() => void) | undefined;
+}

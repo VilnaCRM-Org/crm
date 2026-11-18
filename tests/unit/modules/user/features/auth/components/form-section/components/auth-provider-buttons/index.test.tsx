@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router';
 
+import API_ENDPOINTS from '@/config/api-config';
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
+import browserNavigator from '@auth/utils/browser-navigator';
 
 jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'svg' }));
@@ -25,19 +29,25 @@ const PROVIDER_LABELS = [
   `${CONTINUE_WITH_KEY}:Twitter`,
 ];
 
+const inRouter = (): ReactElement => (
+  <MemoryRouter>
+    <AuthProviderButtons />
+  </MemoryRouter>
+);
+
 describe('AuthProviderButtons', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
   it('labels the social divider with the localized heading', () => {
-    render(<AuthProviderButtons />);
+    render(inRouter());
 
     expect(screen.getByText('sign_up.socials_main_heading')).toBeInTheDocument();
   });
 
   it('renders one accessible button per registered OAuth provider', () => {
-    render(<AuthProviderButtons />);
+    render(inRouter());
 
     expect(screen.getAllByRole('button')).toHaveLength(PROVIDER_LABELS.length);
 
@@ -51,17 +61,13 @@ describe('AuthProviderButtons', () => {
     ['GitHub', 'github'],
     ['Facebook', 'facebook'],
     ['Twitter', 'twitter'],
-  ])('wires the %s button to the authorization popup of its own provider', (name, provider) => {
-    const openSpy = jest.spyOn(window, 'open').mockReturnValue(window);
+  ])('sends the %s button through its own social initiate endpoint', (name, provider) => {
+    const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
 
-    render(<AuthProviderButtons />);
+    render(inRouter());
 
     fireEvent.click(screen.getByRole('button', { name: `${CONTINUE_WITH_KEY}:${name}` }));
 
-    expect(openSpy).toHaveBeenCalledWith(
-      expect.stringContaining(`/auth/${provider}`),
-      '_blank',
-      'noopener,noreferrer'
-    );
+    expect(assign).toHaveBeenCalledWith(`${API_ENDPOINTS.SOCIAL_AUTH}/${provider}`);
   });
 });

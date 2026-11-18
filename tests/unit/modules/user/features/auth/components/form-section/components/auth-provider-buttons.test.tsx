@@ -6,6 +6,7 @@ import createLocaleI18n from '../../../../../../../utils/create-locale-i18n';
 import renderWithProviders from '../../../../../../../utils/render-with-providers';
 
 const mockClicks: string[] = [];
+const mockListStates: unknown[] = [];
 
 const UK_GOOGLE = 'Продовжити через Google';
 const UK_GITHUB = 'Продовжити через GitHub';
@@ -13,28 +14,34 @@ const UK_GITHUB = 'Продовжити через GitHub';
 jest.mock('@auth/components/form-section/components/auth-provider-buttons/oauth-providers', () => ({
   __esModule: true,
   default: {
-    items: [
-      {
-        label: 'Google',
-        SvgComponent: (): null => null,
-        onClick: (): void => {
-          mockClicks.push('Google');
-        },
-      },
-      {
-        label: 'GitHub',
-        SvgComponent: (): null => null,
-        onClick: (): void => {
-          mockClicks.push('GitHub');
-        },
-      },
-    ],
+    list: (state: unknown): { items: typeof mockItems } => {
+      mockListStates.push(state);
+      return { items: mockItems };
+    },
   },
 }));
+
+const mockItems = [
+  {
+    label: 'Google',
+    SvgComponent: (): null => null,
+    onClick: (): void => {
+      mockClicks.push('Google');
+    },
+  },
+  {
+    label: 'GitHub',
+    SvgComponent: (): null => null,
+    onClick: (): void => {
+      mockClicks.push('GitHub');
+    },
+  },
+];
 
 describe('AuthProviderButtons', () => {
   beforeEach(() => {
     mockClicks.length = 0;
+    mockListStates.length = 0;
   });
 
   it('names every provider button in English when English is active', () => {
@@ -70,5 +77,12 @@ describe('AuthProviderButtons', () => {
     fireEvent.click(screen.getByRole('button', { name: UK_GITHUB }));
 
     expect(mockClicks).toEqual(['GitHub']);
+  });
+
+  it('builds the provider list from the router state, so the destination survives', () => {
+    renderWithProviders(<AuthProviderButtons />);
+
+    expect(mockListStates.length).toBeGreaterThan(0);
+    expect(mockListStates.every((state) => state === null)).toBe(true);
   });
 });

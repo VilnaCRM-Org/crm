@@ -351,6 +351,15 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
   `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
   still reports HTTP status 404 for those responses; the page itself renders normally.
 
+### Social sign-in in development
+
+`make start` also serves the user-service social OAuth routes from Mockoon, with a mock consent
+page that has one link per backend outcome. Set `OAUTH_MODE=provider` and a Google or GitHub
+client ID in `.env`, then run `make mockoon-restart`, to go through the real consent screen
+instead. Registering the OAuth clients, the redirect URIs and troubleshooting are in
+[`docs/social-sign-in-local.md`](docs/social-sign-in-local.md); the design is
+[ADR-004](docs/adr/004-social-sign-in-spa-callback-relay.md).
+
 ### Password reset e-mails in development
 
 `make start` also runs [Mailpit](https://mailpit.axllent.org/), a local mail catcher, next to

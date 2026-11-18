@@ -32,7 +32,7 @@ export default class AuthSecuritySignals {
 
   public loginSettled(result: LoginResult): void {
     if (result.ok) {
-      this.observability.setUser({ id: uuidv4() });
+      this.signedIn();
       return;
     }
     if (result.error.aborted) return;
@@ -42,6 +42,11 @@ export default class AuthSecuritySignals {
   public registerSettled(result: RegisterResult): void {
     if (result.ok || result.error.aborted) return;
     this.registerFailed(result.error);
+  }
+
+  // An opaque per-session id only, never user data (issue #115).
+  public signedIn(): void {
+    this.observability.setUser({ id: uuidv4() });
   }
 
   public loginFailed(error: unknown): void {

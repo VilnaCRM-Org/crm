@@ -21,6 +21,7 @@ import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
+import socialSignInRegistrar from '@auth/di';
 import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
@@ -54,6 +55,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
     this.registerRepository(container);
     this.registerAuthState(container);
     this.registerSessionLink(container);
+    socialSignInRegistrar.register(container);
   }
 
   // The auth store stays a container-free module singleton so the auth page paints without

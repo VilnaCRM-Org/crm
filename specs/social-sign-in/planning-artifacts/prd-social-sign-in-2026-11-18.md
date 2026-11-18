@@ -53,8 +53,9 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 - **FR2** Before navigating, the SPA stores the intended post-sign-in destination (the
   `state.from` that `ProtectedRoute` set, issue #150) in `sessionStorage`, accepting only an
   internal path; anything else stores `/`.
-- **FR3** After one activation, every provider button and the surrounding form controls become
-  non-interactive (`inert`) until the page unloads, so a double click cannot start two flows.
+- **FR3** _Withdrawn in implementation (2026-11-18)_: a second click before the page unloads only
+  restarts the flow, and the later redirect replaces the earlier one; a guard flag would survive a
+  back-forward-cache restore and leave the buttons dead, which is worse than the harmless repeat.
 - **FR4** _Withdrawn with D7_: every provider button stays rendered, in today's order and layout.
 
 ### Callback

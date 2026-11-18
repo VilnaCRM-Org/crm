@@ -49,25 +49,26 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 
 ## Registered routes
 
-| Key                    | Path                     | Contract                   | Guard     |
-| ---------------------- | ------------------------ | -------------------------- | --------- |
-| `home`                 | `/` (index)              | `app-routes.ts`            | protected |
-| `signUp`               | `/sign-up`               | `@auth/routes` (user.auth) | public    |
-| `signIn`               | `/sign-in`               | `@auth/routes` (user.auth) | public    |
-| `passwordRecovery`     | `/password-recovery`     | `@auth/routes` (user.auth) | public    |
-| `passwordReset`        | `/password-reset`        | `@auth/routes` (user.auth) | public    |
-| `settings`             | `/settings`              | settings routes            | protected |
-| `forbidden`            | `/forbidden`             | `app-routes.ts`            | public    |
-| `serverError`          | `/server-error`          | `app-routes.ts`            | public    |
-| `boards`               | `/boards`                | `app-routes.ts`            | protected |
-| `products`             | `/products`              | `app-routes.ts`            | protected |
-| `orders`               | `/orders`                | `app-routes.ts`            | protected |
-| `contacts`             | `/contacts`              | `app-routes.ts`            | protected |
-| `analytics`            | `/analytics`             | `app-routes.ts`            | protected |
-| `settingsIntegrations` | `/settings/integrations` | settings routes            | protected |
-| `settingsWebhooks`     | `/settings/webhooks`     | settings routes            | protected |
-| `settingsBilling`      | `/settings/billing`      | settings routes            | protected |
-| `notFound`             | `*`                      | `app-routes.ts`            | public    |
+| Key                    | Path                       | Contract                   | Guard     |
+| ---------------------- | -------------------------- | -------------------------- | --------- |
+| `home`                 | `/` (index)                | `app-routes.ts`            | protected |
+| `signUp`               | `/sign-up`                 | `@auth/routes` (user.auth) | public    |
+| `signIn`               | `/sign-in`                 | `@auth/routes` (user.auth) | public    |
+| `passwordRecovery`     | `/password-recovery`       | `@auth/routes` (user.auth) | public    |
+| `passwordReset`        | `/password-reset`          | `@auth/routes` (user.auth) | public    |
+| `socialCallback`       | `/auth/callback/:provider` | `@auth/routes` (user.auth) | public    |
+| `settings`             | `/settings`                | settings routes            | protected |
+| `forbidden`            | `/forbidden`               | `app-routes.ts`            | public    |
+| `serverError`          | `/server-error`            | `app-routes.ts`            | public    |
+| `boards`               | `/boards`                  | `app-routes.ts`            | protected |
+| `products`             | `/products`                | `app-routes.ts`            | protected |
+| `orders`               | `/orders`                  | `app-routes.ts`            | protected |
+| `contacts`             | `/contacts`                | `app-routes.ts`            | protected |
+| `analytics`            | `/analytics`               | `app-routes.ts`            | protected |
+| `settingsIntegrations` | `/settings/integrations`   | settings routes            | protected |
+| `settingsWebhooks`     | `/settings/webhooks`       | settings routes            | protected |
+| `settingsBilling`      | `/settings/billing`        | settings routes            | protected |
+| `notFound`             | `*`                        | `app-routes.ts`            | public    |
 
 `/settings` (issue #330) and the three `/settings/…` coming-soon routes are registered in every
 environment, with no feature flag. Their contract is

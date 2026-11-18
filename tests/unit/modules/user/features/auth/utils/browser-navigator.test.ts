@@ -1,30 +1,23 @@
-import browserNavigator from '@auth/utils/browser-navigator';
-
-afterEach(() => {
-  jest.restoreAllMocks();
-});
+import browserNavigator, { BrowserNavigator } from '@auth/utils/browser-navigator';
 
 describe('browserNavigator', () => {
-  it('opens the url in a new tab with noopener/noreferrer', () => {
-    const openSpy = jest
-      .spyOn(window, 'open')
-      .mockReturnValue({} as ReturnType<typeof window.open>);
+  it('navigates the current tab, never a new one', () => {
+    const assign = jest.fn();
+    const open = jest.spyOn(window, 'open');
 
-    browserNavigator.openInNewTab('/auth/google');
+    new BrowserNavigator({ assign } as unknown as Location).assign('/api/auth/social/google');
 
-    expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy).toHaveBeenCalledWith('/auth/google', '_blank', 'noopener,noreferrer');
+    expect(assign).toHaveBeenCalledTimes(1);
+    expect(assign).toHaveBeenCalledWith('/api/auth/social/google');
+    expect(open).not.toHaveBeenCalled();
+    open.mockRestore();
   });
 
-  // `noopener` makes several browsers return `null` from a successful `window.open`, so a null
-  // handle is not evidence the popup was blocked. The current tab must stay where it is.
-  it('leaves the current tab alone when window.open returns no handle', () => {
-    const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
-    const hrefBefore = window.location.href;
+  it('is bound to the window location', () => {
+    browserNavigator.assign('#social-sign-in');
 
-    browserNavigator.openInNewTab('/auth/github');
-
-    expect(openSpy).toHaveBeenCalledWith('/auth/github', '_blank', 'noopener,noreferrer');
-    expect(window.location.href).toBe(hrefBefore);
+    expect(browserNavigator).toBeInstanceOf(BrowserNavigator);
+    expect(window.location.hash).toBe('#social-sign-in');
+    window.location.hash = '';
   });
 });

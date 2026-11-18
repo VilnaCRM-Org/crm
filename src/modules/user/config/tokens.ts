@@ -26,6 +26,9 @@ const AUTH_TOKENS = Object.freeze({
   ProfileProvider: Symbol('ProfileProvider'),
   PasswordRecoveryProvider: Symbol('PasswordRecoveryProvider'),
   UserDisplayNameMapper: Symbol('UserDisplayNameMapper'),
+  SocialSignInRepository: Symbol('SocialSignInRepository'),
+  SocialSignInTransformer: Symbol('SocialSignInTransformer'),
+  SocialSignInProvider: Symbol('SocialSignInProvider'),
 } as const);
 
 export default AUTH_TOKENS;

@@ -1,13 +1,13 @@
-class BrowserNavigator {
-  // `window.open` is called for its side effect only. Its return value is deliberately ignored:
-  // with `noopener` the opener is severed, and several browsers signal that by returning `null`
-  // on a *successful* open. Treating `null` as "popup blocked" and navigating the current tab
-  // therefore replaces a working sign-in page with the OAuth endpoint on those browsers.
-  public openInNewTab(url: string): void {
-    window.open(url, '_blank', 'noopener,noreferrer');
+export class BrowserNavigator {
+  constructor(private readonly location: Location) {}
+
+  // A same-tab navigation, not a new tab: the session token lives in this tab's memory only, so
+  // a provider round trip has to come back to the same tab to sign it in (specs/social-sign-in).
+  public assign(url: string): void {
+    this.location.assign(url);
   }
 }
 
-const browserNavigator = new BrowserNavigator();
+const browserNavigator = new BrowserNavigator(window.location);
 
 export default browserNavigator;

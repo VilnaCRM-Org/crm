@@ -6,6 +6,7 @@ export { default as ApiStatusErrorFactory } from './api-status-error-factory';
 export { default as BaseAPI } from './base-api';
 export { default as LoginAPI } from './login-api';
 export { default as RegistrationAPI } from './registration-api';
+export { default as SocialSignInRepository } from './social-sign-in-repository';
 export type { RequestOptions } from './types';
 
 export { GraphQLPasswordRecoveryRepository };

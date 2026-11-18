@@ -10,6 +10,8 @@ import useFocusOnMount from '@/utils/use-focus-on-mount';
 import InCardLink from '@auth/components/reset-password/in-card-link';
 import recoveryStyles from '@auth/components/reset-password/styles';
 import type {
+  SocialSignInErrorActionsProps,
+  SocialSignInErrorMessageProps,
   SocialSignInErrorTable,
   SocialSignInErrorViewProps,
 } from '@auth/types/social-sign-in/social-sign-in-error-view';
@@ -30,6 +32,47 @@ const ERROR_ROWS: SocialSignInErrorTable = {
   generic: { messageKey: 'auth.social.error.generic', retryable: true },
 };
 
+// Mounted empty and filled after the first paint, so the polite region announces the reason
+// after the focused heading instead of being created and filled in one commit.
+function SocialSignInErrorMessage({
+  messageKey,
+  providerLabel,
+}: SocialSignInErrorMessageProps): JSX.Element {
+  const { t } = useTranslation();
+  const [announcedMessage, setAnnouncedMessage] = useState('');
+
+  useEffect(() => {
+    setAnnouncedMessage(t(messageKey, { provider: providerLabel }));
+  }, [messageKey, providerLabel, t]);
+
+  return (
+    <Box role="status" aria-live="polite">
+      <UITypography sx={recoveryStyles.resultBody}>{announcedMessage}</UITypography>
+    </Box>
+  );
+}
+
+function SocialSignInErrorActions({ onRetry }: SocialSignInErrorActionsProps): JSX.Element {
+  const { t } = useTranslation();
+
+  return (
+    <Box id="social-sign-in-actions" sx={styles.actions}>
+      {onRetry !== undefined && (
+        <UIButton variant="contained" onClick={onRetry} sx={recoveryStyles.resultAction}>
+          {t('auth.social.try_again')}
+        </UIButton>
+      )}
+      <InCardLink
+        to={ROUTE_PATHS.signIn}
+        variant={onRetry === undefined ? 'contained' : 'text'}
+        sx={onRetry === undefined ? recoveryStyles.resultAction : styles.backText}
+      >
+        {t('auth.social.back_to_sign_in')}
+      </InCardLink>
+    </Box>
+  );
+}
+
 export default function SocialSignInErrorView({
   kind,
   providerLabel,
@@ -38,12 +81,6 @@ export default function SocialSignInErrorView({
   const { t } = useTranslation();
   const focusOnMount = useFocusOnMount<HTMLElement>();
   const { messageKey, retryable } = ERROR_ROWS[kind];
-  const showRetry = retryable && onRetry !== undefined;
-  const [announcedMessage, setAnnouncedMessage] = useState('');
-
-  useEffect(() => {
-    setAnnouncedMessage(t(messageKey, { provider: providerLabel }));
-  }, [messageKey, providerLabel, t]);
 
   return (
     <>
@@ -55,23 +92,8 @@ export default function SocialSignInErrorView({
       >
         {t('auth.social.error.title', { provider: providerLabel })}
       </UITypography>
-      <Box role="status" aria-live="polite">
-        <UITypography sx={recoveryStyles.resultBody}>{announcedMessage}</UITypography>
-      </Box>
-      <Box sx={styles.actions}>
-        {showRetry && (
-          <UIButton variant="contained" onClick={onRetry} sx={recoveryStyles.resultAction}>
-            {t('auth.social.try_again')}
-          </UIButton>
-        )}
-        <InCardLink
-          to={ROUTE_PATHS.signIn}
-          variant={showRetry ? 'text' : 'contained'}
-          sx={showRetry ? styles.backText : recoveryStyles.resultAction}
-        >
-          {t('auth.social.back_to_sign_in')}
-        </InCardLink>
-      </Box>
+      <SocialSignInErrorMessage messageKey={messageKey} providerLabel={providerLabel} />
+      <SocialSignInErrorActions onRetry={retryable ? onRetry : undefined} />
     </>
   );
 }

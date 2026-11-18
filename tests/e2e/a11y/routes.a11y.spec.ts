@@ -82,6 +82,18 @@ const routeScans: readonly RouteScan[] = [
     rendered: expectFooterRendered,
   },
   {
+    key: 'socialCallback',
+    path: '/auth/callback/google',
+    ready: 'main h1',
+    rendered: expectFooterRendered,
+  },
+  {
+    key: 'socialCallback',
+    path: '/auth/callback/unknown',
+    ready: 'main h1',
+    rendered: expectFooterRendered,
+  },
+  {
     key: 'forbidden',
     path: ROUTE_PATHS.forbidden,
     ready: 'main h1',
