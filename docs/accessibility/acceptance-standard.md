@@ -177,7 +177,8 @@ closes.
 The two-factor code cells take the Figma states on the owner's decision of 2026-11-04: a `#E1E7EA`
 rest border (1.24:1 on white, under the 3:1 of SC 1.4.11), and a focused cell marked only by a soft
 shadow and the caret, with no outline, so its focus indicator also falls short of SC 1.4.11 though
-it stays visible under SC 2.4.7. No axe rule tests either, so no exception entry exists for them.
+it stays visible under SC 2.4.7. No axe rule tests either, so no exception entry exists for them;
+the owner put them under #276 on 2026-11-18, and they are resolved when it closes.
 The challenge's "Назад" takes the Figma `#969B9D` (2.81:1) under the twelfth allowlist entry.
 
 The sign-in two-factor challenge submits on its sixth digit with no advance notice, which departs
@@ -185,7 +186,8 @@ from WCAG 3.2.2 On Input: entering a value changes context, and a person who has
 can be surprised by it, most of all on a screen reader. The owner chose it on 2026-11-04 and declined
 an advance sentence to keep the Figma copy. "Підтвердити" stays, the recovery-code field and the
 setup confirmation keep an explicit submit, and no axe rule tests this, so no exception entry exists
-for it; it is resolved by telling the user first or by going back to an explicit submit.
+for it. The owner put it under #276 on 2026-11-18; it is resolved by telling the user first or by
+going back to an explicit submit, and #276 tracks that.
 
 ## Adding coverage
 
