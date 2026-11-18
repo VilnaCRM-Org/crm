@@ -292,7 +292,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-63-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+76-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -320,7 +320,7 @@ process churn) and the settings `ready-story-provider` test, which imports a `*.
 that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
 shard that selects it and pins only story wiring outside the mutate scope. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 63-way shard count rather than
+These keep the run affordable — parallelism comes from the 76-way shard count rather than
 Stryker's in-process concurrency.
 
 **Shards are packed by mutant-run cost.** `scripts/ci/mutation-scope.mjs` counts each file's
@@ -356,8 +356,8 @@ shard under the file cap that holds the fewest mutants (the lighter load, then t
 breaking ties), so the 1.05x figure is a target the fallback can overshoot, never a guarantee.
 Counting the whole scope takes about 4 s, so every shard job and the merge job
 count at run time and derive the same packing from the same commit; no weight file is committed, so
-none can go stale. At 562 files the scope holds 505 sharded files; 57 files run in no shard. The 63
-shards carry 80 to 166 runnable mutants (mean 158) and 2,237 to 3,189 weight units, except
+none can go stale. At 565 files the scope holds 508 sharded files; 57 files run in no shard. The 76
+shards carry 41 to 139 runnable mutants (mean 132) and 1,254 to 3,120 weight units, except
 `ui-form/styles.ts`, alone at 5,394. Weighing by scored mutants alone had packed that scrubber's 103
 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
 `lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
@@ -367,8 +367,9 @@ as the scrubber was twice: its free-text patterns moved to `PiiTextScrubber`, an
 alone still took 14.6 minutes cold, its two-factor patterns moved to `TwoFactorTextScrubber` (47 and
 60 mutants). The cap binds the same way: at 63 shards it fell to 166, under the 177 runnable
 mutants `user-service-error-transformer.ts` held alone, so its field-violation parsing moved to an
-injected `FieldViolationParser`. File size was a poor proxy too: under the 30-shard size packing a
-cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
+injected `FieldViolationParser`; at 76 it is 139, one over the 138 runnable mutants
+`graphql-sign-in-transformer.ts` holds alone. File size was a poor proxy too: under the 30-shard
+size packing a cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard meets
 the kill switch, and it fails when the two matrices, their `MUTATION_SHARD_TOTAL`s and the `-of<N>-`
@@ -376,7 +377,7 @@ cache-key segments disagree.
 
 The shard count is a wall-clock lever: the split is balanced over the whole mutate scope, but an
 incremental run only re-runs the mutants a diff invalidates, and those cluster by area. A diff
-touching one area can therefore land most of its re-run cost in a single shard; 63 shards keep that
+touching one area can therefore land most of its re-run cost in a single shard; 76 shards keep that
 hot shard inside the `timeout-minutes` kill switch. Raise the count if a shard starts approaching
 it — never the kill switch. The count went from 16 to 24 when Stryker 10's `CallExpression` mutator
 added 164 mutants and a cold run pushed shards 5 and 14 into the 15-minute kill switch, and from 24
@@ -398,13 +399,22 @@ went from 56 to 63 on 2026-11-11, when the cold run the 60 s `timeoutMS` forced 
 on shards 12 and 22 after each had scored all 187 of its mutants with no survivor: shard 22 (no
 timed-out mutant) spent 3.9 min starting and 11 min mutating, shard 12 4.5 and 10 with three timed
 out, while every other shard but one finished inside 12 min. Both sat at the 1.05x cap, so the
-count, not a hang, was again the cost. The mutant cap alone left the light shards to absorb a pile
+count, not a hang, was again the cost. It went from 63 to 76 on 2026-11-18, when an incremental run
+clustered 167 mutants of three heavily tested files onto one shard and hit the kill switch: shard 24
+(`profile-section-form.tsx`, `error-handler.ts` and the two-factor settings styles) spent 2.9 min
+starting and 1.4 min on its dry run, then scored 117 of the 167 with no survivor, about 4.5 s a
+mutant, before it was cancelled, while the slowest other shard took 12.9 min. 76 is the highest
+count at which every shard still holds within 1.05x the mean: at 77 the cap falls to 137, under
+the 138 that `graphql-sign-in-transformer.ts` holds alone. At 76 the three files land on three
+shards, the heaviest holding 103 of the mutants (about 12 min projected), but a shard filled to the
+139 cap at that rate would still project to about 14.7 min, so a further raise needs the files over
+the next cap split by responsibility first. The mutant cap alone left the light shards to absorb a pile
 of small files, so the file-spread check (no shard over twice the mean file count) passed or failed
 by chance as files changed: 63 failed it once a later commit added files. The packing therefore also
 caps every shard at twice the mean file count. That cap is a hard bound rather than a target:
 `total` shards at the cap always seat every sharded file, so the mutant fallback never has to
 breach it, and the spread holds by construction while the scope has at least half as many sharded
-files as there are shards (505 against 63 today). Below that, twice the mean is under one file and
+files as there are shards (508 against 76 today). Below that, twice the mean is under one file and
 `fileCap` clamps the cap to `max(1, …)`, so a shard holding one file is over twice the mean.
 
 ### Honest mutant classification (issue #171)
@@ -1198,7 +1208,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 63-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 76-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
