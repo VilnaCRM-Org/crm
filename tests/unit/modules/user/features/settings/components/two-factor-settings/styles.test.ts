@@ -58,7 +58,7 @@ describe('two-factor settings styles', () => {
         display: 'grid',
         gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
         gap: '0.5rem',
-        margin: '0 0 1rem',
+        margin: 0,
         padding: 0,
         listStyle: 'none',
       },

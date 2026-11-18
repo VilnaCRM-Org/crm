@@ -7,6 +7,7 @@ import {
   codeListOf,
   codesHeadingOf,
   copyKeyOf,
+  copyLineOf,
   disableFieldOf,
   disableHeadingOf,
   disableSubmitOf,
@@ -115,7 +116,17 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
   test('the codes after the copy feedback have no axe violations', async ({ page }) => {
     await reachCodes(page);
     await sectionOf(page).getByRole('button', { name: twoFactorText.copyCodes }).click();
-    await expect(sectionOf(page).getByText(twoFactorText.codesCopied)).toBeVisible();
+    await expect(copyLineOf(page, twoFactorText.codesCopied)).toBeVisible();
+
+    await expectCleanScan(page);
+  });
+
+  test('the codes with the manual-copy line have no axe violations', async ({ page }) => {
+    await stubClipboard(page, 'missing');
+    await page.reload();
+    await reachCodes(page);
+    await sectionOf(page).getByRole('button', { name: twoFactorText.copyCodes }).click();
+    await expect(copyLineOf(page, twoFactorText.codesCopyFailed)).toBeVisible();
 
     await expectCleanScan(page);
   });

@@ -11,6 +11,7 @@ import {
   codesHeadingOf,
   confirmOf,
   copyCodesOf,
+  copyLineOf,
   copyBackupKeyOf,
   copyKeyOf,
   keyInfoOf,
@@ -162,7 +163,7 @@ test.describe('Two-factor settings on touch devices (issue #331)', () => {
 
     await copyCodesOf(page).tap();
 
-    await expect(sectionOf(page).getByText(twoFactorText.codesCopied)).toBeVisible();
+    await expect(copyLineOf(page, twoFactorText.codesCopied)).toBeVisible();
   });
 
   test('opens the key info tooltip with a tap and closes it with a tap elsewhere', async ({

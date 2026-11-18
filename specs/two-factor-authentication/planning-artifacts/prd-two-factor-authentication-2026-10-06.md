@@ -1030,6 +1030,15 @@ codes from memory and shows the on state. Leaving the page without acknowledging
 codes are discarded on unmount and the on state shows next time (brief §11). After confirm the
 known status is on. Focus moves to the `h3`.
 
+> **Amended 2026-11-18 (owner decision, copy feedback).** "Скопіювати коди" itself never changes:
+> same label, size and colours, no icon. Besides the polite status announcement above, which stays
+> as written, the result shows as a line above the button in Inter 14 px #404142, hidden from
+> assistive technology: "Коди скопійовано" for 3 s, fading out over 0.4 s (removed at once under
+> `prefers-reduced-motion: reduce`, restarted by a new copy), and the FR-28 manual instruction on
+> failure, kept until the next copy. The line sits in a 16 px slot in place of the list's bottom
+> margin, so nothing moves at rest; a failure line that wraps on a narrow phone pushes the button
+> down instead of covering a code. The original text above is kept as the record of the plan.
+
 - Given a resolved confirm with eight codes, when it settles, then the list shows eight items in
   response order and focus is on the `h3`.
 - Given the box unticked, when "Готово" is activated, then nothing happens and the button is

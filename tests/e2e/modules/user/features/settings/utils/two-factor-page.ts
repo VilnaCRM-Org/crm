@@ -26,6 +26,7 @@ export const twoFactorText = {
   codesTitle: t('settings.two_factor.codes.title'),
   copyCodes: t('settings.two_factor.codes.copy'),
   codesCopied: t('settings.two_factor.codes.copied'),
+  codesCopyFailed: t('settings.two_factor.codes.copy_failed'),
   saved: t('settings.two_factor.codes.saved'),
   done: t('settings.two_factor.codes.done'),
   blocked: t('settings.two_factor.codes.blocked'),
@@ -97,6 +98,9 @@ export const codeListOf = (page: Page): Locator =>
 
 export const copyCodesOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.copyCodes, exact: true });
+
+export const copyLineOf = (page: Page, text: string): Locator =>
+  sectionOf(page).locator('p[aria-hidden="true"]', { hasText: text });
 
 export const savedBoxOf = (page: Page): Locator =>
   sectionOf(page).getByRole('checkbox', { name: twoFactorText.saved, exact: true });

@@ -23,6 +23,7 @@ import {
   copiedText,
   copyCodesOf,
   copyKeyOf,
+  copyLineOf,
   doneOf,
   errorBannerOf,
   expectEveryStateInsideCard,
@@ -62,6 +63,18 @@ async function clickCopyKey(page: Page, clipboard: 'works' | 'missing'): Promise
   await page.goto(SETTINGS_URL);
   await openSetup(page);
   await copyKeyOf(page).click();
+}
+
+async function expectLineAbove(page: Page, text: string): Promise<void> {
+  const line = copyLineOf(page, text);
+  await expect(line).toBeVisible();
+  await expect(line).toHaveCSS('font-size', '14px');
+  await expect(line).toHaveCSS('color', 'rgb(64, 65, 66)');
+  const lineBox = await boxOf(line);
+  const listBox = await codeListOf(page).boundingBox();
+  const buttonBox = await boxOf(copyCodesOf(page));
+  expect(lineBox.y).toBeGreaterThanOrEqual((listBox?.y ?? 0) + (listBox?.height ?? 0));
+  expect(lineBox.y).toBeLessThan(buttonBox.y);
 }
 
 async function expectCopyAnnounced(page: Page, text: string): Promise<void> {
@@ -245,6 +258,28 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(
         page.getByRole('status').filter({ hasText: twoFactorText.codesCopied })
       ).toBeAttached();
+      await expectLineAbove(page, twoFactorText.codesCopied);
+      await expect(copyLineOf(page, twoFactorText.codesCopied)).toHaveCount(0, { timeout: 5000 });
+      await expect(copyCodesOf(page)).toHaveText(twoFactorText.copyCodes);
+    });
+
+    test('shows the manual-copy line above the button while the clipboard refuses', async ({
+      page,
+    }) => {
+      await stubClipboard(page, 'missing');
+      await stubSetup(page);
+      await stubConfirm(page);
+      await page.goto(SETTINGS_URL);
+      await reachCodes(page);
+
+      await copyCodesOf(page).click();
+
+      expect(await selectedText(page)).toContain(RECOVERY_CODES[0] ?? '');
+      await expect(
+        page.getByRole('status').filter({ hasText: twoFactorText.codesCopyFailed })
+      ).toBeAttached();
+      await expectLineAbove(page, twoFactorText.codesCopyFailed);
+      await expect(copyLineOf(page, twoFactorText.codesCopied)).toHaveCount(0);
     });
 
     test('outlines the box in #80878A, keeps the hover edge dark and fills it #0074B5', async ({

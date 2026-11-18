@@ -56,6 +56,10 @@ export interface KeyBlockProps {
   readonly copyLabel: string;
 }
 
+export interface CopiedLineProps {
+  readonly text: string;
+}
+
 export interface KeyCopyButtonProps {
   readonly label: string;
   readonly copied: boolean;

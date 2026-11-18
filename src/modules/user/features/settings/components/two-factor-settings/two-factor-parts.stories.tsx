@@ -5,7 +5,6 @@ import { withRefusingClipboard } from '@stories/clipboard-decorators';
 import { OTPAUTH_URI, SECRET } from '@stories/two-factor-story-fixtures';
 import waitForText from '@stories/wait-for-text';
 
-import CopyButton from './copy-button';
 import KeyBlock from './key-block';
 import KeyChip from './key-chip';
 import KeyInfoTooltip from './key-info-tooltip';
@@ -46,18 +45,6 @@ export const Step: Story = {
 
 export const Key: Story = {
   render: () => <KeyChip secret={SECRET} chipRef={createRef<HTMLElement>()} />,
-};
-
-export const Copy: Story = {
-  render: () => (
-    <CopyButton
-      text={SECRET}
-      targetRef={createRef<HTMLElement>()}
-      label="Скопіювати ключ"
-      copiedText="Ключ скопійовано"
-      failedText="Не вдалося скопіювати. Виділіть ключ і скопіюйте вручну."
-    />
-  ),
 };
 
 export const KeyWithCopy: Story = {

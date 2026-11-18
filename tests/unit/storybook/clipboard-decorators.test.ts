@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 
-import { useRefusingClipboard } from '@stories/clipboard-decorators';
+import { useAcceptingClipboard, useRefusingClipboard } from '@stories/clipboard-decorators';
 
 const mountDecorated = (): ReturnType<typeof renderHook> =>
   renderHook(() => useRefusingClipboard());
@@ -30,6 +30,26 @@ describe('useRefusingClipboard', () => {
 
   it('removes its own override when no clipboard property existed before', () => {
     const { unmount } = mountDecorated();
+
+    unmount();
+
+    expect(Object.getOwnPropertyDescriptor(navigator, 'clipboard')).toBeUndefined();
+  });
+});
+
+describe('useAcceptingClipboard', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, 'clipboard');
+  });
+
+  it('accepts every clipboard write while the story is mounted', async () => {
+    renderHook(() => useAcceptingClipboard());
+
+    await expect(navigator.clipboard.writeText('codes')).resolves.toBeUndefined();
+  });
+
+  it('removes its own override when the story unmounts', () => {
+    const { unmount } = renderHook(() => useAcceptingClipboard());
 
     unmount();
 

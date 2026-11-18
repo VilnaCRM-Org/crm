@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { buildOtpauthUri, buildRecoveryCodeSet, buildTotpSecret } from '@tests/builders';
 import {
@@ -92,5 +93,24 @@ describe('TwoFactorPanel accessibility', () => {
     );
 
     await expectNoA11yViolations(container);
+  });
+
+  it.each([
+    ['copied', 'Коди скопійовано', jest.fn().mockResolvedValue(undefined)],
+    [
+      'failed',
+      'Не вдалося скопіювати. Виділіть коди і скопіюйте вручну.',
+      jest.fn().mockRejectedValue(new Error('refused')),
+    ],
+  ] as const)('has no violation in the codes view with the %s line', async (_, line, writeText) => {
+    const actor = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const { container } = renderPanel(panelProps({ settings: CODES, view: viewState('codes') }));
+
+    await actor.click(screen.getByRole('button', { name: 'Скопіювати коди' }));
+    await screen.findByText(line, { selector: 'p' });
+
+    await expectNoA11yViolations(container);
+    Reflect.deleteProperty(navigator, 'clipboard');
   });
 });

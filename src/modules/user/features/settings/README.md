@@ -353,6 +353,15 @@ Deliberate differences, each for a reason a frame cannot show:
   regenerate button, which no frame draws, stacks under it in the same text column.
 - **Copying gives visible feedback**: the glyph becomes a check on success and the manual instruction
   appears on failure, because an icon-only button has no label to change.
+- **Copying the recovery codes shows a line, not a new button** (owner decision of 2026-11-18): "Скопіювати
+  коди" keeps its label, size and colours. "Коди скопійовано" shows above it for 3 s and fades out over
+  0.4 s (at once with `prefers-reduced-motion: reduce`, and a new copy restarts the 3 s); the manual
+  instruction shows in the same place on failure and stays until the next copy. Both lines use the
+  key's failure-line type (Inter 14 px, #404142) and are `aria-hidden`, because the polite status
+  region still carries the announcement. They sit in a 16 px slot that replaces the list's 16 px
+  bottom margin, so nothing moves at rest or on success; at 375 px and narrower the failure line
+  wraps to two lines and pushes the button down 16 px rather than overlap the codes (WCAG 1.4.10,
+  1.4.12).
 
 The tooltip has no frame at 1025 to 1439 px, where the card is narrower than it: there it aligns to
 the step's right edge without an arrow, and on a phone it fills the step, so it can never add
