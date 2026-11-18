@@ -232,7 +232,7 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
   });
 
   test('a 429 shows a focused alert banner without a retry', async ({ page }) => {
-    await stubChallenge(page, ['rate_limited']);
+    const challenge = await stubChallenge(page, ['rate_limited']);
     await signInToChallenge(page, credentials);
 
     await typeCode(page, CODE);
@@ -240,6 +240,23 @@ test.describe('Sign-in challenge on /sign-in/two-factor (issue #331)', () => {
     await expect(page.getByRole('alert')).toHaveText(challengeText.rateLimited);
     await expect(challengeBannerOf(page, challengeText.rateLimited)).toBeFocused();
     await expect(challengeRetryOf(page)).toHaveCount(0);
+    expect(challenge.count()).toBe(1);
+    for (const [index, cell] of (await codeCellsOf(page).all()).entries()) {
+      await expect(cell).toHaveValue(CODE.charAt(index));
+    }
+  });
+
+  test('a 429 keeps the submit enabled and re-sends only when it is pressed', async ({ page }) => {
+    const challenge = await stubChallenge(page, ['rate_limited']);
+    await signInToChallenge(page, credentials);
+    await typeCode(page, CODE);
+    await expect(challengeBannerOf(page, challengeText.rateLimited)).toBeFocused();
+    expect(challenge.count()).toBe(1);
+
+    await expect(confirmButtonOf(page)).toBeEnabled();
+    await confirmButtonOf(page).click();
+
+    await expect.poll(() => challenge.count()).toBe(2);
   });
 
   test('a 503 offers a retry that sends exactly one more identical request', async ({ page }) => {

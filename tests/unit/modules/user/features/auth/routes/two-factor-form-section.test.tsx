@@ -226,6 +226,8 @@ describe('TwoFactorFormSection', () => {
       'Забагато спроб. Зачекайте хвилину і спробуйте знову.'
     );
     expect(screen.queryByRole('button', { name: 'Спробувати ще раз' })).not.toBeInTheDocument();
+    expect(completeChallenge).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Підтвердити' })).toBeEnabled();
   });
 
   it('retries a server failure with exactly one more identical request', async () => {
