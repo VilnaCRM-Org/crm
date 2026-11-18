@@ -1,9 +1,14 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { buildTotpCode } from '@tests/builders';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { RECOVERY_CODES, SETUP_SECRET } from '@tests/e2e/utils/two-factor-settings-responses';
+import {
+  RECOVERY_CODES,
+  SETUP_SECRET,
+  SETUP_URI,
+} from '@tests/e2e/utils/two-factor-settings-responses';
 
 export const twoFactorText = {
   title: t('settings.two_factor.title'),
@@ -119,6 +124,7 @@ export async function typeCode(page: Page, code: string): Promise<void> {
 export async function openSetup(page: Page): Promise<void> {
   await startOf(page).click();
   await expect(setupHeadingOf(page)).toBeFocused();
+  await expectNoSecrets(page, { secret: SETUP_SECRET, uri: SETUP_URI });
 }
 
 const SETUP_CODE = buildTotpCode();
@@ -128,6 +134,12 @@ export async function reachCodes(page: Page): Promise<void> {
   await typeCode(page, SETUP_CODE);
   await confirmOf(page).click();
   await expect(codesHeadingOf(page)).toBeFocused();
+  await expectNoSecrets(page, {
+    secret: SETUP_SECRET,
+    uri: SETUP_URI,
+    typed: SETUP_CODE,
+    ...Object.fromEntries(RECOVERY_CODES.map((code, index) => [`code${index}`, code])),
+  });
 }
 
 export async function stubClipboard(page: Page, mode: 'works' | 'missing'): Promise<void> {

@@ -123,6 +123,7 @@ test.describe('WCAG 2.1 AA scans of the two-factor settings states (issue #331)'
 
   test('the codes with the manual-copy line have no axe violations', async ({ page }) => {
     await stubClipboard(page, 'missing');
+    await page.evaluate(() => document.fonts.ready);
     await page.reload();
     await reachCodes(page);
     await sectionOf(page).getByRole('button', { name: twoFactorText.copyCodes }).click();
