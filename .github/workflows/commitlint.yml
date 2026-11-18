@@ -52,8 +52,8 @@ jobs:
       - name: Lint every commit in the pull request
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          # The pull request's own base, not main: a pull request stacked on another branch
-          # lints only its own commits, which its squash merge writes onto that base.
+          # Always main under the `branches: ['main']` trigger: a pull request stacked on another
+          # branch gets no run here until it is retargeted to main.
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           # Bot detection asks GitHub whether it signed the commit, so the step needs a token
           # and the repository to ask about. Read-only: the job declares `contents: read`.

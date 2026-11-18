@@ -63,6 +63,16 @@ run_start() {
   [ "$(grep -c 'docker compose rm' "$COMMAND_LOG")" -eq 0 ]
 }
 
+@test "local stack start puts the token TTL on its own line after an unterminated last line" {
+  printf 'APP_ENV=dev' > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$USER_SERVICE_DIR/.env.local")" = \
+    "$(printf '%s\n' APP_ENV=dev AUTH_ACCESS_TOKEN_TTL_SECONDS=2592000)" ]
+}
+
 @test "local stack start creates .env.local when user-service has none" {
   run_start
 

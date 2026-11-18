@@ -847,7 +847,7 @@ start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate $(PROD_START_SERVICES) && make wait-for-prod-health && make wait-for-mockoon
 
 .PHONY: start-local-stack stop-local-stack
-start-local-stack: ## Run the SPA against a real user-service at http://vilnacrm.localhost
+start-local-stack: ## Run the SPA against a real user-service at http://vilnacrm.localhost (host Node 24.8+ and Docker)
 	./scripts/local-stack/start.sh
 
 stop-local-stack: ## Stop the gateway, the sign-in mock and the dev server of the local stack

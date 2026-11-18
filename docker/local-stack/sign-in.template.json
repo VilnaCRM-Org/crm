@@ -53,9 +53,43 @@
       "responseMode": "FALLBACK",
       "streamingMode": null,
       "streamingInterval": 0
+    },
+    {
+      "uuid": "e4d1a6b3-2c7f-4e58-9b10-6a3f8c2d5e44",
+      "type": "http",
+      "documentation": "Answers the container healthcheck without reaching user-service.",
+      "method": "get",
+      "endpoint": "health",
+      "responses": [
+        {
+          "uuid": "f7a2c9d4-8e31-4b6a-a5c2-1d9e7b3f6a55",
+          "body": "ok",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Healthy",
+          "headers": [{ "key": "Content-Type", "value": "text/plain" }],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
     }
   ],
-  "rootChildren": [{ "type": "route", "uuid": "b2a7c1de-4f60-4a0b-8e21-3d9c5e7f1a22" }],
+  "rootChildren": [
+    { "type": "route", "uuid": "b2a7c1de-4f60-4a0b-8e21-3d9c5e7f1a22" },
+    { "type": "route", "uuid": "e4d1a6b3-2c7f-4e58-9b10-6a3f8c2d5e44" }
+  ],
   "proxyMode": true,
   "proxyHost": "http://host.docker.internal:8081",
   "proxyRemovePrefix": false,

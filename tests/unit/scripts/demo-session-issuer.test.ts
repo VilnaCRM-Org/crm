@@ -1,9 +1,19 @@
 /**
  * @jest-environment node
  */
-import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+
+import { parse } from 'yaml';
 
 import DemoSessionIssuer from '@scripts/local-stack/demo-session-issuer.mjs';
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
@@ -206,7 +216,41 @@ describe('DemoSessionIssuer', () => {
         clientMutationId: expect.any(String),
       });
       expect(readFileSync(generatedPath, 'utf8')).toBe(generatedFile(fresh, demo.email));
-      expect(statSync(generatedPath).mode & 0o777).toBe(0o644);
+      expect(statSync(generatedPath).mode & 0o777).toBe(0o600);
+    });
+
+    it('tightens a generated file another run left world-readable to owner-only', async () => {
+      const fresh = jwtExpiringIn(86_400);
+      const { issuer, generatedPath } = harness([existing, signedIn(fresh)]);
+      mkdirSync(dirname(generatedPath), { recursive: true });
+      writeFileSync(generatedPath, generatedFile(jwtExpiringIn(60), buildEmail()), {
+        mode: 0o644,
+      });
+      chmodSync(generatedPath, 0o644);
+
+      await issuer.run();
+
+      expect(statSync(generatedPath).mode & 0o777).toBe(0o600);
+      expect(tokenIn(generatedPath)).toBe(fresh);
+    });
+
+    it('names two-factor authentication when sign-in answers with a challenge', async () => {
+      const challenge: unknown = {
+        data: {
+          signInUser: { user: { success: true, twoFactorEnabled: true, accessToken: null } },
+        },
+      };
+      const { issuer, demo, generatedPath } = harness([{ data: {} }, challenge]);
+
+      const failure = await issuer.run().catch((caught: unknown) => caught);
+
+      assertInstanceOf(failure, Error);
+      expect(failure.message).toBe(
+        `${demo.email} has two-factor authentication enabled, so user-service answered the demo ` +
+          'sign-in with a challenge instead of a token. Disable it for that account, or run ' +
+          'again with LOCAL_DEMO_EMAIL set to an account without it.'
+      );
+      expect(existsSync(generatedPath)).toBe(false);
     });
 
     it('substitutes every placeholder of the committed template', async () => {
@@ -239,5 +283,53 @@ describe('DemoSessionIssuer', () => {
       expect(failure.message).toContain('LOCAL_DEMO_PASSWORD');
       expect(existsSync(generatedPath)).toBe(false);
     });
+  });
+});
+
+describe('local stack sign-in mock healthcheck', () => {
+  interface ComposeService {
+    readonly healthcheck?: { readonly test?: readonly string[]; readonly disable?: boolean };
+  }
+  interface TemplateRoute {
+    readonly method: string;
+    readonly endpoint: string;
+    readonly responses: readonly {
+      readonly statusCode: number;
+      readonly rules: readonly unknown[];
+    }[];
+  }
+
+  const compose = parse(
+    readFileSync(resolve(__dirname, '../../../docker-compose.local-stack.yml'), 'utf8')
+  ) as { services: Record<string, ComposeService> };
+  const template = JSON.parse(readFileSync(REAL_TEMPLATE, 'utf8')) as {
+    routes: readonly TemplateRoute[];
+    rootChildren: readonly { uuid: string }[];
+  };
+
+  it('probes a path the mock answers itself instead of proxying to user-service', () => {
+    const probe = compose.services['sign-in-mock']?.healthcheck?.test ?? [];
+    const path = new URL(probe.at(-1) ?? '').pathname.slice(1);
+    const route = template.routes.find((candidate) => candidate.endpoint === path);
+
+    expect(probe.slice(0, 2)).toEqual(['CMD', 'wget']);
+    expect(route?.method).toBe('get');
+    expect(route?.responses).toEqual([expect.objectContaining({ statusCode: 200, rules: [] })]);
+    expect(template.rootChildren).toHaveLength(template.routes.length);
+  });
+
+  it('keeps the demo sign-in as the first route the issuer reads', () => {
+    expect(template.routes[0]?.endpoint).toBe('api/graphql');
+  });
+
+  it('gives the gateway a probe of its own', () => {
+    const probe = compose.services.gateway?.healthcheck?.test ?? [];
+    const nginx = readFileSync(
+      resolve(__dirname, '../../../docker/local-stack/nginx.conf'),
+      'utf8'
+    );
+
+    expect(probe.at(-1)).toBe('http://127.0.0.1/healthz');
+    expect(nginx).toMatch(/location = \/healthz \{\s+access_log off;\s+return 200;\s+\}/u);
   });
 });

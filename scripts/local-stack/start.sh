@@ -13,8 +13,12 @@ if [ ! -d "$USER_SERVICE_DIR" ]; then
   exit 1
 fi
 
-if ! grep -q '^AUTH_ACCESS_TOKEN_TTL_SECONDS=' "$USER_SERVICE_DIR/.env.local" 2>/dev/null; then
-  echo "AUTH_ACCESS_TOKEN_TTL_SECONDS=$TOKEN_TTL_SECONDS" >> "$USER_SERVICE_DIR/.env.local"
+ENV_LOCAL="$USER_SERVICE_DIR/.env.local"
+if ! grep -q '^AUTH_ACCESS_TOKEN_TTL_SECONDS=' "$ENV_LOCAL" 2>/dev/null; then
+  if [ -s "$ENV_LOCAL" ] && [ -n "$(tail -c 1 "$ENV_LOCAL")" ]; then
+    echo >> "$ENV_LOCAL"
+  fi
+  echo "AUTH_ACCESS_TOKEN_TTL_SECONDS=$TOKEN_TTL_SECONDS" >> "$ENV_LOCAL"
   TTL_ADDED=true
 fi
 

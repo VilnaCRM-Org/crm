@@ -140,7 +140,9 @@ const EXEMPT_RENDER_PATH_FILES = [
   },
   {
     path: 'src/services/observability/pii-text-scrubber.ts',
-    reason: 'Container-free free-text half of that scrubber; builds its two-factor patterns.',
+    reason:
+      'Container-free free-text half of that scrubber; value-imports and delegates to its ' +
+      'TwoFactorTextScrubber sibling for the two-factor patterns.',
   },
   {
     path: 'src/services/observability/web-vitals-reporter.ts',
@@ -170,7 +172,7 @@ const EXEMPT_RENDER_PATH_FILES = [
   },
   {
     path: 'src/utils/url-builder.ts',
-    reason: 'Container-free URL builder consumed by the OAuth provider catalog at module load.',
+    reason: 'Container-free URL builder consumed by the OAuth provider buttons on click.',
   },
   {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',

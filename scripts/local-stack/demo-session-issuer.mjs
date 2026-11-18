@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 const MINIMUM_REMAINING_SECONDS = 3600;
@@ -64,8 +64,15 @@ export default class DemoSessionIssuer {
       rememberMe: true,
       clientMutationId: randomUUID(),
     });
-    const token = signIn.data?.signInUser?.user?.accessToken;
-    if (typeof token === 'string' && token !== '') return token;
+    const user = signIn.data?.signInUser?.user;
+    if (typeof user?.accessToken === 'string' && user.accessToken !== '') return user.accessToken;
+    if (user?.twoFactorEnabled === true) {
+      throw new Error(
+        `${email} has two-factor authentication enabled, so user-service answered the demo ` +
+          'sign-in with a challenge instead of a token. Disable it for that account, or run ' +
+          'again with LOCAL_DEMO_EMAIL set to an account without it.'
+      );
+    }
     const reason = JSON.stringify(signIn.errors ?? signIn);
     throw new Error(
       `user-service refused the demo sign-in: ${reason}. If you changed the demo password, ` +
@@ -78,7 +85,8 @@ export default class DemoSessionIssuer {
       .replaceAll('__ACCESS_TOKEN__', token)
       .replaceAll('__DEMO_EMAIL__', this.demo.email);
     mkdirSync(dirname(this.generatedPath), { recursive: true });
-    writeFileSync(this.generatedPath, environment, { mode: 0o644 });
+    if (existsSync(this.generatedPath)) chmodSync(this.generatedPath, 0o600);
+    writeFileSync(this.generatedPath, environment, { mode: 0o600 });
   }
 
   async run() {

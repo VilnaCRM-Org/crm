@@ -166,8 +166,9 @@ printf 'feat(#123): add a thing (#456)\n' | make lint-commit-message
 make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" COMMIT_RANGE_TO=HEAD
 ```
 
-The range starts at the merge base with the pull request's own base branch, so for a pull
-request stacked on another branch, replace `origin/main` with `origin/<that branch>`.
+The workflow runs only for pull requests that target `main`, so a pull request stacked on another
+branch is not linted until it is retargeted to `main`. To check one earlier, replace `origin/main`
+with `origin/<its base branch>`.
 
 Do not relax `commitlint.config.js` to make a header pass — it is the contract the release
 pipeline parses.
@@ -390,6 +391,10 @@ make start-local-stack
 make stop-local-stack
 ```
 
+Unlike the other targets, `start-local-stack` runs its script on the host rather than in the dev
+container, because it builds and starts user-service's own compose project. It needs a host Node.js
+that satisfies `engines.node` (24.8 or later) and a host Docker CLI with Compose.
+
 Set `USER_SERVICE_DIR` when the clone is elsewhere, which includes running from a worktree. Port 80
 has to be free, because the gateway binds it. `stop-local-stack` leaves user-service running; stop
 it with `docker compose down` from its own directory, using
@@ -422,6 +427,11 @@ What that means when you test by hand:
 
 - The sign-in page accepts **any** password for the demo user, because Mockoon answers it. Every
   other address signs in against user-service.
+- For the same reason the demo user never sees the `/sign-in/two-factor` challenge: Mockoon always
+  answers with `twoFactorEnabled: false` and a token, even after you enable 2FA for it in
+  Settings. Test the challenge with another account, which signs in against user-service. Once 2FA
+  is on, the start script can no longer issue a new demo token and says so; disable it for the demo
+  user, or set `LOCAL_DEMO_EMAIL` to an account without it.
 - The local demo account is deliberately not the sandbox demo (`demo@vilnacrm.com` / `Demo1234`):
   a development build accepts that pair without any request, so its fake token would reach the
   real user-service and end the session on the first settings call.
@@ -434,6 +444,15 @@ What that means when you test by hand:
 The start script builds the user-service image without its DocumentDB CA bundle step. That file
 secures AWS connections, which a local Mongo never makes, and its pinned digest fails whenever AWS
 rotates the bundle (user-service #503). user-service's tracked files are left unchanged.
+
+The script builds that image only when `user-service-local-php` does not exist yet. user-service's
+source is bind-mounted into the container, so code changes apply without a rebuild, but a change to
+its `Dockerfile` or to the dependencies baked into the image does not. Untag the image to pick one
+up, and the next start rebuilds it:
+
+```bash
+docker rmi --force user-service-local-php
+```
 
 ### The browser security-header gate
 
