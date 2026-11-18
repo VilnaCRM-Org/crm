@@ -4,7 +4,7 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-17
+revised: 2026-11-18
 iteration: 8
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -2355,7 +2355,8 @@ other than through a hook.
   підтверджено", a separator, and a `button type="button"` styled as a link in `#0074B5`, at
   least 24 px tall. The e-mail field's `describedBy` includes `statusId`. While a resend or a
   Save is in flight, the button is `aria-disabled="true"` and ignores activation, so focus stays
-  on it (P4, FR-15).
+  on it (P4, FR-15). Amended 2026-11-18 (owner decision): "a Save" is a Save of the e-mail
+  section; a full-name or password save leaves the button usable (PRD FR-12, FR-15).
 - **`ClearButton`** calls `useFormContext().reset(defaults)` (both password fields empty and
   masked, errors gone) and `onClear()` (the save hook's `clear`: server errors and the no-change
   status); it is `aria-disabled` during a Save and never dismisses a toast.

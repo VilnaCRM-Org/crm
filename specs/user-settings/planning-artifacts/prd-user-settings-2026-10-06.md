@@ -3,7 +3,7 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-17
+revised: 2026-11-18
 iteration: 9
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
@@ -598,6 +598,12 @@ user is still in keeps focus.
 > does not succeed keeps the section open under the focus rules above. The password section keeps
 > its Save shown, so this criterion applies to it unchanged.
 
+> **Amended 2026-11-18** (owner decision of 2026-11-18): "Надіслати повторно" is inert during a
+> Save of the e-mail section only. A full-name or password save owns no e-mail and remounts only
+> its own section's form, so nothing typed in the e-mail section can be dropped by it, and resend
+> stays usable while it is in flight. "Очистити" and the read-only fields stay per section as
+> amended above.
+
 #### FR-13 — Clear
 
 > **Amended 2026-11-16** (owner decision of 2026-11-05, as shipped): each section has its own
@@ -661,6 +667,9 @@ the request settles (P4), and is inert offline and during a Save. Success shows 
 - Given unsaved edits in the form, when a resend succeeds, then every typed value is kept.
 - Given the row, when computed styles are read, then the control is `#0074B5` (5.04:1) and the
   status text reaches 4.5:1.
+
+> **Amended 2026-11-18** (owner decision of 2026-11-18): "during a Save" above means a Save of the
+> e-mail section (FR-12 amendment); during a full-name or password save the control stays usable.
 
 #### FR-16 — Violations as field errors
 
