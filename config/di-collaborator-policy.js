@@ -142,7 +142,8 @@ const EXEMPT_RENDER_PATH_FILES = [
     path: 'src/services/observability/pii-text-scrubber.ts',
     reason:
       'Container-free free-text half of that scrubber; value-imports and delegates to its ' +
-      'TwoFactorTextScrubber sibling for the two-factor patterns.',
+      'TwoFactorTextScrubber sibling for the two-factor patterns and its TokenTextScrubber ' +
+      'sibling for the token and secret patterns.',
   },
   {
     path: 'src/services/observability/web-vitals-reporter.ts',

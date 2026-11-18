@@ -1,5 +1,6 @@
 import { PiiScrubber } from '@/services/observability/pii-scrubber';
 import PiiTextScrubber from '@/services/observability/pii-text-scrubber';
+import TokenTextScrubber from '@/services/observability/token-text-scrubber';
 import TwoFactorTextScrubber from '@/services/observability/two-factor-text-scrubber';
 import type { SentryEvent } from '@/services/types/observability/sentry';
 import {
@@ -383,6 +384,8 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
       Reflect.get(new TwoFactorTextScrubber(), 'patterns') as readonly RegExp[];
     const credentialPatternsOf = (): readonly RegExp[] =>
       Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[];
+    const tokenPatternsOf = (): readonly RegExp[] =>
+      Reflect.get(new TokenTextScrubber(), 'patterns') as readonly RegExp[];
     const sourcesOf = (patterns: readonly RegExp[]): string[][] =>
       patterns.map((pattern) => [pattern.source, pattern.flags]);
 
@@ -416,6 +419,11 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
         [String.raw`[^\s@]+@[^\s@]+\.[^\s@]+`, 'g'],
         [String.raw`bearer\s+[\w.\-~+/]+=*`, 'gi'],
         [String.raw`eyJ[\w-]+\.[\w-]+\.[\w-]+`, 'g'],
+      ]);
+    });
+
+    it('pins every token and secret pattern and its flags, in the order they apply', () => {
+      expect(sourcesOf(tokenPatternsOf())).toEqual([
         [String.raw`(?<=token=)[^&#\s]+`, 'gi'],
         [String.raw`(?<=token%3d)(?:(?!%26|%23)[^&#\s])+`, 'gi'],
         [String.raw`(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+`, 'gi'],

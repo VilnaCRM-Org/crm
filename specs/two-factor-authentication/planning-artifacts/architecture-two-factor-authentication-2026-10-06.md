@@ -2310,6 +2310,14 @@ Amended 2026-11-11 (mutation-shard cap): two more new classes, `PiiTextScrubber`
 `PiiScrubber` so each file fits one mutation shard. `PiiScrubber` holds a `PiiTextScrubber`, which
 holds a `TwoFactorTextScrubber` and applies its 2FA patterns first (§7.2).
 
+Amended 2026-11-18 (mutation-shard cap, owner decision): one more new class, `TokenTextScrubber`
+(`Scrubber`, one public `scrub` method, no token), takes the three token and secret patterns out of
+`PiiTextScrubber`, which applies them last, so the pattern order is unchanged. In the same change
+the user-settings `ProfileSectionForm` moves `ServerFieldErrors` into `server-field-errors.tsx`
+and `useSectionForm` into `use-section-form.ts` beside it, rendering the same tree. After the
+Bun toolchain merge both files ran their cold mutation shards past the 15-minute kill switch;
+split, each part packs into its own shard, and the shard count and the cap are unchanged.
+
 Amended 2026-11-16 (gate finding, AR-5): the suffix list above also includes `Parser`
 (`FieldViolationParser`) and `Scrubber` (`PiiTextScrubber`, `TwoFactorTextScrubber`), both already
 in `config/class-naming-policy.js`, so the bundle still edits no naming policy (epics AR-5). The
