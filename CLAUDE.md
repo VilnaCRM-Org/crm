@@ -550,9 +550,10 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a seventeen
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 562 files; not all of them produce scored mutants — the 57 unsharded ones hold no
-runnable mutant (re-export barrels, token modules, route maps), and a sharded file whose only
-mutants are static is skipped by `ignoreStatic`.
+mutate scope is the 565 files counted under "Mutation testing scope and baseline" above; not all of
+them produce scored mutants — the 57 unsharded ones hold no runnable mutant (re-export barrels,
+token modules, route maps), and a sharded file whose only mutants are static is skipped by
+`ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by mutant count, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
