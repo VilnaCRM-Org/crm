@@ -125,13 +125,17 @@ describe('SocialSignInErrorView', () => {
   });
 
   it('stacks its actions in one column', async () => {
-    const { default: styles } = await import('@auth/components/social-sign-in-error-view/styles');
+    const styles = await loadIsolated(
+      async () => (await import('@auth/components/social-sign-in-error-view/styles')).default
+    );
 
     expect(styles.actions).toEqual({ display: 'flex', flexDirection: 'column', gap: '0.75rem' });
   });
 
   it('keeps the secondary link coloured when visited and gives it a focus ring', async () => {
-    const { default: styles } = await import('@auth/components/social-sign-in-error-view/styles');
+    const styles = await loadIsolated(
+      async () => (await import('@auth/components/social-sign-in-error-view/styles')).default
+    );
 
     expect(styles.backText).toMatchObject({
       color: '#0074B5',
