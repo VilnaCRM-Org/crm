@@ -14,7 +14,8 @@ slug: 'social-sign-in'
   `/sign-up` over two GraphQL mutations answered by the local Apollo mock, verifiable locally with
   the Mockoon consent page and with the requester's own provider keys. The work is tracked under
   issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
-- **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), plan iteration 2/5.
+- **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), readiness
+  iterations 1-7 (iteration 7 is the latest review pass).
 
 ## Artifacts
 
@@ -48,8 +49,10 @@ rather than the skill's bare `research.md` names.
 
 ## Validation rounds
 
-One self-review round per artifact; readiness ran twice (iteration 1 corrected three findings,
-iteration 2 clean).
+One self-review round per artifact, then readiness iterations 1-7 as recorded in the
+[readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
+2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-7
+corrected stale passages that pull request reviews found.
 
 ## Open questions and warnings
 

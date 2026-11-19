@@ -80,6 +80,15 @@ describe('pending social sign-in mutations on the mock', () => {
   const errorOf = (result: Result): Record<string, unknown> | undefined =>
     result.errors?.[0]?.extensions as Record<string, unknown> | undefined;
 
+  // formatError logs every GraphQL error; a test that expects one spies on it and asserts it.
+  const graphqlErrorLog = (): jest.SpyInstance =>
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+  const expectLogged = (log: jest.SpyInstance, message: string): void => {
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalledWith('GraphQL Error:', expect.objectContaining({ message }));
+  };
+
   beforeEach(async () => {
     ENV_KEYS.forEach((key) => delete process.env[key]);
     __socialTest__.issuedStates.clear();
@@ -94,7 +103,6 @@ describe('pending social sign-in mutations on the mock', () => {
       formatError,
     });
     await server.start();
-    jest.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(async () => {
@@ -146,31 +154,48 @@ describe('pending social sign-in mutations on the mock', () => {
   });
 
   it.each([
-    ['github', 'https://github.com/login/oauth/authorize', 'read:user user:email'],
-    ['facebook', 'https://www.facebook.com/v19.0/dialog/oauth', 'email'],
-    ['twitter', 'https://x.com/i/oauth2/authorize', 'users.read tweet.read'],
-  ] as const)('builds the real %s authorize URL', (provider, base, scope) => {
+    ['github', 'https://github.com/login/oauth/authorize', { scope: 'read:user user:email' }],
+    ['facebook', 'https://www.facebook.com/v19.0/dialog/oauth', { scope: 'email' }],
+    [
+      'twitter',
+      'https://x.com/i/oauth2/authorize',
+      {
+        response_type: 'code',
+        scope: 'users.read tweet.read',
+        code_challenge: 'mock-challenge',
+        code_challenge_method: 'plain',
+      },
+    ],
+  ] as const)('builds the real %s authorize URL', (provider, base, params) => {
     process.env.OAUTH_MODE = 'provider';
-    process.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID`] = 'id';
+    process.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID`] = `${provider}-id`;
 
     const url = new URL(authorizationUrlFor(provider, 's'));
 
     expect(url.origin + url.pathname).toBe(base);
-    expect(url.searchParams.get('scope')).toBe(scope);
-    delete process.env[`OAUTH_${provider.toUpperCase()}_CLIENT_ID`];
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      ...params,
+      client_id: `${provider}-id`,
+      redirect_uri: `http://localhost:3000/auth/callback/${provider}`,
+      state: 's',
+    });
   });
 
   it('rejects an unsupported provider with its error code', async () => {
+    const log = graphqlErrorLog();
+
     const result = await execute(INITIATE, { provider: 'myspace' });
 
     expect(result.errors?.[0]?.message).toBe('Unsupported OAuth provider "myspace".');
     expect(errorOf(result)).toMatchObject({ status: 400, error_code: 'unsupported_provider' });
+    expectLogged(log, 'Unsupported OAuth provider "myspace".');
   });
 
   it('signs in with the state it issued, exactly once', async () => {
     const { state } = await initiate();
 
     const first = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+    const log = graphqlErrorLog();
     const second = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
 
     expect(first.data?.completeSocialSignInUser).toMatchObject({
@@ -183,6 +208,7 @@ describe('pending social sign-in mutations on the mock', () => {
       },
     });
     expect(errorOf(second)).toMatchObject({ status: 422, error_code: 'invalid_state' });
+    expectLogged(log, String(second.errors?.[0]?.message));
   });
 
   it('hands a 2FA account a pending session and no tokens', async () => {
@@ -202,10 +228,12 @@ describe('pending social sign-in mutations on the mock', () => {
 
   it('refuses a state issued for another provider', async () => {
     const { state } = await initiate('github');
+    const log = graphqlErrorLog();
 
     const result = await execute(COMPLETE, { provider: 'google', code: 'c', state });
 
     expect(errorOf(result)).toMatchObject({ status: 400, error_code: 'provider_mismatch' });
+    expectLogged(log, String(result.errors?.[0]?.message));
   });
 
   it.each([
@@ -216,6 +244,7 @@ describe('pending social sign-in mutations on the mock', () => {
     ['mock-unavailable', 503, 'provider_unavailable'],
   ])('answers the %s scenario with %s %s', async (code, status, errorCode) => {
     const { state } = await initiate();
+    const log = graphqlErrorLog();
 
     const result = await execute(COMPLETE, { provider: 'google', code, state });
 
@@ -224,5 +253,6 @@ describe('pending social sign-in mutations on the mock', () => {
       status,
       error_code: errorCode,
     });
+    expectLogged(log, String(result.errors?.[0]?.message));
   });
 });

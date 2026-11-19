@@ -2,7 +2,14 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { SCENARIOS, addConsentRoute, main } = require('../../../scripts/mockoon-social-oauth');
+const {
+  PROVIDER_PATTERN,
+  REDIRECT_URI_PATTERN,
+  STATE_PATTERN,
+  SCENARIOS,
+  addConsentRoute,
+  main,
+} = require('../../../scripts/mockoon-social-oauth');
 
 const importedEnv = () => ({
   uuid: 'env',
@@ -37,7 +44,7 @@ describe('mockoon-social-oauth', () => {
     const back = "{{queryParam 'redirect_uri'}}";
     const state = "{{queryParam 'state'}}";
 
-    expect(response).toMatchObject({ default: true, statusCode: 200, rules: [] });
+    expect(response).toMatchObject({ default: false, statusCode: 200, rulesOperator: 'AND' });
     expect(response.headers).toEqual([{ key: 'Content-Type', value: 'text/html; charset=utf-8' }]);
     for (const [code, label] of Object.entries(SCENARIOS)) {
       expect(response.body).toContain(
@@ -59,6 +66,81 @@ describe('mockoon-social-oauth', () => {
     ]);
   });
 
+  describe('reflected input', () => {
+    const rules = () => addConsentRoute(importedEnv()).routes[0].responses[0].rules;
+    const matches = (pattern, value) => new RegExp(pattern).test(value);
+
+    it('renders the page only when the provider, redirect URI and state all match', () => {
+      expect(rules()).toEqual([
+        {
+          target: 'params',
+          modifier: 'provider',
+          value: PROVIDER_PATTERN,
+          invert: false,
+          operator: 'regex',
+        },
+        {
+          target: 'query',
+          modifier: 'redirect_uri',
+          value: REDIRECT_URI_PATTERN,
+          invert: false,
+          operator: 'regex',
+        },
+        {
+          target: 'query',
+          modifier: 'state',
+          value: STATE_PATTERN,
+          invert: false,
+          operator: 'regex',
+        },
+      ]);
+    });
+
+    it('rejects anything else with a plain-text 400 that reflects nothing', () => {
+      const [, rejected] = addConsentRoute(importedEnv()).routes[0].responses;
+
+      expect(rejected).toMatchObject({
+        default: true,
+        statusCode: 400,
+        body: 'Invalid mock consent request.',
+        rules: [],
+        headers: [{ key: 'Content-Type', value: 'text/plain; charset=utf-8' }],
+      });
+    });
+
+    it.each([
+      ['http://localhost:3000/auth/callback/google', true],
+      ['https://crm.localhost:3001/auth/callback/twitter', true],
+      ['http://localhost/auth/callback/github', true],
+      ['http://evil.test/auth/callback/google', false],
+      ['http://localhost.evil.test/auth/callback/google', false],
+      ['javascript:alert(1)//localhost/auth/callback/google', false],
+      ['http://localhost:3000/auth/callback/google"><script>', false],
+      ['http://localhost:3000/auth/callback/myspace', false],
+      ['http://localhost:3000/sign-in', false],
+    ])('accepts %s as a redirect URI: %s', (value, expected) => {
+      expect(matches(REDIRECT_URI_PATTERN, value)).toBe(expected);
+    });
+
+    it.each([
+      ['3f2504e0-4f89-41d3-9a0c-0305e82c3301', true],
+      ['"><script>alert(1)</script>', false],
+      ['3F2504E0-4F89-41D3-9A0C-0305E82C3301', false],
+      ['', false],
+    ])('accepts %s as a state: %s', (value, expected) => {
+      expect(matches(STATE_PATTERN, value)).toBe(expected);
+    });
+
+    it.each([
+      ['google', true],
+      ['twitter', true],
+      ['<b>google</b>', false],
+      ['googlex', false],
+    ])('accepts %s as a provider: %s', (value, expected) => {
+      expect(matches(PROVIDER_PATTERN, value)).toBe(expected);
+    });
+  });
+
   describe('main', () => {
     let dir;
 
@@ -76,12 +158,15 @@ describe('mockoon-social-oauth', () => {
       fs.writeFileSync(input, JSON.stringify(importedEnv()));
       const write = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
-      main([input, output]);
+      try {
+        main([input, output]);
 
-      expect(JSON.parse(fs.readFileSync(output, 'utf8')).routes).toHaveLength(2);
-      expect(fs.readFileSync(output, 'utf8').endsWith('}\n')).toBe(true);
-      expect(write).toHaveBeenCalledWith('mockoon-social-oauth: added the mock consent page\n');
-      write.mockRestore();
+        expect(JSON.parse(fs.readFileSync(output, 'utf8')).routes).toHaveLength(2);
+        expect(fs.readFileSync(output, 'utf8').endsWith('}\n')).toBe(true);
+        expect(write).toHaveBeenCalledWith('mockoon-social-oauth: added the mock consent page\n');
+      } finally {
+        write.mockRestore();
+      }
     });
 
     it('requires both paths', () => {

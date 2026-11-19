@@ -76,7 +76,8 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
   from the query and removes the query string from the address bar (`history.replaceState`).
 - **FR7** Provider denial (`error` present, e.g. `access_denied`) shows a localized
   "sign-in was cancelled" message without calling the backend.
-- **FR8** Missing `code` or `state` (and no `error`) shows the `missing_oauth_parameters`
+- **FR8** On a provider callback (an arrival not marked `{ socialStart: true }`, which FR1
+  covers), a missing `code` or `state` (and no `error`) shows the `missing_oauth_parameters`
   message without calling the backend.
 - **FR9** _(2026-11-19)_ Otherwise the route accepts only a `state` equal to the one this tab saved for this provider (else the `expired` message, no request), and performs exactly one `completeSocialSignInUser(provider, code, state)` per state, even when React runs the effect twice.
 - **FR10** A `completeSocialSignInUser` result with `twoFactorEnabled: false` and an `accessToken`

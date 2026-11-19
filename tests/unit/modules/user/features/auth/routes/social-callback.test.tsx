@@ -130,8 +130,8 @@ describe('SocialCallback page', () => {
       expect(restart).toHaveBeenCalledWith('github', expect.any(Function));
     });
 
-    it('treats a start that never answered as the service being unavailable', async () => {
-      mockStart.mockResolvedValue({ kind: 'aborted' });
+    it('shows a start the service could not answer as unavailable', async () => {
+      mockStart.mockResolvedValue({ kind: 'failed', error: 'unavailable' });
 
       startFlow();
 
@@ -222,8 +222,8 @@ describe('SocialCallback page', () => {
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('GitHub');
     });
 
-    it('treats a completion that never answered as the service being unavailable', async () => {
-      mockComplete.mockResolvedValue({ kind: 'aborted' });
+    it('shows a completion the service could not answer as unavailable', async () => {
+      mockComplete.mockResolvedValue({ kind: 'failed', error: 'unavailable' });
 
       returnFrom('google', { code: 'c' });
 

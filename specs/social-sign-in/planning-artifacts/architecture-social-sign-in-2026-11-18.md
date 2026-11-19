@@ -5,6 +5,11 @@ bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-19'
+iteration: 4
+revisionPasses:
+  - '2026-11-19 GraphQL only, no ADR'
+  - '2026-11-19 review: stale REST passages corrected'
+  - '2026-11-19 review: GraphQL field names and scope aligned'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -33,8 +38,12 @@ top-level directory.
 > `src/api/contracts/pending/social-sign-in.graphql`, answered locally by the Apollo mock. The
 > state is bound to the tab in `sessionStorage` instead of a cross-origin cookie. Rows below marked
 > _(2026-11-19)_ supersede the earlier text.
+>
+> **§7 is the current design.** §§1-5 are kept as the history of the superseded REST relay
+> (cookie-bound state, credentialed `fetch`, Mockoon social routes); none of it is built, and where
+> they disagree with §7, §7 wins.
 
-## 1. End-to-end flow
+## 1. End-to-end flow (historical: superseded REST relay, see §7)
 
 ```mermaid
 sequenceDiagram
@@ -55,7 +64,7 @@ sequenceDiagram
     SPA->>SPA: authState.set token → navigate(destination, replace) | 2FA route | error view
 ```
 
-## 2. Component and layer inventory
+## 2. Component and layer inventory (historical, see §7)
 
 > The inventory below is the 2026-11-18 plan. The landed files are listed in §6 and §7.
 
@@ -110,7 +119,7 @@ Out of `src/`:
 | `tests/e2e/route-coverage.tsv`                  | row for `socialCallback`                                                                                                                                                                                                               |
 | `docs/social-sign-in-local.md`                  | the local verification guide (published copy of the bundle guide)                                                                                                                                                                      |
 
-## 3. Key designs
+## 3. Key designs (historical, see §7)
 
 ### 3.1 Initiation (`oauth-providers.ts`, paint path)
 
@@ -194,7 +203,7 @@ Documented only (guide §5): run user-service from its repository with
 `CORS_ALLOW_ORIGIN='^http://localhost:(3000|3001)$'`, and point the SPA at it with
 `REACT_APP_MOCKOON_URL` in the local `.env`. No crm code depends on this mode.
 
-## 4. Cross-cutting constraints
+## 4. Cross-cutting constraints (historical, see §7)
 
 - **Paint path (ADR-011, ADR-017).** The callback page, hook, repository, mapper and zod schema
   load only in the `social-callback` chunk and the deferred auth-actions chunk. The button
@@ -213,7 +222,7 @@ Documented only (guide §5): run user-service from its repository with
   page never renders query values; `Referrer-Policy` unchanged.
 - **ADR drift** _(2026-11-19)_. The feature carries no ADR by the owner's decision; the pull request uses the documented `[no-adr]` escape hatch for the `src/routes/**` change.
 
-## 5. Test strategy
+## 5. Test strategy (historical, see §7)
 
 | Layer       | Where                                                                                 | What                                                                                                                                                                     |
 | ----------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

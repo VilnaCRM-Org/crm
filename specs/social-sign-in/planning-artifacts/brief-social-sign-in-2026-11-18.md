@@ -5,6 +5,11 @@ bmadCommand: 'create-brief'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-19'
+iteration: 4
+revisionPasses:
+  - '2026-11-19 GraphQL only, no ADR'
+  - '2026-11-19 review: stale REST passages corrected'
+  - '2026-11-19 review: GraphQL field names and scope aligned'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'

@@ -32,6 +32,14 @@ const SCENARIOS = Object.freeze({
   'mock-unavailable': 'Provider unavailable',
 });
 
+// Every reflected value is constrained before the page renders, so nothing a request carries can
+// inject markup: a local SPA callback URL for a known provider, a v4 UUID state, a known provider.
+const PROVIDERS = '(google|github|facebook|twitter)';
+const PROVIDER_PATTERN = `^${PROVIDERS}$`;
+const LOCAL_ORIGIN = 'https?://(localhost|[a-z0-9-]+\\.localhost)(:[0-9]{1,5})?';
+const REDIRECT_URI_PATTERN = `^${LOCAL_ORIGIN}/auth/callback/${PROVIDERS}$`;
+const STATE_PATTERN = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+
 function fail(message) {
   throw new Error(`mockoon-social-oauth: ${message}`);
 }
@@ -57,6 +65,26 @@ function consentPage() {
   ].join('\n');
 }
 
+function rule(target, modifier, value) {
+  return { target, modifier, value, invert: false, operator: 'regex' };
+}
+
+function response(overrides) {
+  return {
+    uuid: crypto.randomUUID(),
+    latency: 0,
+    bodyType: 'INLINE',
+    filePath: '',
+    databucketID: '',
+    sendFileAsBody: false,
+    disableTemplating: false,
+    fallbackTo404: false,
+    crudKey: 'id',
+    callbacks: [],
+    ...overrides,
+  };
+}
+
 function consentRoute() {
   return {
     uuid: crypto.randomUUID(),
@@ -65,25 +93,28 @@ function consentRoute() {
     method: 'get',
     endpoint: CONSENT_ENDPOINT,
     responses: [
-      {
-        uuid: crypto.randomUUID(),
+      response({
         body: consentPage(),
-        latency: 0,
         statusCode: 200,
         label: 'Consent page',
         headers: [{ key: 'Content-Type', value: 'text/html; charset=utf-8' }],
-        bodyType: 'INLINE',
-        filePath: '',
-        databucketID: '',
-        sendFileAsBody: false,
+        rules: [
+          rule('params', 'provider', PROVIDER_PATTERN),
+          rule('query', 'redirect_uri', REDIRECT_URI_PATTERN),
+          rule('query', 'state', STATE_PATTERN),
+        ],
+        rulesOperator: 'AND',
+        default: false,
+      }),
+      response({
+        body: 'Invalid mock consent request.',
+        statusCode: 400,
+        label: 'Rejected consent request',
+        headers: [{ key: 'Content-Type', value: 'text/plain; charset=utf-8' }],
         rules: [],
         rulesOperator: 'OR',
-        disableTemplating: false,
-        fallbackTo404: false,
         default: true,
-        crudKey: 'id',
-        callbacks: [],
-      },
+      }),
     ],
     responseMode: null,
     streamingMode: null,
@@ -121,4 +152,11 @@ if (require.main === module) {
   }
 }
 
-module.exports = { SCENARIOS, addConsentRoute, main };
+module.exports = {
+  PROVIDER_PATTERN,
+  REDIRECT_URI_PATTERN,
+  STATE_PATTERN,
+  SCENARIOS,
+  addConsentRoute,
+  main,
+};

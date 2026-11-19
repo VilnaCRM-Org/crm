@@ -20,10 +20,13 @@ The design and the plan are in
 3. A cancel shows the cancelled view. Otherwise the page accepts only the `state` this tab started
    with, then calls `completeSocialSignInUser` and signs in.
 
-| Mode     | `OAUTH_MODE` | Provider screen      | Answers the mutations | Keys you need |
-| -------- | ------------ | -------------------- | --------------------- | ------------- |
-| Mock     | `mock`       | Mockoon consent page | Apollo mock           | none          |
-| Provider | `provider`   | real Google / GitHub | Apollo mock           | client ID     |
+| Mode     | `OAUTH_MODE` | Provider screen        | Answers the mutations | Keys you need |
+| -------- | ------------ | ---------------------- | --------------------- | ------------- |
+| Mock     | `mock`       | Mockoon consent page   | Apollo mock           | none          |
+| Provider | `provider`   | the real provider page | Apollo mock           | client ID     |
+
+In Provider mode a provider reaches its real screen only when its `OAUTH_<PROVIDER>_CLIENT_ID` is
+set; any provider without one, Facebook and Twitter/X included, stays on the Mockoon page.
 
 The redirect URI is always a **frontend** URL:
 

@@ -29,10 +29,10 @@ The design and the plan are in
 
 1. A provider button opens `/auth/callback/<provider>`, which asks `initiateSocialSignInUser` for
    the provider's authorization URL and a `state`, keeps the `state`, and sends the browser there.
-2. The provider (or the mock consent page) redirects back to `/auth/callback/<provider>` with a
-   `code` and the `state`.
-3. The page accepts only the `state` this tab started with, then calls `completeSocialSignInUser`
-   and signs in.
+2. The provider (or the mock consent page) redirects back to `/auth/callback/<provider>` with the
+   `state` and either a `code` or, when you cancel, `error=access_denied`.
+3. A cancel shows the cancelled view. Otherwise the page accepts only the `state` this tab started
+   with, then calls `completeSocialSignInUser` and signs in.
 
 | Mode     | `OAUTH_MODE` | Provider screen      | Answers the mutations | Keys you need |
 | -------- | ------------ | -------------------- | --------------------- | ------------- |

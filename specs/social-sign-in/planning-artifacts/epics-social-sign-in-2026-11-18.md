@@ -176,9 +176,10 @@ what went wrong and how to recover.
 - Success → token set, `navigate(destination, { replace: true })`, focus on `<main>` (FR10);
   destination consumed once.
 - Loading uses `RouteFallback` with `auth.social.signing_in` announced politely (NFR6).
-- Authenticated on arrival → `/` without a request (FR14).
-- Unmount aborts the request; no state update after unmount (no `act()` warnings — the console
-  gate is the proof).
+- _(FR14 withdrawn 2026-11-19)_ An already signed-in user is **not** redirected: the page runs
+  the flow and the new session replaces the old one.
+- The page never aborts a request it started (NFR8); an answer that arrives after unmount is
+  ignored, with no state update (no `act()` warnings — the console gate is the proof).
 - Lazy `social-callback` chunk; `performance-serving` golden test green.
 
 ### S3.3 2FA hand-off — **dependent on S3.2**
@@ -202,12 +203,11 @@ what went wrong and how to recover.
   baselines unchanged.
 - All selectors semantic; `retries: 0`; no `waitForTimeout`.
 
-### S4.2 ADR and documentation — **dependent on S3.2**
+### S4.2 Documentation — **dependent on S3.2**
 
-_(2026-11-19)_ No ADR: removed by the owner's decision; the pull request carries `[no-adr]`.
+_(2026-11-19)_ Documentation only: no ADR is written, by the owner's decision; the pull request
+carries `[no-adr]`.
 
-- `docs/adr/0NN-social-sign-in-spa-callback-relay.md` (Deciders @kravalg) records D1/D2/D3;
-  `docs/adr/README.md` row; `make lint-adr` clean.
 - `src/modules/user/README.md` and `src/routes/README.md` mention the new route and contract.
 - `specs/README.md` lists `social-sign-in` as "Planned".
 

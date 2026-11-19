@@ -86,7 +86,9 @@ OAUTH_GITHUB_REDIRECT_URI=${API_BASE_URL}/api/auth/social/github/callback
 
 Findings:
 
-- **F-R4 — the callback answers JSON, not a redirect.** With the default redirect URI the
+- **F-R4 — the callback answers JSON, not a redirect.** _Superseded 2026-11-19: the plan runs
+  over two GraphQL mutations with the state bound to the tab in `sessionStorage` (architecture §7);
+  the REST relay and its cookie below are not used._ With the default redirect URI the
   provider sends the browser to the **API** origin and the user ends on a raw JSON page. The
   state record stores `redirect_uri` and the backend re-sends it at token exchange, so pointing
   `OAUTH_<P>_REDIRECT_URI` at a **frontend** route works without backend code changes: the
@@ -94,7 +96,8 @@ Findings:
   `fetch(..., { credentials: 'include' })`. The flow-binding cookie is `SameSite=Lax` and
   `localhost:3000` → `localhost:8080` is **same-site** (cookies ignore ports), so it is sent.
   This "SPA callback relay" is the integration pattern this plan adopts.
-- **F-R5 — CORS with credentials.** The relay is a credentialed cross-origin `fetch`; the
+- **F-R5 — CORS with credentials.** _Superseded 2026-11-19 with F-R4: no credentialed
+  cross-origin `fetch` remains, so no CORS change is needed._ The relay is a credentialed cross-origin `fetch`; the
   backend's `CORS_ALLOW_ORIGIN` must list the SPA origin and allow credentials. Mockoon must
   answer `Access-Control-Allow-Origin: <exact origin>` + `Access-Control-Allow-Credentials:
 true` (a `*` origin is rejected by browsers for credentialed requests).
