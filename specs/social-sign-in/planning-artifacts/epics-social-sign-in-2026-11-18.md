@@ -219,7 +219,9 @@ walk-through in the local guide.
   and the 44 px floor on both error actions, on both mobile projects.
 - `tests/e2e/a11y/routes.a11y.spec.ts` scans `/auth/callback/google` and
   `/auth/callback/unknown`.
-- Visual baselines for the callback states are not recorded yet (readiness W5).
+- `tests/visual/visual-comparison.social-callback.spec.ts` and `tests/visual/mobile/social-callback.spec.ts`:
+  loading, cancelled, expired and unavailable, desktop, tablet and mobile in all three engines and
+  on both mobile projects; the existing baselines are unchanged.
 - All selectors semantic; `retries: 0`; no `waitForTimeout`.
 
 ### S4.2 Documentation — **dependent on S3.2**

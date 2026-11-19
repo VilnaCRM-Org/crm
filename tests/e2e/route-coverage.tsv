@@ -107,3 +107,5 @@ settingsBilling	visual	tests/visual/mobile/coming-soon.spec.ts	Pixel 7 and iPhon
 socialCallback	e2e	tests/e2e/modules/user/features/auth/social-sign-in.spec.ts	Drives Google and GitHub sign-in from /sign-in and /sign-up through stubbed initiate and callback responses, the protected-page return, every mapped error, cancel, 2FA and a keyboard-only retry.
 socialCallback	e2e	tests/e2e/mobile/social-sign-in-touch.spec.ts	Taps Google on the mobile projects and checks the callback error actions against the 44 px touch floor.
 socialCallback	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /auth/callback/google (the missing-parameters error view) with axe against the WCAG 2.1 AA tag set.
+socialCallback	visual	tests/visual/visual-comparison.social-callback.spec.ts	Loading, cancelled, expired and unavailable callback states at 1440 x 940, 1024 x 1366 and 375 x 1082 in all three desktop engines.
+socialCallback	visual	tests/visual/mobile/social-callback.spec.ts	The same four callback states as device-scale rasters on the Pixel 7 and iPhone 14 projects.
