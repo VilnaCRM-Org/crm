@@ -3,6 +3,7 @@ import { t } from '@tests/e2e/utils/initialize-localization';
 import {
   answerComplete,
   answerInitiate,
+  E2E_STATE,
   refused,
   signedIn,
 } from '@tests/e2e/utils/social-sign-in-stubs';
@@ -12,7 +13,7 @@ import expectTouchTarget from './utils/touch-target';
 test.describe('Social sign-in on a touch device', () => {
   test('a tap on Google signs in through the same tab', async ({ page }) => {
     const initiated = await answerInitiate(page, 'touch-code');
-    await answerComplete(page, signedIn());
+    const completed = await answerComplete(page, signedIn());
     await page.goto('/sign-in');
 
     await page
@@ -21,6 +22,9 @@ test.describe('Social sign-in on a touch device', () => {
 
     await expect(page).toHaveURL(/\/$/);
     expect(initiated.map((input) => input.provider)).toEqual(['google']);
+    expect(completed).toEqual([
+      expect.objectContaining({ provider: 'google', code: 'touch-code', state: E2E_STATE }),
+    ]);
   });
 
   test('the callback error actions meet the 44 px touch floor', async ({ page }) => {

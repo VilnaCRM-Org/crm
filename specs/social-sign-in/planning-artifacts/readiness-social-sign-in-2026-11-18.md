@@ -5,6 +5,7 @@ bmadCommand: 'implementation-readiness'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-19'
+iteration: 7
 slug: 'social-sign-in'
 verdict: 'PASS'
 inputDocuments:

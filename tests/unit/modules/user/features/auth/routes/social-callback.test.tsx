@@ -181,6 +181,7 @@ describe('SocialCallback page', () => {
       visit(CALLBACK, '?code=c&state=shared');
 
       expect(await screen.findByText(EXPIRED)).toBeInTheDocument();
+      expect(mockResolve).not.toHaveBeenCalled();
     });
 
     it('announces the sign-in in progress with the provider name', async () => {

@@ -67,16 +67,13 @@ describe('social sign-in result schemas', () => {
   });
 
   describe('SocialCompleteResultSchema', () => {
-    it('keeps the access token of a direct sign-in, with or without the 2FA flag', async () => {
+    it('keeps the access token of a direct sign-in', async () => {
       const { SocialCompleteResultSchema } = await import('@auth/utils/response-schemas');
       const accessToken = buildToken();
 
       expect(
         SocialCompleteResultSchema.parse(completion({ twoFactorEnabled: false, accessToken }))
       ).toEqual(completion({ twoFactorEnabled: false, accessToken }));
-      expect(
-        SocialCompleteResultSchema.parse(completion({ twoFactorEnabled: null, accessToken }))
-      ).toEqual(completion({ twoFactorEnabled: null, accessToken }));
     });
 
     it('keeps the pending session of a 2FA account', async () => {
@@ -93,6 +90,8 @@ describe('social sign-in result schemas', () => {
     it.each([
       ['an empty access token', { twoFactorEnabled: false, accessToken: '' }],
       ['no access token', { twoFactorEnabled: false }],
+      ['a token without the 2FA flag', { accessToken: 'token' }],
+      ['a token with a null 2FA flag', { twoFactorEnabled: null, accessToken: 'token' }],
       ['a 2FA account without its session', { twoFactorEnabled: true, pendingSessionId: '' }],
     ])('rejects %s', async (_label, user) => {
       const { SocialCompleteResultSchema } = await import('@auth/utils/response-schemas');

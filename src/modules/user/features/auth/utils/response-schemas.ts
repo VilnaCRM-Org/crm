@@ -53,7 +53,7 @@ export const SocialCompleteResultSchema = z.object({
     user: z.union([
       z.object({ twoFactorEnabled: z.literal(true), pendingSessionId: z.string().min(1) }),
       z.object({
-        twoFactorEnabled: z.literal(false).nullish(),
+        twoFactorEnabled: z.literal(false),
         accessToken: z.string().min(1),
       }),
     ]),

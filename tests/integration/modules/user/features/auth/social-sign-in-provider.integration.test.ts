@@ -156,7 +156,7 @@ describe('SocialSignInProvider over the container and msw', () => {
     });
   });
 
-  it('signs in when the payload leaves twoFactorEnabled null', async () => {
+  it('refuses a token whose payload leaves twoFactorEnabled null', async () => {
     const accessToken = buildToken();
     answer('CompleteSocialSignIn', () =>
       HttpResponse.json({
@@ -170,8 +170,8 @@ describe('SocialSignInProvider over the container and msw', () => {
 
     await expect(
       provider.complete('google', PARAMS, new AbortController().signal)
-    ).resolves.toEqual({ kind: 'signed-in' });
-    expect(useAuthStore.getState().token).toBe(accessToken);
+    ).resolves.toEqual({ kind: 'failed', error: 'generic' });
+    expect(useAuthStore.getState().token).not.toBe(accessToken);
   });
 
   it.each([

@@ -55,8 +55,9 @@ recovery, and zero regression to the auth page's performance budget.
   `initiateSocialSignInUser` GraphQL mutation and sends the same tab to the returned
   authorization URL.
 - A public callback route that checks the returned `state`, calls `completeSocialSignInUser`
-  with `code`/`state` and finishes sign-in, hands off to the 2FA challenge when required, or
-  shows a localized, recoverable error.
+  with `code`/`state` and finishes sign-in, or shows a localized, recoverable error. A 2FA
+  account is told to finish signing in with its password; the hand-off to the 2FA challenge
+  route waits for PR #377 (PRD D6, readiness W2).
 - Preserve the intended destination across the provider round trip (issue #150 behaviour).
 - Stateful Apollo mock resolvers for both mutations, plus a Mockoon-hosted mock consent page
   with one link per outcome, so every state is reachable locally and in CI.

@@ -111,7 +111,8 @@ _(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas fo
   records it as a provisional local contract removed by the pin bump (PRD D3).
 - `SocialInitiateResultSchema` accepts only an `http(s)` `authorizationUrl` and a `state`;
   `SocialCompleteResultSchema` accepts a `twoFactorEnabled: false` result with an `accessToken`
-  or a `twoFactorEnabled: true` result with a `pendingSessionId`, and rejects any other shape.
+  or a `twoFactorEnabled: true` result with a `pendingSessionId`, and rejects any other shape,
+  including a token whose `twoFactorEnabled` is missing or `null`.
 - Types in `@auth/types/social-sign-in/` are type-only files.
 
 ### S2.4 GraphQL repository, transformer, provider _(2026-11-19)_ — **dependent on S2.3**
