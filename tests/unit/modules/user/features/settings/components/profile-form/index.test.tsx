@@ -105,6 +105,14 @@ const field = (label: string): HTMLInputElement => screen.getByLabelText(label) 
 
 const save = (): HTMLElement => screen.getByRole('button', { name: SAVE });
 
+const settle = async (): Promise<void> => {
+  await act(async () => {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  });
+};
+
 const okOutcome = { kind: 'ok', user: buildUserEntity() };
 
 describe('ProfileForm', () => {
@@ -438,11 +446,12 @@ describe('ProfileForm', () => {
     await userEvent.type(field(CURRENT), 'abc');
 
     await userEvent.click(save());
+    await settle();
 
-    expect(await screen.findByText('Неправильний поточний пароль')).toBeInTheDocument();
+    expect(screen.getByText('Неправильний поточний пароль')).toBeInTheDocument();
     expect(field('E-mail')).toHaveAttribute('aria-invalid', 'true');
     expect(field(CURRENT)).toHaveAttribute('aria-invalid', 'true');
-    await waitFor(() => expect(field('E-mail')).toHaveFocus());
+    expect(field('E-mail')).toHaveFocus();
   });
 
   it('shows the e-mail taken message for an email_taken violation', async () => {
@@ -490,8 +499,10 @@ describe('ProfileForm', () => {
       await userEvent.type(field('E-mail'), '.ua');
       await userEvent.type(field(CURRENT), 'abc');
       await userEvent.click(save());
+      await settle();
 
-      await waitFor(() => expect(field(label)).toHaveFocus());
+      expect(screen.getByText(message)).toBeInTheDocument();
+      expect(field(label)).toHaveFocus();
       expect(field(label)).toHaveAttribute('aria-invalid', 'true');
       expect(field(label)).toHaveAccessibleDescription(expect.stringContaining(message));
     }
@@ -518,7 +529,9 @@ describe('ProfileForm', () => {
       await userEvent.type(field('E-mail'), '.ua');
       await userEvent.type(field(CURRENT), 'abc');
       await userEvent.click(save());
-      await waitFor(() => expect(field(label)).toHaveFocus());
+      await settle();
+      expect(screen.getByText(message)).toBeInTheDocument();
+      expect(field(label)).toHaveFocus();
 
       await userEvent.click(save());
 
