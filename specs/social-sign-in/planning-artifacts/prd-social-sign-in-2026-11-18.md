@@ -74,7 +74,8 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
   feature's route contract and the route-coverage manifest.
 - **FR6** On mount, before rendering anything else, the route reads `code`, `state` and `error`
   from the query and removes the query string from the address bar (`history.replaceState`).
-- **FR7** Provider denial (`error` present, e.g. `access_denied`) shows a localized
+- **FR7** _(2026-11-19)_ A provider denial (`error` present, e.g. `access_denied`) with the
+  `state` this tab started shows a localized
   "sign-in was cancelled" message without calling the backend.
 - **FR8** On a provider callback (an arrival not marked `{ socialStart: true }`, which FR1
   covers), a missing `code` or `state` (and no `error`) shows the `missing_oauth_parameters`

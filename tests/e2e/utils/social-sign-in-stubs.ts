@@ -38,13 +38,16 @@ async function answerOperation(
   return seen;
 }
 
+// The provider sends the issued state back with `answer`: `code=<code>` for a consent by default,
+// or `error=access_denied` for a denial.
 export async function answerInitiate(
   page: Page,
-  code: string
+  code: string,
+  answer = `code=${code}`
 ): Promise<Array<Record<string, string>>> {
   return answerOperation(page, 'InitiateSocialSignIn', (input) => {
     const origin = new URL(page.url()).origin;
-    const back = `${origin}/auth/callback/${input.provider}?code=${code}&state=${E2E_STATE}`;
+    const back = `${origin}/auth/callback/${input.provider}?${answer}&state=${E2E_STATE}`;
     return {
       data: { initiateSocialSignInUser: { user: { authorizationUrl: back, state: E2E_STATE } } },
     };

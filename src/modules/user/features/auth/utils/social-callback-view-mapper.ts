@@ -88,17 +88,19 @@ class SocialCallbackViewMapper {
     return { status: 'failed', provider, label, error };
   }
 
-  // A provider-side denial, a redirect without its code or state, and a state this tab never
-  // started all end here, before user-service is asked anything.
+  // A redirect without its state (or, unless it is a denial, without its code), a state this tab
+  // never started, and a provider-side denial all end here, before user-service is asked anything.
+  // A denial is bound to the tab's state like a code, so a forged one reads as expired.
   private queryError(
     provider: SocialProvider,
-    query: SocialCallbackQuery,
+    { code, state, error }: SocialCallbackQuery,
     starting: boolean
   ): SocialSignInErrorKind | 'start' | null {
-    if (query.error !== null) return 'cancelled';
-    if (!query.code || !query.state) return starting ? 'start' : 'missing_parameters';
-    const expected = { provider, state: query.state };
-    return socialSignInFlowSource.matchesState(expected) ? null : 'expired';
+    if (!state || (error === null && !code)) {
+      return starting && error === null ? 'start' : 'missing_parameters';
+    }
+    if (!socialSignInFlowSource.matchesState({ provider, state })) return 'expired';
+    return error === null ? null : 'cancelled';
   }
 }
 

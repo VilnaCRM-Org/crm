@@ -5,6 +5,9 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-19'
+iteration: 2
+revisionPasses:
+  - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -68,8 +71,14 @@ Acceptance criteria:
   one link per scenario, each targeting `${OAUTH_SPA_ORIGIN}/auth/callback/<provider>`.
 - Given `OAUTH_MODE=provider` and `OAUTH_GOOGLE_CLIENT_ID` set, the Google `authorizationUrl` is
   `accounts.google.com` with that client ID; a provider without a client ID keeps the mock page.
+- The consent page renders only for a known provider, a local SPA callback URL and a v4 state,
+  and answers anything else with a plain-text 400 that reflects nothing.
+- `Mockoon.Dockerfile` imports the pinned spec at build time, copies the consent-page script and
+  its entrypoint, and keeps its digest pin and healthcheck; `hadolint` clean, and
+  `tests/unit/tooling/image-hardening.test.ts` plus the Dockerfile golden-text tests updated, not
+  weakened.
 - `tests/apollo-server/social-sign-in.test.ts` covers both modes, every scenario and the state
-  rules; the Mockoon consent page script has its unit test.
+  rules; `tests/unit/scripts/mockoon-social-oauth.test.js` covers the page and its input rules.
 
 ### S1.2 Environment keys and `make apollo-restart` — **dependent on S1.1**
 
@@ -171,7 +180,8 @@ what went wrong and how to recover.
   `tests/e2e/route-coverage.tsv`; title key set.
 - On mount the query string is removed before first paint of content (FR6); `page.url()` in
   E2E has no `code`/`state`.
-- `error` param → `cancelled` view, no request (FR7); missing params → `missing_parameters`,
+- `error` param with this tab's `state` → `cancelled` view, no request (FR7); an `error` with a
+  missing state → `missing_parameters`, with a foreign state → `expired`; missing params → `missing_parameters`,
   no request (FR8).
 - Exactly one network request per `state`, proved under `<StrictMode>` in a unit test (FR9).
 - Success → token set, `navigate(destination, { replace: true })`, focus on `<main>` (FR10);
@@ -195,13 +205,21 @@ what went wrong and how to recover.
 
 ### S4.1 E2E, mobile and visual coverage — **dependent on S1.2, S2.5, S3.2**
 
-- `tests/e2e/modules/social-sign-in.spec.ts`: for Google and GitHub, success from `/sign-in`
-  and from `/sign-up`; destination restore from a protected route; every error scenario link
-  on the mock consent page; Deny; double-click guard; keyboard-only run.
-- `tests/e2e/mobile/social-sign-in.spec.ts`: `tap()` success path on both mobile projects.
-- `tests/visual/social-callback.spec.ts`: loading, `cancelled`, `expired`, `unavailable` —
-  desktop + mobile projects; new baselines recorded with `make test-visual-update`, existing
-  baselines unchanged.
+_(2026-11-19)_ Rewritten to the landed suite. The browser lanes answer both mutations with
+GraphQL stubs (`tests/e2e/utils/social-sign-in-stubs.ts`): the stubbed authorization URL is
+already the provider's redirect back, so no spec opens the Mockoon consent page. The consent
+page's outcomes are covered by its unit test and the Apollo mock test (S1.1) and by the manual
+walk-through in the local guide.
+
+- `tests/e2e/modules/user/features/auth/social-sign-in.spec.ts`: for Google and GitHub, success
+  from `/sign-in`, and from `/sign-up`; the query is stripped from the address bar; a forged
+  state and a forged cancel are refused; every FR12 error code with its recovery; a cancel
+  through the provider; the 2FA notice; a keyboard-only retry; Back to sign in.
+- `tests/e2e/mobile/social-sign-in-touch.spec.ts`: `tap()` success with the completion asserted,
+  and the 44 px floor on both error actions, on both mobile projects.
+- `tests/e2e/a11y/routes.a11y.spec.ts` scans `/auth/callback/google` and
+  `/auth/callback/unknown`.
+- Visual baselines for the callback states are not recorded yet (readiness W5).
 - All selectors semantic; `retries: 0`; no `waitForTimeout`.
 
 ### S4.2 Documentation — **dependent on S3.2**
@@ -210,7 +228,8 @@ _(2026-11-19)_ Documentation only: no ADR is written, by the owner's decision; t
 carries `[no-adr]`.
 
 - `src/modules/user/README.md` and `src/routes/README.md` mention the new route and contract.
-- `specs/README.md` lists `social-sign-in` as "Planned".
+- `specs/README.md` lists `social-sign-in` as "In progress" while the pull request is open; it
+  moves to "Done" when the feature is merged.
 
 ## Coverage matrix
 

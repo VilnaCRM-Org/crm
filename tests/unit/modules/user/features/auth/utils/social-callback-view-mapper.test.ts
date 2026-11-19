@@ -88,14 +88,41 @@ describe('socialCallbackViewMapper', () => {
     expect(mapper.initialView(undefined, query(), false)).toMatchObject({ provider: null });
   });
 
-  it('reports a provider-side denial as cancelled, whatever else the query holds', async () => {
+  it.each([
+    ['without a code', { error: 'access_denied', state: 's' }],
+    ['even beside a code', { error: 'access_denied', code: 'c', state: 's' }],
+  ])("reports a denial for this tab's state as cancelled, %s", async (_label, fields) => {
     const { mapper, matchesState } = await load();
 
-    expect(
-      mapper.initialView('google', query({ error: 'access_denied', code: 'c', state: 's' }), false)
-    ).toEqual({ status: 'failed', provider: 'google', label: 'Google', error: 'cancelled' });
-    expect(matchesState).not.toHaveBeenCalled();
+    expect(mapper.initialView('google', query(fields), false)).toEqual({
+      status: 'failed',
+      provider: 'google',
+      label: 'Google',
+      error: 'cancelled',
+    });
+    expect(matchesState).toHaveBeenCalledWith({ provider: 'google', state: 's' });
   });
+
+  it('reports a denial for a state this tab did not start as expired', async () => {
+    const { mapper, matchesState } = await load();
+    matchesState.mockReturnValue(false);
+
+    expect(
+      mapper.initialView('google', query({ error: 'access_denied', state: 'forged' }), false)
+    ).toMatchObject({ status: 'failed', error: 'expired' });
+  });
+
+  it.each([true, false])(
+    'reports a denial without a state as missing parameters (starting: %s)',
+    async (starting) => {
+      const { mapper, matchesState } = await load();
+
+      expect(
+        mapper.initialView('google', query({ error: 'access_denied' }), starting)
+      ).toMatchObject({ status: 'failed', error: 'missing_parameters' });
+      expect(matchesState).not.toHaveBeenCalled();
+    }
+  );
 
   it.each([
     ['no code', { state: 's' }],

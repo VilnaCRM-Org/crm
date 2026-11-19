@@ -62,6 +62,14 @@ test.describe('Social sign-in', () => {
     expect(page.url()).not.toContain(E2E_STATE);
   });
 
+  test('refuses a cancel for a state this tab never started', async ({ page }) => {
+    await page.goto(`/auth/callback/github?error=access_denied&state=${E2E_STATE}`);
+
+    await expect(
+      page.getByRole('status').filter({ hasText: t('auth.social.error.expired') })
+    ).toBeVisible();
+  });
+
   test('refuses a callback for a state this tab never started', async ({ page }) => {
     const completed = await answerComplete(page, signedIn());
 
@@ -105,9 +113,10 @@ test.describe('Social sign-in', () => {
   }
 
   test('shows a cancelled sign-in without completing it', async ({ page }) => {
+    await answerInitiate(page, 'unused', 'error=access_denied');
     const completed = await answerComplete(page, signedIn());
 
-    await page.goto(`/auth/callback/github?error=access_denied&state=${E2E_STATE}`);
+    await signInWith(page, 'GitHub');
 
     await expect(
       page

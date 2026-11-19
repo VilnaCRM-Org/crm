@@ -257,9 +257,19 @@ describe('SocialCallback page', () => {
   });
 
   it('shows a cancelled sign-in without calling user-service', async () => {
-    visit(CALLBACK, `?error=access_denied&state=${nextState()}`);
+    returnFrom('google', { error: 'access_denied' });
 
     expect(await screen.findByText(/скасовано/)).toBeInTheDocument();
+    expect(mockResolve).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cancel for a state this tab never started', async () => {
+    socialSignInFlowSource.saveState({ provider: 'google', state: 'mine' });
+
+    visit(CALLBACK, '?error=access_denied&state=forged');
+
+    expect(await screen.findByText(EXPIRED)).toBeInTheDocument();
+    expect(screen.queryByText(/скасовано/)).not.toBeInTheDocument();
     expect(mockResolve).not.toHaveBeenCalled();
   });
 
