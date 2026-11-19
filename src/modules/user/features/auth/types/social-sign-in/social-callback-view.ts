@@ -31,6 +31,7 @@ export interface SocialFailedView {
 
 export interface SocialRedirectView {
   readonly status: 'redirect';
+  readonly label: string;
   readonly to: string;
   readonly state: RedirectNavigationState;
 }

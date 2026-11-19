@@ -103,9 +103,9 @@ describe('SocialCallback page', () => {
       expect(socialSignInFlowSource.matchesState({ provider: 'google', state: 'issued' })).toBe(
         true
       );
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-        'Виконуємо вхід через Google…'
-      );
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toHaveTextContent('Виконуємо вхід через Google…');
+      expect(heading).toHaveStyle({ fontSize: '1.375rem', fontWeight: '700' });
     });
 
     it('shows a failed start with a retry that starts the same provider again', async () => {

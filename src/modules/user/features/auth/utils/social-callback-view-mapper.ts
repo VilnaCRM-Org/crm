@@ -57,7 +57,7 @@ class SocialCallbackViewMapper {
   public outcomeView(view: SocialPendingView, outcome: SocialSignInOutcome): SocialCallbackView {
     if (outcome.kind !== 'signed-in') return this.failedView(view, this.errorOf(outcome));
     const to = socialSignInFlowSource.takeDestination();
-    return { status: 'redirect', to, state: { focusMain: true } };
+    return { status: 'redirect', label: view.label, to, state: { focusMain: true } };
   }
 
   public unavailableView(view: SocialPendingView): SocialCallbackView {

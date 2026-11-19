@@ -17,9 +17,7 @@ function SocialCallbackContent(): JSX.Element {
   const { view, retry } = useSocialCallback();
 
   if (view.status !== 'failed') {
-    const message = t('auth.social.signing_in', {
-      provider: view.status === 'redirect' ? '' : view.label,
-    });
+    const message = t('auth.social.signing_in', { provider: view.label });
     // A visible, unfocused heading while the relay runs; the error view's h1 takes focus later.
     return (
       <>

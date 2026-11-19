@@ -154,4 +154,35 @@ describe('SocialSignInErrorView', () => {
     const { container: finalContainer } = render(view('duplicate_email'));
     await expectNoA11yViolations(finalContainer);
   });
+
+  it('re-announces when the kind changes on the same view', async () => {
+    const { rerender } = render(view('expired', jest.fn()));
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Спроба входу застаріла або вже використана. Спробуйте ще раз.'
+    );
+
+    rerender(view('unavailable', jest.fn()));
+
+    expect(
+      await screen.findByText('Google зараз не відповідає. Спробуйте ще раз за хвилину.')
+    ).toBeInTheDocument();
+  });
+
+  it('styles the way back as the text link beside a retry, else as the primary action', () => {
+    const { unmount } = render(view('expired', jest.fn()));
+    expect(screen.getByRole('link', { name: BACK })).toHaveStyle({ color: '#0074B5' });
+    unmount();
+
+    render(view('duplicate_email'));
+    expect(screen.getByRole('link', { name: BACK })).not.toHaveStyle({ color: '#0074B5' });
+  });
+
+  it('styles its heading as the auth form title', () => {
+    render(view('expired', jest.fn()));
+
+    expect(screen.getByRole('heading', { level: 1, name: TITLE })).toHaveStyle({
+      fontSize: '1.375rem',
+      fontWeight: '700',
+    });
+  });
 });

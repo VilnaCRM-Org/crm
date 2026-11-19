@@ -39,6 +39,14 @@ describe('social sign-in result schemas', () => {
       ['a javascript: URL', { authorizationUrl: 'javascript:alert(1)', state: 's' }],
       ['a relative URL', { authorizationUrl: '/oauth', state: 's' }],
       [
+        'a scheme that only starts with https',
+        { authorizationUrl: 'httpsx://evil.example/', state: 's' },
+      ],
+      [
+        'a scheme that only ends with http',
+        { authorizationUrl: 'xhttp://evil.example/', state: 's' },
+      ],
+      [
         'an empty state',
         { authorizationUrl: 'https://github.com/login/oauth/authorize', state: '' },
       ],
