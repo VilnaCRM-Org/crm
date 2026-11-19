@@ -15,7 +15,7 @@ slug: 'social-sign-in'
   the Mockoon consent page and with the requester's own provider keys. The work is tracked under
   issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), readiness
-  iterations 1-8 (iteration 8 is the latest review pass).
+  iterations 1-9 (iteration 9 is the latest review pass).
 
 ## Artifacts
 
@@ -49,9 +49,9 @@ rather than the skill's bare `research.md` names.
 
 ## Validation rounds
 
-One self-review round per artifact, then readiness iterations 1-8 as recorded in the
+One self-review round per artifact, then readiness iterations 1-9 as recorded in the
 [readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
-2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-8
+2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-9
 corrected stale passages that pull request reviews found.
 
 ## Open questions and warnings

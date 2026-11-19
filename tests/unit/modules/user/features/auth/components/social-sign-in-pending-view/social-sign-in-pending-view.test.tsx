@@ -42,8 +42,10 @@ describe('SocialSignInPendingView', () => {
     );
   });
 
-  it('has no axe violations', async () => {
+  it('has no axe violations once the deferred spinner shows', async () => {
     const { container } = renderView('Google');
+    await screen.findByRole('status');
+    await waitFor(() => expect(screen.getByRole('status')).not.toBeEmptyDOMElement());
 
     await expectNoA11yViolations(container);
   });

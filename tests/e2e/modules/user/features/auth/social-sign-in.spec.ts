@@ -26,6 +26,8 @@ test.describe('Social sign-in', () => {
   for (const [label, provider] of [
     ['Google', 'google'],
     ['GitHub', 'github'],
+    ['Facebook', 'facebook'],
+    ['Twitter', 'twitter'],
   ] as const) {
     test(`signs in with ${label} from /sign-in in the same tab`, async ({ page }) => {
       const initiated = await answerInitiate(page, 'e2e-code');
