@@ -46,6 +46,45 @@ describe('SocialSignInTransformer', () => {
     });
   });
 
+  it.each([
+    [401, 'authentication'],
+    [403, 'authentication'],
+    [409, 'conflict'],
+    [400, 'validation'],
+    [422, 'validation'],
+    [429, 'validation'],
+    [499, 'validation'],
+    [500, 'server'],
+    [503, 'server'],
+  ])('signals a %s answer as a %s failure with its status', (status, kind) => {
+    const error = new ApolloError({
+      graphQLErrors: [{ message: 'refused', extensions: { status, error_code: 'x' } }],
+    });
+
+    expect(transformer.signalOf(error)).toEqual({ kind, status });
+  });
+
+  it('signals an unreachable user-service as a network failure', () => {
+    expect(transformer.signalOf(new ApolloError({ networkError: new Error('offline') }))).toEqual({
+      kind: 'network',
+      status: undefined,
+    });
+  });
+
+  it.each([
+    ['without a status', { error_code: 'state_expired' }],
+    ['with a non-numeric status', { status: '503', error_code: 'provider_unavailable' }],
+  ])('signals an answer %s as unknown', (_label, extensions) => {
+    const error = new ApolloError({ graphQLErrors: [{ message: 'refused', extensions }] });
+
+    expect(transformer.signalOf(error)).toEqual({ kind: 'unknown', status: undefined });
+  });
+
+  it('signals a value that is not an Apollo error as unknown', () => {
+    expect(transformer.signalOf(new Error('zod'))).toEqual({ kind: 'unknown', status: undefined });
+    expect(transformer.signalOf(null)).toEqual({ kind: 'unknown', status: undefined });
+  });
+
   it('reports an aborted relay as aborted, whatever the error', () => {
     const controller = new AbortController();
     controller.abort();

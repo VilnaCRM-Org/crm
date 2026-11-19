@@ -7,6 +7,7 @@ import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
 import type {
   SocialCallbackParams,
+  SocialFailureOutcome,
   SocialSignInOutcome,
   SocialStartOutcome,
 } from '@auth/types/social-sign-in/social-sign-in-outcome';
@@ -28,7 +29,7 @@ export default class SocialSignInProvider {
     try {
       return this.transformer.toStart(await this.repository.initiate(provider, signal));
     } catch (caught) {
-      return this.transformer.fromFailure(caught, signal);
+      return this.failed(caught, signal);
     }
   }
 
@@ -40,10 +41,16 @@ export default class SocialSignInProvider {
     try {
       return this.settle(await this.repository.complete(provider, params, signal));
     } catch (caught) {
-      const outcome = this.transformer.fromFailure(caught, signal);
-      if (outcome.kind === 'failed') this.auth.securitySignals.loginFailed(caught);
-      return outcome;
+      return this.failed(caught, signal);
     }
+  }
+
+  private failed(caught: unknown, signal: AbortSignal): SocialFailureOutcome {
+    const outcome = this.transformer.fromFailure(caught, signal);
+    if (outcome.kind === 'failed') {
+      this.auth.securitySignals.loginFailed(this.transformer.signalOf(caught));
+    }
+    return outcome;
   }
 
   // The access token is kept exactly like a password sign-in's: in the memory-only auth store.

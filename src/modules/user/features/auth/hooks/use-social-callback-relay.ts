@@ -74,7 +74,7 @@ export default function useSocialCallbackRelay(
         guard.active = false;
       };
     },
-    // Stryker disable next-line ArrayDeclaration: equivalent, both are fixed for the mount
+    // Stryker disable next-line ArrayDeclaration: equivalent, both deps are useState-held per mount
     [loader, run]
   );
 }

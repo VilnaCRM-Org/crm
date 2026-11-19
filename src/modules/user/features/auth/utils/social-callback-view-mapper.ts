@@ -34,8 +34,7 @@ class SocialCallbackViewMapper {
   // under StrictMode's repeated effects, and it keeps the router's own history state.
   public stripQuery(): void {
     if (window.location.search === '') return;
-    // Stryker disable next-line StringLiteral: equivalent, browsers ignore the title argument
-    window.history.replaceState(window.history.state, '', window.location.pathname);
+    window.history.replaceState(window.history.state, document.title, window.location.pathname);
   }
 
   public initialView(

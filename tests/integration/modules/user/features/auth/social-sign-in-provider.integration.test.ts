@@ -3,6 +3,8 @@ import { HttpResponse } from 'msw';
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import SECURITY_EVENT_TOKENS from '@/services/security-events/tokens';
+import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 import SocialSignInProvider from '@auth/data-providers/social-sign-in-provider';
 import { AuthProviderLoader, useAuthStore } from '@auth/stores';
 import { buildToken, buildUserId } from '@tests/builders';
@@ -42,7 +44,47 @@ describe('SocialSignInProvider over the container and msw', () => {
     );
   });
 
-  afterEach(() => server.resetHandlers());
+  afterEach(() => {
+    server.resetHandlers();
+    jest.restoreAllMocks();
+  });
+
+  const authFailures = (): jest.SpyInstance =>
+    jest.spyOn(
+      container.resolve<SecurityEventRecorder>(SECURITY_EVENT_TOKENS.SecurityEventReporter),
+      'authFailure'
+    );
+
+  it.each([
+    ['a refused completion', 'validation', 422],
+    ['a conflicting completion', 'conflict', 409],
+    ['a completion the provider could not serve', 'server', 503],
+  ])('records %s with its reason code', async (_label, reason, status) => {
+    const recorded = authFailures();
+    answer('CompleteSocialSignIn', () =>
+      HttpResponse.json({
+        data: { completeSocialSignInUser: null },
+        errors: [{ message: 'refused', extensions: { status, error_code: 'x' } }],
+      })
+    );
+
+    await provider.complete('google', PARAMS, new AbortController().signal);
+
+    expect(recorded).toHaveBeenCalledTimes(1);
+    expect(recorded).toHaveBeenCalledWith('login', reason);
+  });
+
+  it('records a start user-service could not be reached for as a network failure', async () => {
+    const recorded = authFailures();
+    answer('InitiateSocialSignIn', () => HttpResponse.error());
+
+    await expect(provider.start('google', new AbortController().signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'unavailable',
+    });
+    expect(recorded).toHaveBeenCalledTimes(1);
+    expect(recorded).toHaveBeenCalledWith('login', 'network');
+  });
 
   it('resolves one container singleton', () => {
     expect(provider).toBeInstanceOf(SocialSignInProvider);

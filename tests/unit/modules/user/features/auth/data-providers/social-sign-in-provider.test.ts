@@ -36,7 +36,7 @@ const setup = (): Harness => {
 
 const stateExpired = (): ApolloError =>
   new ApolloError({
-    graphQLErrors: [{ message: 'x', extensions: { error_code: 'state_expired' } }],
+    graphQLErrors: [{ message: 'x', extensions: { status: 422, error_code: 'state_expired' } }],
   });
 
 describe('SocialSignInProvider', () => {
@@ -53,13 +53,26 @@ describe('SocialSignInProvider', () => {
     expect(initiate).toHaveBeenCalledWith('github', signal);
   });
 
-  it('reports a failed start without an auth-failure signal', async () => {
+  it('reports an unreachable start as a network auth failure', async () => {
     const { provider, initiate, loginFailed } = setup();
     initiate.mockRejectedValue(new ApolloError({ networkError: new Error('offline') }));
 
     await expect(provider.start('google', new AbortController().signal)).resolves.toEqual({
       kind: 'failed',
       error: 'unavailable',
+    });
+    expect(loginFailed).toHaveBeenCalledTimes(1);
+    expect(loginFailed).toHaveBeenCalledWith({ kind: 'network', status: undefined });
+  });
+
+  it('reports nothing when the caller aborted the start', async () => {
+    const { provider, initiate, loginFailed } = setup();
+    const controller = new AbortController();
+    controller.abort();
+    initiate.mockRejectedValue(new Error('aborted'));
+
+    await expect(provider.start('google', controller.signal)).resolves.toEqual({
+      kind: 'aborted',
     });
     expect(loginFailed).not.toHaveBeenCalled();
   });
@@ -95,7 +108,7 @@ describe('SocialSignInProvider', () => {
     expect(signedIn).not.toHaveBeenCalled();
   });
 
-  it('reports a failed completion as an auth failure and returns its error kind', async () => {
+  it('reports a refused completion with its reason code and returns its error kind', async () => {
     const { provider, complete, setState, loginFailed } = setup();
     const error = stateExpired();
     complete.mockRejectedValue(error);
@@ -106,7 +119,8 @@ describe('SocialSignInProvider', () => {
       kind: 'failed',
       error: 'expired',
     });
-    expect(loginFailed).toHaveBeenCalledWith(error);
+    expect(loginFailed).toHaveBeenCalledTimes(1);
+    expect(loginFailed).toHaveBeenCalledWith({ kind: 'validation', status: 422 });
     expect(setState).not.toHaveBeenCalled();
   });
 

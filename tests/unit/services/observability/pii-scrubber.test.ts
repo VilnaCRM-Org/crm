@@ -62,10 +62,10 @@ describe('PiiScrubber', () => {
     });
   });
 
-  it('keeps the six free-text patterns the settings keys did not touch', () => {
+  it('keeps the six free-text patterns plus the two social callback ones', () => {
     const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
 
-    expect(patterns).toHaveLength(6);
+    expect(patterns).toHaveLength(8);
   });
 
   it('redacts PII embedded in an object key', () => {
