@@ -79,17 +79,19 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 
 ## Pending contracts
 
-A pending contract is an upstream declaration the pinned version does not carry yet. It is
-copied verbatim from user-service, read by codegen (`codegen.ts` lists `src/api/contracts/pending`
-beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies the folder, and
-`loadTypeDefs` in `docker/apollo-server/lib/schema-loader.ts` passes every `*.graphql` file in it,
-in name order, as `typeDefs` after the pinned SDL), and deleted by the pin bump that brings the
-declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset mutation through a
-server built from two pending files and pins that the folder `server.mts` resolves from `out/` is
-the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge a duplicate
-declaration silently, so each pending file opens with `# pending-against: <version>` and
-`scripts/ci/check-pending-contracts.sh`, the first step of `scripts/codegen.sh` (so of both
-`make codegen` and `make codegen-check`), fails when that header is missing or no longer names
+A pending contract is a declaration the pinned version does not carry yet. It is either copied
+verbatim from user-service (an upstream declaration awaiting a release) or, when user-service has no
+declaration at all, a provisional contract written here in its style for user-service to adopt; each
+entry below says which. Either kind is read by codegen (`codegen.ts` lists
+`src/api/contracts/pending` beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile`
+copies the folder, and `loadTypeDefs` in `docker/apollo-server/lib/schema-loader.ts` passes every
+`*.graphql` file in it, in name order, as `typeDefs` after the pinned SDL), and deleted by the pin
+bump that brings the declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset
+mutation through a server built from two pending files and pins that the folder `server.mts`
+resolves from `out/` is the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge
+a duplicate declaration silently, so each pending file opens with `# pending-against: <version>` and
+`scripts/ci/check-pending-contracts.sh`, the first step of `scripts/codegen.sh` (so of both `make
+codegen` and `make codegen-check`), fails when that header is missing or no longer names
 `GRAPHQL_SCHEMA_VERSION`. The pin bump that brings the declarations in deletes the file.
 
 `src/api/contracts/pending/password-reset.graphql`:
@@ -106,13 +108,16 @@ declaration silently, so each pending file opens with `# pending-against: <versi
 `src/api/contracts/pending/social-sign-in.graphql` (`specs/social-sign-in/`):
 
 - **Pending against:** `v2.8.0`.
-- **Upstream source:** none yet. user-service exposes social sign-in only as REST
-  (`GET /api/auth/social/{provider}` and its callback); `initiateSocialSignInUser` and
-  `completeSocialSignInUser` are declared here in its API Platform style, for user-service to add.
-  Failures carry the REST `error_code` values in `extensions.error_code`.
+- **Upstream source:** none yet; this is a provisional local contract. user-service exposes social
+  sign-in only as REST (`GET /api/auth/social/{provider}` and its callback);
+  `initiateSocialSignInUser` and `completeSocialSignInUser` are declared here in its API Platform
+  style, for user-service to add. Failures carry the REST `error_code` values in
+  `extensions.error_code`.
 - **Mock answers:** `docker/apollo-server/lib/social-sign-in-resolvers.ts` issues a state per
-  initiate, consumes it once on complete and checks the provider; `OAUTH_MODE` picks a Mockoon mock
-  consent page or the real provider screen (see `docs/social-sign-in-local.md`).
+  initiate, consumes it once on complete and checks the provider. `OAUTH_MODE=mock` sends every
+  provider to the Mockoon mock consent page; `OAUTH_MODE=provider` sends a provider to its real
+  screen only when its `OAUTH_<PROVIDER>_CLIENT_ID` is set, and keeps the rest on the mock page
+  (see `docs/social-sign-in-local.md`).
 - **Removed by:** the contract pin bump to the first user-service release that declares both
   mutations.
 

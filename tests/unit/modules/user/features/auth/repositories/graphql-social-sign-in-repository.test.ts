@@ -9,7 +9,11 @@ import {
 import { GraphQLSocialSignInRepository } from '@auth/repositories';
 import { buildToken } from '@tests/builders';
 
-jest.mock('uuid', () => ({ v4: (): string => 'client-mutation-id' }));
+const UUID_V4 = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/;
+
+const mutationIdOf = (call: unknown[]): unknown =>
+  (call[0] as { variables: { input: { clientMutationId: unknown } } }).variables.input
+    .clientMutationId;
 
 const repositoryWith = (
   data: unknown
@@ -29,7 +33,9 @@ describe('GraphQLSocialSignInRepository', () => {
 
     expect(mutate).toHaveBeenCalledWith({
       mutation: InitiateSocialSignInDocument,
-      variables: { input: { provider: 'github', clientMutationId: 'client-mutation-id' } },
+      variables: {
+        input: { provider: 'github', clientMutationId: expect.stringMatching(UUID_V4) },
+      },
       fetchPolicy: 'no-cache',
       context: { fetchOptions: { signal } },
     });
@@ -55,12 +61,29 @@ describe('GraphQLSocialSignInRepository', () => {
           provider: 'google',
           code: 'c-1',
           state: 's-1',
-          clientMutationId: 'client-mutation-id',
+          clientMutationId: expect.stringMatching(UUID_V4),
         },
       },
       fetchPolicy: 'no-cache',
       context: { fetchOptions: { signal } },
     });
+  });
+
+  it('gives every initiation and completion its own mutation id', async () => {
+    const { repository, mutate } = repositoryWith({
+      initiateSocialSignInUser: { user: { authorizationUrl: 'https://x.test/a', state: 's' } },
+      completeSocialSignInUser: { user: { twoFactorEnabled: false, accessToken: buildToken() } },
+    });
+    const { signal } = new AbortController();
+
+    await repository.initiate('google', signal);
+    await repository.initiate('google', signal);
+    await repository.complete('google', { code: 'c', state: 's' }, signal);
+    await repository.complete('google', { code: 'c', state: 's' }, signal);
+
+    const ids = mutate.mock.calls.map(mutationIdOf);
+    expect(ids).toEqual(Array.from({ length: 4 }, () => expect.stringMatching(UUID_V4)));
+    expect(new Set(ids).size).toBe(4);
   });
 
   it('rejects an answer that matches no documented shape', async () => {

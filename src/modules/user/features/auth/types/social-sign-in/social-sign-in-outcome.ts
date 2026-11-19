@@ -1,7 +1,8 @@
+import type { SocialProvider } from './social-provider';
 import type { SocialSignInErrorKind } from './social-sign-in-error-kind';
 
 export interface SocialExpectedState {
-  readonly provider: string;
+  readonly provider: SocialProvider;
   readonly state: string;
 }
 

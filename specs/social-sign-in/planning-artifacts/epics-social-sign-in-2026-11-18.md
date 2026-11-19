@@ -34,61 +34,52 @@ suppression of any kind; `uk` + `en` strings with `make lint-i18n` clean.
 
 ```text
 E1 local backend          E2 client foundations                E3 UI
-S1.1 mockoon overlays ─┐  S2.1 http credentials ─┐
-S1.2 env + make       ─┤  (S2.2 withdrawn)       ─┼─► S2.4 repository+actions ─► S3.2 callback page ─► S3.3 2FA hand-off
-S1.3 local guide ◄─────┘  S2.3 contract+schemas ─┘                             ▲        │
+S1.1 apollo + consent ─┐  (S2.1, S2.2 withdrawn)
+S1.2 env + make       ─┤  S2.3 contract+schemas ─┬─► S2.4 repository+provider ─► S3.2 callback page ─► S3.3 2FA hand-off
+S1.3 local guide ◄─────┘                                                      ▲        │
                                                   S3.1 error view (component) ─┘        ├─► S4.1 E2E + visual
-                          S2.5 initiation (buttons) ─────────────────────────────────── ┘    S4.2 ADR + docs
+                          S2.5 initiation (buttons) ─────────────────────────────────── ┘    S4.2 docs
 ```
 
 ## Epic 1 — Local back-end for social sign-in (FR16-FR19)
 
-### S1.1 Mockoon social OAuth overlays — **independent**
+### S1.1 Apollo social sign-in resolvers and Mockoon consent page — **independent**
 
-_(2026-11-19)_ Reduced to the mock consent page; the stateful mutations live in the Apollo mock
-(`social-sign-in-resolvers.ts`, tested in `tests/apollo-server/social-sign-in.test.ts`).
+_(2026-11-19)_ Rewritten for the GraphQL flow: the stateful mutations live in the Apollo mock and
+Mockoon serves only the consent page.
 
-As a developer, I want Mockoon to serve the social endpoints and a mock consent page, so that I
-can exercise every outcome without provider accounts.
+As a developer, I want the local mock stack to answer both social sign-in mutations and to show
+a mock consent page, so that I can exercise every outcome without provider accounts.
 
 Acceptance criteria:
 
-- Given `MOCKOON_OAUTH_MODE=mock`, when I open `http://localhost:8080/api/auth/social/google`,
-  then I get `302` to `/__mock-oauth/google/authorize?state=…` with `Set-Cookie:
-oauth_flow_binding=…; Path=/api/auth/social; HttpOnly; SameSite=Lax` and `Cache-Control:
-no-store`.
-- Given an unknown provider, then `400` `application/problem+json` with `error_code:
-unsupported_provider`.
-- The consent page lists, as real links with visible text: Allow (success), Allow (2FA
-  account), Deny, and one link per error scenario in architecture §3.5; each targets
-  `${MOCKOON_SPA_ORIGIN}/auth/callback/<provider>`.
-- The callback route answers every scenario code with the status, body and headers in
-  architecture §3.5, and `400 missing_oauth_parameters` when the flow cookie is absent.
-- Credentialed CORS: preflight and responses carry `Access-Control-Allow-Origin:
-${MOCKOON_SPA_ORIGIN}` and `Access-Control-Allow-Credentials: true`; never `*`.
-- Given `MOCKOON_OAUTH_MODE=provider` and `MOCKOON_OAUTH_GOOGLE_CLIENT_ID` set, the Google
-  initiate route redirects to `accounts.google.com` with that client ID and the SPA redirect URI;
-  a provider without a client ID still uses the mock consent page.
-- An unknown mode makes the entrypoint exit non-zero with a message naming the allowed modes.
-- A5 outcome: the state is shared through Mockoon global vars (architecture §3.5).
-- `Mockoon.Dockerfile` keeps the digest pin, adds no package (the merge is Node, already in the base), keeps the
-  healthcheck; `hadolint` clean; `tests/unit/tooling/image-hardening.test.ts` and the Dockerfile
-  golden-text tests updated, not weakened.
-- `tests/unit/scripts/mockoon-social-oauth.test.js` covers mode selection, unknown mode, CORS
-  headers and the generated routes; the built image was probed route by route.
+- `initiateSocialSignInUser(provider)` returns an `authorizationUrl` and a fresh `state`; given
+  `OAUTH_MODE=mock`, the URL is `/__mock-oauth/<provider>/authorize` on Mockoon with the state
+  and `${OAUTH_SPA_ORIGIN}/auth/callback/<provider>` as the redirect URI.
+- Given an unknown provider, then one GraphQL error with
+  `extensions: { status: 400, error_code: 'unsupported_provider' }`.
+- `completeSocialSignInUser(provider, code, state)` accepts only a state it issued, for that
+  provider, once; a reused or unknown state answers `invalid_state`, another provider
+  `provider_mismatch`.
+- Scenario codes (`mock-expired`, `mock-unverified`, `mock-no-email`, `mock-duplicate`,
+  `mock-unavailable`, `mock-2fa`) answer the matching FR12 `error_code` or the 2FA result; any
+  other code signs in with an `accessToken` and a `refreshToken`.
+- The consent page lists, as real links with visible text, Allow, Allow (2FA account), Deny and
+  one link per scenario, each targeting `${OAUTH_SPA_ORIGIN}/auth/callback/<provider>`.
+- Given `OAUTH_MODE=provider` and `OAUTH_GOOGLE_CLIENT_ID` set, the Google `authorizationUrl` is
+  `accounts.google.com` with that client ID; a provider without a client ID keeps the mock page.
+- `tests/apollo-server/social-sign-in.test.ts` covers both modes, every scenario and the state
+  rules; the Mockoon consent page script has its unit test.
 
-### S1.2 Environment keys and `make mockoon-restart` — **dependent on S1.1**
+### S1.2 Environment keys and `make apollo-restart` — **dependent on S1.1**
 
-_(2026-11-19)_ The keys are read by the Apollo mock through `env_file`; the target is
-`make apollo-restart`, and Mockoon takes no OAuth environment.
+_(2026-11-19)_ The keys are read by the Apollo mock; Mockoon takes no OAuth environment.
 
 - `.env.example` gains `OAUTH_MODE=mock`, `OAUTH_SPA_ORIGIN`, and empty
   `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GITHUB_CLIENT_ID`, `OAUTH_FACEBOOK_CLIENT_ID`,
-  `OAUTH_TWITTER_CLIENT_ID`; `make check-env-sync` passes on a fresh `.env`.
-- `docker-compose.yml` maps them to the `MOCKOON_*` variables; `docker-compose.test.yml` pins
-  `MOCKOON_OAUTH_MODE=mock`; `make lint-compose` clean.
-- `make mockoon-restart` recreates only the `mockoon` service; the Bats make-target manifest
-  gets its row; `make lint-shell` clean.
+  `OAUTH_TWITTER_CLIENT_ID`, each declared once; `make check-env-sync` passes on a fresh `.env`.
+- `make apollo-restart` recreates only the `apollo` service so a `.env` change applies without a
+  rebuild; the Bats make-target manifest gets its row; `make lint-shell` clean.
 - No client secret key exists anywhere in this repository (NFR13); gitleaks `make
 scan-secrets` green.
 
@@ -103,11 +94,8 @@ scan-secrets` green.
 
 ### S2.1 `HttpsClient` credentials option — **withdrawn** _(2026-11-19)_
 
-Withdrawn: no REST call remains, so the option was removed again.
-
-- `RequestConfig.credentials?: RequestCredentials | undefined` reaches `fetch` through
-  `HttpRequestConfigBuilder`; omitted means today's behaviour (unit-pinned both ways).
-- Integration test proves an msw handler sees the cookie only when `credentials: 'include'`.
+Withdrawn: the SPA makes no REST call for social sign-in, so no credentials option is needed and
+the story carries no acceptance criteria.
 
 ### S2.2 Per-provider feature flags — **withdrawn**
 
@@ -118,32 +106,38 @@ and nothing in the requirements needs a kill switch yet.
 
 _(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas for their payloads.
 
-- `src/api/contracts/README.md` records both operations under "Pending REST operations" with the
-  upstream commit SHA and their removal on the pin bump (PRD D3, revised).
-- `SocialCallbackResponseSchema` (discriminated on `2fa_enabled`) and the problem schema live
-  in `response-schemas.ts`; unit tests accept both success shapes and reject a body with
-  neither `access_token` nor `pending_session_id`.
+- `src/api/contracts/pending/social-sign-in.graphql` declares `initiateSocialSignInUser` and
+  `completeSocialSignInUser` under `# pending-against: v2.8.0`; `src/api/contracts/README.md`
+  records it as a provisional local contract removed by the pin bump (PRD D3).
+- `SocialInitiateResultSchema` accepts only an `http(s)` `authorizationUrl` and a `state`;
+  `SocialCompleteResultSchema` accepts a `twoFactorEnabled: false` result with an `accessToken`
+  or a `twoFactorEnabled: true` result with a `pendingSessionId`, and rejects any other shape.
 - Types in `@auth/types/social-sign-in/` are type-only files.
 
-### S2.4 GraphQL repository, transformer, provider _(2026-11-19)_ — **dependent on S2.3** (was: `SocialAuthAPI`, error mapper, `completeSocialSignIn` — dependent on S2.1, S2.3**
+### S2.4 GraphQL repository, transformer, provider _(2026-11-19)_ — **dependent on S2.3**
 
-- `SocialAuthAPI.callback` issues `GET {base}/api/auth/social/{provider}/callback?code&state`
-  with `credentials: 'include'`, the schema, the caller signal, and **no** `retry` (FR15).
-- `SocialAuthErrorMapper` maps every FR12 row; table-driven unit test plus `generic` fallback.
-- `authActions.completeSocialSignIn` sets the token on success, returns the two-factor variant
+- `GraphQLSocialSignInRepository` runs both mutations with `fetchPolicy: 'no-cache'`, a fresh
+  `clientMutationId` and the caller signal, and is never retried (FR15).
+- Both operations are anonymous in `SessionLinkFactory`: no `Authorization` header, and a 401
+  never ends a current session.
+- `SocialSignInTransformer` maps every FR12 `extensions.error_code`, a network error to
+  `unavailable`, and anything else to `generic`; table-driven unit test.
+- `SocialSignInProvider.complete` sets the token on success, returns the two-factor variant
   untouched, and reports failures through `AuthSecuritySignals` with a reason code (NFR10).
-- `piiScrubber` scrubs `code`, `state`, `pending_session_id`, `access_token`, `refresh_token`
-  (NFR7), unit-pinned.
-- Integration suite covers every FR12 response, timeout (`RequestDeadline`) and abort.
-- Tokens registered in `modules/user/config/{tokens,di}.ts`; DI gates green.
+- `accessToken` and `refreshToken` are scrubbed by the existing `token` fragment of
+  `piiScrubber`; `code`, `state` and `pendingSessionId` never reach an event, because the page
+  strips them from the address bar before rendering and no path logs them (NFR7).
+- Integration suite covers every FR12 response through msw GraphQL handlers.
+- Tokens in `modules/user/config/tokens.ts`, registered by the feature registrar; DI gates green.
 
 ### S2.5 Initiation from the provider buttons — **independent**
 
 As a user, I want a provider button to take me to the provider in the same tab, so that I come
 back signed in to the same app.
 
-- Clicking a button calls `window.location.assign` with
-  `{apiBaseUrl}/api/auth/social/<provider>` (FR1) — unit test asserts the URL; no new tab.
+- Clicking a button navigates in the app to `/auth/callback/<provider>`, which calls
+  `initiateSocialSignInUser` and replaces the history entry with the returned authorization URL
+  (FR1) — unit tests assert both steps; no new tab.
 - The destination from `location.state.from` is saved when internal, else `/` (FR2); storage
   that throws does not block navigation.
 - _(FR3 withdrawn)_ A second click before the page changes only starts the flow again.

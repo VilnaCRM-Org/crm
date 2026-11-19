@@ -141,7 +141,7 @@ test.describe('Social sign-in', () => {
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Enter');
 
-    await expect.poll(() => initiated.length).toBe(2);
+    await expect.poll(() => initiated.map((input) => input.provider)).toEqual(['google', 'google']);
   });
 
   test('goes back to sign-in from the error view', async ({ page }) => {

@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import SocialCallback from '@auth/routes/social-callback';
+import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
 import type {
   SocialSignInOutcome,
   SocialStartOutcome,
@@ -69,7 +70,10 @@ const startFlow = (path = CALLBACK): ReturnType<typeof render> =>
   visit(path, '', { socialStart: true });
 
 // A provider redirect back for a state this tab started with.
-const returnFrom = (provider: string, query: Record<string, string>): ReturnType<typeof render> => {
+const returnFrom = (
+  provider: SocialProvider,
+  query: Record<string, string>
+): ReturnType<typeof render> => {
   const state = query.state ?? nextState();
   socialSignInFlowSource.saveState({ provider, state });
   const search = new URLSearchParams({ ...query, state }).toString();

@@ -103,6 +103,8 @@ describe('SessionLinkFactory', () => {
     'ConfirmPasswordReset',
     'SignInUser',
     'CompleteTwoFactorUser',
+    'InitiateSocialSignIn',
+    'CompleteSocialSignIn',
   ])('sends %s without an Authorization header', async (name) => {
     const { link, headers } = harness({ token: buildToken() });
 

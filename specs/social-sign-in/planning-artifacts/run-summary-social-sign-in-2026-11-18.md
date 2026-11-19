@@ -11,9 +11,9 @@ slug: 'social-sign-in'
 
 - **Bundle directory:** `specs/social-sign-in/planning-artifacts/`
 - **Task:** working Google/GitHub (plus Facebook/Twitter) sign-in buttons on `/sign-in` and
-  `/sign-up` against the user-service social OAuth contract, verifiable locally with Mockoon and
-  with the requester's own provider keys. The work is tracked under issue #150 (the dead-end OAuth buttons); the
-  bundle was seeded from the task description.
+  `/sign-up` over two GraphQL mutations answered by the local Apollo mock, verifiable locally with
+  the Mockoon consent page and with the requester's own provider keys. The work is tracked under
+  issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), plan iteration 2/5.
 
 ## Artifacts

@@ -46,22 +46,27 @@ recovery, and zero regression to the auth page's performance budget.
 
 ### In
 
-- Wire all four buttons to `GET /api/auth/social/{provider}` with a same-tab navigation.
-- A public callback route that relays `code`/`state` to the backend callback and finishes
-  sign-in, hands off to the 2FA challenge when required, or shows a localized, recoverable error.
+- Wire all four buttons to an in-app navigation to `/auth/callback/<provider>`, which calls the
+  `initiateSocialSignInUser` GraphQL mutation and sends the same tab to the returned
+  authorization URL.
+- A public callback route that checks the returned `state`, calls `completeSocialSignInUser`
+  with `code`/`state` and finishes sign-in, hands off to the 2FA challenge when required, or
+  shows a localized, recoverable error.
 - Preserve the intended destination across the provider round trip (issue #150 behaviour).
-- A Mockoon overlay that serves the social endpoints plus a mock consent page, with one link per
-  backend outcome, so every state is reachable locally and in CI.
-- A "real provider consent" local mode: Mockoon redirects to the **real** Google/GitHub
-  consent screen using the developer's client ID; Mockoon still answers the callback.
+- Stateful Apollo mock resolvers for both mutations, plus a Mockoon-hosted mock consent page
+  with one link per outcome, so every state is reachable locally and in CI.
+- A "real provider consent" local mode: the Apollo mock returns the **real** Google/GitHub
+  authorization URL for a provider whose client ID is set; the mock still answers the
+  completion, so no client secret is needed.
 - A step-by-step local verification guide: creating the Google Cloud and GitHub OAuth clients,
-  the exact redirect URIs, the `.env` keys, the commands, and an optional full real-backend
-  mode against a local user-service.
+  the exact redirect URIs, the `.env` keys and the commands.
 
 ### Out
 
 - Linking/unlinking providers in settings (user-service #520; separate feature).
-- Backend changes in user-service (the relay pattern needs configuration only).
+- Backend changes in user-service: it has to add the two mutations (declared here as a pending
+  contract), which is tracked as an upstream dependency, not built in this repository.
+- Any REST call from the SPA; social sign-in runs over GraphQL only.
 - Refresh-token persistence (deferred by the 2FA bundle; unchanged here).
 - Production enablement (blocked on user-service #468 and a released contract tag).
 - New visual design: no Figma frame exists for the callback states (see PRD assumption A4).

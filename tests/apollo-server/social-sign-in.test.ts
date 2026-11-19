@@ -55,6 +55,9 @@ const ENV_KEYS = [
   'OAUTH_MODE',
   'OAUTH_SPA_ORIGIN',
   'OAUTH_GOOGLE_CLIENT_ID',
+  'OAUTH_GITHUB_CLIENT_ID',
+  'OAUTH_FACEBOOK_CLIENT_ID',
+  'OAUTH_TWITTER_CLIENT_ID',
   'REACT_APP_MOCKOON_URL',
 ];
 
@@ -171,7 +174,13 @@ describe('pending social sign-in mutations on the mock', () => {
     const second = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
 
     expect(first.data?.completeSocialSignInUser).toMatchObject({
-      user: { success: true, twoFactorEnabled: false, pendingSessionId: null },
+      user: {
+        success: true,
+        twoFactorEnabled: false,
+        accessToken: expect.stringMatching(/\S/),
+        refreshToken: expect.stringMatching(/\S/),
+        pendingSessionId: null,
+      },
     });
     expect(errorOf(second)).toMatchObject({ status: 422, error_code: 'invalid_state' });
   });
@@ -182,7 +191,12 @@ describe('pending social sign-in mutations on the mock', () => {
     const result = await execute(COMPLETE, { provider: 'google', code: 'mock-2fa', state });
 
     expect(result.data?.completeSocialSignInUser).toMatchObject({
-      user: { twoFactorEnabled: true, accessToken: null, refreshToken: null },
+      user: {
+        twoFactorEnabled: true,
+        accessToken: null,
+        refreshToken: null,
+        pendingSessionId: expect.stringMatching(/\S/),
+      },
     });
   });
 

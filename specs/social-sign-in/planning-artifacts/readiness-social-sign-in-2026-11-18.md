@@ -22,7 +22,7 @@ Predecessors: [brief](brief-social-sign-in-2026-11-18.md) · [PRD](prd-social-si
 [epics](epics-social-sign-in-2026-11-18.md) ·
 [local guide](local-verification-social-sign-in-2026-11-18.md).
 
-## Verdict: **PASS** (with four tracked warnings)
+## Verdict: **PASS** (with five tracked warnings)
 
 ## Checks
 
