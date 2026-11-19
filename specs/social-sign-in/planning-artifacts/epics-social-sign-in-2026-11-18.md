@@ -74,9 +74,10 @@ Acceptance criteria:
 - The consent page renders only for a known provider, a local SPA callback URL and a v4 state,
   and answers anything else with a plain-text 400 that reflects nothing.
 - `Mockoon.Dockerfile` imports the pinned spec at build time, copies the consent-page script and
-  its entrypoint, and keeps its digest pin and healthcheck; `hadolint` clean, and
-  `tests/unit/tooling/image-hardening.test.ts` plus the Dockerfile golden-text tests updated, not
-  weakened.
+  its entrypoint, and keeps its digest pin and healthcheck; `hadolint` clean,
+  `tests/unit/tooling/image-hardening.test.ts` unchanged and green, and
+  `tests/unit/tooling/mockoon-image.test.ts` pins the import step, both `COPY` lines, the entrypoint
+  `CMD`, the healthcheck, and the entrypoint's `set -eu` with the merge before `exec`.
 - `tests/apollo-server/social-sign-in.test.ts` covers both modes, every scenario and the state
   rules; `tests/unit/scripts/mockoon-social-oauth.test.js` covers the page and its input rules.
 

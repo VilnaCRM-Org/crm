@@ -447,11 +447,11 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Fifteen directives are annotated today, at two mutators. Fourteen are `ArrayDeclaration` on a
+Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
 React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. Four annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
 - `use-login-submitter.ts` annotates `[actions, loginControllersRef]`: `actions` is always the
@@ -465,12 +465,18 @@ and each is equivalent for a reason worth stating separately:
   the token is a module constant; `src/modules/user/config/di.ts` binds it with
   `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
   therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
+- `use-social-callback-relay.ts` (specs/social-sign-in) annotates `[loader, run]`, the deps of
+  the effect that settles one social sign-in relay. `loader` is held in `useState` by
+  `use-auth-provider-loader.ts`, `run` is a `useState` initializer in `use-social-callback.ts`,
+  and the callback page remounts its content on every history entry (keyed by `location.key`),
+  so neither identity changes while the effect is mounted and an emptied list runs it exactly as
+  often.
 
 Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The fifteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
