@@ -37,10 +37,13 @@ const CALLBACK = '/auth/callback/google';
 const EXPIRED = 'Спроба входу застаріла або вже використана. Спробуйте ще раз.';
 const AUTHORIZE = 'https://accounts.google.com/o/oauth2/v2/auth?state=issued';
 
+let entryCounter = 0;
+
+// Each visit is its own history entry, as a real navigation is; the relay is keyed by it.
 const page = (path: string, state: unknown): JSX.Element => (
   <StrictMode>
     <I18nextProvider i18n={i18n}>
-      <MemoryRouter initialEntries={[{ pathname: path, state }]}>
+      <MemoryRouter initialEntries={[{ pathname: path, state, key: `entry-${++entryCounter}` }]}>
         <Routes>
           <Route path="/auth/callback/:provider" element={<SocialCallback />} />
           <Route path="/" element={<h1>home page</h1>} />

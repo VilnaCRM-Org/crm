@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from 'react-router';
 
 import useSocialCallback from '@auth/hooks/use-social-callback';
 import socialCallbackViewMapper from '@auth/utils/social-callback-view-mapper';
@@ -16,11 +16,20 @@ jest.mock('@auth/hooks/use-auth-provider-loader', () => ({
   default: (): unknown => mockLoader,
 }));
 
+interface Landing {
+  pathname: string;
+  state: unknown;
+  type: string;
+}
+
 const locations: string[] = [];
+const landings: Landing[] = [];
 
 function LocationProbe(): null {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
+  const type = useNavigationType();
   locations.push(pathname);
+  landings.push({ pathname, state, type });
   return null;
 }
 
@@ -54,6 +63,7 @@ const render = (
 describe('useSocialCallback', () => {
   beforeEach(() => {
     locations.length = 0;
+    landings.length = 0;
     mockStart.mockReset();
     mockComplete.mockReset();
     mockLoader.resolve.mockReset().mockResolvedValue({ start: mockStart, complete: mockComplete });
@@ -111,6 +121,11 @@ describe('useSocialCallback', () => {
     render('/auth/callback/github', '?code=c&state=hook-2');
 
     await waitFor(() => expect(locations).toContain('/orders'));
+    expect(landings.find(({ pathname }) => pathname === '/orders')).toEqual({
+      pathname: '/orders',
+      state: { focusMain: true },
+      type: 'REPLACE',
+    });
     expect(mockComplete).toHaveBeenCalledWith(
       'github',
       { code: 'c', state: 'hook-2' },

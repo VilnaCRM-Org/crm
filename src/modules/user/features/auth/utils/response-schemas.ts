@@ -39,7 +39,8 @@ export const CreateUserResultSchema = z
 // The social sign-in mutations (src/api/contracts/pending/social-sign-in.graphql; pending until a
 // user-service release declares them). The authorization URL leaves the app, so only an http(s)
 // URL is accepted; the access token or the pending 2FA session must be present for its branch.
-const SocialAuthorizationUrlSchema = z.url({ protocol: /^https?$/ });
+const HTTP_PROTOCOL = /^https?$/;
+const SocialAuthorizationUrlSchema = z.url({ protocol: HTTP_PROTOCOL });
 
 export const SocialInitiateResultSchema = z.object({
   initiateSocialSignInUser: z.object({

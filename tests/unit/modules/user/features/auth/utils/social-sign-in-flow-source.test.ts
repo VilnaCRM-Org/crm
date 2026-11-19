@@ -1,4 +1,5 @@
-import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
+import type SocialSignInFlowSourceModule from '@auth/utils/social-sign-in-flow-source';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const DESTINATION_KEY = 'crm.socialSignIn.destination';
 const STATE_KEY = 'crm.socialSignIn.state';
@@ -6,7 +7,16 @@ const from = (pathname: string, search = '', hash = ''): unknown => ({
   from: { pathname, search, hash },
 });
 
+// The storage keys are module-level literals, so the source is loaded inside each test.
+let socialSignInFlowSource: typeof SocialSignInFlowSourceModule;
+
 describe('socialSignInFlowSource', () => {
+  beforeEach(async () => {
+    socialSignInFlowSource = await loadIsolated(
+      async () => (await import('@auth/utils/social-sign-in-flow-source')).default
+    );
+  });
+
   afterEach(() => {
     window.sessionStorage.clear();
     jest.restoreAllMocks();

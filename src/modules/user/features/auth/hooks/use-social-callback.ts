@@ -30,7 +30,11 @@ function useInitialCallback(): SocialCallbackInitial {
     const starting = (location.state as RedirectNavigationState | null)?.socialStart === true;
     return { query, view: socialCallbackViewMapper.initialView(provider, query, starting) };
   });
-  useLayoutEffect(() => socialCallbackViewMapper.stripQuery(), [initial]);
+  useLayoutEffect(
+    () => socialCallbackViewMapper.stripQuery(),
+    // Stryker disable next-line ArrayDeclaration: equivalent, `initial` is a fixed useState value
+    [initial]
+  );
   return initial;
 }
 
@@ -39,13 +43,17 @@ function useRelay(
   settle: Dispatch<SetStateAction<SocialCallbackView>>
 ): SocialRelay | null {
   const { key } = useLocation();
-  return useMemo(() => {
-    const { view, query } = initial;
-    if (view.status === 'starting') return { kind: 'start', key: `start:${key}`, view, settle };
-    if (view.status !== 'relaying' || !query.code || !query.state) return null;
-    const params = { code: query.code, state: query.state };
-    return { kind: 'complete', key: `complete:${query.state}`, view, params, settle };
-  }, [initial, key, settle]);
+  return useMemo(
+    () => {
+      const { view, query } = initial;
+      if (view.status === 'starting') return { kind: 'start', key, view, settle };
+      if (view.status !== 'relaying' || !query.code || !query.state) return null;
+      const params = { code: query.code, state: query.state };
+      return { kind: 'complete', key, view, params, settle };
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, useState value, mount key, setter
+    [initial, key, settle]
+  );
 }
 
 function useNavigation(view: SocialCallbackView): void {

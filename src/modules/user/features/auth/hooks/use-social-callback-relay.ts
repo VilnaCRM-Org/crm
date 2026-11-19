@@ -65,12 +65,16 @@ export default function useSocialCallbackRelay(
   loader: AuthProviderLoader,
   run: SocialRelay | null
 ): void {
-  useEffect(() => {
-    if (run === null) return undefined;
-    const guard: SocialRelayGuard = { active: true };
-    void settleRelay(loader, run, guard);
-    return (): void => {
-      guard.active = false;
-    };
-  }, [loader, run]);
+  useEffect(
+    () => {
+      if (run === null) return undefined;
+      const guard: SocialRelayGuard = { active: true };
+      void settleRelay(loader, run, guard);
+      return (): void => {
+        guard.active = false;
+      };
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, both are fixed for the mount
+    [loader, run]
+  );
 }

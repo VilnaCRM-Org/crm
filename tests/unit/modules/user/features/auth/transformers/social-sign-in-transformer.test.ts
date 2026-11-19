@@ -2,10 +2,12 @@ import 'reflect-metadata';
 
 import { ApolloError } from '@apollo/client';
 
-import SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
+import type SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
 import { buildToken, buildUserId } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
-const transformer = new SocialSignInTransformer();
+// The error-code table is a module-level literal, so the transformer is loaded inside each test.
+let transformer: SocialSignInTransformer;
 const live = (): AbortSignal => new AbortController().signal;
 
 const coded = (errorCode: unknown): ApolloError =>
@@ -14,6 +16,14 @@ const coded = (errorCode: unknown): ApolloError =>
   });
 
 describe('SocialSignInTransformer', () => {
+  beforeEach(async () => {
+    transformer = await loadIsolated(async () => {
+      const { default: Transformer } =
+        await import('@auth/transformers/social-sign-in-transformer');
+      return new Transformer();
+    });
+  });
+
   it('turns an initiation into the redirect it asks for', () => {
     const initiation = { authorizationUrl: 'https://github.com/login/oauth/authorize', state: 's' };
 
