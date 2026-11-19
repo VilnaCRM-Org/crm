@@ -115,5 +115,7 @@ run_start() {
     "$COMMAND_LOG"
   grep -qx 'node scripts/local-stack/issue-demo-session.mjs' "$COMMAND_LOG"
   grep -qx 'docker compose -f docker-compose.local-stack.yml up --detach --build' "$COMMAND_LOG"
+  [ "$(grep -n 'docker compose -f docker-compose.local-stack.yml' "$COMMAND_LOG" | tail -1 | cut -d: -f2-)" = \
+    'docker compose -f docker-compose.local-stack.yml restart sign-in-mock' ]
   assert_output_contains 'Open http://vilnacrm.localhost and sign in as local-demo@vilnacrm.com'
 }

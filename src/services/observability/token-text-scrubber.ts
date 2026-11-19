@@ -2,7 +2,7 @@ export default class TokenTextScrubber {
   private readonly patterns: readonly RegExp[] = [
     /(?<=token=)[^&#\s]+/gi,
     /(?<=token%3d)(?:(?!%26|%23)[^&#\s])+/gi,
-    /(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+/gi,
+    /(?<="[\w-]*(?:token|password|secret)[\w-]*"\s*:\s*")(?:\\.|[^"\\])+/gi,
   ];
 
   public scrub(value: string): string {

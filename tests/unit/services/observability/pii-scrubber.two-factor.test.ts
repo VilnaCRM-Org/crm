@@ -426,7 +426,7 @@ describe('PiiScrubber two-factor redaction (#331)', () => {
       expect(sourcesOf(tokenPatternsOf())).toEqual([
         [String.raw`(?<=token=)[^&#\s]+`, 'gi'],
         [String.raw`(?<=token%3d)(?:(?!%26|%23)[^&#\s])+`, 'gi'],
-        [String.raw`(?<="[\w-]*(?:token|password|secret)"\s*:\s*")(?:\\.|[^"\\])+`, 'gi'],
+        [String.raw`(?<="[\w-]*(?:token|password|secret)[\w-]*"\s*:\s*")(?:\\.|[^"\\])+`, 'gi'],
       ]);
     });
 

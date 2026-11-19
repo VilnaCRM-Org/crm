@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4]
 project_name: crm
 date: 2026-10-06
 revised: 2026-11-17
-iteration: 17
+iteration: 18
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'pm (John), autonomous run'
@@ -59,6 +59,8 @@ revisions:
   - '2026-11-17: gate finding; shipped spec paths noted in Stories 3.4, 3.5, 4.3 and 4.4'
   - '2026-11-17: Story 1.4 names FieldViolationParser in Files and the class check, Story 2.2
     demo resolve wording; the flag-removal commit cited as 62ddc565'
+  - '2026-11-18: Story 1.4 code facts marked superseded where FieldViolationParser took the
+    violation tables'
 ---
 
 # Epics and stories: two-factor authentication for the user module
@@ -845,7 +847,10 @@ wrong-password texts), `TAKEN_MESSAGES` and `VIOLATION_PROPERTIES` (`email`, `to
 `newPassword`, `initials`, `password`). The exact-message step runs after the violation step
 and before `extensions.status`; an unmatched status-less error is `unknown` when it carries
 `extensions.code` and `refused` otherwise. The file holds ten functions, so the story adds rows
-only. Its unit test is
+only. Superseded 2026-11-11 (amendment below): `TAKEN_MESSAGES`, `VIOLATION_PROPERTIES` and the
+violation step moved to the injected `FieldViolationParser`
+(`src/modules/user/transformers/field-violation-parser.ts`), so the transformer no longer holds
+those tables or ten functions; the step order above is unchanged. Its unit test is
 `tests/unit/modules/user/transformers/user-service-error-transformer.test.ts`;
 the integration suites that resolve it are
 `tests/integration/modules/user/features/auth/password-recovery-transformers.integration.test.ts`

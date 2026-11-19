@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
 revised: 2026-11-18
-iteration: 8
+iteration: 10
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -21,7 +21,8 @@ inputDocuments:
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
 2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below), 2026-11-05
-(FR/NFR reconciliation) and 2026-11-17 (the flag-removal commit cited as 62ddc565) **Feature:**
+(FR/NFR reconciliation), 2026-11-17 (the flag-removal commit cited as 62ddc565) and 2026-11-18
+(owner decision: resend inert only during an e-mail-section save) **Feature:**
 `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They

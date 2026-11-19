@@ -126,7 +126,8 @@ declaration silently, so each pending file opens with `# pending-against: <versi
   - `disableTwoFactorUser` answers `success: true`.
   - A malformed e-mail or a blank `password` on sign-in, a blank `pendingSessionId` on complete,
     or a malformed `twoFactorCode` on complete, confirm or disable, answers one GraphQL error
-    `<property>: <reason>` with `extensions: { code: 'BAD_USER_INPUT', status: 422 }` and no token.
+    `<property>: <reason>` with `extensions: { code: 'BAD_USER_INPUT', status: 422, violations:
+[{ path, message }] }` and no token (FR-4; `violations` is the user-service GraphQL shape).
     A blank value reads `This value should not be blank.`
 
   A recovery code is `XXXX-XXXX` from `A-Z0-9`, in either case. Confirm takes a six-digit code

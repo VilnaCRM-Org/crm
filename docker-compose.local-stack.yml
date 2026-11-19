@@ -53,7 +53,7 @@ services:
       - dev
       - sign-in-mock
     ports:
-      - '80:80'
+      - '127.0.0.1:80:80'
     healthcheck:
       test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/healthz']
       interval: 10s

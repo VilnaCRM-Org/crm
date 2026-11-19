@@ -209,17 +209,17 @@ receives it is still signed in; it is `rejected` and gets the same error toast a
 Save, read or resend (amended 2026-11-02, superseding the earlier `session_ended` mapping).
 
 Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `password_wrong`,
-`password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an
-i18n key; a field error reason is copy that `ProfileSectionForm` looks up in its module-private
-`ERROR_MESSAGES` table when it renders the error under its field, and it focuses the first
-field, in field order, that has one. A `currentPassword` error goes to the password field of the
-section that sent it. A Save that settles with a toast moves focus when focus has fallen to the
-page body or is still inside the form, as after Enter in a field (`useSettledFocus`), so a control
-the user moved to outside the form keeps focus: to that form's Save, or to the text input when a
-name or e-mail save succeeded and hid its Save. When Save is itself disabled as it settles, because
-the connection dropped during the Save, focus that fell to the page body moves to the `h1`, the same
-fallback closing a toast uses, and a field the user is still in keeps focus. `useCollapseFocus`
-does the same for a Clear that removes itself.
+`password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an i18n
+key; a field error reason is copy that `ServerFieldErrors` (`server-field-errors.tsx`) looks up in
+its module-private `ERROR_MESSAGES` table when it renders the error under its field, and it focuses
+the first field, in field order, that has one. A `currentPassword` error goes to the password field
+of the section that sent it. A Save that settles with a toast moves focus when focus has fallen to
+the page body or is still inside the form, as after Enter in a field (`useSettledFocus`), so a
+control the user moved to outside the form keeps focus: to that form's Save, or to the text input
+when a name or e-mail save succeeded and hid its Save. When Save is itself disabled as it settles,
+because the connection dropped during the Save, focus that fell to the page body moves to the `h1`,
+the same fallback closing a toast uses, and a field the user is still in keeps focus.
+`useCollapseFocus` does the same for a Clear that removes itself.
 
 Every Save toast belongs to the section that sent it (`useSaveSettle`). Its `returnFocusRef` is that
 section's own settled target, so closing the last toast returns focus to that form's Save, or to
@@ -359,9 +359,9 @@ Deliberate differences, each for a reason a frame cannot show:
   instruction shows in the same place on failure and stays until the next copy. Both lines use the
   key's failure-line type (Inter 14 px, #404142) and are `aria-hidden`, because the polite status
   region still carries the announcement. They sit in a 16 px slot that replaces the list's 16 px
-  bottom margin, so nothing moves at rest or on success; at 375 px and narrower the failure line
-  wraps to two lines and pushes the button down 16 px rather than overlap the codes (WCAG 1.4.10,
-  1.4.12).
+  bottom margin, so nothing moves at rest or on success; the shortened failure line stays on one
+  line down to 320 px, and if text spacing or zoom ever wraps it, it pushes the button down rather
+  than overlap the codes (WCAG 1.4.10, 1.4.12).
 
 The tooltip has no frame at 1025 to 1439 px, where the card is narrower than it: there it aligns to
 the step's right edge without an arrow, and on a phone it fills the step, so it can never add

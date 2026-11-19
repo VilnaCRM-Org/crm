@@ -5,7 +5,7 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
 revised: 2026-11-18
-iteration: 21
+iteration: 22
 feature: two-factor-authentication
 issue: https://github.com/VilnaCRM-Org/crm/issues/331
 author: 'architect (Winston), autonomous run'
@@ -82,6 +82,9 @@ revisions:
     Parser and Scrubber suffixes (AR-5)'
   - '2026-11-17: the error-text red marked superseded, the sign-in context listed in full, the
     §6.1 import paragraph marked; the flag-removal commit cited as 62ddc565'
+  - '2026-11-18: owner decision; TokenTextScrubber split out of PiiTextScrubber, ServerFieldErrors
+    and useSectionForm out of ProfileSectionForm; gate findings, §6.17 settings transformer names
+    and the one-argument toFailureOutcome'
 ---
 
 # Architecture: two-factor authentication for the user module
@@ -2109,8 +2112,8 @@ The board's L3 stack, one class per box (§3.4), registered in the user module c
   narrows `recoveryCodes` (`Iterable`, generated as `unknown`) through the zod contract module
   `settings/utils/response-schemas.ts` and returns status `enabled` with a `RecoveryCodeSet`;
   `toDisabledOutcome(DisableTwoFactorUserMutation)` returns status `disabled`; a payload failing
-  its schema becomes the `server` failure. `toFailureOutcome(TwoFactorSettingsOperation,
-UserServiceFailure)` applies the §8 settings rows from one module-level table.
+  its schema becomes the `server` failure. `toFailureOutcome(UserServiceFailure)` applies the §8
+  settings rows from one module-level table.
   Amended 2026-11-18 (gate finding): `toFailureOutcome` takes the `UserServiceFailure` alone. Every
   §8 settings reason maps to one outcome whatever the operation that produced it, so the operation
   argument would select nothing; the sequence diagram shows the one-argument call.
