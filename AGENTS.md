@@ -1258,7 +1258,7 @@ scenario file that exports nothing fails, and zero executed scenarios fails inst
 vacuously. Waive a third-party false positive only through a reviewed `trace` + `reason` entry in
 `tests/memory-leak/leak-allowlist.json`.
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 56-way
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 60-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
