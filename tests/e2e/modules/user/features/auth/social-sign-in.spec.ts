@@ -161,18 +161,22 @@ test.describe('Social sign-in', () => {
     await expect.poll(() => initiated.map((input) => input.provider)).toEqual(['google', 'google']);
   });
 
-  test('explains a completion user-service could not be reached for', async ({ page }) => {
-    await answerInitiate(page, 'e2e-code');
-    await unreachableComplete(page);
+  test.describe('dropped connection', () => {
+    test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
 
-    await signInWith(page, 'Google');
+    test('explains a completion user-service could not be reached for', async ({ page }) => {
+      await answerInitiate(page, 'e2e-code');
+      await unreachableComplete(page);
 
-    await expect(
-      page
-        .getByRole('status')
-        .filter({ hasText: t('auth.social.error.unavailable', { provider: 'Google' }) })
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(1);
+      await signInWith(page, 'Google');
+
+      await expect(
+        page
+          .getByRole('status')
+          .filter({ hasText: t('auth.social.error.unavailable', { provider: 'Google' }) })
+      ).toBeVisible();
+      await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(1);
+    });
   });
 
   test('refuses an unknown provider without asking user-service', async ({ page }) => {
