@@ -12,6 +12,7 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
+  SOCIAL_SIGN_IN_SDL,
   type SingleBody,
 } from './mock-schema-fixtures';
 
@@ -78,7 +79,7 @@ describe('profile operations on the stateless mock', () => {
 
   beforeEach(async () => {
     server = new ApolloServer({
-      typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION],
+      typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION, ...SOCIAL_SIGN_IN_SDL],
       resolvers,
       formatError,
     });
@@ -239,10 +240,12 @@ describe('profile operations on the stateless mock', () => {
     expect(result.data).toEqual({ resendEmailToUser: { clientMutationId } });
   });
 
-  it('keeps createUser and the password reset resolvers beside the profile ones', () => {
+  it('keeps createUser, password reset and social sign-in beside the profile resolvers', () => {
     expect(Object.keys(resolvers.Mutation).sort()).toEqual([
+      'completeSocialSignInUser',
       'confirmPasswordResetUser',
       'createUser',
+      'initiateSocialSignInUser',
       'requestPasswordResetUser',
       'resendEmailToUser',
       'updateUser',

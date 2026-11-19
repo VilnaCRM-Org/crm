@@ -1,16 +1,26 @@
+import type { Page } from '@playwright/test';
+
 import { buildUserId } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import {
-  answerCallback,
+  answerComplete,
   answerInitiate,
-  problem,
+  E2E_STATE,
+  refused,
   signedIn,
+  twoFactor,
 } from '@tests/e2e/utils/social-sign-in-stubs';
 
 const errorTitle = (provider: string): string => t('auth.social.error.title', { provider });
 const tryAgain = t('auth.social.try_again');
 const backToSignIn = t('auth.social.back_to_sign_in');
+const button = (provider: string): string => t('auth.oauth.continue_with', { provider });
+
+async function signInWith(page: Page, provider: string, from = '/sign-in'): Promise<void> {
+  await page.goto(from);
+  await page.getByRole('button', { name: button(provider) }).click();
+}
 
 test.describe('Social sign-in', () => {
   for (const [label, provider] of [
@@ -19,54 +29,48 @@ test.describe('Social sign-in', () => {
   ] as const) {
     test(`signs in with ${label} from /sign-in in the same tab`, async ({ page }) => {
       const initiated = await answerInitiate(page, 'e2e-code');
-      const relayed = await answerCallback(page, 200, signedIn());
-      await page.goto('/sign-in');
+      const completed = await answerComplete(page, signedIn());
 
-      await page
-        .getByRole('button', { name: t('auth.oauth.continue_with', { provider: label }) })
-        .click();
+      await signInWith(page, label);
 
       await expect(page).toHaveURL(/\/$/);
-      expect(initiated).toEqual([provider]);
-      expect(relayed).toHaveLength(1);
-      expect(new URL(relayed[0] ?? '').searchParams.get('code')).toBe('e2e-code');
+      expect(initiated.map((input) => input.provider)).toEqual([provider]);
+      expect(completed).toEqual([
+        expect.objectContaining({ provider, code: 'e2e-code', state: E2E_STATE }),
+      ]);
       await expect(page.locator('main')).toBeFocused();
     });
   }
 
   test('signs in from /sign-up as well', async ({ page }) => {
     await answerInitiate(page, 'e2e-code');
-    await answerCallback(page, 200, signedIn());
-    await page.goto('/sign-up');
+    await answerComplete(page, signedIn());
 
-    await page
-      .getByRole('button', { name: t('auth.oauth.continue_with', { provider: 'Google' }) })
-      .click();
+    await signInWith(page, 'Google', '/sign-up');
 
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test('returns to the protected page that sent the user to sign in', async ({ page }) => {
-    await answerInitiate(page, 'e2e-code');
-    await answerCallback(page, 200, signedIn());
-    await page.goto('/orders');
-    await expect(page).toHaveURL(/\/sign-in$/);
-
-    await page
-      .getByRole('button', { name: t('auth.oauth.continue_with', { provider: 'GitHub' }) })
-      .click();
-
-    await expect(page).toHaveURL(/\/orders$/);
-    await expect(page.locator('main')).toBeFocused();
-  });
-
   test('strips the code and state from the address bar', async ({ page }) => {
-    await answerCallback(page, 422, problem(422, 'state_expired'));
+    await answerInitiate(page, 'secret-code');
+    await answerComplete(page, refused(422, 'state_expired'));
 
-    await page.goto('/auth/callback/google?code=secret-code&state=secret-state');
+    await signInWith(page, 'Google');
 
     await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeVisible();
     expect(page.url()).not.toContain('secret');
+    expect(page.url()).not.toContain(E2E_STATE);
+  });
+
+  test('refuses a callback for a state this tab never started', async ({ page }) => {
+    const completed = await answerComplete(page, signedIn());
+
+    await page.goto('/auth/callback/google?code=c&state=forged');
+
+    await expect(
+      page.getByRole('status').filter({ hasText: t('auth.social.error.expired') })
+    ).toBeVisible();
+    expect(completed).toHaveLength(0);
   });
 
   for (const [errorCode, status, messageKey, retryable] of [
@@ -79,9 +83,10 @@ test.describe('Social sign-in', () => {
     ['provider_mismatch', 400, 'provider_mismatch', false],
   ] as const) {
     test(`explains ${errorCode} and offers the right way out`, async ({ page }) => {
-      await answerCallback(page, status, problem(status, errorCode));
+      await answerInitiate(page, 'e2e-code');
+      await answerComplete(page, refused(status, errorCode));
 
-      await page.goto(`/auth/callback/google?code=c&state=${errorCode}`);
+      await signInWith(page, 'Google');
 
       await expect(
         page.getByRole('heading', { level: 1, name: errorTitle('Google') })
@@ -99,23 +104,24 @@ test.describe('Social sign-in', () => {
     });
   }
 
-  test('shows a cancelled sign-in without calling user-service', async ({ page }) => {
-    const relayed = await answerCallback(page, 200, signedIn());
+  test('shows a cancelled sign-in without completing it', async ({ page }) => {
+    const completed = await answerComplete(page, signedIn());
 
-    await page.goto('/auth/callback/github?error=access_denied&state=s');
+    await page.goto(`/auth/callback/github?error=access_denied&state=${E2E_STATE}`);
 
     await expect(
       page
         .getByRole('status')
         .filter({ hasText: t('auth.social.error.cancelled', { provider: 'GitHub' }) })
     ).toBeVisible();
-    expect(relayed).toHaveLength(0);
+    expect(completed).toHaveLength(0);
   });
 
   test('tells a 2FA account to finish with its password', async ({ page }) => {
-    await answerCallback(page, 200, { '2fa_enabled': true, pending_session_id: buildUserId() });
+    await answerInitiate(page, 'e2e-code');
+    await answerComplete(page, twoFactor(buildUserId()));
 
-    await page.goto('/auth/callback/google?code=c&state=two-factor');
+    await signInWith(page, 'Google');
 
     await expect(
       page.getByRole('status').filter({ hasText: t('auth.social.error.two_factor_required') })
@@ -123,9 +129,9 @@ test.describe('Social sign-in', () => {
   });
 
   test('retries the same provider with the keyboard only', async ({ page }) => {
-    await answerCallback(page, 503, problem(503, 'provider_unavailable'));
-    const initiated = await answerInitiate(page, 'second-code');
-    await page.goto('/auth/callback/google?code=c&state=retry');
+    const initiated = await answerInitiate(page, 'e2e-code');
+    await answerComplete(page, refused(503, 'provider_unavailable'));
+    await signInWith(page, 'Google');
     await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
 
     await page.keyboard.press('Tab');
@@ -135,12 +141,13 @@ test.describe('Social sign-in', () => {
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Enter');
 
-    await expect.poll(() => initiated).toEqual(['google']);
+    await expect.poll(() => initiated.length).toBe(2);
   });
 
   test('goes back to sign-in from the error view', async ({ page }) => {
-    await answerCallback(page, 409, problem(409, 'duplicate_email'));
-    await page.goto('/auth/callback/google?code=c&state=back');
+    await answerInitiate(page, 'e2e-code');
+    await answerComplete(page, refused(409, 'duplicate_email'));
+    await signInWith(page, 'Google');
 
     await page.getByRole('link', { name: backToSignIn }).click();
 

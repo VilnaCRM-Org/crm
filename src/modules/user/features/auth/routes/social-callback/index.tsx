@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router';
 
 import RouteFallback from '@/components/route-fallback';
 import formStyles from '@/components/ui-form/styles';
@@ -17,7 +18,7 @@ function SocialCallbackContent(): JSX.Element {
 
   if (view.status !== 'failed') {
     const message = t('auth.social.signing_in', {
-      provider: view.status === 'relaying' ? view.label : '',
+      provider: view.status === 'redirect' ? '' : view.label,
     });
     // A visible, unfocused heading while the relay runs; the error view's h1 takes focus later.
     return (
@@ -33,13 +34,15 @@ function SocialCallbackContent(): JSX.Element {
   return <SocialSignInErrorView kind={view.error} providerLabel={label} onRetry={retry} />;
 }
 
+// Keyed by the history entry, so a retry (a fresh entry on the same route) starts over.
 export default function SocialCallback(): JSX.Element {
   usePageTitle('auth.social.callback_title');
+  const { key } = useLocation();
 
   return (
     <AuthPageLayout>
       <AuthCard variant="recovery">
-        <SocialCallbackContent />
+        <SocialCallbackContent key={key} />
       </AuthCard>
     </AuthPageLayout>
   );

@@ -1,11 +1,18 @@
+import type { ApolloError } from '@apollo/client';
 import { injectable } from 'tsyringe';
 
-import type { SocialCallbackResponse } from '@auth/types/social-sign-in/social-callback-response';
 import type { SocialSignInErrorKind } from '@auth/types/social-sign-in/social-sign-in-error-kind';
-import type { SocialSignInOutcome } from '@auth/types/social-sign-in/social-sign-in-outcome';
-import { SocialAuthProblemSchema } from '@auth/utils/response-schemas';
+import type {
+  SocialFailureOutcome,
+  SocialSignInOutcome,
+  SocialStartOutcome,
+} from '@auth/types/social-sign-in/social-sign-in-outcome';
+import type {
+  SocialCompletion,
+  SocialInitiation,
+} from '@auth/types/social-sign-in/social-sign-in-result';
 
-// user-service `error_code` → the message the callback page shows (PRD FR12).
+// user-service `extensions.error_code` → the message the callback page shows (PRD FR12).
 const ERROR_KINDS = new Map<string, SocialSignInErrorKind>([
   ['missing_oauth_parameters', 'missing_parameters'],
   ['provider_mismatch', 'provider_mismatch'],
@@ -18,40 +25,29 @@ const ERROR_KINDS = new Map<string, SocialSignInErrorKind>([
   ['provider_unavailable', 'unavailable'],
 ]);
 
-const TRANSPORT_FAILURE_STATUS = 0;
-
 @injectable()
 export default class SocialSignInTransformer {
-  public toOutcome(response: SocialCallbackResponse | undefined): SocialSignInOutcome {
-    if (response === undefined) return { kind: 'failed', error: 'generic' };
-    if (response['2fa_enabled']) {
-      return { kind: 'two-factor', pendingSessionId: response.pending_session_id };
-    }
-    return { kind: 'signed-in' };
+  public toStart(initiation: SocialInitiation): SocialStartOutcome {
+    return { kind: 'redirect', ...initiation };
   }
 
-  public fromFailure(error: unknown, signal: AbortSignal): SocialSignInOutcome {
+  public toOutcome(completion: SocialCompletion): SocialSignInOutcome {
+    return completion.twoFactorEnabled === true
+      ? { kind: 'two-factor', pendingSessionId: completion.pendingSessionId }
+      : { kind: 'signed-in' };
+  }
+
+  public fromFailure(error: unknown, signal: AbortSignal): SocialFailureOutcome {
     if (signal.aborted) return { kind: 'aborted' };
     return { kind: 'failed', error: this.errorKindOf(error) };
   }
 
-  // Read structurally: the HTTP client's error carries `status` (0 for a timeout or a dropped
-  // connection) and the response body in `cause.body`, and a feature does not import the client.
+  // A transport failure (no answer at all) is "unavailable"; a GraphQL error names its reason in
+  // `extensions.error_code`, and anything unmapped, including an unparsable body, is "generic".
   private errorKindOf(error: unknown): SocialSignInErrorKind {
-    const { status, cause } = (error ?? {}) as { status?: unknown; cause?: unknown };
-    if (typeof status !== 'number') return 'generic';
-    if (status === TRANSPORT_FAILURE_STATUS) return 'unavailable';
-    return ERROR_KINDS.get(this.errorCodeOf(cause) ?? '') ?? 'generic';
-  }
-
-  private errorCodeOf(cause: unknown): string | undefined {
-    const body = (cause as { body?: unknown } | undefined)?.body;
-    if (typeof body !== 'string') return undefined;
-    try {
-      const problem = SocialAuthProblemSchema.safeParse(JSON.parse(body));
-      return problem.success ? problem.data.error_code : undefined;
-    } catch {
-      return undefined;
-    }
+    const { networkError, graphQLErrors } = Object(error) as Partial<ApolloError>;
+    if (networkError) return 'unavailable';
+    const code = graphQLErrors?.[0]?.extensions?.error_code;
+    return (typeof code === 'string' ? ERROR_KINDS.get(code) : undefined) ?? 'generic';
   }
 }

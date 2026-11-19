@@ -1,23 +1,36 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse } from 'msw';
 
 import '../../../../setup';
-import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import SocialSignInProvider from '@auth/data-providers/social-sign-in-provider';
 import { AuthProviderLoader, useAuthStore } from '@auth/stores';
 import { buildToken, buildUserId } from '@tests/builders';
 
-import server from '../../../../mocks/server';
+import server, { userServiceGraphql } from '../../../../mocks/server';
 
-const CALLBACK = `${API_ENDPOINTS.SOCIAL_AUTH}/:provider/callback`;
 const PARAMS = { code: 'code-1', state: 'state-1' };
+const AUTHORIZE = 'https://github.com/login/oauth/authorize?state=issued';
 
-const problem = (status: number, errorCode: string): Response =>
-  HttpResponse.json(
-    { type: `/errors/${status}`, title: 'An error occurred', status, error_code: errorCode },
-    { status, headers: { 'Content-Type': 'application/problem+json' } }
+const answer = (
+  operation: 'InitiateSocialSignIn' | 'CompleteSocialSignIn',
+  respond: () => Response
+): Array<Record<string, unknown>> => {
+  const seen: Array<Record<string, unknown>> = [];
+  server.use(
+    userServiceGraphql.mutation(operation, ({ variables }) => {
+      seen.push(variables);
+      return respond();
+    })
   );
+  return seen;
+};
+
+const refused = (errorCode: string): Response =>
+  HttpResponse.json({
+    data: { completeSocialSignInUser: null },
+    errors: [{ message: 'refused', extensions: { status: 422, error_code: errorCode } }],
+  });
 
 describe('SocialSignInProvider over the container and msw', () => {
   let provider: SocialSignInProvider;
@@ -36,80 +49,171 @@ describe('SocialSignInProvider over the container and msw', () => {
     expect(container.resolve(AUTH_TOKENS.SocialSignInProvider)).toBe(provider);
   });
 
-  it('signs in with the returned access token, sending code, state and cookies', async () => {
-    const token = buildToken();
-    let seen: { url: URL; credentials: RequestCredentials; provider: unknown } | null = null;
-    server.use(
-      http.get(CALLBACK, ({ request, params }) => {
-        seen = {
-          url: new URL(request.url),
-          credentials: request.credentials,
-          provider: params.provider,
-        };
-        return HttpResponse.json({ '2fa_enabled': false, access_token: token, refresh_token: 'r' });
+  it('starts with the authorization URL and state of initiateSocialSignInUser', async () => {
+    const seen = answer('InitiateSocialSignIn', () =>
+      HttpResponse.json({
+        data: {
+          initiateSocialSignInUser: { user: { authorizationUrl: AUTHORIZE, state: 'issued' } },
+        },
+      })
+    );
+
+    await expect(provider.start('github', new AbortController().signal)).resolves.toEqual({
+      kind: 'redirect',
+      authorizationUrl: AUTHORIZE,
+      state: 'issued',
+    });
+    expect(seen).toEqual([{ input: { provider: 'github', clientMutationId: expect.any(String) } }]);
+  });
+
+  it('refuses an authorization URL that is not http(s)', async () => {
+    answer('InitiateSocialSignIn', () =>
+      HttpResponse.json({
+        data: {
+          initiateSocialSignInUser: {
+            user: { authorizationUrl: 'javascript:alert(1)', state: 's' },
+          },
+        },
+      })
+    );
+
+    await expect(provider.start('google', new AbortController().signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'generic',
+    });
+  });
+
+  it('signs in with the access token completeSocialSignInUser returns', async () => {
+    const accessToken = buildToken();
+    const seen = answer('CompleteSocialSignIn', () =>
+      HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken, pendingSessionId: null },
+          },
+        },
       })
     );
 
     await expect(
-      provider.complete('github', PARAMS, new AbortController().signal)
-    ).resolves.toEqual({ kind: 'signed-in' });
-
-    expect(useAuthStore.getState().token).toBe(token);
-    expect(seen).not.toBeNull();
-    const {
-      url,
-      credentials,
-      provider: routed,
-    } = seen as unknown as {
-      url: URL;
-      credentials: string;
-      provider: string;
-    };
-    expect(routed).toBe('github');
-    expect(Object.fromEntries(url.searchParams)).toEqual({ code: 'code-1', state: 'state-1' });
-    expect(credentials).toBe('include');
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({
+      kind: 'signed-in',
+    });
+    expect(useAuthStore.getState().token).toBe(accessToken);
+    expect(seen).toEqual([
+      { input: { provider: 'google', ...PARAMS, clientMutationId: expect.any(String) } },
+    ]);
   });
 
   it('hands a 2FA account its pending session without signing in', async () => {
     const pendingSessionId = buildUserId();
-    server.use(
-      http.get(CALLBACK, () =>
-        HttpResponse.json({ '2fa_enabled': true, pending_session_id: pendingSessionId })
-      )
-    );
-
-    await expect(
-      provider.complete('google', PARAMS, new AbortController().signal)
-    ).resolves.toEqual({ kind: 'two-factor', pendingSessionId });
-    expect(useAuthStore.getState().token).toBeNull();
-  });
-
-  it.each([
-    [422, 'state_expired', 'expired'],
-    [422, 'unverified_provider_email', 'email_unverified'],
-    [409, 'duplicate_email', 'duplicate_email'],
-    [503, 'provider_unavailable', 'unavailable'],
-  ])('maps a %s %s problem to %s and asks only once', async (status, code, kind) => {
-    let calls = 0;
-    server.use(
-      http.get(CALLBACK, () => {
-        calls += 1;
-        return problem(status, code);
+    answer('CompleteSocialSignIn', () =>
+      HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: true, accessToken: null, pendingSessionId },
+          },
+        },
       })
     );
 
     await expect(
       provider.complete('google', PARAMS, new AbortController().signal)
-    ).resolves.toEqual({ kind: 'failed', error: kind });
-    expect(calls).toBe(1);
+    ).resolves.toEqual({
+      kind: 'two-factor',
+      pendingSessionId,
+    });
     expect(useAuthStore.getState().token).toBeNull();
   });
 
-  it('rejects a success body that matches neither documented shape', async () => {
-    server.use(http.get(CALLBACK, () => HttpResponse.json({ access_token: buildToken() })));
+  it.each([
+    ['state_expired', 'expired'],
+    ['unverified_provider_email', 'email_unverified'],
+    ['duplicate_email', 'duplicate_email'],
+    ['provider_unavailable', 'unavailable'],
+  ])('maps the %s GraphQL error to %s and asks only once', async (errorCode, kind) => {
+    const seen = answer('CompleteSocialSignIn', () => refused(errorCode));
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({
+      kind: 'failed',
+      error: kind,
+    });
+    expect(seen).toHaveLength(1);
+    expect(useAuthStore.getState().token).toBeNull();
+  });
+
+  it('maps a dropped connection to unavailable', async () => {
+    answer('CompleteSocialSignIn', () => HttpResponse.error());
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({
+      kind: 'failed',
+      error: 'unavailable',
+    });
+  });
+
+  it('signs in when the payload leaves twoFactorEnabled null', async () => {
+    const accessToken = buildToken();
+    answer('CompleteSocialSignIn', () =>
+      HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: null, accessToken, pendingSessionId: null },
+          },
+        },
+      })
+    );
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'signed-in' });
+    expect(useAuthStore.getState().token).toBe(accessToken);
+  });
+
+  it.each([
+    ['an unmapped error code', { status: 422, error_code: 'something_new' }],
+    ['a non-string error code', { status: 422, error_code: 42 }],
+    ['no error code at all', { status: 500 }],
+  ])('maps a GraphQL error with %s to generic', async (_label, extensions) => {
+    answer('CompleteSocialSignIn', () =>
+      HttpResponse.json({
+        data: { completeSocialSignInUser: null },
+        errors: [{ message: 'x', extensions }],
+      })
+    );
 
     await expect(
       provider.complete('google', PARAMS, new AbortController().signal)
     ).resolves.toEqual({ kind: 'failed', error: 'generic' });
+  });
+
+  it('maps a start refused with unsupported_provider', async () => {
+    answer('InitiateSocialSignIn', () =>
+      HttpResponse.json({
+        data: { initiateSocialSignInUser: null },
+        errors: [{ message: 'x', extensions: { status: 400, error_code: 'unsupported_provider' } }],
+      })
+    );
+
+    await expect(provider.start('google', new AbortController().signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'unsupported_provider',
+    });
+  });
+
+  it('reports nothing for a completion the caller already aborted', async () => {
+    const seen = answer('CompleteSocialSignIn', () => refused('state_expired'));
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(provider.complete('google', PARAMS, controller.signal)).resolves.toEqual({
+      kind: 'aborted',
+    });
+    expect(seen).toHaveLength(0);
+    expect(useAuthStore.getState().token).toBeNull();
   });
 });

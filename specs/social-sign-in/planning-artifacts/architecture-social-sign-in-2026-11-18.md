@@ -24,6 +24,15 @@ registry, RSBuild, react-i18next. All new code slots into the existing `user` mo
 feature, the shared `services/https-client` layer, `config/runtime`, and `docker/` — no new
 top-level directory.
 
+> **Revision 2026-11-19 — GraphQL only, no ADR.** The SPA talks to user-service over GraphQL
+> only, never REST, and the feature carries no ADR. user-service exposes social sign-in only as
+> REST, so this plan declares two pending GraphQL mutations for it to add —
+> `initiateSocialSignInUser` (returns the provider's `authorizationUrl` and a `state`) and
+> `completeSocialSignInUser` (returns a `signInUser`-shaped payload) — in
+> `src/api/contracts/pending/social-sign-in.graphql`, answered locally by the Apollo mock. The
+> state is bound to the tab in `sessionStorage` instead of a cross-origin cookie. Rows below marked
+> _(2026-11-19)_ supersede the earlier text.
+
 ## 1. End-to-end flow
 
 ```mermaid
@@ -87,17 +96,16 @@ No new `UI*` kit component is required. One feature-local presentational compone
 
 Out of `src/`:
 
-| Path                                                | Change                                                                                                                                                                                                                                 |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/mockoon-social-oauth.js`                   | builds the social routes for the selected mode from the container environment and merges them into the imported environment (refuses to shadow a route the spec already declares)                                                      |
-| `scripts/docker/mockoon-entrypoint.sh`              | runs the merge, then `exec mockoon-cli start`                                                                                                                                                                                          |
-| `Mockoon.Dockerfile`                                | `mockoon-cli import` the pinned spec at build time into `/app/base.json`; copy the script + entrypoint; `ENV MOCKOON_OAUTH_MODE=mock`, `MOCKOON_SPA_ORIGIN=http://localhost:3000`; `CMD` → entrypoint; healthcheck unchanged           |
-| `docker-compose.yml`, `docker-compose.test.yml`     | `mockoon.environment`: `MOCKOON_OAUTH_MODE`, `MOCKOON_OAUTH_GOOGLE_CLIENT_ID`, `MOCKOON_OAUTH_GITHUB_CLIENT_ID`, `MOCKOON_OAUTH_FACEBOOK_CLIENT_ID`, `MOCKOON_OAUTH_TWITTER_CLIENT_ID`, `MOCKOON_SPA_ORIGIN`; test compose pins `mock` |
-| `.env.example`                                      | `OAUTH_MODE=mock`, empty `OAUTH_<P>_CLIENT_ID=` keys, `OAUTH_SPA_ORIGIN=http://${WEBSITE_DOMAIN}:${DEV_PORT}`                                                                                                                          |
-| `Makefile`                                          | `make mockoon-restart` (recreate the mockoon service only); Bats manifest row                                                                                                                                                          |
-| `tests/e2e/route-coverage.tsv`                      | row for `socialCallback`                                                                                                                                                                                                               |
-| `docs/social-sign-in-local.md`                      | the local verification guide (published copy of the bundle guide)                                                                                                                                                                      |
-| `docs/adr/0NN-social-sign-in-spa-callback-relay.md` | ADR for D1/D2 (the `ROUTE_PATHS`/registry change trips the ADR drift gate)                                                                                                                                                             |
+| Path                                            | Change                                                                                                                                                                                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/mockoon-social-oauth.js`               | builds the social routes for the selected mode from the container environment and merges them into the imported environment (refuses to shadow a route the spec already declares)                                                      |
+| `scripts/docker/mockoon-entrypoint.sh`          | runs the merge, then `exec mockoon-cli start`                                                                                                                                                                                          |
+| `Mockoon.Dockerfile`                            | `mockoon-cli import` the pinned spec at build time into `/app/base.json`; copy the script + entrypoint; `ENV MOCKOON_OAUTH_MODE=mock`, `MOCKOON_SPA_ORIGIN=http://localhost:3000`; `CMD` → entrypoint; healthcheck unchanged           |
+| `docker-compose.yml`, `docker-compose.test.yml` | `mockoon.environment`: `MOCKOON_OAUTH_MODE`, `MOCKOON_OAUTH_GOOGLE_CLIENT_ID`, `MOCKOON_OAUTH_GITHUB_CLIENT_ID`, `MOCKOON_OAUTH_FACEBOOK_CLIENT_ID`, `MOCKOON_OAUTH_TWITTER_CLIENT_ID`, `MOCKOON_SPA_ORIGIN`; test compose pins `mock` |
+| `.env.example`                                  | `OAUTH_MODE=mock`, empty `OAUTH_<P>_CLIENT_ID=` keys, `OAUTH_SPA_ORIGIN=http://${WEBSITE_DOMAIN}:${DEV_PORT}`                                                                                                                          |
+| `Makefile`                                      | `make mockoon-restart` (recreate the mockoon service only); Bats manifest row                                                                                                                                                          |
+| `tests/e2e/route-coverage.tsv`                  | row for `socialCallback`                                                                                                                                                                                                               |
+| `docs/social-sign-in-local.md`                  | the local verification guide (published copy of the bundle guide)                                                                                                                                                                      |
 
 ## 3. Key designs
 
@@ -201,7 +209,7 @@ Documented only (guide §5): run user-service from its repository with
   manifest row and an E2E spec land in the same story.
 - **Security.** Destination validation reuses the issue-#150 internal-path check; the callback
   page never renders query values; `Referrer-Policy` unchanged.
-- **ADR drift.** `src/routes/**` and `src/config/**` changes require the new ADR in the same PR.
+- **ADR drift** _(2026-11-19)_. The feature carries no ADR by the owner's decision; the pull request uses the documented `[no-adr]` escape hatch for the `src/routes/**` change.
 
 ## 5. Test strategy
 
@@ -230,3 +238,34 @@ What changed against this design while building it on the `main` of the day, and
 | E2E against Mockoon                                                            | E2E stubs the initiate and callback responses with `page.route`                                                                                    | The e2e stack serves the SPA and the API on different sites, so the `SameSite=Lax` flow cookie cannot flow there |
 | Visual baselines for the callback states (S4.1)                                | not recorded                                                                                                                                       | Baselines come from `make test-visual-update` on the production stack, which this laptop's rules keep CI-only    |
 | No new axe exception                                                           | `#social-sign-in-actions > .MuiButton-contained` (issue #276)                                                                                      | The primary action reuses the design-owned `#1EAEFF` button, like the recovery in-card links                     |
+
+## 7. GraphQL design (2026-11-19)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant SPA as SPA (/auth/callback/:provider)
+    participant G as GraphQL (Apollo mock / user-service)
+    participant P as Provider (mock page / Google / GitHub)
+    U->>SPA: click provider button (in-app, state socialStart)
+    SPA->>G: initiateSocialSignInUser(provider)
+    G-->>SPA: authorizationUrl, state
+    SPA->>SPA: sessionStorage state; location.replace(authorizationUrl)
+    U->>P: consent
+    P-->>SPA: /auth/callback/:provider?code&state
+    SPA->>SPA: state equals the saved one? strip the query
+    SPA->>G: completeSocialSignInUser(provider, code, state)
+    G-->>SPA: accessToken | pendingSessionId | error (extensions.error_code)
+```
+
+| Piece            | Where                                                                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pending contract | `src/api/contracts/pending/social-sign-in.graphql`; operations `initiate-social-sign-in.graphql`, `complete-social-sign-in.graphql` beside the repository; types from `make codegen` |
+| Repository       | `GraphQLSocialSignInRepository` (Apollo client, `no-cache`, zod-parsed: http(s) `authorizationUrl`, non-empty `state`, token or pending session)                                     |
+| Transformer      | `SocialSignInTransformer`: `toStart`, `toOutcome`, `fromFailure` (`networkError` → `unavailable`, `extensions.error_code` → kind, else `generic`)                                    |
+| Data provider    | `SocialSignInProvider.start` / `.complete`; writes the token through `AuthStoreActionsDeps`                                                                                          |
+| Tab binding      | `SocialSignInFlowSource`: destination (validated twice) and `provider:state` in `sessionStorage`, read without consuming so StrictMode sees one answer                               |
+| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in                       |
+| Page             | `useSocialCallback` + `useSocialCallbackRelay` (one relay per start key or per state) + `SocialCallbackViewMapper` (`starting`, `relaying`, `leaving`, `failed`, `redirect`)         |
+| Local mock       | `docker/apollo-server/lib/social-sign-in-resolvers.ts` (stateful, `OAUTH_MODE`); Mockoon serves only the mock consent page                                                           |
+| Removed          | the REST `credentials` option of `HttpsClient`, the REST schemas, Mockoon's social routes and CORS, ADR-004                                                                          |

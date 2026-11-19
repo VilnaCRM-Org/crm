@@ -59,6 +59,12 @@ iteration 2 clean).
 - Assumption A1 (meaning of "real (mockoon) back-end") is the one decision the requester may
   want to revisit; Backend mode is documented as the alternative.
 
+## Revision 2026-11-19
+
+Owner direction: GraphQL only (no REST endpoints) and no ADR. user-service exposes social sign-in
+only as REST, so the bundle now declares two pending GraphQL mutations for it to add (readiness W6,
+architecture §7). ADR-004 was deleted.
+
 ## Recommended next step
 
 Register the Google client and GitHub OAuth App now (guide §3-§4) — the redirect URIs do not

@@ -14,6 +14,7 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
+  SOCIAL_SIGN_IN_SDL,
   REQUEST_RESET,
   type SingleBody,
 } from './mock-schema-fixtures';
@@ -38,7 +39,7 @@ const startServer = async (
   serverResolvers: typeof resolvers = resolvers
 ): Promise<ApolloServer> => {
   const server = new ApolloServer({
-    typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION],
+    typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION, ...SOCIAL_SIGN_IN_SDL],
     resolvers: serverResolvers,
     formatError,
   });

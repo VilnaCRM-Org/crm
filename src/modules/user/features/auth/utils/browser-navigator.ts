@@ -1,10 +1,10 @@
 export class BrowserNavigator {
   constructor(private readonly location: Location) {}
 
-  // A same-tab navigation, not a new tab: the session token lives in this tab's memory only, so
-  // a provider round trip has to come back to the same tab to sign it in (specs/social-sign-in).
-  public assign(url: string): void {
-    this.location.assign(url);
+  // Replaces the current history entry, so Back from the destination returns to the page before
+  // this one instead of to a page that would only send the browser forward again.
+  public replace(url: string): void {
+    this.location.replace(url);
   }
 }
 

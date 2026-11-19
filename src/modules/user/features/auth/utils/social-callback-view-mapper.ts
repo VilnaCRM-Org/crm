@@ -1,15 +1,18 @@
-import ROUTE_PATHS from '@/routes/route-paths';
 import type {
   SocialCallbackQuery,
   SocialCallbackView,
+  SocialPendingView,
   SocialProviderLabels,
-  SocialRelayingView,
+  SocialStartingView,
 } from '@auth/types/social-sign-in/social-callback-view';
 import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
 import type { SocialSignInErrorKind } from '@auth/types/social-sign-in/social-sign-in-error-kind';
-import type { SocialSignInOutcome } from '@auth/types/social-sign-in/social-sign-in-outcome';
+import type {
+  SocialSignInOutcome,
+  SocialStartOutcome,
+} from '@auth/types/social-sign-in/social-sign-in-outcome';
 import socialProviderGuard from '@auth/utils/social-provider-guard';
-import socialSignInDestinationSource from '@auth/utils/social-sign-in-destination-source';
+import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
 
 const PROVIDER_LABELS: SocialProviderLabels = {
   google: 'Google',
@@ -18,9 +21,9 @@ const PROVIDER_LABELS: SocialProviderLabels = {
   twitter: 'Twitter',
 };
 
-// What the social callback page shows, decided from the URL it was opened with and from the
-// relay's outcome (specs/social-sign-in, FR5-FR14). Kept apart from the hook so every branch is
-// a plain method call.
+// What the social callback page shows, decided from how it was opened (a start from the
+// provider buttons, or a provider redirect back) and from each relay's outcome
+// (specs/social-sign-in, FR5-FR14).
 class SocialCallbackViewMapper {
   public readQuery(): SocialCallbackQuery {
     const params = new URLSearchParams(window.location.search);
@@ -37,36 +40,64 @@ class SocialCallbackViewMapper {
   public initialView(
     param: string | undefined,
     query: SocialCallbackQuery,
-    signedIn: boolean
+    starting: boolean
   ): SocialCallbackView {
-    if (signedIn) return { status: 'redirect', to: ROUTE_PATHS.home, state: { focusMain: true } };
     if (!socialProviderGuard.isSocialProvider(param)) {
       return { status: 'failed', provider: null, label: '', error: 'unsupported_provider' };
     }
-    return this.queryView(param, query);
+    return this.queryView(param, query, starting);
   }
 
-  public outcomeView(view: SocialRelayingView, outcome: SocialSignInOutcome): SocialCallbackView {
-    if (outcome.kind === 'signed-in') {
-      const to = socialSignInDestinationSource.take();
-      return { status: 'redirect', to, state: { focusMain: true } };
-    }
-    const error = outcome.kind === 'failed' ? outcome.error : 'two_factor_required';
+  public startView(view: SocialStartingView, outcome: SocialStartOutcome): SocialCallbackView {
+    if (outcome.kind !== 'redirect') return this.failedView(view, this.errorOf(outcome));
+    socialSignInFlowSource.saveState({ provider: view.provider, state: outcome.state });
+    return { status: 'leaving', label: view.label, authorizationUrl: outcome.authorizationUrl };
+  }
+
+  public outcomeView(view: SocialPendingView, outcome: SocialSignInOutcome): SocialCallbackView {
+    if (outcome.kind !== 'signed-in') return this.failedView(view, this.errorOf(outcome));
+    const to = socialSignInFlowSource.takeDestination();
+    return { status: 'redirect', to, state: { focusMain: true } };
+  }
+
+  public unavailableView(view: SocialPendingView): SocialCallbackView {
+    return this.failedView(view, 'unavailable');
+  }
+
+  private failedView(view: SocialPendingView, error: SocialSignInErrorKind): SocialCallbackView {
     return { status: 'failed', provider: view.provider, label: view.label, error };
   }
 
-  private queryView(provider: SocialProvider, query: SocialCallbackQuery): SocialCallbackView {
-    const label = PROVIDER_LABELS[provider];
-    const error = this.queryError(query);
-    return error === null
-      ? { status: 'relaying', provider, label }
-      : { status: 'failed', provider, label, error };
+  // A 2FA account finishes with its password until the 2FA challenge lands; a relay that never
+  // got an answer (the page never aborts one) counts as the service being unavailable.
+  private errorOf(outcome: SocialSignInOutcome | SocialStartOutcome): SocialSignInErrorKind {
+    if (outcome.kind === 'failed') return outcome.error;
+    return outcome.kind === 'two-factor' ? 'two_factor_required' : 'unavailable';
   }
 
-  // A provider-side denial and a redirect without its code or state never reach the backend.
-  private queryError(query: SocialCallbackQuery): SocialSignInErrorKind | null {
+  private queryView(
+    provider: SocialProvider,
+    query: SocialCallbackQuery,
+    starting: boolean
+  ): SocialCallbackView {
+    const label = PROVIDER_LABELS[provider];
+    const error = this.queryError(provider, query, starting);
+    if (error === 'start') return { status: 'starting', provider, label };
+    if (error === null) return { status: 'relaying', provider, label };
+    return { status: 'failed', provider, label, error };
+  }
+
+  // A provider-side denial, a redirect without its code or state, and a state this tab never
+  // started all end here, before user-service is asked anything.
+  private queryError(
+    provider: SocialProvider,
+    query: SocialCallbackQuery,
+    starting: boolean
+  ): SocialSignInErrorKind | 'start' | null {
     if (query.error !== null) return 'cancelled';
-    return query.code && query.state ? null : 'missing_parameters';
+    if (!query.code || !query.state) return starting ? 'start' : 'missing_parameters';
+    const expected = { provider, state: query.state };
+    return socialSignInFlowSource.matchesState(expected) ? null : 'expired';
   }
 }
 

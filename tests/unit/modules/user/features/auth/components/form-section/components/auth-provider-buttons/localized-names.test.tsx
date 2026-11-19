@@ -1,9 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { Route, Routes } from 'react-router';
 
-import API_ENDPOINTS from '@/config/api-config';
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
-import browserNavigator from '@auth/utils/browser-navigator';
+import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
 
 type SvgModule = { ReactComponent: () => ReactElement };
@@ -30,21 +30,18 @@ describe('AuthProviderButtons against the real i18n catalogue', () => {
     expect(names).toEqual(PROVIDER_LABELS.map((label) => `Continue with ${label}`));
   });
 
-  it('navigates to the provider auth endpoint on click', () => {
-    const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
-    renderWithProviders(<AuthProviderButtons />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
-
-    expect(assign).toHaveBeenCalledWith(`${API_ENDPOINTS.SOCIAL_AUTH}/google`);
-  });
-
-  it('uses the provider key, not its display label, in the endpoint', () => {
-    const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
-    renderWithProviders(<AuthProviderButtons />);
+  it('opens the social callback page to start the flow, saving the destination', async () => {
+    const save = jest.spyOn(socialSignInFlowSource, 'saveDestination');
+    renderWithProviders(
+      <Routes>
+        <Route path="/" element={<AuthProviderButtons />} />
+        <Route path="/auth/callback/:provider" element={<p>callback page</p>} />
+      </Routes>
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue with GitHub' }));
 
-    expect(assign).toHaveBeenCalledWith(`${API_ENDPOINTS.SOCIAL_AUTH}/github`);
+    expect(await screen.findByText('callback page')).toBeInTheDocument();
+    expect(save).toHaveBeenCalledWith(null);
   });
 });

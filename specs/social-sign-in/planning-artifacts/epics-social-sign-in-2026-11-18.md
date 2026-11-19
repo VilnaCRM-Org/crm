@@ -20,6 +20,15 @@ Every story's Definition of Done includes: `make format && make lint` clean; uni
 named, integration) tests at 100% coverage; Stryker survivors 0 for touched files; no
 suppression of any kind; `uk` + `en` strings with `make lint-i18n` clean.
 
+> **Revision 2026-11-19 — GraphQL only, no ADR.** The SPA talks to user-service over GraphQL
+> only, never REST, and the feature carries no ADR. user-service exposes social sign-in only as
+> REST, so this plan declares two pending GraphQL mutations for it to add —
+> `initiateSocialSignInUser` (returns the provider's `authorizationUrl` and a `state`) and
+> `completeSocialSignInUser` (returns a `signInUser`-shaped payload) — in
+> `src/api/contracts/pending/social-sign-in.graphql`, answered locally by the Apollo mock. The
+> state is bound to the tab in `sessionStorage` instead of a cross-origin cookie. Rows below marked
+> _(2026-11-19)_ supersede the earlier text.
+
 ## Dependency graph
 
 ```text
@@ -34,6 +43,9 @@ S1.3 local guide ◄─────┘  S2.3 contract+schemas ─┘            
 ## Epic 1 — Local back-end for social sign-in (FR16-FR19)
 
 ### S1.1 Mockoon social OAuth overlays — **independent**
+
+_(2026-11-19)_ Reduced to the mock consent page; the stateful mutations live in the Apollo mock
+(`social-sign-in-resolvers.ts`, tested in `tests/apollo-server/social-sign-in.test.ts`).
 
 As a developer, I want Mockoon to serve the social endpoints and a mock consent page, so that I
 can exercise every outcome without provider accounts.
@@ -66,6 +78,9 @@ ${MOCKOON_SPA_ORIGIN}` and `Access-Control-Allow-Credentials: true`; never `*`.
 
 ### S1.2 Environment keys and `make mockoon-restart` — **dependent on S1.1**
 
+_(2026-11-19)_ The keys are read by the Apollo mock through `env_file`; the target is
+`make apollo-restart`, and Mockoon takes no OAuth environment.
+
 - `.env.example` gains `OAUTH_MODE=mock`, `OAUTH_SPA_ORIGIN`, and empty
   `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GITHUB_CLIENT_ID`, `OAUTH_FACEBOOK_CLIENT_ID`,
   `OAUTH_TWITTER_CLIENT_ID`; `make check-env-sync` passes on a fresh `.env`.
@@ -85,7 +100,9 @@ scan-secrets` green.
 
 ## Epic 2 — Client foundations
 
-### S2.1 `HttpsClient` credentials option — **independent**
+### S2.1 `HttpsClient` credentials option — **withdrawn** _(2026-11-19)_
+
+Withdrawn: no REST call remains, so the option was removed again.
 
 - `RequestConfig.credentials?: RequestCredentials | undefined` reaches `fetch` through
   `HttpRequestConfigBuilder`; omitted means today's behaviour (unit-pinned both ways).
@@ -98,6 +115,8 @@ and nothing in the requirements needs a kill switch yet.
 
 ### S2.3 Pending contract and response schemas — **independent**
 
+_(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas for their payloads.
+
 - `src/api/contracts/README.md` records both operations under "Pending REST operations" with the
   upstream commit SHA and their removal on the pin bump (PRD D3, revised).
 - `SocialCallbackResponseSchema` (discriminated on `2fa_enabled`) and the problem schema live
@@ -105,7 +124,7 @@ and nothing in the requirements needs a kill switch yet.
   neither `access_token` nor `pending_session_id`.
 - Types in `@auth/types/social-sign-in/` are type-only files.
 
-### S2.4 `SocialAuthAPI`, error mapper, `completeSocialSignIn` — **dependent on S2.1, S2.3**
+### S2.4 GraphQL repository, transformer, provider _(2026-11-19)_ — **dependent on S2.3** (was: `SocialAuthAPI`, error mapper, `completeSocialSignIn` — dependent on S2.1, S2.3**
 
 - `SocialAuthAPI.callback` issues `GET {base}/api/auth/social/{provider}/callback?code&state`
   with `credentials: 'include'`, the schema, the caller signal, and **no** `retry` (FR15).
@@ -189,6 +208,8 @@ what went wrong and how to recover.
 - All selectors semantic; `retries: 0`; no `waitForTimeout`.
 
 ### S4.2 ADR and documentation — **dependent on S3.2**
+
+_(2026-11-19)_ No ADR: removed by the owner's decision; the pull request carries `[no-adr]`.
 
 - `docs/adr/0NN-social-sign-in-spa-callback-relay.md` (Deciders @kravalg) records D1/D2/D3;
   `docs/adr/README.md` row; `make lint-adr` clean.

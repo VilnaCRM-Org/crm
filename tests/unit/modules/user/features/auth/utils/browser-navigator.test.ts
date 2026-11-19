@@ -1,20 +1,20 @@
 import browserNavigator, { BrowserNavigator } from '@auth/utils/browser-navigator';
 
 describe('browserNavigator', () => {
-  it('navigates the current tab, never a new one', () => {
-    const assign = jest.fn();
+  it('replaces the current history entry in this tab, never a new one', () => {
+    const replace = jest.fn();
     const open = jest.spyOn(window, 'open');
 
-    new BrowserNavigator({ assign } as unknown as Location).assign('/api/auth/social/google');
+    new BrowserNavigator({ replace } as unknown as Location).replace('https://github.com/login');
 
-    expect(assign).toHaveBeenCalledTimes(1);
-    expect(assign).toHaveBeenCalledWith('/api/auth/social/google');
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith('https://github.com/login');
     expect(open).not.toHaveBeenCalled();
     open.mockRestore();
   });
 
   it('is bound to the window location', () => {
-    browserNavigator.assign('#social-sign-in');
+    browserNavigator.replace('#social-sign-in');
 
     expect(browserNavigator).toBeInstanceOf(BrowserNavigator);
     expect(window.location.hash).toBe('#social-sign-in');

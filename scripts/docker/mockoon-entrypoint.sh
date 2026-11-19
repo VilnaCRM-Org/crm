@@ -1,11 +1,9 @@
 #!/usr/bin/env sh
-# scripts/docker/mockoon-entrypoint.sh - start Mockoon on the pinned spec plus the social OAuth
-# routes the pin does not carry yet (specs/social-sign-in, story S1.1).
+# scripts/docker/mockoon-entrypoint.sh - start Mockoon on the pinned spec plus the mock OAuth
+# provider consent page social sign-in uses locally (specs/social-sign-in).
 #
-# The imported environment is built into the image (/app/base.json); the overlay is merged here,
-# at container start, because its mode, SPA origin and client IDs are runtime settings
-# (MOCKOON_OAUTH_MODE, MOCKOON_SPA_ORIGIN, MOCKOON_OAUTH_<PROVIDER>_CLIENT_ID). A bad mode or
-# origin stops the container before Mockoon listens, so a misconfiguration never serves.
+# The imported environment is built into the image (/app/base.json); the page is merged here, and
+# a merge that fails stops the container before Mockoon listens.
 
 set -eu
 

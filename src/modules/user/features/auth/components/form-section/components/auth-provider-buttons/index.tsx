@@ -2,11 +2,12 @@ import { Box, Divider, ListItem, List, SvgIcon } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
+import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 
 import oauthProviders from './oauth-providers';
 import styles from './styles';
@@ -33,6 +34,7 @@ function ProviderButton({ label, SvgComponent, onClick }: OAuthProvider): JSX.El
 export default function AuthProviderButtons(): JSX.Element {
   const { t } = useTranslation();
   const { state } = useLocation();
+  const navigate = useNavigate();
 
   return (
     <ThemeProvider theme={Theme}>
@@ -42,14 +44,16 @@ export default function AuthProviderButtons(): JSX.Element {
         </Divider>
 
         <List sx={styles.servicesList}>
-          {oauthProviders.list(state).items.map(({ label, SvgComponent, onClick }) => (
-            <ProviderButton
-              key={label}
-              label={label}
-              SvgComponent={SvgComponent}
-              onClick={onClick}
-            />
-          ))}
+          {oauthProviders
+            .list((provider) => socialSignInNavigator.start(provider, state, navigate))
+            .items.map(({ label, SvgComponent, onClick }) => (
+              <ProviderButton
+                key={label}
+                label={label}
+                SvgComponent={SvgComponent}
+                onClick={onClick}
+              />
+            ))}
         </List>
       </Box>
     </ThemeProvider>

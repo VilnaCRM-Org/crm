@@ -60,13 +60,8 @@ export default class FetchHttpsClient implements HttpsClient {
     timeoutMs: number
   ): Promise<R | undefined> {
     const deadline = this.deps.deadlines.create(config.signal, timeoutMs);
-    // `credentials` is forwarded only when the caller asks, so a cross-origin request carries
-    // cookies only by intent.
-    const requestInit: RequestInit = {
-      ...this.deps.requestConfigBuilder.create(method, body, config.headers),
-      signal: deadline.signal,
-      ...(config.credentials === undefined ? {} : { credentials: config.credentials }),
-    };
+    const requestInit = this.deps.requestConfigBuilder.create(method, body, config.headers);
+    requestInit.signal = deadline.signal;
     try {
       const response = await fetch(url, requestInit);
       return await this.deps.responseProcessor.process<R>(response, config.schema);

@@ -1,12 +1,13 @@
 import { fireEvent, screen } from '@testing-library/react';
 
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
+import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 
 import createLocaleI18n from '../../../../../../../utils/create-locale-i18n';
 import renderWithProviders from '../../../../../../../utils/render-with-providers';
 
 const mockClicks: string[] = [];
-const mockListStates: unknown[] = [];
+const mockStarts: unknown[] = [];
 
 const UK_GOOGLE = 'Продовжити через Google';
 const UK_GITHUB = 'Продовжити через GitHub';
@@ -14,8 +15,8 @@ const UK_GITHUB = 'Продовжити через GitHub';
 jest.mock('@auth/components/form-section/components/auth-provider-buttons/oauth-providers', () => ({
   __esModule: true,
   default: {
-    list: (state: unknown): { items: typeof mockItems } => {
-      mockListStates.push(state);
+    list: (start: unknown): { items: typeof mockItems } => {
+      mockStarts.push(start);
       return { items: mockItems };
     },
   },
@@ -41,7 +42,7 @@ const mockItems = [
 describe('AuthProviderButtons', () => {
   beforeEach(() => {
     mockClicks.length = 0;
-    mockListStates.length = 0;
+    mockStarts.length = 0;
   });
 
   it('names every provider button in English when English is active', () => {
@@ -79,10 +80,14 @@ describe('AuthProviderButtons', () => {
     expect(mockClicks).toEqual(['GitHub']);
   });
 
-  it('builds the provider list from the router state, so the destination survives', () => {
+  it('hands the provider list a start callback bound to the social sign-in navigator', () => {
+    const start = jest.spyOn(socialSignInNavigator, 'start').mockImplementation(() => undefined);
     renderWithProviders(<AuthProviderButtons />);
 
-    expect(mockListStates.length).toBeGreaterThan(0);
-    expect(mockListStates.every((state) => state === null)).toBe(true);
+    const [bound] = mockStarts as Array<(provider: string) => void>;
+    bound?.('google');
+
+    expect(start).toHaveBeenCalledWith('google', null, expect.any(Function));
+    start.mockRestore();
   });
 });

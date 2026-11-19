@@ -103,6 +103,19 @@ declaration silently, so each pending file opens with `# pending-against: <versi
 - **Removed by:** the contract pin bump to the first user-service release that declares both
   mutations (Follow-up 5.3).
 
+`src/api/contracts/pending/social-sign-in.graphql` (`specs/social-sign-in/`):
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** none yet. user-service exposes social sign-in only as REST
+  (`GET /api/auth/social/{provider}` and its callback); `initiateSocialSignInUser` and
+  `completeSocialSignInUser` are declared here in its API Platform style, for user-service to add.
+  Failures carry the REST `error_code` values in `extensions.error_code`.
+- **Mock answers:** `docker/apollo-server/lib/social-sign-in-resolvers.ts` issues a state per
+  initiate, consumes it once on complete and checks the provider; `OAUTH_MODE` picks a Mockoon mock
+  consent page or the real provider screen (see `docs/social-sign-in-local.md`).
+- **Removed by:** the contract pin bump to the first user-service release that declares both
+  mutations.
+
 The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswordResetUser`
 answer every valid input with the same payload, so domain refusals, `429`, `503` and aborts are
 exercised in the browser lanes (`page.route`) and the integration suite (msw) instead. The dev
@@ -115,29 +128,6 @@ suites never set it, so they keep the stateless answers. Deleting one extension
 means removing its file; the two resolvers stay. Deleting the last one removes the folder, so it
 also removes the `codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending folder read in
 `schema-loader.ts`: the mock refuses to start without the folder it was told to read.
-
-### Pending REST operations
-
-The pending folder is GraphQL-only: codegen and the Apollo mock read it, and nothing reads an
-OpenAPI file there. A REST operation the pinned `OPENAPI_SPEC_VERSION` lacks is therefore pending
-in two places instead, and both go when the pin bump brings the operation in:
-
-- its response contract is a hand-written zod schema in the feature's `response-schemas.ts`,
-  the same boundary every REST body passes through;
-- its local answers come from the Mockoon social OAuth overlay (`docker/mockoon/`), because a
-  Mockoon instance built from the pinned spec has no route for it.
-
-Social sign-in (`specs/social-sign-in/`):
-
-- **Operations:** `GET /api/auth/social/{provider}` and
-  `GET /api/auth/social/{provider}/callback`.
-- **Pending against:** `v2.8.0`.
-- **Upstream source:** `VilnaCRM-Org/user-service@a95c1e85` (`.github/openapi-spec/spec.yaml`
-  on `main`).
-- **Contract:** `SocialCallbackResponseSchema` and `SocialAuthProblemSchema` in
-  `src/modules/user/features/auth/utils/response-schemas.ts`.
-- **Removed by:** the contract pin bump to the first user-service release that declares both
-  operations, which switches the schemas to the generated `openapi.ts` types.
 
 ## Semantic breaking-change gate (issue #177)
 

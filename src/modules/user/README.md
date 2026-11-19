@@ -725,20 +725,23 @@ module grows:
 
 ## Social sign-in decisions
 
-The Google, GitHub, Facebook and Twitter/X buttons start the user-service social OAuth flow in
-the same tab, and `/auth/callback/:provider` relays the provider's code and state back to
-user-service ([ADR-004](../../../docs/adr/004-social-sign-in-spa-callback-relay.md), planning in
-`specs/social-sign-in/`).
+The Google, GitHub, Facebook and Twitter/X buttons sign in through two GraphQL mutations that are
+pending until user-service declares them (`src/api/contracts/pending/social-sign-in.graphql`;
+planning in `specs/social-sign-in/`).
 
+- **Flow.** A button opens `/auth/callback/:provider` with `{ socialStart: true }`; the page calls
+  `initiateSocialSignInUser`, keeps the returned `state` and replaces its history entry with the
+  provider's authorization URL. The provider redirects back to the same page, which checks the
+  `state` against the one this tab started with and calls `completeSocialSignInUser`.
 - **Layers.** `useSocialCallback` (hook) → `SocialSignInProvider` (data provider, resolved through
-  `AuthProviderLoader`) → `SocialSignInRepository` (REST) with `SocialSignInTransformer`
-  mapping each RFC 7807 `error_code` to a `SocialSignInErrorKind`. The provider writes the access
-  token into `useAuthStore` exactly like a password sign-in; the refresh token is not read.
-- **Paint path.** The buttons only add a `sessionStorage` write and `socialSignInNavigator`; the
-  page, hook, repository and schemas load with the `social-callback` chunk.
-- **Single use.** The relay is never retried and is shared per `state`, so StrictMode's repeated
-  effect cannot spend the code twice; "Try again" starts a new round trip.
+  `AuthProviderLoader`) → `GraphQLSocialSignInRepository`, with `SocialSignInTransformer` mapping
+  `extensions.error_code` to a `SocialSignInErrorKind`. The provider writes the access token into
+  `useAuthStore` exactly like a password sign-in.
+- **Paint path.** The buttons only add a `sessionStorage` write and an in-app navigation; the
+  page, hooks, repository and schemas load with the `social-callback` chunk.
+- **Single use.** Each mutation runs once per start or per `state`, even under StrictMode, and is
+  never retried; "Try again" starts a new round trip and replaces the failed attempt's entry.
 - **Destination.** The page a protected route sent the user from survives the round trip in
   `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
-- **2FA.** A `pending_session_id` answer shows "finish with your email and password" until the
-  2FA challenge route (PR #377) exists.
+- **2FA.** A `pendingSessionId` answer shows "finish with your email and password" until the 2FA
+  challenge route (PR #377) exists.

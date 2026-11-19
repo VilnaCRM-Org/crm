@@ -52,4 +52,12 @@ describe('auth route contract', () => {
       expect(typeof route.load).toBe('function');
     });
   });
+
+  it('loads the social callback page lazily from its own module', async () => {
+    const { routes } = await loadAuthRoutes();
+    const route = routes.find((candidate) => candidate.path === ROUTE_PATHS.socialCallback);
+    const { default: SocialCallback } = await import('@auth/routes/social-callback');
+
+    await expect(route?.load?.()).resolves.toMatchObject({ default: SocialCallback });
+  });
 });

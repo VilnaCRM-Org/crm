@@ -2,9 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 
-import API_ENDPOINTS from '@/config/api-config';
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
-import browserNavigator from '@auth/utils/browser-navigator';
+import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 
 jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'svg' }));
@@ -61,13 +60,13 @@ describe('AuthProviderButtons', () => {
     ['GitHub', 'github'],
     ['Facebook', 'facebook'],
     ['Twitter', 'twitter'],
-  ])('sends the %s button through its own social initiate endpoint', (name, provider) => {
-    const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
+  ])('starts the social sign-in of the %s button with its own provider', (name, provider) => {
+    const start = jest.spyOn(socialSignInNavigator, 'start').mockImplementation(() => undefined);
 
     render(inRouter());
 
     fireEvent.click(screen.getByRole('button', { name: `${CONTINUE_WITH_KEY}:${name}` }));
 
-    expect(assign).toHaveBeenCalledWith(`${API_ENDPOINTS.SOCIAL_AUTH}/${provider}`);
+    expect(start).toHaveBeenCalledWith(provider, null, expect.any(Function));
   });
 });

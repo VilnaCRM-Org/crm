@@ -10,6 +10,12 @@ export interface SocialCallbackQuery {
   readonly error: string | null;
 }
 
+export interface SocialStartingView {
+  readonly status: 'starting';
+  readonly provider: SocialProvider;
+  readonly label: string;
+}
+
 export interface SocialRelayingView {
   readonly status: 'relaying';
   readonly provider: SocialProvider;
@@ -29,18 +35,38 @@ export interface SocialRedirectView {
   readonly state: RedirectNavigationState;
 }
 
-export type SocialCallbackView = SocialRelayingView | SocialFailedView | SocialRedirectView;
+export interface SocialLeavingView {
+  readonly status: 'leaving';
+  readonly label: string;
+  readonly authorizationUrl: string;
+}
+
+export type SocialPendingView = SocialStartingView | SocialRelayingView;
+
+export type SocialCallbackView =
+  SocialPendingView | SocialFailedView | SocialRedirectView | SocialLeavingView;
 
 export interface SocialCallback {
   readonly view: SocialCallbackView;
   readonly retry: (() => void) | undefined;
 }
 
-export interface SocialRelay {
+export interface SocialStartRelay {
+  readonly kind: 'start';
+  readonly key: string;
+  readonly view: SocialStartingView;
+  readonly settle: (view: SocialCallbackView) => void;
+}
+
+export interface SocialCompleteRelay {
+  readonly kind: 'complete';
+  readonly key: string;
   readonly view: SocialRelayingView;
   readonly params: SocialCallbackParams;
   readonly settle: (view: SocialCallbackView) => void;
 }
+
+export type SocialRelay = SocialStartRelay | SocialCompleteRelay;
 
 export interface SocialRelayGuard {
   active: boolean;

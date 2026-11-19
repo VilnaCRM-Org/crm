@@ -2,8 +2,10 @@ import { ReactComponent as Facebook } from '@/assets/icons/social/facebook-color
 import { ReactComponent as GitHub } from '@/assets/icons/social/github-color.svg';
 import { ReactComponent as Google } from '@/assets/icons/social/google-color.svg';
 import { ReactComponent as Twitter } from '@/assets/icons/social/twitter-color.svg';
-import type { OAuthProviderList } from '@auth/types/auth-provider-buttons/oauth-providers';
-import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
+import type {
+  OAuthProviderList,
+  OAuthProviderStart,
+} from '@auth/types/auth-provider-buttons/oauth-providers';
 
 const PROVIDERS = [
   { key: 'google', label: 'Google', SvgComponent: Google },
@@ -13,12 +15,12 @@ const PROVIDERS = [
 ] as const;
 
 class OAuthProviders {
-  public list(routerState: unknown): OAuthProviderList {
+  public list(start: OAuthProviderStart): OAuthProviderList {
     return {
       items: PROVIDERS.map((p) => ({
         label: p.label,
         SvgComponent: p.SvgComponent,
-        onClick: () => socialSignInNavigator.start(p.key, routerState),
+        onClick: () => start(p.key),
       })),
     };
   }

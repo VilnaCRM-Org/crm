@@ -39,6 +39,10 @@ recovery, and zero regression to the auth page's performance budget.
 
 ## 4. Scope
 
+> Revision 2026-11-19: the SPA uses GraphQL only. Sign-in runs through two pending user-service
+> mutations (`initiateSocialSignInUser`, `completeSocialSignInUser`) that the Apollo mock answers
+> locally; Mockoon hosts only the mock consent page. No ADR is written for the feature.
+
 ### In
 
 - Wire all four buttons to `GET /api/auth/social/{provider}` with a same-tab navigation.

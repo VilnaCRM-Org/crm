@@ -1,6 +1,4 @@
 import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
-import type BrowserNavigator from '@auth/utils/browser-navigator';
-import type SocialSignInDestinationSource from '@auth/utils/social-sign-in-destination-source';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
@@ -8,13 +6,9 @@ jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'sv
 jest.mock('@/assets/icons/social/google-color.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/icons/social/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
 
-const ROUTER_STATE = { from: { pathname: '/settings', search: '', hash: '' } };
-
 interface IsolatedProviders {
   providers: ReadonlyArray<OAuthProvider>;
-  socialAuthBase: string;
-  browserNavigator: typeof BrowserNavigator;
-  destination: typeof SocialSignInDestinationSource;
+  start: jest.Mock;
 }
 
 // The provider table is a module-level literal, so it is only evaluated inside the test when the
@@ -22,19 +16,12 @@ interface IsolatedProviders {
 // spies below would sit on different singletons than the ones the handler calls.
 function loadProviders(): Promise<IsolatedProviders> {
   return loadIsolated(async () => {
-    const socialAuthBase = (await import('@/config/api-config')).default.SOCIAL_AUTH;
-    const browserNavigator = (await import('@auth/utils/browser-navigator')).default;
-    const destination = (await import('@auth/utils/social-sign-in-destination-source')).default;
     const oauthProviders = (
       await import('@auth/components/form-section/components/auth-provider-buttons/oauth-providers')
     ).default;
+    const start = jest.fn();
 
-    return {
-      providers: oauthProviders.list(ROUTER_STATE).items,
-      socialAuthBase,
-      browserNavigator,
-      destination,
-    };
+    return { providers: oauthProviders.list(start).items, start };
   });
 }
 
@@ -76,21 +63,12 @@ describe('oauthProviders', () => {
     ['GitHub', 'github'],
     ['Facebook', 'facebook'],
     ['Twitter', 'twitter'],
-  ])(
-    'saves the destination and sends %s through the social initiate endpoint',
-    async (label, key) => {
-      const { providers, socialAuthBase, browserNavigator, destination } = await loadProviders();
-      const save = jest.spyOn(destination, 'save').mockImplementation(() => undefined);
-      const assign = jest.spyOn(browserNavigator, 'assign').mockImplementation(() => undefined);
+  ])('starts the %s flow with its provider key', async (label, key) => {
+    const { providers, start } = await loadProviders();
 
-      providerFor(providers, label).onClick();
+    providerFor(providers, label).onClick();
 
-      expect(save).toHaveBeenCalledWith(ROUTER_STATE);
-      expect(assign).toHaveBeenCalledTimes(1);
-      expect(assign).toHaveBeenCalledWith(`${socialAuthBase}/${key}`);
-      expect(save.mock.invocationCallOrder[0]).toBeLessThan(
-        assign.mock.invocationCallOrder[0] ?? 0
-      );
-    }
-  );
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledWith(key);
+  });
 });

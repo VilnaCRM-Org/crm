@@ -9,6 +9,7 @@ export type ArrivalNotice = 'password_reset' | 'session_ended';
 export interface RedirectNavigationState {
   from?: RedirectLocationLike;
   focusMain?: boolean;
+  socialStart?: boolean;
   notice?: ArrivalNotice | undefined;
 }
 

@@ -193,7 +193,7 @@ const EXEMPT_RENDER_PATH_FILES = [
       'browser navigator and the destination source off the container (specs/social-sign-in).',
   },
   {
-    path: 'src/modules/user/features/auth/utils/social-sign-in-destination-source.ts',
+    path: 'src/modules/user/features/auth/utils/social-sign-in-flow-source.ts',
     reason:
       'Container-free sessionStorage source the provider buttons write on the paint path; it ' +
       'composes the loginRedirectTarget validator off the container (specs/social-sign-in).',

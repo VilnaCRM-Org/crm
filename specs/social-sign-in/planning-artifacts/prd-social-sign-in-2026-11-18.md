@@ -15,17 +15,26 @@ inputDocuments:
 Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 [brief](brief-social-sign-in-2026-11-18.md).
 
+> **Revision 2026-11-19 — GraphQL only, no ADR.** The SPA talks to user-service over GraphQL
+> only, never REST, and the feature carries no ADR. user-service exposes social sign-in only as
+> REST, so this plan declares two pending GraphQL mutations for it to add —
+> `initiateSocialSignInUser` (returns the provider's `authorizationUrl` and a `state`) and
+> `completeSocialSignInUser` (returns a `signInUser`-shaped payload) — in
+> `src/api/contracts/pending/social-sign-in.graphql`, answered locally by the Apollo mock. The
+> state is bound to the tab in `sessionStorage` instead of a cross-origin cookie. Rows below marked
+> _(2026-11-19)_ supersede the earlier text.
+
 ## 1. Decisions
 
-| Id  | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | **SPA callback relay.** Providers redirect to a frontend route; the SPA forwards `code`+`state` to `GET /api/auth/social/{provider}/callback` with credentials. No user-service code change; only its `OAUTH_<P>_REDIRECT_URI` points at the SPA.                                                                                                                                                                                                                                 |
-| D2  | **Same-tab navigation** (`window.location.assign`) replaces `openInNewTab`. A popup flow is rejected: popup blockers, cross-window messaging, and the memory-only token make it strictly worse.                                                                                                                                                                                                                                                                                   |
-| D3  | **Contract (revised 2026-11-18, wave 1).** Until user-service tags a release containing `/api/auth/social/*`, the callback contract is the hand-written `SocialCallbackResponseSchema` / `SocialAuthProblemSchema` in `response-schemas.ts`, recorded under "Pending REST operations" in `src/api/contracts/README.md`. The `pending/` folder is GraphQL-only (codegen and the Apollo mock read it), so no OpenAPI fragment goes there. The pin bump switches to generated types. |
-| D4  | **Three local modes**, one switch (`OAUTH_MODE` in the untracked `.env`): `mock` (default, CI), `provider` (real consent screen, Mockoon callback), `backend` (real local user-service, documented only).                                                                                                                                                                                                                                                                         |
-| D5  | **Production enablement is out of scope** and blocked on user-service #468 (pre-hijacking via email auto-link) plus the released contract tag.                                                                                                                                                                                                                                                                                                                                    |
-| D6  | **2FA hand-off** reuses the 2FA challenge route when it exists in the tree (`ROUTE_PATHS.twoFactorChallenge`, PR #377). When it does not, the `2fa_enabled: true` response renders a localized "finish signing in with your password" notice.                                                                                                                                                                                                                                     |
-| D7  | **No per-provider feature flags (revised 2026-11-18, wave 1).** All four buttons keep shipping as they do today. `main` retired every runtime flag (`FeatureFlag = never`), and the flag guide asks for new flags to default off and stay rare; a provider an environment has not configured already ends in the `unsupported_provider` or `unavailable` error view. A kill switch is added only when a real environment needs one.                                               |
+| Id  | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | **Callback page relay over GraphQL** _(2026-11-19)_. A provider button opens `/auth/callback/:provider` in the app; the page calls `initiateSocialSignInUser`, keeps the returned `state` in `sessionStorage`, and replaces its history entry with the provider's `authorizationUrl`. The provider redirects back to the same page, which accepts only the state this tab started with and calls `completeSocialSignInUser`. No REST endpoint is called. |
+| D2  | **Same-tab navigation** (`window.location.assign`) replaces `openInNewTab`. A popup flow is rejected: popup blockers, cross-window messaging, and the memory-only token make it strictly worse.                                                                                                                                                                                                                                                          |
+| D3  | **Contract** _(2026-11-19)_. The two mutations are a pending GraphQL contract, `src/api/contracts/pending/social-sign-in.graphql` (`# pending-against: v2.8.0`), read by codegen and the Apollo mock and deleted by the pin bump to the user-service release that declares them. Failures carry the REST `error_code` set in `extensions.error_code`. **Upstream dependency:** user-service must add both mutations before production.                   |
+| D4  | **Two local modes** _(2026-11-19)_, one switch (`OAUTH_MODE` in the untracked `.env`, read by the Apollo mock): `mock` (default, CI) points `authorizationUrl` at a Mockoon mock consent page; `provider` points it at the real Google/GitHub screen for a provider with a client ID. A real user-service needs the mutations first.                                                                                                                     |
+| D5  | **Production enablement is out of scope** and blocked on user-service #468 (pre-hijacking via email auto-link) plus the released contract tag.                                                                                                                                                                                                                                                                                                           |
+| D6  | **2FA hand-off** reuses the 2FA challenge route when it exists in the tree (`ROUTE_PATHS.twoFactorChallenge`, PR #377). When it does not, the `2fa_enabled: true` response renders a localized "finish signing in with your password" notice.                                                                                                                                                                                                            |
+| D7  | **No per-provider feature flags (revised 2026-11-18, wave 1).** All four buttons keep shipping as they do today. `main` retired every runtime flag (`FeatureFlag = never`), and the flag guide asks for new flags to default off and stay rare; a provider an environment has not configured already ends in the `unsupported_provider` or `unavailable` error view. A kill switch is added only when a real environment needs one.                      |
 
 > Assumption A1: the requester's "real (mockoon) back-end" means the user-service contract as
 > served by Mockoon, with the real provider consent screen reachable through their own keys —
@@ -48,8 +57,7 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 
 ### Initiation
 
-- **FR1** Activating an enabled provider button navigates the current tab to
-  `{apiBaseUrl}/api/auth/social/{provider}` with `provider ∈ {google, github, facebook, twitter}`.
+- **FR1** _(2026-11-19)_ Activating a provider button opens `/auth/callback/{provider}` in the app with router state `{ socialStart: true }`; the page calls `initiateSocialSignInUser(provider)` and replaces its history entry with the returned `authorizationUrl` (http(s) only).
 - **FR2** Before navigating, the SPA stores the intended post-sign-in destination (the
   `state.from` that `ProtectedRoute` set, issue #150) in `sessionStorage`, accepting only an
   internal path; anything else stores `/`.
@@ -68,9 +76,7 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
   "sign-in was cancelled" message without calling the backend.
 - **FR8** Missing `code` or `state` (and no `error`) shows the `missing_oauth_parameters`
   message without calling the backend.
-- **FR9** Otherwise the route performs exactly one credentialed `GET` to
-  `/api/auth/social/{provider}/callback?code=…&state=…` per `state`, even when React runs the
-  effect twice.
+- **FR9** _(2026-11-19)_ Otherwise the route accepts only a `state` equal to the one this tab saved for this provider (else the `expired` message, no request), and performs exactly one `completeSocialSignInUser(provider, code, state)` per state, even when React runs the effect twice.
 - **FR10** A `{2fa_enabled:false, access_token}` response stores the token through the existing
   auth state, then navigates (replace) to the stored destination or `/`, and focus lands on
   `<main>` via the existing arrival-focus behaviour.
@@ -93,22 +99,15 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 
 - **FR13** (the two email kinds became retryable after the S3.1 accessibility review: granting or
   verifying the email at the provider is fixed by a fresh round trip) "Try again" restarts FR1 for the same provider; "Back to sign in" links to `/sign-in`.
-- **FR14** An already-authenticated user who lands on the callback route is redirected to `/`
-  without a backend call.
+- **FR14** _Withdrawn 2026-11-19_: no redirect for a user who is already signed in. A second social sign-in only issues a fresh session, and the redirect made every page of the E2E stack (which preloads a token) leave the callback before it could be tested.
 - **FR15** The callback is never retried automatically (codes are single-use); only "Try again"
   restarts the flow.
 
 ### Local verification
 
-- **FR16** `OAUTH_MODE=mock` (default): Mockoon serves the initiate route as a `302` to a
-  Mockoon-hosted consent page that lists one link per outcome in FR12 plus success and 2FA;
-  each link redirects to the SPA callback with a scenario `code`.
-- **FR17** `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the
-  initiate route redirects to the real provider authorize URL with that client ID, the SPA
-  redirect URI and a fresh `state`; providers without a client ID fall back to the mock consent
-  page. Mockoon's callback answers success for any `code`.
-- **FR18** Switching mode needs only an `.env` edit and a Mockoon restart (`make` target),
-  never a rebuild of the SPA.
+- **FR16** _(2026-11-19)_ `OAUTH_MODE=mock` (default): the Apollo mock answers `initiateSocialSignInUser` with a Mockoon-hosted consent page URL that lists one link per outcome; each link redirects to the SPA callback with a scenario `code` and the issued `state`.
+- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code for a state it issued, once.
+- **FR18** _(2026-11-19)_ Switching mode needs only an `.env` edit and `make apollo-restart`, never a rebuild of the SPA.
 - **FR19** A local verification guide documents provider registration, redirect URIs, `.env`
   keys, commands, the expected screens per mode, and troubleshooting.
 
@@ -125,7 +124,7 @@ Quality floors restate `.claude/react-sdlc.yml` `quality.*` — raise-only:
 | NFR5  | 0 visual diffs on existing baselines; new baselines for the callback loading and error states, desktop and both mobile projects                                                                                                                                    |
 | NFR6  | WCAG 2.1 AA: loading announced via a polite live region; error message in `role="alert"` with focus moved to the error heading; recovery controls reachable by Tab and operable by Enter/Space; ≥ 44 px targets on the callback screen; axe clean on the new route |
 | NFR7  | Security: `code`, `state`, `pending_session_id`, tokens never appear in logs, Sentry events, rendered DOM, or browser history; `piiScrubber` keys extended and unit-pinned                                                                                         |
-| NFR8  | The callback `fetch` runs under `RequestDeadline` (`REACT_APP_REQUEST_TIMEOUT_MS`), is never auto-retried (no `retry: true`), and honours caller abort on unmount                                                                                                  |
+| NFR8  | _(2026-11-19)_ Both mutations run under the Apollo link's request deadline, are never retried, and are never aborted by the page (a spent state or code cannot be re-asked); an unmounted page ignores the answer                                                  |
 | NFR9  | i18n: every new string exists in `uk` and `en`; `make lint-i18n` clean; provider names are not translated                                                                                                                                                          |
 | NFR10 | Observability: success and each failure emit through the existing boundaries — `auth_failure` security events with reason codes for failures; no new direct Sentry calls                                                                                           |
 | NFR11 | CSP unchanged; `make check-security-headers` green                                                                                                                                                                                                                 |

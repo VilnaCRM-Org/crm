@@ -2,71 +2,79 @@ import type { Page, Route } from '@playwright/test';
 
 import { buildToken } from '@tests/builders';
 
-// Network-edge stubs for the social sign-in specs (specs/social-sign-in, S4.1): the initiate
-// endpoint answers the redirect a provider round trip ends in, and the callback relay answers a
-// documented user-service response. The e2e stack serves the SPA and the API on different sites,
-// so the flow-binding cookie a real backend sets is out of scope here; the local Mockoon overlay
-// and user-service's own suite cover it.
-export const INITIATE = '**/api/auth/social/*';
-export const CALLBACK = '**/api/auth/social/*/callback**';
+// GraphQL stubs for the social sign-in specs (specs/social-sign-in, S4.1). initiateSocialSignInUser
+// answers with an authorization URL that is already the provider's redirect back to the SPA, so a
+// button click runs the whole round trip without leaving the app's origin; completeSocialSignInUser
+// answers with the documented user-service result or error.
+const GRAPHQL = '**/graphql';
+export const E2E_STATE = 'e2e-state';
 
-const corsHeaders = (page: Page): Record<string, string> => ({
-  'Access-Control-Allow-Origin': new URL(page.url()).origin,
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Allow-Headers': 'Accept, Content-Type, X-Request-Id, X-Correlation-Id',
-  Vary: 'Origin',
-});
+type Operation = 'InitiateSocialSignIn' | 'CompleteSocialSignIn';
 
-export async function answerCallback(
+interface GraphqlBody {
+  operationName?: string;
+  variables?: { input?: Record<string, string> };
+}
+
+async function answerOperation(
   page: Page,
-  status: number,
-  body: Record<string, unknown>
-): Promise<string[]> {
-  const seen: string[] = [];
-  await page.route(CALLBACK, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      return route.fulfill({ status: 204, headers: corsHeaders(page) });
+  operation: Operation,
+  respond: (input: Record<string, string>) => Record<string, unknown>
+): Promise<Array<Record<string, string>>> {
+  const seen: Array<Record<string, string>> = [];
+  await page.route(GRAPHQL, async (route: Route) => {
+    const body = route.request().postDataJSON() as GraphqlBody | null;
+    if (route.request().method() !== 'POST' || body?.operationName !== operation) {
+      return route.fallback();
     }
-    seen.push(route.request().url());
-    const contentType = status === 200 ? 'application/json' : 'application/problem+json';
+    const input = body.variables?.input ?? {};
+    seen.push(input);
     return route.fulfill({
-      status,
-      contentType,
-      headers: corsHeaders(page),
-      body: JSON.stringify(body),
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(respond(input)),
     });
   });
   return seen;
 }
 
-export async function answerInitiate(page: Page, code: string): Promise<string[]> {
-  const seen: string[] = [];
-  await page.route(INITIATE, async (route: Route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith('/callback')) return route.fallback();
-    const provider = url.pathname.split('/').pop() ?? '';
-    seen.push(provider);
+export async function answerInitiate(
+  page: Page,
+  code: string
+): Promise<Array<Record<string, string>>> {
+  return answerOperation(page, 'InitiateSocialSignIn', (input) => {
     const origin = new URL(page.url()).origin;
-    return route.fulfill({
-      status: 302,
-      headers: {
-        Location: `${origin}/auth/callback/${provider}?code=${code}&state=e2e-${provider}`,
-      },
-    });
+    const back = `${origin}/auth/callback/${input.provider}?code=${code}&state=${E2E_STATE}`;
+    return {
+      data: { initiateSocialSignInUser: { user: { authorizationUrl: back, state: E2E_STATE } } },
+    };
   });
-  return seen;
+}
+
+export async function answerComplete(
+  page: Page,
+  result: Record<string, unknown>
+): Promise<Array<Record<string, string>>> {
+  return answerOperation(page, 'CompleteSocialSignIn', () => result);
 }
 
 export const signedIn = (): Record<string, unknown> => ({
-  '2fa_enabled': false,
-  access_token: buildToken(),
-  refresh_token: buildToken(),
+  data: {
+    completeSocialSignInUser: {
+      user: { twoFactorEnabled: false, accessToken: buildToken(), pendingSessionId: null },
+    },
+  },
 });
 
-export const problem = (status: number, errorCode: string): Record<string, unknown> => ({
-  type: `/errors/${status}`,
-  title: 'An error occurred',
-  detail: errorCode,
-  status,
-  error_code: errorCode,
+export const twoFactor = (pendingSessionId: string): Record<string, unknown> => ({
+  data: {
+    completeSocialSignInUser: {
+      user: { twoFactorEnabled: true, accessToken: null, pendingSessionId },
+    },
+  },
+});
+
+export const refused = (status: number, errorCode: string): Record<string, unknown> => ({
+  data: { completeSocialSignInUser: null },
+  errors: [{ message: errorCode, extensions: { status, error_code: errorCode } }],
 });

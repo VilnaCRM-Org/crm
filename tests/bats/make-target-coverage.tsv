@@ -78,7 +78,7 @@ lighthouse-mobile	ci	.github/workflows/performance-testing.yml	Executed directly
 lighthouse-setup	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
 install	bats	tests/bats/makefile_targets.bats	Validated as the Bun install plus Husky setup entrypoint.
 update	bats	tests/bats/makefile_targets.bats	Validated as the Bun dependency update command.
-mockoon-restart	bats	tests/bats/makefile_targets.bats	Validated as the Mockoon-only recreate command.
+apollo-restart	bats	tests/bats/makefile_targets.bats	Validated as the Apollo-only recreate command.
 down	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose teardown command.
 sh	bats	tests/bats/makefile_targets.bats	Validated as the dev-shell entrypoint.
 ps	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose status command.

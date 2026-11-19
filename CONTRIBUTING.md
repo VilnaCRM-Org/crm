@@ -353,12 +353,12 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
 
 ### Social sign-in in development
 
-`make start` also serves the user-service social OAuth routes from Mockoon, with a mock consent
-page that has one link per backend outcome. Set `OAUTH_MODE=provider` and a Google or GitHub
-client ID in `.env`, then run `make mockoon-restart`, to go through the real consent screen
+Social sign-in runs through the pending `initiateSocialSignInUser` and `completeSocialSignInUser`
+GraphQL mutations, which the Apollo mock answers. By default each provider button leads to a
+Mockoon mock consent page with one link per outcome. Set `OAUTH_MODE=provider` and a Google or
+GitHub client ID in `.env`, then run `make apollo-restart`, to go through the real consent screen
 instead. Registering the OAuth clients, the redirect URIs and troubleshooting are in
-[`docs/social-sign-in-local.md`](docs/social-sign-in-local.md); the design is
-[ADR-004](docs/adr/004-social-sign-in-spa-callback-relay.md).
+[`docs/social-sign-in-local.md`](docs/social-sign-in-local.md).
 
 ### Password reset e-mails in development
 
