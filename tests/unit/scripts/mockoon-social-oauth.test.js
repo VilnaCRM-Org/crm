@@ -39,7 +39,7 @@ describe('mockoon-social-oauth', () => {
 
     expect(response).toMatchObject({ default: true, statusCode: 200, rules: [] });
     expect(response.headers).toEqual([{ key: 'Content-Type', value: 'text/html; charset=utf-8' }]);
-    for (const { code, label } of SCENARIOS) {
+    for (const [code, label] of Object.entries(SCENARIOS)) {
       expect(response.body).toContain(
         `<a href="${back}?code=${code}&amp;state=${state}">${label}</a>`
       );
@@ -48,7 +48,7 @@ describe('mockoon-social-oauth', () => {
       `<a href="${back}?error=access_denied&amp;state=${state}">Deny</a>`
     );
     expect(response.body).toContain('<html lang="en">');
-    expect(SCENARIOS.map(({ code }) => code)).toEqual([
+    expect(Object.keys(SCENARIOS)).toEqual([
       'mock-success',
       'mock-2fa',
       'mock-expired',

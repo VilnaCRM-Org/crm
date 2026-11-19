@@ -20,16 +20,17 @@ const fs = require('fs');
 
 const CONSENT_ENDPOINT = '__mock-oauth/:provider/authorize';
 
-// One link per outcome; the Apollo mock maps each `code` to its user-service answer.
-const SCENARIOS = [
-  { code: 'mock-success', label: 'Allow' },
-  { code: 'mock-2fa', label: 'Allow (2FA account)' },
-  { code: 'mock-expired', label: 'Expired state' },
-  { code: 'mock-unverified', label: 'Unverified email' },
-  { code: 'mock-no-email', label: 'No email shared' },
-  { code: 'mock-duplicate', label: 'Duplicate email' },
-  { code: 'mock-unavailable', label: 'Provider unavailable' },
-];
+// One link per outcome, scenario code -> link text; the Apollo mock maps each code to its
+// user-service answer.
+const SCENARIOS = Object.freeze({
+  'mock-success': 'Allow',
+  'mock-2fa': 'Allow (2FA account)',
+  'mock-expired': 'Expired state',
+  'mock-unverified': 'Unverified email',
+  'mock-no-email': 'No email shared',
+  'mock-duplicate': 'Duplicate email',
+  'mock-unavailable': 'Provider unavailable',
+});
 
 function fail(message) {
   throw new Error(`mockoon-social-oauth: ${message}`);
@@ -38,8 +39,8 @@ function fail(message) {
 function consentPage() {
   const back = "{{queryParam 'redirect_uri'}}";
   const state = "{{queryParam 'state'}}";
-  const links = SCENARIOS.map(
-    ({ code, label }) => `<li><a href="${back}?code=${code}&amp;state=${state}">${label}</a></li>`
+  const links = Object.entries(SCENARIOS).map(
+    ([code, label]) => `<li><a href="${back}?code=${code}&amp;state=${state}">${label}</a></li>`
   );
   links.push(`<li><a href="${back}?error=access_denied&amp;state=${state}">Deny</a></li>`);
 
