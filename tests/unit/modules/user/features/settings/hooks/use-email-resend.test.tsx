@@ -1,12 +1,15 @@
 import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
+import * as React from 'react';
 import type { JSX, ReactNode } from 'react';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
 import useEmailResend from '@/modules/user/features/settings/hooks/use-email-resend';
 import type { ProfileResendOutcome } from '@/modules/user/features/settings/types/user-profile';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const mockResend = jest.fn();
 const mockProvider = { resend: mockResend };
@@ -229,4 +232,42 @@ describe('useEmailResend', () => {
     expect(show).not.toHaveBeenCalled();
     expect(confirm).not.toHaveBeenCalled();
   });
+
+  // The failure-toast table is a module-level Map, so the hook is also loaded inside the test.
+  it.each([
+    ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],
+    ['transient', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+    ['rejected', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+  ] as const)(
+    'maps %s to its toast when the module loads inside the test',
+    async (reason, message) => {
+      const freshHook = await loadIsolated(async () => {
+        jest.doMock('react', () => React);
+        jest.doMock('react-i18next', () => ReactI18next);
+        return (await import('@/modules/user/features/settings/hooks/use-email-resend')).default;
+      });
+      mockResend.mockResolvedValue({ kind: 'failed', reason });
+      const show = jest.fn();
+      const toasts = {
+        toasts: { items: [] },
+        announcement: '',
+        alert: '',
+        show,
+        dismiss: jest.fn(),
+      };
+      const adoption = {
+        adopt: jest.fn(),
+        confirm: jest.fn(),
+        isCurrent: (): boolean => true,
+        revision: (): number => 0,
+      };
+      const { result } = renderHook(() => freshHook(user, adoption, toasts), { wrapper });
+
+      await act(async () => {
+        await result.current.resend();
+      });
+
+      expect(show).toHaveBeenCalledWith({ items: [{ tone: 'error', message }] });
+    }
+  );
 });

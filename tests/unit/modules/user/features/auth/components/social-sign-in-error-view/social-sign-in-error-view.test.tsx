@@ -1,14 +1,18 @@
 import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as React from 'react';
 import type { JSX } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
+import * as ReactRouter from 'react-router';
 import { MemoryRouter } from 'react-router';
 
 import SocialSignInErrorView from '@auth/components/social-sign-in-error-view';
 import type { SocialSignInErrorKind } from '@auth/types/social-sign-in/social-sign-in-error-kind';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const i18n = createLocaleI18n('uk');
@@ -185,4 +189,31 @@ describe('SocialSignInErrorView', () => {
       fontWeight: '700',
     });
   });
+
+  // The error-row table is a module-level literal, so the view is also loaded inside the test.
+  it.each([
+    ...RETRYABLE.map((row) => [...row, true] as const),
+    ...FINAL.map((row) => [...row, false] as const),
+  ])(
+    'maps %s to its message and retry when the module loads inside the test',
+    async (kind, message, retryable) => {
+      const FreshView = await loadIsolated(async () => {
+        jest.doMock('react', () => React);
+        jest.doMock('react-i18next', () => ReactI18next);
+        jest.doMock('react-router', () => ReactRouter);
+        return (await import('@auth/components/social-sign-in-error-view')).default;
+      });
+
+      render(
+        <I18nextProvider i18n={i18n}>
+          <MemoryRouter>
+            <FreshView kind={kind} providerLabel="Google" onRetry={jest.fn()} />
+          </MemoryRouter>
+        </I18nextProvider>
+      );
+
+      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(screen.queryAllByRole('button', { name: TRY_AGAIN })).toHaveLength(retryable ? 1 : 0);
+    }
+  );
 });
