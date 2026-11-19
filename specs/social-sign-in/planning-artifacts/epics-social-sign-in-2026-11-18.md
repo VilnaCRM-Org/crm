@@ -4,6 +4,7 @@ workflowType: 'epics-and-stories'
 bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
+revised: '2026-11-19'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -145,8 +146,7 @@ back signed in to the same app.
   `{apiBaseUrl}/api/auth/social/<provider>` (FR1) — unit test asserts the URL; no new tab.
 - The destination from `location.state.from` is saved when internal, else `/` (FR2); storage
   that throws does not block navigation.
-- After the first click all provider buttons and form controls are inert (FR3); a second click
-  causes no second navigation.
+- _(FR3 withdrawn)_ A second click before the page changes only starts the flow again.
 - All four buttons stay rendered (FR4); the DOM and visual baselines are unchanged (NFR5).
 - Buttons keep accessible names `auth.oauth.continue_with` in both locales, Tab order unchanged.
 - The eager chunk grows ≤ 1 kB gzip; `make perf-budget` green; dead `openInNewTab` removed if
@@ -159,7 +159,8 @@ back signed in to the same app.
 Component story (feature-local; no kit component is missing — architecture §2).
 
 - Props: `kind: SocialSignInErrorKind`, `providerLabel`, `onRetry?`, `signInHref`.
-- Renders an `<h1>` that receives focus on mount, the localized message inside `role="alert"`,
+- Renders an `<h1>` that receives focus on mount, the localized message inside a polite `role="status"` (changed from an alert after the
+  accessibility review, so it does not cut off the heading),
   "Try again" (`UIButton`) only for retryable kinds, and an always-present "Back to sign in" link.
 - Storybook: default plus one story per kind (Ukrainian copy, the main language); `make
 storybook-build` and `make check-storybook-static` green.

@@ -1,14 +1,25 @@
-import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-webpack5';
+import type { JSX } from 'react';
 
+import AuthCard from '@auth/components/auth-card';
 import SocialSignInErrorView from '@auth/components/social-sign-in-error-view';
 import { withMemoryRouter } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
+
+// The callback page renders the view inside the recovery auth card; the story does the same.
+const inRecoveryCard: Decorator = function RecoveryCardDecorator(Story): JSX.Element {
+  return (
+    <AuthCard variant="recovery">
+      <Story />
+    </AuthCard>
+  );
+};
 
 const meta: Meta<typeof SocialSignInErrorView> = {
   title: 'Auth/Components/SocialSignInErrorView',
   component: SocialSignInErrorView,
   tags: ['autodocs'],
-  decorators: [withMemoryRouter('/auth/callback/google')],
+  decorators: [inRecoveryCard, withMemoryRouter('/auth/callback/google')],
   args: { providerLabel: 'Google', onRetry: noop },
   argTypes: {
     onRetry: { control: false },
@@ -33,9 +44,10 @@ const meta: Meta<typeof SocialSignInErrorView> = {
     docs: {
       description: {
         component:
-          'What the social sign-in callback page shows when the provider round trip fails. The ' +
-          'focused h1 names the provider, the alert carries the reason, "Try again" appears ' +
-          'only for kinds a fresh attempt can fix, and the way back to sign-in is always there.',
+          'What the social sign-in callback page shows when the provider round trip fails. ' +
+          'The focused h1 names the provider, a polite status carries the reason, "Try again" ' +
+          'appears only for kinds a fresh attempt can fix, and the way back to sign-in is ' +
+          'always there.',
       },
       story: { inline: false },
     },

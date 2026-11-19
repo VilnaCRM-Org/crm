@@ -4,6 +4,7 @@ workflowType: 'architecture'
 bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
+revised: '2026-11-19'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -42,7 +43,7 @@ sequenceDiagram
     participant API as API (Mockoon / user-service :8080)
     participant P as Provider (mock page / Google / GitHub)
     U->>SPA: click "Continue with Google" on /sign-in
-    SPA->>SPA: store destination in sessionStorage, inert the form
+    SPA->>SPA: store destination in sessionStorage
     SPA->>API: top-level GET /api/auth/social/google
     API-->>U: 302 Location: provider authorize URL + Set-Cookie oauth_flow_binding (Path=/api/auth/social)
     U->>P: consent
@@ -56,16 +57,18 @@ sequenceDiagram
 
 ## 2. Component and layer inventory
 
+> The inventory below is the 2026-11-18 plan. The landed files are listed in §6 and §7.
+
 ### UI kit check
 
-| Need on the callback screen        | Kit component                              | Status                                            |
-| ---------------------------------- | ------------------------------------------ | ------------------------------------------------- |
-| Deferred spinner + polite announce | `RouteFallback` (`minHeight`, `message`)   | exists                                            |
-| Heading, body text                 | `UITypography`                             | exists                                            |
-| "Try again" button                 | `UIButton`                                 | exists                                            |
-| "Back to sign in" link             | `UILink` / `UITextLink` (ui-toolkit)       | exists                                            |
-| Error message container            | none with `role="alert"` + focused heading | **new feature component** `SocialSignInErrorView` |
-| Provider buttons                   | `AuthProviderButtons` (feature)            | exists, behaviour change only                     |
+| Need on the callback screen        | Kit component                                        | Status                                            |
+| ---------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| Deferred spinner + polite announce | `RouteFallback` (`minHeight`, `message`)             | exists                                            |
+| Heading, body text                 | `UITypography`                                       | exists                                            |
+| "Try again" button                 | `UIButton`                                           | exists                                            |
+| "Back to sign in" link             | `UILink` / `UITextLink` (ui-toolkit)                 | exists                                            |
+| Error message container            | none with a polite `role="status"` + focused heading | **new feature component** `SocialSignInErrorView` |
+| Provider buttons                   | `AuthProviderButtons` (feature)                      | exists, behaviour change only                     |
 
 No new `UI*` kit component is required. One feature-local presentational component is new.
 
@@ -117,8 +120,7 @@ Out of `src/`:
 - `currentFrom` comes from the router location state passed in by `AuthProviderButtons`
   (`useLocation().state?.from`), so `oauth-providers.ts` exposes `list(from)` rather than reading
   globals.
-- FR3: `AuthProviderButtons` lifts a `started` flag through the existing `oauthInert` path of
-  `AuthFormSection` (it already inerts the box while a form submits) — no new inert mechanism.
+- FR3 is withdrawn (PRD); the buttons carry no inert state.
 
 ### 3.2 Relay (`use-social-callback.ts`)
 

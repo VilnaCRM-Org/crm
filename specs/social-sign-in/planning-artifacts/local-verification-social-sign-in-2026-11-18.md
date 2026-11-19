@@ -3,6 +3,7 @@ status: 'complete'
 workflowType: 'local-verification-guide'
 project_name: 'crm'
 date: '2026-11-18'
+revised: '2026-11-19'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'

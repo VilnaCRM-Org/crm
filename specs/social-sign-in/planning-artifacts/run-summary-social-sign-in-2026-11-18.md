@@ -3,6 +3,7 @@ status: 'complete'
 workflowType: 'run-summary'
 project_name: 'crm'
 date: '2026-11-18'
+revised: '2026-11-19'
 slug: 'social-sign-in'
 ---
 
@@ -11,8 +12,8 @@ slug: 'social-sign-in'
 - **Bundle directory:** `specs/social-sign-in/planning-artifacts/`
 - **Task:** working Google/GitHub (plus Facebook/Twitter) sign-in buttons on `/sign-in` and
   `/sign-up` against the user-service social OAuth contract, verifiable locally with Mockoon and
-  with the requester's own provider keys. No GitHub issue was supplied; the bundle is seeded
-  from the task description.
+  with the requester's own provider keys. The work is tracked under issue #150 (the dead-end OAuth buttons); the
+  bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), plan iteration 2/5.
 
 ## Artifacts
@@ -52,12 +53,12 @@ iteration 2 clean).
 
 ## Open questions and warnings
 
-- W1 contract pin: user-service needs a release tag containing `/api/auth/social/*`.
-- W2 2FA dependency on PR #377.
-- W3 Mockoon shared-state spike (A5).
-- W4 user-service #468 before any production enablement.
-- Assumption A1 (meaning of "real (mockoon) back-end") is the one decision the requester may
-  want to revisit; Backend mode is documented as the alternative.
+- W1 / W6: user-service must add `initiateSocialSignInUser` and `completeSocialSignInUser`; until
+  a release declares them, the pending GraphQL contract and the Apollo mock stand in.
+- W2: the 2FA hand-off waits for PR #377.
+- W4: user-service #468 before any production enablement.
+- W5: the callback page's visual baselines are not recorded yet.
+- W3 (Mockoon shared state, A5) is closed.
 
 ## Revision 2026-11-19
 

@@ -737,8 +737,9 @@ planning in `specs/social-sign-in/`).
   `AuthProviderLoader`) → `GraphQLSocialSignInRepository`, with `SocialSignInTransformer` mapping
   `extensions.error_code` to a `SocialSignInErrorKind`. The provider writes the access token into
   `useAuthStore` exactly like a password sign-in.
-- **Paint path.** The buttons only add a `sessionStorage` write and an in-app navigation; the
-  page, hooks, repository and schemas load with the `social-callback` chunk.
+- **Paint path.** The buttons only add a `sessionStorage` write and an in-app navigation. The
+  page and its hooks load with the `social-callback` chunk; the data provider, repository and
+  schemas come with the DI container chunk `AuthProviderLoader` loads.
 - **Single use.** Each mutation runs once per start or per `state`, even under StrictMode, and is
   never retried; "Try again" starts a new round trip and replaces the failed attempt's entry.
 - **Destination.** The page a protected route sent the user from survives the round trip in

@@ -4,6 +4,7 @@ workflowType: 'product-brief'
 bmadCommand: 'create-brief'
 project_name: 'crm'
 date: '2026-11-18'
+revised: '2026-11-19'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'

@@ -23,14 +23,14 @@ const meta = {
   title: 'Auth/Pages/SocialCallback',
   component: SocialCallback,
   tags: ['autodocs'],
-  decorators: [withCallbackRoute('google')],
   parameters: {
     docs: {
       description: {
         component:
-          'The /auth/callback/:provider page a social provider redirects back to. It relays the ' +
-          'code and state to user-service once, then lands on the saved destination, hands a 2FA ' +
-          'account on, or shows SocialSignInErrorView with a way to recover.',
+          'The /auth/callback/:provider page. Opened from a provider button it asks ' +
+          'initiateSocialSignInUser for the authorization URL and leaves for it; opened by the ' +
+          'provider redirect it checks the state and calls completeSocialSignInUser once, then ' +
+          'lands on the saved destination or shows SocialSignInErrorView with a way to recover.',
       },
       story: { inline: false },
     },
@@ -40,7 +40,9 @@ const meta = {
 
 export default meta;
 
-export const MissingParameters: StoryObj<typeof meta> = {};
+export const MissingParameters: StoryObj<typeof meta> = {
+  decorators: [withCallbackRoute('google')],
+};
 
 export const UnknownProvider: StoryObj<typeof meta> = {
   decorators: [withCallbackRoute('myspace')],

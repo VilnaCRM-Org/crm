@@ -4,6 +4,7 @@ workflowType: 'research'
 bmadCommand: 'analyst'
 project_name: 'crm'
 date: '2026-11-18'
+revised: '2026-11-19'
 slug: 'social-sign-in'
 inputDocuments:
   - 'src/modules/user/features/auth/components/form-section/components/auth-provider-buttons/index.tsx'
@@ -146,7 +147,7 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
   by `connect-src`; the relay `fetch` already falls under `connect-src 'self'` + API origins.
   `form-action 'self'` is irrelevant (no form post). No CSP change expected — to be confirmed by
   `make check-security-headers`.
-- `Referrer-Policy: strict-origin-when-cross-origin` keeps `code`/`state` out of `Referer` to
+- `Referrer-Policy: strict-origin` (from `config/security-headers.json`) keeps `code`/`state` out of `Referer` to
   third parties; the SPA must still strip them from the address bar (`history.replaceState`)
   before rendering anything that could leak them, and never log them (observability
   `piiScrubber` must cover `code`, `state`, `pending_session_id`).

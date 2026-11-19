@@ -1,6 +1,10 @@
 import browserNavigator, { BrowserNavigator } from '@auth/utils/browser-navigator';
 
 describe('browserNavigator', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('replaces the current history entry in this tab, never a new one', () => {
     const replace = jest.fn();
     const open = jest.spyOn(window, 'open');
@@ -10,7 +14,6 @@ describe('browserNavigator', () => {
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace).toHaveBeenCalledWith('https://github.com/login');
     expect(open).not.toHaveBeenCalled();
-    open.mockRestore();
   });
 
   it('is bound to the window location', () => {
