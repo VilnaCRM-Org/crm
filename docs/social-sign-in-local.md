@@ -53,8 +53,9 @@ where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhos
    - **No email shared**: "Google did not share your email address…" and Try again.
    - **Duplicate email**: "…cannot be linked automatically. Sign in with your email…".
    - **Provider unavailable**: "Google is not responding right now…" and Try again.
-5. After any outcome the address bar shows `/auth/callback/google` with no `code` or `state`, and
-   pressing Back from the consent page returns to `/sign-in`.
+5. After an error or a cancel the address bar shows `/auth/callback/google` with no `code` or
+   `state`; after Allow it shows the page you were sent to. Pressing Back from the consent page
+   returns to `/sign-in`.
 
 ## 3. Register a Google OAuth client
 
