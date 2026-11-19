@@ -81,3 +81,11 @@ export const refused = (status: number, errorCode: string): Record<string, unkno
   data: { completeSocialSignInUser: null },
   errors: [{ message: errorCode, extensions: { status, error_code: errorCode } }],
 });
+
+export async function unreachableComplete(page: Page): Promise<void> {
+  await page.route(GRAPHQL, async (route: Route) => {
+    const body = route.request().postDataJSON() as GraphqlBody | null;
+    if (body?.operationName !== 'CompleteSocialSignIn') return route.fallback();
+    return route.abort('connectionrefused');
+  });
+}

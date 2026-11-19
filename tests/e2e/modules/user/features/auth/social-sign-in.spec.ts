@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { buildUserId } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import {
   answerComplete,
   answerInitiate,
@@ -10,12 +11,14 @@ import {
   refused,
   signedIn,
   twoFactor,
+  unreachableComplete,
 } from '@tests/e2e/utils/social-sign-in-stubs';
 
 const errorTitle = (provider: string): string => t('auth.social.error.title', { provider });
 const tryAgain = t('auth.social.try_again');
 const backToSignIn = t('auth.social.back_to_sign_in');
 const button = (provider: string): string => t('auth.oauth.continue_with', { provider });
+const PROTECTED_DESTINATION = '/?tab=deals#pipeline';
 
 async function signInWith(page: Page, provider: string, from = '/sign-in'): Promise<void> {
   await page.goto(from);
@@ -91,6 +94,9 @@ test.describe('Social sign-in', () => {
     ['provider_unavailable', 503, 'unavailable', true],
     ['duplicate_email', 409, 'duplicate_email', false],
     ['provider_mismatch', 400, 'provider_mismatch', false],
+    ['missing_oauth_parameters', 400, 'missing_parameters', true],
+    ['unsupported_provider', 400, 'unsupported_provider', false],
+    ['an_unmapped_code', 422, 'generic', true],
   ] as const) {
     test(`explains ${errorCode} and offers the right way out`, async ({ page }) => {
       await answerInitiate(page, 'e2e-code');
@@ -153,6 +159,54 @@ test.describe('Social sign-in', () => {
     await page.keyboard.press('Enter');
 
     await expect.poll(() => initiated.map((input) => input.provider)).toEqual(['google', 'google']);
+  });
+
+  test('explains a completion user-service could not be reached for', async ({ page }) => {
+    await answerInitiate(page, 'e2e-code');
+    await unreachableComplete(page);
+
+    await signInWith(page, 'Google');
+
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: t('auth.social.error.unavailable', { provider: 'Google' }) })
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(1);
+  });
+
+  test('refuses an unknown provider without asking user-service', async ({ page }) => {
+    const initiated = await answerInitiate(page, 'e2e-code');
+
+    await page.goto('/auth/callback/unknown');
+
+    await expect(
+      page.getByRole('status').filter({
+        hasText: t('auth.social.error.unsupported_provider', {
+          provider: t('auth.social.provider_fallback'),
+        }),
+      })
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: tryAgain })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: backToSignIn })).toHaveAttribute(
+      'href',
+      '/sign-in'
+    );
+    expect(initiated).toHaveLength(0);
+  });
+
+  test('returns to the protected page a signed-out visitor was sent away from', async ({
+    page,
+  }) => {
+    await answerInitiate(page, 'e2e-code');
+    await answerComplete(page, signedIn());
+    await signOutToSignIn(page);
+    await bounceFromProtectedDestination(page, PROTECTED_DESTINATION);
+
+    await page.getByRole('button', { name: button('Google') }).click();
+
+    await expect(page).toHaveURL(PROTECTED_DESTINATION);
+    await expect(page.locator('main')).toBeFocused();
   });
 
   test('goes back to sign-in from the error view', async ({ page }) => {
