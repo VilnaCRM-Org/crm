@@ -14,6 +14,7 @@ import {
   PROFILE_SDL_FIXTURE,
   type SingleBody,
 } from './mock-schema-fixtures';
+import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
 
 const PENDING_EXTENSION = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'api', 'contracts', 'pending', 'password-reset.graphql'),
@@ -78,7 +79,12 @@ describe('profile operations on the stateless mock', () => {
 
   beforeEach(async () => {
     server = new ApolloServer({
-      typeDefs: [PINNED_SDL_FIXTURE, PROFILE_SDL_FIXTURE, PENDING_EXTENSION],
+      typeDefs: [
+        PINNED_SDL_FIXTURE,
+        PROFILE_SDL_FIXTURE,
+        PENDING_EXTENSION,
+        ...TWO_FACTOR_SDL_FIXTURES,
+      ],
       resolvers,
       formatError,
     });
@@ -241,10 +247,16 @@ describe('profile operations on the stateless mock', () => {
 
   it('keeps createUser and the password reset resolvers beside the profile ones', () => {
     expect(Object.keys(resolvers.Mutation).sort()).toEqual([
+      'completeTwoFactorUser',
       'confirmPasswordResetUser',
+      'confirmTwoFactorUser',
       'createUser',
+      'disableTwoFactorUser',
+      'regenerateRecoveryCodesUser',
       'requestPasswordResetUser',
       'resendEmailToUser',
+      'setupTwoFactorUser',
+      'signInUser',
       'updateUser',
     ]);
     expect(Object.keys(resolvers.Query)).toEqual(['users']);

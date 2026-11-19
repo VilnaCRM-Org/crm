@@ -40,7 +40,7 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **No static methods or free functions** in non-React `src/**/*.ts`: behaviour is an instance
   method on an `@injectable()` class, or on a module singleton (`export default new X()`) when
   the file must stay container-free. Hooks (`use-*.ts`) and `.tsx` components are exempt.
-- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `LoginResponseMapper`,
+- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `RegistrationResponseMapper`,
   `EmailValidator`): the suffix names the role from the approved table in
   `config/class-naming-policy.js` (mirrored in `CLAUDE.md`). Banned: `Manager`, `Helper`,
   `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, a bare
@@ -93,7 +93,8 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **i18n is per feature**: edit `src/**/i18n/{en,uk}.json` together, then run `make i18n-generate`
   to refresh the committed `src/i18n/localization.json`. The lazy catalogs in
   `config/i18n-catalog-policy.json` (recovery, password policy, settings, toast, app shell, coming
-  soon, user menu) are not merged into it; their keys resolve only inside the listed `owners`.
+  soon, user menu, two-factor challenge, recovery codes notice) are not merged into it; their keys
+  resolve only inside the listed `owners`.
 - **Routes are module-owned**: add a page to the owning feature's `routes/index.ts` contract as
   a lazy `load` with a `webpackChunkName`, and register a new module with one line in
   `src/routes/registry.ts`. Never edit `src/routes/routes.tsx` or the composer.

@@ -25,6 +25,8 @@ const EXEMPT: Readonly<Record<string, string>> = {
     'redirect-only guard; renders its outlet or a Navigate, nothing of its own',
   'src/components/ui-server-field-error/index.tsx':
     'renders no DOM: it only sets a server error and focus on a field of the enclosing form',
+  'src/modules/user/features/settings/components/profile-form/server-field-errors.tsx':
+    'renders no DOM: one UIServerFieldError per section field, shown through ProfileSectionForm',
   [`${authRoot}/components/auth-skeleton/index.tsx`]:
     're-export of src/components/skeletons/auth-skeleton, which has its own story',
 };

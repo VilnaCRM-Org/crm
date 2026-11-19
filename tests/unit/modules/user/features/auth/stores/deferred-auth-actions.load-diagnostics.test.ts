@@ -1,7 +1,7 @@
 import type { ObservabilityCore } from '@/services/observability/observability-core';
 import type useAuthStoreHook from '@auth/stores/use-auth-store';
 import type { AuthActions } from '@auth/types/auth-store';
-import { buildCredentials, buildUser } from '@tests/builders';
+import { buildUser } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const resolveMock = jest.fn();
@@ -19,7 +19,6 @@ const LOAD_FAILURE = {
 const CONSOLE_MESSAGE = 'Auth module failed to load; surfacing retryable error to the user.';
 const CAPTURE_CONTEXT = { source: 'auth:module-load' };
 
-const credentials = buildCredentials();
 const registration = buildUser();
 
 interface Loaded {
@@ -51,40 +50,6 @@ describe('deferred auth actions load-failure diagnostics', () => {
     jest.restoreAllMocks();
   });
 
-  it('surfaces the retryable load-failure error verbatim on login', async () => {
-    const { authActions, useAuthStore } = await loadBarrel();
-
-    await authActions.loginUser(credentials);
-
-    expect(useAuthStore.getState().loginError).toEqual(LOAD_FAILURE);
-    expect(useAuthStore.getState().loginLoading).toBe(false);
-  });
-
-  it('surfaces the load failure for a login whose signal is still live', async () => {
-    const { authActions, useAuthStore } = await loadBarrel();
-
-    await authActions.loginUser(credentials, new AbortController().signal);
-
-    expect(useAuthStore.getState().loginError).toEqual(LOAD_FAILURE);
-  });
-
-  it('keeps a login the user backed out of clear but still reports its load failure', async () => {
-    const { authActions, useAuthStore, observability } = await loadBarrel();
-    const captureSpy = jest
-      .spyOn(observability, 'captureError')
-      .mockImplementation(() => undefined);
-    const controller = new AbortController();
-    const pending = authActions.loginUser(credentials, controller.signal);
-
-    controller.abort();
-    await pending;
-
-    expect(useAuthStore.getState().loginError).toBeNull();
-    expect(useAuthStore.getState().loginLoading).toBe(false);
-    expect(captureSpy).toHaveBeenCalledWith(failure, CAPTURE_CONTEXT);
-    expect(consoleSpy).toHaveBeenCalledWith(CONSOLE_MESSAGE, failure);
-  });
-
   it('surfaces the retryable load-failure error verbatim on registration', async () => {
     const { authActions, useAuthStore } = await loadBarrel();
 
@@ -97,7 +62,7 @@ describe('deferred auth actions load-failure diagnostics', () => {
   it('logs the load failure with its diagnostic message and the raw cause', async () => {
     const { authActions } = await loadBarrel();
 
-    await authActions.loginUser(credentials);
+    await authActions.registerUser(registration);
 
     expect(consoleSpy).toHaveBeenCalledWith(CONSOLE_MESSAGE, failure);
   });
@@ -108,7 +73,7 @@ describe('deferred auth actions load-failure diagnostics', () => {
       .spyOn(observability, 'captureError')
       .mockImplementation(() => undefined);
 
-    await authActions.loginUser(credentials);
+    await authActions.registerUser(registration);
 
     expect(captureSpy).toHaveBeenCalledWith(failure, CAPTURE_CONTEXT);
   });
@@ -119,13 +84,12 @@ describe('deferred auth actions load-failure diagnostics', () => {
       .spyOn(observability, 'captureError')
       .mockImplementation(() => undefined);
     resolveMock.mockReturnValue({
-      login: jest.fn().mockResolvedValue(undefined),
       register: jest.fn().mockResolvedValue(undefined),
     });
 
-    await authActions.loginUser(credentials);
+    await authActions.registerUser(registration);
 
-    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(useAuthStore.getState().registerError).toBeNull();
     expect(captureSpy).not.toHaveBeenCalled();
     expect(consoleSpy).not.toHaveBeenCalled();
   });

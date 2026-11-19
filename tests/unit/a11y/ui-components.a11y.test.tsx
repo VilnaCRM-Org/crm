@@ -97,6 +97,18 @@ const componentCases: ComponentCase[] = [
     withProviders: true,
   },
   { name: 'UIButton while loading', element: <UIButton loading>Saving</UIButton> },
+  {
+    name: 'UIButton as an outlined pill',
+    element: <UIButton variant="outlinedPill">Copy codes</UIButton>,
+  },
+  {
+    name: 'UIButton as a disabled compact outlined pill',
+    element: (
+      <UIButton variant="outlinedPill" size="small" disabled>
+        Dismiss
+      </UIButton>
+    ),
+  },
   { name: 'UITextField', element: <UITextField id="email" label="Email" name="email" /> },
   {
     name: 'UITextField in its error state',

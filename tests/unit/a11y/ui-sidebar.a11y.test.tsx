@@ -7,6 +7,10 @@ import renderShell from '@tests/unit/utils/render-shell';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 describe('UISidebar a11y', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
   it.each([
     ['desktop', '/'],
     ['desktop', '/settings'],

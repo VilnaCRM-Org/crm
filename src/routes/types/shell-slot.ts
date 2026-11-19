@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 
-import type { ProtectedOutletContext } from './protected-outlet-context';
+import type { SignOutContext } from './protected-outlet-context';
 
 export type ShellChunkSource = 'app-shell:load' | 'app-shell:user-menu' | 'app-shell:current-user';
 
@@ -10,7 +10,7 @@ export type ShellFailureHandler = (error: unknown) => void;
 
 export type ShellAvatarHandler = (avatar: ReactNode) => void;
 
-export interface ShellSlotHostProps extends ProtectedOutletContext {
+export interface ShellSlotHostProps extends SignOutContext {
   readonly onAvatar: ShellAvatarHandler;
 }
 

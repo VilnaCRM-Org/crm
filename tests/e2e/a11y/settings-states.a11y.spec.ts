@@ -9,14 +9,14 @@ import {
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   editName,
-  emailField,
   expectErrorToast,
   expectSuccessToast,
-  currentPasswordField,
-  saveButton,
+  namePasswordField,
+  saveEditedEmail,
+  saveEditedName,
+  saveNameButton,
   text,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
-import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
@@ -51,10 +51,18 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
       UpdateUser: [replyWithGraphQLError('email: This email address is already registered', 422)],
     });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await fillInput(emailField(page), buildEmail());
-    await fillInput(currentPasswordField(page), password);
-    await saveButton(page).click();
+    await saveEditedEmail(page, buildEmail(), password);
     await expect(page.getByText(text.emailTaken, { exact: true })).toBeVisible();
+
+    await expectNoAxeViolations(page);
+  });
+
+  test('a revealed name form has no axe violations', async ({ page }) => {
+    await stubProfile(page);
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    await editName(page, NEW_NAME, password);
+    await expect(namePasswordField(page)).toBeVisible();
+    await expect(saveNameButton(page)).toBeVisible();
 
     await expectNoAxeViolations(page);
   });
@@ -62,8 +70,7 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
   test('a success toast has no axe violations', async ({ page }) => {
     await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
     await expectSuccessToast(page, text.saved);
 
     await expectNoAxeViolations(page);
@@ -72,8 +79,7 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
   test('an error toast has no axe violations', async ({ page }) => {
     await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
     await page.goto('/settings', { waitUntil: 'domcontentloaded' });
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
     await expectErrorToast(page, text.transient);
 
     await expectNoAxeViolations(page);

@@ -77,6 +77,7 @@ describe('useCreateNewPassword', () => {
     const { result } = renderHook(() => useCreateNewPassword(loader));
 
     expect(formState(result.current).failure).toBeNull();
+    expect(formState(result.current).failureOccurrence).toBe(0);
     expect(formState(result.current).isSubmitting).toBe(false);
     expect(resolve).not.toHaveBeenCalled();
   });
@@ -170,6 +171,25 @@ describe('useCreateNewPassword', () => {
     }
   );
 
+  it('counts every failure, so an identical second refusal is a new occurrence', async () => {
+    const { loader, confirmReset } = harness(failed('policy_rejected'));
+    const token = buildResetToken();
+    const { result } = renderHook(() => useCreateNewPassword(loader));
+
+    await act(() => formState(result.current).callbacks.submit(formValues(token)));
+    expect(formState(result.current).failureOccurrence).toBe(1);
+    await act(() => formState(result.current).callbacks.submit(formValues(token)));
+    expect(formState(result.current)).toMatchObject({
+      failure: { reason: 'policy_rejected', retryable: false },
+      failureOccurrence: 2,
+    });
+
+    confirmReset.mockResolvedValue({ kind: 'confirmed' });
+    await act(() => formState(result.current).callbacks.submit(formValues(token)));
+
+    expect(formState(result.current)).toMatchObject({ failure: null, failureOccurrence: 2 });
+  });
+
   it('dismisses a shown failure without sending a request', async () => {
     const { loader, confirmReset } = harness(failed('server', true));
     const token = buildResetToken();
@@ -180,6 +200,7 @@ describe('useCreateNewPassword', () => {
     act(() => formState(result.current).callbacks.dismissFailure());
 
     expect(formState(result.current).failure).toBeNull();
+    expect(formState(result.current).failureOccurrence).toBe(1);
     expect(confirmReset).toHaveBeenCalledTimes(1);
   });
 

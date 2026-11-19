@@ -14,6 +14,7 @@ import {
   authPageVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
+  TWO_FACTOR_FORM_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
 
 type ChunkFilter = (chunk: Rspack.Chunk) => boolean;
@@ -69,6 +70,7 @@ describe('auth-form cache groups', () => {
       'create-new-password-form-section',
     ]);
     expect(SETTINGS_CHUNKS).toEqual(['settings']);
+    expect(TWO_FACTOR_FORM_CHUNKS).toEqual(['two-factor-form-section']);
   });
 
   describe.each(groups)('%s', (_label, factory) => {
@@ -78,6 +80,8 @@ describe('auth-form cache groups', () => {
       ['reset-password-form-section', true],
       ['create-new-password-form-section', true],
       ['settings', true],
+      ['two-factor-form-section', true],
+      ['two-factor-challenge', false],
       ['sign-in', false],
       ['reset-password', false],
       ['index', false],
@@ -93,6 +97,7 @@ describe('auth-form cache groups', () => {
       [['sign-up-form-section', 'create-new-password-form-section']],
       [['reset-password-form-section', 'create-new-password-form-section']],
       [['sign-in-form-section', 'settings']],
+      [['sign-up-form-section', 'two-factor-form-section']],
       [['settings']],
       [['sign-in-form-section']],
       [[]],

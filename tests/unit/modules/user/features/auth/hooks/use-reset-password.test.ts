@@ -74,6 +74,25 @@ describe('useResetPassword', () => {
     expect(result.current).toMatchObject({ step: 'sent', failure: null, submittedEmail: email });
   });
 
+  it('counts every failure, so an identical second refusal is a new occurrence', async () => {
+    const { loader, requestReset } = harness(NETWORK);
+    const email = buildEmail();
+    const { result } = renderHook(() => useResetPassword(loader));
+
+    await act(() => result.current.callbacks.submit({ email }));
+    expect(result.current.failureOccurrence).toBe(1);
+    await act(() => result.current.callbacks.submit({ email }));
+    expect(result.current).toMatchObject({
+      failure: { reason: 'network', retryable: true },
+      failureOccurrence: 2,
+    });
+
+    requestReset.mockResolvedValue(SENT);
+    await act(() => result.current.callbacks.submit({ email }));
+
+    expect(result.current).toMatchObject({ step: 'sent', failureOccurrence: 2 });
+  });
+
   it('dismisses the failure without a request and keeps the submitted e-mail', async () => {
     const { loader, requestReset } = harness(NETWORK);
     const email = buildEmail();
@@ -162,6 +181,7 @@ describe('useResetPassword loaded inside the test', () => {
       submittedEmail: '',
       maskedEmail: null,
       failure: null,
+      failureOccurrence: 0,
       returned: false,
       isSubmitting: false,
       callbacks: expect.any(Object),

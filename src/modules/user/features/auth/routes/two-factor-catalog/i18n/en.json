@@ -1,0 +1,28 @@
+{
+  "two_factor": {
+    "title": "Two-factor authentication",
+    "subtitle": "Check the Google Authenticator app",
+    "code_label": "Verification code",
+    "cell_label": "Digit {{position}} of {{total}}",
+    "submit_button": "Confirm",
+    "submitting": "Verifying…",
+    "recovery": {
+      "label": "Recovery code",
+      "helper": "Format: XXXX-XXXX",
+      "subtitle": "Enter one of the recovery codes you saved during setup.",
+      "use_recovery": "Use a recovery code",
+      "use_authenticator": "Use the app code"
+    },
+    "errors": {
+      "recovery_format": "Enter the recovery code in the XXXX-XXXX format",
+      "recovery_invalid": "Incorrect recovery code. Try again.",
+      "incomplete": "Enter all 6 digits of the code",
+      "format": "The code must be exactly six digits",
+      "invalid_code": "Incorrect code. Check that the time on your phone is correct and try again."
+    },
+    "banner": {
+      "rate_limited": "Too many attempts. Wait a minute and try again.",
+      "transient": "The request could not be sent. Check your connection and try again."
+    }
+  }
+}

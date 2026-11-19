@@ -1,10 +1,9 @@
 import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import type { SignInDto } from '@/modules/user/types/user/sign-in-dto';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type { AuthError } from '@auth/types/auth-error';
-import type { LoginResult, RegisterResult } from '@auth/types/auth-repository';
+import type { RegisterResult } from '@auth/types/auth-repository';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 
 @injectable()
@@ -12,21 +11,6 @@ export default class AuthStoreActions {
   constructor(
     @inject(AUTH_TOKENS.AuthStoreActionsDeps) private readonly deps: AuthStoreActionsDeps
   ) {}
-
-  public async login(credentials: SignInDto, signal?: AbortSignal): Promise<void> {
-    this.deps.authState.setState({ loginLoading: true, loginError: null });
-    try {
-      const demoSession = signal?.aborted ? null : this.deps.sandboxDemoSession.signIn(credentials);
-      const result: LoginResult =
-        demoSession === null
-          ? await this.deps.repository.login(credentials, signal)
-          : { ok: true, value: demoSession };
-      this.applyLogin(result);
-      this.deps.securitySignals.loginSettled(result);
-    } catch (error) {
-      this.applyLoginRejection(error);
-    }
-  }
 
   public async register(credentials: SignUpDto, signal?: AbortSignal): Promise<void> {
     this.deps.authState.setState({ registerLoading: true, registerError: null, user: null });
@@ -76,32 +60,6 @@ export default class AuthStoreActions {
       displayMessage: normalized.displayMessage,
       retryable: normalized.retryable,
     };
-  }
-
-  private applyLogin(result: LoginResult): void {
-    if (result.ok) {
-      this.deps.authState.setState({
-        loginLoading: false,
-        email: result.value.email,
-        token: result.value.token,
-        loginError: null,
-      });
-      return;
-    }
-    if (result.error.aborted) {
-      this.deps.authState.setState({ loginLoading: false });
-      return;
-    }
-    this.deps.authState.setState({ loginLoading: false, loginError: result.error });
-  }
-
-  private applyLoginRejection(error: unknown): void {
-    if (this.isAborted(error)) {
-      this.deps.authState.setState({ loginLoading: false });
-      return;
-    }
-    this.deps.securitySignals.loginFailed(error);
-    this.deps.authState.setState({ loginLoading: false, loginError: this.toAuthError(error) });
   }
 
   private applyRegister(result: RegisterResult): void {

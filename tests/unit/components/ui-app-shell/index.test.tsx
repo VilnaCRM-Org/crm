@@ -48,14 +48,17 @@ describe('UIAppShell', () => {
     expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
   });
 
-  it('renders the banner and the sidebar at 1024 px, the tablet layout', () => {
-    renderAt(1024);
+  it.each([768, 1024])(
+    'renders the banner and the sidebar at %i px, the tablet layout',
+    (width) => {
+      renderAt(width);
 
-    expect(screen.getByRole('banner')).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
-  });
+      expect(screen.getByRole('banner')).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
+    }
+  );
 
-  it.each([320, 1023])('renders the banner and the burger but no sidebar at %i px', (width) => {
+  it.each([320, 767])('renders the banner and the burger but no sidebar at %i px', (width) => {
     renderAt(width);
 
     expect(screen.getByRole('banner')).toBeInTheDocument();

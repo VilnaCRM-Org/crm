@@ -6,6 +6,7 @@ import { Route, Routes, useNavigate } from 'react-router';
 
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import DrawerPanel from '@/components/ui-navigation-drawer/drawer-panel';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderShell from '@tests/unit/utils/render-shell';
 
 function Probe({ onNavigate }: { onNavigate: () => void }): ReactElement {
@@ -60,7 +61,8 @@ describe('DrawerPanel', () => {
     ]);
     const links = screen.getAllByRole('link');
     links.forEach((link) => expect(link).toHaveStyle({ minHeight: '60px' }));
-    expect(screen.getAllByRole('listitem')[0]).toHaveStyle({ width: '233px' });
+    const firstRow = screen.getAllByRole('listitem')[0] as HTMLElement;
+    expect(styleRuleFor(firstRow)?.getPropertyValue('width')).toBe('');
     expect(
       (links.at(-1) as HTMLElement).compareDocumentPosition(
         screen.getByRole('button', { name: 'Sign out' })

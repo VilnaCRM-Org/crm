@@ -51,6 +51,8 @@ describe('stories that stub a Data provider or the current-user answer in shared
   it('finds the settings stories that stub the provider or the current-user answer', () => {
     expect(stories).toEqual([
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
+      `${SETTINGS_ROOT}/components/profile-form/profile-section-form.stories.tsx`,
+      `${SETTINGS_ROOT}/components/profile-form/section-fields.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-menu/current-user-menu.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-menu/user-menu-slot.stories.tsx`,
       `${SETTINGS_ROOT}/components/user-profile-settings/user-profile-settings.stories.tsx`,

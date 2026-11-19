@@ -18,7 +18,7 @@ const meta: Meta<typeof AuthCard> = {
     children: { control: false },
     after: { control: false },
     page: { control: 'select', options: [undefined, 'signIn', 'signUp'] },
-    variant: { control: 'select', options: [undefined, 'recovery'] },
+    variant: { control: 'select', options: [undefined, 'recovery', 'challenge'] },
   },
   parameters: {
     docs: {
@@ -42,5 +42,28 @@ export const Default: Story = {};
 export const WithContentAfterTheCard: Story = {
   args: {
     after: <UITypography>Content rendered under the card</UITypography>,
+  },
+};
+
+export const Recovery: Story = {
+  args: { variant: 'recovery' },
+  globals: { viewport: { value: 'md', isRotated: false } },
+  parameters: {
+    docs: {
+      description: {
+        story: 'The recovery pages card at the tablet width, where its own padding applies.',
+      },
+    },
+  },
+};
+
+export const Challenge: Story = {
+  args: {
+    variant: 'challenge',
+    children: (
+      <UITypography component="h1" variant="h4">
+        Двофакторна автентифікація
+      </UITypography>
+    ),
   },
 };

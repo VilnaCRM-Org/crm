@@ -9,14 +9,14 @@ type AppLayoutStyles = (typeof import('@/components/layouts/app-layout.styles'))
 const loadStyles = (): Promise<AppLayoutStyles> =>
   loadIsolated(async () => (await import('@/components/layouts/app-layout.styles')).default);
 
-const FROM_SIDEBAR = '@media (min-width:1024px)';
+const FROM_SIDEBAR = '@media (min-width:768px)';
 
 describe('app layout styles', () => {
-  it('pins the sidebar breakpoint to the toolkit lg value', async () => {
+  it('pins the sidebar breakpoint to the toolkit md value', async () => {
     const styles = await loadStyles();
 
-    expect(styles.sidebarBreakpoint).toBe(1024);
-    expect(styles.sidebarBreakpoint).toBe(breakpointsTheme.breakpoints.values.lg);
+    expect(styles.sidebarBreakpoint).toBe(768);
+    expect(styles.sidebarBreakpoint).toBe(breakpointsTheme.breakpoints.values.md);
   });
 
   it('keeps the tablet-only media query below the toolkit xl value', async () => {

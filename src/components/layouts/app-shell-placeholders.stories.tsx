@@ -27,7 +27,7 @@ const meta: Meta<typeof AppShellPlaceholders> = {
         component:
           'The two empty, aria-hidden boxes AppLayout renders while the ui-app-shell chunk ' +
           'loads and after it fails: a 64 px sticky header slot across the frame and, from ' +
-          '1024 px, the navigation column (251 px up to 1439 px, 250 px from 1440 px). They ' +
+          '768 px, the navigation column (251 px up to 1439 px, 250 px from 1440 px). They ' +
           'hold the shell boxes so nothing shifts when the shell arrives. The dashed outline ' +
           'is drawn by this story only; in the app the boxes are invisible.',
       },
@@ -47,6 +47,10 @@ export const Desktop: Story = {
 
 export const Tablet: Story = {
   globals: { viewport: { value: 'lg', isRotated: false } },
+};
+
+export const SmallTablet: Story = {
+  globals: { viewport: { value: 'md', isRotated: false } },
 };
 
 export const Mobile: Story = {

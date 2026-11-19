@@ -49,6 +49,8 @@ describe('TB-2 domain type names', () => {
       'RestorePasswordDto',
       'SignInDto',
       'SignUpDto',
+      'TwoFactorDto',
+      'TwoFactorSettingsEntity',
       'UserEntity',
     ]);
   });

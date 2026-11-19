@@ -17,6 +17,7 @@ import type {
   CreateNewPasswordInvalidState,
   CreateNewPasswordState,
   CreateNewPasswordViewState,
+  RecordedRecoveryFailure,
   RecoveryProviderStep,
 } from '@auth/types/password-recovery/state';
 
@@ -26,6 +27,8 @@ const PASSWORD_RESET_ARRIVAL: RedirectNavigationState = {
 };
 
 const INVALID_LINK: CreateNewPasswordInvalidState = { view: 'invalid' };
+
+const NO_FAILURE: RecordedRecoveryFailure = { failure: null, failureOccurrence: 0 };
 
 const CONFIRM_STEP: RecoveryProviderStep<CreateNewPasswordDto, CreateNewPasswordOutcome> = (
   provider,
@@ -37,23 +40,37 @@ function nextFailure(outcome: CreateNewPasswordOutcome): RecoveryFailure | null 
   return outcome.kind === 'failed' ? outcome.failure : null;
 }
 
+function recordFailure(
+  current: RecordedRecoveryFailure,
+  failure: RecoveryFailure | null
+): RecordedRecoveryFailure {
+  return failure === null
+    ? { ...current, failure }
+    : { failure, failureOccurrence: current.failureOccurrence + 1 };
+}
+
 function goToSignIn(navigate: NavigateFunction): void {
   navigate(ROUTE_PATHS.signIn, { replace: true, state: PASSWORD_RESET_ARRIVAL });
 }
 
 function useCreateNewPasswordView(): CreateNewPasswordViewState {
   const navigate = useNavigate();
-  const [failure, setFailure] = useState<RecoveryFailure | null>(null);
+  const [recorded, setRecorded] = useState(NO_FAILURE);
   const [linkInvalid, setLinkInvalid] = useState(false);
 
   const settle = (outcome: CreateNewPasswordOutcome | null): void => {
     if (outcome === null) return;
     if (outcome.kind === 'confirmed') goToSignIn(navigate);
     else if (outcome.failure.reason === 'invalid_link') setLinkInvalid(true);
-    setFailure(nextFailure(outcome));
+    setRecorded((current) => recordFailure(current, nextFailure(outcome)));
   };
 
-  return { failure, linkInvalid, settle, clearFailure: (): void => setFailure(null) };
+  return {
+    ...recorded,
+    linkInvalid,
+    settle,
+    clearFailure: (): void => setRecorded((current) => recordFailure(current, null)),
+  };
 }
 
 function useCreateNewPasswordCallbacks({
@@ -78,6 +95,7 @@ export default function useCreateNewPassword(loader: AuthProviderLoader): Create
   return {
     view: 'form',
     failure: viewState.failure,
+    failureOccurrence: viewState.failureOccurrence,
     isSubmitting: submitter.isSubmitting,
     callbacks,
   };

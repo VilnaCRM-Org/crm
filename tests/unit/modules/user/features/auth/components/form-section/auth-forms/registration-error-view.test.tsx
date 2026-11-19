@@ -125,6 +125,50 @@ describe('RegistrationErrorView', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/^Network unavailable$/);
   });
 
+  it('moves focus back to the heading for a new error once focus has fallen to the page', () => {
+    const view = (text: string): JSX.Element => (
+      <RegErrorView
+        resolvedErrorText={text}
+        submittingMessage={SUBMITTING}
+        isSubmitting={false}
+        isClosing={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+      />
+    );
+    const { rerender } = render(view(ERROR_TEXT));
+    const heading = screen.getByRole('heading', { level: 2, name: 'notifications.error.title' });
+    heading.blur();
+    expect(document.body).toHaveFocus();
+
+    rerender(view('Network unavailable'));
+
+    expect(heading).toHaveFocus();
+  });
+
+  it('leaves focus on Retry when a new error arrives while it is focused', async () => {
+    const view = (text: string, isSubmitting: boolean): JSX.Element => (
+      <RegErrorView
+        resolvedErrorText={text}
+        submittingMessage={SUBMITTING}
+        isSubmitting={isSubmitting}
+        isClosing={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+      />
+    );
+    const { rerender } = render(view(ERROR_TEXT, false));
+    const retry = screen.getByRole('button', { name: RETRY_LABEL });
+    await userEvent.tab();
+    expect(retry).toHaveFocus();
+
+    rerender(view(ERROR_TEXT, true));
+    rerender(view('Network unavailable', false));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/^Network unavailable$/);
+    expect(retry).toHaveFocus();
+  });
+
   it('keeps both buttons focusable while a retry runs and ignores busy clicks', async () => {
     const { onRetry, onBack } = renderErrorView({ isSubmitting: true });
     const retry = screen.getByRole('button', { name: RETRY_LABEL });

@@ -55,7 +55,6 @@ export default function UserProfileSettings(props: UserProfileSettingsProps): JS
           <ProfileForm
             user={user}
             adoption={props.adoption}
-            version={props.version}
             refocus={refocus}
             toasts={props.toasts}
             saveRef={props.saveRef}

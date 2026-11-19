@@ -6,6 +6,7 @@ import ProfileProvider from '@/modules/user/features/settings/data-providers/pro
 import type GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import UnseenFailureReporter from '@/services/observability/unseen-failure-reporter';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import { buildProfileChange, buildUserIri, buildUserNode } from '@tests/builders';
@@ -28,7 +29,7 @@ const build = (): {
     update: jest.fn(),
     resend: jest.fn(),
   };
-  const errors = new UserServiceErrorTransformer();
+  const errors = new UserServiceErrorTransformer(new FieldViolationParser());
   const transformer = new GraphQLProfileTransformer(errors);
   const captureError = jest.fn();
   const provider = new ProfileProvider(

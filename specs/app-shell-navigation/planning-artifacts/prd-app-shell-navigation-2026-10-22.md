@@ -29,7 +29,9 @@ inputDocuments:
 re-read; each change is marked in place as a dated amendment or owner decision; 2026-11-02: the
 chip's read moved off the container, 0addef83, noted 2026-11-06; 2026-11-03: the
 userSettings flag removal; 2026-11-04: the settings page centred and the handle moved to the sidebar
-edge; 2026-11-05: the dated notes for DV-11 and DV-13; 2026-11-06: the tablet rail handle's `right`,
+edge; 2026-11-05: the dated notes for DV-11 and DV-13; owner decisions of 2026-11-05 (confirmed 2026-11-10): the
+sidebar from 768 px, the full-screen drawer, the centred tablet header title and the persisted rail;
+2026-11-06: the tablet rail handle's `right`,
 `expectTapArea` in NFR-3, the exemptions in NFR-6 and NFR-15, and the dated notes at C-3, the failure
 journeys, FR-5, FR-5.3, NFR-5, NFR-7, §8 R-1 and OQ-27; owner decisions of 2026-11-06: R-1 closed, the three exemptions approved, the badge
 colour DV-14, the undrawn header states dropped; 2026-11-09: the desktop journey's Settings group and
@@ -64,6 +66,21 @@ WCAG 2.2 SC 2.4.11 criterion in NFR-2; the DV-15 notes at C-9 and in NFR-22) **F
 > Amended 2026-11-06 (reconciliation with shipped code): three handles take `right: -9px`. The tablet rail's
 > handle keeps its 9 px overhang past the 76 px panel as `right: 28px`, against a 113 px wrapper with a 37 px
 > right padding (113 − 28 − 32 = 53), so it still lands at 53,15.
+
+> **Owner decision of 2026-11-05 (sidebar from 768 px, full-screen drawer, persisted rail),
+> confirmed 2026-11-10.** After the owner's hand test of #377 the owner asked for four shell
+> changes, which land in #377. The sidebar shows from 768 px instead of 1024 (OQ-5), so the tablet
+> layout runs from 768 to 1439 px and the burger and drawer exist only below 768. The mobile drawer
+> is full-screen with no shadow instead of the `min(313px, 100vw - 7px)` panel (OQ-24). The tablet
+> header title is centred. The sidebar's collapsed state persists across reloads in `localStorage`
+> under `crm.sidebar.collapsed` (`src/components/ui-sidebar/use-sidebar-collapse.ts`), which reverses
+> FR-12 E and OQ-4's "not persisted". On 2026-11-10 the owner confirmed that persistence stays and
+> asked for this PRD to say so. "The sidebar breakpoint" below therefore means 768 px, and the
+> breakpoint tests pin the toolkit's `md` (768), not `lg` (1024); see the
+> [shell README, "Layouts"](../../../src/components/ui-app-shell/README.md#layouts). The tablet
+> journey, the §5 breakpoint definition, FR-12 E, FR-13.4 E, R-11 and the OQ-4, OQ-5 and OQ-24 rows
+> carry dated notes; their text is kept as the record of the plan as approved. The Settings group's
+> disclosure (FR-8.1) is still not persisted.
 
 > **Owner decision of 2026-10-26 (Settings label clear of its chevron, DV-11), noted 2026-11-05.**
 > Figma draws the Settings chevron inside the room its label needs once WCAG 1.4.12 text spacing is
@@ -226,6 +243,10 @@ The same journey with tablet metrics: 52 px header controls, a 360 px search, a 
 66 px nav rows in a 238 px sidebar at x 13 (research §3.3, §3.4). The persistent sidebar is kept at
 1024 (OQ-5).
 
+Amended 2026-11-05 (owner decision, confirmed 2026-11-10): the sidebar now shows from 768 px, so
+the tablet metrics apply from 768 to 1439 and the tablet header title is centred. See the owner
+decision of 2026-11-05 at the top of this PRD.
+
 ### Mobile 375
 
 The 64 px header shows the logo, the disabled bell and list glyphs, the 40 px monogram avatar and
@@ -261,6 +282,9 @@ per bullet in Given / when / then form, grouped as positive (**P**), negative (*
 (**E**). Geometry belongs to the UX spec; criteria here name it only where behaviour depends on
 it. "Below the sidebar breakpoint" and "at or above it" mean 1024, the width OQ-5
 settled.
+
+Amended 2026-11-05 (owner decision, confirmed 2026-11-10): the sidebar breakpoint is 768 px, the
+toolkit's `md`; below it the burger and the full-screen drawer apply, at or above it the sidebar.
 
 > Assumption: a control in the **disabled with status** class (search, bell, list, drawer search;
 > OQ-2 resolved 2026-10-23) is natively `disabled`, not in the Tab sequence, and does nothing when
@@ -850,7 +874,10 @@ Under OQ-4's resolution the handle is a `button` that toggles the sidebar betwee
   (every row navigates to its route, Sign out signs out).
 - **N** Given below the sidebar breakpoint, when the page renders, then no handle exists.
 - **E** Given a reload, when the page renders, then the sidebar is expanded (state is not persisted,
-  OQ-4 resolved).
+  OQ-4 resolved). Superseded 2026-11-05 by the owner decision at the top of this PRD (confirmed
+  2026-11-10): given a reload, the sidebar keeps the expanded or rail state last chosen, read from
+  `localStorage` key `crm.sidebar.collapsed`; with no stored value, or when storage throws, it is
+  expanded.
 - **E** Given 1024 to 1439, when the handle on the expanded tablet panel is activated, then the panel
   collapses to the tablet rail `378:21462`; when the rail's handle `378:21542` is activated, then it
   expands again, and both handles report the matching name and `aria-expanded` (F-10).
@@ -932,7 +959,9 @@ does nothing). **Figma:** `609:47254` (293×48 at 10,13 in the panel).
 - **N** Given the field, when typed into or tapped, then nothing happens and focus does not land on
   it.
 - **E** Given 320 CSS px, when the drawer opens, then the disabled search keeps its 10 px panel inset
-  and fits the `min(313px, 100vw - 7px)` panel without horizontal scroll (OQ-24).
+  and fits the `min(313px, 100vw - 7px)` panel without horizontal scroll (OQ-24). Amended
+  2026-11-05 (owner decision): the drawer is full-screen with no shadow, so the panel is the viewport
+  width; the search keeps its inset and the drawer still has no horizontal scroll.
 
 #### FR-13.5 — Drawer navigation content
 
@@ -1580,6 +1609,11 @@ of the service was not examined. Residual, recorded and not fixed: the sandbox's
 end the demo session on the first read (`src/config/env/sandbox-demo-session-provider.ts`). See the
 brief's R-1 banner.
 
+Amended 2026-11-05 (owner decision, confirmed 2026-11-10): R-11's `lg + 1` convention and its
+1023/1024/1025 tests no longer describe the breakpoint. The sidebar breakpoint is the toolkit's `md`
+(768); `use-shell-layout.test.ts` asserts the layout at 767, 768, 1439 and 1440 px and
+`app-layout.styles.tokens.test.ts` holds the frame's 768 and 1440 equal to `md` and `xl`.
+
 ## 9. Owner decisions (every question RESOLVED by owner 2026-10-23)
 
 No question is open and none blocks readiness. Verbatim answers are quoted; the others were given
@@ -1618,6 +1652,13 @@ as the recommended or stated option on 2026-10-23. OQ-18 and OQ-24 were not aske
 | OQ-26 | Shell chunk fails twice (arch.)     | keep the placeholders and capture the error                                                                                                               | NFR-18                       |
 | OQ-27 | Mapper reach (arch.)                | `UserDisplayNameMapper` registered under `AUTH_TOKENS`, read through `useService` (chip amended 2026-11-06, see below)                                    | FR-17                        |
 | OQ-28 | Coming-soon page design             | existing tokens and the error-page layout, marked for designer confirmation                                                                               | FR-18.1                      |
+
+**OQ-4, OQ-5 and OQ-24, superseded 2026-11-05 by owner decision (confirmed 2026-11-10).** OQ-4: the
+rail is built and the expanded tablet panel keeps its handle, but the state **is** persisted, in
+`localStorage` under `crm.sidebar.collapsed`. OQ-5: the sidebar shows from 768 px (the toolkit's
+`md`), the tablet metrics apply from 768 to 1439, desktop starts at 1440 and the drawer applies below 768. OQ-24: the mobile drawer is full-screen with no shadow, not the `min(313px, 100vw - 7px)`
+panel. The tablet header title is centred. The rows above are kept as the record of the plan as
+approved; see the owner decision of 2026-11-05 at the top of this PRD.
 
 **C-9, amended 2026-11-05.** The owner's parity decision stands, with the later owner decisions
 beside it: DV-10 (2026-10-23), DV-11 (2026-10-26), and DV-12 and DV-13 (2026-11-04); DV-14 (2026-11-06, the

@@ -1,0 +1,175 @@
+import 'reflect-metadata';
+
+import { GraphQLTwoFactorSettingsTransformer } from '@/modules/user/features/settings/transformers';
+import type {
+  UserServiceFailure,
+  UserServiceFailureReason,
+} from '@/modules/user/types/user-service/user-service-failure';
+import {
+  buildOtpauthUri,
+  buildRecoveryCode,
+  buildRecoveryCodeSet,
+  buildTotpSecret,
+} from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
+
+const isolatedTransformer = (): Promise<GraphQLTwoFactorSettingsTransformer> =>
+  loadIsolated(async () => {
+    const { GraphQLTwoFactorSettingsTransformer: Transformer } =
+      await import('@/modules/user/features/settings/transformers');
+    return new Transformer();
+  });
+
+const failure = (reason: UserServiceFailureReason): UserServiceFailure => ({
+  reason,
+  status: null,
+  violations: { items: [], complete: true },
+});
+
+const SERVER = { kind: 'failed', reason: 'server' };
+
+const codesOf = (set: ReturnType<typeof buildRecoveryCodeSet>): string[] =>
+  set.items.map((code) => code.value);
+
+describe('GraphQLTwoFactorSettingsTransformer', () => {
+  const transformer = new GraphQLTwoFactorSettingsTransformer();
+  const code = buildRecoveryCode();
+
+  describe('toEnrolmentOutcome', () => {
+    it('hands the URI and secret back with status disabled and no codes', () => {
+      const otpauthUri = buildOtpauthUri();
+      const secret = buildTotpSecret();
+
+      expect(
+        transformer.toEnrolmentOutcome({ setupTwoFactorUser: { user: { otpauthUri, secret } } })
+      ).toEqual({
+        kind: 'changed',
+        settings: { status: 'disabled', otpauthUri, secret, recoveryCodes: null },
+      });
+    });
+
+    it.each([
+      ['null data', null],
+      ['a null payload', { setupTwoFactorUser: null }],
+      ['a null user', { setupTwoFactorUser: { user: null } }],
+      [
+        'a null secret',
+        { setupTwoFactorUser: { user: { otpauthUri: buildOtpauthUri(), secret: null } } },
+      ],
+      [
+        'an empty URI',
+        { setupTwoFactorUser: { user: { otpauthUri: '', secret: buildTotpSecret() } } },
+      ],
+    ])('fails with the server reason for %s', (_name, payload) => {
+      expect(transformer.toEnrolmentOutcome(payload)).toEqual(SERVER);
+    });
+  });
+
+  describe.each(['confirmTwoFactorUser', 'regenerateRecoveryCodesUser'] as const)(
+    'toRecoveryCodesOutcome for %s',
+    (field) => {
+      const method = 'toRecoveryCodesOutcome';
+      it('turns the strings into a RecoveryCodeSet in response order with status enabled', () => {
+        const set = buildRecoveryCodeSet();
+        const payload = { [field]: { user: { recoveryCodes: codesOf(set) } } };
+
+        expect(transformer[method](payload as never)).toEqual({
+          kind: 'changed',
+          settings: { status: 'enabled', otpauthUri: null, secret: null, recoveryCodes: set },
+        });
+      });
+
+      it('accepts a single non-empty code', () => {
+        expect(
+          transformer[method]({ [field]: { user: { recoveryCodes: [code] } } } as never)
+        ).toEqual({
+          kind: 'changed',
+          settings: {
+            status: 'enabled',
+            otpauthUri: null,
+            secret: null,
+            recoveryCodes: { items: [{ value: code }] },
+          },
+        });
+      });
+
+      it.each([
+        ['an empty list', []],
+        ['a blank code', ['']],
+        ['a blank code among valid ones', [code, '']],
+        ['a string', code],
+        ['an object', { 0: code }],
+        ['numbers', [1, 2]],
+        ['null', null],
+      ])('fails with the server reason for recovery codes given as %s', (_name, recoveryCodes) => {
+        expect(transformer[method]({ [field]: { user: { recoveryCodes } } } as never)).toEqual(
+          SERVER
+        );
+      });
+
+      it.each([
+        ['null data', null],
+        ['undefined data', undefined],
+        ['a null payload', { [field]: null }],
+        ['a null user', { [field]: { user: null } }],
+      ])('fails with the server reason for %s', (_name, payload) => {
+        expect(transformer[method](payload as never)).toEqual(SERVER);
+      });
+    }
+  );
+
+  describe('toDisabledOutcome', () => {
+    it('gives status disabled with every secret and code null', () => {
+      expect(
+        transformer.toDisabledOutcome({ disableTwoFactorUser: { user: { success: true } } })
+      ).toEqual({
+        kind: 'changed',
+        settings: { status: 'disabled', otpauthUri: null, secret: null, recoveryCodes: null },
+      });
+    });
+
+    it.each([
+      ['success false', { disableTwoFactorUser: { user: { success: false } } }],
+      ['a null user', { disableTwoFactorUser: { user: null } }],
+      ['a null payload', { disableTwoFactorUser: null }],
+      ['null data', null],
+      ['undefined data', undefined],
+      ['a success flag given as a string', { disableTwoFactorUser: { user: { success: 'true' } } }],
+    ])('fails with the server reason for %s', (_name, payload) => {
+      expect(transformer.toDisabledOutcome(payload as never)).toEqual(SERVER);
+    });
+  });
+
+  describe('toFailureOutcome', () => {
+    it.each([
+      ['already_enabled', 'already_enabled'],
+      ['not_enabled', 'not_enabled'],
+      ['setup_not_initiated', 'setup_not_initiated'],
+      ['invalid_code', 'invalid_code'],
+      ['violation', 'invalid_code'],
+      ['reauth_required', 'reauth_required'],
+      ['unauthenticated', 'session_ended'],
+      ['access_denied', 'session_ended'],
+      ['rate_limited', 'rate_limited'],
+      ['network', 'network'],
+      ['aborted', 'network'],
+      ['server', 'server'],
+      ['refused', 'server'],
+      ['unknown', 'server'],
+      ['invalid_password', 'server'],
+      ['locked', 'server'],
+      ['expired_session', 'server'],
+    ] as const)('maps the %s failure to the %s reason', async (reason, expected) => {
+      const loaded = await isolatedTransformer();
+
+      expect(loaded.toFailureOutcome(failure(reason))).toEqual({
+        kind: 'failed',
+        reason: expected,
+      });
+    });
+  });
+
+  it('has no constructor dependencies', () => {
+    expect(GraphQLTwoFactorSettingsTransformer.length).toBe(0);
+  });
+});

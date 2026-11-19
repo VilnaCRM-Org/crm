@@ -56,6 +56,7 @@ failure reaches the route `errorElement` and its **Reload the page** button.
 | `signIn`               | `/sign-in`               | `@auth/routes` (user.auth) | public    |
 | `passwordRecovery`     | `/password-recovery`     | `@auth/routes` (user.auth) | public    |
 | `passwordReset`        | `/password-reset`        | `@auth/routes` (user.auth) | public    |
+| `twoFactorChallenge`   | `/sign-in/two-factor`    | `@auth/routes` (user.auth) | public    |
 | `settings`             | `/settings`              | settings routes            | protected |
 | `forbidden`            | `/forbidden`             | `app-routes.ts`            | public    |
 | `serverError`          | `/server-error`          | `app-routes.ts`            | public    |
@@ -175,7 +176,8 @@ fails when the eager graph reaches either component or a file only they import.
 
 `AppLayout` is the shell chrome of every protected page (issues #106, #362). It hands
 `appShellLoader` to `AppLayoutFrame`, a CSS grid frame that renders, in order, the lazy
-`UIAppShell` (header, sidebar from 1024 px or mobile drawer below it, built by `useAppShell` from
+`UIAppShell` (header, sidebar from 768 px or mobile drawer below it, per the owner decision of
+2026-11-05, built by `useAppShell` from
 that loader behind a `<Suspense>` whose fallback is `AppShellPlaceholders`, two `aria-hidden`
 size-holding placeholders, a header slot and a navigation column), the page's `<main>` and, after it
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
@@ -197,12 +199,29 @@ chunk loads. The chunk comes through a `ChunkRetryLoader`
 (`src/components/layouts/footer-loader.ts`, issue #147), and a load that still fails resolves to an
 empty component: a missing footer never reaches the `AppLayout` `errorElement` and never replaces
 the page. `AppLayoutFrame`, which `AppLayout` renders, also forwards `ProtectedRoute`'s outlet
-context (`ProtectedOutletContext`, `{ signOut, session }` as a `ProtectedSessionContext`, from
+context (`ProtectedOutletContext`,
+`{ signOut, twoFactorStatus, setTwoFactorStatus, banner, session }` as a `ProtectedSessionContext`,
+from
 `src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
 react-router 7 — and hands the same `signOut` to the lazy app shell
 (`<AppShell signOut={outletContext.signOut} userMenu={userMenu} />`), whose sidebar, drawer and user
 menu are the sign-out controls (issue #362). The home page at `/` no longer reads the context.
+
+`twoFactorStatus` is `'enabled' | 'disabled' | 'unknown'` and is the one place the settings card
+and the guard share what is known about the account's two-factor state; `setTwoFactorStatus`
+publishes a change made on `/settings`. `banner` is optional: `ProtectedRoute` fills it with the
+low-recovery-codes notice after a recovery-code sign-in, and `AppLayout` renders it first inside
+`<main>` (issue #331).
+
+## The sign-in challenge route (issue #331)
+
+`ROUTE_PATHS.twoFactorChallenge` (`/sign-in/two-factor`, key `twoFactorChallenge`) is a public route
+owned by the auth feature's route contract (`@auth/routes`), rendered under `RootLayout` and never
+guarded. It is reached only with a pending session from a sign-in that asked for a
+code: a typed URL or a reload has none, so the route replaces itself with `/sign-in` and sends
+nothing. The page lazy-loads its form section behind the `two-factor-form-section` chunk and
+completes back to the destination `ProtectedRoute` preserved in `state.from`.
 
 ## Errors and fallbacks (issue #116)
 
