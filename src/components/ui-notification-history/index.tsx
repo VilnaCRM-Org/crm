@@ -6,7 +6,6 @@ import type {
   HistoryRowProps,
   UINotificationHistoryProps,
 } from '@/components/types/ui-notification-history';
-import UINotificationContent from '@/components/ui-notification-content';
 
 import styles from './styles';
 
@@ -18,8 +17,17 @@ function HistoryRow({ view, unread, label }: HistoryRowProps): JSX.Element {
           {label}
         </Box>
       ) : null}
-      <UINotificationContent view={view} />
-      {unread ? <Box component="span" aria-hidden sx={styles.dot} /> : null}
+      <Box component="span" sx={styles.title}>
+        <Box component="span" sx={[styles.message, unread && styles.unreadMessage]}>
+          {view.message}
+        </Box>
+        {unread ? <Box component="span" aria-hidden sx={styles.dot} /> : null}
+      </Box>
+      {view.time === undefined ? null : (
+        <Box component="span" sx={styles.time}>
+          {view.time}
+        </Box>
+      )}
     </Box>
   );
 }
@@ -54,8 +62,10 @@ export default function UINotificationHistory({
         {copy.heading}
       </Box>
       <HistoryBody views={views} unread={unread} copy={copy} />
-      <Box component="button" type="button" sx={styles.markAll} onClick={onMarkAllRead}>
-        {copy.markAllRead}
+      <Box sx={styles.footer}>
+        <Box component="button" type="button" sx={styles.markAll} onClick={onMarkAllRead}>
+          {copy.markAllRead}
+        </Box>
       </Box>
     </Box>
   );

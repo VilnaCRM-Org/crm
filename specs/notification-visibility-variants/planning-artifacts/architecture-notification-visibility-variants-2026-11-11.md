@@ -1258,6 +1258,14 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
   16 px. Rows: icon, message, time, and for unread rows the tint, an 8 px `#0074B5` dot and the
   hidden "Непрочитане". Empty state in `#57595B`. "Позначити всі прочитаними" is a `#0074B5` text
   button, 24 px minimum (44 px on mobile).
+  **Amended 2026-11-20 (owner decision: align with Figma `377:18485`).** Frame 2 px `#E1E7EA`,
+  radius 12, the caret drawn in the same edge colour. Heading Golos 600 18 px. Rows 71 px, no
+  status icon, message Inter 16/18 (unread Medium `#404142` on the `#FBFBFB` tint, read Regular
+  `#57595B` on white), time Inter Medium Italic 12 px, unread dot 4 px after the title. "Позначити
+  всі прочитаними" is a 279 × 50 bordered button (2 px `#E1E7EA`, radius 12, Inter Medium 14
+  `#1B2327`) in a sticky footer over a white fade. Kept for contrast: the dot is `#0074B5`
+  (4.86:1; Figma `#FFC01E` is 1.6:1) and the time `#57595B` (Figma `#969B9D` is 2.8:1); no row
+  deletion, per the brief.
 - **Motion.** The merged card and the caret card enter with `translateY(-8px)` and opacity over
   180 ms `cubic-bezier(0.2, 0, 0, 1)` when the first row mounts, `transform-origin` at the bell. The
   panel has no motion. Reduced motion: none (FR-21).
