@@ -2019,6 +2019,14 @@ the recorded measures as JSON and one screenshot per variant × viewport × kind
 - Given the QA stage, when it completes, then the PR carries a table with every measure for every variant and viewport, referencing the 18 screenshots, B's unaccented-edge ratios listed as a design question (architecture §18, design 8), and the sheet file is in the bundle (verified at QA / finish-PR stage, not in a local Ralph run).
 - Not applicable: unit coverage and mutation (test-only), i18n, baselines (attachments are not baselines).
 
+> Code facts (2026-11-20): the measuring spec and its helper (`tests/e2e/utils/notification-measures.ts`)
+> are written and linted locally; the run, the JSON and the 18 screenshots come from CI, and the
+> sheet markdown is written at QA. The mobile header draws no badge (`layout !== 'mobile'`), so at
+> 375 × 812 the screenshot waits for the bell's count description instead of a badge. C's edge is
+> the `--bell-notice-tone` colour, because at 1440 the merged card draws its outline with a
+> `drop-shadow` filter and has no border colour; B's unaccented edges are its tint on the white
+> card. The three-outcome case saves name and e-mail at 1440 and the password at the measured size.
+
 ### Story 4.9: Record the notifications decisions in the feature, module and settings READMEs
 
 As a future maintainer or the engineer who extracts the feature,
