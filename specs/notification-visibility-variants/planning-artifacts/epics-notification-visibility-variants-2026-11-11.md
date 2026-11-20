@@ -1255,6 +1255,14 @@ neither component nor loader imports the adapter), `make lint-metrics`.
 > twice per revision. The panel's stories therefore pass fixed rows as args and need neither an
 > adapter nor a notification decorator.
 
+> Code facts (2026-11-20): `useNotificationViews` takes `{ timeKey }` as an options object, not
+> the key as a string. The notice passes it from `components/` into
+> `hooks/use-bell-notice-views.ts`, so the time key stays under the `components` owner and the
+> policy gains only that owner. The Retry wrapping (return focus, retire the row, then run the
+> action) moved into `src/hooks/use-retiring-notification-views.ts`, shared with
+> `ui-notification-slot/use-slot-views.ts`, to clear a jscpd clone. With no published focus
+> target the notice returns focus to the bell.
+
 ### Story 2.12: Build BellNotifications, the bell connector of every style
 
 As a user under any style,

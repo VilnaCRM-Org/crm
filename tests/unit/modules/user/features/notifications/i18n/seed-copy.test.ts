@@ -30,13 +30,27 @@ describe('notification seed copy follows the settings toasts', () => {
   it('holds exactly the three seed keys and no others', () => {
     [notificationEn, notificationUk].forEach((catalog) => {
       expect(Object.keys(catalog)).toEqual(['notification_center']);
-      expect(Object.keys(catalog.notification_center)).toEqual(['seed']);
+      expect(Object.keys(catalog.notification_center)).toEqual(['seed', 'history', 'time']);
       expect(Object.keys(catalog.notification_center.seed).sort()).toEqual([
         'email_sent',
         'password_changed',
         'saved',
       ]);
     });
+  });
+
+  it('holds the five history strings and the time pattern in both locales', () => {
+    [notificationEn, notificationUk].forEach((catalog) => {
+      expect(Object.keys(catalog.notification_center.history).sort()).toEqual([
+        'empty',
+        'heading',
+        'mark_all_read',
+        'unread',
+      ]);
+      expect(catalog.notification_center.time).toBe('{{value, datetime}}');
+    });
+    expect(notificationUk.notification_center.history.heading).toBe('Сповіщення');
+    expect(notificationEn.notification_center.history.heading).toBe('Notifications');
   });
 
   it('resolves every seed message key in both locales', () => {
