@@ -2,7 +2,14 @@ import type { ComponentType, ReactNode } from 'react';
 
 import type { SignOutContext } from './protected-outlet-context';
 
-export type ShellChunkSource = 'app-shell:load' | 'app-shell:user-menu' | 'app-shell:current-user';
+export type ShellChunkSource =
+  | 'app-shell:load'
+  | 'app-shell:user-menu'
+  | 'app-shell:current-user'
+  | 'app-shell:notifications'
+  | 'app-shell:notifications-history'
+  | 'app-shell:notifications-notice'
+  | 'app-shell:notifications-record';
 
 export type ShellChunkFailureHandler = (source: ShellChunkSource, error: unknown) => void;
 
