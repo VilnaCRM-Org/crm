@@ -949,6 +949,14 @@ reports `BLOCKED`, never skips).
 - Given the change, when the visual job runs in CI, then every baseline is unchanged (the overhang defaults to `0px` and nothing mounts the notice yet).
 - Given the new and changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors, styles loaded through `isolated-module.ts`.
 
+> Code facts (2026-11-20): Figma `397:18093` puts the message at x 1101, 14 px inside the union
+> and 9 px left of the card edge, so on desktop the card body takes `margin-left: -23px` and the
+> text starts 14 px from the union's left edge. `useBellAnchor` also sets `--bell-bottom`, the
+> caret card's vertical anchor (top is the bell bottom plus 10 px: 4 px gap and the 6 px caret).
+> The caret card is `position: fixed` and animates itself, because a transform on an ancestor
+> would re-anchor a fixed child. The shared content piece keeps its 14/20 message and 13/20 time;
+> Figma's 14/18 and 12/18 stay a known delta of Story 2.2.
+
 > Assumption: if WebKit renders the four-shadow union outline unevenly in the CI baselines of
 > Story 4.6, the K3a fallback (two bordered boxes with a white patch over the seam) is applied in
 > this component and the edge contrasts above still hold.

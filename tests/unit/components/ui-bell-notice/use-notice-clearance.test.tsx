@@ -1,0 +1,150 @@
+import { renderHook } from '@testing-library/react';
+import type { RefObject } from 'react';
+
+import useNoticeClearance from '@/components/ui-bell-notice/use-notice-clearance';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
+
+const root = document.documentElement;
+
+const rows = (): NotificationViewSet => ({
+  items: [{ id: '1', kind: 'success', message: 'Зміни збережено' }],
+});
+
+const card = (bottom: number): RefObject<HTMLElement | null> => {
+  const element = document.createElement('div');
+  element.getBoundingClientRect = (): DOMRect => ({ bottom }) as DOMRect;
+  document.body.appendChild(element);
+  return { current: element };
+};
+
+const overhang = (): string => root.style.getPropertyValue('--app-top-overhang');
+
+describe('useNoticeClearance', () => {
+  let scrollBy: jest.Mock;
+
+  beforeEach(() => {
+    scrollBy = jest.fn();
+    Object.defineProperty(window, 'scrollBy', { configurable: true, value: scrollBy });
+  });
+
+  afterEach(() => {
+    root.style.removeProperty('--app-top-overhang');
+    Reflect.deleteProperty(window, 'scrollBy');
+    document.body.replaceChildren();
+  });
+
+  it('sets the overhang to the card bottom minus the 64 px header', () => {
+    renderHook(() => useNoticeClearance(card(125), rows()));
+
+    expect(overhang()).toBe('61px');
+  });
+
+  it('never sets a negative overhang', () => {
+    renderHook(() => useNoticeClearance(card(40), rows()));
+
+    expect(overhang()).toBe('0px');
+  });
+
+  it('removes the overhang when the card unmounts', () => {
+    const { unmount } = renderHook(() => useNoticeClearance(card(125), rows()));
+
+    unmount();
+
+    expect(overhang()).toBe('');
+  });
+
+  it('removes the overhang when the card is gone', () => {
+    root.style.setProperty('--app-top-overhang', '61px');
+
+    renderHook(() => useNoticeClearance({ current: null }, rows()));
+
+    expect(overhang()).toBe('');
+  });
+
+  it('measures again when the rows change and when the window is resized', () => {
+    const ref = card(125);
+    const { rerender } = renderHook(({ views }) => useNoticeClearance(ref, views), {
+      initialProps: { views: rows() },
+    });
+    const element = ref.current as HTMLElement;
+    element.getBoundingClientRect = (): DOMRect => ({ bottom: 200 }) as DOMRect;
+
+    rerender({ views: rows() });
+    expect(overhang()).toBe('136px');
+
+    element.getBoundingClientRect = (): DOMRect => ({ bottom: 150 }) as DOMRect;
+    window.dispatchEvent(new Event('resize'));
+    expect(overhang()).toBe('86px');
+  });
+
+  it('stops listening to resize after unmount', () => {
+    const ref = card(125);
+    const { unmount } = renderHook(() => useNoticeClearance(ref, rows()));
+    unmount();
+
+    window.dispatchEvent(new Event('resize'));
+
+    expect(overhang()).toBe('');
+  });
+
+  describe('a focused page control the card has just covered', () => {
+    const focusAt = (top: number): HTMLElement => {
+      const button = document.createElement('button');
+      button.getBoundingClientRect = (): DOMRect => ({ top }) as DOMRect;
+      document.body.appendChild(button);
+      button.focus();
+      return button;
+    };
+
+    it('is scrolled back by the part the card covers', () => {
+      focusAt(100);
+
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      expect(scrollBy).toHaveBeenCalledTimes(1);
+      expect(scrollBy).toHaveBeenCalledWith({ top: -25 });
+    });
+
+    it('rounds a sub-pixel cover up to a whole pixel', () => {
+      focusAt(99.5);
+
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      expect(scrollBy).toHaveBeenCalledWith({ top: -26 });
+    });
+
+    it('is left alone when it sits at or below the card bottom', () => {
+      focusAt(125);
+
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it('is left alone when it is a header control above the 64 px line', () => {
+      focusAt(63);
+
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it('is left alone when it is the card itself that holds focus', () => {
+      const ref = card(125);
+      const inside = document.createElement('button');
+      inside.getBoundingClientRect = (): DOMRect => ({ top: 100 }) as DOMRect;
+      ref.current?.appendChild(inside);
+      inside.focus();
+
+      renderHook(() => useNoticeClearance(ref, rows()));
+
+      expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it('is not looked for when nothing holds focus', () => {
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      expect(scrollBy).not.toHaveBeenCalled();
+    });
+  });
+});

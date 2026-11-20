@@ -1,0 +1,57 @@
+import { renderHook } from '@testing-library/react';
+import type { RefObject } from 'react';
+
+import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
+
+const root = document.documentElement;
+
+const bell = (rect: Partial<DOMRect>): RefObject<HTMLElement | null> => {
+  const element = document.createElement('button');
+  element.getBoundingClientRect = (): DOMRect => ({ ...rect }) as DOMRect;
+  return { current: element };
+};
+
+describe('useBellAnchor', () => {
+  afterEach(() => {
+    root.style.removeProperty('--bell-centre-x');
+    root.style.removeProperty('--bell-bottom');
+  });
+
+  it('sets the horizontal centre and the bottom of the bell on mount', () => {
+    renderHook(() => useBellAnchor(bell({ left: 1000, width: 48, bottom: 56 })));
+
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('1024px');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('56px');
+  });
+
+  it('follows the bell when the window is resized', () => {
+    const ref = bell({ left: 300, width: 24, bottom: 44 });
+    renderHook(() => useBellAnchor(ref));
+    const element = ref.current as HTMLElement;
+    element.getBoundingClientRect = (): DOMRect =>
+      ({ left: 250, width: 24, bottom: 40 }) as DOMRect;
+
+    window.dispatchEvent(new Event('resize'));
+
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('262px');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('40px');
+  });
+
+  it('removes both properties and stops listening on unmount', () => {
+    const ref = bell({ left: 300, width: 24, bottom: 44 });
+    const { unmount } = renderHook(() => useBellAnchor(ref));
+
+    unmount();
+
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('');
+    window.dispatchEvent(new Event('resize'));
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
+  });
+
+  it('leaves the properties alone while the ref holds no element', () => {
+    renderHook(() => useBellAnchor({ current: null }));
+
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
+  });
+});
