@@ -106,3 +106,25 @@ describe('render-path import graph', () => {
     expect(graph.packages.get(packageName) ?? []).toEqual([]);
   });
 });
+
+describe('notification surface hook import graph (#391)', () => {
+  const graph = walkStaticGraph('src/hooks/use-notification-surface.ts');
+  const files = [...graph.files];
+
+  it('reaches the style reader and the surface table', () => {
+    expect(graph.files.has('src/config/runtime/notification-style-config.ts')).toBe(true);
+    expect(graph.files.has('src/config/runtime/app-config-choice-guard.ts')).toBe(true);
+    expect(graph.files.has('src/lib/notifications/notification-surfaces.ts')).toBe(true);
+  });
+
+  it.each(FORBIDDEN)('never statically imports %s', (packageName) => {
+    expect(graph.packages.get(packageName) ?? []).toEqual([]);
+  });
+
+  it('reaches no DI bridge, composition root or runtime schema', () => {
+    expect(files.filter((file) => file.startsWith('src/providers/di'))).toEqual([]);
+    expect(files).not.toContain('src/config/dependency-injection-config.ts');
+    expect(files).not.toContain('src/config/runtime/app-config.ts');
+    expect(files).not.toContain('src/config/runtime/app-config-schema.ts');
+  });
+});
