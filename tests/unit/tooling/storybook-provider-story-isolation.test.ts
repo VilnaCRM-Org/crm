@@ -12,6 +12,7 @@ const SHARED_STATE_STUB_CALLS = [
   'withNotificationStyle(',
   'withRaisedNotifications(',
   'withFreshNotificationRepository(',
+  'comparisonStory(',
 ];
 
 interface DocsStoryParameters {
