@@ -1,4 +1,5 @@
 import ROUTE_PATHS from '@/routes/route-paths';
+import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import type { SocialExpectedState } from '@auth/types/social-sign-in/social-sign-in-outcome';
 import loginRedirectTarget from '@auth/utils/login-redirect-target';
 
@@ -20,6 +21,11 @@ class SocialSignInFlowSource {
     if (stored === null || !stored.startsWith('/')) return ROUTE_PATHS.home;
     const { pathname, search, hash } = new URL(stored, PARSE_BASE);
     return loginRedirectTarget.resolve({ from: { pathname, search, hash } });
+  }
+
+  public takeChallengeState(): RedirectNavigationState {
+    const { pathname, search, hash } = new URL(this.takeDestination(), PARSE_BASE);
+    return { from: { pathname, search, hash } };
   }
 
   public saveState(expected: SocialExpectedState): void {

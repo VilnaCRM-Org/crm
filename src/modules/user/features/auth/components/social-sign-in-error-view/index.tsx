@@ -28,7 +28,6 @@ const ERROR_ROWS: SocialSignInErrorTable = {
   email_unavailable: { messageKey: 'auth.social.error.email_unavailable', retryable: true },
   email_unverified: { messageKey: 'auth.social.error.email_unverified', retryable: true },
   unavailable: { messageKey: 'auth.social.error.unavailable', retryable: true },
-  two_factor_required: { messageKey: 'auth.social.error.two_factor_required', retryable: false },
   generic: { messageKey: 'auth.social.error.generic', retryable: true },
 };
 

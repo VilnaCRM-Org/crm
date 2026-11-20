@@ -1028,7 +1028,7 @@ container-resolved class. Those inside a gated directory (`auth-store-selectors`
 the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
 `social-callback-view-mapper`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
-issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
+issue #116), `locale-formatter-core`, the `security-event-core` and its
 `auth-failure-monitor` leaf, the observability
 core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, the app-shell
 session (`auth-session-provider`) and the chip's current-user read (`current-user-client`,

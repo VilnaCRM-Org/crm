@@ -168,6 +168,7 @@ describe('user module composition root', () => {
       'SandboxDemoSessionProvider',
       'SessionLinkDeps',
       'SessionLinkFactory',
+      'SocialSignInDeps',
       'SocialSignInProvider',
       'SocialSignInRepository',
       'SocialSignInTransformer',

@@ -8,5 +8,4 @@ export type SocialSignInErrorKind =
   | 'email_unavailable'
   | 'email_unverified'
   | 'unavailable'
-  | 'two_factor_required'
   | 'generic';

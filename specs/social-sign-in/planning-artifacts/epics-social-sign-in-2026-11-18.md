@@ -198,7 +198,7 @@ what went wrong and how to recover.
 
 _(2026-11-20)_ Re-planned against the merged challenge (#331), as readiness W2 required.
 
-- `SocialSignInProvider` starts every outcome through injected `SocialSessionDeps`: when the store
+- `SocialSignInProvider` starts every outcome through injected `SocialSignInDeps`: when the store
   holds a token (a sandbox demo session included) it calls `session.signOut()` first; a session
   then writes `{ ...signedOut, token, twoFactorStatus: 'disabled' }` and a 2FA result writes
   `{ ...signedOut, pendingSessionId }`, never a token. Unit-pinned for both outcomes, with and

@@ -173,10 +173,6 @@ const EXEMPT_RENDER_PATH_FILES = [
       'load, so it composes the IntlFormatterCache leaf off the container (issue #155).',
   },
   {
-    path: 'src/utils/url-builder.ts',
-    reason: 'Container-free URL builder consumed by the OAuth provider buttons on click.',
-  },
-  {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',
     reason: 'Container-free selector singleton consumed directly by auth components.',
   },

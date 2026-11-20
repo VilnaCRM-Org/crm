@@ -35,7 +35,6 @@ const meta: Meta<typeof SocialSignInErrorView> = {
         'email_unavailable',
         'email_unverified',
         'unavailable',
-        'two_factor_required',
         'generic',
       ],
     },
@@ -67,6 +66,5 @@ export const Expired: Story = { args: { kind: 'expired' } };
 export const EmailUnavailable: Story = { args: { kind: 'email_unavailable' } };
 export const EmailUnverified: Story = { args: { kind: 'email_unverified' } };
 export const Unavailable: Story = { args: { kind: 'unavailable', providerLabel: 'GitHub' } };
-export const TwoFactorRequired: Story = { args: { kind: 'two_factor_required' } };
 export const Generic: Story = { args: { kind: 'generic' } };
 export const RetryableWithoutHandler: Story = { args: { kind: 'expired', onRetry: undefined } };

@@ -34,6 +34,7 @@ const AUTH_TOKENS = Object.freeze({
   SocialSignInRepository: Symbol('SocialSignInRepository'),
   SocialSignInTransformer: Symbol('SocialSignInTransformer'),
   SocialSignInProvider: Symbol('SocialSignInProvider'),
+  SocialSignInDeps: Symbol('SocialSignInDeps'),
 } as const);
 
 export default AUTH_TOKENS;

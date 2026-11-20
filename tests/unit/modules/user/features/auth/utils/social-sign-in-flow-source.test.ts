@@ -49,6 +49,22 @@ describe('socialSignInFlowSource', () => {
     expect(socialSignInFlowSource.takeDestination()).toBe('/');
   });
 
+  it('hands the saved destination to the 2FA challenge as from, for one read', () => {
+    socialSignInFlowSource.saveDestination(from('/settings', '?tab=2', '#security'));
+
+    expect(socialSignInFlowSource.takeChallengeState()).toEqual(
+      from('/settings', '?tab=2', '#security')
+    );
+    expect(window.sessionStorage.getItem(DESTINATION_KEY)).toBeNull();
+    expect(socialSignInFlowSource.takeChallengeState()).toEqual(from('/'));
+  });
+
+  it('hands the challenge home when the stored destination is not safe', () => {
+    window.sessionStorage.setItem(DESTINATION_KEY, '//evil.example');
+
+    expect(socialSignInFlowSource.takeChallengeState()).toEqual(from('/'));
+  });
+
   it('matches only the state saved for the same provider, without consuming it', () => {
     socialSignInFlowSource.saveState({ provider: 'google', state: 's-1' });
 

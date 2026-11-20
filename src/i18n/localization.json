@@ -86,7 +86,6 @@
             "email_unavailable": "{{provider}} did not share your email address, which VilnaCRM needs. Allow {{provider}} to share it and try again, or sign in with your email and password.",
             "email_unverified": "Your {{provider}} email address is not verified. Verify it with {{provider}}, then try again.",
             "unavailable": "{{provider}} is not responding right now. Please try again in a moment.",
-            "two_factor_required": "Your account uses two-factor authentication. Sign in with your email and password to finish.",
             "generic": "Something went wrong while signing in with {{provider}}. Please try again."
           },
           "try_again": "Try again",
@@ -317,7 +316,6 @@
             "email_unavailable": "{{provider}} не надав вашу адресу пошти, без якої VilnaCRM не може виконати вхід. Дозвольте {{provider}} поділитися нею й спробуйте ще раз або увійдіть за допомогою пошти та пароля.",
             "email_unverified": "Ваша адреса пошти в {{provider}} не підтверджена. Підтвердьте її в {{provider}} і спробуйте ще раз.",
             "unavailable": "{{provider}} зараз не відповідає. Спробуйте ще раз за хвилину.",
-            "two_factor_required": "Ваш обліковий запис захищено двофакторною автентифікацією. Увійдіть за допомогою пошти та пароля, щоб завершити вхід.",
             "generic": "Під час входу через {{provider}} щось пішло не так. Спробуйте ще раз."
           },
           "try_again": "Спробувати ще раз",

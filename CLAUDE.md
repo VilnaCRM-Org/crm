@@ -2627,7 +2627,7 @@ Three different things are outside the gate, and the distinction matters when yo
   the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
   `social-callback-view-mapper`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
-  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
+  boundaries receive by prop, issue #116), `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
   correlation-id / sentry-client / sentry-config / pii-scrubber / pii-text-scrubber / web-vitals
   leaves, the
@@ -2745,9 +2745,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
    validates the **committed** block in `public/index.html` against the schema so the shipped
    default cannot drift from the contract.
 
-**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
-back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
-`GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
+**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`; no client reader since `url-builder` went
+with the last REST caller, so today it only widens the CSP `connect-src`), `graphqlUrl`
+(`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
 `flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
 initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config

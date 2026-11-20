@@ -2,11 +2,13 @@ import { HttpResponse } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import SECURITY_EVENT_TOKENS from '@/services/security-events/tokens';
 import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 import SocialSignInProvider from '@auth/data-providers/social-sign-in-provider';
 import { AuthProviderLoader, useAuthStore } from '@auth/stores';
+import { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken, buildUserId } from '@tests/builders';
 
 import server, { userServiceGraphql } from '../../../../mocks/server';
@@ -142,7 +144,11 @@ describe('SocialSignInProvider over the container and msw', () => {
     ).resolves.toEqual({
       kind: 'signed-in',
     });
-    expect(useAuthStore.getState().token).toBe(accessToken);
+    expect(useAuthStore.getState()).toMatchObject({
+      token: accessToken,
+      twoFactorStatus: 'disabled',
+      pendingSessionId: null,
+    });
     expect(seen).toEqual([
       { input: { provider: 'google', ...PARAMS, clientMutationId: expect.any(String) } },
     ]);
@@ -166,7 +172,36 @@ describe('SocialSignInProvider over the container and msw', () => {
       kind: 'two-factor',
       pendingSessionId,
     });
-    expect(useAuthStore.getState().token).toBeNull();
+    expect(useAuthStore.getState()).toMatchObject({ token: null, pendingSessionId });
+  });
+
+  it('ends an earlier session, a demo one included, before the social one starts', async () => {
+    const demoSignOut = jest.spyOn(sandboxDemoSessionProvider, 'signOut');
+    useAuthStore.setState({
+      ...CLEARED_AUTH_STATE,
+      token: 'demo-token',
+      email: 'demo@vilnacrm.com',
+      twoFactorStatus: 'enabled',
+    });
+    const accessToken = buildToken();
+    answer('CompleteSocialSignIn', () =>
+      HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken, pendingSessionId: null },
+          },
+        },
+      })
+    );
+
+    await provider.complete('google', PARAMS, new AbortController().signal);
+
+    expect(demoSignOut).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      token: accessToken,
+      email: '',
+      twoFactorStatus: 'disabled',
+    });
   });
 
   it.each([

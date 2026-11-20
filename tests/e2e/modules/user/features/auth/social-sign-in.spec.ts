@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { buildUserId } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { challengeHeadingOf, codeCellsOf, typeCode } from '@tests/e2e/utils/reach-challenge';
 import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
 import {
   answerComplete,
@@ -13,6 +14,7 @@ import {
   twoFactor,
   unreachableComplete,
 } from '@tests/e2e/utils/social-sign-in-stubs';
+import { stubChallenge } from '@tests/e2e/utils/two-factor-responses';
 
 const errorTitle = (provider: string): string => t('auth.social.error.title', { provider });
 const tryAgain = t('auth.social.try_again');
@@ -134,15 +136,31 @@ test.describe('Social sign-in', () => {
     expect(completed).toHaveLength(0);
   });
 
-  test('tells a 2FA account to finish with its password', async ({ page }) => {
+  test('hands a 2FA account to the challenge and lands it on the page it came from', async ({
+    page,
+  }) => {
+    const pendingSessionId = buildUserId();
     await answerInitiate(page, 'e2e-code');
-    await answerComplete(page, twoFactor(buildUserId()));
+    await answerComplete(page, twoFactor(pendingSessionId));
+    const challenge = await stubChallenge(page);
+    await signOutToSignIn(page);
+    await bounceFromProtectedDestination(page, PROTECTED_DESTINATION);
 
-    await signInWith(page, 'Google');
+    await page.getByRole('button', { name: button('Google') }).click();
 
-    await expect(
-      page.getByRole('status').filter({ hasText: t('auth.social.error.two_factor_required') })
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/sign-in\/two-factor$/);
+    await expect(challengeHeadingOf(page)).toBeVisible();
+    await expect(codeCellsOf(page).first()).toBeFocused();
+    await expect(page.getByRole('status').filter({ hasText: errorTitle('Google') })).toHaveCount(0);
+
+    await typeCode(page, '246810');
+
+    await expect(page).toHaveURL(PROTECTED_DESTINATION);
+    await expect(page.getByRole('main')).toBeFocused();
+    expect(challenge.calls[0]?.variables['input']).toMatchObject({
+      pendingSessionId,
+      twoFactorCode: '246810',
+    });
   });
 
   test('retries the same provider with the keyboard only', async ({ page }) => {

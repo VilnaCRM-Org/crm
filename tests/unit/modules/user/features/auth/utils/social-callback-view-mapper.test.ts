@@ -9,6 +9,7 @@ interface Loaded {
   saveState: jest.SpyInstance;
   matchesState: jest.SpyInstance;
   takeDestination: jest.SpyInstance;
+  takeChallengeState: jest.SpyInstance;
 }
 
 // The provider label table is a module-level literal, so the mapper is loaded inside each test.
@@ -21,6 +22,9 @@ const load = (): Promise<Loaded> =>
       saveState: jest.spyOn(flow, 'saveState').mockImplementation(() => undefined),
       matchesState: jest.spyOn(flow, 'matchesState').mockReturnValue(true),
       takeDestination: jest.spyOn(flow, 'takeDestination').mockReturnValue('/orders'),
+      takeChallengeState: jest
+        .spyOn(flow, 'takeChallengeState')
+        .mockReturnValue({ from: { pathname: '/orders', search: '?tab=1', hash: '#top' } }),
     };
   });
 
@@ -197,14 +201,26 @@ describe('socialCallbackViewMapper', () => {
     expect(takeDestination).toHaveBeenCalledTimes(1);
   });
 
+  it('hands a 2FA account to the challenge with the saved destination as from', async () => {
+    const { mapper, takeDestination, takeChallengeState } = await load();
+
+    expect(mapper.outcomeView(relaying, { kind: 'two-factor', pendingSessionId: 'p' })).toEqual({
+      status: 'redirect',
+      label: 'GitHub',
+      to: '/sign-in/two-factor',
+      state: { from: { pathname: '/orders', search: '?tab=1', hash: '#top' } },
+    });
+    expect(takeChallengeState).toHaveBeenCalledTimes(1);
+    expect(takeDestination).not.toHaveBeenCalled();
+  });
+
   it.each([
-    ['a 2FA account', { kind: 'two-factor', pendingSessionId: 'p' }, 'two_factor_required'],
     ['a failed completion', { kind: 'failed', error: 'duplicate_email' }, 'duplicate_email'],
     ['an aborted completion', { kind: 'aborted' }, 'unavailable'],
   ] as const)(
     'shows %s as its error without taking the destination',
     async (_label, outcome, error) => {
-      const { mapper, takeDestination } = await load();
+      const { mapper, takeDestination, takeChallengeState } = await load();
 
       expect(mapper.outcomeView(relaying, outcome)).toEqual({
         status: 'failed',
@@ -213,6 +229,7 @@ describe('socialCallbackViewMapper', () => {
         error,
       });
       expect(takeDestination).not.toHaveBeenCalled();
+      expect(takeChallengeState).not.toHaveBeenCalled();
     }
   );
 

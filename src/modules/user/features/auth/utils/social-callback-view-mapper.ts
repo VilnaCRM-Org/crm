@@ -1,3 +1,4 @@
+import ROUTE_PATHS from '@/routes/route-paths';
 import type {
   SocialCallbackQuery,
   SocialCallbackView,
@@ -55,6 +56,10 @@ class SocialCallbackViewMapper {
   }
 
   public outcomeView(view: SocialPendingView, outcome: SocialSignInOutcome): SocialCallbackView {
+    if (outcome.kind === 'two-factor') {
+      const state = socialSignInFlowSource.takeChallengeState();
+      return { status: 'redirect', label: view.label, to: ROUTE_PATHS.twoFactorChallenge, state };
+    }
     if (outcome.kind !== 'signed-in') return this.failedView(view, this.errorOf(outcome));
     const to = socialSignInFlowSource.takeDestination();
     return { status: 'redirect', label: view.label, to, state: { focusMain: true } };
@@ -68,11 +73,10 @@ class SocialCallbackViewMapper {
     return { status: 'failed', provider: view.provider, label: view.label, error };
   }
 
-  // A 2FA account finishes with its password until the 2FA challenge lands; a relay that never
-  // got an answer (the page never aborts one) counts as the service being unavailable.
+  // A relay that never got an answer (the page never aborts one) counts as the service being
+  // unavailable.
   private errorOf(outcome: SocialSignInOutcome | SocialStartOutcome): SocialSignInErrorKind {
-    if (outcome.kind === 'failed') return outcome.error;
-    return outcome.kind === 'two-factor' ? 'two_factor_required' : 'unavailable';
+    return outcome.kind === 'failed' ? outcome.error : 'unavailable';
   }
 
   private queryView(

@@ -3,7 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type JSX, type ReactNode, StrictMode } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
 import SocialCallback from '@auth/routes/social-callback';
 import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
@@ -40,6 +40,11 @@ const AUTHORIZE = 'https://accounts.google.com/o/oauth2/v2/auth?state=issued';
 
 let entryCounter = 0;
 
+function ChallengeProbe(): JSX.Element {
+  const { state } = useLocation();
+  return <h1>challenge page {JSON.stringify(state)}</h1>;
+}
+
 // Each visit is its own history entry, as a real navigation is; the relay is keyed by it.
 const page = (path: string, state: unknown): JSX.Element => (
   <StrictMode>
@@ -49,6 +54,7 @@ const page = (path: string, state: unknown): JSX.Element => (
           <Route path="/auth/callback/:provider" element={<SocialCallback />} />
           <Route path="/" element={<h1>home page</h1>} />
           <Route path="/orders" element={<h1>orders page</h1>} />
+          <Route path="/sign-in/two-factor" element={<ChallengeProbe />} />
         </Routes>
       </MemoryRouter>
     </I18nextProvider>
@@ -214,13 +220,20 @@ describe('SocialCallback page', () => {
       expect(restart).toHaveBeenCalledWith('google', expect.any(Function));
     });
 
-    it('tells a 2FA account to finish with its password for now', async () => {
+    it('hands a 2FA account to the challenge, carrying the saved page as from', async () => {
+      window.sessionStorage.setItem('crm.socialSignIn.destination', '/orders?tab=1#top');
       mockComplete.mockResolvedValue({ kind: 'two-factor', pendingSessionId: 'p-1' });
 
       returnFrom('github', { code: 'c' });
 
-      expect(await screen.findByText(/захищено двофакторною автентифікацією/)).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('GitHub');
+      expect(
+        await screen.findByRole('heading', {
+          level: 1,
+          name: 'challenge page {"from":{"pathname":"/orders","search":"?tab=1","hash":"#top"}}',
+        })
+      ).toBeInTheDocument();
+      expect(mockComplete).toHaveBeenCalledTimes(1);
+      expect(window.sessionStorage.getItem('crm.socialSignIn.destination')).toBeNull();
     });
 
     it('shows a completion the service could not answer as unavailable', async () => {
