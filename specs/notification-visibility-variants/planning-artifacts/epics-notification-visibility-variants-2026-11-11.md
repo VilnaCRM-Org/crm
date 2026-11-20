@@ -1901,6 +1901,12 @@ Story 2.3).
 - Given every new test, when the console gate runs, then no unexpected console output appears.
 - Not applicable: unit coverage and mutation (test-only); a browser forced-colors check (NFR-7 is verified on the style objects in Epic 2, because Playwright emulates forced colours in Chromium only and a per-engine skip is banned, PRD readiness amendment 16).
 
+> Code facts (2026-11-20): the scans and the keyboard contract extend
+> `tests/e2e/a11y/settings-states.a11y.spec.ts` and `settings-keyboard.a11y.spec.ts`. The close-focus
+> journeys use the password section, whose Save stays visible after a save (a saved name or e-mail
+> section collapses and focus goes to its input). The Escape step focuses mark-all-read directly,
+> as `bell-history.spec.ts` does. Written and linted locally, first run in CI.
+
 ### Story 4.6: Record the intended visual baselines from CI
 
 As a reviewer,
