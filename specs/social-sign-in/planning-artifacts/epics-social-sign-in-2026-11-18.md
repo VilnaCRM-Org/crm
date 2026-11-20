@@ -163,7 +163,9 @@ back signed in to the same app.
 
 Component story (feature-local; no kit component is missing — architecture §2).
 
-- Props: `kind: SocialSignInErrorKind`, `providerLabel`, `onRetry?`, `signInHref`.
+- Props: `kind: SocialSignInErrorKind`, `providerLabel`, `onRetry?`. _(2026-11-20)_ The "Back to
+  sign in" link always targets `ROUTE_PATHS.signIn`; no caller needs another target, so there is
+  no `signInHref` prop.
 - Renders an `<h1>` that receives focus on mount, the localized message inside a polite `role="status"` (changed from an alert after the
   accessibility review, so it does not cut off the heading),
   "Try again" (`UIButton`) only for retryable kinds, and an always-present "Back to sign in" link.
