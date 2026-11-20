@@ -524,8 +524,9 @@ and each is equivalent for a reason worth stating separately:
 - `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
   the `run` callback handed to `useAbortableSubmit`. `provider` comes from
   `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
-  the token is a module constant; `src/modules/user/config/di.ts` binds it with
-  `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
+  the token is a module constant; `src/modules/user/features/settings/di.ts` (`UserSettingsRegistrar`,
+  which `src/modules/user/config/di.ts` composes) binds it with `registerSingleton`, so every resolve
+  returns the same instance. The identity of `provider` is
   therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
 - `challenge-code-field.tsx` (issue #331) annotates `[setFocus]` on the effect that focuses the
   code field when the challenge mounts. `setFocus` comes from `useFormContext`, and react-hook-form
@@ -553,7 +554,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
