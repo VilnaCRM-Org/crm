@@ -8,13 +8,13 @@ import type {
   ToastCloseButtonProps,
   UIToastProps,
 } from '@/components/types/ui-toast';
+import NotificationIcon from '@/components/ui-notification-content/notification-icon';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
 import en from './i18n/en.json';
 import uk from './i18n/uk.json';
 import styles from './styles';
-import ToastIcon from './toast-icon';
 
 lazyCatalogLoader.register(i18n, { en, uk });
 
@@ -48,7 +48,7 @@ function ToastCloseButton({
       sx={styles.close}
       onClick={dismiss}
     >
-      <ToastIcon name="close" />
+      <NotificationIcon kind="close" />
     </IconButton>
   );
 }
@@ -62,8 +62,8 @@ const UIToast = forwardRef<HTMLButtonElement, UIToastProps>(function UIToast(
 
   return (
     <Box sx={[styles.toast, styles.tones[tone]]}>
-      <Box component="span" sx={[styles.icon, styles.iconTones[tone]]}>
-        <ToastIcon name={tone === 'error' ? 'alert' : 'check'} />
+      <Box component="span" sx={styles.icon}>
+        <NotificationIcon kind={tone} />
       </Box>
       <Box component="span" id={messageId} sx={styles.message}>
         {message}

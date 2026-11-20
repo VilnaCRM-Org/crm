@@ -84,10 +84,6 @@ export default {
     fontSize: '1.25rem',
     [fromSm]: { fontSize: '1.5rem' },
   },
-  iconTones: {
-    success: { color: paletteColors.success.text },
-    error: { color: paletteColors.error.main },
-  },
   message: {
     gridColumn: 2,
     gridRow: 1,

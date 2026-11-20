@@ -23,31 +23,26 @@ const loadStyles = (): Promise<ToastStyles> =>
   loadIsolated(async () => (await import('@/components/ui-toast/styles')).default);
 
 describe('toast styles', () => {
-  it('takes the surfaces, icons and text from the palette tokens', async () => {
+  it('takes the surfaces and text from the palette tokens', async () => {
     const styles = await loadStyles();
 
     expect(styles.tones).toEqual({
       success: { backgroundColor: '#E8F4EF' },
       error: { backgroundColor: '#FDECEC' },
     });
-    expect(styles.iconTones).toEqual({
-      success: { color: '#2E7D32' },
-      error: { color: '#DC3939' },
-    });
     expect(styles.toast.color).toBe('#1A1C1E');
     expect(styles.close.color).toBe('#1A1C1E');
     expect(styles.action.color).toBe('#1A1C1E');
   });
 
-  it('keeps every toast text at 4.5:1 and every icon at 3:1 on its own surface', async () => {
-    const { tones, iconTones, toast, close, action } = await loadStyles();
+  it('keeps every toast text at 4.5:1 on its own surface', async () => {
+    const { tones, toast, close, action } = await loadStyles();
 
     for (const tone of ['success', 'error'] as const) {
       const surface = tones[tone].backgroundColor;
       expect(contrast(toast.color, surface)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(close.color, surface)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(action.color, surface)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(iconTones[tone].color, surface)).toBeGreaterThanOrEqual(3);
     }
   });
 

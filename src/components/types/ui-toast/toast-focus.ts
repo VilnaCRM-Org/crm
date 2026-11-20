@@ -25,9 +25,3 @@ export interface ToastFocus {
   readonly dismiss: ToastDismiss;
   closeRef(id: number): RefCallback<HTMLButtonElement>;
 }
-
-export type ToastIconName = 'check' | 'alert' | 'close';
-
-export interface ToastIconProps {
-  readonly name: ToastIconName;
-}

@@ -8,6 +8,7 @@ import type { ToastItem } from '@/components/types/ui-toast';
 import UIToast from '@/components/ui-toast/ui-toast';
 import appI18n from '@/i18n';
 import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import findSvg from '@tests/unit/utils/find-svg';
 
 const ukWrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>{children}</I18nextProvider>
@@ -82,7 +83,7 @@ describe('UIToast', () => {
 
     const holder = within(toastRoot('Зміни збережено')).getAllByRole('generic')[0] as HTMLElement;
 
-    expect(holder).toHaveStyle({ color });
+    expect(findSvg(holder)).toHaveStyle({ color });
     expect(holder.innerHTML).toContain('aria-hidden="true"');
     expect(holder.innerHTML).toContain(`d="${path}`);
   });
