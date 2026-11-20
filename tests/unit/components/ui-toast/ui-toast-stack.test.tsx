@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   createRef,
@@ -7,29 +7,35 @@ import {
   type ReactNode,
   type RefObject,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
-import type { ToastDraft, ToastDraftSet } from '@/components/types/ui-toast';
 import UIToastStack from '@/components/ui-toast';
-import useToastQueue from '@/hooks/use-toast-queue';
+import useNotifications from '@/hooks/use-notifications';
+import type {
+  NotificationDraft,
+  NotificationDraftSet,
+} from '@/lib/notifications/types/notification-draft';
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
+
+const i18n = createToastLocaleI18n('uk');
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
-  <I18nextProvider i18n={createToastLocaleI18n('uk')}>{children}</I18nextProvider>
+  <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
 );
 
-const success = (message: string): ToastDraft => ({ tone: 'success', message });
+const success = (messageKey: string): NotificationDraft => ({ kind: 'success', messageKey });
 
-const failure = (message: string): ToastDraft => ({ tone: 'error', message });
+const failure = (messageKey: string): NotificationDraft => ({ kind: 'error', messageKey });
 
-const set = (...items: ToastDraft[]): ToastDraftSet => ({ items });
+const set = (...items: NotificationDraft[]): NotificationDraftSet => ({ items });
 
 type ReturnTarget = 'enabled' | 'disabled' | 'detached' | 'hidden' | 'none';
-
-type ShowDrafts = (drafts: ToastDraftSet) => void;
 
 interface PageOptions {
   readonly returnTarget?: ReturnTarget | undefined;
@@ -38,26 +44,26 @@ interface PageOptions {
 }
 
 interface PageProps extends PageOptions {
-  readonly showRef: RefObject<ShowDrafts | null>;
   readonly rerenderRef: RefObject<(() => void) | null>;
 }
 
 const detached = document.createElement('button');
 
 function Page({
-  showRef,
   rerenderRef,
   returnTarget = 'enabled',
   withFallback = false,
 }: PageProps): JSX.Element {
-  const queue = useToastQueue();
+  const { publishFocus } = useNotifications();
   const [, setRenders] = useState(0);
   const saveRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const returnFocusRef: RefObject<HTMLElement | null> =
-    returnTarget === 'detached' ? { current: detached } : saveRef;
-  useImperativeHandle(showRef, () => queue.show);
+  const detachedRef = useRef<HTMLElement | null>(detached);
+  const primary = returnTarget === 'detached' ? detachedRef : saveRef;
   useImperativeHandle(rerenderRef, () => (): void => setRenders((count) => count + 1));
+  useLayoutEffect(() => {
+    publishFocus({ primary, fallback: withFallback ? headingRef : undefined });
+  }, [publishFocus, primary, withFallback]);
 
   return (
     <main>
@@ -74,39 +80,31 @@ function Page({
           Зберегти зміни
         </button>
       )}
-      <UIToastStack
-        toasts={queue.toasts}
-        announcement={queue.announcement}
-        alert={queue.alert}
-        onDismiss={queue.dismiss}
-        returnFocusRef={returnFocusRef}
-        fallbackFocusRef={withFallback ? headingRef : undefined}
-      />
+      <UIToastStack />
     </main>
   );
 }
 
-type Show = ShowDrafts & {
-  readonly settled: (drafts: ToastDraftSet) => Promise<void>;
+type Show = ((drafts: NotificationDraftSet) => void) & {
+  readonly settled: (drafts: NotificationDraftSet) => Promise<void>;
   readonly rerender: () => void;
   readonly unmount: () => void;
 };
 
 const mountPage = (options: PageOptions = {}): Show => {
-  const showRef = createRef<ShowDrafts>();
+  const port = renderHook(() => useNotifications(), { wrapper }).result.current;
   const rerenderRef = createRef<() => void>();
   const { unmount } = render(
     <Page
-      showRef={showRef}
       rerenderRef={rerenderRef}
       returnTarget={options.returnTarget}
       withFallback={options.withFallback}
     />,
     { wrapper, reactStrictMode: options.strict === true }
   );
-  return Object.assign((drafts: ToastDraftSet) => act(() => showRef.current?.(drafts)), {
-    settled: async (drafts: ToastDraftSet): Promise<void> => {
-      await act(async () => showRef.current?.(drafts));
+  return Object.assign((drafts: NotificationDraftSet) => act(() => port.raise(drafts)), {
+    settled: async (drafts: NotificationDraftSet): Promise<void> => {
+      await act(async () => port.raise(drafts));
     },
     rerender: (): void => act(() => rerenderRef.current?.()),
     unmount,
@@ -125,28 +123,25 @@ const focusOn = async (element: HTMLElement | undefined): Promise<void> => {
 const heading = (): HTMLElement => screen.getByRole('heading', { level: 1 });
 
 describe('UIToastStack', () => {
+  beforeEach(() => resetClientStores());
+
   afterEach(() => {
     document.documentElement.style.removeProperty('scroll-padding-bottom');
   });
 
-  describe('live regions', () => {
-    it('mounts one empty status region and one empty alert region before any toast', () => {
-      mountPage();
+  describe('rendering', () => {
+    it('renders nothing while no notification is shown', () => {
+      const { container } = render(<UIToastStack />, { wrapper });
 
-      expect(screen.getAllByRole('status')).toHaveLength(1);
-      expect(screen.getByRole('status')).toBeEmptyDOMElement();
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
-      expect(screen.getByRole('alert')).toBeEmptyDOMElement();
+      expect(container).toBeEmptyDOMElement();
       expect(closeButtons()).toHaveLength(0);
     });
 
-    it('shows the toasts in order and announces three successes as one text update', () => {
+    it('shows the shown notifications in order, translated', () => {
       const show = mountPage();
 
       show(set(success('Перше'), success('Друге'), success('Третє')));
 
-      expect(screen.getAllByRole('status')).toHaveLength(1);
-      expect(screen.getByRole('status')).toHaveTextContent('Перше Друге Третє');
       expect(closeButtons()).toHaveLength(3);
       expect(screen.getAllByText(/^(Перше|Друге|Третє)$/).map((node) => node.textContent)).toEqual([
         'Перше',
@@ -155,48 +150,51 @@ describe('UIToastStack', () => {
       ]);
     });
 
-    it('changes the status text for an identical repeat', () => {
+    it('shows at most the three newest notifications', () => {
       const show = mountPage();
 
-      show(set(success('Зміни збережено')));
-      expect(screen.getByRole('status')).toHaveTextContent(/^Зміни збережено\u200B$/);
+      show(set(success('Перше'), success('Друге'), success('Третє')));
+      show(set(success('Четверте')));
 
-      show(set(success('Зміни збережено')));
-      expect(screen.getByRole('status')).toHaveTextContent(/^Зміни збережено$/);
+      expect(screen.queryByText('Перше')).not.toBeInTheDocument();
+      expect(screen.getAllByText(/^(Друге|Третє|Четверте)$/)).toHaveLength(3);
     });
 
-    it('announces an error through the one always-mounted alert region, never the status', () => {
-      const show = mountPage();
-      const region = screen.getByRole('alert');
-
-      show(set(failure('Не вдалося зберегти')));
-
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
-      expect(screen.getByRole('alert')).toBe(region);
-      expect(region).toHaveTextContent(/^Не вдалося зберегти\u200B$/);
-      expect(screen.getByRole('status')).toBeEmptyDOMElement();
-    });
-
-    it('changes the alert text for an identical repeated error', () => {
-      const show = mountPage();
-
-      show(set(failure('Не вдалося зберегти')));
-      expect(screen.getByRole('alert')).toHaveTextContent(/^Не вдалося зберегти\u200B$/);
-
-      show(set(failure('Не вдалося зберегти')));
-
-      expect(screen.getByRole('alert')).toHaveTextContent(/^Не вдалося зберегти$/);
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
-    });
-
-    it('gives no toast a role of its own', () => {
+    it('renders no live region and gives no toast a role of its own', () => {
       const show = mountPage();
 
       show(set(failure('Не вдалося'), success('Збережено')));
 
-      expect(screen.getAllByRole('alert')).toHaveLength(1);
-      expect(screen.getAllByRole('status')).toHaveLength(1);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
       expect(screen.getAllByText(/^(Не вдалося|Збережено)$/)).toHaveLength(2);
+    });
+
+    it('dismisses a closed toast through the port, leaving the others shown', async () => {
+      const show = mountPage();
+      show(set(success('Перше'), success('Друге')));
+
+      await userEvent.click(closeButtons()[0] as HTMLElement);
+
+      expect(
+        useNotificationOutletStore.getState().shown.items.map((item) => item.messageKey)
+      ).toEqual(['Друге']);
+      expect(screen.queryByText('Перше')).not.toBeInTheDocument();
+    });
+
+    it('dismisses the toast before running its action', async () => {
+      const seen: number[] = [];
+      const onActivate = jest.fn((): void => {
+        seen.push(useNotificationOutletStore.getState().shown.items.length);
+      });
+      const show = mountPage();
+      show(set({ ...failure('Не вдалося'), action: { labelKey: 'Повторити', onActivate } }));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Повторити' }));
+
+      expect(onActivate).toHaveBeenCalledTimes(1);
+      expect(seen).toEqual([0]);
+      expect(closeButtons()).toHaveLength(0);
     });
   });
 
@@ -270,23 +268,6 @@ describe('UIToastStack', () => {
       expect(closeButtons()).toHaveLength(0);
     });
 
-    it.each([
-      ['to the target a toast names, over the page return target', 'block', 'own'],
-      ['to the fallback, not the page return target, when the named target hid', 'none', 'heading'],
-    ] as const)('moves focus %s', async (_name, display, expected) => {
-      const own = document.createElement('button');
-      own.style.display = display;
-      document.body.append(own);
-      const show = mountPage({ withFallback: true });
-      show(set({ ...failure('Не вдалося'), returnFocusRef: { current: own } }));
-
-      await userEvent.click(closeButtons()[0] as HTMLElement);
-
-      expect(expected === 'own' ? own : heading()).toHaveFocus();
-      expect(saveButton()).not.toHaveFocus();
-      own.remove();
-    });
-
     it('moves focus to the fallback when the return target is disabled', async () => {
       const show = mountPage({ returnTarget: 'disabled', withFallback: true });
       show(set(success('Перше')));
@@ -352,7 +333,10 @@ describe('UIToastStack', () => {
     it('moves focus to the newest close button when the pushed-out action had focus', async () => {
       const show = mountPage();
       show(
-        set({ ...failure('Не вдалося'), action: { label: 'Повторити', onActivate: jest.fn() } })
+        set({
+          ...failure('Не вдалося'),
+          action: { labelKey: 'Повторити', onActivate: jest.fn() },
+        })
       );
       await focusOn(screen.getByRole('button', { name: 'Повторити' }));
 

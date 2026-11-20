@@ -10,7 +10,7 @@ const meta: Meta<typeof UIToast> = {
   component: UIToast,
   tags: ['autodocs'],
   args: {
-    toast: { id: 1, tone: 'success', message: 'Зміни збережено' },
+    toast: { id: '1', kind: 'success', message: 'Зміни збережено' },
     onDismiss: noop,
   },
   parameters: {
@@ -19,11 +19,10 @@ const meta: Meta<typeof UIToast> = {
         component:
           'One elevated toast. Success sits on #E8F4EF with a #2E7D32 check icon, a 1 px edge, a ' +
           '4 px accent and the popover shadow in the same green; error is #FDECEC with #DC3939. ' +
-          'It slides in over 180 ms on mount only. A toast carries no role: the stack announces ' +
-          'it through its ' +
-          'always-mounted status and alert regions. The close button is described by the ' +
-          'message. The text, the optional underlined action and the close icon are #1A1C1E. ' +
-          'Nothing closes a toast but the person reading it.',
+          'It slides in over 180 ms on mount only. A toast carries no role: the notification ' +
+          'outlet announces it through its always-mounted status and alert regions. The close ' +
+          'button is described by the message. The text, the optional underlined action and ' +
+          'the close icon are #1A1C1E. Nothing closes a toast but the person reading it.',
       },
       story: { inline: false },
     },
@@ -39,8 +38,8 @@ export const Success: Story = {};
 export const SuccessWithAction: Story = {
   args: {
     toast: {
-      id: 1,
-      tone: 'success',
+      id: '1',
+      kind: 'success',
       message: 'Лист для підтвердження надіслано',
       action: { label: 'Скасувати', onActivate: noop },
     },
@@ -48,14 +47,14 @@ export const SuccessWithAction: Story = {
 };
 
 export const Error: Story = {
-  args: { toast: { id: 1, tone: 'error', message: 'Не вдалося зберегти зміни' } },
+  args: { toast: { id: '1', kind: 'error', message: 'Не вдалося зберегти зміни' } },
 };
 
 export const ErrorWithAction: Story = {
   args: {
     toast: {
-      id: 1,
-      tone: 'error',
+      id: '1',
+      kind: 'error',
       message: 'Не вдалося зберегти зміни',
       action: { label: 'Повторити', onActivate: noop },
     },

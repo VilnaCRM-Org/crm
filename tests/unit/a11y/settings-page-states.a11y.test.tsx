@@ -9,6 +9,7 @@ import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const mockRead = jest.fn();
 const mockUpdate = jest.fn();
@@ -55,6 +56,7 @@ const openAndEdit = async (): Promise<void> => {
 
 describe('settings page states accessibility', () => {
   beforeEach(() => {
+    resetClientStores();
     mockRead.mockReset();
     mockUpdate.mockReset();
   });

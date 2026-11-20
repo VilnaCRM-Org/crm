@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
 
-import type { ToastItemSet } from '@/components/types/ui-toast';
 import useStackClearance from '@/components/ui-toast/use-stack-clearance';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
 const VIEWPORT_HEIGHT = 800;
 
@@ -15,8 +15,8 @@ const stack = (top: number): HTMLDivElement => {
   return node;
 };
 
-const toastSet = (...ids: number[]): ToastItemSet => ({
-  items: ids.map((id) => ({ id, tone: 'success', message: `toast ${id}` })),
+const toastSet = (...ids: number[]): NotificationViewSet => ({
+  items: ids.map((id) => ({ id: String(id), kind: 'success', message: `toast ${id}` })),
 });
 
 const resize = (): void => {

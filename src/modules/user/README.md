@@ -605,11 +605,13 @@ the profile card's width.
 **Context.** The name, the e-mail and the password are saved separately and each can succeed, fail
 or be rejected on its own, and a confirmation that disappears can be missed.
 
-**Decision.** `UIToastStack` shows at most three toasts with no timer. Success texts are
-announced through one always-mounted polite region and error texts through one always-mounted
+**Decision.** Outcomes are raised through the notifications port and shown, under the default
+style, by `UIToastStack`: at most three toasts with no timer. `UINotificationOutlet` announces
+success texts through one always-mounted polite region and error texts through one always-mounted
 assertive region, so neither is a region created and filled in the same commit. Closing the last
-toast returns focus to the Save that settled, to the text input when a name or e-mail save hid its
-Save, or to the page heading while that target cannot take focus. The success icon uses
+toast returns focus to the target the page published as `saveRef`, which the latest settled save
+points at its Save, or at the text input when a name or e-mail save hid its Save, or to the page
+heading while that target cannot take focus. The success icon uses
 `success.text` (`#2E7D32`, 4.55:1 on the success surface), since the Figma `#38B386` is 2.34:1,
 under the 3:1 graphics floor. A field error is shown on its field, never as a toast.
 

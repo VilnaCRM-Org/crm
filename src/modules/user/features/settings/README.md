@@ -11,7 +11,7 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
 
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
-  toast queue.
+  and the `UINotificationOutlet` its outcomes show in.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
   (`ProfileSectionForm`, `SectionFields` with its `EmailField` and `EmailStatus`, `ClearButton`,
   `EmailStatusRow`), `change-password`,
@@ -102,9 +102,13 @@ Built here:
   instead.
 - The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
   `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
-- `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
-  region for success texts and an assertive one for error texts, both always mounted, at most three
-  on screen. The two-factor card reports inside its own card.
+- The outcome surface: every save and resend outcome is raised through the notifications port
+  (`useNotifications` in `src/hooks/`), as `settings.toasts.*` message keys, and the page renders
+  `UINotificationOutlet`, which announces it (a polite region for success texts and an assertive
+  one for error texts, both always mounted) and, under the default style, shows it as
+  `UIToastStack`: no timer, at most three on screen. Saves withdraw the `primary` anchor when they
+  start or Clear runs, and a resend withdraws and raises the `email` anchor. The two-factor card
+  reports inside its own card.
 - The `SettingsGrid`, whose second slot holds the two-factor card.
 - The two-factor card itself (#331): `TwoFactorSettings` in that slot, the `TwoFactorSettingsEntity`,
   the `TwoFactorDto` and `TwoFactorCodeNormalizer` in the user module, and `twoFactorStatus` /
@@ -121,7 +125,7 @@ imports `SessionLinkFactory`. The card reuses `UserServiceErrorTransformer` thro
 ## Page tree
 
 ```text
-UserProfile [component]<route>          title, toast queue, useProfileLoad
+UserProfile [component]<route>          title, useProfileLoad
 └ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column holds the 2FA card
@@ -151,7 +155,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │     ├ DisableView                   disable: code field, Cancel
   │     ├ RegenerateView                regenerate: confirm, Cancel
   │     └ ReauthView                    reauth: message, "sign in again" button
-  └ UIToastStack                        returns focus to the Save, or the input if its Save hid
+  └ UINotificationOutlet                announces outcomes; under `toast` renders UIToastStack
 ```
 
 ## Layer stack

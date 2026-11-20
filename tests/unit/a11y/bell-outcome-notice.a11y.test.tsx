@@ -8,6 +8,7 @@ import type { NotificationDraft } from '@/lib/notifications/types/notification-d
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const i18n = createI18n('uk', ['en']);
@@ -55,7 +56,12 @@ function Page(): JSX.Element {
 }
 
 describe('BellOutcomeNotice accessibility', () => {
-  beforeEach(() => resetClientStores());
+  beforeEach(() => {
+    resetClientStores();
+    writeConfigBlock(JSON.stringify({ notificationStyle: 'bell' }));
+  });
+
+  afterEach(() => clearConfigBlock());
 
   it.each(states)('has no axe violations for %s', async (_name, items) => {
     const port = renderHook(() => useNotifications(), { wrapper }).result.current;

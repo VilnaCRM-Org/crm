@@ -11,29 +11,27 @@ const UIToast = forwardRef<HTMLButtonElement, UIToastProps>(function UIToast(
   { toast, onDismiss },
   closeRef
 ): JSX.Element {
-  const { id, message, tone, action } = toast;
+  const { id, kind, action } = toast;
   const view = useMemo(
-    (): NotificationView => ({
-      id: String(id),
-      kind: tone,
-      message,
-      action:
-        action === undefined
-          ? undefined
-          : {
+    (): NotificationView =>
+      action === undefined
+        ? toast
+        : {
+            ...toast,
+            action: {
               label: action.label,
               onActivate: (): void => {
                 onDismiss(id);
                 action.onActivate();
               },
             },
-    }),
-    [id, message, tone, action, onDismiss]
+          },
+    [toast, id, action, onDismiss]
   );
   const close = useCallback((): void => onDismiss(id), [id, onDismiss]);
 
   return (
-    <Box sx={[styles.toast, styles.tones[tone]]}>
+    <Box sx={[styles.toast, styles.tones[kind]]}>
       <UINotificationContent view={view} onClose={close} closeRef={closeRef} />
     </Box>
   );

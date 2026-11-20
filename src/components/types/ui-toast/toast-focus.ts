@@ -1,12 +1,15 @@
 import type { RefCallback, RefObject } from 'react';
 
-import type { ToastDismiss, ToastItemSet } from './index';
+import type { NotificationFocusReturn } from '@/lib/notifications/types/notification-outlet-state';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
-export type CloseButtons = RefObject<Map<number, HTMLButtonElement>>;
+import type { ToastDismiss } from './index';
 
-export type LostFocus = RefObject<Set<number>>;
+export type CloseButtons = RefObject<Map<string, HTMLButtonElement>>;
 
-export type CloseRefCallbacks = RefObject<Map<number, RefCallback<HTMLButtonElement>>>;
+export type LostFocus = RefObject<Set<string>>;
+
+export type CloseRefCallbacks = RefObject<Map<string, RefCallback<HTMLButtonElement>>>;
 
 export interface ToastFocusRegistry {
   readonly buttons: CloseButtons;
@@ -15,13 +18,12 @@ export interface ToastFocusRegistry {
 }
 
 export interface ToastFocusOptions {
-  readonly toasts: ToastItemSet;
-  readonly returnFocusRef: RefObject<HTMLElement | null>;
-  readonly fallbackFocusRef?: RefObject<HTMLElement | null> | undefined;
+  readonly toasts: NotificationViewSet;
+  readonly focus: NotificationFocusReturn | null;
   readonly onDismiss: ToastDismiss;
 }
 
 export interface ToastFocus {
   readonly dismiss: ToastDismiss;
-  closeRef(id: number): RefCallback<HTMLButtonElement>;
+  closeRef(id: string): RefCallback<HTMLButtonElement>;
 }

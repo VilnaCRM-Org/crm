@@ -1,6 +1,6 @@
 import { type RefObject, useLayoutEffect } from 'react';
 
-import type { ToastItemSet } from '@/components/types/ui-toast';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
 function revealFocused(stack: HTMLElement, top: number): void {
   const focused = document.activeElement ?? document.body;
@@ -36,7 +36,7 @@ function reserveClearance(stack: HTMLElement): () => void {
 
 export default function useStackClearance(
   stackRef: RefObject<HTMLElement | null>,
-  toasts: ToastItemSet
+  toasts: NotificationViewSet
 ): void {
   useLayoutEffect(() => {
     const stack = stackRef.current;

@@ -3,29 +3,48 @@ import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import type { JSX } from 'react';
 
 import UIToastStack from '@/components/ui-toast';
+import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
+import { withRaisedNotifications } from '@stories/notification-story-decorators';
 import { noop } from '@stories/story-callbacks';
+
+const saved = { kind: 'success', messageKey: 'settings.toasts.saved' } as const;
+
+const ONE: NotificationDraftSet = { items: [saved] };
+
+const THREE: NotificationDraftSet = {
+  items: [
+    saved,
+    { kind: 'success', messageKey: 'settings.toasts.email_sent' },
+    { kind: 'success', messageKey: 'settings.toasts.password_changed' },
+  ],
+};
+
+const MIXED: NotificationDraftSet = {
+  items: [
+    saved,
+    {
+      kind: 'error',
+      messageKey: 'settings.toasts.save_failed_transient',
+      action: { labelKey: 'auth.error.tryAgain', onActivate: noop },
+    },
+  ],
+};
 
 const meta: Meta<typeof UIToastStack> = {
   title: 'Components/Feedback/UIToastStack',
   component: UIToastStack,
   tags: ['autodocs'],
-  args: {
-    toasts: { items: [{ id: 1, tone: 'success', message: 'Зміни збережено' }] },
-    announcement: 'Зміни збережено',
-    alert: '',
-    onDismiss: noop,
-    returnFocusRef: { current: null },
-  },
   parameters: {
     docs: {
       description: {
         component:
-          'Up to three toasts, fixed bottom-right from 480 px and across the bottom below it, ' +
-          'with two always-mounted visually hidden regions before them: a status region that ' +
-          'announces the success texts once and an alert region that announces the error texts. ' +
-          'Closing a toast moves focus to the next close button, then to the previous one, then ' +
-          'back to the control the page passes in while it is enabled, and otherwise to the ' +
-          'fallback target. No toast takes focus when it appears and none times out.',
+          'Variant A of the notification outlet: up to three toasts of the shown outcomes, fixed ' +
+          'bottom-right from 480 px and across the bottom below it. The outlet renders it only ' +
+          'under the `toast` style and owns the status and alert regions that announce each ' +
+          'outcome. Closing a toast dismisses it through the notifications port and moves focus ' +
+          'to the next close button, then to the previous one, then to the Save target the ' +
+          'outlet published while it is enabled, and otherwise to the heading. No toast takes ' +
+          'focus when it appears and none times out.',
       },
       story: { inline: false },
     },
@@ -36,42 +55,13 @@ export default meta;
 
 type Story = StoryObj<typeof UIToastStack>;
 
-export const One: Story = {};
+export const One: Story = { decorators: [withRaisedNotifications(ONE)] };
 
-export const Three: Story = {
-  args: {
-    toasts: {
-      items: [
-        { id: 1, tone: 'success', message: 'Особисті дані збережено' },
-        { id: 2, tone: 'success', message: 'Пароль змінено' },
-        { id: 3, tone: 'success', message: 'Лист для підтвердження надіслано' },
-      ],
-    },
-    announcement: 'Особисті дані збережено Пароль змінено Лист для підтвердження надіслано',
-  },
-};
+export const Three: Story = { decorators: [withRaisedNotifications(THREE)] };
 
-export const Mixed: Story = {
-  args: {
-    toasts: {
-      items: [
-        { id: 1, tone: 'success', message: 'Особисті дані збережено' },
-        {
-          id: 2,
-          tone: 'error',
-          message: 'Не вдалося змінити пароль',
-          action: { label: 'Повторити', onActivate: noop },
-        },
-      ],
-    },
-    announcement: 'Особисті дані збережено',
-    alert: 'Не вдалося змінити пароль',
-  },
-};
+export const Mixed: Story = { decorators: [withRaisedNotifications(MIXED)] };
 
-export const Empty: Story = {
-  args: { toasts: { items: [] }, announcement: '', alert: '' },
-};
+export const Empty: Story = {};
 
 export const ReducedMotion: Story = {
   parameters: {
@@ -84,6 +74,7 @@ export const ReducedMotion: Story = {
     },
   },
   decorators: [
+    withRaisedNotifications(ONE),
     (Story): JSX.Element => (
       <Box sx={{ '& *': { animation: 'none !important' } }}>
         <Story />

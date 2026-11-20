@@ -1,6 +1,5 @@
 import { type RefCallback, useLayoutEffect, useRef } from 'react';
 
-import type { ToastItem, ToastItemSet } from '@/components/types/ui-toast';
 import type {
   CloseButtons,
   CloseRefCallbacks,
@@ -9,6 +8,10 @@ import type {
   ToastFocusOptions,
   ToastFocusRegistry,
 } from '@/components/types/ui-toast/toast-focus';
+import type {
+  NotificationView,
+  NotificationViewSet,
+} from '@/lib/notifications/types/notification-view';
 
 const HOLDS_FOCUS = ':focus, :focus ~ *';
 
@@ -30,28 +33,29 @@ function focusable(element: HTMLElement | null): HTMLElement | null {
   return usable ? element : null;
 }
 
-function closeOf(buttons: CloseButtons, toast: ToastItem | undefined): HTMLElement | undefined {
+function closeOf(
+  buttons: CloseButtons,
+  toast: NotificationView | undefined
+): HTMLElement | undefined {
   return toast === undefined ? undefined : buttons.current.get(toast.id);
 }
 
 function dismissTarget(
   buttons: CloseButtons,
   options: ToastFocusOptions,
-  id: number
+  id: string
 ): HTMLElement | null | undefined {
   const { items } = options.toasts;
   const index = items.findIndex((toast) => toast.id === id);
-  const closing = items[index];
-  if (closing === undefined) return undefined;
-  const returnTo = closing.returnFocusRef ?? options.returnFocusRef;
+  if (index < 0) return undefined;
   return (
     closeOf(buttons, items[index + 1] ?? items[index - 1]) ??
-    focusable(returnTo.current) ??
-    options.fallbackFocusRef?.current
+    focusable(options.focus?.primary.current ?? null) ??
+    options.focus?.fallback?.current
   );
 }
 
-function detachOf(registry: ToastFocusRegistry, id: number, node: HTMLButtonElement): () => void {
+function detachOf(registry: ToastFocusRegistry, id: string, node: HTMLButtonElement): () => void {
   return (): void => {
     if (node.matches(HOLDS_FOCUS)) registry.lostFocus.current.add(id);
     registry.buttons.current.delete(id);
@@ -59,7 +63,7 @@ function detachOf(registry: ToastFocusRegistry, id: number, node: HTMLButtonElem
   };
 }
 
-function closeRefFor(registry: ToastFocusRegistry, id: number): RefCallback<HTMLButtonElement> {
+function closeRefFor(registry: ToastFocusRegistry, id: string): RefCallback<HTMLButtonElement> {
   const known = registry.callbacks.current.get(id);
   if (known !== undefined) return known;
   const callback = (node: HTMLButtonElement): (() => void) => {
@@ -70,7 +74,11 @@ function closeRefFor(registry: ToastFocusRegistry, id: number): RefCallback<HTML
   return callback;
 }
 
-function useEvictedFocus(buttons: CloseButtons, lostFocus: LostFocus, toasts: ToastItemSet): void {
+function useEvictedFocus(
+  buttons: CloseButtons,
+  lostFocus: LostFocus,
+  toasts: NotificationViewSet
+): void {
   useLayoutEffect(() => {
     const lost = lostFocus.current.size > 0;
     lostFocus.current.clear();
@@ -81,15 +89,15 @@ function useEvictedFocus(buttons: CloseButtons, lostFocus: LostFocus, toasts: To
 }
 
 export default function useToastFocus(options: ToastFocusOptions): ToastFocus {
-  const buttons: CloseButtons = useRef(new Map<number, HTMLButtonElement>());
-  const lostFocus: LostFocus = useRef(new Set<number>());
-  const callbacks: CloseRefCallbacks = useRef(new Map<number, RefCallback<HTMLButtonElement>>());
+  const buttons: CloseButtons = useRef(new Map<string, HTMLButtonElement>());
+  const lostFocus: LostFocus = useRef(new Set<string>());
+  const callbacks: CloseRefCallbacks = useRef(new Map<string, RefCallback<HTMLButtonElement>>());
   useEvictedFocus(buttons, lostFocus, options.toasts);
 
   return {
-    closeRef: (id: number): RefCallback<HTMLButtonElement> =>
+    closeRef: (id: string): RefCallback<HTMLButtonElement> =>
       closeRefFor({ buttons, lostFocus, callbacks }, id),
-    dismiss: (id: number): void => {
+    dismiss: (id: string): void => {
       dismissTarget(buttons, options, id)?.focus();
       options.onDismiss(id);
     },

@@ -1489,6 +1489,16 @@ and `use-email-resend.ts`, or the tuple data they hold today); a helper split ou
 - Given the CI visual job, when it runs, then only the 18 A captures already named in Story 2.3 differ (recorded in Story 4.6).
 - Given the changed files, when Stryker runs in CI, then zero survivors remain.
 
+> Code facts (2026-11-20): port drafts carry no per-toast return target, so a toast's close returns
+> focus to the next close button, then the previous one, then the published `saveRef` (which
+> `useSettledFocus` points at the latest settled section's Save, or its collapsed row when a name
+> or e-mail save hid the Save), then the `h1`. After a failed name save and a successful e-mail
+> save, closing the last toast therefore lands on the e-mail row, not the name Save as before.
+> `UIToastStack` takes no props; the Retry label stays `auth.error.tryAgain`. `useProfileSave`
+> withdraws `primary` inside a small `useProfileFormState` wrapper (on `pending` and `clear`) to
+> stay under the metrics caps. Settings route tests need `qrcode-generator` and `jsqr`, which this
+> worktree's `node_modules` lacks; they ran with `NODE_PATH` pointed at the main checkout.
+
 ### Story 3.2: Show variant B's inline status at Save and at the e-mail row
 
 As a user under `inline`,

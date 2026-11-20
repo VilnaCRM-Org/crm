@@ -56,6 +56,7 @@ describe('stories that stub a Data provider or the current-user answer in shared
     expect(stories).toEqual([
       'src/components/ui-notification-outlet/ui-notification-outlet.stories.tsx',
       'src/components/ui-notification-slot/ui-notification-slot.stories.tsx',
+      'src/components/ui-toast/ui-toast-stack.stories.tsx',
       `${NOTIFICATIONS_ROOT}/components/bell-notifications.stories.tsx`,
       `${NOTIFICATIONS_ROOT}/components/bell-outcome-notice.stories.tsx`,
       `${NOTIFICATIONS_ROOT}/components/notifications-shell-slot.stories.tsx`,

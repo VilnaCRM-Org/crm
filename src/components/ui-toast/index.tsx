@@ -1,42 +1,32 @@
 import Box from '@mui/material/Box';
-import { type JSX, useRef } from 'react';
+import { type JSX, useCallback, useRef } from 'react';
 
-import type { UIToastStackProps } from '@/components/types/ui-toast';
-import UILiveStatus from '@/components/ui-live-status';
+import useNotificationFocus from '@/hooks/use-notification-focus';
+import useNotificationViews from '@/hooks/use-notification-views';
+import useNotifications from '@/hooks/use-notifications';
+import useShownNotifications from '@/hooks/use-shown-notifications';
 
 import styles from './styles';
 import UIToast from './ui-toast';
 import useStackClearance from './use-stack-clearance';
 import useToastFocus from './use-toast-focus';
 
-export default function UIToastStack({
-  toasts,
-  announcement,
-  alert,
-  onDismiss,
-  returnFocusRef,
-  fallbackFocusRef,
-}: UIToastStackProps): JSX.Element {
+export default function UIToastStack(): JSX.Element | null {
   const stackRef = useRef<HTMLDivElement>(null);
+  const toasts = useNotificationViews(useShownNotifications());
+  const focus = useNotificationFocus();
+  const port = useNotifications();
+  const onDismiss = useCallback((id: string): void => port.dismiss(Number(id)), [port]);
   useStackClearance(stackRef, toasts);
-  const { closeRef, dismiss } = useToastFocus({
-    toasts,
-    returnFocusRef,
-    fallbackFocusRef,
-    onDismiss,
-  });
+  const { closeRef, dismiss } = useToastFocus({ toasts, focus, onDismiss });
+
+  if (toasts.items.length === 0) return null;
 
   return (
-    <>
-      <UILiveStatus message={announcement} />
-      <UILiveStatus message={alert} politeness="assertive" />
-      {toasts.items.length > 0 && (
-        <Box ref={stackRef} sx={styles.stack}>
-          {toasts.items.map((toast) => (
-            <UIToast key={toast.id} ref={closeRef(toast.id)} toast={toast} onDismiss={dismiss} />
-          ))}
-        </Box>
-      )}
-    </>
+    <Box ref={stackRef} sx={styles.stack}>
+      {toasts.items.map((toast) => (
+        <UIToast key={toast.id} ref={closeRef(toast.id)} toast={toast} onDismiss={dismiss} />
+      ))}
+    </Box>
   );
 }

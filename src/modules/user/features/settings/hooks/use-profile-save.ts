@@ -2,6 +2,7 @@ import { useCallback, useReducer, useRef, useState } from 'react';
 
 import type { AbortableSubmit } from '@/hooks/types/use-abortable-submit';
 import useAbortableSubmit from '@/hooks/use-abortable-submit';
+import useNotifications from '@/hooks/use-notifications';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { useService } from '@/providers/di';
 
@@ -9,6 +10,7 @@ import type ProfileProvider from '../data-providers/profile-provider';
 import type {
   ProfileEditContext,
   ProfileFormAction,
+  ProfileFormStore,
   ProfileSave,
   SaveTarget,
 } from '../types/hooks/use-profile-save';
@@ -60,6 +62,17 @@ function useProfileUpdate(): AbortableSubmit<ProfileChange, ProfileUpdateOutcome
   return useAbortableSubmit(run);
 }
 
+function useProfileFormState(): ProfileFormStore {
+  const [state, reduce] = useReducer(reduceFormState, INITIAL_STATE);
+  const { withdraw } = useNotifications();
+  const dispatch = (action: ProfileFormAction): void => {
+    if (action.type === 'pending' || action.type === 'clear') withdraw('primary');
+    reduce(action);
+  };
+
+  return { state, dispatch };
+}
+
 function useSaveTarget(
   props: ProfileEditContext,
   section: ProfileSection,
@@ -84,7 +97,7 @@ export default function useProfileSave(
   section: ProfileSection
 ): ProfileSave {
   const [changes] = useState(() => new ProfileChangeDetector());
-  const [state, dispatch] = useReducer(reduceFormState, INITIAL_STATE);
+  const { state, dispatch } = useProfileFormState();
   const { isSubmitting, submit } = useProfileUpdate();
   const { remember, ...targets } = useSaveTarget(props, section, state);
   const settle = useSaveSettle({ props, targets, dispatch });
