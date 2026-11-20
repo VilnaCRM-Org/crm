@@ -1025,8 +1025,10 @@ Never push the DI container into the auth paint path: do not eager-import
 container-resolved class. Those inside a gated directory (`auth-store-selectors`,
 `response-schemas`, `map-registration-error`, `load-registration-notification`,
 `registration-handlers-factory`, `auth-error-reporter`,
+the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
+`social-callback-view-mapper`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
-issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
+issue #116), `locale-formatter-core`, the `security-event-core` and its
 `auth-failure-monitor` leaf, the observability
 core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, the app-shell
 session (`auth-session-provider`) and the chip's current-user read (`current-user-client`,
@@ -1821,11 +1823,12 @@ build goes red. Know them before you touch a config file:
 - `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
   `make security-headers-generate`, commit the result; `make lint-security-headers` (in
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy
-- `connect-src` is derived from the API variables the app reads: the build-time
+- `connect-src` is derived from the API variables: the build-time
   `REACT_APP_MOCKOON_URL` / `REACT_APP_GRAPHQL_URL` / `REACT_APP_SENTRY_DSN` origins at
   generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` origins
-  appended by the container entrypoint. A new foreign origin is a new environment variable in
-  `connectSrcFromEnv`, never a hard-coded host
+  appended by the container entrypoint. The REST pair has no client reader today and stays
+  admitted only until the `apiBaseUrl` setting is decided (`src/config/runtime/README.md`). A new
+  foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host
 - `make check-security-headers` (the `security headers` job of the `security testing` workflow)
   builds `--target production`, boots it, and asserts every header on the emitted responses,
   then boots it again with `APP_CONFIG_*` overrides that must reach `connect-src`. The policy

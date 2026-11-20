@@ -34,6 +34,12 @@ const authRoutes: RouteModule = {
       load: () => import(/* webpackChunkName: "create-new-password" */ './create-new-password'),
       meta: { titleKey: 'password_reset.title' },
     },
+    {
+      path: ROUTE_PATHS.socialCallback,
+      guard: 'public',
+      load: () => import(/* webpackChunkName: "social-callback" */ './social-callback'),
+      meta: { titleKey: 'auth.social.callback_title' },
+    },
   ],
 };
 

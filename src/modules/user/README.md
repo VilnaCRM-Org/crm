@@ -1242,3 +1242,29 @@ module grows:
    add a bare alias like `@auth` in `tsconfig.paths.json`, `jest.config.ts`,
    and `rsbuild.config.ts`.
 4. Run `make lint-deps` and iterate until green. Never weaken a rule.
+
+## Social sign-in decisions
+
+The Google, GitHub, Facebook and Twitter/X buttons sign in through two GraphQL mutations that are
+pending until user-service declares them (`src/api/contracts/pending/social-sign-in.graphql`;
+planning in `specs/social-sign-in/`).
+
+- **Flow.** A button opens `/auth/callback/:provider` with `{ socialStart: true }`; the page calls
+  `initiateSocialSignInUser`, keeps the returned `state` and replaces its history entry with the
+  provider's authorization URL. The provider redirects back to the same page, which checks the
+  `state` against the one this tab started with and calls `completeSocialSignInUser`.
+- **Layers.** `useSocialCallback` (hook) → `SocialSignInProvider` (data provider, resolved through
+  `AuthProviderLoader`) → `GraphQLSocialSignInRepository`, with `SocialSignInTransformer` mapping
+  `extensions.error_code` to a `SocialSignInErrorKind`. Like a password sign-in, the provider
+  first signs out any earlier session the store still holds, then writes
+  `{ ...CLEARED_AUTH_STATE, token, twoFactorStatus: 'disabled' }` and emits `signedIn()`.
+- **Paint path.** The buttons only add a `sessionStorage` write and an in-app navigation. The
+  page and its hooks load with the `social-callback` chunk; the data provider, repository and
+  schemas come with the DI container chunk `AuthProviderLoader` loads.
+- **Single use.** Each mutation runs once per start or per `state`, even under StrictMode, and is
+  never retried; "Try again" starts a new round trip and replaces the failed attempt's entry.
+- **Destination.** The page a protected route sent the user from survives the round trip in
+  `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
+- **2FA.** A `pendingSessionId` answer stores `{ ...CLEARED_AUTH_STATE, pendingSessionId }`, never a
+  token, and replace-navigates to `/sign-in/two-factor` (`ROUTE_PATHS.twoFactorChallenge`) with the
+  saved destination as `state.from`; the challenge route finishes the sign-in.

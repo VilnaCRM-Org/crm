@@ -263,10 +263,14 @@ granted to `style-src` only. `script-src` stays strict: the shell carries no inl
 runtime configuration block is `type="application/json"`, data rather than code — so an injected
 script cannot execute, which is the property the CSP exists to protect.
 
-**How `connect-src` is derived.** The browser talks to the origins RSBuild inlined at build time
+**How `connect-src` is derived.** It admits the origins RSBuild inlined at build time
 (`REACT_APP_MOCKOON_URL`, `REACT_APP_GRAPHQL_URL`, and the Sentry ingest host from
-`REACT_APP_SENTRY_DSN` when it is set), and to the runtime overrides an operator sets at container
-start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The generator reads the
+`REACT_APP_SENTRY_DSN` when it is set), and the runtime overrides an operator sets at container
+start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The browser talks only to
+the GraphQL and Sentry origins today: the REST base URL (`REACT_APP_MOCKOON_URL`,
+`APP_CONFIG_API_BASE_URL`) has no client reader since the last REST caller went, and stays
+admitted only until the separate decision on keeping the `apiBaseUrl` setting
+(`src/config/runtime/README.md`) narrows the policy. The generator reads the
 build-time values from the tracked `.env.example` — never from the untracked local `.env`
 (issue #142) — so the committed `serve.json` is identical on every machine; the container
 entrypoint renders the served `/app/serve.json` from the immutable baseline the image ships

@@ -18,6 +18,7 @@ import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
+import SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import type { SessionLinkDeps } from '@auth/types/session-link-deps';
 
@@ -63,7 +64,13 @@ const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.SessionLinkDeps,
 ];
 const SESSION_LINK_TOKENS = [AUTH_TOKENS.SessionLinkFactory];
+const SOCIAL_SIGN_IN_TOKENS = [
+  AUTH_TOKENS.SocialSignInRepository,
+  AUTH_TOKENS.SocialSignInTransformer,
+  AUTH_TOKENS.SocialSignInProvider,
+];
 const EVERY_TOKEN = [
+  ...SOCIAL_SIGN_IN_TOKENS,
   ...GRAPHQL_CLIENT_TOKENS,
   ...ERROR_FACTORY_TOKENS,
   ...ERROR_HANDLING_TOKENS,
@@ -161,6 +168,10 @@ describe('user module composition root', () => {
       'SandboxDemoSessionProvider',
       'SessionLinkDeps',
       'SessionLinkFactory',
+      'SocialSignInDeps',
+      'SocialSignInProvider',
+      'SocialSignInRepository',
+      'SocialSignInTransformer',
       'TwoFactorSettingsProvider',
       'UserDisplayNameMapper',
       'UserServiceErrorTransformer',
@@ -169,6 +180,15 @@ describe('user module composition root', () => {
 
   it('binds the auth repository and its dependency bundle', () => {
     expectAllRegistered(registeredContainer(), REPOSITORY_TOKENS);
+  });
+
+  it('binds the social sign-in repository, transformer and provider', () => {
+    const child = registeredContainer();
+    const transformer = child.resolve(AUTH_TOKENS.SocialSignInTransformer);
+
+    expectAllRegistered(child, SOCIAL_SIGN_IN_TOKENS);
+    expect(transformer).toBeInstanceOf(SocialSignInTransformer);
+    expect(child.resolve(AUTH_TOKENS.SocialSignInTransformer)).toBe(transformer);
   });
 
   it('binds the password recovery transformers, repository and provider as singletons', () => {

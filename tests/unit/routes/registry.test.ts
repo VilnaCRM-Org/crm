@@ -95,6 +95,7 @@ describe('route registry', () => {
       ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
+      ROUTE_PATHS.socialCallback,
     ]);
     expect(auth?.routes.every((route) => route.guard === 'public')).toBe(true);
     expect(auth?.routes.map((route) => route.meta?.titleKey)).toEqual([
@@ -103,6 +104,7 @@ describe('route registry', () => {
       'two_factor.title',
       'password_recovery.title',
       'password_reset.title',
+      'auth.social.callback_title',
     ]);
   });
 });

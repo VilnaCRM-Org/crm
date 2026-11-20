@@ -73,7 +73,27 @@
         "oauth": {
           "continue_with": "Continue with {{provider}}"
         },
-        "loadingForm": "Loading authentication form"
+        "loadingForm": "Loading authentication form",
+        "social": {
+          "error": {
+            "title": "Could not sign in with {{provider}}",
+            "cancelled": "Sign-in with {{provider}} was cancelled. You can try again or sign in another way.",
+            "missing_parameters": "{{provider}} did not return the sign-in details. Please try again.",
+            "provider_mismatch": "The sign-in response came from a different provider than the one you chose. Go back and start again.",
+            "unsupported_provider": "Signing in with {{provider}} is not available. Sign in with your email and password or another service.",
+            "duplicate_email": "Your {{provider}} email matches more than one VilnaCRM account, so it cannot be linked automatically. Sign in with your email and password instead.",
+            "expired": "Your sign-in attempt expired or was already used. Please try again.",
+            "email_unavailable": "{{provider}} did not share your email address, which VilnaCRM needs. Allow {{provider}} to share it and try again, or sign in with your email and password.",
+            "email_unverified": "Your {{provider}} email address is not verified. Verify it with {{provider}}, then try again.",
+            "unavailable": "{{provider}} is not responding right now. Please try again in a moment.",
+            "generic": "Something went wrong while signing in with {{provider}}. Please try again."
+          },
+          "try_again": "Try again",
+          "back_to_sign_in": "Back to sign in",
+          "callback_title": "Signing in",
+          "signing_in": "Signing you in with {{provider}}…",
+          "provider_fallback": "this service"
+        }
       },
       "sign_up": {
         "title": "Registration",
@@ -283,7 +303,27 @@
         "oauth": {
           "continue_with": "Продовжити через {{provider}}"
         },
-        "loadingForm": "Завантаження форми автентифікації"
+        "loadingForm": "Завантаження форми автентифікації",
+        "social": {
+          "error": {
+            "title": "Не вдалося увійти через {{provider}}",
+            "cancelled": "Вхід через {{provider}} скасовано. Спробуйте ще раз або увійдіть іншим способом.",
+            "missing_parameters": "{{provider}} не повернув даних для входу. Спробуйте ще раз.",
+            "provider_mismatch": "Відповідь надійшла від іншого сервісу, ніж той, який ви обрали. Поверніться й почніть знову.",
+            "unsupported_provider": "Вхід через {{provider}} недоступний. Увійдіть за допомогою пошти та пароля або іншого сервісу.",
+            "duplicate_email": "Ваша адреса електронної пошти в {{provider}} збігається з кількома обліковими записами VilnaCRM, тому її не можна прив’язати автоматично. Увійдіть за допомогою пошти та пароля.",
+            "expired": "Спроба входу застаріла або вже використана. Спробуйте ще раз.",
+            "email_unavailable": "{{provider}} не надав вашу адресу пошти, без якої VilnaCRM не може виконати вхід. Дозвольте {{provider}} поділитися нею й спробуйте ще раз або увійдіть за допомогою пошти та пароля.",
+            "email_unverified": "Ваша адреса пошти в {{provider}} не підтверджена. Підтвердьте її в {{provider}} і спробуйте ще раз.",
+            "unavailable": "{{provider}} зараз не відповідає. Спробуйте ще раз за хвилину.",
+            "generic": "Під час входу через {{provider}} щось пішло не так. Спробуйте ще раз."
+          },
+          "try_again": "Спробувати ще раз",
+          "back_to_sign_in": "Повернутися до входу",
+          "callback_title": "Вхід",
+          "signing_in": "Виконуємо вхід через {{provider}}…",
+          "provider_fallback": "цей сервіс"
+        }
       },
       "sign_up": {
         "title": "Реєєстрація",

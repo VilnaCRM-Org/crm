@@ -191,6 +191,7 @@ describe('route composer', () => {
       ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
+      ROUTE_PATHS.socialCallback,
     ]);
   });
 

@@ -12,6 +12,7 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
+  SOCIAL_SIGN_IN_SDL,
   type SingleBody,
 } from './mock-schema-fixtures';
 import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
@@ -84,6 +85,7 @@ describe('profile operations on the stateless mock', () => {
         PROFILE_SDL_FIXTURE,
         PENDING_EXTENSION,
         ...TWO_FACTOR_SDL_FIXTURES,
+        ...SOCIAL_SIGN_IN_SDL,
       ],
       resolvers,
       formatError,
@@ -245,13 +247,15 @@ describe('profile operations on the stateless mock', () => {
     expect(result.data).toEqual({ resendEmailToUser: { clientMutationId } });
   });
 
-  it('keeps createUser and the password reset resolvers beside the profile ones', () => {
+  it('keeps createUser, password reset, 2FA and social sign-in beside the profile ones', () => {
     expect(Object.keys(resolvers.Mutation).sort()).toEqual([
+      'completeSocialSignInUser',
       'completeTwoFactorUser',
       'confirmPasswordResetUser',
       'confirmTwoFactorUser',
       'createUser',
       'disableTwoFactorUser',
+      'initiateSocialSignInUser',
       'regenerateRecoveryCodesUser',
       'requestPasswordResetUser',
       'resendEmailToUser',

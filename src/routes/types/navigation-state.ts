@@ -10,6 +10,7 @@ export type ArrivalNotice =
 export interface RedirectNavigationState {
   from?: RedirectLocationLike;
   focusMain?: boolean;
+  socialStart?: boolean;
   notice?: ArrivalNotice | undefined;
 }
 

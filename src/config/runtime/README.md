@@ -86,17 +86,19 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
 
 | Key            | Environment variable                 | Falls back to           |
 | -------------- | ------------------------------------ | ----------------------- |
-| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | `REACT_APP_MOCKOON_URL` |
+| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | none (no client reader) |
 | `graphqlUrl`   | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
 | `flags.<name>` | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
 
-`apiBaseUrl` is read by `@/utils/url-builder` (the REST origin), `graphqlUrl` is injected into
-`GraphQLUrl` (the Apollo endpoint), and flags are read through `featureFlagService`.
+`graphqlUrl` is injected into `GraphQLUrl` (the Apollo endpoint), and flags are read through
+`featureFlagService`. `apiBaseUrl` has no client reader today: its reader, `url-builder`, went with
+the last REST caller (#331 retired the REST login client and specs/social-sign-in moved social
+sign-in to GraphQL). The setting is still validated, and the container entrypoint still adds its
+origin to the CSP `connect-src`; whether to keep it is a separate decision.
 
-Each URL setting falls back to the build-time variable its consumer already read before this
-module existed, so existing deployments behave exactly as before until an `APP_CONFIG_*` value is
-supplied. Note the REST fallback is `REACT_APP_MOCKOON_URL`, not `REACT_APP_API_BASE_URL` —
-`url-builder` has always used the former, and this change deliberately does not repoint it.
+`graphqlUrl` falls back to the build-time variable its consumer already read before this module
+existed, so existing deployments behave exactly as before until an `APP_CONFIG_*` value is
+supplied.
 
 A runtime URL that is not an absolute `http(s)` URL is treated as absent by the paint-path reader,
 so a malformed value falls back to the build-time default instead of reaching `fetch`. The zod
