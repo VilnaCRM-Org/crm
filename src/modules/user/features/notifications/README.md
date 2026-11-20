@@ -59,4 +59,18 @@ importer outside the feature is still stopped by the module and feature boundary
 file imports tsyringe as a type only. The gap is recorded here rather than closed by widening that
 list.
 
+## Hooks
+
+All hooks in `hooks/` are container-free and read the repository through
+`useNotificationRepository()`.
+
+- `useNotificationRecorder(report)` records every raise of the outlet store once, keyed on the
+  store revision, and reports a failed write as `app-shell:notifications-record`.
+- `useNotificationHistory(revision)` returns the records newest first, the unread count,
+  `markAllRead` and `refresh`; it reloads on mount, on each revision and after `markAllRead`.
+- `useBellDisclosure(layout)` owns the bell's open state and `visited`. Opening hides the merged
+  card only under the `bell` style. Escape, a pointerdown or focus leaving the bell wrapper, a
+  route change and a layout change close it. It is built from `useBellOutsideClose`,
+  `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
+
 Later stories add the port and the shell slot; this README grows with them.
