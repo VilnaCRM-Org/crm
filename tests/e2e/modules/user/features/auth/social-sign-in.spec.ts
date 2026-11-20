@@ -151,7 +151,9 @@ test.describe('Social sign-in', () => {
     await expect(page).toHaveURL(/\/sign-in\/two-factor$/);
     await expect(challengeHeadingOf(page)).toBeVisible();
     await expect(codeCellsOf(page).first()).toBeFocused();
-    await expect(page.getByRole('status').filter({ hasText: errorTitle('Google') })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toHaveCount(
+      0
+    );
 
     await typeCode(page, '246810');
 

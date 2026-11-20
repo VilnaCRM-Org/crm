@@ -86,7 +86,7 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
 
 | Key            | Environment variable                 | Falls back to           |
 | -------------- | ------------------------------------ | ----------------------- |
-| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | `REACT_APP_MOCKOON_URL` |
+| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | none (no client reader) |
 | `graphqlUrl`   | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
 | `flags.<name>` | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
 

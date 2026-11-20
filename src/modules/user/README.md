@@ -1255,8 +1255,9 @@ planning in `specs/social-sign-in/`).
   `state` against the one this tab started with and calls `completeSocialSignInUser`.
 - **Layers.** `useSocialCallback` (hook) → `SocialSignInProvider` (data provider, resolved through
   `AuthProviderLoader`) → `GraphQLSocialSignInRepository`, with `SocialSignInTransformer` mapping
-  `extensions.error_code` to a `SocialSignInErrorKind`. The provider writes the access token into
-  `useAuthStore` exactly like a password sign-in.
+  `extensions.error_code` to a `SocialSignInErrorKind`. Like a password sign-in, the provider
+  first signs out any earlier session the store still holds, then writes
+  `{ ...CLEARED_AUTH_STATE, token, twoFactorStatus: 'disabled' }` and emits `signedIn()`.
 - **Paint path.** The buttons only add a `sessionStorage` write and an in-app navigation. The
   page and its hooks load with the `social-callback` chunk; the data provider, repository and
   schemas come with the DI container chunk `AuthProviderLoader` loads.
@@ -1264,5 +1265,6 @@ planning in `specs/social-sign-in/`).
   never retried; "Try again" starts a new round trip and replaces the failed attempt's entry.
 - **Destination.** The page a protected route sent the user from survives the round trip in
   `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
-- **2FA.** A `pendingSessionId` answer shows "finish with your email and password" until the 2FA
-  challenge route (PR #377) exists.
+- **2FA.** A `pendingSessionId` answer stores `{ ...CLEARED_AUTH_STATE, pendingSessionId }`, never a
+  token, and replace-navigates to `/sign-in/two-factor` (`ROUTE_PATHS.twoFactorChallenge`) with the
+  saved destination as `state.from`; the challenge route finishes the sign-in.

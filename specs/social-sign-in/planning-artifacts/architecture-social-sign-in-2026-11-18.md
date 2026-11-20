@@ -153,11 +153,13 @@ Out of `src/`:
 
 ### 3.4 2FA hand-off (PRD D6)
 
-`completeSocialSignIn` returns `{ kind: 'two-factor', pendingSessionId }`. The page navigates to
-`ROUTE_PATHS.twoFactorChallenge` with the pending session in **router state** (never the URL)
-when that key exists; otherwise it renders `SocialSignInErrorView` with kind
-`two_factor_required`. Story S3.3 is the only place that branches on the 2FA route's presence and
-is re-planned when PR #377 merges.
+_(Rewritten 2026-11-20; §7 is authoritative.)_ On a `twoFactorEnabled: true` result,
+`SocialSignInProvider.settle()` ends any earlier session first (`session.signOut()` when the store
+holds a token), then writes `{ ...signedOut, pendingSessionId }` to the memory-only auth store and
+never a token. `SocialCallbackViewMapper.outcomeView` then replace-navigates to
+`ROUTE_PATHS.twoFactorChallenge` with `state: { from }`, built from the saved destination and
+consumed once; main's challenge page and `usePostLoginRedirect` finish the sign-in. The
+`pendingSessionId` never enters the URL, router or history state, or `sessionStorage` (NFR7).
 
 ### 3.5 Mockoon overlays
 
@@ -270,15 +272,15 @@ sequenceDiagram
     G-->>SPA: accessToken | pendingSessionId | error (extensions.error_code)
 ```
 
-| Piece            | Where                                                                                                                                                                                                                                                               |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pending contract | `src/api/contracts/pending/social-sign-in.graphql`; operations `initiate-social-sign-in.graphql`, `complete-social-sign-in.graphql` beside the repository; types from `make codegen`                                                                                |
-| Repository       | `GraphQLSocialSignInRepository` (Apollo client, `no-cache`, zod-parsed: http(s) `authorizationUrl`, non-empty `state`, token or pending session)                                                                                                                    |
-| Transformer      | `SocialSignInTransformer`: `toStart`, `toOutcome`, `fromFailure` (`networkError` → `unavailable`, `extensions.error_code` → kind, else `generic`)                                                                                                                   |
+| Piece            | Where                                                                                                                                                                                                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pending contract | `src/api/contracts/pending/social-sign-in.graphql`; operations `initiate-social-sign-in.graphql`, `complete-social-sign-in.graphql` beside the repository; types from `make codegen`                                                                                                                     |
+| Repository       | `GraphQLSocialSignInRepository` (Apollo client, `no-cache`, zod-parsed: http(s) `authorizationUrl`, non-empty `state`, token or pending session)                                                                                                                                                         |
+| Transformer      | `SocialSignInTransformer`: `toStart`, `toOutcome`, `fromFailure` (`networkError` → `unavailable`, `extensions.error_code` → kind, else `generic`)                                                                                                                                                        |
 | Data provider    | `SocialSignInProvider.start` / `.complete`; a session or a pending 2FA challenge starts through `SocialSignInDeps` (the auth store, the security signals, `session`: `authSessionProvider`, `signedOut`: `CLEARED_AUTH_STATE`), ending any earlier session first, as main's `SignInSubmitProcessor` does |
-| 2FA hand-off     | `SocialCallbackViewMapper.outcomeView` maps a `two-factor` outcome to a replace redirect to `ROUTE_PATHS.twoFactorChallenge` with `{ from }` built from the saved destination; main's challenge page and `usePostLoginRedirect` finish the sign-in                  |
-| Tab binding      | `SocialSignInFlowSource` in `sessionStorage`: the destination, validated twice and consumed once by `takeDestination()` after a sign-in; `provider:state`, read without consuming so StrictMode sees one answer                                                     |
-| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in                                                                                                      |
-| Page             | `useSocialCallback` + `useSocialCallbackRelay` (one relay per start key or per state) + `SocialCallbackViewMapper` (`starting`, `relaying`, `leaving`, `failed`, `redirect`)                                                                                        |
-| Local mock       | `docker/apollo-server/lib/social-sign-in-resolvers.ts` (stateful, `OAUTH_MODE`); Mockoon serves only the mock consent page                                                                                                                                          |
-| Removed          | the REST `credentials` option of `HttpsClient`, the REST schemas, Mockoon's social routes and CORS, ADR-004; `src/utils/url-builder.ts`, whose last consumers each side of the #331 merge had removed                                                               |
+| 2FA hand-off     | `SocialCallbackViewMapper.outcomeView` maps a `two-factor` outcome to a replace redirect to `ROUTE_PATHS.twoFactorChallenge` with `{ from }` built from the saved destination; main's challenge page and `usePostLoginRedirect` finish the sign-in                                                       |
+| Tab binding      | `SocialSignInFlowSource` in `sessionStorage`: the destination, validated twice and consumed once by `takeDestination()` after a sign-in; `provider:state`, read without consuming so StrictMode sees one answer                                                                                          |
+| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in                                                                                                                                           |
+| Page             | `useSocialCallback` + `useSocialCallbackRelay` (one relay per start key or per state) + `SocialCallbackViewMapper` (`starting`, `relaying`, `leaving`, `failed`, `redirect`)                                                                                                                             |
+| Local mock       | `docker/apollo-server/lib/social-sign-in-resolvers.ts` (stateful, `OAUTH_MODE`); Mockoon serves only the mock consent page                                                                                                                                                                               |
+| Removed          | the REST `credentials` option of `HttpsClient`, the REST schemas, Mockoon's social routes and CORS, ADR-004; `src/utils/url-builder.ts`, whose last consumers each side of the #331 merge had removed                                                                                                    |

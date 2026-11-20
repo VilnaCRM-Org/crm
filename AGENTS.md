@@ -1823,11 +1823,12 @@ build goes red. Know them before you touch a config file:
 - `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
   `make security-headers-generate`, commit the result; `make lint-security-headers` (in
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy
-- `connect-src` is derived from the API variables the app reads: the build-time
+- `connect-src` is derived from the API variables: the build-time
   `REACT_APP_MOCKOON_URL` / `REACT_APP_GRAPHQL_URL` / `REACT_APP_SENTRY_DSN` origins at
   generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` origins
-  appended by the container entrypoint. A new foreign origin is a new environment variable in
-  `connectSrcFromEnv`, never a hard-coded host
+  appended by the container entrypoint. The REST pair has no client reader today and stays
+  admitted only until the `apiBaseUrl` setting is decided (`src/config/runtime/README.md`). A new
+  foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host
 - `make check-security-headers` (the `security headers` job of the `security testing` workflow)
   builds `--target production`, boots it, and asserts every header on the emitted responses,
   then boots it again with `APP_CONFIG_*` overrides that must reach `connect-src`. The policy

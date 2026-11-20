@@ -301,7 +301,7 @@ When writing or editing a class in a logic directory (`src/services/**`,
   `map-registration-error`, `load-registration-notification`,
   `registration-handlers-factory`, `auth-error-reporter`,
   `boundary-error-reporter` (the reporter the paint-path error boundaries
-  receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
+  receive by prop, issue #116), `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability
   core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves,
   the app-shell session (`auth-session-provider`) and the chip's current-user read
