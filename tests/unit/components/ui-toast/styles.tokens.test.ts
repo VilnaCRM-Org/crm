@@ -5,52 +5,95 @@ type ToastStyles = (typeof import('@/components/ui-toast/styles'))['default'];
 
 const SM = '@media (min-width:480px)';
 const DESKTOP = '@media (min-width:1025px)';
-const RING = { outline: '2px solid #1A1C1E', outlineOffset: '2px' };
-const CONTROL_FROM_SM = { margin: 0, minWidth: '1.5rem', minHeight: '1.5rem' };
-const CONTROL = {
-  margin: '-0.75rem',
-  minWidth: '2.75rem',
-  minHeight: '2.75rem',
-  padding: 0,
-  color: '#1A1C1E',
-  '&:hover, &:focus-visible': { backgroundColor: 'transparent' },
-  '&:focus-visible': RING,
-  '@media (prefers-reduced-motion: reduce)': { '& .MuiTouchRipple-root': { display: 'none' } },
-  [SM]: CONTROL_FROM_SM,
-};
+const REDUCED = '@media (prefers-reduced-motion: reduce)';
+const FORCED = '@media (forced-colors: active)';
+const SHADOW = '0 8px 27px rgba(49, 59, 67, 0.14)';
 
 const loadStyles = (): Promise<ToastStyles> =>
   loadIsolated(async () => (await import('@/components/ui-toast/styles')).default);
 
 describe('toast styles', () => {
   it('takes the surfaces and text from the palette tokens', async () => {
-    const styles = await loadStyles();
+    const { tones, toast } = await loadStyles();
 
-    expect(styles.tones).toEqual({
-      success: { backgroundColor: '#E8F4EF' },
-      error: { backgroundColor: '#FDECEC' },
+    expect(tones.success.backgroundColor).toBe('#E8F4EF');
+    expect(tones.error.backgroundColor).toBe('#FDECEC');
+    expect(toast.color).toBe('#1A1C1E');
+  });
+
+  it('draws a 1 px tone edge, a 4 px accent and the popover shadow on each tone', async () => {
+    const { tones, toast } = await loadStyles();
+
+    expect(toast.border).toBe('1px solid');
+    expect(tones.success).toMatchObject({
+      borderColor: '#2E7D32',
+      boxShadow: `inset 4px 0 0 0 #2E7D32, ${SHADOW}`,
     });
-    expect(styles.toast.color).toBe('#1A1C1E');
-    expect(styles.close.color).toBe('#1A1C1E');
-    expect(styles.action.color).toBe('#1A1C1E');
+    expect(tones.error).toMatchObject({
+      borderColor: '#DC3939',
+      boxShadow: `inset 4px 0 0 0 #DC3939, ${SHADOW}`,
+    });
   });
 
-  it('keeps every toast text at 4.5:1 on its own surface', async () => {
-    const { tones, toast, close, action } = await loadStyles();
+  it.each([
+    ['success', '#2E7D32', '#FBFBFB', 4.95],
+    ['error', '#DC3939', '#FBFBFB', 4.33],
+    ['success', '#2E7D32', '#F4F5F6', 4.7],
+    ['error', '#DC3939', '#F4F5F6', 4.1],
+  ] as const)('keeps the %s edge %s at %s:1 on %s', async (tone, edge, page, ratio) => {
+    const { tones } = await loadStyles();
 
-    for (const tone of ['success', 'error'] as const) {
-      const surface = tones[tone].backgroundColor;
-      expect(contrast(toast.color, surface)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(close.color, surface)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(action.color, surface)).toBeGreaterThanOrEqual(4.5);
-    }
+    expect(tones[tone].borderColor).toBe(edge);
+    expect(contrast(tones[tone].borderColor, page)).toBeCloseTo(ratio, 1);
   });
 
-  it('draws a system-colour border in forced-colors mode and none otherwise', async () => {
+  it.each([
+    ['success', '#E8F4EF', 15.15, 4.55],
+    ['error', '#FDECEC', 14.96, 3.92],
+  ] as const)('keeps the text and icon readable on the %s fill', async (tone, fill, text, icon) => {
+    const { tones, toast } = await loadStyles();
+
+    expect(tones[tone].backgroundColor).toBe(fill);
+    expect(contrast(toast.color, fill)).toBeCloseTo(text, 1);
+    expect(contrast(tone === 'success' ? '#2E7D32' : '#DC3939', fill)).toBeCloseTo(icon, 1);
+  });
+
+  it('keeps main geometry and takes one pixel off each padding side for the new edge', async () => {
     const { toast } = await loadStyles();
 
-    expect(toast['@media (forced-colors: active)']).toEqual({ border: '1px solid CanvasText' });
-    expect(toast).not.toHaveProperty('border');
+    expect(toast).toMatchObject({
+      padding: '0.9375rem',
+      borderRadius: '0.75rem',
+      color: '#1A1C1E',
+    });
+    expect(toast[SM]).toMatchObject({ padding: '1.125rem 1.0625rem 1.125rem 1.1875rem' });
+  });
+
+  it('slides in 16 px over 180 ms on mount only, from the bottom then the end', async () => {
+    const { toast } = await loadStyles();
+    const below = String(toast.animation);
+    const fromSm = JSON.stringify(Object.entries(toast).find(([key]) => key === SM)?.[1]);
+
+    expect(below).toContain('translateY(16px)');
+    expect(below).toContain('opacity: 0');
+    expect(below).toContain('180ms cubic-bezier(0.2, 0, 0, 1)');
+    expect(fromSm).toContain('translateX(16px)');
+    expect(fromSm).toContain('opacity: 0');
+    expect(fromSm).toContain('180ms cubic-bezier(0.2, 0, 0, 1)');
+    expect(JSON.stringify(toast)).not.toMatch(/transition|iterationCount|infinite/);
+  });
+
+  it('plays no animation, so no transform applies at any frame, under reduced motion', async () => {
+    const { toast } = await loadStyles();
+
+    expect(toast[REDUCED]).toEqual({ animation: 'none' });
+    expect(Object.keys(toast).indexOf(REDUCED)).toBeGreaterThan(Object.keys(toast).indexOf(SM));
+  });
+
+  it('shows a system-colour edge and drops the accent and shadow in forced colors', async () => {
+    const { toast } = await loadStyles();
+
+    expect(toast[FORCED]).toEqual({ borderColor: 'CanvasText', boxShadow: 'none' });
   });
 
   it('fixes the stack bottom-right from sm, 12 px in on desktop, full width below sm', async () => {
@@ -84,119 +127,9 @@ describe('toast styles', () => {
     });
   });
 
-  it('lays the toast out as a three-column grid in Golos on a 12 px radius', async () => {
-    const { toast } = await loadStyles();
-
-    expect(toast).toEqual({
-      display: 'grid',
-      gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-      alignItems: 'start',
-      columnGap: '0.375rem',
-      rowGap: '0.25rem',
-      padding: '1rem',
-      borderRadius: '0.75rem',
-      fontFamily: 'Golos',
-      fontWeight: 600,
-      fontSize: '0.875rem',
-      lineHeight: 'normal',
-      color: '#1A1C1E',
-      [SM]: {
-        columnGap: '0.5rem',
-        padding: '1.1875rem 1.125rem 1.1875rem 1.25rem',
-        fontSize: '1rem',
-      },
-      '@media (forced-colors: active)': { border: '1px solid CanvasText' },
-    });
-  });
-
-  it('puts an action on its own row under the message so the message keeps its width', async () => {
-    const { icon, message, action, close } = await loadStyles();
-
-    expect(icon).toEqual({
-      gridColumn: 1,
-      gridRow: 1,
-      display: 'inline-flex',
-      fontSize: '1.25rem',
-      [SM]: { fontSize: '1.5rem' },
-    });
-    expect(message).toEqual({
-      gridColumn: 2,
-      gridRow: 1,
-      minWidth: 0,
-      lineHeight: '1.25rem',
-      overflowWrap: 'anywhere',
-      [SM]: { lineHeight: '1.5rem' },
-    });
-    expect(action).toMatchObject({ gridColumn: 2, gridRow: 2, justifySelf: 'start' });
-    expect(close).toMatchObject({ gridColumn: 3, gridRow: 1 });
-  });
-
-  it('draws the action as an underlined inline text button with the shared control', async () => {
-    const { action } = await loadStyles();
-
-    expect(action).toEqual({
-      ...CONTROL,
-      margin: '-0.75rem 0',
-      minWidth: 0,
-      border: 0,
-      background: 'none',
-      cursor: 'pointer',
-      font: 'inherit',
-      textDecoration: 'underline',
-      gridColumn: 2,
-      gridRow: 2,
-      justifySelf: 'start',
-      [SM]: { margin: 0, minHeight: '1.5rem' },
-    });
-  });
-
-  it('draws the close button as the shared control bleeding into the toast padding', async () => {
-    const { close } = await loadStyles();
-
-    expect(close).toEqual({
-      ...CONTROL,
-      gridColumn: 3,
-      gridRow: 1,
-      fontSize: '1.25rem',
-      [SM]: { ...CONTROL_FROM_SM, fontSize: '1.5rem' },
-    });
-  });
-
-  it('rings both controls in #1A1C1E and never paints a hover surface on them', async () => {
-    const { action, close } = await loadStyles();
-
-    expect(close['&:focus-visible']).toEqual(RING);
-    expect(action['&:focus-visible']).toEqual(RING);
-    expect(close['&:hover, &:focus-visible']).toEqual({ backgroundColor: 'transparent' });
-    expect(action['&:hover, &:focus-visible']).toEqual({ backgroundColor: 'transparent' });
-  });
-
-  it('hides the MUI ripple on both controls when the user asks for reduced motion', async () => {
-    const { action, close } = await loadStyles();
-    const reduced = { '& .MuiTouchRipple-root': { display: 'none' } };
-
-    expect(close['@media (prefers-reduced-motion: reduce)']).toEqual(reduced);
-    expect(action['@media (prefers-reduced-motion: reduce)']).toEqual(reduced);
-  });
-
-  it('gives the buttons a 44 CSS px minimum height below sm and less from sm', async () => {
-    const { action, close } = await loadStyles();
-
-    expect(close.minHeight).toBe('2.75rem');
-    expect(action.minHeight).toBe('2.75rem');
-    expect(close[SM]).toEqual({
-      margin: 0,
-      minWidth: '1.5rem',
-      minHeight: '1.5rem',
-      fontSize: '1.5rem',
-    });
-    expect(action[SM]).toEqual({ margin: 0, minHeight: '1.5rem' });
-  });
-
-  it('declares no transition and no keyframes', async () => {
+  it('draws no icon, message, action or close style of its own any more', async () => {
     const styles = await loadStyles();
-    const serialized = JSON.stringify(styles);
 
-    expect(serialized).not.toMatch(/transition|animation|keyframes/i);
+    expect(Object.keys(styles).sort()).toEqual(['stack', 'toast', 'tones']);
   });
 });

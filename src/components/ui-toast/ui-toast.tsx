@@ -1,77 +1,40 @@
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import { forwardRef, type JSX, useCallback, useId } from 'react';
-import { useTranslation } from 'react-i18next';
+import { forwardRef, type JSX, useCallback, useMemo } from 'react';
 
-import type {
-  ToastActionButtonProps,
-  ToastCloseButtonProps,
-  UIToastProps,
-} from '@/components/types/ui-toast';
-import NotificationIcon from '@/components/ui-notification-content/notification-icon';
-import i18n from '@/i18n';
-import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
+import type { UIToastProps } from '@/components/types/ui-toast';
+import UINotificationContent from '@/components/ui-notification-content';
+import type { NotificationView } from '@/lib/notifications/types/notification-view';
 
-import en from './i18n/en.json';
-import uk from './i18n/uk.json';
 import styles from './styles';
-
-lazyCatalogLoader.register(i18n, { en, uk });
-
-function ToastActionButton({ id, action, onDismiss }: ToastActionButtonProps): JSX.Element {
-  const activate = useCallback((): void => {
-    onDismiss(id);
-    action.onActivate();
-  }, [action, id, onDismiss]);
-
-  return (
-    <Box component="button" type="button" sx={styles.action} onClick={activate}>
-      {action.label}
-    </Box>
-  );
-}
-
-function ToastCloseButton({
-  id,
-  describedBy,
-  closeRef,
-  onDismiss,
-}: ToastCloseButtonProps): JSX.Element {
-  const { t } = useTranslation();
-  const dismiss = useCallback((): void => onDismiss(id), [id, onDismiss]);
-
-  return (
-    <IconButton
-      ref={closeRef}
-      aria-label={t('ui_toast.close')}
-      aria-describedby={describedBy}
-      sx={styles.close}
-      onClick={dismiss}
-    >
-      <NotificationIcon kind="close" />
-    </IconButton>
-  );
-}
 
 const UIToast = forwardRef<HTMLButtonElement, UIToastProps>(function UIToast(
   { toast, onDismiss },
   closeRef
 ): JSX.Element {
-  const messageId = useId();
   const { id, message, tone, action } = toast;
+  const view = useMemo(
+    (): NotificationView => ({
+      id: String(id),
+      kind: tone,
+      message,
+      action:
+        action === undefined
+          ? undefined
+          : {
+              label: action.label,
+              onActivate: (): void => {
+                onDismiss(id);
+                action.onActivate();
+              },
+            },
+    }),
+    [id, message, tone, action, onDismiss]
+  );
+  const close = useCallback((): void => onDismiss(id), [id, onDismiss]);
 
   return (
     <Box sx={[styles.toast, styles.tones[tone]]}>
-      <Box component="span" sx={styles.icon}>
-        <NotificationIcon kind={tone} />
-      </Box>
-      <Box component="span" id={messageId} sx={styles.message}>
-        {message}
-      </Box>
-      {action === undefined ? null : (
-        <ToastActionButton id={id} action={action} onDismiss={onDismiss} />
-      )}
-      <ToastCloseButton id={id} describedBy={messageId} closeRef={closeRef} onDismiss={onDismiss} />
+      <UINotificationContent view={view} onClose={close} closeRef={closeRef} />
     </Box>
   );
 });

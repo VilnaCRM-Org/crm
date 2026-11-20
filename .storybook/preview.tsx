@@ -9,8 +9,6 @@ import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
 import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
 import notificationContentEn from '@/components/ui-notification-content/i18n/en.json';
 import notificationContentUk from '@/components/ui-notification-content/i18n/uk.json';
-import toastEn from '@/components/ui-toast/i18n/en.json';
-import toastUk from '@/components/ui-toast/i18n/uk.json';
 import SidebarCollapseSource from '@/components/ui-sidebar/sidebar-collapse-source';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import userMenuEn from '@/modules/user/features/settings/components/user-menu/i18n/en.json';
@@ -53,7 +51,6 @@ export const i18nInitPromise = i18next.isInitialized
 lazyCatalogLoader.register(i18next, { en: recoveryEn, uk: recoveryUk });
 lazyCatalogLoader.register(i18next, { en: policyEn, uk: policyUk });
 lazyCatalogLoader.register(i18next, { en: settingsEn, uk: settingsUk });
-lazyCatalogLoader.register(i18next, { en: toastEn, uk: toastUk });
 lazyCatalogLoader.register(i18next, { en: appShellEn, uk: appShellUk });
 lazyCatalogLoader.register(i18next, { en: comingSoonEn, uk: comingSoonUk });
 lazyCatalogLoader.register(i18next, { en: userMenuEn, uk: userMenuUk });

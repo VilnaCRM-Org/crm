@@ -1959,11 +1959,12 @@ its `meta.titleKey`; the user-menu folder and the shell hooks beside those files
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
 protected page, before the settings catalog is registered, so they own no settings key; the
 feature's `data-providers/`, `repositories/` and `transformers/` load in the container chunk and
-own no settings key. The toast catalog
-(`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
-label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are owned the same
-way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
-`ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
+own no settings key. The notification content catalog
+(`ui_notification.*`) is owned by `components/ui-notification-content`, the only module that
+renders it, so the close label stays off `/sign-in`. The three catalogs of the app shell
+(issue #362) are owned the same way: the shell copy (`app_shell.*`) by its five component
+folders `components/ui-app-shell`, `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and
+`ui-navigation-drawer`; the coming-soon
 copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
 `settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. The two catalogs of
 two-factor sign-in (issue #331) follow suit: the challenge copy (`two_factor.*`) is owned by
@@ -2880,8 +2881,9 @@ verified in CI.
   copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
   when that component module evaluates; the settings copy (`settings.*`), owned by
   `src/modules/user/features/settings/` and registered when the `UserProfile` route module
-  evaluates; the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered when
-  `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
+  evaluates; the notification content copy (`ui_notification.*`), owned by
+  `src/components/ui-notification-content/` and registered when `UINotificationContent`
+  evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
   `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
   `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
   `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; the user-menu

@@ -25,7 +25,7 @@ const toastRoot = (message: string): HTMLElement => {
   const candidates = screen
     .getAllByRole('generic')
     .filter((node) => node.tagName === 'DIV' && node.textContent?.includes(message));
-  return candidates[candidates.length - 1] as HTMLElement;
+  return candidates[candidates.length - 2] as HTMLElement;
 };
 
 const closeButton = (): HTMLElement => screen.getByRole('button', { name: 'Закрити сповіщення' });
@@ -57,6 +57,21 @@ describe('UIToast', () => {
     expect(toast).not.toHaveAttribute('role');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(toast).toHaveStyle({ backgroundColor: '#FDECEC', color: '#1A1C1E' });
+  });
+
+  it.each([
+    ['success', 'Зміни збережено', 'rgb(46, 125, 50)'],
+    ['error', 'Не вдалося', 'rgb(220, 57, 57)'],
+  ] as const)('frames the %s toast with a 1 px solid edge in its tone', (tone, message, edge) => {
+    render(<UIToast toast={buildToast({ tone, message })} onDismiss={jest.fn()} />, {
+      wrapper: ukWrapper,
+    });
+
+    expect(toastRoot(message)).toHaveStyle({
+      borderStyle: 'solid',
+      borderWidth: '1px',
+      borderColor: edge,
+    });
   });
 
   it('describes each close button by the message of its own toast', () => {
@@ -208,8 +223,12 @@ describe('UIToast', () => {
     });
   });
 
-  it('registers the toast catalog on the app i18n instance when its module loads', () => {
-    expect(appI18n.getResource('uk', 'translation', 'ui_toast.close')).toBe('Закрити сповіщення');
-    expect(appI18n.getResource('en', 'translation', 'ui_toast.close')).toBe('Close notification');
+  it('registers the notification close label on the app i18n instance on load', () => {
+    expect(appI18n.getResource('uk', 'translation', 'ui_notification.close')).toBe(
+      'Закрити сповіщення'
+    );
+    expect(appI18n.getResource('en', 'translation', 'ui_notification.close')).toBe(
+      'Close notification'
+    );
   });
 });

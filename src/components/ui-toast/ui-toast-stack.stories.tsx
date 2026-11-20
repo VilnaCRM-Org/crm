@@ -1,4 +1,6 @@
+import Box from '@mui/material/Box';
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import type { JSX } from 'react';
 
 import UIToastStack from '@/components/ui-toast';
 import { noop } from '@stories/story-callbacks';
@@ -69,4 +71,23 @@ export const Mixed: Story = {
 
 export const Empty: Story = {
   args: { toasts: { items: [] }, announcement: '', alert: '' },
+};
+
+export const ReducedMotion: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A simulation: Storybook cannot switch `prefers-reduced-motion`, so this story removes ' +
+          'every animation in its frame. With the real preference the toasts appear at once.',
+      },
+    },
+  },
+  decorators: [
+    (Story): JSX.Element => (
+      <Box sx={{ '& *': { animation: 'none !important' } }}>
+        <Story />
+      </Box>
+    ),
+  ],
 };

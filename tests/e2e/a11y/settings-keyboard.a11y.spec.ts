@@ -40,7 +40,7 @@ const password = buildPassword();
 const newPassword = buildPassword();
 const VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST = 11;
 
-const closeLabel: string = t('ui_toast.close');
+const closeLabel: string = t('ui_notification.close');
 const showPasswordLabel: string = t('auth.password.show');
 const privacyLabel: string = t('footer.privacy');
 const termsLabel: string = t('footer.usage_policy');

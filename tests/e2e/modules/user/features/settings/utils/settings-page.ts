@@ -31,7 +31,7 @@ export const text = {
   resent: t('settings.toasts.resent'),
   transient: t('settings.toasts.save_failed_transient'),
   rateLimited: t('settings.toasts.rate_limited'),
-  toastClose: t('ui_toast.close'),
+  toastClose: t('ui_notification.close'),
   passwordWrong: t('settings.errors.password_wrong'),
   emailTaken: t('sign_up.errors.email_used'),
   tryAgain: t('auth.error.tryAgain'),

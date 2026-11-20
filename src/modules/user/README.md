@@ -625,8 +625,8 @@ downloads, and its mobile Lighthouse budget has no headroom.
 when the route module evaluates, by the mechanism #315 introduced. The rule list's
 `password_policy.*` keys leave the recovery catalog for a catalog the shared
 `UIPasswordPolicyRules` component owns, so a key resolves wherever the component renders, and the
-toast's `ui_toast.close` is a lazy catalog `components/ui-toast` owns, since only the settings
-chunk renders a toast. Every lazy catalog registers through one container-free
+toast's `ui_notification.close` is a lazy catalog `components/ui-notification-content` owns,
+since only the settings chunk renders a toast. Every lazy catalog registers through one container-free
 `lazyCatalogLoader` (`src/lib/locale-catalog`) that takes the owner's JSON as a named
 `LocaleCatalogPair`, so the owner keeps its static import and a new catalog adds no class.
 

@@ -1,5 +1,6 @@
+import { keyframes } from '@emotion/react';
+
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { control, controlFromSm } from '@/components/ui-notification-content/styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
 const { sm, lg } = breakpointsTheme.breakpoints.values;
@@ -7,6 +8,22 @@ const { sm, lg } = breakpointsTheme.breakpoints.values;
 const fromSm = `@media (min-width:${sm}px)`;
 
 const fromDesktop = `@media (min-width:${lg + 1}px)`;
+
+const enterFromBottom = keyframes`
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+`;
+
+const enterFromEnd = keyframes`
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+`;
+
+const entrance = '180ms cubic-bezier(0.2, 0, 0, 1)';
+
+const successEdge = paletteColors.success.text;
+
+const errorEdge = paletteColors.error.main;
 
 const stackFromSm = {
   left: 'auto',
@@ -32,63 +49,28 @@ export default {
     [fromDesktop]: { right: '0.75rem' },
   },
   toast: {
-    display: 'grid',
-    gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-    alignItems: 'start',
-    columnGap: '0.375rem',
-    rowGap: '0.25rem',
-    padding: '1rem',
+    padding: '0.9375rem',
+    border: '1px solid',
     borderRadius: '0.75rem',
-    fontFamily: 'Golos',
-    fontWeight: 600,
-    fontSize: '0.875rem',
-    lineHeight: 'normal',
     color: customColors.text.dark,
+    animation: `${enterFromBottom} ${entrance}`,
     [fromSm]: {
-      columnGap: '0.5rem',
-      padding: '1.1875rem 1.125rem 1.1875rem 1.25rem',
-      fontSize: '1rem',
+      padding: '1.125rem 1.0625rem 1.125rem 1.1875rem',
+      animation: `${enterFromEnd} ${entrance}`,
     },
-    '@media (forced-colors: active)': { border: '1px solid CanvasText' },
+    '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+    '@media (forced-colors: active)': { borderColor: 'CanvasText', boxShadow: 'none' },
   },
   tones: {
-    success: { backgroundColor: paletteColors.success.surface },
-    error: { backgroundColor: paletteColors.error.surface },
-  },
-  icon: {
-    gridColumn: 1,
-    gridRow: 1,
-    display: 'inline-flex',
-    fontSize: '1.25rem',
-    [fromSm]: { fontSize: '1.5rem' },
-  },
-  message: {
-    gridColumn: 2,
-    gridRow: 1,
-    minWidth: 0,
-    lineHeight: '1.25rem',
-    overflowWrap: 'anywhere',
-    [fromSm]: { lineHeight: '1.5rem' },
-  },
-  action: {
-    ...control,
-    margin: '-0.75rem 0',
-    minWidth: 0,
-    border: 0,
-    background: 'none',
-    cursor: 'pointer',
-    font: 'inherit',
-    textDecoration: 'underline',
-    gridColumn: 2,
-    gridRow: 2,
-    justifySelf: 'start',
-    [fromSm]: { margin: 0, minHeight: '1.5rem' },
-  },
-  close: {
-    ...control,
-    gridColumn: 3,
-    gridRow: 1,
-    fontSize: '1.25rem',
-    [fromSm]: { ...controlFromSm, fontSize: '1.5rem' },
+    success: {
+      backgroundColor: paletteColors.success.surface,
+      borderColor: successEdge,
+      boxShadow: `inset 4px 0 0 0 ${successEdge}, ${customColors.shell.popoverShadow}`,
+    },
+    error: {
+      backgroundColor: paletteColors.error.surface,
+      borderColor: errorEdge,
+      boxShadow: `inset 4px 0 0 0 ${errorEdge}, ${customColors.shell.popoverShadow}`,
+    },
   },
 } as const;

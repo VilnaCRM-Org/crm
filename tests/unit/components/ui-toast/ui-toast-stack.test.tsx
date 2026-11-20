@@ -205,15 +205,16 @@ describe('UIToastStack', () => {
 
     afterEach(() => jest.useRealTimers());
 
-    it('keeps every toast after a minute, since no timer exists', () => {
+    it('keeps every toast after ten minutes, since no timer exists', () => {
       const show = mountPage();
       show(set(success('Перше'), failure('Друге')));
 
       act(() => {
-        jest.advanceTimersByTime(60_000);
+        jest.advanceTimersByTime(600_000);
       });
 
       expect(closeButtons()).toHaveLength(2);
+      expect(jest.getTimerCount()).toBe(0);
     });
   });
 

@@ -1,9 +1,9 @@
 import type { i18n as I18nInstance } from 'i18next';
 
+import contentEn from '@/components/ui-notification-content/i18n/en.json';
+import contentUk from '@/components/ui-notification-content/i18n/uk.json';
 import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
 import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
-import toastEn from '@/components/ui-toast/i18n/en.json';
-import toastUk from '@/components/ui-toast/i18n/uk.json';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import type { LocaleCatalogPair } from '@/lib/locale-catalog/types/locale-catalog-pair';
 import settingsEn from '@/modules/user/features/settings/i18n/en.json';
@@ -36,9 +36,9 @@ const CATALOGS: ReadonlyArray<[string, LocaleCatalogPair, string, string, string
   ],
   ['settings', { en: settingsEn, uk: settingsUk }, 'settings.heading', 'Settings', 'Налаштування'],
   [
-    'toast',
-    { en: toastEn, uk: toastUk },
-    'ui_toast.close',
+    'notification content',
+    { en: contentEn, uk: contentUk },
+    'ui_notification.close',
     'Close notification',
     'Закрити сповіщення',
   ],

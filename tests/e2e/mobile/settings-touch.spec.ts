@@ -44,7 +44,7 @@ const NARROW_VIEWPORT = { width: 320, height: 640 };
 const REFLOW_VIEWPORT = { width: 320, height: 256 };
 const TOAST_EDGE_PX = 16;
 
-const closeLabel: string = t('ui_toast.close');
+const closeLabel: string = t('ui_notification.close');
 
 const clearButton = (page: Page): Locator => clearButtonOf(currentPasswordField(page));
 
