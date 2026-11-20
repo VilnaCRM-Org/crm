@@ -2,34 +2,49 @@ import { renderHook } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
+import type { NotificationDraft } from '@/lib/notifications/types/notification-draft';
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import useSaveSettle from '@/modules/user/features/settings/hooks/use-save-settle';
-import { buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
+import type { ProfileChange } from '@/modules/user/features/settings/types/user-profile';
+import { buildEmail, buildFullName, buildPassword, buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 type SaveSettleOptions = Parameters<typeof useSaveSettle>[0];
 
 interface Parts {
   readonly options: SaveSettleOptions;
-  readonly show: jest.Mock;
   readonly adopt: jest.Mock;
   readonly dispatch: jest.Mock;
   readonly button: HTMLButtonElement;
   readonly shared: HTMLButtonElement;
-  readonly target: HTMLElement;
 }
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>{children}</I18nextProvider>
 );
 
-const NAME_CHANGE = {
+const NAME_CHANGE: ProfileChange = {
   id: buildUserEntity().id,
   currentPassword: buildPassword(),
   fullName: buildFullName(),
 };
 
+const SAVE_ANCHOR = 'fullName-save';
+
+const raised = (): readonly NotificationDraft[] =>
+  useNotificationOutletStore
+    .getState()
+    .raised.items.map(({ kind, messageKey, action, anchor }) => ({
+      kind,
+      messageKey,
+      action,
+      anchor,
+    }));
+
+const raiseCount = (): number => useNotificationOutletStore.getState().revision;
+
 const partsOf = (): Parts => {
-  const show = jest.fn();
   const adopt = jest.fn();
   const dispatch = jest.fn();
   const button = document.createElement('button');
@@ -44,100 +59,131 @@ const partsOf = (): Parts => {
         isCurrent: (): boolean => true,
         revision: (): number => 0,
       },
-      toasts: { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() },
       saveRef: { current: shared },
       headingRef: { current: null },
     },
     targets: { buttonRef: { current: button }, focusRef: { current: target } },
+    anchor: SAVE_ANCHOR,
     dispatch,
   };
-  return { options, show, adopt, dispatch, button, shared, target };
+  return { options, adopt, dispatch, button, shared };
 };
 
 describe('useSaveSettle', () => {
-  it('adopts a saved user and shows its toast owned by the section target', () => {
-    const { options, show, adopt, dispatch, target } = partsOf();
+  beforeEach(() => resetClientStores());
+
+  it('adopts a saved user and raises its saved draft once', () => {
+    const { options, adopt, dispatch } = partsOf();
     const user = buildUserEntity();
     const { result } = renderHook(() => useSaveSettle(options), { wrapper });
 
     result.current({ kind: 'ok', user }, NAME_CHANGE);
 
     expect(adopt).toHaveBeenCalledWith(user);
-    expect(show).toHaveBeenCalledWith({
-      items: [{ tone: 'success', message: 'Зміни збережено', returnFocusRef: { current: target } }],
-    });
+    expect(raised()).toEqual([
+      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: SAVE_ANCHOR },
+    ]);
+    expect(raiseCount()).toBe(1);
     expect(dispatch).toHaveBeenCalledWith({ type: 'settled', saved: true });
   });
 
-  it('retries through the section button, not the shared save ref', () => {
-    const { options, show, button, shared, target } = partsOf();
+  it("anchors every draft at the section's save anchor it was given", () => {
+    const { options } = partsOf();
+    const { result } = renderHook(() => useSaveSettle({ ...options, anchor: 'password-save' }), {
+      wrapper,
+    });
+
+    result.current({ kind: 'ok', user: buildUserEntity() }, NAME_CHANGE);
+    result.current({ kind: 'failed', reason: 'transient' }, NAME_CHANGE);
+
+    const shown = useNotificationOutletStore.getState().shown.items;
+    expect(shown.map((item) => item.anchor)).toEqual(['password-save', 'password-save']);
+    expect(raiseCount()).toBe(2);
+  });
+
+  it('raises one set for a combined save, in name, e-mail and password order', () => {
+    const { options } = partsOf();
+    const { result } = renderHook(() => useSaveSettle(options), { wrapper });
+
+    result.current(
+      { kind: 'ok', user: buildUserEntity() },
+      { ...NAME_CHANGE, newPassword: buildPassword(), email: buildEmail() }
+    );
+
+    expect(raised()).toEqual([
+      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: SAVE_ANCHOR },
+      { kind: 'success', messageKey: 'settings.toasts.email_sent', anchor: SAVE_ANCHOR },
+      { kind: 'success', messageKey: 'settings.toasts.password_changed', anchor: SAVE_ANCHOR },
+    ]);
+    expect(raiseCount()).toBe(1);
+  });
+
+  it('raises the transient failure with a Try again action that clicks the section Save', () => {
+    const { options, button, shared } = partsOf();
     const click = jest.spyOn(button, 'click');
     const sharedClick = jest.spyOn(shared, 'click');
     const { result } = renderHook(() => useSaveSettle(options), { wrapper });
 
     result.current({ kind: 'failed', reason: 'transient' }, NAME_CHANGE);
-    const [drafts] = show.mock.calls[0] as [
-      { items: Array<{ returnFocusRef?: unknown; action?: { onActivate: () => void } }> },
-    ];
-    drafts.items[0]?.action?.onActivate();
+    const [draft] = raised();
 
-    expect(drafts.items[0]?.returnFocusRef).toEqual({ current: target });
+    expect(draft?.kind).toBe('error');
+    expect(draft?.messageKey).toBe('settings.toasts.save_failed_transient');
+    expect(draft?.action?.labelKey).toBe('auth.error.tryAgain');
+    expect(draft?.anchor).toBe(SAVE_ANCHOR);
+
+    draft?.action?.onActivate();
+
     expect(click).toHaveBeenCalledTimes(1);
     expect(sharedClick).not.toHaveBeenCalled();
   });
 
   it('lets the retry do nothing once the section button is gone', () => {
-    const { options, show, shared } = partsOf();
+    const { options, shared } = partsOf();
     const sharedClick = jest.spyOn(shared, 'click');
     const gone = { ...options, targets: { ...options.targets, buttonRef: { current: null } } };
     const { result } = renderHook(() => useSaveSettle(gone), { wrapper });
 
     result.current({ kind: 'failed', reason: 'transient' }, NAME_CHANGE);
-    const [drafts] = show.mock.calls[0] as [
-      { items: Array<{ action?: { onActivate: () => void } }> },
-    ];
+    const [draft] = raised();
 
-    expect(() => drafts.items[0]?.action?.onActivate()).not.toThrow();
+    expect(() => draft?.action?.onActivate()).not.toThrow();
     expect(sharedClick).not.toHaveBeenCalled();
   });
 
-  it('shows a rejected failure with no retry action, still owned by the section', () => {
-    const { options, show, dispatch, target } = partsOf();
+  it.each([
+    ['rejected', 'settings.toasts.save_failed'],
+    ['rate_limited', 'settings.toasts.rate_limited'],
+  ] as const)('raises a %s failure with no retry action', (reason, messageKey) => {
+    const { options, dispatch } = partsOf();
     const { result } = renderHook(() => useSaveSettle(options), { wrapper });
 
-    result.current({ kind: 'failed', reason: 'rejected' }, NAME_CHANGE);
+    result.current({ kind: 'failed', reason }, NAME_CHANGE);
 
-    expect(show).toHaveBeenCalledWith({
-      items: [
-        {
-          tone: 'error',
-          message: 'Не вдалося зберегти зміни. Спробуйте пізніше.',
-          action: undefined,
-          returnFocusRef: { current: target },
-        },
-      ],
-    });
+    expect(raised()).toEqual([{ kind: 'error', messageKey, anchor: SAVE_ANCHOR }]);
+    expect(raised()[0]?.action).toBeUndefined();
+    expect(raiseCount()).toBe(1);
     expect(dispatch).toHaveBeenCalledWith({ type: 'settled', saved: false });
   });
 
-  it('dispatches field errors without a toast', () => {
-    const { options, show, dispatch } = partsOf();
+  it('dispatches field errors without raising', () => {
+    const { options, dispatch } = partsOf();
     const errors = { items: [{ field: 'fullName', reason: 'name_rejected' }] } as const;
     const { result } = renderHook(() => useSaveSettle(options), { wrapper });
 
     result.current({ kind: 'invalid', errors }, NAME_CHANGE);
 
     expect(dispatch).toHaveBeenCalledWith({ type: 'invalid', errors });
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
   });
 
-  it('shows and dispatches nothing when the session ended', () => {
-    const { options, show, dispatch } = partsOf();
+  it('raises and dispatches nothing when the session ended', () => {
+    const { options, dispatch } = partsOf();
     const { result } = renderHook(() => useSaveSettle(options), { wrapper });
 
     result.current({ kind: 'failed', reason: 'session_ended' }, NAME_CHANGE);
 
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(dispatch).not.toHaveBeenCalled();
   });
 });

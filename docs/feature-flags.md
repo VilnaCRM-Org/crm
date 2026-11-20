@@ -128,6 +128,21 @@ entry points, the sidebar and drawer Settings group and the user menu's profile 
 The page's two-factor section (issue #331) is not flagged either: `UserProfile` always renders
 it, and the sign-in challenge at `/sign-in/two-factor` is registered in every environment.
 
+### `notificationStyle` (a choice setting, temporary)
+
+`notificationStyle` (issue #391) is not a flag, because it holds one of three values rather than
+on or off: `toast`, `inline` or `bell`. It picks where the outcome of a save is shown, so the
+three variants can be compared on one image. The default is `toast`, which is today's behaviour.
+Set it with `APP_CONFIG_NOTIFICATION_STYLE`; an empty value keeps the default and any other value
+fails container start with `APP_CONFIG_NOTIFICATION_STYLE must be one of toast, inline, bell, got
+"<value>".` The browser applies the same check at boot, before the app renders.
+
+The setting is temporary: the removal follow-up keeps the winning style, deletes the other two,
+and deletes the setting with its schema entry, renderer entry, `.env.example` line and compose
+pass-through. To review a style on the running production-parity stack, put the value on the make
+command line, `make start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=bell`; see
+`src/config/runtime/README.md`.
+
 ## Rules
 
 - **Default off.** A new flag ships disabled. The only reason to declare a default of `true` is a

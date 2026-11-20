@@ -3,7 +3,8 @@
 The user settings page (issue #330): `/settings`, a protected route registered in every
 environment, with no feature flag. A signed-in user reads their profile, changes the name, the
 e-mail and the password in three forms, one thing saved at a time, resends the confirmation link
-and sees every outcome as a toast or a field error. The decisions are recorded in
+and sees every outcome as a notification (a toast, an inline status or the bell's card, by the
+runtime `notificationStyle`) or a field error. The decisions are recorded in
 `## User Settings decisions` of the
 [user module README](../../README.md).
 
@@ -11,7 +12,7 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
 
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
-  toast queue.
+  and the `UINotificationOutlet` its outcomes show in.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
   (`ProfileSectionForm`, `SectionFields` with its `EmailField` and `EmailStatus`, `ClearButton`,
   `EmailStatusRow`), `change-password`,
@@ -102,9 +103,16 @@ Built here:
   instead.
 - The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
   `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
-- `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
-  region for success texts and an assertive one for error texts, both always mounted, at most three
-  on screen. The two-factor card reports inside its own card.
+- The outcome surface: every save and resend outcome is raised through the notifications port
+  (`useNotifications` in `src/hooks/`), as `settings.toasts.*` message keys, and the page renders
+  `UINotificationOutlet`, which announces it (a polite region for success texts and an assertive
+  one for error texts, both always mounted) and, under the default `toast` style, shows it as
+  `UIToastStack`: no timer, at most three on screen. Each section's save stamps its drafts with
+  its own anchor, `fullName-save`, `email-save` or `password-save` (`${section}-save` in
+  `useProfileSave`), and withdraws it when a save starts or Clear runs; a resend withdraws and
+  raises the `email` anchor. Under `inline` each anchor has a `UINotificationSlot`: the three in
+  `SectionFooter` (`profile-section-form.tsx`), after Clear, and the `email` one in `EmailField`
+  (`section-fields.tsx`), after the status row. The two-factor card reports inside its own card.
 - The `SettingsGrid`, whose second slot holds the two-factor card.
 - The two-factor card itself (#331): `TwoFactorSettings` in that slot, the `TwoFactorSettingsEntity`,
   the `TwoFactorDto` and `TwoFactorCodeNormalizer` in the user module, and `twoFactorStatus` /
@@ -121,7 +129,7 @@ imports `SessionLinkFactory`. The card reuses `UserServiceErrorTransformer` thro
 ## Page tree
 
 ```text
-UserProfile [component]<route>          title, toast queue, useProfileLoad
+UserProfile [component]<route>          title, useProfileLoad
 └ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column holds the 2FA card
@@ -151,7 +159,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │     ├ DisableView                   disable: code field, Cancel
   │     ├ RegenerateView                regenerate: confirm, Cancel
   │     └ ReauthView                    reauth: message, "sign in again" button
-  └ UIToastStack                        returns focus to the Save, or the input if its Save hid
+  └ UINotificationOutlet                announces outcomes; under `toast` renders UIToastStack
 ```
 
 ## Layer stack
@@ -221,11 +229,14 @@ because the connection dropped during the Save, focus that fell to the page body
 the same fallback closing a toast uses, and a field the user is still in keeps focus.
 `useCollapseFocus` does the same for a Clear that removes itself.
 
-Every Save toast belongs to the section that sent it (`useSaveSettle`). Its `returnFocusRef` is that
-section's own settled target, so closing the last toast returns focus to that form's Save, or to
-its text input when the Save hid, and to the `h1` when that control cannot take focus, never to a
-section that saved later. The transient-failure "Спробувати ще раз" clicks the Save of the section
-that failed, so a name failure followed by an e-mail save retries the name alone.
+Every Save outcome belongs to the section that sent it (`useSaveSettle` stamps the section's
+anchor). The drafts carry no return target of their own: the page publishes one `saveRef` to the
+outlet as `returnFocusRef`, and `useSettledFocus` points it at the Save of the section that settled
+last, or at its text input when a name or e-mail save hid the Save. Closing the last toast returns
+focus there, and to the `h1` when that control cannot take focus, so after a failed name save and a
+successful e-mail save it lands on the e-mail field. The transient-failure "Спробувати ще раз"
+clicks the Save of the section that failed, so a name failure followed by an e-mail save retries
+the name alone.
 
 Each section sends only its own field and its own password (`ProfileChangeDetector.detect`), and a
 form remounts only on its own successful save (`key=saved`), so a draft in another form survives.

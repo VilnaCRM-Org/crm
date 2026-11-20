@@ -20,6 +20,7 @@ import { answerProfileOperation } from '@tests/integration/mocks/profile-operati
 import server, { userServiceGraphql } from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const RESENT = 'Посилання для підтвердження надіслано повторно';
 const FAILED = 'Не вдалося надіслати посилання. Спробуйте ще раз.';
@@ -75,6 +76,7 @@ describe('settings page e-mail resend (page)', () => {
   });
 
   beforeEach(() => {
+    resetClientStores();
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
     useConnectivityStore.setState({ online: true });
   });

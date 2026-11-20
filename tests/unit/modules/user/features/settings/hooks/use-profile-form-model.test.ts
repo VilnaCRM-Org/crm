@@ -28,13 +28,6 @@ describe('useProfileFormModel', () => {
       isCurrent: (): boolean => true,
       revision: (): number => 0,
     },
-    toasts: {
-      toasts: { items: [] },
-      announcement: '',
-      alert: '',
-      show: jest.fn(),
-      dismiss: jest.fn(),
-    },
     saveRef: { current: null },
     headingRef: { current: null },
   };

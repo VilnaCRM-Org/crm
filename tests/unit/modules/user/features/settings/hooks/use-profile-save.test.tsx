@@ -3,6 +3,10 @@ import * as React from 'react';
 import { StrictMode, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
+import useNotifications from '@/hooks/use-notifications';
+import type { NotificationDraft } from '@/lib/notifications/types/notification-draft';
+import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import useProfileSave from '@/modules/user/features/settings/hooks/use-profile-save';
 import type { ProfileSave } from '@/modules/user/features/settings/types/hooks/use-profile-save';
 import type {
@@ -20,6 +24,7 @@ import {
 } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import loadIsolated from '@tests/unit/utils/isolated-module';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const NEW_FULL_NAME = buildFullName();
 const NEW_EMAIL = buildEmail();
@@ -51,13 +56,44 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>{children}</I18nextProvider>
 );
 
+const draftsOf = (state: NotificationOutletState): NotificationDraft[] =>
+  state.raised.items.map(({ kind, messageKey, action, anchor }) => ({
+    kind,
+    messageKey,
+    action,
+    anchor,
+  }));
+
+const raised = (): NotificationDraft[] => draftsOf(useNotificationOutletStore.getState());
+
+const raiseCount = (): number => useNotificationOutletStore.getState().revision;
+
+const inlineAnchors = (): string[] =>
+  useNotificationOutletStore.getState().inline.items.map((batch) => batch.anchor);
+
+const raiseOnEveryAnchor = (): void => {
+  const port = renderHook(() => useNotifications(), { wrapper }).result.current;
+  act(() =>
+    port.raise({
+      items: [
+        { kind: 'success', messageKey: 'settings.toasts.saved', anchor: 'fullName-save' },
+        {
+          kind: 'success',
+          messageKey: 'settings.toasts.password_changed',
+          anchor: 'password-save',
+        },
+        { kind: 'success', messageKey: 'settings.toasts.resent', anchor: 'email' },
+      ],
+    })
+  );
+};
+
 type ProfileFormProps = Parameters<typeof useProfileSave>[0];
 type ProfileSection = Parameters<typeof useProfileSave>[1];
 
 interface Harness {
   readonly props: ProfileFormProps;
   readonly adopt: jest.Mock;
-  readonly show: jest.Mock;
   readonly button: HTMLButtonElement;
   readonly input: HTMLInputElement;
   readonly click: jest.SpyInstance;
@@ -66,7 +102,6 @@ interface Harness {
 
 const harness = (): Harness => {
   const adopt = jest.fn();
-  const show = jest.fn();
   const form = document.createElement('form');
   const input = document.createElement('input');
   input.id = 'fullName';
@@ -82,14 +117,12 @@ const harness = (): Harness => {
       isCurrent: (): boolean => true,
       revision: (): number => 0,
     },
-    toasts: { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() },
     saveRef: { current: null },
     headingRef: { current: null },
   };
   return {
     props,
     adopt,
-    show,
     button,
     input,
     click: jest.spyOn(button, 'click'),
@@ -121,6 +154,7 @@ const failedOutcome = (reason: ProfileFailureReason): ProfileUpdateOutcome => ({
 
 describe('useProfileSave', () => {
   beforeEach(() => {
+    resetClientStores();
     mockUpdate.mockReset();
     mockSubmitRuns.length = 0;
   });
@@ -151,7 +185,6 @@ describe('useProfileSave', () => {
 
   it('sends nothing and shows the no-change state when nothing changed', async () => {
     const parts = harness();
-    const { show } = parts;
     const { result } = mountSave(parts);
 
     await act(async () => {
@@ -159,7 +192,7 @@ describe('useProfileSave', () => {
     });
 
     expect(mockUpdate).not.toHaveBeenCalled();
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
       noChanges: true,
@@ -174,7 +207,6 @@ describe('useProfileSave', () => {
 
   it('clears the no-change state when a later Save is blocked by client validation', async () => {
     const parts = harness();
-    const { show } = parts;
     const { result } = mountSave(parts);
     await act(async () => {
       result.current.save(unchangedValues());
@@ -183,7 +215,7 @@ describe('useProfileSave', () => {
     act(() => result.current.block());
 
     expect(mockUpdate).not.toHaveBeenCalled();
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
       noChanges: false,
@@ -293,14 +325,14 @@ describe('useProfileSave', () => {
   });
 
   it.each([
-    ['fullName', 'Зміни збережено'],
-    ['email', 'Ми надіслали посилання для підтвердження на нову адресу'],
-    ['password', 'Ви успішно змінили пароль'],
+    ['fullName', 'settings.toasts.saved', 'fullName-save'],
+    ['email', 'settings.toasts.email_sent', 'email-save'],
+    ['password', 'settings.toasts.password_changed', 'password-save'],
   ] as const)(
-    'adopts the entity, shows the %s draft alone and counts the saved settle',
-    async (section, message) => {
+    "adopts the entity, raises the %s draft alone at the section's save anchor",
+    async (section, messageKey, anchor) => {
       const parts = harness();
-      const { adopt, show } = parts;
+      const { adopt } = parts;
       const entity = buildUserEntity();
       mockUpdate.mockResolvedValue({ kind: 'ok', user: entity });
       const { result } = mountSave(parts, section);
@@ -316,10 +348,9 @@ describe('useProfileSave', () => {
       });
 
       expect(adopt).toHaveBeenCalledWith(entity);
-      expect(show).toHaveBeenCalledTimes(1);
-      expect(show).toHaveBeenCalledWith({
-        items: [{ tone: 'success', message, returnFocusRef: expect.anything() }],
-      });
+      expect(raiseCount()).toBe(1);
+      expect(raised()).toEqual([{ kind: 'success', messageKey, anchor }]);
+      expect(result.current.anchor).toBe(anchor);
       expect(result.current.state.settled).toBe(1);
       expect(result.current.state.saved).toBe(1);
       expect(result.current.state.lastSettleSaved).toBe(true);
@@ -353,6 +384,85 @@ describe('useProfileSave', () => {
       });
     }
   );
+
+  it('raises one set of name, e-mail and password drafts for a combined save', async () => {
+    const parts = harness();
+    const detect = jest.spyOn(ProfileChangeDetector.prototype, 'detect').mockReturnValue({
+      id: user.id,
+      currentPassword: buildPassword(),
+      fullName: NEW_FULL_NAME,
+      email: NEW_EMAIL,
+      newPassword: NEW_PASSWORD,
+    });
+    mockUpdate.mockResolvedValue(okOutcome());
+    const { result } = mountSave(parts);
+
+    await act(async () => {
+      result.current.save(nameChange());
+    });
+
+    expect(raiseCount()).toBe(1);
+    expect(raised()).toEqual([
+      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: 'fullName-save' },
+      { kind: 'success', messageKey: 'settings.toasts.email_sent', anchor: 'fullName-save' },
+      { kind: 'success', messageKey: 'settings.toasts.password_changed', anchor: 'fullName-save' },
+    ]);
+    detect.mockRestore();
+  });
+
+  it.each([
+    ['fullName', ['password-save', 'email']],
+    ['password', ['fullName-save', 'email']],
+  ] as const)(
+    "withdraws only the %s section's save anchor when a save goes pending",
+    (section, kept) => {
+      const parts = harness();
+      raiseOnEveryAnchor();
+      mockUpdate.mockReturnValue(new Promise(() => undefined));
+      const { result } = mountSave(parts, section);
+
+      expect(inlineAnchors()).toEqual(['fullName-save', 'password-save', 'email']);
+
+      act(() => {
+        result.current.save(
+          buildProfileFormValues({
+            fullName: NEW_FULL_NAME,
+            email: NEW_EMAIL,
+            newPassword: NEW_PASSWORD,
+          })
+        );
+      });
+
+      expect(inlineAnchors()).toEqual(kept);
+      expect(result.current.state.attempts).toBe(1);
+    }
+  );
+
+  it('withdraws nothing when nothing changed', async () => {
+    const parts = harness();
+    raiseOnEveryAnchor();
+    const { result } = mountSave(parts);
+
+    await act(async () => {
+      result.current.save(unchangedValues());
+    });
+
+    expect(inlineAnchors()).toEqual(['fullName-save', 'password-save', 'email']);
+  });
+
+  it.each([
+    ['fullName', ['password-save', 'email']],
+    ['password', ['fullName-save', 'email']],
+  ] as const)("withdraws only the %s section's save anchor on clear", (section, kept) => {
+    const parts = harness();
+    raiseOnEveryAnchor();
+    const { result } = mountSave(parts, section);
+
+    act(() => result.current.clear());
+
+    expect(inlineAnchors()).toEqual(kept);
+    expect(raiseCount()).toBe(1);
+  });
 
   it('hands the save ref to the section button as soon as a request starts', () => {
     const parts = harness();
@@ -443,7 +553,7 @@ describe('useProfileSave', () => {
 
   it('publishes the field errors as the outcome orders them, without a toast', async () => {
     const parts = harness();
-    const { show, focus } = parts;
+    const { focus } = parts;
     mockUpdate.mockResolvedValue({
       kind: 'invalid',
       errors: {
@@ -469,13 +579,13 @@ describe('useProfileSave', () => {
     ]);
     expect(result.current.state.settled).toBe(0);
     expect(result.current.state.noChanges).toBe(false);
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(focus).not.toHaveBeenCalled();
   });
 
-  it('shows the transient failure with a retry that clicks the save button', async () => {
+  it('raises the transient failure with a retry that clicks the save button', async () => {
     const parts = harness();
-    const { show, adopt, click } = parts;
+    const { adopt, click } = parts;
     mockUpdate.mockResolvedValue(failedOutcome('transient'));
     const { result } = mountSave(parts);
 
@@ -483,15 +593,12 @@ describe('useProfileSave', () => {
       result.current.save(nameChange());
     });
 
-    const [drafts] = show.mock.calls[0] as [
-      { items: Array<{ message: string; action?: { label: string; onActivate: () => void } }> },
-    ];
-    expect(drafts.items).toHaveLength(1);
-    expect(drafts.items[0]?.message).toBe(
-      'Не вдалося зберегти зміни. Перевірте з’єднання та спробуйте ще раз.'
-    );
-    expect(drafts.items[0]?.action?.label).toBe('Спробувати ще раз');
-    drafts.items[0]?.action?.onActivate();
+    const drafts = raised();
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0]?.messageKey).toBe('settings.toasts.save_failed_transient');
+    expect(drafts[0]?.action?.labelKey).toBe('auth.error.tryAgain');
+    expect(drafts[0]?.anchor).toBe('fullName-save');
+    drafts[0]?.action?.onActivate();
     expect(click).toHaveBeenCalledTimes(1);
     expect(adopt).not.toHaveBeenCalled();
     expect(result.current.state.settled).toBe(1);
@@ -499,7 +606,7 @@ describe('useProfileSave', () => {
 
   it('retries its own section after another section took the save ref', async () => {
     const parts = harness();
-    const { show, click } = parts;
+    const { click } = parts;
     const other = document.createElement('button');
     const otherClick = jest.spyOn(other, 'click');
     mockUpdate.mockResolvedValue(failedOutcome('transient'));
@@ -509,40 +616,14 @@ describe('useProfileSave', () => {
     });
     parts.props.saveRef.current = other;
 
-    const [drafts] = show.mock.calls[0] as [
-      { items: Array<{ action?: { onActivate: () => void } }> },
-    ];
-    drafts.items[0]?.action?.onActivate();
+    raised()[0]?.action?.onActivate();
 
     expect(click).toHaveBeenCalledTimes(1);
     expect(otherClick).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['fails', failedOutcome('transient'), 'button'],
-    ['succeeds', okOutcome(), 'input'],
-  ] as const)(
-    'hands the toast its own section target when a name save %s',
-    async (_name, outcome, owner) => {
-      const parts = harness();
-      mockUpdate.mockResolvedValue(outcome);
-      const { result } = mountSave(parts);
-      await act(async () => {
-        result.current.save(nameChange());
-      });
-      parts.props.saveRef.current = document.createElement('button');
-
-      const [drafts] = parts.show.mock.calls[0] as [
-        { items: Array<{ returnFocusRef?: { current: HTMLElement | null } }> },
-      ];
-
-      expect(drafts.items).toHaveLength(1);
-      expect(drafts.items[0]?.returnFocusRef?.current).toBe(parts[owner]);
-    }
-  );
-
   it('lets the transient retry do nothing once the save button is gone', async () => {
-    const { props, show } = harness();
+    const { props } = harness();
     mockUpdate.mockResolvedValue(failedOutcome('transient'));
     const { result } = renderHook(() => useProfileSave(props, 'fullName'), { wrapper });
 
@@ -550,21 +631,17 @@ describe('useProfileSave', () => {
       result.current.save(nameChange());
     });
 
-    const [drafts] = show.mock.calls[0] as [
-      { items: Array<{ action?: { onActivate: () => void } }> },
-    ];
     expect(props.saveRef.current).toBeNull();
-    expect(() => drafts.items[0]?.action?.onActivate()).not.toThrow();
+    expect(() => raised()[0]?.action?.onActivate()).not.toThrow();
     expect(mockUpdate).toHaveBeenCalledTimes(1);
     expect(result.current.state.settled).toBe(1);
   });
 
   it.each([
-    ['rejected', 'Не вдалося зберегти зміни. Спробуйте пізніше.'],
-    ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],
-  ] as const)('shows the %s failure without an action', async (reason, message) => {
+    ['rejected', 'settings.toasts.save_failed'],
+    ['rate_limited', 'settings.toasts.rate_limited'],
+  ] as const)('raises the %s failure once without an action', async (reason, messageKey) => {
     const parts = harness();
-    const { show } = parts;
     mockUpdate.mockResolvedValue(failedOutcome(reason));
     const { result } = mountSave(parts);
 
@@ -572,15 +649,15 @@ describe('useProfileSave', () => {
       result.current.save(nameChange());
     });
 
-    expect(show).toHaveBeenCalledWith({
-      items: [{ tone: 'error', message, action: undefined, returnFocusRef: expect.anything() }],
-    });
+    expect(raised()).toEqual([{ kind: 'error', messageKey, anchor: 'fullName-save' }]);
+    expect(raised()[0]?.action).toBeUndefined();
+    expect(raiseCount()).toBe(1);
     expect(result.current.state.settled).toBe(1);
   });
 
-  it('does nothing when the session ended', async () => {
+  it('raises nothing when the session ended', async () => {
     const parts = harness();
-    const { show, adopt } = parts;
+    const { adopt } = parts;
     mockUpdate.mockResolvedValue(failedOutcome('session_ended'));
     const { result } = mountSave(parts);
 
@@ -588,7 +665,7 @@ describe('useProfileSave', () => {
       result.current.save(nameChange());
     });
 
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(adopt).not.toHaveBeenCalled();
     expect(result.current.state).toEqual({
       fieldErrors: { items: [] },
@@ -604,7 +681,7 @@ describe('useProfileSave', () => {
 
   it('publishes nothing when the component unmounts while the request is in flight', async () => {
     const parts = harness();
-    const { show, adopt } = parts;
+    const { adopt } = parts;
     let settle: (outcome: ProfileUpdateOutcome) => void = () => undefined;
     mockUpdate.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     const { result, unmount } = mountSave(parts);
@@ -617,7 +694,7 @@ describe('useProfileSave', () => {
     await act(async () => settle(okOutcome()));
 
     expect(signal.aborted).toBe(true);
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(adopt).not.toHaveBeenCalled();
   });
 
@@ -688,20 +765,28 @@ describe('useProfileSave', () => {
     expect(result.current.state.settled).toBe(1);
   });
   describe('module-level values evaluated inside the test', () => {
-    const loadKeyed = (): Promise<typeof useProfileSave> =>
+    interface Keyed {
+      readonly hook: typeof useProfileSave;
+      readonly store: typeof useNotificationOutletStore;
+    }
+
+    const loadKeyed = (): Promise<Keyed> =>
       loadIsolated(async () => {
         jest.doMock('react', () => React);
         jest.doMock('react-i18next', () => ({
           useTranslation: (): { t: (key: string) => string } => ({ t: (key) => key }),
         }));
-        return (await import('@/modules/user/features/settings/hooks/use-profile-save')).default;
+        return {
+          hook: (await import('@/modules/user/features/settings/hooks/use-profile-save')).default,
+          store: (await import('@/lib/notifications/use-notification-outlet-store')).default,
+        };
       });
 
     it('starts with no-change flags off', async () => {
       const fresh = await loadKeyed();
       const { props } = harness();
 
-      const { result } = renderHook(() => fresh(props, 'fullName'));
+      const { result } = renderHook(() => fresh.hook(props, 'fullName'));
 
       expect(result.current.state.noChanges).toBe(false);
       expect(result.current.state.noChangesMarked).toBe(false);
@@ -711,7 +796,7 @@ describe('useProfileSave', () => {
       const fresh = await loadKeyed();
       const { props } = harness();
 
-      const { result } = renderHook(() => fresh(props, 'fullName'));
+      const { result } = renderHook(() => fresh.hook(props, 'fullName'));
 
       expect(result.current.state).toEqual({
         fieldErrors: { items: [] },
@@ -727,14 +812,14 @@ describe('useProfileSave', () => {
     });
 
     it.each([
-      ['fullName', 'settings.toasts.saved'],
-      ['email', 'settings.toasts.email_sent'],
-      ['password', 'settings.toasts.password_changed'],
-    ] as const)('shows the %s success toast with its exact key', async (section, key) => {
+      ['fullName', 'settings.toasts.saved', 'fullName-save'],
+      ['email', 'settings.toasts.email_sent', 'email-save'],
+      ['password', 'settings.toasts.password_changed', 'password-save'],
+    ] as const)('raises the %s success draft with its exact key', async (section, key, anchor) => {
       const fresh = await loadKeyed();
-      const { props, show } = harness();
+      const { props } = harness();
       mockUpdate.mockResolvedValue(okOutcome());
-      const { result } = renderHook(() => fresh(props, section));
+      const { result } = renderHook(() => fresh.hook(props, section));
 
       await act(async () => {
         result.current.save(
@@ -746,30 +831,30 @@ describe('useProfileSave', () => {
         );
       });
 
-      expect(show).toHaveBeenCalledTimes(1);
-      expect(show.mock.calls[0]?.[0]).toEqual({
-        items: [{ tone: 'success', message: key, returnFocusRef: expect.anything() }],
-      });
+      expect(fresh.store.getState().revision).toBe(1);
+      expect(draftsOf(fresh.store.getState())).toEqual([
+        { kind: 'success', messageKey: key, anchor },
+      ]);
     });
 
     it.each([
       ['transient', 'settings.toasts.save_failed_transient'],
       ['rejected', 'settings.toasts.save_failed'],
       ['rate_limited', 'settings.toasts.rate_limited'],
-    ] as const)('shows the exact %s failure key', async (reason, key) => {
+    ] as const)('raises the exact %s failure key', async (reason, key) => {
       const fresh = await loadKeyed();
-      const { props, show } = harness();
+      const { props } = harness();
       mockUpdate.mockResolvedValue(failedOutcome(reason));
-      const { result } = renderHook(() => fresh(props, 'fullName'));
+      const { result } = renderHook(() => fresh.hook(props, 'fullName'));
 
       await act(async () => {
         result.current.save(nameChange());
       });
 
-      expect(show).toHaveBeenCalledTimes(1);
-      const drafts = show.mock.calls[0]?.[0] as { items: { tone: string; message: string }[] };
-      expect(drafts.items).toHaveLength(1);
-      expect(drafts.items[0]).toMatchObject({ tone: 'error', message: key });
+      const drafts = draftsOf(fresh.store.getState());
+      expect(fresh.store.getState().revision).toBe(1);
+      expect(drafts).toHaveLength(1);
+      expect(drafts[0]).toMatchObject({ kind: 'error', messageKey: key, anchor: 'fullName-save' });
     });
   });
 });

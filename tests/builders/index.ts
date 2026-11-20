@@ -6,3 +6,5 @@ export * from './auth';
 export * from './graphql';
 export * from './profile';
 export * from './two-factor';
+export * from './notification-draft';
+export * from './notification-record';

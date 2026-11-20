@@ -4,18 +4,19 @@ import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
-import type { ToastItem } from '@/components/types/ui-toast';
 import UIToast from '@/components/ui-toast/ui-toast';
 import appI18n from '@/i18n';
+import type { NotificationView } from '@/lib/notifications/types/notification-view';
 import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import findSvg from '@tests/unit/utils/find-svg';
 
 const ukWrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>{children}</I18nextProvider>
 );
 
-const buildToast = (overrides: Partial<ToastItem> = {}): ToastItem => ({
-  id: 7,
-  tone: 'success',
+const buildToast = (overrides: Partial<NotificationView> = {}): NotificationView => ({
+  id: '7',
+  kind: 'success',
   message: 'Зміни збережено',
   ...overrides,
 });
@@ -24,7 +25,7 @@ const toastRoot = (message: string): HTMLElement => {
   const candidates = screen
     .getAllByRole('generic')
     .filter((node) => node.tagName === 'DIV' && node.textContent?.includes(message));
-  return candidates[candidates.length - 1] as HTMLElement;
+  return candidates[candidates.length - 2] as HTMLElement;
 };
 
 const closeButton = (): HTMLElement => screen.getByRole('button', { name: 'Закрити сповіщення' });
@@ -43,7 +44,7 @@ describe('UIToast', () => {
   it('shows an error toast without a role, on the error surface in the dark text', () => {
     render(
       <UIToast
-        toast={buildToast({ tone: 'error', message: 'Не вдалося' })}
+        toast={buildToast({ kind: 'error', message: 'Не вдалося' })}
         onDismiss={jest.fn()}
       />,
       {
@@ -58,11 +59,26 @@ describe('UIToast', () => {
     expect(toast).toHaveStyle({ backgroundColor: '#FDECEC', color: '#1A1C1E' });
   });
 
+  it.each([
+    ['success', 'Зміни збережено', 'rgb(46, 125, 50)'],
+    ['error', 'Не вдалося', 'rgb(220, 57, 57)'],
+  ] as const)('frames the %s toast with a 1 px solid edge in its tone', (tone, message, edge) => {
+    render(<UIToast toast={buildToast({ kind: tone, message })} onDismiss={jest.fn()} />, {
+      wrapper: ukWrapper,
+    });
+
+    expect(toastRoot(message)).toHaveStyle({
+      borderStyle: 'solid',
+      borderWidth: '1px',
+      borderColor: edge,
+    });
+  });
+
   it('describes each close button by the message of its own toast', () => {
     render(
       <>
-        <UIToast toast={buildToast({ id: 1, message: 'Перше' })} onDismiss={jest.fn()} />
-        <UIToast toast={buildToast({ id: 2, message: 'Друге' })} onDismiss={jest.fn()} />
+        <UIToast toast={buildToast({ id: '1', message: 'Перше' })} onDismiss={jest.fn()} />
+        <UIToast toast={buildToast({ id: '2', message: 'Друге' })} onDismiss={jest.fn()} />
       </>,
       { wrapper: ukWrapper }
     );
@@ -78,11 +94,13 @@ describe('UIToast', () => {
     ['success', '#2E7D32', 'M7.5 12L10.5 15L16.5 9'],
     ['error', '#DC3939', 'M12 8V12M12 16H12.01'],
   ] as const)('draws the %s icon in %s, hidden from assistive technology', (tone, color, path) => {
-    render(<UIToast toast={buildToast({ tone })} onDismiss={jest.fn()} />, { wrapper: ukWrapper });
+    render(<UIToast toast={buildToast({ kind: tone })} onDismiss={jest.fn()} />, {
+      wrapper: ukWrapper,
+    });
 
     const holder = within(toastRoot('Зміни збережено')).getAllByRole('generic')[0] as HTMLElement;
 
-    expect(holder).toHaveStyle({ color });
+    expect(findSvg(holder)).toHaveStyle({ color });
     expect(holder.innerHTML).toContain('aria-hidden="true"');
     expect(holder.innerHTML).toContain(`d="${path}`);
   });
@@ -112,28 +130,28 @@ describe('UIToast', () => {
 
   it('dismisses the toast by its id when the close button is clicked', async () => {
     const onDismiss = jest.fn();
-    render(<UIToast toast={buildToast({ id: 42 })} onDismiss={onDismiss} />, {
+    render(<UIToast toast={buildToast({ id: '42' })} onDismiss={onDismiss} />, {
       wrapper: ukWrapper,
     });
 
     await userEvent.click(closeButton());
 
     expect(onDismiss).toHaveBeenCalledTimes(1);
-    expect(onDismiss).toHaveBeenCalledWith(42);
+    expect(onDismiss).toHaveBeenCalledWith('42');
   });
 
   it('dismisses by the current id through the current callback after a re-render', async () => {
     const first = jest.fn();
     const second = jest.fn();
-    const { rerender } = render(<UIToast toast={buildToast({ id: 1 })} onDismiss={first} />, {
+    const { rerender } = render(<UIToast toast={buildToast({ id: '1' })} onDismiss={first} />, {
       wrapper: ukWrapper,
     });
 
-    rerender(<UIToast toast={buildToast({ id: 2 })} onDismiss={second} />);
+    rerender(<UIToast toast={buildToast({ id: '2' })} onDismiss={second} />);
     await userEvent.click(closeButton());
 
     expect(first).not.toHaveBeenCalled();
-    expect(second).toHaveBeenCalledWith(2);
+    expect(second).toHaveBeenCalledWith('2');
   });
 
   it('renders no action button when the draft has no action', () => {
@@ -148,7 +166,7 @@ describe('UIToast', () => {
       const onActivate = jest.fn();
       render(
         <UIToast
-          toast={buildToast({ id: 3, action: { label: 'Повторити', onActivate } })}
+          toast={buildToast({ id: '3', action: { label: 'Повторити', onActivate } })}
           onDismiss={onDismiss}
         />,
         { wrapper: ukWrapper }
@@ -171,8 +189,11 @@ describe('UIToast', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Повторити' }));
 
       expect(onDismiss).toHaveBeenCalledTimes(1);
-      expect(onDismiss).toHaveBeenCalledWith(3);
+      expect(onDismiss).toHaveBeenCalledWith('3');
       expect(onActivate).toHaveBeenCalledTimes(1);
+      expect(onDismiss.mock.invocationCallOrder[0]).toBeLessThan(
+        onActivate.mock.invocationCallOrder[0] ?? 0
+      );
     });
 
     it('runs the current action and dismissal after a re-render', async () => {
@@ -180,19 +201,19 @@ describe('UIToast', () => {
       const staleActivate = jest.fn();
       const onDismiss = jest.fn();
       const onActivate = jest.fn();
-      const toastWith = (id: number, activate: jest.Mock): ToastItem =>
+      const toastWith = (id: string, activate: jest.Mock): NotificationView =>
         buildToast({ id, action: { label: 'Повторити', onActivate: activate } });
       const { rerender } = render(
-        <UIToast toast={toastWith(3, staleActivate)} onDismiss={staleDismiss} />,
+        <UIToast toast={toastWith('3', staleActivate)} onDismiss={staleDismiss} />,
         { wrapper: ukWrapper }
       );
 
-      rerender(<UIToast toast={toastWith(4, onActivate)} onDismiss={onDismiss} />);
+      rerender(<UIToast toast={toastWith('4', onActivate)} onDismiss={onDismiss} />);
       await userEvent.click(screen.getByRole('button', { name: 'Повторити' }));
 
       expect(staleDismiss).not.toHaveBeenCalled();
       expect(staleActivate).not.toHaveBeenCalled();
-      expect(onDismiss).toHaveBeenCalledWith(4);
+      expect(onDismiss).toHaveBeenCalledWith('4');
       expect(onActivate).toHaveBeenCalledTimes(1);
     });
 
@@ -207,8 +228,12 @@ describe('UIToast', () => {
     });
   });
 
-  it('registers the toast catalog on the app i18n instance when its module loads', () => {
-    expect(appI18n.getResource('uk', 'translation', 'ui_toast.close')).toBe('Закрити сповіщення');
-    expect(appI18n.getResource('en', 'translation', 'ui_toast.close')).toBe('Close notification');
+  it('registers the notification close label on the app i18n instance on load', () => {
+    expect(appI18n.getResource('uk', 'translation', 'ui_notification.close')).toBe(
+      'Закрити сповіщення'
+    );
+    expect(appI18n.getResource('en', 'translation', 'ui_notification.close')).toBe(
+      'Close notification'
+    );
   });
 });

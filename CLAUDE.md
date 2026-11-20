@@ -169,8 +169,9 @@ more project names.
   overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
   same for the app shell: the drawer, the avatar menu, and no overflow at device width and 320 px.
   Its 44 px tap-area floor applies to every shell control except two recorded gaps: the drawer
-  sub-items (42 px Figma pitch) and the disabled bell and list (40 px Figma pitch), both listed
-  under "Known gaps" in `src/components/ui-app-shell/README.md`. Playwright cannot open a native
+  sub-items (42 px Figma pitch) and the disabled list (40 px Figma pitch), both listed under
+  "Known gaps" in `src/components/ui-app-shell/README.md`; the enabled notifications bell meets the
+  44 px floor under every `notificationStyle`. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
   `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
@@ -1532,7 +1533,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 51 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 52 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.
@@ -1689,7 +1690,8 @@ top-level interface or alias. The gate fails at those positions:
   `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
   as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
-  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+  type-only file (`export type CallerTextFieldProps = Omit<FormTextFieldProps, ControllerOwnedTextFieldProp>;`)
+  and use the name.
 
 Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
 `AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
@@ -1959,11 +1961,15 @@ its `meta.titleKey`; the user-menu folder and the shell hooks beside those files
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
 protected page, before the settings catalog is registered, so they own no settings key; the
 feature's `data-providers/`, `repositories/` and `transformers/` load in the container chunk and
-own no settings key. The toast catalog
-(`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
-label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are owned the same
-way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
-`ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
+own no settings key. The notification content catalog
+(`ui_notification.*`) is owned by `components/ui-notification-content`, the only module that
+renders it, so the close label stays off `/sign-in`. The notification-centre catalog
+(`notification_center.*`, issue #391) is owned by `notifications/components` and by the adapter
+file `notifications/repositories/in-memory-notification-repository.ts`, whose seed rows name its
+keys. The three catalogs of the app shell
+(issue #362) are owned the same way: the shell copy (`app_shell.*`) by its five component
+folders `components/ui-app-shell`, `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and
+`ui-navigation-drawer`; the coming-soon
 copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
 `settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. The two catalogs of
 two-factor sign-in (issue #331) follow suit: the challenge copy (`two_factor.*`) is owned by
@@ -2227,6 +2233,14 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
      `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`),
      `src/config/runtime/{di,tokens}.ts` (`RUNTIME_TOKENS`).
    - Module: `src/modules/user/config/{di,tokens}.ts` (`AUTH_TOKENS`).
+   - Feature root: `src/modules/user/features/notifications/{di,tokens}.ts`
+     (`NOTIFICATION_TOKENS`, `NotificationsRegistrar`, issue #391), applied by the aggregator after
+     the user module registrar. It sits at the feature root so the feature can move to its own
+     module unchanged, and it is not in `.dependency-cruiser.js` `DI_COMPOSITION_ROOTS`, so
+     `no-di-config-import-outside-composition-root` does not guard it; the boundary rules do
+     (`no-module-internal-imports`, `no-cross-feature-imports` and `no-feature-internal-imports`
+     stop an importer, and `notifications-feature-self-contained` stops the feature importing the
+     rest of the user module).
 2. Each root is a `ModuleRegistrar` (`src/config/types/module-registrar.ts`) singleton.
    `src/config/dependency-injection-config.ts` is a **thin aggregator** holding **zero**
    `container.register*` calls — it collects the registrars and invokes each against the
@@ -2748,10 +2762,13 @@ container-resolved classes inject it instead of value-importing it (issue #130).
 **Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`; no client reader since `url-builder` went
 with the last REST caller, so today it only widens the CSP `connect-src`), `graphqlUrl`
 (`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
-`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
-initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
-tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
-change.
+`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`), and the temporary choice setting
+`notificationStyle` (`APP_CONFIG_NOTIFICATION_STYLE`, one of `toast`, `inline` or `bell`, default
+`toast`, issue #391), which is not a flag and is read through `notificationStyleConfig`; the
+committed block omits it, and the removal follow-up deletes it once a variant is chosen. Languages
+stay build-time — `src/i18n.js` initializes i18next at module evaluation and
+`src/config/i18n-config.js` is `require`d by node tooling without a TypeScript loader, so that is an
+i18n boot-path restructuring, not a config change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
 container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
@@ -2823,19 +2840,32 @@ Deep-importing a feature page from the shell fails
 `routes.tsx`, or a route object with an `element` and no `errorElement` inside
 `src/routes/**`, fails the issue-#116 ESLint selectors (see pattern 14).
 
-**Toasts (issue #330)** — `UIToastStack` (`src/components/ui-toast/`, state in `useToastQueue`)
-is the one transient-message surface: no timer, so a toast stays until the user closes it; two
-always-mounted `UILiveStatus` regions announce the queue, a polite one for success texts and an
-assertive one (`politeness="assertive"`, `role="alert"`) for error texts, both with the
-alternating mark so an identical repeat is spoken again; no toast carries a role of its own, and
-each close button is described by its message; at most three are shown. Closing a toast moves
-focus to the next close button, then the previous one, then the control the page names
-(`returnFocusRef`) while it is connected and enabled, then `fallbackFocusRef` (the settings
-`<h1 tabindex="-1">`); a toast pushed out by the cap while it holds focus hands it to the newest
-close button. The stack reserves `scroll-padding-bottom` so a focused control is never hidden
-under it, and when it measures itself over a control that already has focus (the settled Save, focused
-in the same commit that pushes the toast) it scrolls that control into view, so the result does not
-depend on which layout effect runs first.
+**Notifications (issues #330, #391)** — a page raises outcomes through one port, never through a
+renderer: `useNotifications()` (`src/hooks/use-notifications.ts`, typed by `NotificationsPort` in
+`src/hooks/types/notifications-port.ts`) returns `raise`, `dismiss`, `dismissAll`, `withdraw`,
+`publishFocus` and `clear`, bound to the container-free Zustand outlet store
+(`useNotificationOutletStore` in `src/lib/notifications/`); the read hooks beside it are
+`useShownNotifications`, `useNotificationViews`, `useNotificationFocus`,
+`useNotificationAnnouncement` and `useNotificationSurface`. The page mounts `UINotificationOutlet`
+(`src/components/ui-notification-outlet/`), which publishes its `returnFocusRef` and
+`fallbackFocusRef` (the settings `<h1 tabindex="-1">`), clears the store on unmount, and holds the
+two always-mounted `UILiveStatus` regions, a polite one for success texts and an assertive one
+(`politeness="assertive"`) for error texts, both with the alternating mark so an identical repeat
+is spoken again. No outcome has a timer, and at most three are shown. The transient surface has
+three variants, selected at container start by the runtime `notificationStyle` setting
+(`APP_CONFIG_NOTIFICATION_STYLE`, default `toast`; see
+[`src/config/runtime/README.md`](src/config/runtime/README.md#notification-style-temporary)):
+`toast` (A) renders `UIToastStack` in the outlet, `inline` (B) renders `UIInlineStatus` in each
+`UINotificationSlot` the page places by anchor, and `bell` (C) renders the merged card under the
+bell. Under every style the shell's notifications slot (`src/modules/user/features/notifications/`,
+chunk `notifications-shell`) records each outcome and shows the enabled bell, its unread badge and
+the history panel. Closing a toast moves focus to the next close button, then the previous one,
+then the published `returnFocusRef` while it is connected and enabled, then `fallbackFocusRef`; a
+toast pushed out by the cap while it holds focus hands it to the newest close button. The stack
+reserves `scroll-padding-bottom` so a focused control is never hidden under it, and scrolls a
+control that already has focus into view when it measures itself over it. Once the team picks a
+variant, a follow-up removes the two others and the setting, and keeps the bell, the badge, the
+history and the feature (see the user module README's notifications decision).
 
 ### GraphQL Setup
 
@@ -2873,15 +2903,16 @@ verified in CI.
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
   owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
   for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
-  lazy catalog adds no loader class. Nine lazy catalogs exist today: the password-recovery copy
+  lazy catalog adds no loader class. Ten lazy catalogs exist today: the password-recovery copy
   (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
   copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
   when that component module evaluates; the settings copy (`settings.*`), owned by
   `src/modules/user/features/settings/` and registered when the `UserProfile` route module
-  evaluates; the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered when
-  `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
+  evaluates; the notification content copy (`ui_notification.*`), owned by
+  `src/components/ui-notification-content/` and registered when `UINotificationContent`
+  evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
   `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
   `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
   `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; the user-menu
@@ -2889,10 +2920,13 @@ verified in CI.
   registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates; the two-factor challenge
   copy (`two_factor.*`, issue #331), owned by
   `src/modules/user/features/auth/routes/two-factor-catalog/` and registered when the
-  `two-factor-challenge` route module evaluates; and the low-codes notice copy
+  `two-factor-challenge` route module evaluates; the low-codes notice copy
   (`recovery_codes_notice.*`), owned by
   `src/modules/user/features/auth/components/recovery-codes-notice/` and registered when the lazy
-  `RecoveryCodesNotice` chunk evaluates. Those two were 3,749 B of the minified merged catalog
+  `RecoveryCodesNotice` chunk evaluates; and the notification-centre copy
+  (`notification_center.*`, issue #391), owned by `src/modules/user/features/notifications/` and
+  registered when `BellNotifications` (in the `notifications-shell` chunk every protected page
+  loads) evaluates. The two #331 catalogs were 3,749 B of the minified merged catalog
   (about 0.9 KB gzip) on every page. The recovery keys were
   3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
   raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
@@ -2902,11 +2936,13 @@ verified in CI.
   Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
   use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
-  `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
-  user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor challenge tests
-  `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card back control
-  reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key leaking into
-  an eager page renders raw in that page's tests too. Storybook's preview and the e2e
+  `createToastLocaleI18n`, which registers the notification content catalog, notification-centre
+  tests `createNotificationCenterLocaleI18n`, which also registers the settings catalog the seed
+  copy mirrors, bell tests `createBellLocaleI18n`, shell tests `createAppShellLocaleI18n`, which
+  also registers the user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor
+  challenge tests `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card
+  back control reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key
+  leaking into an eager page renders raw in that page's tests too. Storybook's preview and the e2e
   `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
   JSON files) keep the copy available for every story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
@@ -3239,22 +3275,24 @@ Verified in headless Chromium against the production image: fully styled, fonts 
 console violations; `serve`'s clean URLs redirect `/index.html` to `/`, so the shell is probed
 at `/`.
 
-**Enforcement.** `make check-security-headers` (the `security headers` job of the
-`security testing` workflow, pull requests only) builds `--target production`, boots it, and
-asserts the response headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**`
-asset and the document headers plus the CSP on the two documents;
-then boots it again with `APP_CONFIG_*` overrides and asserts they reached `connect-src`, so the
-entrypoint step cannot go dead unnoticed. `connect-src` is compared as an exact set — the
-committed `serve.json` sources plus the expected overrides, nothing more — every other
-directive must equal the policy, a directive the policy does not declare is a finding
-(`script-src-elem 'unsafe-inline'` would otherwise slip past a strict `script-src`), and a
-repeated directive is rejected outright, because browsers enforce the first occurrence and a
-checker that kept the last one could be talked past.
-`loadPolicy()` refuses a weakened policy — no `nosniff`, HSTS under 180 days or without
-`includeSubDomains`, `X-Frame-Options` outside `DENY`/`SAMEORIGIN`, a widened
-`default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` /
-`'unsafe-eval'` / a wildcard on `script-src`, `*` anywhere — so a weakened baseline cannot be
-generated, shipped, or pass the gate.
+**Enforcement.** `make check-security-headers` (the `security headers` job of the `security testing`
+workflow, pull requests only) builds `--target production`, boots it, and asserts the response
+headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset and the document
+headers plus the CSP on the two documents, and that the default boot serves no `notificationStyle`
+key; then boots it again with the `APP_CONFIG_API_BASE_URL` and `APP_CONFIG_GRAPHQL_URL` overrides
+plus `APP_CONFIG_NOTIFICATION_STYLE=inline`, asserts the API origins reached `connect-src` and that
+`/` serves `"notificationStyle":"inline"` in its runtime-config block
+(`scripts/ci/check-security-headers.sh`), so neither entrypoint step can go dead unnoticed.
+`connect-src` is compared as an exact set — the committed `serve.json` sources plus the expected
+overrides, nothing more — every other directive must equal the policy, a directive the policy does
+not declare is a finding (`script-src-elem 'unsafe-inline'` would otherwise slip past a strict
+`script-src`), and a repeated directive is rejected outright, because browsers enforce the first
+occurrence and a checker that kept the last one could be talked past. `loadPolicy()` refuses a
+weakened policy — no `nosniff`, HSTS under 180 days or without `includeSubDomains`,
+`X-Frame-Options` outside `DENY`/`SAMEORIGIN`, a widened
+`default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` / `'unsafe-eval'` / a
+wildcard on `script-src`, `*` anywhere — so a weakened baseline cannot be generated, shipped, or
+pass the gate.
 [`tests/unit/scripts/security-headers.test.ts`](tests/unit/scripts/security-headers.test.ts) pins
 those floors with must-fail cases,
 [`tests/unit/scripts/check-security-headers.test.ts`](tests/unit/scripts/check-security-headers.test.ts)

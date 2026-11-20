@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
 
-import type { ToastItemSet } from '@/components/types/ui-toast';
 import useStackClearance from '@/components/ui-toast/use-stack-clearance';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
 const VIEWPORT_HEIGHT = 800;
 
@@ -15,8 +15,8 @@ const stack = (top: number): HTMLDivElement => {
   return node;
 };
 
-const toastSet = (...ids: number[]): ToastItemSet => ({
-  items: ids.map((id) => ({ id, tone: 'success', message: `toast ${id}` })),
+const toastSet = (...ids: number[]): NotificationViewSet => ({
+  items: ids.map((id) => ({ id: String(id), kind: 'success', message: `toast ${id}` })),
 });
 
 const resize = (): void => {
@@ -216,6 +216,18 @@ describe('useStackClearance', () => {
 
       expect(scrollIntoView).not.toHaveBeenCalled();
     });
+  });
+
+  it('publishes the distance for the history panel to subtract, then drops it', () => {
+    const clearance = (): string =>
+      document.documentElement.style.getPropertyValue('--toast-stack-clearance');
+    const { unmount } = renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+    expect(clearance()).toBe('96px');
+
+    unmount();
+
+    expect(clearance()).toBe('');
   });
 
   it('adds the same distance as real scroll space at the end of the page', () => {

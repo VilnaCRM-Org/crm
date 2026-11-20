@@ -1,6 +1,6 @@
 import { type RefObject, useLayoutEffect } from 'react';
 
-import type { ToastItemSet } from '@/components/types/ui-toast';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
 function revealFocused(stack: HTMLElement, top: number): void {
   const focused = document.activeElement ?? document.body;
@@ -10,13 +10,17 @@ function revealFocused(stack: HTMLElement, top: number): void {
   }
 }
 
+const STACK_CLEARANCE_PROPERTY = '--toast-stack-clearance';
+
 function setClearance(value: string): void {
   document.documentElement.style.setProperty('scroll-padding-bottom', value);
+  document.documentElement.style.setProperty(STACK_CLEARANCE_PROPERTY, value);
   document.body.style.setProperty('padding-bottom', value);
 }
 
 function clearClearance(): void {
   document.documentElement.style.removeProperty('scroll-padding-bottom');
+  document.documentElement.style.removeProperty(STACK_CLEARANCE_PROPERTY);
   document.body.style.removeProperty('padding-bottom');
 }
 
@@ -36,7 +40,7 @@ function reserveClearance(stack: HTMLElement): () => void {
 
 export default function useStackClearance(
   stackRef: RefObject<HTMLElement | null>,
-  toasts: ToastItemSet
+  toasts: NotificationViewSet
 ): void {
   useLayoutEffect(() => {
     const stack = stackRef.current;

@@ -20,6 +20,7 @@ import { answerProfileOperation } from '@tests/integration/mocks/profile-operati
 import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const NAME = 'Ваше ПІБ';
 const EMAIL = 'E-mail';
@@ -130,6 +131,7 @@ describe('settings page save outcomes (page)', () => {
   });
 
   beforeEach(() => {
+    resetClientStores();
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
     useConnectivityStore.setState({ online: true });
   });
@@ -410,7 +412,7 @@ describe('settings page save outcomes (page)', () => {
     await waitFor(() => expect(toastTexts().join(' ')).not.toContain(TRANSIENT));
   });
 
-  it('returns focus to the name Save when the name toast closes after an e-mail save', async () => {
+  it('returns focus to the target of the latest save when the last toast closes', async () => {
     await mount();
     await failNameThenSaveEmail();
     const [nameClose, emailClose] = screen.getAllByRole('button', { name: 'Закрити сповіщення' });
@@ -420,7 +422,8 @@ describe('settings page save outcomes (page)', () => {
     await userEvent.click(nameClose as HTMLElement);
 
     expect(toastTexts()).toHaveLength(0);
-    expect(saveButton()).toHaveFocus();
+    expect(field(EMAIL)).toHaveFocus();
+    expect(saveButton()).not.toHaveFocus();
   });
 
   it('sends nothing when the retry is activated while offline', async () => {

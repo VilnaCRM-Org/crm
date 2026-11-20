@@ -1,5 +1,9 @@
-import type { TFunction } from 'i18next';
 import type { Dispatch } from 'react';
+
+import type {
+  NotificationAnchor,
+  NotificationDraftSet,
+} from '@/lib/notifications/types/notification-draft';
 
 import type { ProfileUpdateOutcome } from '../user-profile/outcome';
 import type { ProfileChange } from '../user-profile/profile-change';
@@ -9,11 +13,12 @@ import type { ProfileEditContext, ProfileFormAction, SectionTargets } from './us
 export interface SaveSettleOptions {
   readonly props: ProfileEditContext;
   readonly targets: SectionTargets;
+  readonly anchor: NotificationAnchor;
   readonly dispatch: Dispatch<ProfileFormAction>;
 }
 
 export interface SaveSettleContext extends SaveSettleOptions {
-  readonly t: TFunction;
+  readonly raise: (drafts: NotificationDraftSet) => void;
 }
 
 export type SaveSettle = (outcome: ProfileUpdateOutcome, change: ProfileChange) => void;

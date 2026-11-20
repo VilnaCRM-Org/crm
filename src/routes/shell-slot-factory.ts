@@ -6,17 +6,18 @@ import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 
 import type {
   ShellChunkFailureHandler,
+  ShellSlot,
   ShellSlotHostProps,
   ShellSlotLoad,
   ShellSlotModule,
   ShellSlotProps,
-  UserMenuSlot,
+  ShellSlotSource,
 } from './types/shell-slot';
 
 export default class ShellSlotFactory {
   constructor(private readonly report: ShellChunkFailureHandler) {}
 
-  public create(load: ShellSlotLoad): UserMenuSlot {
+  public create(load: ShellSlotLoad, source: ShellSlotSource): ShellSlot {
     const loader = new ThemedChunkLoader<ShellSlotProps>(
       new ChunkRetryLoader<ShellSlotModule>(load),
       muiThemeShellLoader
@@ -29,18 +30,18 @@ export default class ShellSlotFactory {
 
     const loadSlot = (): Promise<ShellSlotModule> =>
       loader.load().catch((error: unknown) => {
-        report('app-shell:user-menu', error);
+        report(source, error);
 
         return { default: EmptySlot };
       });
 
-    return function BoundUserMenuSlot({ signOut, onAvatar }: ShellSlotHostProps) {
+    return function BoundShellSlot({ layout, signOut, onAvatar }: ShellSlotHostProps) {
       const [Slot] = useState(() => lazy(loadSlot));
 
       return createElement(
         Suspense,
         { fallback: createElement('span', { 'aria-hidden': 'true' }) },
-        createElement(Slot, { signOut, onAvatar, onChunkFailure: report })
+        createElement(Slot, { layout, signOut, onAvatar, onChunkFailure: report })
       );
     };
   }

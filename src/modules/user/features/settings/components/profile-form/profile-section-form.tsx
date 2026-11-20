@@ -3,12 +3,13 @@ import { type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
+import UINotificationSlot from '@/components/ui-notification-slot';
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
 
 import type {
   ProfileSectionFormProps,
   SectionBodyProps,
-  SectionClearProps,
+  SectionFooterProps,
 } from '../../types/components/profile-form';
 import type { ProfileFormValues } from '../../types/user-profile/profile-form-values';
 
@@ -43,12 +44,17 @@ function SectionBody({ context, section, model, onChange }: SectionBodyProps): J
   );
 }
 
-function SectionClear({ model, revealed }: SectionClearProps): JSX.Element | null {
+function SectionFooter({ model, revealed }: SectionFooterProps): JSX.Element {
   const { save, defaults } = model;
 
-  return revealed ? (
-    <ClearButton defaults={defaults} busy={save.isSubmitting} onClear={save.clear} />
-  ) : null;
+  return (
+    <>
+      {revealed && (
+        <ClearButton defaults={defaults} busy={save.isSubmitting} onClear={save.clear} />
+      )}
+      <UINotificationSlot anchor={save.anchor} />
+    </>
+  );
 }
 
 export default function ProfileSectionForm({
@@ -71,7 +77,7 @@ export default function ProfileSectionForm({
       submitRef={save.buttonRef}
       submitSx={form.submitSx}
       offlineNotice={form.offlineNotice}
-      footer={<SectionClear model={form.model} revealed={form.revealed} />}
+      footer={<SectionFooter model={form.model} revealed={form.revealed} />}
     >
       <SectionBody
         context={context}

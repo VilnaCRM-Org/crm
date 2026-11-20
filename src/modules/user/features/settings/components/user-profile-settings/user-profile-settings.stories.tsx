@@ -24,7 +24,6 @@ const meta: Meta<typeof UserProfileSettings> = {
       isCurrent: (): boolean => true,
       revision: (): number => 0,
     },
-    toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
     headingRef: { current: null },
   },

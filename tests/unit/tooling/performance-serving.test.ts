@@ -602,7 +602,8 @@ describe('performance serving config', () => {
       expect(namespaces).not.toContain('password_reset');
       expect(namespaces).not.toContain('password_policy');
       expect(namespaces).not.toContain('settings');
-      expect(namespaces).not.toContain('ui_toast');
+      expect(namespaces).not.toContain('notification_center');
+      expect(namespaces).not.toContain('ui_notification');
     });
     expect(
       readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')
@@ -805,5 +806,82 @@ describe('performance serving config', () => {
     );
     expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
     expect(TWO_FACTOR_FORM_CHUNKS).toEqual([loaderChunkName('two-factor')]);
+  });
+});
+
+describe('the notification chunks of the bell (issue #391)', () => {
+  const COMPONENTS = 'src/modules/user/features/notifications/components';
+  const CHUNKS = [
+    ['notifications-history', 'notification-history-panel', 'NotificationHistoryPanelModule'],
+    ['notifications-notice', 'bell-outcome-notice', 'BellOutcomeNoticeModule'],
+  ] as const;
+  const HEAVY = /^(tsyringe|reflect-metadata|zod|@apollo\/|graphql)/;
+
+  const walkSources = (directory: string): string[] =>
+    fs.readdirSync(path.join(projectRoot, directory), { withFileTypes: true }).flatMap((entry) => {
+      const relative = `${directory}/${entry.name}`;
+      return entry.isDirectory() ? walkSources(relative) : [relative];
+    });
+
+  it.each(CHUNKS)('reaches %s only through one named dynamic import()', (chunk, file, module) => {
+    const loaderSource = readFile(`${COMPONENTS}/${file}-loader.ts`);
+
+    expect(loaderSource.match(/import\(/g)).toHaveLength(1);
+    expect(loaderSource).toMatch(
+      new RegExp(String.raw`import\(\s*/\* webpackChunkName: "${chunk}" \*/\s*'\./${file}'\s*\)`)
+    );
+    expect(loaderSource).toContain(`new ChunkRetryLoader<${module}>(`);
+    expect(staticImportsOf(loaderSource)).not.toContain(`./${file}`);
+  });
+
+  it.each(CHUNKS)('has no static import of the %s module outside its loader', (_chunk, file) => {
+    const importers = walkSources('src')
+      .filter((source) => /\.(ts|tsx)$/.test(source) && !source.endsWith('.stories.tsx'))
+      .filter((source) => !source.endsWith(`${file}-loader.ts`))
+      .filter((source) =>
+        staticImportsOf(readFile(source)).some((specifier) => specifier.endsWith(`/${file}`))
+      );
+
+    expect(importers).toEqual([]);
+  });
+
+  it('loads the notifications shell slot only through its named contract import()', () => {
+    const contract = readFile('src/modules/user/features/notifications/routes/index.ts');
+    const importers = walkSources('src')
+      .filter((source) => /\.(ts|tsx)$/.test(source) && !source.endsWith('.stories.tsx'))
+      .filter((source) =>
+        staticImportsOf(readFile(source)).some((specifier) =>
+          specifier.endsWith('/notifications-shell-slot')
+        )
+      );
+
+    expect(contract.match(/import\(/g)).toHaveLength(1);
+    expect(contract).toMatch(
+      new RegExp(
+        String.raw`notifications: \(\) =>\s*import\(\s*` +
+          String.raw`/\* webpackChunkName: "notifications-shell" \*/\s*` +
+          String.raw`'\.\./components/notifications-shell-slot'\s*\)`
+      )
+    );
+    expect(importers).toEqual([]);
+  });
+
+  it('names no notifications-bell chunk anywhere', () => {
+    const named = walkSources('src').filter((source) =>
+      readFile(source).includes('notifications-bell')
+    );
+
+    expect(named).toEqual([]);
+  });
+
+  it.each(CHUNKS)('keeps tsyringe, the container, Apollo and zod out of %s', (_chunk, file) => {
+    const { files } = eagerGraphOf(`${COMPONENTS}/${file}.tsx`);
+    const edges = [...files].flatMap((source) =>
+      staticImportsOf(readFile(source)).map((specifier) => `${source} -> ${specifier}`)
+    );
+
+    expect(edges.filter((edge) => HEAVY.test(edge.split(' -> ')[1] ?? ''))).toEqual([]);
+    expect(edges.filter((edge) => /dependency-injection-config|\/di'/.test(edge))).toEqual([]);
+    expect([...files].filter((source) => /\/(di|tokens)\.ts$/.test(source))).toEqual([]);
   });
 });

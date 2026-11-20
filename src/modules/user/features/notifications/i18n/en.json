@@ -1,0 +1,20 @@
+{
+  "notification_center": {
+    "seed": {
+      "password_changed": "You have changed your password",
+      "email_sent": "We sent a confirmation link to the new address",
+      "saved": "Changes saved"
+    },
+    "history": {
+      "heading": "Notifications",
+      "mark_all_read": "Mark all as read",
+      "unread": "Unread",
+      "empty": "No notifications yet"
+    },
+    "time": "{{value, datetime}}",
+    "bell": {
+      "unread_count_one": "{{count}} unread notification",
+      "unread_count_other": "{{count}} unread notifications"
+    }
+  }
+}

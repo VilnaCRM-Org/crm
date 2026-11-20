@@ -1,14 +1,14 @@
 import '@testing-library/jest-dom';
 import { renderHook } from '@testing-library/react';
 
-import type { ToastItemSet } from '@/components/types/ui-toast';
 import type { ToastFocus, ToastFocusOptions } from '@/components/types/ui-toast/toast-focus';
 import useToastFocus from '@/components/ui-toast/use-toast-focus';
+import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
-const twoToasts: ToastItemSet = {
+const twoToasts: NotificationViewSet = {
   items: [
-    { id: 1, tone: 'success', message: 'Перше' },
-    { id: 2, tone: 'error', message: 'Друге' },
+    { id: '1', kind: 'success', message: 'Перше' },
+    { id: '2', kind: 'error', message: 'Друге' },
   ],
 };
 
@@ -24,7 +24,7 @@ type Mounted = ReturnType<typeof renderHook<ToastFocus, undefined>>;
 const mount = (overrides: Partial<ToastFocusOptions> = {}): Mounted => {
   const options: ToastFocusOptions = {
     toasts: twoToasts,
-    returnFocusRef: { current: null },
+    focus: null,
     onDismiss: jest.fn(),
     ...overrides,
   };
@@ -44,13 +44,13 @@ describe('useToastFocus', () => {
     const close = button('close 2');
     const focus = jest.spyOn(close, 'focus');
     const toastFocus = mountFocus({ onDismiss });
-    toastFocus.closeRef(2)(close);
+    toastFocus.closeRef('2')(close);
 
-    toastFocus.dismiss(1);
+    toastFocus.dismiss('1');
 
     expect(close).toHaveFocus();
     expect(onDismiss).toHaveBeenCalledTimes(1);
-    expect(onDismiss).toHaveBeenCalledWith(1);
+    expect(onDismiss).toHaveBeenCalledWith('1');
     expect(focus.mock.invocationCallOrder[0]).toBeLessThan(
       onDismiss.mock.invocationCallOrder[0] ?? 0
     );
@@ -60,10 +60,10 @@ describe('useToastFocus', () => {
     const close1 = button('close 1');
     const close2 = button('close 2');
     const toastFocus = mountFocus();
-    toastFocus.closeRef(1)(close1);
-    toastFocus.closeRef(2)(close2);
+    toastFocus.closeRef('1')(close1);
+    toastFocus.closeRef('2')(close2);
 
-    toastFocus.dismiss(2);
+    toastFocus.dismiss('2');
 
     expect(close1).toHaveFocus();
     expect(close2).not.toHaveFocus();
@@ -76,17 +76,17 @@ describe('useToastFocus', () => {
     const toastFocus = mountFocus({
       toasts: {
         items: [
-          { id: 1, tone: 'success', message: 'Перше' },
-          { id: 2, tone: 'error', message: 'Друге' },
-          { id: 3, tone: 'success', message: 'Третє' },
+          { id: '1', kind: 'success', message: 'Перше' },
+          { id: '2', kind: 'error', message: 'Друге' },
+          { id: '3', kind: 'success', message: 'Третє' },
         ],
       },
     });
-    toastFocus.closeRef(1)(close1);
-    toastFocus.closeRef(2)(close2);
-    toastFocus.closeRef(3)(close3);
+    toastFocus.closeRef('1')(close1);
+    toastFocus.closeRef('2')(close2);
+    toastFocus.closeRef('3')(close3);
 
-    toastFocus.dismiss(2);
+    toastFocus.dismiss('2');
 
     expect(close3).toHaveFocus();
     expect(close1).not.toHaveFocus();
@@ -98,65 +98,65 @@ describe('useToastFocus', () => {
     const save = button('save');
     const close1 = button('close 1');
     const close2 = button('close 2');
-    const toastFocus = mountFocus({ onDismiss, returnFocusRef: { current: save } });
-    toastFocus.closeRef(1)(close1);
-    toastFocus.closeRef(2)(close2);
+    const toastFocus = mountFocus({ onDismiss, focus: { primary: { current: save } } });
+    toastFocus.closeRef('1')(close1);
+    toastFocus.closeRef('2')(close2);
 
-    toastFocus.dismiss(9);
+    toastFocus.dismiss('9');
 
     expect(document.body).toHaveFocus();
     expect(close1).not.toHaveFocus();
     expect(save).not.toHaveFocus();
-    expect(onDismiss).toHaveBeenCalledWith(9);
+    expect(onDismiss).toHaveBeenCalledWith('9');
   });
 
   it('falls back to the return target when the neighbour close button is not registered', () => {
     const save = button('save');
-    const toastFocus = mountFocus({ returnFocusRef: { current: save } });
+    const toastFocus = mountFocus({ focus: { primary: { current: save } } });
 
-    toastFocus.dismiss(1);
+    toastFocus.dismiss('1');
 
     expect(save).toHaveFocus();
   });
 
   it('hands out one ref callback per toast id for the whole mount once it attached', () => {
     const { result, rerender } = mount();
-    const first = result.current.closeRef(1);
-    const second = result.current.closeRef(2);
+    const first = result.current.closeRef('1');
+    const second = result.current.closeRef('2');
     first(button('close 1'));
     second(button('close 2'));
 
     rerender();
 
-    expect(result.current.closeRef(1)).toBe(first);
-    expect(result.current.closeRef(2)).toBe(second);
+    expect(result.current.closeRef('1')).toBe(first);
+    expect(result.current.closeRef('2')).toBe(second);
     expect(first).not.toBe(second);
   });
 
   it('remembers nothing from a render whose callback never attached', () => {
     const toastFocus = mountFocus();
-    const discarded = toastFocus.closeRef(1);
-    const committed = toastFocus.closeRef(1);
+    const discarded = toastFocus.closeRef('1');
+    const committed = toastFocus.closeRef('1');
     committed(button('close 1'));
 
     expect(discarded).not.toBe(committed);
-    expect(toastFocus.closeRef(1)).toBe(committed);
+    expect(toastFocus.closeRef('1')).toBe(committed);
   });
 
   it('forgets a close button once its cleanup runs and hands out a fresh callback', () => {
     const save = button('save');
     const close = button('close 2');
-    const toastFocus = mountFocus({ returnFocusRef: { current: save } });
-    const closeRef = toastFocus.closeRef(2);
+    const toastFocus = mountFocus({ focus: { primary: { current: save } } });
+    const closeRef = toastFocus.closeRef('2');
     const cleanup = closeRef(close);
 
     expect(typeof cleanup).toBe('function');
     (cleanup as () => void)();
-    toastFocus.dismiss(1);
+    toastFocus.dismiss('1');
 
     expect(save).toHaveFocus();
     expect(close).not.toHaveFocus();
-    expect(toastFocus.closeRef(2)).not.toBe(closeRef);
+    expect(toastFocus.closeRef('2')).not.toBe(closeRef);
   });
 
   it('skips a disabled return target for the fallback', () => {
@@ -166,12 +166,11 @@ describe('useToastFocus', () => {
     heading.tabIndex = -1;
     document.body.append(heading);
     const toastFocus = mountFocus({
-      toasts: { items: [{ id: 5, tone: 'success', message: 'Одне' }] },
-      returnFocusRef: { current: save },
-      fallbackFocusRef: { current: heading },
+      toasts: { items: [{ id: '5', kind: 'success', message: 'Одне' }] },
+      focus: { primary: { current: save }, fallback: { current: heading } },
     });
 
-    toastFocus.dismiss(5);
+    toastFocus.dismiss('5');
 
     expect(heading).toHaveFocus();
   });
@@ -214,12 +213,11 @@ describe('useToastFocus', () => {
     heading.tabIndex = -1;
     document.body.append(heading);
     const toastFocus = mountFocus({
-      toasts: { items: [{ id: 6, tone: 'success', message: 'Одне' }] },
-      returnFocusRef: { current: save },
-      fallbackFocusRef: { current: heading },
+      toasts: { items: [{ id: '6', kind: 'success', message: 'Одне' }] },
+      focus: { primary: { current: save }, fallback: { current: heading } },
     });
 
-    toastFocus.dismiss(6);
+    toastFocus.dismiss('6');
 
     expect(heading).toHaveFocus();
   });
@@ -233,12 +231,11 @@ describe('useToastFocus', () => {
     heading.tabIndex = -1;
     document.body.append(heading);
     const toastFocus = mountFocus({
-      toasts: { items: [{ id: 7, tone: 'success', message: 'Одне' }] },
-      returnFocusRef: { current: save },
-      fallbackFocusRef: { current: heading },
+      toasts: { items: [{ id: '7', kind: 'success', message: 'Одне' }] },
+      focus: { primary: { current: save }, fallback: { current: heading } },
     });
 
-    toastFocus.dismiss(7);
+    toastFocus.dismiss('7');
 
     expect(save).toHaveFocus();
   });
@@ -247,31 +244,59 @@ describe('useToastFocus', () => {
     const onDismiss = jest.fn();
     const toastFocus = mountFocus({ toasts: { items: [] }, onDismiss });
 
-    expect(() => toastFocus.dismiss(9)).not.toThrow();
-    expect(onDismiss).toHaveBeenCalledWith(9);
+    expect(() => toastFocus.dismiss('9')).not.toThrow();
+    expect(onDismiss).toHaveBeenCalledWith('9');
     expect(document.body).toHaveFocus();
   });
 
   it('dismisses without throwing when the fallback ref is empty', () => {
     const onDismiss = jest.fn();
     const toastFocus = mountFocus({
-      toasts: { items: [{ id: 3, tone: 'success', message: 'Одне' }] },
+      toasts: { items: [{ id: '3', kind: 'success', message: 'Одне' }] },
       onDismiss,
-      fallbackFocusRef: { current: null },
+      focus: { primary: { current: null }, fallback: { current: null } },
     });
 
-    expect(() => toastFocus.dismiss(3)).not.toThrow();
-    expect(onDismiss).toHaveBeenCalledWith(3);
+    expect(() => toastFocus.dismiss('3')).not.toThrow();
+    expect(onDismiss).toHaveBeenCalledWith('3');
+  });
+
+  it('moves focus to the fallback when the primary ref holds no element', () => {
+    const heading = document.createElement('h1');
+    heading.tabIndex = -1;
+    document.body.append(heading);
+    const toastFocus = mountFocus({
+      toasts: { items: [{ id: '4', kind: 'error', message: 'Одне' }] },
+      focus: { primary: { current: null }, fallback: { current: heading } },
+    });
+
+    toastFocus.dismiss('4');
+
+    expect(heading).toHaveFocus();
+  });
+
+  it('moves no focus and still dismisses when no focus target was published', () => {
+    const onDismiss = jest.fn();
+    const toastFocus = mountFocus({
+      toasts: { items: [{ id: '8', kind: 'success', message: 'Одне' }] },
+      focus: null,
+      onDismiss,
+    });
+
+    toastFocus.dismiss('8');
+
+    expect(document.body).toHaveFocus();
+    expect(onDismiss).toHaveBeenCalledWith('8');
   });
 
   describe('a toast pushed out by the cap while it holds focus', () => {
-    const toast = (id: number): ToastItemSet['items'][number] => ({
+    const toast = (id: string): NotificationViewSet['items'][number] => ({
       id,
-      tone: 'success',
+      kind: 'success',
       message: `Сповіщення ${id}`,
     });
-    const before: ToastItemSet = { items: [toast(1), toast(2), toast(3)] };
-    const after: ToastItemSet = { items: [toast(2), toast(3), toast(4)] };
+    const before: NotificationViewSet = { items: [toast('1'), toast('2'), toast('3')] };
+    const after: NotificationViewSet = { items: [toast('2'), toast('3'), toast('4')] };
 
     interface Eviction {
       readonly settle: () => void;
@@ -283,8 +308,8 @@ describe('useToastFocus', () => {
 
     const evictFirst = (focusedInFirst: PickFocus): Eviction => {
       const { result, rerender } = renderHook(
-        ({ toasts }: { toasts: ToastItemSet }) =>
-          useToastFocus({ toasts, returnFocusRef: { current: null }, onDismiss: jest.fn() }),
+        ({ toasts }: { toasts: NotificationViewSet }) =>
+          useToastFocus({ toasts, focus: null, onDismiss: jest.fn() }),
         { initialProps: { toasts: before } }
       );
       const first = document.createElement('div');
@@ -293,13 +318,13 @@ describe('useToastFocus', () => {
       document.body.append(first);
       const next = button('close 2');
       button('close 3');
-      const detach = result.current.closeRef(1)(close1);
-      result.current.closeRef(2)(next);
+      const detach = result.current.closeRef('1')(close1);
+      result.current.closeRef('2')(next);
       focusedInFirst(first, close1).focus();
       (detach as () => void)();
       first.remove();
       const newest = button('close 4');
-      result.current.closeRef(4)(newest);
+      result.current.closeRef('4')(newest);
       return { settle: (): void => rerender({ toasts: after }), next, newest };
     };
 

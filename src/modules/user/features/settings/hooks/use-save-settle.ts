@@ -1,8 +1,9 @@
-import type { TFunction } from 'i18next';
-import type { RefObject } from 'react';
-import { useTranslation } from 'react-i18next';
-
-import type { ToastDraft, ToastDraftSet } from '@/components/types/ui-toast';
+import useNotifications from '@/hooks/use-notifications';
+import type {
+  NotificationAnchor,
+  NotificationDraft,
+  NotificationDraftSet,
+} from '@/lib/notifications/types/notification-draft';
 
 import type { SavedAspect, SectionTargets } from '../types/hooks/use-profile-save';
 import type {
@@ -29,54 +30,47 @@ const FAILURE_TOASTS = new Map<ProfileFailureReason, string>([
   ['rate_limited', 'settings.toasts.rate_limited'],
 ]);
 
-function savedDrafts(
-  change: ProfileChange,
-  t: TFunction,
-  returnFocusRef: RefObject<HTMLElement | null>
-): ToastDraftSet {
-  const items: ToastDraft[] = [];
-  for (const [aspect, key] of SAVED_TOASTS) {
-    if (change[aspect] !== undefined)
-      items.push({ tone: 'success', message: t(key), returnFocusRef });
+function savedDrafts(change: ProfileChange, anchor: NotificationAnchor): NotificationDraftSet {
+  const items: NotificationDraft[] = [];
+  for (const [aspect, messageKey] of SAVED_TOASTS) {
+    if (change[aspect] !== undefined) items.push({ kind: 'success', messageKey, anchor });
   }
   return { items };
 }
 
 function failureDrafts(
   outcome: ProfileFailedOutcome,
-  t: TFunction,
-  { buttonRef, focusRef }: SectionTargets
-): ToastDraftSet | null {
-  const key = FAILURE_TOASTS.get(outcome.reason);
-  if (key === undefined) return null;
+  { buttonRef }: SectionTargets,
+  anchor: NotificationAnchor
+): NotificationDraftSet | null {
+  const messageKey = FAILURE_TOASTS.get(outcome.reason);
+  if (messageKey === undefined) return null;
   const action =
     outcome.reason === 'transient'
-      ? { label: t('auth.error.tryAgain'), onActivate: (): void => buttonRef.current?.click() }
+      ? { labelKey: 'auth.error.tryAgain', onActivate: (): void => buttonRef.current?.click() }
       : undefined;
-  return { items: [{ tone: 'error', message: t(key), action, returnFocusRef: focusRef }] };
+  return { items: [{ kind: 'error', messageKey, action, anchor }] };
 }
 
 function settleSave(
   outcome: ProfileUpdateOutcome,
   change: ProfileChange,
-  { props, targets, t, dispatch }: SaveSettleContext
+  { props, targets, anchor, raise, dispatch }: SaveSettleContext
 ): void {
   if (outcome.kind === 'invalid') {
     return dispatch({ type: 'invalid', errors: outcome.errors });
   }
   if (outcome.kind === 'ok') props.adoption.adopt(outcome.user);
   const drafts =
-    outcome.kind === 'ok'
-      ? savedDrafts(change, t, targets.focusRef)
-      : failureDrafts(outcome, t, targets);
+    outcome.kind === 'ok' ? savedDrafts(change, anchor) : failureDrafts(outcome, targets, anchor);
   if (drafts === null) return;
-  props.toasts.show(drafts);
+  raise(drafts);
   dispatch({ type: 'settled', saved: outcome.kind === 'ok' });
 }
 
 export default function useSaveSettle(options: SaveSettleOptions): SaveSettle {
-  const { t } = useTranslation();
+  const { raise } = useNotifications();
 
   return (outcome: ProfileUpdateOutcome, change: ProfileChange): void =>
-    settleSave(outcome, change, { ...options, t });
+    settleSave(outcome, change, { ...options, raise });
 }

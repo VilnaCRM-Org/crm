@@ -21,9 +21,9 @@ route set discoverable (audit, nav, sitemap).
 | ----------------------- | ------------------------------------------------------------------ |
 | `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)        |
 | `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape        |
-| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, `onAvatar`     |
+| `types/shell-slot.ts`   | `RouteModuleShell` (two slot loaders), slot props, `onAvatar`      |
 | `app-routes.ts`         | Shell contract: home, five coming-soon routes, 404, 403, 5xx       |
-| `shell-slot-factory.ts` | Wraps `shell.userMenu` in a lazy, retrying slot component          |
+| `shell-slot-factory.ts` | Wraps a shell slot loader in a lazy, retrying slot component       |
 | `registry.ts`           | Collects every module contract into one list                       |
 | `route-validator.ts`    | Rejects an invalid contract when the router is built (rules below) |
 | `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`      |
@@ -32,8 +32,8 @@ route set discoverable (audit, nav, sitemap).
 | `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`           |
 
 `route-validator.ts` throws when two modules share an `id`, when more than one module declares
-`shell.userMenu`, when a nested route declares a `guard` (guards are top-level only), and when a
-route has neither a `path` nor `index: true`.
+`shell.userMenu` or more than one declares `shell.notifications`, when a nested route declares a
+`guard` (guards are top-level only), and when a route has neither a `path` nor `index: true`.
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -93,15 +93,17 @@ contract beside `/settings`.
 ## Shell slots (issue #362)
 
 A module may put one piece of its UI into the app shell without the shell importing the module.
-`RouteModule.shell` is an optional `RouteModuleShell`; today it carries `userMenu`, a loader of a
-component that takes `signOut`, an `onChunkFailure` callback and an `onAvatar` callback
-(`ShellSlotProps`). The settings contract declares it
-(`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and passes
-the loader to `protectedLayoutLoader.create`, which hands `AppLayout` a slot built by the
-`ShellSlotFactory` in the `protected-layout` chunk: a lazy component wrapped like a page chunk (one
-re-import, the MUI theme shell loaded in parallel), reporting through
-`routeMapper.slotFailureReporter()`. `RouteValidator` rejects a registry in which two modules
-declare `shell.userMenu`.
+`RouteModule.shell` is an optional `RouteModuleShell` with two slot keys (`ShellSlotKey`):
+`userMenu` and `notifications`. Each is a loader of a component that takes the shell `layout`
+(`ShellSlotLayout`: `mobile`, `tablet` or `desktop`), `signOut`, an `onChunkFailure` callback and an
+`onAvatar` callback (`ShellSlotProps`). The settings contract declares `userMenu`
+(`webpackChunkName: "user-menu"`); no contract declares `notifications` yet, and without it the
+header keeps its disabled bell. `RouteComposer` finds, per key, the one module that declares it and
+passes both loaders to `protectedLayoutLoader.create`, which hands `AppLayout` one slot per declared
+key, each built by `ShellSlotFactory.create(load, source)` in the `protected-layout` chunk: a lazy
+component wrapped like a page chunk (one re-import, the MUI theme shell loaded in parallel),
+reporting through `routeMapper.slotFailureReporter()`. `RouteValidator` rejects a registry in which
+two modules declare the same key (`Only one route module may declare shell.<key> (<ids>)`).
 
 - **The avatar copy (`onAvatar`):** the host (`UIAppShell`) renders the slot with
   `ShellSlotHostProps` — `signOut` plus `onAvatar`, its own state setter — and the factory passes
@@ -117,7 +119,8 @@ declare `shell.userMenu`.
   announced.
 
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
-  failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
+  failure is captured with the slot's own `ShellSlotSource`: `'app-shell:user-menu'` for the user
+  menu, `'app-shell:notifications'` for the notifications slot. The page and the rest of the shell
   are untouched and nothing reloads. Each mount of the slot creates its own lazy component and
   holds its own `Suspense` boundary (an aria-hidden placeholder while the chunk loads), so a host
   that mounts again after a twice-failed load imports the chunk again instead of keeping the empty
@@ -205,9 +208,10 @@ context (`ProtectedOutletContext`,
 from
 `src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
-react-router 7 — and hands the same `signOut` to the lazy app shell
-(`<AppShell signOut={outletContext.signOut} userMenu={userMenu} />`), whose sidebar, drawer and user
-menu are the sign-out controls (issue #362). The home page at `/` no longer reads the context.
+react-router 7 — and hands the same `signOut` to the lazy app shell, together with both shell
+slots (`<AppShell signOut={…} userMenu={userMenu} notifications={notifications} />`), whose
+sidebar, drawer and user menu are the sign-out controls (issue #362). The home page at `/` no
+longer reads the context.
 
 `twoFactorStatus` is `'enabled' | 'disabled' | 'unknown'` and is the one place the settings card
 and the guard share what is known about the account's two-factor state; `setTwoFactorStatus`

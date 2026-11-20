@@ -1,14 +1,14 @@
 import '@testing-library/jest-dom';
 import { act, isInaccessible, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useEffect } from 'react';
+import { type JSX, useEffect } from 'react';
 
 import UIAppShell from '@/components/ui-app-shell';
-import type { UserMenuSlot } from '@/routes/types/shell-slot';
+import type { ShellSlot, ShellSlotHostProps } from '@/routes/types/shell-slot';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
-const AvatarMenu: UserMenuSlot = ({ onAvatar }) => {
+const AvatarMenu: ShellSlot = ({ onAvatar }) => {
   useEffect(() => {
     onAvatar(<span>ОП</span>);
   }, [onAvatar]);
@@ -24,16 +24,28 @@ const openDrawer = async (): Promise<HTMLElement> => {
   return screen.findByRole('dialog', { name: 'Main navigation' });
 };
 
-const Menu: UserMenuSlot = ({ signOut }) => (
+const Menu: ShellSlot = ({ signOut }) => (
   <button type="button" onClick={signOut}>
     chip
   </button>
 );
 
-const renderAt = (width: number, userMenu?: UserMenuSlot, signOut = jest.fn()): void => {
+const renderAt = (width: number, userMenu?: ShellSlot, signOut = jest.fn()): void => {
   stubViewportWidth(width);
   renderShell(<UIAppShell signOut={signOut} userMenu={userMenu} />);
 };
+
+function LayoutBell({ layout }: ShellSlotHostProps): JSX.Element {
+  return <button type="button">bell {layout}</button>;
+}
+
+function SignOutBell({ signOut }: ShellSlotHostProps): JSX.Element {
+  return (
+    <button type="button" onClick={signOut}>
+      bell
+    </button>
+  );
+}
 
 describe('UIAppShell', () => {
   afterEach(() => {
@@ -170,5 +182,49 @@ describe('UIAppShell', () => {
     expect(scrollBy).toHaveBeenCalledWith({ top: -28 });
     Reflect.deleteProperty(window, 'scrollBy');
     Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+  });
+
+  describe('notifications slot', () => {
+    const renderWithBell = (width: number, userMenu?: ShellSlot): void => {
+      stubViewportWidth(width);
+      renderShell(
+        <UIAppShell signOut={jest.fn()} userMenu={userMenu} notifications={LayoutBell} />
+      );
+    };
+
+    it.each([
+      [1440, 'desktop'],
+      [1024, 'tablet'],
+      [390, 'mobile'],
+    ] as const)('renders the slot at %i px with the %s layout', (width, layout) => {
+      renderWithBell(width);
+
+      expect(screen.getByRole('button', { name: `bell ${layout}` })).toBeEnabled();
+      expect(screen.queryByRole('button', { name: 'Notifications' })).not.toBeInTheDocument();
+    });
+
+    it('hands the user menu slot the shell layout too', () => {
+      const LayoutMenu: ShellSlot = ({ layout }) => <span>menu {layout}</span>;
+
+      renderWithBell(1024, LayoutMenu);
+
+      expect(screen.getByText('menu tablet')).toBeInTheDocument();
+    });
+
+    it('hands the slot the shell sign-out', async () => {
+      const signOut = jest.fn();
+      stubViewportWidth(1440);
+      renderShell(<UIAppShell signOut={signOut} notifications={SignOutBell} />);
+
+      await userEvent.setup().click(screen.getByRole('button', { name: 'bell' }));
+
+      expect(signOut).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the disabled bell when no slot is given', () => {
+      renderAt(1440);
+
+      expect(screen.getByRole('button', { name: 'Notifications' })).toBeDisabled();
+    });
   });
 });

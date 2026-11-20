@@ -3,8 +3,15 @@
 import fs from 'fs';
 import path from 'path';
 
+import appConfigChoiceGuard, {
+  APP_CONFIG_CHOICE_KEYS,
+} from '@/config/runtime/app-config-choice-guard';
 import AppConfigSchema from '@/config/runtime/app-config-schema';
 import featureFlagService from '@/config/runtime/feature-flag-service';
+import {
+  DEFAULT_NOTIFICATION_STYLE,
+  NOTIFICATION_STYLES,
+} from '@/config/runtime/notification-styles';
 
 import { FLAG_ENV_PREFIX, renderAppConfig, toCamelCase } from '../../../scripts/render-app-config';
 
@@ -21,6 +28,9 @@ const SCHEMA = 'src/config/runtime/app-config-schema.ts';
 const UNION = 'src/config/runtime/types/feature-flag.ts';
 const RENDERER = 'scripts/render-app-config.js';
 const DOCS = 'docs/feature-flags.md';
+const COMPOSE = 'docker-compose.test.yml';
+const RUNTIME_README = 'src/config/runtime/README.md';
+const ENTRY = 'src/index.tsx';
 
 // Both the id AND the JSON type are part of the contract: a block that loses `application/json`
 // would become an executable script, so matching the id alone would let that regression pass.
@@ -91,6 +101,49 @@ const urlSettings = (): Array<{ envVar: string; key: string }> => {
   );
 };
 
+interface ChoiceSetting {
+  envVar: string;
+  key: string;
+  values: string[];
+}
+
+const choiceSettings = (): ChoiceSetting[] => {
+  const body = /const CHOICE_SETTINGS = \[([\s\S]*?)\n\];/.exec(readFile(RENDERER))?.[1];
+
+  if (body === undefined) {
+    throw new Error(
+      `${RENDERER} no longer declares a CHOICE_SETTINGS array. It is the list of APP_CONFIG_* ` +
+        'choice variables the container entrypoint validates and renders into the HTML shell.'
+    );
+  }
+
+  return [
+    ...body.matchAll(/envVar:\s*'([^']+)',\s*key:\s*'([^']+)',\s*values:\s*\[([^\]]*)\]/g),
+  ].flatMap(([, envVar, key, values]) =>
+    envVar === undefined || key === undefined || values === undefined
+      ? []
+      : [
+          {
+            envVar,
+            key,
+            values: Array.from(values.matchAll(/'([^']+)'/g), ([, value]) => value ?? ''),
+          },
+        ]
+  );
+};
+
+const guardAllowedValues = (key: string): string[] => {
+  try {
+    appConfigChoiceGuard.choice(key as (typeof APP_CONFIG_CHOICE_KEYS)[number], '\u0000');
+  } catch (error) {
+    const listed = /must be one of (.*), got/.exec(String(error))?.[1];
+
+    return listed === undefined ? [] : listed.split(', ');
+  }
+
+  return [];
+};
+
 const ROUTE_CONTRACTS = [
   'src/routes/app-routes.ts',
   'src/modules/user/features/auth/routes/index.ts',
@@ -158,7 +211,109 @@ describe('runtime configuration contract', () => {
     // An undeclared variable is invisible to docker-compose and to `make check-env-sync`.
     expect(settings.filter((setting) => !declared.includes(setting.envVar))).toEqual([]);
     // A renderer key the schema does not know would be rejected by the strictObject at boot.
-    expect(settings.map((setting) => setting.key).sort()).toEqual(schemaKeys);
+    expect([...settings.map((setting) => setting.key), ...APP_CONFIG_CHOICE_KEYS].sort()).toEqual(
+      schemaKeys
+    );
+  });
+
+  describe('choice settings (#391)', () => {
+    it('declares one notificationStyle choice in the renderer, in order', () => {
+      expect(choiceSettings()).toEqual([
+        {
+          envVar: 'APP_CONFIG_NOTIFICATION_STYLE',
+          key: 'notificationStyle',
+          values: ['toast', 'inline', 'bell'],
+        },
+      ]);
+      expect(APP_CONFIG_CHOICE_KEYS.length).toBe(choiceSettings().length);
+    });
+
+    it('keeps the renderer values, the schema enum, the guard table and the list in step', () => {
+      const [setting] = choiceSettings();
+
+      expect(setting?.values).toEqual([...NOTIFICATION_STYLES]);
+      expect(setting?.values).toEqual(AppConfigSchema.shape.notificationStyle.unwrap().options);
+      expect(setting?.values).toEqual(guardAllowedValues('notificationStyle'));
+      expect(setting?.values).toHaveLength(3);
+    });
+
+    it('defaults to toast, one of exactly three values', () => {
+      expect(DEFAULT_NOTIFICATION_STYLE).toBe('toast');
+      expect(NOTIFICATION_STYLES).toContain(DEFAULT_NOTIFICATION_STYLE);
+      expect(NOTIFICATION_STYLES).toHaveLength(3);
+    });
+
+    it('declares every choice variable in .env.example and passes it through compose', () => {
+      const declared = appConfigEnvKeys('.env.example');
+      const compose = readFile(COMPOSE);
+
+      choiceSettings().forEach(({ envVar }) => {
+        expect(declared).toContain(envVar);
+        expect(compose).toContain(`- ${envVar}=\${${envVar}-}`);
+      });
+    });
+
+    it.each([
+      ['toast', true],
+      ['inline', true],
+      ['bell', true],
+      ['Toast', false],
+      ['banner', false],
+      ['toast,bell', false],
+    ])('accepts %s in the renderer and the schema alike (%s)', (value, accepted) => {
+      const rendererAccepts = ((): boolean => {
+        try {
+          renderAppConfig(readFile(SHELL), { APP_CONFIG_NOTIFICATION_STYLE: value });
+          return true;
+        } catch {
+          return false;
+        }
+      })();
+
+      expect({
+        rendererAccepts,
+        schemaAccepts: AppConfigSchema.safeParse({ notificationStyle: value }).success,
+      }).toEqual({ rendererAccepts: accepted, schemaAccepts: accepted });
+    });
+
+    it('writes no key for an empty value and keeps the committed block free of the setting', () => {
+      const block = parseConfigBlock(
+        renderAppConfig(readFile(SHELL), { APP_CONFIG_NOTIFICATION_STYLE: '' })
+      );
+
+      expect(block).not.toHaveProperty('notificationStyle');
+      expect(parseConfigBlock(readFile(SHELL))).not.toHaveProperty('notificationStyle');
+    });
+
+    it('names the setting and every value in the runtime README and the feature-flag guide', () => {
+      for (const path of [RUNTIME_README, DOCS]) {
+        const text = readFile(path);
+
+        expect(text).toContain('notificationStyle');
+        expect(text).toContain('APP_CONFIG_NOTIFICATION_STYLE');
+        NOTIFICATION_STYLES.forEach((style) => expect(text).toContain(`\`${style}\``));
+        expect(text).toContain('temporary');
+      }
+    });
+
+    it('documents the make command line that actually switches the running stack', () => {
+      const readme = readFile(RUNTIME_README);
+
+      expect(readme).toContain('make start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=');
+      expect(readme).toContain('make start-prod');
+    });
+
+    it('creates the root, loads the config in the bootstrap try block, then renders', () => {
+      const source = readFile(ENTRY);
+      const created = source.indexOf('createRoot(');
+      const loaded = source.indexOf('appConfigSource.load()');
+      const rendered = source.indexOf('root.render(');
+
+      expect(created).toBeGreaterThan(-1);
+      expect(loaded).toBeGreaterThan(created);
+      expect(rendered).toBeGreaterThan(loaded);
+      expect(source.slice(source.lastIndexOf('try {', loaded), loaded)).toBe('try {\n  ');
+    });
   });
 
   it('documents every registered feature flag in the feature-flag guide', () => {

@@ -4,10 +4,15 @@ import path from 'path';
 
 const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const SETTINGS_ROOT = 'src/modules/user/features/settings';
+const NOTIFICATIONS_ROOT = 'src/modules/user/features/notifications';
 const SHARED_STATE_STUB_CALLS = [
   'withProfileProvider(',
   'withCurrentUserAnswer(',
   'withCurrentUserFailure(',
+  'withNotificationStyle(',
+  'withRaisedNotifications(',
+  'withFreshNotificationRepository(',
+  'comparisonStory(',
 ];
 
 interface DocsStoryParameters {
@@ -48,8 +53,15 @@ const storiesRegisteringTheProviderStub = (): string[] =>
 describe('stories that stub a Data provider or the current-user answer in shared state', () => {
   const stories = storiesRegisteringTheProviderStub();
 
-  it('finds the settings stories that stub the provider or the current-user answer', () => {
+  it('finds the stories that stub shared provider, user or notification state', () => {
     expect(stories).toEqual([
+      'src/components/ui-notification-outlet/ui-notification-outlet.stories.tsx',
+      'src/components/ui-notification-slot/ui-notification-slot.stories.tsx',
+      'src/components/ui-toast/ui-toast-stack.stories.tsx',
+      `${NOTIFICATIONS_ROOT}/components/bell-notifications.stories.tsx`,
+      `${NOTIFICATIONS_ROOT}/components/bell-outcome-notice.stories.tsx`,
+      `${NOTIFICATIONS_ROOT}/components/comparison/notification-comparison.stories.tsx`,
+      `${NOTIFICATIONS_ROOT}/components/notifications-shell-slot.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/profile-section-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/section-fields.stories.tsx`,

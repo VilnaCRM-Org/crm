@@ -31,6 +31,17 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
   the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
   `src/routes/README.md`.
+- **The notifications slot is a prop too.** A route contract may declare `shell.notifications`;
+  the composer hands `AppLayout` a second slot built the same way, and `UIAppShell` renders it with
+  the shell `layout`, `signOut` and `onAvatar` (the user menu slot receives `layout` as well and
+  ignores it). `UIAppHeader` puts the rendered slot inside `BellSlotFrame` at the bell's position,
+  between search and tasks, in place of the disabled notifications `HeaderIconButton`, and tells
+  the mobile drawer through `MobileNavigation` (`liveBell`), whose aria-hidden bell copy then takes
+  the enabled `#1A1C1E` glyph colour (`customColors.text.dark`) instead of the disabled `#D0D4D8`.
+  Without the slot the header and the drawer would render the disabled bell described
+  "Ще недоступно" and the disabled bell copy. The notifications route contract
+  (`user.notifications`, `src/modules/user/features/notifications/routes/index.ts`) declares the
+  slot as the `notifications-shell` chunk, so every protected page renders the enabled bell.
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
   `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
   it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
@@ -71,13 +82,16 @@ fails both tests instead of moving the shell or splitting it from the frame.
 
 ## Header
 
-`UIAppHeader` (`src/components/ui-app-header/`) is the 64 px banner. Search, bell and list are
-natively `disabled` and described by the visually hidden status "Not available yet"; the mobile
-header has no search. The bell and list take an optional badge count that only stories pass: the
-header stories feed exactly 1 and 8, and no page, hook or route passes a count. One guard
-(`badge-count-guard.ts`) decides both the badge and the hidden count description: only a whole count
-of at least 1 shows, so zero, a fraction, `NaN` and `Infinity` show neither. The badge is
-painted in the disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
+`UIAppHeader` (`src/components/ui-app-header/`) is the 64 px banner. The bell is enabled whenever
+the notifications slot is registered, which the notifications route contract does for every
+protected page: the slot renders it inside `BellSlotFrame`, and its unread count, its description
+and its alert badge `#D63333` (`paletteColors.error.text`) come from the slot. The search and the
+tasks button stay natively `disabled` and described by the visually hidden status "Not available
+yet"; the mobile header has no search. The tasks button takes an optional badge count that the
+header stories pass (1 and 8); no page passes one. One guard (`badge-count-guard.ts`) decides both
+the badge and the hidden count description: only a whole count of at least 1 shows, so zero, a
+fraction, `NaN` and `Infinity` show neither. A disabled button paints its badge in the
+disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
 The user slot reserves the chip's box with an `aria-hidden` placeholder until the chip arrives.
 
 ### Measured against Figma
@@ -116,17 +130,16 @@ buttons are `#E1E7EA` with a `#D0D4D8` glyph and no border; the badge is 18 px, 
 Inter 500 12/18, digits within 0.2 px of Figma's text origin.
 
 The badge rows were measured with counts 1 and 8 passed through the header, as the header stories
-do. `AppLayout` now mounts the header through the shell (Story 3.1) but passes no counts, so the
-rows above were read from a temporary local mount that was removed again; the burger (P-33) and the
-drawer rows belong to the drawer story.
+do, from a temporary local mount that was removed again; the enabled bell draws its badge in the
+same box. The burger (P-33) and the drawer rows belong to the drawer story.
 
 Two choices record what Figma leaves open:
 
 - The desktop frame has no fill, so the sticky header paints the page colour `#FBFBFB`, the colour
   that shows through in the frame.
-- The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. Every header
-  button is disabled, so the badge follows the disabled variant. The owner approved this on
-  2026-11-06 ("use all from Figma"); see DV-14.
+- The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. The disabled
+  header buttons follow the disabled variant. The owner approved this on 2026-11-06 ("use all from
+  Figma"); see DV-14. The enabled bell draws the alert badge `#D63333` instead.
 - The round buttons' rest, hover and open states and the search field's rest, hover and active
   states are not drawn in the app while those controls ship disabled, so the owner dropped them as
   required Storybook state rows on 2026-11-06 (UX §10.2). The requirement returns when the controls
@@ -436,8 +449,9 @@ sidebar at top 74.
 ## Browser proofs (issue #362)
 
 - `tests/e2e/modules/app-shell.spec.ts` (desktop engines): Settings and Sign out from the sidebar
-  and the chip menu (1440 and 1024), every row and sub-item, the disabled controls, no badge, the
-  `CurrentUser` request counts and no shell chunk on the public pages.
+  and the chip menu (1440 and 1024), every row and sub-item, the disabled search and list, the
+  enabled bell and its seed badge, the `CurrentUser` request counts and no shell chunk on the
+  public pages.
 - `tests/e2e/a11y/app-shell-keyboard.a11y.spec.ts` (desktop engines): Tab order at 1440, 1024 and
   375, the handle, the chip menu arrow-key walk, Escape and Tab, the drawer's full Tab order on `/`
   and `/settings` (close, the rows, Settings and its chevron, the sub-items on `/settings`, Sign out,
@@ -467,8 +481,8 @@ Playwright container and run in CI only.
 
 ### Known gaps, deliberately not fixed (design-owned)
 
-- **The disabled bell and list** keep Figma's 40 px pitch and are not measured by the tap-area
-  check (OQ-15).
+- **The disabled list** keeps Figma's 40 px pitch and is not measured by the tap-area check
+  (OQ-15).
 - **The drawer sub-items** Integrations, Webhooks and Billing keep Figma's 42 px PROP-18 pitch, under
   the 44 px floor (owner decision, 2026-10-27). `app-shell-touch.spec.ts` asserts the recorded rule
   instead: each answers a tap across its whole 42 px height and the drawer row width, and adjacent
@@ -493,15 +507,17 @@ glyph's contrast against white from the styles and fails under 3:1.
 
 The plan specified a `#1EAEFF` badge on the bell and list buttons (PRD FR-3, FR-4, FR-19, NFR-4; UX
 §3). Figma's disabled variant `451:26214` was read directly on 2026-11-06 and draws a 48×48 button
-in `#e1e7ea` with an 18×18 badge in `#d0d4d8` and white digits. Every header button ships disabled,
-so the owner asked for all of it to come from Figma ("use all from Figma"), and
-`src/components/ui-app-header/styles.ts` paints the badge `#D0D4D8` with white Inter 500 12/18
-digits. Box, radius and position are unchanged (18 px, radius 45, 34,30 in the button).
+in `#e1e7ea` with an 18×18 badge in `#d0d4d8` and white digits. The owner asked for all of it to
+come from Figma ("use all from Figma"), and `src/components/ui-app-header/styles.ts` paints the
+badge of a disabled button `#D0D4D8` with white Inter 500 12/18 digits. Box, radius and position
+are unchanged (18 px, radius 45, 34,30 in the button). The choice now covers the disabled buttons
+only: since the notifications slot is registered, the enabled bell draws the alert badge `#D63333`
+(`bell-styles.ts`, `alertBadge`) in the same box.
 
-Contrast, recorded as it is: white on `#D0D4D8` is about 1.5:1. The badge sits on a natively
+Contrast, recorded as it is: white on `#D0D4D8` is about 1.5:1. That badge sits on a natively
 disabled control (an inactive component, exempt from SC 1.4.3 and 1.4.11), it is `aria-hidden`, the
-count reaches assistive technology through the button's description, and production passes no count
-today, so no page renders it. No `A11Y_EXCEPTIONS` entry is added.
+count reaches assistive technology through the button's description, and no page passes a count to
+a disabled button, so no page renders it. No `A11Y_EXCEPTIONS` entry is added.
 
 ### DV-13: the handle rides the sidebar edge (owner decision, 2026-11-04)
 

@@ -42,10 +42,6 @@
       ]
     },
     {
-      "catalog": "components/ui-toast/i18n",
-      "owners": ["components/ui-toast"]
-    },
-    {
       "catalog": "components/ui-app-shell/i18n",
       "owners": [
         "components/ui-app-shell",
@@ -82,6 +78,17 @@
         "modules/user/features/auth/components/recovery-codes-notice",
         "modules/user/features/auth/hooks/use-recovery-notice-message.ts"
       ]
+    },
+    {
+      "catalog": "modules/user/features/notifications/i18n",
+      "owners": [
+        "modules/user/features/notifications/repositories/in-memory-notification-repository.ts",
+        "modules/user/features/notifications/components"
+      ]
+    },
+    {
+      "catalog": "components/ui-notification-content/i18n",
+      "owners": ["components/ui-notification-content"]
     }
   ]
 }
