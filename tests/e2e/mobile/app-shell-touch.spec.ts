@@ -12,6 +12,7 @@ import {
   chipOf,
   drawerOf,
   expectShellReady,
+  logoOf,
   menuItemOf,
   shellText,
   userMenuOf,
@@ -35,8 +36,6 @@ const drawerLinkOf = (page: Page, id: string): Locator =>
   drawerOf(page).getByRole('link', { name: t(`app_shell.items.${id}`), exact: true });
 const drawerSignOutOf = (page: Page): Locator =>
   drawerOf(page).getByRole('button', { name: shellText.signOut, exact: true });
-const logoOf = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
 
 async function tapCentre(control: Locator): Promise<void> {
   const box = await control.boundingBox();

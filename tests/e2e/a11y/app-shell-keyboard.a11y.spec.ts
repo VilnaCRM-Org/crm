@@ -8,6 +8,7 @@ import {
   chipOf,
   drawerOf,
   expectShellReady,
+  logoOf,
   menuItemOf,
   openChipMenu,
   shellText,
@@ -26,8 +27,6 @@ const SUB_ITEM_IDS = ['integrations', 'webhooks', 'billing'] as const;
 const labelOf = (id: string): string => t(`app_shell.items.${id}`);
 const rowOf = (page: Page, id: string): Locator =>
   sidebarOf(page).getByRole('link', { name: labelOf(id), exact: true });
-const logoOf = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
 const handleOf = (page: Page): Locator =>
   page.getByRole('button', {
     name: new RegExp(`^(${shellText.collapse}|${shellText.expand})$`, 'u'),

@@ -51,6 +51,9 @@ export const drawerOf = (page: Page): Locator =>
 export const burgerOf = (page: Page): Locator =>
   page.getByRole('banner').getByRole('button', { name: shellText.openMenu, exact: true });
 
+export const logoOf = (page: Page): Locator =>
+  page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
+
 export const bellOf = (page: Page): Locator =>
   page.getByRole('banner').getByRole('button', { name: shellText.notifications, exact: true });
 

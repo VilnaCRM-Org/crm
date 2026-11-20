@@ -7,7 +7,14 @@ import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { NOTIFICATION_STYLES, type NotificationStyle } from '@tests/e2e/utils/notification-style';
 
-import { PROFILE_NODE, type RecordedCall, configuredOrigin, originsOf } from './profile-stub';
+import {
+  PROFILE_NODE,
+  type ProfileReplies,
+  type RecordedCall,
+  configuredOrigin,
+  originsOf,
+  replyWithSaved,
+} from './profile-stub';
 
 export const text = {
   title: `${t('settings.title')} - VilnaCRM`,
@@ -297,4 +304,30 @@ export async function actionRowBottom(form: Locator): Promise<number> {
   const actions = await form.getByRole('button', { name: actionNames }).all();
   const boxes = await Promise.all(actions.map((action) => documentBoxOf(action)));
   return Math.max(...boxes.map((box) => box.y + box.height));
+}
+
+export interface SectionEdits {
+  readonly fullName: string;
+  readonly email: string;
+  readonly password: string;
+  readonly newPassword: string;
+}
+
+export const everySectionReplies = (edits: SectionEdits): ProfileReplies => {
+  const saved = replyWithSaved({ initials: edits.fullName, email: edits.email, confirmed: false });
+  return { UpdateUser: [replyWithSaved({ initials: edits.fullName }), saved, saved] };
+};
+
+export async function saveEverySection(
+  page: Page,
+  style: NotificationStyle,
+  edits: SectionEdits
+): Promise<void> {
+  await saveEditedName(page, edits.fullName, edits.password);
+  await expectSuccessOutcome(page, style, text.saved);
+  await saveEditedEmail(page, edits.email, edits.password);
+  await expectSuccessOutcome(page, style, text.emailSent);
+  await editPassword(page, edits.password, edits.newPassword);
+  await saveButton(page).click();
+  await expectSuccessOutcome(page, style, text.passwordChanged);
 }

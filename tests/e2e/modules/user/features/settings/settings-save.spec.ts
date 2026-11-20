@@ -24,6 +24,8 @@ import {
   editName,
   editPassword,
   emailField,
+  everySectionReplies,
+  saveEverySection,
   emailPasswordField,
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
@@ -220,21 +222,13 @@ for (const style of NOTIFICATION_STYLES) {
     });
 
     test('J4: three section saves in turn raise the badge from one to four', async ({ page }) => {
-      const saved = replyWithSaved({ initials: NEW_NAME, email: newEmail, confirmed: false });
-      stub = await stubProfile(page, {
-        UpdateUser: [replyWithSaved({ initials: NEW_NAME }), saved, saved],
-      });
+      const edits = { fullName: NEW_NAME, email: newEmail, password, newPassword };
+      stub = await stubProfile(page, everySectionReplies(edits));
       await page.setViewportSize(DESKTOP);
       await openLoadedSettings(page);
       await expect(bellOf(page).getByText('1', { exact: true })).toBeVisible();
 
-      await saveEditedName(page, NEW_NAME, password);
-      await expectSuccessOutcome(page, style, text.saved);
-      await saveEditedEmail(page, newEmail, password);
-      await expectSuccessOutcome(page, style, text.emailSent);
-      await editPassword(page, password, newPassword);
-      await saveButton(page).click();
-      await expectSuccessOutcome(page, style, text.passwordChanged);
+      await saveEverySection(page, style, edits);
 
       expect(stub.count('UpdateUser')).toBe(3);
       await expect(bellOf(page).getByText('4', { exact: true })).toBeVisible();

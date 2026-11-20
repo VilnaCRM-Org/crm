@@ -1827,6 +1827,14 @@ scenario parametrised over `['toast', 'inline', 'bell']` with `useNotificationSt
 - Given a reload under each style, when the panel opens, then the seed is shown again and the badge reads 1 (no persistence).
 - Not applicable: unit coverage and mutation (test-only), visual (Story 4.6).
 
+> Code facts (2026-11-20): written and linted locally, first run in CI. Row times are pinned per
+> engine by a UTC timezone and a regex over the seed date and time, because the e2e `t()` has no
+> `datetime` formatter. The combined save is the three section saves in turn
+> (`saveEverySection`). "Tabs to the bell" starts from the focused logo, as the shell keyboard spec
+> does; the route-change close uses Back, since a sidebar click would close through the outside
+> path first; "no merged card" under `toast` and `inline` is asserted as no `notifications-notice`
+> load and no close button in the header.
+
 ### Story 4.4: Prove touch targets, reflow and clearance on mobile and small viewports
 
 As a touch user and a user of a small or zoomed viewport,
