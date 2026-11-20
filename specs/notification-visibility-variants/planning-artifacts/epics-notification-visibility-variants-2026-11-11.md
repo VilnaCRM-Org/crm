@@ -1956,6 +1956,14 @@ changed-PNG list.
 - Given the baselines, when their origin is checked, then each came from the CI `visual tests` artifact of the branch, never from a local container (verified at QA / finish-PR stage, not in a local Ralph run).
 - Not applicable: unit coverage and mutation (test-only), i18n.
 
+> Code facts (2026-11-20): the spec changes are written and linted locally; the 42 new PNGs and the
+> re-recorded protected-page baselines come from the CI `visual tests` artifact, never from a local
+> run. `freezeClock` pauses at the real time plus 500 ms, so the captures also install the clock at
+> 2026-11-11T10:00:00Z in UTC before load for deterministic row times. The bell extent is checked in
+> the one-outcome (transient) case at 1440 × 900 (the screens' desktop size is 1440 × 1000, so the
+> test resizes for the check), because three rows make the card taller than the Figma extent.
+> `stabilizePage` waits for the enabled bell and its badge on any page with a `banner`.
+
 ### Story 4.7: Prove the notificationStyle entrypoint on the built production image
 
 As an operator,
