@@ -2,7 +2,28 @@
 
 The history of outcomes a user has seen, kept behind a repository contract so that it can become
 its own module later (issue #391). No notification back end exists yet (user-service issues #526
-and #527 are open), so the only adapter is an in-memory mock.
+and #527 are open), so the only adapter is an in-memory mock. The design decision (three variants
+of the transient surface, the 3:1 edge floor, the `notificationStyle` switch and the removal plan)
+is recorded in the [user module README](../../README.md).
+
+## The port this feature listens to
+
+Pages never import this feature. They raise outcomes through the port, which lives outside the
+module so that any page can use it:
+
+- `src/lib/notifications/`: the container-free Zustand outlet store
+  (`use-notification-outlet-store.ts`), the actions that raise, dismiss and withdraw
+  (`notification-outlet-actions.ts`, `notification-raise-builder.ts`), the style-to-surface table
+  (`notification-surfaces.ts`: `toast` → `page`, `inline` → `anchor`, `bell` → `header`) and the
+  port types in `types/` (`NotificationDraftSet`, `NotificationView`, `ShownNotification`,
+  `NotificationOutletState` and the others).
+- `src/hooks/use-notifications.ts`: `useNotifications()` returns the `NotificationsPort`
+  (`src/hooks/types/notifications-port.ts`): `raise`, `dismiss`, `dismissAll`, `withdraw`,
+  `publishFocus` and `clear`.
+- The read hooks beside it: `useShownNotifications`, `useNotificationViews`,
+  `useRetiringNotificationViews`, `useNotificationFocus`, `useNotificationFocusReturn`,
+  `useNotificationAnnouncement` and `useNotificationSurface`, which answers whether the active
+  `notificationStyle` renders a given surface.
 
 ## The contract
 
@@ -34,12 +55,14 @@ texts equal the shipped `settings.toasts.password_changed`, `email_sent` and `sa
 `tests/unit/modules/user/features/notifications/i18n/seed-copy.test.ts` turns red when the
 settings copy changes and the seed does not follow.
 
-## Extraction rule: no user-module imports
+## Isolation rule: no user-module imports
 
-Nothing in this folder may import from the rest of `src/modules/user/`. It imports only the port
-types in `src/lib/notifications/types` with `import type`, so the feature can move to
-`src/modules/notifications/` without changing a caller. The public barrel (`index.ts`) exports
-types only.
+Nothing in this folder may import from the rest of `src/modules/user/`; the dependency-cruiser rule
+`notifications-feature-self-contained` fails the build on such an import. The feature reaches only
+shared code outside the module: the port (`src/lib/notifications`, the hooks in `src/hooks/`),
+shared components (`ui-app-header`, `ui-bell-notice`, `ui-notification-history`,
+`ui-notification-outlet`), `src/lib/reliability`, `src/lib/locale-catalog`, `@/i18n` and the route
+and registrar types. The public barrel (`index.ts`) exports types only.
 
 ## The token and the hook seam
 
@@ -56,11 +79,13 @@ gets that instance, and a unit test resolves the token and asserts it is that ve
 Storybook's `withFreshNotificationRepository(seed?)` provides a new `InMemoryNotificationRepository`
 per story through that context, so one story marking rows read never reaches the next.
 
-`di.ts` sits at the feature root, so the `no-di-config-import-outside-composition-root` rule, whose
-`DI_COMPOSITION_ROOTS` list names `src/modules/<module>/config/di.ts`, does not cover it. An
-importer outside the feature is still stopped by the module and feature boundary rules, and the
-file imports tsyringe as a type only. The gap is recorded here rather than closed by widening that
-list.
+`features/notifications/di.ts` is not in `DI_COMPOSITION_ROOTS` (`.dependency-cruiser.js`), whose
+module entry is `^src/modules/[^/]+/config/di[.]ts$`, so the
+`no-di-config-import-outside-composition-root` rule does not guard it. The boundary rules do: an
+importer outside the module is stopped by `no-module-internal-imports` (the aggregator is its one
+exemption), a sibling feature by `no-cross-feature-imports`, and the module's shared layers by
+`no-feature-internal-imports`. The file imports tsyringe as a type only. The gap is recorded here
+rather than closed by widening that list.
 
 ## Hooks
 
@@ -107,3 +132,17 @@ The route contract `routes/index.ts` (`user.notifications`, no routes of its own
 `shell.notifications`, which lazily imports the slot as the `notifications-shell` chunk; the
 route registry appends it, so the composer mounts the slot on every protected page under every
 style.
+
+## Chunks
+
+| Chunk                   | Holds                                | Loads                        |
+| ----------------------- | ------------------------------------ | ---------------------------- |
+| `notifications-shell`   | slot, recorder, adapter, bell        | every protected page         |
+| `notifications-history` | `NotificationHistoryPanel`           | the first open of the bell   |
+| `notifications-notice`  | `BellOutcomeNotice`, the merged card | protected pages, `bell` only |
+
+## Extraction checklist
+
+1. Move this folder (and its tests) to `src/modules/notifications/`.
+2. Re-point `src/routes/registry.ts` and the `src/config/dependency-injection-config.ts` entry.
+3. Rename this feature's catalog and owner paths in `config/i18n-catalog-policy.json`.
