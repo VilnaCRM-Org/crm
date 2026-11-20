@@ -71,12 +71,17 @@ const raiseCount = (): number => useNotificationOutletStore.getState().revision;
 const inlineAnchors = (): string[] =>
   useNotificationOutletStore.getState().inline.items.map((batch) => batch.anchor);
 
-const raiseOnBothAnchors = (): void => {
+const raiseOnEveryAnchor = (): void => {
   const port = renderHook(() => useNotifications(), { wrapper }).result.current;
   act(() =>
     port.raise({
       items: [
-        { kind: 'success', messageKey: 'settings.toasts.saved' },
+        { kind: 'success', messageKey: 'settings.toasts.saved', anchor: 'fullName-save' },
+        {
+          kind: 'success',
+          messageKey: 'settings.toasts.password_changed',
+          anchor: 'password-save',
+        },
         { kind: 'success', messageKey: 'settings.toasts.resent', anchor: 'email' },
       ],
     })
@@ -320,12 +325,12 @@ describe('useProfileSave', () => {
   });
 
   it.each([
-    ['fullName', 'settings.toasts.saved'],
-    ['email', 'settings.toasts.email_sent'],
-    ['password', 'settings.toasts.password_changed'],
+    ['fullName', 'settings.toasts.saved', 'fullName-save'],
+    ['email', 'settings.toasts.email_sent', 'email-save'],
+    ['password', 'settings.toasts.password_changed', 'password-save'],
   ] as const)(
-    'adopts the entity, raises the %s draft alone and counts the saved settle',
-    async (section, messageKey) => {
+    "adopts the entity, raises the %s draft alone at the section's save anchor",
+    async (section, messageKey, anchor) => {
       const parts = harness();
       const { adopt } = parts;
       const entity = buildUserEntity();
@@ -344,7 +349,8 @@ describe('useProfileSave', () => {
 
       expect(adopt).toHaveBeenCalledWith(entity);
       expect(raiseCount()).toBe(1);
-      expect(raised()).toEqual([{ kind: 'success', messageKey }]);
+      expect(raised()).toEqual([{ kind: 'success', messageKey, anchor }]);
+      expect(result.current.anchor).toBe(anchor);
       expect(result.current.state.settled).toBe(1);
       expect(result.current.state.saved).toBe(1);
       expect(result.current.state.lastSettleSaved).toBe(true);
@@ -397,49 +403,64 @@ describe('useProfileSave', () => {
 
     expect(raiseCount()).toBe(1);
     expect(raised()).toEqual([
-      { kind: 'success', messageKey: 'settings.toasts.saved' },
-      { kind: 'success', messageKey: 'settings.toasts.email_sent' },
-      { kind: 'success', messageKey: 'settings.toasts.password_changed' },
+      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: 'fullName-save' },
+      { kind: 'success', messageKey: 'settings.toasts.email_sent', anchor: 'fullName-save' },
+      { kind: 'success', messageKey: 'settings.toasts.password_changed', anchor: 'fullName-save' },
     ]);
     detect.mockRestore();
   });
 
-  it('withdraws the primary notifications when a save goes pending', () => {
-    const parts = harness();
-    raiseOnBothAnchors();
-    mockUpdate.mockReturnValue(new Promise(() => undefined));
-    const { result } = mountSave(parts);
+  it.each([
+    ['fullName', ['password-save', 'email']],
+    ['password', ['fullName-save', 'email']],
+  ] as const)(
+    "withdraws only the %s section's save anchor when a save goes pending",
+    (section, kept) => {
+      const parts = harness();
+      raiseOnEveryAnchor();
+      mockUpdate.mockReturnValue(new Promise(() => undefined));
+      const { result } = mountSave(parts, section);
 
-    expect(inlineAnchors()).toEqual(['primary', 'email']);
+      expect(inlineAnchors()).toEqual(['fullName-save', 'password-save', 'email']);
 
-    act(() => {
-      result.current.save(nameChange());
-    });
+      act(() => {
+        result.current.save(
+          buildProfileFormValues({
+            fullName: NEW_FULL_NAME,
+            email: NEW_EMAIL,
+            newPassword: NEW_PASSWORD,
+          })
+        );
+      });
 
-    expect(inlineAnchors()).toEqual(['email']);
-    expect(result.current.state.attempts).toBe(1);
-  });
+      expect(inlineAnchors()).toEqual(kept);
+      expect(result.current.state.attempts).toBe(1);
+    }
+  );
 
   it('withdraws nothing when nothing changed', async () => {
     const parts = harness();
-    raiseOnBothAnchors();
+    raiseOnEveryAnchor();
     const { result } = mountSave(parts);
 
     await act(async () => {
       result.current.save(unchangedValues());
     });
 
-    expect(inlineAnchors()).toEqual(['primary', 'email']);
+    expect(inlineAnchors()).toEqual(['fullName-save', 'password-save', 'email']);
   });
 
-  it('withdraws the primary notifications on clear', () => {
+  it.each([
+    ['fullName', ['password-save', 'email']],
+    ['password', ['fullName-save', 'email']],
+  ] as const)("withdraws only the %s section's save anchor on clear", (section, kept) => {
     const parts = harness();
-    raiseOnBothAnchors();
-    const { result } = mountSave(parts);
+    raiseOnEveryAnchor();
+    const { result } = mountSave(parts, section);
 
     act(() => result.current.clear());
 
-    expect(inlineAnchors()).toEqual(['email']);
+    expect(inlineAnchors()).toEqual(kept);
     expect(raiseCount()).toBe(1);
   });
 
@@ -576,6 +597,7 @@ describe('useProfileSave', () => {
     expect(drafts).toHaveLength(1);
     expect(drafts[0]?.messageKey).toBe('settings.toasts.save_failed_transient');
     expect(drafts[0]?.action?.labelKey).toBe('auth.error.tryAgain');
+    expect(drafts[0]?.anchor).toBe('fullName-save');
     drafts[0]?.action?.onActivate();
     expect(click).toHaveBeenCalledTimes(1);
     expect(adopt).not.toHaveBeenCalled();
@@ -627,7 +649,7 @@ describe('useProfileSave', () => {
       result.current.save(nameChange());
     });
 
-    expect(raised()).toEqual([{ kind: 'error', messageKey }]);
+    expect(raised()).toEqual([{ kind: 'error', messageKey, anchor: 'fullName-save' }]);
     expect(raised()[0]?.action).toBeUndefined();
     expect(raiseCount()).toBe(1);
     expect(result.current.state.settled).toBe(1);
@@ -790,10 +812,10 @@ describe('useProfileSave', () => {
     });
 
     it.each([
-      ['fullName', 'settings.toasts.saved'],
-      ['email', 'settings.toasts.email_sent'],
-      ['password', 'settings.toasts.password_changed'],
-    ] as const)('raises the %s success draft with its exact key', async (section, key) => {
+      ['fullName', 'settings.toasts.saved', 'fullName-save'],
+      ['email', 'settings.toasts.email_sent', 'email-save'],
+      ['password', 'settings.toasts.password_changed', 'password-save'],
+    ] as const)('raises the %s success draft with its exact key', async (section, key, anchor) => {
       const fresh = await loadKeyed();
       const { props } = harness();
       mockUpdate.mockResolvedValue(okOutcome());
@@ -810,7 +832,9 @@ describe('useProfileSave', () => {
       });
 
       expect(fresh.store.getState().revision).toBe(1);
-      expect(draftsOf(fresh.store.getState())).toEqual([{ kind: 'success', messageKey: key }]);
+      expect(draftsOf(fresh.store.getState())).toEqual([
+        { kind: 'success', messageKey: key, anchor },
+      ]);
     });
 
     it.each([
@@ -830,7 +854,7 @@ describe('useProfileSave', () => {
       const drafts = draftsOf(fresh.store.getState());
       expect(fresh.store.getState().revision).toBe(1);
       expect(drafts).toHaveLength(1);
-      expect(drafts[0]).toMatchObject({ kind: 'error', messageKey: key });
+      expect(drafts[0]).toMatchObject({ kind: 'error', messageKey: key, anchor: 'fullName-save' });
     });
   });
 });

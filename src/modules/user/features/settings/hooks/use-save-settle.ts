@@ -1,5 +1,6 @@
 import useNotifications from '@/hooks/use-notifications';
 import type {
+  NotificationAnchor,
   NotificationDraft,
   NotificationDraftSet,
 } from '@/lib/notifications/types/notification-draft';
@@ -29,17 +30,18 @@ const FAILURE_TOASTS = new Map<ProfileFailureReason, string>([
   ['rate_limited', 'settings.toasts.rate_limited'],
 ]);
 
-function savedDrafts(change: ProfileChange): NotificationDraftSet {
+function savedDrafts(change: ProfileChange, anchor: NotificationAnchor): NotificationDraftSet {
   const items: NotificationDraft[] = [];
   for (const [aspect, messageKey] of SAVED_TOASTS) {
-    if (change[aspect] !== undefined) items.push({ kind: 'success', messageKey });
+    if (change[aspect] !== undefined) items.push({ kind: 'success', messageKey, anchor });
   }
   return { items };
 }
 
 function failureDrafts(
   outcome: ProfileFailedOutcome,
-  { buttonRef }: SectionTargets
+  { buttonRef }: SectionTargets,
+  anchor: NotificationAnchor
 ): NotificationDraftSet | null {
   const messageKey = FAILURE_TOASTS.get(outcome.reason);
   if (messageKey === undefined) return null;
@@ -47,19 +49,20 @@ function failureDrafts(
     outcome.reason === 'transient'
       ? { labelKey: 'auth.error.tryAgain', onActivate: (): void => buttonRef.current?.click() }
       : undefined;
-  return { items: [{ kind: 'error', messageKey, action }] };
+  return { items: [{ kind: 'error', messageKey, action, anchor }] };
 }
 
 function settleSave(
   outcome: ProfileUpdateOutcome,
   change: ProfileChange,
-  { props, targets, raise, dispatch }: SaveSettleContext
+  { props, targets, anchor, raise, dispatch }: SaveSettleContext
 ): void {
   if (outcome.kind === 'invalid') {
     return dispatch({ type: 'invalid', errors: outcome.errors });
   }
   if (outcome.kind === 'ok') props.adoption.adopt(outcome.user);
-  const drafts = outcome.kind === 'ok' ? savedDrafts(change) : failureDrafts(outcome, targets);
+  const drafts =
+    outcome.kind === 'ok' ? savedDrafts(change, anchor) : failureDrafts(outcome, targets, anchor);
   if (drafts === null) return;
   raise(drafts);
   dispatch({ type: 'settled', saved: outcome.kind === 'ok' });

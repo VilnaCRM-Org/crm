@@ -1531,6 +1531,14 @@ decorator), profile-form and route tests, `tests/unit/a11y/settings-page-states.
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys (copy unchanged).
 
+> Code facts (2026-11-20): since #377 the profile is three section forms (`fullName`, `email`,
+> `password`), each with its own Save and Clear, so one `primary` anchor would draw a save batch in
+> all three footers. `useProfileSave` therefore uses `${section}-save` as the section's anchor,
+> withdraws it on pending and Clear, and `useSaveSettle` stamps it on every draft; each section
+> footer (`SectionFooter`, which replaced `SectionClear`) renders Clear and
+> `<UINotificationSlot anchor={save.anchor} />`. The e-mail slot sits in `EmailField` after the
+> conditional status row. Story 3.1's `withdraw('primary')` became the section's anchor here.
+
 ### Story 3.3: Carry a second route-contract shell slot from the registry to the header
 
 As the app shell,

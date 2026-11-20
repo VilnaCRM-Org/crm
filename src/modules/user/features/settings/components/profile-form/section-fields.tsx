@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIFormField from '@/components/ui-form-field';
+import UINotificationSlot from '@/components/ui-notification-slot';
 import UIPasswordField from '@/components/ui-password-field';
 
 import useEmailRow from '../../hooks/use-email-row';
@@ -126,6 +127,7 @@ function EmailField({ context, rules, busy }: EmailFieldProps): JSX.Element {
       />
       <SaveHint id={EMAIL_HINT_ID} />
       <EmailStatus context={context} busy={busy} />
+      <UINotificationSlot anchor="email" />
     </>
   );
 }

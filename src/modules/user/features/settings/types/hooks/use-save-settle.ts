@@ -1,6 +1,9 @@
 import type { Dispatch } from 'react';
 
-import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
+import type {
+  NotificationAnchor,
+  NotificationDraftSet,
+} from '@/lib/notifications/types/notification-draft';
 
 import type { ProfileUpdateOutcome } from '../user-profile/outcome';
 import type { ProfileChange } from '../user-profile/profile-change';
@@ -10,6 +13,7 @@ import type { ProfileEditContext, ProfileFormAction, SectionTargets } from './us
 export interface SaveSettleOptions {
   readonly props: ProfileEditContext;
   readonly targets: SectionTargets;
+  readonly anchor: NotificationAnchor;
   readonly dispatch: Dispatch<ProfileFormAction>;
 }
 

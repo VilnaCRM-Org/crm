@@ -74,6 +74,7 @@ const saveOf = (overrides: Partial<ProfileSave> = {}): ProfileSave => ({
   },
   isSubmitting: false,
   changes: new ProfileChangeDetector(),
+  anchor: 'fullName-save',
   buttonRef: { current: null },
   save: jest.fn(),
   clear: jest.fn(),
