@@ -1,7 +1,11 @@
 import type { ComponentType, RefObject } from 'react';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
-import type { ShellChunkFailureHandler, ShellChunkSource } from '@/routes/types/shell-slot';
+import type {
+  ShellChunkFailureHandler,
+  ShellChunkSource,
+  ShellSlotProps,
+} from '@/routes/types/shell-slot';
 
 import type { BellDisclosure } from './bell-disclosure';
 import type { NotificationRecordSet } from './notification-record';
@@ -40,4 +44,8 @@ export interface BellButtonProps {
   readonly unread: number;
   readonly historyId: string;
   readonly disclosure: BellDisclosure;
+}
+
+export interface NotificationsShellSlotProps extends ShellSlotProps {
+  readonly layout: ShellLayout;
 }

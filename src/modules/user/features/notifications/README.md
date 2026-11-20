@@ -95,4 +95,13 @@ All hooks in `hooks/` are container-free and read the repository through
 - Each loader reports a final chunk failure as `app-shell:notifications-history` or
   `app-shell:notifications-notice` and resolves to an empty component, so the bell keeps working.
 
-Later stories add the shell slot; this README grows with it.
+- `NotificationsShellSlot` (`components/notifications-shell-slot.tsx`) is the shell slot of
+  every protected page under every style. It calls `useNotificationRecorder(onChunkFailure)`,
+  which records each raise once and reports a rejected write as `app-shell:notifications-record`,
+  and renders `BellNotifications` with the shell `layout` and the recorder's revision, so the
+  badge counts every recorded outcome. It declares no `Suspense`: the shell slot factory's
+  boundary waits for its chunk inside the fixed-size `BellSlotFrame`, and the panel and the card
+  are caught by the boundaries `BellNotifications` owns.
+
+The route contract that loads the slot as the `notifications-shell` chunk arrives with the shell
+wiring.

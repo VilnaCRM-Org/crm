@@ -7,4 +7,5 @@ export type {
   NotificationChunkReporter,
   NotificationHistoryPanelModule,
   NotificationHistoryPanelProps,
+  NotificationsShellSlotProps,
 } from './types/components';

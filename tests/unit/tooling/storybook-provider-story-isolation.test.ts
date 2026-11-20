@@ -58,6 +58,7 @@ describe('stories that stub a Data provider or the current-user answer in shared
       'src/components/ui-notification-slot/ui-notification-slot.stories.tsx',
       `${NOTIFICATIONS_ROOT}/components/bell-notifications.stories.tsx`,
       `${NOTIFICATIONS_ROOT}/components/bell-outcome-notice.stories.tsx`,
+      `${NOTIFICATIONS_ROOT}/components/notifications-shell-slot.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/profile-section-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/section-fields.stories.tsx`,

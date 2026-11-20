@@ -1,59 +1,21 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-webpack5';
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ComponentType, JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
-import type { ShellLayout } from '@/components/types/ui-app-shell';
+import composeLayoutStories, {
+  type LayoutStoriesModule,
+} from '@tests/unit/utils/compose-layout-stories';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { clearConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
-interface StageArgs {
-  readonly layout: ShellLayout;
-}
-
-type StageMeta = Meta<ComponentType<StageArgs>>;
-
-type StageStory = StoryObj<ComponentType<StageArgs>>;
-
-interface StoriesModule {
-  readonly [name: string]: StageStory | StageMeta;
-  readonly default: StageMeta;
-}
-
-const storiesModule: StoriesModule = jest.requireActual(
+const storiesModule: LayoutStoriesModule = jest.requireActual(
   '@/modules/user/features/notifications/components/bell-notifications.stories'
 );
 
-const { default: meta, ...stories } = storiesModule;
-
-const storyContext = {} as Parameters<Decorator<StageArgs>>[1];
-
-type StoryRender = () => JSX.Element;
-
-const decorate = (story: StageStory): StoryRender => {
-  const Stage = meta.component;
-  if (Stage === undefined) throw new Error('the stories declare no component');
-  const args: StageArgs = { layout: 'desktop', ...meta.args, ...story.args };
-  const decorators = [story.decorators ?? [], meta.decorators ?? []].flat();
-
-  return decorators.reduce<StoryRender>(
-    (Inner, decorator) =>
-      function Decorated(): JSX.Element {
-        return decorator(Inner, storyContext) as JSX.Element;
-      },
-    function Undecorated(): JSX.Element {
-      return <Stage layout={args.layout} />;
-    }
-  );
-};
-
-const composed: Record<string, StoryRender> = Object.fromEntries(
-  Object.entries(stories).map(([name, story]) => [name, decorate(story as StageStory)])
-);
+const composed = composeLayoutStories(storiesModule);
 
 const OPENED = new Set(['HistoryOpen', 'AfterMarkAllRead']);
 

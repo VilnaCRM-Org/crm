@@ -1381,6 +1381,12 @@ gains `notifications-shell-slot.stories.tsx`, readiness R2-01), tests.
 - Given the new file, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys.
 
+> Code facts (2026-11-20): `NotificationsShellSlotProps` is `ShellSlotProps` plus the shell
+> `layout`. `ShellSlotFactory.create` still passes only `signOut`, `onAvatar` and
+> `onChunkFailure` and reports `'app-shell:user-menu'`, so the composed-shell test wraps the slot
+> with a fixed `layout`; handing the layout and the slot's own source through the factory is
+> Story 3.4's routing change. The stories' axe tests share `tests/unit/utils/compose-layout-stories.tsx`.
+
 ## Epic 3: Composition
 
 Wire the components into `/settings` and the shell. Scope: `src/components/ui-toast/`,
