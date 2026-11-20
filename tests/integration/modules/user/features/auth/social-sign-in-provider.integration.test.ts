@@ -30,10 +30,10 @@ const answer = (
   return seen;
 };
 
-const refused = (errorCode: string): Response =>
+const refused = (errorCode: string, status = 422): Response =>
   HttpResponse.json({
     data: { completeSocialSignInUser: null },
-    errors: [{ message: 'refused', extensions: { status: 422, error_code: errorCode } }],
+    errors: [{ message: 'refused', extensions: { status, error_code: errorCode } }],
   });
 
 describe('SocialSignInProvider over the container and msw', () => {
@@ -205,22 +205,29 @@ describe('SocialSignInProvider over the container and msw', () => {
   });
 
   it.each([
-    ['state_expired', 'expired'],
-    ['unverified_provider_email', 'email_unverified'],
-    ['duplicate_email', 'duplicate_email'],
-    ['provider_unavailable', 'unavailable'],
-  ])('maps the %s GraphQL error to %s and asks only once', async (errorCode, kind) => {
-    const seen = answer('CompleteSocialSignIn', () => refused(errorCode));
+    ['missing_oauth_parameters', 400, 'missing_parameters'],
+    ['provider_mismatch', 400, 'provider_mismatch'],
+    ['invalid_state', 422, 'expired'],
+    ['state_expired', 422, 'expired'],
+    ['provider_email_unavailable', 422, 'email_unavailable'],
+    ['unverified_provider_email', 422, 'email_unverified'],
+    ['duplicate_email', 409, 'duplicate_email'],
+    ['provider_unavailable', 503, 'unavailable'],
+  ] as const)(
+    'maps the %s GraphQL error (%s) to %s and asks only once',
+    async (errorCode, status, kind) => {
+      const seen = answer('CompleteSocialSignIn', () => refused(errorCode, status));
 
-    await expect(
-      provider.complete('google', PARAMS, new AbortController().signal)
-    ).resolves.toEqual({
-      kind: 'failed',
-      error: kind,
-    });
-    expect(seen).toHaveLength(1);
-    expect(useAuthStore.getState().token).toBeNull();
-  });
+      await expect(
+        provider.complete('google', PARAMS, new AbortController().signal)
+      ).resolves.toEqual({
+        kind: 'failed',
+        error: kind,
+      });
+      expect(seen).toHaveLength(1);
+      expect(useAuthStore.getState().token).toBeNull();
+    }
+  );
 
   it('maps a dropped connection to unavailable', async () => {
     answer('CompleteSocialSignIn', () => HttpResponse.error());
