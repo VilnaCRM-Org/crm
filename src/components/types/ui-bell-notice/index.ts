@@ -10,16 +10,22 @@ export type NoticeTargetRef = RefObject<HTMLElement | null>;
 
 export type NoticeCloseRegistry = RefObject<Map<string, HTMLButtonElement>>;
 
-export interface NoticeFocusOptions {
+export interface NoticeFocusTargets {
   readonly views: NotificationViewSet;
   readonly returnFocusRef: NoticeTargetRef;
   readonly fallbackFocusRef?: NoticeTargetRef | undefined;
+}
+
+export interface NoticeFocusOptions extends NoticeFocusTargets {
   readonly onDismiss: NotificationClose;
 }
+
+export type NoticeRelease = (id: string, node: HTMLButtonElement) => void;
 
 export interface NoticeFocus {
   readonly registry: NoticeCloseRegistry;
   readonly dismiss: NotificationClose;
+  readonly release: NoticeRelease;
 }
 
 export interface UIBellNoticeProps {
@@ -32,12 +38,10 @@ export interface UIBellNoticeProps {
 
 export interface NoticeRowProps {
   readonly view: NotificationView;
-  readonly registry: NoticeCloseRegistry;
-  readonly onClose: NotificationClose;
+  readonly focus: NoticeFocus;
 }
 
 export interface NoticeListProps {
   readonly views: NotificationViewSet;
-  readonly registry: NoticeCloseRegistry;
-  readonly onClose: NotificationClose;
+  readonly focus: NoticeFocus;
 }
