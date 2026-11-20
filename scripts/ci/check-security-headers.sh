@@ -5,7 +5,8 @@
 # Two container starts, both against the deployable `production` image the Makefile just built:
 #   1. the committed baseline, exactly as serve.json ships it;
 #   2. the same image with APP_CONFIG_* API overrides, which must surface in connect-src — the
-#      positive control proving the entrypoint really extends the CSP at start-up.
+#      positive control proving the entrypoint really extends the CSP at start-up — and with
+#      APP_CONFIG_NOTIFICATION_STYLE, which must reach the served runtime-config block (issue #391).
 # The container is always removed, whichever step fails.
 
 set -eu
@@ -39,6 +40,25 @@ wait_until_ready() {
   return 1
 }
 
+expect_notification_style() {
+  expected="$1"
+  served=$(curl -fsS "${BASE_URL}/")
+  if [ -z "$expected" ]; then
+    case "$served" in
+      *'"notificationStyle"'*)
+        printf 'check-security-headers: the default boot serves a notificationStyle key\n' >&2
+        return 1
+        ;;
+    esac
+    return 0
+  fi
+  case "$served" in
+    *"\"notificationStyle\":\"${expected}\""*) return 0 ;;
+  esac
+  printf 'check-security-headers: / does not serve "notificationStyle":"%s"\n' "$expected" >&2
+  return 1
+}
+
 start_probe() {
   cleanup
   docker run -d --name "$CONTAINER" -p "127.0.0.1:${PORT}:3001" "$@" "$IMAGE" >/dev/null
@@ -48,9 +68,12 @@ start_probe() {
 printf '🔒 [1/2] committed baseline: every response of the production image\n'
 start_probe
 node "$GATE" --url "$BASE_URL"
+expect_notification_style ''
 
-printf '🔒 [2/2] runtime API overrides must extend connect-src at container start\n'
+printf '🔒 [2/2] runtime overrides must extend connect-src and set the notification style\n'
 start_probe \
   -e "APP_CONFIG_API_BASE_URL=${API_ORIGIN}/api" \
-  -e "APP_CONFIG_GRAPHQL_URL=${GRAPHQL_ORIGIN}/graphql"
+  -e "APP_CONFIG_GRAPHQL_URL=${GRAPHQL_ORIGIN}/graphql" \
+  -e "APP_CONFIG_NOTIFICATION_STYLE=inline"
 node "$GATE" --url "$BASE_URL" --expect-connect "$API_ORIGIN" --expect-connect "$GRAPHQL_ORIGIN"
+expect_notification_style inline
