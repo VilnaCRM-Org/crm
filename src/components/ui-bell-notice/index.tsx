@@ -15,29 +15,28 @@ import useNoticePlacement from './use-notice-placement';
 
 const MAX_ROWS = 3;
 
-function NoticeRow({ view, registry, onClose }: NoticeRowProps): JSX.Element {
+function NoticeRow({ view, focus }: NoticeRowProps): JSX.Element {
+  const { registry, release } = focus;
   const closeRef = useCallback(
     (node: HTMLButtonElement): (() => void) => {
       registry.current.set(view.id, node);
-      return (): void => {
-        registry.current.delete(view.id);
-      };
+      return (): void => release(view.id, node);
     },
-    [registry, view.id]
+    [registry, release, view.id]
   );
 
   return (
     <li>
-      <UINotificationContent view={view} onClose={onClose} closeRef={closeRef} />
+      <UINotificationContent view={view} onClose={focus.dismiss} closeRef={closeRef} />
     </li>
   );
 }
 
-function NoticeList({ views, registry, onClose }: NoticeListProps): JSX.Element {
+function NoticeList({ views, focus }: NoticeListProps): JSX.Element {
   return (
     <Box component="ul" sx={styles.list}>
       {views.items.map((view) => (
-        <NoticeRow key={view.id} view={view} registry={registry} onClose={onClose} />
+        <NoticeRow key={view.id} view={view} focus={focus} />
       ))}
     </Box>
   );
@@ -52,7 +51,7 @@ function NoticeCard({
 }: UIBellNoticeProps): JSX.Element {
   const cardRef = useRef<HTMLDivElement>(null);
   useNoticePlacement(bellRef, cardRef, views);
-  const { registry, dismiss } = useNoticeFocus({
+  const focus = useNoticeFocus({
     views,
     returnFocusRef,
     fallbackFocusRef,
@@ -66,7 +65,7 @@ function NoticeCard({
       <Box ref={cardRef} sx={styles.card}>
         <Box sx={styles.caret} aria-hidden />
         <Box sx={styles.body}>
-          <NoticeList views={views} registry={registry} onClose={dismiss} />
+          <NoticeList views={views} focus={focus} />
         </Box>
       </Box>
     </Box>

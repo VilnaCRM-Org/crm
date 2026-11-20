@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type JSX, useRef } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -186,5 +186,112 @@ describe('UIBellNotice', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Повторити' }));
 
     expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('UIBellNotice when a focused row leaves without being closed', () => {
+  const focusedRow = (): string | undefined =>
+    screen
+      .getAllByRole('listitem')
+      .find((item) =>
+        within(item).getByRole('button', { name: 'Закрити сповіщення' }).matches(':focus')
+      )?.textContent ?? undefined;
+
+  it('follows the rows shown at the time, not the rows of the first render', () => {
+    const { rerender } = render(<Host views={set(row('one'))} />);
+    rerender(<Host views={set(row('one'), row('two'))} />);
+    focus(closeButtons()[1]);
+
+    rerender(<Host views={set(row('one'))} />);
+
+    expect(focusedRow()).toContain('Рядок one');
+  });
+
+  it('moves focus to the new oldest row when a fourth outcome evicts the focused one', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    focus(closeButtons()[0]);
+
+    rerender(<Host views={set(row('one'), row('two'), row('three'), row('four'))} />);
+
+    expect(closeButtons()[0]).toHaveFocus();
+    expect(focusedRow()).toContain('Рядок two');
+  });
+
+  it('moves focus to the next row when a focused middle row expires', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    focus(closeButtons()[1]);
+
+    rerender(<Host views={set(row('one'), row('three'))} />);
+
+    expect(focusedRow()).toContain('Рядок three');
+  });
+
+  it('moves focus to the previous row when the focused last row expires', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    focus(closeButtons()[2]);
+
+    rerender(<Host views={set(row('one'), row('two'))} />);
+
+    expect(focusedRow()).toContain('Рядок two');
+  });
+
+  it('ends on the next surviving row when several rows leave in one commit', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    focus(closeButtons()[0]);
+
+    rerender(<Host views={set(row('three'), row('four'), row('five'))} />);
+
+    expect(focusedRow()).toContain('Рядок three');
+  });
+
+  it('moves focus to the Save target when the card empties', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'))} />);
+    focus(closeButtons()[1]);
+
+    rerender(<Host views={set()} />);
+
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toHaveFocus();
+  });
+
+  it('moves focus to the h1 when the card empties and the Save target is disabled', () => {
+    const { rerender } = render(<Host views={set(row('one'))} />);
+    screen.getByRole('button', { name: 'Зберегти' }).setAttribute('disabled', '');
+    focus(closeButtons()[0]);
+
+    rerender(<Host views={set()} />);
+
+    expect(screen.getByRole('heading', { name: 'Налаштування' })).toHaveFocus();
+  });
+
+  it('leaves focus alone when it is outside the card', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    const bell = screen.getByRole('button', { name: 'Сповіщення' });
+    focus(bell);
+
+    rerender(<Host views={set(row('two'), row('three'), row('four'))} />);
+
+    expect(bell).toHaveFocus();
+  });
+
+  it('keeps focus on its row when the same rows render again', async () => {
+    const rows = set(row('one'), row('two'), row('three'));
+    const { rerender } = render(<Host views={rows} />);
+    const [, middle] = closeButtons();
+    focus(middle);
+
+    rerender(<Host views={set(...rows.items)} />);
+
+    await waitFor(() => expect(middle).toHaveFocus());
+    expect(focusedRow()).toContain('Рядок two');
+  });
+
+  it('moves focus once on close, so the row leaving later does not move it again', async () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    focus(closeButtons()[0]);
+    await userEvent.keyboard('{Enter}');
+
+    rerender(<Host views={set(row('two'), row('three'))} />);
+
+    expect(focusedRow()).toContain('Рядок two');
   });
 });

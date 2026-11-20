@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom';
-import { render, renderHook, screen } from '@testing-library/react';
+import { render, renderHook, type RenderHookResult, screen } from '@testing-library/react';
 import { type JSX, useCallback } from 'react';
 
-import type { NoticeCloseRegistry, NoticeTargetRef } from '@/components/types/ui-bell-notice';
+import type {
+  NoticeCloseRegistry,
+  NoticeFocus,
+  NoticeTargetRef,
+} from '@/components/types/ui-bell-notice';
 import useNoticeFocus from '@/components/ui-bell-notice/use-notice-focus';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
@@ -181,5 +185,76 @@ describe('useNoticeFocus', () => {
 
     expect(save).not.toHaveFocus();
     expect(onDismiss).toHaveBeenCalledWith('ghost');
+  });
+});
+
+type Mounted = RenderHookResult<NoticeFocus, { set: NotificationViewSet }>;
+
+describe('useNoticeFocus release', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const closeButton = (id: string): HTMLButtonElement => {
+    const button = document.createElement('button');
+    button.textContent = `Закрити ${id}`;
+    document.body.append(button);
+    return button;
+  };
+
+  const mount = (save: HTMLElement | null): Mounted => {
+    const returnFocusRef = { current: save };
+    const onDismiss = jest.fn();
+    return renderHook(({ set }) => useNoticeFocus({ views: set, returnFocusRef, onDismiss }), {
+      initialProps: { set: views },
+    });
+  };
+
+  it('keeps the same release across renders with new rows', () => {
+    const { result, rerender } = mount(null);
+    const first = result.current.release;
+
+    rerender({ set: { items: [views.items[2]] } as NotificationViewSet });
+
+    expect(result.current.release).toBe(first);
+  });
+
+  it('only unregisters a button that does not hold focus', () => {
+    const { save } = targets();
+    const { result } = mount(save);
+    const one = closeButton('one');
+    const two = closeButton('two');
+    result.current.registry.current.set('one', one);
+    result.current.registry.current.set('two', two);
+
+    result.current.release('one', one);
+
+    expect(document.body).toHaveFocus();
+    expect([...result.current.registry.current.keys()]).toEqual(['two']);
+  });
+
+  it('hands a focused button over to the next shown row, then unregisters it', () => {
+    const { save } = targets();
+    const { result } = mount(save);
+    const one = closeButton('one');
+    const two = closeButton('two');
+    result.current.registry.current.set('one', one);
+    result.current.registry.current.set('two', two);
+    one.focus();
+
+    result.current.release('one', one);
+
+    expect(two).toHaveFocus();
+    expect(result.current.registry.current.has('one')).toBe(false);
+  });
+
+  it('hands a focused button over to the Save target when no other row is registered', () => {
+    const { save } = targets();
+    const { result } = mount(save);
+    const three = closeButton('three');
+    result.current.registry.current.set('three', three);
+    three.focus();
+
+    result.current.release('three', three);
+
+    expect(save).toHaveFocus();
   });
 });
