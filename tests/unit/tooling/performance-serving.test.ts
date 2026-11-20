@@ -845,6 +845,27 @@ describe('the notification chunks of the bell (issue #391)', () => {
     expect(importers).toEqual([]);
   });
 
+  it('loads the notifications shell slot only through its named contract import()', () => {
+    const contract = readFile('src/modules/user/features/notifications/routes/index.ts');
+    const importers = walkSources('src')
+      .filter((source) => /\.(ts|tsx)$/.test(source) && !source.endsWith('.stories.tsx'))
+      .filter((source) =>
+        staticImportsOf(readFile(source)).some((specifier) =>
+          specifier.endsWith('/notifications-shell-slot')
+        )
+      );
+
+    expect(contract.match(/import\(/g)).toHaveLength(1);
+    expect(contract).toMatch(
+      new RegExp(
+        String.raw`notifications: \(\) =>\s*import\(\s*` +
+          String.raw`/\* webpackChunkName: "notifications-shell" \*/\s*` +
+          String.raw`'\.\./components/notifications-shell-slot'\s*\)`
+      )
+    );
+    expect(importers).toEqual([]);
+  });
+
   it('names no notifications-bell chunk anywhere', () => {
     const named = walkSources('src').filter((source) =>
       readFile(source).includes('notifications-bell')

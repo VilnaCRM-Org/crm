@@ -1670,6 +1670,16 @@ imports `routes/index` only), `make lint-docs` (the app-shell README), `make che
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys; recording baselines (Story 4.6 records every changed capture).
 
+> Code facts (2026-11-20): the integration test composes the real registry, `ProtectedRoute`,
+> `AppLayout`, `UIAppShell`, header and `NotificationsShellSlot` over a fresh adapter, with probe
+> pages for `/` and `/settings` (the real settings page needs the DI container and the GraphQL
+> profile and two-factor answers); the `/settings` probe registers the settings catalog as
+> `UserProfile` does. A rejected record reaches `routeMapper.slotFailureReporter()` and is asserted
+> through `observabilityCore.captureError` with source `app-shell:notifications-record`. The shell
+> writes `crm.sidebar.collapsed` to local storage, so NFR-21 is checked as "no storage entry holds
+> the address or notification data". The collapsed-rail keyboard walk's forward Tab now starts at
+> the bell, so its `sidebarStops(...).slice(2)` became `.slice(3)`.
+
 ## Epic 4: Comparison and verification
 
 Prove each variant in the browser, give the team lead a side-by-side view and a measured sheet,

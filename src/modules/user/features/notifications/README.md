@@ -103,5 +103,7 @@ All hooks in `hooks/` are container-free and read the repository through
   boundary waits for its chunk inside the fixed-size `BellSlotFrame`, and the panel and the card
   are caught by the boundaries `BellNotifications` owns.
 
-The route contract that loads the slot as the `notifications-shell` chunk arrives with the shell
-wiring.
+The route contract `routes/index.ts` (`user.notifications`, no routes of its own) declares
+`shell.notifications`, which lazily imports the slot as the `notifications-shell` chunk; the
+route registry appends it, so the composer mounts the slot on every protected page under every
+style.

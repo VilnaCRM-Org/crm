@@ -3,6 +3,7 @@ import type { Locator, Page } from '@playwright/test';
 import ROUTE_PATHS from '@/routes/route-paths';
 import { stubProfile } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
+  bellOf,
   burgerOf,
   chipOf,
   drawerOf,
@@ -53,6 +54,7 @@ function sidebarStops(page: Page, subItems: boolean): { locator: Locator; visibl
 
   return [
     { locator: logoOf(page), visibleFocus: true },
+    { locator: bellOf(page), visibleFocus: true },
     { locator: chipOf(page), visibleFocus: true },
     { locator: handleOf(page), visibleFocus: true },
     ...[...rows, groupToggleOf(page), ...subs, signOutOf(page)].map((locator) => ({
@@ -66,7 +68,7 @@ for (const width of [1440, 1024]) {
   test.describe(`App shell keyboard contract at ${width} px (issue #362)`, () => {
     test.use({ viewport: { width, height: 900 } });
 
-    test('Tab visits the logo, chip, handle, rows, Settings, chevron and Sign out on /', async ({
+    test('Tab visits the logo, bell, chip, handle, rows, Settings, chevron and Sign out', async ({
       page,
     }) => {
       await openAs(page, ROUTE_PATHS.home);
@@ -80,7 +82,7 @@ for (const width of [1440, 1024]) {
       ]);
     });
 
-    test('Tab visits the logo, chip, handle, pills and Sign out of the collapsed rail', async ({
+    test('Tab visits the logo, bell, chip, handle, pills and Sign out of the rail', async ({
       page,
     }) => {
       await openAs(page, ROUTE_PATHS.home);
@@ -93,10 +95,12 @@ for (const width of [1440, 1024]) {
         visibleFocus: true as const,
       }));
       const chip = { locator: chipOf(page), visibleFocus: true as const };
+      const bell = { locator: bellOf(page), visibleFocus: true as const };
       const logo = { locator: logoOf(page), visibleFocus: true as const };
 
-      await expectTabOrder(page, [chip, logo], 'Shift+Tab');
+      await expectTabOrder(page, [chip, bell, logo], 'Shift+Tab');
       await expectTabOrder(page, [
+        bell,
         chip,
         { locator: handleOf(page), visibleFocus: true },
         ...pills,
@@ -140,6 +144,10 @@ for (const width of [1440, 1024]) {
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(400);
       await logoOf(page).evaluate((logo: HTMLElement) => logo.focus({ preventScroll: true }));
 
+      await page.keyboard.press('Tab');
+
+      await expect(bellOf(page)).toBeFocused();
+      expect(await page.evaluate(() => window.scrollY)).toBe(400);
       await page.keyboard.press('Tab');
 
       await expect(chipOf(page)).toBeFocused();
@@ -242,7 +250,7 @@ for (const { path, subItems } of [
       const footerLinks = page.getByRole('contentinfo').getByRole('link');
       const stops = [
         ...sidebarStops(page, subItems)
-          .slice(2)
+          .slice(3)
           .map(({ locator }) => locator),
         homeLinkOf(page),
         footerLinks.first(),
@@ -295,11 +303,12 @@ function drawerStops(page: Page, subItems: boolean): TabStop[] {
 test.describe('App shell keyboard contract at 375 px (issue #362)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test('Tab visits the logo, the avatar and the burger', async ({ page }) => {
+  test('Tab visits the logo, the bell, the avatar and the burger', async ({ page }) => {
     await openAs(page, ROUTE_PATHS.home);
 
     await expectTabOrder(page, [
       { locator: logoOf(page), visibleFocus: true },
+      { locator: bellOf(page), visibleFocus: true },
       { locator: chipOf(page), visibleFocus: true },
       { locator: burgerOf(page), visibleFocus: true },
     ]);
