@@ -54,6 +54,11 @@ export interface UserSlotFrameProps {
   readonly children?: ReactNode | undefined;
 }
 
+export interface BellSlotFrameProps {
+  readonly layout: ShellLayout;
+  readonly children?: ReactNode | undefined;
+}
+
 export interface HeaderHiddenTextProps {
   readonly id: string;
   readonly children: ReactNode;

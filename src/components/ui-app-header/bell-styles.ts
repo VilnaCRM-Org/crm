@@ -2,6 +2,8 @@ import { customColors, paletteColors } from '@/styles/colors';
 
 import { bareButton, roundButton, standaloneFocus } from './styles';
 
+const slotBase = { position: 'relative', flexShrink: 0, overflow: 'visible' };
+
 const enabledButton = {
   color: customColors.text.dark,
   cursor: 'pointer',
@@ -29,6 +31,11 @@ export default {
       minHeight: '2.75rem',
       margin: '-0.625rem',
     },
+  },
+  slot: {
+    desktop: { ...slotBase, width: '48px', height: '48px' },
+    tablet: { ...slotBase, width: '52px', height: '52px' },
+    mobile: { ...slotBase, width: '24px', height: '24px' },
   },
   alertBadge: {
     backgroundColor: paletteColors.error.text,

@@ -1089,6 +1089,10 @@ shell layout, `Suspense` with a same-size `aria-hidden` placeholder, never a nul
 - Given the new file, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: i18n.
 
+> Code facts (2026-11-20): the frame sizes live in `ui-app-header/bell-styles.ts` (`slot`) with
+> the other bell styles, because `styles.ts` is at the file Halstead limit. The frame is also
+> `position: relative`, so it is the wrapper the merged notice (Story 2.5) anchors to.
+
 ### Story 2.9: Build UINotificationOutlet, the page's announcer and lifetime owner
 
 As a screen-reader user on any page that raises outcomes,
