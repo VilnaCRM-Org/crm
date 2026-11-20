@@ -5,12 +5,15 @@ const FORCED_COLORS = '@media (forced-colors: active)';
 
 const white = paletteColors.background.default;
 
+const edge = paletteColors.background.subtle;
+
 const caret = {
   ...caretShape,
   content: '""',
   position: 'absolute',
-  top: '-7px',
-  backgroundColor: paletteColors.border.default,
+  top: '-8px',
+  left: 'calc(var(--bell-centre-x, 0px) - var(--bell-card-left) - 15px)',
+  backgroundColor: edge,
 } as const;
 
 export default {
@@ -18,8 +21,8 @@ export default {
     ...cardAnchor,
     position: 'fixed',
     boxSizing: 'border-box',
-    borderRadius: '0.5rem',
-    border: `1px solid ${paletteColors.border.default}`,
+    borderRadius: '0.75rem',
+    border: `2px solid ${edge}`,
     backgroundColor: white,
     boxShadow: customColors.shell.popoverShadow,
     '&::before': caret,
@@ -27,11 +30,11 @@ export default {
       ...caret,
       top: '-6px',
       backgroundColor: white,
-      width: '22px',
+      width: '20px',
       height: '6px',
       left: 'calc(var(--bell-centre-x, 0px) - var(--bell-card-left) - 12px)',
     },
-    [FORCED_COLORS]: { border: '1px solid CanvasText', boxShadow: 'none' },
+    [FORCED_COLORS]: { border: '2px solid CanvasText', boxShadow: 'none' },
   },
   scroller: {
     maxHeight: 'max(3.125rem, calc(100dvh - 80px - var(--toast-stack-clearance, 0px)))',

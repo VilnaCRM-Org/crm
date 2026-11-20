@@ -71,9 +71,16 @@ describe('UINotificationHistory', () => {
     render(<Panel />);
     const [first, second, third] = screen.getAllByRole('listitem');
 
-    expect(second).toHaveStyle({ backgroundColor: '#E8F7FF' });
-    expect(first).not.toHaveStyle({ backgroundColor: '#E8F7FF' });
-    expect(third).not.toHaveStyle({ backgroundColor: '#E8F7FF' });
+    expect(second).toHaveStyle({ backgroundColor: '#FBFBFB' });
+    expect(first).not.toHaveStyle({ backgroundColor: '#FBFBFB' });
+    expect(third).not.toHaveStyle({ backgroundColor: '#FBFBFB' });
+  });
+
+  it('sets the unread title in Medium and the read titles in Regular', () => {
+    render(<Panel />);
+
+    expect(screen.getByText('Не вдалося зберегти')).toHaveStyle({ fontWeight: '500' });
+    expect(screen.getByText('Пароль змінено')).toHaveStyle({ fontWeight: '400' });
   });
 
   it('marks several unread rows and none when all are read', () => {
