@@ -1,6 +1,6 @@
 import type { StoreApi } from 'zustand';
 
-import { CLEARED_NOTIFICATION_OUTLET } from './cleared-notification-outlet';
+import CLEARED_NOTIFICATION_OUTLET from './cleared-notification-outlet';
 import notificationRaiseBuilder from './notification-raise-builder';
 import type { NotificationAnchor, NotificationDraftSet } from './types/notification-draft';
 import type {

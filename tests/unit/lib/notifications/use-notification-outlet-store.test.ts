@@ -1,4 +1,4 @@
-import { CLEARED_NOTIFICATION_OUTLET } from '@/lib/notifications/cleared-notification-outlet';
+import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notification-outlet';
 import NotificationOutletActions from '@/lib/notifications/notification-outlet-actions';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import { buildNotificationDraftSet } from '@tests/builders/notification-draft';

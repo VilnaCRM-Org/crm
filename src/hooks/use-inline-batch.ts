@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { CLEARED_NOTIFICATION_OUTLET } from '@/lib/notifications/cleared-notification-outlet';
+import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notification-outlet';
 import PRIMARY_NOTIFICATION_ANCHOR from '@/lib/notifications/notification-anchors';
 import type { NotificationAnchor } from '@/lib/notifications/types/notification-draft';
 import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';

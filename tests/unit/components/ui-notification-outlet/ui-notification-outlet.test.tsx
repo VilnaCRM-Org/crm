@@ -6,7 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import UINotificationOutlet from '@/components/ui-notification-outlet';
 import useNotifications from '@/hooks/use-notifications';
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
-import { CLEARED_NOTIFICATION_OUTLET } from '@/lib/notifications/cleared-notification-outlet';
+import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notification-outlet';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { resetClientStores } from '@tests/utils/reset-client-stores';

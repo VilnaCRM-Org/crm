@@ -1,5 +1,5 @@
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
-import { CLEARED_NOTIFICATION_OUTLET } from '@/lib/notifications/cleared-notification-outlet';
+import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notification-outlet';
 import notificationRaiseBuilder from '@/lib/notifications/notification-raise-builder';
 import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
 import { buildNotificationDraft } from '@tests/builders/notification-draft';
