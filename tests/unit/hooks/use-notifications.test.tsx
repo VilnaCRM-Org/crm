@@ -38,6 +38,8 @@ describe('useNotifications', () => {
     expect(result.current.dismiss).toBe(first.dismiss);
     expect(result.current.dismissAll).toBe(first.dismissAll);
     expect(result.current.withdraw).toBe(first.withdraw);
+    expect(result.current.publishFocus).toBe(first.publishFocus);
+    expect(result.current.clear).toBe(first.clear);
   });
 
   it('translates the drafts with the active language at raise time', () => {
@@ -99,5 +101,23 @@ describe('useNotifications', () => {
 
     act(() => result.current.dismissAll());
     expect(useNotificationOutletStore.getState().shown.items).toEqual([]);
+  });
+
+  it('publishes the focus return refs and clears the outlet through the same store', () => {
+    const wrapper = wrapperFor(createSettingsLocaleI18n('en'));
+    const { result } = renderHook(() => useNotifications(), { wrapper });
+    const focus = { primary: { current: null }, fallback: { current: null } };
+
+    act(() => result.current.publishFocus(focus));
+    expect(useNotificationOutletStore.getState().focus).toBe(focus);
+
+    act(() => result.current.raise({ items: [savedDraft] }));
+    act(() => result.current.clear());
+
+    const state = useNotificationOutletStore.getState();
+    expect(state.focus).toBeNull();
+    expect(state.shown.items).toEqual([]);
+    expect(state.inline.items).toEqual([]);
+    expect(state.announcement).toEqual({ polite: '', assertive: '' });
   });
 });

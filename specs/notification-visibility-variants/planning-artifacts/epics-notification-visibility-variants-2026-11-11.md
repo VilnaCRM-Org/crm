@@ -1132,6 +1132,12 @@ tests and `tests/unit/a11y/ui-notification-outlet.a11y.test.tsx`.
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys (texts arrive translated).
 
+> Code facts (2026-11-20): `NotificationsPort` gained `publishFocus` and `clear`, bound to the
+> same module-private actions instance as the other four functions, so the outlet reaches the
+> store only through `useNotifications()`. The story-decorator test list gains
+> `src/components/ui-notification-outlet/ui-notification-outlet.stories.tsx`, and the file imports
+> the decorators through the `@stories` alias.
+
 ### Story 2.10: Build UINotificationSlot, variant B's anchor connector
 
 As a page that places outcomes where they belong,

@@ -8,6 +8,8 @@ const SHARED_STATE_STUB_CALLS = [
   'withProfileProvider(',
   'withCurrentUserAnswer(',
   'withCurrentUserFailure(',
+  'withNotificationStyle(',
+  'withRaisedNotifications(',
 ];
 
 interface DocsStoryParameters {
@@ -48,8 +50,9 @@ const storiesRegisteringTheProviderStub = (): string[] =>
 describe('stories that stub a Data provider or the current-user answer in shared state', () => {
   const stories = storiesRegisteringTheProviderStub();
 
-  it('finds the settings stories that stub the provider or the current-user answer', () => {
+  it('finds the stories that stub shared provider, user or notification state', () => {
     expect(stories).toEqual([
+      'src/components/ui-notification-outlet/ui-notification-outlet.stories.tsx',
       `${SETTINGS_ROOT}/components/profile-form/profile-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/profile-section-form.stories.tsx`,
       `${SETTINGS_ROOT}/components/profile-form/section-fields.stories.tsx`,

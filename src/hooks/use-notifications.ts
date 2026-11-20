@@ -11,6 +11,8 @@ const outletActions = new NotificationOutletActions(useNotificationOutletStore, 
 const dismiss = outletActions.dismiss.bind(outletActions);
 const dismissAll = outletActions.dismissAll.bind(outletActions);
 const withdraw = outletActions.withdraw.bind(outletActions);
+const publishFocus = outletActions.publishFocus.bind(outletActions);
+const clear = outletActions.clear.bind(outletActions);
 
 export default function useNotifications(): NotificationsPort {
   const { t } = useTranslation();
@@ -19,5 +21,8 @@ export default function useNotifications(): NotificationsPort {
     [t]
   );
 
-  return useMemo((): NotificationsPort => ({ raise, dismiss, dismissAll, withdraw }), [raise]);
+  return useMemo(
+    (): NotificationsPort => ({ raise, dismiss, dismissAll, withdraw, publishFocus, clear }),
+    [raise]
+  );
 }
