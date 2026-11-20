@@ -14,6 +14,7 @@ const projectRoot = path.resolve(__dirname, '../../..');
 
 const API_BASE_URL_VAR = 'APP_CONFIG_API_BASE_URL';
 const GRAPHQL_URL_VAR = 'APP_CONFIG_GRAPHQL_URL';
+const NOTIFICATION_STYLE_VAR = 'APP_CONFIG_NOTIFICATION_STYLE';
 const DEMO_FLAG_VAR = `${FLAG_ENV_PREFIX}DEMO_FLAG`;
 const RETIRED_FLAG_VAR = `${FLAG_ENV_PREFIX}FORGOT_PASSWORD`;
 const UNKNOWN_FLAG_VAR = `${FLAG_ENV_PREFIX}DARK_MODE`;
@@ -178,6 +179,55 @@ describe('scripts/render-app-config.js', () => {
       expect(() => renderAppConfig(defaultShell(), { [GRAPHQL_URL_VAR]: 'nope' })).toThrow(
         new RegExp(`^${GRAPHQL_URL_VAR} must be an absolute URL, got "nope"\\.$`)
       );
+    });
+  });
+
+  describe('renderAppConfig — choice settings', () => {
+    it('writes no key for an empty, unset or whitespace-only value', () => {
+      [undefined, '', '   \t '].forEach((value) => {
+        const rendered = renderAppConfig(defaultShell(), { [NOTIFICATION_STYLE_VAR]: value });
+
+        expect(readBlockConfig(rendered)).toEqual({ flags: { demoFlag: false } });
+      });
+    });
+
+    it.each(['toast', 'inline', 'bell'])('writes %s into the block', (style) => {
+      const rendered = renderAppConfig(defaultShell(), { [NOTIFICATION_STYLE_VAR]: style });
+
+      expect(readBlockConfig(rendered)).toEqual({
+        flags: { demoFlag: false },
+        notificationStyle: style,
+      });
+    });
+
+    it('trims surrounding whitespace before matching', () => {
+      const rendered = renderAppConfig(defaultShell(), { [NOTIFICATION_STYLE_VAR]: ' bell\n' });
+
+      expect(readBlockConfig(rendered).notificationStyle).toBe('bell');
+    });
+
+    it.each(['Toast', 'banner', 'toast,bell'])(
+      'rejects %s naming the variable, the value and the allowed values',
+      (value) => {
+        expect(() => renderAppConfig(defaultShell(), { [NOTIFICATION_STYLE_VAR]: value })).toThrow(
+          new Error(`${NOTIFICATION_STYLE_VAR} must be one of toast, inline, bell, got "${value}".`)
+        );
+      }
+    );
+
+    it('combines with the URL settings in one block', () => {
+      const graphqlUrl = buildHttpUrl('/graphql');
+
+      const rendered = renderAppConfig(defaultShell(), {
+        [GRAPHQL_URL_VAR]: graphqlUrl,
+        [NOTIFICATION_STYLE_VAR]: 'inline',
+      });
+
+      expect(readBlockConfig(rendered)).toEqual({
+        flags: { demoFlag: false },
+        graphqlUrl,
+        notificationStyle: 'inline',
+      });
     });
   });
 

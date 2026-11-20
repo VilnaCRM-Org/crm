@@ -379,6 +379,42 @@ strip_config_block() {
   diff "$PROJECT_ROOT/serve.json" "$SERVE_CONFIG"
 }
 
+@test "docker-entrypoint.sh fails before exec when the notification style is not one of the three (issue #391)" {
+  local artifact
+  artifact="$(copy_artifact entrypoint-bad-style)"
+
+  run --separate-stderr env \
+    APP_CONFIG_HTML="$artifact" \
+    APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
+    SERVE_CONFIG="$SERVE_CONFIG" \
+    SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
+    APP_CONFIG_NOTIFICATION_STYLE=banner \
+    sh "$ENTRYPOINT" echo started
+
+  [ "$status" -ne 0 ]
+  [[ "$output" != *"started"* ]]
+  [[ "$stderr" == *'APP_CONFIG_NOTIFICATION_STYLE must be one of toast, inline, bell, got "banner".'* ]]
+  [ "$(config_block "$artifact")" = "" ]
+}
+
+@test "docker-entrypoint.sh renders the chosen notification style into the shell (issue #391)" {
+  local artifact
+  artifact="$(copy_artifact entrypoint-inline-style)"
+
+  run --separate-stderr env \
+    APP_CONFIG_HTML="$artifact" \
+    APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
+    SERVE_CONFIG="$SERVE_CONFIG" \
+    SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
+    APP_CONFIG_NOTIFICATION_STYLE=inline \
+    sh "$ENTRYPOINT" echo started
+
+  [ "$status" -eq 0 ]
+  [ "$(config_block "$artifact")" = '{"flags":{},"notificationStyle":"inline"}' ]
+}
+
 @test "docker-entrypoint.sh fails before exec when a runtime API origin is not an http(s) URL" {
   local artifact
   artifact="$(copy_artifact entrypoint-bad-origin)"
