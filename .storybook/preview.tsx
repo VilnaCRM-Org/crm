@@ -7,6 +7,8 @@ import appShellEn from '@/components/ui-app-shell/i18n/en.json';
 import appShellUk from '@/components/ui-app-shell/i18n/uk.json';
 import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
 import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
+import notificationContentEn from '@/components/ui-notification-content/i18n/en.json';
+import notificationContentUk from '@/components/ui-notification-content/i18n/uk.json';
 import toastEn from '@/components/ui-toast/i18n/en.json';
 import toastUk from '@/components/ui-toast/i18n/uk.json';
 import SidebarCollapseSource from '@/components/ui-sidebar/sidebar-collapse-source';
@@ -58,6 +60,7 @@ lazyCatalogLoader.register(i18next, { en: userMenuEn, uk: userMenuUk });
 lazyCatalogLoader.register(i18next, { en: twoFactorEn, uk: twoFactorUk });
 lazyCatalogLoader.register(i18next, { en: noticeEn, uk: noticeUk });
 lazyCatalogLoader.register(i18next, { en: notificationsEn, uk: notificationsUk });
+lazyCatalogLoader.register(i18next, { en: notificationContentEn, uk: notificationContentUk });
 
 const customViewports: ViewportMap = {
   xs: {

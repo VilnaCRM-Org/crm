@@ -88,6 +88,10 @@
       "owners": [
         "modules/user/features/notifications/repositories/in-memory-notification-repository.ts"
       ]
+    },
+    {
+      "catalog": "components/ui-notification-content/i18n",
+      "owners": ["components/ui-notification-content"]
     }
   ]
 }

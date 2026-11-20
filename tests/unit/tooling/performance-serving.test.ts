@@ -604,6 +604,7 @@ describe('performance serving config', () => {
       expect(namespaces).not.toContain('settings');
       expect(namespaces).not.toContain('ui_toast');
       expect(namespaces).not.toContain('notification_center');
+      expect(namespaces).not.toContain('ui_notification');
     });
     expect(
       readFile('src/modules/user/features/auth/components/recovery-page-layout/index.tsx')

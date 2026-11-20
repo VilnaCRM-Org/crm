@@ -1,6 +1,5 @@
-import { touchRippleClasses } from '@mui/material/ButtonBase';
-
 import breakpointsTheme from '@/components/ui-breakpoints';
+import { control, controlFromSm } from '@/components/ui-notification-content/styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
 const { sm, lg } = breakpointsTheme.breakpoints.values;
@@ -8,27 +7,6 @@ const { sm, lg } = breakpointsTheme.breakpoints.values;
 const fromSm = `@media (min-width:${sm}px)`;
 
 const fromDesktop = `@media (min-width:${lg + 1}px)`;
-
-const focusRing = {
-  outline: `2px solid ${customColors.text.dark}`,
-  outlineOffset: '2px',
-};
-
-const controlFromSm = { margin: 0, minWidth: '1.5rem', minHeight: '1.5rem' };
-
-const control = {
-  margin: '-0.75rem',
-  minWidth: '2.75rem',
-  minHeight: '2.75rem',
-  padding: 0,
-  color: customColors.text.dark,
-  '&:hover, &:focus-visible': { backgroundColor: 'transparent' },
-  '&:focus-visible': focusRing,
-  '@media (prefers-reduced-motion: reduce)': {
-    [`& .${touchRippleClasses.root}`]: { display: 'none' },
-  },
-  [fromSm]: controlFromSm,
-};
 
 const stackFromSm = {
   left: 'auto',
