@@ -22,6 +22,20 @@ const CARD_LEFT = `clamp(16px, ${CARD_LEFT_CENTRED}, ${CARD_LEFT_LIMIT})`;
 
 const CARET_POLYGON = 'polygon(50% 0, 0 100%, 100% 100%)';
 
+export const cardAnchor = {
+  top: 'calc(var(--bell-bottom, 64px) + 10px)',
+  left: CARD_LEFT,
+  width: CARD_WIDTH,
+  '--bell-card-left': CARD_LEFT,
+} as const;
+
+export const caretShape = {
+  clipPath: CARET_POLYGON,
+  left: 'calc(var(--bell-centre-x, 0px) - var(--bell-card-left) - 14px)',
+  width: '26px',
+  height: '6px',
+} as const;
+
 const OUTLINE_OFFSETS = ['1px 0 0', '-1px 0 0', '0 1px 0', '0 -1px 0'];
 
 const CARD_DROP = 'drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))';
@@ -87,10 +101,7 @@ export default {
   },
   card: {
     position: 'fixed',
-    top: 'calc(var(--bell-bottom, 64px) + 10px)',
-    left: CARD_LEFT,
-    '--bell-card-left': CARD_LEFT,
-    width: CARD_WIDTH,
+    ...cardAnchor,
     boxSizing: 'border-box',
     borderRadius: '0.5rem',
     border: '1px solid var(--bell-notice-tone)',
@@ -116,12 +127,9 @@ export default {
   },
   caret: {
     position: 'absolute',
+    ...caretShape,
     top: '-7px',
-    left: 'calc(var(--bell-centre-x, 0px) - var(--bell-card-left) - 14px)',
-    width: '26px',
-    height: '6px',
     backgroundColor: 'var(--bell-notice-tone)',
-    clipPath: CARET_POLYGON,
     '&::after': {
       content: '""',
       position: 'absolute',

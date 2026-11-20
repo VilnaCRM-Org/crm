@@ -1001,6 +1001,14 @@ reports `BLOCKED`, never skips (readiness R3-10).
 - Given the change, when the visual job runs in CI, then every baseline is unchanged.
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 
+> Code facts (2026-11-20): the host shares the caret card's anchor (`cardAnchor`, `caretShape`,
+> exported from `ui-bell-notice/styles.ts`) and reads `--bell-centre-x` and `--bell-bottom` with
+> `100vw` and `64px` fallbacks, so the panel needs `useBellAnchor` from the connector (Story 2.12)
+> to sit under the bell. The host wraps its children in a `Suspense` with a deferred
+> `RouteFallback`, so any lazy child is caught inside it. Figma `377:18485` draws a trash icon on
+> each row; the spec keeps rows read-only, so none is drawn. Row padding is `15px 16px` with the
+> dot 16 px from the end.
+
 ### Story 2.7: Let HeaderIconButton act as the bell disclosure and HeaderBadge take an alert tone
 
 As a keyboard or screen-reader user under any style,

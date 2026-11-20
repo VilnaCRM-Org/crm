@@ -1,0 +1,71 @@
+import { customColors, paletteColors } from '@/styles/colors';
+
+const FORCED_COLORS = '@media (forced-colors: active)';
+
+export default {
+  heading: {
+    margin: 0,
+    padding: '18px 16px 15px',
+    fontFamily: 'Golos',
+    fontWeight: 600,
+    fontSize: '1rem',
+    lineHeight: '22px',
+    color: customColors.text.dark,
+    [FORCED_COLORS]: { color: 'CanvasText' },
+  },
+  list: {
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+    '& > li + li': { borderTop: `1px solid ${paletteColors.background.subtle}` },
+  },
+  row: {
+    position: 'relative',
+    padding: '15px 2.5rem 15px 16px',
+  },
+  unread: { backgroundColor: '#E8F7FF' },
+  dot: {
+    position: 'absolute',
+    top: '1.375rem',
+    right: '1rem',
+    width: '0.5rem',
+    height: '0.5rem',
+    borderRadius: '50%',
+    backgroundColor: paletteColors.primary.linkText,
+    [FORCED_COLORS]: { backgroundColor: 'CanvasText' },
+  },
+  hidden: {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    margin: '-1px',
+    padding: 0,
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  },
+  empty: {
+    margin: 0,
+    padding: '0 16px 16px',
+    fontFamily: 'Golos',
+    fontSize: '0.875rem',
+    lineHeight: '1.25rem',
+    color: customColors.text.muted,
+    [FORCED_COLORS]: { color: 'CanvasText' },
+  },
+  markAll: {
+    width: '100%',
+    minHeight: '3.125rem',
+    border: 0,
+    background: 'none',
+    cursor: 'pointer',
+    fontFamily: 'Golos',
+    fontWeight: 600,
+    fontSize: '0.875rem',
+    color: paletteColors.primary.linkText,
+    '&:hover': { color: paletteColors.primary.linkTextHover },
+    '&:focus-visible': { outline: `2px solid ${customColors.text.dark}`, outlineOffset: '-2px' },
+    [FORCED_COLORS]: { color: 'ButtonText' },
+  },
+} as const;
