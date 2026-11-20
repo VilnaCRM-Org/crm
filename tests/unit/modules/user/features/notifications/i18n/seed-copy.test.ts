@@ -30,7 +30,7 @@ describe('notification seed copy follows the settings toasts', () => {
   it('holds exactly the three seed keys and no others', () => {
     [notificationEn, notificationUk].forEach((catalog) => {
       expect(Object.keys(catalog)).toEqual(['notification_center']);
-      expect(Object.keys(catalog.notification_center)).toEqual(['seed', 'history', 'time']);
+      expect(Object.keys(catalog.notification_center)).toEqual(['seed', 'history', 'time', 'bell']);
       expect(Object.keys(catalog.notification_center.seed).sort()).toEqual([
         'email_sent',
         'password_changed',
@@ -51,6 +51,19 @@ describe('notification seed copy follows the settings toasts', () => {
     });
     expect(notificationUk.notification_center.history.heading).toBe('Сповіщення');
     expect(notificationEn.notification_center.history.heading).toBe('Notifications');
+  });
+
+  it('holds the unread count in the CLDR plural families of each locale', () => {
+    expect(notificationEn.notification_center.bell).toEqual({
+      unread_count_one: '{{count}} unread notification',
+      unread_count_other: '{{count}} unread notifications',
+    });
+    expect(notificationUk.notification_center.bell).toEqual({
+      unread_count_one: '{{count}} непрочитане сповіщення',
+      unread_count_few: '{{count}} непрочитані сповіщення',
+      unread_count_many: '{{count}} непрочитаних сповіщень',
+      unread_count_other: '{{count}} непрочитаного сповіщення',
+    });
   });
 
   it('resolves every seed message key in both locales', () => {

@@ -11,6 +11,10 @@
       "unread": "Unread",
       "empty": "No notifications yet"
     },
-    "time": "{{value, datetime}}"
+    "time": "{{value, datetime}}",
+    "bell": {
+      "unread_count_one": "{{count}} unread notification",
+      "unread_count_other": "{{count}} unread notifications"
+    }
   }
 }

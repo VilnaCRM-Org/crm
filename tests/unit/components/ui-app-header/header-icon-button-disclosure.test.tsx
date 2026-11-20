@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
 
 import type { HeaderDisclosure } from '@/components/types/ui-app-header';
 import HeaderIconButton from '@/components/ui-app-header/header-icon-button';
@@ -143,6 +144,19 @@ describe('HeaderIconButton with a disclosure', () => {
     expect(screen.getByRole('button', { name: 'Сповіщення' })).toHaveAccessibleDescription(
       '4 непрочитані'
     );
+  });
+
+  it('attaches the button ref of the disclosure to the enabled bell', () => {
+    const buttonRef = createRef<HTMLButtonElement>();
+    renderShell(
+      <HeaderIconButton
+        layout="desktop"
+        kind="notifications"
+        disclosure={disclosure({ buttonRef })}
+      />
+    );
+
+    expect(buttonRef.current).toBe(bell());
   });
 
   it('leaves the control without a disclosure disabled and described as unavailable', () => {

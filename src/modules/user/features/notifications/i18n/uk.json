@@ -11,6 +11,12 @@
       "unread": "Непрочитане",
       "empty": "Сповіщень ще немає"
     },
-    "time": "{{value, datetime}}"
+    "time": "{{value, datetime}}",
+    "bell": {
+      "unread_count_one": "{{count}} непрочитане сповіщення",
+      "unread_count_few": "{{count}} непрочитані сповіщення",
+      "unread_count_many": "{{count}} непрочитаних сповіщень",
+      "unread_count_other": "{{count}} непрочитаного сповіщення"
+    }
   }
 }

@@ -25,13 +25,14 @@ const GLYPHS: Record<HeaderControlKind, ComponentType<SVGProps<SVGSVGElement>>> 
 function DisclosureButton({ layout, kind, count, disclosure }: DisclosureButtonProps): JSX.Element {
   const { t } = useTranslation();
   const descriptionId = useId();
-  const { expanded, controls, describedBy, onToggle } = disclosure;
+  const { expanded, controls, describedBy, onToggle, buttonRef } = disclosure;
 
   return (
     <>
       <Box
         component="button"
         type="button"
+        ref={buttonRef}
         aria-label={t(`app_shell.${kind}.label`)}
         aria-expanded={expanded}
         aria-controls={controls}

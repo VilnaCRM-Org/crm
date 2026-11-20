@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import { renderHook } from '@testing-library/react';
 import { container } from 'tsyringe';
 
 import { inMemoryNotificationRepository } from '@/modules/user/features/notifications/repositories';
@@ -33,8 +34,8 @@ describe('NotificationsRegistrar', () => {
       await import('@/modules/user/features/notifications/hooks/use-notification-repository');
     await import('@/config/dependency-injection-config');
 
-    expect(container.resolve(NOTIFICATION_TOKENS.NotificationRepository)).toBe(
-      useNotificationRepository()
-    );
+    const { result } = renderHook(() => useNotificationRepository());
+
+    expect(container.resolve(NOTIFICATION_TOKENS.NotificationRepository)).toBe(result.current);
   });
 });

@@ -49,9 +49,12 @@ types only.
 entry, after the user module registrar. A real adapter later replaces that one registration.
 
 The container-free shell does not resolve the token. It calls `useNotificationRepository()`
-(`hooks/use-notification-repository.ts`), the one seam that returns the same singleton, so the
-shell never loads tsyringe or the composition root. A unit test resolves the token and asserts it
-is that very instance.
+(`hooks/use-notification-repository.ts`), the one seam, so the shell never loads tsyringe or the
+composition root. The hook reads `NotificationRepositoryContext`, exported from the same file,
+whose default value is the singleton; nothing in `src/` provides another value, so the app always
+gets that instance, and a unit test resolves the token and asserts it is that very instance.
+Storybook's `withFreshNotificationRepository(seed?)` provides a new `InMemoryNotificationRepository`
+per story through that context, so one story marking rows read never reaches the next.
 
 `di.ts` sits at the feature root, so the `no-di-config-import-outside-composition-root` rule, whose
 `DI_COMPOSITION_ROOTS` list names `src/modules/<module>/config/di.ts`, does not cover it. An
@@ -73,4 +76,23 @@ All hooks in `hooks/` are container-free and read the repository through
   route change and a layout change close it. It is built from `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
-Later stories add the port and the shell slot; this README grows with them.
+## Components
+
+- `BellNotifications` (`components/bell-notifications.tsx`) is the bell connector of every
+  style. It renders the enabled `HeaderIconButton` with its `disclosure` (the button draws the
+  alert badge and the single unread-count description, `notification_center.bell.unread_count_*`,
+  or none at zero), the always-present `UINotificationHistoryFrame` host its `aria-controls`
+  names, and, only under the `bell` style, the merged outcome card. It reads
+  `useNotificationHistory(revision)` and `useBellDisclosure(layout)`, anchors the panel under the
+  bell through `useBellAnchor`, and registers this feature's catalog on `@/i18n` when the module
+  evaluates, so the panel and the card translate on every protected page.
+- `NotificationHistoryPanel` (chunk `notifications-history`) is the panel content. It mounts in
+  the host on the first open and stays mounted, so its loader runs once; the host's deferred
+  `RouteFallback` covers the wait. It receives the records and `onMarkAllRead` from the bell.
+- `BellOutcomeNotice` (chunk `notifications-notice`) draws the shown items as `UIBellNotice`. It
+  sits in its own `Suspense` with a `0 × 0` `aria-hidden` fallback, so neither the bell nor the
+  badge suspends on it, and its loader never runs under `toast` or `inline`.
+- Each loader reports a final chunk failure as `app-shell:notifications-history` or
+  `app-shell:notifications-notice` and resolves to an empty component, so the bell keeps working.
+
+Later stories add the shell slot; this README grows with it.

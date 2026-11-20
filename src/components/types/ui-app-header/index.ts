@@ -36,6 +36,7 @@ export interface HeaderDisclosure {
   readonly controls: string;
   readonly describedBy?: string | undefined;
   readonly onToggle: ActivateHandler;
+  readonly buttonRef?: RefObject<HTMLButtonElement | null> | undefined;
 }
 
 export interface HeaderIconButtonProps {

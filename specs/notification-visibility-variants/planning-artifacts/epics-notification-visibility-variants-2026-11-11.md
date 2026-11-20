@@ -1326,6 +1326,18 @@ Suspense-fallback ESLint gate (both boundaries have a non-null fallback).
 - Given the change, when the visual job runs in CI, then every baseline is unchanged (the shell does not mount it yet).
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 
+> Code facts (2026-11-20): `HeaderDisclosure` gains an optional `buttonRef`, attached to the
+> enabled button, because `useBellDisclosure` focuses `bell.current` on Escape and the notice
+> anchors to it. `BellNotificationsProps` is `{ layout, revision, onChunkFailure }`, and the
+> loaders' reporter takes a `ShellChunkSource`. The seam is `NotificationRepositoryContext`, a named
+> export of `hooks/use-notification-repository.ts` (the hooks folder takes only `use-*` files)
+> whose default value is the singleton; `withFreshNotificationRepository` provides a new adapter
+> through it. The panel's `lazy` lives in `BellNotifications`, which commits, because a component
+> that suspends on its first mount loses its state and would rebuild the lazy on every retry. The
+> stories add `withMemoryRouter()` for the route-change close, and `AfterMarkAllRead` starts from
+> an all-read seed, because a story may not import the adapter module. `composeStories` cannot
+> load under Jest (ESM), so `bell-notifications.a11y.test.tsx` applies the decorators itself.
+
 ### Story 2.13: Build NotificationsShellSlot, the always-mounted shell slot with the bell
 
 As every protected page under every style,
