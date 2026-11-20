@@ -1171,6 +1171,12 @@ the store's primary focus target, calls `withdraw(anchor)`, then activates the a
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys.
 
+> Code facts (2026-11-20): the slot's reads and the Retry wiring live in
+> `ui-notification-slot/use-slot-views.ts`, so the component only gates on the `anchor` surface
+> and picks the `email` placement for the `email` anchor. Retry focuses the primary target and,
+> when that is disabled or detached, the published fallback, so focus never falls to `body`
+> either way. The stories raise anchored drafts through the Story 2.9 decorators.
+
 ### Story 2.11: Build NotificationHistoryPanel and BellOutcomeNotice, the bell's two lazy children
 
 As a user who opens the bell under any style, and who under `bell` sees outcomes at the bell,
