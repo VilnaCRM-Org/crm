@@ -6,6 +6,7 @@ import type { NotificationStyle } from '@/config/runtime/types/notification-styl
 import i18n from '@/i18n';
 import NotificationOutletActions from '@/lib/notifications/notification-outlet-actions';
 import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
+import type { NotificationClock } from '@/lib/notifications/types/notification-outlet-state';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import type { NotificationRecordSet } from '@/modules/user/features/notifications';
 import { NotificationRepositoryContext } from '@/modules/user/features/notifications/hooks/use-notification-repository';
@@ -49,12 +50,21 @@ export function withNotificationStyle(style: NotificationStyle): Decorator {
   };
 }
 
-export function withRaisedNotifications(drafts: NotificationDraftSet): Decorator {
+const FIXED_EPOCH = Date.parse('2026-11-12T10:30:00Z');
+
+export const FIXED_CLOCK: NotificationClock = () => FIXED_EPOCH;
+
+const wallClock: NotificationClock = () => Date.now();
+
+export function withRaisedNotifications(
+  drafts: NotificationDraftSet,
+  clock: NotificationClock = wallClock
+): Decorator {
   return function RaisedNotificationsDecorator(Story): JSX.Element {
     useEffect(() => {
       const store = useNotificationOutletStore;
       store.setState(store.getInitialState(), true);
-      new NotificationOutletActions(store, () => Date.now()).raise(drafts, (key) => i18n.t(key));
+      new NotificationOutletActions(store, clock).raise(drafts, (key) => i18n.t(key));
 
       return (): void => store.setState(store.getInitialState(), true);
     }, []);

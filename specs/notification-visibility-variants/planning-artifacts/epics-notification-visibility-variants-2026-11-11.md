@@ -1738,6 +1738,17 @@ the expected list),
 - Given the new files, when coverage runs in CI, then it stays 100 % (stories are excluded from coverage as configured; the decorator's logic, if any lives in `src`, is unit-tested).
 - Not applicable: production visual baselines (Storybook is not visually gated).
 
+> Code facts (2026-11-20): `composeStories` cannot load under Jest (ESM), so the axe test composes
+> the stories with `tests/unit/utils/compose-layout-stories.tsx`, which applies the decorators but
+> not `play`; the test opens the bell and marks all read itself. Every `bell` comparison story
+> raises its own outcomes, so the fresh-adapter check renders `BellOneSuccessXl` after
+> `BellAfterMarkAllRead` and reads badge 2 (seed plus its one outcome) with the seed's unread row
+> intact. The desktop merged card and the tablet caret card differ only by a media query jsdom does
+> not evaluate; the test proves the layout arg through the header (48 px vs 52 px bell, no badge
+> and no search on mobile) and the card's presence at all three. `withRaisedNotifications` takes an
+> optional clock (`FIXED_CLOCK`, 2026-11-12T10:30Z); `lg1366` is 1024 × 1366 and `mobile375` is
+> 375 × 812.
+
 ### Story 4.2: Select the style per test and run the settings journeys under every style
 
 As QA,
