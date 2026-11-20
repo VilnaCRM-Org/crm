@@ -1,6 +1,5 @@
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import { sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
-import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import {
@@ -15,16 +14,25 @@ import {
   type StubbedProfile,
 } from './utils/profile-stub';
 import {
+  editEmail,
   editName,
+  editPassword,
   emailField,
+  emailPasswordField,
   expectEveryPasswordFieldEmpty,
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
   expectSuccessToast,
   expectToastsInOrder,
+  fillCurrentPassword,
+  namePasswordField,
   newPasswordField,
   openLoadedSettings,
   saveButton,
+  saveEditedEmail,
+  saveEditedName,
+  saveEmailButton,
+  saveNameButton,
   text,
   currentPasswordField,
   nameField,
@@ -78,17 +86,19 @@ test.describe('Settings save journeys (issue #330)', () => {
     expect(stub.calls[0]?.authorization).toMatch(/^Bearer \S+/);
   });
 
-  test('saves a name with the exact input keys and clears both password fields', async ({
-    page,
-  }) => {
+  test('saves a name with the exact input keys and collapses the name form', async ({ page }) => {
     stub = await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
     await openLoadedSettings(page);
+    await expect(saveNameButton(page)).toBeHidden();
+    await expect(namePasswordField(page)).toHaveCount(0);
 
-    await editName(page, NEW_NAME, password);
-    await saveButton(page).click();
+    await saveEditedName(page, NEW_NAME, password);
 
     await expectSuccessToast(page, text.saved);
     await expect(page.getByText(NEW_NAME, { exact: true })).toBeVisible();
+    await expect(namePasswordField(page)).toHaveCount(0);
+    await expect(saveNameButton(page)).toBeHidden();
+    await expect(nameField(page)).toBeFocused();
     await expectEveryPasswordFieldEmpty(page);
     const updates = stub.calls.filter((call) => call.operation === 'UpdateUser');
     expect(updates).toHaveLength(1);
@@ -100,7 +110,7 @@ test.describe('Settings save journeys (issue #330)', () => {
     ]);
   });
 
-  test('saves when Save is clicked straight from the empty, focused new password', async ({
+  test('saves a name from its Save straight from the empty, focused new password', async ({
     page,
   }) => {
     stub = await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
@@ -109,10 +119,34 @@ test.describe('Settings save journeys (issue #330)', () => {
     await newPasswordField(page).click();
     await expect(page.locator('#new-password-rules')).toBeVisible();
 
-    await saveButton(page).click();
+    await saveNameButton(page).click();
 
     await expectSuccessToast(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(1);
+  });
+
+  test('a name save sends only the name and keeps the e-mail and password drafts', async ({
+    page,
+  }) => {
+    stub = await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
+    await openLoadedSettings(page);
+    await editEmail(page, newEmail, password);
+    await editPassword(page, password, newPassword);
+
+    await saveEditedName(page, NEW_NAME, password);
+
+    await expectSuccessToast(page, text.saved);
+    const update = stub.calls.find((call) => call.operation === 'UpdateUser');
+    expect(Object.keys(update?.variables.input as object).sort()).toEqual([
+      'clientMutationId',
+      'id',
+      'initials',
+      'password',
+    ]);
+    await expect(emailField(page)).toHaveValue(newEmail);
+    await expect(emailPasswordField(page)).toHaveValue(password);
+    await expect(currentPasswordField(page)).toHaveValue(password);
+    await expect(newPasswordField(page)).toHaveValue(newPassword);
   });
 
   test('saves an e-mail, shows the unconfirmed row and resends the link once', async ({ page }) => {
@@ -122,11 +156,10 @@ test.describe('Settings save journeys (issue #330)', () => {
     });
     await openLoadedSettings(page);
 
-    await fillInput(emailField(page), newEmail);
-    await fillInput(currentPasswordField(page), password);
-    await saveButton(page).click();
+    await saveEditedEmail(page, newEmail, password);
 
     await expectSuccessToast(page, text.emailSent);
+    await expect(saveEmailButton(page)).toBeHidden();
     await expect(page.getByText(text.unconfirmed, { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: text.resend, exact: true }).click();
@@ -135,27 +168,29 @@ test.describe('Settings save journeys (issue #330)', () => {
     expect(stub.count('ResendEmailToUser')).toBe(1);
   });
 
-  test('shows the three toasts in order when every aspect changes', async ({ page }) => {
+  test('stacks one toast per save in order when each aspect is saved in turn', async ({ page }) => {
+    const saved = replyWithSaved({ initials: NEW_NAME, email: newEmail, confirmed: false });
     stub = await stubProfile(page, {
-      UpdateUser: [replyWithSaved({ initials: NEW_NAME, email: newEmail, confirmed: false })],
+      UpdateUser: [replyWithSaved({ initials: NEW_NAME }), saved, saved],
     });
     await openLoadedSettings(page);
 
-    await fillInput(nameField(page), NEW_NAME);
-    await fillInput(emailField(page), newEmail);
-    await fillInput(currentPasswordField(page), password);
-    await fillInput(newPasswordField(page), newPassword);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectSuccessToast(page, text.saved);
+    await saveEditedEmail(page, newEmail, password);
+    await expectSuccessToast(page, text.emailSent);
+    await editPassword(page, password, newPassword);
     await saveButton(page).click();
 
     await expectToastsInOrder(page, [text.saved, text.emailSent, text.passwordChanged]);
-    expect(stub.count('UpdateUser')).toBe(1);
+    expect(stub.count('UpdateUser')).toBe(3);
   });
 
   test('sends nothing and says so when only the current password is typed', async ({ page }) => {
     stub = await stubProfile(page);
     await openLoadedSettings(page);
 
-    await fillInput(currentPasswordField(page), password);
+    await fillCurrentPassword(page, password);
     await saveButton(page).click();
 
     await expect(page.getByText(text.noChanges, { exact: true })).toBeVisible();

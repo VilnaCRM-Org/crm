@@ -3,17 +3,19 @@ import type { JSX } from 'react';
 
 import type { ErrorBannerProps } from '@/components/types/ui-form';
 import styles from '@/components/ui-form/styles';
+import UILinkButton from '@/components/ui-link-button';
 import UITypography from '@/components/ui-typography';
+import { focusVisibleRing } from '@/styles/focus-ring';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
-
-import useFocusReturn from './use-focus-return';
 
 export default function ErrorBanner({
   error,
-  returnFocusRef,
+  action,
+  focusReturn,
+  unavailable,
+  unavailableReasonId,
 }: ErrorBannerProps): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLElement>();
-  const focusReturn = useFocusReturn(Boolean(error), returnFocusRef);
 
   if (!error) return null;
   return (
@@ -28,6 +30,16 @@ export default function ErrorBanner({
       <UITypography role="alert" sx={styles.errorText}>
         {error}
       </UITypography>
+      {action && (
+        <UILinkButton
+          onClick={action.onClick}
+          unavailable={unavailable}
+          describedBy={unavailableReasonId}
+          sx={focusVisibleRing}
+        >
+          {action.label}
+        </UILinkButton>
+      )}
     </Box>
   );
 }

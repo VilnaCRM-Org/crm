@@ -40,6 +40,9 @@ async function openNewPasswordForm(page: Page, screen: ScreenSize): Promise<void
   await expect(page.getByLabel(newPasswordLabel)).toBeVisible();
 }
 
+const operationOf = (body: unknown): string | undefined =>
+  (body as { operationName?: string } | null)?.operationName;
+
 async function answer(page: Page, operation: string, data: unknown): Promise<void> {
   await page.route(GRAPHQL_URL, async (route: Route) => {
     const body = route.request().postDataJSON() as { operationName?: string };
@@ -75,7 +78,13 @@ test.describe.parallel('Password recovery visual tests (issue #315)', () => {
       await page.setViewportSize({ width: screen.width, height: screen.height });
       await stabilizePage(page, PAGES.PASSWORD_RECOVERY);
       await page.getByPlaceholder(emailPlaceholder).fill('eirene@gmail.com');
+      const answered = page.waitForResponse(
+        (response) =>
+          response.url().includes('/graphql') &&
+          operationOf(response.request().postDataJSON()) === 'RequestPasswordReset'
+      );
       await page.getByRole('button', { name: submitLabel }).click();
+      await answered;
       await expect(page.getByRole('heading', { level: 1, name: sentTitle })).toBeVisible();
 
       await takeRecoverySnapshot(page, screen, 'sent-step');

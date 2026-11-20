@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
-iteration: 8
+revised: 2026-11-18
+iteration: 10
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -20,8 +20,9 @@ inputDocuments:
 # Architecture: user settings for the user module
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
-2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below) and 2026-11-05
-(FR/NFR reconciliation) **Feature:**
+2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below), 2026-11-05
+(FR/NFR reconciliation), 2026-11-17 (the flag-removal commit cited as 62ddc565) and 2026-11-18
+(owner decision: resend inert only during an e-mail-section save) **Feature:**
 `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -36,6 +37,11 @@ inputDocuments:
 >   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
+> - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
+>   flag (62ddc565) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
+>   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
+>   off" row, scenario or criterion describes a state no build reaches.
 > - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
 >   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
 >   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,
@@ -2350,7 +2356,8 @@ other than through a hook.
   підтверджено", a separator, and a `button type="button"` styled as a link in `#0074B5`, at
   least 24 px tall. The e-mail field's `describedBy` includes `statusId`. While a resend or a
   Save is in flight, the button is `aria-disabled="true"` and ignores activation, so focus stays
-  on it (P4, FR-15).
+  on it (P4, FR-15). Amended 2026-11-18 (owner decision): "a Save" is a Save of the e-mail
+  section; a full-name or password save leaves the button usable (PRD FR-12, FR-15).
 - **`ClearButton`** calls `useFormContext().reset(defaults)` (both password fields empty and
   masked, errors gone) and `onClear()` (the save hook's `clear`: server errors and the no-change
   status); it is `aria-disabled` during a Save and never dismisses a toast.

@@ -136,7 +136,14 @@ describe('header styles', () => {
 
     expect(cluster).toEqual({
       desktop: { ...CLUSTER, gap: '10px' },
-      tablet: { ...CLUSTER, gap: '8px', marginTop: '6px' },
+      tablet: {
+        ...CLUSTER,
+        flexShrink: 1,
+        minWidth: 0,
+        gap: '8px',
+        marginTop: '6px',
+        marginLeft: '12px',
+      },
       mobile: {
         ...CLUSTER,
         alignItems: 'center',
@@ -152,7 +159,13 @@ describe('header styles', () => {
     const { search, searchInput, magnifier } = await loadStyles();
 
     expect(search.desktop).toEqual({ ...SEARCH_BOX, width: '477px', height: '48px' });
-    expect(search.tablet).toEqual({ ...SEARCH_BOX, width: '360px', height: '52px' });
+    expect(search.tablet).toEqual({
+      ...SEARCH_BOX,
+      flexShrink: 1,
+      width: '360px',
+      minWidth: '52px',
+      height: '52px',
+    });
     expect(searchInput.desktop).toEqual({ ...SEARCH_INPUT, paddingLeft: '44px', fontSize: '14px' });
     expect(searchInput.tablet).toEqual({ ...SEARCH_INPUT, paddingLeft: '48px', fontSize: '16px' });
     expect(magnifier.desktop).toEqual({ ...MAGNIFIER, width: '20px', height: '20px' });
@@ -249,7 +262,6 @@ describe('header styles', () => {
 
     expect(search.drawer).toEqual({
       ...SEARCH_BOX,
-      width: '293px',
       height: '48px',
       margin: '13px 10px 0',
     });

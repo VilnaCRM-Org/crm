@@ -10,14 +10,14 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   loads with `ProtectedRoute` in the `protected-layout` chunk, never on a public page (see
   `src/routes/README.md`), and hands `appShellLoader` to `AppLayoutFrame`, which owns a CSS grid
   and renders `AppShellPlaceholders`: two `aria-hidden`, non-null placeholders, a 64 px sticky
-  header slot and, from 1024 px, a 250 px navigation column (251 px from 1024 to 1439 px, where
+  header slot and, from 768 px, a 250 px navigation column (251 px from 768 to 1439 px, where
   the loaded sidebar's inset is 13 px). `useAppShell` builds the lazy shell from the loader the
   frame receives. `UIAppShell` arrives through `appShellLoader`, a `ThemedChunkLoader` around a
   `ChunkRetryLoader` for the `ui-app-shell` chunk, so the MUI theme loads in parallel and no
   public page requests the shell. The `Layouts/AppLayout` stories show the loaded, pending and
-  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 1024 and
-  1440 px. The sidebar breakpoint is a number in
-  `app-layout.styles.ts`, pinned by test to the toolkit's `lg` (1024), because the frame cannot
+  failed shell, and `Layouts/AppShellPlaceholders` shows the reserved boxes at 320, 768, 1024
+  and 1440 px. The sidebar breakpoint is a number in
+  `app-layout.styles.ts`, pinned by test to the toolkit's `md` (768), because the frame cannot
   import `@/components/ui-breakpoints` without pulling the toolkit into `protected-layout`.
 - **The grid places items by line, not by area name.** A sticky element is limited to its grid
   area, so the header slot spans every row (`grid-row: 1 / -1`, `align-self: start`, 64 px tall)
@@ -54,12 +54,19 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 
 ## Layouts
 
-`useShellLayout()` returns `'mobile'` below 1024 px, `'tablet'` from 1024 to 1439 px and
-`'desktop'` from 1440 px. It reads the two breakpoints from the crm scale (`lg`, `xl`) through
-`useMediaQuery` with `noSsr`, so the first render is already the right layout. The Figma values
+`useShellLayout()` returns `'mobile'` below 768 px, `'tablet'` from 768 to 1439 px and
+`'desktop'` from 1440 px. Tablets get the sidebar as desktops do and phones get a full-screen
+drawer; that is a product decision over the Figma frames, which draw a 313 px drawer up to 1023 px
+(owner decision of 2026-11-05, confirmed 2026-11-10; see the
+[PRD amendment](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md)).
+The sidebar remembers whether it is collapsed in `localStorage` under `crm.sidebar.collapsed`:
+`use-sidebar-collapse.ts` keeps one `SidebarCollapseSource` (`sidebar-collapse-source.ts`) per
+mount, which falls back to expanded when storage cannot be read and ignores a failed write.
+The hook reads the two breakpoints from the crm scale (`md`, `xl`) through
+`useMediaQuery` with `noSsr`, so the first render is already the right layout. The values
 are pinned by test rather than duplicated as constants: `use-shell-layout.test.ts` asserts the
-layout at 1023, 1024, 1439 and 1440 px, and `app-layout.styles.tokens.test.ts` holds the frame's
-numeric 1024 and 1440 equal to the same `lg` and `xl`. A toolkit change to either value therefore
+layout at 767, 768, 1439 and 1440 px, and `app-layout.styles.tokens.test.ts` holds the frame's
+numeric 768 and 1440 equal to the same `md` and `xl`. A toolkit change to either value therefore
 fails both tests instead of moving the shell or splitting it from the frame.
 
 ## Header
@@ -138,12 +145,13 @@ browser Back) shows the route rule again. The handle collapses the panel to the 
 76 px tablet); the rail shows each row as an icon pill with a tooltip on hover and keyboard focus.
 Hover and focus are tracked apart, so the tooltip stays while either holds: the pointer leaving a
 row that keeps focus, or focus leaving a row the pointer still covers, does not hide it. While a
-tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so
-a tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Nothing
-is persisted. Sign-out runs through the `useSignOut` latch the protected route provides: while a
-sign-out is pending, a second activation of any sign-out control (sidebar, drawer or user menu)
-does nothing, and a sign-out whose auth-store chunk fails to load releases the latch, so the
-control can be activated again.
+tooltip is shown, Escape pressed anywhere in the document hides it without moving focus, so a
+tooltip opened by the pointer while focus sits elsewhere is dismissible too (WCAG 1.4.13). Only the
+collapsed state is persisted, in `localStorage` under `crm.sidebar.collapsed` (see "Layouts"); the
+Settings group's chevron toggle and the tooltips are not. Sign-out runs through the `useSignOut`
+latch the protected route provides: while a sign-out is pending, a second activation of any sign-out
+control (sidebar, drawer or user menu) does nothing, and a sign-out whose auth-store chunk fails to
+load releases the latch, so the control can be activated again.
 
 ### Measured against Figma (sidebar)
 
@@ -239,16 +247,20 @@ What Figma leaves open, and how it was built:
 
 ## Mobile drawer
 
-Below 1024 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
+Below 768 px the header ends with the burger (`MenuToggleButton`, `menu-04` in `#57595B`, a 44 px
 transparent target around the 24 px glyph at 336,16) and `UINavigationDrawer` opens a modal dialog
 named "Main navigation". It is MUI's `Modal`, so the focus trap, the hidden page (the app root,
 banner, main and footer lose their roles), the scroll lock and Escape are MUI's; no `inert`, `:has()`
 or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies of the logo, bell,
-list and avatar and the one operable `x-close` button, and a 313×622 panel at 62,56 with the
-disabled drawer search and the same `UINavigationList` as the sidebar in 60 px rows (the Settings
-header is 48 px while the group is open, as drawn). The panel slides in over 200 ms and the scrim
-fades in over 200 ms; under `prefers-reduced-motion: reduce` both durations are 0
-(`useDrawerMotion`).
+list and avatar and the one operable `x-close` button, and a panel under that header that spans the
+whole viewport width down to the bottom edge with no shadow, holding the disabled drawer search and
+the same `UINavigationList` as the sidebar in 60 px rows (the Settings header is 48 px while the
+group is open, as drawn). Both the 768 px breakpoint and the viewport-wide panel are the owner
+decision of 2026-11-05, confirmed 2026-11-10 (see the amendment banner of
+[the app-shell PRD](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md));
+until then the drawer served everything below 1024 px as a 313×622 panel at 62,56,
+as the Figma frame draws it. The panel slides in over 200 ms and the scrim fades in over 200 ms;
+under `prefers-reduced-motion: reduce` both durations are 0 (`useDrawerMotion`).
 
 Focus: the close button takes focus on open. Escape, the close button, a tap anywhere outside the
 panel (the scrim, the untinted footer, or the header outside the close button) close the drawer and
@@ -281,6 +293,10 @@ closes the drawer and runs `signOut` once.
 | drawer avatar copy  | 280,8, 40×40, photo    | 280,8, 40×40, ОП    | see below |
 | scrim bottom        | footer top (y 772)     | footer top (604.4)  | pass      |
 
+The P-34 panel, P-35 search, P-36 first-row and P-44 Sign out rows were measured before the owner
+decision of 2026-11-05: the panel now starts at 0,56 and spans the viewport, so the 62 px x offset
+of those four rows and the 293 px search width no longer apply.
+
 The scrim row compares the rule, not a y value: Figma's 375×812 drawer frame puts the footer top
 at y 772, and `/boards` at 375×812 puts it at 604.4, and in both the scrim ends there.
 
@@ -297,13 +313,13 @@ both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15
 `rgb(26, 28, 30)`; the copy sits under `aria-hidden`, holds no focusable element, and the page made
 one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
 
-At 320 px the header insets are 8 px and the panel is 313 px at x 7; the burger and close targets
+At 320 px the header insets are 8 px; the burger and close targets
 stay 44×44 there: both share `edgeButtonStyles.target`, which below 375 px trims the right extension
 to the 8 px inset and gives the 2 px to the left (12 px), so the glyph does not move, the page does
 not scroll sideways and the burger stays clear of the avatar target. Below 375 px their focus ring is
 drawn inside the button (`outline-offset: -2px`), so the 8 px inset never clips it at the viewport's
-right edge. The Sign out row is 314 px wide
-in Figma and 313 px here: the panel clips the extra pixel, so the painted box is equal.
+right edge. The full-screen panel of the 2026-11-05 decision spans the viewport there too, so the
+313 px panel width and the Sign out row it clipped to 313 px no longer apply.
 
 What Figma leaves open, and how it was built:
 
@@ -386,28 +402,33 @@ Figma's 92 / 180 / 232 stack the items.
 Measured in Chromium on the 3004 dev server with `getBoundingClientRect()`, session restored from the
 sandbox demo marker.
 
-| Row                         | Width           | Figma          | Measured            | Result |
-| --------------------------- | --------------- | -------------- | ------------------- | ------ |
-| header                      | all             | 64 px tall     | 0,0 w×64            | pass   |
-| sidebar panel               | 1440            | 12,74 238×791  | 12,74 238×791       | pass   |
-| sidebar panel (fits 900 px) | 1024            | 13,74 238 wide | 13,74 238 wide      | pass   |
-| `<main>` left edge          | 1440            | 250            | 250                 | pass   |
-| `<main>` left edge          | 1024            | 251            | 251                 | pass   |
-| `/settings` title left edge | 1440            | 262            | 262                 | pass   |
-| `/settings` title left edge | 1024            | 263            | 263                 | pass   |
-| `/settings` title left edge | 375             | unchanged 15   | 15                  | pass   |
-| `/` title left edge         | 1440            | 262            | 262                 | pass   |
-| `/` title left edge         | 1024            | 263            | 263                 | pass   |
-| `/` title left edge         | 375             | unchanged 15   | 15                  | pass   |
-| horizontal overflow         | 1440, 1024, 375 | none           | scrollWidth = width | pass   |
+| Row                         | Width          | Figma          | Measured            | Result |
+| --------------------------- | -------------- | -------------- | ------------------- | ------ |
+| header                      | all            | 64 px tall     | 0,0 w×64            | pass   |
+| sidebar panel               | 1440           | 12,74 238×791  | 12,74 238×791       | pass   |
+| sidebar panel (fits 900 px) | 1024           | 13,74 238 wide | 13,74 238 wide      | pass   |
+| `<main>` left edge          | 1440           | 250            | 250                 | pass   |
+| `<main>` left edge          | 1024           | 251            | 251                 | pass   |
+| `/settings` title left edge | 1440           | 262            | 262                 | pass   |
+| `/settings` title left edge | 1024           | 263            | 263                 | pass   |
+| `/settings` title left edge | 768, 900, 1023 | 263            | 263                 | pass   |
+| `/settings` title left edge | 375            | unchanged 15   | 15                  | pass   |
+| `/` title left edge         | 1440           | 262            | 262                 | pass   |
+| `/` title left edge         | 1024           | 263            | 263                 | pass   |
+| `/` title left edge         | 768, 900, 1023 | 263            | 263                 | pass   |
+| `/` title left edge         | 375            | unchanged 15   | 15                  | pass   |
+| horizontal overflow         | 1440 to 375    | none           | scrollWidth = width | pass   |
 
 The toolkit `UIContainer` pads 32 px at 1024 and 124 px at 1440, which put the title at x 283 and
 x 374. Both pages now render inside the shared `UIShellContent`
-(`src/components/ui-shell-content/`), whose insets are 15 px, 26 px from 768 px and 12 px from
-1024 px, so the title starts 12 px from the sidebar; below 1024 px those are the toolkit
-container's own 15 px and 26 px, so the mobile and small-tablet insets are unchanged. The `/` rows
-were measured by `tests/e2e/modules/home.spec.ts` on the 3004 dev server (sidebar expanded). The
-tablet
+(`src/components/ui-shell-content/`), whose insets are 15 px below 768 px and 12 px from 768 px,
+where the sidebar appears (OQ-5, amended 2026-11-05: tablet metrics apply from 768 to 1439), so the
+title starts 12 px from the sidebar at every width that has one. Figma draws the tablet shell only
+at 1024 (`377:20163`: content 12 px from its frame edge), so 768 to 1023 follow that rule; with the
+expanded 238 px panel `main` starts at 251 and the title at 263 there. Below 768 px the 15 px inset
+is the toolkit container's own, so the mobile inset is unchanged. The `/` rows, including 768, 900
+and 1023 and the overflow check, are measured by `tests/e2e/modules/home.spec.ts` (sidebar
+expanded); the 768 to 1023 rows were read on the 3002 worktree dev server on 2026-11-17. The tablet
 panel's height is the viewport minus 86 px by design (UX 4.3), not the drawn 1142 px, so it is not a
 row. With the viewport 500 px tall and the page scrolled 300 px, the header stays at top 0 and the
 sidebar at top 74.

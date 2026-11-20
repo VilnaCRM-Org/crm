@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
-iteration: 7
+revised: 2026-11-17
+iteration: 9
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -20,7 +20,9 @@ inputDocuments:
 
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
 2026-10-16, amended 2026-10-19, 2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma
-correction below) and 2026-11-05 (FR/NFR reconciliation) **Feature:** `user-settings`
+correction below), 2026-11-05 (FR/NFR reconciliation), 2026-11-16 (Stories 3.4 and 4.4, the
+per-section reveal and collapse) and 2026-11-17 (Story 3.5's focus criteria marked; the
+flag-removal commit cited as 62ddc565) **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -34,6 +36,11 @@ correction below) and 2026-11-05 (FR/NFR reconciliation) **Feature:** `user-sett
 >   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
+> - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
+>   flag (62ddc565) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
+>   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
+>   off" row, scenario or criterion describes a state no build reaches.
 > - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
 >   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
 >   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,
@@ -56,6 +63,8 @@ architecture's, and `U`, `D`, `R` and `P` ids come from the run's decision recor
 operation the page uses (`users`, `updateUser`, `resendEmailToUser`) is in the pinned v2.8.0
 schema (D5), so no story waits for user-service: the page runs against the browser-lane stubs,
 msw and a stateless local Apollo mock, behind the `userSettings` flag, which ships off (U5).
+Superseded 2026-11-03: the owner removed the flag, so the page is an ordinary protected route in
+every environment ("No flag" in the owner decisions above).
 
 `settings/` below means `src/modules/user/features/settings/`, `@auth/` means
 `src/modules/user/features/auth/` and `user/` means `src/modules/user/`.
@@ -1564,8 +1573,11 @@ and working with the plain `PasswordChange`),
 - Given an empty new password and a changed name, when Save runs, then the input has no `newPassword` and no rule error shows; with `Pa1` typed, only the length rule of `UIPasswordPolicyRules` is unmet; with `Пароль123`, Save shows the shared uppercase message, focuses the field and sends nothing, because `useProfileFormRules` wraps `passwordValidator.create(t)` so that an empty or whitespace-only value passes (the field is optional) and any other value gets the per-rule message, not #315's `createChecklistGate`; the field's `aria-describedby` names the hint "Необов’язково. Залиште порожнім, щоб не змінювати пароль." and the rule list. Amended 2026-10-21 (product owner, matching Figma): the hint is visually hidden but stays in `aria-describedby`; the rule list renders only while the field has focus or a value, and after an empty field blurs it stays 200 ms more (`useBlurHold`, `RULES_COLLAPSE_DELAY_MS`) so a click on Save that starts the blur lands before Save moves; a new password equal to the current one is refused once the policy passes (`settings.errors.new_password_same`), and the new-password rule re-validates when the current password changes. The optional state is announced but not shown visually, the owner's recorded trade-off.
 - Given Save, when it runs, then the button is disabled with the spinner and keeps the name "Зберегти зміни", the form has `aria-busy`, "Збереження…" is announced, Enter in any field submits, and offline the button is disabled and described by the offline notice.
 - Given a settled Save that adopts or ends in a toast, when it settles, then focus is on "Зберегти зміни" (amended 2026-11-05, FR-12: unless Save is disabled as it settles, when focus on `body` moves to the `h1` and a field the user is still in keeps focus); a Save that ends in field errors focuses the first field in error in DOM order with `aria-invalid="true"`; a successful retry of a failed read focuses `h2` "Особисті дані", which has `tabIndex={-1}` (when that heading is the `UIForm` title, #315's `titleRef` `RefCallback<HTMLElement>` focuses it instead of a second hand-rolled ref).
+  Amended 2026-11-16 (FR-12, FR-13): in the full-name and e-mail sections the password field,
+  the section's Save and "Очистити" appear once that section changes; a successful save collapses
+  them and focus goes to the section's input; a save that does not succeed keeps them open.
 - Given a Save adoption, when the form's `key` changes, then the form reads the new defaults, both password fields are empty and the form is pristine; a resend's `confirm` never changes the `key`.
-- Given edited fields, typed passwords and field errors, when "Очистити" is activated, then the fields hold the last loaded values, both password fields are empty and masked, no field has `aria-invalid`, the no-change status is cleared, nothing is sent and focus stays on it; during a Save it is `aria-disabled="true"` and does nothing.
+- Given edited fields, typed passwords and field errors, when "Очистити" is activated, then the fields hold the last loaded values, both password fields are empty and masked, no field has `aria-invalid`, the no-change status is cleared, nothing is sent and focus stays on it (amended 2026-11-16, FR-13: in the full-name and e-mail sections the restored section collapses and focus moves to its input; the password section keeps focus on "Очистити"); during a Save it is `aria-disabled="true"` and does nothing.
 - Given the Save and "Очистити" pills, when their styles and axe are read, then Save stays under the existing exception of issue #276, "Очистити" is outlined with label `#1A1C1E` (17.09:1) and border `#969B9D`, `A11Y_EXCEPTIONS` gains nothing (superseded 2026-10-21 for the page: it gains the one scoped `#settings-greeting` entry; the two pills still add none), and both have a 44 CSS px minimum height on mobile (measured in Story 4.3).
 - Given jest-axe, when the form renders resting, busy and with field errors, and "Очистити" idle and disabled, then there is no violation, and each new component has a story.
 - Given `make lint-metrics`, when it runs, then every file stays within the per-file caps of `config/metrics-policy.json` (10 functions, 6 closures, 15 in all), `ui-form/index.tsx` included. The planning estimates (`profile-form/index.tsx` at one function and at most three closures, `change-password/index.tsx` at one and at most two, `use-profile-form-rules.ts` at one and at most six) are superseded 2026-10-21 by the counts measured with rust-code-analysis 0.0.25 at #354 head 10c00282: `profile-form/index.tsx` holds five functions and four closures (`ProfileForm` plus the named `PersonalDetails`, `ProfileFormFields`, `ServerFieldErrors` and `EmailField` sub-components), `change-password/index.tsx` three functions and no closure (`ChangePassword`, `CurrentPassword`, `NewPassword`), and `use-profile-form-rules.ts` five functions and five closures; the split into named sub-components and helpers is what keeps each function inside the function-level LLOC and Halstead limits, so every file stays within the caps.
@@ -1605,15 +1617,15 @@ unit and page tests with the `AUTH_TOKENS.ProfileProvider` token mocked.
 
 **Acceptance Criteria:**
 
-- Given only the name changed and the Save succeeds, when it settles, then "Зміни збережено" shows, is announced once through the status region while focus stays on "Зберегти зміни", the header and the field show the payload's name, both password fields are empty and the form is pristine.
-- Given only the e-mail changed and the Save succeeds, when it settles, then "Ми надіслали посилання для підтвердження на нову адресу" shows and the payload's `confirmed: false` is adopted; with all three changed, three toasts show in the order name, e-mail, password as one utterance, and an immediate second Save sends nothing.
+- Given only the name changed and the Save succeeds, when it settles, then "Зміни збережено" shows, is announced once through the status region while focus stays on "Зберегти зміни", the header and the field show the payload's name, both password fields are empty and the form is pristine. Amended 2026-11-17 (FR-12, carrying its 2026-11-16 amendment into this story): the name section's Save is "Зберегти ім’я", and a successful save collapses the section, so focus goes to the full-name input; the e-mail section works the same way with "Зберегти пошту", and only the password section keeps focus on its Save.
+- Given only the e-mail changed and the Save succeeds, when it settles, then "Ми надіслали посилання для підтвердження на нову адресу" shows and the payload's `confirmed: false` is adopted; with all three changed, three toasts show in the order name, e-mail, password as one utterance, and an immediate second Save sends nothing. Superseded 2026-11-05 (owner decision, PRD): the profile card is three per-section forms (full name, e-mail, password), each with its own password field, Save, `UpdateUser` and toast.
 - Given a 422 violation on `email` with the uniqueness message, or no `extensions` and the message `email: This email address is already registered`, when it settles, then the e-mail field shows "Електронна адреса вже використовується" and takes focus.
 - Given violations on `initials` and `newPassword`, when they settle, then the name field shows "Будь ласка, введіть повне ім’я у правильному форматі", the new-password field shows "Пароль не відповідає вимогам. Перевірте правила нижче" from `settings.errors.new_password_rejected`, and focus is on the name field, first in DOM order; a violation list with an unknown path shows "Не вдалося зберегти зміни. Спробуйте пізніше." and no field error.
 - Given "Old password is invalid" with no `extensions`, or its Ukrainian text, when it settles, then "Поточний пароль" shows "Неправильний поточний пароль", takes focus and the other fields keep their values; an unknown message carrying `FORBIDDEN` shows the generic toast instead.
 - Given an HTTP 429, when it settles, then "Забагато спроб. Спробуйте пізніше." shows with no action; no answer, the deadline or a 5xx shows "Не вдалося зберегти зміни. Перевірте з’єднання та спробуйте ще раз." with "Спробувати ще раз", whose activation removes the toast, submits once through the form's own validation and leaves focus on "Зберегти зміни".
 - Given the transient toast and the browser offline, when "Спробувати ще раз" is activated, then nothing is sent, because the action clicks the disabled Save instead of calling `requestSubmit()`, which would ignore the disabled state (must-fail).
 - Given `session_ended`, when it settles, then no toast and no field error show and nothing is sent again.
-- Given a server field error, when its field is next edited, then the error clears; "Очистити" never dismisses a toast; and closing the last toast puts focus on "Зберегти зміни".
+- Given a server field error, when its field is next edited, then the error clears; "Очистити" never dismisses a toast; and closing the last toast puts focus on "Зберегти зміни" (amended 2026-11-17, FR-12: the toast returns focus to the Save of the section that sent it, or to that section's input when a successful save hid the Save).
 - Given the page, when it renders, then the toast stack is its last child inside `main`, after both sections and before the footer, and `UserProfileSettingsProps` carries the queue as a `ToastQueue`.
 - Given jest-axe, when the page renders with toasts and with field errors, then there is no violation; the catalogs pass `make lint-i18n`.
 - Given the change, when the DoD gates run, then ESLint (the TB-1 selectors included), `tsc`, dependency-cruiser, jscpd and `make lint-metrics` report nothing, unit coverage stays at 100%, Stryker reports zero survivors and no existing visual baseline changes.
@@ -1756,7 +1768,7 @@ of #315's per-spec helpers, which stay where they are),
 
 - Given the seeded token, when `/settings` opens through the home link, then no document load happens, `main` has focus, the title, `h1` and skeleton show, then the card with the stubbed user, and exactly one `CurrentUser` request carrying `Authorization: Bearer` was sent.
 - Given a name change with the current password, when Save runs, then one `UpdateUser` was sent with input keys exactly `id`, `password`, `initials` and `clientMutationId`, "Зміни збережено" shows, the header updates and both password fields are empty.
-- Given an e-mail change, when Save runs, then its toast and the unconfirmed row show; when "Надіслати повторно" runs, then one `ResendEmailToUser` was sent and its toast shows; with all three aspects changed, three toasts show in the order name, e-mail, password.
+- Given an e-mail change, when Save runs, then its toast and the unconfirmed row show; when "Надіслати повторно" runs, then one `ResendEmailToUser` was sent and its toast shows; with all three aspects changed, three toasts show in the order name, e-mail, password. Superseded 2026-11-05 (owner decision, PRD): each of the three per-section forms saves with its own `UpdateUser` and shows its own toast.
 - Given a message-only wrong-password answer, a 422 taken-e-mail answer, an HTTP 429 and an HTTP 503 followed by "Спробувати ще раз", when each settles, then the field error or toast of FR-16 to FR-18 shows and the retry sends exactly one new `UpdateUser`.
 - Given the browser offline, when Save is activated, then it is disabled and nothing is sent; with only the current password typed, Save sends nothing and the no-change status shows.
 - Given a failed read, when "Спробувати ще раз" runs, then one new `CurrentUser` is sent and the card renders.
@@ -1812,7 +1824,7 @@ So that I can change my profile without a mouse or sight.
 - Given the route scan in chromium, firefox and webkit, when `/settings` is scanned loaded, then axe reports no violation outside the #276 entry and no positive `tabindex` exists; the states with field errors, the unconfirmed row and toasts are scanned too with the same result, and `A11Y_EXCEPTIONS` keeps the entries it has on the base branch, with none added. Amended 2026-10-21 (product owner, PRD FR-7, FR-26, NFR-6): exactly one entry is added, the scoped `color-contrast` exception `#settings-greeting` for "Вітаємо!" in `#969B9D` (2.81:1), tracked in #276, and axe reports no violation outside the #276 entries, that one included.
 - Given `expectTabOrder`, when the keyboard spec tabs through the loaded page with the unconfirmed row and a toast showing, then the order is the name, the e-mail, "Надіслати повторно", the current password, its toggle, the new password, its toggle, "Зберегти зміни", "Очистити", the toast buttons and then the footer, and every stop is `:focus-visible` with the repository ring.
 - Given the eye toggle focused, when Space is pressed, then it toggles; when Enter is pressed in a field, then the form submits.
-- Given the focus rules, when a Save settles, a Save ends in field errors, "Очистити" runs, the last toast closes and a session ends, then focus is on "Зберегти зміни", on the first field in error, on "Очистити", on "Зберегти зміни" and on `main` of `/sign-in` respectively.
+- Given the focus rules, when a Save settles, a Save ends in field errors, "Очистити" runs, the last toast closes and a session ends, then focus is on "Зберегти зміни", on the first field in error, on "Очистити", on "Зберегти зміни" and on `main` of `/sign-in` respectively. Amended 2026-11-16 (FR-12, FR-13): in the full-name and e-mail sections a successful Save and "Очистити" collapse the section and focus its input.
 - Given the 2FA card, when it is absent from this feature, then the keyboard spec asserts no stop for it; the bundle that renders the card adds its stop.
 - Given the manifest, when `make check-e2e-route-coverage` runs, then the scan and the keyboard spec have `settings` e2e rows.
 

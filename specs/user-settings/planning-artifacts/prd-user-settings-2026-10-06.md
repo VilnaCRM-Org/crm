@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
-iteration: 7
+revised: 2026-11-18
+iteration: 9
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -16,8 +16,10 @@ inputDocuments:
 # PRD: user settings for the `user` module
 
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
-2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below) and
-2026-11-05 (FR/NFR reconciliation)
+2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below),
+2026-11-05 (FR/NFR reconciliation, and the owner decision that splits the profile card),
+2026-11-16 (FR-12 and FR-13, the shipped per-section reveal and collapse) and 2026-11-17 (FR-13's
+focus sentence marked and a collapse criterion added; the flag-removal commit cited as 62ddc565)
 **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -32,6 +34,11 @@ inputDocuments:
 >   and updates whichever user the unauthenticated API returns, not the signed-in one. The owner
 >   accepted that in production; `src/modules/user/README.md`, "No feature flag for the settings
 >   page", has the reasoning.
+> - **`twoFactorAuth` flag (owner, 2026-11-03, #331).** The owner removed the `twoFactorAuth` runtime
+>   flag (62ddc565) with `userSettings`: `/settings` always renders the two-factor section, in every
+>   environment (`src/modules/user/README.md`, "No feature flag for the two-factor section"). Every
+>   condition that reads "while `twoFactorAuth` is on" now always holds, and every "`twoFactorAuth`
+>   off" row, scenario or criterion describes a state no build reaches.
 > - **Field-error colour (owner, 2026-11-02).** `paletteColors.error.text` is `#D63333` (about
 >   4.79:1 on white, computed `rgb(214, 51, 51)`) for field errors and the `UIForm` banner, not
 >   `#C62828`. FR-26's 4.5:1 floor holds. The 5.6:1 and `rgb(198, 40, 40)` criteria of FR-26,
@@ -40,6 +47,15 @@ inputDocuments:
 > - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
 >   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
 >   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
+
+> **Owner decision of 2026-11-05 (profile card split into three forms).** From the owner's hand
+> test of #377, landing in #377, not in a separate pull request: the settings profile card is split
+> into three per-section forms (full name, e-mail, password), each with its own password field and
+> Save; each save sends its own `UpdateUser` and shows its own toast. Where this PRD describes one
+> form, one current-password field, one Save and one `updateUser` for the whole card, and three
+> toasts in order when every aspect changes (journey step 5, FR-8, FR-11 to FR-14), the split
+> supersedes it; that text is kept as the record of the plan as approved. The two-factor PRD and
+> the app-shell PRD carry the matching owner decisions of 2026-11-05.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and
@@ -225,7 +241,9 @@ only stacking and toast placement change.
 4. An e-mail change ends in "Ми надіслали посилання для підтвердження на нову адресу" and the row
    "E-mail не підтверджено · Надіслати повторно"; a resend ends in its own success toast.
 5. A password change ends in "Ви успішно змінили пароль"; all three at once show three toasts in
-   the order name, e-mail, password. "Очистити" restores the last loaded values.
+   the order name, e-mail, password. "Очистити" restores the last loaded values. Superseded
+   2026-11-05 (owner decision, profile card split): each section saves on its own, so there is no
+   save of all three at once; each save shows its own toast.
 
 ### Tablet 1024
 
@@ -572,17 +590,43 @@ user is still in keeps focus.
 > Assumption: focus returns to "Зберегти зміни", the control that started the action, because the
 > native busy state disables it and would otherwise drop focus to `body`.
 
+> **Amended 2026-11-16** (gate finding; the shipped form of the owner decision of 2026-11-05): the
+> full-name and e-mail sections show their password field, their Save ("Зберегти ім’я",
+> "Зберегти пошту") and "Очистити" only once that section's value changes. A save that succeeds
+> collapses them and focus goes to the section's input, because the Save it would return to is
+> gone; the toast stack returns focus to the Save, or to the input when its Save hid. A save that
+> does not succeed keeps the section open under the focus rules above. The password section keeps
+> its Save shown, so this criterion applies to it unchanged.
+
+> **Amended 2026-11-18** (owner decision of 2026-11-18): "Надіслати повторно" is inert during a
+> Save of the e-mail section only. A full-name or password save owns no e-mail and remounts only
+> its own section's form, so nothing typed in the e-mail section can be dropped by it, and resend
+> stays usable while it is in flight. "Очистити" and the read-only fields stay per section as
+> amended above.
+
 #### FR-13 — Clear
+
+> **Amended 2026-11-16** (owner decision of 2026-11-05, as shipped): each section has its own
+> "Очистити". In the full-name and e-mail sections it appears with that section's Save once the
+> section changes; the password section shows it with its Save. Restoring a full-name or e-mail
+> section leaves it unchanged, so its "Очистити" collapses with the password field and Save, and
+> focus moves to that section's input; in the password section focus stays on "Очистити".
 
 "Очистити" restores the last loaded name and e-mail, empties and re-masks both password fields,
 removes every field error and the no-change status, and sends nothing. It never blanks a field,
 never dismisses a toast and is inert during a Save. It is outlined, its label reaches 4.5:1 and
-is never the primary blue (D15); focus stays on it.
+is never the primary blue (D15); focus stays on it. Superseded 2026-11-17 (owner decision of
+2026-11-05, as shipped; the amendment above): focus stays on "Очистити" only in the password
+section; in the full-name and e-mail sections the restored section collapses and focus moves to
+its input.
 
 - Given edited fields, typed passwords and field errors, when "Очистити" is activated, then the
   fields hold the last loaded values, both password fields are empty and masked, no field has
   `aria-invalid`, and nothing is sent.
 - Given a saved new name, when "Очистити" is activated, then the field holds the new name.
+- Given an edited full name or e-mail, when that section's "Очистити" is activated, then the
+  section's password field, Save and "Очистити" collapse and focus is on the section's input
+  (added 2026-11-17).
 
 ### 5.4 Outcomes
 
@@ -600,6 +644,10 @@ form to pristine; an e-mail change comes back with `confirmed` false.
   not-confirmed row appears.
 - Given all three changed, when the Save succeeds, then three toasts show in the order name,
   e-mail, password, each announced once, and an immediate second Save sends nothing.
+
+Superseded 2026-11-05 (owner decision, profile card split): the full name, e-mail and password are
+three forms, each with its own password field and Save. Each Save sends its own `UpdateUser` and
+shows its own toast, so the three-toast criterion above describes the plan as approved.
 
 #### FR-15 — Not-confirmed row and resend
 
@@ -619,6 +667,9 @@ the request settles (P4), and is inert offline and during a Save. Success shows 
 - Given unsaved edits in the form, when a resend succeeds, then every typed value is kept.
 - Given the row, when computed styles are read, then the control is `#0074B5` (5.04:1) and the
   status text reaches 4.5:1.
+
+> **Amended 2026-11-18** (owner decision of 2026-11-18): "during a Save" above means a Save of the
+> e-mail section (FR-12 amendment); during a full-name or password save the control stays usable.
 
 #### FR-16 — Violations as field errors
 

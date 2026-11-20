@@ -161,4 +161,27 @@ describe('UIButton Component', () => {
       expect(link).not.toHaveClass('MuiButton-loading');
     });
   });
+
+  describe('Outlined pill variant', () => {
+    it('renders a native button carrying the declared pill and its compact size', () => {
+      render(
+        <>
+          <UIButton variant="outlinedPill">Standard</UIButton>
+          <UIButton variant="outlinedPill" size="small" disabled>
+            Compact
+          </UIButton>
+        </>
+      );
+
+      const standard = screen.getByRole('button', { name: 'Standard' });
+      const compact = screen.getByRole('button', { name: 'Compact' });
+
+      expect(standard).toHaveClass('MuiButton-outlinedPill', 'MuiButton-sizeMedium');
+      expect(standard).not.toHaveClass('MuiButton-outlined');
+      expect(standard).toHaveStyle({ borderRadius: '3.5625rem', padding: '0 1.5rem' });
+      expect(compact).toHaveClass('MuiButton-outlinedPill', 'MuiButton-sizeSmall');
+      expect(compact).toBeDisabled();
+      expect(compact).toHaveStyle({ padding: '0 1.25rem', color: '#969B9D' });
+    });
+  });
 });

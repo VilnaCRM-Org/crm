@@ -80,6 +80,17 @@ describe('AuthProviderLoader', () => {
     expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:provider-load' });
   });
 
+  it('reports a sign-in chunk load failure once under the sign-in-load source', async () => {
+    const failure = new Error('processor chunk failed');
+    const { loader, observability } = await load();
+    const capture = jest.spyOn(observability, 'captureError').mockImplementation(() => undefined);
+
+    loader.reportLoadFailure(failure);
+
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(failure, { source: 'auth:sign-in-load' });
+  });
+
   it('captures a resolve failure once under provider-resolve and keeps the container', async () => {
     const failure = new Error('Attempted to resolve unregistered dependency token');
     resolveMock.mockImplementationOnce(() => {

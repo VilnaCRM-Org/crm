@@ -1,5 +1,6 @@
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import type {
   FieldViolationReason,
   UserServiceFailure,
@@ -14,7 +15,7 @@ import {
 } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
-const errors = new UserServiceErrorTransformer();
+const errors = new UserServiceErrorTransformer(new FieldViolationParser());
 const transformer = new GraphQLProfileTransformer(errors);
 
 const isolatedTransformer = (): Promise<GraphQLProfileTransformer> =>

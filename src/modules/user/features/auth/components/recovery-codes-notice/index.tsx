@@ -1,0 +1,45 @@
+import Box from '@mui/material/Box';
+import type { JSX } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import UIButton from '@/components/ui-button';
+import UIShellContent from '@/components/ui-shell-content';
+import i18n from '@/i18n';
+import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
+import useRecoveryNoticeMessage from '@auth/hooks/use-recovery-notice-message';
+import type { RecoveryCodesNoticeProps } from '@auth/types/two-factor/recovery-codes-notice';
+
+import en from './i18n/en.json';
+import uk from './i18n/uk.json';
+import OpenSettingsLink from './open-settings-link';
+import styles from './styles';
+
+lazyCatalogLoader.register(i18n, { en, uk });
+
+export default function RecoveryCodesNotice({
+  count,
+  onDismiss,
+}: RecoveryCodesNoticeProps): JSX.Element {
+  const { t } = useTranslation();
+  const message = useRecoveryNoticeMessage(count);
+  const dismiss = (): void => {
+    document.querySelector<HTMLElement>('main[tabindex="-1"]')?.focus();
+    onDismiss();
+  };
+
+  return (
+    <UIShellContent>
+      <Box sx={styles.notice}>
+        <Box role="status" aria-atomic="true" sx={styles.message}>
+          {message}
+        </Box>
+        <Box sx={styles.actions}>
+          <OpenSettingsLink onDismiss={onDismiss} />
+          <UIButton type="button" variant="outlinedPill" size="small" onClick={dismiss}>
+            {t('recovery_codes_notice.dismiss')}
+          </UIButton>
+        </Box>
+      </Box>
+    </UIShellContent>
+  );
+}

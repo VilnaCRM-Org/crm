@@ -11,6 +11,7 @@ function DismissingCreateNewPasswordForm({
   token,
   onSubmit,
   failure: initialFailure,
+  failureOccurrence,
   isSubmitting,
 }: CreateNewPasswordFormProps): JSX.Element {
   const [failure, setFailure] = useState(initialFailure);
@@ -22,6 +23,7 @@ function DismissingCreateNewPasswordForm({
       onSubmit={onSubmit}
       onDismissFailure={dismiss}
       failure={failure}
+      failureOccurrence={failureOccurrence}
       isSubmitting={isSubmitting}
     />
   );
@@ -45,6 +47,7 @@ const meta: Meta<typeof CreateNewPasswordForm> = {
       onSubmit={args.onSubmit}
       onDismissFailure={args.onDismissFailure}
       failure={args.failure}
+      failureOccurrence={args.failureOccurrence}
       isSubmitting={args.isSubmitting}
     />
   ),
@@ -53,6 +56,7 @@ const meta: Meta<typeof CreateNewPasswordForm> = {
     onSubmit: resolved,
     onDismissFailure: (): undefined => undefined,
     failure: null,
+    failureOccurrence: 0,
     isSubmitting: false,
   },
   argTypes: {

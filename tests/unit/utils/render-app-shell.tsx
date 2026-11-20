@@ -40,7 +40,12 @@ const renderAppShell = async ({
   stubViewportWidth(width);
   const i18n = createAppShellLocaleI18n('uk', ['en', 'uk']);
   lazyCatalogLoader.register(i18n, { en: comingSoonEn, uk: comingSoonUk });
-  const context: ProtectedSessionContext = { signOut, session: inertSession };
+  const context: ProtectedSessionContext = {
+    signOut,
+    session: inertSession,
+    twoFactorStatus: 'unknown',
+    setTwoFactorStatus: () => undefined,
+  };
   const view = render(
     <I18nextProvider i18n={i18n}>
       <MemoryRouter initialEntries={[path]}>

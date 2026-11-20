@@ -5,7 +5,6 @@ import { useFormContext } from 'react-hook-form';
 import UIButton from '@/components/ui-button';
 import UIForm from '@/components/ui-form';
 import UIFormInputField from '@/components/ui-form-input-field';
-import useConnectivityStore from '@/lib/connectivity/use-connectivity-store';
 
 interface DemoValues {
   email: string;
@@ -151,17 +150,17 @@ export const SubmitRef: Story = {
   },
 };
 
-export const Offline: Story = {
-  beforeEach: () => {
-    useConnectivityStore.setState({ online: false });
-    return (): void => useConnectivityStore.setState({ online: true });
-  },
+export const SubmitBlocked: Story = {
+  args: { submitBlockedReason: 'Спочатку підтвердьте, що зберегли коди' },
   parameters: {
     docs: {
       description: {
         story:
-          'While the browser reports no network the submit is disabled and described by the ' +
-          'offline notice under the heading (issue #147).',
+          '`submitBlockedReason` makes the submit `aria-disabled` rather than natively ' +
+          'disabled: it keeps its contained style and stays focusable, click, Enter and Space ' +
+          'send nothing, and the reason shows under the button in #404142 and describes it. ' +
+          'A native disabled state (offline, `isSubmitDisabled`, submitting) wins and hides ' +
+          'the reason.',
       },
     },
   },

@@ -176,6 +176,43 @@ describe('useEmailResend', () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],
+    ['transient', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+    ['rejected', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+  ] as const)(
+    'maps the %s failure to its toast in a hook loaded in the test',
+    async (reason, message) => {
+      const fresh = await loadIsolated(async () => {
+        jest.doMock('react', () => React);
+        jest.doMock('react-i18next', () => ReactI18next);
+        return (await import('@/modules/user/features/settings/hooks/use-email-resend')).default;
+      });
+      mockResend.mockResolvedValue({ kind: 'failed', reason });
+      const show = jest.fn();
+      const toasts = {
+        toasts: { items: [] },
+        announcement: '',
+        alert: '',
+        show,
+        dismiss: jest.fn(),
+      };
+      const adoption = {
+        adopt: jest.fn(),
+        confirm: jest.fn(),
+        isCurrent: jest.fn(() => true),
+        revision: jest.fn(() => 0),
+      };
+      const { result } = renderHook(() => fresh(user, adoption, toasts), { wrapper });
+
+      await act(async () => {
+        result.current.resend();
+      });
+
+      expect(show).toHaveBeenCalledWith({ items: [{ tone: 'error', message }] });
+    }
+  );
+
   it('does nothing when the session ended', async () => {
     mockResend.mockResolvedValue({ kind: 'failed', reason: 'session_ended' });
     const { result, confirm, show } = setup();

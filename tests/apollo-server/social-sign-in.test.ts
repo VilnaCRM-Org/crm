@@ -17,6 +17,7 @@ import {
   SOCIAL_SIGN_IN_SDL,
   type SingleBody,
 } from './mock-schema-fixtures';
+import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
 
 const PASSWORD_RESET_EXTENSION = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'api', 'contracts', 'pending', 'password-reset.graphql'),
@@ -97,6 +98,7 @@ describe('pending social sign-in mutations on the mock', () => {
         PINNED_SDL_FIXTURE,
         PROFILE_SDL_FIXTURE,
         PASSWORD_RESET_EXTENSION,
+        ...TWO_FACTOR_SDL_FIXTURES,
         ...SOCIAL_SIGN_IN_SDL,
       ],
       resolvers,

@@ -49,6 +49,8 @@ test-visual-update	bats	tests/bats/makefile_targets.bats	Validated as the visual
 create-network	ci	.github/workflows/static-testing.yml	Exercised transitively by the shared start and prod-side startup entrypoints.
 start-prod	ci	.github/workflows/e2e-testing.yml	Exercised transitively by prod-side PR workflows that depend on `make start-prod`.
 start-prod-clean	bats	tests/bats/makefile_targets.bats	Validated as the force-recreate prod startup wrapper.
+start-local-stack	bats	tests/bats/makefile_targets.bats	Validated as the wrapper over the local-stack start script.
+stop-local-stack	bats	tests/bats/makefile_targets.bats	Validated as the compose teardown of the local stack.
 wait-for-prod	bats	tests/bats/makefile_targets.bats	Validated as the wait-on based prod readiness helper.
 test-unit-all	ci	.github/workflows/unit-testing.yml	Executed directly by the unit-testing PR workflow.
 test-unit-client	ci	.github/workflows/unit-testing.yml	Exercised transitively by `make test-unit-all`.

@@ -1,5 +1,6 @@
 import ROUTE_PATHS from '@/routes/route-paths';
 import type { RouteModule } from '@/routes/types/route-module';
+import TwoFactorChallenge from '@auth/routes/two-factor';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 // The whole contract is one module-level literal, so it is evaluated inside the test body. Loaded
@@ -14,12 +15,13 @@ describe('auth route contract', () => {
     expect((await loadAuthRoutes()).id).toBe('user.auth');
   });
 
-  it('declares the sign-up, sign-in, recovery and social callback routes, in order', async () => {
+  it('declares the sign-up, sign-in, challenge, recovery and callback routes', async () => {
     const { routes } = await loadAuthRoutes();
 
     expect(routes.map((route) => route.path)).toEqual([
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
+      ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
       ROUTE_PATHS.socialCallback,
@@ -32,6 +34,7 @@ describe('auth route contract', () => {
     expect(routes.map((route) => route.meta)).toEqual([
       { titleKey: 'sign_up.title' },
       { titleKey: 'sign_in.title' },
+      { titleKey: 'two_factor.title' },
       { titleKey: 'password_recovery.title' },
       { titleKey: 'password_reset.title' },
       { titleKey: 'auth.social.callback_title' },
@@ -47,10 +50,31 @@ describe('auth route contract', () => {
       'public',
       'public',
       'public',
+      'public',
     ]);
     routes.forEach((route) => {
       expect(typeof route.load).toBe('function');
     });
+  });
+
+  it('declares the challenge as a flag-free public route', async () => {
+    const { routes } = await loadAuthRoutes();
+    const challenge = routes.find((route) => route.path === ROUTE_PATHS.twoFactorChallenge);
+
+    expect(challenge).toEqual({
+      path: '/sign-in/two-factor',
+      guard: 'public',
+      load: expect.any(Function),
+      meta: { titleKey: 'two_factor.title' },
+    });
+    expect(challenge).not.toHaveProperty('flag');
+  });
+
+  it('lazily loads the two-factor challenge page module', async () => {
+    const { routes } = await loadAuthRoutes();
+    const challenge = routes.find((route) => route.path === ROUTE_PATHS.twoFactorChallenge);
+
+    await expect(challenge?.load()).resolves.toMatchObject({ default: TwoFactorChallenge });
   });
 
   it('loads the social callback page lazily from its own module', async () => {

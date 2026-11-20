@@ -1,6 +1,6 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 
-const { md, lg } = breakpointsTheme.breakpoints.values;
+const { md } = breakpointsTheme.breakpoints.values;
 
 export default {
   container: {
@@ -9,9 +9,6 @@ export default {
     paddingInline: '15px',
 
     [`@media (min-width:${md}px)`]: {
-      paddingInline: '26px',
-    },
-    [`@media (min-width:${lg}px)`]: {
       paddingInline: '12px',
     },
   },

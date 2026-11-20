@@ -139,6 +139,14 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free PII scrubbing leaf used by the Sentry beforeSend hook.',
   },
   {
+    path: 'src/services/observability/pii-text-scrubber.ts',
+    reason:
+      'Container-free free-text half of that scrubber; value-imports and delegates to its ' +
+      'TwoFactorTextScrubber sibling for the two-factor patterns, its TokenTextScrubber ' +
+      'sibling for the token and secret patterns and its SocialCallbackTextScrubber sibling ' +
+      'for the OAuth callback code and state.',
+  },
+  {
     path: 'src/services/observability/web-vitals-reporter.ts',
     reason: 'Container-free web-vitals leaf; dynamic import of web-vitals.',
   },
@@ -166,7 +174,7 @@ const EXEMPT_RENDER_PATH_FILES = [
   },
   {
     path: 'src/utils/url-builder.ts',
-    reason: 'Container-free URL builder consumed by api-config at module load.',
+    reason: 'Container-free URL builder consumed by the OAuth provider buttons on click.',
   },
   {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',
@@ -260,14 +268,6 @@ const ALLOWED_TARGETS = [
     specifier: '(?:^|/)tokens$',
     sample: 'src/services/https-client/tokens.ts',
     sampleSpecifier: './tokens',
-  },
-  {
-    id: 'api-endpoint-config',
-    reason: 'API_ENDPOINTS is a frozen endpoint map — configuration data with no sensible token.',
-    path: '^src/config/api-config[.]ts$',
-    specifier: '^@/config/api-config$',
-    sample: 'src/config/api-config.ts',
-    sampleSpecifier: '@/config/api-config',
   },
   {
     id: 'typed-env',

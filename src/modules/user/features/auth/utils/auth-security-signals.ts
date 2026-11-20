@@ -9,9 +9,12 @@ import type {
   SecurityEventRecorder,
 } from '@/services/types/security-events/security-event';
 import type { AuthError } from '@auth/types/auth-error';
-import type { LoginResult, RegisterResult } from '@auth/types/auth-repository';
+import type { RegisterResult } from '@auth/types/auth-repository';
+import type { ChallengeResult } from '@auth/types/two-factor/challenge';
+import type { SignInResult } from '@auth/types/two-factor/sign-in';
 
 const TOO_MANY_REQUESTS = 429;
+const LOCKED = 423;
 
 const KNOWN_REASONS: ReadonlySet<string> = new Set<AuthFailureReason>([
   'authentication',
@@ -30,18 +33,13 @@ export default class AuthSecuritySignals {
     private readonly observability: ObservabilityService
   ) {}
 
-  public loginSettled(result: LoginResult): void {
+  public loginSettled(result: SignInResult): void {
     if (result.ok) {
-      this.signedIn();
+      if (result.value.kind === 'session') this.signedIn();
       return;
     }
     if (result.error.aborted) return;
     this.loginFailed(result.error);
-  }
-
-  public registerSettled(result: RegisterResult): void {
-    if (result.ok || result.error.aborted) return;
-    this.registerFailed(result.error);
   }
 
   // An opaque per-session id only, never user data (issue #115).
@@ -53,12 +51,27 @@ export default class AuthSecuritySignals {
     this.recorder.authFailure('login', this.reasonOf(error));
   }
 
+  public challengeSettled(result: ChallengeResult): void {
+    if (result.kind === 'completed') {
+      this.observability.setUser({ id: uuidv4() });
+      return;
+    }
+    this.recorder.authFailure('login', result.reason);
+  }
+
+  public registerSettled(result: RegisterResult): void {
+    if (result.ok || result.error.aborted) return;
+    this.registerFailed(result.error);
+  }
+
   public registerFailed(error: unknown): void {
     this.recorder.authFailure('registration', this.reasonOf(error));
   }
 
   private reasonOf(error: unknown): AuthFailureReason {
-    if (this.statusOf(error) === TOO_MANY_REQUESTS) return 'rate_limited';
+    const status = this.statusOf(error);
+    if (status === TOO_MANY_REQUESTS) return 'rate_limited';
+    if (status === LOCKED) return 'locked';
     const kind = (error as Partial<AuthError> | null | undefined)?.kind;
     return KNOWN_REASONS.has(kind as string) ? (kind as AuthFailureReason) : 'unknown';
   }

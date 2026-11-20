@@ -64,6 +64,22 @@ describe('SecurityEventCore', () => {
     });
   });
 
+  it.each(['invalid_code', 'expired_session', 'locked'] as const)(
+    'records the challenge reason %s as a login auth_failure',
+    (reason) => {
+      jest.spyOn(authFailureMonitor, 'observe').mockReturnValue(quiet);
+
+      new SecurityEventCore().authFailure('login', reason);
+
+      expect(lastCall()[1]).toMatchObject({
+        event: 'auth_failure',
+        category: 'login',
+        reason,
+        severity: 'warning',
+      });
+    }
+  );
+
   it('never carries a credential, token, or identifier in the auth-failure payload', () => {
     jest.spyOn(authFailureMonitor, 'observe').mockReturnValue(quiet);
 

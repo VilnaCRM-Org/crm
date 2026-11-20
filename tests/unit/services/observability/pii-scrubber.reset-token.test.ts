@@ -34,6 +34,21 @@ describe('PiiScrubber reset token redaction (#315)', () => {
     ['a JSON access token value', '{"access_token":"abc"}', '{"access_token":"[redacted]"}'],
     ['a hyphenated JSON token key', '{"x-reset-token":"abc"}', '{"x-reset-token":"[redacted]"}'],
     [
+      'a JSON key that continues after password',
+      '{"passwordConfirmation":"Secret1"}',
+      '{"passwordConfirmation":"[redacted]"}',
+    ],
+    [
+      'a JSON key that continues after token',
+      '{"tokenValue":"abc"}',
+      '{"tokenValue":"[redacted]"}',
+    ],
+    [
+      'a JSON key that continues after secret',
+      '{"secret_key":"abc"}',
+      '{"secret_key":"[redacted]"}',
+    ],
+    [
       'a percent-encoded token',
       'next=%2Fpassword-reset%3Ftoken%3Dabc%26x%3D1',
       'next=%2Fpassword-reset%3Ftoken%3D[redacted]%26x%3D1',

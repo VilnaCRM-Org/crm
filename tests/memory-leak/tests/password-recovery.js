@@ -15,6 +15,7 @@ const CONFIRM_INPUT = 'input#confirmPassword';
 const RULES_LIST = 'ul#new-password-rules';
 const SUBMIT = 'form button[type="submit"]';
 const SIGN_IN_EMAIL_INPUT = 'form input#email';
+const SIGN_IN_PASSWORD_INPUT = 'input#password';
 const PAGE_TIMEOUT = 15000;
 const BACK_TIMEOUT = 5000;
 
@@ -27,18 +28,21 @@ async function navigateInApp(page, targetPath) {
   }, targetPath);
 }
 
-async function waitForSelectors(page, selectors, timeout) {
+async function waitForSelectors(page, selectors, timeout, absent = []) {
   const rendered = await page.waitForFunction(
-    (wanted) => wanted.every((selector) => document.querySelector(selector) !== null),
+    (wanted, gone) =>
+      wanted.every((selector) => document.querySelector(selector) !== null) &&
+      gone.every((selector) => document.querySelector(selector) === null),
     { timeout },
-    selectors
+    selectors,
+    absent
   );
   await rendered.dispose();
 }
 
 async function exerciseRequestForm(page) {
   await navigateInApp(page, REQUEST_PATH);
-  await waitForSelectors(page, [EMAIL_INPUT, SUBMIT], PAGE_TIMEOUT);
+  await waitForSelectors(page, [EMAIL_INPUT, SUBMIT], PAGE_TIMEOUT, [SIGN_IN_PASSWORD_INPUT]);
   await verifyPage(page, REQUEST_PATH);
   await page.type(EMAIL_INPUT, faker.internet.email());
 }

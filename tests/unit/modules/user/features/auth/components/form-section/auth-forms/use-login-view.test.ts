@@ -45,6 +45,36 @@ describe('useLoginView', () => {
     expect(result.current.view).toBe('success');
   });
 
+  it('returns to the form once a retry settles without an error or a new sign-in', () => {
+    const { result, rerender } = mount({ ...IDLE, error: 'failed' });
+    rerender({ ...IDLE, error: 'failed', isSubmitting: true });
+
+    rerender(IDLE);
+
+    expect(result.current.view).toBe('form');
+    expect(result.current.returnCount).toBe(1);
+  });
+
+  it('counts no return when a retry settles signed in', () => {
+    const { result, rerender } = mount({ ...IDLE, error: 'failed' });
+    rerender({ ...IDLE, error: 'failed', isSubmitting: true });
+
+    rerender({ ...IDLE, signedIn: true });
+
+    expect(result.current.view).toBe('success');
+    expect(result.current.returnCount).toBe(0);
+  });
+
+  it('returns to the form when the session ends after a sign-in over an error', () => {
+    const { result, rerender } = mount({ ...IDLE, error: 'failed' });
+    rerender({ ...IDLE, signedIn: true });
+
+    rerender(IDLE);
+
+    expect(result.current.view).toBe('form');
+    expect(result.current.returnCount).toBe(1);
+  });
+
   it('returns to the form on back and counts every return', () => {
     const { result, rerender } = mount({ ...IDLE, error: 'failed' });
 

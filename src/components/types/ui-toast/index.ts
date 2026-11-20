@@ -13,6 +13,7 @@ export interface ToastDraft {
   readonly tone: ToastTone;
   readonly message: string;
   readonly action?: ToastAction | undefined;
+  readonly returnFocusRef?: RefObject<HTMLElement | null> | undefined;
 }
 
 export interface ToastItem extends ToastDraft {

@@ -12,8 +12,22 @@ import type {
 
 const HOLDS_FOCUS = ':focus, :focus ~ *';
 
+function rendered(element: HTMLElement): boolean {
+  let node: Element | null = element;
+  while (node !== null) {
+    if (window.getComputedStyle(node).display === 'none') return false;
+    node = node.parentElement;
+  }
+  return window.getComputedStyle(element).visibility !== 'hidden';
+}
+
 function focusable(element: HTMLElement | null): HTMLElement | null {
-  return element?.isConnected && !element.matches(':disabled') ? element : null;
+  const usable =
+    element?.isConnected &&
+    !element.matches(':disabled') &&
+    element.closest('[inert]') === null &&
+    rendered(element);
+  return usable ? element : null;
 }
 
 function closeOf(buttons: CloseButtons, toast: ToastItem | undefined): HTMLElement | undefined {
@@ -27,10 +41,12 @@ function dismissTarget(
 ): HTMLElement | null | undefined {
   const { items } = options.toasts;
   const index = items.findIndex((toast) => toast.id === id);
-  if (index < 0) return undefined;
+  const closing = items[index];
+  if (closing === undefined) return undefined;
+  const returnTo = closing.returnFocusRef ?? options.returnFocusRef;
   return (
     closeOf(buttons, items[index + 1] ?? items[index - 1]) ??
-    focusable(options.returnFocusRef.current) ??
+    focusable(returnTo.current) ??
     options.fallbackFocusRef?.current
   );
 }

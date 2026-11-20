@@ -1,22 +1,22 @@
-import type { Page, Route } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
 import { buildCredentials } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import {
   continueButtonOf,
-  expectSignInErrorCard,
+  expectSignInErrorCardWithoutRetry,
   expectSignInSuccessCard,
   signInErrorMessages,
   successCardHeading,
 } from '@tests/e2e/utils/sign-in-result-card';
 import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import fillInput from '../../../../utils/fill-input';
 import { t } from '../../../../utils/initialize-localization';
 
-const LOGIN_API_URL = '**/api/users';
 const PRESERVED_DESTINATION = '/?tab=deals#pipeline';
 
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
@@ -32,17 +32,6 @@ async function submitValidLogin(page: Page): Promise<void> {
   await page.locator('button', { hasText: submitLabel }).click();
 }
 
-async function mockLoginSuccess(page: Page): Promise<void> {
-  await page.route(LOGIN_API_URL, async (route: Route) => {
-    if (route.request().method() !== 'POST') return route.fallback();
-    return route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ token: 'e2e-login-token' }),
-    });
-  });
-}
-
 async function expectHomeWithMainFocused(page: Page): Promise<void> {
   await expect(
     page.getByRole('main').getByRole('heading', { level: 1, name: homeHeading })
@@ -56,18 +45,15 @@ test.describe('Post-login success card and redirect (issues #150, #315)', () => 
     page,
   }) => {
     await seedPreloadedAuthToken(page);
-    await mockLoginSuccess(page);
+    const signIn = await stubSignIn(page, ['session']);
     await page.goto(ROUTE_PATHS.signIn);
-
-    // Without observing the request, this test would also pass if the login never fired at all —
-    // the URL holding on /sign-in is exactly what a dead submit button produces.
-    const loginRequest = page.waitForRequest(
-      (request) => request.url().includes('/api/users') && request.method() === 'POST'
-    );
 
     await submitValidLogin(page);
 
-    expect((await loginRequest).postDataJSON()).toMatchObject({ email: validCredentials.email });
+    // Without observing the request, this test would also pass if the login never fired at all —
+    // the URL holding on /sign-in is exactly what a dead submit button produces.
+    await expect.poll(() => signIn.count()).toBe(1);
+    expect(signIn.calls[0]?.variables['input']).toMatchObject({ email: validCredentials.email });
 
     await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
     await expect(page).toHaveURL(/\/sign-in$/);
@@ -78,7 +64,7 @@ test.describe('Post-login success card and redirect (issues #150, #315)', () => 
   test('a sign-in after signing out shows the success card and waits for Продовжити', async ({
     page,
   }) => {
-    await mockLoginSuccess(page);
+    await stubSignIn(page, ['session']);
     await signOutToSignIn(page);
 
     await submitValidLogin(page);
@@ -93,7 +79,7 @@ test.describe('Post-login success card and redirect (issues #150, #315)', () => 
   });
 
   test('Продовжити lands on the preserved protected destination', async ({ page }) => {
-    await mockLoginSuccess(page);
+    await stubSignIn(page, ['session']);
     await signOutToSignIn(page);
     await bounceFromProtectedDestination(page, PRESERVED_DESTINATION);
 
@@ -106,19 +92,12 @@ test.describe('Post-login success card and redirect (issues #150, #315)', () => 
   });
 
   test('a failed login shows the error card and never leaves /sign-in', async ({ page }) => {
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (route.request().method() !== 'POST') return route.fallback();
-      return route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Invalid credentials' }),
-      });
-    });
+    await stubSignIn(page, ['unauthenticated']);
 
     await signOutToSignIn(page);
     await submitValidLogin(page);
 
-    await expectSignInErrorCard(page, signInErrorMessages.invalidCredentials);
+    await expectSignInErrorCardWithoutRetry(page, signInErrorMessages.invalidCredentials);
     await expect(page).toHaveURL(/\/sign-in$/);
     await expect(successCardHeading(page)).toHaveCount(0);
   });
