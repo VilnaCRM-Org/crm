@@ -1865,6 +1865,15 @@ reads `t('ui_notification.close')` since Story 2.3), a clearance spec under
 - Given `toast` at 1440, 1024 and 375, when one toast shows, then its right edge, bottom edge, width and height each match `main`'s within 1 px (right 12, bottom 24, width 397; mobile 15 px gutters), the padding having absorbed the new 1 px border (FR-13 as amended, PRD readiness amendment 13).
 - Not applicable: unit coverage and mutation (test-only), i18n.
 
+> Code facts (2026-11-20): at 320 × 256 the stack (about y 128–241) covered the panel's only
+> control, so K13a applies: `useStackClearance` also publishes the measured clearance as
+> `--toast-stack-clearance` and the history scroller's `max-height` is
+> `max(3.125rem, calc(100dvh - 80px - var(--toast-stack-clearance, 0px)))`, with no z-index
+> change. The toast's right gutter is 12 px from 1025 px and 24 px at 1024 (the breakpoint table),
+> so the box test asserts 12 at 1440 and 24 at 1024. The desktop-size checks live in
+> `settings-clearance.spec.ts` with `setViewportSize`; the touch checks in
+> `tests/e2e/mobile/settings-touch.spec.ts`. Written and linted locally, first run in CI.
+
 ### Story 4.5: Scan every style with Playwright axe and prove the keyboard contract
 
 As a user of assistive technology,

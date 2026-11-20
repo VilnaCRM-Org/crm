@@ -10,13 +10,17 @@ function revealFocused(stack: HTMLElement, top: number): void {
   }
 }
 
+const STACK_CLEARANCE_PROPERTY = '--toast-stack-clearance';
+
 function setClearance(value: string): void {
   document.documentElement.style.setProperty('scroll-padding-bottom', value);
+  document.documentElement.style.setProperty(STACK_CLEARANCE_PROPERTY, value);
   document.body.style.setProperty('padding-bottom', value);
 }
 
 function clearClearance(): void {
   document.documentElement.style.removeProperty('scroll-padding-bottom');
+  document.documentElement.style.removeProperty(STACK_CLEARANCE_PROPERTY);
   document.body.style.removeProperty('padding-bottom');
 }
 

@@ -27,9 +27,14 @@ import {
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
-import { burgerOf, drawerOf, shellText } from '@tests/e2e/utils/app-shell';
+import { bellOf, burgerOf, drawerOf, shellText } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import {
+  NOTIFICATION_STYLES,
+  type NotificationStyle,
+  useNotificationStyle,
+} from '@tests/e2e/utils/notification-style';
 
 import { showPasswordLabel } from './constants';
 import expectTouchTarget from './utils/touch-target';
@@ -45,6 +50,55 @@ const REFLOW_VIEWPORT = { width: 320, height: 256 };
 const TOAST_EDGE_PX = 16;
 
 const closeLabel: string = t('ui_notification.close');
+const markAllLabel: string = t('notification_center.history.mark_all_read');
+const CARD_GUTTER_PX = 16;
+
+interface OutcomeControl {
+  readonly name: string;
+  readonly of: (page: Page) => Locator;
+}
+
+interface LayoutBox {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+const closeIn = (scope: Locator): Locator =>
+  scope.getByRole('button', { name: closeLabel, exact: true });
+const retryIn = (scope: Locator): Locator =>
+  scope.getByRole('button', { name: text.tryAgain, exact: true });
+const nameFormOf = (page: Page): Locator => nameField(page).locator('xpath=ancestor::form');
+const tasksOf = (page: Page): Locator =>
+  page.getByRole('banner').getByRole('button', { name: shellText.tasks, exact: true });
+const markAllOf = (page: Page): Locator =>
+  page.getByRole('button', { name: markAllLabel, exact: true });
+const bellNoticeCardOf = (page: Page): Locator =>
+  closeIn(page.getByRole('banner')).first().locator('xpath=ancestor::ul[1]/../..');
+
+const OUTCOME_CONTROLS: Record<NotificationStyle, readonly OutcomeControl[]> = {
+  toast: [
+    { name: 'toast close', of: (page) => closeIn(page.getByRole('main')) },
+    { name: 'toast Retry', of: (page) => retryIn(page.getByRole('main')) },
+  ],
+  inline: [{ name: 'inline Retry', of: (page) => retryIn(nameFormOf(page)) }],
+  bell: [
+    { name: 'bell notice close', of: (page) => closeIn(page.getByRole('banner')) },
+    { name: 'bell notice Retry', of: (page) => retryIn(page.getByRole('banner')) },
+  ],
+};
+
+const boxGap = (first: LayoutBox | null, second: LayoutBox | null): number => {
+  const a = first ?? { x: 0, y: 0, width: Infinity, height: Infinity };
+  const b = second ?? { x: 0, y: 0, width: Infinity, height: Infinity };
+  return Math.max(
+    b.x - (a.x + a.width),
+    a.x - (b.x + b.width),
+    b.y - (a.y + a.height),
+    a.y - (b.y + b.height)
+  );
+};
 
 const clearButton = (page: Page): Locator => clearButtonOf(currentPasswordField(page));
 
@@ -313,5 +367,78 @@ test.describe('Settings on touch devices (issue #330)', () => {
     expect((clearBox?.y ?? Infinity) + (clearBox?.height ?? 0)).toBeLessThanOrEqual(
       toastBox?.y ?? 0
     );
+  });
+});
+
+for (const style of NOTIFICATION_STYLES) {
+  test.describe(`Notification controls on touch devices under ${style} (issue #391)`, () => {
+    test.beforeEach(async ({ page }) => {
+      await useNotificationStyle(page, style);
+      await signInToSettings(page);
+    });
+
+    test('keeps the bell, mark-all-read and every outcome control at 44 px', async ({ page }) => {
+      await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
+      await openByTap(page);
+      await tapSaveWith(page, NEW_NAME);
+      await expect(retryIn(page.locator('body'))).toBeVisible();
+
+      for (const control of OUTCOME_CONTROLS[style]) {
+        await expectTouchTarget(control.of(page), control.name);
+      }
+      await expectTouchTarget(bellOf(page), 'bell');
+      await bellOf(page).tap();
+      await expect(bellOf(page)).toHaveAttribute('aria-expanded', 'true');
+
+      await expectTouchTarget(markAllOf(page), 'mark all read');
+    });
+
+    test('keeps the bell and the tasks button apart', async ({ page }) => {
+      await stubProfile(page);
+      await openByTap(page);
+      await expect(bellOf(page)).toBeEnabled();
+      await expect(tasksOf(page)).toBeVisible();
+
+      const gap = boxGap(await bellOf(page).boundingBox(), await tasksOf(page).boundingBox());
+
+      expect(gap, 'bell and tasks boxes must not overlap').toBeGreaterThanOrEqual(0);
+    });
+
+    test('shows an outcome at 320 px with no horizontal scroll', async ({ page }) => {
+      await page.setViewportSize(NARROW_VIEWPORT);
+      await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
+      await openByTap(page);
+
+      await tapSaveWith(page, NEW_NAME);
+
+      await expect(retryIn(page.locator('body'))).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    });
+  });
+}
+
+test.describe('The bell caret card at 320 px (issue #391)', () => {
+  test.beforeEach(async ({ page }) => {
+    await useNotificationStyle(page, 'bell');
+    await signInToSettings(page);
+  });
+
+  test('keeps the caret card inside the viewport with 16 px gutters', async ({ page }) => {
+    await page.setViewportSize(NARROW_VIEWPORT);
+    await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
+    await openByTap(page);
+    await tapSaveWith(page, NEW_NAME);
+    const card = bellNoticeCardOf(page);
+    await expect(card).toBeVisible();
+
+    const box = await card.boundingBox();
+
+    expect(box).not.toBeNull();
+    expect(box?.x ?? -Infinity).toBeGreaterThanOrEqual(CARD_GUTTER_PX - 0.5);
+    expect((box?.x ?? 0) + (box?.width ?? Infinity)).toBeLessThanOrEqual(
+      NARROW_VIEWPORT.width - CARD_GUTTER_PX + 0.5
+    );
+    await expect(card).toBeInViewport({ ratio: 1 });
+    await expectNoHorizontalOverflow(page);
   });
 });

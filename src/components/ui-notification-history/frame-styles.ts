@@ -34,7 +34,7 @@ export default {
     [FORCED_COLORS]: { border: '1px solid CanvasText', boxShadow: 'none' },
   },
   scroller: {
-    maxHeight: 'calc(100dvh - 80px)',
+    maxHeight: 'max(3.125rem, calc(100dvh - 80px - var(--toast-stack-clearance, 0px)))',
     overflowY: 'auto',
     borderRadius: 'inherit',
   },

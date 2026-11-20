@@ -218,6 +218,18 @@ describe('useStackClearance', () => {
     });
   });
 
+  it('publishes the distance for the history panel to subtract, then drops it', () => {
+    const clearance = (): string =>
+      document.documentElement.style.getPropertyValue('--toast-stack-clearance');
+    const { unmount } = renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+    expect(clearance()).toBe('96px');
+
+    unmount();
+
+    expect(clearance()).toBe('');
+  });
+
   it('adds the same distance as real scroll space at the end of the page', () => {
     const { unmount } = renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
 

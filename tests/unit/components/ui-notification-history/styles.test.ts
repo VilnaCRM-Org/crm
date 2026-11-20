@@ -119,7 +119,10 @@ describe('notification history frame styles', () => {
       boxShadow: '0 8px 27px rgba(49, 59, 67, 0.14)',
     });
     expect(frame).not.toHaveProperty('display');
-    expect(scroller).toMatchObject({ maxHeight: 'calc(100dvh - 80px)', overflowY: 'auto' });
+    expect(scroller).toMatchObject({
+      maxHeight: 'max(3.125rem, calc(100dvh - 80px - var(--toast-stack-clearance, 0px)))',
+      overflowY: 'auto',
+    });
   });
 
   it('draws a 26 by 6 caret on the bell centre with a white triangle inside it', async () => {
