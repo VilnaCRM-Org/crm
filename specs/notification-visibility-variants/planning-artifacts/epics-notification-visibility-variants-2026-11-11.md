@@ -1051,6 +1051,13 @@ variant `451:26214`; an unreachable MCP reports `BLOCKED`, never skips (readines
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys (the description text is passed in by Story 2.12).
 
+> Code facts (2026-11-20): the enabled-bell and alert-badge styles live in
+> `ui-app-header/bell-styles.ts`, not in `styles.ts`, which was at the file Halstead limit;
+> `styles.ts` exports its round and bare button bases and `standaloneFocus` for it. The disabled
+> variant is the `DisabledButton` component beside `DisclosureButton`; `HeaderIconButton`
+> dispatches on `disclosure`. Figma `451:26214` matches the existing geometry: a 48 px frame, the
+> 20 px glyph at 14, 14 and the 18 px badge at 34, 30.
+
 ### Story 2.8: Add BellSlotFrame, a fixed-size frame for the bell slot
 
 As the header under any style,

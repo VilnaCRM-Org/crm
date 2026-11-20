@@ -31,10 +31,22 @@ export interface HeaderSearchProps {
   readonly layout: HeaderSearchLayout;
 }
 
+export interface HeaderDisclosure {
+  readonly expanded: boolean;
+  readonly controls: string;
+  readonly describedBy?: string | undefined;
+  readonly onToggle: ActivateHandler;
+}
+
 export interface HeaderIconButtonProps {
   readonly layout: ShellLayout;
   readonly kind: HeaderControlKind;
   readonly count?: number | null | undefined;
+  readonly disclosure?: HeaderDisclosure | undefined;
+}
+
+export interface DisclosureButtonProps extends HeaderIconButtonProps {
+  readonly disclosure: HeaderDisclosure;
 }
 
 export interface UserSlotFrameProps {
