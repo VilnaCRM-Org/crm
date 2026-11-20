@@ -133,8 +133,8 @@ _(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas fo
   never ends a current session.
 - `SocialSignInTransformer` maps every FR12 `extensions.error_code`, a network error to
   `unavailable`, and anything else to `generic`; table-driven unit test.
-- `SocialSignInProvider.complete` sets the token on success, returns the two-factor variant
-  untouched, and reports failures through `AuthSecuritySignals` with a reason code (NFR10).
+- `SocialSignInProvider.complete` starts the session on success and the pending challenge on a
+  2FA result (S3.3), and reports failures through `AuthSecuritySignals` with a reason code (NFR10).
 - `accessToken` and `refreshToken` are scrubbed by the existing `token` fragment of
   `piiScrubber`; `code`, `state` and `pendingSessionId` never reach an event, because the page
   strips them from the address bar before rendering and no path logs them (NFR7).
@@ -196,11 +196,22 @@ what went wrong and how to recover.
 
 ### S3.3 2FA hand-off — **dependent on S3.2**
 
-- When `ROUTE_PATHS.twoFactorChallenge` exists: navigate there with `pendingSessionId` in router
-  state, never in the URL; the 2FA screen completes sign-in (verified in E2E with the mock
-  `mock-2fa` code).
-- When it does not exist: `two_factor_required` error kind with "Back to sign in".
-- This story is re-planned against the merged 2FA code when PR #377 lands.
+_(2026-11-20)_ Re-planned against the merged challenge (#331), as readiness W2 required.
+
+- `SocialSignInProvider` starts every outcome through injected `SocialSessionDeps`: when the store
+  holds a token (a sandbox demo session included) it calls `session.signOut()` first; a session
+  then writes `{ ...signedOut, token, twoFactorStatus: 'disabled' }` and a 2FA result writes
+  `{ ...signedOut, pendingSessionId }`, never a token. Unit-pinned for both outcomes, with and
+  without an earlier session.
+- `SocialCallbackViewMapper.outcomeView` maps `two-factor` to a replace redirect to
+  `ROUTE_PATHS.twoFactorChallenge` with `state: { from }`, `from` being the saved destination as
+  `{ pathname, search, hash }`, consumed once; the `pendingSessionId` never enters the URL or the
+  router state.
+- The `two_factor_required` kind, its error-view row, story and both translations are removed.
+- E2E: a stubbed 2FA completion reaches the challenge, a stubbed `completeTwoFactorUser` signs in,
+  and the user lands on the protected page they came from; the mock consent page's "Allow (2FA
+  account)" link leads to the challenge locally.
+- Integration: the provider writes the pending session through the real container and store.
 
 ## Epic 4 — Verification and documentation
 
@@ -215,7 +226,8 @@ walk-through in the local guide.
 - `tests/e2e/modules/user/features/auth/social-sign-in.spec.ts`: for Google and GitHub, success
   from `/sign-in`, and from `/sign-up`; the query is stripped from the address bar; a forged
   state and a forged cancel are refused; every FR12 error code with its recovery; a cancel
-  through the provider; the 2FA notice; a keyboard-only retry; Back to sign in.
+  through the provider; a 2FA account through the challenge to its destination; a keyboard-only
+  retry; Back to sign in.
 - `tests/e2e/mobile/social-sign-in-touch.spec.ts`: `tap()` success with the completion asserted,
   and the 44 px floor on both error actions, on both mobile projects.
 - `tests/e2e/a11y/routes.a11y.spec.ts` scans `/auth/callback/google` and
@@ -233,6 +245,18 @@ carries `[no-adr]`.
 - `src/modules/user/README.md` and `src/routes/README.md` mention the new route and contract.
 - `specs/README.md` lists `social-sign-in` as "In progress" while the pull request is open; it
   moves to "Done" when the feature is merged.
+
+### S4.3 Remove the orphaned `url-builder` — **independent** _(2026-11-20)_
+
+The #331 merge removed both consumers of `src/utils/url-builder.ts` (main deleted the REST
+`api-config`, this branch rewrote main's provider buttons), so nothing in the app reads
+`APP_CONFIG_API_BASE_URL` any more.
+
+- Delete `src/utils/url-builder.ts`, its unit and integration tests and its
+  `config/di-collaborator-policy.js` entry.
+- `CLAUDE.md`, `AGENTS.md`, `src/config/runtime/README.md` and `src/config/env/README.md` say the
+  setting has no client reader today and only widens the CSP `connect-src`; whether to keep the
+  setting is left to a separate decision.
 
 ## Coverage matrix
 

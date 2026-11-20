@@ -4,12 +4,13 @@ workflowType: 'architecture'
 bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-20'
 iteration: 4
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
   - '2026-11-19 review: GraphQL field names and scope aligned'
+  - '2026-11-20 after #331 merged: 2FA hand-off to the challenge, session start, url-builder removed'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -269,14 +270,15 @@ sequenceDiagram
     G-->>SPA: accessToken | pendingSessionId | error (extensions.error_code)
 ```
 
-| Piece            | Where                                                                                                                                                                                                           |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pending contract | `src/api/contracts/pending/social-sign-in.graphql`; operations `initiate-social-sign-in.graphql`, `complete-social-sign-in.graphql` beside the repository; types from `make codegen`                            |
-| Repository       | `GraphQLSocialSignInRepository` (Apollo client, `no-cache`, zod-parsed: http(s) `authorizationUrl`, non-empty `state`, token or pending session)                                                                |
-| Transformer      | `SocialSignInTransformer`: `toStart`, `toOutcome`, `fromFailure` (`networkError` → `unavailable`, `extensions.error_code` → kind, else `generic`)                                                               |
-| Data provider    | `SocialSignInProvider.start` / `.complete`; writes the token through `AuthStoreActionsDeps`                                                                                                                     |
-| Tab binding      | `SocialSignInFlowSource` in `sessionStorage`: the destination, validated twice and consumed once by `takeDestination()` after a sign-in; `provider:state`, read without consuming so StrictMode sees one answer |
-| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in                                                  |
-| Page             | `useSocialCallback` + `useSocialCallbackRelay` (one relay per start key or per state) + `SocialCallbackViewMapper` (`starting`, `relaying`, `leaving`, `failed`, `redirect`)                                    |
-| Local mock       | `docker/apollo-server/lib/social-sign-in-resolvers.ts` (stateful, `OAUTH_MODE`); Mockoon serves only the mock consent page                                                                                      |
-| Removed          | the REST `credentials` option of `HttpsClient`, the REST schemas, Mockoon's social routes and CORS, ADR-004                                                                                                     |
+| Piece            | Where                                                                                                                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pending contract | `src/api/contracts/pending/social-sign-in.graphql`; operations `initiate-social-sign-in.graphql`, `complete-social-sign-in.graphql` beside the repository; types from `make codegen`                                                                                |
+| Repository       | `GraphQLSocialSignInRepository` (Apollo client, `no-cache`, zod-parsed: http(s) `authorizationUrl`, non-empty `state`, token or pending session)                                                                                                                    |
+| Transformer      | `SocialSignInTransformer`: `toStart`, `toOutcome`, `fromFailure` (`networkError` → `unavailable`, `extensions.error_code` → kind, else `generic`)                                                                                                                   |
+| Data provider    | `SocialSignInProvider.start` / `.complete`; a session or a pending 2FA challenge starts through `SocialSessionDeps` (`session`: `authSessionProvider`, `signedOut`: `CLEARED_AUTH_STATE`), ending any earlier session first, as main's `SignInSubmitProcessor` does |
+| 2FA hand-off     | `SocialCallbackViewMapper.outcomeView` maps a `two-factor` outcome to a replace redirect to `ROUTE_PATHS.twoFactorChallenge` with `{ from }` built from the saved destination; main's challenge page and `usePostLoginRedirect` finish the sign-in                  |
+| Tab binding      | `SocialSignInFlowSource` in `sessionStorage`: the destination, validated twice and consumed once by `takeDestination()` after a sign-in; `provider:state`, read without consuming so StrictMode sees one answer                                                     |
+| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in                                                                                                      |
+| Page             | `useSocialCallback` + `useSocialCallbackRelay` (one relay per start key or per state) + `SocialCallbackViewMapper` (`starting`, `relaying`, `leaving`, `failed`, `redirect`)                                                                                        |
+| Local mock       | `docker/apollo-server/lib/social-sign-in-resolvers.ts` (stateful, `OAUTH_MODE`); Mockoon serves only the mock consent page                                                                                                                                          |
+| Removed          | the REST `credentials` option of `HttpsClient`, the REST schemas, Mockoon's social routes and CORS, ADR-004; `src/utils/url-builder.ts`, whose last consumers each side of the #331 merge had removed                                                               |

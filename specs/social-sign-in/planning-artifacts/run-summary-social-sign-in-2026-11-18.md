@@ -15,7 +15,7 @@ slug: 'social-sign-in'
   the Mockoon consent page and with the requester's own provider keys. The work is tracked under
   issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), readiness
-  iterations 1-10 (iteration 10 is the latest review pass).
+  iterations 1-11 (iteration 11 is the latest review pass).
 
 ## Artifacts
 
@@ -49,16 +49,17 @@ rather than the skill's bare `research.md` names.
 
 ## Validation rounds
 
-One self-review round per artifact, then readiness iterations 1-10 as recorded in the
+One self-review round per artifact, then readiness iterations 1-11 as recorded in the
 [readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
 2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-10
-corrected stale passages that pull request reviews and the FR/NFR gate found.
+corrected stale passages that pull request reviews and the FR/NFR gate found; 11 re-planned
+the 2FA hand-off after #331 merged.
 
 ## Open questions and warnings
 
 - W1 / W6: user-service must add `initiateSocialSignInUser` and `completeSocialSignInUser`; until
   a release declares them, the pending GraphQL contract and the Apollo mock stand in.
-- W2: the 2FA hand-off waits for PR #377.
+- W2 (2FA hand-off waiting for PR #377) is closed: #331 merged and S3.3 was re-planned.
 - W4: user-service #468 before any production enablement.
 - W7: the callback error action keeps `#1EAEFF` (below AA) by the owner's decision until #276.
 - W5 (callback visual baselines) is closed.

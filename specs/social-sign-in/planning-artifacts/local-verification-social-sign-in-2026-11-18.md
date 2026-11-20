@@ -60,7 +60,8 @@ where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhos
 4. The mock consent page lists one link per outcome. What you should see (English copy shown;
    Ukrainian is the main language):
    - **Allow**: signed in, on `/` or on the protected page you came from.
-   - **Allow (2FA account)**: "Your account uses two-factor authentication…" and Back to sign in.
+   - **Allow (2FA account)**: the two-factor challenge at `/sign-in/two-factor`; any six-digit code
+     signs in on the mock and lands on `/`.
    - **Deny**: "Sign-in with Google was cancelled…", Try again and Back to sign in.
    - **Expired state**: "Your sign-in attempt expired…" and Try again.
    - **Unverified email**: "Your Google email address is not verified…" and Try again.

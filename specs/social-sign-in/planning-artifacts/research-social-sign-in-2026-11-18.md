@@ -160,11 +160,11 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 
 ## 7. Risks
 
-| Risk                                                       | Likelihood | Impact | Mitigation in plan                                               |
-| ---------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------- |
-| Contract pin cannot move to a released tag                 | High       | Medium | Pin to a user-service commit SHA or wait for `v2.9.0` (PRD D3)   |
-| Mobile Lighthouse regression on `/sign-in`                 | Medium     | High   | Callback code in its own lazy chunk; button module change ≤ 1 kB |
-| Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by `state`                             |
-| `code`/`state` leak through history, logs, Sentry          | Medium     | High   | `replaceState` first; scrubber keys; unit tests                  |
-| 2FA route not merged when this lands                       | Medium     | Low    | Degrade to a localized "complete sign-in with password" notice   |
-| Developer confusion between Mockoon and real-provider mode | Medium     | Medium | One `make` switch + a local verification guide                   |
+| Risk                                                       | Likelihood | Impact | Mitigation in plan                                                                                                                 |
+| ---------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Contract pin cannot move to a released tag                 | High       | Medium | Pin to a user-service commit SHA or wait for `v2.9.0` (PRD D3)                                                                     |
+| Mobile Lighthouse regression on `/sign-in`                 | Medium     | High   | Callback code in its own lazy chunk; button module change ≤ 1 kB                                                                   |
+| Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by `state`                                                                                               |
+| `code`/`state` leak through history, logs, Sentry          | Medium     | High   | `replaceState` first; scrubber keys; unit tests                                                                                    |
+| 2FA route not merged when this lands                       | Medium     | Low    | Degrade to a localized "complete sign-in with password" notice _(resolved 2026-11-20: #331 merged; the hand-off is built, PRD D6)_ |
+| Developer confusion between Mockoon and real-provider mode | Medium     | Medium | One `make` switch + a local verification guide                                                                                     |
