@@ -1786,6 +1786,16 @@ J1–J9 each), a network assertion block in the same specs.
 - Given the nightly flake audit, when it runs these specs with retries, then the flake budget stays 0.
 - Not applicable: unit coverage and mutation (test-only files), i18n.
 
+> Code facts (2026-11-20): written and linted locally, first run in CI. The page has no single
+> three-section save, so J4 saves name, e-mail and password in sequence before reading the badge.
+> Hashed vendor chunks cannot be pinned, so on `/` the chunk check pins the `notifications-*` set
+> and that no tsyringe, container, Apollo, GraphQL or zod chunk name appears. "Focus did not change
+> on appearance" is checked as "focus is not inside the outcome when it appears and two frames
+> later", because the section form remounts on save and the page moves focus itself. The inline
+> geometry runs on the password section, whose Save stays visible after saving, with Enter on the
+> focused Save (WebKit does not focus a button on click). `useNotificationStyle` renders the block
+> with the real `renderAppConfig()` and fulfils with the original headers.
+
 ### Story 4.3: Prove the bell history end to end under every style
 
 As a keyboard and pointer user under any style,

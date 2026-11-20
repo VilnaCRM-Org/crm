@@ -5,6 +5,7 @@ import { sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import { NOTIFICATION_STYLES, type NotificationStyle } from '@tests/e2e/utils/notification-style';
 
 import { PROFILE_NODE, type RecordedCall, configuredOrigin, originsOf } from './profile-stub';
 
@@ -30,6 +31,8 @@ export const text = {
   passwordChanged: t('settings.toasts.password_changed'),
   resent: t('settings.toasts.resent'),
   transient: t('settings.toasts.save_failed_transient'),
+  saveFailed: t('settings.toasts.save_failed'),
+  resendFailed: t('settings.toasts.resend_failed'),
   rateLimited: t('settings.toasts.rate_limited'),
   toastClose: t('ui_notification.close'),
   passwordWrong: t('settings.errors.password_wrong'),
@@ -152,4 +155,146 @@ export function expectOnlyAllowedOrigins(
 export function expectNoPersonalDataInUrls(urls: readonly string[], secrets: string[]): void {
   const decoded = urls.map((url) => decodeURIComponent(url));
   expect(decoded.filter((url) => secrets.some((secret) => url.includes(secret)))).toEqual([]);
+}
+
+type SurfaceOf = (page: Page, section: Locator | undefined) => Locator;
+
+const SURFACES: Record<NotificationStyle, SurfaceOf> = {
+  toast: (page) =>
+    page
+      .getByRole('main')
+      .getByRole('button', { name: text.toastClose, exact: true })
+      .locator('xpath=..'),
+  inline: (page, section) => section ?? page.locator('form'),
+  bell: (page) => page.getByRole('banner'),
+};
+
+export const outcomeSurface = (page: Page, style: NotificationStyle, section?: Locator): Locator =>
+  SURFACES[style](page, section);
+
+export const outcomeIn = (page: Page, style: NotificationStyle, message: string): Locator =>
+  outcomeSurface(page, style).getByText(message, { exact: true });
+
+type LiveRole = 'status' | 'alert';
+
+const OTHER_LIVE_ROLE: Record<LiveRole, LiveRole> = { status: 'alert', alert: 'status' };
+
+export async function expectAnnouncedOnce(
+  page: Page,
+  message: string,
+  role: LiveRole
+): Promise<void> {
+  await expect(page.getByRole(role).filter({ hasText: message })).toHaveCount(1);
+  await expect(page.getByRole(OTHER_LIVE_ROLE[role]).filter({ hasText: message })).toHaveCount(0);
+}
+
+export async function expectOnlyRenderer(
+  page: Page,
+  style: NotificationStyle,
+  message: string
+): Promise<void> {
+  await expect(outcomeIn(page, style, message)).toHaveCount(1);
+  await expect(outcomeIn(page, style, message)).toBeVisible();
+  for (const other of NOTIFICATION_STYLES.filter((candidate) => candidate !== style)) {
+    await expect(outcomeIn(page, other, message)).toHaveCount(0);
+  }
+}
+
+export async function expectSuccessOutcome(
+  page: Page,
+  style: NotificationStyle,
+  message: string
+): Promise<void> {
+  await expectOnlyRenderer(page, style, message);
+  await expectAnnouncedOnce(page, message, 'status');
+}
+
+export async function expectErrorOutcome(
+  page: Page,
+  style: NotificationStyle,
+  message: string
+): Promise<void> {
+  await expectOnlyRenderer(page, style, message);
+  await expectAnnouncedOnce(page, message, 'alert');
+}
+
+const FOCUS_WATCH_KEY = '__notificationFocusWatch';
+
+interface FocusWatch {
+  readonly settled: boolean;
+  readonly kept: boolean;
+}
+
+export async function watchFocusOnAppearance(page: Page, message: string): Promise<void> {
+  await page.evaluate(
+    ({ key, expected }) => {
+      const state = { settled: false, kept: false };
+      Reflect.set(window, key, state);
+      const shownMessage = (): Element | undefined =>
+        [...document.querySelectorAll('span')].find(
+          (element) =>
+            element.textContent === expected &&
+            element.closest('[role="status"], [role="alert"]') === null
+        );
+      const outsideOutcome = (outcome: Element | null): boolean =>
+        outcome === null || !outcome.contains(document.activeElement);
+      const observer = new MutationObserver(() => {
+        const message = shownMessage();
+        if (message === undefined) return;
+        observer.disconnect();
+        const outcome = message.parentElement;
+        const atAppearance = outsideOutcome(outcome);
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            state.kept = atAppearance && outsideOutcome(outcome);
+            state.settled = true;
+          })
+        );
+      });
+      observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    },
+    { key: FOCUS_WATCH_KEY, expected: message }
+  );
+}
+
+export async function expectFocusKeptOnAppearance(page: Page): Promise<void> {
+  const read = (): Promise<FocusWatch> =>
+    page.evaluate((key) => Reflect.get(window, key) as FocusWatch, FOCUS_WATCH_KEY);
+  await expect.poll(async () => (await read()).settled).toBe(true);
+  expect((await read()).kept).toBe(true);
+}
+
+export const unreadDescription = (count: number): string =>
+  t('notification_center.bell.unread_count', { count });
+
+export const passwordFormOf = (page: Page): Locator =>
+  currentPasswordField(page).locator('xpath=ancestor::form');
+
+export const inlineBlockOf = (form: Locator, message: string): Locator =>
+  form.locator('ul', { hasText: message }).locator('xpath=..');
+
+export interface DocumentBox {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+export const documentBoxOf = (locator: Locator): Promise<DocumentBox> =>
+  locator.evaluate((element): DocumentBox => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: Math.round(rect.x + window.scrollX),
+      y: Math.round(rect.y + window.scrollY),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    };
+  });
+
+const actionNames = new RegExp(`^(${text.save}|${text.clear})$`);
+
+export async function actionRowBottom(form: Locator): Promise<number> {
+  const actions = await form.getByRole('button', { name: actionNames }).all();
+  const boxes = await Promise.all(actions.map((action) => documentBoxOf(action)));
+  return Math.max(...boxes.map((box) => box.y + box.height));
 }
