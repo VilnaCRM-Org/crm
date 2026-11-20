@@ -10,6 +10,8 @@ import ClearButton from './clear-button';
 const DEFAULTS: ProfileFormValues = {
   fullName: 'Олена Петренко',
   email: 'olena.petrenko@example.com',
+  fullNamePassword: '',
+  emailPassword: '',
   currentPassword: '',
   newPassword: '',
 };

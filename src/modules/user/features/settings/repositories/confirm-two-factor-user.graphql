@@ -1,0 +1,7 @@
+mutation ConfirmTwoFactorUser($input: confirmTwoFactorUserInput!) {
+  confirmTwoFactorUser(input: $input) {
+    user {
+      recoveryCodes
+    }
+  }
+}

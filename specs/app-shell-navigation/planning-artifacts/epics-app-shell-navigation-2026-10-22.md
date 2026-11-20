@@ -36,7 +36,9 @@ the tablet rail handle's `right`, the drawer and menu primitives and two Story 3
 decisions: R-1 closed, the three exemptions approved, DV-14 and the dropped undrawn header states;
 2026-11-09: the six-chunk bundle criterion and the drawer scroll-lock test limit, owner decision DV-15 for
 the three icon-only glyphs and the dated DV-15 notes at the definition of done and in Story 3.2, the
-X-1 decision re-confirmed, and `a11y/non-text-contrast` in the NFR-4 traceability row)
+X-1 decision re-confirmed, and `a11y/non-text-contrast` in the NFR-4 traceability row; owner
+decisions of 2026-11-05, confirmed 2026-11-10: the sidebar from 768 px, the full-screen drawer, the
+centred tablet header title and the persisted rail)
 **Feature:**
 `app-shell-navigation`
 
@@ -60,6 +62,16 @@ X-1 decision re-confirmed, and `a11y/non-text-contrast` in the NFR-4 traceabilit
 > 53,15 ([shell README, DV-13](../../../src/components/ui-app-shell/README.md#dv-13-the-handle-rides-the-sidebar-edge-owner-decision-2026-11-04)). The Settings label's box now stops at its chevron's box, which
 > changes nothing at rest ([shell README, DV-11](../../../src/components/ui-app-shell/README.md#dv-11-the-settings-label-keeps-clear-of-its-chevron-owner-decision-2026-10-26)). Both count among the allowed differences of
 > UX §10.3, which is what every story's parity criterion refers to.
+
+> **Owner decision of 2026-11-05 (sidebar from 768 px, full-screen drawer, persisted rail),
+> confirmed 2026-11-10.** After the owner's hand test of #377 the owner asked for four shell
+> changes, which land in #377: the sidebar shows from 768 px (the toolkit's `md`) instead of 1024
+> (`lg`); the mobile drawer is full-screen with no shadow instead of OQ-24's 313 px panel; the
+> tablet header title is centred; and the sidebar's collapsed state persists across reloads in
+> `localStorage` under `crm.sidebar.collapsed`, which OQ-4 had left unpersisted. On 2026-11-10 the
+> owner confirmed that persistence stays. The criteria that test the breakpoint at 1023, 1024 and
+> 1025, pin it to `lg` or size the drawer by OQ-24 carry dated notes; see the matching owner decision
+> in the PRD and the [shell README, "Layouts"](../../../src/components/ui-app-shell/README.md#layouts).
 
 > **Amended 2026-11-05 (reconciliation with shipped code).** Stories 2.4 and 3.1 now carry the chip's
 > read of 0addef83 (owner decision of 2026-11-02), through the container-free `currentUserSource`, and
@@ -461,7 +473,7 @@ Story 1.1).
 > enabled (UX §10.2).
 
 - Given a `userMenu` slot that has not resolved, when the slot frame renders, then an `aria-hidden`, non-null placeholder reserves the chip's FOUND box for the current layout so the banner does not shift when the slot arrives (FR-5.3, FR-14 E).
-- Given `useShellLayout` at 1023, 1024, 1025, 1439 and 1440 px, when it renders the first time, then it returns the layout the answered OQ-5 assigns to that width with no second render to correct it (AD-3, AV-4, R-11).
+- Given `useShellLayout` at 1023, 1024, 1025, 1439 and 1440 px, when it renders the first time, then it returns the layout the answered OQ-5 assigns to that width with no second render to correct it (AD-3, AV-4, R-11). Amended 2026-11-05 (owner decision, confirmed 2026-11-10): the widths are 767, 768, 1439 and 1440, and the sidebar breakpoint is `md` (768).
 - Given the logo focused by keyboard, when focus is visible, then the indicator is the one OQ-13 selects, and a mouse focus draws no ring (NFR-2).
 - Given the header source, when it is checked, then it uses no `inert`, `:has()`, native CSS nesting, `color-mix()` or Popover API, and it imports nothing from `src/modules/` (NFR-11, NFR-6).
 - Given the logo link, the bell, the list and the burger, when they are activated by pointer under `matchMedia('(prefers-reduced-motion: reduce)')` and without it, then no MUI `TouchRipple` element is rendered inside them (NFR-20).
@@ -603,7 +615,7 @@ Amended 2026-11-06 (architecture §5.5): `UINavigationDrawer` shipped as MUI `Mo
 - Given the drawer open, when the viewport widens past the sidebar breakpoint, then the drawer unmounts and focus moves to `main[tabindex="-1"]`; when the route changes, then it closes without restoring focus to the burger (FR-13.2 E).
 - Given the drawer, when it traps focus, then it relies on MUI's modal and not on `inert`, `:has()` or the Popover API, and under `prefers-reduced-motion: reduce` its slide and scrim transitions have duration 0 (FR-13.2 E, NFR-11, NFR-20, OQ-23).
 - Given the burger, the close button and the drawer rows, when activated by pointer, then no MUI `TouchRipple` element is rendered (NFR-20).
-- Given the burger, close and drawer rows, when their boxes are declared, then each target is at least 44×44 CSS px, and the panel width follows OQ-24's resolution at 320 px (FR-13.1 E, FR-13.3 E, FR-13.5 E, NFR-3). Amended 2026-11-05 (owner decision 2026-10-27, PRD NFR-3): the drawer's Settings sub-items are excluded from the 44 px floor and keep Figma's 42 px PROP-18 pitch; each answers a tap across its whole 42 px height and the drawer row width, and adjacent sub-item targets do not overlap.
+- Given the burger, close and drawer rows, when their boxes are declared, then each target is at least 44×44 CSS px, and the panel width follows OQ-24's resolution at 320 px (FR-13.1 E, FR-13.3 E, FR-13.5 E, NFR-3). Amended 2026-11-05 (owner decision): the drawer is full-screen with no shadow, so the panel is the viewport width. Amended 2026-11-05 (owner decision 2026-10-27, PRD NFR-3): the drawer's Settings sub-items are excluded from the 44 px floor and keep Figma's 42 px PROP-18 pitch; each answers a tap across its whole 42 px height and the drawer row width, and adjacent sub-item targets do not overlap.
 - Given this surface at 1440, 1024 and 375 in the 3004 preview, when every measured-versus-Figma row of UX §10 for it (boxes, paint, type and every FOUND state) is filled, then all of them pass within the NFR-22 tolerance (0 px on integer Figma values, at most 0.5 px sub-pixel rounding on fractional ones; exact hex, alpha and type), and the only differences are the allowed ones of UX §10.3 (NFR-22, SM-1).
 - Given the change, when the DoD gates run, then jest-axe is clean with the drawer open, scanning `expectNoA11yViolations(document.body)` after asserting `screen.getByRole('dialog', { name: 'Main navigation' })` is present (MUI portals the drawer and hides the render container), no `act()` warning escapes the transitions, coverage is 100 % and Stryker reports zero survivors (NFR-8, NFR-12, NFR-14).
 
@@ -860,7 +872,7 @@ OQ-7's resolution; `make lint-docs`; CI-only: bundle-size report, Lighthouse, `m
 - Given a protected route, when `AppLayout` renders, then the landmarks in DOM order are banner, navigation (at or above the breakpoint), main and contentinfo, and `<main>` is still the only `main[tabindex="-1"]` with `useArrivalFocus` (FR-14 P, NFR-1).
 - Given `state.focusMain` on arrival, when the page renders, then `<main>` receives focus, not the header or the navigation (FR-14 P).
 - Given the shell chunk loading, when the frame paints, then two `aria-hidden`, non-null placeholders reserve the 64 px header and, at or above the breakpoint, the 250 px nav column, so home's `h1` does not move when the shell arrives (FR-14 E, AD-2).
-- Given `app-layout.styles.ts`, when its test reads the sidebar breakpoint, then the number equals the toolkit's `lg` (1024, OQ-5 resolved), and the eager file imports neither `@/components/ui-breakpoints` nor any `@mui/*` module (AD-2, NFR-5). Amended 2026-11-05 for 663151bc: this frame file is in the lazy `protected-layout` chunk, not the entry; the import rule still holds, so the chunk stays free of the toolkit.
+- Given `app-layout.styles.ts`, when its test reads the sidebar breakpoint, then the number equals the toolkit's `lg` (1024, OQ-5 resolved; amended 2026-11-05 by owner decision, confirmed 2026-11-10: the toolkit's `md`, 768), and the eager file imports neither `@/components/ui-breakpoints` nor any `@mui/*` module (AD-2, NFR-5). Amended 2026-11-05 for 663151bc: this frame file is in the lazy `protected-layout` chunk, not the entry; the import rule still holds, so the chunk stays free of the toolkit.
 - Given `performance-serving.test.ts`, when it walks the eager graph, then `app-providers.tsx` is still the only eager `@mui/*` edge, `app-shell-loader.ts` holds `new ThemedChunkLoader(` with a `ui-app-shell` chunk name, and the `user-menu` and `current-user` imports are dynamic only (NFR-5). Amended 2026-11-05 for 663151bc: the same test also pins that `ProtectedRoute`, `AppLayout` and their own imports are off the eager graph, with only `protected-layout-loader.ts` on it, and that the guard, the layout and the slot factory load from one `protected-layout` chunk.
 - Given a shell file imported statically by `AppLayout`, when the performance test runs on that fixture, then it fails (must-fail, NFR-5). Amended 2026-11-05: the shipped fixtures taint the composer instead, for a shell file and for `AppLayout` and the guard.
 - Given the composer under OQ-17's resolution, when the router is built, then the protected branch passes `layout.userMenu` from `protectedLayoutLoader.create({ userMenu, report: routeMapper.slotFailureReporter() })` as `AppLayout`'s `userMenu` (amended 2026-11-05 for 663151bc; the plan named `routeMapper.shellSlot(load)`), the public branch renders no `AppLayout`, and `make lint-deps` reports no `no-circular` or layer violation (FR-14, R-3, AV-1).

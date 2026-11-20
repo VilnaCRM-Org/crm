@@ -9,13 +9,18 @@ import policyEn from '@/components/ui-password-policy-rules/i18n/en.json';
 import policyUk from '@/components/ui-password-policy-rules/i18n/uk.json';
 import toastEn from '@/components/ui-toast/i18n/en.json';
 import toastUk from '@/components/ui-toast/i18n/uk.json';
+import SidebarCollapseSource from '@/components/ui-sidebar/sidebar-collapse-source';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import userMenuEn from '@/modules/user/features/settings/components/user-menu/i18n/en.json';
 import userMenuUk from '@/modules/user/features/settings/components/user-menu/i18n/uk.json';
 import settingsEn from '@/modules/user/features/settings/i18n/en.json';
 import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
+import noticeEn from '@auth/components/recovery-codes-notice/i18n/en.json';
+import noticeUk from '@auth/components/recovery-codes-notice/i18n/uk.json';
 import recoveryEn from '@auth/routes/recovery-catalog/i18n/en.json';
 import recoveryUk from '@auth/routes/recovery-catalog/i18n/uk.json';
+import twoFactorEn from '@auth/routes/two-factor-catalog/i18n/en.json';
+import twoFactorUk from '@auth/routes/two-factor-catalog/i18n/uk.json';
 import { initReactI18next } from 'react-i18next';
 import i18next from 'i18next';
 import { ThemeProvider } from '@mui/material/styles';
@@ -48,6 +53,8 @@ lazyCatalogLoader.register(i18next, { en: toastEn, uk: toastUk });
 lazyCatalogLoader.register(i18next, { en: appShellEn, uk: appShellUk });
 lazyCatalogLoader.register(i18next, { en: comingSoonEn, uk: comingSoonUk });
 lazyCatalogLoader.register(i18next, { en: userMenuEn, uk: userMenuUk });
+lazyCatalogLoader.register(i18next, { en: twoFactorEn, uk: twoFactorUk });
+lazyCatalogLoader.register(i18next, { en: noticeEn, uk: noticeUk });
 
 const customViewports: ViewportMap = {
   xs: {
@@ -91,6 +98,9 @@ const preview: Preview = {
   },
   initialGlobals: {
     viewport: { value: 'lg', isRotated: false },
+  },
+  beforeEach: () => {
+    new SidebarCollapseSource().write(false);
   },
   loaders: [
     async () => {

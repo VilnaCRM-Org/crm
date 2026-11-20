@@ -7,8 +7,9 @@ live in `url-builder`, `get-graphql-url`, and the auth store (issue #112).
 This is the **build-time** layer: `REACT_APP_*` values are inlined into the bundle, so changing one
 requires a rebuild. Configuration an administrator can change **without** a rebuild lives in the
 sibling **runtime** layer, `@/config/runtime` (issue #145), which reuses the two-layer split below
-for the same paint-path reason. Where both define a setting (`graphqlUrl`, the REST base URL), the
-runtime value wins and the build-time value is the default. See
+for the same paint-path reason. Where both define a setting (`graphqlUrl`), the runtime value wins
+and the build-time value is the default. `APP_CONFIG_API_BASE_URL` has no client reader today and
+only widens the CSP `connect-src`. See
 [`../runtime/README.md`](../runtime/README.md).
 
 ## Why a two-layer module
@@ -138,16 +139,20 @@ where a sandbox host starts with `sandbox-crm-`, ends with `.amazonaws.com`, and
 - `signIn({ email, password })` returns the demo session for exactly `demo@vilnacrm.com` /
   `Demo1234` and remembers the demo **email** (never the password or a token) in `localStorage`
   under `vilnacrm.sandbox-demo-session`;
+- `match({ email, password })` answers the same demo session without remembering anything, so
+  the sign-in can end an earlier session before `signIn` records the demo;
 - `restore()` turns that marker back into the demo session, so `useAuthStore` starts signed in
   after a reload or a deep link;
 - `signOut()` removes the marker; the auth composition root's `logout` calls it.
 
-Inactive, `signIn` and `restore` return `null` and nothing is written. Every storage call is
+Inactive, `match`, `signIn` and `restore` return `null` and nothing is written. Every storage call is
 wrapped, so a browser that refuses storage simply gets no persistence. The location and the
 storage are constructor parameters defaulting to `globalThis`, so tests drive the host without
 touching globals. The auth module's composition root registers the singleton by value under
-`AUTH_TOKENS.SandboxDemoSessionProvider`; `AuthStoreActions.login` asks it before the repository
-unless the login's signal is already aborted. The reviewer instructions are in
+`AUTH_TOKENS.SandboxDemoSessionProvider`; the sign-in submit path asks it before resolving the
+sign-in provider: `SignInSubmitProcessor.signInDemo` in
+`src/modules/user/features/auth/utils/sign-in-submit-processor.ts` short-circuits to the demo
+session unless the sign-in's signal is already aborted. The reviewer instructions are in
 [CONTRIBUTING.md](../../../CONTRIBUTING.md#pull-request-sandboxes-and-the-demo-login).
 
 ## Adding a variable

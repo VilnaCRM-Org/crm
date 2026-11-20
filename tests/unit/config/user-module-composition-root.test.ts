@@ -8,7 +8,6 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
 import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
-import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
@@ -19,6 +18,7 @@ import { GraphQLPasswordRecoveryRepository } from '@auth/repositories';
 import SessionLinkFactory from '@auth/repositories/session-link-factory';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import PasswordRecoveryTransformer from '@auth/transformers/password-recovery-transformer';
+import SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import type { SessionLinkDeps } from '@auth/types/session-link-deps';
 
@@ -30,11 +30,10 @@ const ERROR_HANDLING_TOKENS = [
   AUTH_TOKENS.AuthSecuritySignals,
 ];
 const RESPONSE_MAPPER_TOKENS = [
-  AUTH_TOKENS.LoginResponseMapper,
   AUTH_TOKENS.RegistrationResponseMapper,
   AUTH_TOKENS.AuthUiErrorMapper,
 ];
-const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
+const API_TOKENS = [AUTH_TOKENS.RegistrationAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
 const PASSWORD_RECOVERY_TOKENS = [
   AUTH_TOKENS.PasswordRecoveryTransformer,
@@ -48,6 +47,16 @@ const SETTINGS_TOKENS = [
   AUTH_TOKENS.ProfileProvider,
   AUTH_TOKENS.UserDisplayNameMapper,
 ];
+const SIGN_IN_TOKENS = [
+  AUTH_TOKENS.GraphQLSignInRepository,
+  AUTH_TOKENS.GraphQLSignInTransformer,
+  AUTH_TOKENS.GraphQLSignInProvider,
+];
+const TWO_FACTOR_SETTINGS_TOKENS = [
+  AUTH_TOKENS.GraphQLTwoFactorSettingsRepository,
+  AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer,
+  AUTH_TOKENS.TwoFactorSettingsProvider,
+];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
   AUTH_TOKENS.SandboxDemoSessionProvider,
@@ -55,7 +64,13 @@ const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.SessionLinkDeps,
 ];
 const SESSION_LINK_TOKENS = [AUTH_TOKENS.SessionLinkFactory];
+const SOCIAL_SIGN_IN_TOKENS = [
+  AUTH_TOKENS.SocialSignInRepository,
+  AUTH_TOKENS.SocialSignInTransformer,
+  AUTH_TOKENS.SocialSignInProvider,
+];
 const EVERY_TOKEN = [
+  ...SOCIAL_SIGN_IN_TOKENS,
   ...GRAPHQL_CLIENT_TOKENS,
   ...ERROR_FACTORY_TOKENS,
   ...ERROR_HANDLING_TOKENS,
@@ -64,6 +79,8 @@ const EVERY_TOKEN = [
   ...REPOSITORY_TOKENS,
   ...PASSWORD_RECOVERY_TOKENS,
   ...SETTINGS_TOKENS,
+  ...SIGN_IN_TOKENS,
+  ...TWO_FACTOR_SETTINGS_TOKENS,
   ...AUTH_STATE_TOKENS,
   ...SESSION_LINK_TOKENS,
 ];
@@ -110,22 +127,68 @@ describe('user module composition root', () => {
     expectAllRegistered(registeredContainer(), ERROR_HANDLING_TOKENS);
   });
 
-  it('binds the login, registration and ui error response mappers', () => {
+  it('binds the registration and ui error response mappers', () => {
     const child = registeredContainer();
 
     expectAllRegistered(child, RESPONSE_MAPPER_TOKENS);
-    expect(child.resolve(AUTH_TOKENS.LoginResponseMapper)).toBeInstanceOf(LoginResponseMapper);
     expect(child.resolve(AUTH_TOKENS.RegistrationResponseMapper)).toBeInstanceOf(
       RegistrationResponseMapper
     );
   });
 
-  it('binds the login and registration apis', () => {
+  it('binds the registration api and declares exactly the module tokens', () => {
     expectAllRegistered(registeredContainer(), API_TOKENS);
+    expect(Object.keys(AUTH_TOKENS).sort()).toEqual([
+      'ApiErrorFactory',
+      'ApiStatusErrorFactory',
+      'ApolloClient',
+      'AuthErrorHandler',
+      'AuthRepository',
+      'AuthRepositoryDeps',
+      'AuthRequestErrors',
+      'AuthSecuritySignals',
+      'AuthStore',
+      'AuthStoreActionsDeps',
+      'AuthUiErrorMapper',
+      'FieldViolationParser',
+      'GraphQLProfileRepository',
+      'GraphQLProfileTransformer',
+      'GraphQLSignInProvider',
+      'GraphQLSignInRepository',
+      'GraphQLSignInTransformer',
+      'GraphQLTwoFactorSettingsRepository',
+      'GraphQLTwoFactorSettingsTransformer',
+      'GraphQLUrl',
+      'PasswordRecoveryProvider',
+      'PasswordRecoveryRepository',
+      'PasswordRecoveryTransformer',
+      'ProfileProvider',
+      'RegistrationAPI',
+      'RegistrationResponseMapper',
+      'SandboxDemoSessionProvider',
+      'SessionLinkDeps',
+      'SessionLinkFactory',
+      'SocialSignInDeps',
+      'SocialSignInProvider',
+      'SocialSignInRepository',
+      'SocialSignInTransformer',
+      'TwoFactorSettingsProvider',
+      'UserDisplayNameMapper',
+      'UserServiceErrorTransformer',
+    ]);
   });
 
   it('binds the auth repository and its dependency bundle', () => {
     expectAllRegistered(registeredContainer(), REPOSITORY_TOKENS);
+  });
+
+  it('binds the social sign-in repository, transformer and provider', () => {
+    const child = registeredContainer();
+    const transformer = child.resolve(AUTH_TOKENS.SocialSignInTransformer);
+
+    expectAllRegistered(child, SOCIAL_SIGN_IN_TOKENS);
+    expect(transformer).toBeInstanceOf(SocialSignInTransformer);
+    expect(child.resolve(AUTH_TOKENS.SocialSignInTransformer)).toBe(transformer);
   });
 
   it('binds the password recovery transformers, repository and provider as singletons', () => {
@@ -168,6 +231,14 @@ describe('user module composition root', () => {
     expect(child.resolve(AUTH_TOKENS.UserDisplayNameMapper)).toBe(displayNameMapper);
   });
 
+  it('binds the graphql sign-in repository, transformer and provider', () => {
+    expectAllRegistered(registeredContainer(), SIGN_IN_TOKENS);
+  });
+
+  it('binds the two-factor settings repository, transformer and provider', () => {
+    expectAllRegistered(registeredContainer(), TWO_FACTOR_SETTINGS_TOKENS);
+  });
+
   it('binds the session link factory as a singleton over the session link bundle', () => {
     const child = registeredContainer();
     child.register(OBSERVABILITY_TOKENS.ObservabilityService, { useValue: {} });
@@ -188,7 +259,7 @@ describe('user module composition root', () => {
     expect(child.resolve(AUTH_TOKENS.AuthStore)).toBe(useAuthStore);
   });
 
-  it('hands the container-free sandbox demo seed to the store actions by value', () => {
+  it('registers the sandbox demo seed by value, out of the store deps', () => {
     const child = registeredContainer();
     child.register(AUTH_TOKENS.AuthRepository, { useValue: {} });
     child.register(AUTH_TOKENS.AuthRequestErrors, { useValue: {} });
@@ -196,8 +267,8 @@ describe('user module composition root', () => {
 
     expect(child.resolve(AUTH_TOKENS.SandboxDemoSessionProvider)).toBe(sandboxDemoSessionProvider);
     expect(
-      child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps).sandboxDemoSession
-    ).toBe(sandboxDemoSessionProvider);
+      Object.keys(child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps)).sort()
+    ).toEqual(['authRequestErrors', 'authState', 'repository', 'securitySignals']);
   });
 
   it('hands the session link the logout() collaborators and the cleared auth state', () => {
@@ -217,8 +288,8 @@ describe('user module composition root', () => {
   it('registers the mappers as singletons rather than per-resolve instances', () => {
     const child = registeredContainer();
 
-    const mapper = child.resolve(AUTH_TOKENS.LoginResponseMapper);
+    const mapper = child.resolve(AUTH_TOKENS.RegistrationResponseMapper);
 
-    expect(child.resolve(AUTH_TOKENS.LoginResponseMapper)).toBe(mapper);
+    expect(child.resolve(AUTH_TOKENS.RegistrationResponseMapper)).toBe(mapper);
   });
 });

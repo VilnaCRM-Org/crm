@@ -176,6 +176,73 @@ describe('useToastFocus', () => {
     expect(heading).toHaveFocus();
   });
 
+  it.each([
+    [
+      'its own display is none',
+      (target: HTMLElement): void => {
+        target.style.setProperty('display', 'none');
+      },
+    ],
+    [
+      'an ancestor has display none',
+      (target: HTMLElement): void => {
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'none';
+        document.body.append(wrapper);
+        wrapper.append(target);
+      },
+    ],
+    [
+      'it is visibility hidden',
+      (target: HTMLElement): void => {
+        target.style.setProperty('visibility', 'hidden');
+      },
+    ],
+    [
+      'an ancestor is inert',
+      (target: HTMLElement): void => {
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('inert', '');
+        document.body.append(wrapper);
+        wrapper.append(target);
+      },
+    ],
+  ])('skips the return target for the fallback when %s', (_case, hide) => {
+    const save = button('save');
+    hide(save);
+    const heading = document.createElement('h1');
+    heading.tabIndex = -1;
+    document.body.append(heading);
+    const toastFocus = mountFocus({
+      toasts: { items: [{ id: 6, tone: 'success', message: 'Одне' }] },
+      returnFocusRef: { current: save },
+      fallbackFocusRef: { current: heading },
+    });
+
+    toastFocus.dismiss(6);
+
+    expect(heading).toHaveFocus();
+  });
+
+  it('returns focus to a target nested in rendered ancestors', () => {
+    const wrapper = document.createElement('section');
+    document.body.append(wrapper);
+    const save = button('save');
+    wrapper.append(save);
+    const heading = document.createElement('h1');
+    heading.tabIndex = -1;
+    document.body.append(heading);
+    const toastFocus = mountFocus({
+      toasts: { items: [{ id: 7, tone: 'success', message: 'Одне' }] },
+      returnFocusRef: { current: save },
+      fallbackFocusRef: { current: heading },
+    });
+
+    toastFocus.dismiss(7);
+
+    expect(save).toHaveFocus();
+  });
+
   it('dismisses without throwing when no target can take focus', () => {
     const onDismiss = jest.fn();
     const toastFocus = mountFocus({ toasts: { items: [] }, onDismiss });

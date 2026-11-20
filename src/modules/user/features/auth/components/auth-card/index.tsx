@@ -2,14 +2,16 @@ import { Box } from '@mui/material';
 import type { JSX } from 'react';
 
 import styles from '@auth/components/form-section/styles';
-import recoveryStyles from '@auth/components/reset-password/styles';
 import type { AuthCardProps } from '@auth/types/auth-card';
+
+import cardStyles from './styles';
 
 export default function AuthCard({ children, after, page, variant }: AuthCardProps): JSX.Element {
   const wrapper = [
     styles.formWrapper,
     page !== undefined && styles.formWrapperBottomPadding[page],
-    variant === 'recovery' && recoveryStyles.recoveryCard,
+    variant === 'recovery' && cardStyles.recoveryCard,
+    variant === 'challenge' && cardStyles.challengeCard,
   ];
   return (
     <Box component="section" sx={styles.formSection}>

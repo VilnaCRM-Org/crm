@@ -1,0 +1,32 @@
+import 'reflect-metadata';
+import { container } from 'tsyringe';
+
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import ProfileProvider, {
+  TwoFactorSettingsProvider,
+} from '@/modules/user/features/settings/data-providers';
+import userSettingsRegistrar from '@/modules/user/features/settings/di';
+import GraphQLProfileRepository, {
+  GraphQLTwoFactorSettingsRepository,
+} from '@/modules/user/features/settings/repositories';
+import GraphQLProfileTransformer, {
+  GraphQLTwoFactorSettingsTransformer,
+} from '@/modules/user/features/settings/transformers';
+
+describe('user settings registrar', () => {
+  it('registers the profile and two-factor settings layers as singletons', () => {
+    const child = container.createChildContainer();
+    const registerSingleton = jest.spyOn(child, 'registerSingleton');
+
+    userSettingsRegistrar.register(child);
+
+    expect(registerSingleton.mock.calls).toEqual([
+      [AUTH_TOKENS.GraphQLProfileRepository, GraphQLProfileRepository],
+      [AUTH_TOKENS.GraphQLProfileTransformer, GraphQLProfileTransformer],
+      [AUTH_TOKENS.ProfileProvider, ProfileProvider],
+      [AUTH_TOKENS.GraphQLTwoFactorSettingsRepository, GraphQLTwoFactorSettingsRepository],
+      [AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer, GraphQLTwoFactorSettingsTransformer],
+      [AUTH_TOKENS.TwoFactorSettingsProvider, TwoFactorSettingsProvider],
+    ]);
+  });
+});

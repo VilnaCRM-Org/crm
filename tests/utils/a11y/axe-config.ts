@@ -33,6 +33,12 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
   },
   {
     ruleId: 'color-contrast',
+    selector: '#auth-form-card > button.MuiButton-text',
+    reason: 'Challenge back control: Figma grey[50] #969B9D on white is 2.81:1; owner 2026-11-04.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
     selector: 'form button[type="submit"].MuiButton-contained',
     reason: 'Submit button is white on the Figma primary #1EAEFF (2.45:1); token owned by design.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
@@ -78,6 +84,14 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
       '#auth-form-card > a.MuiButton-contained[href="/password-recovery"]',
     reason:
       'Recovery in-card link buttons: white on the Figma primary #1EAEFF is 2.45:1; design-owned.',
+    trackingUrl: PALETTE_CONTRAST_ISSUE,
+  },
+  {
+    ruleId: 'color-contrast',
+    selector: '#social-sign-in-actions > .MuiButton-contained',
+    reason:
+      'Social sign-in callback primary action: white on the Figma primary #1EAEFF is 2.45:1; ' +
+      'design-owned.',
     trackingUrl: PALETTE_CONTRAST_ISSUE,
   },
   {

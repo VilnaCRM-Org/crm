@@ -54,13 +54,10 @@ async function submitEmail(): Promise<void> {
   await userEvent.click(screen.getByRole('button', { name: 'Підтвердити' }));
 }
 
-jest.mock('@auth/components/reset-password/styles', () => {
-  const actual = jest.requireActual('@auth/components/reset-password/styles');
-  return {
-    __esModule: true,
-    default: { ...actual.default, recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' } },
-  };
-});
+jest.mock('@auth/components/auth-card/styles', () => ({
+  __esModule: true,
+  default: { recoveryCard: { borderTopColor: 'rgb(1, 2, 3)' } },
+}));
 
 const recoveryCard = (): HTMLElement | undefined =>
   screen.getAllByRole('generic').find((element) => element.id === 'auth-form-card');

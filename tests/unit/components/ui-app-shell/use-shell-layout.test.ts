@@ -27,9 +27,9 @@ describe('useShellLayout', () => {
 
   it.each([
     [320, 'mobile'],
-    [1023, 'mobile'],
+    [767, 'mobile'],
+    [768, 'tablet'],
     [1024, 'tablet'],
-    [1025, 'tablet'],
     [1439, 'tablet'],
     [1440, 'desktop'],
     [1920, 'desktop'],
@@ -65,12 +65,12 @@ describe('useShellLayout', () => {
     expect(renders).toEqual([expected]);
   });
 
-  it('reads the sidebar breakpoint 1024 and the desktop breakpoint 1440 from the crm scale', () => {
+  it('reads the sidebar breakpoint 768 and the desktop breakpoint 1440 from the crm scale', () => {
     const matchMedia = stubWidth(1200);
 
     renderHook(() => useShellLayout());
 
     const queries = matchMedia.mock.calls.map(([query]) => query);
-    expect(queries).toEqual(expect.arrayContaining(['(min-width:1440px)', '(min-width:1024px)']));
+    expect(queries).toEqual(expect.arrayContaining(['(min-width:1440px)', '(min-width:768px)']));
   });
 });

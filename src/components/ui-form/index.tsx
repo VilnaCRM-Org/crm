@@ -1,12 +1,13 @@
-import { type JSX, useState } from 'react';
-import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
+import type { JSX } from 'react';
+import { SubmitHandler, FieldValues } from 'react-hook-form';
 
 import type {
+  BlockedReasonProps,
   FormBodyProps,
   FormHeaderProps,
-  FormHeaderSectionProps,
-  FormLeadSectionProps,
   FormSubmitProps,
+  InlineOfflineNoticeProps,
+  SubmitAreaProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
   UIFormProps,
@@ -18,33 +19,12 @@ import UILiveStatus from '@/components/ui-live-status';
 import UIOfflineNotice from '@/components/ui-offline-notice';
 import UITypography from '@/components/ui-typography';
 
-import ErrorBanner from './error-banner';
+import FormLead from './form-lead';
 import SubmitSpinner from './submit-spinner';
-import useOfflineSubmit from './use-offline-submit';
+import useFormSubmission from './use-form-submission';
 import useUIForm from './use-ui-form';
 
 const NO_STYLES = {};
-
-function FormHeader({ header, bannerShown }: FormHeaderSectionProps): JSX.Element {
-  const { title, subtitle, showTitle, showSubtitle, titleComponent, titleRef } = header;
-  const [bannerAtMount] = useState(bannerShown);
-  return (
-    <>
-      {showTitle && title && (
-        <UITypography
-          variant="h4"
-          component={titleComponent}
-          sx={styles.formTitle}
-          ref={bannerAtMount ? undefined : titleRef}
-          tabIndex={titleRef ? -1 : undefined}
-        >
-          {title}
-        </UITypography>
-      )}
-      {showSubtitle && subtitle && <UITypography sx={styles.formSubtitle}>{subtitle}</UITypography>}
-    </>
-  );
-}
 
 function buildSubmitHandler<T extends FieldValues>(
   options: SubmitHandlerOptions<T>
@@ -58,6 +38,7 @@ function buildSubmitHandler<T extends FieldValues>(
 function SubmitControls({
   submitting,
   isSubmitDisabled,
+  blocked,
   submitLabel,
   describedBy,
   buttonRef,
@@ -72,6 +53,7 @@ function SubmitControls({
       loadingPosition="center"
       loadingIndicator={<SubmitSpinner />}
       disabled={isSubmitDisabled}
+      aria-disabled={blocked || undefined}
       aria-describedby={describedBy}
       variant="contained"
       sx={[styles.submitButton, spacing === 'tight' && styles.submitButtonTight, submitSx]}
@@ -81,52 +63,77 @@ function SubmitControls({
   );
 }
 
-function FormLead({ header, lead, offline }: FormLeadSectionProps): JSX.Element {
-  return (
-    <>
-      <FormHeader header={header} bannerShown={Boolean(lead.error)} />
-      {lead.notice}
-      <ErrorBanner error={lead.error} returnFocusRef={offline.submitRef} />
-      <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
-    </>
+function BlockedReason({ block }: BlockedReasonProps): JSX.Element | null {
+  return block.reason === '' ? null : (
+    <UITypography id={block.reasonId} sx={styles.blockedReason}>
+      {block.reason}
+    </UITypography>
   );
 }
 
-function FormBody<T extends FieldValues>({
-  handleSubmit,
-  onInvalid,
-  children,
-  header,
-  lead,
+function InlineOfflineNotice({ offline, mode }: InlineOfflineNoticeProps): JSX.Element | null {
+  return mode === 'inline' ? (
+    <UIOfflineNotice
+      ref={offline.noticeRef}
+      id={offline.noticeId}
+      online={offline.online}
+      live={false}
+    />
+  ) : null;
+}
+
+function SubmitArea({
+  block,
   submit,
   submitting,
-  announceSubmitting,
-  footer,
-}: FormBodyProps<T>): JSX.Element {
-  const methods = useFormContext<T>();
-  // Offline, the submit is disabled rather than allowed to fail: the notice sits inside the
-  // form after its heading so the registration overlay never covers it, the button describes
-  // itself by the notice, and focus moves there if the button held it (issue #147).
-  const offline = useOfflineSubmit(submit.submitRef);
+  disabled,
+  offline,
+}: SubmitAreaProps): JSX.Element {
   return (
-    <form
-      noValidate
-      aria-busy={submitting}
-      onSubmit={methods.handleSubmit(handleSubmit, onInvalid)}
-    >
-      <FormLead header={header} lead={lead} offline={offline} />
-      {children}
+    <>
       <SubmitControls
         submitting={submitting}
-        isSubmitDisabled={submit.isSubmitDisabled || !offline.online}
+        isSubmitDisabled={disabled}
+        blocked={block.blocked}
         submitLabel={submit.submitLabel}
-        describedBy={offline.noticeId}
+        describedBy={block.describedBy}
         buttonRef={offline.submitRef}
         spacing={submit.submitSpacing}
         submitSx={submit.submitSx}
       />
-      {footer}
-      <UILiveStatus message={announceSubmitting ? submit.submittingLabel : ''} />
+      <BlockedReason block={block} />
+    </>
+  );
+}
+
+function FormBody<T extends FieldValues>(props: FormBodyProps<T>): JSX.Element {
+  const { submit, submitting, offlineNotice } = props;
+  const { offline, block, disabled } = useFormSubmission({
+    submit,
+    submitting,
+    handleSubmit: props.handleSubmit,
+    onInvalid: props.onInvalid,
+    noticeShown: offlineNotice !== 'none',
+  });
+  return (
+    <form noValidate aria-busy={submitting} onSubmit={block.onSubmit}>
+      <FormLead
+        header={props.header}
+        lead={props.lead}
+        offline={offline}
+        liveOfflineNotice={offlineNotice === 'live'}
+      />
+      {props.children}
+      <InlineOfflineNotice offline={offline} mode={offlineNotice} />
+      <SubmitArea
+        block={block}
+        submit={submit}
+        submitting={submitting}
+        disabled={disabled}
+        offline={offline}
+      />
+      {props.footer}
+      <UILiveStatus message={props.announceSubmitting ? submit.submittingLabel : ''} />
     </form>
   );
 }
@@ -149,6 +156,7 @@ function submitOf<T extends FieldValues>(props: UIFormProps<T>): FormSubmitProps
     submitLabel,
     submittingLabel,
     isSubmitDisabled,
+    blockedReason: props.submitBlockedReason,
     submitSpacing,
     submitRef: props.submitRef,
     submitSx: props.submitSx,
@@ -157,6 +165,7 @@ function submitOf<T extends FieldValues>(props: UIFormProps<T>): FormSubmitProps
 
 export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JSX.Element {
   const { onSubmit, defaultValues, formOptions = {}, isSubmitting, resetOnSuccess = false } = props;
+  const { error = null, notice, errorAction, errorOccurrence } = props;
   const { methods, submitting } = useUIForm<T>({ defaultValues, formOptions, isSubmitting });
 
   return (
@@ -165,11 +174,12 @@ export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JS
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         onInvalid={props.onInvalid}
         header={headerOf(props)}
-        lead={{ error: props.error ?? null, notice: props.notice }}
+        lead={{ error, notice, errorAction, errorOccurrence }}
         submit={submitOf(props)}
         submitting={submitting}
         announceSubmitting={props.submittingAnnouncement ?? submitting}
         footer={props.footer}
+        offlineNotice={props.offlineNotice ?? 'live'}
       >
         {props.children}
       </FormBody>

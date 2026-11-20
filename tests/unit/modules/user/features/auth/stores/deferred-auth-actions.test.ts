@@ -14,12 +14,10 @@ type Barrel = { authActions: AuthActions; useAuthStore: typeof useAuthStoreHook 
 const loadBarrel = (): Promise<Barrel> =>
   loadIsolated(async () => (await import('@auth/stores')) as unknown as Barrel);
 
-const makeActions = (): { login: jest.Mock; register: jest.Mock } => ({
-  login: jest.fn().mockResolvedValue(undefined),
+const makeActions = (): { register: jest.Mock } => ({
   register: jest.fn().mockResolvedValue(undefined),
 });
 
-const credentials = { email: 'a@b.c', password: 'p' };
 const registration = { fullName: 'A', email: 'a@b.c', password: 'p' };
 const loadFailureLog = 'Auth module failed to load; surfacing retryable error to the user.';
 
@@ -30,26 +28,17 @@ describe('deferred auth actions composition root', () => {
     resolveMock.mockReset();
   });
 
-  it('sets loginLoading synchronously before the deferred graph resolves', async () => {
-    const { authActions, useAuthStore } = await loadBarrel();
-    resolveMock.mockReturnValue(makeActions());
-
-    const pending = authActions.loginUser(credentials);
-    expect(useAuthStore.getState().loginLoading).toBe(true);
-    await pending;
-  });
-
-  it('delegates login with credentials and signal, reusing one resolved instance', async () => {
+  it('delegates register with credentials and signal, reusing one resolved instance', async () => {
     const { authActions } = await loadBarrel();
     const actions = makeActions();
     resolveMock.mockReturnValue(actions);
     const { signal } = new AbortController();
 
-    await authActions.loginUser(credentials, signal);
-    await authActions.loginUser(credentials);
+    await authActions.registerUser(registration, signal);
+    await authActions.registerUser(registration);
 
-    expect(actions.login).toHaveBeenNthCalledWith(1, credentials, signal);
-    expect(actions.login).toHaveBeenNthCalledWith(2, credentials, undefined);
+    expect(actions.register).toHaveBeenNthCalledWith(1, registration, signal);
+    expect(actions.register).toHaveBeenNthCalledWith(2, registration, undefined);
     expect(resolveMock).toHaveBeenCalledTimes(1);
   });
 
@@ -63,24 +52,6 @@ describe('deferred auth actions composition root', () => {
     await pending;
 
     expect(actions.register).toHaveBeenCalledWith(registration, undefined);
-  });
-
-  it('stores a retryable login error when the deferred graph fails to load', async () => {
-    const { authActions, useAuthStore } = await loadBarrel();
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    const loadError = new Error('chunk load failed');
-    resolveMock.mockImplementation(() => {
-      throw loadError;
-    });
-
-    await authActions.loginUser(credentials);
-
-    expect(consoleError).toHaveBeenCalledWith(loadFailureLog, loadError);
-    expect(consoleError).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState()).toMatchObject({
-      loginLoading: false,
-      loginError: { kind: 'network', retryable: true },
-    });
   });
 
   it('stores a retryable register error when the deferred graph fails to load', async () => {
@@ -113,11 +84,11 @@ describe('deferred auth actions composition root', () => {
       })
       .mockReturnValue(actions);
 
-    await authActions.loginUser(credentials);
+    await authActions.registerUser(registration);
 
-    expect(actions.login).toHaveBeenCalledWith(credentials, undefined);
+    expect(actions.register).toHaveBeenCalledWith(registration, undefined);
     expect(resolveMock).toHaveBeenCalledTimes(2);
-    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(useAuthStore.getState().registerError).toBeNull();
   });
 
   it('retries the load after a failure instead of caching the rejection', async () => {
@@ -131,12 +102,12 @@ describe('deferred auth actions composition root', () => {
       })
       .mockReturnValue(actions);
 
-    await authActions.loginUser(credentials);
-    expect(useAuthStore.getState().loginError).not.toBeNull();
+    await authActions.registerUser(registration);
+    expect(useAuthStore.getState().registerError).not.toBeNull();
     expect(consoleError).toHaveBeenCalledWith(loadFailureLog, loadError);
 
-    await authActions.loginUser(credentials);
-    expect(actions.login).toHaveBeenCalledWith(credentials, undefined);
+    await authActions.registerUser(registration);
+    expect(actions.register).toHaveBeenCalledWith(registration, undefined);
     expect(resolveMock).toHaveBeenCalledTimes(2);
     expect(consoleError).toHaveBeenCalledTimes(1);
   });

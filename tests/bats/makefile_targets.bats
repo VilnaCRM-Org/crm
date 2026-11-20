@@ -55,6 +55,17 @@ EOF
   assert_output_contains 'Dev service is already running.'
 }
 
+@test "local stack targets delegate to the start script and the compose file" {
+  run make -n -C "$MAKEFILE_SANDBOX" start-local-stack
+  [ "$status" -eq 0 ]
+  assert_output_contains './scripts/local-stack/start.sh'
+
+  reset_command_log
+  run_make_target stop-local-stack
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.local-stack.yml down'
+}
+
 @test "build, formatting, lint, and developer convenience targets shell out correctly" {
   reset_command_log
   run_make_target build
@@ -91,7 +102,7 @@ format|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml} --w
 fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml} --write --ignore-path .prettierignore|
 fmt-qlty|qlty fmt --all --trigger agent --no-progress|
 lint-eslint|bun x eslint .|
-lint-tsc|bun x tsc|
+lint-tsc|bun check|
 lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
 lint-dup|bun x jscpd|
 lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|
@@ -116,6 +127,7 @@ check-storybook-static|node scripts/ci/check-storybook-static.mjs storybook-stat
 update|docker compose exec -T dev bun update|
 check-node-version|docker compose exec -T dev node check-node-version.js|
 pr-comments|get-pr-comments.sh|
+apollo-restart|docker compose up -d --force-recreate --no-deps apollo|
 down|docker compose down --remove-orphans|
 sh|docker compose exec dev sh|
 ps|docker compose ps|
@@ -140,6 +152,7 @@ EOF
   assert_log_contains 'docker compose -f docker-compose.test.yml config -q'
   assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q'
   assert_log_contains 'docker compose -f docker-compose.memory-leak.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.local-stack.yml config -q'
 }
 
 @test "commit contract targets lint the header and the range with their own configs" {
@@ -349,7 +362,7 @@ run-unit-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test en
 run-integration-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test env TEST_ENV=integration node ./node_modules/jest/bin/jest.js --maxWorkers=2 --logHeapUsage|
 run-mutation-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test bun x stryker run|
 run-eslint-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test npx eslint .|
-run-typescript-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test bun x tsc|
+run-typescript-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test bun check|
 run-markdown-lint-tests-dind TEMP_CONTAINER_NAME=crm-dev-test|docker exec crm-dev-test bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
 create-k6-helper-container-dind K6_HELPER_NAME=crm-k6-helper|docker images -q crm-k6|docker run -d --name crm-k6-helper --network crm-network --entrypoint /bin/sh fake-image-id -c tail -f /dev/null
 run-load-tests-dind K6_HELPER_NAME=crm-k6-helper|docker exec crm-k6-helper k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)|/loadTests/homepage.js

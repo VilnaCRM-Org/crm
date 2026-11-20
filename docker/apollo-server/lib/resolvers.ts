@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
 
 import { profileResolvers } from './profile-resolvers';
+import { socialSignInResolvers } from './social-sign-in-resolvers';
 import {
   issueResetToken,
   redeemResetToken,
@@ -16,6 +17,7 @@ import {
   RequestPasswordResetInput,
   User,
 } from './types';
+import { twoFactorResolvers } from './two-factor-resolvers';
 import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
@@ -143,6 +145,8 @@ export const resolvers = {
       return passwordResetPayload(input.clientMutationId);
     },
     ...profileResolvers.Mutation,
+    ...twoFactorResolvers.Mutation,
+    ...socialSignInResolvers.Mutation,
   },
 };
 

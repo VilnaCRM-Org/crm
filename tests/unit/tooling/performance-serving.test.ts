@@ -3,6 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 
+import * as ts from 'typescript';
+
 import {
   AUTH_FORM_CHUNKS,
   AUTH_PAGE_CHUNKS,
@@ -11,6 +13,7 @@ import {
   authPageVendorsCacheGroup,
   RECOVERY_FORM_CHUNKS,
   SETTINGS_CHUNKS,
+  TWO_FACTOR_FORM_CHUNKS,
 } from '@scripts/auth-forms-chunk-group';
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
@@ -19,6 +22,49 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 const readJson = <T>(relativePath: string): T => JSON.parse(readFile(relativePath)) as T;
+
+const WRAPPER_GUARDS: ReadonlyArray<(node: ts.Node) => boolean> = [
+  ts.isParenthesizedExpression,
+  ts.isAsExpression,
+  ts.isSatisfiesExpression,
+  ts.isNonNullExpression,
+  ts.isTypeAssertionExpression,
+];
+
+const isWrapperExpression = (
+  node: ts.Expression
+): node is
+  | ts.ParenthesizedExpression
+  | ts.AsExpression
+  | ts.SatisfiesExpression
+  | ts.NonNullExpression
+  | ts.TypeAssertion => WRAPPER_GUARDS.some((guard) => guard(node));
+
+const unwrapExpression = (node: ts.Expression): ts.Expression =>
+  isWrapperExpression(node) ? unwrapExpression(node.expression) : node;
+
+const constructsChunkRetryLoader = (node: ts.Expression | undefined): boolean => {
+  const inner = node === undefined ? undefined : unwrapExpression(node);
+  return (
+    inner !== undefined &&
+    ts.isNewExpression(inner) &&
+    ts.isIdentifier(inner.expression) &&
+    inner.expression.text === 'ChunkRetryLoader'
+  );
+};
+
+const moduleLevelChunkLoadersOf = (source: string): string[] =>
+  ts
+    .createSourceFile('probe.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
+    .statements.flatMap((statement) => {
+      if (ts.isExportAssignment(statement)) {
+        return constructsChunkRetryLoader(statement.expression) ? ['default'] : [];
+      }
+      if (!ts.isVariableStatement(statement)) return [];
+      return statement.declarationList.declarations
+        .filter((declaration) => constructsChunkRetryLoader(declaration.initializer))
+        .map((declaration) => declaration.name.getText());
+    });
 
 // Static value-level module edges only: `import type` and an all-`type` specifier list are
 // erased, and `import()` is a chunk boundary.
@@ -85,18 +131,27 @@ const shellFilesOf = (files: ReadonlySet<string>): string[] =>
 const PROTECTED_LAYOUT_ROOT = 'src/routes/protected-layout.ts';
 
 const SHARED_WITH_EAGER_PATH = [
+  'src/components/route-fallback/index.tsx',
+  'src/components/route-fallback/styles.ts',
+  'src/components/ui-live-status/index.tsx',
   'src/config/env/raw-env.ts',
   'src/lib/reliability/chunk-load-error-detector.ts',
   'src/lib/reliability/chunk-retry-loader.ts',
   'src/providers/mui-theme/mui-theme-shell-loader.ts',
   'src/providers/mui-theme/themed-chunk-loader.ts',
+  'src/routes/route-paths.ts',
   'src/services/observability/correlation-id-provider.ts',
   'src/services/observability/observability-core.ts',
   'src/services/observability/pii-scrubber.ts',
+  'src/services/observability/pii-text-scrubber.ts',
   'src/services/observability/sentry-client.ts',
   'src/services/observability/sentry-config.ts',
   'src/services/observability/session-correlation.ts',
+  'src/services/observability/social-callback-text-scrubber.ts',
+  'src/services/observability/token-text-scrubber.ts',
+  'src/services/observability/two-factor-text-scrubber.ts',
   'src/services/observability/web-vitals-reporter.ts',
+  'src/styles/colors.ts',
 ];
 
 const protectedGraphIn = (files: ReadonlySet<string>): string[] => {
@@ -350,11 +405,13 @@ describe('performance serving config', () => {
         'src/config/env/preloaded-auth-token.ts',
         'src/config/env/sandbox-demo-session-provider.ts',
         'src/modules/user/features/auth/components/protected-route/index.tsx',
+        'src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
         'src/modules/user/features/auth/hooks/use-session-redirect-state.ts',
         'src/modules/user/features/auth/stores/auth-session-provider.ts',
         'src/modules/user/features/auth/stores/auth-store-selectors.ts',
         'src/modules/user/features/auth/stores/use-auth-store.ts',
         'src/modules/user/features/auth/stores/use-auth-token.ts',
+        'src/modules/user/features/auth/stores/use-failure-capture.ts',
         'src/modules/user/features/auth/stores/use-sign-out.ts',
       ],
     ],
@@ -557,6 +614,155 @@ describe('performance serving config', () => {
     });
   });
 
+  it('keeps the two-factor challenge and recovery-codes notice copy off the eager path', () => {
+    const merged = readJson<Record<string, { translation: Record<string, unknown> }>>(
+      'src/i18n/localization.json'
+    );
+    const policy = readJson<{ lazyCatalogs: { catalog: string; owners: string[] }[] }>(
+      'config/i18n-catalog-policy.json'
+    );
+    const ownersOf = (catalog: string): string[] =>
+      policy.lazyCatalogs.find((entry) => entry.catalog === catalog)?.owners ?? [];
+    const challengeOwners = ownersOf('modules/user/features/auth/routes/two-factor-catalog/i18n');
+    const noticeOwners = ownersOf(
+      'modules/user/features/auth/components/recovery-codes-notice/i18n'
+    );
+    const { files } = eagerGraphOf('src/index.tsx');
+    const eagerSurfaces = [
+      'modules/user/features/auth/routes/sign-in/index.tsx',
+      'modules/user/features/auth/components/sign-in-notice/index.tsx',
+      'modules/user/features/auth/components/protected-route/index.tsx',
+      'modules/user/features/auth/hooks/use-recovery-codes-banner.ts',
+      'modules/user/features/auth/hooks/use-two-factor-redirect.ts',
+      'components/ui-form/index.tsx',
+    ];
+    const lazyOnly = [
+      'src/modules/user/features/auth/routes/two-factor/',
+      'src/modules/user/features/auth/components/two-factor/',
+      'src/modules/user/features/auth/components/recovery-codes-notice/',
+    ];
+    const catalogEdges = [...files].flatMap((file) =>
+      staticImportsOf(readFile(file))
+        .filter((specifier) => /two-factor-catalog|recovery-codes-notice/.test(specifier))
+        .map((specifier) => `${file} -> ${specifier}`)
+    );
+
+    expect(challengeOwners).toEqual([
+      'modules/user/features/auth/routes/index.ts',
+      'modules/user/features/auth/routes/two-factor',
+      'modules/user/features/auth/components/two-factor',
+      'modules/user/features/auth/hooks/use-challenge-banner.ts',
+      'modules/user/features/auth/hooks/use-challenge-copy.ts',
+    ]);
+    expect(noticeOwners).toEqual([
+      'modules/user/features/auth/components/recovery-codes-notice',
+      'modules/user/features/auth/hooks/use-recovery-notice-message.ts',
+    ]);
+    eagerSurfaces.forEach((surface) => {
+      const owner = [...challengeOwners, ...noticeOwners].find(
+        (candidate) => surface === candidate || surface.startsWith(`${candidate}/`)
+      );
+      expect({ surface, owner }).toEqual({ surface, owner: undefined });
+    });
+    ['en', 'uk'].forEach((locale) => {
+      const translation = merged[locale]?.translation ?? {};
+      expect(Object.keys(translation)).not.toContain('two_factor');
+      expect(Object.keys(translation)).not.toContain('recovery_codes_notice');
+      expect(Object.keys(translation.sign_in ?? {})).toContain('notices');
+    });
+    expect(
+      (merged.en?.translation.sign_in as { notices: Record<string, string> }).notices
+        .two_factor_expired
+    ).toBe('The sign-in confirmation has expired. Please sign in again.');
+    expect(files.has('src/routes/protected-layout-loader.ts')).toBe(true);
+    expect(files.has('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toBe(
+      false
+    );
+    expect([...files].filter((file) => lazyOnly.some((folder) => file.startsWith(folder)))).toEqual(
+      []
+    );
+    expect(catalogEdges).toEqual([]);
+    expect(readFile('src/modules/user/features/auth/hooks/use-recovery-codes-banner.ts')).toMatch(
+      new RegExp(
+        String.raw`import\(\s*/\* webpackChunkName: "recovery-codes-notice" \*/\s*` +
+          String.raw`'@auth/components/recovery-codes-notice'\s*\)`
+      )
+    );
+    expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
+      "import en from '@auth/routes/two-factor-catalog/i18n/en.json';"
+    );
+    expect(readFile('src/modules/user/features/auth/routes/two-factor/index.tsx')).toContain(
+      'lazyCatalogLoader.register(i18n, { en, uk });'
+    );
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-codes-notice/index.tsx')
+    ).toContain("import en from './i18n/en.json';");
+    expect(
+      readFile('src/modules/user/features/auth/components/recovery-codes-notice/index.tsx')
+    ).toContain('lazyCatalogLoader.register(i18n, { en, uk });');
+  });
+
+  it.each([
+    'sign-in/sign-in-form-section.tsx',
+    'reset-password/reset-password-form-section.tsx',
+    'create-new-password/create-new-password-form-section.tsx',
+  ])('loads the auth tokens and the sign-in processor on submit, not with %s', (entry) => {
+    const { files } = eagerGraphOf(`src/modules/user/features/auth/routes/${entry}`);
+    const submitOnly = [
+      'src/modules/user/config/tokens.ts',
+      'src/modules/user/features/auth/utils/sign-in-submit-processor.ts',
+      'src/modules/user/features/auth/data-providers/graphql-sign-in-provider.ts',
+      'src/modules/user/features/auth/data-providers/password-recovery-provider.ts',
+    ];
+
+    expect(submitOnly.filter((file) => files.has(file))).toEqual([]);
+    expect(files.has('src/modules/user/features/auth/stores/index.ts')).toBe(true);
+  });
+
+  it('imports the sign-in processor and the auth tokens only through a chunk-retry loader', () => {
+    const signInSubmit = readFile('src/modules/user/features/auth/hooks/use-sign-in-submit.ts');
+    const recoveryRun = readFile('src/modules/user/features/auth/hooks/use-recovery-run.ts');
+
+    expect(signInSubmit).toContain(
+      '  const processorLoader = new ChunkRetryLoader(\n' +
+        "    () => import('@auth/utils/sign-in-submit-processor')\n  );"
+    );
+    expect(moduleLevelChunkLoadersOf(signInSubmit)).toEqual([]);
+    expect(recoveryRun).toContain(
+      '  const [tokensLoader] = useState(\n' +
+        "    () => new ChunkRetryLoader(() => import('@/modules/user/config/tokens'))\n  );"
+    );
+    expect(moduleLevelChunkLoadersOf(recoveryRun)).toEqual([]);
+    expect(staticImportsOf(signInSubmit)).not.toContain('@/modules/user/config/tokens');
+    expect(staticImportsOf(recoveryRun)).not.toContain('@/modules/user/config/tokens');
+  });
+
+  it('finds every module-level chunk-retry loader shape and ignores one built per mount', () => {
+    const source = [
+      "const plain = new ChunkRetryLoader(() => import('./a'));",
+      "export const typed: ChunkRetryLoader<Module> = new ChunkRetryLoader(() => import('./b'));",
+      'let multiline =',
+      '  new ChunkRetryLoader(',
+      "    () => import('./c')",
+      '  );',
+      "const cast = (new ChunkRetryLoader(() => import('./d')) as Loader);",
+      "export default new ChunkRetryLoader(() => import('./e'));",
+      'export function useLoader(): Loader {',
+      "  const local = new ChunkRetryLoader(() => import('./f'));",
+      '  return local;',
+      '}',
+      "const other = new OtherLoader(() => import('./g'));",
+    ].join('\n');
+
+    expect(moduleLevelChunkLoadersOf(source)).toEqual([
+      'plain',
+      'typed',
+      'multiline',
+      'cast',
+      'default',
+    ]);
+  });
+
   it('wires both auth-form groups to the chunk names the form and settings loaders emit', () => {
     const rsbuildConfigSource = readFile('rsbuild.config.ts');
     const loaderChunkName = (route: string): string | undefined =>
@@ -591,11 +797,13 @@ describe('performance serving config', () => {
         )
       ).toEqual([true, true, true, true]);
       expect(selects({ name: settingsChunkName })).toBe(true);
+      expect(selects({ name: loaderChunkName('two-factor') })).toBe(true);
     });
     expect(AUTH_FORM_CHUNKS).toEqual(['sign-in', 'sign-up'].map(loaderChunkName));
     expect(RECOVERY_FORM_CHUNKS).toEqual(
       ['reset-password', 'create-new-password'].map(loaderChunkName)
     );
     expect(SETTINGS_CHUNKS).toEqual([settingsChunkName]);
+    expect(TWO_FACTOR_FORM_CHUNKS).toEqual([loaderChunkName('two-factor')]);
   });
 });

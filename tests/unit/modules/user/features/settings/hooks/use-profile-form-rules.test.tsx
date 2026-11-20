@@ -79,12 +79,21 @@ describe('useProfileFormRules', () => {
     expect(run(rules().email, 'other@example.com')).toBe(true);
   });
 
-  it('requires the current password only while a change exists', () => {
-    const changed = values({ fullName: 'Олена Іванівна' });
+  it.each([
+    ['fullNamePassword', { fullName: 'Олена Іванівна' }],
+    ['emailPassword', { email: 'other@example.com' }],
+    ['currentPassword', { newPassword: 'Password123' }],
+  ] as const)('requires %s only while its own section changed', (field, edit) => {
+    const changed = values(edit);
+    const others = values({
+      fullName: field === 'fullNamePassword' ? user.fullName : 'Олена Іванівна',
+      email: field === 'emailPassword' ? user.email : 'other@example.com',
+      newPassword: field === 'currentPassword' ? '' : 'Password123',
+    });
 
-    expect(run(rules().currentPassword, '', changed)).toBe("Це поле обов'язкове");
-    expect(run(rules().currentPassword, '', values())).toBe(true);
-    expect(run(rules().currentPassword, 'abc', changed)).toBe(true);
+    expect(run(rules()[field], '', changed)).toBe("Це поле обов'язкове");
+    expect(run(rules()[field], '', others)).toBe(true);
+    expect(run(rules()[field], 'abc', changed)).toBe(true);
   });
 
   it('treats a new password as optional and checks a typed one against the policy', () => {

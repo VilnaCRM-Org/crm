@@ -47,12 +47,14 @@ export interface ResetPasswordFormProps {
   onSubmit: (dto: RestorePasswordDto) => Promise<void>;
   onDismissFailure: () => void;
   failure: RecoveryFailure | null;
+  failureOccurrence: number;
   isSubmitting: boolean;
   focusTitle: boolean;
 }
 
 export interface ResetPasswordEmailFieldProps {
   failure: RecoveryFailure | null;
+  failureOccurrence: number;
 }
 
 export interface CreateNewPasswordFormProps {
@@ -60,9 +62,11 @@ export interface CreateNewPasswordFormProps {
   onSubmit: (dto: CreateNewPasswordDto) => Promise<void>;
   onDismissFailure: () => void;
   failure: RecoveryFailure | null;
+  failureOccurrence: number;
   isSubmitting: boolean;
 }
 
 export interface CreateNewPasswordFieldsProps {
   failure: RecoveryFailure | null;
+  failureOccurrence: number;
 }

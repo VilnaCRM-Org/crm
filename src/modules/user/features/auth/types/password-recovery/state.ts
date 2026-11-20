@@ -23,6 +23,7 @@ export interface ResetPasswordView {
   readonly submittedEmail: string;
   readonly maskedEmail: string | null;
   readonly failure: RecoveryFailure | null;
+  readonly failureOccurrence: number;
   readonly returned: boolean;
 }
 
@@ -74,6 +75,7 @@ export interface CreateNewPasswordInvalidState {
 export interface CreateNewPasswordFormState {
   readonly view: 'form';
   readonly failure: RecoveryFailure | null;
+  readonly failureOccurrence: number;
   readonly isSubmitting: boolean;
   readonly callbacks: CreateNewPasswordCallbacks;
 }
@@ -88,10 +90,16 @@ export type RecoveryProviderStep<TDto, TOutcome> = (
 
 export interface CreateNewPasswordViewState {
   readonly failure: RecoveryFailure | null;
+  readonly failureOccurrence: number;
   readonly linkInvalid: boolean;
   settle(outcome: CreateNewPasswordOutcome | null): void;
   clearFailure(): void;
 }
+
+export type RecordedRecoveryFailure = Pick<
+  CreateNewPasswordViewState,
+  'failure' | 'failureOccurrence'
+>;
 
 export interface CreateNewPasswordCallbackDeps {
   readonly submitter: AbortableSubmit<CreateNewPasswordDto, CreateNewPasswordOutcome>;

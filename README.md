@@ -39,7 +39,7 @@ Clone locally or use GitHub’s `Use this template` feature.
 
 Before running the application, make sure the following tools are installed on your machine:
 
-- **[Node.js](https://nodejs.org/en/)** (version 20 or higher).
+- **[Node.js](https://nodejs.org/en/)** (version 24.11.0 or higher, pinned in `.nvmrc`).
   You can download and install Node.js from the official website, or use a version manager like
   nvm [Node Version Manager](https://github.com/nvm-sh/nvm) to easily manage versions.
 
@@ -135,7 +135,7 @@ Linting & Formatting
 
 ```bash
   make lint-eslint: lints the codebase using eslint rules
-  make lint-tsc: runs static type checking with TypeScript
+  make lint-tsc: type-checks the repository with bun check (ADR-003)
   make lint-commit-message: lints one commit message or squash header read from stdin
   make lint-commit-bot-message: same, with the task-number rule relaxed for bot authors
   make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
@@ -164,8 +164,9 @@ dependencies.
 
 Translations live in per-feature catalogs. Eager catalogs are merged into one committed file; the
 lazy catalogs listed in `config/i18n-catalog-policy.json` (password recovery, password policy,
-settings, toast, app shell, coming soon and the user menu) stay out of it and are registered by the
-route or component chunk that owns them.
+settings, toast, app shell, coming soon, the user menu, the two-factor challenge and the low
+recovery codes notice) stay out of it and are registered by the route or component chunk that owns
+them.
 
 - Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
 - Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are mandatory and
@@ -507,7 +508,7 @@ a row names a workflow that does not exist.
 
 | Workflow                                | What it enforces                                 |
 | --------------------------------------- | ------------------------------------------------ |
-| `mutation testing (scheduled full)`     | Weekly cold, unsharded Stryker baseline          |
+| `mutation testing (scheduled full)`     | Weekly cold, 76-shard Stryker baseline           |
 | `security testing`                      | Weekly CodeQL re-scan and the `main` baseline    |
 | `supply-chain security`                 | Weekly full-tree dependency audit to an issue    |
 | `sbom`                                  | SBOMs attached after release, tracked on failure |

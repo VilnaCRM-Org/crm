@@ -226,8 +226,9 @@ runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL 
 `RegistrationAPI`) — data is parsed, never cast.
 
 - **Which transport?** GraphQL (Apollo) for user/account **domain-graph** reads and mutations;
-  REST (`HttpsClient`) for non-graph endpoints (login/token, health, files). When both expose
-  the same resource, the write goes through GraphQL and the token/session concern through REST.
+  REST (`HttpsClient`) for non-graph endpoints (health, files). Sign-in and the two-factor
+  operations are GraphQL mutations; no REST login exists. When both expose the same resource,
+  GraphQL wins.
 - **Generated files are build output** — never hand-edit `src/api/generated/**`; change the
   spec/operation and rerun `make codegen`. They are excluded from every source gate via the gate
   configs, never with suppressions. CI (`static testing`) runs `make codegen-check` and fails on
@@ -243,10 +244,12 @@ Every user-facing string is a translated key, and every key exists in **both** l
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
 `src/i18n/localization.json` is the merge of every **eager** catalog, produced by
 `scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
-regenerates it. The seven catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
 (password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
-`coming_soon.*` and the user menu `user_menu.*`) are left out of it and registered by their owning
-chunk; a key in one of them resolves only in the files its `owners` list names.
+`coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
+`auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
+`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+key in one of them resolves only in the files its `owners` list names.
 
 - **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
   `make i18n-generate`, and commit the regenerated merged catalog together with the catalog edit (a
@@ -324,7 +327,6 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildCredentials(overrides?)` → `{ email, password }` (`SignInDto` from `@/modules/user`).
 - `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
 - `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
-- `buildLoginResponse(overrides?)` → `{ token }`.
 - `buildResetToken()` → a 32-character alphanumeric password-reset token.
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
@@ -360,7 +362,7 @@ FAKER_SEED=12345 make test-unit-client
 
 Determinism keeps visual snapshots stable. The shared integration mock server
 (`tests/integration/mocks/server.ts`) exposes its generated defaults
-(`defaultLoginResponse`, `defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
+(`defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
 against those exports rather than literals.
 
 ### When NOT to use a builder
@@ -810,7 +812,7 @@ class Service {}
 class ApiErrorFactory {}
 class EmailValidator {}
 class ApiErrorGuard {}
-class LoginResponseMapper {}
+class RegistrationResponseMapper {}
 class FetchHttpsClient {}
 ```
 
@@ -941,7 +943,7 @@ that still sets `APP_CONFIG_FLAG_FORGOT_PASSWORD` to a non-empty value fails con
 Container start fails on two flag shapes (`scripts/render-app-config.js`): an `APP_CONFIG_FLAG_*`
 name that matches no declared flag, and a declared flag whose value is not exactly `true` or
 `false`. The user settings page (issue #330), its three coming-soon sub-pages and their app-shell
-entry points (issue #362) ship without a flag.
+entry points (issue #362), and the page's two-factor section (issue #331) ship without a flag.
 
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
@@ -1006,7 +1008,7 @@ register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If 
 only an annotation, make it `import type` (issue #88).
 
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
-`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`reflect-metadata`, token modules, config data (`@/config/env`,
 `@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
 `error-codes`), runtime data contracts (`response-schemas`, `*-mutation` / `*-query`), the
 module/feature public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
@@ -1023,8 +1025,10 @@ Never push the DI container into the auth paint path: do not eager-import
 container-resolved class. Those inside a gated directory (`auth-store-selectors`,
 `response-schemas`, `map-registration-error`, `load-registration-notification`,
 `registration-handlers-factory`, `auth-error-reporter`,
+the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
+`social-callback-view-mapper`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
-issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
+issue #116), `locale-formatter-core`, the `security-event-core` and its
 `auth-failure-monitor` leaf, the observability
 core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, the app-shell
 session (`auth-session-provider`) and the chip's current-user read (`current-user-client`,
@@ -1256,7 +1260,7 @@ scenario file that exports nothing fails, and zero executed scenarios fails inst
 vacuously. Waive a third-party false positive only through a reviewed `trace` + `reason` entry in
 `tests/memory-leak/leak-allowlist.json`.
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across an 8-way
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 76-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
@@ -1498,8 +1502,8 @@ make build
 **Solution**:
 
 ```bash
-node --version  # Should be >=24.8.0
-bun --version   # Should be >=1.3.5
+node --version  # Should be >=24.11.0
+bun --version   # Should be >=1.4.4
 nvm use         # If using nvm
 ```
 
@@ -1819,11 +1823,12 @@ build goes red. Know them before you touch a config file:
 - `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
   `make security-headers-generate`, commit the result; `make lint-security-headers` (in
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy
-- `connect-src` is derived from the API variables the app reads: the build-time
+- `connect-src` is derived from the API variables: the build-time
   `REACT_APP_MOCKOON_URL` / `REACT_APP_GRAPHQL_URL` / `REACT_APP_SENTRY_DSN` origins at
   generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` origins
-  appended by the container entrypoint. A new foreign origin is a new environment variable in
-  `connectSrcFromEnv`, never a hard-coded host
+  appended by the container entrypoint. The REST pair has no client reader today and stays
+  admitted only until the `apiBaseUrl` setting is decided (`src/config/runtime/README.md`). A new
+  foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host
 - `make check-security-headers` (the `security headers` job of the `security testing` workflow)
   builds `--target production`, boots it, and asserts every header on the emitted responses,
   then boots it again with `APP_CONFIG_*` overrides that must reach `connect-src`. The policy

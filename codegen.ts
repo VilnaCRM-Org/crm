@@ -25,7 +25,7 @@ const config: CodegenConfig = {
         useTypeImports: true,
         enumsAsTypes: true,
         skipTypename: true,
-        scalars: { ID: 'string' },
+        scalars: { ID: 'string', Iterable: 'unknown' },
         maybeValue: 'T | null',
       },
     },

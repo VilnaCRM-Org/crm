@@ -139,6 +139,14 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free PII scrubbing leaf used by the Sentry beforeSend hook.',
   },
   {
+    path: 'src/services/observability/pii-text-scrubber.ts',
+    reason:
+      'Container-free free-text half of that scrubber; value-imports and delegates to its ' +
+      'TwoFactorTextScrubber sibling for the two-factor patterns, its TokenTextScrubber ' +
+      'sibling for the token and secret patterns and its SocialCallbackTextScrubber sibling ' +
+      'for the OAuth callback code and state.',
+  },
+  {
     path: 'src/services/observability/web-vitals-reporter.ts',
     reason: 'Container-free web-vitals leaf; dynamic import of web-vitals.',
   },
@@ -165,10 +173,6 @@ const EXEMPT_RENDER_PATH_FILES = [
       'load, so it composes the IntlFormatterCache leaf off the container (issue #155).',
   },
   {
-    path: 'src/utils/url-builder.ts',
-    reason: 'Container-free URL builder consumed by api-config at module load.',
-  },
-  {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',
     reason: 'Container-free selector singleton consumed directly by auth components.',
   },
@@ -179,6 +183,24 @@ const EXEMPT_RENDER_PATH_FILES = [
   {
     path: 'src/modules/user/features/settings/utils/response-schemas.ts',
     reason: 'The settings zod response-contract module; declares schemas consumed as data.',
+  },
+  {
+    path: 'src/modules/user/features/auth/utils/social-callback-view-mapper.ts',
+    reason:
+      'Container-free decision table of the social callback page; it composes the provider guard ' +
+      'and the destination source off the container (specs/social-sign-in).',
+  },
+  {
+    path: 'src/modules/user/features/auth/utils/social-sign-in-navigator.ts',
+    reason:
+      'Container-free navigator the provider buttons call on the paint path; it composes the ' +
+      'browser navigator and the destination source off the container (specs/social-sign-in).',
+  },
+  {
+    path: 'src/modules/user/features/auth/utils/social-sign-in-flow-source.ts',
+    reason:
+      'Container-free sessionStorage source the provider buttons write on the paint path; it ' +
+      'composes the loginRedirectTarget validator off the container (specs/social-sign-in).',
   },
   {
     path: 'src/modules/user/features/auth/utils/map-registration-error.ts',
@@ -242,14 +264,6 @@ const ALLOWED_TARGETS = [
     specifier: '(?:^|/)tokens$',
     sample: 'src/services/https-client/tokens.ts',
     sampleSpecifier: './tokens',
-  },
-  {
-    id: 'api-endpoint-config',
-    reason: 'API_ENDPOINTS is a frozen endpoint map — configuration data with no sensible token.',
-    path: '^src/config/api-config[.]ts$',
-    specifier: '^@/config/api-config$',
-    sample: 'src/config/api-config.ts',
-    sampleSpecifier: '@/config/api-config',
   },
   {
     id: 'typed-env',

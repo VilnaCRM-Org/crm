@@ -8,7 +8,14 @@ export type UserServiceFailureReason =
   | 'unknown'
   | 'unauthenticated'
   | 'access_denied'
-  | 'invalid_password';
+  | 'invalid_password'
+  | 'locked'
+  | 'invalid_code'
+  | 'expired_session'
+  | 'setup_not_initiated'
+  | 'already_enabled'
+  | 'not_enabled'
+  | 'reauth_required';
 
 export type FieldViolationReason = 'other' | 'taken';
 

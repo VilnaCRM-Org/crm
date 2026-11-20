@@ -9,7 +9,7 @@ const makeFactory = (): ApiErrorFactory =>
 
 describe('ApiErrorFactory', () => {
   it('loads auth API modules when reflected constructor types are unavailable', () => {
-    const modulePaths = ['@auth/repositories/login-api', '@auth/repositories/registration-api'];
+    const modulePaths = ['@auth/repositories/registration-api'];
     for (const modulePath of modulePaths) {
       jest.isolateModules(() => {
         jest.doMock('@auth/repositories/api-error-factory', () => ({

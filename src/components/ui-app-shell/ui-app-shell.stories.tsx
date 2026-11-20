@@ -30,9 +30,9 @@ const meta: Meta<typeof UIAppShell> = {
     docs: {
       description: {
         component:
-          'The lazy half of the app shell: the banner and, from 1024 px, the sidebar, placed in ' +
+          'The lazy half of the app shell: the banner and, from 768 px, the sidebar, placed in ' +
           'the header and navigation cells that AppLayout reserves with placeholders. Below ' +
-          '1024 px the banner carries the burger that opens the navigation drawer. The user ' +
+          '768 px the banner carries the burger that opens the navigation drawer. The user ' +
           'menu slot is optional and renders in the banner.',
       },
       story: { inline: false },
@@ -50,6 +50,10 @@ export const Desktop: Story = {
 
 export const Tablet: Story = {
   globals: { viewport: { value: 'lg', isRotated: false } },
+};
+
+export const SmallTablet: Story = {
+  globals: { viewport: { value: 'md', isRotated: false } },
 };
 
 export const Mobile: Story = {

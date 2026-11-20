@@ -24,7 +24,7 @@ format	bats	tests/bats/makefile_targets.bats	Validated as the combined Prettier 
 fmt-prettier	bats	tests/bats/makefile_targets.bats	Validated as the direct Prettier formatting command.
 fmt-qlty	bats	tests/bats/makefile_targets.bats	Validated as the direct Qlty formatting command.
 lint-eslint	bats	tests/bats/makefile_targets.bats	Validated as the direct ESLint command.
-lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct TypeScript check command.
+lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct bun check type-check command.
 lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown lint command.
 lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
 lint-dup	bats	tests/bats/makefile_targets.bats	Validated as the direct jscpd copy/paste duplication command.
@@ -49,6 +49,8 @@ test-visual-update	bats	tests/bats/makefile_targets.bats	Validated as the visual
 create-network	ci	.github/workflows/static-testing.yml	Exercised transitively by the shared start and prod-side startup entrypoints.
 start-prod	ci	.github/workflows/e2e-testing.yml	Exercised transitively by prod-side PR workflows that depend on `make start-prod`.
 start-prod-clean	bats	tests/bats/makefile_targets.bats	Validated as the force-recreate prod startup wrapper.
+start-local-stack	bats	tests/bats/makefile_targets.bats	Validated as the wrapper over the local-stack start script.
+stop-local-stack	bats	tests/bats/makefile_targets.bats	Validated as the compose teardown of the local stack.
 wait-for-prod	bats	tests/bats/makefile_targets.bats	Validated as the wait-on based prod readiness helper.
 test-unit-all	ci	.github/workflows/unit-testing.yml	Executed directly by the unit-testing PR workflow.
 test-unit-client	ci	.github/workflows/unit-testing.yml	Exercised transitively by `make test-unit-all`.
@@ -78,6 +80,7 @@ lighthouse-mobile	ci	.github/workflows/performance-testing.yml	Executed directly
 lighthouse-setup	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
 install	bats	tests/bats/makefile_targets.bats	Validated as the Bun install plus Husky setup entrypoint.
 update	bats	tests/bats/makefile_targets.bats	Validated as the Bun dependency update command.
+apollo-restart	bats	tests/bats/makefile_targets.bats	Validated as the Apollo-only recreate command.
 down	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose teardown command.
 sh	bats	tests/bats/makefile_targets.bats	Validated as the dev-shell entrypoint.
 ps	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose status command.

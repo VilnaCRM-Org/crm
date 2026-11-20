@@ -1,4 +1,7 @@
 import piiScrubber, { PiiScrubber } from '@/services/observability/pii-scrubber';
+import PiiTextScrubber from '@/services/observability/pii-text-scrubber';
+import TokenTextScrubber from '@/services/observability/token-text-scrubber';
+import TwoFactorTextScrubber from '@/services/observability/two-factor-text-scrubber';
 import type { SentryEvent } from '@/services/types/observability/sentry';
 
 const DENIED_KEYS = [
@@ -18,12 +21,12 @@ const DENIED_KEYS = [
 ];
 
 describe('PiiScrubber', () => {
-  const scrubber = new PiiScrubber();
+  const scrubber = (): PiiScrubber => new PiiScrubber();
 
   it.each(DENIED_KEYS)('drops the denied key "%s" case-insensitively at any depth', (key) => {
     const event: SentryEvent = { extra: { nested: { [key]: 'sensitive' }, keep: 'ok' } };
 
-    const result = scrubber.scrub(event);
+    const result = scrubber().scrub(event);
 
     expect(result.extra).toEqual({ nested: {}, keep: 'ok' });
   });
@@ -33,7 +36,7 @@ describe('PiiScrubber', () => {
     (key) => {
       const event: SentryEvent = { extra: { [key]: 'sensitive', keep: 'ok' } };
 
-      const result = scrubber.scrub(event);
+      const result = scrubber().scrub(event);
 
       expect(result.extra).toEqual({ keep: 'ok' });
     }
@@ -55,23 +58,25 @@ describe('PiiScrubber', () => {
       },
     };
 
-    const result = scrubber.scrub(event);
+    const result = scrubber().scrub(event);
 
     expect(result.extra).toEqual({
       variables: { input: { id: '/api/users/1', clientMutationId: 'cmid' } },
     });
   });
 
-  it('keeps the six free-text patterns the settings keys did not touch', () => {
-    const patterns = Reflect.get(scrubber, 'patterns') as readonly RegExp[];
+  it('keeps nine free-text patterns after the otpauth one', () => {
+    const twoFactor = Reflect.get(new TwoFactorTextScrubber(), 'patterns') as readonly RegExp[];
+    const credentials = Reflect.get(new PiiTextScrubber(), 'patterns') as readonly RegExp[];
+    const tokens = Reflect.get(new TokenTextScrubber(), 'patterns') as readonly RegExp[];
 
-    expect(patterns).toHaveLength(6);
+    expect([...twoFactor.slice(1), ...credentials, ...tokens]).toHaveLength(9);
   });
 
   it('redacts PII embedded in an object key', () => {
     const event: SentryEvent = { extra: { 'bob@corp.io': 'context' } };
 
-    const result = scrubber.scrub(event);
+    const result = scrubber().scrub(event);
 
     expect(result.extra).toEqual({ '[redacted]': 'context' });
   });
@@ -83,7 +88,7 @@ describe('PiiScrubber', () => {
       breadcrumbs: [{ message: 'issued eyJhbGciOi.JeyJzdWIi.Qsdfx now' }],
     };
 
-    const result = scrubber.scrub(event);
+    const result = scrubber().scrub(event);
 
     expect(result.message).toBe('login failed for [redacted]');
     expect((result.exception as { values: Array<{ value: string }> }).values[0]?.value).toBe(
@@ -97,7 +102,7 @@ describe('PiiScrubber', () => {
   it('keeps non-sensitive strings, numbers, and null untouched', () => {
     const event: SentryEvent = { extra: { route: '/sign-in', count: 5, nothing: null } };
 
-    const result = scrubber.scrub(event);
+    const result = scrubber().scrub(event);
 
     expect(result.extra).toEqual({ route: '/sign-in', count: 5, nothing: null });
   });
@@ -105,7 +110,7 @@ describe('PiiScrubber', () => {
   it('recurses through arrays of values', () => {
     const event: SentryEvent = { extra: { list: ['plain', 'bob@corp.io'] } };
 
-    const result = scrubber.scrub(event);
+    const result = scrubber().scrub(event);
 
     expect(result.extra).toEqual({ list: ['plain', '[redacted]'] });
   });

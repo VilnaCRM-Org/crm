@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router';
 
 import CardBackControl from '@auth/components/reset-password/card-back-control';
 import createRecoveryLocaleI18n from '@tests/unit/utils/create-recovery-locale-i18n';
-import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+import { styleRuleFor, styleRulesFor } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 jest.mock('@auth/assets/chevron-left.svg', () => ({
@@ -58,6 +58,15 @@ describe('CardBackControl', () => {
     await userEvent.keyboard(' ');
 
     await waitFor(() => expect(onClick).toHaveBeenCalledTimes(2));
+  });
+
+  it('inks the control in the secondary Figma grey', () => {
+    renderControl(<CardBackControl onClick={jest.fn()} />);
+
+    const control = screen.getByRole('button', { name: 'Назад' });
+    expect(styleRulesFor(control, ' svg').map((rule) => rule.getPropertyValue('color'))).toEqual([
+      '#969B9D',
+    ]);
   });
 
   it.each([

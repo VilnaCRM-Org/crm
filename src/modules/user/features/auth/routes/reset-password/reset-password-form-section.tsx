@@ -47,6 +47,7 @@ export default function ResetPasswordFormSection(): JSX.Element {
             onSubmit={callbacks.submit}
             onDismissFailure={callbacks.dismissFailure}
             failure={state.failure}
+            failureOccurrence={state.failureOccurrence}
             isSubmitting={state.isSubmitting}
             focusTitle={state.returned}
           />

@@ -34,7 +34,6 @@ type Props = ComponentProps<typeof UserProfileSettings>;
 const props = (overrides: Partial<Props> = {}): Props => ({
   status: 'loading',
   user: null,
-  version: 0,
   refocus: false,
   retry: jest.fn(),
   adoption: {
@@ -61,7 +60,6 @@ const card = (overrides: Partial<Props> = {}): JSX.Element => {
     <UserProfileSettings
       status={state.status}
       user={state.user}
-      version={state.version}
       refocus={state.refocus}
       retry={state.retry}
       adoption={state.adoption}

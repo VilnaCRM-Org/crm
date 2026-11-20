@@ -60,10 +60,11 @@ assert_lighthouse_compose_files() {
 @test "Lighthouse DIND commands use locked tooling and run in prod, not nested Compose" {
   run /usr/bin/make -C "$PROJECT_ROOT" -n install-chromium-lhci
   [ "$status" -eq 0 ]
-  assert_output_contains 'chromium=136.0.7103.113-r0'
-  assert_output_contains 'LHCI_VERSION="0.15.1"'
+  assert_output_contains 'chromium=156.0.8078.79-r0'
+  assert_output_contains 'npm=11.12.1-r0'
+  assert_output_contains 'LHCI_VERSION="0.16.1"'
   assert_output_contains 'DOTENV_EXPAND_VERSION="13.0.0"'
-  assert_output_contains 'DOTENV_VERSION="17.4.2"'
+  assert_output_contains 'DOTENV_VERSION="18.0.10"'
   assert_output_contains '"@lhci/cli@$LHCI_VERSION"'
   ! printf '%s' "$output" | grep -Fq '@lhci/cli@0.10.0'
 

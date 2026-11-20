@@ -30,10 +30,11 @@ Choose the transport by the nature of the endpoint, not by convenience:
   create/update/delete mutations. New user-graph features add a colocated `*.graphql` operation
   next to their repository and consume the generated `TypedDocumentNode`.
 - **Use REST (`HttpsClient`)** for endpoints that are **not** part of the GraphQL schema:
-  session/token exchange (login), health checks, binary/file transfer, and any infrastructure
-  or third-party endpoint the OpenAPI spec models but the graph does not.
-- **When both transports expose the same resource** (today `/api/users`), prefer GraphQL for
-  the write (`createUser`) and reserve REST for the token/session concern (`login`).
+  health checks, binary/file transfer, and any infrastructure or third-party endpoint the
+  OpenAPI spec models but the graph does not.
+- **Sign-in is GraphQL.** The token exchange is the `signInUser` mutation (and the 2FA
+  mutations after it), reached through `GraphQLSignInRepository`; no REST login exists.
+- **When both transports expose the same resource** (today `/api/users`), use GraphQL.
 
 The transport is an implementation detail of the **repository** layer. Components and hooks
 never see transport types — they consume repository return types (see the layered architecture
@@ -43,9 +44,9 @@ in `.claude/skills/architecture/SKILL.md`).
 
 Data is **parsed, never cast**, before it leaves the repository layer:
 
-- **REST** — `HttpResponseProcessor.process(response, schema)` validates every JSON body with a
-  zod schema. There is no unchecked `as T`. Repositories pass the generated-shape schema (e.g.
-  `LoginResponseSchema`); a schema violation becomes a typed `HttpError`
+- **REST** — every `HttpsClient` call carries `RequestConfig.schema`, and
+  `HttpResponseProcessor.process(response, schema)` validates the JSON body with that zod schema.
+  There is no unchecked `as T`. A schema violation becomes a typed `HttpError`
   (`INVALID_RESPONSE_SHAPE`), not a crash or a corrupted record.
 - **GraphQL** — `RegistrationAPI` validates the Apollo result with `CreateUserResultSchema`
   before returning; an invalid payload becomes a typed `ApiError` (`VALIDATION`).
@@ -79,17 +80,19 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 
 ## Pending contracts
 
-A pending contract is an upstream declaration the pinned version does not carry yet. It is
-copied verbatim from user-service, read by codegen (`codegen.ts` lists `src/api/contracts/pending`
-beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile` copies the folder, and
-`loadTypeDefs` in `docker/apollo-server/lib/schema-loader.ts` passes every `*.graphql` file in it,
-in name order, as `typeDefs` after the pinned SDL), and deleted by the pin bump that brings the
-declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset mutation through a
-server built from two pending files and pins that the folder `server.mts` resolves from `out/` is
-the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge a duplicate
-declaration silently, so each pending file opens with `# pending-against: <version>` and
-`scripts/ci/check-pending-contracts.sh`, the first step of `scripts/codegen.sh` (so of both
-`make codegen` and `make codegen-check`), fails when that header is missing or no longer names
+A pending contract is a declaration the pinned version does not carry yet. It is either copied
+verbatim from user-service (an upstream declaration awaiting a release) or, when user-service has no
+declaration at all, a provisional contract written here in its style for user-service to adopt; each
+entry below says which. Either kind is read by codegen (`codegen.ts` lists
+`src/api/contracts/pending` beside the pinned SDL) and by the local Apollo mock (`Apollo.Dockerfile`
+copies the folder, and `loadTypeDefs` in `docker/apollo-server/lib/schema-loader.ts` passes every
+`*.graphql` file in it, in name order, as `typeDefs` after the pinned SDL), and deleted by the pin
+bump that brings the declarations in. `tests/apollo-server/pending-schema.test.ts` runs a reset
+mutation through a server built from two pending files and pins that the folder `server.mts`
+resolves from `out/` is the one `Apollo.Dockerfile` copies. graphql-codegen and Apollo Server merge
+a duplicate declaration silently, so each pending file opens with `# pending-against: <version>` and
+`scripts/ci/check-pending-contracts.sh`, the first step of `scripts/codegen.sh` (so of both `make
+codegen` and `make codegen-check`), fails when that header is missing or no longer names
 `GRAPHQL_SCHEMA_VERSION`. The pin bump that brings the declarations in deletes the file.
 
 `src/api/contracts/pending/password-reset.graphql`:
@@ -103,6 +106,60 @@ declaration silently, so each pending file opens with `# pending-against: <versi
 - **Removed by:** the contract pin bump to the first user-service release that declares both
   mutations (Follow-up 5.3).
 
+`src/api/contracts/pending/two-factor-authentication.graphql`:
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** `VilnaCRM-Org/user-service@a95c1e85`
+  (`a95c1e854bf21770b7fc630611a8257b0f9c600b`, `.github/graphql-spec/spec` on `main`). No release
+  tag declares these operations yet. The file holds one `extend type Mutation` with
+  `signInUser`, `completeTwoFactorUser`, `setupTwoFactorUser`, `confirmTwoFactorUser`,
+  `disableTwoFactorUser` and `regenerateRecoveryCodesUser`, their input, payload and payload-data
+  types in the upstream field order, and `scalar Iterable`, which no other pending file declares.
+  `codegen.ts` maps `Iterable` to `unknown`, never `any`.
+- **Mock rows** (`docker/apollo-server/lib/two-factor-resolvers.ts`, no state between requests):
+
+  - `signInUser` with a valid e-mail answers `accessToken` and `twoFactorEnabled: false`; with the
+    local part `2fa` it answers `pendingSessionId` and `twoFactorEnabled: true`, and no token.
+  - `completeTwoFactorUser` with any well-formed code answers `accessToken` and
+    `twoFactorEnabled: true`; a wrong-code 401 comes only from msw and `page.route` (FR-4).
+  - `setupTwoFactorUser` answers a fixed `otpauthUri` and a 32-character `secret`.
+  - `confirmTwoFactorUser` and `regenerateRecoveryCodesUser` answer the same eight fixed
+    `recoveryCodes`.
+  - `disableTwoFactorUser` answers `success: true`.
+  - A malformed e-mail or a blank `password` on sign-in, a blank `pendingSessionId` on complete,
+    or a malformed `twoFactorCode` on complete, confirm or disable, answers one GraphQL error
+    `<property>: <reason>` with `extensions: { code: 'BAD_USER_INPUT', status: 422, violations:
+[{ path, message }] }` and no token (FR-4; `violations` is the user-service GraphQL shape).
+    A blank value reads `This value should not be blank.`
+
+  A recovery code is `XXXX-XXXX` from `A-Z0-9`, in either case. Confirm takes a six-digit code
+  only, as upstream does.
+
+- **Layer split:** the mock answers only manual clicking through the local stack. Every other
+  upstream answer (401 and 403 on the protected operations, 409, 423, 429, 5xx, no answer) is
+  exercised where CI runs it: Playwright `page.route` stubs in the browser lanes and msw handlers
+  in the integration suite.
+- **Removed by:** the contract pin bump to the first user-service release that declares these
+  operations (Follow-up 5.1). The bump deletes this file, because graphql-codegen and Apollo
+  Server merge an identical duplicate declaration silently; the mock resolvers and the
+  `Iterable` mapping stay, since the pinned schema then declares the same operations and scalar.
+
+`src/api/contracts/pending/social-sign-in.graphql` (`specs/social-sign-in/`):
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** none yet; this is a provisional local contract. user-service exposes social
+  sign-in only as REST (`GET /api/auth/social/{provider}` and its callback);
+  `initiateSocialSignInUser` and `completeSocialSignInUser` are declared here in its API Platform
+  style, for user-service to add. Failures carry the REST `error_code` values in
+  `extensions.error_code`.
+- **Mock answers:** `docker/apollo-server/lib/social-sign-in-resolvers.ts` issues a state per
+  initiate, consumes it once on complete and checks the provider. `OAUTH_MODE=mock` sends every
+  provider to the Mockoon mock consent page; `OAUTH_MODE=provider` sends a provider to its real
+  screen only when its `OAUTH_<PROVIDER>_CLIENT_ID` is set, and keeps the rest on the mock page
+  (see `docs/social-sign-in-local.md`).
+- **Removed by:** the contract pin bump to the first user-service release that declares both
+  mutations.
+
 The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswordResetUser`
 answer every valid input with the same payload, so domain refusals, `429`, `503` and aborts are
 exercised in the browser lanes (`page.route`) and the integration suite (msw) instead. The dev
@@ -115,6 +172,50 @@ suites never set it, so they keep the stateless answers. Deleting one extension
 means removing its file; the two resolvers stay. Deleting the last one removes the folder, so it
 also removes the `codegen.ts` entry, the `Apollo.Dockerfile` copy and the pending folder read in
 `schema-loader.ts`: the mock refuses to start without the folder it was told to read.
+
+### Mock drift (two-factor)
+
+Every place where the local Apollo mock, the msw handlers or the Playwright stubs differ from real
+user-service for the two-factor operations, copied from §9 of the
+[two-factor PRD](../../../specs/two-factor-authentication/planning-artifacts/prd-two-factor-authentication-2026-10-06.md#9-mock-drift),
+which FR-41 points here; "§N", "FR-N" and "Follow-up N" refer to that PRD and its epics. The pin
+bump to the first release that declares the operations (Follow-up 5.1) re-checks each item against
+a real environment before production enablement.
+
+- **MD-1 — Schema source.** The pending file is user-service `main` at `a95c1e85`; a release may
+  differ. Recorded in the pending file header; detected by `make contract-diff` on the pin bump.
+- **MD-2 — Error codes.** Mock errors add `extensions.code`; real errors carry only
+  `extensions.status` and `category`, and real domain exceptions carry no `extensions` at all. The
+  client never reads `code` (FR-4 test) and classifies a status-less error by its message (§1).
+- **MD-3 — Error messages.** The completion, confirm and disable `401` messages are mirrored
+  exactly; real wording may change in a release. Constants live in one transformer (§1).
+- **MD-4 — `429` shape.** Real: HTTP `429` problem+json with `Retry-After`. The local mock has no
+  `429`; the msw handlers and the Playwright stubs answer HTTP `429` with `Retry-After`. The
+  client reads the status and never the body, so the body cannot reach it.
+- **MD-5 — HTTP status of GraphQL errors.** Real: reportedly 200, unverified; mock: Apollo Server's
+  status. The shared error transformer reads a transport `401` as `unauthenticated` without
+  reading its body, so an operation-specific `401` sent as a transport `401` would read as a
+  session end; user-service sends its 2FA `401`s as GraphQL errors, and Follow-up 5.1 re-checks
+  that against the released server (FR-34 accepted risk).
+- **MD-6 — TOTP.** Real: SHA-1, current and previous window, replay-protected; mock: fixed codes.
+- **MD-7 — Secret and URI.** Real: random per setup; mock: fixed (keeps QR baselines stable).
+- **MD-8 — Recovery codes.** Real: random, hashed, single use; mock: a fixed list, never consumed
+  (the mock is stateless).
+- **MD-9 — Pending session.** Real: 300 s TTL, five attempts; mock: none, any pending id passes.
+- **MD-10 — Rate limits and lockout.** Real: counters per IP, e-mail and user; mock: none (msw and
+  the route stubs inject `423` and `429`).
+- **MD-11 — Sudo window.** Real: session age under 300 s; mock: none (the stubs inject the `403`).
+- **MD-12 — Other sessions.** Real confirm revokes other sessions; not modelled.
+- **MD-13 — Bearer validation.** Real: JWT validated, cookie also accepted; mock: header presence.
+- **MD-14 — Enumeration timing.** Real dummy-hash timing not modelled; message uniform in both.
+- **MD-15 — Tokens.** Real JWTs with lifetimes; mock opaque strings; `rememberMe` not sent.
+- **MD-16 — `warning`, `id`, `_id`.** Never selected, so differences cannot reach the client.
+- **MD-17, MD-18 — Dropped (2026-10-08).** The mock holds no state, and no REST login remains.
+- **MD-19 — Third mock.** The msw handlers in integration tests share every drift class above.
+- **MD-20 — CORS.** Same-origin in the test stack; upstream allows `Authorization` but not the
+  correlation headers until user-service#514 ships (§8).
+- **MD-24, MD-25 — Dropped (2026-10-08).** The mock reads no token, as #330's does; every
+  401/403 branch comes from msw and `page.route`.
 
 ## Semantic breaking-change gate (issue #177)
 

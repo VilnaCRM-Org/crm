@@ -69,6 +69,38 @@ if [ -n "$rogue_specs" ]; then
   status=1
 fi
 
+# (c) Integrity shape: Bun finishes an install when an integrity value is malformed
+#     rather than wrong (ADR-003), so every recorded value must be a well-formed SHA-512
+#     Subresource Integrity string: sha512-, 86 base64 characters and the == padding of a
+#     64-byte digest. A weaker algorithm (sha1-, sha256-) fails the same check. The value is
+#     read by its position, the string after a package tuple's metadata object, so an empty
+#     value or one with no sha prefix at all ("garbage", a bare "sha512") is caught too; any
+#     other sha-prefixed string in the file is held to the same shape.
+SRI_SHA512='^"sha512-[A-Za-z0-9+/]{86}=="$'
+positional_integrity=$(awk '/^[[:space:]]*"packages": \{/ { in_packages = 1; next } in_packages' "$LOCK" |
+  sed -nE 's/^[[:space:]]*"[^"]+": \[.*\}, ("[^"]*")\],?[[:space:]]*$/\1/p')
+prefixed_integrity=$(grep -oE '"sha[0-9]*-[^"]*"' "$LOCK" || true)
+bad_integrity=$(printf '%s\n%s\n' "$positional_integrity" "$prefixed_integrity" |
+  grep -v '^$' | grep -vE "$SRI_SHA512" | sort -u || true)
+if [ -n "$bad_integrity" ]; then
+  echo "Malformed integrity values in $LOCK (expected sha512- and a 64-byte base64 digest):"
+  echo "$bad_integrity"
+  status=1
+fi
+
+# (d) Integrity presence: every package tuple must end in its integrity value, after the
+#     metadata object. A tuple that stops before it, or ends in something that is not a string,
+#     records no checksum for the tarball, so the install could not detect a swapped artifact.
+missing_integrity=$(awk '/^[[:space:]]*"packages": \{/ { in_packages = 1; next } in_packages' "$LOCK" |
+  grep -E '^[[:space:]]*"[^"]+": \[' |
+  grep -vE '\}, "[^"]*"\],?[[:space:]]*$' |
+  sed -E 's/^[[:space:]]*("[^"]+"):.*/\1/' || true)
+if [ -n "$missing_integrity" ]; then
+  echo "Package entries without an integrity value in $LOCK:"
+  echo "$missing_integrity"
+  status=1
+fi
+
 if [ "$status" -eq 0 ]; then
   echo "$LOCK: all resolutions on allowed registries"
 fi

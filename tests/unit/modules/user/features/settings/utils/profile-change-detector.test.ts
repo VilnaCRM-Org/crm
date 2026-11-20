@@ -10,6 +10,11 @@ import {
 const NEW_FULL_NAME = buildFullName();
 const NEW_EMAIL = buildEmail();
 const NEW_PASSWORD = buildPassword();
+const CURRENT_PASSWORD = buildPassword();
+const OTHER_PASSWORD = buildPassword();
+const ANOTHER_PASSWORD = buildPassword();
+const PADDED_CURRENT_PASSWORD = ` ${CURRENT_PASSWORD} `;
+const PADDED_NEW_PASSWORD = ` ${NEW_PASSWORD} `;
 
 const detector = new ProfileChangeDetector();
 
@@ -19,66 +24,87 @@ const unchanged = (overrides = {}): ReturnType<typeof buildProfileFormValues> =>
   buildProfileFormValues({
     fullName: user.fullName,
     email: user.email,
+    fullNamePassword: '',
+    emailPassword: '',
+    currentPassword: '',
     newPassword: '',
     ...overrides,
   });
 
 describe('ProfileChangeDetector.detect', () => {
-  it('returns null when only the current password is filled in', () => {
-    expect(detector.detect(user, unchanged({ currentPassword: 'Current1' }))).toBeNull();
-  });
+  it.each(['fullName', 'email', 'password'] as const)(
+    'returns null for the %s section when only a password is filled in',
+    (section) => {
+      const values = unchanged({
+        fullNamePassword: CURRENT_PASSWORD,
+        emailPassword: CURRENT_PASSWORD,
+        currentPassword: CURRENT_PASSWORD,
+      });
+
+      expect(detector.detect(section, user, values)).toBeNull();
+    }
+  );
 
   it.each([
-    ['surrounding spaces on the name', { fullName: `  ${user.fullName}  ` }],
-    ['a different e-mail case', { email: user.email.toLowerCase() }],
-    ['an upper-cased e-mail', { email: user.email.toUpperCase() }],
-    ['surrounding spaces on the e-mail', { email: `  ${user.email}  ` }],
-  ])('treats %s as no change', (_name, overrides) => {
-    expect(detector.detect(user, unchanged(overrides))).toBeNull();
+    ['surrounding spaces on the name', 'fullName', { fullName: `  ${user.fullName}  ` }],
+    ['a different e-mail case', 'email', { email: user.email.toLowerCase() }],
+    ['an upper-cased e-mail', 'email', { email: user.email.toUpperCase() }],
+    ['surrounding spaces on the e-mail', 'email', { email: `  ${user.email}  ` }],
+  ] as const)('treats %s as no change', (_name, section, overrides) => {
+    expect(detector.detect(section, user, unchanged(overrides))).toBeNull();
   });
 
   it('compares against a profile whose own values carry spaces and a different case', () => {
     const padded = buildUserEntity({ fullName: '  Олена  ', email: '  A@B.CO ' });
+    const values = unchanged({ fullName: 'Олена', email: 'a@b.co' });
 
-    expect(detector.detect(padded, unchanged({ fullName: 'Олена', email: 'a@b.co' }))).toBeNull();
+    expect(detector.detect('fullName', padded, values)).toBeNull();
+    expect(detector.detect('email', padded, values)).toBeNull();
   });
 
-  it('sends only the trimmed name for a name change', () => {
-    const values = unchanged({ fullName: '  Ірина Коваль  ', currentPassword: ' Current1 ' });
+  it('sends only the trimmed name and its own password for a name change', () => {
+    const values = unchanged({
+      fullName: '  Ірина Коваль  ',
+      fullNamePassword: PADDED_CURRENT_PASSWORD,
+      emailPassword: OTHER_PASSWORD,
+      currentPassword: ANOTHER_PASSWORD,
+    });
 
-    const change = detector.detect(user, values);
-
-    expect(change).toEqual({
+    expect(detector.detect('fullName', user, values)).toStrictEqual({
       id: user.id,
-      currentPassword: ' Current1 ',
+      currentPassword: PADDED_CURRENT_PASSWORD,
       fullName: 'Ірина Коваль',
     });
-    expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'fullName', 'id']);
   });
 
   it('sends the name and no e-mail for a name change with a case-only e-mail edit', () => {
     const fullName = buildFullName();
     const values = unchanged({ fullName, email: user.email.toUpperCase() });
 
-    const change = detector.detect(user, values);
+    const change = detector.detect('fullName', user, values);
 
     expect(change).toMatchObject({ id: user.id, fullName });
     expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'fullName', 'id']);
+    expect(detector.detect('email', user, values)).toBeNull();
   });
 
-  it('sends only the trimmed e-mail in the typed case for an e-mail change', () => {
-    const change = detector.detect(user, unchanged({ email: '  New.Person@Example.com ' }));
+  it('sends only the trimmed e-mail in the typed case and its own password', () => {
+    const values = unchanged({
+      email: '  New.Person@Example.com ',
+      emailPassword: CURRENT_PASSWORD,
+      fullNamePassword: OTHER_PASSWORD,
+      currentPassword: ANOTHER_PASSWORD,
+    });
 
-    expect(change).toEqual({
+    expect(detector.detect('email', user, values)).toStrictEqual({
       id: user.id,
-      currentPassword: expect.any(String),
+      currentPassword: CURRENT_PASSWORD,
       email: 'New.Person@Example.com',
     });
-    expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'email', 'id']);
   });
 
   it.each([' ', '   ', '\t'])('treats a whitespace-only new password %j as no change', (pw) => {
-    expect(detector.detect(user, unchanged({ newPassword: pw }))).toBeNull();
+    expect(detector.detect('password', user, unchanged({ newPassword: pw }))).toBeNull();
     expect(detector.passwordChanged(pw)).toBe(false);
   });
 
@@ -88,32 +114,40 @@ describe('ProfileChangeDetector.detect', () => {
   });
 
   it('sends a non-empty new password exactly as typed, spaces included', () => {
-    const change = detector.detect(user, unchanged({ newPassword: ' Next12345 ' }));
+    const values = unchanged({
+      newPassword: PADDED_NEW_PASSWORD,
+      currentPassword: CURRENT_PASSWORD,
+    });
 
-    expect(change).toMatchObject({ id: user.id, newPassword: ' Next12345 ' });
-    expect(Object.keys(change ?? {}).sort()).toEqual(['currentPassword', 'id', 'newPassword']);
+    expect(detector.detect('password', user, values)).toStrictEqual({
+      id: user.id,
+      currentPassword: CURRENT_PASSWORD,
+      newPassword: PADDED_NEW_PASSWORD,
+    });
   });
 
-  it('sends all three aspects with the entity IRI unchanged', () => {
-    const change = detector.detect(
-      user,
-      unchanged({ fullName: NEW_FULL_NAME, email: NEW_EMAIL, newPassword: NEW_PASSWORD })
-    );
+  it('keeps a section to itself when the other sections hold edits too', () => {
+    const values = unchanged({
+      fullName: NEW_FULL_NAME,
+      email: NEW_EMAIL,
+      newPassword: NEW_PASSWORD,
+    });
 
-    expect(Object.keys(change ?? {}).sort()).toEqual([
+    expect(Object.keys(detector.detect('fullName', user, values) ?? {}).sort()).toEqual([
+      'currentPassword',
+      'fullName',
+      'id',
+    ]);
+    expect(Object.keys(detector.detect('email', user, values) ?? {}).sort()).toEqual([
       'currentPassword',
       'email',
-      'fullName',
+      'id',
+    ]);
+    expect(Object.keys(detector.detect('password', user, values) ?? {}).sort()).toEqual([
+      'currentPassword',
       'id',
       'newPassword',
     ]);
-    expect(change?.id).toBe(user.id);
-  });
-
-  it('never carries an undefined value', () => {
-    const change = detector.detect(user, unchanged({ fullName: NEW_FULL_NAME }));
-
-    expect(Object.values(change ?? {})).not.toContain(undefined);
   });
 });
 

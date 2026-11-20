@@ -66,6 +66,48 @@ describe('UIOfflineNotice', () => {
     expect(styleRuleFor(text)?.color).toBe('#1B2327');
   });
 
+  it('is a live region by default', () => {
+    renderWithI18n(<UIOfflineNotice online live />);
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-atomic', 'true');
+  });
+
+  describe('live={false}', () => {
+    it('drops the role and aria-atomic but keeps the id, ref and script focus', () => {
+      const ref = { current: null as HTMLSpanElement | null };
+      renderWithI18n(<UIOfflineNotice ref={ref} id="offline-notice" online={false} live={false} />);
+
+      const notice = ref.current as HTMLElement;
+      expect(notice).toContainElement(screen.getByText(OFFLINE));
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(notice).not.toHaveAttribute('role');
+      expect(notice).not.toHaveAttribute('aria-atomic');
+      expect(notice).toHaveAttribute('id', 'offline-notice');
+      expect(notice).toHaveAttribute('tabindex', '-1');
+    });
+
+    it('stays empty and unpadded while online', () => {
+      const ref = { current: null as HTMLSpanElement | null };
+      renderWithI18n(<UIOfflineNotice ref={ref} online live={false} />);
+
+      expect(ref.current).toBeEmptyDOMElement();
+      expect(styleRuleFor(ref.current as HTMLElement)?.padding ?? '').toBe('');
+    });
+
+    it('shows the restored copy after a reconnection, then empties', () => {
+      const ref = { current: null as HTMLSpanElement | null };
+      const { rerender } = renderWithI18n(
+        <UIOfflineNotice ref={ref} online={false} live={false} />
+      );
+
+      rerender(<UIOfflineNotice ref={ref} online live={false} />);
+      expect(ref.current).toHaveTextContent(RESTORED);
+
+      act(() => jest.advanceTimersByTime(5_000));
+      expect(ref.current).toBeEmptyDOMElement();
+    });
+  });
+
   it('announces the restored connection, then empties the region again', () => {
     const { rerender } = renderWithI18n(<UIOfflineNotice online={false} />);
 

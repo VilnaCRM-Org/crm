@@ -3,11 +3,13 @@ import { chipOf } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
 import { bounceFromProtectedDestination, signOutToSignIn } from '@tests/e2e/utils/sign-out';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 
 import fillInput from '../../../../utils/fill-input';
 import { t } from '../../../../utils/initialize-localization';
 
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   replyWithGraphQLError,
   replyWithProfile,
@@ -17,7 +19,6 @@ import {
 } from './utils/profile-stub';
 
 const SETTINGS_URL = '/settings';
-const LOGIN_API_URL = '**/api/users';
 
 const settingsTitle: string = `${t('settings.title')} - VilnaCRM`;
 const settingsHeading: string = t('settings.heading');
@@ -57,7 +58,9 @@ test.describe('Settings route', () => {
 
     await expect(page.getByText(greeting)).toBeVisible();
     await expect(page.getByRole('main').getByText(PROFILE_NODE.initials)).toBeVisible();
-    await expect(chipOf(page)).toHaveAccessibleName(new RegExp(`^${PROFILE_NODE.initials}`, 'u'));
+    await expect(chipOf(page)).toHaveAccessibleName(
+      new RegExp(`^${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}`, 'u')
+    );
     expect(reads(stub)).toBe(1);
     expect(stub.shellCalls).toHaveLength(1);
   });
@@ -84,14 +87,7 @@ test.describe('Settings route', () => {
     page,
   }) => {
     await stubProfile(page);
-    await page.route(LOGIN_API_URL, async (route) => {
-      if (route.request().method() !== 'POST') return route.fallback();
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ token: 'e2e-session-token' }),
-      });
-    });
+    await stubSignIn(page, ['session']);
 
     await signOutToSignIn(page);
     await bounceFromProtectedDestination(page, SETTINGS_URL);

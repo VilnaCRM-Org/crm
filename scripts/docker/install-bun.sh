@@ -34,12 +34,12 @@ fi
 asset="bun-linux-${arch}${libc}${variant}.zip"
 
 case "${version}/${asset}" in
-  1.3.5/bun-linux-x64.zip) sha256=7051d86a924aefea3e0b96213b5fd8f79c0793f9cae6534233e627e5c3db4669 ;;
-  1.3.5/bun-linux-x64-baseline.zip) sha256=6bddacd6a65855698b9816f2d74871eda4dd0b7fa921140c6445248f94a742fd ;;
-  1.3.5/bun-linux-aarch64.zip) sha256=ed01000f85bd97785228ad2845dc92a1860b8054856826d7317690ac8f8ee74b ;;
-  1.3.5/bun-linux-x64-musl.zip) sha256=720d88e0e5f40450a1da91c0226f626b156eaa224876d794fa95f6ebf74f46b6 ;;
-  1.3.5/bun-linux-x64-musl-baseline.zip) sha256=57997319f8b9f72ce137363c3dfcd8d401327925108bb30dc5c3257452fba524 ;;
-  1.3.5/bun-linux-aarch64-musl.zip) sha256=980b567beeca875b79776d60a35b178309583df3f0973b3bae62f7244dc486ad ;;
+  1.4.4/bun-linux-x64.zip) sha256=bf8ccbfb2b0b80159e0f9a6d15c55317add8077534dbc6130a3edb52fccb395c ;;
+  1.4.4/bun-linux-x64-baseline.zip) sha256=e0446eb55995772eb9894bebae9a6be368d985a8b9271ee124486f9946eedd76 ;;
+  1.4.4/bun-linux-aarch64.zip) sha256=baa6bb36f51d6e58561e02bbea825038a9df454f673d6d776e8bbf86f8c7850e ;;
+  1.4.4/bun-linux-x64-musl.zip) sha256=a5a8ccc5e74dcb883fe974f125a7bdb3b41e5195ed1b870e73f17effd3eb2b2d ;;
+  1.4.4/bun-linux-x64-musl-baseline.zip) sha256=6e9c37098b293920aed28bfb51ab240e26d23bfdd9bbfecb3ad428ac166549bc ;;
+  1.4.4/bun-linux-aarch64-musl.zip) sha256=57f01b02ac7113c61c935f28f38c2eab849e3c970dab21f8b640a87b1ef65009 ;;
   *) echo "install-bun: no pinned checksum for ${asset} at bun-v${version}" >&2; exit 1 ;;
 esac
 

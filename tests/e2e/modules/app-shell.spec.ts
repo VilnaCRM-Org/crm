@@ -1,7 +1,9 @@
 import type { Locator, Page, Request } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import { buildCredentials } from '@tests/builders';
 import {
+  PROFILE_MONOGRAM,
   PROFILE_NODE,
   type StubbedProfile,
   stubProfile,
@@ -20,9 +22,12 @@ import {
   userMenuOf,
   visitedColourOf,
 } from '@tests/e2e/utils/app-shell';
+import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { expectSignInPage } from '@tests/e2e/utils/sign-out';
+import { continueButtonOf, expectSignInSuccessCard } from '@tests/e2e/utils/sign-in-result-card';
+import { expectSignInPage, signOutToSignIn } from '@tests/e2e/utils/sign-out';
+import { stubSignIn } from '@tests/e2e/utils/two-factor-responses';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 interface NavigationTarget {
@@ -152,6 +157,24 @@ async function openProtected(page: Page, path: string): Promise<StubbedProfile> 
   return stub;
 }
 
+async function signInByForm(page: Page): Promise<void> {
+  const { email, password } = buildCredentials();
+  await fillInput(page.getByPlaceholder(t('sign_in.form.email_input.placeholder')), email);
+  await fillInput(page.getByPlaceholder(t('sign_in.form.password_input.placeholder')), password);
+  await page.getByRole('button', { name: t('sign_in.form.submit_button') }).click();
+  await expectSignInSuccessCard(page);
+  await continueButtonOf(page).click();
+  await expectShellReady(page);
+}
+
+async function expectSidebarCollapsed(page: Page): Promise<void> {
+  await expect(page.getByRole('button', { name: shellText.expand, exact: true })).toHaveAttribute(
+    'aria-expanded',
+    'false'
+  );
+  await expect(page.getByRole('button', { name: shellText.collapse, exact: true })).toHaveCount(0);
+}
+
 async function expectSettingsPage(page: Page): Promise<void> {
   await expect(page).toHaveURL(ROUTE_PATHS.settings);
   await expect(page.getByRole('heading', { level: 1, name: t('settings.heading') })).toBeVisible();
@@ -160,6 +183,25 @@ async function expectSettingsPage(page: Page): Promise<void> {
 
 test.describe('App shell on desktop (issue #362)', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('keeps the sidebar collapsed across a reload and a new sign-in', async ({ page }) => {
+    await stubProfile(page);
+    await stubSignIn(page, ['session', 'session']);
+    await signOutToSignIn(page);
+    await signInByForm(page);
+    await page.getByRole('button', { name: shellText.collapse, exact: true }).click();
+    await expectSidebarCollapsed(page);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expectShellReady(page);
+    await expectSidebarCollapsed(page);
+
+    await sidebarSignOutOf(page).click();
+    await expectSignInPage(page);
+    await signInByForm(page);
+
+    await expectSidebarCollapsed(page);
+  });
 
   test('opens Settings from the sidebar and marks only that link current', async ({ page }) => {
     await openProtected(page, ROUTE_PATHS.home);
@@ -354,7 +396,7 @@ test.describe('App shell on desktop (issue #362)', () => {
     const stub = await openProtected(page, ROUTE_PATHS.home);
     await expect.poll(() => stub.count('CurrentUser')).toBe(1);
     await expect(chipOf(page)).toHaveAccessibleName(
-      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
     );
     await page.evaluate(async () => {
       await document.fonts.ready;
@@ -400,7 +442,18 @@ test.describe('App shell on desktop (issue #362)', () => {
     await openProtected(page, ROUTE_PATHS.home);
 
     await expect(chipOf(page)).toHaveAccessibleName(
-      new RegExp(`^${PROFILE_NODE.initials}.*${shellText.userMenu}$`, 'u')
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
+    );
+  });
+
+  test('starts the chip name with the initials it shows (WCAG 2.5.3 Label in Name)', async ({
+    page,
+  }) => {
+    await openProtected(page, ROUTE_PATHS.home);
+
+    await expect(chipOf(page).getByText(PROFILE_MONOGRAM, { exact: true })).toBeVisible();
+    await expect(chipOf(page)).toHaveAccessibleName(
+      `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
     );
   });
 

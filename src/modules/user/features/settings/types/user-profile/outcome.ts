@@ -1,8 +1,6 @@
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
-import type { ProfileFormValues } from './profile-form-values';
-
-export type ProfileField = keyof ProfileFormValues;
+export type ProfileField = 'fullName' | 'email' | 'currentPassword' | 'newPassword';
 
 export type FieldErrorReason =
   | 'name_rejected'

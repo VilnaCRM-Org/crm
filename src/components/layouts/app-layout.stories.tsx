@@ -7,7 +7,7 @@ import AppLayoutFrame from '@/components/layouts/app-layout-frame';
 import type { AppShellModuleLoader } from '@/components/types/layouts/app-layout-frame';
 import UIContainer from '@/components/ui-container';
 import UITypography from '@/components/ui-typography';
-import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
+import type { SignOutContext } from '@/routes/types/protected-outlet-context';
 import { DataRouterStory, storySignOut } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
 
@@ -22,7 +22,7 @@ function PlaceholderPage(): JSX.Element {
   );
 }
 
-function StubUserMenu({ signOut }: ProtectedOutletContext): JSX.Element {
+function StubUserMenu({ signOut }: SignOutContext): JSX.Element {
   return (
     <button type="button" onClick={signOut}>
       Профіль
@@ -42,6 +42,7 @@ const failedShell: AppShellModuleLoader = {
 
 interface AppLayoutStoryProps {
   withUserMenu?: boolean;
+  withBanner?: boolean;
   shell?: ShellState;
 }
 
@@ -62,14 +63,24 @@ function layoutFor(shell: ShellState, withUserMenu: boolean): JSX.Element {
 
 function AppLayoutStory({
   withUserMenu = false,
+  withBanner = false,
   shell = 'loaded',
 }: AppLayoutStoryProps): JSX.Element {
   return (
     <DataRouterStory
-      key={`${shell}-${String(withUserMenu)}`}
+      key={`${shell}-${String(withUserMenu)}-${String(withBanner)}`}
       routes={[
         {
-          element: <Outlet context={storySignOut} />,
+          element: (
+            <Outlet
+              context={{
+                ...storySignOut,
+                banner: withBanner ? (
+                  <UITypography role="status">Банер, який передає ProtectedRoute</UITypography>
+                ) : undefined,
+              }}
+            />
+          ),
           children: [
             {
               element: layoutFor(shell, withUserMenu),
@@ -101,7 +112,8 @@ const meta: Meta<typeof AppLayoutStory> = {
           'shell (banner and sidebar, held by two placeholders until it arrives), a focusable ' +
           '`<main>` holding the routed page and the lazily loaded footer. It forwards the ' +
           'sign-out outlet context from ProtectedRoute to the shell and the page, and renders ' +
-          'the optional `userMenu` slot in the banner. AppLayout hands the real shell loader ' +
+          'the optional `userMenu` slot in the header. An optional notice from ProtectedRoute ' +
+          'renders first inside `<main>`. AppLayout hands the real shell loader ' +
           'to AppLayoutFrame; the pending and failed stories hand the frame a loader that never ' +
           'settles or rejects.',
       },
@@ -118,6 +130,8 @@ type Story = StoryObj<typeof AppLayoutStory>;
 export const WithPage: Story = {};
 
 export const WithUserMenuSlot: Story = { args: { withUserMenu: true } };
+
+export const WithBanner: Story = { args: { withBanner: true } };
 
 export const ShellLoading: Story = {
   args: { shell: 'pending' },

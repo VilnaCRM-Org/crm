@@ -14,7 +14,7 @@ import useOfflineNotice from './use-offline-notice';
 // as a block `span`, not a `div`: the auth field wrappers space themselves with
 // `:nth-of-type(-n+2)`, and a `div` in front of them would shift that count.
 const UIOfflineNotice = forwardRef<HTMLSpanElement, UIOfflineNoticeProps>(function UIOfflineNotice(
-  { online, id },
+  { online, id, live = true },
   ref
 ): JSX.Element {
   const message = useOfflineNotice(online);
@@ -24,8 +24,8 @@ const UIOfflineNotice = forwardRef<HTMLSpanElement, UIOfflineNoticeProps>(functi
       component="span"
       ref={ref}
       id={id}
-      role="status"
-      aria-atomic="true"
+      role={live ? 'status' : undefined}
+      aria-atomic={live ? 'true' : undefined}
       tabIndex={-1}
       sx={message ? styles.notice : styles.empty}
     >

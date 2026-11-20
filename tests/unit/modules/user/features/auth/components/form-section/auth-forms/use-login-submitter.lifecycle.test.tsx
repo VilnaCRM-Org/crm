@@ -3,14 +3,20 @@ import type { TFunction } from 'i18next';
 import { Activity, type ReactNode } from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
-import { authActions } from '@auth/stores';
 import { buildCredentials } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
+
+const mockRun = jest.fn();
+
+jest.mock('@auth/hooks/use-sign-in-submit', () => ({
+  __esModule: true,
+  default: (): jest.Mock => mockRun,
+}));
 
 const t = ((key: string): string => key) as unknown as TFunction;
 
 function neverSettlingLogin(signals: AbortSignal[]): void {
-  jest.spyOn(authActions, 'loginUser').mockImplementation(
+  mockRun.mockImplementation(
     (_data, signal?: AbortSignal): Promise<void> =>
       new Promise<void>(() => {
         signals.push(signal as AbortSignal);
@@ -21,6 +27,7 @@ function neverSettlingLogin(signals: AbortSignal[]): void {
 describe('useLoginSubmitter request tracking', () => {
   beforeEach(() => {
     resetClientStores();
+    mockRun.mockReset();
   });
 
   afterEach(() => {
@@ -29,11 +36,9 @@ describe('useLoginSubmitter request tracking', () => {
 
   it('stops tracking a settled request so unmounting cannot abort it', async () => {
     const signals: AbortSignal[] = [];
-    jest
-      .spyOn(authActions, 'loginUser')
-      .mockImplementation(async (_data, signal?: AbortSignal): Promise<void> => {
-        signals.push(signal as AbortSignal);
-      });
+    mockRun.mockImplementation(async (_data, signal?: AbortSignal): Promise<void> => {
+      signals.push(signal as AbortSignal);
+    });
 
     const { result, unmount } = renderHook(() => useLoginSubmitter(t));
 
@@ -51,12 +56,7 @@ describe('useLoginSubmitter request tracking', () => {
 
   it('aborts a request that is still in flight when the form unmounts', () => {
     const signals: AbortSignal[] = [];
-    jest.spyOn(authActions, 'loginUser').mockImplementation(
-      (_data, signal?: AbortSignal): Promise<void> =>
-        new Promise<void>(() => {
-          signals.push(signal as AbortSignal);
-        })
-    );
+    neverSettlingLogin(signals);
 
     const { result, unmount } = renderHook(() => useLoginSubmitter(t));
 
@@ -106,7 +106,7 @@ describe('useLoginSubmitter request tracking', () => {
     expect(new Set(abort.mock.contexts).size).toBe(2);
   });
 
-  it('keeps a stable handler that still calls through to the live login action', async () => {
+  it('keeps a stable handler that still calls through to the sign-in run', async () => {
     const { result, rerender } = renderHook(() => useLoginSubmitter(t));
     const handlerBeforeRerender = result.current.handleLogin;
 
@@ -114,11 +114,9 @@ describe('useLoginSubmitter request tracking', () => {
 
     expect(result.current.handleLogin).toBe(handlerBeforeRerender);
 
-    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    mockRun.mockResolvedValue(undefined);
     rerender();
 
-    // The handler is memoized on the authActions singleton, not on a detached method reference,
-    // so it stays the same function across renders even after loginUser is replaced.
     expect(result.current.handleLogin).toBe(handlerBeforeRerender);
 
     const credentials = buildCredentials();
@@ -126,6 +124,6 @@ describe('useLoginSubmitter request tracking', () => {
       await result.current.handleLogin(credentials);
     });
 
-    expect(loginUser).toHaveBeenCalledWith(credentials, expect.any(AbortSignal));
+    expect(mockRun).toHaveBeenCalledWith(credentials, expect.any(AbortSignal));
   });
 });

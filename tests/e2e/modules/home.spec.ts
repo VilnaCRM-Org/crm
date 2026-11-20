@@ -51,6 +51,9 @@ test.describe('Home page E2E Tests (issue #106)', () => {
   for (const [width, left] of [
     [1440, 262],
     [1024, 263],
+    [1023, 263],
+    [900, 263],
+    [768, 263],
     [375, 15],
   ] as const) {
     test(`starts the content at x ${left} at ${width} px, as settings does`, async ({ page }) => {
@@ -60,6 +63,9 @@ test.describe('Home page E2E Tests (issue #106)', () => {
       const heading = page.getByRole('heading', { level: 1, name: homeHeading });
 
       await expect.poll(async () => (await heading.boundingBox())?.x).toBe(left);
+      await expect
+        .poll(async () => page.evaluate(() => document.documentElement.scrollWidth))
+        .toBe(width);
     });
   }
 

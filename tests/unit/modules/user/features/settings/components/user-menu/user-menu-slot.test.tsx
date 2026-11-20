@@ -98,9 +98,15 @@ describe('UserMenuSlot', () => {
     const settingsItem = screen.getByRole('menuitem', { name: 'Settings' });
     expect(settingsItem).toHaveFocus();
     await resolveChunk();
-    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+    await screen.findByRole('button', {
+      name: `${identity.monogram}, ${identity.displayName}, User menu`,
+    });
 
-    expect(screen.getByRole('button', { name: `${identity.displayName}, User menu` })).toBe(chip);
+    expect(
+      screen.getByRole('button', {
+        name: `${identity.monogram}, ${identity.displayName}, User menu`,
+      })
+    ).toBe(chip);
     expect(chip).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toBe(settingsItem);
     expect(settingsItem).toHaveFocus();
@@ -116,7 +122,9 @@ describe('UserMenuSlot', () => {
     act(() => chip.focus());
 
     await resolveChunk();
-    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+    await screen.findByRole('button', {
+      name: `${identity.monogram}, ${identity.displayName}, User menu`,
+    });
 
     expect(chip).toHaveFocus();
     const { container } = renderShell(<>{onAvatar.mock.calls.at(-1)?.[0]}</>);
@@ -216,14 +224,18 @@ describe('UserMenuSlot', () => {
       </>
     );
     await resolveChunk();
-    await screen.findByRole('button', { name: `${identity.displayName}, User menu` });
+    await screen.findByRole('button', {
+      name: `${identity.monogram}, ${identity.displayName}, User menu`,
+    });
 
     mockRead.mockResolvedValueOnce({ kind: 'failed', reason: 'session_ended' });
     await user.click(screen.getByRole('button', { name: 'Go to settings' }));
 
     await waitFor(() =>
       expect(
-        screen.queryByRole('button', { name: `${identity.displayName}, User menu` })
+        screen.queryByRole('button', {
+          name: `${identity.monogram}, ${identity.displayName}, User menu`,
+        })
       ).not.toBeInTheDocument()
     );
     expect(screen.getByRole('button', { name: 'User menu' })).toBeInTheDocument();

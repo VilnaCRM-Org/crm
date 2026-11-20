@@ -1,7 +1,5 @@
 import { z } from '@/config/zod';
 
-export const LoginResponseSchema = z.object({ token: z.string() });
-
 export const RegistrationResponseSchema = z.object({
   fullName: z.string().optional(),
   email: z.string().optional(),
@@ -35,3 +33,50 @@ export const CreateUserResultSchema = z
       .nullish(),
   })
   .nullish();
+
+const SignInUserNodeSchema = z.object({
+  twoFactorEnabled: z.boolean().nullish(),
+  accessToken: z.string().nullish(),
+  pendingSessionId: z.string().nullish(),
+});
+
+export const SignInUserResultSchema = z
+  .object({
+    signInUser: z.object({ user: SignInUserNodeSchema.nullish() }).nullish(),
+  })
+  .nullish();
+
+const CompleteTwoFactorUserNodeSchema = z.object({
+  accessToken: z.string().nullish(),
+  recoveryCodesRemaining: z.number().int().nonnegative().nullish(),
+});
+
+export const CompleteTwoFactorUserResultSchema = z
+  .object({
+    completeTwoFactorUser: z.object({ user: CompleteTwoFactorUserNodeSchema.nullish() }).nullish(),
+  })
+  .nullish();
+
+// The social sign-in mutations (src/api/contracts/pending/social-sign-in.graphql; pending until a
+// user-service release declares them). The authorization URL leaves the app, so only an http(s)
+// URL is accepted; the access token or the pending 2FA session must be present for its branch.
+const HTTP_PROTOCOL = /^https?$/;
+const SocialAuthorizationUrlSchema = z.url({ protocol: HTTP_PROTOCOL });
+
+export const SocialInitiateResultSchema = z.object({
+  initiateSocialSignInUser: z.object({
+    user: z.object({ authorizationUrl: SocialAuthorizationUrlSchema, state: z.string().min(1) }),
+  }),
+});
+
+export const SocialCompleteResultSchema = z.object({
+  completeSocialSignInUser: z.object({
+    user: z.union([
+      z.object({ twoFactorEnabled: z.literal(true), pendingSessionId: z.string().min(1) }),
+      z.object({
+        twoFactorEnabled: z.literal(false),
+        accessToken: z.string().min(1),
+      }),
+    ]),
+  }),
+});

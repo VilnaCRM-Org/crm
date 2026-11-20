@@ -20,9 +20,11 @@ const meta: Meta<typeof UISidebar> = {
           'The persistent sidebar: one `<nav>` named "Main navigation" in a 238 px panel ' +
           '(791 px desktop, 1142 px tablet) with a `#E1E7EA` border, radius 12 and a soft ' +
           'shadow. The handle collapses it to the 72 px (76 px tablet) rail, where each row ' +
-          'shows a tooltip on hover and keyboard focus. The state is not persisted. The rail ' +
-          'stories collapse it on load by activating the handle; on a short viewport the rail ' +
-          'list scrolls inside the card with Sign out kept at its foot.',
+          'shows a tooltip on hover and keyboard focus. The collapsed state persists in ' +
+          '`localStorage` under `crm.sidebar.collapsed`; Storybook resets it to expanded before ' +
+          'every story, so each story starts from the same state. The rail stories collapse it ' +
+          'on load by activating the handle; on a short viewport the rail list scrolls inside ' +
+          'the card with Sign out kept at its foot.',
       },
       story: { inline: false },
     },

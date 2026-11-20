@@ -14,7 +14,7 @@ before proposing any change, and follow every `.claude/skills/*/SKILL.md` that m
 - tsyringe with `reflect-metadata` for dependency injection.
 - i18next v26 with react-i18next; `uk` is the main language, `en` the fallback.
 - RSBuild (Rspack) for the build; Apollo Server as the local GraphQL mock; Mockoon for E2E.
-- Bun (>= 1.3.5) manages dependencies through `bun.lock`; Node >= 24.8 is the runtime.
+- Bun (>= 1.4.4) manages dependencies through `bun.lock`; Node >= 24.11 is the runtime.
 - Jest 30, Testing Library, and msw for unit and integration tests; Playwright for E2E and
   visual regression; Stryker for mutation testing.
 
@@ -40,7 +40,7 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **No static methods or free functions** in non-React `src/**/*.ts`: behaviour is an instance
   method on an `@injectable()` class, or on a module singleton (`export default new X()`) when
   the file must stay container-free. Hooks (`use-*.ts`) and `.tsx` components are exempt.
-- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `LoginResponseMapper`,
+- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `RegistrationResponseMapper`,
   `EmailValidator`): the suffix names the role from the approved table in
   `config/class-naming-policy.js` (mirrored in `CLAUDE.md`). Banned: `Manager`, `Helper`,
   `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, a bare
@@ -93,7 +93,8 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **i18n is per feature**: edit `src/**/i18n/{en,uk}.json` together, then run `make i18n-generate`
   to refresh the committed `src/i18n/localization.json`. The lazy catalogs in
   `config/i18n-catalog-policy.json` (recovery, password policy, settings, toast, app shell, coming
-  soon, user menu) are not merged into it; their keys resolve only inside the listed `owners`.
+  soon, user menu, two-factor challenge, recovery codes notice) are not merged into it; their keys
+  resolve only inside the listed `owners`.
 - **Routes are module-owned**: add a page to the owning feature's `routes/index.ts` contract as
   a lazy `load` with a `webpackChunkName`, and register a new module with one line in
   `src/routes/registry.ts`. Never edit `src/routes/routes.tsx` or the composer.
@@ -169,7 +170,7 @@ coordinated by a hook, not a class.
 
 ## Quality gates
 
-`make lint` runs ESLint, `tsc`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
+`make lint` runs ESLint, `bun check`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
 at 70 tokens), the rust-code-analysis metrics policy (cyclomatic above 10, cognitive above 15,
 more than 3 arguments, or more than 10 function LLOC fail the build), i18n parity, the docs
 gates, the license allowlist, the lockfile provenance gate (the npm registry plus one pinned

@@ -1,8 +1,9 @@
-import type { InputProps } from '@mui/material/Input';
 import type { Theme } from '@mui/material/styles';
 import type { SystemStyleObject } from '@mui/system';
 import type { InputHTMLAttributes } from 'react';
 import type { FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
+
+import type { FormTextFieldInputSlotProps } from '@/components/types/ui-form-input-field';
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
   rules: RegisterOptions<T, Path<T>>;
@@ -12,7 +13,7 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
   label: string;
   autoComplete: string;
   defaultValue?: PathValue<T, Path<T>>;
-  inputProps?: InputProps;
+  inputProps?: FormTextFieldInputSlotProps;
   describedBy?: string | undefined;
   sx?: SystemStyleObject<Theme> | undefined;
 }
@@ -22,6 +23,6 @@ export interface FormFieldHtmlInputProps {
 }
 
 export interface FormFieldSlotProps {
-  input: InputProps;
+  input: FormTextFieldInputSlotProps;
   htmlInput?: FormFieldHtmlInputProps;
 }

@@ -1,0 +1,9 @@
+mutation CompleteTwoFactorUser($input: completeTwoFactorUserInput!) {
+  completeTwoFactorUser(input: $input) {
+    user {
+      twoFactorEnabled
+      accessToken
+      recoveryCodesRemaining
+    }
+  }
+}

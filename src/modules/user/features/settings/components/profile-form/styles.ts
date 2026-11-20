@@ -33,6 +33,10 @@ export const SETTINGS_PILL = {
   '&:focus-visible': SETTINGS_FOCUS_RING,
 };
 
+export const SETTINGS_FIELD_WIDTH_RESET = { '& .MuiTextField-root': { minWidth: 0 } };
+
+export const SETTINGS_SUBMIT_WIDTH_RESET = { '&&': { minWidth: 0 } };
+
 export const SETTINGS_PILL_FROM_TABLET = {
   fontWeight: 600,
   fontSize: '1.125rem',
@@ -78,7 +82,7 @@ export default {
     marginBottom: '1rem',
     flexWrap: 'nowrap',
     '& label': { lineHeight: '1.125rem' },
-    '& .MuiTextField-root': { minWidth: 0 },
+    ...SETTINGS_FIELD_WIDTH_RESET,
     '& .MuiOutlinedInput-input': { color: customColors.text.dark },
     [SETTINGS_TABLET]: {
       marginBottom: '0.8125rem',
@@ -183,6 +187,18 @@ export default {
       },
       [SETTINGS_DESKTOP]: { width: '16.875rem', height: '3.875rem' },
     },
+  },
+  saveButtonHidden: { '&&': { display: 'none' } },
+  visuallyHidden: {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    margin: '-1px',
+    padding: 0,
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
   },
   clearButton: {
     '&&': {

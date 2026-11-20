@@ -21,7 +21,27 @@
     "oauth": {
       "continue_with": "Continue with {{provider}}"
     },
-    "loadingForm": "Loading authentication form"
+    "loadingForm": "Loading authentication form",
+    "social": {
+      "error": {
+        "title": "Could not sign in with {{provider}}",
+        "cancelled": "Sign-in with {{provider}} was cancelled. You can try again or sign in another way.",
+        "missing_parameters": "{{provider}} did not return the sign-in details. Please try again.",
+        "provider_mismatch": "The sign-in response came from a different provider than the one you chose. Go back and start again.",
+        "unsupported_provider": "Signing in with {{provider}} is not available. Sign in with your email and password or another service.",
+        "duplicate_email": "Your {{provider}} email matches more than one VilnaCRM account, so it cannot be linked automatically. Sign in with your email and password instead.",
+        "expired": "Your sign-in attempt expired or was already used. Please try again.",
+        "email_unavailable": "{{provider}} did not share your email address, which VilnaCRM needs. Allow {{provider}} to share it and try again, or sign in with your email and password.",
+        "email_unverified": "Your {{provider}} email address is not verified. Verify it with {{provider}}, then try again.",
+        "unavailable": "{{provider}} is not responding right now. Please try again in a moment.",
+        "generic": "Something went wrong while signing in with {{provider}}. Please try again."
+      },
+      "try_again": "Try again",
+      "back_to_sign_in": "Back to sign in",
+      "callback_title": "Signing in",
+      "signing_in": "Signing you in with {{provider}}…",
+      "provider_fallback": "this service"
+    }
   },
   "sign_up": {
     "title": "Registration",
@@ -81,7 +101,9 @@
     "errors": {
       "load_failed": "Failed to load sign-in form. Please try again.",
       "invalid_credentials": "Invalid e-mail or password",
-      "rate_limited": "Too many sign-in attempts. Try again later"
+      "locked": "The account is temporarily locked after too many failed attempts. Try again later.",
+      "rate_limited": "Too many sign-in attempts. Try again later",
+      "transient": "The request could not be sent. Check your connection and try again."
     },
     "form": {
       "email_input": {
@@ -101,7 +123,9 @@
     },
     "notices": {
       "password_reset": "Your password has been changed. Sign in with your new password.",
-      "session_ended": "Your session has ended. Please sign in again."
+      "session_ended": "Your session has ended. Please sign in again.",
+      "two_factor_expired": "The sign-in confirmation has expired. Please sign in again.",
+      "account_locked": "The account is temporarily locked after too many failed attempts. Try again later."
     },
     "success": {
       "title": "Welcome back!",
