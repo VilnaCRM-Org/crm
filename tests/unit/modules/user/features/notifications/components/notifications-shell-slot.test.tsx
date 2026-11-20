@@ -24,7 +24,7 @@ import {
   NOTIFICATION_SEED,
 } from '@/modules/user/features/notifications/repositories';
 import ShellSlotFactory from '@/routes/shell-slot-factory';
-import type { ShellSlotModule, ShellSlotProps } from '@/routes/types/shell-slot';
+import type { ShellSlotModule } from '@/routes/types/shell-slot';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -238,33 +238,47 @@ describe('NotificationsShellSlot', () => {
         () =>
           new Promise((resolve) => {
             resolveSlot = resolve;
-          })
+          }),
+        'app-shell:notifications'
       );
-      function DesktopSlot(props: ShellSlotProps): JSX.Element {
-        return (
-          <NotificationsShellSlot
-            layout="desktop"
-            signOut={props.signOut}
-            onAvatar={props.onAvatar}
-            onChunkFailure={props.onChunkFailure}
-          />
-        );
-      }
       render(
         wrap(
           new InMemoryNotificationRepository(NOTIFICATION_SEED),
           <BellSlotFrame layout="desktop">
-            <Slot signOut={jest.fn()} onAvatar={jest.fn()} />
+            <Slot layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />
           </BellSlotFrame>
         )
       );
 
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
 
-      await act(async () => resolveSlot({ default: DesktopSlot }));
+      await act(async () => resolveSlot({ default: NotificationsShellSlot }));
 
       await waitFor(() => expect(badge()).toEqual(['1']));
       expect(bell()).toBeEnabled();
     });
+  });
+
+  it('reports a twice-failed slot chunk as app-shell:notifications', async () => {
+    const report = jest.fn();
+    const failure = Object.assign(new Error('Loading chunk notifications failed.'), {
+      name: 'ChunkLoadError',
+    });
+    const Slot = new ShellSlotFactory(report).create(
+      () => Promise.reject(failure),
+      'app-shell:notifications'
+    );
+    render(
+      wrap(
+        new InMemoryNotificationRepository(NOTIFICATION_SEED),
+        <BellSlotFrame layout="desktop">
+          <Slot layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />
+        </BellSlotFrame>
+      )
+    );
+
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+    expect(report).toHaveBeenCalledWith('app-shell:notifications', failure);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

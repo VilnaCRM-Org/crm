@@ -11,6 +11,7 @@ export default function MobileNavigation({
   items,
   signOut,
   avatar,
+  liveBell,
 }: MobileNavigationProps): JSX.Element {
   const dialogId = useId();
   const { open, restore, show, dismiss, leave } = useDrawerOpen();
@@ -26,6 +27,7 @@ export default function MobileNavigation({
         onClose={dismiss}
         onNavigate={leave}
         avatar={avatar}
+        liveBell={liveBell}
       />
       <MenuToggleButton open={open} controls={dialogId} onToggle={show} ref={attachBurger} />
     </>

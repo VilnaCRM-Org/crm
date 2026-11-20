@@ -31,6 +31,15 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
   the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
   `src/routes/README.md`.
+- **The notifications slot is a prop too.** A route contract may declare `shell.notifications`;
+  the composer hands `AppLayout` a second slot built the same way, and `UIAppShell` renders it with
+  the shell `layout`, `signOut` and `onAvatar` (the user menu slot receives `layout` as well and
+  ignores it). `UIAppHeader` puts the rendered slot inside `BellSlotFrame` at the bell's position,
+  between search and tasks, in place of the disabled notifications `HeaderIconButton`, and tells
+  the mobile drawer through `MobileNavigation` (`liveBell`), whose aria-hidden bell copy then takes
+  the enabled `#1A1C1E` glyph colour (`customColors.text.dark`) instead of the disabled `#D0D4D8`.
+  Without the slot the header and the drawer render exactly as before: the disabled bell described
+  "Ще недоступно" and the disabled bell copy. No route contract declares the slot yet.
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
   `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
   it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot

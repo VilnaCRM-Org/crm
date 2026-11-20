@@ -17,7 +17,14 @@ export type ShellFailureHandler = (error: unknown) => void;
 
 export type ShellAvatarHandler = (avatar: ReactNode) => void;
 
+export type ShellSlotLayout = 'mobile' | 'tablet' | 'desktop';
+
+export type ShellSlotSource = 'app-shell:user-menu' | 'app-shell:notifications';
+
+export type ShellSlotKey = 'userMenu' | 'notifications';
+
 export interface ShellSlotHostProps extends SignOutContext {
+  readonly layout: ShellSlotLayout;
   readonly onAvatar: ShellAvatarHandler;
 }
 
@@ -33,6 +40,7 @@ export type ShellSlotLoad = () => Promise<ShellSlotModule>;
 
 export interface RouteModuleShell {
   readonly userMenu?: ShellSlotLoad | undefined;
+  readonly notifications?: ShellSlotLoad | undefined;
 }
 
-export type UserMenuSlot = ComponentType<ShellSlotHostProps>;
+export type ShellSlot = ComponentType<ShellSlotHostProps>;

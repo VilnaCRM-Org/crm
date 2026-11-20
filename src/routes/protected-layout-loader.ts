@@ -7,11 +7,12 @@ import type {
   ProtectedLayoutExport,
   ProtectedLayoutModule,
   ProtectedShell,
+  ShellSlotRequest,
 } from './types/protected-layout';
-import type { ShellChunkFailureHandler, ShellSlotLoad, UserMenuSlot } from './types/shell-slot';
+import type { ShellChunkFailureHandler, ShellSlot } from './types/shell-slot';
 
 class ProtectedLayoutLoader {
-  public create({ userMenu, report }: ProtectedShell): ProtectedLayout {
+  public create({ userMenu, notifications, report }: ProtectedShell): ProtectedLayout {
     const chunk = new ChunkRetryLoader<ProtectedLayoutModule>(
       () => import(/* webpackChunkName: "protected-layout" */ './protected-layout')
     );
@@ -19,7 +20,19 @@ class ProtectedLayoutLoader {
     return {
       ProtectedRoute: this.component(chunk, 'ProtectedRoute'),
       AppLayout: this.component(chunk, 'AppLayout'),
-      ...(userMenu === undefined ? {} : { userMenu: this.userMenu(chunk, userMenu, report) }),
+      ...(userMenu === undefined
+        ? {}
+        : {
+            userMenu: this.slot(chunk, report, { load: userMenu, source: 'app-shell:user-menu' }),
+          }),
+      ...(notifications === undefined
+        ? {}
+        : {
+            notifications: this.slot(chunk, report, {
+              load: notifications,
+              source: 'app-shell:notifications',
+            }),
+          }),
     };
   }
 
@@ -30,15 +43,15 @@ class ProtectedLayoutLoader {
     return lazy(() => chunk.load().then((module) => ({ default: module[name] })));
   }
 
-  private userMenu(
+  private slot(
     chunk: ChunkRetryLoader<ProtectedLayoutModule>,
-    load: ShellSlotLoad,
-    report: ShellChunkFailureHandler
-  ): UserMenuSlot {
+    report: ShellChunkFailureHandler,
+    { load, source }: ShellSlotRequest
+  ): ShellSlot {
     return lazy(() =>
-      chunk
-        .load()
-        .then(({ ShellSlotFactory }) => ({ default: new ShellSlotFactory(report).create(load) }))
+      chunk.load().then(({ ShellSlotFactory }) => ({
+        default: new ShellSlotFactory(report).create(load, source),
+      }))
     );
   }
 }

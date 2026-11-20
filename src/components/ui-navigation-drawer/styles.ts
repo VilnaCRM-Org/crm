@@ -48,6 +48,7 @@ export default {
     marginTop: '8px',
   },
   glyph: { ...glyph, color: customColors.checkbox.main },
+  liveGlyph: { ...glyph, color: customColors.text.dark },
   avatar: {
     display: 'flex',
     alignItems: 'center',

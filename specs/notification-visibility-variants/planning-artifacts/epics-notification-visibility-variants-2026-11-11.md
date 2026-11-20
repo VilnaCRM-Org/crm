@@ -1588,6 +1588,16 @@ covered by the `[no-adr]` line.
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys.
 
+> Code facts (2026-11-20): every shell slot now receives the shell `layout`: `ShellSlotHostProps`
+> gains `layout: ShellSlotLayout`, a union defined in `routes/types/shell-slot.ts` that
+> `ShellLayout` aliases, so the routes types never import `src/components`. `UserMenuSlot` is
+> `ShellSlot`; `ShellSlotFactory.create(load, source)` reports `ShellSlotSource` and forwards
+> `layout`; the composer reads `shellLoad(registry, key)` for `ShellSlotKey`. For the metrics caps,
+> the header's bell choice moved into `HeaderBell` (disabled button, or the slot in
+> `BellSlotFrame`), `DrawerHeader` takes one `copies` prop (`{ avatar, liveBell }`), and the
+> loader's slot builder takes a `ShellSlotRequest`. `NotificationsShellSlotProps` is now an alias of
+> `ShellSlotProps`.
+
 ### Story 3.4: Mount the notifications slot in the shell through its route contract
 
 As a user on any protected page,

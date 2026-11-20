@@ -46,6 +46,4 @@ export interface BellButtonProps {
   readonly disclosure: BellDisclosure;
 }
 
-export interface NotificationsShellSlotProps extends ShellSlotProps {
-  readonly layout: ShellLayout;
-}
+export type NotificationsShellSlotProps = ShellSlotProps;

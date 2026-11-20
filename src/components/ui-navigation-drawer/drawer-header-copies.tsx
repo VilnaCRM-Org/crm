@@ -8,10 +8,18 @@ import type { DrawerHeaderCopiesProps } from '@/components/types/ui-navigation-d
 
 import styles from './styles';
 
-export default function DrawerHeaderCopies({ avatar }: DrawerHeaderCopiesProps): JSX.Element {
+export default function DrawerHeaderCopies({
+  avatar,
+  liveBell = false,
+}: DrawerHeaderCopiesProps): JSX.Element {
   return (
     <>
-      <Box component={BellIcon} aria-hidden="true" focusable="false" sx={styles.glyph} />
+      <Box
+        component={BellIcon}
+        aria-hidden="true"
+        focusable="false"
+        sx={liveBell ? styles.liveGlyph : styles.glyph}
+      />
       <Box component={TasksIcon} aria-hidden="true" focusable="false" sx={styles.glyph} />
       <Box aria-hidden="true" sx={styles.avatar}>
         {avatar ?? <PersonOutlinedIcon sx={styles.avatarGlyph} />}
