@@ -244,11 +244,13 @@ Every user-facing string is a translated key, and every key exists in **both** l
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
 `src/i18n/localization.json` is the merge of every **eager** catalog, produced by
 `scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
-regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
-(password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
+regenerates it. The ten catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+(password recovery, password policy, settings, the notification content `ui_notification.*` in
+`components/ui-notification-content`, the app shell `app_shell.*`, coming soon
 `coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
 `auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
-`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+`auth/components/recovery-codes-notice`, and the notification centre `notification_center.*` in
+`modules/user/features/notifications`) are left out of it and registered by their owning chunk; a
 key in one of them resolves only in the files its `owners` list names.
 
 - **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
@@ -857,7 +859,8 @@ top-level interface or alias. The gate fails at those positions:
   `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
   as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
-  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+  type-only file (`export type CallerTextFieldProps = Omit<FormTextFieldProps, ControllerOwnedTextFieldProp>;`)
+  and use the name.
 
 Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
 `AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
@@ -1055,7 +1058,11 @@ literal's method, and wiring that registers the wrong implementation behind the 
 
 Per-module / per-infra composition roots (issue #109): tokens and registrations are
 owned by each area, not centralized. `src/config/dependency-injection-config.ts` is a
-thin aggregator that only collects the registrars.
+thin aggregator that only collects the registrars. One registrar sits at a feature root rather
+than under `config/`: `src/modules/user/features/notifications/{di,tokens}.ts`
+(`NOTIFICATION_TOKENS`, issue #391), so the feature can move to its own module unchanged. It is
+not in `.dependency-cruiser.js` `DI_COMPOSITION_ROOTS`, so the boundary rules guard it, not
+`no-di-config-import-outside-composition-root`.
 
 ```typescript
 // 1. Declare the token in the owning area's token module, e.g. src/services/my-area/tokens.ts
@@ -1831,7 +1838,9 @@ build goes red. Know them before you touch a config file:
   foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host
 - `make check-security-headers` (the `security headers` job of the `security testing` workflow)
   builds `--target production`, boots it, and asserts every header on the emitted responses,
-  then boots it again with `APP_CONFIG_*` overrides that must reach `connect-src`. The policy
+  then boots it again with `APP_CONFIG_*` API overrides that must reach `connect-src` and
+  `APP_CONFIG_NOTIFICATION_STYLE=inline`, which must reach the served runtime-config block
+  (`scripts/ci/check-security-headers.sh`). The policy
   loader refuses a weakened baseline, so a relaxation is a reviewed change to the floors and
   their tests, never a lone edit that makes a run pass
 
