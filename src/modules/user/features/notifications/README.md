@@ -41,5 +41,22 @@ types in `src/lib/notifications/types` with `import type`, so the feature can mo
 `src/modules/notifications/` without changing a caller. The public barrel (`index.ts`) exports
 types only.
 
-Later stories add the DI token and the hook seam, then the port and the shell slot; this README
-grows with them.
+## The token and the hook seam
+
+`NOTIFICATION_TOKENS.NotificationRepository` (`tokens.ts`) is the DI token, and
+`NotificationsRegistrar` (`di.ts`) registers the in-memory singleton under it by value.
+`src/config/dependency-injection-config.ts` applies the registrar with one import and one array
+entry, after the user module registrar. A real adapter later replaces that one registration.
+
+The container-free shell does not resolve the token. It calls `useNotificationRepository()`
+(`hooks/use-notification-repository.ts`), the one seam that returns the same singleton, so the
+shell never loads tsyringe or the composition root. A unit test resolves the token and asserts it
+is that very instance.
+
+`di.ts` sits at the feature root, so the `no-di-config-import-outside-composition-root` rule, whose
+`DI_COMPOSITION_ROOTS` list names `src/modules/<module>/config/di.ts`, does not cover it. An
+importer outside the feature is still stopped by the module and feature boundary rules, and the
+file imports tsyringe as a type only. The gap is recorded here rather than closed by widening that
+list.
+
+Later stories add the port and the shell slot; this README grows with them.
