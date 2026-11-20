@@ -3,8 +3,7 @@ import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const loadCleared = (): Promise<NotificationOutletState> =>
   loadIsolated(
-    async () =>
-      (await import('@/lib/notifications/cleared-notification-outlet')).CLEARED_NOTIFICATION_OUTLET
+    async () => (await import('@/lib/notifications/cleared-notification-outlet')).default
   );
 
 describe('CLEARED_NOTIFICATION_OUTLET', () => {

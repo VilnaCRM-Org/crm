@@ -1,7 +1,7 @@
 import { createRef } from 'react';
 
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
-import { CLEARED_NOTIFICATION_OUTLET } from '@/lib/notifications/cleared-notification-outlet';
+import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notification-outlet';
 import NotificationOutletActions from '@/lib/notifications/notification-outlet-actions';
 import type {
   NotificationFocusReturn,

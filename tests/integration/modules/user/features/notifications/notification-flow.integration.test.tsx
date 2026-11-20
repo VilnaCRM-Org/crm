@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type Context, type JSX, useRef } from 'react';
+import { type Context, type JSX, useCallback, useRef } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 
 import UINotificationOutlet from '@/components/ui-notification-outlet';
@@ -86,17 +86,15 @@ function SettingsProbe(): JSX.Element {
     dispatch: jest.fn(),
   });
 
+  const save = useCallback(() => settle({ kind: 'ok', user }, probe.current), [settle]);
+
   return (
     <>
       <h1 ref={headingRef} tabIndex={-1}>
         Налаштування
       </h1>
       <section aria-label="Профіль">
-        <button
-          ref={buttonRef}
-          type="button"
-          onClick={() => settle({ kind: 'ok', user }, probe.current)}
-        >
+        <button ref={buttonRef} type="button" onClick={save}>
           Зберегти
         </button>
         <UINotificationSlot anchor={SAVE_ANCHOR} />
