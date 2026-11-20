@@ -189,6 +189,7 @@ describe('LocalizationGenerator', () => {
         'modules/user/features/settings/components/user-menu/i18n',
         'modules/user/features/auth/routes/two-factor-catalog/i18n',
         'modules/user/features/auth/components/recovery-codes-notice/i18n',
+        'modules/user/features/notifications/i18n',
       ]);
     });
   });

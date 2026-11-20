@@ -1,0 +1,9 @@
+{
+  "notification_center": {
+    "seed": {
+      "password_changed": "You have changed your password",
+      "email_sent": "We sent a confirmation link to the new address",
+      "saved": "Changes saved"
+    }
+  }
+}

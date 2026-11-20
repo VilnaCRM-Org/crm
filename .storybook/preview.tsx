@@ -13,6 +13,8 @@ import SidebarCollapseSource from '@/components/ui-sidebar/sidebar-collapse-sour
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import userMenuEn from '@/modules/user/features/settings/components/user-menu/i18n/en.json';
 import userMenuUk from '@/modules/user/features/settings/components/user-menu/i18n/uk.json';
+import notificationsEn from '@/modules/user/features/notifications/i18n/en.json';
+import notificationsUk from '@/modules/user/features/notifications/i18n/uk.json';
 import settingsEn from '@/modules/user/features/settings/i18n/en.json';
 import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
 import noticeEn from '@auth/components/recovery-codes-notice/i18n/en.json';
@@ -55,6 +57,7 @@ lazyCatalogLoader.register(i18next, { en: comingSoonEn, uk: comingSoonUk });
 lazyCatalogLoader.register(i18next, { en: userMenuEn, uk: userMenuUk });
 lazyCatalogLoader.register(i18next, { en: twoFactorEn, uk: twoFactorUk });
 lazyCatalogLoader.register(i18next, { en: noticeEn, uk: noticeUk });
+lazyCatalogLoader.register(i18next, { en: notificationsEn, uk: notificationsUk });
 
 const customViewports: ViewportMap = {
   xs: {
