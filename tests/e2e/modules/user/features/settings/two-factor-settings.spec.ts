@@ -20,6 +20,7 @@ import {
   codeListOf,
   codesHeadingOf,
   confirmOf,
+  copiedCodesOf,
   copiedText,
   copyCodesOf,
   copyKeyOf,
@@ -258,9 +259,9 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await expect(
         page.getByRole('status').filter({ hasText: twoFactorText.codesCopied })
       ).toBeAttached();
-      await expectLineAbove(page, twoFactorText.codesCopied);
-      await expect(copyLineOf(page, twoFactorText.codesCopied)).toHaveCount(0, { timeout: 5000 });
-      await expect(copyCodesOf(page)).toHaveText(twoFactorText.copyCodes);
+      await expect(copiedCodesOf(page)).toBeVisible();
+      await expect(copyLineOf(page, twoFactorText.codesCopied)).toHaveCount(0);
+      await expect(copyCodesOf(page)).toBeVisible({ timeout: 5000 });
     });
 
     test('shows the manual-copy line above the button while the clipboard refuses', async ({

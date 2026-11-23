@@ -102,15 +102,18 @@ describe('TwoFactorPanel accessibility', () => {
       'Не вдалося. Виділіть коди вручну.',
       jest.fn().mockRejectedValue(new Error('refused')),
     ],
-  ] as const)('has no violation in the codes view with the %s line', async (_, line, writeText) => {
-    const actor = userEvent.setup();
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    const { container } = renderPanel(panelProps({ settings: CODES, view: viewState('codes') }));
+  ] as const)(
+    'has no violation in the codes view with the %s feedback',
+    async (_, text, writeText) => {
+      const actor = userEvent.setup();
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+      const { container } = renderPanel(panelProps({ settings: CODES, view: viewState('codes') }));
 
-    await actor.click(screen.getByRole('button', { name: 'Скопіювати коди' }));
-    await screen.findByText(line, { selector: 'p' });
+      await actor.click(screen.getByRole('button', { name: 'Скопіювати коди' }));
+      await screen.findByText(text, { selector: '[role="status"]' });
 
-    await expectNoA11yViolations(container);
-    Reflect.deleteProperty(navigator, 'clipboard');
-  });
+      await expectNoA11yViolations(container);
+      Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  );
 });
