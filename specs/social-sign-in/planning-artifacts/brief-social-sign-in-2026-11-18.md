@@ -69,7 +69,8 @@ recovery, and zero regression to the auth page's performance budget.
 
 ### Out
 
-- Linking/unlinking providers in settings (user-service #520; separate feature).
+- Linking/unlinking providers in settings (user-service #520; separate feature, planned 2026-11-23
+  in `specs/social-account-linking/` as a pull request stacked on this one).
 - Backend changes in user-service: it has to add the two mutations (declared here as a pending
   contract), which is tracked as an upstream dependency, not built in this repository.
 - Any REST call from the SPA; social sign-in runs over GraphQL only.

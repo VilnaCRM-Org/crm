@@ -56,6 +56,9 @@ const TWO_FACTOR_SETTINGS_TOKENS = [
   AUTH_TOKENS.GraphQLTwoFactorSettingsRepository,
   AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer,
   AUTH_TOKENS.TwoFactorSettingsProvider,
+  AUTH_TOKENS.GraphQLSocialLinkRepository,
+  AUTH_TOKENS.GraphQLSocialLinkTransformer,
+  AUTH_TOKENS.SocialLinkProvider,
 ];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStore,
@@ -156,6 +159,8 @@ describe('user module composition root', () => {
       'GraphQLSignInProvider',
       'GraphQLSignInRepository',
       'GraphQLSignInTransformer',
+      'GraphQLSocialLinkRepository',
+      'GraphQLSocialLinkTransformer',
       'GraphQLTwoFactorSettingsRepository',
       'GraphQLTwoFactorSettingsTransformer',
       'GraphQLUrl',
@@ -168,6 +173,7 @@ describe('user module composition root', () => {
       'SandboxDemoSessionProvider',
       'SessionLinkDeps',
       'SessionLinkFactory',
+      'SocialLinkProvider',
       'SocialSignInDeps',
       'SocialSignInProvider',
       'SocialSignInRepository',

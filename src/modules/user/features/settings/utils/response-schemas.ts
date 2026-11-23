@@ -60,3 +60,38 @@ export const RegenerateRecoveryCodesResultSchema = z
     regenerateRecoveryCodesUser: z.object({ user: RecoveryCodesUserSchema.nullable() }).nullable(),
   })
   .nullish();
+
+const ProviderSchema = z.enum(['google', 'facebook', 'github', 'twitter']);
+
+const ProvidersSchema = z
+  .array(z.string())
+  .transform((names) => names.flatMap((name) => ProviderSchema.safeParse(name).data ?? []));
+
+const ChangedUserSchema = z.object({ user: z.object({ success: z.literal(true) }) });
+
+export const LinkedSocialProvidersResultSchema = z.object({
+  linkedSocialProviders: ProvidersSchema,
+});
+
+const HTTP_PROTOCOL = /^https?$/;
+
+const LINK_STATE = /^link\../;
+
+const LinkAuthorizationUrlSchema = z.url({ protocol: HTTP_PROTOCOL });
+
+export const InitiateSocialLinkResultSchema = z.object({
+  initiateSocialLinkUser: z.object({
+    user: z.object({
+      authorizationUrl: LinkAuthorizationUrlSchema,
+      state: z.string().regex(LINK_STATE),
+    }),
+  }),
+});
+
+export const CompleteSocialLinkResultSchema = z.object({
+  completeSocialLinkUser: ChangedUserSchema,
+});
+
+export const UnlinkSocialProviderResultSchema = z.object({
+  unlinkSocialProviderUser: ChangedUserSchema,
+});

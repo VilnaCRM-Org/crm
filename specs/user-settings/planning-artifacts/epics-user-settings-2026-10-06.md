@@ -315,7 +315,7 @@ used by settings alone (R16).
   superseded 2026-10-21: the Figma grey `#969B9D` stays, under a scoped exception). Amended
   2026-10-21: the name line greets with the first name and surname only, taken from the ПІБ
   (three or more words show the second word then the first), and the monogram follows it.
-- FR-7a (added 2026-10-21): a UI-only "Соціальні мережі" card, Figma-exact, four tiles in a
+- FR-7a (added 2026-10-21; superseded 2026-11-23 by `specs/social-account-linking/`): a UI-only "Соціальні мережі" card, Figma-exact, four tiles in a
   labelled list, each with a hidden "linking not available yet" status; no actions (G6).
 - FR-8: one form, two `h2` sections, labelled fields with `autocomplete`, eye toggles, Save and
   Clear; Enter submits. Amended 2026-10-21: the name is a row above "Особисті дані", labelled

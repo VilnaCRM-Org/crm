@@ -204,4 +204,83 @@ describe('settings response schemas', () => {
       expect(schemas[schema].safeParse({ [field]: { user: null } }).success).toBe(true);
     });
   });
+
+  it('keeps the four providers of the linked list and drops any other', async () => {
+    const { LinkedSocialProvidersResultSchema: schema } = await loadSchemas();
+
+    expect(
+      schema.parse({ linkedSocialProviders: ['google', 'apple', 'facebook', 'github', 'twitter'] })
+    ).toEqual({ linkedSocialProviders: ['google', 'facebook', 'github', 'twitter'] });
+  });
+
+  it.each([undefined, {}, { linkedSocialProviders: null }, { linkedSocialProviders: [1] }])(
+    'rejects the linked list %j',
+    async (payload) => {
+      const { LinkedSocialProvidersResultSchema: schema } = await loadSchemas();
+
+      expect(schema.safeParse(payload).success).toBe(false);
+    }
+  );
+
+  it.each(['https://provider.example/authorize?a=b', 'http://localhost:8080/consent'])(
+    'accepts a link that starts at %s with a marked state',
+    async (authorizationUrl) => {
+      const { InitiateSocialLinkResultSchema: schema } = await loadSchemas();
+      const payload = { initiateSocialLinkUser: { user: { authorizationUrl, state: 'link.a' } } };
+
+      expect(schema.parse(payload)).toEqual(payload);
+    }
+  );
+
+  it.each([
+    ['a script URL', 'javascript:alert(1)', 'link.a'],
+    ['a scheme that ends like http', 'xhttp://provider.example', 'link.a'],
+    ['a scheme that starts like https', 'httpsx://provider.example', 'link.a'],
+    ['a relative URL', '/authorize', 'link.a'],
+    ['an unmarked state', 'https://provider.example', 'a'],
+    ['a state that only contains the mark', 'https://provider.example', 'a-link.b'],
+    ['a mark without its dot', 'https://provider.example', 'linkab'],
+    ['a state that is the mark alone', 'https://provider.example', 'link.'],
+  ])('rejects a link that starts with %s', async (_name, authorizationUrl, state) => {
+    const { InitiateSocialLinkResultSchema: schema } = await loadSchemas();
+
+    expect(
+      schema.safeParse({ initiateSocialLinkUser: { user: { authorizationUrl, state } } }).success
+    ).toBe(false);
+  });
+
+  it.each([{}, { initiateSocialLinkUser: null }, { initiateSocialLinkUser: { user: null } }])(
+    'rejects the started link %j',
+    async (payload) => {
+      const { InitiateSocialLinkResultSchema: schema } = await loadSchemas();
+
+      expect(schema.safeParse(payload).success).toBe(false);
+    }
+  );
+
+  describe.each([
+    ['CompleteSocialLinkResultSchema', 'completeSocialLinkUser'],
+    ['UnlinkSocialProviderResultSchema', 'unlinkSocialProviderUser'],
+  ] as const)('%s', (name, field) => {
+    it('accepts a success', async () => {
+      const schema = (await loadSchemas())[name];
+      const payload = { [field]: { user: { success: true } } };
+
+      expect(schema.parse(payload)).toEqual(payload);
+    });
+
+    it.each([
+      undefined,
+      {},
+      { [field]: null },
+      { [field]: {} },
+      { [field]: { user: null } },
+      { [field]: { user: {} } },
+      { [field]: { user: { success: false } } },
+    ])('rejects %j', async (payload) => {
+      const schema = (await loadSchemas())[name];
+
+      expect(schema.safeParse(payload).success).toBe(false);
+    });
+  });
 });

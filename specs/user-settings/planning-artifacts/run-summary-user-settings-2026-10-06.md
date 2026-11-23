@@ -137,6 +137,7 @@ the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 | D1   | v1 scope: `/settings` profile card (name, e-mail + resend, password), toasts, 2FA slot                               |
 | D2   | Superseded 2026-10-21 for the social card (D2a): no avatar upload or social networks section; decorative monogram    |
 | D2a  | 2026-10-21: the social networks card renders UI-only with no actions (PRD FR-7a); linking stays out (G6)             |
+| D2b  | 2026-11-23: the social tiles link and unlink (`specs/social-account-linking/`); supersedes D2a                       |
 | D3   | No app-shell navigation; one flag-gated home link to `/settings`, shared with 2FA                                    |
 | D4   | Current user from `users(first: 1)`; its IRI `id` addresses both mutations                                           |
 | D5   | No pending schema extension: every operation used is in pinned v2.8.0                                                |

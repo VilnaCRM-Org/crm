@@ -72,7 +72,7 @@ export default function UserProfile(): JSX.Element {
               saveRef={saveRef}
               headingRef={headingRef}
             />
-            <SocialNetworks />
+            <SocialNetworks toasts={toasts} />
           </Box>
           <TwoFactorSettings />
         </SettingsGrid>

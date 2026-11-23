@@ -7,6 +7,7 @@ import {
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import { nameField } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import { linkButton } from '@tests/e2e/modules/user/features/settings/utils/social-links-page';
 import {
   cancelOf,
   codeCellsOf,
@@ -84,7 +85,7 @@ test.describe('Two-factor settings keyboard contract (issue #331)', () => {
   });
 
   test('off offers the start button as its only stop', async ({ page }) => {
-    await page.getByRole('button', { name: t('settings.profile.clear'), exact: true }).focus();
+    await linkButton(page, 'Twitter').focus();
 
     await expectTabOrder(page, [
       { locator: startOf(page), visibleFocus: true },

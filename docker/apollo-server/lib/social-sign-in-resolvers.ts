@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 // real consent screen. Completion never exchanges the code, so no client secret is ever read.
 
 const PROVIDERS = ['google', 'github', 'facebook', 'twitter'] as const;
-type SocialProvider = (typeof PROVIDERS)[number];
+export type SocialProvider = (typeof PROVIDERS)[number];
 
 interface InitiateInput {
   clientMutationId?: string | null;
@@ -100,7 +100,7 @@ const reject = (errorCode: string, status: number, message: string): never => {
   });
 };
 
-const isSocialProvider = (value: string): value is SocialProvider =>
+export const isSocialProvider = (value: string): value is SocialProvider =>
   (PROVIDERS as readonly string[]).includes(value);
 
 const spaOrigin = (): string =>

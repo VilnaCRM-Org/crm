@@ -21,6 +21,10 @@ import server, { userServiceGraphql } from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const RESENT = 'Посилання для підтвердження надіслано повторно';
 const FAILED = 'Не вдалося надіслати посилання. Спробуйте ще раз.';
 const STATUS = 'E-mail не підтверджено';

@@ -14,6 +14,7 @@ import type {
 import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
 import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import FakeBroadcastChannel from '@tests/unit/utils/fake-broadcast-channel';
 
 const mockStart = jest.fn<Promise<SocialStartOutcome>, unknown[]>();
 const mockComplete = jest.fn<Promise<SocialSignInOutcome>, unknown[]>();
@@ -97,6 +98,70 @@ describe('SocialCallback page', () => {
     window.sessionStorage.clear();
     window.history.replaceState(null, '', '/');
     jest.restoreAllMocks();
+  });
+
+  describe('returning to a linking popup', () => {
+    beforeEach(() => {
+      FakeBroadcastChannel.install();
+      jest.spyOn(window, 'close').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => FakeBroadcastChannel.uninstall());
+
+    it('hands the code to the settings tab, strips the query and closes', () => {
+      visit(CALLBACK, '?code=granted&state=link.issued');
+
+      const posted = FakeBroadcastChannel.opened.flatMap((channel) => channel.posted);
+      expect(posted[0]).toEqual({
+        provider: 'google',
+        code: 'granted',
+        state: 'link.issued',
+        error: null,
+      });
+      expect(window.location.search).toBe('');
+      expect(window.close).toHaveBeenCalled();
+    });
+
+    it('hands a provider refusal to the settings tab', () => {
+      visit(CALLBACK, '?error=access_denied&state=link.issued');
+
+      expect(FakeBroadcastChannel.opened[0]?.posted[0]).toEqual({
+        provider: 'google',
+        code: null,
+        state: 'link.issued',
+        error: 'access_denied',
+      });
+    });
+
+    it('never signs in, not even for a state this tab saved, and offers no retry', () => {
+      returnFrom('google', { code: 'granted', state: 'link.issued' });
+
+      expect(mockResolve).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('titles the page and focuses its only heading, with what to do next', () => {
+      visit(CALLBACK, '?code=granted&state=link.issued');
+
+      expect(document.title).toContain('Підключення облікового запису');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+      expect(screen.getByRole('heading')).toHaveAttribute('tabindex', '-1');
+      expect(screen.getByRole('heading')).toHaveStyle({ fontSize: '1.375rem', fontWeight: '700' });
+      expect(screen.getByRole('heading')).toHaveTextContent('Підключення облікового запису');
+      expect(
+        screen.getByText(
+          'Поверніться до налаштувань, щоб побачити результат. Це вікно можна закрити.'
+        )
+      ).toBeInTheDocument();
+    });
+
+    it('keeps an unmarked state a sign-in', () => {
+      visit(CALLBACK, '?code=granted&state=unknown');
+
+      expect(FakeBroadcastChannel.opened).toHaveLength(0);
+      expect(window.close).not.toHaveBeenCalled();
+      expect(document.title).toContain('Вхід');
+    });
   });
 
   describe('starting from a provider button', () => {

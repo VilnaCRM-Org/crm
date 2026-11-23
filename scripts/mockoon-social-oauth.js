@@ -33,12 +33,13 @@ const SCENARIOS = Object.freeze({
 });
 
 // Every reflected value is constrained before the page renders, so nothing a request carries can
-// inject markup: a local SPA callback URL for a known provider, a v4 UUID state, a known provider.
+// inject markup: a local SPA callback URL for a known provider, a v4 UUID state, marked when it
+// links an account, a known provider.
 const PROVIDERS = '(google|github|facebook|twitter)';
 const PROVIDER_PATTERN = `^${PROVIDERS}$`;
 const LOCAL_ORIGIN = 'https?://(localhost|[a-z0-9-]+\\.localhost)(:[0-9]{1,5})?';
 const REDIRECT_URI_PATTERN = `^${LOCAL_ORIGIN}/auth/callback/${PROVIDERS}$`;
-const STATE_PATTERN = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+const STATE_PATTERN = '^(link\\.)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 
 function fail(message) {
   throw new Error(`mockoon-social-oauth: ${message}`);

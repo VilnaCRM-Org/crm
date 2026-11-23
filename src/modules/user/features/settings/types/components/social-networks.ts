@@ -1,7 +1,93 @@
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType, Ref, RefObject, SVGProps } from 'react';
 
-export interface SocialTileProps {
+import type { ToastQueue } from '@/components/types/ui-toast';
+import type { SocialLinkProviderId } from '@/modules/user/types/social-link/social-link-callback';
+
+import type {
+  SocialLinks,
+  SocialLinksStatus,
+  SocialLinkStep,
+  UnlinkConfirmation,
+} from '../social-link/social-links';
+
+export interface SocialNetworksProps {
+  readonly toasts: ToastQueue;
+}
+
+export interface SocialListProps {
+  readonly links: SocialLinks;
+  readonly confirmation: UnlinkConfirmation;
+  readonly headingId: string;
+}
+
+export interface SocialNetworksCardProps {
+  readonly links: SocialLinks;
+}
+
+export interface SocialTileProvider {
+  readonly id: SocialLinkProviderId;
   readonly label: string;
   readonly Icon: ComponentType<SVGProps<SVGSVGElement>>;
-  readonly status: string;
+}
+
+export interface SocialTileProps {
+  readonly tile: SocialTileProvider;
+  readonly linked: boolean;
+  readonly busy: boolean;
+  readonly onLink: SocialLinkStep;
+  readonly onUnlink: SocialLinkStep;
+}
+
+export interface SocialTileLabelProps {
+  readonly tile: SocialTileProvider;
+  readonly status?: string | undefined;
+}
+
+export interface SocialTileControlProps {
+  readonly tile: SocialTileProvider;
+  readonly busy: boolean;
+  readonly controlRef: Ref<HTMLButtonElement>;
+  readonly onActivate: () => void;
+}
+
+export interface SocialInertTileProps {
+  readonly tile: SocialTileProvider;
+}
+
+export interface SocialLoadFailureProps {
+  readonly retrying: boolean;
+  readonly headingRef: RefObject<HTMLElement | null>;
+  readonly onRetry: () => void;
+}
+
+export interface SocialUnlinkRowProps {
+  readonly confirmation: UnlinkConfirmation;
+  readonly busy: boolean;
+}
+
+export interface SocialUnlinkConfirmationProps {
+  readonly label: string;
+  readonly busy: boolean;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}
+
+export interface SocialUnlinkActionsProps {
+  readonly questionId: string;
+  readonly busy: boolean;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}
+
+export interface SocialLoadStatusProps {
+  readonly status: SocialLinksStatus;
+}
+
+export interface TileControlBox {
+  current: HTMLButtonElement | null;
+}
+
+export interface TileFocus {
+  readonly controlRef: TileControlBox;
+  readonly attach: (node: HTMLButtonElement | null) => () => void;
 }

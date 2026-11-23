@@ -21,6 +21,10 @@ import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const NAME = 'Ваше ПІБ';
 const EMAIL = 'E-mail';
 const NAME_PASSWORD = 'Пароль для зміни імені';

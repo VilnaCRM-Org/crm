@@ -52,6 +52,9 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useSectionReveal`,
   `useCollapseFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
+- `hooks/` for social accounts — `useSocialLinks` over `useSocialLinkAttempt`, `useSocialUnlink`,
+  `useSocialLinkSettle` and `useSocialBusy`; `useUnlinkConfirmation` asks before an unlink; a tile
+  keeps the keyboard through `useTileFocus`.
 - `hooks/` for two-factor — the compose hook `useTwoFactorSettings` over `useTwoFactorTransition`
   (the view state store) and the three operations `useTwoFactorSetup`, `useTwoFactorDisable` and
   `useRecoveryCodesRegenerate`, which settle through `useTwoFactorSettle`. The panel reads
@@ -61,14 +64,17 @@ and sees every outcome as a toast or a field error. The decisions are recorded i
   `useConfirmationShell`. Focus and feedback are `useConfirmFieldFocus`, `useOptionalFocus`,
   `useEscapeCancel`, `useCopyToClipboard`, `useCopyAnnouncement`, `useKeyInfoTooltip`,
   `useKeyInfoControls` and `useKeyInfoDismissal`.
-- `data-providers/` — `ProfileProvider` and `TwoFactorSettingsProvider`, the translation
-  boundaries.
-- `transformers/` — `GraphQLProfileTransformer` and `GraphQLTwoFactorSettingsTransformer`.
+- `data-providers/` — `ProfileProvider`, `TwoFactorSettingsProvider` and `SocialLinkProvider`, the
+  translation boundaries.
+- `transformers/` — `GraphQLProfileTransformer`, `GraphQLTwoFactorSettingsTransformer` and
+  `GraphQLSocialLinkTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and its three GraphQL document seams, and
   `GraphQLTwoFactorSettingsRepository` with its four (`setup`, `confirm`, `disable` and
-  `regenerate-recovery-codes` mutations, each a `.graphql` document beside its typed mutation).
-- `utils/` — `ProfileChangeDetector`, the zod `response-schemas`, and the container-free chip read:
-  `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
+  `regenerate-recovery-codes` mutations, each a `.graphql` document beside its typed
+  mutation), and `GraphQLSocialLinkRepository` with one query and three mutations (pending, see
+  `src/api/contracts/README.md`).
+- `utils/` — `ProfileChangeDetector`, `TileFocusHandler`, the zod `response-schemas`, and the
+  container-free chip read: `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
 - `types/` — type-only files, grouped by source area (TB-1).
 - `i18n/{en,uk}.json` — the lazy settings catalog.
 
@@ -141,7 +147,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │ │     └ ProfileSectionForm password     UIForm key=saved, submitRef, onInvalid, ClearButton
   │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords, policy rules
   │ │       └ UIServerFieldError per field, p role=status
-  │ ├ SocialNetworks                    h2 "Соціальні мережі", four presentational tiles
+  │ ├ SocialNetworks                    h2 "Соціальні мережі", four tiles, toasts
   │ └ TwoFactorSettings                 section, useTwoFactorSettings; reports inside its card
   │   └ TwoFactorPanel                  CardHeader (key=view) + one view, ArrivalContext
   │     ├ OffView                       off: UIForm "Почати налаштування", OffGuide, banner
@@ -178,13 +184,11 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
 No file names a controller, a service or a handler: the board has none. Gaps that remain gaps: the
-board's social-network component is presentational only — `SocialNetworks` draws the Figma card as a
-list rather than buttons, each tile telling a screen reader that linking is not available yet,
-because user-service has no link, list or unlink — the header menu with the "Log-out" edge is now
-drawn (the app-shell user menu in `components/user-menu/`, declared as `shell.userMenu` in
-`routes/index.ts`, issue #362) and is no longer one of them, nor is the two-factor card (#331),
-whose layers are in the rows above, and the session link reads and resets `useAuthStore`
-without a Repository → State edge on the board.
+board draws no popup or callback for linking a social account (`specs/social-account-linking`). The
+header menu with the "Log-out" edge is now drawn (the app-shell user menu in
+`components/user-menu/`, declared as `shell.userMenu` in `routes/index.ts`, issue #362) and is no
+longer one of them, nor is the two-factor card (#331), whose layers are in the rows above. The
+session link reads and resets `useAuthStore` without a Repository → State edge on the board.
 
 ## Data provider outcomes
 
@@ -290,6 +294,15 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   desktop against 23 px at the top, icon-only tiles below 768 px that fill the columns first
   (Google and GitHub on top, as on the sign-in provider grid), and the Figma heading copy
   "Социальные сети" translated to "Соціальні мережі" / "Social networks".
+- **The tiles link and unlink through a popup** (2026-11-23, `specs/social-account-linking`). The
+  token lives in memory, so the settings tab never leaves: `useSocialLinkAttempt` opens the popup
+  in the click, asks `initiateSocialLinkUser` for an authorization URL and a `link.…` state, and
+  waits on the `crm.socialLink` `BroadcastChannel`. `/auth/callback/:provider` sees the mark,
+  posts the query and closes; the settings tab completes only the exact state it was issued. A
+  result changes its own provider's tile alone, shows one toast, and leaves the keyboard on the
+  tile. Until `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to
+  press. A linked tile is `315:11754`, with its bin in `#0074B5` because the Figma blue fails 3:1.
+  The bin asks first in one row under the tiles (PRD L6); Figma draws none.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.

@@ -6,6 +6,10 @@ import i18n from '@/i18n';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import renderUserProfile from '@tests/unit/utils/render-user-profile';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
   jest.requireActual('@tests/unit/utils/loading-profile-load-stub')
 );

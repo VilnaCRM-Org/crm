@@ -160,6 +160,17 @@ codegen` and `make codegen-check`), fails when that header is missing or no long
 - **Removed by:** the contract pin bump to the first user-service release that declares both
   mutations.
 
+`src/api/contracts/pending/social-account-linking.graphql` (`specs/social-account-linking/`):
+
+- **Pending against:** `v2.8.0`.
+- **Upstream source:** none yet; user-service #520 is open and shaped differently (it finishes a
+  link in a REST redirect). The list query and the initiate, complete and unlink mutations are
+  declared here in the API Platform style. A link `state` starts with `link.`, and the refusals are
+  `identity_linked_to_other_user`, `provider_already_linked` and `last_sign_in_method`.
+- **Mock answers:** `docker/apollo-server/lib/social-link-resolvers.ts` keeps the links in memory,
+  one set for every client, and uses the same consent page as sign-in.
+- **Removed by:** the contract pin bump to the first user-service release that declares them.
+
 The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswordResetUser`
 answer every valid input with the same payload, so domain refusals, `429`, `503` and aborts are
 exercised in the browser lanes (`page.route`) and the integration suite (msw) instead. The dev

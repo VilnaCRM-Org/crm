@@ -1,0 +1,8 @@
+mutation InitiateSocialLink($input: initiateSocialLinkUserInput!) {
+  initiateSocialLinkUser(input: $input) {
+    user {
+      authorizationUrl
+      state
+    }
+  }
+}

@@ -8,6 +8,10 @@ import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const mockDismiss = jest.fn();
 
 jest.mock('@/hooks/use-toast-queue', () => ({

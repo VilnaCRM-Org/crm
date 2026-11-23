@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
 
 import { profileResolvers } from './profile-resolvers';
+import { socialLinkResolvers } from './social-link-resolvers';
 import { socialSignInResolvers } from './social-sign-in-resolvers';
 import {
   issueResetToken,
@@ -90,7 +91,7 @@ export function clearUsers(): void {
 }
 
 export const resolvers = {
-  Query: { ...profileResolvers.Query },
+  Query: { ...profileResolvers.Query, ...socialLinkResolvers.Query },
   Mutation: {
     createUser: async (
       _: unknown,
@@ -147,6 +148,7 @@ export const resolvers = {
     ...profileResolvers.Mutation,
     ...twoFactorResolvers.Mutation,
     ...socialSignInResolvers.Mutation,
+    ...socialLinkResolvers.Mutation,
   },
 };
 

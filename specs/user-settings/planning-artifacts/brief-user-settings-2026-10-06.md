@@ -404,6 +404,7 @@ readiness; nothing already tracked (research §4.9) is filed again.
 | D1       | v1: `/settings` card with name, e-mail and resend, password, toasts, 2FA slot        |
 | D2       | No avatar or social networks (social part superseded 2026-10-21, D2a); monogram      |
 | D2a      | 2026-10-21: the social networks card renders UI-only, no actions; amends D2          |
+| D2b      | 2026-11-23: the social tiles link and unlink; supersedes D2a                         |
 | D3       | No app-shell menu; one flag-gated home link, shared with 2FA                         |
 | D4       | Current user from `users(first: 1)`; its `id` addresses both mutations               |
 | D5       | No schema extension: all three operations are in pinned v2.8.0                       |

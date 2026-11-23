@@ -1,0 +1,67 @@
+# pending-against: v2.8.0
+# Linking a social provider to the signed-in account (user-service #520). Provisional local
+# contract in the API Platform style; no upstream release declares it yet. A link state starts
+# with "link.", so the callback page can tell it from a sign-in state.
+extend type Query {
+  "Providers linked to the signed-in user."
+  linkedSocialProviders: [String!]!
+}
+
+extend type Mutation {
+  "Starts linking a provider to the signed-in user."
+  initiateSocialLinkUser(input: initiateSocialLinkUserInput!): initiateSocialLinkUserPayload
+
+  "Links the provider account behind the code to the signed-in user."
+  completeSocialLinkUser(input: completeSocialLinkUserInput!): completeSocialLinkUserPayload
+
+  "Unlinks a provider from the signed-in user."
+  unlinkSocialProviderUser(input: unlinkSocialProviderUserInput!): unlinkSocialProviderUserPayload
+}
+
+input initiateSocialLinkUserInput {
+  clientMutationId: String
+  provider: String!
+}
+
+type initiateSocialLinkUserPayload {
+  user: initiateSocialLinkUserPayloadData
+  clientMutationId: String
+}
+
+type initiateSocialLinkUserPayloadData implements Node {
+  id: ID!
+  authorizationUrl: String!
+  state: String!
+}
+
+input completeSocialLinkUserInput {
+  clientMutationId: String
+  provider: String!
+  code: String!
+  state: String!
+}
+
+type completeSocialLinkUserPayload {
+  user: completeSocialLinkUserPayloadData
+  clientMutationId: String
+}
+
+type completeSocialLinkUserPayloadData implements Node {
+  id: ID!
+  success: Boolean!
+}
+
+input unlinkSocialProviderUserInput {
+  clientMutationId: String
+  provider: String!
+}
+
+type unlinkSocialProviderUserPayload {
+  user: unlinkSocialProviderUserPayloadData
+  clientMutationId: String
+}
+
+type unlinkSocialProviderUserPayloadData implements Node {
+  id: ID!
+  success: Boolean!
+}

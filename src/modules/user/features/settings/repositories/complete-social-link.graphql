@@ -1,0 +1,7 @@
+mutation CompleteSocialLink($input: completeSocialLinkUserInput!) {
+  completeSocialLinkUser(input: $input) {
+    user {
+      success
+    }
+  }
+}
