@@ -4,6 +4,7 @@ import layoutStyles from '@/components/layouts/app-layout.styles';
 import type { NoticeTargetRef } from '@/components/types/ui-bell-notice';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
+import useFrameFollow from './use-frame-follow';
 import useMeasureOnResize from './use-measure-on-resize';
 
 const HEADER_HEIGHT = parseFloat(layoutStyles.headerHeight);
@@ -12,14 +13,15 @@ function release(): void {
   document.documentElement.style.removeProperty(layoutStyles.overhangProperty);
 }
 
-function revealCovered(cardBottom: number, card: HTMLElement): void {
+function revealCovered(area: DOMRect, card: HTMLElement): void {
   const { activeElement } = document;
   if (!(activeElement instanceof HTMLElement) || card.contains(activeElement)) {
     return;
   }
-  const { top } = activeElement.getBoundingClientRect();
-  if (top >= HEADER_HEIGHT && top < cardBottom) {
-    window.scrollBy({ top: -Math.ceil(cardBottom - top) });
+  const { top, left, right } = activeElement.getBoundingClientRect();
+  if (right <= area.left || left >= area.right) return;
+  if (top >= HEADER_HEIGHT && top < area.bottom) {
+    window.scrollBy({ top: -Math.ceil(area.bottom - top) });
   }
 }
 
@@ -28,10 +30,10 @@ function measureOverhang(card: HTMLElement | null): void {
     release();
     return;
   }
-  const { bottom } = card.getBoundingClientRect();
-  const overhang = `${Math.max(0, bottom - HEADER_HEIGHT)}px`;
+  const area = card.getBoundingClientRect();
+  const overhang = `${Math.max(0, area.bottom - HEADER_HEIGHT)}px`;
   document.documentElement.style.setProperty(layoutStyles.overhangProperty, overhang);
-  revealCovered(bottom, card);
+  revealCovered(area, card);
 }
 
 export default function useNoticeClearance(
@@ -40,6 +42,7 @@ export default function useNoticeClearance(
 ): () => void {
   const measure = useCallback((): void => measureOverhang(cardRef.current), [cardRef]);
   useMeasureOnResize(measure, release, rows);
+  useFrameFollow('focusin', measure);
 
   return measure;
 }

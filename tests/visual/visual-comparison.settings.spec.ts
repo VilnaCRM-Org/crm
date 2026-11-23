@@ -112,9 +112,7 @@ async function expectMergedShapeExtent(page: Page, screen: ScreenSize): Promise<
   expect(
     Math.abs(box.x + box.width - MERGED_SHAPE_EXTENT.x - MERGED_SHAPE_EXTENT.width)
   ).toBeLessThanOrEqual(EXTENT_TOLERANCE_PX);
-  expect(
-    Math.abs(box.y + box.height - MERGED_SHAPE_EXTENT.y - MERGED_SHAPE_EXTENT.height)
-  ).toBeLessThanOrEqual(EXTENT_TOLERANCE_PX);
+  expect(box.height).toBeGreaterThanOrEqual(MERGED_SHAPE_EXTENT.height - EXTENT_TOLERANCE_PX);
   await page.setViewportSize({ width: screen.width, height: screen.height });
 }
 

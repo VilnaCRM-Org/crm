@@ -107,13 +107,13 @@ test.describe.parallel('App shell visual tests (issue #362)', () => {
     for (const screen of HISTORY_SCREENS) {
       test(`[app-shell] history open ${screen.name}`, async ({ page }) => {
         await page.clock.install({ time: FROZEN_AT });
-        await freezeClock(page);
         await openShell(page, screen, ROUTE_PATHS.home);
         await bellOf(page).click();
         await expect(bellOf(page)).toHaveAttribute('aria-expanded', 'true');
         await expect(
           page.getByRole('heading', { level: 2, name: historyHeading, exact: true })
         ).toBeVisible();
+        await freezeClock(page);
         await restPointer(page);
 
         await takeShellSnapshot(page, screen, 'history-open');

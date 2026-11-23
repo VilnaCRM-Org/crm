@@ -115,6 +115,46 @@ describe('useNoticeClearance', () => {
       return button;
     };
 
+    it('is scrolled back when it takes focus after the card was shown', async () => {
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      focusAt(73);
+      expect(scrollBy).not.toHaveBeenCalled();
+      await nextFrame();
+
+      expect(scrollBy).toHaveBeenCalledTimes(1);
+      expect(scrollBy).toHaveBeenCalledWith({ top: -52 });
+    });
+
+    it('is not followed any more once the card is gone', async () => {
+      const { unmount } = renderHook(() => useNoticeClearance(card(125), rows()));
+      unmount();
+
+      focusAt(73);
+      await nextFrame();
+
+      expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['left of', { left: 0, right: 100 }, false],
+      ['right of', { left: 300, right: 400 }, false],
+      ['one pixel under the left edge of', { left: 0, right: 101 }, true],
+      ['one pixel under the right edge of', { left: 299, right: 400 }, true],
+    ])('takes a control %s the card into account only if covered', (_name, sides, covered) => {
+      const button = document.createElement('button');
+      button.getBoundingClientRect = (): DOMRect => ({ top: 100, ...sides }) as DOMRect;
+      document.body.appendChild(button);
+      button.focus();
+      const ref = card(125);
+      (ref.current as HTMLElement).getBoundingClientRect = (): DOMRect =>
+        ({ bottom: 125, left: 100, right: 300 }) as DOMRect;
+
+      renderHook(() => useNoticeClearance(ref, rows()));
+
+      expect(scrollBy).toHaveBeenCalledTimes(covered ? 1 : 0);
+    });
+
     it('is scrolled back by the part the card covers', () => {
       focusAt(100);
 

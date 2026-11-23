@@ -28,6 +28,8 @@ export interface NoticeFocus {
   readonly release: NoticeRelease;
 }
 
+export type FollowedEvent = 'focusin' | 'resize';
+
 export interface UIBellNoticeProps {
   readonly views: NotificationViewSet;
   readonly returnFocusRef: NoticeTargetRef;

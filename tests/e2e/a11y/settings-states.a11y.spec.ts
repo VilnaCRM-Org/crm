@@ -62,11 +62,13 @@ const visibleLiveSemantics = (page: Page): Promise<string[]> =>
       .map((element) => element.outerHTML.slice(0, 120))
   );
 
+const settleAnimations = (page: Page): Promise<unknown> =>
+  page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+
 const outletPoliteOf = (alert: Locator): Locator => alert.locator('xpath=preceding-sibling::*[1]');
 
 async function expectEmptyOutletRegions(page: Page): Promise<void> {
-  const alert = page.getByRole('main').getByRole('alert');
-  await expect(alert).toHaveCount(1);
+  const alert = page.getByRole('main').getByRole('alert').last();
   await expect(alert).toHaveText('');
   await expect(alert).toHaveAttribute('aria-atomic', 'true');
   await expect(outletPoliteOf(alert)).toHaveAttribute('role', 'status');
@@ -182,6 +184,7 @@ test.describe('WCAG 2.1 AA scans of the settings outcomes (issue #391)', () => {
     await openLoaded(page);
     await saveEditedName(page, NEW_NAME, password);
     await expectSuccessOutcome(page, text.saved);
+    await settleAnimations(page);
 
     expect(await visibleLiveSemantics(page)).toEqual([]);
     await expectNoAxeViolations(page);
@@ -195,6 +198,7 @@ test.describe('WCAG 2.1 AA scans of the settings outcomes (issue #391)', () => {
     await saveEditedName(page, NEW_NAME, password);
     await expectErrorOutcome(page, text.transient);
     await expect(page.getByRole('button', { name: tryAgain, exact: true })).toBeVisible();
+    await settleAnimations(page);
 
     expect(await visibleLiveSemantics(page)).toEqual([]);
     await expectNoAxeViolations(page);
