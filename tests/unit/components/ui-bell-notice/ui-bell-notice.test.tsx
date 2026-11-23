@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type JSX, useRef } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -60,6 +60,7 @@ const closeButtons = (): HTMLElement[] =>
 
 describe('UIBellNotice', () => {
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.useRealTimers();
     root.removeAttribute('style');
   });
@@ -154,6 +155,18 @@ describe('UIBellNotice', () => {
     expect(root.style.getPropertyValue('--app-top-overhang')).toBe('');
     expect(root.style.getPropertyValue('--bell-centre-x')).toBe('1111px');
     expect(root.style.getPropertyValue('--bell-bottom')).toBe('56px');
+  });
+
+  it('measures the header clearance again when the entrance animation ends', () => {
+    const rect = jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    rect.mockReturnValue({ top: 0, bottom: 129 } as DOMRect);
+    render(<Host views={set(row('one'))} />);
+    expect(root.style.getPropertyValue('--app-top-overhang')).toBe('65px');
+
+    rect.mockReturnValue({ top: 0, bottom: 137 } as DOMRect);
+    fireEvent.animationEnd(screen.getByRole('list'));
+
+    expect(root.style.getPropertyValue('--app-top-overhang')).toBe('73px');
   });
 
   it('renders nothing for an empty batch', () => {

@@ -49,7 +49,7 @@ function NoticeCard({
   onDismiss,
 }: UIBellNoticeProps): JSX.Element {
   const cardRef = useRef<HTMLDivElement>(null);
-  useNoticeClearance(cardRef, views);
+  const measureClearance = useNoticeClearance(cardRef, views);
   const focus = useNoticeFocus({
     views,
     returnFocusRef,
@@ -59,7 +59,7 @@ function NoticeCard({
   const tone = views.items.some(({ kind }) => kind === 'error') ? 'error' : 'success';
 
   return (
-    <Box sx={[styles.root, styles.tones[tone]]}>
+    <Box sx={[styles.root, styles.tones[tone]]} onAnimationEnd={measureClearance}>
       <Box sx={styles.pill} aria-hidden />
       <Box ref={cardRef} sx={styles.card}>
         <Box sx={styles.caret} aria-hidden />

@@ -83,6 +83,18 @@ describe('useNoticeClearance', () => {
     expect(overhang()).toBe('86px');
   });
 
+  it('hands back a measurement for the caller to run once the card has settled', () => {
+    const ref = card(117);
+    const { result } = renderHook(() => useNoticeClearance(ref, rows()));
+    expect(overhang()).toBe('53px');
+    const element = ref.current as HTMLElement;
+    element.getBoundingClientRect = (): DOMRect => ({ bottom: 125 }) as DOMRect;
+
+    result.current();
+
+    expect(overhang()).toBe('61px');
+  });
+
   it('stops listening to resize after unmount', async () => {
     const ref = card(125);
     const { unmount } = renderHook(() => useNoticeClearance(ref, rows()));

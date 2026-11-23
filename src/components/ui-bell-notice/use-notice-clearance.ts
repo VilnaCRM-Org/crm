@@ -37,7 +37,9 @@ function measureOverhang(card: HTMLElement | null): void {
 export default function useNoticeClearance(
   cardRef: NoticeTargetRef,
   rows: NotificationViewSet
-): void {
+): () => void {
   const measure = useCallback((): void => measureOverhang(cardRef.current), [cardRef]);
   useMeasureOnResize(measure, release, rows);
+
+  return measure;
 }
