@@ -1612,7 +1612,8 @@ the outlet regions. Coverage stays 100 % over `src`.
   with the badge incremented. New `tests/e2e/modules/user/features/notifications/bell-history.spec.ts`
   covers J15 under each of the three styles: the badge from 1 to 4 after a three-success save,
   mark-all-read clearing it, Escape, outside click, Tab out, route close, the transient surface left
-  alone under `toast` and `inline`, and no network request.
+  alone under `toast` and `inline`, and no network request (with `notificationEventsUrl` absent, the
+  default in every lane; PRD item 39).
 - **Existing shell specs** that assert the disabled, inert bell change once the registry carries the
   notifications slot (epics Story 3.4):
   - `tests/e2e/modules/app-shell.spec.ts`: the "disabled search, bell and list" test (`:353-377`)

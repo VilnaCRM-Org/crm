@@ -373,6 +373,54 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     and P-9 reads "Opening the dropdown marks nothing read; under `bell` it also hides the merged
 >     card".
 
+> **Amendment 2026-11-23 (owner decision: broadcast-only events).** notification-service exists as a
+> live broadcast hub: it keeps nothing and authorizes no subscriber, so it can carry a notice meant
+> for everyone and nothing meant for one user. The owner chose to use it for broadcast events only,
+> off by default. Like the blocks above these items supersede the PRD body, which stays as first
+> written. The wire contract is in the notifications feature README and is provisional until the
+> notification-service team agrees to it.
+>
+> 37. **What is in scope now.** While the runtime setting `notificationEventsUrl`
+>     (`APP_CONFIG_NOTIFICATION_EVENTS_URL`) names the service, the shell of every protected page
+>     keeps one server-sent-events stream open and records each valid `crm.broadcast` event through
+>     the repository, so it appears in the bell history as an unread row and raises the badge. With
+>     no setting there is no stream, and every requirement below reads exactly as before.
+> 38. **§3.3 and §9, the non-goals.** "Server-pushed or asynchronous notifications" reads
+>     "Server-pushed or asynchronous notifications other than the broadcast events of item 37". "New
+>     notification consumers beyond `/settings`" does not cover that one source. "New or changed
+>     outcome copy" is unchanged: the two broadcast strings are not save outcomes. Still out of
+>     scope: personal notifications, a real notification store, any call to user-service #526 or
+>     #527, a network mock, and an auto-dismiss timer in any variant.
+> 39. **FR-4 and item 19, no request.** The repository still makes none: it stays the in-memory
+>     mock, so history, unread state and mark-all-read live as long as the document, and a reload
+>     loses the recorded events. The stream belongs to the shell, not to the repository. The FR-4
+>     network criterion holds as written while the setting is absent, which is the default in every
+>     image and lane. With the setting, the only traffic attributable to notifications is
+>     `GET <setting>/api/events/stream`, one connection at a time, reconnecting after a loss.
+> 40. **NFR-21 and FR-34, privacy and documentation.** The stream is opened without a token,
+>     credentials or user id. An event carries a code and no text; a code the catalog does not know
+>     is dropped, and the row's words come only from our `en` and `uk` catalogs. Nothing is written
+>     to storage. The origin joins the CSP `connect-src` only through the setting. `SECURITY.md` and
+>     the runtime-config README describe it.
+> 41. **FR-5, FR-6 and NFR-3, presentation.** A broadcast event raises no toast, inline status or
+>     merged card, moves no focus and is not announced; the unread count in the bell's accessible
+>     description is how it is perceived. The accessibility review recommended announcing the badge
+>     change and did not require it; that stays open for the owner. The reconnection delay is not a
+>     display timer, so no notification is dismissed by time.
+> 42. **NFR-12 and §12.** The stream client and the two strings sit in the lazy notifications
+>     chunks, so the change adds nothing to the eager entrypoint or the auth chunks, and the client
+>     loads no composition root, tsyringe, Apollo or zod. notification-service is an optional
+>     dependency: the app, the tests and every image work without it. user-service #526 and #527
+>     stay "not required".
+> 43. **Criteria.** The unit and integration tests of the change cover them, with one exception: the
+>     "no transient surface" clause is asserted under `toast` only.
+>
+>     - Given no setting, when a protected page loads, then no event stream is opened.
+>     - Given the setting, when one valid event arrives, then the history gains one unread row, the
+>       badge rises by one, and no transient surface appears.
+>     - Given the same event id twice, an unknown code or a malformed frame, then nothing is added.
+>     - Given the shell unmounts, then the stream is closed and no reconnection follows.
+
 ## 1. Executive summary
 
 After a user saves their name, e-mail or password on `/settings`, the page confirms the outcome

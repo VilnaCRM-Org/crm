@@ -173,7 +173,9 @@ The research ranks five causes; each variant below is described by which of them
 - A notification centre, history, unread state or badge in variants A and B. Only C shows them,
   and only from the mock.
 - Enabling the header bell in A and B. It stays natively disabled there.
-- Server-pushed or asynchronous notifications.
+- Server-pushed or asynchronous notifications. **Amended 2026-11-23 (owner decision):** broadcast
+  events from notification-service are in scope, off by default (PRD items 37 to 43). Personal
+  notifications stay out.
 - An auto-dismiss timer, in any variant.
 - New or changed outcome copy. All variants say the same eight messages (§7).
 - Per-field success marks in variant B (R10; an optional extension later).

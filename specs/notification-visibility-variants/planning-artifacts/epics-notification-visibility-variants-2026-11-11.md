@@ -39,6 +39,10 @@ PRD's, section references (`§n`) are the architecture's, and `R`, `MA`, `O`, `P
 from the decision record. No story waits for user-service: the only repository implementation is
 the client-side in-memory adapter (MA-5), and #526 and #527 are never called.
 
+> **Amended 2026-11-23 (owner decision: broadcast-only events).** The broadcast stream (PRD items 37
+> to 43) was added after these stories, outside their numbering. It is off by default, so each
+> "no network request" criterion below is read with the setting absent.
+
 Short paths used throughout:
 
 - `features/notifications/` means `src/modules/user/features/notifications/`;

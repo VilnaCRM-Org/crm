@@ -159,6 +159,11 @@ where they differ.
 > raises its outcome through this feature. Variant C can therefore show a mocked history, unread
 > state and badge in the bell dropdown (`377:18485`) as well as the merged card.
 
+> **Owner decision, 2026-11-23 (narrows the one above).** notification-service exists as a live
+> broadcast hub with no storage and no subscriber authorization. The bell may record its broadcast
+> events, off by default; the repository stays the mock, and personal notifications stay out of
+> scope (PRD items 37 to 43).
+
 > Assumption (main agent, after the brief): the notification repository's mock is a **client-side
 > adapter**, not a network mock. It is in-memory and seeded with deterministic fixtures, and is
 > registered by value under the notifications DI token in the user module's composition root.
