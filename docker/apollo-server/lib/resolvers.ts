@@ -17,7 +17,12 @@ import {
   User,
 } from './types';
 import { twoFactorResolvers } from './two-factor-resolvers';
-import { isValidEmail, MAX_EMAIL_LENGTH, rejectViolation } from './violations';
+import {
+  isValidEmail,
+  MAX_EMAIL_LENGTH,
+  rejectFieldViolation,
+  rejectViolation,
+} from './violations';
 
 const validateCreateUserInput = (input: CreateUserInput): void => {
   if (!input.email || !isValidEmail(input.email)) {
@@ -46,23 +51,6 @@ const passwordResetPayload = (clientMutationId?: string | null): PasswordResetPa
   user: null,
   clientMutationId: clientMutationId ?? null,
 });
-
-function rejectIfExists<K, V>(
-  collection: Map<K, V>,
-  item: K,
-  message = 'Item already exists',
-  status = 409,
-  code = 'CONFLICT'
-): void {
-  if (collection.has(item)) {
-    throw new GraphQLError(message, {
-      extensions: {
-        code,
-        http: { status },
-      },
-    });
-  }
-}
 
 const users = new Map<string, User>();
 
@@ -96,7 +84,9 @@ export const resolvers = {
       { input }: { input: CreateUserInput }
     ): Promise<{ user: User; clientMutationId: string }> => {
       validateCreateUserInput(input);
-      rejectIfExists(users, input.email, 'Email already exists');
+      if (users.has(input.email)) {
+        rejectFieldViolation('email', 'This email address is already registered');
+      }
 
       try {
         const newUser: User = {
@@ -147,6 +137,3 @@ export const resolvers = {
     ...twoFactorResolvers.Mutation,
   },
 };
-
-// Expose internal helpers for targeted testing
-export const __test__ = { rejectIfExists };

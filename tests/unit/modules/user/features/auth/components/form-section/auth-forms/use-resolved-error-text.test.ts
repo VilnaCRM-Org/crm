@@ -39,6 +39,10 @@ describe('useResolvedErrorText whitespace normalization', () => {
     expect(resolve('Email already exists')).toBe(EMAIL_USED_KEY);
   });
 
+  it('keeps the e-mail-used key it is handed', () => {
+    expect(resolve(EMAIL_USED_KEY)).toBe(EMAIL_USED_KEY);
+  });
+
   it.each([
     { shape: 'undefined', raw: undefined },
     { shape: 'empty', raw: '' },

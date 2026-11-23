@@ -1,6 +1,8 @@
 import { ApolloError } from '@apollo/client';
 
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
@@ -18,6 +20,9 @@ const mockApollo = (mutate: jest.Mock): ApolloClientLike =>
 const realFactory = (): ApiErrorFactory =>
   new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard());
 
+const realErrors = (): UserServiceErrorTransformer =>
+  new UserServiceErrorTransformer(new FieldViolationParser());
+
 const rejectionOf = async (promise: Promise<unknown>): Promise<unknown> =>
   promise.then(
     () => undefined,
@@ -29,7 +34,7 @@ describe('RegistrationAPI — error message contracts', () => {
 
   it('labels a converted transport failure with the Registration context', async () => {
     const mutate = jest.fn().mockRejectedValue(new Error('Something unexpected happened'));
-    const api = new RegistrationAPI(mockApollo(mutate), realFactory());
+    const api = new RegistrationAPI(mockApollo(mutate), realFactory(), realErrors());
 
     const rejection = await rejectionOf(api.register(credentials));
 
@@ -40,7 +45,7 @@ describe('RegistrationAPI — error message contracts', () => {
 
   it('states the contract violation when the payload does not match the schema', async () => {
     const mutate = jest.fn().mockResolvedValue({ data: { createUser: { user: { id: 1 } } } });
-    const api = new RegistrationAPI(mockApollo(mutate), realFactory());
+    const api = new RegistrationAPI(mockApollo(mutate), realFactory(), realErrors());
 
     const rejection = await rejectionOf(api.register(credentials));
 
@@ -55,7 +60,7 @@ describe('RegistrationAPI — error message contracts', () => {
     const controller = new AbortController();
     controller.abort();
     const mutate = jest.fn().mockRejectedValue(new Error('transport gave up'));
-    const api = new RegistrationAPI(mockApollo(mutate), realFactory());
+    const api = new RegistrationAPI(mockApollo(mutate), realFactory(), realErrors());
 
     const rejection = await rejectionOf(api.register(credentials, { signal: controller.signal }));
 
@@ -69,7 +74,7 @@ describe('RegistrationAPI — error message contracts', () => {
       networkError: Object.assign(new Error('Teapot'), { statusCode: 418 }),
     });
     const mutate = jest.fn().mockRejectedValue(apolloError);
-    const api = new RegistrationAPI(mockApollo(mutate), realFactory());
+    const api = new RegistrationAPI(mockApollo(mutate), realFactory(), realErrors());
 
     const rejection = (await rejectionOf(api.register(credentials))) as ApiError;
 
@@ -89,7 +94,7 @@ describe('RegistrationAPI — error message contracts', () => {
       }),
     });
     const mutate = jest.fn().mockRejectedValue(apolloError);
-    const api = new RegistrationAPI(mockApollo(mutate), realFactory());
+    const api = new RegistrationAPI(mockApollo(mutate), realFactory(), realErrors());
 
     const rejection = (await rejectionOf(api.register(credentials))) as ApiError;
 

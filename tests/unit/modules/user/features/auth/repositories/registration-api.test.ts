@@ -2,6 +2,8 @@ import { ApolloError } from '@apollo/client';
 
 import type { CreateUserMutation } from '@/api/generated/graphql';
 import { ApiError, ApiErrorCodes, ConflictError } from '@/modules/user/lib/api-errors';
+import UserServiceErrorTransformer from '@/modules/user/transformers';
+import FieldViolationParser from '@/modules/user/transformers/field-violation-parser';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
 import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
@@ -16,6 +18,8 @@ type ApolloClient = import('@apollo/client').ApolloClient<
 
 const mockApollo = (mutate: jest.Mock): ApolloClient => ({ mutate }) as unknown as ApolloClient;
 
+const errors = new UserServiceErrorTransformer(new FieldViolationParser());
+
 describe('RegistrationAPI', () => {
   const credentials = buildUser();
 
@@ -28,7 +32,7 @@ describe('RegistrationAPI', () => {
     const mutate = jest.fn().mockResolvedValue({
       data: { createUser: { user: userPayload, clientMutationId: buildClientMutationId() } },
     });
-    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never, errors);
 
     await expect(api.register(credentials)).resolves.toEqual({
       email: credentials.email,
@@ -52,7 +56,7 @@ describe('RegistrationAPI', () => {
 
   it('returns undefined when the mutation yields no user', async () => {
     const mutate = jest.fn().mockResolvedValue({ data: null });
-    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never, errors);
 
     await expect(api.register(credentials)).resolves.toBeUndefined();
   });
@@ -61,7 +65,7 @@ describe('RegistrationAPI', () => {
     const mutate = jest.fn().mockResolvedValue({
       data: { createUser: { user: null, clientMutationId: buildClientMutationId() } },
     });
-    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never, errors);
 
     await expect(api.register(credentials)).resolves.toBeUndefined();
   });
@@ -70,7 +74,7 @@ describe('RegistrationAPI', () => {
     const mutate = jest.fn().mockResolvedValue({
       data: { createUser: { user: { id: 1, confirmed: 'yes', email: 5, initials: null } } },
     });
-    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never, errors);
 
     const rejection = await api.register(credentials).catch((error: unknown) => error);
     expect(rejection).toBeInstanceOf(ApiError);
@@ -93,7 +97,7 @@ describe('RegistrationAPI', () => {
     controller.abort();
     const mutate = jest.fn().mockRejectedValue(new Error('network failure mid-flight'));
     const converter = { convert: jest.fn() };
-    const api = new RegistrationAPI(mockApollo(mutate), converter as never);
+    const api = new RegistrationAPI(mockApollo(mutate), converter as never, errors);
 
     await expect(api.register(credentials, { signal: controller.signal })).rejects.toMatchObject({
       name: 'AbortError',
@@ -107,9 +111,13 @@ describe('RegistrationAPI', () => {
   it('maps non-abort failures through BaseAPI handling', async () => {
     const mutate = jest.fn().mockRejectedValue(new Error('network down'));
     const converted = new ApiError({ message: 'Converted', code: 'CONVERTED' });
-    const api = new RegistrationAPI(mockApollo(mutate), {
-      convert: jest.fn().mockReturnValue(converted),
-    } as never);
+    const api = new RegistrationAPI(
+      mockApollo(mutate),
+      {
+        convert: jest.fn().mockReturnValue(converted),
+      } as never,
+      errors
+    );
 
     await expect(api.register(credentials)).rejects.toBe(converted);
   });
@@ -119,7 +127,8 @@ describe('RegistrationAPI', () => {
     const mutate = jest.fn().mockRejectedValue(new ApolloError({ networkError }));
     const api = new RegistrationAPI(
       mockApollo(mutate),
-      new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard())
+      new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard()),
+      errors
     );
 
     await expect(api.register(credentials)).rejects.toBeInstanceOf(ConflictError);
@@ -130,7 +139,8 @@ describe('RegistrationAPI', () => {
     const mutate = jest.fn().mockRejectedValue(new ApolloError({ graphQLErrors: [graphQLError] }));
     const api = new RegistrationAPI(
       mockApollo(mutate),
-      new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard())
+      new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard()),
+      errors
     );
 
     await expect(api.register(credentials)).rejects.toBeInstanceOf(ApiError);

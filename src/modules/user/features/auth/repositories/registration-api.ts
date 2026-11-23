@@ -9,6 +9,7 @@ import type {
 } from '@/api/generated/graphql';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
+import type UserServiceErrorTransformer from '@/modules/user/transformers';
 import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import { HttpError } from '@/services/https-client/http-error';
 import type { RegistrationResponse } from '@auth/types/api-responses';
@@ -19,12 +20,16 @@ import BaseAPI from './base-api';
 import CREATE_USER from './create-user-mutation';
 import type { RequestOptions } from './types';
 
+const EMAIL_TAKEN_STATUS = 409;
+
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
   constructor(
     @inject(AUTH_TOKENS.ApolloClient)
     private readonly apolloClient: ApolloClient<NormalizedCacheObject>,
-    @inject(AUTH_TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
+    @inject(AUTH_TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory,
+    @inject(AUTH_TOKENS.UserServiceErrorTransformer)
+    private readonly errors: UserServiceErrorTransformer
   ) {
     super(apiErrorFactory);
   }
@@ -85,10 +90,18 @@ export default class RegistrationAPI extends BaseAPI {
   }
 
   private normalizeError(error: unknown): unknown {
-    const networkError = (error as { networkError?: { statusCode?: number } }).networkError;
-    const status = networkError?.statusCode;
+    const status = this.isEmailTaken(error) ? EMAIL_TAKEN_STATUS : this.networkStatus(error);
     return typeof status === 'number'
       ? new HttpError({ status, message: 'Registration request failed', cause: error })
       : error;
+  }
+
+  private networkStatus(error: unknown): number | undefined {
+    return (error as { networkError?: { statusCode?: number } }).networkError?.statusCode;
+  }
+
+  private isEmailTaken(error: unknown): boolean {
+    const { violations } = this.errors.normalize(error);
+    return violations.items.some(({ path, reason }) => path === 'email' && reason === 'taken');
   }
 }

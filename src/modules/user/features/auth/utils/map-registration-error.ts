@@ -1,3 +1,4 @@
+import type { AuthError } from '@auth/types/auth-error';
 import type {
   EmailAlreadyUsedKey,
   GenericSignupErrorKey,
@@ -9,9 +10,15 @@ export const GENERIC_SIGNUP_ERROR_KEY: GenericSignupErrorKey = 'sign_up.errors.s
 
 const ERROR_PATTERNS = [
   { keys: ['email', 'exists'] as const, messageKey: EMAIL_ALREADY_USED_KEY },
+  { keys: [EMAIL_ALREADY_USED_KEY] as const, messageKey: EMAIL_ALREADY_USED_KEY },
 ] as const;
 
 class RegistrationErrorMapper {
+  public displayText(error: AuthError | null): string | null {
+    if (error === null) return null;
+    return error.kind === 'conflict' ? EMAIL_ALREADY_USED_KEY : error.displayMessage;
+  }
+
   public map(rawError: string | null | undefined): MessageKey | null {
     if (!rawError) return null;
 

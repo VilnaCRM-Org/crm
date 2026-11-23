@@ -37,6 +37,21 @@ describe('useRegistrationForm', () => {
     expect(result.current.view).toBe('error');
   });
 
+  it('names the used e-mail for a conflict instead of its generic text', () => {
+    useAuthStore.setState({
+      registerError: {
+        kind: 'conflict',
+        displayMessage: 'Resource already exists',
+        retryable: false,
+      },
+    });
+
+    const { result } = renderHook(() => useRegistrationForm());
+
+    expect(result.current.errorText).toBe('sign_up.errors.email_used');
+    expect(result.current.view).toBe('error');
+  });
+
   it('keeps showSubmitLoader on while the request is in flight', () => {
     useAuthStore.setState({ registerLoading: true });
 

@@ -4,6 +4,7 @@ import type { SignUpDto } from '@/modules/user/types/user/sign-up-dto';
 import type { RegistrationView } from '@auth/components/form-section/types';
 import { AuthStoreSelectors, useAuthState } from '@auth/stores';
 import type { UseRegistrationFormResult } from '@auth/types/registration-form-result';
+import registrationErrorMapper from '@auth/utils/map-registration-error';
 
 import useRegistrationHandlers from './use-registration-handlers';
 import useRegistrationViewSync from './use-registration-view-sync';
@@ -15,7 +16,7 @@ export default function useRegistrationForm(
   const user = AuthStoreSelectors.registerUser(state);
   const isSubmitting = AuthStoreSelectors.registerLoading(state);
   const error = AuthStoreSelectors.registerError(state);
-  const errorText = error?.displayMessage ?? null;
+  const errorText = registrationErrorMapper.displayText(error);
   const showSubmitLoader = isSubmitting || Boolean(user) || Boolean(error);
 
   const [view, setView] = useState<RegistrationView>('form');
