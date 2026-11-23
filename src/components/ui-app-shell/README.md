@@ -332,7 +332,7 @@ What Figma leaves open, and how it was built:
   it fails, the drawer keeps its own 40 px `#E1E7EA` circle with the 24 px person glyph in
   `#1A1C1E`, the same size, so nothing shifts.
 - The Settings header is the drawn 48 px open and collapsed, with the chevron 12 px from its top in
-  both, so closing the group moves neither (owner decision 2026-11-23; it was 60 px when collapsed).
+  both, so closing the group moves neither (the collapsed row was 60 px until 2026-11-23).
 - The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.
 
 ### Measured against Figma (user chip and menu)

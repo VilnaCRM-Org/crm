@@ -7,8 +7,7 @@ export default function useCopiedHold({ status, message }: CopiedHoldRequest): b
   const [held, setHeld] = useState(false);
 
   useEffect(() => {
-    if (status === 'idle') return undefined;
-    setHeld(status === 'copied');
+    if (status !== 'idle') setHeld(status === 'copied');
     const timer = setTimeout(() => setHeld(false), copyLineTiming.holdMs);
     return (): void => clearTimeout(timer);
   }, [status, message]);

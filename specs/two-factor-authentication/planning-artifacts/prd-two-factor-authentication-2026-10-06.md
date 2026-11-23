@@ -1042,6 +1042,10 @@ known status is on. Focus moves to the `h3`.
 > margin, so nothing moves at rest; a failure line that wraps on a narrow phone pushes the button
 > down instead of covering a code. The original text above is kept as the record of the plan.
 
+> **Amended 2026-11-23 (owner decision, copy feedback).** The line "Коди скопійовано" is gone: the
+> button's own text reads "Коди скопійовано" for 3 s instead, at the same size and colours, with no
+> fade. The status announcement, the failure line and its slot stay as amended on 2026-11-18.
+
 - Given a resolved confirm with eight codes, when it settles, then the list shows eight items in
   response order and focus is on the `h3`.
 - Given the box unticked, when "Готово" is activated, then nothing happens and the button is
@@ -1643,6 +1647,8 @@ inline confirmation acts as "Скасувати".
 
 > Superseded 2026-11-18 in part (owner decision, copy feedback): the codes copy line fades out over
 > 0.4 s after 3 s, and is removed at once under `prefers-reduced-motion: reduce` (FR-30).
+>
+> Superseded 2026-11-23: there is no codes copy line and no fade (FR-30).
 
 No new animation; any transition between card states is instant under
 `prefers-reduced-motion: reduce`; nothing auto-scrolls smoothly. On both mobile projects

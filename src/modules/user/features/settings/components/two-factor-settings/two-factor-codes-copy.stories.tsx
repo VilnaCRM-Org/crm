@@ -44,13 +44,14 @@ const renderCodesCopy = (): JSX.Element => (
 
 export const Copy: Story = { render: renderCodesCopy };
 
-const copyResultStory = (decorator: Decorator, expected: string, story: string): Story => ({
+const copyResultStory = (decorator: Decorator, region: string, story: string): Story => ({
   render: renderCodesCopy,
   decorators: [decorator],
   play: async ({ canvasElement, userEvent }): Promise<void> => {
     const copy = canvasElement.querySelector<HTMLButtonElement>('button');
     if (copy !== null) await userEvent.click(copy);
-    await waitForText(canvasElement, expected);
+    const status = canvasElement.querySelector<HTMLElement>('[role="status"]');
+    if (status !== null) await waitForText(status, region);
   },
   parameters: { docs: { description: { story } } },
 });

@@ -146,7 +146,7 @@ describe('CopyButton visible copy feedback', () => {
     expect(copyOf(LABEL)).toBe(button);
   });
 
-  it('keeps the copied text while a repeat copy is still pending', async () => {
+  it('keeps the copied text for at most 3 s while a repeat copy never settles', async () => {
     const actor = user();
     installClipboard(
       jest
@@ -160,9 +160,11 @@ describe('CopyButton visible copy feedback', () => {
     await press(actor, button);
     elapse(2900);
     await press(actor, button);
-    elapse(2900);
-
+    elapse(2999);
     expect(copyOf(COPIED)).toBe(button);
+    elapse(1);
+
+    expect(copyOf(LABEL)).toBe(button);
   });
 
   it('shows the copied text again after it returned', async () => {
@@ -219,11 +221,11 @@ describe('CopyButton visible copy feedback', () => {
     installClipboard(jest.fn().mockResolvedValue(undefined));
     const { unmount } = mount();
     await press(actor, copyOf(LABEL));
-    const held = jest.getTimerCount();
+    elapse(1000);
+    expect(jest.getTimerCount()).toBe(1);
 
     unmount();
 
-    expect(held).toBeGreaterThan(0);
     expect(jest.getTimerCount()).toBe(0);
   });
 });

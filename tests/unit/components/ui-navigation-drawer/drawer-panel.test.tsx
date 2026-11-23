@@ -48,7 +48,7 @@ describe('DrawerPanel', () => {
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('lists the same rows as the sidebar, in the 60 px drawer rows, ending with Sign out', () => {
+  it('lists the sidebar rows at 60 px with a 48 px Settings row, ending with Sign out', () => {
     renderPanel();
 
     expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual([
