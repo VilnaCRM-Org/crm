@@ -58,7 +58,6 @@ export default {
       '&::after': { ...hitArea, inset: '-10px' },
     },
   },
-  toggleDrawerCollapsed: { top: '18px' },
   toggleGlyph: {
     expanded: { transform: 'rotate(90deg)' },
     collapsed: { transform: 'rotate(-90deg)' },

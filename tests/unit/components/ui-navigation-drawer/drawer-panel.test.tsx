@@ -60,13 +60,14 @@ describe('DrawerPanel', () => {
       'Settings',
     ]);
     const links = screen.getAllByRole('link');
-    links.forEach((link) => expect(link).toHaveStyle({ minHeight: '60px' }));
+    const settings = links.at(-1) as HTMLElement;
+    links.slice(0, -1).forEach((link) => expect(link).toHaveStyle({ minHeight: '60px' }));
+    expect(settings).toHaveStyle({ minHeight: '48px' });
     const firstRow = screen.getAllByRole('listitem')[0] as HTMLElement;
     expect(styleRuleFor(firstRow)?.getPropertyValue('width')).toBe('');
     expect(
-      (links.at(-1) as HTMLElement).compareDocumentPosition(
-        screen.getByRole('button', { name: 'Sign out' })
-      ) & Node.DOCUMENT_POSITION_FOLLOWING
+      settings.compareDocumentPosition(screen.getByRole('button', { name: 'Sign out' })) &
+        Node.DOCUMENT_POSITION_FOLLOWING
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 

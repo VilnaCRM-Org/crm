@@ -99,19 +99,7 @@ describe('navigation list styles', () => {
           paddingTop: '8px',
         },
       },
-      drawer: {},
-    });
-  });
-
-  it('pins rowOpen', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.rowOpen).toEqual({
-      desktop: {},
-      tablet: {},
-      drawer: {
-        minHeight: '48px',
-      },
+      drawer: { settings: { minHeight: '48px' } },
     });
   });
 

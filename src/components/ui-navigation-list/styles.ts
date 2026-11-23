@@ -9,6 +9,10 @@ const tabletOverrides: Partial<Record<NavigationRowId, object>> = {
   settings: { paddingTop: '8px' },
 };
 
+const drawerOverrides: Partial<Record<NavigationRowId, object>> = {
+  settings: { minHeight: '48px' },
+};
+
 const noOverrides: Partial<Record<NavigationRowId, object>> = {};
 
 export const insetFocus = {
@@ -104,8 +108,7 @@ export default {
     },
     drawer: { ...rowBase, minHeight: '60px', fontSize: '16px', lineHeight: '1.125' },
   },
-  rowById: { desktop: noOverrides, tablet: tabletOverrides, drawer: noOverrides },
-  rowOpen: { desktop: noOverrides, tablet: noOverrides, drawer: { minHeight: '48px' } },
+  rowById: { desktop: noOverrides, tablet: tabletOverrides, drawer: drawerOverrides },
   action: {
     ...rowBase,
     minWidth: layoutStyles.sidebarExpandedWidth,

@@ -104,12 +104,14 @@ describe('NavigationGroupToggle', () => {
   });
 
   it.each([
-    ['drawer', false, '18px'],
+    ['drawer', false, '12px'],
     ['drawer', true, '12px'],
     ['desktop', false, '19px'],
+    ['desktop', true, '19px'],
     ['tablet', false, '24px'],
+    ['tablet', true, '24px'],
   ] as const)(
-    'drops only the collapsed drawer toggle to 18 px: %s, expanded %s, at top %s',
+    'keeps the toggle where it is when the group closes: %s, expanded %s, at top %s',
     (layout, expanded, top) => {
       renderShell(
         <NavigationGroupToggle

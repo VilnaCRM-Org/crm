@@ -140,14 +140,6 @@ describe('navigation group styles', () => {
     });
   });
 
-  it('pins toggleDrawerCollapsed', async () => {
-    const styles = await loadStyles();
-
-    expect(styles.toggleDrawerCollapsed).toEqual({
-      top: '18px',
-    });
-  });
-
   it('pins toggleGlyph', async () => {
     const styles = await loadStyles();
 
