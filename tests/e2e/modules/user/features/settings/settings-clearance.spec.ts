@@ -5,6 +5,7 @@ import { bellOf, expectShellReady } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import waitForSettledScroll from '@tests/e2e/utils/wait-for-settled-scroll';
 
+import { probeFocused, resetSeen } from './utils/focus-cover';
 import {
   type ProfileReplies,
   replyWithStatus,
@@ -38,11 +39,6 @@ interface TabReport {
   readonly covered: readonly string[];
 }
 
-interface CoverProbe {
-  readonly closeLabel: string;
-  readonly seenKey: string;
-}
-
 const SIZES: readonly ViewportSize[] = [
   { width: 1440, height: 900 },
   { width: 1024, height: 1366 },
@@ -53,7 +49,6 @@ const SIZES: readonly ViewportSize[] = [
 const MAX_TAB_STOPS = 300;
 const MIN_TAB_STOPS = 10;
 const CARET_TOLERANCE_PX = 2;
-const SEEN_KEY = '__clearanceSeen';
 
 const newEdits = (): SectionEdits => ({
   fullName: buildFullName(),
@@ -80,56 +75,6 @@ const THREE_OUTCOMES: OutcomeSet = {
 const OUTCOME_SETS: readonly OutcomeSet[] = [ONE_OUTCOME, THREE_OUTCOMES];
 
 const sizeName = (size: ViewportSize): string => `${size.width} × ${size.height}`;
-
-function coverOfFocused(probe: CoverProbe): Promise<string> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const seen =
-          (Reflect.get(window, probe.seenKey) as WeakSet<Element> | undefined) ??
-          new WeakSet<Element>();
-        Reflect.set(window, probe.seenKey, seen);
-        const focused = document.activeElement;
-        if (focused === null || focused === document.body) return resolve('body');
-        if (seen.has(focused)) return resolve('repeat');
-        seen.add(focused);
-        const header = document.querySelector('header');
-        const covers = new Map<Element, string>();
-        if (header !== null) covers.set(header, 'header');
-        const closes = [...document.querySelectorAll('button')].filter(
-          (button) => button.getAttribute('aria-label') === probe.closeLabel
-        );
-        for (const close of closes) {
-          const card = close.closest('ul')?.parentElement?.parentElement;
-          if (card) covers.set(card, 'bell notice card');
-        }
-        const box = focused.getBoundingClientRect();
-        if (box.width === 0 || box.height === 0) return resolve('clear');
-        const label = focused.getAttribute('aria-label') ?? focused.textContent?.trim() ?? '';
-        const name = `${focused.tagName.toLowerCase()} "${label}"`;
-        for (const [cover, coverName] of covers) {
-          const area = cover.getBoundingClientRect();
-          const inside =
-            area.width > 0 &&
-            area.height > 0 &&
-            box.left >= area.left - 0.5 &&
-            box.right <= area.right + 0.5 &&
-            box.top >= area.top - 0.5 &&
-            box.bottom <= area.bottom + 0.5;
-          if (inside && !cover.contains(focused)) return resolve(`${name} under the ${coverName}`);
-        }
-        return resolve('clear');
-      })
-    );
-  });
-}
-
-const probeFocused = (page: Page): Promise<string> =>
-  page.evaluate(coverOfFocused, { closeLabel: text.noticeClose, seenKey: SEEN_KEY });
-
-async function resetSeen(page: Page): Promise<void> {
-  await page.evaluate((key) => Reflect.deleteProperty(window, key), SEEN_KEY);
-}
 
 async function tabThroughEveryControl(page: Page): Promise<TabReport> {
   await resetSeen(page);

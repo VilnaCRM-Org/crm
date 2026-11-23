@@ -1,66 +1,13 @@
 import Box from '@mui/material/Box';
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
-import { type JSX, type ReactNode, type RefObject, useRef } from 'react';
+import { type JSX, useRef } from 'react';
 
 import type { UIBellNoticeProps } from '@/components/types/ui-bell-notice';
 import UIBellNotice from '@/components/ui-bell-notice';
-import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
+import { StageHeader, StageMain, StagePage } from '@stories/bell-notice-stage';
 import { noop } from '@stories/story-callbacks';
 
 type StageProps = Pick<UIBellNoticeProps, 'views'>;
-
-interface StageHeaderProps {
-  readonly bell: RefObject<HTMLButtonElement | null>;
-  readonly children: ReactNode;
-}
-
-interface StageMainProps {
-  readonly save: RefObject<HTMLButtonElement | null>;
-  readonly heading: RefObject<HTMLHeadingElement | null>;
-}
-
-const STAGE = {
-  page: { minHeight: '20rem', backgroundColor: '#FBFBFB' },
-  header: { position: 'sticky', top: 0, height: '64px', display: 'flex', alignItems: 'center' },
-  wrapper: { position: 'relative', marginLeft: 'auto', marginRight: '3rem' },
-  bell: {
-    position: 'relative',
-    zIndex: 1,
-    width: '48px',
-    height: '48px',
-    border: 0,
-    borderRadius: '50%',
-    backgroundColor: '#FFFFFF',
-  },
-  main: { padding: '1rem' },
-  heading: { font: 'inherit' },
-} as const;
-
-function StageHeader({ bell, children }: StageHeaderProps): JSX.Element {
-  useBellAnchor(bell);
-
-  return (
-    <Box component="header" sx={STAGE.header}>
-      <Box sx={STAGE.wrapper}>
-        <Box component="button" type="button" ref={bell} aria-label="Сповіщення" sx={STAGE.bell} />
-        {children}
-      </Box>
-    </Box>
-  );
-}
-
-function StageMain({ save, heading }: StageMainProps): JSX.Element {
-  return (
-    <Box component="main" sx={STAGE.main}>
-      <Box component="h1" tabIndex={-1} ref={heading} sx={STAGE.heading}>
-        Налаштування
-      </Box>
-      <Box component="button" type="button" ref={save}>
-        Зберегти
-      </Box>
-    </Box>
-  );
-}
 
 function NoticeStage({ views }: StageProps): JSX.Element {
   const bell = useRef<HTMLButtonElement>(null);
@@ -68,7 +15,7 @@ function NoticeStage({ views }: StageProps): JSX.Element {
   const heading = useRef<HTMLHeadingElement>(null);
 
   return (
-    <Box sx={STAGE.page}>
+    <StagePage>
       <StageHeader bell={bell}>
         <UIBellNotice
           views={views}
@@ -78,7 +25,7 @@ function NoticeStage({ views }: StageProps): JSX.Element {
         />
       </StageHeader>
       <StageMain save={save} heading={heading} />
-    </Box>
+    </StagePage>
   );
 }
 

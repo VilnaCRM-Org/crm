@@ -17,7 +17,6 @@ const meta: Meta<typeof NotificationIcon> = {
           '`#DC3939`, both `CanvasText` in forced colors; the close glyph takes the colour of ' +
           'its control. Always `aria-hidden`: the text and the control name carry the meaning.',
       },
-      story: { inline: false },
     },
   },
 };
