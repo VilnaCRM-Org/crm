@@ -129,15 +129,67 @@ lines() {
   [ "$(grep -c 'docker compose rm' "$COMMAND_LOG")" -eq 0 ]
 }
 
-@test "local stack start keeps encryption keys the developer already set" {
+@test "local stack start keeps encryption keys that match .env.dev, quoted or not" {
+  lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 'OAUTH_ENCRYPTION_KEY="dev-oauth"' \
+    "TWO_FACTOR_ENCRYPTION_KEY='dev-2fa'" > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 0 ]
+  [ "$(env_local)" = "$(lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 'OAUTH_ENCRYPTION_KEY="dev-oauth"' \
+    "TWO_FACTOR_ENCRYPTION_KEY='dev-2fa'")" ]
+  [ "$(grep -c 'docker compose rm' "$COMMAND_LOG")" -eq 0 ]
+}
+
+@test "local stack start keeps local encryption keys .env.dev does not set" {
   lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY=mine \
     TWO_FACTOR_ENCRYPTION_KEY=mine-too > "$USER_SERVICE_DIR/.env.local"
+  rm "$USER_SERVICE_DIR/.env.dev"
 
   run_start
 
   [ "$status" -eq 0 ]
   [ "$(env_local)" = "$(lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY=mine \
     TWO_FACTOR_ENCRYPTION_KEY=mine-too)" ]
+}
+
+@test "local stack start stops, changing nothing, when a local key differs from .env.dev" {
+  lines OAUTH_ENCRYPTION_KEY=dev-oauth TWO_FACTOR_ENCRYPTION_KEY=mine \
+    > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 1 ]
+  assert_output_contains "TWO_FACTOR_ENCRYPTION_KEY differs between $USER_SERVICE_DIR/.env.local"
+  [[ "$output" != *mine* ]]
+  [[ "$output" != *dev-2fa* ]]
+  [ "$(env_local)" = "$(lines OAUTH_ENCRYPTION_KEY=dev-oauth TWO_FACTOR_ENCRYPTION_KEY=mine)" ]
+  [ ! -s "$COMMAND_LOG" ]
+}
+
+@test "local stack start fills an empty local encryption key from .env.dev" {
+  lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY= \
+    'TWO_FACTOR_ENCRYPTION_KEY=""' > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 0 ]
+  [ "$(env_local)" = "$(lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY= \
+    'TWO_FACTOR_ENCRYPTION_KEY=""' OAUTH_ENCRYPTION_KEY=dev-oauth \
+    TWO_FACTOR_ENCRYPTION_KEY=dev-2fa)" ]
+  grep -qx 'docker compose rm --force --stop workers' "$COMMAND_LOG"
+}
+
+@test "local stack start fails fast, changing nothing, when .env.dev has an empty key" {
+  lines OAUTH_ENCRYPTION_KEY=dev-oauth TWO_FACTOR_ENCRYPTION_KEY= \
+    > "$USER_SERVICE_DIR/.env.dev"
+
+  run_start
+
+  [ "$status" -eq 1 ]
+  assert_output_contains "TWO_FACTOR_ENCRYPTION_KEY is not set in $USER_SERVICE_DIR/.env.dev"
+  [ ! -e "$USER_SERVICE_DIR/.env.local" ]
+  [ ! -s "$COMMAND_LOG" ]
 }
 
 @test "local stack start fails fast when .env.dev has no key for the workers" {

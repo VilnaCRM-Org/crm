@@ -8,6 +8,7 @@ import authSessionProvider from '@auth/stores/auth-session-provider';
 import { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
 import type { AuthStateWriter } from '@auth/types/auth-store';
+import type { EarlierSession } from '@auth/types/earlier-session';
 import type { SocialSignInDeps } from '@auth/types/social-sign-in/social-sign-in-deps';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
@@ -19,11 +20,12 @@ class SocialSignInRegistrar implements ModuleRegistrar {
     container.registerSingleton(AUTH_TOKENS.SocialSignInRepository, GraphQLSocialSignInRepository);
     container.registerSingleton(AUTH_TOKENS.SocialSignInTransformer, SocialSignInTransformer);
     container.registerSingleton(AUTH_TOKENS.SocialSignInProvider, SocialSignInProvider);
+    container.register<EarlierSession>(AUTH_TOKENS.AuthSession, { useValue: authSessionProvider });
     container.register<SocialSignInDeps>(AUTH_TOKENS.SocialSignInDeps, {
       useFactory: (c) => ({
         authState: c.resolve<AuthStateWriter>(AUTH_TOKENS.AuthStore),
         securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
-        session: authSessionProvider,
+        session: c.resolve<EarlierSession>(AUTH_TOKENS.AuthSession),
         signedOut: CLEARED_AUTH_STATE,
       }),
     });
