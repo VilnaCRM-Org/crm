@@ -103,6 +103,21 @@ describe('useNotificationRecorder', () => {
     expect(state.announcement.polite).toContain('saved');
   });
 
+  it('reports through the newest handler after it changes', async () => {
+    const failure = new Error('write failed');
+    mockRepository.record.mockRejectedValue(failure);
+    const newest = jest.fn();
+    const { rerender } = renderHook(({ handler }) => useRecorder(handler), {
+      initialProps: { handler: report },
+    });
+
+    rerender({ handler: newest });
+    await raise(1);
+
+    expect(newest).toHaveBeenCalledWith(REPORT_SOURCE, failure);
+    expect(report).not.toHaveBeenCalled();
+  });
+
   it('does not record a rejected batch again on a second mount', async () => {
     mockRepository.record.mockRejectedValue(new Error('write failed'));
     const { unmount } = renderHook(() => useRecorder(report));
