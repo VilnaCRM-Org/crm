@@ -85,12 +85,13 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
 
 ## Settings
 
-| Key                 | Environment variable                 | Falls back to           |
-| ------------------- | ------------------------------------ | ----------------------- |
-| `apiBaseUrl`        | `APP_CONFIG_API_BASE_URL`            | none (no client reader) |
-| `graphqlUrl`        | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
-| `flags.<name>`      | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
-| `notificationStyle` | `APP_CONFIG_NOTIFICATION_STYLE`      | `toast`                 |
+| Key                     | Environment variable                 | Falls back to           |
+| ----------------------- | ------------------------------------ | ----------------------- |
+| `apiBaseUrl`            | `APP_CONFIG_API_BASE_URL`            | none (no client reader) |
+| `graphqlUrl`            | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
+| `notificationEventsUrl` | `APP_CONFIG_NOTIFICATION_EVENTS_URL` | none (no stream)        |
+| `flags.<name>`          | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
+| `notificationStyle`     | `APP_CONFIG_NOTIFICATION_STYLE`      | `toast`                 |
 
 `graphqlUrl` is injected into `GraphQLUrl` (the Apollo endpoint), and flags are read through
 `featureFlagService`. `apiBaseUrl` has no client reader today: its reader, `url-builder`, went with

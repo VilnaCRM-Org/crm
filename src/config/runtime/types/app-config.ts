@@ -4,11 +4,12 @@ import type { NotificationStyle } from './notification-style';
 export interface AppConfigValues {
   readonly apiBaseUrl?: string | undefined;
   readonly graphqlUrl?: string | undefined;
+  readonly notificationEventsUrl?: string | undefined;
   readonly flags?: FeatureFlagValues | undefined;
   readonly notificationStyle?: NotificationStyle | undefined;
 }
 
-export type AppConfigUrlKey = 'apiBaseUrl' | 'graphqlUrl';
+export type AppConfigUrlKey = 'apiBaseUrl' | 'graphqlUrl' | 'notificationEventsUrl';
 
 export type AppConfigChoiceKey = 'notificationStyle';
 

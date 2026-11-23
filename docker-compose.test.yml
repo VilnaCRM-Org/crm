@@ -18,6 +18,7 @@ services:
       # default", which is what local, e2e and Lighthouse runs use.
       - APP_CONFIG_API_BASE_URL=${APP_CONFIG_API_BASE_URL-}
       - APP_CONFIG_GRAPHQL_URL=${APP_CONFIG_GRAPHQL_URL-}
+      - APP_CONFIG_NOTIFICATION_EVENTS_URL=${APP_CONFIG_NOTIFICATION_EVENTS_URL-}
       - APP_CONFIG_NOTIFICATION_STYLE=${APP_CONFIG_NOTIFICATION_STYLE-}
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3001']

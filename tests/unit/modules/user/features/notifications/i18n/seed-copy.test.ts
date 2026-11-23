@@ -30,7 +30,13 @@ describe('notification seed copy follows the settings toasts', () => {
   it('holds exactly the three seed keys and no others', () => {
     [notificationEn, notificationUk].forEach((catalog) => {
       expect(Object.keys(catalog)).toEqual(['notification_center']);
-      expect(Object.keys(catalog.notification_center)).toEqual(['seed', 'history', 'time', 'bell']);
+      expect(Object.keys(catalog.notification_center)).toEqual([
+        'seed',
+        'broadcast',
+        'history',
+        'time',
+        'bell',
+      ]);
       expect(Object.keys(catalog.notification_center.seed).sort()).toEqual([
         'email_sent',
         'password_changed',
@@ -51,6 +57,17 @@ describe('notification seed copy follows the settings toasts', () => {
     });
     expect(notificationUk.notification_center.history.heading).toBe('Сповіщення');
     expect(notificationEn.notification_center.history.heading).toBe('Notifications');
+  });
+
+  it('holds exactly the broadcast strings the parser can name, in both locales', () => {
+    expect(notificationUk.notification_center.broadcast).toEqual({
+      maintenance_planned: 'Заплановано технічні роботи',
+      new_version: 'Доступна нова версія CRM',
+    });
+    expect(notificationEn.notification_center.broadcast).toEqual({
+      maintenance_planned: 'Maintenance is planned',
+      new_version: 'A new version of the CRM is available',
+    });
   });
 
   it('holds the unread count in the CLDR plural families of each locale', () => {

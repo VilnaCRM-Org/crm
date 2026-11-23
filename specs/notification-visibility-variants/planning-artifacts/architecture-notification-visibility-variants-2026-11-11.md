@@ -1212,6 +1212,13 @@ tablet and mobile and on `#FBFBFB` at desktop; both backdrops are listed.
 
 ### 9.5 Variant C, bell-merged notification, and the bell of every style
 
+> **Amended 2026-11-23 (owner decision: broadcast-only).** notification-service exists as a live
+> delivery hub: it stores nothing and authorizes no subscriber. While
+> `APP_CONFIG_NOTIFICATION_EVENTS_URL` names it, the bell records its `crm.broadcast` events as
+> unread. History, unread counts and mark-all-read stay on the repository mock, and personal
+> notifications wait for authorized subscriptions and for user-service #526 and #527. The contract
+> is in the notifications feature README. Off by default: no setting, no stream.
+
 The merged shape, card content, caret card, height cap, motion, stickiness and clearance below are
 C only (`bell`). The **enabled bell, the badge and the history panel** are common to every style
 (owner decision 2026-11-12): they render identically under `toast`, `inline` and `bell`.

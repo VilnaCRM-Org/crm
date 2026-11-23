@@ -25,7 +25,9 @@ import {
 } from '@/modules/user/features/notifications/repositories';
 import ShellSlotFactory from '@/routes/shell-slot-factory';
 import type { ShellSlotModule } from '@/routes/types/shell-slot';
+import { buildBroadcastEvent } from '@tests/builders/broadcast-event';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
+import FakeEventSource from '@tests/unit/utils/fake-event-source';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -119,6 +121,42 @@ describe('NotificationsShellSlot', () => {
   afterEach(() => {
     clearConfigBlock();
     jest.restoreAllMocks();
+  });
+
+  describe('with a notification events service', () => {
+    const broadcast = (): void =>
+      FakeEventSource.last().send(JSON.stringify(buildBroadcastEvent()));
+
+    beforeEach(() => {
+      FakeEventSource.opened = [];
+      Object.defineProperty(window, 'EventSource', { configurable: true, value: FakeEventSource });
+      writeConfigBlock(JSON.stringify({ notificationEventsUrl: 'https://events.example' }));
+    });
+
+    afterEach(() => Reflect.deleteProperty(window, 'EventSource'));
+
+    it('counts a broadcast event on the badge and raises no toast for it', async () => {
+      mount();
+      await waitFor(() => expect(badge()).toEqual(['1']));
+
+      act(broadcast);
+
+      await waitFor(() => expect(badge()).toEqual(['2']));
+      expect(screen.queryByText('Доступна нова версія CRM')).not.toBeInTheDocument();
+    });
+
+    it('counts an outcome and a broadcast that settle together', async () => {
+      mount();
+      await waitFor(() => expect(badge()).toEqual(['1']));
+      const port = renderHook(() => useNotifications()).result.current;
+
+      await act(async () => {
+        port.raise({ items: [saved] });
+        broadcast();
+      });
+
+      await waitFor(() => expect(badge()).toEqual(['3']));
+    });
   });
 
   describe.each(['toast', 'inline', 'bell'] as const)('under %s', (style) => {

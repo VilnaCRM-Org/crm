@@ -266,8 +266,11 @@ script cannot execute, which is the property the CSP exists to protect.
 **How `connect-src` is derived.** It admits the origins RSBuild inlined at build time
 (`REACT_APP_MOCKOON_URL`, `REACT_APP_GRAPHQL_URL`, and the Sentry ingest host from
 `REACT_APP_SENTRY_DSN` when it is set), and the runtime overrides an operator sets at container
-start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The browser talks only to
-the GraphQL and Sentry origins today: the REST base URL (`REACT_APP_MOCKOON_URL`,
+start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145, and
+`APP_CONFIG_NOTIFICATION_EVENTS_URL`; issue #391). The browser talks only to the GraphQL and Sentry
+origins today, and to notification-service where that last setting names it. That service authorizes
+no subscriber, so the CRM takes broadcast events only from it, sends it no token, and shows no text
+an event carries: the REST base URL (`REACT_APP_MOCKOON_URL`,
 `APP_CONFIG_API_BASE_URL`) has no client reader since the last REST caller went, and stays
 admitted only until the separate decision on keeping the `apiBaseUrl` setting
 (`src/config/runtime/README.md`) narrows the policy. The generator reads the

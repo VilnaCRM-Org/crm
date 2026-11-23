@@ -1832,7 +1832,8 @@ build goes red. Know them before you touch a config file:
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy
 - `connect-src` is derived from the API variables: the build-time
   `REACT_APP_MOCKOON_URL` / `REACT_APP_GRAPHQL_URL` / `REACT_APP_SENTRY_DSN` origins at
-  generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` origins
+  generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` /
+  `APP_CONFIG_NOTIFICATION_EVENTS_URL` origins
   appended by the container entrypoint. The REST pair has no client reader today and stays
   admitted only until the `apiBaseUrl` setting is decided (`src/config/runtime/README.md`). A new
   foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host

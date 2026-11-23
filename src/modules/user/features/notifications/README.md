@@ -1,8 +1,9 @@
 # Notifications feature
 
 The history of outcomes a user has seen, kept behind a repository contract so that it can become
-its own module later (issue #391). No notification back end exists yet (user-service issues #526
-and #527 are open), so the only adapter is an in-memory mock. The design decision (three variants
+its own module later (issue #391). No back end stores notifications yet (user-service issues #526
+and #527 are open), so the only adapter is an in-memory mock; live broadcast events can be added
+from notification-service (see "Broadcast events"). The design decision (three variants
 of the transient surface, the 3:1 edge floor, the `notificationStyle` switch and the removal plan)
 is recorded in the [user module README](../../README.md).
 
@@ -101,6 +102,29 @@ All hooks in `hooks/` are container-free and read the repository through
   route change and a layout change close it. It is built from `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
+- `useBroadcastEvents(report)` opens the broadcast stream while the `notificationEventsUrl` setting
+  names a service, records each event as unread, and returns how many have settled; the slot adds
+  it to the recorder's revision, so the bell reloads for either.
+
+## Broadcast events
+
+[notification-service](https://github.com/VilnaCRM-Org/notification-service) streams the events of
+one Kafka topic. It stores nothing and authorizes no subscriber: its `SECURITY.md` forbids anything
+meant for one user on the topic. The owner therefore decided on 2026-11-23 that the bell takes
+**broadcast events only**, and only when `APP_CONFIG_NOTIFICATION_EVENTS_URL` is set. Personal
+notifications wait for authorized subscriptions there and for user-service #526 and #527.
+
+- **Contract (ours, to be agreed with the service):** event type `crm.broadcast`, envelope
+  `{ id, type, occurredAt, data: { code } }`. `BroadcastEventParser` accepts the codes
+  `maintenance_planned` and `new_version` and maps each to a `notification_center.broadcast.*` key
+  of this catalog. Text in an event is never shown, and any other event is dropped.
+- **Delivery:** `BroadcastEventClient` follows the service's streaming protocol over SSE. It drops
+  repeated envelope ids (the newest 500), lets the browser reconnect an interrupted stream, and
+  reopens a closed one after the last event id, with a delay that doubles up to 30 s and has a
+  random part. It sends no token and no credentials.
+- **Limits:** a page that loads receives live events only, and the in-memory records go with a
+  reload, like every other record here.
+
 ## Components
 
 - `BellNotifications` (`components/bell-notifications.tsx`) is the bell connector of every
@@ -123,8 +147,9 @@ All hooks in `hooks/` are container-free and read the repository through
 - `NotificationsShellSlot` (`components/notifications-shell-slot.tsx`) is the shell slot of
   every protected page under every style. It calls `useNotificationRecorder(onChunkFailure)`,
   which records each raise once and reports a rejected write as `app-shell:notifications-record`,
-  and renders `BellNotifications` with the shell `layout` and the recorder's revision, so the
-  badge counts every recorded outcome. It declares no `Suspense`: the shell slot factory's
+  and `useBroadcastEvents(onChunkFailure)`, and renders `BellNotifications` with the shell `layout`
+  and the sum of both revisions, so the badge counts every recorded outcome and broadcast. It
+  declares no `Suspense`: the shell slot factory's
   boundary waits for its chunk inside the fixed-size `BellSlotFrame`, and the panel and the card
   are caught by the boundaries `BellNotifications` owns.
 
@@ -137,7 +162,7 @@ style.
 
 | Chunk                   | Holds                                | Loads                        |
 | ----------------------- | ------------------------------------ | ---------------------------- |
-| `notifications-shell`   | slot, recorder, adapter, bell        | every protected page         |
+| `notifications-shell`   | slot, recorder, broadcast, bell      | every protected page         |
 | `notifications-history` | `NotificationHistoryPanel`           | the first open of the bell   |
 | `notifications-notice`  | `BellOutcomeNotice`, the merged card | protected pages, `bell` only |
 

@@ -339,10 +339,16 @@ describe('runtime configuration contract', () => {
     ['not-a-url', false],
     ['/api', false],
   ])('accepts %s in the schema and the renderer alike (%s)', (url, accepted) => {
-    const schemaAccepts = AppConfigSchema.safeParse({ graphqlUrl: url }).success;
+    const schemaAccepts = AppConfigSchema.safeParse({
+      graphqlUrl: url,
+      notificationEventsUrl: url,
+    }).success;
     const rendererAccepts = ((): boolean => {
       try {
-        renderAppConfig(readFile(SHELL), { APP_CONFIG_GRAPHQL_URL: url });
+        renderAppConfig(readFile(SHELL), {
+          APP_CONFIG_GRAPHQL_URL: url,
+          APP_CONFIG_NOTIFICATION_EVENTS_URL: url,
+        });
         return true;
       } catch {
         return false;

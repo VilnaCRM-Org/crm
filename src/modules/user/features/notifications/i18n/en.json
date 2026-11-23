@@ -5,6 +5,10 @@
       "email_sent": "We sent a confirmation link to the new address",
       "saved": "Changes saved"
     },
+    "broadcast": {
+      "maintenance_planned": "Maintenance is planned",
+      "new_version": "A new version of the CRM is available"
+    },
     "history": {
       "heading": "Notifications",
       "mark_all_read": "Mark all as read",

@@ -2761,7 +2761,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
 
 **Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`; no client reader since `url-builder` went
 with the last REST caller, so today it only widens the CSP `connect-src`), `graphqlUrl`
-(`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
+(`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`),
+`notificationEventsUrl` (`APP_CONFIG_NOTIFICATION_EVENTS_URL`, the origin of notification-service,
+empty by default: the bell then opens no stream; broadcast events only, issue #391), and
 `flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`), and the temporary choice setting
 `notificationStyle` (`APP_CONFIG_NOTIFICATION_STYLE`, one of `toast`, `inline` or `bell`, default
 `toast`, issue #391), which is not a flag and is read through `notificationStyleConfig`; the
@@ -3247,7 +3249,8 @@ the runtime image ships beside the entrypoint:
 - **The container entrypoint extends `connect-src`.** `scripts/docker-entrypoint.sh` runs
   `scripts/render-security-headers.js` after `render-app-config.js`, rendering the served
   `/app/serve.json` from the immutable baseline the image ships at `/app/config/serve.json`
-  plus the origins of `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL`, so a repointed API
+  plus the origins of `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` /
+  `APP_CONFIG_NOTIFICATION_EVENTS_URL`, so a repointed API
   is reachable under the enforced policy without a rebuild and an override that is changed or
   cleared between restarts leaves no stale origin behind. Invalid values abort the start.
 - **The RSBuild dev server** sets `server.headers` from the same policy, so a CSP break surfaces
