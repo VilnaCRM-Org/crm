@@ -13,6 +13,7 @@ const enabledButton = {
 const enabledRound = {
   ...roundButton,
   ...enabledButton,
+  zIndex: 1,
   backgroundColor: paletteColors.background.default,
   '&:hover': { backgroundColor: paletteColors.background.paper },
 };

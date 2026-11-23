@@ -65,7 +65,7 @@ describe('bell notice styles', () => {
     expect(contrast('#DC3939', '#FFFFFF')).toBeCloseTo(4.48, 1);
   });
 
-  it('merges a 48 by 117 pill and a 256 wide card at 23, 55 on desktop', async () => {
+  it('fuses a 48 wide tab and a 279 wide card along one left edge on desktop', async () => {
     const { root, pill, card } = await loadStyles();
 
     expect(at(root, DESKTOP)).toMatchObject({ position: 'absolute', top: 0, left: 0 });
@@ -75,17 +75,17 @@ describe('bell notice styles', () => {
       left: 0,
       top: 0,
       width: '48px',
-      height: '117px',
-      borderRadius: '24px',
+      height: '67px',
+      borderRadius: '24px 24px 0 0',
       backgroundColor: '#FFFFFF',
     });
     expect(at(card, DESKTOP)).toMatchObject({
       position: 'absolute',
-      left: '23px',
+      left: 0,
       top: '55px',
-      width: '256px',
+      width: '279px',
       minHeight: '62px',
-      borderRadius: '0.75rem',
+      borderRadius: '0 0.75rem 0.75rem 0.75rem',
       border: 0,
       boxShadow: 'none',
     });
@@ -135,7 +135,7 @@ describe('bell notice styles', () => {
       maxHeight: 'max(4rem, calc(50dvh - 4rem))',
       overflowY: 'auto',
     });
-    expect(at(body, DESKTOP)).toEqual({ marginLeft: '-23px' });
+    expect(body).not.toHaveProperty(DESKTOP);
     expect(list).toMatchObject({ gap: '0.75rem', listStyle: 'none', margin: 0, padding: 0 });
     expect(Reflect.get(list, '& > li + li')).toEqual({
       borderTop: '1px solid #E1E7EA',

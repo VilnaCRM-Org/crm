@@ -34,6 +34,15 @@ describe('enabled bell styles', () => {
     }
   );
 
+  it.each(['desktop', 'tablet'] as const)(
+    'lifts the %s bell above the notice pill drawn behind it',
+    async (layout) => {
+      const { enabled } = await loadBell();
+
+      expect(enabled[layout]).toMatchObject({ position: 'relative', zIndex: 1 });
+    }
+  );
+
   it.each(['desktop', 'tablet'] as const)('fills the %s bell #F4F5F6 on hover', async (layout) => {
     const { enabled } = await loadBell();
 

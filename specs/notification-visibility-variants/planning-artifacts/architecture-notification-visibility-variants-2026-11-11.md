@@ -1223,6 +1223,11 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
   by the card shadow `drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))`. `T` is the tone of the most
   severe row, and the stroke follows the fused shape with no seam. Visible extent at 1440 for one
   row: 1087–1366 × 8–125 (FR-18).
+  **Amended 2026-11-23 (defects seen in the running app).** A 48 × 117 pill beside a card at 23 px
+  leaves a notch as soon as the card is taller than 62 px. The tab is 48 × 67 with radius
+  `24px 24px 0 0` and ends inside the card; the card is 279 wide at 0, 55 with radius
+  `0 12px 12px 12px`, so the left edge is one line at any height, as `397:18093` draws it. The
+  enabled round bell takes `z-index: 1`, so its glyph and badge stay above the tab.
 - **Card content.** Padding `15px 14px 11px 14px`; a row is the message (Golos 600 14/18), the time
   (Inter 500 12/18, `#57595B`) and a 24 × 24 close at the row end; rows divided by 1 px `#E1E7EA`,
   gap 12; at most three rows, newest last.
@@ -1232,6 +1237,9 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
   `clamp(16px, var(--bell-centre-x) - caretOffset, 100vw - 16px - width)`; radius 8;
   `border: 1px solid <tone>`; `popoverShadow`. `useBellAnchor` sets `--bell-centre-x` (layout effect
   plus `resize`), so the card follows the bell wherever the header puts it (FR-19).
+  **Amended 2026-11-23.** `BellNotifications` alone sets and clears the bell properties, because
+  the history panel still needs them after the notice unmounts; `UIBellNotice` takes no `bellRef`.
+  After a `resize` the hooks measure in the next animation frame, once the layout has changed.
 - **Height cap.** The card body has `max-height: max(4rem, calc(50dvh - 4rem))` and
   `overflow-y: auto`, so at 320 × 256 a focused page control keeps at least 64 px of viewport.
 - **Enabled bell (every style).** Desktop 48 and tablet 52 px round, white fill, glyph

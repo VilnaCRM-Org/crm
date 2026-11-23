@@ -440,6 +440,19 @@ describe('BellNotifications', () => {
       expect(await repository.countUnread()).toBe(4);
     });
 
+    it('keeps the bell position for the panel once opening it hides the notice', async () => {
+      mount();
+      raise(1);
+      await screen.findByRole('button', { name: 'Закрити сповіщення' });
+
+      await openWithEnter();
+
+      const { style } = document.documentElement;
+      expect(screen.queryByRole('button', { name: 'Закрити сповіщення' })).not.toBeInTheDocument();
+      expect(style.getPropertyValue('--bell-centre-x')).toBe('0px');
+      expect(style.getPropertyValue('--bell-bottom')).toBe('0px');
+    });
+
     it('lists a row closed in the notice as still unread', async () => {
       const { repository } = mount();
       raise(1);

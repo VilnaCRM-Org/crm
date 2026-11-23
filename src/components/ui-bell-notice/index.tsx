@@ -10,8 +10,8 @@ import UINotificationContent from '@/components/ui-notification-content';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
 import styles from './styles';
+import useNoticeClearance from './use-notice-clearance';
 import useNoticeFocus from './use-notice-focus';
-import useNoticePlacement from './use-notice-placement';
 
 const MAX_ROWS = 3;
 
@@ -44,13 +44,12 @@ function NoticeList({ views, focus }: NoticeListProps): JSX.Element {
 
 function NoticeCard({
   views,
-  bellRef,
   returnFocusRef,
   fallbackFocusRef,
   onDismiss,
 }: UIBellNoticeProps): JSX.Element {
   const cardRef = useRef<HTMLDivElement>(null);
-  useNoticePlacement(bellRef, cardRef, views);
+  useNoticeClearance(cardRef, views);
   const focus = useNoticeFocus({
     views,
     returnFocusRef,
@@ -74,7 +73,6 @@ function NoticeCard({
 
 export default function UIBellNotice({
   views,
-  bellRef,
   returnFocusRef,
   fallbackFocusRef,
   onDismiss,
@@ -87,7 +85,6 @@ export default function UIBellNotice({
   return rows.items.length === 0 ? null : (
     <NoticeCard
       views={rows}
-      bellRef={bellRef}
       returnFocusRef={returnFocusRef}
       fallbackFocusRef={fallbackFocusRef}
       onDismiss={onDismiss}

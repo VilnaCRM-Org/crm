@@ -36,11 +36,6 @@ export default {
     padding: '15px 16px',
   },
   unread: { backgroundColor: customColors.surface.page },
-  title: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
   message: {
     fontFamily: INTER,
     fontWeight: 400,
@@ -52,7 +47,9 @@ export default {
   },
   unreadMessage: { fontWeight: 500, color: customColors.text.primary },
   dot: {
-    flexShrink: 0,
+    display: 'inline-block',
+    marginLeft: '8px',
+    verticalAlign: 'middle',
     width: '4px',
     height: '4px',
     borderRadius: '50%',

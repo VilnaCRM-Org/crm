@@ -29,7 +29,6 @@ interface HostProps {
 }
 
 function Host({ views, onDismiss = jest.fn() }: HostProps): JSX.Element {
-  const bell = useRef<HTMLButtonElement>(null);
   const save = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -38,12 +37,9 @@ function Host({ views, onDismiss = jest.fn() }: HostProps): JSX.Element {
       <h1 tabIndex={-1} ref={heading}>
         Налаштування
       </h1>
-      <button type="button" ref={bell}>
-        Сповіщення
-      </button>
+      <button type="button">Сповіщення</button>
       <UIBellNotice
         views={views}
-        bellRef={bell}
         returnFocusRef={save}
         fallbackFocusRef={heading}
         onDismiss={onDismiss}
@@ -146,16 +142,18 @@ describe('UIBellNotice', () => {
     expect(screen.getByRole('heading', { name: 'Налаштування' })).toHaveFocus();
   });
 
-  it('sets the page properties while shown and removes them when it hides', () => {
+  it('clears the header while shown and leaves the bell position to its owner', () => {
+    root.style.setProperty('--bell-centre-x', '1111px');
+    root.style.setProperty('--bell-bottom', '56px');
     const { rerender } = render(<Host views={set(row('one'))} />);
 
     expect(root.style.getPropertyValue('--app-top-overhang')).not.toBe('');
-    expect(root.style.getPropertyValue('--bell-centre-x')).not.toBe('');
 
     rerender(<Host views={set()} />);
 
     expect(root.style.getPropertyValue('--app-top-overhang')).toBe('');
-    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('1111px');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('56px');
   });
 
   it('renders nothing for an empty batch', () => {

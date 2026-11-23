@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { type JSX, useRef } from 'react';
 
+import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import UINotificationOutlet from '@/components/ui-notification-outlet';
 import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
@@ -52,6 +53,7 @@ const STAGE = {
 
 function StageHeader(): JSX.Element {
   const bell = useRef<HTMLButtonElement>(null);
+  useBellAnchor(bell);
 
   return (
     <Box component="header" sx={STAGE.header}>

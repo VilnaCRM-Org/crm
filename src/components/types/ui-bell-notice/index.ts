@@ -30,7 +30,6 @@ export interface NoticeFocus {
 
 export interface UIBellNoticeProps {
   readonly views: NotificationViewSet;
-  readonly bellRef: NoticeTargetRef;
   readonly returnFocusRef: NoticeTargetRef;
   readonly fallbackFocusRef?: NoticeTargetRef | undefined;
   readonly onDismiss: NotificationClose;

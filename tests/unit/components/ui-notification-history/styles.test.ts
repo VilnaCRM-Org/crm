@@ -41,11 +41,17 @@ describe('notification history styles', () => {
   });
 
   it('draws the 4 px unread dot after the title in #0074B5, not brand yellow', async () => {
-    const { dot, title } = await loadStyles();
+    const { dot } = await loadStyles();
 
-    expect(dot).toMatchObject({ width: '4px', height: '4px', borderRadius: '50%', flexShrink: 0 });
+    expect(dot).toMatchObject({
+      display: 'inline-block',
+      marginLeft: '8px',
+      verticalAlign: 'middle',
+      width: '4px',
+      height: '4px',
+      borderRadius: '50%',
+    });
     expect(dot.backgroundColor).toBe(LINK);
-    expect(title).toEqual({ display: 'flex', alignItems: 'center', gap: '8px' });
     expect(contrast(LINK, TINT)).toBeCloseTo(4.86, 1);
     expect(contrast('#FFC01E', TINT)).toBeCloseTo(1.6, 1);
   });

@@ -17,6 +17,11 @@ const card = (bottom: number): RefObject<HTMLElement | null> => {
   return { current: element };
 };
 
+const nextFrame = (): Promise<void> =>
+  new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+
 const overhang = (): string => root.style.getPropertyValue('--app-top-overhang');
 
 describe('useNoticeClearance', () => {
@@ -61,7 +66,7 @@ describe('useNoticeClearance', () => {
     expect(overhang()).toBe('');
   });
 
-  it('measures again when the rows change and when the window is resized', () => {
+  it('measures again when the rows change and when the window is resized', async () => {
     const ref = card(125);
     const { rerender } = renderHook(({ views }) => useNoticeClearance(ref, views), {
       initialProps: { views: rows() },
@@ -74,15 +79,17 @@ describe('useNoticeClearance', () => {
 
     element.getBoundingClientRect = (): DOMRect => ({ bottom: 150 }) as DOMRect;
     window.dispatchEvent(new Event('resize'));
+    await nextFrame();
     expect(overhang()).toBe('86px');
   });
 
-  it('stops listening to resize after unmount', () => {
+  it('stops listening to resize after unmount', async () => {
     const ref = card(125);
     const { unmount } = renderHook(() => useNoticeClearance(ref, rows()));
     unmount();
 
     window.dispatchEvent(new Event('resize'));
+    await nextFrame();
 
     expect(overhang()).toBe('');
   });

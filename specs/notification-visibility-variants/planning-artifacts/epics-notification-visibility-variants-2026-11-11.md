@@ -957,6 +957,10 @@ reports `BLOCKED`, never skips).
 > would re-anchor a fixed child. The shared content piece keeps its 14/20 message and 13/20 time;
 > Figma's 14/18 and 12/18 stay a known delta of Story 2.2.
 
+> Code facts (2026-11-23): the shape is now a 48 × 67 tab over a 279-wide card at 0, 55 and the
+> notice no longer anchors the bell; see the architecture §9.5 amendments of the same date. The
+> `margin-left: -23px` above is gone, because the card starts at the union's left edge.
+
 > Assumption: if WebKit renders the four-shadow union outline unevenly in the CI baselines of
 > Story 4.6, the K3a fallback (two bordered boxes with a white patch over the seam) is applied in
 > this component and the edge contrasts above still hold.

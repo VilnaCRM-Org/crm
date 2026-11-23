@@ -5,6 +5,11 @@ import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 
 const root = document.documentElement;
 
+const nextFrame = (): Promise<void> =>
+  new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+
 const bell = (rect: Partial<DOMRect>): RefObject<HTMLElement | null> => {
   const element = document.createElement('button');
   element.getBoundingClientRect = (): DOMRect => ({ ...rect }) as DOMRect;
@@ -24,7 +29,7 @@ describe('useBellAnchor', () => {
     expect(root.style.getPropertyValue('--bell-bottom')).toBe('56px');
   });
 
-  it('follows the bell when the window is resized', () => {
+  it('follows the bell when the window is resized', async () => {
     const ref = bell({ left: 300, width: 24, bottom: 44 });
     renderHook(() => useBellAnchor(ref));
     const element = ref.current as HTMLElement;
@@ -32,12 +37,13 @@ describe('useBellAnchor', () => {
       ({ left: 250, width: 24, bottom: 40 }) as DOMRect;
 
     window.dispatchEvent(new Event('resize'));
+    await nextFrame();
 
     expect(root.style.getPropertyValue('--bell-centre-x')).toBe('262px');
     expect(root.style.getPropertyValue('--bell-bottom')).toBe('40px');
   });
 
-  it('removes both properties and stops listening on unmount', () => {
+  it('removes both properties and stops listening on unmount', async () => {
     const ref = bell({ left: 300, width: 24, bottom: 44 });
     const { unmount } = renderHook(() => useBellAnchor(ref));
 
@@ -46,6 +52,7 @@ describe('useBellAnchor', () => {
     expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
     expect(root.style.getPropertyValue('--bell-bottom')).toBe('');
     window.dispatchEvent(new Event('resize'));
+    await nextFrame();
     expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
   });
 

@@ -17,10 +17,8 @@ function HistoryRow({ view, unread, label }: HistoryRowProps): JSX.Element {
           {label}
         </Box>
       ) : null}
-      <Box component="span" sx={styles.title}>
-        <Box component="span" sx={[styles.message, unread && styles.unreadMessage]}>
-          {view.message}
-        </Box>
+      <Box component="span" sx={[styles.message, unread && styles.unreadMessage]}>
+        {view.message}
         {unread ? <Box component="span" aria-hidden sx={styles.dot} /> : null}
       </Box>
       {view.time === undefined ? null : (

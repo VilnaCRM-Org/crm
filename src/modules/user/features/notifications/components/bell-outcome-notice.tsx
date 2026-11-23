@@ -19,7 +19,6 @@ export default function BellOutcomeNotice({ bellRef }: BellOutcomeNoticeProps): 
   return (
     <UIBellNotice
       views={views}
-      bellRef={bellRef}
       returnFocusRef={focus?.primary ?? bellRef}
       fallbackFocusRef={focus?.fallback ?? bellRef}
       onDismiss={onDismiss}

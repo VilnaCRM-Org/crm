@@ -4,6 +4,7 @@ import { type JSX, type ReactNode, type RefObject, useRef } from 'react';
 
 import type { UIBellNoticeProps } from '@/components/types/ui-bell-notice';
 import UIBellNotice from '@/components/ui-bell-notice';
+import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import { noop } from '@stories/story-callbacks';
 
 type StageProps = Pick<UIBellNoticeProps, 'views'>;
@@ -36,6 +37,8 @@ const STAGE = {
 } as const;
 
 function StageHeader({ bell, children }: StageHeaderProps): JSX.Element {
+  useBellAnchor(bell);
+
   return (
     <Box component="header" sx={STAGE.header}>
       <Box sx={STAGE.wrapper}>
@@ -69,7 +72,6 @@ function NoticeStage({ views }: StageProps): JSX.Element {
       <StageHeader bell={bell}>
         <UIBellNotice
           views={views}
-          bellRef={bell}
           returnFocusRef={save}
           fallbackFocusRef={heading}
           onDismiss={noop}
@@ -102,15 +104,16 @@ const meta: Meta<typeof NoticeStage> = {
     docs: {
       description: {
         component:
-          'The bell notice of variant C. From 1440 px it is the merged shape: a 48 by 117 pill ' +
-          'fused with a 256 wide card at 23, 55, outlined in the tone of the most severe row ' +
-          'with four 1 px drop shadows. Below 1440 px it is a caret card, `min(313px, 100vw - ' +
-          '32px)` wide, whose 26 by 6 caret points at the bell centre. Rows show a time and a ' +
-          'close button, newest last, at most three. It carries no role, `aria-live` or ' +
-          '`aria-atomic`, so the time is never announced, and it stays until the person closes ' +
-          'it. Closing moves focus to the next close button, then the previous, then the Save ' +
-          'target, then the h1. While shown it sets `--bell-centre-x`, `--bell-bottom` and ' +
-          '`--app-top-overhang` on the root element.',
+          'The bell notice of variant C. From 1440 px it is the merged shape: a 48 wide tab ' +
+          'fused with a 279 wide card along one left edge, outlined in the tone of the most ' +
+          'severe row with four 1 px drop shadows. Below 1440 px it is a caret card, ' +
+          '`min(313px, 100vw - 32px)` wide, whose 26 by 6 caret points at the bell centre. ' +
+          'Rows show a time and a close button, newest last, at most three. It carries no ' +
+          'role, `aria-live` or `aria-atomic`, so the time is never announced, and it stays ' +
+          'until the person closes it. Closing moves focus to the next close button, then the ' +
+          'previous, then the Save target, then the h1. While shown it sets ' +
+          '`--app-top-overhang` on the root element; the bell that owns it sets ' +
+          '`--bell-centre-x` and `--bell-bottom`.',
       },
       story: { inline: false },
     },

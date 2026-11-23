@@ -35,7 +35,7 @@ function Stage({ views }: { views: NotificationViewSet }): JSX.Element {
     <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>
       <main>
         <h1>Налаштування</h1>
-        <UIBellNotice views={views} bellRef={none} returnFocusRef={none} onDismiss={jest.fn()} />
+        <UIBellNotice views={views} returnFocusRef={none} onDismiss={jest.fn()} />
       </main>
     </I18nextProvider>
   );

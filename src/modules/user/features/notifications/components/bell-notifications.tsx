@@ -56,6 +56,7 @@ function useHistoryPanelChunk(
 
 function BellButton({ layout, unread, historyId, disclosure }: BellButtonProps): JSX.Element {
   const { t } = useTranslation();
+  useBellAnchor(disclosure.bell);
 
   return (
     <HeaderIconButton
@@ -93,7 +94,6 @@ export default function BellNotifications({
   const disclosure = useBellDisclosure(layout);
   const showsNotice = useNotificationSurface('header');
   const HistoryPanel = useHistoryPanelChunk(onChunkFailure);
-  useBellAnchor(disclosure.bell);
 
   return (
     <Box
