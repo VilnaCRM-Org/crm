@@ -71,24 +71,48 @@ export const hexOf = (colour: RgbaColour): string =>
     .join('')
     .toUpperCase()}`;
 
-export const readNoticeEdge = (card: Locator): Promise<NoticeEdgeReading> =>
-  card.evaluate((element): NoticeEdgeReading => {
-    const style = getComputedStyle(element);
-    const value = style.getPropertyValue('--bell-notice-edge').trim();
+const resolvedEdge = (card: Locator): Promise<string> =>
+  card.evaluate((element) => {
+    const value = getComputedStyle(element).getPropertyValue('--bell-notice-edge').trim();
     if (value === '') throw new Error('--bell-notice-edge has no value on the notice card');
     const probe = document.createElement('span');
     probe.style.color = value;
     document.body.append(probe);
     const edge = getComputedStyle(probe).color;
     probe.remove();
+    return edge;
+  });
+
+const paintedEdge = (card: Locator): Promise<string> =>
+  card.evaluate((element) => {
     const { filter } = getComputedStyle(element.parentElement ?? element);
-    const backdrop: string[] = [];
+    return filter === 'none' ? getComputedStyle(element).borderTopColor : filter;
+  });
+
+const layersBehind = (card: Locator): Promise<readonly string[]> =>
+  card.evaluate(() => {
+    const layers: string[] = [];
     let layer: Element | null = document.querySelector('main');
     while (layer !== null) {
-      const colour = getComputedStyle(layer).backgroundColor;
-      if (!/^rgba\(.*,\s*0\)$/.test(colour) && colour !== 'transparent') backdrop.push(colour);
-      if (/^rgb\(/.test(colour)) break;
+      layers.push(getComputedStyle(layer).backgroundColor);
       layer = layer.parentElement;
     }
-    return { edge, painted: filter === 'none' ? style.borderTopColor : filter, backdrop };
+    return layers;
   });
+
+const isClear = (colour: string): boolean =>
+  colour === 'transparent' || /^rgba\(.*,\s*0\)$/.test(colour);
+
+function visibleLayers(layers: readonly string[]): readonly string[] {
+  const opaque = layers.findIndex((colour) => colour.startsWith('rgb('));
+  const reached = opaque === -1 ? layers : layers.slice(0, opaque + 1);
+  return reached.filter((colour) => !isClear(colour));
+}
+
+export async function readNoticeEdge(card: Locator): Promise<NoticeEdgeReading> {
+  return {
+    edge: await resolvedEdge(card),
+    painted: await paintedEdge(card),
+    backdrop: visibleLayers(await layersBehind(card)),
+  };
+}

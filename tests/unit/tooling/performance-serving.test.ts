@@ -823,6 +823,9 @@ describe('the notification chunks of the bell (issue #391)', () => {
       return entry.isDirectory() ? walkSources(relative) : [relative];
     });
 
+  const shippedSources = (): string[] =>
+    walkSources('src').filter((source) => /(?<!\.stories)\.tsx?$/.test(source));
+
   it.each(CHUNKS)('reaches %s only through one named dynamic import()', (chunk, file, module) => {
     const loaderSource = readFile(`${COMPONENTS}/${file}-loader.ts`);
 
@@ -835,8 +838,7 @@ describe('the notification chunks of the bell (issue #391)', () => {
   });
 
   it.each(CHUNKS)('has no static import of the %s module outside its loader', (_chunk, file) => {
-    const importers = walkSources('src')
-      .filter((source) => /\.(ts|tsx)$/.test(source) && !source.endsWith('.stories.tsx'))
+    const importers = shippedSources()
       .filter((source) => !source.endsWith(`${file}-loader.ts`))
       .filter((source) =>
         staticImportsOf(readFile(source)).some((specifier) => specifier.endsWith(`/${file}`))
@@ -847,13 +849,11 @@ describe('the notification chunks of the bell (issue #391)', () => {
 
   it('loads the notifications shell slot only through its named contract import()', () => {
     const contract = readFile('src/modules/user/features/notifications/routes/index.ts');
-    const importers = walkSources('src')
-      .filter((source) => /\.(ts|tsx)$/.test(source) && !source.endsWith('.stories.tsx'))
-      .filter((source) =>
-        staticImportsOf(readFile(source)).some((specifier) =>
-          specifier.endsWith('/notifications-shell-slot')
-        )
-      );
+    const importers = shippedSources().filter((source) =>
+      staticImportsOf(readFile(source)).some((specifier) =>
+        specifier.endsWith('/notifications-shell-slot')
+      )
+    );
 
     expect(contract.match(/import\(/g)).toHaveLength(1);
     expect(contract).toMatch(

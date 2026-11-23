@@ -1208,14 +1208,14 @@ itself and does not use `useNotificationViews` (that hook maps shown items): `id
 (a string), `kind: record.kind`, `message: t(record.messageKey)`, `time: t('notification_center.time', { value: record.createdAt })` through the locale formatter, and the read flag
 from `record.read`; it renders `UINotificationHistory` with the translated heading, mark-all-read, unread and empty copy and the `onMarkAllRead` handler it
 receives; it reads no repository of its own), `notification-history-panel-loader.ts` (NEW:
-`NotificationHistoryPanelLoader`, one `ChunkRetryLoader` over a
+one `NotificationChunkLoader` around one `ChunkRetryLoader` over a
 `webpackChunkName: "notifications-history"` dynamic `import()`; `load(report)` calls
 `report('app-shell:notifications-history', error)` once on a final failure and resolves to an
 empty component, the `ShellSlotFactory` pattern of `src/routes/shell-slot-factory.ts`),
 `features/notifications/components/bell-outcome-notice.tsx` (NEW, chunk `notifications-notice`,
 `bell` only: `UIBellNotice` over
 `useNotificationViews(useShownNotifications(), 'notification_center.time')`, closing and Retry
-through the port), `bell-outcome-notice-loader.ts` (NEW: `BellOutcomeNoticeLoader`, the same
+through the port), `bell-outcome-notice-loader.ts` (NEW: the same
 shape over `webpackChunkName: "notifications-notice"`, reporting
 `'app-shell:notifications-notice'`), `features/notifications/types/components.ts` (NEW:
 `NotificationHistoryPanelProps`, `BellOutcomeNoticeProps` and the two loaders' module types),
@@ -1252,8 +1252,8 @@ neither component nor loader imports the adapter), `make lint-metrics`.
 - Given the row times in `uk` and `en`, when they render in the notice and the panel, then they go through the registered `datetime` formatter via `notification_center.time` (no raw `Intl`; `make lint-eslint` passes) and no live region contains a time.
 - Given fake timers advanced ten minutes, when the notice is read, then every row is still shown and nothing was marked read (NFR-3).
 - Given each loader, when `load` is called twice, then its dynamic `import()` runs once, and a first chunk-load error is re-imported once before the loader settles (`ChunkRetryLoader`).
-- Given the `notifications-history` import failing twice, when `NotificationHistoryPanelLoader.load(report)` settles, then `report('app-shell:notifications-history', error)` is called once and the loader resolves to a component that renders nothing, with no console output.
-- Given the `notifications-notice` import failing twice, when `BellOutcomeNoticeLoader.load(report)` settles, then `report('app-shell:notifications-notice', error)` is called once and the resolved component renders `null`, with no console output.
+- Given the `notifications-history` import failing twice, when `notificationHistoryPanelLoader.load(report)` settles, then `report('app-shell:notifications-history', error)` is called once and the loader resolves to a component that renders nothing, with no console output.
+- Given the `notifications-notice` import failing twice, when `bellOutcomeNoticeLoader.load(report)` settles, then `report('app-shell:notifications-notice', error)` is called once and the resolved component renders `null`, with no console output.
 - Given `performance-serving.test.ts`, when it runs, then `NotificationHistoryPanel` is reached only through a `webpackChunkName: "notifications-history"` dynamic `import()`, `BellOutcomeNotice` only through `webpackChunkName: "notifications-notice"`, no `notifications-bell` chunk name exists, and neither import graph holds tsyringe, a composition root, Apollo or zod (NFR-12).
 - Given `uk` and `en`, when `make lint-i18n` runs, then the five new keys exist in both locales, no key sits under `notifications.*`, the `components` owner resolves the panel's and the notice's keys with no `[lazy-key-scope]` finding, the policy entry differs from Story 1.5's only by that owner, and the eager key set equals `main`'s.
 - Given `bell-outcome-notice.stories.tsx`, when the isolation test runs, then its exact expected file list includes the file and it asserts `inline: false`; `notification-history-panel.stories.tsx` uses no notification decorator and is not in that list (readiness R2-01).

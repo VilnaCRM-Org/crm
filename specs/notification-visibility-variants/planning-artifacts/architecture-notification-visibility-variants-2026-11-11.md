@@ -197,6 +197,7 @@ src/modules/user/features/notifications/
 │   ├── notification-history-panel-loader.ts   # ChunkRetryLoader for the panel chunk
 │   ├── bell-outcome-notice.tsx          # chunk `notifications-notice`, `bell` only
 │   ├── bell-outcome-notice-loader.ts    # ChunkRetryLoader for the notice chunk
+│   ├── notification-chunk-loader.ts     # shared: reports a final failure, resolves empty
 │   └── comparison/notification-comparison.stories.tsx
 ├── routes/index.ts               # RouteModule { routes: [], shell.notifications }
 └── i18n/{en,uk}.json             # `notification_center.*`, lazy, registered by BellNotifications

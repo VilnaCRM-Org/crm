@@ -4,6 +4,7 @@ export type {
   BellNotificationsProps,
   BellOutcomeNoticeModule,
   BellOutcomeNoticeProps,
+  NotificationChunkModule,
   NotificationChunkReporter,
   NotificationHistoryPanelModule,
   NotificationHistoryPanelProps,

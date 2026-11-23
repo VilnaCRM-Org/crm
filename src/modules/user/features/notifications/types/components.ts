@@ -8,22 +8,22 @@ import type { NotificationRecordSet } from './notification-record';
 
 export type NotificationChunkReporter = ShellChunkFailureHandler;
 
+export interface NotificationChunkModule<TProps> {
+  readonly default: ComponentType<TProps>;
+}
+
 export interface NotificationHistoryPanelProps {
   readonly records: NotificationRecordSet;
   readonly onMarkAllRead: () => void;
 }
 
-export interface NotificationHistoryPanelModule {
-  readonly default: ComponentType<NotificationHistoryPanelProps>;
-}
+export type NotificationHistoryPanelModule = NotificationChunkModule<NotificationHistoryPanelProps>;
 
 export interface BellOutcomeNoticeProps {
   readonly bellRef: RefObject<HTMLElement | null>;
 }
 
-export interface BellOutcomeNoticeModule {
-  readonly default: ComponentType<BellOutcomeNoticeProps>;
-}
+export type BellOutcomeNoticeModule = NotificationChunkModule<BellOutcomeNoticeProps>;
 
 export interface BellNotificationsProps {
   readonly layout: ShellLayout;
