@@ -11,6 +11,8 @@ const button = (): HTMLButtonElement => {
   return element;
 };
 
+const nowhere = { current: null };
+
 describe('useNotificationFocusReturn', () => {
   beforeEach(() => resetClientStores());
 
@@ -19,7 +21,7 @@ describe('useNotificationFocusReturn', () => {
   it('focuses the published primary target', () => {
     const primary = button();
     useNotificationOutletStore.setState({ focus: { primary: { current: primary } } });
-    const { result } = renderHook(() => useNotificationFocusReturn());
+    const { result } = renderHook(() => useNotificationFocusReturn(nowhere));
 
     result.current();
 
@@ -36,7 +38,7 @@ describe('useNotificationFocusReturn', () => {
       useNotificationOutletStore.setState({
         focus: { primary: { current: primary }, fallback: { current: fallback } },
       });
-      const { result } = renderHook(() => useNotificationFocusReturn());
+      const { result } = renderHook(() => useNotificationFocusReturn(nowhere));
 
       result.current();
 
@@ -44,10 +46,80 @@ describe('useNotificationFocusReturn', () => {
     }
   );
 
-  it('does nothing when no focus target was published', () => {
+  it('focuses the last resort when no focus target was published', () => {
+    const bell = button();
+    const { result } = renderHook(() => useNotificationFocusReturn({ current: bell }));
+
+    result.current();
+
+    expect(bell).toHaveFocus();
+  });
+
+  it.each(['disabled', 'detached'])(
+    'focuses the last resort when both published targets are %s',
+    (state) => {
+      const targets = [button(), button()];
+      const [primary, fallback] = targets;
+      targets.forEach((target) => {
+        if (state === 'disabled') target.setAttribute('disabled', '');
+        else target.remove();
+      });
+      const bell = button();
+      useNotificationOutletStore.setState({
+        focus: {
+          primary: { current: primary as HTMLButtonElement },
+          fallback: { current: fallback as HTMLButtonElement },
+        },
+      });
+      const { result } = renderHook(() => useNotificationFocusReturn({ current: bell }));
+
+      result.current();
+
+      expect(bell).toHaveFocus();
+    }
+  );
+
+  it('prefers a usable published target to the last resort', () => {
+    const primary = button();
+    const bell = button();
+    useNotificationOutletStore.setState({ focus: { primary: { current: primary } } });
+    const { result } = renderHook(() => useNotificationFocusReturn({ current: bell }));
+
+    result.current();
+
+    expect(primary).toHaveFocus();
+  });
+
+  it('does not focus a disabled last resort', () => {
+    const outside = button();
+    const bell = button();
+    bell.disabled = true;
+    outside.focus();
+    const { result } = renderHook(() => useNotificationFocusReturn({ current: bell }));
+
+    result.current();
+
+    expect(outside).toHaveFocus();
+  });
+
+  it('follows a changed last resort', () => {
+    const first = button();
+    const second = button();
+    const { result, rerender } = renderHook(
+      (lastResort: { current: HTMLElement }) => useNotificationFocusReturn(lastResort),
+      { initialProps: { current: first } }
+    );
+
+    rerender({ current: second });
+    result.current();
+
+    expect(second).toHaveFocus();
+  });
+
+  it('does nothing when nothing was published and there is no last resort', () => {
     const outside = button();
     outside.focus();
-    const { result } = renderHook(() => useNotificationFocusReturn());
+    const { result } = renderHook(() => useNotificationFocusReturn(nowhere));
 
     result.current();
 
@@ -60,7 +132,7 @@ describe('useNotificationFocusReturn', () => {
     primary.disabled = true;
     outside.focus();
     useNotificationOutletStore.setState({ focus: { primary: { current: primary } } });
-    const { result } = renderHook(() => useNotificationFocusReturn());
+    const { result } = renderHook(() => useNotificationFocusReturn(nowhere));
 
     result.current();
 
@@ -68,7 +140,7 @@ describe('useNotificationFocusReturn', () => {
   });
 
   it('keeps the same function until the published focus changes', () => {
-    const { result, rerender } = renderHook(() => useNotificationFocusReturn());
+    const { result, rerender } = renderHook(() => useNotificationFocusReturn(nowhere));
     const first = result.current;
 
     rerender();

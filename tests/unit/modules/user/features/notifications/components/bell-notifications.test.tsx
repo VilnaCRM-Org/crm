@@ -23,6 +23,7 @@ import {
   NOTIFICATION_SEED,
 } from '@/modules/user/features/notifications/repositories';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
+import findBellWrapper from '@tests/unit/utils/find-bell-wrapper';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 interface DefaultModule<T> {
@@ -115,7 +116,9 @@ const raise = (count: number): void => {
 const bell = (name = 'Сповіщення'): HTMLElement => screen.getByRole('button', { name });
 
 const badge = (): string[] =>
-  screen.queryAllByText(/^\d+$/u).map((digits) => digits.textContent ?? '');
+  within(findBellWrapper(bell()))
+    .queryAllByText(/^\d+$/u, { selector: '[aria-hidden="true"]' })
+    .map((digits) => digits.textContent ?? '');
 
 const host = (): HTMLElement => {
   const id = bell().getAttribute('aria-controls');
@@ -158,6 +161,7 @@ describe('BellNotifications', () => {
       expect(host()).not.toBeVisible();
       expect(host()).toHaveAttribute('hidden');
       expect(screen.getAllByText(/^\d+$/u)).toHaveLength(1);
+      expect(bell()).not.toHaveTextContent(/\d/u);
     }
   );
 
@@ -403,16 +407,43 @@ describe('BellNotifications', () => {
   });
 
   it('keeps the bell position for the panel once opening it hides the notice', async () => {
+    jest
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ left: 300, right: 348, width: 48, top: 8, bottom: 56 } as DOMRect);
+    const { style } = document.documentElement;
+    const position = (): string[] =>
+      ['--bell-centre-x', '--bell-bottom'].map((name) => style.getPropertyValue(name));
     mount();
     raise(1);
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
+    expect(position()).toEqual(['324px', '56px']);
 
     await openWithEnter();
 
-    const { style } = document.documentElement;
     expect(screen.queryByRole('button', { name: 'Закрити сповіщення' })).not.toBeInTheDocument();
-    expect(style.getPropertyValue('--bell-centre-x')).toBe('0px');
-    expect(style.getPropertyValue('--bell-bottom')).toBe('0px');
+    expect(position()).toEqual(['324px', '56px']);
+  });
+
+  it('holds back an outcome raised while the panel is open until the panel closes', async () => {
+    const load = jest.spyOn(bellOutcomeNoticeLoader, 'load');
+    mount();
+    raise(1);
+    await screen.findByRole('button', { name: 'Закрити сповіщення' });
+    await openWithEnter();
+    const rows = await within(host()).findAllByRole('listitem');
+
+    raise(1);
+
+    await waitFor(() =>
+      expect(within(host()).getAllByRole('listitem')).toHaveLength(rows.length + 1)
+    );
+    expect(screen.queryByRole('button', { name: 'Закрити сповіщення' })).not.toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.getAllByRole('button', { name: 'Закрити сповіщення' })).toHaveLength(1);
+    expect(bell()).toHaveFocus();
+    expect(load).toHaveBeenCalledTimes(1);
   });
 
   it('lists a row closed in the notice as still unread', async () => {

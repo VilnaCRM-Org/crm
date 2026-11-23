@@ -8,7 +8,15 @@ import type {
 } from '@/modules/user/features/notifications/types/notification-record';
 
 const DEFAULT_RECORD_COUNT = 3;
-const MESSAGE_KEY_LENGTH = 12;
+
+const MESSAGE_KEYS = [
+  'notification_center.seed.saved',
+  'notification_center.seed.email_sent',
+  'notification_center.seed.password_changed',
+] as const;
+
+const messageKeyAt = (index: number): string =>
+  MESSAGE_KEYS[index % MESSAGE_KEYS.length] ?? MESSAGE_KEYS[0];
 
 export function buildNotificationRecord(
   overrides: Partial<NotificationRecord> = {}
@@ -16,7 +24,7 @@ export function buildNotificationRecord(
   return {
     id: faker.string.uuid(),
     kind: 'success',
-    messageKey: faker.string.alphanumeric(MESSAGE_KEY_LENGTH),
+    messageKey: MESSAGE_KEYS[0],
     createdAt: faker.date.past().getTime(),
     read: false,
     ...overrides,
@@ -25,9 +33,13 @@ export function buildNotificationRecord(
 
 export function buildNotificationRecordSet(
   count: number = DEFAULT_RECORD_COUNT,
-  overrides: Partial<NotificationRecord> = {}
+  overrides: Partial<Omit<NotificationRecord, 'id'>> = {}
 ): NotificationRecordSet {
-  return { items: Array.from({ length: count }, () => buildNotificationRecord(overrides)) };
+  return {
+    items: Array.from({ length: count }, (_unused, index) =>
+      buildNotificationRecord({ messageKey: messageKeyAt(index), ...overrides })
+    ),
+  };
 }
 
 export function buildNotificationRecordDraft(
@@ -35,7 +47,7 @@ export function buildNotificationRecordDraft(
 ): NotificationRecordDraft {
   return {
     kind: 'success',
-    messageKey: faker.string.alphanumeric(MESSAGE_KEY_LENGTH),
+    messageKey: MESSAGE_KEYS[0],
     createdAt: faker.date.past().getTime(),
     ...overrides,
   };
@@ -46,6 +58,8 @@ export function buildNotificationRecordDraftSet(
   overrides: Partial<NotificationRecordDraft> = {}
 ): NotificationRecordDraftSet {
   return {
-    items: Array.from({ length: count }, () => buildNotificationRecordDraft(overrides)),
+    items: Array.from({ length: count }, (_unused, index) =>
+      buildNotificationRecordDraft({ messageKey: messageKeyAt(index), ...overrides })
+    ),
   };
 }

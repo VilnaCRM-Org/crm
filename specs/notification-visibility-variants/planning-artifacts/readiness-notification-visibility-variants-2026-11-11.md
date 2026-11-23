@@ -4,7 +4,7 @@ workflowType: implementation-readiness
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-13
+revised: 2026-11-23
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'architect, autonomous readiness run'
@@ -19,6 +19,11 @@ inputDocuments:
 ---
 
 # Implementation readiness: notification visibility variants
+
+> **Status, 2026-11-23.** The verdict below is iteration 4's, of 2026-11-13. It includes the owner
+> decision of 2026-11-12, which iteration 3 reviewed and iteration 4 passed. It predates the two owner
+> decisions of 2026-11-23 (the broadcast-only feed, PRD items 37–43; the bell pick, items 44–49), which
+> no readiness iteration has re-checked; they are checked on pull request #392.
 
 Iteration 4 result: PASS — 0 BLOCKER, 0 MAJOR, 5 MINOR, after the iteration 3 corrections (the
 split of Story 2.11 into Stories 2.11 to 2.13, 36 stories). The findings and the final verdict
@@ -94,19 +99,19 @@ contradiction.
 
 ### 3.1 Upstream chain
 
-| Source                                         | Brief goal | PRD                       | Architecture | Stories              |
-| ---------------------------------------------- | ---------- | ------------------------- | ------------ | -------------------- |
-| Request: three variants after a settings save  | G1         | FR-11..FR-24, FR-25/26    | §5.3, §6, §9 | 2.3–2.12, 3.1–3.4    |
-| Request: app-wide, `/settings` as the test bed | G5         | FR-2, FR-5, FR-27         | §2, §5       | 1.1, 1.2, 2.9, 3.4   |
-| Team lead: "not clearly seen" (causes 1–5)     | G2         | FR-12, FR-15–18, SM-1..5  | §9.2–§9.5    | 2.3, 2.4, 2.5, 4.8   |
-| Team lead: compare and pick                    | G1, G4     | FR-28–FR-33, SM-7         | §12, §14     | 4.1–4.8, 5.1, 5.2    |
-| A11y guarantees kept (run summary)             | G3         | FR-6, NFR-1..NFR-10       | §5.4, §10    | Epic 2 DoD, 4.4, 4.5 |
-| Owner: feature in user module, mock, movable   | G6         | FR-1..FR-7 (as amended)   | §2, §3, §4   | 1.5–1.9, 3.4, 4.9    |
-| MA-5: in-memory adapter, no mock server        | G6         | FR-4, NFR-12              | §3.3         | 1.5, 1.6             |
-| MA-6: bell enabled only under `bell`           | —          | FR-22                     | §10          | 2.7, 2.11, 3.3       |
-| R1: `notificationStyle`, default `toast`       | G1         | FR-8..FR-10               | §7           | 1.3, 1.4, 4.7        |
-| R2: `[no-adr]`                                 | —          | NFR-22                    | §7.6         | 3.3, 4.9, 4.10       |
-| F-06 final: feature-owned seed keys            | G6         | P-2, FR-4 (amend. 11, 18) | §3.3 A-17    | 1.5, 2.11, 3.4       |
+| Source                                          | Brief goal | PRD                       | Architecture | Stories              |
+| ----------------------------------------------- | ---------- | ------------------------- | ------------ | -------------------- |
+| Request: three variants after a settings save   | G1         | FR-11..FR-24, FR-25/26    | §5.3, §6, §9 | 2.3–2.12, 3.1–3.4    |
+| Request: app-wide, `/settings` as the test bed  | G5         | FR-2, FR-5, FR-27         | §2, §5       | 1.1, 1.2, 2.9, 3.4   |
+| Team lead: "not clearly seen" (causes 1–5)      | G2         | FR-12, FR-15–18, SM-1..5  | §9.2–§9.5    | 2.3, 2.4, 2.5, 4.8   |
+| Team lead: compare and pick                     | G1, G4     | FR-28–FR-33, SM-7         | §12, §14     | 4.1–4.8, 5.1, 5.2    |
+| A11y guarantees kept (run summary)              | G3         | FR-6, NFR-1..NFR-10       | §5.4, §10    | Epic 2 DoD, 4.4, 4.5 |
+| Owner: feature in user module, mock, movable    | G6         | FR-1..FR-7 (as amended)   | §2, §3, §4   | 1.5–1.9, 3.4, 4.9    |
+| MA-5: in-memory adapter, no mock server         | G6         | FR-4, NFR-12              | §3.3         | 1.5, 1.6             |
+| MA-6: bell only under `bell` (superseded 11-12) | —          | FR-22                     | §10          | 2.7, 2.11, 3.3       |
+| R1: `notificationStyle`, default `toast`        | G1         | FR-8..FR-10               | §7           | 1.3, 1.4, 4.7        |
+| R2: `[no-adr]`                                  | —          | NFR-22                    | §7.6         | 3.3, 4.9, 4.10       |
+| F-06 final: feature-owned seed keys             | G6         | P-2, FR-4 (amend. 11, 18) | §3.3 A-17    | 1.5, 2.11, 3.4       |
 
 ### 3.2 Coverage map check
 

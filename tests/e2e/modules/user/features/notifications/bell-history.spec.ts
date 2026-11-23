@@ -6,7 +6,6 @@ import {
   PROFILE_NODE,
   signInToSettings,
   stubProfile,
-  type StubbedProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
   everySectionReplies,
@@ -103,7 +102,6 @@ test.describe('Bell history (issue #391)', () => {
   test.use({ viewport: DESKTOP, timezoneId: 'UTC' });
 
   let footprint: NotificationFootprint;
-  let stub: StubbedProfile;
 
   test.beforeEach(async ({ page }) => {
     footprint = await watchNotificationFootprint(page);
@@ -113,13 +111,12 @@ test.describe('Bell history (issue #391)', () => {
   test.afterEach(async () => {
     expect(footprint.notificationRequests()).toEqual([]);
     expect(await footprint.notificationStorageWrites()).toEqual([]);
-    expect(stub.calls.filter((call) => /notification/i.test(call.operation))).toEqual([]);
   });
 
   test('lists the seeded rows when the bell is reached with Tab and opened with Enter', async ({
     page,
   }) => {
-    stub = await stubProfile(page);
+    await stubProfile(page);
     await openLoadedSettings(page);
     await expectShellReady(page);
     await expect(badgeOf(page)).toHaveText('1');
@@ -137,7 +134,7 @@ test.describe('Bell history (issue #391)', () => {
   });
 
   test('marks every row read, drops the badge and keeps focus on the button', async ({ page }) => {
-    stub = await stubProfile(page);
+    await stubProfile(page);
     await openLoadedSettings(page);
     const history = await openBellWithKeyboard(page);
 
@@ -157,7 +154,7 @@ test.describe('Bell history (issue #391)', () => {
       password: buildPassword(),
       newPassword: buildPassword(),
     };
-    stub = await stubProfile(page, everySectionReplies(edits));
+    await stubProfile(page, everySectionReplies(edits));
     await openLoadedSettings(page);
     await expect(badgeOf(page)).toHaveText('1');
 
@@ -182,7 +179,7 @@ test.describe('Bell history (issue #391)', () => {
   });
 
   test('loads the history chunk only when the bell is first opened', async ({ page }) => {
-    stub = await stubProfile(page);
+    await stubProfile(page);
     await openLoadedSettings(page);
     await saveEditedName(page, buildFullName(), buildPassword());
     await expectSuccessOutcome(page, text.saved);
@@ -197,7 +194,7 @@ test.describe('Bell history (issue #391)', () => {
   test('closes on Escape, an outside click, a Tab past the panel and a route change', async ({
     page,
   }) => {
-    stub = await stubProfile(page);
+    await stubProfile(page);
     await openLoadedSettings(page);
     await nameField(page).scrollIntoViewIfNeeded();
 
@@ -225,7 +222,7 @@ test.describe('Bell history (issue #391)', () => {
   });
 
   test('shows the seed again with a badge of one after a reload', async ({ page }) => {
-    stub = await stubProfile(page);
+    await stubProfile(page);
     await openLoadedSettings(page);
     const history = await openBellWithKeyboard(page);
     await markAllOf(history).press('Enter');

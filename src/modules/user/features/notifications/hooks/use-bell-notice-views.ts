@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { type RefObject, useCallback } from 'react';
 
 import type { NotificationViewsOptions } from '@/hooks/types/notifications-port';
 import useNotificationViews from '@/hooks/use-notification-views';
@@ -10,12 +10,16 @@ import type {
   NotificationViewSet,
 } from '@/lib/notifications/types/notification-view';
 
-export default function useBellNoticeViews(options: NotificationViewsOptions): NotificationViewSet {
+export default function useBellNoticeViews(
+  options: NotificationViewsOptions,
+  bellRef: RefObject<HTMLElement | null>
+): NotificationViewSet {
   const { dismiss } = useNotifications();
   const retire = useCallback((view: NotificationView): void => dismiss(Number(view.id)), [dismiss]);
 
   return useRetiringNotificationViews(
     useNotificationViews(useShownNotifications(), options),
-    retire
+    retire,
+    bellRef
   );
 }

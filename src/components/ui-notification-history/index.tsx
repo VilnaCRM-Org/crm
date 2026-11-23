@@ -40,7 +40,7 @@ function HistoryBody({ views, unread, copy }: HistoryBodyProps): JSX.Element {
   }
 
   return (
-    <Box component="ul" sx={styles.list}>
+    <Box component="ul" role="list" sx={styles.list}>
       {views.items.map((view) => (
         <HistoryRow key={view.id} view={view} unread={unread.has(view.id)} label={copy.unread} />
       ))}

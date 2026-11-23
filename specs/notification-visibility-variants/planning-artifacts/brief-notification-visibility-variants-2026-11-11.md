@@ -4,6 +4,8 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-11-11
+revised: 2026-11-23
+iteration: 5
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'analyst, autonomous run'
@@ -25,6 +27,10 @@ inputDocuments:
 > them, or removes the bell with C, the PRD's amendment blocks govern: the
 > [PRD](./prd-notification-visibility-variants-2026-11-11.md) items 21–36 (the 2026-11-12
 > decision) and item 31 (the Lighthouse fallback on `/`).
+
+> **Amended 2026-11-23.** The bell variant won and the other two are removed (run summary, "Decision
+> record, 2026-11-23"; PRD items 44–49). The scope statements of §4, §5, §7 and §10 that differ carry
+> a dated note in place.
 
 # Product Brief: three notification variants that are clearly seen
 
@@ -171,8 +177,10 @@ The research ranks five causes; each variant below is described by which of them
   delivery). The only repository implementation is the mock.
 - Extracting the feature into its own module now. It stays inside the user module, ready to move.
 - A notification centre, history, unread state or badge in variants A and B. Only C shows them,
-  and only from the mock.
-- Enabling the header bell in A and B. It stays natively disabled there.
+  and only from the mock. **Superseded 2026-11-12 (owner decision):** the enabled bell, the badge and
+  the history are common to every style (PRD items 21–36).
+- Enabling the header bell in A and B. It stays natively disabled there. **Superseded 2026-11-12**, as
+  above.
 - Server-pushed or asynchronous notifications. **Amended 2026-11-23 (owner decision):** broadcast
   events from notification-service are in scope, off by default (PRD items 37 to 43). Personal
   notifications stay out.
@@ -374,9 +382,12 @@ once (`saved`, `email_sent`, `password_changed`); each variant must show that co
 - The notifications feature `src/modules/user/features/notifications/`: the variant-neutral
   contract every page raises outcomes through, its public types and its repository contract.
 - The mock repository: fixtures in the local GraphQL or REST mock stack and the existing test
-  mocks; a seeded history for C; never a call to user-service.
+  mocks; a seeded history for C; never a call to user-service. **Superseded (run summary, after the
+  brief; noted here 2026-11-23):** the mock is a deterministic client-side in-memory adapter, and a
+  network mock is deferred until a schema exists, so no mock-server path is added.
 - The three visible renderers, all fed by that feature.
 - For C only: the enabled bell, its unread badge and the dropdown with the mocked history.
+  **Superseded 2026-11-12:** for every style.
 - The `notificationStyle` runtime setting, its validation at container start and its default.
 - Storybook stories for each variant and outcome at the three breakpoints.
 - Unit, accessibility, end-to-end and visual coverage of each variant on `/settings`.
@@ -482,10 +493,13 @@ Save at 1440 × 900 and three toasts covering Clear on mobile.
   repository implementation is the mock. Dependency-cruiser boundary rules apply unchanged.
 - **The enabled bell (C)** follows the user menu's menu-button pattern: expanded state, Escape,
   outside click, focus return to the bell, 44 px on mobile. A and B keep it natively disabled.
+  (Superseded 2026-11-12: the bell is enabled under every style.)
 - **Design gate:** A and B have no Figma frame and C has none for tablet or mobile, so the UX stage
   records the intended look for each and an owner confirmation or explicit deviation.
 - **Planning only here:** this bundle writes no production code; nothing is committed, and no
-  issue or pull request is opened until the owner approves.
+  issue or pull request is opened until the owner approves. (Amended 2026-11-23: the restriction
+  covered production code and its implementation. Issue #391 and pull request #392 deliver this
+  bundle for the owner's review; merging is what waits for the owner.)
 
 ## 11. Risks
 

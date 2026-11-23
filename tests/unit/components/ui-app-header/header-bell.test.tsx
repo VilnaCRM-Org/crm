@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { screen, within } from '@testing-library/react';
 
 import HeaderBell from '@/components/ui-app-header/header-bell';
+import findBellWrapper from '@tests/unit/utils/find-bell-wrapper';
 import renderShell from '@tests/unit/utils/render-shell';
 
 const SLOT = 'Live bell';
@@ -22,7 +23,9 @@ describe('HeaderBell', () => {
   it('hands the count to the disabled bell', () => {
     renderShell(<HeaderBell layout="desktop" count={1} />);
 
-    expect(screen.getByRole('button', { name: 'Notifications' })).toHaveTextContent('1');
+    const button = screen.getByRole('button', { name: 'Notifications' });
+    expect(findBellWrapper(button)).toHaveTextContent(/^1$/u);
+    expect(button).toHaveTextContent(/^$/u);
   });
 
   it.each([

@@ -31,7 +31,7 @@ const failed: NotificationDraft = { kind: 'error', messageKey: 'settings.toasts.
 const mount = (report = jest.fn()): { current: Flow } =>
   renderHook((): Flow => {
     const port = useNotifications();
-    const history = useHistory(useRecorder(report));
+    const history = useHistory(useRecorder(report), report);
 
     return { port, history, ...useNotificationAnnouncement() };
   }).result;
@@ -94,6 +94,32 @@ describe('notification flow from a raised outcome into the history', () => {
     );
     expect(useNotificationOutletStore.getState().shown.items).toHaveLength(1);
     expect(await inMemoryNotificationRepository.countUnread()).toBe(before);
+  });
+
+  it('records the outcome raised before the bell slot mounted', async () => {
+    const before = await inMemoryNotificationRepository.countUnread();
+    const port = renderHook(() => useNotifications()).result;
+    act(() => port.current.raise({ items: [saved] }));
+
+    const flow = mount();
+
+    await waitFor(() => expect(flow.current.history.unread).toBe(before + 1));
+  });
+
+  it('reports a history that cannot be read or marked read', async () => {
+    const failure = new Error('repository failed');
+    jest.spyOn(inMemoryNotificationRepository, 'list').mockRejectedValue(failure);
+    jest.spyOn(inMemoryNotificationRepository, 'markAllRead').mockRejectedValue(failure);
+    const report = jest.fn();
+    const flow = mount(report);
+
+    await waitFor(() =>
+      expect(report).toHaveBeenCalledWith('app-shell:notifications-list', failure)
+    );
+    await act(async () => flow.current.history.markAllRead());
+
+    expect(report).toHaveBeenCalledWith('app-shell:notifications-mark-read', failure);
+    expect(flow.current.history.records.items).toEqual([]);
   });
 
   it('drops the shown outcomes on dismissal and on leaving, and keeps them unread', async () => {

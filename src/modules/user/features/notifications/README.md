@@ -22,7 +22,8 @@ module so that any page can use it:
   `publishFocus` and `clear`.
 - The read hooks beside it: `useShownNotifications`, `useNotificationViews`,
   `useRetiringNotificationViews`, `useNotificationFocus`, `useNotificationFocusReturn` and
-  `useNotificationAnnouncement`.
+  `useNotificationAnnouncement`. The focus return goes to the page's published control (Save, or
+  its fallback), then to the last resort the caller passes: the bell.
 
 ## The contract
 
@@ -68,15 +69,20 @@ and registrar types. The public barrel (`index.ts`) exports types only.
 `NOTIFICATION_TOKENS.NotificationRepository` (`tokens.ts`) is the DI token, and
 `NotificationsRegistrar` (`di.ts`) registers the in-memory singleton under it by value.
 `src/config/dependency-injection-config.ts` applies the registrar with one import and one array
-entry, after the user module registrar. A real adapter later replaces that one registration.
+entry, after the user module registrar. Nothing in `src/` resolves the token today: the
+registration is the seam for container code.
 
-The container-free shell does not resolve the token. It calls `useNotificationRepository()`
-(`hooks/use-notification-repository.ts`), the one seam, so the shell never loads tsyringe or the
-composition root. The hook reads `NotificationRepositoryContext`, exported from the same file,
-whose default value is the singleton; nothing in `src/` provides another value, so the app always
-gets that instance, and a unit test resolves the token and asserts it is that very instance.
-Storybook's `withFreshNotificationRepository(seed?)` provides a new `InMemoryNotificationRepository`
-per story through that context, so one story marking rows read never reaches the next.
+The container-free shell cannot resolve the token: resolving it would load tsyringe and the
+composition root on the paint path of every protected page. It calls `useNotificationRepository()`
+(`hooks/use-notification-repository.ts`), the one seam the bell uses. The hook reads
+`NotificationRepositoryContext`, exported from the same file, whose default value is the singleton;
+nothing in `src/` provides another value, so the app always gets that instance, and a unit test
+resolves the token and asserts it is that very instance. A real adapter therefore has to change two
+places: the registration in `di.ts` and the instance the hook returns (its context default, or a
+`NotificationRepositoryContext.Provider` around the slot). Changing the registration alone leaves
+the bell on the mock, and that unit test fails. Storybook's `withFreshNotificationRepository(seed?)`
+provides a new `InMemoryNotificationRepository` per story through that context, so one story marking
+rows read never reaches the next.
 
 `features/notifications/di.ts` is not in `DI_COMPOSITION_ROOTS` (`.dependency-cruiser.js`), whose
 module entry is `^src/modules/[^/]+/config/di[.]ts$`, so the
@@ -91,12 +97,20 @@ rather than closed by widening that list.
 All hooks in `hooks/` are container-free and read the repository through
 `useNotificationRepository()`.
 
-- `useNotificationRecorder(report)` records every raise of the outlet store once, keyed on the
-  store revision, and reports a failed write as `app-shell:notifications-record`.
-- `useNotificationHistory(revision)` returns the records newest first, the unread count,
-  `markAllRead` and `refresh`; it reloads on mount, on each revision and after `markAllRead`.
-- `useBellDisclosure(layout)` owns the bell's open state and `visited`. Opening hides the merged
-  card. Escape, a pointerdown or focus leaving the bell wrapper, a
+- `useNotificationRecorder(report)` records every raise of the outlet store once and reports a
+  failed write as `app-shell:notifications-record`. The store's `recorded` field holds the revision
+  of the last recorded raise, so the batch raised before this lazy slot mounts is recorded on mount
+  and a remount never records a batch twice. The store keeps the latest batch only: of two raises
+  made before the first mount, the earlier one is shown and announced but not recorded, and a batch
+  whose page was left before the mount is not recorded.
+- `useNotificationHistory(revision, report)` returns the records newest first, the unread count,
+  `markAllRead` and `refresh`; it reloads on mount, on each revision and after `markAllRead`. A
+  rejected `list` or `countUnread` is reported as `app-shell:notifications-list` and keeps the last
+  snapshot; a rejected `markAllRead` is reported as `app-shell:notifications-mark-read` and leaves
+  the rows unread.
+- `useBellDisclosure(layout)` owns the bell's open state and `visited`. Opening dismisses the
+  merged card; an outcome raised while the panel is open is listed there, and its card waits until
+  the panel closes. Escape, a pointerdown or focus leaving the bell wrapper, a
   route change and a layout change close it. It is built from `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
@@ -119,7 +133,9 @@ notifications wait for authorized subscriptions there and for user-service #526 
 - **Delivery:** `BroadcastEventClient` follows the service's streaming protocol over SSE. It drops
   repeated envelope ids (the newest 500), lets the browser reconnect an interrupted stream, and
   reopens a closed one after the last event id, with a delay that doubles up to 30 s and has a
-  random part. It sends no token and no credentials.
+  random part. It sends no token and no cross-origin credentials (`withCredentials` stays off); an
+  `EventSource` still sends the cookies of its own origin, so a stream served from the app's origin
+  receives them.
 - **Limits:** a page that loads receives live events only, and the in-memory records go with a
   reload, like every other record here.
 

@@ -8,6 +8,8 @@ const BELOW_DESKTOP = '@media (max-width:1439.95px)';
 
 const DESKTOP_COLOURS = '@media (min-width:1440px) and (forced-colors: none)';
 
+const DESKTOP_FORCED = '@media (min-width:1440px) and (forced-colors: active)';
+
 const REDUCED_MOTION = '@media (prefers-reduced-motion: reduce)';
 
 const FORCED_COLORS = '@media (forced-colors: active)';
@@ -69,6 +71,7 @@ export default {
     [DESKTOP_COLOURS]: {
       filter: [...outline, CARD_DROP].join(' '),
     },
+    [DESKTOP_FORCED]: { isolation: 'isolate' },
     [REDUCED_MOTION]: { animation: 'none' },
   },
   pill: {
@@ -83,7 +86,13 @@ export default {
       borderRadius: '24px 24px 0 0',
       backgroundColor: white,
     },
-    [FORCED_COLORS]: { border: '1px solid CanvasText' },
+    [DESKTOP_FORCED]: {
+      zIndex: 1,
+      boxSizing: 'border-box',
+      height: '56px',
+      border: '1px solid CanvasText',
+      borderBottom: 'none',
+    },
   },
   card: {
     position: 'fixed',

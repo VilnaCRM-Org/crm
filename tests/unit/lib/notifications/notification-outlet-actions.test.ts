@@ -88,7 +88,10 @@ describe('NotificationOutletActions', () => {
     it('speaks successes politely and errors assertively, alternating the mark per raise', () => {
       const actions = createActions();
       const success = buildNotificationDraft({ kind: 'success' });
-      const error = buildNotificationDraft({ kind: 'error' });
+      const error = buildNotificationDraft({
+        kind: 'error',
+        messageKey: 'settings.toasts.save_failed',
+      });
       const raiseBoth = (): void => actions.raise({ items: [success, error] }, translate);
       const polite = `text:${success.messageKey}`;
       const assertive = `text:${error.messageKey}`;

@@ -6,6 +6,7 @@ type Styles = (typeof import('@/components/ui-bell-notice/styles'))['default'];
 const DESKTOP = '@media (min-width:1440px)';
 const BELOW = '@media (max-width:1439.95px)';
 const DESKTOP_COLOURS = '@media (min-width:1440px) and (forced-colors: none)';
+const DESKTOP_FORCED = '@media (min-width:1440px) and (forced-colors: active)';
 const REDUCED = '@media (prefers-reduced-motion: reduce)';
 const FORCED = '@media (forced-colors: active)';
 const CARD_SHADOW = 'drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))';
@@ -156,10 +157,30 @@ describe('bell notice styles', () => {
     expect(Reflect.get(card, REDUCED)).toEqual({ animation: 'none' });
   });
 
-  it('uses a CanvasText border on the pill and the card in forced colors', async () => {
-    const { pill, card } = await loadStyles();
+  it('opens the tab into the card in forced colors: one outline and no seam', async () => {
+    const { root, pill, card } = await loadStyles();
+    const tab = at(pill, DESKTOP_FORCED);
+    const cardTop = Number.parseInt(String(at(card, DESKTOP).top), 10);
 
-    expect(Reflect.get(pill, FORCED)).toEqual({ border: '1px solid CanvasText' });
+    expect(at(root, DESKTOP_FORCED)).toEqual({ isolation: 'isolate' });
+    expect(tab).toEqual({
+      zIndex: 1,
+      boxSizing: 'border-box',
+      height: '56px',
+      border: '1px solid CanvasText',
+      borderBottom: 'none',
+    });
+    expect(Object.keys(tab).indexOf('borderBottom')).toBeGreaterThan(
+      Object.keys(tab).indexOf('border')
+    );
+    expect(Number.parseInt(String(tab.height), 10)).toBe(cardTop + 1);
+    expect(pill).not.toHaveProperty([FORCED]);
+  });
+
+  it('draws the card and its caret in CanvasText in forced colors', async () => {
+    const { card, caret } = await loadStyles();
+
+    expect(Reflect.get(caret, FORCED)).toEqual({ backgroundColor: 'CanvasText' });
     expect(Reflect.get(card, FORCED)).toEqual({
       border: '1px solid CanvasText',
       boxShadow: 'none',

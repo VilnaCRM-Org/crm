@@ -3,6 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-11-11
+revised: 2026-11-23
+iteration: 9
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm + sm, autonomous run'
@@ -937,7 +939,7 @@ reports `BLOCKED`, never skips).
 
 **Acceptance Criteria:**
 
-- Given the Figma design gate, when it reads `397:18093`, then the merged shape follows a 48 × 117 radius-24 pill at 0,0 fused with a 256-wide, ≥ 62 px tall, radius-12 card at 23,55, and the drawn `#D0D4D8` stroke (1.44:1) is replaced by the tone stroke (R6).
+- Given the Figma design gate, when it reads `397:18093`, then the merged shape follows a 48 × 67 tab at 0,0 (radius 24 24 0 0) fused with a 279-wide, ≥ 62 px tall card at 0,55 (radius 0 12 12 12), and the drawn `#D0D4D8` stroke (1.44:1) is replaced by the neutral `#80878A` stroke (R6, PRD item 45). Amended 2026-11-23, architecture §9.5: this supersedes the 48 × 117 pill with a 256-wide card at 23,55 and the tone stroke.
 - Given a success and an error row at the desktop layout, when the style objects are read, then the union outline is four 1 px `drop-shadow`s in `#2E7D32` / `#DC3939` followed by `drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))`; the edge contrast is 4.95:1 / 4.33:1 on `#FBFBFB`, and 5.13:1 / 4.48:1 on the white tablet and mobile header.
 - Given a row, when contrast is computed, then the message `#1A1C1E` on white is 17.09:1, the time `#57595B` on white is 7.03:1 (the rejected `#969B9D` is 2.81:1), and the error icon on white 4.48:1.
 - Given the tablet and mobile layouts, when the card renders with `--bell-centre-x` set, then it is `min(313px, 100vw - 32px)` wide with radius 8, a 1 px tone border, `popoverShadow`, a 26 × 6 caret whose tip is on the bell's centre, and its left edge clamped to 16 px gutters (FR-19).
@@ -955,7 +957,7 @@ reports `BLOCKED`, never skips).
 
 > Code facts (2026-11-20): Figma `397:18093` puts the message at x 1101, 14 px inside the union
 > and 9 px left of the card edge, so on desktop the card body takes `margin-left: -23px` and the
-> text starts 14 px from the union's left edge. `useBellAnchor` also sets `--bell-bottom`, the
+> text starts 14 px from the union's left edge (superseded 2026-11-23, below). `useBellAnchor` also sets `--bell-bottom`, the
 > caret card's vertical anchor (top is the bell bottom plus 10 px: 4 px gap and the 6 px caret).
 > The caret card is `position: fixed` and animates itself, because a transform on an ancestor
 > would re-anchor a fixed child. The shared content piece keeps its 14/20 message and 13/20 time;
@@ -963,7 +965,9 @@ reports `BLOCKED`, never skips).
 
 > Code facts (2026-11-23): the shape is now a 48 × 67 tab over a 279-wide card at 0, 55 and the
 > notice no longer anchors the bell; see the architecture §9.5 amendments of the same date. The
-> `margin-left: -23px` above is gone, because the card starts at the union's left edge.
+> `margin-left: -23px` above is gone, because the card starts at the union's left edge. In forced
+> colors on desktop the tab has no bottom border, is 56 px tall and is painted over the card's top
+> border, so the outline is continuous and no line crosses the shape.
 
 > Assumption: if WebKit renders the four-shadow union outline unevenly in the CI baselines of
 > Story 4.6, the K3a fallback (two bordered boxes with a white patch over the seam) is applied in
@@ -2133,18 +2137,21 @@ bundle-size report, `make check-adr-drift`, `gate ratchet`.
 
 ## Follow-ups
 
-Neither follow-up is dispatched. Each waits on a human decision.
+Neither follow-up is dispatched. Each waits on a human decision. (Amended 2026-11-23: the decision is
+made. 5.1 is done except for the two parts its note names, and 5.2 is done.)
 
 ### Follow-up 5.1: Record the team lead's pick and the owner's confirmation
 
-> **Done (2026-11-23).** The owner's decision, C (`bell`), is recorded in the run summary, "Decision
-> record, 2026-11-23". The request to the designer for the missing frames is still open.
+> **Done in part (2026-11-23).** The owner's decision, C (`bell`), its date and the confirming owner are
+> recorded in the run summary, "Decision record, 2026-11-23". Two parts of the criteria below are not
+> met: the owner gave no reason, so "the reason" is not recorded, and the designer has not yet been
+> asked for the missing frames.
 
 As the product owner,
 I want the pick, its reason and the confirmation written into this bundle,
 So that the removal has an authoritative trigger.
 
-**Dependencies:** BLOCKED on the team lead's review of the published Storybook, the running app
+**Dependencies:** (closed 2026-11-23; as first written) BLOCKED on the team lead's review of the published Storybook, the running app
 (`make start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=<toast|inline|bell>`, the value on the make
 command line and `prod` recreated on each run, architecture §7.5; or the sandbox if R3 is answered
 yes) and the Story 4.8 sheet. Default for the PRD §11 owner question 2: no time box, and the
@@ -2160,7 +2167,7 @@ bundle; a designer request for the winner's missing frames.
 - Given the review, when it ends, then the bundle holds a dated entry naming one variant (`toast`, `inline` or `bell`) or "none, revise", the reason, and the confirming owner.
 - Given a picked variant, when the entry is written, then the designer has been asked to draw the winner's missing frames at every breakpoint.
 
-### Follow-up 5.2: Remove the losing variants and the notificationStyle setting (BLOCKED)
+### Follow-up 5.2: Remove the losing variants and the notificationStyle setting (done 2026-11-23)
 
 > **Done (2026-11-23), no longer blocked.** Carried out for "C wins", together with the neutral edge of
 > PRD amendment items 45 and 46. The bell's own settings baselines and the visual job are recorded and
@@ -2170,7 +2177,7 @@ As a maintainer after the pick,
 I want the two losing renderers and the temporary setting deleted in one change,
 So that the code base keeps one implementation with every gate green.
 
-**Dependencies:** BLOCKED on Follow-up 5.1 (the team-lead decision). If 5.1 records "none,
+**Dependencies:** (met 2026-11-23; as first written) BLOCKED on Follow-up 5.1 (the team-lead decision). If 5.1 records "none,
 revise", this stays blocked and a new planning cycle starts (P-13). Promote it to a `### Story`
 header only after 5.1 is recorded.
 

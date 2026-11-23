@@ -3,6 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-11-11
+revised: 2026-11-23
+iteration: 8
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm, autonomous run'
@@ -123,8 +125,9 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 > 10. **SM-2 (F-05).** SM-2's target reads "recorded for every variant; B's nearest-edge gap
 >     ≤ 16 px (FR-15)". The Save-centre to first-outcome-centre distance is recorded without a
 >     threshold for every variant, B included: at 1440 × 900 Save is 270 × 62 and B's block is at
->     least 49 px tall and the full content width, so B's centre distance is at least about 71 px
->     vertically and 285 px horizontally. In the §3.2 reference sentence, "B about 0–16 px" reads
+>     least 49 px tall and the full content width, so B's centre distance is at least about 55 px
+>     vertically (a 0 px gap; 71 px at the 16 px maximum gap) and 285 px horizontally. (Corrected
+>     2026-11-23: this item first gave the 16 px figure, 71 px, as the lower bound.) In the §3.2 reference sentence, "B about 0–16 px" reads
 >     "B's edge gap 0–16 px (its centre distance is not comparable with A's and C's)".
 > 11. **P-2, FR-4's seed assumption and §13 (F-06).** No UX stage runs in this bundle. The seed is
 >     three success rows whose copy equals the shipped outcome copy, held under three
@@ -418,7 +421,8 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     - Given no setting, when a protected page loads, then no event stream is opened.
 >     - Given the setting, when one valid event arrives, then the history gains one unread row, the
 >       badge rises by one, and no transient surface appears.
->     - Given the same event id twice, an unknown code or a malformed frame, then nothing is added.
+>     - Given the same event id twice, an unknown code or a malformed frame, then nothing is added. (The
+>       repeated id is bounded by item 50.)
 >     - Given the shell unmounts, then the stream is closed and no reconnection follows.
 
 > **Amendment (2026-11-23, owner decision: the bell variant wins).** The team lead's pick and the
@@ -445,6 +449,29 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     rendered it without one.
 > 49. **Item 43's exception is closed.** The "no transient surface" clause is asserted on the one
 >     surface that remains.
+
+> **Amendment (2026-11-23, review of pull request #392).** Corrections found by the reviewers; they
+> change no requirement's intent.
+>
+> 50. **Item 43, the deduplication window.** "Given the same event id twice, then nothing is added"
+>     holds inside the newest 500 distinct ids of one open stream client. An id replayed after 500 newer
+>     ones is recorded again; the records are in memory and go with a reload, so durable deduplication
+>     waits for a store.
+> 51. **Item 40, credentials.** "Without a token, credentials or user id" reads "without a token, a user
+>     id or cross-origin credentials": an `EventSource` sends the cookies of its own origin, so a stream
+>     served from the app's origin receives them.
+> 52. **NFR-17, the per-file caps in full.** `config/metrics-policy.json` caps a file at 10 functions
+>     (`nom_functions_file_max`), 6 closures (`nom_closures_file_max`) and 15 of both together
+>     (`nom_total_file_max`); a closure takes at most 3 arguments (`nargs_closure_max`) and a function or
+>     closure has at most 3 exits (`nexits_max`).
+> 53. **FR-5, the first mount.** The batch raised before the notifications slot mounts is recorded when
+>     it mounts, once, and a remount records nothing twice. The store keeps the latest batch only.
+> 54. **FR-5 and FR-24, a failing repository.** A rejected read or mark-all-read is reported as
+>     `app-shell:notifications-list` or `app-shell:notifications-mark-read`; the bell keeps its last
+>     rows and count.
+> 55. **FR-20 and FR-24, the card and the panel.** Opening the bell dismisses the card, and an outcome
+>     raised while the panel is open is listed there and shown as a card only after the panel closes, so
+>     the two never overlap. Retry with no usable page target returns focus to the bell.
 
 ## 1. Executive summary
 

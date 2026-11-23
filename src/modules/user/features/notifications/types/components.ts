@@ -1,16 +1,12 @@
 import type { ComponentType, RefObject } from 'react';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
-import type {
-  ShellChunkFailureHandler,
-  ShellChunkSource,
-  ShellSlotProps,
-} from '@/routes/types/shell-slot';
+import type { ShellChunkFailureHandler, ShellSlotProps } from '@/routes/types/shell-slot';
 
 import type { BellDisclosure } from './bell-disclosure';
 import type { NotificationRecordSet } from './notification-record';
 
-export type NotificationChunkReporter = (source: ShellChunkSource, error: unknown) => void;
+export type NotificationChunkReporter = ShellChunkFailureHandler;
 
 export interface NotificationHistoryPanelProps {
   readonly records: NotificationRecordSet;
@@ -36,6 +32,7 @@ export interface BellNotificationsProps {
 }
 
 export interface LazyBellNoticeProps extends BellOutcomeNoticeProps {
+  readonly hidden: boolean;
   readonly onChunkFailure: ShellChunkFailureHandler;
 }
 

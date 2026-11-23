@@ -16,6 +16,7 @@ describe('CLEARED_NOTIFICATION_OUTLET', () => {
       announcement: { polite: '', assertive: '' },
       focus: null,
       revision: 0,
+      recorded: 0,
       nextId: 1,
       marked: false,
     });

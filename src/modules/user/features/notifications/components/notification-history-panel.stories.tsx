@@ -1,39 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
 import Panel from '@/modules/user/features/notifications/components/notification-history-panel';
+import { READ_HISTORY, SEEDED_HISTORY } from '@stories/notification-story-decorators';
 import { noop } from '@stories/story-callbacks';
-
-const RECORDS = {
-  items: [
-    {
-      id: 'seed-1',
-      kind: 'success',
-      messageKey: 'notification_center.seed.password_changed',
-      createdAt: 1_790_000_000_000,
-      read: false,
-    },
-    {
-      id: 'seed-2',
-      kind: 'success',
-      messageKey: 'notification_center.seed.email_sent',
-      createdAt: 1_789_990_000_000,
-      read: true,
-    },
-    {
-      id: 'seed-3',
-      kind: 'success',
-      messageKey: 'notification_center.seed.saved',
-      createdAt: 1_789_900_000_000,
-      read: true,
-    },
-  ],
-} as const;
 
 const meta: Meta<typeof Panel> = {
   title: 'Modules/User/Notifications/NotificationHistoryPanel',
   component: Panel,
   tags: ['autodocs'],
-  args: { records: RECORDS, onMarkAllRead: noop },
+  args: { records: SEEDED_HISTORY, onMarkAllRead: noop },
   parameters: {
     docs: {
       description: {
@@ -56,10 +31,6 @@ type Story = StoryObj<typeof Panel>;
 
 export const Seeded: Story = {};
 
-export const AllRead: Story = {
-  args: {
-    records: { items: RECORDS.items.map((record) => ({ ...record, read: true })) },
-  },
-};
+export const AllRead: Story = { args: { records: READ_HISTORY } };
 
 export const Empty: Story = { args: { records: { items: [] } } };

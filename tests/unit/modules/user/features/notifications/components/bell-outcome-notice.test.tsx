@@ -42,6 +42,19 @@ function Page(): JSX.Element {
   );
 }
 
+function BellOnly(): JSX.Element {
+  const bell = useRef<HTMLButtonElement>(null);
+
+  return (
+    <I18nextProvider i18n={i18n}>
+      <button type="button" ref={bell}>
+        Сповіщення
+      </button>
+      <Notice bellRef={bell} />
+    </I18nextProvider>
+  );
+}
+
 const portOf = (): ReturnType<typeof useNotifications> =>
   renderHook(() => useNotifications(), { wrapper }).result.current;
 
@@ -158,20 +171,29 @@ describe('BellOutcomeNotice', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
+  it('on Retry returns focus to the bell when no focus target was published', async () => {
+    const port = portOf();
+    render(<BellOnly />);
+    act(() =>
+      port.raise({
+        items: [
+          {
+            kind: 'error',
+            messageKey: 'settings.toasts.save_failed_transient',
+            action: { labelKey: 'notifications.error.retry_button', onActivate: jest.fn() },
+          },
+        ],
+      })
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Сповіщення' })).toHaveFocus();
+  });
+
   it('returns focus to the bell when no focus target was published', async () => {
     const port = portOf();
-    function BellOnly(): JSX.Element {
-      const bell = useRef<HTMLButtonElement>(null);
-
-      return (
-        <I18nextProvider i18n={i18n}>
-          <button type="button" ref={bell}>
-            Сповіщення
-          </button>
-          <Notice bellRef={bell} />
-        </I18nextProvider>
-      );
-    }
     render(<BellOnly />);
     act(() => port.raise({ items: [saved] }));
 
@@ -184,18 +206,6 @@ describe('BellOutcomeNotice', () => {
   it('returns focus to the bell when the primary is detached and no fallback exists', async () => {
     const port = portOf();
     const detached = document.createElement('button');
-    function BellOnly(): JSX.Element {
-      const bell = useRef<HTMLButtonElement>(null);
-
-      return (
-        <I18nextProvider i18n={i18n}>
-          <button type="button" ref={bell}>
-            Сповіщення
-          </button>
-          <Notice bellRef={bell} />
-        </I18nextProvider>
-      );
-    }
     render(<BellOnly />);
     act(() => useNotificationOutletStore.setState({ focus: { primary: { current: detached } } }));
     act(() => port.raise({ items: [saved] }));

@@ -8,11 +8,14 @@ import UINotificationOutlet from '@/components/ui-notification-outlet';
 import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
 import BellNotifications from '@/modules/user/features/notifications/components/bell-notifications';
 import {
+  READ_HISTORY,
+  storyClock,
   withFreshNotificationRepository,
   withRaisedNotifications,
 } from '@stories/notification-story-decorators';
 import { withMemoryRouter } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
+import waitForText from '@stories/wait-for-text';
 
 import useNotificationRecorder from '../hooks/use-notification-recorder';
 
@@ -24,31 +27,7 @@ const THREE: NotificationDraftSet = {
   ],
 };
 
-const ALL_READ = {
-  items: [
-    {
-      id: 'seed-1',
-      kind: 'success',
-      messageKey: 'notification_center.seed.password_changed',
-      createdAt: Date.parse('2026-11-10T09:15:00Z'),
-      read: true,
-    },
-    {
-      id: 'seed-2',
-      kind: 'success',
-      messageKey: 'notification_center.seed.email_sent',
-      createdAt: Date.parse('2026-11-09T16:40:00Z'),
-      read: true,
-    },
-    {
-      id: 'seed-3',
-      kind: 'success',
-      messageKey: 'notification_center.seed.saved',
-      createdAt: Date.parse('2026-11-08T11:05:00Z'),
-      read: true,
-    },
-  ],
-} as const;
+const HISTORY_ROW = 'Ми надіслали посилання для підтвердження на нову адресу';
 
 const STAGE = {
   page: { minHeight: '24rem', backgroundColor: '#FBFBFB' },
@@ -97,7 +76,7 @@ const openBell = ({ canvasElement }: { canvasElement: HTMLElement }): Promise<vo
   const bell = canvasElement.querySelector<HTMLButtonElement>('button[aria-expanded]');
   bell?.click();
 
-  return Promise.resolve();
+  return waitForText(canvasElement, HISTORY_ROW);
 };
 
 const meta: Meta<typeof BellStage> = {
@@ -131,7 +110,7 @@ type Story = StoryObj<typeof BellStage>;
 export const Closed: Story = { decorators: [withFreshNotificationRepository()] };
 
 export const WithNotice: Story = {
-  decorators: [withRaisedNotifications(THREE), withFreshNotificationRepository()],
+  decorators: [withRaisedNotifications(THREE, storyClock), withFreshNotificationRepository()],
 };
 
 export const HistoryOpen: Story = {
@@ -140,7 +119,7 @@ export const HistoryOpen: Story = {
 };
 
 export const AfterMarkAllRead: Story = {
-  decorators: [withFreshNotificationRepository(ALL_READ)],
+  decorators: [withFreshNotificationRepository(READ_HISTORY)],
   play: openBell,
 };
 

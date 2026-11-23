@@ -8,6 +8,7 @@ import { ReactComponent as TasksIcon } from '@/assets/icons/shell/dotpoints-01.s
 import type {
   DisclosureButtonProps,
   HeaderControlKind,
+  HeaderGlyphProps,
   HeaderIconButtonProps,
 } from '@/components/types/ui-app-header';
 
@@ -21,6 +22,17 @@ const GLYPHS: Record<HeaderControlKind, ComponentType<SVGProps<SVGSVGElement>>> 
   notifications: BellIcon,
   tasks: TasksIcon,
 };
+
+function HeaderGlyph({ layout, kind }: HeaderGlyphProps): JSX.Element {
+  return (
+    <Box
+      component={GLYPHS[kind]}
+      aria-hidden="true"
+      focusable="false"
+      sx={styles.iconGlyph[layout]}
+    />
+  );
+}
 
 function DisclosureButton({ layout, kind, count, disclosure }: DisclosureButtonProps): JSX.Element {
   const { t } = useTranslation();
@@ -40,12 +52,7 @@ function DisclosureButton({ layout, kind, count, disclosure }: DisclosureButtonP
         sx={bellStyles.enabled[layout]}
         onClick={onToggle}
       >
-        <Box
-          component={GLYPHS[kind]}
-          aria-hidden="true"
-          focusable="false"
-          sx={styles.iconGlyph[layout]}
-        />
+        <HeaderGlyph layout={layout} kind={kind} />
       </Box>
       {layout !== 'mobile' && <HeaderBadge count={count} tone="alert" />}
       {describedBy !== undefined && (
@@ -63,20 +70,17 @@ function DisabledButton({ layout, kind, count }: HeaderIconButtonProps): JSX.Ele
 
   return (
     <>
-      <Box
-        component="button"
-        type="button"
-        disabled
-        aria-label={t(`app_shell.${kind}.label`)}
-        aria-describedby={showsCount ? `${statusId} ${countId}` : statusId}
-        sx={styles.iconButton[layout]}
-      >
+      <Box sx={bellStyles.slot[layout]}>
         <Box
-          component={GLYPHS[kind]}
-          aria-hidden="true"
-          focusable="false"
-          sx={styles.iconGlyph[layout]}
-        />
+          component="button"
+          type="button"
+          disabled
+          aria-label={t(`app_shell.${kind}.label`)}
+          aria-describedby={showsCount ? `${statusId} ${countId}` : statusId}
+          sx={styles.iconButton[layout]}
+        >
+          <HeaderGlyph layout={layout} kind={kind} />
+        </Box>
         {layout !== 'mobile' && <HeaderBadge count={count} />}
       </Box>
       <HeaderHiddenText id={statusId}>{t('app_shell.unavailable')}</HeaderHiddenText>

@@ -7,9 +7,10 @@ import HeaderIconButton from './header-icon-button';
 const ENABLED = {
   expanded: false,
   controls: 'notification-history',
-  describedBy: '4 непрочитані',
   onToggle: noop,
 };
+
+const UNREAD = { ...ENABLED, describedBy: '4 непрочитані' };
 
 const meta: Meta<typeof HeaderIconButton> = {
   title: 'Shell/Header/HeaderIconButton',
@@ -65,10 +66,10 @@ export const BellEnabled: Story = { args: { disclosure: ENABLED } };
 
 export const BellExpanded: Story = { args: { disclosure: { ...ENABLED, expanded: true } } };
 
-export const BellWithUnread: Story = { args: { count: 4, disclosure: ENABLED } };
+export const BellWithUnread: Story = { args: { count: 4, disclosure: UNREAD } };
 
 export const TabletBellWithUnread: Story = {
-  args: { layout: 'tablet', count: 4, disclosure: ENABLED },
+  args: { layout: 'tablet', count: 4, disclosure: UNREAD },
 };
 
 export const MobileBellEnabled: Story = { args: { layout: 'mobile', disclosure: ENABLED } };

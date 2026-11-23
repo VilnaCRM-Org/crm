@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { type RefObject, useCallback } from 'react';
 
 import useNotificationFocus from './use-notification-focus';
 
@@ -6,11 +6,16 @@ function usable(element: HTMLElement | null | undefined): HTMLElement | undefine
   return element?.isConnected && !element.matches(':disabled') ? element : undefined;
 }
 
-export default function useNotificationFocusReturn(): () => void {
+export default function useNotificationFocusReturn(
+  lastResort: RefObject<HTMLElement | null>
+): () => void {
   const focus = useNotificationFocus();
 
   return useCallback((): void => {
-    const target = usable(focus?.primary.current) ?? usable(focus?.fallback?.current);
+    const target =
+      usable(focus?.primary.current) ??
+      usable(focus?.fallback?.current) ??
+      usable(lastResort.current);
     target?.focus();
-  }, [focus]);
+  }, [focus, lastResort]);
 }

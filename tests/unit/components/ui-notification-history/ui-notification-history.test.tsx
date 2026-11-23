@@ -50,6 +50,7 @@ describe('UINotificationHistory', () => {
     render(<Panel />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Сповіщення' })).toBeInTheDocument();
+    expect(screen.getByRole('list')).toHaveAttribute('role', 'list');
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       'Пароль змінено10 листопада, 09:15',
       'НепрочитанеНе вдалося зберегти10 листопада, 09:10',
@@ -135,13 +136,13 @@ describe('UINotificationHistory', () => {
     expect(screen.queryByText('Сповіщень ще немає')).not.toBeInTheDocument();
   });
 
-  it('carries no role, aria-live or aria-atomic and has no close buttons', () => {
+  it('carries no role but its list role, no live region and no close buttons', () => {
     render(<Panel />);
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-    expect(document.body.innerHTML).not.toMatch(/aria-live|aria-atomic|role=/);
+    expect(document.body.innerHTML).not.toMatch(/aria-live|aria-atomic|role=(?!"list")/);
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 });

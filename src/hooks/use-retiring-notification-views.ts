@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { type RefObject, useMemo } from 'react';
 
 import type {
   NotificationView,
@@ -9,9 +9,10 @@ import useNotificationFocusReturn from './use-notification-focus-return';
 
 export default function useRetiringNotificationViews(
   views: NotificationViewSet,
-  retire: (view: NotificationView) => void
+  retire: (view: NotificationView) => void,
+  lastResort: RefObject<HTMLElement | null>
 ): NotificationViewSet {
-  const focusReturn = useNotificationFocusReturn();
+  const focusReturn = useNotificationFocusReturn(lastResort);
 
   return useMemo(
     (): NotificationViewSet => ({

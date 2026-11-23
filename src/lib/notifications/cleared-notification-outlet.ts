@@ -9,6 +9,7 @@ const CLEARED_NOTIFICATION_OUTLET: NotificationOutletState = Object.freeze({
   announcement: Object.freeze({ polite: '', assertive: '' }),
   focus: null,
   revision: 0,
+  recorded: 0,
   nextId: 1,
   marked: false,
 });

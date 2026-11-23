@@ -97,26 +97,28 @@ A module may put one piece of its UI into the app shell without the shell import
 `userMenu` and `notifications`. Each is a loader of a component that takes the shell `layout`
 (`ShellSlotLayout`: `mobile`, `tablet` or `desktop`), `signOut`, an `onChunkFailure` callback and an
 `onAvatar` callback (`ShellSlotProps`). The settings contract declares `userMenu`
-(`webpackChunkName: "user-menu"`); no contract declares `notifications` yet, and without it the
-header keeps its disabled bell. `RouteComposer` finds, per key, the one module that declares it and
-passes both loaders to `protectedLayoutLoader.create`, which hands `AppLayout` one slot per declared
-key, each built by `ShellSlotFactory.create(load, source)` in the `protected-layout` chunk: a lazy
-component wrapped like a page chunk (one re-import, the MUI theme shell loaded in parallel),
-reporting through `routeMapper.slotFailureReporter()`. `RouteValidator` rejects a registry in which
-two modules declare the same key (`Only one route module may declare shell.<key> (<ids>)`).
+(`webpackChunkName: "user-menu"`) and the notifications contract (`user.notifications`) declares
+`notifications` (`webpackChunkName: "notifications-shell"`), which enables the bell on every
+protected page; without a declaring contract the header keeps its disabled bell. `RouteComposer`
+finds, per key, the one module that declares it and passes both loaders to
+`protectedLayoutLoader.create`, which hands `AppLayout` one slot per declared key, each built by
+`ShellSlotFactory.create(load, source)` in the `protected-layout` chunk: a lazy component wrapped
+like a page chunk (one re-import, the MUI theme shell loaded in parallel), reporting through
+`routeMapper.slotFailureReporter()`. `RouteValidator` rejects a registry in which two modules
+declare the same key (`Only one route module may declare shell.<key> (<ids>)`).
 
 - **The avatar copy (`onAvatar`):** the host (`UIAppShell`) renders the slot with
-  `ShellSlotHostProps` — `signOut` plus `onAvatar`, its own state setter — and the factory passes
-  both through. The loaded slot calls `onAvatar` with an aria-hidden, non-focusable copy of the
-  avatar it is showing, and with `null` when it unmounts; the shell hands that node to the mobile
-  drawer, whose opaque header covers the header avatar. It is the slot's output, not a second slot:
-  a second component reading the user would issue a second `currentUser` query (the read is
-  `no-cache` and re-runs on every navigation) and flash the glyph before the monogram on every
-  drawer open, and copying the user into a client store is what the state rules forbid. So the copy
-  costs no request, no chunk and no new contract key. Before the slot loads, after its chunk fails
-  twice, or without a declaring module, `onAvatar` is never called and the drawer keeps its 40 px
-  `#E1E7EA` placeholder with the no-data glyph, the same size, so nothing shifts and nothing is
-  announced.
+  `ShellSlotHostProps` — the shell `layout`, `signOut` and `onAvatar`, its own state setter — and
+  the factory passes all three through. The loaded slot calls `onAvatar` with an aria-hidden,
+  non-focusable copy of the avatar it is showing, and with `null` when it unmounts; the shell hands
+  that node to the mobile drawer, whose opaque header covers the header avatar. It is the slot's
+  output, not a second slot: a second component reading the user would issue a second `currentUser`
+  query (the read is `no-cache` and re-runs on every navigation) and flash the glyph before the
+  monogram on every drawer open, and copying the user into a client store is what the state rules
+  forbid. So the copy costs no request, no chunk and no new contract key. Before the slot loads,
+  after its chunk fails twice, or without a declaring module, `onAvatar` is never called and the
+  drawer keeps its 40 px `#E1E7EA` placeholder with the no-data glyph, the same size, so nothing
+  shifts and nothing is announced.
 
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
   failure is captured with the slot's own `ShellSlotSource`: `'app-shell:user-menu'` for the user

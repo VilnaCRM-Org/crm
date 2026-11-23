@@ -8,6 +8,8 @@ export type ShellChunkSource =
   | 'app-shell:current-user'
   | 'app-shell:notifications'
   | 'app-shell:notifications-history'
+  | 'app-shell:notifications-list'
+  | 'app-shell:notifications-mark-read'
   | 'app-shell:notifications-notice'
   | 'app-shell:notifications-record';
 

@@ -34,7 +34,7 @@ function NoticeRow({ view, focus }: NoticeRowProps): JSX.Element {
 
 function NoticeList({ views, focus }: NoticeListProps): JSX.Element {
   return (
-    <Box component="ul" sx={styles.list}>
+    <Box component="ul" role="list" sx={styles.list}>
       {views.items.map((view) => (
         <NoticeRow key={view.id} view={view} focus={focus} />
       ))}

@@ -17,20 +17,22 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
 
 const OPTIONS = { timeKey: 'notification_center.time' } as const;
 
+const NO_BELL = { current: null };
+
 const saved = { kind: 'success', messageKey: 'settings.toasts.saved' } as const;
 
 describe('useBellNoticeViews', () => {
   beforeEach(() => resetClientStores());
 
   it('returns no views before anything is shown', () => {
-    const { result } = renderHook(() => useBellNoticeViews(OPTIONS), { wrapper });
+    const { result } = renderHook(() => useBellNoticeViews(OPTIONS, NO_BELL), { wrapper });
 
     expect(result.current.items).toEqual([]);
   });
 
   it('maps every shown item with its translated text and a time', () => {
     const port = renderHook(() => useNotifications(), { wrapper }).result.current;
-    const { result } = renderHook(() => useBellNoticeViews(OPTIONS), { wrapper });
+    const { result } = renderHook(() => useBellNoticeViews(OPTIONS, NO_BELL), { wrapper });
 
     act(() => port.raise({ items: [saved] }));
 
@@ -56,7 +58,7 @@ describe('useBellNoticeViews', () => {
     target.addEventListener('focus', () => order.push('focus'));
     useNotificationOutletStore.setState({ focus: { primary: { current: target } } });
     const port = renderHook(() => useNotifications(), { wrapper }).result.current;
-    const { result } = renderHook(() => useBellNoticeViews(OPTIONS), { wrapper });
+    const { result } = renderHook(() => useBellNoticeViews(OPTIONS, NO_BELL), { wrapper });
     act(() =>
       port.raise({
         items: [

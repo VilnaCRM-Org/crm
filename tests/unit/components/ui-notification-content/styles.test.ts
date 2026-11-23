@@ -72,8 +72,6 @@ describe('notification content styles', () => {
       rowGap: '0.25rem',
     });
     expect(Reflect.get(styles.root, SM)).toEqual({ columnGap: '0.5rem' });
-    expect(styles.icon).toMatchObject({ gridColumn: 1, gridRow: 1 });
-    expect(styles.message).toMatchObject({ gridColumn: 2, gridRow: 1, minWidth: 0 });
     expect(styles.close).toMatchObject({ gridColumn: 3, gridRow: 1 });
     expect(styles.time.gridColumn).toBe(2);
     expect(styles.action.gridColumn).toBe(2);
@@ -82,14 +80,23 @@ describe('notification content styles', () => {
   it('sizes the icon, the message and the close glyph', async () => {
     const styles = await loadStyles();
 
-    expect(styles.icon.fontSize).toBe('1.25rem');
-    expect(Reflect.get(styles.icon, SM)).toEqual({ fontSize: '1.5rem' });
-    expect(styles.message).toMatchObject({
+    expect(styles.icon).toEqual({
+      gridColumn: 1,
+      gridRow: 1,
+      display: 'inline-flex',
+      fontSize: '1.25rem',
+      [SM]: { fontSize: '1.5rem' },
+    });
+    expect(styles.message).toEqual({
+      gridColumn: 2,
+      gridRow: 1,
+      minWidth: 0,
+      overflowWrap: 'anywhere',
       fontWeight: 600,
       fontSize: '0.875rem',
       lineHeight: '1.25rem',
+      [SM]: { fontSize: '1rem', lineHeight: '1.5rem' },
     });
-    expect(Reflect.get(styles.message, SM)).toEqual({ fontSize: '1rem', lineHeight: '1.5rem' });
     expect(styles.close.fontSize).toBe('1.25rem');
     expect(Reflect.get(styles.close, SM)).toEqual({
       margin: 0,

@@ -23,12 +23,25 @@ async function recordStorageWrites(page: Page): Promise<void> {
       writes.push(`storage:${name}`);
       setItem.call(this, name, value);
     };
-    const open = IDBFactory.prototype.open;
-    IDBFactory.prototype.open = function recordOpen(
-      ...args: Parameters<IDBFactory['open']>
-    ): IDBOpenDBRequest {
-      writes.push(`indexeddb:${args[0]}`);
-      return open.apply(this, args);
+    const { removeItem } = Storage.prototype;
+    Storage.prototype.removeItem = function recordRemoveItem(name: string): void {
+      writes.push(`storage:${name}`);
+      removeItem.call(this, name);
+    };
+    const stored = (store: IDBObjectStore): string =>
+      `indexeddb:${store.transaction.db.name}/${store.name}`;
+    const { add, put } = IDBObjectStore.prototype;
+    IDBObjectStore.prototype.add = function recordAdd(
+      ...args: Parameters<IDBObjectStore['add']>
+    ): IDBRequest<IDBValidKey> {
+      writes.push(stored(this));
+      return add.apply(this, args);
+    };
+    IDBObjectStore.prototype.put = function recordPut(
+      ...args: Parameters<IDBObjectStore['put']>
+    ): IDBRequest<IDBValidKey> {
+      writes.push(stored(this));
+      return put.apply(this, args);
     };
     const cookie = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
     Object.defineProperty(document, 'cookie', {
@@ -59,7 +72,12 @@ export async function watchNotificationFootprint(page: Page): Promise<Notificati
     notificationRequests: () => requests,
     notificationStorageWrites: async (): Promise<readonly string[]> => {
       const writes = await page.evaluate(
-        (key: string) => Reflect.get(window, key) as string[],
+        (key: string) => [
+          ...(Reflect.get(window, key) as string[]),
+          ...[window.localStorage, window.sessionStorage].flatMap((storage) =>
+            Object.keys(storage).map((name) => `storage:${name}`)
+          ),
+        ],
         STORAGE_WRITES_KEY
       );
       return writes.filter((write) => NOTIFICATION_PATTERN.test(write));

@@ -213,12 +213,13 @@ describe('notification history frame styles', () => {
     });
   });
 
-  it('uses a CanvasText border and drops the shadow in forced colors', async () => {
+  it('uses a CanvasText border and caret and drops the shadow in forced colors', async () => {
     const { frame } = await loadFrame();
 
-    expect(Reflect.get(frame, FORCED)).toMatchObject({
+    expect(Reflect.get(frame, FORCED)).toEqual({
       border: '2px solid CanvasText',
       boxShadow: 'none',
+      '&::before': { backgroundColor: 'CanvasText' },
     });
   });
 });

@@ -14,9 +14,9 @@ export default function UINotificationOutlet({
 
   useLayoutEffect(() => {
     publishFocus({ primary: returnFocusRef, fallback: fallbackFocusRef });
+  }, [publishFocus, returnFocusRef, fallbackFocusRef]);
 
-    return clear;
-  }, [publishFocus, clear, returnFocusRef, fallbackFocusRef]);
+  useLayoutEffect(() => clear, [clear]);
 
   return (
     <>

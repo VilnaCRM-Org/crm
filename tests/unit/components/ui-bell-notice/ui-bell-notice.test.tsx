@@ -69,6 +69,7 @@ describe('UIBellNotice', () => {
   it('lists the rows in order, newest last, each with a time and a close button', () => {
     render(<Host views={set(row('one'), row('two'), row('three'))} />);
 
+    expect(screen.getByRole('list')).toHaveAttribute('role', 'list');
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       'Рядок one10 листопада, 09:15',
       'Рядок two10 листопада, 09:15',
@@ -109,12 +110,12 @@ describe('UIBellNotice', () => {
     expect(findSvg(screen.getByRole('listitem'))).toHaveStyle({ color: colour });
   });
 
-  it('carries no role, aria-live or aria-atomic, so the time is never announced', () => {
+  it('carries no role but its list role and no live region, so the time is never announced', () => {
     render(<Host views={set(row('one'), row('two', { kind: 'error' }))} />);
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(document.body.innerHTML).not.toMatch(/aria-live|aria-atomic|role=/);
+    expect(document.body.innerHTML).not.toMatch(/aria-live|aria-atomic|role=(?!"list")/);
   });
 
   it('closes a row from the keyboard and focuses the next close button', async () => {

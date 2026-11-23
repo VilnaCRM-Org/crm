@@ -18,6 +18,8 @@ const composed = composeLayoutStories(storiesModule);
 
 const OPENED = new Set(['HistoryOpen', 'AfterMarkAllRead']);
 
+const LISTED = new Set([...OPENED, 'WithNotice']);
+
 const i18n = createBellLocaleI18n('uk', ['en']);
 
 const bell = (): HTMLElement => screen.getByRole('button', { name: 'Сповіщення' });
@@ -50,6 +52,9 @@ describe('BellNotifications stories', () => {
     const { container } = renderStory(name);
     await waitFor(() => expect(bell()).toBeEnabled());
     if (OPENED.has(name)) await userEvent.click(bell());
+    await waitFor(() =>
+      expect(screen.queryAllByRole('listitem')).toHaveLength(LISTED.has(name) ? 3 : 0)
+    );
     await act(async () => undefined);
 
     await expectNoA11yViolations(container);

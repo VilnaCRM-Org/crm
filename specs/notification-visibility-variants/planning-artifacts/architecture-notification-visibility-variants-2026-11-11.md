@@ -4,6 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-11-11
+revised: 2026-11-23
+iteration: 9
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'architect, autonomous run'
@@ -322,7 +324,10 @@ adapter (FR-3).
 previous.revision`), never against a revision the hook remembers, and `clear()` keeps
   `revision` monotonic (§5.2), so a raise after a page unmount is still recorded. On rejection it
   calls `report('app-shell:notifications-record', error)`; the outcome was already shown and
-  announced (FR-5).
+  announced (FR-5). **Amended 2026-11-23 (PRD item 53).** The comparison is now `revision` against the
+  store's own `recorded` field, which the recorder sets when it writes: the hook still remembers
+  nothing, the batch raised before the first mount is recorded on mount, and a remount records
+  nothing twice. An empty batch is not recorded.
 - `useNotificationHistory(revision: number): NotificationHistory` returns
   `{ records, unread, markAllRead, refresh }` and refreshes on mount, on each revision and after
   `markAllRead`. `BellNotifications` calls it under every style, so the badge and the count

@@ -3,6 +3,7 @@ status: complete
 workflowType: autonomous-planning
 project_name: crm
 date: 2026-11-11
+revised: 2026-11-23
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 ---
@@ -106,7 +107,9 @@ test bed. This bundle is planning only: it writes no production code.
 
 > Assumption: no GitHub issue or PR is created and nothing is committed until the owner
 > approves. The bundle stays uncommitted on branch `docs/notification-variants-planning`, in
-> worktree `crm-worktrees/notification-variants-planning`.
+> worktree `crm-worktrees/notification-variants-planning`. **Superseded (noted 2026-11-23):** issue
+> #391 and draft pull request #392 exist. #392 delivers this bundle as the request for the owner's
+> approval and later carries the implementation too; only its merge waits for the owner.
 
 ## Bundle
 
@@ -183,8 +186,8 @@ where they differ.
 
 > Assumption (main agent, after the PRD): PRD assumptions P-1 to P-13 are adopted. Client state
 > follows `docs/state-architecture.md`, which names a Zustand store and points at
-> [ADR-002](../../../docs/adr/002-zustand-over-redux.md), not the reactive var that `CLAUDE.md`
-> still describes. That `CLAUDE.md` text is stale and is not this bundle's to fix. The user
+> [ADR-002](../../../docs/adr/002-zustand-over-redux.md), as `CLAUDE.md` does (line 16: "Zustand
+> stores"). (Corrected 2026-11-23: this block first called that `CLAUDE.md` text stale.) The user
 > registrar `src/modules/user/config/di.ts` is at the rust-code-analysis cap of 10 functions, so
 > the notifications token gets its own registrar file inside the user module (P-11). The bell
 > dropdown is a disclosure, not `role="menu"` (P-7).
@@ -253,8 +256,8 @@ where they differ.
 ## Decision record, 2026-11-23: the bell variant wins (FR-32, Follow-up 5.1)
 
 > **Owner decision (2026-11-23):** the pick is variant **C, `bell`**, the card merged with the bell.
-> The product owner is the confirming owner. The pick reached this bundle without a written reason, so
-> none is recorded.
+> The product owner is the confirming owner. The owner gave no reason, so none is recorded: the "reason"
+> part of Follow-up 5.1's first criterion is not met.
 >
 > Second owner decision of the same day: the notice is neutral. Its outline, border and caret carry no
 > green or red for any kind; only the status icon keeps its colour (PRD amendment items 44 to 49).
@@ -285,6 +288,12 @@ where they differ.
 
 ## Outcome
 
+> **Status, 2026-11-23.** The readiness PASS below is iteration 4's. It covers the 2026-11-12 owner
+> decision (iteration 3 re-checked it and failed, iteration 4 passed) and predates the two owner
+> decisions of 2026-11-23: the broadcast-only event feed (PRD items 37–43) and the bell pick with the
+> neutral edge (items 44–49). No readiness iteration has re-checked those two; they are checked on
+> pull request #392. The rest of this section is the iteration 4 record, except the dated scope lines.
+
 Readiness PASS at iteration 4 of 5. The bundle has 4 epics, 36 stories and 2 blocked follow-ups,
 with 285 visual baselines expected to change (243 re-recorded, 42 new), all recorded from CI.
 Issue #391; draft PR #392.
@@ -298,6 +307,12 @@ Scope: three transient outcome surfaces, selected by `notificationStyle`:
 Under every style, the header bell is enabled and shows the unread badge, and opens the history
 with "mark all read". The notifications feature lives in the user module behind an in-memory
 mock repository.
+
+Since 2026-11-23:
+
+- only C, the card merged with the bell, remains, and `notificationStyle` is removed;
+- the bell also records broadcast events from notification-service. The feed is broadcast only, off
+  unless `APP_CONFIG_NOTIFICATION_EVENTS_URL` is set, and writes to the same in-memory repository.
 
 Open questions for the owner and the designer, each with a recorded default:
 
@@ -317,4 +332,5 @@ Open questions for the owner and the designer, each with a recorded default:
 
 Recommended next step: review PR #392. Then run `/fe-sdlc-implement`, with bmalph's
 `_bmad/config.yaml` pointed at this bundle. Give the published Storybook to the team lead to pick
-a variant. Follow-ups 5.1 and 5.2 stay blocked until that pick.
+a variant. Follow-ups 5.1 and 5.2 stay blocked until that pick. (2026-11-23: the pick is C; 5.2 is
+done, 5.1 is done except for the reason and the request to the designer.)

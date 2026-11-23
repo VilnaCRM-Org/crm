@@ -34,7 +34,11 @@ export default {
       height: '6px',
       left: 'calc(var(--bell-centre-x, 0px) - var(--bell-card-left) - 12px)',
     },
-    [FORCED_COLORS]: { border: '2px solid CanvasText', boxShadow: 'none' },
+    [FORCED_COLORS]: {
+      border: '2px solid CanvasText',
+      boxShadow: 'none',
+      '&::before': { backgroundColor: 'CanvasText' },
+    },
   },
   scroller: {
     maxHeight: 'max(3.125rem, calc(100dvh - 80px))',

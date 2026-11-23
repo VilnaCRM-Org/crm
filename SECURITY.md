@@ -278,11 +278,11 @@ build-time values from the tracked `.env.example` — never from the untracked l
 (issue #142) — so the committed `serve.json` is identical on every machine; the container
 entrypoint renders the served `/app/serve.json` from the immutable baseline the image ships
 (`/app/config/serve.json`) plus the origins of the runtime overrides, after it renders the same
-values into the HTML shell, so a repointed API is reachable under the enforced
-policy and an override that is changed or cleared between restarts leaves no stale origin
-behind. Runtime overrides extend the list rather than replace it, and the entrypoint refuses to
-start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
-a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
+values into the HTML shell, so a repointed API or a configured notification event stream is
+reachable under the enforced policy and an override that is changed or cleared between restarts
+leaves no stale origin behind. Runtime overrides extend the list rather than replace it, and the
+entrypoint refuses to start on a value that is not an absolute `http(s)` URL. Sentry is a build-time
+value: a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
 
 **The build-time origins are the template's.** The committed `serve.json` allows
 `http://localhost:8080` and `http://localhost:4000` because the tracked `.env.example` points the

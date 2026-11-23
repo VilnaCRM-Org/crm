@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { act, render, renderHook, screen } from '@testing-library/react';
-import { type JSX, type ReactNode, useRef } from 'react';
+import { createRef, type JSX, type ReactNode, type RefObject, useRef } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import UINotificationOutlet from '@/components/ui-notification-outlet';
@@ -121,6 +121,35 @@ describe('UINotificationOutlet', () => {
     expect(state.raised).toEqual(CLEARED_NOTIFICATION_OUTLET.raised);
     expect(state.announcement).toEqual({ polite: '', assertive: '' });
     expect(state.focus).toBeNull();
+  });
+
+  it('republishes changed focus refs and keeps what is shown and announced', () => {
+    const port = portOf();
+    const outlet = (
+      primary: RefObject<HTMLElement | null>,
+      fallback: RefObject<HTMLElement | null>
+    ): JSX.Element => <UINotificationOutlet returnFocusRef={primary} fallbackFocusRef={fallback} />;
+    const refs = [0, 1, 2].map(() => createRef<HTMLElement>());
+    const [first, second, third] = refs as [
+      RefObject<HTMLElement | null>,
+      RefObject<HTMLElement | null>,
+      RefObject<HTMLElement | null>,
+    ];
+    const { rerender } = render(outlet(first, second), { wrapper });
+    act(() => port.raise({ items: [success, failure] }));
+    const { shown, raised, announcement } = useNotificationOutletStore.getState();
+
+    rerender(outlet(third, second));
+    expect(useNotificationOutletStore.getState().focus?.primary).toBe(third);
+    rerender(outlet(third, first));
+
+    const state = useNotificationOutletStore.getState();
+    expect(state.focus).toEqual({ primary: third, fallback: first });
+    expect(state.focus?.fallback).toBe(first);
+    expect(state.shown).toBe(shown);
+    expect(state.raised).toBe(raised);
+    expect(state.announcement).toBe(announcement);
+    expect(state.shown.items).toHaveLength(2);
   });
 
   it('adds no notification region other than the two', () => {

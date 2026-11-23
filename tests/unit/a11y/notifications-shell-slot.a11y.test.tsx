@@ -1,11 +1,12 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 
 import composeLayoutStories, {
   type LayoutStoriesModule,
 } from '@tests/unit/utils/compose-layout-stories';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
+import findBellWrapper from '@tests/unit/utils/find-bell-wrapper';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -36,7 +37,9 @@ describe('NotificationsShellSlot stories', () => {
       );
       const bell = screen.getByRole('button', { name: 'Сповіщення' });
 
-      await screen.findByText('1');
+      const badge = await within(findBellWrapper(bell)).findByText('1');
+      expect(badge).toHaveAttribute('aria-hidden', 'true');
+      expect(bell).not.toContainElement(badge);
       expect(bell).toBeEnabled();
       await expectNoA11yViolations(container);
     }

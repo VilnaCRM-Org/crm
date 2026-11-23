@@ -59,7 +59,8 @@ describe('NotificationRaiseBuilder', () => {
   });
 
   it('joins several texts of one kind with a single space', () => {
-    const [a, b] = [buildNotificationDraft(), buildNotificationDraft()];
+    const a = buildNotificationDraft();
+    const b = buildNotificationDraft({ messageKey: 'settings.toasts.email_sent' });
 
     const next = build([a, b], { ...CLEARED_NOTIFICATION_OUTLET, marked: true });
 

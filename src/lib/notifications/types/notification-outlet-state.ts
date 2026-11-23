@@ -19,6 +19,7 @@ export interface NotificationOutletState {
   readonly announcement: NotificationAnnouncement;
   readonly focus: NotificationFocusReturn | null;
   readonly revision: number;
+  readonly recorded: number;
   readonly nextId: number;
   readonly marked: boolean;
 }

@@ -40,9 +40,12 @@ export interface HeaderDisclosure {
   readonly buttonRef?: RefObject<HTMLButtonElement | null> | undefined;
 }
 
-export interface HeaderIconButtonProps {
+export interface HeaderGlyphProps {
   readonly layout: ShellLayout;
   readonly kind: HeaderControlKind;
+}
+
+export interface HeaderIconButtonProps extends HeaderGlyphProps {
   readonly count?: number | null | undefined;
   readonly disclosure?: HeaderDisclosure | undefined;
 }

@@ -87,8 +87,11 @@ the notifications slot is registered, which the notifications route contract doe
 protected page: the slot renders it inside `BellSlotFrame`, and its unread count, its description
 and its alert badge `#D63333` (`paletteColors.error.text`) come from the slot. The search and the
 tasks button stay natively `disabled` and described by the visually hidden status "Not available
-yet"; the mobile header has no search. The tasks button takes an optional badge count that the
-header stories pass (1 and 8); no page passes one. One guard (`badge-count-guard.ts`) decides both
+yet"; the mobile header has no search. `badgeCounts` gives the bell and the tasks button an
+optional count each, which only the header stories pass (1 to the bell, 8 to the tasks button); no
+page passes either, and the bell's count applies only without a notifications slot. A badge is
+drawn beside its button, never inside it, so its digit is not part of the button's label. One
+guard (`badge-count-guard.ts`) decides both
 the badge and the hidden count description: only a whole count of at least 1 shows, so zero, a
 fraction, `NaN` and `Infinity` show neither. A disabled button paints its badge in the
 disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).

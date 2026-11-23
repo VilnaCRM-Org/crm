@@ -103,6 +103,19 @@ describe('useNotificationRecorder', () => {
     expect(state.announcement.polite).toContain('saved');
   });
 
+  it('does not record a rejected batch again on a second mount', async () => {
+    mockRepository.record.mockRejectedValue(new Error('write failed'));
+    const { unmount } = renderHook(() => useRecorder(report));
+    await raise(1);
+    unmount();
+
+    renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
+    expect(mockRepository.record).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledTimes(1);
+  });
+
   it('records nothing once unmounted', async () => {
     const { unmount } = renderHook(() => useRecorder(report));
     unmount();
@@ -140,16 +153,63 @@ describe('useNotificationRecorder', () => {
     expect(mockRepository.record).toHaveBeenCalledTimes(2);
   });
 
-  it('records the first raise after mounting on a store that already has a revision', async () => {
+  it('records the batch raised before it mounted, once, and then later raises', async () => {
     actions.raise(buildNotificationDraftSet(2), identity);
     expect(useNotificationOutletStore.getState().revision).toBe(1);
-    renderHook(() => useRecorder(report));
-    expect(mockRepository.record).not.toHaveBeenCalled();
+
+    const { result } = renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
+    expect(mockRepository.record).toHaveBeenCalledTimes(1);
+    expect(mockRepository.record.mock.calls[0]?.[0].items).toHaveLength(2);
+    expect(result.current).toBe(1);
 
     await raise(1);
 
+    expect(mockRepository.record).toHaveBeenCalledTimes(2);
+    expect(mockRepository.record.mock.calls[1]?.[0].items).toHaveLength(1);
+  });
+
+  it('does not record a batch again when it mounts a second time', async () => {
+    actions.raise(buildNotificationDraftSet(2), identity);
+    const { unmount } = renderHook(() => useRecorder(report));
+    await raise(1);
+    unmount();
+
+    renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
+    expect(mockRepository.record).toHaveBeenCalledTimes(2);
+  });
+
+  it('records a raise made between two mounts once', async () => {
+    renderHook(() => useRecorder(report)).unmount();
+    actions.raise(buildNotificationDraftSet(1), identity);
+
+    renderHook(() => useRecorder(report)).unmount();
+    renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
     expect(mockRepository.record).toHaveBeenCalledTimes(1);
-    expect(mockRepository.record.mock.calls[0]?.[0].items).toHaveLength(1);
+  });
+
+  it('records nothing for a batch cleared before it mounted', async () => {
+    actions.raise(buildNotificationDraftSet(2), identity);
+    actions.clear();
+
+    const { result } = renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
+    expect(mockRepository.record).not.toHaveBeenCalled();
+    expect(result.current).toBe(0);
+  });
+
+  it('records nothing on a store that has never been raised', async () => {
+    renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
+    expect(mockRepository.record).not.toHaveBeenCalled();
+    expect(useNotificationOutletStore.getState().recorded).toBe(0);
   });
 
   it('stops listening after unmount', async () => {

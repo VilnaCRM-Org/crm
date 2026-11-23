@@ -38,11 +38,13 @@ const meta: Meta<typeof UINotificationHistory> = {
       description: {
         component:
           'The content of the bell history panel. An `h2`, ' +
-          'a list of past outcomes in the given order and a `#0074B5` mark-all-read text button ' +
-          'that stays enabled at zero unread. An unread row has a `#E8F7FF` tint, an 8 px ' +
-          '`#0074B5` dot and a visually hidden unread text, so the mark never depends on colour; ' +
-          'in forced colors the dot renders as `CanvasText`. It carries no role, `aria-live` or ' +
-          '`aria-atomic`: the panel is a disclosure, not a menu.',
+          'a list of past outcomes in the given order and a full-width mark-all-read button with ' +
+          'a 2 px `#E1E7EA` border, a white fill and `#1B2327` text, which stays enabled at zero ' +
+          'unread. An unread row has a `#FBFBFB` tint, a 4 px `#0074B5` dot and a visually ' +
+          'hidden unread text, so the mark never depends on colour; in forced colors the dot ' +
+          'renders as `CanvasText`. The list keeps `role="list"` because its markers are ' +
+          'removed. The panel is a disclosure, not a menu: it has no menu role, `aria-live` or ' +
+          '`aria-atomic`.',
       },
       story: { inline: false },
     },

@@ -318,9 +318,12 @@ are killed by the integration tests that assert on them. The mutation config exc
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation), the `tests/unit/config/eslint-policy` test (it resolves `eslint.config.mjs`
 through a child `node` process and reaches no `src` module, so it kills nothing and only adds
-process churn) and the settings `ready-story-provider` test, which imports a `*.stories.tsx` file
-that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
-shard that selects it and pins only story wiring outside the mutate scope. The config also uses
+process churn) and the settings `ready-story-provider`, `bell-notifications.a11y` and
+`notifications-shell-slot.a11y` tests, which import `*.stories.tsx` files that
+`stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so each fails the dry run of every
+shard that selects it and pins only story wiring outside the mutate scope. The same list is in
+`scripts/ci/mutation-related-tests.mjs`, and
+`tests/unit/tooling/mutation-related-tests.test.ts` fails when the two differ. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
 These keep the run affordable — parallelism comes from the 76-way shard count rather than
 Stryker's in-process concurrency.
@@ -3243,9 +3246,10 @@ the runtime image ships beside the entrypoint:
   `scripts/render-security-headers.js` after `render-app-config.js`, rendering the served
   `/app/serve.json` from the immutable baseline the image ships at `/app/config/serve.json`
   plus the origins of `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` /
-  `APP_CONFIG_NOTIFICATION_EVENTS_URL`, so a repointed API
-  is reachable under the enforced policy without a rebuild and an override that is changed or
-  cleared between restarts leaves no stale origin behind. Invalid values abort the start.
+  `APP_CONFIG_NOTIFICATION_EVENTS_URL`, so a repointed API or a
+  configured notification event stream is reachable under the enforced policy without a rebuild and
+  an override that is changed or cleared between restarts leaves no stale origin behind. Invalid
+  values abort the start.
 - **The RSBuild dev server** sets `server.headers` from the same policy, so a CSP break surfaces
   on `make start`. HMR is a same-origin WebSocket, which `'self'` admits.
 

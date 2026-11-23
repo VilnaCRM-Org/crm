@@ -6,7 +6,7 @@ import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import UINotificationOutlet from '@/components/ui-notification-outlet';
 import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
-import { withRaisedNotifications } from '@stories/notification-story-decorators';
+import { storyClock, withRaisedNotifications } from '@stories/notification-story-decorators';
 import { noop } from '@stories/story-callbacks';
 
 const saved = { kind: 'success', messageKey: 'settings.toasts.saved' } as const;
@@ -101,7 +101,8 @@ const meta: Meta<typeof NoticeStage> = {
           'The outcomes of a page: the shown rows as the merged card on desktop and ' +
           'the caret card on tablet and mobile, each with its time and a close button. Closing ' +
           'a row only removes it from the page and never marks it read. Retry dismisses the ' +
-          'row through the port before the action runs and returns focus to Save. It loads as ' +
+          'row through the port before the action runs and returns focus to Save, or to ' +
+          'the bell when the page published no usable target. It loads as ' +
           'its own chunk, `notifications-notice`.',
       },
       story: { inline: false },
@@ -113,18 +114,20 @@ export default meta;
 
 type Story = StoryObj<typeof NoticeStage>;
 
-export const DesktopOneRow: Story = { decorators: [withRaisedNotifications(ONE)] };
+export const DesktopOneRow: Story = { decorators: [withRaisedNotifications(ONE, storyClock)] };
 
-export const DesktopThreeRows: Story = { decorators: [withRaisedNotifications(THREE)] };
+export const DesktopThreeRows: Story = { decorators: [withRaisedNotifications(THREE, storyClock)] };
 
 export const TabletCaret: Story = {
-  decorators: [withRaisedNotifications(THREE)],
+  decorators: [withRaisedNotifications(THREE, storyClock)],
   globals: { viewport: { value: 'lg', isRotated: false } },
 };
 
 export const MobileCaret: Story = {
-  decorators: [withRaisedNotifications(THREE)],
+  decorators: [withRaisedNotifications(THREE, storyClock)],
   globals: { viewport: { value: 'xs', isRotated: false } },
 };
 
-export const TransientError: Story = { decorators: [withRaisedNotifications(TRANSIENT)] };
+export const TransientError: Story = {
+  decorators: [withRaisedNotifications(TRANSIENT, storyClock)],
+};

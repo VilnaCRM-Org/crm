@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { renderHook } from '@testing-library/react';
+import type { RefObject } from 'react';
 
 import useRetiringNotificationViews from '@/hooks/use-retiring-notification-views';
 import type {
@@ -14,6 +15,8 @@ interface HookInput {
   readonly retire: (view: NotificationView) => void;
 }
 
+const bellRef: RefObject<HTMLElement | null> = { current: null };
+
 const plain: NotificationView = { id: '1', kind: 'success', message: 'Changes saved' };
 
 const actionable = (onActivate: () => void): NotificationView => ({
@@ -27,14 +30,20 @@ const actionable = (onActivate: () => void): NotificationView => ({
 const renderViews = (
   input: HookInput
 ): ReturnType<typeof renderHook<NotificationViewSet, HookInput>> =>
-  renderHook((props: HookInput) => useRetiringNotificationViews(props.views, props.retire), {
-    initialProps: input,
-  });
+  renderHook(
+    (props: HookInput) => useRetiringNotificationViews(props.views, props.retire, bellRef),
+    {
+      initialProps: input,
+    }
+  );
 
 describe('useRetiringNotificationViews', () => {
   beforeEach(() => resetClientStores());
 
-  afterEach(() => document.body.replaceChildren());
+  afterEach(() => {
+    bellRef.current = null;
+    document.body.replaceChildren();
+  });
 
   it('passes a view without an action through as the same object', () => {
     const { result } = renderViews({ views: { items: [plain] }, retire: jest.fn() });
@@ -65,6 +74,18 @@ describe('useRetiringNotificationViews', () => {
     expect(retire).toHaveBeenCalledTimes(1);
     expect(retire).toHaveBeenCalledWith(view);
     expect(target).toHaveFocus();
+  });
+
+  it('returns focus to the last resort when the page published no target', () => {
+    const bell = document.createElement('button');
+    document.body.appendChild(bell);
+    bellRef.current = bell;
+    const views = { items: [actionable(jest.fn())] };
+    const { result } = renderViews({ views, retire: jest.fn() });
+
+    result.current.items[0]?.action?.onActivate();
+
+    expect(bell).toHaveFocus();
   });
 
   it('keeps the same set while the views and the retire callback are unchanged', () => {

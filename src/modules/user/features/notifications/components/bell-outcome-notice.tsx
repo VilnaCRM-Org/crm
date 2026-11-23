@@ -11,7 +11,7 @@ import type { BellOutcomeNoticeProps } from '../types/components';
 const NOTICE_VIEWS: NotificationViewsOptions = { timeKey: 'notification_center.time' };
 
 export default function BellOutcomeNotice({ bellRef }: BellOutcomeNoticeProps): JSX.Element {
-  const views = useBellNoticeViews(NOTICE_VIEWS);
+  const views = useBellNoticeViews(NOTICE_VIEWS, bellRef);
   const focus = useNotificationFocus();
   const { dismiss } = useNotifications();
   const onDismiss = useCallback((id: string): void => dismiss(Number(id)), [dismiss]);
