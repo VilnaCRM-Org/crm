@@ -104,9 +104,10 @@ const meta: Meta<typeof NoticeStage> = {
     docs: {
       description: {
         component:
-          'The bell notice of variant C. From 1440 px it is the merged shape: a 48 wide tab ' +
-          'fused with a 279 wide card along one left edge, outlined in the tone of the most ' +
-          'severe row with four 1 px drop shadows. Below 1440 px it is a caret card, ' +
+          'The bell notice. From 1440 px it is the merged shape: a 48 wide tab fused with a ' +
+          '279 wide card along one left edge, outlined in the neutral edge `#80878A` with four ' +
+          '1 px drop shadows whatever the rows say; only the row icons keep their status ' +
+          'colour. Below 1440 px it is a caret card, ' +
           '`min(313px, 100vw - 32px)` wide, whose 26 by 6 caret points at the bell centre. ' +
           'Rows show a time and a close button, newest last, at most three. It carries no ' +
           'role, `aria-live` or `aria-atomic`, so the time is never announced, and it stays ' +

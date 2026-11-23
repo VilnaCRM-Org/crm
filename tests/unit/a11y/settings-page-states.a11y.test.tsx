@@ -7,9 +7,9 @@ import { MemoryRouter } from 'react-router';
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import OutcomeNoticeHeader from '@tests/unit/utils/outcome-notice-header';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const mockRead = jest.fn();
@@ -45,6 +45,7 @@ const waitForSettledSave = async (): Promise<void> => {
 
 const page = (): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk')}>
+    <OutcomeNoticeHeader />
     <main>
       <MemoryRouter>
         <SessionOutlet>
@@ -66,15 +67,12 @@ const openAndEdit = async (): Promise<void> => {
   await userEvent.type(screen.getByLabelText('Пароль для зміни пошти'), 'abc');
 };
 
-describe.each(['toast', 'inline', 'bell'])('settings page states accessibility (%s)', (style) => {
+describe('settings page states accessibility', () => {
   beforeEach(() => {
     resetClientStores();
-    writeConfigBlock(JSON.stringify({ notificationStyle: style }));
     mockRead.mockReset();
     mockUpdate.mockReset();
   });
-
-  afterEach(() => clearConfigBlock());
 
   it('has no axe violations with a success outcome showing', async () => {
     mockUpdate.mockResolvedValue({ kind: 'ok', user: buildUserEntity() });
@@ -109,23 +107,8 @@ describe.each(['toast', 'inline', 'bell'])('settings page states accessibility (
 
     await expectNoA11yViolations(document.body);
   });
-});
 
-describe('settings page outcome surfaces the axe runs cover', () => {
-  beforeEach(() => {
-    resetClientStores();
-    mockRead.mockReset();
-    mockUpdate.mockReset();
-  });
-
-  afterEach(() => clearConfigBlock());
-
-  it.each([
-    ['toast', 1, 0],
-    ['inline', 0, 1],
-    ['bell', 0, 0],
-  ] as const)('renders %s with %i toasts and %i inline blocks', async (style, toasts, inline) => {
-    writeConfigBlock(JSON.stringify({ notificationStyle: style }));
+  it('shows the outcome in the bell notice only', async () => {
     mockUpdate.mockResolvedValue({ kind: 'failed', reason: 'transient' });
     await openAndEdit();
 
@@ -133,12 +116,10 @@ describe('settings page outcome surfaces the axe runs cover', () => {
     await announced('alert', TRANSIENT);
     await waitForSettledSave();
 
-    expect(screen.queryAllByRole('button', { name: 'Закрити сповіщення' })).toHaveLength(toasts);
-    const { form } = screen.getByRole('button', { name: SAVE_EMAIL }) as HTMLButtonElement;
-    const blocks = screen
-      .queryAllByRole('list')
-      .filter((list) => within(list).queryByText(TRANSIENT) !== null);
-    expect(blocks).toHaveLength(inline);
-    expect(blocks.every((block) => form?.contains(block) === true)).toBe(true);
+    const shown = screen
+      .getAllByText(TRANSIENT, { exact: false })
+      .filter((node) => node.getAttribute('role') !== 'alert');
+    expect(shown).toHaveLength(1);
+    expect(within(screen.getByRole('banner')).getByText(TRANSIENT)).toBe(shown[0]);
   });
 });

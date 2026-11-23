@@ -1,11 +1,9 @@
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
 
-import PRIMARY_NOTIFICATION_ANCHOR from './notification-anchors';
 import type { NotificationDraftSet } from './types/notification-draft';
 import type { NotificationKind } from './types/notification-kind';
 import type {
   NotificationAnnouncement,
-  NotificationInlineBatchSet,
   NotificationOutletState,
   NotificationTranslate,
 } from './types/notification-outlet-state';
@@ -25,11 +23,9 @@ class NotificationRaiseBuilder {
       ...state,
       shown: { items: [...state.shown.items, ...added].slice(-MAX_SHOWN) },
       raised: { items: added },
-      inline: this.latest(state.inline, added, state.nextBatch),
       announcement: this.announce(added.slice(-MAX_SHOWN), translate, marked),
       revision: state.revision + 1,
       nextId: state.nextId + added.length,
-      nextBatch: state.nextBatch + 1,
       marked,
     };
   }
@@ -42,24 +38,8 @@ class NotificationRaiseBuilder {
     return drafts.items.map((draft, index): ShownNotification => ({
       ...draft,
       id: state.nextId + index,
-      batch: state.nextBatch,
       raisedAt,
     }));
-  }
-
-  private latest(
-    inline: NotificationInlineBatchSet,
-    added: readonly ShownNotification[],
-    batch: number
-  ): NotificationInlineBatchSet {
-    const anchors = new Set(added.map((item) => item.anchor ?? PRIMARY_NOTIFICATION_ANCHOR));
-
-    return {
-      items: [
-        ...inline.items.filter((entry) => !anchors.has(entry.anchor)),
-        ...Array.from(anchors, (anchor) => ({ anchor, batch })),
-      ],
-    };
   }
 
   private announce(

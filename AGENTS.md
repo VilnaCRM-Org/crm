@@ -1839,8 +1839,7 @@ build goes red. Know them before you touch a config file:
   foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host
 - `make check-security-headers` (the `security headers` job of the `security testing` workflow)
   builds `--target production`, boots it, and asserts every header on the emitted responses,
-  then boots it again with `APP_CONFIG_*` API overrides that must reach `connect-src` and
-  `APP_CONFIG_NOTIFICATION_STYLE=inline`, which must reach the served runtime-config block
+  then boots it again with `APP_CONFIG_*` API overrides that must reach `connect-src`
   (`scripts/ci/check-security-headers.sh`). The policy
   loader refuses a weakened baseline, so a relaxation is a reviewed change to the floors and
   their tests, never a lone edit that makes a run pass

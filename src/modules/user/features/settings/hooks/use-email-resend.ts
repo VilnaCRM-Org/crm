@@ -28,18 +28,18 @@ function settleResend(
 ): void {
   if (outcome.kind === 'sent') {
     if (adoption.revision() === issued) applyConfirmed(outcome.confirmed, email, adoption);
-    raise({ items: [{ kind: 'success', messageKey: 'settings.toasts.resent', anchor: 'email' }] });
+    raise({ items: [{ kind: 'success', messageKey: 'settings.toasts.resent' }] });
     return;
   }
   const messageKey = FAILURE_TOASTS.get(outcome.reason);
-  if (messageKey !== undefined) raise({ items: [{ kind: 'error', messageKey, anchor: 'email' }] });
+  if (messageKey !== undefined) raise({ items: [{ kind: 'error', messageKey }] });
 }
 
 export default function useEmailResend(
   user: UserEntity,
   adoption: UserEntityAdoption
 ): EmailResend {
-  const { raise, withdraw } = useNotifications();
+  const { raise } = useNotifications();
   const provider = useService<ProfileProvider>(AUTH_TOKENS.ProfileProvider);
   const run = useCallback(
     (userId: string, signal: AbortSignal) => provider.resend(userId, signal),
@@ -50,7 +50,6 @@ export default function useEmailResend(
 
   const resend = async (): Promise<void> => {
     const issued = adoption.revision();
-    withdraw('email');
     const outcome = await submit(user.id);
     if (outcome === null || !adoption.isCurrent(user.email)) return;
     settleResend(outcome, { email: user.email, adoption, issued, raise });

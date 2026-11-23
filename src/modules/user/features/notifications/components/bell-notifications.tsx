@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next';
 import HeaderIconButton from '@/components/ui-app-header/header-icon-button';
 import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import UINotificationHistoryFrame from '@/components/ui-notification-history/history-frame';
-import useNotificationSurface from '@/hooks/use-notification-surface';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import type { ShellChunkFailureHandler } from '@/routes/types/shell-slot';
@@ -92,7 +91,6 @@ export default function BellNotifications({
   const historyId = useId();
   const { records, unread, markAllRead } = useNotificationHistory(revision);
   const disclosure = useBellDisclosure(layout);
-  const showsNotice = useNotificationSurface('header');
   const HistoryPanel = useHistoryPanelChunk(onChunkFailure);
 
   return (
@@ -106,7 +104,7 @@ export default function BellNotifications({
       <UINotificationHistoryFrame id={historyId} open={disclosure.expanded}>
         {disclosure.visited && <HistoryPanel records={records} onMarkAllRead={markAllRead} />}
       </UINotificationHistoryFrame>
-      {showsNotice && <LazyBellNotice bellRef={disclosure.bell} onChunkFailure={onChunkFailure} />}
+      <LazyBellNotice bellRef={disclosure.bell} onChunkFailure={onChunkFailure} />
     </Box>
   );
 }

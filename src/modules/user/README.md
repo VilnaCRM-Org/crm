@@ -544,14 +544,14 @@ It also amends #315's violation step by name. API Platform reports several const
 of one `updateUser` as a multi-line message, so the step reads one `FieldViolation` per line
 instead of one for the whole message. A line with an unknown property is flagged, not dropped:
 the set carries `complete: false` and keeps every recognised line. The rule that an unknown line
-means no field errors and one toast lives in `GraphQLProfileTransformer`, the settings consumer,
+means no field errors and one notification lives in `GraphQLProfileTransformer`, the settings consumer,
 so the shared step stays shape-only. On the confirm step of password recovery a `token` line
 anywhere in the message still gives `invalid_link`, before or after a `newPassword` line and
 beside an unknown line.
 
 **Rejected.** Matching `extensions.code` (upstream drops it); a substring or case-insensitive
 match of a message (it would turn a translation change into a silent misclassification); half
-field errors and half toast for one failure.
+field errors and half notification for one failure.
 
 ### One rule ends a session, in the link
 
@@ -600,51 +600,45 @@ the profile card's width.
 
 **Rejected.** Rendering the challenge inside `/settings` (the user is not signed in yet).
 
-### Notifications: three variants, one port, a bell under every style (issue #391)
+### Notifications: one port, the bell notice, a bell on every page (issue #391)
 
 **Context.** The name, the e-mail and the password are saved separately and each can succeed, fail
 or be rejected on its own, and a confirmation that disappears can be missed. The team lead
-reported that the toast "is not clearly seen", and the measurements agreed: its pale success
-surface `#E8F4EF` separates from the page `#FBFBFB` by 1.09:1 (the error surface by 1.10:1), with
-no border, shadow or motion, and at 1440 × 900 it appeared about 555 px from the Save just pressed
+reported that the first version, a toast, "is not clearly seen", and the measurements agreed: its
+pale success surface `#E8F4EF` separated from the page `#FBFBFB` by 1.09:1 (the error surface by
+1.10:1), with no border, shadow or motion, and at 1440 × 900 it appeared about 555 px from the Save
+just pressed
 (`specs/notification-visibility-variants/planning-artifacts/prd-notification-visibility-variants-2026-11-11.md`,
-"Measured pair" table, from research §2.1).
+"Measured pair" table, from research §2.1). Three variants of the transient surface were built
+behind a temporary runtime setting and compared: an elevated toast stack (A), an inline status
+below the Save that sent the outcome (B) and a merged card under the header bell (C).
 
-**Decision.** Outcomes are raised through the notifications port, `useNotifications()` in
-`src/hooks/`, over the container-free outlet store in `src/lib/notifications/`, and a page never
-names a renderer. Every variant keeps an edge of at least 3:1 against the backdrop it sits on, a
-product rule modelled on WCAG 1.4.11; the toast's toned border, for example, is `#2E7D32` at 4.95:1
-and `#DC3939` at 4.33:1 on `#FBFBFB`, pinned by `tests/unit/components/ui-toast/styles.tokens.test.ts`.
-The transient surface has three variants, chosen by the runtime `notificationStyle` setting
-(`APP_CONFIG_NOTIFICATION_STYLE`, default `toast`, read through `notificationStyleConfig`; see
-`src/config/runtime/README.md`) so one built image can show each:
+**Decision.** The bell variant (C) won (owner decision 2026-11-23). Outcomes are raised through the
+notifications port, `useNotifications()` in `src/hooks/`, over the container-free outlet store in
+`src/lib/notifications/`, and a page never names a renderer. The outcome shows in the merged card
+under the header bell (`BellOutcomeNotice`, chunk `notifications-notice`), and opening the bell
+hides it. The card's edge is neutral for every kind: `border.strong` (`#80878A`), 3.65:1 on white
+and 3.53:1 on the page `#FBFBFB`, above the 3:1 floor modelled on WCAG 1.4.11 and pinned by
+`tests/unit/components/ui-bell-notice/styles.test.ts` and
+`tests/e2e/modules/user/features/notifications/bell-notice-edge.spec.ts`. Only the status icon
+keeps its colour (`success.text` `#2E7D32`, `error.main` `#DC3939`), and its shape differs per
+kind, so the status never rests on colour alone.
 
-- **A, `toast`:** `UIToastStack`, rendered by `UINotificationOutlet`, with the toned border, an
-  accent bar, a shadow and a short entrance.
-- **B, `inline`:** `UIInlineStatus` inside the `UINotificationSlot` the page places by anchor,
-  directly below the Save of the section that sent the outcome (`fullName-save`, `email-save`,
-  `password-save`) or under the e-mail row for a resend (`email`).
-- **C, `bell`:** the merged card under the header bell (`BellOutcomeNotice`, chunk
-  `notifications-notice`, never requested under the other two styles).
+The outlet's two always-mounted regions (polite for success texts, assertive for error texts)
+announce each outcome, no outcome has a timer, at most three are shown, and the notifications
+feature (`features/notifications/`) records every outcome and shows the enabled bell, its unread
+badge and the history panel with mark-all-read on every protected page (owner decision
+2026-11-12). A field error is still shown on its field, never as a notification.
 
-Common to every style (owner decision 2026-11-12): the outlet's two always-mounted regions (polite
-for success texts, assertive for error texts) announce each outcome, no outcome has a timer, at
-most three are shown, and the notifications feature (`features/notifications/`) records every
-outcome and shows the enabled bell, its unread badge and the history panel with mark-all-read on
-every protected page. A field error is still shown on its field, never as a notification. The
-success icon keeps `success.text` (`#2E7D32`, 4.55:1 on the success surface), since the Figma
-`#38B386` is 2.34:1.
-
-**Removal plan.** Once the team lead picks a variant from the comparison sheet, one follow-up story
-removes the two losing renderers, their stories, tests and baselines, the `notificationStyle`
-setting, its compose and `.env.example` entries and their docs rows. It keeps the enabled bell, the
-badge, the count description, the history panel and mark-all-read, the repository's four
-operations, the seed, the notifications shell slot and the feature: if C loses, only the merged
-card, the caret card and their chunk go; if C wins, the toast stack and the inline status go.
+**Removal plan.** Carried out on 2026-11-23: one follow-up removed the two losing renderers, their
+stories, tests and baselines, the comparison sheet, and the temporary setting with its compose and
+`.env.example` entries and its docs rows. It kept the enabled bell, the badge, the count
+description, the history panel and mark-all-read, the repository's four operations, the seed, the
+notifications shell slot, the broadcast events, the feature, and the merged card with its chunk.
 
 **Rejected.** A timer (a confirmation could be lost before it is read); a toast per field error
-(the user would fix the wrong place); a bell enabled only under the `bell` style (the unread count
-could never be cleared under A and B).
+(the user would fix the wrong place); a toned edge on the card (the owner wants the notice
+neutral, and the icon already carries the status).
 
 ### The settings copy is a lazy catalog
 
@@ -656,7 +650,7 @@ when the route module evaluates, by the mechanism #315 introduced. The rule list
 `password_policy.*` keys leave the recovery catalog for a catalog the shared
 `UIPasswordPolicyRules` component owns, so a key resolves wherever the component renders, and the
 close label `ui_notification.close` is a lazy catalog `components/ui-notification-content`
-owns, since only the notification renderers use it. Every lazy catalog registers through one container-free
+owns, since only the bell notice uses it. Every lazy catalog registers through one container-free
 `lazyCatalogLoader` (`src/lib/locale-catalog`) that takes the owner's JSON as a named
 `LocaleCatalogPair`, so the owner keeps its static import and a new catalog adds no class.
 

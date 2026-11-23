@@ -9,7 +9,8 @@ import type {
   NotificationView,
   NotificationViewSet,
 } from '@/lib/notifications/types/notification-view';
-import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import createContentI18n from '@tests/unit/utils/create-notification-content-locale-i18n';
+import findSvg from '@tests/unit/utils/find-svg';
 
 const root = document.documentElement;
 
@@ -33,7 +34,7 @@ function Host({ views, onDismiss = jest.fn() }: HostProps): JSX.Element {
   const heading = useRef<HTMLHeadingElement>(null);
 
   return (
-    <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>
+    <I18nextProvider i18n={createContentI18n('uk', ['en'])}>
       <h1 tabIndex={-1} ref={heading}>
         Налаштування
       </h1>
@@ -86,17 +87,26 @@ describe('UIBellNotice', () => {
   });
 
   it.each([
-    ['success', [row('one')], '#2E7D32'],
-    ['error', [row('one'), row('two', { kind: 'error' })], '#DC3939'],
-  ] as const)('takes the %s tone of the most severe row', (_name, rows, edge) => {
+    ['a success', [row('one')]],
+    ['a success and an error', [row('one'), row('two', { kind: 'error' })]],
+    ['an error', [row('one', { kind: 'error' })]],
+  ] as const)('keeps the neutral edge for %s', (_name, rows) => {
     render(<Host views={set(...rows)} />);
-    const outer = screen
+    const edges = screen
       .getAllByRole('generic')
-      .find((node) => getComputedStyle(node).getPropertyValue('--bell-notice-tone') !== '');
+      .map((node) => getComputedStyle(node).getPropertyValue('--bell-notice-edge'))
+      .filter((edge) => edge !== '');
 
-    expect(getComputedStyle(outer as HTMLElement).getPropertyValue('--bell-notice-tone')).toBe(
-      edge
-    );
+    expect(new Set(edges)).toEqual(new Set(['#80878A']));
+  });
+
+  it.each([
+    ['success', 'rgb(46, 125, 50)'],
+    ['error', 'rgb(220, 57, 57)'],
+  ] as const)('keeps the status colour on the %s icon', (kind, colour) => {
+    render(<Host views={set(row('one', { kind }))} />);
+
+    expect(findSvg(screen.getByRole('listitem'))).toHaveStyle({ color: colour });
   });
 
   it('carries no role, aria-live or aria-atomic, so the time is never announced', () => {

@@ -9,14 +9,14 @@ const fromSm = `@media (min-width:${sm}px)`;
 
 const forcedColors = '@media (forced-colors: active)';
 
-export const focusRing = {
+const focusRing = {
   outline: `2px solid ${customColors.text.dark}`,
   outlineOffset: '2px',
 };
 
-export const controlFromSm = { margin: 0, minWidth: '1.5rem', minHeight: '1.5rem' };
+const controlFromSm = { margin: 0, minWidth: '1.5rem', minHeight: '1.5rem' };
 
-export const control = {
+const control = {
   margin: '-0.75rem',
   minWidth: '2.75rem',
   minHeight: '2.75rem',
@@ -49,8 +49,23 @@ export default {
     [fromSm]: { columnGap: '0.5rem' },
     [forcedColors]: { color: 'CanvasText' },
   },
-  icon: { gridColumn: 1, gridRow: 1, display: 'inline-flex' },
-  message: { gridColumn: 2, gridRow: 1, minWidth: 0, overflowWrap: 'anywhere' },
+  icon: {
+    gridColumn: 1,
+    gridRow: 1,
+    display: 'inline-flex',
+    fontSize: '1.25rem',
+    [fromSm]: glyphFromSm,
+  },
+  message: {
+    gridColumn: 2,
+    gridRow: 1,
+    minWidth: 0,
+    overflowWrap: 'anywhere',
+    fontWeight: 600,
+    fontSize: '0.875rem',
+    lineHeight: '1.25rem',
+    [fromSm]: { fontSize: '1rem', lineHeight: '1.5rem' },
+  },
   time: {
     gridColumn: 2,
     color: customColors.text.muted,
@@ -77,24 +92,8 @@ export default {
     ...control,
     gridColumn: 3,
     gridRow: 1,
-    [fromSm]: controlFromSm,
+    fontSize: '1.25rem',
+    [fromSm]: { ...controlFromSm, ...glyphFromSm },
     ...systemControl,
-  },
-  sizes: {
-    toast: {
-      icon: { fontSize: '1.25rem', [fromSm]: glyphFromSm },
-      message: {
-        fontWeight: 600,
-        fontSize: '0.875rem',
-        lineHeight: '1.25rem',
-        [fromSm]: { fontSize: '1rem', lineHeight: '1.5rem' },
-      },
-      close: { fontSize: '1.25rem', [fromSm]: glyphFromSm },
-    },
-    inline: {
-      icon: { fontSize: '1.25rem' },
-      message: { fontWeight: 500, fontSize: '0.9375rem', lineHeight: '1.5625rem' },
-      close: { fontSize: '1.25rem' },
-    },
   },
 } as const;

@@ -7,7 +7,7 @@ import type {
   NotificationView,
   NotificationViewSet,
 } from '@/lib/notifications/types/notification-view';
-import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import createContentI18n from '@tests/unit/utils/create-notification-content-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const retry = { label: 'Повторити', onActivate: jest.fn() };
@@ -32,7 +32,7 @@ function Stage({ views }: { views: NotificationViewSet }): JSX.Element {
   const none = { current: null };
 
   return (
-    <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>
+    <I18nextProvider i18n={createContentI18n('uk', ['en'])}>
       <main>
         <h1>Налаштування</h1>
         <UIBellNotice views={views} returnFocusRef={none} onDismiss={jest.fn()} />

@@ -421,6 +421,31 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     - Given the same event id twice, an unknown code or a malformed frame, then nothing is added.
 >     - Given the shell unmounts, then the stream is closed and no reconnection follows.
 
+> **Amendment (2026-11-23, owner decision: the bell variant wins).** The team lead's pick and the
+> owner's confirmation are recorded in the run summary (Follow-up 5.1), and the removal (FR-33,
+> Follow-up 5.2) is carried out in the same change. The text below and the earlier amendments stay as
+> history; where they differ from the items here, the items here win.
+>
+> 44. **FR-32, done.** The pick is C, `bell`. FR-33 is done: variants A and B, their stories, tests and
+>     baselines, the comparison stories and sheet, the `notificationStyle` setting, the enum setting
+>     kind, the compose and `.env.example` entries and their docs rows are deleted. FR-10 to FR-17,
+>     J16 and P-13 are therefore closed, and every "under every style" clause reads "always".
+> 45. **FR-18 and FR-19, a neutral stroke.** "A tone stroke of ≥ 3:1" reads "a neutral stroke of
+>     ≥ 3:1": the outline, the caret card's border and the caret are `border.strong` (`#80878A`) for
+>     every kind. The status is carried by the icon alone, by its shape and its colour (`success.text`
+>     `#2E7D32`, `error.main` `#DC3939`), so no status rests on colour alone (WCAG 1.4.1). The
+>     forced-colors rules are unchanged.
+> 46. **SM-1, one value.** "Edge contrast vs backdrop, per tone, every variant" reads "edge contrast vs
+>     backdrop, one value": `#80878A` measures 3.53:1 on the page `#FBFBFB` and 3.65:1 on white. It is
+>     measured by the style unit test and by one browser spec at 1440 × 900, 1024 × 1366 and
+>     375 × 812, for a success and for an error, and that spec fails when the edge property is empty.
+> 47. **Port.** `withdraw`, the anchors, the inline batches and the batch number are gone, because only
+>     variant B read them. `raise`, `dismiss`, `dismissAll`, `publishFocus` and `clear` stay.
+> 48. **Content.** The content piece has one size and always has a close button, because only variant B
+>     rendered it without one.
+> 49. **Item 43's exception is closed.** The "no transient surface" clause is asserted on the one
+>     surface that remains.
+
 ## 1. Executive summary
 
 After a user saves their name, e-mail or password on `/settings`, the page confirms the outcome

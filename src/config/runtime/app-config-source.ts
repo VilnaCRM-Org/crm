@@ -1,10 +1,4 @@
-import appConfigChoiceGuard, { APP_CONFIG_CHOICE_KEYS } from './app-config-choice-guard';
-import type {
-  AppConfigParse,
-  AppConfigTextKey,
-  AppConfigUrlKey,
-  AppConfigValues,
-} from './types/app-config';
+import type { AppConfigParse, AppConfigUrlKey, AppConfigValues } from './types/app-config';
 import type { FeatureFlag } from './types/feature-flag';
 
 export const APP_CONFIG_ELEMENT_ID = 'app-runtime-config';
@@ -18,14 +12,13 @@ class AppConfigSource {
 
   public load(): void {
     this.raw();
-    APP_CONFIG_CHOICE_KEYS.forEach((key) => appConfigChoiceGuard.choice(key, this.text(key)));
   }
 
   public validated(parse: AppConfigParse): AppConfigValues {
     return parse(this.raw());
   }
 
-  public text(key: AppConfigTextKey): string | undefined {
+  public text(key: AppConfigUrlKey): string | undefined {
     const value = this.raw()[key];
 
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;

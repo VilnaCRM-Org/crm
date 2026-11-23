@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom';
 import { act, render, renderHook, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
@@ -11,7 +10,6 @@ import useNotificationOutletStore from '@/lib/notifications/use-notification-out
 import UserProfile from '@/modules/user/features/settings/routes/user-profile';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
@@ -54,17 +52,15 @@ const renderPage = (locale: Locale = 'uk'): Page => {
 const regionsWith = (role: 'status' | 'alert', text: string): HTMLElement[] =>
   screen.queryAllByRole(role).filter((node) => node.textContent?.includes(text));
 
-const toastTexts = (text: string): HTMLElement[] =>
+const drawnTexts = (text: string): HTMLElement[] =>
   screen.queryAllByText(text).filter((node) => node.getAttribute('role') === null);
 
 const success = (messageKey: string): NotificationDraft => ({ kind: 'success', messageKey });
 
 const failure = (messageKey: string): NotificationDraft => ({ kind: 'error', messageKey });
 
-describe('UserProfile toasts', () => {
+describe('UserProfile outcomes', () => {
   beforeEach(() => resetClientStores());
-
-  afterEach(() => clearConfigBlock());
 
   it('makes the heading a programmatic focus target only', () => {
     renderPage();
@@ -80,16 +76,16 @@ describe('UserProfile toasts', () => {
     ['en', 'settings.toasts.saved', 'Changes saved'],
     ['en', 'settings.toasts.password_changed', 'You have changed your password'],
   ] as const)(
-    'shows a %s %s success as a toast and announces it once in the status region',
+    'announces a %s %s success once in the status region and draws nothing',
     (locale, messageKey, text) => {
       const { port } = renderPage(locale);
 
       act(() => port.raise({ items: [success(messageKey)] }));
 
-      expect(toastTexts(text)).toHaveLength(1);
+      expect(drawnTexts(text)).toHaveLength(0);
       expect(regionsWith('status', text)).toHaveLength(1);
       expect(regionsWith('alert', text)).toHaveLength(0);
-      expect(screen.getAllByRole('button', { name: CLOSE[locale] })).toHaveLength(1);
+      expect(screen.queryByRole('button', { name: CLOSE[locale] })).not.toBeInTheDocument();
     }
   );
 
@@ -109,46 +105,26 @@ describe('UserProfile toasts', () => {
     ],
     ['en', 'settings.toasts.rate_limited', 'Too many attempts. Please try again later.'],
   ] as const)(
-    'shows a %s %s failure as a toast and announces it once in the alert region',
+    'announces a %s %s failure once in the alert region and draws nothing',
     (locale, messageKey, text) => {
       const { port } = renderPage(locale);
 
       act(() => port.raise({ items: [failure(messageKey)] }));
 
-      expect(toastTexts(text)).toHaveLength(1);
+      expect(drawnTexts(text)).toHaveLength(0);
       expect(regionsWith('alert', text)).toHaveLength(1);
       expect(regionsWith('status', text)).toHaveLength(0);
     }
   );
 
-  it('moves focus to the heading when a toast closes while Save is not on the page', async () => {
-    const { port } = renderPage();
-    act(() => port.raise({ items: [failure('settings.toasts.save_failed')] }));
+  it('publishes the Save ref and the heading as the focus return targets', () => {
+    renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: CLOSE.uk }));
+    const { focus } = useNotificationOutletStore.getState();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Налаштування' })).toHaveFocus();
-    expect(useNotificationOutletStore.getState().shown.items).toEqual([]);
+    expect(focus?.primary.current).toBeNull();
+    expect(focus?.fallback?.current).toBe(screen.getByRole('heading', { level: 1 }));
   });
-
-  it.each(['inline', 'bell'])(
-    'renders no toast stack under %s while both regions remain and announce',
-    (style) => {
-      writeConfigBlock(JSON.stringify({ notificationStyle: style }));
-      const { port } = renderPage();
-
-      act(() =>
-        port.raise({
-          items: [success('settings.toasts.saved'), failure('settings.toasts.rate_limited')],
-        })
-      );
-
-      expect(screen.queryByRole('button', { name: CLOSE.uk })).not.toBeInTheDocument();
-      expect(toastTexts('Зміни збережено')).toHaveLength(0);
-      expect(regionsWith('status', 'Зміни збережено')).toHaveLength(1);
-      expect(regionsWith('alert', 'Забагато спроб. Спробуйте пізніше.')).toHaveLength(1);
-    }
-  );
 
   it('clears the shown notifications when the route unmounts', () => {
     const { port, unmount } = renderPage();

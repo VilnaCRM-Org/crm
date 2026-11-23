@@ -39,6 +39,8 @@ export default {
     mobile: { ...slotBase, width: '24px', height: '24px' },
   },
   alertBadge: {
+    zIndex: 1,
+    pointerEvents: 'none',
     backgroundColor: paletteColors.error.text,
     '@media (forced-colors: active)': { border: '1px solid CanvasText' },
   },

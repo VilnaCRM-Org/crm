@@ -46,8 +46,8 @@ function DisclosureButton({ layout, kind, count, disclosure }: DisclosureButtonP
           focusable="false"
           sx={styles.iconGlyph[layout]}
         />
-        {layout !== 'mobile' && <HeaderBadge count={count} tone="alert" />}
       </Box>
+      {layout !== 'mobile' && <HeaderBadge count={count} tone="alert" />}
       {describedBy !== undefined && (
         <HeaderHiddenText id={descriptionId}>{describedBy}</HeaderHiddenText>
       )}

@@ -19,12 +19,10 @@ describe('notification content styles', () => {
     expect(styles.action.color).not.toBe('#0074B5');
   });
 
-  it('keeps the dark text at 14.96:1 or better on every fill', async () => {
+  it('keeps the dark text at 14.96:1 or better on the white card', async () => {
     const styles = await loadStyles();
 
-    for (const fill of ['#FFFFFF', '#E8F4EF', '#FDECEC']) {
-      expect(contrast(styles.root.color, fill)).toBeGreaterThanOrEqual(14.96);
-    }
+    expect(contrast(styles.root.color, '#FFFFFF')).toBeGreaterThanOrEqual(14.96);
   });
 
   it('keeps the time muted at 7:1 on white', async () => {
@@ -81,24 +79,24 @@ describe('notification content styles', () => {
     expect(styles.action.gridColumn).toBe(2);
   });
 
-  it('sizes the toast and inline variants', async () => {
-    const { sizes } = await loadStyles();
+  it('sizes the icon, the message and the close glyph', async () => {
+    const styles = await loadStyles();
 
-    expect(sizes.toast.icon).toEqual({ fontSize: '1.25rem', [SM]: { fontSize: '1.5rem' } });
-    expect(sizes.toast.message).toEqual({
+    expect(styles.icon.fontSize).toBe('1.25rem');
+    expect(Reflect.get(styles.icon, SM)).toEqual({ fontSize: '1.5rem' });
+    expect(styles.message).toMatchObject({
       fontWeight: 600,
       fontSize: '0.875rem',
       lineHeight: '1.25rem',
-      [SM]: { fontSize: '1rem', lineHeight: '1.5rem' },
     });
-    expect(sizes.toast.close).toEqual({ fontSize: '1.25rem', [SM]: { fontSize: '1.5rem' } });
-    expect(sizes.inline.icon).toEqual({ fontSize: '1.25rem' });
-    expect(sizes.inline.message).toEqual({
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: '1.5625rem',
+    expect(Reflect.get(styles.message, SM)).toEqual({ fontSize: '1rem', lineHeight: '1.5rem' });
+    expect(styles.close.fontSize).toBe('1.25rem');
+    expect(Reflect.get(styles.close, SM)).toEqual({
+      margin: 0,
+      minWidth: '1.5rem',
+      minHeight: '1.5rem',
+      fontSize: '1.5rem',
     });
-    expect(sizes.inline.close).toEqual({ fontSize: '1.25rem' });
   });
 
   it('uses system colours and keeps the focus ring visible in forced colors', async () => {

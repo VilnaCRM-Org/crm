@@ -30,33 +30,9 @@ fi
 exit 0
 EOF
   chmod +x "$STUB_BIN_DIR/node"
-  create_served_page_curl_stub
+  create_curl_stub
   create_docker_stub
   rm -f "$COMMAND_LOG.gate-calls"
-}
-
-# The curl stub answers like the real entrypoint: the served block carries the notification style
-# only when the latest `docker run` passed APP_CONFIG_NOTIFICATION_STYLE. FAKE_STYLE_DROPPED=1
-# serves a block that never carries it, FAKE_STYLE_LEAKED=1 one that always does.
-create_served_page_curl_stub() {
-  cat > "$STUB_BIN_DIR/curl" <<'STUB'
-#!/usr/bin/env bash
-printf 'curl %s\n' "$*" >> "${COMMAND_LOG:?}"
-latest_run=$(grep -F 'docker run -d' "$COMMAND_LOG" | tail -n 1)
-block='{}'
-if [[ "$latest_run" == *'APP_CONFIG_NOTIFICATION_STYLE=inline'* ]]; then
-  block='{"notificationStyle":"inline"}'
-fi
-if [ "${FAKE_STYLE_DROPPED:-0}" = '1' ]; then
-  block='{}'
-fi
-if [ "${FAKE_STYLE_LEAKED:-0}" = '1' ]; then
-  block='{"notificationStyle":"bell"}'
-fi
-printf '<script id="app-runtime-config" type="application/json">%s</script>\n' "$block"
-exit 0
-STUB
-  chmod +x "$STUB_BIN_DIR/curl"
 }
 
 run_runner() {
@@ -108,7 +84,7 @@ run_runner() {
 
   assert_log_contains 'docker run -d --name crm-security-headers-probe -p 127.0.0.1:3011:3001 crm-security-headers-probe'
   assert_log_contains 'node scripts/ci/check-security-headers.mjs --url http://127.0.0.1:3011'
-  assert_log_contains 'docker run -d --name crm-security-headers-probe -p 127.0.0.1:3011:3001 -e APP_CONFIG_API_BASE_URL=https://api.security-headers-probe.example/api -e APP_CONFIG_GRAPHQL_URL=https://graphql.security-headers-probe.example/graphql -e APP_CONFIG_NOTIFICATION_STYLE=inline crm-security-headers-probe'
+  assert_log_contains 'docker run -d --name crm-security-headers-probe -p 127.0.0.1:3011:3001 -e APP_CONFIG_API_BASE_URL=https://api.security-headers-probe.example/api -e APP_CONFIG_GRAPHQL_URL=https://graphql.security-headers-probe.example/graphql crm-security-headers-probe'
   assert_log_contains 'node scripts/ci/check-security-headers.mjs --url http://127.0.0.1:3011 --expect-connect https://api.security-headers-probe.example --expect-connect https://graphql.security-headers-probe.example'
   assert_log_contains 'curl -fsS http://127.0.0.1:3011/'
 
@@ -136,27 +112,6 @@ run_runner() {
   run grep -c -- 'docker run -d' "$COMMAND_LOG"
   [ "$output" -eq 2 ]
   assert_log_contains 'docker rm -f crm-security-headers-probe'
-}
-
-@test "the runner fails when the override boot serves no notificationStyle in its block" {
-  create_runner_stubs
-  run_runner FAKE_STYLE_DROPPED=1
-  [ "$status" -ne 0 ]
-  [[ "$output" == *'does not serve "notificationStyle":"inline"'* ]]
-
-  run grep -c -- 'docker run -d' "$COMMAND_LOG"
-  [ "$output" -eq 2 ]
-  assert_log_contains 'docker rm -f crm-security-headers-probe'
-}
-
-@test "the runner fails when the default boot already serves a notificationStyle key" {
-  create_runner_stubs
-  run_runner FAKE_STYLE_LEAKED=1
-  [ "$status" -ne 0 ]
-  [[ "$output" == *'the default boot serves a notificationStyle key'* ]]
-
-  run grep -c -- 'docker run -d' "$COMMAND_LOG"
-  [ "$output" -eq 1 ]
 }
 
 @test "the runner fails closed when the image never answers" {

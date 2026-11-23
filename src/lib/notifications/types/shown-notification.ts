@@ -2,7 +2,6 @@ import type { NotificationDraft } from './notification-draft';
 
 export interface ShownNotification extends NotificationDraft {
   readonly id: number;
-  readonly batch: number;
   readonly raisedAt: number;
 }
 

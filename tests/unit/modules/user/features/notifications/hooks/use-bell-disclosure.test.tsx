@@ -11,9 +11,8 @@ import useNotificationOutletStore from '@/lib/notifications/use-notification-out
 import useDisclosure from '@/modules/user/features/notifications/hooks/use-bell-disclosure';
 import { inMemoryNotificationRepository } from '@/modules/user/features/notifications/repositories';
 import type { BellDisclosure } from '@/modules/user/features/notifications/types/bell-disclosure';
-import { buildNotificationDraft, buildNotificationDraftSet } from '@tests/builders';
+import { buildNotificationDraftSet } from '@tests/builders';
 import testI18n from '@tests/i18n/test-i18n';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 interface HookProps {
@@ -47,12 +46,7 @@ const setup = (layout: ShellLayout = 'desktop'): RenderHookResult<HookResult, Ho
 const state = (): NotificationOutletState => useNotificationOutletStore.getState();
 
 describe('useBellDisclosure', () => {
-  beforeEach(() => {
-    resetClientStores();
-    clearConfigBlock();
-  });
-
-  afterAll(() => clearConfigBlock());
+  beforeEach(() => resetClientStores());
 
   it('starts closed and unvisited', () => {
     const { result } = setup();
@@ -61,8 +55,7 @@ describe('useBellDisclosure', () => {
     expect(result.current.disclosure.visited).toBe(false);
   });
 
-  it('under bell, show opens, marks visited and hides the merged card, reading nothing', () => {
-    writeConfigBlock(JSON.stringify({ notificationStyle: 'bell' }));
+  it('show opens, marks visited and hides the merged card, reading nothing', () => {
     const markAllRead = jest.spyOn(inMemoryNotificationRepository, 'markAllRead');
     const { result } = setup();
     act(() => result.current.port.raise(buildNotificationDraftSet(3)));
@@ -75,29 +68,6 @@ describe('useBellDisclosure', () => {
     expect(state().shown.items).toEqual([]);
     expect(markAllRead).not.toHaveBeenCalled();
   });
-
-  it.each(['toast', 'inline'])(
-    'under %s, show opens and marks visited but hides nothing',
-    (style) => {
-      writeConfigBlock(JSON.stringify({ notificationStyle: style }));
-      const markAllRead = jest.spyOn(inMemoryNotificationRepository, 'markAllRead');
-      const { result } = setup();
-      act(() =>
-        result.current.port.raise({
-          items: [buildNotificationDraft({ anchor: 'primary' }), buildNotificationDraft()],
-        })
-      );
-      const { shown, inline } = state();
-
-      act(() => result.current.disclosure.show());
-
-      expect(result.current.disclosure.expanded).toBe(true);
-      expect(result.current.disclosure.visited).toBe(true);
-      expect(state().shown).toBe(shown);
-      expect(state().inline).toBe(inline);
-      expect(markAllRead).not.toHaveBeenCalled();
-    }
-  );
 
   it('keeps visited after the panel was opened once and closed', () => {
     const { result } = setup();

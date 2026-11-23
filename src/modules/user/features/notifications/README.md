@@ -3,9 +3,9 @@
 The history of outcomes a user has seen, kept behind a repository contract so that it can become
 its own module later (issue #391). No back end stores notifications yet (user-service issues #526
 and #527 are open), so the only adapter is an in-memory mock; live broadcast events can be added
-from notification-service (see "Broadcast events"). The design decision (three variants
-of the transient surface, the 3:1 edge floor, the `notificationStyle` switch and the removal plan)
-is recorded in the [user module README](../../README.md).
+from notification-service (see "Broadcast events"). The design decision (the bell notice as the
+one transient surface, and its neutral edge at 3:1 or more) is recorded in the
+[user module README](../../README.md).
 
 ## The port this feature listens to
 
@@ -13,18 +13,16 @@ Pages never import this feature. They raise outcomes through the port, which liv
 module so that any page can use it:
 
 - `src/lib/notifications/`: the container-free Zustand outlet store
-  (`use-notification-outlet-store.ts`), the actions that raise, dismiss and withdraw
-  (`notification-outlet-actions.ts`, `notification-raise-builder.ts`), the style-to-surface table
-  (`notification-surfaces.ts`: `toast` → `page`, `inline` → `anchor`, `bell` → `header`) and the
-  port types in `types/` (`NotificationDraftSet`, `NotificationView`, `ShownNotification`,
+  (`use-notification-outlet-store.ts`), the actions that raise and dismiss
+  (`notification-outlet-actions.ts`, `notification-raise-builder.ts`) and the port types in
+  `types/` (`NotificationDraftSet`, `NotificationView`, `ShownNotification`,
   `NotificationOutletState` and the others).
 - `src/hooks/use-notifications.ts`: `useNotifications()` returns the `NotificationsPort`
-  (`src/hooks/types/notifications-port.ts`): `raise`, `dismiss`, `dismissAll`, `withdraw`,
+  (`src/hooks/types/notifications-port.ts`): `raise`, `dismiss`, `dismissAll`,
   `publishFocus` and `clear`.
 - The read hooks beside it: `useShownNotifications`, `useNotificationViews`,
-  `useRetiringNotificationViews`, `useNotificationFocus`, `useNotificationFocusReturn`,
-  `useNotificationAnnouncement` and `useNotificationSurface`, which answers whether the active
-  `notificationStyle` renders a given surface.
+  `useRetiringNotificationViews`, `useNotificationFocus`, `useNotificationFocusReturn` and
+  `useNotificationAnnouncement`.
 
 ## The contract
 
@@ -98,7 +96,7 @@ All hooks in `hooks/` are container-free and read the repository through
 - `useNotificationHistory(revision)` returns the records newest first, the unread count,
   `markAllRead` and `refresh`; it reloads on mount, on each revision and after `markAllRead`.
 - `useBellDisclosure(layout)` owns the bell's open state and `visited`. Opening hides the merged
-  card only under the `bell` style. Escape, a pointerdown or focus leaving the bell wrapper, a
+  card. Escape, a pointerdown or focus leaving the bell wrapper, a
   route change and a layout change close it. It is built from `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
@@ -127,11 +125,11 @@ notifications wait for authorized subscriptions there and for user-service #526 
 
 ## Components
 
-- `BellNotifications` (`components/bell-notifications.tsx`) is the bell connector of every
-  style. It renders the enabled `HeaderIconButton` with its `disclosure` (the button draws the
-  alert badge and the single unread-count description, `notification_center.bell.unread_count_*`,
-  or none at zero), the always-present `UINotificationHistoryFrame` host its `aria-controls`
-  names, and, only under the `bell` style, the merged outcome card. It reads
+- `BellNotifications` (`components/bell-notifications.tsx`) is the bell connector. It renders
+  the enabled `HeaderIconButton` with its `disclosure` (the button draws the alert badge and the
+  single unread-count description, `notification_center.bell.unread_count_*`, or none at zero), the
+  always-present `UINotificationHistoryFrame` host its `aria-controls`
+  names, and the merged outcome card. It reads
   `useNotificationHistory(revision)` and `useBellDisclosure(layout)`, anchors the panel under the
   bell through `useBellAnchor`, and registers this feature's catalog on `@/i18n` when the module
   evaluates, so the panel and the card translate on every protected page.
@@ -140,12 +138,13 @@ notifications wait for authorized subscriptions there and for user-service #526 
   `RouteFallback` covers the wait. It receives the records and `onMarkAllRead` from the bell.
 - `BellOutcomeNotice` (chunk `notifications-notice`) draws the shown items as `UIBellNotice`. It
   sits in its own `Suspense` with a `0 × 0` `aria-hidden` fallback, so neither the bell nor the
-  badge suspends on it, and its loader never runs under `toast` or `inline`.
+  badge suspends on it. Its edge is neutral for every kind; only the row icons keep the status
+  colour.
 - Each loader reports a final chunk failure as `app-shell:notifications-history` or
   `app-shell:notifications-notice` and resolves to an empty component, so the bell keeps working.
 
 - `NotificationsShellSlot` (`components/notifications-shell-slot.tsx`) is the shell slot of
-  every protected page under every style. It calls `useNotificationRecorder(onChunkFailure)`,
+  every protected page. It calls `useNotificationRecorder(onChunkFailure)`,
   which records each raise once and reports a rejected write as `app-shell:notifications-record`,
   and `useBroadcastEvents(onChunkFailure)`, and renders `BellNotifications` with the shell `layout`
   and the sum of both revisions, so the badge counts every recorded outcome and broadcast. It
@@ -155,16 +154,15 @@ notifications wait for authorized subscriptions there and for user-service #526 
 
 The route contract `routes/index.ts` (`user.notifications`, no routes of its own) declares
 `shell.notifications`, which lazily imports the slot as the `notifications-shell` chunk; the
-route registry appends it, so the composer mounts the slot on every protected page under every
-style.
+route registry appends it, so the composer mounts the slot on every protected page.
 
 ## Chunks
 
-| Chunk                   | Holds                                | Loads                        |
-| ----------------------- | ------------------------------------ | ---------------------------- |
-| `notifications-shell`   | slot, recorder, broadcast, bell      | every protected page         |
-| `notifications-history` | `NotificationHistoryPanel`           | the first open of the bell   |
-| `notifications-notice`  | `BellOutcomeNotice`, the merged card | protected pages, `bell` only |
+| Chunk                   | Holds                                | Loads                      |
+| ----------------------- | ------------------------------------ | -------------------------- |
+| `notifications-shell`   | slot, recorder, broadcast, bell      | every protected page       |
+| `notifications-history` | `NotificationHistoryPanel`           | the first open of the bell |
+| `notifications-notice`  | `BellOutcomeNotice`, the merged card | every protected page       |
 
 ## Extraction checklist
 

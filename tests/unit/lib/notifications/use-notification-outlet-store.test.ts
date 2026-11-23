@@ -16,12 +16,10 @@ describe('useNotificationOutletStore', () => {
     expect(fresh.getState()).toEqual({
       shown: { items: [] },
       raised: { items: [] },
-      inline: { items: [] },
       announcement: { polite: '', assertive: '' },
       focus: null,
       revision: 0,
       nextId: 1,
-      nextBatch: 1,
       marked: false,
     });
   });

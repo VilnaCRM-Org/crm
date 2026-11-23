@@ -39,7 +39,7 @@ async function waitForNetworkIdle(page: Page): Promise<void> {
   }
 }
 
-const shellBadgeOf = (page: Page): Locator => bellOf(page).getByText(/^\d+$/);
+const shellBadgeOf = (page: Page): Locator => page.getByRole('banner').getByText(/^\d+$/);
 
 export async function waitForShellBell(page: Page, unread: number = SEED_UNREAD): Promise<void> {
   const width = page.viewportSize()?.width ?? 0;

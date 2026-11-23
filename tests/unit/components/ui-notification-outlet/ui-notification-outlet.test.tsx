@@ -112,14 +112,13 @@ describe('UINotificationOutlet', () => {
   it('clears the whole outlet when it unmounts', () => {
     const port = portOf();
     const { unmount } = render(<Host />);
-    act(() => port.raise({ items: [success, { ...failure, anchor: 'email' }] }));
+    act(() => port.raise({ items: [success, failure] }));
 
     unmount();
 
     const state = useNotificationOutletStore.getState();
     expect(state.shown).toEqual(CLEARED_NOTIFICATION_OUTLET.shown);
     expect(state.raised).toEqual(CLEARED_NOTIFICATION_OUTLET.raised);
-    expect(state.inline).toEqual(CLEARED_NOTIFICATION_OUTLET.inline);
     expect(state.announcement).toEqual({ polite: '', assertive: '' });
     expect(state.focus).toBeNull();
   });
@@ -129,5 +128,15 @@ describe('UINotificationOutlet', () => {
 
     expect(screen.queryAllByRole('status').length + screen.queryAllByRole('alert').length).toBe(2);
     expect(screen.queryByRole('log')).not.toBeInTheDocument();
+  });
+
+  it('draws nothing but the two regions after a raise', () => {
+    const port = portOf();
+    render(<Host />);
+
+    act(() => port.raise({ items: [success] }));
+
+    expect(screen.getAllByText(/^Changes saved/u)).toEqual([screen.getByRole('status')]);
+    expect(screen.getAllByRole('button')).toEqual([screen.getByRole('button', { name: 'Save' })]);
   });
 });

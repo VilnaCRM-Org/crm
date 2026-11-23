@@ -7,7 +7,7 @@ import { I18nextProvider } from 'react-i18next';
 import type { NotificationHistoryCopy } from '@/components/types/ui-notification-history';
 import UINotificationHistory from '@/components/ui-notification-history';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
-import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import createContentI18n from '@tests/unit/utils/create-notification-content-locale-i18n';
 
 const copy: NotificationHistoryCopy = {
   heading: 'Сповіщення',
@@ -34,7 +34,7 @@ function Panel({
   onMarkAllRead?: () => void;
 }): JSX.Element {
   return (
-    <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>
+    <I18nextProvider i18n={createContentI18n('uk', ['en'])}>
       <UINotificationHistory
         views={set}
         unread={unread}
@@ -55,6 +55,12 @@ describe('UINotificationHistory', () => {
       'НепрочитанеНе вдалося зберегти10 листопада, 09:10',
       'Зміни збережено9 листопада, 18:00',
     ]);
+  });
+
+  it('shows a row without a time as its message alone', () => {
+    render(<Panel set={{ items: [{ id: 'a', kind: 'success', message: 'Пароль змінено' }] }} />);
+
+    expect(screen.getByRole('listitem')).toHaveTextContent(/^Пароль змінено$/u);
   });
 
   it('marks only the unread row with the hidden text', () => {

@@ -107,14 +107,13 @@ describe('render-path import graph', () => {
   });
 });
 
-describe('notification surface hook import graph (#391)', () => {
-  const graph = walkStaticGraph('src/hooks/use-notification-surface.ts');
+describe('notifications port import graph (#391)', () => {
+  const graph = walkStaticGraph('src/hooks/use-notifications.ts');
   const files = [...graph.files];
 
-  it('reaches the style reader and the surface table', () => {
-    expect(graph.files.has('src/config/runtime/notification-style-config.ts')).toBe(true);
-    expect(graph.files.has('src/config/runtime/app-config-choice-guard.ts')).toBe(true);
-    expect(graph.files.has('src/lib/notifications/notification-surfaces.ts')).toBe(true);
+  it('reaches the outlet store and its actions', () => {
+    expect(graph.files.has('src/lib/notifications/use-notification-outlet-store.ts')).toBe(true);
+    expect(graph.files.has('src/lib/notifications/notification-outlet-actions.ts')).toBe(true);
   });
 
   it.each(FORBIDDEN)('never statically imports %s', (packageName) => {

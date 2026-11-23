@@ -43,10 +43,6 @@ create_docker_stub() {
 #!/usr/bin/env bash
 printf 'docker %s\n' "$*" >> "${COMMAND_LOG:?}"
 
-if [ -n "${APP_CONFIG_NOTIFICATION_STYLE:-}" ]; then
-  printf 'APP_CONFIG_NOTIFICATION_STYLE=%s\n' "$APP_CONFIG_NOTIFICATION_STYLE" >> "${COMMAND_LOG:?}"
-fi
-
 if [ "$1" = "network" ] && [ "$2" = "ls" ]; then
   if [ -n "${FAKE_DOCKER_NETWORK_EXISTS:-}" ]; then
     printf '%s\n' "${FAKE_DOCKER_NETWORK_EXISTS}"
@@ -493,17 +489,6 @@ assert_log_contains() {
 
   if ! grep -F -- "$expected" "$COMMAND_LOG" >/dev/null 2>&1; then
     echo "Expected command log to contain: $expected" >&2
-    echo "--- command log ---" >&2
-    cat "$COMMAND_LOG" >&2
-    return 1
-  fi
-}
-
-refute_log_contains() {
-  local unexpected="$1"
-
-  if grep -F -- "$unexpected" "$COMMAND_LOG" >/dev/null 2>&1; then
-    echo "Expected command log not to contain: $unexpected" >&2
     echo "--- command log ---" >&2
     cat "$COMMAND_LOG" >&2
     return 1

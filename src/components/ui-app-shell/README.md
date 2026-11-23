@@ -608,7 +608,8 @@ insets on each side.
 
 The counts below are from the first recording. On 2026-11-06, 135 of these baselines were re-recorded
 from the CI report after each diff was inspected: the sidebar and rail states (DV-13 and the sign-out
-side lines), the settings pages (DV-12 and the toast clearance) and the tablet rail page (P-62).
+side lines), the settings pages (DV-12 and the clearance of the toasts of that time) and the tablet
+rail page (P-62).
 
 The baselines were recorded in the pinned Playwright container against a freshly built
 `test-harness` image (`make start-prod`, then `playwright test tests/visual --update-snapshots

@@ -27,7 +27,7 @@ describe('NotificationOutletActions', () => {
   afterEach(() => jest.useRealTimers());
 
   describe('raise', () => {
-    it('shows three drafts in raised order with ids, one batch and the clock value', () => {
+    it('shows three drafts in raised order with ids and the clock value', () => {
       const drafts = buildNotificationDraftSet(3);
 
       createActions().raise(drafts, translate);
@@ -36,14 +36,12 @@ describe('NotificationOutletActions', () => {
       const expected = drafts.items.map((draft, index) => ({
         ...draft,
         id: index + 1,
-        batch: 1,
         raisedAt: CLOCK_VALUE,
       }));
       expect(state.shown).toEqual({ items: expected });
       expect(state.raised).toEqual({ items: expected });
       expect(state.revision).toBe(1);
       expect(state.nextId).toBe(4);
-      expect(state.nextBatch).toBe(2);
     });
 
     it('announces the three texts joined by a space with the mark on the first raise', () => {
@@ -67,7 +65,7 @@ describe('NotificationOutletActions', () => {
 
       const state = readState();
       expect(state.shown.items.map((item) => item.id)).toEqual([2, 3, 4]);
-      expect(state.shown.items[2]).toMatchObject({ ...fourth, id: 4, batch: 2 });
+      expect(state.shown.items[2]).toMatchObject({ ...fourth, id: 4 });
       expect(state.raised.items).toHaveLength(1);
       expect(state.raised.items[0]).toMatchObject({ ...fourth, id: 4 });
     });
@@ -123,45 +121,6 @@ describe('NotificationOutletActions', () => {
       expect(readState().marked).toBe(false);
     });
 
-    it('keeps one latest batch per anchor and stores a missing anchor as primary', () => {
-      const actions = createActions();
-      actions.raise(
-        {
-          items: [
-            buildNotificationDraft({ anchor: 'email' }),
-            buildNotificationDraft(),
-            buildNotificationDraft({ anchor: 'email' }),
-          ],
-        },
-        translate
-      );
-
-      expect(readState().inline).toEqual({
-        items: [
-          { anchor: 'email', batch: 1 },
-          { anchor: 'primary', batch: 1 },
-        ],
-      });
-
-      actions.raise({ items: [buildNotificationDraft({ anchor: 'email' })] }, translate);
-
-      expect(readState().inline).toEqual({
-        items: [
-          { anchor: 'primary', batch: 1 },
-          { anchor: 'email', batch: 2 },
-        ],
-      });
-    });
-
-    it('treats an explicit primary anchor like a missing one', () => {
-      const actions = createActions();
-      actions.raise({ items: [buildNotificationDraft()] }, translate);
-
-      actions.raise({ items: [buildNotificationDraft({ anchor: 'primary' })] }, translate);
-
-      expect(readState().inline).toEqual({ items: [{ anchor: 'primary', batch: 2 }] });
-    });
-
     it('keeps no timer: every item is still shown ten minutes later', () => {
       jest.useFakeTimers();
       createActions().raise(buildNotificationDraftSet(3), translate);
@@ -173,16 +132,11 @@ describe('NotificationOutletActions', () => {
     });
   });
 
-  describe('dismiss, dismissAll, withdraw', () => {
+  describe('dismiss, dismissAll', () => {
     const raiseSeveral = (actions: NotificationOutletActions): void => {
       actions.raise(buildNotificationDraftSet(2), translate);
       actions.raise(
-        {
-          items: [
-            buildNotificationDraft({ anchor: 'email' }),
-            buildNotificationDraft({ kind: 'error' }),
-          ],
-        },
+        { items: [buildNotificationDraft(), buildNotificationDraft({ kind: 'error' })] },
         translate
       );
     };
@@ -200,7 +154,6 @@ describe('NotificationOutletActions', () => {
       });
       expect(readState().shown.items.map((item) => item.id)).toEqual([2, 4]);
       expect(readState().raised).toBe(before.raised);
-      expect(readState().inline).toBe(before.inline);
     });
 
     it('dismiss of an unknown id changes nothing visible', () => {
@@ -221,22 +174,6 @@ describe('NotificationOutletActions', () => {
       actions.dismissAll();
 
       expect(readState()).toEqual({ ...before, shown: { items: [] } });
-      expect(readState().inline).toBe(before.inline);
-    });
-
-    it('withdraw drops only that anchor batch', () => {
-      const actions = createActions();
-      raiseSeveral(actions);
-      const before = readState();
-
-      actions.withdraw('email');
-
-      expect(readState()).toEqual({
-        ...before,
-        inline: { items: before.inline.items.filter((batch) => batch.anchor !== 'email') },
-      });
-      expect(readState().inline.items).toEqual([{ anchor: 'primary', batch: 2 }]);
-      expect(readState().shown).toBe(before.shown);
     });
   });
 
@@ -261,9 +198,9 @@ describe('NotificationOutletActions', () => {
       expect(readState().focus).toBeNull();
     });
 
-    it('clear resets the five outlet fields and keeps the counters', () => {
+    it('clear resets the four outlet fields and keeps the counters', () => {
       const actions = createActions();
-      actions.raise(buildNotificationDraftSet(3, { anchor: 'email' }), translate);
+      actions.raise(buildNotificationDraftSet(3), translate);
       actions.raise(buildNotificationDraftSet(1), translate);
       actions.raise(buildNotificationDraftSet(1, { kind: 'error' }), translate);
       actions.publishFocus(focus());
@@ -271,19 +208,17 @@ describe('NotificationOutletActions', () => {
 
       actions.clear();
 
-      const { shown, raised, inline, announcement, focus: cleared } = CLEARED_NOTIFICATION_OUTLET;
+      const { shown, raised, announcement, focus: cleared } = CLEARED_NOTIFICATION_OUTLET;
       expect(readState()).toEqual({
         ...before,
         shown,
         raised,
-        inline,
         announcement,
         focus: cleared,
       });
       expect(readState()).toMatchObject({
         revision: 3,
         nextId: 6,
-        nextBatch: 4,
         marked: true,
       });
     });
@@ -300,7 +235,6 @@ describe('NotificationOutletActions', () => {
       const state = readState();
       expect(state.revision).toBe(4);
       expect(state.shown.items.map((item) => item.id)).toEqual([4]);
-      expect(state.shown.items[0]?.batch).toBe(4);
       expect(state.marked).toBe(false);
     });
   });

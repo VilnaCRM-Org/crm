@@ -8,7 +8,6 @@ import composeLayoutStories, {
 } from '@tests/unit/utils/compose-layout-stories';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
-import { clearConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const storiesModule: LayoutStoriesModule = jest.requireActual(
@@ -37,17 +36,12 @@ const renderStory = (name: string): ReturnType<typeof render> => {
 describe('BellNotifications stories', () => {
   beforeEach(() => resetClientStores());
 
-  afterEach(() => clearConfigBlock());
-
-  it('ships the eight stories the bell connector documents', () => {
+  it('ships the five stories the bell connector documents', () => {
     expect(Object.keys(composed)).toEqual([
-      'ToastClosed',
-      'InlineClosed',
-      'BellClosed',
-      'BellWithNotice',
+      'Closed',
+      'WithNotice',
       'HistoryOpen',
       'AfterMarkAllRead',
-      'DesktopShell',
       'MobileShell',
     ]);
   });
@@ -68,7 +62,7 @@ describe('BellNotifications stories', () => {
     await waitFor(() => expect(bell()).not.toHaveAccessibleDescription());
     view.unmount();
 
-    renderStory('ToastClosed');
+    renderStory('Closed');
 
     await waitFor(() => expect(bell()).toHaveAccessibleDescription('1 непрочитане сповіщення'));
     await userEvent.click(bell());

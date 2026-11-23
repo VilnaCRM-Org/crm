@@ -1,7 +1,5 @@
 import { z } from '@/config/zod';
 
-import { NOTIFICATION_STYLES } from './notification-styles';
-
 // Protocol-constrained rather than bare `z.url()`: both settings are HTTP endpoints, and the
 // container entrypoint already rejects every other scheme, so a block that reaches the document
 // without passing through the renderer must not be able to smuggle in a `mailto:` or
@@ -19,7 +17,6 @@ const AppConfigSchema = z.strictObject({
   graphqlUrl: HttpUrl.optional(),
   notificationEventsUrl: HttpUrl.optional(),
   flags: z.strictObject({}).optional(),
-  notificationStyle: z.enum(NOTIFICATION_STYLES).optional(),
 });
 
 export default AppConfigSchema;

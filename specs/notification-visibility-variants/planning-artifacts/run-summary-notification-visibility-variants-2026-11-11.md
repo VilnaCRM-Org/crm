@@ -250,6 +250,19 @@ where they differ.
 > - **Removal.** The follow-up that deletes the two styles not chosen keeps the bell, the badge, the
 >   history and the notifications feature, whichever variant wins.
 
+## Decision record, 2026-11-23: the bell variant wins (FR-32, Follow-up 5.1)
+
+> **Owner decision (2026-11-23):** the pick is variant **C, `bell`**, the card merged with the bell.
+> The product owner is the confirming owner. The pick reached this bundle without a written reason, so
+> none is recorded.
+>
+> Second owner decision of the same day: the notice is neutral. Its outline, border and caret carry no
+> green or red for any kind; only the status icon keeps its colour (PRD amendment items 44 to 49).
+>
+> Consequences: Follow-up 5.2 is unblocked and carried out for "C wins". Still open from 5.1: the
+> request to the designer to draw C's missing frames (the tablet and mobile caret card and the neutral
+> edge).
+
 ## After the 2026-11-12 owner decision
 
 | Phase         | BMAD command                   | Artifact                                                              | Rounds                                                                 |

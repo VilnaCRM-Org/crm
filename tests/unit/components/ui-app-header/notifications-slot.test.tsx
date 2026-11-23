@@ -8,7 +8,6 @@ import navigationItems from '@/components/ui-app-shell/navigation-items';
 import { customColors } from '@/styles/colors';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 const LIVE_BELL = 'Live bell';
 
@@ -56,50 +55,43 @@ const openDrawer = async (): Promise<HTMLElement> => {
 
 describe('UIAppHeader notifications slot', () => {
   afterEach(() => {
-    clearConfigBlock();
     Reflect.deleteProperty(window, 'matchMedia');
   });
 
-  describe.each(['toast', 'inline', 'bell'] as const)('under %s', (notificationStyle) => {
-    beforeEach(() => {
-      writeConfigBlock(JSON.stringify({ notificationStyle }));
-    });
+  it.each(['desktop', 'tablet', 'mobile'] as const)(
+    'renders the slot and no disabled bell at %s',
+    (layout) => {
+      renderShell(<UIAppHeader layout={layout} notifications={liveBell} />, { locale: 'uk' });
 
-    it.each(['desktop', 'tablet', 'mobile'] as const)(
-      'renders the slot and no disabled bell at %s',
-      (layout) => {
-        renderShell(<UIAppHeader layout={layout} notifications={liveBell} />, { locale: 'uk' });
+      expect(screen.queryByRole('button', { name: 'Сповіщення' })).not.toBeInTheDocument();
+      expect(screen.getAllByText('Ще недоступно')).toHaveLength(layout === 'mobile' ? 1 : 2);
+      expect(screen.getByRole('button', { name: LIVE_BELL })).not.toHaveAccessibleDescription();
+      expect(screen.getByRole('button', { name: LIVE_BELL })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Завдання' })).toBeDisabled();
+    }
+  );
 
-        expect(screen.queryByRole('button', { name: 'Сповіщення' })).not.toBeInTheDocument();
-        expect(screen.getAllByText('Ще недоступно')).toHaveLength(layout === 'mobile' ? 1 : 2);
-        expect(screen.getByRole('button', { name: LIVE_BELL })).not.toHaveAccessibleDescription();
-        expect(screen.getByRole('button', { name: LIVE_BELL })).toBeEnabled();
-        expect(screen.getByRole('button', { name: 'Завдання' })).toBeDisabled();
-      }
-    );
+  it.each(['desktop', 'tablet'] as const)(
+    'keeps search, bell frame, tasks and the user frame in order at %s',
+    (layout) => {
+      renderShell(
+        <UIAppHeader
+          layout={layout}
+          notifications={liveBell}
+          userMenu={<button type="button">menu</button>}
+        />,
+        { locale: 'uk' }
+      );
+      const search = screen.getByRole('searchbox', { name: 'Пошук' });
+      const bell = screen.getByRole('button', { name: LIVE_BELL });
+      const tasks = screen.getByRole('button', { name: 'Завдання' });
+      const menu = screen.getByRole('button', { name: 'menu' });
 
-    it.each(['desktop', 'tablet'] as const)(
-      'keeps search, bell frame, tasks and the user frame in order at %s',
-      (layout) => {
-        renderShell(
-          <UIAppHeader
-            layout={layout}
-            notifications={liveBell}
-            userMenu={<button type="button">menu</button>}
-          />,
-          { locale: 'uk' }
-        );
-        const search = screen.getByRole('searchbox', { name: 'Пошук' });
-        const bell = screen.getByRole('button', { name: LIVE_BELL });
-        const tasks = screen.getByRole('button', { name: 'Завдання' });
-        const menu = screen.getByRole('button', { name: 'menu' });
-
-        expect(follows(search, bell)).toBe(true);
-        expect(follows(bell, tasks)).toBe(true);
-        expect(follows(tasks, menu)).toBe(true);
-      }
-    );
-  });
+      expect(follows(search, bell)).toBe(true);
+      expect(follows(bell, tasks)).toBe(true);
+      expect(follows(tasks, menu)).toBe(true);
+    }
+  );
 
   it.each([
     ['desktop', '48px'],

@@ -3,7 +3,6 @@ import * as React from 'react';
 import { StrictMode, type JSX, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
-import useNotifications from '@/hooks/use-notifications';
 import type { NotificationDraft } from '@/lib/notifications/types/notification-draft';
 import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
@@ -57,36 +56,11 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
 );
 
 const draftsOf = (state: NotificationOutletState): NotificationDraft[] =>
-  state.raised.items.map(({ kind, messageKey, action, anchor }) => ({
-    kind,
-    messageKey,
-    action,
-    anchor,
-  }));
+  state.raised.items.map(({ kind, messageKey, action }) => ({ kind, messageKey, action }));
 
 const raised = (): NotificationDraft[] => draftsOf(useNotificationOutletStore.getState());
 
 const raiseCount = (): number => useNotificationOutletStore.getState().revision;
-
-const inlineAnchors = (): string[] =>
-  useNotificationOutletStore.getState().inline.items.map((batch) => batch.anchor);
-
-const raiseOnEveryAnchor = (): void => {
-  const port = renderHook(() => useNotifications(), { wrapper }).result.current;
-  act(() =>
-    port.raise({
-      items: [
-        { kind: 'success', messageKey: 'settings.toasts.saved', anchor: 'fullName-save' },
-        {
-          kind: 'success',
-          messageKey: 'settings.toasts.password_changed',
-          anchor: 'password-save',
-        },
-        { kind: 'success', messageKey: 'settings.toasts.resent', anchor: 'email' },
-      ],
-    })
-  );
-};
 
 type ProfileFormProps = Parameters<typeof useProfileSave>[0];
 type ProfileSection = Parameters<typeof useProfileSave>[1];
@@ -325,37 +299,33 @@ describe('useProfileSave', () => {
   });
 
   it.each([
-    ['fullName', 'settings.toasts.saved', 'fullName-save'],
-    ['email', 'settings.toasts.email_sent', 'email-save'],
-    ['password', 'settings.toasts.password_changed', 'password-save'],
-  ] as const)(
-    "adopts the entity, raises the %s draft alone at the section's save anchor",
-    async (section, messageKey, anchor) => {
-      const parts = harness();
-      const { adopt } = parts;
-      const entity = buildUserEntity();
-      mockUpdate.mockResolvedValue({ kind: 'ok', user: entity });
-      const { result } = mountSave(parts, section);
+    ['fullName', 'settings.toasts.saved'],
+    ['email', 'settings.toasts.email_sent'],
+    ['password', 'settings.toasts.password_changed'],
+  ] as const)('adopts the entity and raises the %s draft alone', async (section, messageKey) => {
+    const parts = harness();
+    const { adopt } = parts;
+    const entity = buildUserEntity();
+    mockUpdate.mockResolvedValue({ kind: 'ok', user: entity });
+    const { result } = mountSave(parts, section);
 
-      await act(async () => {
-        result.current.save(
-          buildProfileFormValues({
-            fullName: NEW_FULL_NAME,
-            email: NEW_EMAIL,
-            newPassword: NEW_PASSWORD,
-          })
-        );
-      });
+    await act(async () => {
+      result.current.save(
+        buildProfileFormValues({
+          fullName: NEW_FULL_NAME,
+          email: NEW_EMAIL,
+          newPassword: NEW_PASSWORD,
+        })
+      );
+    });
 
-      expect(adopt).toHaveBeenCalledWith(entity);
-      expect(raiseCount()).toBe(1);
-      expect(raised()).toEqual([{ kind: 'success', messageKey, anchor }]);
-      expect(result.current.anchor).toBe(anchor);
-      expect(result.current.state.settled).toBe(1);
-      expect(result.current.state.saved).toBe(1);
-      expect(result.current.state.lastSettleSaved).toBe(true);
-    }
-  );
+    expect(adopt).toHaveBeenCalledWith(entity);
+    expect(raiseCount()).toBe(1);
+    expect(raised()).toEqual([{ kind: 'success', messageKey }]);
+    expect(result.current.state.settled).toBe(1);
+    expect(result.current.state.saved).toBe(1);
+    expect(result.current.state.lastSettleSaved).toBe(true);
+  });
 
   it.each([
     ['fullName', 'fullNamePassword', 'fullName'],
@@ -403,65 +373,11 @@ describe('useProfileSave', () => {
 
     expect(raiseCount()).toBe(1);
     expect(raised()).toEqual([
-      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: 'fullName-save' },
-      { kind: 'success', messageKey: 'settings.toasts.email_sent', anchor: 'fullName-save' },
-      { kind: 'success', messageKey: 'settings.toasts.password_changed', anchor: 'fullName-save' },
+      { kind: 'success', messageKey: 'settings.toasts.saved' },
+      { kind: 'success', messageKey: 'settings.toasts.email_sent' },
+      { kind: 'success', messageKey: 'settings.toasts.password_changed' },
     ]);
     detect.mockRestore();
-  });
-
-  it.each([
-    ['fullName', ['password-save', 'email']],
-    ['password', ['fullName-save', 'email']],
-  ] as const)(
-    "withdraws only the %s section's save anchor when a save goes pending",
-    (section, kept) => {
-      const parts = harness();
-      raiseOnEveryAnchor();
-      mockUpdate.mockReturnValue(new Promise(() => undefined));
-      const { result } = mountSave(parts, section);
-
-      expect(inlineAnchors()).toEqual(['fullName-save', 'password-save', 'email']);
-
-      act(() => {
-        result.current.save(
-          buildProfileFormValues({
-            fullName: NEW_FULL_NAME,
-            email: NEW_EMAIL,
-            newPassword: NEW_PASSWORD,
-          })
-        );
-      });
-
-      expect(inlineAnchors()).toEqual(kept);
-      expect(result.current.state.attempts).toBe(1);
-    }
-  );
-
-  it('withdraws nothing when nothing changed', async () => {
-    const parts = harness();
-    raiseOnEveryAnchor();
-    const { result } = mountSave(parts);
-
-    await act(async () => {
-      result.current.save(unchangedValues());
-    });
-
-    expect(inlineAnchors()).toEqual(['fullName-save', 'password-save', 'email']);
-  });
-
-  it.each([
-    ['fullName', ['password-save', 'email']],
-    ['password', ['fullName-save', 'email']],
-  ] as const)("withdraws only the %s section's save anchor on clear", (section, kept) => {
-    const parts = harness();
-    raiseOnEveryAnchor();
-    const { result } = mountSave(parts, section);
-
-    act(() => result.current.clear());
-
-    expect(inlineAnchors()).toEqual(kept);
-    expect(raiseCount()).toBe(1);
   });
 
   it('hands the save ref to the section button as soon as a request starts', () => {
@@ -597,7 +513,6 @@ describe('useProfileSave', () => {
     expect(drafts).toHaveLength(1);
     expect(drafts[0]?.messageKey).toBe('settings.toasts.save_failed_transient');
     expect(drafts[0]?.action?.labelKey).toBe('auth.error.tryAgain');
-    expect(drafts[0]?.anchor).toBe('fullName-save');
     drafts[0]?.action?.onActivate();
     expect(click).toHaveBeenCalledTimes(1);
     expect(adopt).not.toHaveBeenCalled();
@@ -649,7 +564,7 @@ describe('useProfileSave', () => {
       result.current.save(nameChange());
     });
 
-    expect(raised()).toEqual([{ kind: 'error', messageKey, anchor: 'fullName-save' }]);
+    expect(raised()).toEqual([{ kind: 'error', messageKey }]);
     expect(raised()[0]?.action).toBeUndefined();
     expect(raiseCount()).toBe(1);
     expect(result.current.state.settled).toBe(1);
@@ -812,10 +727,10 @@ describe('useProfileSave', () => {
     });
 
     it.each([
-      ['fullName', 'settings.toasts.saved', 'fullName-save'],
-      ['email', 'settings.toasts.email_sent', 'email-save'],
-      ['password', 'settings.toasts.password_changed', 'password-save'],
-    ] as const)('raises the %s success draft with its exact key', async (section, key, anchor) => {
+      ['fullName', 'settings.toasts.saved'],
+      ['email', 'settings.toasts.email_sent'],
+      ['password', 'settings.toasts.password_changed'],
+    ] as const)('raises the %s success draft with its exact key', async (section, key) => {
       const fresh = await loadKeyed();
       const { props } = harness();
       mockUpdate.mockResolvedValue(okOutcome());
@@ -832,9 +747,7 @@ describe('useProfileSave', () => {
       });
 
       expect(fresh.store.getState().revision).toBe(1);
-      expect(draftsOf(fresh.store.getState())).toEqual([
-        { kind: 'success', messageKey: key, anchor },
-      ]);
+      expect(draftsOf(fresh.store.getState())).toEqual([{ kind: 'success', messageKey: key }]);
     });
 
     it.each([
@@ -854,7 +767,7 @@ describe('useProfileSave', () => {
       const drafts = draftsOf(fresh.store.getState());
       expect(fresh.store.getState().revision).toBe(1);
       expect(drafts).toHaveLength(1);
-      expect(drafts[0]).toMatchObject({ kind: 'error', messageKey: key, anchor: 'fullName-save' });
+      expect(drafts[0]).toMatchObject({ kind: 'error', messageKey: key });
     });
   });
 });

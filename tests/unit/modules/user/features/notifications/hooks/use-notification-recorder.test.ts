@@ -72,7 +72,6 @@ describe('useNotificationRecorder', () => {
     ['a re-render', (): void => undefined],
     ['a dismiss', (): void => actions.dismiss(1)],
     ['a dismissAll', (): void => actions.dismissAll()],
-    ['a withdraw', (): void => actions.withdraw('primary')],
     ['a published focus', (): void => actions.publishFocus({ primary: { current: null } })],
   ])('does not record again on %s', async (_label, change) => {
     const { rerender } = renderHook(() => useRecorder(report));

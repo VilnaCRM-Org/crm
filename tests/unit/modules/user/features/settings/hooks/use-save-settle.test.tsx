@@ -30,17 +30,10 @@ const NAME_CHANGE: ProfileChange = {
   fullName: buildFullName(),
 };
 
-const SAVE_ANCHOR = 'fullName-save';
-
 const raised = (): readonly NotificationDraft[] =>
   useNotificationOutletStore
     .getState()
-    .raised.items.map(({ kind, messageKey, action, anchor }) => ({
-      kind,
-      messageKey,
-      action,
-      anchor,
-    }));
+    .raised.items.map(({ kind, messageKey, action }) => ({ kind, messageKey, action }));
 
 const raiseCount = (): number => useNotificationOutletStore.getState().revision;
 
@@ -63,7 +56,6 @@ const partsOf = (): Parts => {
       headingRef: { current: null },
     },
     targets: { buttonRef: { current: button }, focusRef: { current: target } },
-    anchor: SAVE_ANCHOR,
     dispatch,
   };
   return { options, adopt, dispatch, button, shared };
@@ -80,25 +72,9 @@ describe('useSaveSettle', () => {
     result.current({ kind: 'ok', user }, NAME_CHANGE);
 
     expect(adopt).toHaveBeenCalledWith(user);
-    expect(raised()).toEqual([
-      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: SAVE_ANCHOR },
-    ]);
+    expect(raised()).toEqual([{ kind: 'success', messageKey: 'settings.toasts.saved' }]);
     expect(raiseCount()).toBe(1);
     expect(dispatch).toHaveBeenCalledWith({ type: 'settled', saved: true });
-  });
-
-  it("anchors every draft at the section's save anchor it was given", () => {
-    const { options } = partsOf();
-    const { result } = renderHook(() => useSaveSettle({ ...options, anchor: 'password-save' }), {
-      wrapper,
-    });
-
-    result.current({ kind: 'ok', user: buildUserEntity() }, NAME_CHANGE);
-    result.current({ kind: 'failed', reason: 'transient' }, NAME_CHANGE);
-
-    const shown = useNotificationOutletStore.getState().shown.items;
-    expect(shown.map((item) => item.anchor)).toEqual(['password-save', 'password-save']);
-    expect(raiseCount()).toBe(2);
   });
 
   it('raises one set for a combined save, in name, e-mail and password order', () => {
@@ -111,9 +87,9 @@ describe('useSaveSettle', () => {
     );
 
     expect(raised()).toEqual([
-      { kind: 'success', messageKey: 'settings.toasts.saved', anchor: SAVE_ANCHOR },
-      { kind: 'success', messageKey: 'settings.toasts.email_sent', anchor: SAVE_ANCHOR },
-      { kind: 'success', messageKey: 'settings.toasts.password_changed', anchor: SAVE_ANCHOR },
+      { kind: 'success', messageKey: 'settings.toasts.saved' },
+      { kind: 'success', messageKey: 'settings.toasts.email_sent' },
+      { kind: 'success', messageKey: 'settings.toasts.password_changed' },
     ]);
     expect(raiseCount()).toBe(1);
   });
@@ -130,7 +106,6 @@ describe('useSaveSettle', () => {
     expect(draft?.kind).toBe('error');
     expect(draft?.messageKey).toBe('settings.toasts.save_failed_transient');
     expect(draft?.action?.labelKey).toBe('auth.error.tryAgain');
-    expect(draft?.anchor).toBe(SAVE_ANCHOR);
 
     draft?.action?.onActivate();
 
@@ -160,7 +135,7 @@ describe('useSaveSettle', () => {
 
     result.current({ kind: 'failed', reason }, NAME_CHANGE);
 
-    expect(raised()).toEqual([{ kind: 'error', messageKey, anchor: SAVE_ANCHOR }]);
+    expect(raised()).toEqual([{ kind: 'error', messageKey }]);
     expect(raised()[0]?.action).toBeUndefined();
     expect(raiseCount()).toBe(1);
     expect(dispatch).toHaveBeenCalledWith({ type: 'settled', saved: false });

@@ -20,18 +20,16 @@ import {
   expectErrorOutcome,
   expectEveryPasswordFieldEmpty,
   expectSuccessOutcome,
-  expectSuccessToast,
   fillCurrentPassword,
   nameField,
   namePasswordField,
   newPasswordField,
-  passwordFormOf,
+  noticeClose,
   saveButton,
   saveEditedEmail,
   saveEditedName,
   saveEmailButton,
   text,
-  toastClose,
   unreadDescription,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { startOf } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
@@ -39,22 +37,15 @@ import { bellOf, chipOf, expectShellReady, logoOf, shellText } from '@tests/e2e/
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import {
-  NOTIFICATION_STYLES,
-  type NotificationStyle,
-  useNotificationStyle,
-} from '@tests/e2e/utils/notification-style';
 import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 
 const NEW_NAME = buildFullName();
 const password = buildPassword();
 const newPassword = buildPassword();
-const VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST = 11;
+const VISIBLE_MAIN_CONTROLS = 10;
 const DESKTOP = { width: 1440, height: 900 };
-const CLOSABLE_STYLES: readonly NotificationStyle[] = ['toast', 'bell'];
 const FAILED_SAVES = 3;
 
-const closeLabel: string = t('ui_notification.close');
 const showPasswordLabel: string = t('auth.password.show');
 const privacyLabel: string = t('footer.privacy');
 const termsLabel: string = t('footer.usage_policy');
@@ -66,8 +57,8 @@ const resendButton = (page: Page): Locator =>
 
 const markAllLabel: string = t('notification_center.history.mark_all_read');
 
-const passwordRetry = (page: Page): Locator =>
-  passwordFormOf(page).getByRole('button', { name: text.tryAgain, exact: true });
+const noticeRetry = (page: Page): Locator =>
+  page.getByRole('banner').getByRole('button', { name: text.tryAgain, exact: true });
 const settingsHeading = (page: Page): Locator =>
   page.getByRole('heading', { level: 1, name: text.heading });
 
@@ -88,7 +79,7 @@ async function failPasswordSaves(page: Page, count: number): Promise<void> {
   await editPassword(page, password, newPassword);
   for (let saved = 1; saved <= count; saved += 1) {
     await saveButton(page).press('Enter');
-    await expect(toastClose(page)).toHaveCount(saved);
+    await expect(noticeClose(page)).toHaveCount(saved);
   }
 }
 
@@ -102,13 +93,13 @@ async function openSettings(page: Page, stub: Promise<StubbedProfile>): Promise<
 
 async function saveName(page: Page): Promise<void> {
   await saveEditedName(page, NEW_NAME, password);
-  await expectSuccessToast(page, text.saved);
+  await expectSuccessOutcome(page, text.saved);
 }
 
 async function savePassword(page: Page): Promise<void> {
   await editPassword(page, password, newPassword);
   await saveButton(page).click();
-  await expectSuccessToast(page, text.passwordChanged);
+  await expectSuccessOutcome(page, text.passwordChanged);
 }
 
 test.describe('Settings keyboard contract (issue #330)', () => {
@@ -116,9 +107,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await signInToSettings(page);
   });
 
-  test('Tab visits the form, two-factor, the toast and the footer in reading order', async ({
-    page,
-  }) => {
+  test('Tab visits the form, two-factor and the footer in reading order', async ({ page }) => {
     await openSettings(
       page,
       stubProfile(page, {
@@ -141,15 +130,12 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       { locator: saveButton(page), visibleFocus: true },
       { locator: clearButton(page), visibleFocus: true },
       { locator: startOf(page), visibleFocus: true },
-      { locator: page.getByRole('button', { name: closeLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: privacyLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: termsLabel }), visibleFocus: true },
     ]);
   });
 
-  test('keeps the control count after an unconfirmed save (no stop from the empty slot)', async ({
-    page,
-  }) => {
+  test('keeps the control count in main after an unconfirmed save', async ({ page }) => {
     await openSettings(
       page,
       stubProfile(page, {
@@ -164,7 +150,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
         .getByRole('main')
         .locator('a[href], button:not([disabled]), input:not([type="hidden"])')
         .filter({ visible: true })
-    ).toHaveCount(VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST);
+    ).toHaveCount(VISIBLE_MAIN_CONTROLS);
   });
 
   test('Space on an eye toggle shows the password', async ({ page }) => {
@@ -183,7 +169,7 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await fillInput(namePasswordField(page), password);
     await namePasswordField(page).press('Enter');
 
-    await expectSuccessToast(page, text.saved);
+    await expectSuccessOutcome(page, text.saved);
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
@@ -271,27 +257,29 @@ test.describe('Settings keyboard contract (issue #330)', () => {
     await expect(namePasswordField(page)).toHaveCount(0);
   });
 
-  test('closing the last toast of a name save returns focus to the name input', async ({
+  test('closing the last notice row of a name save returns focus to the name input', async ({
     page,
   }) => {
     await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
     await saveName(page);
 
-    await toastClose(page).focus();
+    await noticeClose(page).focus();
     await page.keyboard.press('Enter');
 
-    await expect(toastClose(page)).toHaveCount(0);
+    await expect(noticeClose(page)).toHaveCount(0);
     await expect(nameField(page)).toBeFocused();
   });
 
-  test('closing the last toast of a password save returns focus to its Save', async ({ page }) => {
+  test('closing the last notice row of a password save returns focus to its Save', async ({
+    page,
+  }) => {
     await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
     await savePassword(page);
 
-    await toastClose(page).focus();
+    await noticeClose(page).focus();
     await page.keyboard.press('Enter');
 
-    await expect(toastClose(page)).toHaveCount(0);
+    await expect(noticeClose(page)).toHaveCount(0);
     await expect(saveButton(page)).toBeFocused();
   });
 
@@ -305,64 +293,58 @@ test.describe('Settings keyboard contract (issue #330)', () => {
   });
 });
 
-for (const style of CLOSABLE_STYLES) {
-  test.describe(`Outcome close focus under ${style} (issue #391)`, () => {
-    test.use({ viewport: DESKTOP });
-
-    test.beforeEach(async ({ page }) => {
-      await useNotificationStyle(page, style);
-      await signInToSettings(page);
-    });
-
-    test('closing moves focus to the next close, the previous close, then Save', async ({
-      page,
-    }) => {
-      const stub = await openSettings(
-        page,
-        stubProfile(page, {
-          UpdateUser: [replyWithStatus(503), replyWithStatus(503), replyWithStatus(503)],
-        })
-      );
-      await failPasswordSaves(page, FAILED_SAVES);
-      expect(stub.count('UpdateUser')).toBe(FAILED_SAVES);
-      await toastClose(page).nth(1).focus();
-      await page.keyboard.press('Enter');
-      await expect(toastClose(page)).toHaveCount(2);
-      await expect(toastClose(page).nth(1)).toBeFocused();
-
-      await page.keyboard.press('Enter');
-      await expect(toastClose(page)).toHaveCount(1);
-      await expect(toastClose(page).first()).toBeFocused();
-
-      await page.keyboard.press('Enter');
-      await expect(toastClose(page)).toHaveCount(0);
-      await expect(saveButton(page)).toBeFocused();
-    });
-
-    test('closing the last outcome while Save is disabled moves focus to the h1', async ({
-      page,
-      context,
-    }) => {
-      await openSettings(page, stubProfile(page, { UpdateUser: [replyWithStatus(503)] }));
-      await failPasswordSaves(page, 1);
-      await expectErrorOutcome(page, style, text.transient);
-      await context.setOffline(true);
-      await expect(saveButton(page)).toBeDisabled();
-
-      await toastClose(page).focus();
-      await page.keyboard.press('Enter');
-
-      await expect(toastClose(page)).toHaveCount(0);
-      await expect(settingsHeading(page)).toBeFocused();
-    });
-  });
-}
-
-test.describe('Inline Retry focus (issue #391)', () => {
+test.describe('Outcome close focus (issue #391)', () => {
   test.use({ viewport: DESKTOP });
 
   test.beforeEach(async ({ page }) => {
-    await useNotificationStyle(page, 'inline');
+    await signInToSettings(page);
+  });
+
+  test('closing moves focus to the next close, the previous close, then Save', async ({ page }) => {
+    const stub = await openSettings(
+      page,
+      stubProfile(page, {
+        UpdateUser: [replyWithStatus(503), replyWithStatus(503), replyWithStatus(503)],
+      })
+    );
+    await failPasswordSaves(page, FAILED_SAVES);
+    expect(stub.count('UpdateUser')).toBe(FAILED_SAVES);
+    await noticeClose(page).nth(1).focus();
+    await page.keyboard.press('Enter');
+    await expect(noticeClose(page)).toHaveCount(2);
+    await expect(noticeClose(page).nth(1)).toBeFocused();
+
+    await page.keyboard.press('Enter');
+    await expect(noticeClose(page)).toHaveCount(1);
+    await expect(noticeClose(page).first()).toBeFocused();
+
+    await page.keyboard.press('Enter');
+    await expect(noticeClose(page)).toHaveCount(0);
+    await expect(saveButton(page)).toBeFocused();
+  });
+
+  test('closing the last outcome while Save is disabled moves focus to the h1', async ({
+    page,
+    context,
+  }) => {
+    await openSettings(page, stubProfile(page, { UpdateUser: [replyWithStatus(503)] }));
+    await failPasswordSaves(page, 1);
+    await expectErrorOutcome(page, text.transient);
+    await context.setOffline(true);
+    await expect(saveButton(page)).toBeDisabled();
+
+    await noticeClose(page).focus();
+    await page.keyboard.press('Enter');
+
+    await expect(noticeClose(page)).toHaveCount(0);
+    await expect(settingsHeading(page)).toBeFocused();
+  });
+});
+
+test.describe('Notice Retry focus (issue #391)', () => {
+  test.use({ viewport: DESKTOP });
+
+  test.beforeEach(async ({ page }) => {
     await signInToSettings(page);
   });
 
@@ -375,50 +357,59 @@ test.describe('Inline Retry focus (issue #391)', () => {
     );
     await editPassword(page, password, newPassword);
     await saveButton(page).press('Enter');
-    await expectErrorOutcome(page, 'inline', text.transient);
-    await expect(toastClose(page)).toHaveCount(0);
+    await expectErrorOutcome(page, text.transient);
 
-    await passwordRetry(page).focus();
+    await noticeRetry(page).focus();
     await page.keyboard.press('Enter');
 
-    await expectSuccessOutcome(page, 'inline', text.passwordChanged);
+    await expectSuccessOutcome(page, text.passwordChanged);
     await expect(saveButton(page)).toBeFocused();
     expect(stub.count('UpdateUser')).toBe(2);
   });
 });
 
-for (const style of NOTIFICATION_STYLES) {
-  test.describe(`Bell disclosure under ${style} (J15, issue #391)`, () => {
-    test.use({ viewport: DESKTOP });
+test.describe('Bell disclosure (J15, issue #391)', () => {
+  test.use({ viewport: DESKTOP });
 
-    test.beforeEach(async ({ page }) => {
-      await useNotificationStyle(page, style);
-      await signInToSettings(page);
-    });
-
-    test('the bell is a Tab stop before the chip and Escape returns focus to it', async ({
-      page,
-    }) => {
-      await openSettings(page, stubProfile(page));
-      await expectShellReady(page);
-      await logoOf(page).focus();
-
-      await expectTabOrder(page, [{ locator: bellOf(page), visibleFocus: true }]);
-      await expectBellState(page, false);
-      await expectTabOrder(page, [{ locator: chipOf(page), visibleFocus: true }]);
-      await expectTabOrder(page, [{ locator: bellOf(page), visibleFocus: true }], 'Shift+Tab');
-
-      await page.keyboard.press('Enter');
-      await expectBellState(page, true);
-      const panel = await historyPanelOf(page);
-      await expect(panel).toBeVisible();
-      await panel.getByRole('button', { name: markAllLabel, exact: true }).focus();
-
-      await page.keyboard.press('Escape');
-
-      await expect(panel).toBeHidden();
-      await expect(bellOf(page)).toBeFocused();
-      await expectBellState(page, false);
-    });
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
   });
-}
+
+  test('the bell is a Tab stop before the chip and Escape returns focus to it', async ({
+    page,
+  }) => {
+    await openSettings(page, stubProfile(page));
+    await expectShellReady(page);
+    await logoOf(page).focus();
+
+    await expectTabOrder(page, [{ locator: bellOf(page), visibleFocus: true }]);
+    await expectBellState(page, false);
+    await expectTabOrder(page, [{ locator: chipOf(page), visibleFocus: true }]);
+    await expectTabOrder(page, [{ locator: bellOf(page), visibleFocus: true }], 'Shift+Tab');
+
+    await page.keyboard.press('Enter');
+    await expectBellState(page, true);
+    const panel = await historyPanelOf(page);
+    await expect(panel).toBeVisible();
+    await panel.getByRole('button', { name: markAllLabel, exact: true }).focus();
+
+    await page.keyboard.press('Escape');
+
+    await expect(panel).toBeHidden();
+    await expect(bellOf(page)).toBeFocused();
+    await expectBellState(page, false);
+  });
+
+  test('the notice close is the Tab stop between the bell and the chip', async ({ page }) => {
+    await openSettings(page, stubProfile(page, { UpdateUser: [replyWithSaved()] }));
+    await expectShellReady(page);
+    await saveName(page);
+    await logoOf(page).focus();
+
+    await expectTabOrder(page, [
+      { locator: bellOf(page), visibleFocus: true },
+      { locator: noticeClose(page), visibleFocus: true },
+      { locator: chipOf(page), visibleFocus: true },
+    ]);
+  });
+});

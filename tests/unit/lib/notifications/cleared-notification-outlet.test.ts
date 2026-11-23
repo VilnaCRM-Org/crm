@@ -13,12 +13,10 @@ describe('CLEARED_NOTIFICATION_OUTLET', () => {
     expect(cleared).toEqual({
       shown: { items: [] },
       raised: { items: [] },
-      inline: { items: [] },
       announcement: { polite: '', assertive: '' },
       focus: null,
       revision: 0,
       nextId: 1,
-      nextBatch: 1,
       marked: false,
     });
   });
@@ -31,8 +29,6 @@ describe('CLEARED_NOTIFICATION_OUTLET', () => {
     expect(Object.isFrozen(cleared.shown.items)).toBe(true);
     expect(Object.isFrozen(cleared.raised)).toBe(true);
     expect(Object.isFrozen(cleared.raised.items)).toBe(true);
-    expect(Object.isFrozen(cleared.inline)).toBe(true);
-    expect(Object.isFrozen(cleared.inline.items)).toBe(true);
     expect(Object.isFrozen(cleared.announcement)).toBe(true);
   });
 });

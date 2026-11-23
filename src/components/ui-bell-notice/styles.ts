@@ -42,13 +42,9 @@ const CARD_DROP = 'drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))';
 
 const white = paletteColors.background.default;
 
-const successEdge = paletteColors.success.text;
+const EDGE = 'var(--bell-notice-edge)';
 
-const errorEdge = paletteColors.error.main;
-
-const successOutline = OUTLINE_OFFSETS.map((offset) => `drop-shadow(${offset} ${successEdge})`);
-
-const errorOutline = OUTLINE_OFFSETS.map((offset) => `drop-shadow(${offset} ${errorEdge})`);
+const outline = OUTLINE_OFFSETS.map((offset) => `drop-shadow(${offset} ${EDGE})`);
 
 const enter = keyframes`
   from { opacity: 0; transform: translateY(-8px); }
@@ -59,6 +55,7 @@ const entrance = '180ms cubic-bezier(0.2, 0, 0, 1)';
 
 export default {
   root: {
+    '--bell-notice-edge': paletteColors.border.strong,
     [DESKTOP]: {
       position: 'absolute',
       top: 0,
@@ -69,21 +66,10 @@ export default {
       transformOrigin: '24px 0',
       animation: `${enter} ${entrance}`,
     },
+    [DESKTOP_COLOURS]: {
+      filter: [...outline, CARD_DROP].join(' '),
+    },
     [REDUCED_MOTION]: { animation: 'none' },
-  },
-  tones: {
-    success: {
-      '--bell-notice-tone': successEdge,
-      [DESKTOP_COLOURS]: {
-        filter: [...successOutline, CARD_DROP].join(' '),
-      },
-    },
-    error: {
-      '--bell-notice-tone': errorEdge,
-      [DESKTOP_COLOURS]: {
-        filter: [...errorOutline, CARD_DROP].join(' '),
-      },
-    },
   },
   pill: {
     display: 'none',
@@ -104,7 +90,7 @@ export default {
     ...cardAnchor,
     boxSizing: 'border-box',
     borderRadius: '0.5rem',
-    border: '1px solid var(--bell-notice-tone)',
+    border: `1px solid ${EDGE}`,
     backgroundColor: white,
     boxShadow: customColors.shell.popoverShadow,
     [BELOW_DESKTOP]: {
@@ -129,7 +115,7 @@ export default {
     position: 'absolute',
     ...caretShape,
     top: '-7px',
-    backgroundColor: 'var(--bell-notice-tone)',
+    backgroundColor: EDGE,
     '&::after': {
       content: '""',
       position: 'absolute',

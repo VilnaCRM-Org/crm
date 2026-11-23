@@ -38,7 +38,7 @@ describe('useEmailRow', () => {
     mockEmailResend.mockReset().mockReturnValue({ isSubmitting: false, resend });
   });
 
-  it('hands the entity, the adoption and the toast queue to the resend hook', () => {
+  it('hands the entity and the adoption to the resend hook', () => {
     const input = props(false);
 
     renderHook(() => useEmailRow(input, false));

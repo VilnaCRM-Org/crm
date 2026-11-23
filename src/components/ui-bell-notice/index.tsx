@@ -56,10 +56,9 @@ function NoticeCard({
     fallbackFocusRef,
     onDismiss,
   });
-  const tone = views.items.some(({ kind }) => kind === 'error') ? 'error' : 'success';
 
   return (
-    <Box sx={[styles.root, styles.tones[tone]]} onAnimationEnd={measureClearance}>
+    <Box sx={styles.root} onAnimationEnd={measureClearance}>
       <Box sx={styles.pill} aria-hidden />
       <Box ref={cardRef} sx={styles.card}>
         <Box sx={styles.caret} aria-hidden />

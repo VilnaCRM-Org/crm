@@ -165,44 +165,9 @@ describe('appConfigSource', () => {
 
       expect(() => source.load()).toThrow(INVALID_JSON_PREFIX);
     });
-
-    it.each([
-      ['omits the key', {}],
-      ['holds toast', { notificationStyle: 'toast' }],
-      ['holds inline', { notificationStyle: 'inline' }],
-      ['holds a padded bell', { notificationStyle: ' bell ' }],
-      ['holds a value that is not text', { notificationStyle: 5 }],
-    ])('accepts a block that %s', async (_label, values) => {
-      writeConfigBlock(JSON.stringify(values));
-
-      const source = await loadSource();
-
-      expect(() => source.load()).not.toThrow();
-    });
-
-    it.each(['Toast', 'banner', 'toast,bell'])(
-      'fails fast naming the setting when notificationStyle is %s',
-      async (value) => {
-        writeConfigBlock(JSON.stringify({ notificationStyle: value }));
-
-        const source = await loadSource();
-
-        expect(() => source.load()).toThrow(
-          `notificationStyle must be one of toast, inline, bell, got "${value}".`
-        );
-      }
-    );
   });
 
   describe('text', () => {
-    it('returns the trimmed string value of a choice key', async () => {
-      writeConfigBlock(JSON.stringify({ notificationStyle: ' bell ' }));
-
-      const source = await loadSource();
-
-      expect(source.text('notificationStyle')).toBe('bell');
-    });
-
     it('returns the trimmed string value of a key', async () => {
       const apiBaseUrl = buildHttpUrl('/api');
       writeConfigBlock(JSON.stringify({ apiBaseUrl: `  ${apiBaseUrl}  ` }));

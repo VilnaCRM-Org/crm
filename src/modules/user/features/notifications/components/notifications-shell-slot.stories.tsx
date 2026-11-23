@@ -4,10 +4,7 @@ import type { JSX } from 'react';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
 import BellSlotFrame from '@/components/ui-app-header/bell-slot-frame';
-import {
-  withFreshNotificationRepository,
-  withNotificationStyle,
-} from '@stories/notification-story-decorators';
+import { withFreshNotificationRepository } from '@stories/notification-story-decorators';
 import { withMemoryRouter } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
 
@@ -52,7 +49,7 @@ const meta: Meta<typeof SlotStage> = {
     docs: {
       description: {
         component:
-          'The notifications shell slot, mounted on every protected page under every style. It ' +
+          'The notifications shell slot, mounted on every protected page. It ' +
           'records each raised outcome once in the history and renders the enabled bell with ' +
           'its unread badge inside the fixed-size bell frame. It declares no Suspense of its ' +
           'own: the shell slot factory waits for its chunk, and the history panel and the ' +
@@ -68,14 +65,4 @@ export default meta;
 
 type Story = StoryObj<typeof SlotStage>;
 
-export const Toast: Story = {
-  decorators: [withFreshNotificationRepository(), withNotificationStyle('toast')],
-};
-
-export const Inline: Story = {
-  decorators: [withFreshNotificationRepository(), withNotificationStyle('inline')],
-};
-
-export const Bell: Story = {
-  decorators: [withFreshNotificationRepository(), withNotificationStyle('bell')],
-};
+export const Default: Story = { decorators: [withFreshNotificationRepository()] };

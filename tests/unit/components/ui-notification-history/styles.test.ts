@@ -188,7 +188,7 @@ describe('notification history frame styles', () => {
     });
     expect(frame).not.toHaveProperty('display');
     expect(scroller).toMatchObject({
-      maxHeight: 'max(3.125rem, calc(100dvh - 80px - var(--toast-stack-clearance, 0px)))',
+      maxHeight: 'max(3.125rem, calc(100dvh - 80px))',
       overflowY: 'auto',
     });
   });

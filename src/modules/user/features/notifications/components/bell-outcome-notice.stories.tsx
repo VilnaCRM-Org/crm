@@ -6,10 +6,7 @@ import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import UINotificationOutlet from '@/components/ui-notification-outlet';
 import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
-import {
-  withNotificationStyle,
-  withRaisedNotifications,
-} from '@stories/notification-story-decorators';
+import { withRaisedNotifications } from '@stories/notification-story-decorators';
 import { noop } from '@stories/story-callbacks';
 
 const saved = { kind: 'success', messageKey: 'settings.toasts.saved' } as const;
@@ -96,17 +93,16 @@ const meta: Meta<typeof NoticeStage> = {
   component: NoticeStage,
   tags: ['autodocs'],
   globals: { viewport: { value: 'xl', isRotated: false } },
-  decorators: [withNotificationStyle('bell')],
   parameters: {
     layout: 'fullscreen',
     docs: {
       description: {
         component:
-          'The outcomes of the `bell` style: the shown rows as the merged card on desktop and ' +
+          'The outcomes of a page: the shown rows as the merged card on desktop and ' +
           'the caret card on tablet and mobile, each with its time and a close button. Closing ' +
           'a row only removes it from the page and never marks it read. Retry dismisses the ' +
           'row through the port before the action runs and returns focus to Save. It loads as ' +
-          'its own chunk, `notifications-notice`, only under `bell`.',
+          'its own chunk, `notifications-notice`.',
       },
       story: { inline: false },
     },

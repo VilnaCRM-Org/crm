@@ -71,9 +71,8 @@ check that the two stay in sync.
 Fail-fast happens at the earliest point that can act on it, not only in the browser:
 
 1. **Container start** — `scripts/docker-entrypoint.sh` runs `scripts/render-app-config.js`,
-   which rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, an
-   `APP_CONFIG_FLAG_*` variable naming a flag that does not exist, and a choice value outside its
-   list (`APP_CONFIG_NOTIFICATION_STYLE`). The entrypoint exits non-zero,
+   which rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, and an
+   `APP_CONFIG_FLAG_*` variable naming a flag that does not exist. The entrypoint exits non-zero,
    so a misconfigured deployment never starts serving.
 2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before rendering the app, so
    a malformed or non-object JSON block raises a named error that is reported and rendered through
@@ -91,7 +90,6 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
 | `graphqlUrl`            | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
 | `notificationEventsUrl` | `APP_CONFIG_NOTIFICATION_EVENTS_URL` | none (no stream)        |
 | `flags.<name>`          | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
-| `notificationStyle`     | `APP_CONFIG_NOTIFICATION_STYLE`      | `toast`                 |
 
 `graphqlUrl` is injected into `GraphQLUrl` (the Apollo endpoint), and flags are read through
 `featureFlagService`. `apiBaseUrl` has no client reader today: its reader, `url-builder`, went with
@@ -116,40 +114,6 @@ i18next at module evaluation and is CommonJS, and `src/config/i18n-config.js` is
 node tooling without a TypeScript loader, so making the language runtime-configurable is a
 restructuring of the i18n boot path rather than a config change. Tracked separately.
 
-## Notification style (temporary)
-
-`notificationStyle` is a choice setting, not a flag: it holds `toast`, `inline` or `bell`, and
-the default is `toast`, which is today's behaviour. It is temporary. Issue #391 compares three
-ways to show the outcome of a save on one image, and the removal follow-up deletes the setting
-together with the two losing styles.
-
-- **Renderer:** `CHOICE_SETTINGS` in `scripts/render-app-config.js` holds the variable, the key and
-  the three values. An empty variable writes no key; any other value than the three, after
-  trimming, throws `APP_CONFIG_NOTIFICATION_STYLE must be one of toast, inline, bell, got
-"<value>".` and the entrypoint exits non-zero.
-- **Paint path:** `appConfigChoiceGuard` (`app-config-choice-guard.ts`, zod-free) returns a value
-  that is one of the allowed ones and throws otherwise; `appConfigSource.load()` passes every
-  choice key through it, so a bad block fails before `root.render`, and `notificationStyleConfig`
-  (`notification-style-config.ts`) returns the style or `toast`.
-- **Container code:** the zod schema holds `z.enum(NOTIFICATION_STYLES).optional()`.
-
-`public/index.html` stays `{ "flags": {} }`: the default lives in code.
-
-To review a style on the running production-parity stack, put the value on the make command line:
-
-```bash
-make start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=<toast|inline|bell>
-```
-
-Two forms silently keep the previous value. The Makefile includes `.env`, where
-`.env.example` adds an empty `APP_CONFIG_NOTIFICATION_STYLE=` line, and a value read from an
-included file overrides the shell environment, so `APP_CONFIG_NOTIFICATION_STYLE=bell make
-start-prod` exports the empty line. And `make start-prod` runs `up -d --no-recreate`, so a second
-run keeps the running `prod` container's value. A command-line variable overrides the included
-file, and `start-prod-clean` recreates the container on every run. `make start` serves the
-committed block through RSBuild with no entrypoint, so it always shows `toast`; review the other
-two in Storybook.
-
 ## Feature flags
 
 `featureFlagService` (`@/config/runtime/feature-flag-service`) is a container-free class exported
@@ -170,8 +134,7 @@ introduce, roll out, remove — is documented in `docs/feature-flags.md`.
 3. For a flag: add the name to the `FeatureFlag` union in `types/feature-flag.ts` and to
    `FEATURE_FLAG_DEFAULTS` in `feature-flag-service.ts`.
 4. For a URL setting: add the `APP_CONFIG_*` variable to `URL_SETTINGS` in
-   `scripts/render-app-config.js`; for a choice setting, add it to `CHOICE_SETTINGS` and to the
-   guard's choice table in `app-config-choice-guard.ts`.
+   `scripts/render-app-config.js`.
 5. Declare the environment variable in the tracked `.env.example` and in your local `.env`
    (`make check-env-sync`), and pass it through the `prod` service in `docker-compose.test.yml`.
 6. Read it through `appConfigSource` (paint path) or `appConfig` (container-resolved code) — never

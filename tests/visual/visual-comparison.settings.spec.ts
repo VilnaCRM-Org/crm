@@ -27,11 +27,6 @@ import {
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { freezeClock } from '@tests/e2e/utils/freeze-clock';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import {
-  NOTIFICATION_STYLES,
-  type NotificationStyle,
-  useNotificationStyle,
-} from '@tests/e2e/utils/notification-style';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { currentLanguage, notFoundScreens, PAGES, type ScreenSize, screenSizes } from './constants';
@@ -55,21 +50,12 @@ const EXTENT_TOLERANCE_PX = 2;
 const personalHeading: string = t('settings.profile.sections.personal');
 const loadFailed: string = t('settings.profile.load_failed');
 
-interface StyleCaptureNames {
-  readonly success: string;
-  readonly transient: string;
-}
-
-const CAPTURE_NAMES: Record<NotificationStyle, StyleCaptureNames> = {
-  toast: { success: 'success-toasts', transient: 'transient-toast' },
-  inline: { success: 'inline-success', transient: 'inline-transient' },
-  bell: { success: 'bell-success', transient: 'bell-transient' },
-};
+const SUCCESS_CAPTURE = 'bell-success';
+const TRANSIENT_CAPTURE = 'bell-transient';
 
 type ShapeCheck = (page: Page, screen: ScreenSize) => Promise<void>;
 
-interface StyledCase {
-  readonly style: NotificationStyle;
+interface OutcomeCase {
   readonly screen: ScreenSize;
   readonly shapeCheck: ShapeCheck;
 }
@@ -99,7 +85,7 @@ async function openClockedSettings(
 const mergedShapeOf = (page: Page): Locator =>
   page
     .getByRole('banner')
-    .getByRole('button', { name: text.toastClose, exact: true })
+    .getByRole('button', { name: text.noticeClose, exact: true })
     .first()
     .locator('xpath=ancestor::ul[1]/../../..');
 
@@ -134,16 +120,10 @@ async function expectMergedShapeExtent(page: Page, screen: ScreenSize): Promise<
 
 const noShapeCheck: ShapeCheck = async () => undefined;
 
-const STYLED_CASES: readonly StyledCase[] = NOTIFICATION_STYLES.flatMap((style) =>
-  notFoundScreens.map((screen): StyledCase => ({
-    style,
-    screen,
-    shapeCheck:
-      style === 'bell' && screen.width === FIGMA_FRAME.width
-        ? expectMergedShapeExtent
-        : noShapeCheck,
-  }))
-);
+const OUTCOME_CASES: readonly OutcomeCase[] = notFoundScreens.map((screen): OutcomeCase => ({
+  screen,
+  shapeCheck: screen.width === FIGMA_FRAME.width ? expectMergedShapeExtent : noShapeCheck,
+}));
 
 const REDUCED_MOTION_SCREENS: readonly ScreenSize[] = notFoundScreens.filter(
   (screen) => screen.name === 'desktop'
@@ -189,9 +169,9 @@ async function saveEveryAspect(page: Page): Promise<void> {
   await saveButton(page).click();
 }
 
-async function expectEverySuccess(page: Page, style: NotificationStyle): Promise<void> {
+async function expectEverySuccess(page: Page): Promise<void> {
   for (const message of SUCCESS_MESSAGES) {
-    await expect(outcomeIn(page, style, message)).toBeVisible();
+    await expect(outcomeIn(page, message)).toBeVisible();
   }
 }
 
@@ -262,56 +242,51 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
     });
   }
 
-  for (const { style, screen, shapeCheck } of STYLED_CASES) {
-    test(`[settings] ${style} success ${screen.name}`, async ({ page }) => {
-      await useNotificationStyle(page, style);
+  for (const { screen, shapeCheck } of OUTCOME_CASES) {
+    test(`[settings] success outcomes ${screen.name}`, async ({ page }) => {
       await openClockedSettings(page, screen, everyAspectReplies());
       await expectResting(page);
       await saveEveryAspect(page);
-      await expectEverySuccess(page, style);
+      await expectEverySuccess(page);
       await waitForShellBell(page, SUCCESS_UNREAD);
 
       await scrollToTop(page);
-      await takeSettingsSnapshot(page, screen, CAPTURE_NAMES[style].success);
+      await takeSettingsSnapshot(page, screen, SUCCESS_CAPTURE);
     });
 
-    test(`[settings] ${style} transient error ${screen.name}`, async ({ page }) => {
-      await useNotificationStyle(page, style);
+    test(`[settings] transient error ${screen.name}`, async ({ page }) => {
       await openClockedSettings(page, screen, { UpdateUser: [replyWithStatus(503)] });
       await expectResting(page);
       await nameField(page).fill(NEW_NAME);
       await namePasswordField(page).fill(PASSWORD);
       await freezeClock(page);
       await saveNameButton(page).click();
-      await expectErrorOutcome(page, style, text.transient);
+      await expectErrorOutcome(page, text.transient);
 
       await scrollToTop(page);
       await shapeCheck(page, screen);
       await waitForShellBell(page, TRANSIENT_UNREAD);
-      await takeSettingsSnapshot(page, screen, CAPTURE_NAMES[style].transient);
+      await takeSettingsSnapshot(page, screen, TRANSIENT_CAPTURE);
     });
   }
 
-  for (const style of NOTIFICATION_STYLES) {
-    for (const screen of REDUCED_MOTION_SCREENS) {
-      test(`[settings] ${style} success under reduced motion ${screen.name}`, async ({ page }) => {
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await useNotificationStyle(page, style);
-        await openClockedSettings(page, screen, everyAspectReplies(), { motion: 'allowed' });
-        await expectResting(page);
-        await saveEveryAspect(page);
-        const entering = outcomeIn(page, style, text.passwordChanged);
-        await expect(entering).toBeVisible();
+  for (const screen of REDUCED_MOTION_SCREENS) {
+    test(`[settings] success outcomes under reduced motion ${screen.name}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await openClockedSettings(page, screen, everyAspectReplies(), { motion: 'allowed' });
+      await expectResting(page);
+      await saveEveryAspect(page);
+      const entering = outcomeIn(page, text.passwordChanged);
+      await expect(entering).toBeVisible();
 
-        expect(await runningAnimationsAround(entering)).toBe(0);
-        await expectEverySuccess(page, style);
-        await waitForShellBell(page, SUCCESS_UNREAD);
-        await scrollToTop(page);
-        await expect(page).toHaveScreenshot(
-          settingsSnapshotName(screen, CAPTURE_NAMES[style].success),
-          { ...SNAPSHOT_OPTIONS, animations: 'allow' }
-        );
+      expect(await runningAnimationsAround(entering)).toBe(0);
+      await expectEverySuccess(page);
+      await waitForShellBell(page, SUCCESS_UNREAD);
+      await scrollToTop(page);
+      await expect(page).toHaveScreenshot(settingsSnapshotName(screen, SUCCESS_CAPTURE), {
+        ...SNAPSHOT_OPTIONS,
+        animations: 'allow',
       });
-    }
+    });
   }
 });

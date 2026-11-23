@@ -12,32 +12,26 @@ export interface NotificationIconProps {
   readonly kind: NotificationIconKind;
 }
 
-export type NotificationContentSize = 'toast' | 'inline';
-
 export type NotificationClose = (id: string) => void;
 
 export interface UINotificationContentProps {
   readonly view: NotificationView;
-  readonly size?: NotificationContentSize | undefined;
-  readonly onClose?: NotificationClose | undefined;
+  readonly onClose: NotificationClose;
   readonly closeRef?: Ref<HTMLButtonElement> | undefined;
 }
 
 export interface NotificationContentTextProps {
   readonly view: NotificationView;
   readonly messageId: string;
-  readonly size: NotificationContentSize;
 }
 
 export interface NotificationContentActionProps {
   readonly action: NotificationViewAction;
-  readonly size: NotificationContentSize;
 }
 
 export interface NotificationContentCloseProps {
   readonly id: string;
   readonly describedBy: string;
-  readonly size: NotificationContentSize;
   readonly closeRef?: Ref<HTMLButtonElement> | undefined;
   readonly onClose: NotificationClose;
 }

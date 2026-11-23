@@ -4,10 +4,7 @@ import { type JSX, useRef } from 'react';
 
 import UINotificationOutlet from '@/components/ui-notification-outlet';
 import useNotificationAnnouncement from '@/hooks/use-notification-announcement';
-import {
-  withNotificationStyle,
-  withRaisedNotifications,
-} from '@stories/notification-story-decorators';
+import { withRaisedNotifications } from '@stories/notification-story-decorators';
 
 const DRAFTS = {
   items: [
@@ -58,13 +55,12 @@ const meta: Meta<typeof OutletStage> = {
         component:
           'The page announcer and lifetime owner. It always mounts exactly two visually hidden ' +
           'regions: a polite `role="status"` for successes and an assertive `role="alert"` for ' +
-          'errors, each atomic, both fed from the outlet store, so every variant announces the ' +
-          'same text at the same politeness. An identical repeat raise changes the text by an ' +
-          'alternating zero-width mark so it is spoken again. On mount it publishes the focus ' +
-          'return refs; on unmount it clears the store. Each story sets the runtime ' +
-          '`notificationStyle` block and raises one success and one error; the readout below ' +
-          'the controls only shows what the two regions hold. Under `toast` the toast stack ' +
-          'itself arrives with the settings page wiring.',
+          'errors, each atomic, both fed from the outlet store. An identical repeat raise ' +
+          'changes the text by an alternating zero-width mark so it is spoken again. On mount ' +
+          'it publishes the focus return refs; on unmount it clears the store. The story ' +
+          'raises one success and one error; the readout below the controls only shows what ' +
+          'the two regions hold. The outlet draws nothing: the bell in the shell header shows ' +
+          'the outcomes.',
       },
       story: { inline: false },
     },
@@ -75,8 +71,4 @@ export default meta;
 
 type Story = StoryObj<typeof OutletStage>;
 
-export const Toast: Story = { decorators: [withNotificationStyle('toast')] };
-
-export const Inline: Story = { decorators: [withNotificationStyle('inline')] };
-
-export const Bell: Story = { decorators: [withNotificationStyle('bell')] };
+export const Default: Story = {};

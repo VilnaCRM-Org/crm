@@ -437,7 +437,7 @@ test.describe('App shell on desktop (issue #362)', () => {
         await page.setViewportSize({ width, height: 900 });
 
         await expect(bell).toHaveAccessibleDescription(shellText.seedUnread);
-        await expect(bell.getByText('1', { exact: true })).toBeVisible();
+        await expect(page.getByRole('banner').getByText('1', { exact: true })).toBeVisible();
         await expect(
           page.getByRole('button', { name: shellText.tasks, exact: true })
         ).toHaveAccessibleDescription(shellText.unavailable);

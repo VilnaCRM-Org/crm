@@ -20,40 +20,30 @@ const at = (style: object, key: string): Record<string, unknown> =>
   Object.entries(style).find(([name]) => name === key)?.[1] as Record<string, unknown>;
 
 describe('bell notice styles', () => {
-  it.each([
-    ['success', '#2E7D32'],
-    ['error', '#DC3939'],
-  ] as const)(
-    'draws the %s union outline as four 1 px drop shadows and the card shadow',
-    async (tone, edge) => {
-      const { tones } = await loadStyles();
+  it('draws one neutral union outline as four 1 px drop shadows and the card shadow', async () => {
+    const { root } = await loadStyles();
 
-      expect(tones[tone]['--bell-notice-tone']).toBe(edge);
-      expect(at(tones[tone], DESKTOP_COLOURS).filter).toBe(
-        [
-          `drop-shadow(1px 0 0 ${edge})`,
-          `drop-shadow(-1px 0 0 ${edge})`,
-          `drop-shadow(0 1px 0 ${edge})`,
-          `drop-shadow(0 -1px 0 ${edge})`,
-          CARD_SHADOW,
-        ].join(' ')
-      );
-    }
-  );
+    expect(root['--bell-notice-edge']).toBe('#80878A');
+    expect(at(root, DESKTOP_COLOURS)).toEqual({
+      filter: [
+        'drop-shadow(1px 0 0 var(--bell-notice-edge))',
+        'drop-shadow(-1px 0 0 var(--bell-notice-edge))',
+        'drop-shadow(0 1px 0 var(--bell-notice-edge))',
+        'drop-shadow(0 -1px 0 var(--bell-notice-edge))',
+        CARD_SHADOW,
+      ].join(' '),
+    });
+    expect(root).not.toHaveProperty('filter');
+    expect(at(root, DESKTOP)).not.toHaveProperty('filter');
+  });
 
-  it.each([
-    ['success', '#2E7D32', 4.95, 5.13],
-    ['error', '#DC3939', 4.33, 4.48],
-  ] as const)(
-    'keeps the %s edge at %s:1 on the page and %s:1 on white',
-    async (tone, edge, page, white) => {
-      const { tones } = await loadStyles();
+  it('keeps the edge at 3:1 or more on the page and on white', async () => {
+    const { root } = await loadStyles();
+    const edge = root['--bell-notice-edge'];
 
-      expect(tones[tone]['--bell-notice-tone']).toBe(edge);
-      expect(contrast(edge, '#FBFBFB')).toBeCloseTo(page, 1);
-      expect(contrast(edge, '#FFFFFF')).toBeCloseTo(white, 1);
-    }
-  );
+    expect(contrast(edge, '#FBFBFB')).toBeGreaterThanOrEqual(3);
+    expect(contrast(edge, '#FFFFFF')).toBeGreaterThanOrEqual(3);
+  });
 
   it('keeps the message, the time and the error icon readable on white', async () => {
     const { body } = await loadStyles();
@@ -92,14 +82,14 @@ describe('bell notice styles', () => {
     expect(pill.display).toBe('none');
   });
 
-  it('draws the caret card below desktop with a tone border and the popover shadow', async () => {
+  it('draws the caret card below desktop with the neutral border and a shadow', async () => {
     const { card } = await loadStyles();
 
     expect(card).toMatchObject({
       position: 'fixed',
       width: WIDTH,
       borderRadius: '0.5rem',
-      border: '1px solid var(--bell-notice-tone)',
+      border: '1px solid var(--bell-notice-edge)',
       boxShadow: '0 8px 27px rgba(49, 59, 67, 0.14)',
       backgroundColor: '#FFFFFF',
       left: LEFT,
@@ -116,7 +106,7 @@ describe('bell notice styles', () => {
       top: '-7px',
       width: '26px',
       height: '6px',
-      backgroundColor: 'var(--bell-notice-tone)',
+      backgroundColor: 'var(--bell-notice-edge)',
       clipPath: 'polygon(50% 0, 0 100%, 100% 100%)',
       left: 'calc(var(--bell-centre-x, 0px) - var(--bell-card-left) - 14px)',
     });

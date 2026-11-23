@@ -591,24 +591,3 @@ EOF
     assert_log_contains "docker compose exec -T dev bun scripts/docs/lint-docs.ts $check"
   done
 }
-
-@test "start-prod-clean carries the notification style set on the make command line (issue #391)" {
-  printf 'APP_CONFIG_NOTIFICATION_STYLE=\n' > "$MAKEFILE_SANDBOX/.env"
-
-  reset_command_log
-  run_make_target start-prod-clean APP_CONFIG_NOTIFICATION_STYLE=bell
-  [ "$status" -eq 0 ]
-  assert_log_contains 'APP_CONFIG_NOTIFICATION_STYLE=bell'
-  assert_log_contains 'up -d --force-recreate --build prod mockoon playwright'
-}
-
-@test "the notification style set only in the environment never reaches compose (issue #391)" {
-  printf 'APP_CONFIG_NOTIFICATION_STYLE=\n' > "$MAKEFILE_SANDBOX/.env"
-  export APP_CONFIG_NOTIFICATION_STYLE=bell
-
-  reset_command_log
-  run_make_target start-prod
-  [ "$status" -eq 0 ]
-  refute_log_contains 'APP_CONFIG_NOTIFICATION_STYLE=bell'
-  assert_log_contains 'up -d --no-recreate'
-}

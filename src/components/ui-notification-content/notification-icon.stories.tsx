@@ -12,7 +12,7 @@ const meta: Meta<typeof NotificationIcon> = {
     docs: {
       description: {
         component:
-          'The glyphs every outcome renderer draws, as 2 px round-capped strokes that take the ' +
+          'The glyphs the outcome rows draw, as 2 px round-capped strokes that take the ' +
           'size of the caller from the inherited font size. Success is `#2E7D32` and error ' +
           '`#DC3939`, both `CanvasText` in forced colors; the close glyph takes the colour of ' +
           'its control. Always `aria-hidden`: the text and the control name carry the meaning.',

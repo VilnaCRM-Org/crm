@@ -10,7 +10,6 @@ import useNotificationOutletStore from '@/lib/notifications/use-notification-out
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
 import { inMemoryNotificationRepository } from '@/modules/user/features/notifications/repositories';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const i18n = createI18n('uk', ['en']);
@@ -52,11 +51,9 @@ const closeButtons = (): HTMLElement[] =>
 describe('BellOutcomeNotice', () => {
   beforeEach(() => {
     resetClientStores();
-    writeConfigBlock(JSON.stringify({ notificationStyle: 'bell' }));
   });
 
   afterEach(() => {
-    clearConfigBlock();
     jest.useRealTimers();
     jest.restoreAllMocks();
   });

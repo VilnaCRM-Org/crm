@@ -39,14 +39,6 @@ const URL_SETTINGS = [
   { envVar: 'APP_CONFIG_NOTIFICATION_EVENTS_URL', key: 'notificationEventsUrl' },
 ];
 
-const CHOICE_SETTINGS = [
-  {
-    envVar: 'APP_CONFIG_NOTIFICATION_STYLE',
-    key: 'notificationStyle',
-    values: ['toast', 'inline', 'bell'],
-  },
-];
-
 function toCamelCase(upperSnakeCase) {
   return upperSnakeCase.toLowerCase().replace(/_([a-z0-9])/g, (_match, char) => char.toUpperCase());
 }
@@ -89,20 +81,6 @@ function applyUrlSettings(config, env) {
 
     if (value !== undefined) {
       assertHttpUrl(envVar, value);
-      config[key] = value;
-    }
-  }
-}
-
-function applyChoiceSettings(config, env) {
-  for (const { envVar, key, values } of CHOICE_SETTINGS) {
-    const value = readSetting(env, envVar);
-
-    if (value !== undefined) {
-      if (!values.includes(value)) {
-        throw new Error(`${envVar} must be one of ${values.join(', ')}, got "${value}".`);
-      }
-
       config[key] = value;
     }
   }
@@ -164,7 +142,6 @@ function renderAppConfig(html, env) {
   const config = parseExistingConfig(match[2]);
 
   applyUrlSettings(config, env);
-  applyChoiceSettings(config, env);
   applyFlagSettings(config, env);
 
   // Escaping `<` keeps a value containing `</script` from terminating the block early.

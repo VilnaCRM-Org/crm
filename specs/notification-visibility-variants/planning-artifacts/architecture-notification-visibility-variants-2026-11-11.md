@@ -1674,6 +1674,13 @@ surface-table row are killed by assertions. If a shard nears its 15-minute kill 
 
 ## 14. Removal plan (FR-33)
 
+> **Carried out (2026-11-23).** The owner picked C, so "Common to every outcome" and "If C wins" below
+> are done. Three points go beyond the plan. The notice's edge is neutral (`border.strong`, PRD
+> amendment items 45 and 46), so the `tones` and the tone computation in `ui-bell-notice` are gone and
+> the custom property is `--bell-notice-edge`. The batch number of the outlet state went with the
+> inline batches. `--toast-stack-clearance` had no writer left, so its reader in the history frame went
+> too, and so did the two `surface` colour tokens that only A and B read.
+
 **Common to every outcome.** Delete the setting: `notification-styles.ts`,
 `notification-style-config.ts`, `types/notification-style.ts`, the choice loop in
 `app-config-source.ts` `load()`, the schema field, `CHOICE_SETTINGS` in the renderer, the `.env.example` and

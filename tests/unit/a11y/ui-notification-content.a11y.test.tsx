@@ -17,36 +17,18 @@ const action = { label: 'Повторити', onActivate: jest.fn() };
 
 const base: NotificationView = { id: '1', kind: 'success', message: 'Зміни збережено' };
 
-const states: Array<[string, NotificationView, boolean]> = [
-  ['a success with a close button', base, true],
-  ['an error with Retry and a close button', { ...base, kind: 'error', action }, true],
-  ['a success with a time', { ...base, time: '10 листопада, 09:15' }, true],
-  ['a success without a close button', base, false],
+const states: Array<[string, NotificationView]> = [
+  ['a success', base],
+  ['an error with Retry', { ...base, kind: 'error', action }],
+  ['a success with a time', { ...base, time: '10 листопада, 09:15' }],
 ];
 
 describe('UINotificationContent accessibility', () => {
-  it.each(states)('has no axe violations for %s', async (_name, view, closable) => {
-    const { container } = render(
-      <UINotificationContent view={view} onClose={closable ? jest.fn() : undefined} />,
-      { wrapper }
-    );
+  it.each(states)('has no axe violations for %s', async (_name, view) => {
+    const { container } = render(<UINotificationContent view={view} onClose={jest.fn()} />, {
+      wrapper,
+    });
 
     await expectNoA11yViolations(container);
   });
-
-  it.each(states)(
-    'has no axe violations in the inline size for %s',
-    async (_name, view, closable) => {
-      const { container } = render(
-        <UINotificationContent
-          view={view}
-          size="inline"
-          onClose={closable ? jest.fn() : undefined}
-        />,
-        { wrapper }
-      );
-
-      await expectNoA11yViolations(container);
-    }
-  );
 });

@@ -37,7 +37,6 @@ describe('useNotifications', () => {
     expect(result.current.raise).toBe(first.raise);
     expect(result.current.dismiss).toBe(first.dismiss);
     expect(result.current.dismissAll).toBe(first.dismissAll);
-    expect(result.current.withdraw).toBe(first.withdraw);
     expect(result.current.publishFocus).toBe(first.publishFocus);
     expect(result.current.clear).toBe(first.clear);
   });
@@ -80,23 +79,14 @@ describe('useNotifications', () => {
     expect(stamps).toEqual([FIXED_INSTANT, FIXED_INSTANT]);
   });
 
-  it('dismisses, dismisses all and withdraws through the same store', () => {
+  it('dismisses one and dismisses all through the same store', () => {
     const wrapper = wrapperFor(createSettingsLocaleI18n('en'));
     const { result } = renderHook(() => useNotifications(), { wrapper });
-    act(() =>
-      result.current.raise({
-        items: [savedDraft, savedDraft, { ...savedDraft, anchor: 'email' }],
-      })
-    );
+    act(() => result.current.raise({ items: [savedDraft, savedDraft, savedDraft] }));
 
     act(() => result.current.dismiss(1));
     expect(useNotificationOutletStore.getState().shown.items.map((item) => item.id)).toEqual([
       2, 3,
-    ]);
-
-    act(() => result.current.withdraw('email'));
-    expect(useNotificationOutletStore.getState().inline.items).toEqual([
-      { anchor: 'primary', batch: 1 },
     ]);
 
     act(() => result.current.dismissAll());
@@ -117,7 +107,6 @@ describe('useNotifications', () => {
     const state = useNotificationOutletStore.getState();
     expect(state.focus).toBeNull();
     expect(state.shown.items).toEqual([]);
-    expect(state.inline.items).toEqual([]);
     expect(state.announcement).toEqual({ polite: '', assertive: '' });
   });
 });

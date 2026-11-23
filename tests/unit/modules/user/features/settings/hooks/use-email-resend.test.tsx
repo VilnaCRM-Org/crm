@@ -5,7 +5,6 @@ import type { JSX, ReactNode } from 'react';
 import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
-import useNotifications from '@/hooks/use-notifications';
 import type { NotificationDraft } from '@/lib/notifications/types/notification-draft';
 import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
@@ -43,19 +42,11 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
 const user = buildUserEntity({ confirmed: false });
 
 const draftsOf = (state: NotificationOutletState): NotificationDraft[] =>
-  state.raised.items.map(({ kind, messageKey, action, anchor }) => ({
-    kind,
-    messageKey,
-    action,
-    anchor,
-  }));
+  state.raised.items.map(({ kind, messageKey, action }) => ({ kind, messageKey, action }));
 
 const raised = (): NotificationDraft[] => draftsOf(useNotificationOutletStore.getState());
 
 const raiseCount = (): number => useNotificationOutletStore.getState().revision;
-
-const inlineAnchors = (): string[] =>
-  useNotificationOutletStore.getState().inline.items.map((batch) => batch.anchor);
 
 const setup = (): {
   adopt: jest.Mock;
@@ -100,29 +91,6 @@ describe('useEmailResend', () => {
     expect(result.current.isSubmitting).toBe(false);
   });
 
-  it('withdraws the e-mail notifications when a resend starts, before it settles', () => {
-    mockResend.mockReturnValue(new Promise(() => undefined));
-    const port = renderHook(() => useNotifications(), { wrapper }).result.current;
-    act(() =>
-      port.raise({
-        items: [
-          { kind: 'success', messageKey: 'settings.toasts.saved' },
-          { kind: 'error', messageKey: 'settings.toasts.resend_failed', anchor: 'email' },
-        ],
-      })
-    );
-    const { result } = setup();
-
-    expect(inlineAnchors()).toEqual(['primary', 'email']);
-
-    act(() => {
-      result.current.resend();
-    });
-
-    expect(inlineAnchors()).toEqual(['primary']);
-    expect(raiseCount()).toBe(1);
-  });
-
   it('keeps the run handed to useAbortableSubmit stable across renders', () => {
     const { rerender } = setup();
 
@@ -133,7 +101,7 @@ describe('useEmailResend', () => {
   });
 
   it.each([true, false])(
-    'confirms with %s and raises the resent draft at the e-mail anchor once, never adopting',
+    'confirms with %s and raises the resent draft once, never adopting',
     async (confirmed) => {
       mockResend.mockResolvedValue({ kind: 'sent', confirmed });
       const { result, adopt, confirm } = setup();
@@ -144,9 +112,7 @@ describe('useEmailResend', () => {
 
       expect(confirm).toHaveBeenCalledWith(user.email, confirmed);
       expect(adopt).not.toHaveBeenCalled();
-      expect(raised()).toEqual([
-        { kind: 'success', messageKey: 'settings.toasts.resent', anchor: 'email' },
-      ]);
+      expect(raised()).toEqual([{ kind: 'success', messageKey: 'settings.toasts.resent' }]);
       expect(raiseCount()).toBe(1);
     }
   );
@@ -166,9 +132,7 @@ describe('useEmailResend', () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(email).not.toHaveFocus();
     expect(raiseCount()).toBe(1);
-    expect(raised()).toEqual([
-      { kind: 'success', messageKey: 'settings.toasts.resent', anchor: 'email' },
-    ]);
+    expect(raised()).toEqual([{ kind: 'success', messageKey: 'settings.toasts.resent' }]);
     email.remove();
   });
 
@@ -206,21 +170,18 @@ describe('useEmailResend', () => {
     ['rate_limited', 'settings.toasts.rate_limited'],
     ['transient', 'settings.toasts.resend_failed'],
     ['rejected', 'settings.toasts.resend_failed'],
-  ] as const)(
-    'raises the %s failure once as an error at the e-mail anchor',
-    async (reason, messageKey) => {
-      mockResend.mockResolvedValue({ kind: 'failed', reason });
-      const { result, confirm } = setup();
+  ] as const)('raises the %s failure once as an error', async (reason, messageKey) => {
+    mockResend.mockResolvedValue({ kind: 'failed', reason });
+    const { result, confirm } = setup();
 
-      await act(async () => {
-        result.current.resend();
-      });
+    await act(async () => {
+      result.current.resend();
+    });
 
-      expect(raised()).toEqual([{ kind: 'error', messageKey, anchor: 'email' }]);
-      expect(raiseCount()).toBe(1);
-      expect(confirm).not.toHaveBeenCalled();
-    }
-  );
+    expect(raised()).toEqual([{ kind: 'error', messageKey }]);
+    expect(raiseCount()).toBe(1);
+    expect(confirm).not.toHaveBeenCalled();
+  });
 
   it.each([
     ['rate_limited', 'settings.toasts.rate_limited'],
@@ -250,9 +211,7 @@ describe('useEmailResend', () => {
         result.current.resend();
       });
 
-      expect(draftsOf(fresh.store.getState())).toEqual([
-        { kind: 'error', messageKey, anchor: 'email' },
-      ]);
+      expect(draftsOf(fresh.store.getState())).toEqual([{ kind: 'error', messageKey }]);
     }
   );
 

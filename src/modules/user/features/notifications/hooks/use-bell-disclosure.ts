@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
-import useNotificationSurface from '@/hooks/use-notification-surface';
 import useNotifications from '@/hooks/use-notifications';
 
 import type { BellDisclosure } from '../types/bell-disclosure';
@@ -15,13 +14,12 @@ export default function useBellDisclosure(layout: ShellLayout): BellDisclosure {
   const bell = useRef<HTMLButtonElement>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const { dismissAll } = useNotifications();
-  const hidesCard = useNotificationSurface('header');
 
   const show = useCallback((): void => {
     setExpanded(true);
     setVisited(true);
-    if (hidesCard) dismissAll();
-  }, [hidesCard, dismissAll]);
+    dismissAll();
+  }, [dismissAll]);
   const close = useCallback((): void => setExpanded(false), []);
   const toggle = useCallback((): void => (expanded ? close() : show()), [expanded, show, close]);
   const dismissal = useBellDismissal({ expanded, close, bell, wrapper });

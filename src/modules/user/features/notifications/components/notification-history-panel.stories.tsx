@@ -38,7 +38,7 @@ const meta: Meta<typeof Panel> = {
     docs: {
       description: {
         component:
-          'The content of the bell history panel, shown under every notification style. It ' +
+          'The content of the bell history panel. It ' +
           'maps the records it receives to rows (translated message, time through the locale ' +
           'formatter, unread mark from the record read flag) and renders them with the ' +
           'translated heading and mark-all-read copy. It reads no repository: the bell ' +

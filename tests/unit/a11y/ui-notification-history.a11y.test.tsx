@@ -5,7 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 import UINotificationHistory from '@/components/ui-notification-history';
 import UINotificationHistoryFrame from '@/components/ui-notification-history/history-frame';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
-import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import createContentI18n from '@tests/unit/utils/create-notification-content-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 const copy = {
@@ -32,7 +32,7 @@ const states: Array<[string, NotificationViewSet, ReadonlySet<string>]> = [
 
 function Stage({ open, children }: { open: boolean; children?: JSX.Element }): JSX.Element {
   return (
-    <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>
+    <I18nextProvider i18n={createContentI18n('uk', ['en'])}>
       <main>
         <h1>Налаштування</h1>
         <button type="button" aria-controls="history" aria-expanded={open}>

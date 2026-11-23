@@ -100,7 +100,11 @@ describe('enabled bell styles', () => {
     const { badge } = await loadHeader();
     const { alertBadge } = await loadBell();
 
-    expect(alertBadge.backgroundColor).toBe('#D63333');
+    expect(alertBadge).toMatchObject({
+      zIndex: 1,
+      pointerEvents: 'none',
+      backgroundColor: '#D63333',
+    });
     expect(Reflect.get(alertBadge, FORCED)).toEqual({ border: '1px solid CanvasText' });
     expect(badge.color).toBe('#FFFFFF');
     expect(contrast('#FFFFFF', '#D63333')).toBeCloseTo(4.79, 1);

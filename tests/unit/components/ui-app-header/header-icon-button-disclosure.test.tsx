@@ -69,7 +69,8 @@ describe('HeaderIconButton with a disclosure', () => {
         />
       );
 
-      expect(bell()).toHaveTextContent(/^4$/u);
+      expect(bell()).toHaveTextContent(/^$/u);
+      expect(screen.getByText('4')).toHaveAttribute('aria-hidden', 'true');
       expect(screen.getAllByText('4')).toHaveLength(1);
       expect(screen.getByText('4')).toHaveStyle({ backgroundColor: '#D63333' });
       expect(bell()).toHaveAccessibleDescription('4 unread notifications');

@@ -15,8 +15,8 @@ const meta: Meta<typeof UINotificationContent> = {
     docs: {
       description: {
         component:
-          'The one content piece of every variant: icon, message, optional underlined action, ' +
-          'optional time and optional close button, all `#1A1C1E` text. It carries no role, ' +
+          'The content of one notice row: icon, message, optional underlined action, optional ' +
+          'time and close button, all `#1A1C1E` text. It carries no role, ' +
           '`aria-live` or `aria-atomic`: the page outlet announces the outcome once. The close ' +
           'button is described by the message, and the time is visible text that is never ' +
           'announced.',
@@ -53,5 +53,3 @@ export const WithTime: Story = {
     },
   },
 };
-
-export const WithoutClose: Story = { args: { onClose: undefined } };

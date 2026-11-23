@@ -27,13 +27,12 @@ const seedInstance = (): I18nType =>
 
 const shownSet = (onActivate: () => void = jest.fn()): ShownNotificationSet => ({
   items: [
-    { kind: 'success', messageKey: 'message', id: 41, batch: 3, raisedAt: RAISED_AT },
+    { kind: 'success', messageKey: 'message', id: 41, raisedAt: RAISED_AT },
     {
       kind: 'error',
       messageKey: 'message',
       action: { labelKey: 'retry', onActivate },
       id: 42,
-      batch: 3,
       raisedAt: RAISED_AT,
     },
   ],
@@ -120,7 +119,6 @@ describe('useNotificationViews', () => {
           kind: 'success',
           messageKey: 'settings.toasts.saved',
           id: 1,
-          batch: 1,
           raisedAt: RAISED_AT,
         },
       ],

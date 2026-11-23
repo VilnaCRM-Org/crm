@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import fs from 'fs';
 import path from 'path';
 
-import { act, render, renderHook, screen, waitFor, within } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentType, Context, JSX, ReactNode } from 'react';
 import { lazy } from 'react';
@@ -107,13 +107,7 @@ const raiseOne = (): void => {
 const bell = (): HTMLElement => screen.getByRole('button', { name: 'Сповіщення' });
 
 const badge = (): string[] =>
-  within(bell())
-    .queryAllByText(/^\d+$/u)
-    .map((node) => node.textContent ?? '');
-
-const useStyle = (style: string): void => {
-  writeConfigBlock(JSON.stringify({ notificationStyle: style }));
-};
+  screen.queryAllByText(/^\d+$/u).map((digits) => digits.textContent ?? '');
 
 describe('NotificationsShellSlot', () => {
   beforeEach(() => resetClientStores());
@@ -135,7 +129,7 @@ describe('NotificationsShellSlot', () => {
 
     afterEach(() => Reflect.deleteProperty(window, 'EventSource'));
 
-    it('counts a broadcast event on the badge and raises no toast for it', async () => {
+    it('counts a broadcast event on the badge and shows no notice for it', async () => {
       mount();
       await waitFor(() => expect(badge()).toEqual(['1']));
 
@@ -159,107 +153,91 @@ describe('NotificationsShellSlot', () => {
     });
   });
 
-  describe.each(['toast', 'inline', 'bell'] as const)('under %s', (style) => {
-    beforeEach(() => useStyle(style));
-
-    it.each(['desktop', 'tablet'] as const)(
-      'records one raise once and counts it on the badge at %s',
-      async (layout) => {
-        const record = jest.spyOn(InMemoryNotificationRepository.prototype, 'record');
-        mount(layout);
-        await waitFor(() => expect(badge()).toEqual(['1']));
-
-        raiseOne();
-
-        await waitFor(() => expect(badge()).toEqual(['2']));
-        expect(record).toHaveBeenCalledTimes(1);
-        expect(record).toHaveBeenCalledWith({
-          items: [
-            { kind: 'success', messageKey: 'settings.toasts.saved', createdAt: expect.any(Number) },
-          ],
-        });
-        expect(bell()).toBeEnabled();
-      }
-    );
-
-    it('reports a rejecting record and changes nothing else', async () => {
-      const failure = new Error('record failed');
-      jest.spyOn(InMemoryNotificationRepository.prototype, 'record').mockRejectedValue(failure);
-      const { report } = mount();
-      await waitFor(() => expect(badge()).toEqual(['1']));
-
-      raiseOne();
-
-      await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
-      expect(report).toHaveBeenCalledWith('app-shell:notifications-record', failure);
-      expect(badge()).toEqual(['1']);
-      expect(bell()).toHaveAttribute('aria-expanded', 'false');
-    });
-  });
-
-  describe.each(['toast', 'inline'] as const)('under %s', (style) => {
-    beforeEach(() => useStyle(style));
-
-    it('never loads the notice and loads the panel only once the bell is opened', async () => {
-      const notice = jest.spyOn(bellOutcomeNoticeLoader, 'load');
-      const panel = jest.spyOn(notificationHistoryPanelLoader, 'load');
-      mount();
-      raiseOne();
-      raiseOne();
-      await waitFor(() => expect(badge()).toEqual(['3']));
-
-      expect(panel).not.toHaveBeenCalled();
-
-      await userEvent.click(bell());
-
-      expect(panel).toHaveBeenCalledTimes(1);
-      expect(notice).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('under bell', () => {
-    beforeEach(() => useStyle('bell'));
-
-    it('records and counts a raise while the notice chunk is still pending', async () => {
-      const notice = jest
-        .spyOn(bellOutcomeNoticeLoader, 'load')
-        .mockReturnValue(new Promise(() => undefined));
+  it.each(['desktop', 'tablet'] as const)(
+    'records one raise once and counts it on the badge at %s',
+    async (layout) => {
       const record = jest.spyOn(InMemoryNotificationRepository.prototype, 'record');
-      mount();
+      mount(layout);
       await waitFor(() => expect(badge()).toEqual(['1']));
 
       raiseOne();
 
       await waitFor(() => expect(badge()).toEqual(['2']));
       expect(record).toHaveBeenCalledTimes(1);
-      expect(notice).toHaveBeenCalledTimes(1);
-    });
+      expect(record).toHaveBeenCalledWith({
+        items: [
+          { kind: 'success', messageKey: 'settings.toasts.saved', createdAt: expect.any(Number) },
+        ],
+      });
+      expect(bell()).toBeEnabled();
+    }
+  );
+
+  it('reports a rejecting record and changes nothing else', async () => {
+    const failure = new Error('record failed');
+    jest.spyOn(InMemoryNotificationRepository.prototype, 'record').mockRejectedValue(failure);
+    const { report } = mount();
+    await waitFor(() => expect(badge()).toEqual(['1']));
+
+    raiseOne();
+
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+    expect(report).toHaveBeenCalledWith('app-shell:notifications-record', failure);
+    expect(badge()).toEqual(['1']);
+    expect(bell()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('loads the notice with the bell and the panel only once the bell is opened', async () => {
+    const notice = jest.spyOn(bellOutcomeNoticeLoader, 'load');
+    const panel = jest.spyOn(notificationHistoryPanelLoader, 'load');
+    mount();
+    raiseOne();
+    raiseOne();
+    await waitFor(() => expect(badge()).toEqual(['3']));
+
+    expect(panel).not.toHaveBeenCalled();
+
+    await userEvent.click(bell());
+
+    expect(panel).toHaveBeenCalledTimes(1);
+    expect(notice).toHaveBeenCalledTimes(1);
+  });
+
+  it('records and counts a raise while the notice chunk is still pending', async () => {
+    const notice = jest
+      .spyOn(bellOutcomeNoticeLoader, 'load')
+      .mockReturnValue(new Promise(() => undefined));
+    const record = jest.spyOn(InMemoryNotificationRepository.prototype, 'record');
+    mount();
+    await waitFor(() => expect(badge()).toEqual(['1']));
+
+    raiseOne();
+
+    await waitFor(() => expect(badge()).toEqual(['2']));
+    expect(record).toHaveBeenCalledTimes(1);
+    expect(notice).toHaveBeenCalledTimes(1);
   });
 
   describe('while its chunk is pending', () => {
-    it.each(['toast', 'inline', 'bell'] as const)(
-      'shows the bell-sized frame placeholder and no disabled bell under %s',
-      (style) => {
-        useStyle(style);
-        const Pending = lazy(() => new Promise<DefaultModule<() => JSX.Element>>(() => undefined));
-        render(
-          wrap(
-            new InMemoryNotificationRepository(NOTIFICATION_SEED),
-            <BellSlotFrame layout="desktop">
-              <Pending />
-            </BellSlotFrame>
-          )
-        );
+    it('shows the bell-sized frame placeholder and no disabled bell', () => {
+      const Pending = lazy(() => new Promise<DefaultModule<() => JSX.Element>>(() => undefined));
+      render(
+        wrap(
+          new InMemoryNotificationRepository(NOTIFICATION_SEED),
+          <BellSlotFrame layout="desktop">
+            <Pending />
+          </BellSlotFrame>
+        )
+      );
 
-        expect(screen.queryByRole('button')).not.toBeInTheDocument();
-        const [placeholder] = screen
-          .getAllByRole('generic', { hidden: true })
-          .filter((node) => node.getAttribute('aria-hidden') === 'true');
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+      const [placeholder] = screen
+        .getAllByRole('generic', { hidden: true })
+        .filter((node) => node.getAttribute('aria-hidden') === 'true');
 
-        expect(placeholder).toBeEmptyDOMElement();
-        expect(placeholder).toHaveStyle({ width: '100%', height: '100%' });
-      }
-    );
+      expect(placeholder).toBeEmptyDOMElement();
+      expect(placeholder).toHaveStyle({ width: '100%', height: '100%' });
+    });
 
     it('has no Suspense and no null fallback of its own', () => {
       const source = fs.readFileSync(SLOT_SOURCE, 'utf-8');
@@ -269,7 +247,6 @@ describe('NotificationsShellSlot', () => {
     });
 
     it('is caught by the slot factory boundary only, while the notice chunk waits', async () => {
-      useStyle('bell');
       jest.spyOn(bellOutcomeNoticeLoader, 'load').mockReturnValue(new Promise(() => undefined));
       let resolveSlot: (module: ShellSlotModule) => void = () => undefined;
       const Slot = new ShellSlotFactory(jest.fn()).create(

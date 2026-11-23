@@ -4,20 +4,19 @@ import {
 } from '@tests/builders/notification-draft';
 
 describe('notification draft builders', () => {
-  it('builds a success draft with a message key and no action or anchor', () => {
+  it('builds a success draft with a message key and no action', () => {
     const draft = buildNotificationDraft();
 
     expect(draft.kind).toBe('success');
     expect(draft.messageKey).toHaveLength(12);
     expect(draft).not.toHaveProperty('action');
-    expect(draft).not.toHaveProperty('anchor');
   });
 
   it('lets an override win over the defaults', () => {
-    const draft = buildNotificationDraft({ kind: 'error', anchor: 'email' });
+    const draft = buildNotificationDraft({ kind: 'error', messageKey: 'settings.toasts.saved' });
 
     expect(draft.kind).toBe('error');
-    expect(draft.anchor).toBe('email');
+    expect(draft.messageKey).toBe('settings.toasts.saved');
   });
 
   it('builds three drafts by default and as many as asked', () => {

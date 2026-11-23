@@ -85,16 +85,6 @@ const customViewports: ViewportMap = {
     styles: { width: '1440px', height: '900px' },
     type: 'desktop',
   },
-  lg1366: {
-    name: 'Tablet (1024 × 1366)',
-    styles: { width: '1024px', height: '1366px' },
-    type: 'tablet',
-  },
-  mobile375: {
-    name: 'Mobile (375 × 812)',
-    styles: { width: '375px', height: '812px' },
-    type: 'mobile',
-  },
 };
 
 const preview: Preview = {

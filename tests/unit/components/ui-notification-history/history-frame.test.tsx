@@ -4,13 +4,13 @@ import { type JSX, lazy } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import UINotificationHistoryFrame from '@/components/ui-notification-history/history-frame';
-import createToastLocaleI18n from '@tests/unit/utils/create-toast-locale-i18n';
+import createContentI18n from '@tests/unit/utils/create-notification-content-locale-i18n';
 
 const Suspending = lazy(() => new Promise<{ default: () => JSX.Element }>(() => undefined));
 
 function Frame({ open, children }: { open: boolean; children?: JSX.Element }): JSX.Element {
   return (
-    <I18nextProvider i18n={createToastLocaleI18n('uk', ['en'])}>
+    <I18nextProvider i18n={createContentI18n('uk', ['en'])}>
       <button type="button" aria-controls="history" aria-expanded={open}>
         Сповіщення
       </button>

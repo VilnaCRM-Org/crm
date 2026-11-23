@@ -28,7 +28,7 @@ const view = (overrides: Partial<NotificationView> = {}): NotificationView => ({
 
 describe('UINotificationContent', () => {
   it('draws the message in the dark text colour with a hidden icon', () => {
-    const { container } = render(<UINotificationContent view={view()} />, {
+    const { container } = render(<UINotificationContent view={view()} onClose={jest.fn()} />, {
       wrapper: withLocale('uk'),
     });
 
@@ -64,15 +64,6 @@ describe('UINotificationContent', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledWith('42');
     expect(closeRef.current).toBe(screen.getByRole('button', { name: 'Закрити сповіщення' }));
-  });
-
-  it('renders no close button without a close handler and nothing else changes', () => {
-    const { container: withoutClose } = render(<UINotificationContent view={view()} />, {
-      wrapper: withLocale('uk'),
-    });
-
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    expect(withoutClose).toHaveTextContent(MESSAGE);
   });
 
   describe('action', () => {
@@ -111,7 +102,9 @@ describe('UINotificationContent', () => {
     });
 
     it('draws the action as an underlined dark text button, never the link blue', () => {
-      render(<UINotificationContent view={errorView(jest.fn())} />, { wrapper: withLocale('uk') });
+      render(<UINotificationContent view={errorView(jest.fn())} onClose={jest.fn()} />, {
+        wrapper: withLocale('uk'),
+      });
 
       const button = screen.getByRole('button', { name: 'Повторити' });
 
@@ -130,7 +123,7 @@ describe('UINotificationContent', () => {
 
   describe('time', () => {
     it('shows the time as visible text outside any live region', () => {
-      render(<UINotificationContent view={view({ time: '10:15' })} />, {
+      render(<UINotificationContent view={view({ time: '10:15' })} onClose={jest.fn()} />, {
         wrapper: withLocale('uk'),
       });
 
@@ -140,11 +133,11 @@ describe('UINotificationContent', () => {
     });
 
     it('renders nothing for a missing time', () => {
-      const { container } = render(<UINotificationContent view={view()} />, {
+      const { container } = render(<UINotificationContent view={view()} onClose={jest.fn()} />, {
         wrapper: withLocale('uk'),
       });
 
-      expect(container).toHaveTextContent(MESSAGE);
+      expect(container).toHaveTextContent(new RegExp(`^${MESSAGE}$`));
     });
   });
 
@@ -162,17 +155,10 @@ describe('UINotificationContent', () => {
     expect(container.innerHTML).not.toMatch(/aria-atomic/);
   });
 
-  it.each([
-    ['toast', '600'],
-    ['inline', '500'],
-  ] as const)('sets the %s message weight to %s', (size, weight) => {
-    render(<UINotificationContent view={view()} size={size} />, { wrapper: withLocale('uk') });
-
-    expect(screen.getByText(MESSAGE)).toHaveStyle({ fontWeight: weight });
-  });
-
-  it('defaults to the toast size', () => {
-    render(<UINotificationContent view={view()} />, { wrapper: withLocale('uk') });
+  it('draws the message semi-bold', () => {
+    render(<UINotificationContent view={view()} onClose={jest.fn()} />, {
+      wrapper: withLocale('uk'),
+    });
 
     expect(screen.getByText(MESSAGE)).toHaveStyle({ fontWeight: '600' });
   });

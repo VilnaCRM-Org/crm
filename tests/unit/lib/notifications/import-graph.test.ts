@@ -48,7 +48,7 @@ describe('src/lib/notifications import graph', () => {
 
     it.each([
       ["import { x } from '@/modules/user';"],
-      ["import type { X } from '@/components/types/ui-toast';"],
+      ["import type { X } from '@/components/types/ui-bell-notice';"],
       ["import useY from '@/hooks/use-y';"],
       ["export { z } from '@/providers/di';"],
       ["import '@/services/error';"],

@@ -1,6 +1,5 @@
-import type { Dispatch, RefObject } from 'react';
+import type { RefObject } from 'react';
 
-import type { NotificationAnchor } from '@/lib/notifications/types/notification-draft';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
 import type ProfileChangeDetector from '../../utils/profile-change-detector';
@@ -23,7 +22,6 @@ export interface ProfileSave {
   readonly state: ProfileFormState;
   readonly isSubmitting: boolean;
   readonly changes: ProfileChangeDetector;
-  readonly anchor: NotificationAnchor;
   readonly buttonRef: RefObject<HTMLButtonElement | null>;
   readonly save: (values: ProfileFormValues) => void;
   readonly clear: () => void;
@@ -72,8 +70,3 @@ export type ProfileFormAction =
   | SettledSaveAction
   | ClearSaveAction
   | BlockedSaveAction;
-
-export interface ProfileFormStore {
-  readonly state: ProfileFormState;
-  readonly dispatch: Dispatch<ProfileFormAction>;
-}

@@ -30,7 +30,6 @@ function ContentAction({ action }: NotificationContentActionProps): JSX.Element 
 function ContentClose({
   id,
   describedBy,
-  size,
   closeRef,
   onClose,
 }: NotificationContentCloseProps): JSX.Element {
@@ -42,7 +41,7 @@ function ContentClose({
       ref={closeRef}
       aria-label={t('ui_notification.close')}
       aria-describedby={describedBy}
-      sx={[styles.close, styles.sizes[size].close]}
+      sx={styles.close}
       onClick={close}
     >
       <NotificationIcon kind="close" />
@@ -50,15 +49,13 @@ function ContentClose({
   );
 }
 
-function ContentText({ view, messageId, size }: NotificationContentTextProps): JSX.Element {
-  const { icon, message } = styles.sizes[size];
-
+function ContentText({ view, messageId }: NotificationContentTextProps): JSX.Element {
   return (
     <>
-      <Box component="span" sx={[styles.icon, icon]}>
+      <Box component="span" sx={styles.icon}>
         <NotificationIcon kind={view.kind} />
       </Box>
-      <Box component="span" id={messageId} sx={[styles.message, message]}>
+      <Box component="span" id={messageId} sx={styles.message}>
         {view.message}
       </Box>
       {view.time === undefined ? null : (
@@ -72,7 +69,6 @@ function ContentText({ view, messageId, size }: NotificationContentTextProps): J
 
 export default function UINotificationContent({
   view,
-  size = 'toast',
   onClose,
   closeRef,
 }: UINotificationContentProps): JSX.Element {
@@ -81,17 +77,9 @@ export default function UINotificationContent({
 
   return (
     <Box sx={styles.root}>
-      <ContentText view={view} messageId={messageId} size={size} />
-      {action === undefined ? null : <ContentAction action={action} size={size} />}
-      {onClose === undefined ? null : (
-        <ContentClose
-          id={view.id}
-          describedBy={messageId}
-          size={size}
-          closeRef={closeRef}
-          onClose={onClose}
-        />
-      )}
+      <ContentText view={view} messageId={messageId} />
+      {action === undefined ? null : <ContentAction action={action} />}
+      <ContentClose id={view.id} describedBy={messageId} closeRef={closeRef} onClose={onClose} />
     </Box>
   );
 }

@@ -10,7 +10,6 @@ import type { NotificationsPort } from './types/notifications-port';
 const outletActions = new NotificationOutletActions(useNotificationOutletStore, () => Date.now());
 const dismiss = outletActions.dismiss.bind(outletActions);
 const dismissAll = outletActions.dismissAll.bind(outletActions);
-const withdraw = outletActions.withdraw.bind(outletActions);
 const publishFocus = outletActions.publishFocus.bind(outletActions);
 const clear = outletActions.clear.bind(outletActions);
 
@@ -22,7 +21,7 @@ export default function useNotifications(): NotificationsPort {
   );
 
   return useMemo(
-    (): NotificationsPort => ({ raise, dismiss, dismissAll, withdraw, publishFocus, clear }),
+    (): NotificationsPort => ({ raise, dismiss, dismissAll, publishFocus, clear }),
     [raise]
   );
 }

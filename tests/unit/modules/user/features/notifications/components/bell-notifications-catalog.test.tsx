@@ -1,8 +1,6 @@
 import '@testing-library/jest-dom';
 import { screen, within } from '@testing-library/react';
 
-import { clearConfigBlock } from '@tests/utils/config-block';
-
 const SEED_TEXTS = {
   uk: [
     'Ви успішно змінили пароль',
@@ -83,7 +81,6 @@ describe('BellNotifications registers its catalog at module evaluation', () => {
 
   afterEach(() => {
     actEnvironment.IS_REACT_ACT_ENVIRONMENT = previous;
-    clearConfigBlock();
   });
 
   it.each(['uk', 'en'] as const)(

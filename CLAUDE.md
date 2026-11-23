@@ -171,7 +171,7 @@ more project names.
   Its 44 px tap-area floor applies to every shell control except two recorded gaps: the drawer
   sub-items (42 px Figma pitch) and the disabled list (40 px Figma pitch), both listed under
   "Known gaps" in `src/components/ui-app-shell/README.md`; the enabled notifications bell meets the
-  44 px floor under every `notificationStyle`. Playwright cannot open a native
+  44 px floor. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
   `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
@@ -732,7 +732,7 @@ The visual helpers wait on conditions rather than the clock:
 DOM and the scroll position has held for five consecutive frames, replacing the two 3-second sleeps
 in `stabilize-page.ts` and the 300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244
 visual tests). The scroll position is in the fingerprint because a full-page WebKit capture draws a
-`position: fixed` element (the toast stack) where it sits at the current scroll offset.
+`position: fixed` element (the bell's caret card) where it sits at the current scroll offset.
 
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
@@ -2764,13 +2764,10 @@ with the last REST caller, so today it only widens the CSP `connect-src`), `grap
 (`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`),
 `notificationEventsUrl` (`APP_CONFIG_NOTIFICATION_EVENTS_URL`, the origin of notification-service,
 empty by default: the bell then opens no stream; broadcast events only, issue #391), and
-`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`), and the temporary choice setting
-`notificationStyle` (`APP_CONFIG_NOTIFICATION_STYLE`, one of `toast`, `inline` or `bell`, default
-`toast`, issue #391), which is not a flag and is read through `notificationStyleConfig`; the
-committed block omits it, and the removal follow-up deletes it once a variant is chosen. Languages
-stay build-time — `src/i18n.js` initializes i18next at module evaluation and
-`src/config/i18n-config.js` is `require`d by node tooling without a TypeScript loader, so that is an
-i18n boot-path restructuring, not a config change.
+`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
+initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
+tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
+change.
 
 **Reading a flag** — components call `useFeatureFlag(name)` from `@/hooks/use-feature-flag`, the
 container-free bridge; `name` is a `FeatureFlag` union member, so a typo is a compile error. No
@@ -2844,30 +2841,26 @@ Deep-importing a feature page from the shell fails
 
 **Notifications (issues #330, #391)** — a page raises outcomes through one port, never through a
 renderer: `useNotifications()` (`src/hooks/use-notifications.ts`, typed by `NotificationsPort` in
-`src/hooks/types/notifications-port.ts`) returns `raise`, `dismiss`, `dismissAll`, `withdraw`,
+`src/hooks/types/notifications-port.ts`) returns `raise`, `dismiss`, `dismissAll`,
 `publishFocus` and `clear`, bound to the container-free Zustand outlet store
 (`useNotificationOutletStore` in `src/lib/notifications/`); the read hooks beside it are
-`useShownNotifications`, `useNotificationViews`, `useNotificationFocus`,
-`useNotificationAnnouncement` and `useNotificationSurface`. The page mounts `UINotificationOutlet`
+`useShownNotifications`, `useNotificationViews`, `useNotificationFocus` and
+`useNotificationAnnouncement`. The page mounts `UINotificationOutlet`
 (`src/components/ui-notification-outlet/`), which publishes its `returnFocusRef` and
 `fallbackFocusRef` (the settings `<h1 tabindex="-1">`), clears the store on unmount, and holds the
 two always-mounted `UILiveStatus` regions, a polite one for success texts and an assertive one
 (`politeness="assertive"`) for error texts, both with the alternating mark so an identical repeat
-is spoken again. No outcome has a timer, and at most three are shown. The transient surface has
-three variants, selected at container start by the runtime `notificationStyle` setting
-(`APP_CONFIG_NOTIFICATION_STYLE`, default `toast`; see
-[`src/config/runtime/README.md`](src/config/runtime/README.md#notification-style-temporary)):
-`toast` (A) renders `UIToastStack` in the outlet, `inline` (B) renders `UIInlineStatus` in each
-`UINotificationSlot` the page places by anchor, and `bell` (C) renders the merged card under the
-bell. Under every style the shell's notifications slot (`src/modules/user/features/notifications/`,
-chunk `notifications-shell`) records each outcome and shows the enabled bell, its unread badge and
-the history panel. Closing a toast moves focus to the next close button, then the previous one,
-then the published `returnFocusRef` while it is connected and enabled, then `fallbackFocusRef`; a
-toast pushed out by the cap while it holds focus hands it to the newest close button. The stack
-reserves `scroll-padding-bottom` so a focused control is never hidden under it, and scrolls a
-control that already has focus into view when it measures itself over it. Once the team picks a
-variant, a follow-up removes the two others and the setting, and keeps the bell, the badge, the
-history and the feature (see the user module README's notifications decision).
+is spoken again. No outcome has a timer, and at most three are shown. The outlet draws nothing:
+the shell's notifications slot (`src/modules/user/features/notifications/`, chunk
+`notifications-shell`) records each outcome, shows the enabled bell, its unread badge and the history
+panel, and draws the outcomes as `UIBellNotice` (chunk `notifications-notice`), the merged card under
+the bell at desktop and the caret card below it. Its edge is the neutral `border.strong` for every
+kind, at 3:1 or more on the page; only the status icon keeps its colour. Opening the bell hides the
+card. Closing a row moves focus to the next close button, then the previous one, then the published
+`returnFocusRef` while it is connected and enabled, then `fallbackFocusRef`. The card sets
+`--app-top-overhang`, so a focused control is never hidden under it, and scrolls a control that
+already has focus into view when it measures itself over it. The bell won a comparison of three
+variants (owner decision 2026-11-23; see the user module README's notifications decision).
 
 ### GraphQL Setup
 
@@ -2937,8 +2930,8 @@ verified in CI.
   (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
   Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
-  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
-  `createToastLocaleI18n`, which registers the notification content catalog, notification-centre
+  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, notification
+  content tests `createNotificationContentLocaleI18n`, notification-centre
   tests `createNotificationCenterLocaleI18n`, which also registers the settings catalog the seed
   copy mirrors, bell tests `createBellLocaleI18n`, shell tests `createAppShellLocaleI18n`, which
   also registers the user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor
@@ -3281,11 +3274,9 @@ at `/`.
 **Enforcement.** `make check-security-headers` (the `security headers` job of the `security testing`
 workflow, pull requests only) builds `--target production`, boots it, and asserts the response
 headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset and the document
-headers plus the CSP on the two documents, and that the default boot serves no `notificationStyle`
-key; then boots it again with the `APP_CONFIG_API_BASE_URL` and `APP_CONFIG_GRAPHQL_URL` overrides
-plus `APP_CONFIG_NOTIFICATION_STYLE=inline`, asserts the API origins reached `connect-src` and that
-`/` serves `"notificationStyle":"inline"` in its runtime-config block
-(`scripts/ci/check-security-headers.sh`), so neither entrypoint step can go dead unnoticed.
+headers plus the CSP on the two documents; then boots it again with the `APP_CONFIG_API_BASE_URL`
+and `APP_CONFIG_GRAPHQL_URL` overrides and asserts the API origins reached `connect-src`
+(`scripts/ci/check-security-headers.sh`), so the entrypoint step cannot go dead unnoticed.
 `connect-src` is compared as an exact set — the committed `serve.json` sources plus the expected
 overrides, nothing more — every other directive must equal the policy, a directive the policy does
 not declare is a finding (`script-src-elem 'unsafe-inline'` would otherwise slip past a strict

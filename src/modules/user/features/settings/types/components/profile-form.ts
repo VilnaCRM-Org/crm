@@ -36,7 +36,7 @@ export interface RevealedSectionFieldsProps extends Omit<ProfileSectionFieldsPro
   readonly section: RevealedProfileSection;
 }
 
-export interface SectionFooterProps {
+export interface SectionClearProps {
   readonly model: ProfileFormModel;
   readonly revealed: boolean;
 }

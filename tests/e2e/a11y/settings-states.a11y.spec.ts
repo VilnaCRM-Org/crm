@@ -24,7 +24,6 @@ import {
 import { bellOf, expectShellReady } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
-import { NOTIFICATION_STYLES, useNotificationStyle } from '@tests/e2e/utils/notification-style';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
 import { expectNextTabStop } from '@tests/utils/a11y/keyboard';
 
@@ -159,60 +158,57 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
   });
 });
 
-for (const style of NOTIFICATION_STYLES) {
-  test.describe(`WCAG 2.1 AA scans of the settings outcomes under ${style} (issue #391)`, () => {
-    test.use({ viewport: DESKTOP });
+test.describe('WCAG 2.1 AA scans of the settings outcomes (issue #391)', () => {
+  test.use({ viewport: DESKTOP });
 
-    test.beforeEach(async ({ page }) => {
-      await useNotificationStyle(page, style);
-      await signInToSettings(page);
-    });
-
-    test('before any save the two outlet regions are empty and no renderer is live', async ({
-      page,
-    }) => {
-      await stubProfile(page);
-      await openLoaded(page);
-
-      await expectEmptyOutletRegions(page);
-      expect(await visibleLiveSemantics(page)).toEqual([]);
-    });
-
-    test('a success outcome has no axe violations and its renderer carries no live role', async ({
-      page,
-    }) => {
-      await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
-      await openLoaded(page);
-      await saveEditedName(page, NEW_NAME, password);
-      await expectSuccessOutcome(page, style, text.saved);
-
-      expect(await visibleLiveSemantics(page)).toEqual([]);
-      await expectNoAxeViolations(page);
-    });
-
-    test('an error outcome has no axe violations and its renderer carries no live role', async ({
-      page,
-    }) => {
-      await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
-      await openLoaded(page);
-      await saveEditedName(page, NEW_NAME, password);
-      await expectErrorOutcome(page, style, text.transient);
-      await expect(page.getByRole('button', { name: tryAgain, exact: true })).toBeVisible();
-
-      expect(await visibleLiveSemantics(page)).toEqual([]);
-      await expectNoAxeViolations(page);
-    });
-
-    test('the open history panel has no axe violations', async ({ page }) => {
-      await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
-      await openLoaded(page);
-      await saveEditedName(page, NEW_NAME, password);
-      await expectSuccessOutcome(page, style, text.saved);
-
-      const panel = await openHistory(page);
-      await expect(panel.getByText(text.saved, { exact: true }).first()).toBeVisible();
-
-      await expectNoAxeViolations(page);
-    });
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
   });
-}
+
+  test('before any save the two outlet regions are empty and the notice is not live', async ({
+    page,
+  }) => {
+    await stubProfile(page);
+    await openLoaded(page);
+
+    await expectEmptyOutletRegions(page);
+    expect(await visibleLiveSemantics(page)).toEqual([]);
+  });
+
+  test('a success outcome has no axe violations and its notice carries no live role', async ({
+    page,
+  }) => {
+    await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
+    await openLoaded(page);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectSuccessOutcome(page, text.saved);
+
+    expect(await visibleLiveSemantics(page)).toEqual([]);
+    await expectNoAxeViolations(page);
+  });
+
+  test('an error outcome has no axe violations and its notice carries no live role', async ({
+    page,
+  }) => {
+    await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
+    await openLoaded(page);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectErrorOutcome(page, text.transient);
+    await expect(page.getByRole('button', { name: tryAgain, exact: true })).toBeVisible();
+
+    expect(await visibleLiveSemantics(page)).toEqual([]);
+    await expectNoAxeViolations(page);
+  });
+
+  test('the open history panel has no axe violations', async ({ page }) => {
+    await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] });
+    await openLoaded(page);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectSuccessOutcome(page, text.saved);
+
+    const panel = await openHistory(page);
+    await expect(panel.getByText(text.saved, { exact: true }).first()).toBeVisible();
+
+    await expectNoAxeViolations(page);
+  });
+});

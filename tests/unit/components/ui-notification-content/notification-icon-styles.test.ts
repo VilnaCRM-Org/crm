@@ -18,11 +18,11 @@ describe('notification icon styles', () => {
     expect(styles.error.color).toBe('#DC3939');
   });
 
-  it('keeps every glyph at 3:1 on its own surface', async () => {
+  it('keeps every glyph at 3:1 on the white card', async () => {
     const styles = await loadStyles();
 
-    expect(contrast(styles.success.color, '#E8F4EF')).toBeGreaterThanOrEqual(3);
-    expect(contrast(styles.error.color, '#FDECEC')).toBeGreaterThanOrEqual(3);
+    expect(contrast(styles.success.color, '#FFFFFF')).toBeGreaterThanOrEqual(3);
+    expect(contrast(styles.error.color, '#FFFFFF')).toBeGreaterThanOrEqual(3);
   });
 
   it('shows a system colour in forced-colors mode', async () => {

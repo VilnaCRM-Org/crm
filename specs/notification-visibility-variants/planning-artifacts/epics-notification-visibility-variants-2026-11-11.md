@@ -2137,6 +2137,9 @@ Neither follow-up is dispatched. Each waits on a human decision.
 
 ### Follow-up 5.1: Record the team lead's pick and the owner's confirmation
 
+> **Done (2026-11-23).** The owner's decision, C (`bell`), is recorded in the run summary, "Decision
+> record, 2026-11-23". The request to the designer for the missing frames is still open.
+
 As the product owner,
 I want the pick, its reason and the confirmation written into this bundle,
 So that the removal has an authoritative trigger.
@@ -2158,6 +2161,10 @@ bundle; a designer request for the winner's missing frames.
 - Given a picked variant, when the entry is written, then the designer has been asked to draw the winner's missing frames at every breakpoint.
 
 ### Follow-up 5.2: Remove the losing variants and the notificationStyle setting (BLOCKED)
+
+> **Done (2026-11-23), no longer blocked.** Carried out for "C wins", together with the neutral edge of
+> PRD amendment items 45 and 46. The bell's own settings baselines and the visual job are recorded and
+> verified in CI.
 
 As a maintainer after the pick,
 I want the two losing renderers and the temporary setting deleted in one change,
@@ -2255,8 +2262,8 @@ and `dismissAll()`; the bell stays enabled with no setting.
 | 4.8   | 4.2                                    | no           |
 | 4.9   | 3.4                                    | no           |
 | 4.10  | 4.1, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9 | no           |
-| 5.1   | the team lead's review (human)         | BLOCKED      |
-| 5.2   | 5.1                                    | BLOCKED      |
+| 5.1   | the team lead's review (human)         | done         |
+| 5.2   | 5.1                                    | done         |
 
 ## Parallel-dispatch wave plan
 
@@ -2265,20 +2272,20 @@ this laptop implementers run Jest, `tsc`, bundlers and Playwright one at a time 
 `--maxWorkers=2`, `free -m` ≥ 4 GiB first), so stories in one wave may be written in parallel but
 their heavy checks run sequentially, and every heavy suite stays in CI.
 
-| Wave | Stories                           | Unblocked by       |
-| ---- | --------------------------------- | ------------------ |
-| 1    | 1.1, 1.3, 1.7, 2.1, 2.7, 2.8      | nothing            |
-| 2    | 1.2, 1.4, 1.5, 2.2, 4.7           | wave 1             |
-| 3    | 1.6, 2.3, 2.4, 2.5, 2.6, 2.9      | waves 1–2          |
-| 4    | 1.8, 1.9, 2.10, 3.1               | waves 1–3          |
-| 5    | 2.11, 3.2, 3.3                    | waves 1–4          |
-| 6    | 2.12                              | wave 5 (2.11)      |
-| 7    | 2.13                              | wave 6 (2.12)      |
-| 8    | 3.4                               | wave 7 (2.13), 5   |
-| 9    | 4.1, 4.2, 4.9                     | wave 8 (3.4)       |
-| 10   | 4.3, 4.4, 4.5, 4.6, 4.8           | wave 9 (4.2)       |
-| 11   | 4.10                              | waves 9–10         |
-| —    | Follow-up 5.1, then 5.2 (BLOCKED) | the team lead, 5.1 |
+| Wave | Stories                        | Unblocked by       |
+| ---- | ------------------------------ | ------------------ |
+| 1    | 1.1, 1.3, 1.7, 2.1, 2.7, 2.8   | nothing            |
+| 2    | 1.2, 1.4, 1.5, 2.2, 4.7        | wave 1             |
+| 3    | 1.6, 2.3, 2.4, 2.5, 2.6, 2.9   | waves 1–2          |
+| 4    | 1.8, 1.9, 2.10, 3.1            | waves 1–3          |
+| 5    | 2.11, 3.2, 3.3                 | waves 1–4          |
+| 6    | 2.12                           | wave 5 (2.11)      |
+| 7    | 2.13                           | wave 6 (2.12)      |
+| 8    | 3.4                            | wave 7 (2.13), 5   |
+| 9    | 4.1, 4.2, 4.9                  | wave 8 (3.4)       |
+| 10   | 4.3, 4.4, 4.5, 4.6, 4.8        | wave 9 (4.2)       |
+| 11   | 4.10                           | waves 9–10         |
+| —    | Follow-up 5.1, then 5.2 (done) | the team lead, 5.1 |
 
 Shared files inside one wave, merged append-only:
 
