@@ -30,6 +30,7 @@ const FooterSlot = styled('div')(styles.footerSlot);
 export default function AppLayoutFrame({
   shellLoader,
   userMenu,
+  notifications,
   onShellFailure,
 }: AppLayoutFrameProps): JSX.Element {
   const focusOnArrival = useFrameFocus();
@@ -39,7 +40,11 @@ export default function AppLayoutFrame({
   return (
     <Frame>
       <Suspense fallback={<AppShellPlaceholders />}>
-        <AppShell signOut={outletContext.signOut} userMenu={userMenu} />
+        <AppShell
+          signOut={outletContext.signOut}
+          userMenu={userMenu}
+          notifications={notifications}
+        />
       </Suspense>
       <Main ref={focusOnArrival} tabIndex={-1}>
         {outletContext.banner}

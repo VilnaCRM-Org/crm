@@ -15,12 +15,10 @@ export const paletteColors = {
   error: {
     main: '#DC3939',
     text: '#D63333',
-    surface: '#FDECEC',
   },
   success: {
     main: '#4CAF50',
     text: '#2E7D32',
-    surface: '#E8F4EF',
   },
   warning: {
     main: '#FF9800',

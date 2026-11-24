@@ -45,7 +45,7 @@ export const Assertive: Story = {
       description: {
         story:
           'The assertive variant renders `role="alert"`, which interrupts the screen reader. ' +
-          'The toast stack keeps one mounted for error texts, beside the polite one for ' +
+          'The notification outlet keeps one mounted for error texts, beside the polite one for ' +
           'success texts. Nothing is painted; inspect the DOM to see the region and its text.',
       },
     },
