@@ -26,7 +26,7 @@ import { MIN_TOUCH_TARGET_PX } from './constants';
 const HALF_TARGET = MIN_TOUCH_TARGET_PX / 2;
 const SUB_ITEM_PITCH_PX = 42;
 const SUB_ITEM_IDS = ['integrations', 'webhooks', 'billing'] as const;
-const SCRIM_POINT = { x: 20, y: 500 };
+const OUTSIDE_MENU_POINT = { x: 20, y: 500 };
 
 const closeOf = (page: Page): Locator =>
   drawerOf(page).getByRole('button', { name: shellText.closeMenu, exact: true });
@@ -37,12 +37,19 @@ const drawerSignOutOf = (page: Page): Locator =>
 const logoOf = (page: Page): Locator =>
   page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
 
-async function tapCentre(control: Locator): Promise<void> {
-  const box = await control.boundingBox();
+async function tapCentreOfBox(
+  page: Page,
+  box: Awaited<ReturnType<Locator['boundingBox']>>
+): Promise<void> {
   expect(box, 'control must have a box to tap').not.toBeNull();
-  await control
-    .page()
-    .touchscreen.tap((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2);
+  await page.touchscreen.tap(
+    (box?.x ?? 0) + (box?.width ?? 0) / 2,
+    (box?.y ?? 0) + (box?.height ?? 0) / 2
+  );
+}
+
+async function tapCentre(control: Locator): Promise<void> {
+  await tapCentreOfBox(control.page(), await control.boundingBox());
 }
 
 async function openAt(page: Page, path: string): Promise<void> {
@@ -156,18 +163,20 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await expect(burgerOf(page)).toBeFocused();
   });
 
-  test('closes the drawer when the scrim is tapped, activating nothing under it', async ({
+  test('closes the settled drawer on a header tap, not following the logo under it', async ({
     page,
   }) => {
-    await openAt(page, ROUTE_PATHS.home);
+    await openAt(page, ROUTE_PATHS.boards);
+    const logo = await logoOf(page).boundingBox();
     await burgerOf(page).tap();
     await expect(drawerOf(page)).toBeVisible();
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
 
-    await page.touchscreen.tap(SCRIM_POINT.x, SCRIM_POINT.y);
+    await tapCentreOfBox(page, logo);
 
     await expect(drawerOf(page)).toHaveCount(0);
-    await expect(page).toHaveURL(ROUTE_PATHS.home);
-    await expect(userMenuOf(page)).toHaveCount(0);
+    await expect(burgerOf(page)).toBeFocused();
+    await expect(page).toHaveURL(ROUTE_PATHS.boards);
   });
 
   test('does not activate the avatar beneath the scrim when its spot is tapped', async ({
@@ -253,7 +262,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await chipOf(page).tap();
     await expect(userMenuOf(page)).toBeVisible();
 
-    await page.touchscreen.tap(SCRIM_POINT.x, SCRIM_POINT.y);
+    await page.touchscreen.tap(OUTSIDE_MENU_POINT.x, OUTSIDE_MENU_POINT.y);
 
     await expect(userMenuOf(page)).toBeHidden();
     await expect(chipOf(page)).toBeFocused();
