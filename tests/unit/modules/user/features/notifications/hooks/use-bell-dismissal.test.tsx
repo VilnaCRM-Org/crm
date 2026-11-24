@@ -67,6 +67,19 @@ describe('useBellDismissal', () => {
       expect(screen.getByText('inside')).toHaveFocus();
     });
 
+    it('follows the latest open state and the latest close', () => {
+      const first = jest.fn();
+      const second = jest.fn();
+      const view = render(<Harness expanded={false} close={first} />);
+
+      view.rerender(<Harness expanded close={second} />);
+      fireEvent.keyDown(screen.getByText('inside'), { key: 'Escape' });
+
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('bell')).toHaveFocus();
+    });
+
     it('ignores any other key while open', () => {
       const { close } = renderOpen();
 

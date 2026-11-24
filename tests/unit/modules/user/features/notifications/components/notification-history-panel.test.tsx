@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -86,6 +86,36 @@ describe('NotificationHistoryPanel', () => {
     expect(within(rows[0] as HTMLElement).queryByText('Unread')).not.toBeInTheDocument();
     expect(within(rows[1] as HTMLElement).getByText('Unread')).toBeInTheDocument();
     expect(within(rows[2] as HTMLElement).getByText('Unread')).toBeInTheDocument();
+  });
+
+  it('drops the unread mark when the same record comes back read', () => {
+    const i18n = createI18n('en', ['en', 'uk']);
+    const panelOf = (set: NotificationRecordSet): JSX.Element => (
+      <I18nextProvider i18n={i18n}>
+        <Panel records={set} onMarkAllRead={jest.fn()} />
+      </I18nextProvider>
+    );
+    const { rerender } = render(panelOf(records));
+    expect(screen.getAllByText('Unread')).toHaveLength(1);
+
+    rerender(panelOf({ items: records.items.map((item) => ({ ...item, read: true })) }));
+
+    expect(screen.queryByText('Unread')).not.toBeInTheDocument();
+  });
+
+  it('follows a language change with its heading, actions and unread text', async () => {
+    const i18n = createI18n('uk', ['en', 'uk']);
+    render(
+      <I18nextProvider i18n={i18n}>
+        <Panel records={records} onMarkAllRead={jest.fn()} />
+      </I18nextProvider>
+    );
+
+    await act(() => i18n.changeLanguage('en'));
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Notifications' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeInTheDocument();
+    expect(screen.getByText('Unread')).toBeInTheDocument();
   });
 
   it('runs the received mark-all handler once', async () => {

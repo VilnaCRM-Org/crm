@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 import type { RefObject } from 'react';
 
 import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const root = document.documentElement;
 
@@ -41,6 +42,32 @@ describe('useBellAnchor', () => {
 
     expect(root.style.getPropertyValue('--bell-centre-x')).toBe('262px');
     expect(root.style.getPropertyValue('--bell-bottom')).toBe('40px');
+  });
+
+  it('places the notice by the bell of the latest render', () => {
+    const { rerender } = renderHook(({ ref }) => useBellAnchor(ref), {
+      initialProps: { ref: bell({ left: 300, width: 24, bottom: 44 }) },
+    });
+
+    rerender({ ref: bell({ left: 100, width: 20, bottom: 30 }) });
+
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('110px');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('30px');
+  });
+
+  it('writes and removes the two properties the notice styles read', async () => {
+    const { library, hook } = await loadIsolated(async () => ({
+      library: await import('@testing-library/react/pure'),
+      hook: (await import('@/components/ui-bell-notice/use-bell-anchor')).default,
+    }));
+
+    const { unmount } = library.renderHook(() => hook(bell({ left: 8, width: 4, bottom: 6 })));
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('10px');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('6px');
+
+    unmount();
+    expect(root.style.getPropertyValue('--bell-centre-x')).toBe('');
+    expect(root.style.getPropertyValue('--bell-bottom')).toBe('');
   });
 
   it('removes both properties and stops listening on unmount', async () => {

@@ -45,7 +45,7 @@ describe('HeaderIconButton with a disclosure', () => {
   });
 
   it('has no description when describedBy is absent', () => {
-    renderShell(
+    const { container } = renderShell(
       <HeaderIconButton
         layout="desktop"
         kind="notifications"
@@ -55,6 +55,7 @@ describe('HeaderIconButton with a disclosure', () => {
 
     expect(bell()).not.toHaveAttribute('aria-describedby');
     expect(bell()).toHaveAccessibleDescription('');
+    expect(container.innerHTML).not.toMatch(/<span[^>]*><\/span>/);
   });
 
   it.each(['desktop', 'tablet'] as const)(
@@ -85,6 +86,7 @@ describe('HeaderIconButton with a disclosure', () => {
       <HeaderIconButton layout="mobile" kind="notifications" count={4} disclosure={disclosure()} />
     );
 
+    expect(screen.queryByText('4')).not.toBeInTheDocument();
     expect(bell()).toHaveTextContent(/^$/u);
     expect(bell()).toHaveAccessibleDescription('4 unread notifications');
   });

@@ -109,6 +109,7 @@ describe.each(CASES)('the loader of the $chunk chunk', ({ chunk, component, requ
       expect(report).toHaveBeenCalledTimes(1);
       expect(report).toHaveBeenCalledWith(source, failure);
       expect(view.container).toBeEmptyDOMElement();
+      expect(Reflect.apply(Empty as () => unknown, undefined, [])).toBeNull();
     });
   });
 

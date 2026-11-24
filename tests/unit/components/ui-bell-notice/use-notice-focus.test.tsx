@@ -174,6 +174,29 @@ describe('useNoticeFocus', () => {
     expect(onDismiss).toHaveBeenCalledWith('one');
   });
 
+  it('dismisses by the rows, the targets and the caller handler of the latest render', () => {
+    const { save, heading } = targets();
+    const first = jest.fn();
+    const second = jest.fn();
+    const { result, rerender } = renderHook(useNoticeFocus, {
+      initialProps: { views, returnFocusRef: { current: save }, onDismiss: first },
+    });
+    const two = document.createElement('button');
+    document.body.append(two);
+    result.current.registry.current.set('two', two);
+
+    rerender({
+      views: { items: views.items.slice(0, 1) },
+      returnFocusRef: { current: heading },
+      onDismiss: second,
+    });
+    result.current.dismiss('one');
+
+    expect(heading).toHaveFocus();
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith('one');
+  });
+
   it('does nothing for an id that is not shown, apart from the caller dismiss', () => {
     const { save } = targets();
     const onDismiss = jest.fn();
@@ -215,6 +238,22 @@ describe('useNoticeFocus release', () => {
     rerender({ set: { items: [views.items[2]] } as NotificationViewSet });
 
     expect(result.current.release).toBe(first);
+  });
+
+  it('hands a focused button over to the Save target of the latest render', () => {
+    const { save, heading } = targets();
+    const onDismiss = jest.fn();
+    const { result, rerender } = renderHook(useNoticeFocus, {
+      initialProps: { views, returnFocusRef: { current: save }, onDismiss },
+    });
+    const three = closeButton('three');
+    result.current.registry.current.set('three', three);
+    three.focus();
+
+    rerender({ views, returnFocusRef: { current: heading }, onDismiss });
+    result.current.release('three', three);
+
+    expect(heading).toHaveFocus();
   });
 
   it('only unregisters a button that does not hold focus', () => {

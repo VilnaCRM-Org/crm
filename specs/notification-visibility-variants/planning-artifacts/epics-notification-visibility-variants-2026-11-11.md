@@ -1207,7 +1207,9 @@ PRD amendment items 26 and 31; readiness R3-01).
 itself and does not use `useNotificationViews` (that hook maps shown items): `id: record.id`
 (a string), `kind: record.kind`, `message: t(record.messageKey)`, `time: t('notification_center.time', { value: record.createdAt })` through the locale formatter, and the read flag
 from `record.read`; it renders `UINotificationHistory` with the translated heading, mark-all-read, unread and empty copy and the `onMarkAllRead` handler it
-receives; it reads no repository of its own), `notification-history-panel-loader.ts` (NEW:
+receives; it reads no repository of its own), `notification-chunk-loader.ts` (NEW:
+`NotificationChunkLoader`, the class both loaders below share: it reports a final failure and resolves to
+an empty component), `notification-history-panel-loader.ts` (NEW:
 one `NotificationChunkLoader` around one `ChunkRetryLoader` over a
 `webpackChunkName: "notifications-history"` dynamic `import()`; `load(report)` calls
 `report('app-shell:notifications-history', error)` once on a final failure and resolves to an

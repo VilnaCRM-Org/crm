@@ -83,6 +83,17 @@ describe('useNoticeClearance', () => {
     expect(overhang()).toBe('86px');
   });
 
+  it('measures the card of the latest render', () => {
+    const views = rows();
+    const { rerender } = renderHook(({ ref }) => useNoticeClearance(ref, views), {
+      initialProps: { ref: card(125) },
+    });
+
+    rerender({ ref: card(200) });
+
+    expect(overhang()).toBe('136px');
+  });
+
   it('hands back a measurement for the caller to run once the card has settled', () => {
     const ref = card(117);
     const { result } = renderHook(() => useNoticeClearance(ref, rows()));
@@ -178,6 +189,14 @@ describe('useNoticeClearance', () => {
       renderHook(() => useNoticeClearance(card(125), rows()));
 
       expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    it('is scrolled back when it starts exactly at the 64 px line', () => {
+      focusAt(64);
+
+      renderHook(() => useNoticeClearance(card(125), rows()));
+
+      expect(scrollBy).toHaveBeenCalledWith({ top: -61 });
     });
 
     it('is left alone when it is a header control above the 64 px line', () => {

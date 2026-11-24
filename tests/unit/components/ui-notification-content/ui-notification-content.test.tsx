@@ -66,6 +66,20 @@ describe('UINotificationContent', () => {
     expect(closeRef.current).toBe(screen.getByRole('button', { name: 'Закрити сповіщення' }));
   });
 
+  it('closes the latest view through the latest handler', async () => {
+    const first = jest.fn();
+    const second = jest.fn();
+    const { rerender } = render(<UINotificationContent view={view()} onClose={first} />, {
+      wrapper: withLocale('uk'),
+    });
+
+    rerender(<UINotificationContent view={view({ id: '8' })} onClose={second} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith('8');
+  });
+
   describe('action', () => {
     const errorView = (onActivate: () => void): NotificationView =>
       view({ kind: 'error', action: { label: 'Повторити', onActivate } });
@@ -138,6 +152,7 @@ describe('UINotificationContent', () => {
       });
 
       expect(container).toHaveTextContent(new RegExp(`^${MESSAGE}$`));
+      expect(container.innerHTML).not.toMatch(/<span[^>]*><\/span><button/);
     });
   });
 

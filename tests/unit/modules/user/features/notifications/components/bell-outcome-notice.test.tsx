@@ -10,6 +10,7 @@ import useNotificationOutletStore from '@/lib/notifications/use-notification-out
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
 import { inMemoryNotificationRepository } from '@/modules/user/features/notifications/repositories';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const i18n = createI18n('uk', ['en']);
@@ -163,6 +164,25 @@ describe('BellOutcomeNotice', () => {
 
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(markAllRead).not.toHaveBeenCalled();
+  });
+
+  it('asks for rows with the notification centre time', async () => {
+    const viewsPath = '@/modules/user/features/notifications/hooks/use-bell-notice-views';
+    const useViews = jest.fn(() => ({ items: [] }));
+    jest.doMock(viewsPath, () => ({ __esModule: true, default: useViews }));
+    const { library, Isolated } = await loadIsolated(async () => ({
+      library: await import('@testing-library/react/pure'),
+      Isolated: (
+        await import('@/modules/user/features/notifications/components/bell-outcome-notice')
+      ).default,
+    }));
+    const bellRef = { current: null };
+
+    const { unmount } = library.render(<Isolated bellRef={bellRef} />);
+
+    expect(useViews).toHaveBeenCalledWith({ timeKey: 'notification_center.time' }, bellRef);
+    unmount();
+    jest.dontMock(viewsPath);
   });
 
   it('renders nothing while no row is shown', () => {

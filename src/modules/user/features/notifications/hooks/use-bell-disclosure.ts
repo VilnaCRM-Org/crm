@@ -20,7 +20,11 @@ export default function useBellDisclosure(layout: ShellLayout): BellDisclosure {
     setVisited(true);
     dismissAll();
   }, [dismissAll]);
-  const close = useCallback((): void => setExpanded(false), []);
+  const close = useCallback(
+    (): void => setExpanded(false),
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
+    []
+  );
   const toggle = useCallback((): void => (expanded ? close() : show()), [expanded, show, close]);
   const dismissal = useBellDismissal({ expanded, close, bell, wrapper });
   useBellContextClose({ layout, close });

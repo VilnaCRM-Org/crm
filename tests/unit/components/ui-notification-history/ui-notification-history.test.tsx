@@ -62,6 +62,7 @@ describe('UINotificationHistory', () => {
     render(<Panel set={{ items: [{ id: 'a', kind: 'success', message: 'Пароль змінено' }] }} />);
 
     expect(screen.getByRole('listitem')).toHaveTextContent(/^Пароль змінено$/u);
+    expect(screen.getByRole('listitem').innerHTML).not.toMatch(/<span[^>]*><\/span>/);
   });
 
   it('marks only the unread row with the hidden text', () => {

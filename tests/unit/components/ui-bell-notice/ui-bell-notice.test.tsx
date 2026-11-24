@@ -285,6 +285,28 @@ describe('UIBellNotice when a focused row leaves without being closed', () => {
     expect(screen.getByRole('heading', { name: 'Налаштування' })).toHaveFocus();
   });
 
+  it('keeps focus when the return target changes and later uses the new target', () => {
+    const before = document.createElement('button');
+    const after = document.createElement('button');
+    document.body.append(before, after);
+    const noticeFor = (views: NotificationViewSet, target: HTMLElement): JSX.Element => (
+      <I18nextProvider i18n={createContentI18n('uk', ['en'])}>
+        <UIBellNotice views={views} returnFocusRef={{ current: target }} onDismiss={jest.fn()} />
+      </I18nextProvider>
+    );
+    const rows = set(row('one'));
+    const { rerender } = render(noticeFor(rows, before));
+    focus(closeButtons()[0]);
+
+    rerender(noticeFor(rows, after));
+    expect(closeButtons()[0]).toHaveFocus();
+
+    rerender(noticeFor(set(), after));
+    expect(after).toHaveFocus();
+    before.remove();
+    after.remove();
+  });
+
   it('leaves focus alone when it is outside the card', () => {
     const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
     const bell = screen.getByRole('button', { name: 'Сповіщення' });

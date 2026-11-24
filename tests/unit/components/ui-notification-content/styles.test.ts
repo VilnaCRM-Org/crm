@@ -61,6 +61,17 @@ describe('notification content styles', () => {
     expect(styles.action['&:focus-visible']).toEqual(ring);
   });
 
+  it('keeps both controls transparent on hover and focus, with no ripple in reduced motion', async () => {
+    const styles = await loadStyles();
+
+    for (const control of [styles.action, styles.close]) {
+      expect(control['&:hover, &:focus-visible']).toEqual({ backgroundColor: 'transparent' });
+      expect(control['@media (prefers-reduced-motion: reduce)']).toEqual({
+        '& .MuiTouchRipple-root': { display: 'none' },
+      });
+    }
+  });
+
   it('underlines the action and lays the grid out icon, message, close', async () => {
     const styles = await loadStyles();
 

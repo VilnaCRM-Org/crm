@@ -55,6 +55,21 @@ describe('useBellFocusOut', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('runs the close and reads the wrapper of the latest render', () => {
+    const { node, other } = mount();
+    const first = jest.fn();
+    const second = jest.fn();
+    const { result, rerender } = renderHook(useFocusOut, {
+      initialProps: { close: first, wrapper: { current: node } },
+    });
+
+    rerender({ close: second, wrapper: { current: node } });
+    result.current(focusEvent(other));
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps one handler identity while its inputs are unchanged', () => {
     const wrapper: RefObject<HTMLDivElement | null> = { current: null };
     const close = jest.fn();
