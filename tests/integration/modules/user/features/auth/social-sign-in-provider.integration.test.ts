@@ -378,6 +378,25 @@ describe('SocialSignInProvider over the container and msw', () => {
     expect(useAuthStore.getState()).toMatchObject({ ...CLEARED_AUTH_STATE, ...newer });
   });
 
+  it('signs in although another part of the store changed while the completion ran', async () => {
+    const accessToken = buildToken();
+    answer('CompleteSocialSignIn', () => {
+      useAuthStore.setState({ loginLoading: true });
+      return HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken, pendingSessionId: null },
+          },
+        },
+      });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'signed-in' });
+    expect(useAuthStore.getState().token).toBe(accessToken);
+  });
+
   it('settles as aborted, changing nothing, when its page goes mid-request', async () => {
     const reported = reportedEvents();
     const controller = new AbortController();
