@@ -238,7 +238,19 @@ describe('pending social sign-in mutations on the mock', () => {
     }
   );
 
-  it('answers a state older than ten minutes as expired and forgets it', async () => {
+  it('accepts a state until just before it is ten minutes old', async () => {
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    const { state } = await initiate();
+    now.mockReturnValue(1_000 + 10 * 60 * 1000 - 1);
+
+    const result = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.completeSocialSignInUser).toMatchObject({ user: { success: true } });
+  });
+
+  it('answers a state that is ten minutes old as expired and forgets it', async () => {
     const now = jest.spyOn(Date, 'now');
     now.mockReturnValue(1_000);
     const { state } = await initiate();

@@ -73,10 +73,10 @@ class SocialCallbackViewMapper {
     return { status: 'failed', provider: view.provider, label: view.label, error };
   }
 
-  // A relay that never got an answer counts as the service being unavailable. An aborted one has no
-  // page left to show it.
+  // An aborted relay usually has no page left to show it; a completion a newer sign-in overtook
+  // while its page stayed mounted is an attempt that no longer counts.
   private errorOf(outcome: SocialSignInOutcome | SocialStartOutcome): SocialSignInErrorKind {
-    return outcome.kind === 'failed' ? outcome.error : 'unavailable';
+    return outcome.kind === 'failed' ? outcome.error : 'expired';
   }
 
   private queryView(

@@ -4,7 +4,7 @@ workflowType: 'research'
 bmadCommand: 'analyst'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-20'
 slug: 'social-sign-in'
 inputDocuments:
   - 'src/modules/user/features/auth/components/form-section/components/auth-provider-buttons/index.tsx'

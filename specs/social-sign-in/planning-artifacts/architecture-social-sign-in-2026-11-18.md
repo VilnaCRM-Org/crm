@@ -5,7 +5,7 @@ bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 7
+iteration: 9
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
@@ -14,6 +14,7 @@ revisionPasses:
   - '2026-11-24 FR/NFR gate iteration 7: transport answers, scrubber, stale rows'
   - '2026-11-24 review: superseded completions, encoded parameter names'
   - '2026-11-24 FR/NFR gate iteration 8: spent start marker'
+  - '2026-11-24 FR/NFR gate iteration 9: §6 navigator and E2E rows, start abort'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -244,18 +245,18 @@ Documented only (guide §5): run user-service from its repository with
 
 What changed against this design while building it on the `main` of the day, and why:
 
-| Planned                                                                        | Built                                                                                                                                              | Reason                                                                                                           |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `SocialAuthAPI` + `SocialAuthErrorMapper` + `authActions.completeSocialSignIn` | `SocialSignInRepository` → `SocialSignInTransformer` → `SocialSignInProvider` (`AUTH_TOKENS.SocialSignIn*`), resolved through `AuthProviderLoader` | `main` moved auth to the data provider / repository / transformer layering password recovery uses                |
-| `oauth-providers.ts` navigates itself                                          | `socialSignInNavigator` (`start`, `restart`) shared by the buttons and the callback's "Try again"                                                  | One owner of the initiate URL                                                                                    |
-| `AuthStateVar`                                                                 | `useAuthStore` (zustand)                                                                                                                           | `main` replaced the reactive var                                                                                 |
-| Feature flags per provider                                                     | none (S2.2 withdrawn)                                                                                                                              | `main` retired every runtime flag                                                                                |
-| `pending/social-auth.openapi.yaml`                                             | `pending/social-sign-in.graphql` and zod schemas for its two mutations (§7)                                                                        | `pending/` is GraphQL-only                                                                                       |
-| Abort the relay on unmount (NFR8)                                              | the relay counts the pages that share it and aborts once none is left _(2026-11-24)_                                                               | StrictMode unmounts once on mount, and aborting would spend the single-use code on a cancelled request           |
-| `jq` merge, Bats suite                                                         | Node merge script, Jest suite, built image probed route by route                                                                                   | No new image package; the mode logic is testable in Jest                                                         |
-| E2E against Mockoon                                                            | E2E stubs the initiate and callback responses with `page.route`                                                                                    | The e2e stack serves the SPA and the API on different sites, so the `SameSite=Lax` flow cookie cannot flow there |
-| Visual baselines for the callback states (S4.1)                                | recorded 2026-11-19 in CI (W5 closed)                                                                                                              | They were first deferred: baselines come from the production stack, which this laptop's rules keep CI-only       |
-| No new axe exception (superseded, readiness W7)                                | `#social-sign-in-actions > .MuiButton-contained` (issue #276)                                                                                      | The primary action reuses the design-owned `#1EAEFF` button, like the recovery in-card links                     |
+| Planned                                                                        | Built                                                                                                                                              | Reason                                                                                                     |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `SocialAuthAPI` + `SocialAuthErrorMapper` + `authActions.completeSocialSignIn` | `SocialSignInRepository` → `SocialSignInTransformer` → `SocialSignInProvider` (`AUTH_TOKENS.SocialSignIn*`), resolved through `AuthProviderLoader` | `main` moved auth to the data provider / repository / transformer layering password recovery uses          |
+| `oauth-providers.ts` navigates itself                                          | `socialSignInNavigator` (`start`, `restart`) shared by the buttons and the callback's "Try again"                                                  | One owner of the three hops: into the callback page, out to the returned `authorizationUrl`, and the retry |
+| `AuthStateVar`                                                                 | `useAuthStore` (zustand)                                                                                                                           | `main` replaced the reactive var                                                                           |
+| Feature flags per provider                                                     | none (S2.2 withdrawn)                                                                                                                              | `main` retired every runtime flag                                                                          |
+| `pending/social-auth.openapi.yaml`                                             | `pending/social-sign-in.graphql` and zod schemas for its two mutations (§7)                                                                        | `pending/` is GraphQL-only                                                                                 |
+| Abort the relay on unmount (NFR8)                                              | the relay counts the pages that share it and aborts once none is left _(2026-11-24)_                                                               | StrictMode unmounts once on mount, and aborting would spend the single-use code on a cancelled request     |
+| `jq` merge, Bats suite                                                         | Node merge script, Jest suite, built image probed route by route                                                                                   | No new image package; the mode logic is testable in Jest                                                   |
+| E2E against Mockoon                                                            | E2E stubs both mutations with `page.route`                                                                                                         | The suite stays deterministic (NFR12); the mock and its consent page have their own Apollo and Jest suites |
+| Visual baselines for the callback states (S4.1)                                | recorded 2026-11-19 in CI (W5 closed)                                                                                                              | They were first deferred: baselines come from the production stack, which this laptop's rules keep CI-only |
+| No new axe exception (superseded, readiness W7)                                | `#social-sign-in-actions > .MuiButton-contained` (issue #276)                                                                                      | The primary action reuses the design-owned `#1EAEFF` button, like the recovery in-card links               |
 
 ## 7. GraphQL design (2026-11-19)
 

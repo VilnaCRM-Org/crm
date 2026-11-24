@@ -189,6 +189,9 @@ GraphQL URL at it, and the pin bump removes the pending contract.
   or it is at least ten minutes old (the mock also keeps only the newest 1000): start again from the
   button.
 
+- **"Google did not return the sign-in details".** The callback was opened without its `code` or
+  `state` (Back to a failed start, or a reload, opens it this way), or the mock got a blank `code`.
+
 ## 8. Safety
 
 - Client IDs are public identifiers but stay in the untracked `.env` anyway. Client secrets never
