@@ -152,7 +152,8 @@ notifications wait for authorized subscriptions there and for user-service #526 
   evaluates, so the panel and the card translate on every protected page.
 - `NotificationHistoryPanel` (chunk `notifications-history`) is the panel content. It mounts in
   the host on the first open and stays mounted, so its loader runs once unless it gave up; the
-  host's deferred `RouteFallback` covers the wait. It receives the records and `onMarkAllRead` from the bell.
+  host's deferred `RouteFallback` covers the wait. It receives the records and `onMarkAllRead` from
+  the bell.
 - `BellOutcomeNotice` (chunk `notifications-notice`) draws the shown items as `UIBellNotice`. It
   sits in its own `Suspense` with a `0 × 0` `aria-hidden` fallback, so neither the bell nor the
   badge suspends on it. Its edge is neutral for every kind; only the row icons keep the status
