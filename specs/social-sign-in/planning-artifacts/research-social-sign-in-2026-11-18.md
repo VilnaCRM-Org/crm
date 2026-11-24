@@ -4,7 +4,7 @@ workflowType: 'research'
 bmadCommand: 'analyst'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-20'
+revised: '2026-11-24'
 slug: 'social-sign-in'
 inputDocuments:
   - 'src/modules/user/features/auth/components/form-section/components/auth-provider-buttons/index.tsx'
@@ -162,7 +162,7 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 
 | Risk                                                       | Likelihood | Impact | Mitigation in plan                                                                                                                 |
 | ---------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Contract pin cannot move to a released tag                 | High       | Medium | Pin to a user-service commit SHA or wait for `v2.9.0` (PRD D3)                                                                     |
+| Contract pin cannot move to a released tag                 | High       | Medium | Pending contract fragment until a release declares the mutations _(revised 2026-11-24, PRD D3)_                                    |
 | Mobile Lighthouse regression on `/sign-in`                 | Medium     | High   | Callback code in its own lazy chunk; button module change ≤ 1 kB                                                                   |
 | Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by `state`                                                                                               |
 | `code`/`state` leak through history, logs, Sentry          | Medium     | High   | `replaceState` first; scrubber keys; unit tests                                                                                    |

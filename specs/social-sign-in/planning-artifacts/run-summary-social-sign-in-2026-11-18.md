@@ -15,7 +15,7 @@ slug: 'social-sign-in'
   the Mockoon consent page and with the requester's own provider keys. The work is tracked under
   issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), readiness
-  iterations 1-17 (iteration 17 is the latest review pass).
+  iterations 1-18 (iteration 18 is the latest review pass).
 
 ## Artifacts
 
@@ -49,13 +49,13 @@ rather than the skill's bare `research.md` names.
 
 ## Validation rounds
 
-One self-review round per artifact, then readiness iterations 1-17 as recorded in the
+One self-review round per artifact, then readiness iterations 1-18 as recorded in the
 [readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
 2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-10
 corrected stale passages that pull request reviews and the FR/NFR gate found; 11 re-planned
 the 2FA hand-off after #331 merged, 12 addressed the actionable findings of the gate's
 iterations 5-6, 13 those of its sliced iteration 7, 14 the pull request
-reviews that followed, 15 those of its iteration 8, 16 those of its iteration 9, and 17 those of its iteration 10.
+reviews that followed, 15 those of its iteration 8, 16 those of its iteration 9, 17 those of its iteration 10, and 18 those of its iteration 11.
 NFR6 / W7 (contrast) remains open.
 
 ## Open questions and warnings

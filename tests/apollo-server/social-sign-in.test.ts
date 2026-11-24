@@ -264,15 +264,18 @@ describe('pending social sign-in mutations on the mock', () => {
     expect(__socialTest__.issuedStates.size).toBe(0);
   });
 
-  it('drops expired states when it issues a new one', async () => {
+  it('still answers an old state as expired after a newer one was issued', async () => {
     const now = jest.spyOn(Date, 'now');
     now.mockReturnValue(1_000);
-    await initiate();
-    now.mockReturnValue(1_000 + 10 * 60 * 1000);
-
     const { state } = await initiate();
+    now.mockReturnValue(1_000 + 10 * 60 * 1000);
+    await initiate();
+    const log = graphqlErrorLog();
 
-    expect([...__socialTest__.issuedStates.keys()]).toEqual([state]);
+    const result = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+
+    expect(errorOf(result)).toMatchObject({ status: 422, error_code: 'state_expired' });
+    expectLogged(log, 'OAuth state expired');
   });
 
   it('never keeps more than 1000 states, dropping the oldest first', async () => {

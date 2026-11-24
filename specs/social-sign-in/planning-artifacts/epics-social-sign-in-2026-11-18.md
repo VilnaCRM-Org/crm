@@ -5,7 +5,7 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 7
+iteration: 8
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
   - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
@@ -13,6 +13,7 @@ revisionPasses:
   - '2026-11-24 FR/NFR gate iteration 8: S1.1 blank code, expiry and bound, wave 5'
   - '2026-11-24 FR/NFR gate iteration 9: S1.1 repeated parameters, S3.1 stories, graph, matrix'
   - '2026-11-24 FR/NFR gate iteration 10: S3.1 contrast, S4.1 dependency'
+  - '2026-11-24 FR/NFR gate iteration 11: S3.1 keys, S3.2 pending view, S4.1 after S3.3, waves'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -45,7 +46,7 @@ E1 local backend          E2 client foundations                E3 UI
 S1.1 apollo + consent ─┐  (S2.1, S2.2 withdrawn)
 S1.2 env + make       ─┤  S2.3 contract+schemas ─┬─► S2.4 repository+provider ─► S3.2 callback page ─► S3.3 2FA hand-off
 S1.3 local guide ◄─────┘                                                      ▲        │
-                                                  S3.1 error view (component) ─┘        ├─► S4.1 E2E + visual
+                                                  S3.1 error view (component) ─┘        ├─► S4.1 E2E + visual (after S3.3)
                           S2.5 initiation (buttons) ─────────────────────────────────── ┘    S4.2 docs
                                                                                              S4.3 url-builder removal (independent)
 ```
@@ -194,7 +195,8 @@ Component story (feature-local; no kit component is missing — architecture §2
   "Try again" (`UIButton`) only for retryable kinds, and an always-present "Back to sign in" link.
 - Storybook: one story per kind, `Cancelled` first as the default (Ukrainian copy, the main
   language); `make storybook-build` and `make check-storybook-static` green.
-- jest-axe clean; 44 px targets; keyboard: Tab reaches both actions, Enter/Space activate.
+- jest-axe clean; 44 px targets; keyboard: Tab reaches both actions, Enter and Space activate
+  the button, Enter the link.
 - Palette tokens only (assumption A4); contrast AA in the browser lane, except the
   contained action's accepted gap (PRD NFR6, readiness W7).
 
@@ -213,7 +215,8 @@ what went wrong and how to recover.
 - Exactly one network request per `state`, proved under `<StrictMode>` in a unit test (FR9).
 - Success → token set, `navigate(destination, { replace: true })`, focus on `<main>` (FR10);
   destination consumed once.
-- Loading uses `RouteFallback` with `auth.social.signing_in` announced politely (NFR6).
+- Loading uses `SocialSignInPendingView`, a story-covered wrapper of `RouteFallback`, with
+  `auth.social.signing_in` announced politely (NFR6).
 - _(FR14 withdrawn 2026-11-19)_ An already signed-in user is **not** redirected: the page runs
   the flow and the new session replaces the old one.
 - _(2026-11-24)_ The relay aborts its request once every page that shares it has unmounted, and
@@ -242,7 +245,7 @@ _(2026-11-20)_ Re-planned against the merged challenge (#331), as readiness W2 r
 
 ## Epic 4 — Verification and documentation
 
-### S4.1 E2E, mobile and visual coverage — **dependent on S2.5, S3.2**
+### S4.1 E2E, mobile and visual coverage — **dependent on S2.5, S3.2, S3.3**
 
 _(2026-11-19)_ Rewritten to the landed suite. The browser lanes answer both mutations with
 GraphQL stubs (`tests/e2e/utils/social-sign-in-stubs.ts`): the stubbed authorization URL is
@@ -255,7 +258,7 @@ walk-through in the local guide.
   state and a forged cancel are refused; every FR12 error code, an unmapped
   one and an unreachable service with their recovery; an unknown provider; a cancel
   through the provider; a 2FA account through the challenge to its destination; a keyboard-only
-  retry; Back to sign in.
+  retry (Enter and Space); Back to a failed start; Back to sign in.
 - `tests/e2e/mobile/social-sign-in-touch.spec.ts`: `tap()` success with the completion asserted,
   and the 44 px floor on both error actions, on both mobile projects.
 - `tests/e2e/a11y/routes.a11y.spec.ts` scans `/auth/callback/google` and
@@ -309,5 +312,5 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 ## Parallel dispatch
 
 Wave 1 (independent): S1.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3, S3.2. Wave 4:
-S3.3, S4.1, S4.2. Wave 5: S4.3. Per the host resource rules, implementation agents that run
+S3.3, S4.2. Wave 5: S4.1, S4.3. Per the host resource rules, implementation agents that run
 Jest, `tsc`, Docker builds or Playwright execute one at a time even inside a wave.

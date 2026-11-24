@@ -162,13 +162,10 @@ const dropStates = (states: string[]): void =>
   states.forEach((state) => issuedStates.delete(state));
 
 const issueState = (provider: SocialProvider): string => {
-  const now = Date.now();
-  const expired = [...issuedStates].filter(([, issued]) => issued.expiresAt <= now);
-  dropStates(expired.map(([state]) => state));
   const excess = Math.max(0, issuedStates.size + 1 - MAX_ISSUED_STATES);
   dropStates([...issuedStates.keys()].slice(0, excess));
   const state = uuidv4();
-  issuedStates.set(state, { provider, expiresAt: now + STATE_TTL_MS });
+  issuedStates.set(state, { provider, expiresAt: Date.now() + STATE_TTL_MS });
   return state;
 };
 
