@@ -65,9 +65,11 @@ Acceptance criteria:
   `extensions: { status: 400, error_code: 'unsupported_provider' }`.
 - `completeSocialSignInUser(provider, code, state)` accepts only a state it issued, for that
   provider, once; a reused or unknown state answers `invalid_state`, another provider
-  `provider_mismatch`.
+  `provider_mismatch`. _(2026-11-24)_ A state expires after ten minutes (`state_expired`), and at
+  most 1000 are kept, oldest dropped first (`invalid_state`).
 - Scenario codes (`mock-expired`, `mock-unverified`, `mock-no-email`, `mock-duplicate`,
-  `mock-unavailable`, `mock-2fa`) answer the matching FR12 `error_code` or the 2FA result; any
+  `mock-unavailable`, `mock-2fa`) answer the matching FR12 `error_code` or the 2FA result; a
+  blank code answers `missing_oauth_parameters` and leaves the state unused _(2026-11-24)_; any
   other code signs in with an `accessToken` and a `refreshToken`.
 - The consent page lists, as real links with visible text, Allow, Allow (2FA account), Deny and
   one link per scenario, each targeting `${OAUTH_SPA_ORIGIN}/auth/callback/<provider>`.
@@ -299,6 +301,6 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 
 ## Parallel dispatch
 
-Wave 1 (independent): S1.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3,
-S3.2. Wave 4: S3.3, S4.1, S4.2. Per the host resource rules, implementation agents that run Jest,
-`tsc`, Docker builds or Playwright execute one at a time even inside a wave.
+Wave 1 (independent): S1.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3, S3.2. Wave 4:
+S3.3, S4.1, S4.2. Wave 5: S4.3. Per the host resource rules, implementation agents that run
+Jest, `tsc`, Docker builds or Playwright execute one at a time even inside a wave.

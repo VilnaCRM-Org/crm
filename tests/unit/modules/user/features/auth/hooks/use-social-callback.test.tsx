@@ -103,6 +103,19 @@ describe('useSocialCallback', () => {
     expect(window.location.search).toBe('');
   });
 
+  it('spends the start marker of its entry, so opening the entry again never starts', () => {
+    mockStart.mockReturnValue(new Promise(() => undefined));
+    window.history.replaceState({ usr: { socialStart: true }, idx: 1 }, '', '/');
+    const spend = jest.spyOn(socialSignInNavigator, 'consumeStart');
+
+    renderHook(() => useSocialCallback(), {
+      wrapper: wrapperFor('/auth/callback/google', { socialStart: true }),
+    });
+
+    expect(spend).toHaveBeenCalled();
+    expect(window.history.state).toEqual({ usr: null, idx: 1 });
+  });
+
   it('leaves for the authorization URL after a successful start', async () => {
     const leave = jest.spyOn(socialSignInNavigator, 'leave').mockImplementation(() => undefined);
     const url = 'https://accounts.google.com/o/oauth2/v2/auth?state=hook';

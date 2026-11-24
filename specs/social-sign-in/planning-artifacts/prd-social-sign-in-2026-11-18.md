@@ -111,12 +111,14 @@ false` and an `accessToken` starts a session the way a password sign-in does: an
   verifying the email at the provider is fixed by a fresh round trip) "Try again" restarts FR1 for the same provider; "Back to sign in" links to `/sign-in`.
 - **FR14** _Withdrawn 2026-11-19_: no redirect for a user who is already signed in. A second social sign-in only issues a fresh session, and the redirect made every page of the E2E stack (which preloads a token) leave the callback before it could be tested.
 - **FR15** The callback is never retried automatically (codes are single-use); only "Try again"
-  restarts the flow.
+  restarts the flow. _(2026-11-24)_ The start marker is spent when the page reads it, so Back to a
+  failed start, or a reload, shows `missing_parameters` with "Try again" and asks user-service
+  nothing.
 
 ### Local verification
 
 - **FR16** _(2026-11-19)_ `OAUTH_MODE=mock` (default): the Apollo mock answers `initiateSocialSignInUser` with a Mockoon-hosted consent page URL that lists one link per outcome; each link redirects to the SPA callback with a scenario `code` and the issued `state`.
-- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code for a state it issued, once.
+- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code that is not blank for a state it issued, once, within ten minutes; it keeps the newest 1000 states. A blank code answers `missing_oauth_parameters`, an expired state `state_expired` _(2026-11-24)_.
 - **FR18** _(2026-11-19)_ Switching mode needs only an `.env` edit and `make apollo-restart`, never a rebuild of the SPA.
 - **FR19** A local verification guide documents provider registration, redirect URIs, `.env`
   keys, commands, the expected screens per mode, and troubleshooting.

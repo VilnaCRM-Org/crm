@@ -185,8 +185,9 @@ GraphQL URL at it, and the pin bump removes the pending contract.
 - **Still the mock page in Provider mode.** That provider's client ID is empty, or the Apollo
   mock was not restarted.
 - **"Your sign-in attempt expired".** The state was not started in this tab (for example the
-  callback was opened in another tab or the Apollo mock restarted in between), or it was already
-  used: start again from the button.
+  callback was opened in another tab or the Apollo mock restarted in between), it was already used,
+  or it is older than ten minutes (the mock also keeps only the newest 1000): start again from the
+  button.
 
 ## 8. Safety
 

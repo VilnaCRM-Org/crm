@@ -10,6 +10,7 @@ import {
   answerInitiate,
   E2E_STATE,
   refused,
+  refuseInitiate,
   signedIn,
   twoFactor,
   unreachableComplete,
@@ -235,6 +236,30 @@ test.describe('Social sign-in', () => {
 
     await expect(page).toHaveURL(PROTECTED_DESTINATION);
     await expect(page.locator('main')).toBeFocused();
+  });
+
+  test('never starts again on Back to a failed start', async ({ page }) => {
+    const initiated = await refuseInitiate(page, 503, 'provider_unavailable');
+    await signInWith(page, 'Google');
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+    await page.getByRole('link', { name: backToSignIn }).click();
+    await expect(page).toHaveURL(/\/sign-in$/);
+
+    await page.goBack();
+
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: t('auth.social.error.missing_parameters', { provider: 'Google' }) })
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+    expect(initiated).toHaveLength(1);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: tryAgain })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => initiated).toHaveLength(2);
   });
 
   test('goes back to sign-in from the error view', async ({ page }) => {
