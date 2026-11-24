@@ -332,6 +332,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
 
       await expect(search).toBeDisabled();
       await expect(search).toHaveAccessibleDescription(shellText.unavailable);
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
       await expect(search).toBeInViewport({ ratio: 1 });
       await search.tap({ force: true });
 
