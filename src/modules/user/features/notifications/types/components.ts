@@ -22,6 +22,11 @@ export interface RetryableChunkOptions<TProps> {
   readonly attempt: number;
 }
 
+export interface RetryableChunkLoad<TProps> {
+  readonly failed: RefObject<boolean>;
+  readonly load: () => Promise<NotificationChunkModule<TProps>>;
+}
+
 export interface NotificationHistoryPanelProps {
   readonly records: NotificationRecordSet;
   readonly onMarkAllRead: () => void;
@@ -52,6 +57,12 @@ export interface BellButtonProps {
   readonly unread: number;
   readonly historyId: string;
   readonly disclosure: BellDisclosure;
+}
+
+export interface BellHistoryProps extends NotificationHistoryPanelProps {
+  readonly id: string;
+  readonly disclosure: BellDisclosure;
+  readonly onChunkFailure: ShellChunkFailureHandler;
 }
 
 export type NotificationsShellSlotProps = ShellSlotProps;

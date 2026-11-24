@@ -16,6 +16,7 @@ import en from '../i18n/en.json';
 import uk from '../i18n/uk.json';
 import type {
   BellButtonProps,
+  BellHistoryProps,
   BellNotificationsProps,
   LazyBellNoticeProps,
 } from '../types/components';
@@ -73,6 +74,26 @@ function LazyBellNotice({
   );
 }
 
+function BellHistory({
+  id,
+  disclosure,
+  records,
+  onMarkAllRead,
+  onChunkFailure,
+}: BellHistoryProps): JSX.Element {
+  const HistoryPanel = useRetryableChunk({
+    loader: notificationHistoryPanelLoader,
+    onChunkFailure,
+    attempt: disclosure.opens,
+  });
+
+  return (
+    <UINotificationHistoryFrame id={id} open={disclosure.expanded}>
+      {disclosure.visited && <HistoryPanel records={records} onMarkAllRead={onMarkAllRead} />}
+    </UINotificationHistoryFrame>
+  );
+}
+
 export default function BellNotifications({
   layout,
   revision,
@@ -81,11 +102,6 @@ export default function BellNotifications({
   const historyId = useId();
   const { records, unread, markAllRead } = useNotificationHistory(revision, onChunkFailure);
   const disclosure = useBellDisclosure(layout);
-  const HistoryPanel = useRetryableChunk({
-    loader: notificationHistoryPanelLoader,
-    onChunkFailure,
-    attempt: disclosure.opens,
-  });
 
   return (
     <Box
@@ -95,9 +111,13 @@ export default function BellNotifications({
       sx={STYLES.wrapper}
     >
       <BellButton layout={layout} unread={unread} historyId={historyId} disclosure={disclosure} />
-      <UINotificationHistoryFrame id={historyId} open={disclosure.expanded}>
-        {disclosure.visited && <HistoryPanel records={records} onMarkAllRead={markAllRead} />}
-      </UINotificationHistoryFrame>
+      <BellHistory
+        id={historyId}
+        disclosure={disclosure}
+        records={records}
+        onMarkAllRead={markAllRead}
+        onChunkFailure={onChunkFailure}
+      />
       <LazyBellNotice
         bellRef={disclosure.bell}
         hidden={disclosure.expanded}
