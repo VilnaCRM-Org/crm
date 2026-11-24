@@ -225,9 +225,10 @@ already the provider's redirect back, so no spec opens the Mockoon consent page.
 page's outcomes are covered by its unit test and the Apollo mock test (S1.1) and by the manual
 walk-through in the local guide.
 
-- `tests/e2e/modules/user/features/auth/social-sign-in.spec.ts`: for Google and GitHub, success
-  from `/sign-in`, and from `/sign-up`; the query is stripped from the address bar; a forged
-  state and a forged cancel are refused; every FR12 error code with its recovery; a cancel
+- `tests/e2e/modules/user/features/auth/social-sign-in.spec.ts`: for all four providers, success
+  from `/sign-in`, and for Google from `/sign-up`; the query is stripped from the address bar; a forged
+  state and a forged cancel are refused; every FR12 error code, an unmapped
+  one and an unreachable service with their recovery; an unknown provider; a cancel
   through the provider; a 2FA account through the challenge to its destination; a keyboard-only
   retry; Back to sign in.
 - `tests/e2e/mobile/social-sign-in-touch.spec.ts`: `tap()` success with the completion asserted,

@@ -3,7 +3,7 @@ status: 'complete'
 workflowType: 'run-summary'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-20'
 slug: 'social-sign-in'
 ---
 
@@ -53,7 +53,8 @@ One self-review round per artifact, then readiness iterations 1-12 as recorded i
 [readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
 2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-10
 corrected stale passages that pull request reviews and the FR/NFR gate found; 11 re-planned
-the 2FA hand-off after #331 merged, and 12 closed the gate's iteration 5-6 findings.
+the 2FA hand-off after #331 merged, and 12 addressed the actionable findings of the gate's
+iterations 5-6. NFR6 / W7 (contrast) and the gate's diff-size limit remain open.
 
 ## Open questions and warnings
 

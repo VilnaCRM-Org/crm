@@ -361,8 +361,8 @@ shard under the file cap that holds the fewest mutants (the lighter load, then t
 breaking ties), so the 1.05x figure is a target the fallback can overshoot, never a guarantee.
 Counting the whole scope takes about 4 s, so every shard job and the merge job
 count at run time and derive the same packing from the same commit; no weight file is committed, so
-none can go stale. At 565 files the scope holds 508 sharded files; 57 files run in no shard. The 76
-shards carry 41 to 139 runnable mutants (mean 132) and 1,254 to 3,120 weight units, except
+none can go stale. At 588 files the scope holds 528 sharded files; 60 files run in no shard. The 76
+shards carry 46 to 146 runnable mutants (mean 139) and 1,616 to 3,224 weight units, except
 `ui-form/styles.ts`, alone at 5,394. Weighing by scored mutants alone had packed that scrubber's 103
 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
 `lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
@@ -372,8 +372,9 @@ as the scrubber was twice: its free-text patterns moved to `PiiTextScrubber`, an
 alone still took 14.6 minutes cold, its two-factor patterns moved to `TwoFactorTextScrubber` (47 and
 60 mutants). The cap binds the same way: at 63 shards it fell to 166, under the 177 runnable
 mutants `user-service-error-transformer.ts` held alone, so its field-violation parsing moved to an
-injected `FieldViolationParser`; at 76 it is 139, one over the 138 runnable mutants
-`graphql-sign-in-transformer.ts` holds alone. File size was a poor proxy too: under the 30-shard
+injected `FieldViolationParser`; at 76 it was 139, one over the 138 runnable mutants
+`graphql-sign-in-transformer.ts` holds alone, and is 146 since #331 and #150 grew the scope.
+File size was a poor proxy too: under the 30-shard
 size packing a cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard meets
@@ -562,8 +563,8 @@ so the annotation stays rather than the simpler-looking `{}`. Adding a nineteent
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is the 565 files counted under "Mutation testing scope and baseline" above; not all of
-them produce scored mutants — the 57 unsharded ones hold no runnable mutant (re-export barrels,
+mutate scope is the 588 files counted under "Mutation testing scope and baseline" above; not all of
+them produce scored mutants — the 60 unsharded ones hold no runnable mutant (re-export barrels,
 token modules, route maps), and a sharded file whose only mutants are static is skipped by
 `ignoreStatic`.
 

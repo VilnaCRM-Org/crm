@@ -458,10 +458,11 @@ sends them. Without it every e-mail stays queued, and a resend in Settings can f
 
 - The workers always run `messenger:consume --env=prod`, and production mode refuses to boot
   without `OAUTH_ENCRYPTION_KEY` and `TWO_FACTOR_ENCRYPTION_KEY`, which user-service sets only in
-  `.env.dev`. The script copies both dev values into the clone's `.env.local` once, leaving a
-  value you set there alone, and recreates the workers when it adds them. `.env.local` is read in
-  every environment and `.env.dev` still wins in dev, so the php container and the workers share
-  the same keys. A clone whose `.env.dev` lacks either key stops the script with an error.
+  `.env.dev`. The script copies a dev value into the clone's `.env.local` when that file has
+  none, or an empty one, and recreates the workers when it does. `.env.local` is read in every
+  environment and `.env.dev` still wins in dev, so php and the workers share the keys only while
+  both files agree. The script stops with an error, before it changes anything, when neither file
+  sets a key and when the two files set different values.
 - The script starts the workers without `--wait`, because their healthcheck reports `unhealthy`
   while every consumer is running. Check the consumers instead:
 

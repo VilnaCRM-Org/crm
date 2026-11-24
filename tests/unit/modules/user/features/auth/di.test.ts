@@ -39,5 +39,19 @@ describe('social sign-in registrar', () => {
       session: authSessionProvider,
       signedOut: CLEARED_AUTH_STATE,
     });
+    expect(child.resolve(AUTH_TOKENS.AuthSession)).toBe(authSessionProvider);
+  });
+
+  it('ends the session a container overrides, not the global one', () => {
+    const child = container.createChildContainer();
+    const session = { token: jest.fn(), signOut: jest.fn() };
+    socialSignInRegistrar.register(child);
+    child.register(AUTH_TOKENS.AuthStore, { useValue: { setState: jest.fn() } });
+    child.register(AUTH_TOKENS.AuthSecuritySignals, { useValue: { signedIn: jest.fn() } });
+
+    child.register(AUTH_TOKENS.AuthSession, { useValue: session });
+
+    expect(child.resolve(AUTH_TOKENS.SocialSignInDeps)).toMatchObject({ session });
+    expect(child.resolve<{ session: unknown }>(AUTH_TOKENS.SocialSignInDeps).session).toBe(session);
   });
 });

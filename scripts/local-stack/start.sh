@@ -6,6 +6,7 @@ set -eu
 USER_SERVICE_DIR="${USER_SERVICE_DIR:-../user-service}"
 USER_SERVICE_IMAGE=user-service-local-php
 WORKERS_IMAGE=user-service-local-workers
+ENCRYPTION_KEYS='OAUTH_ENCRYPTION_KEY TWO_FACTOR_ENCRYPTION_KEY'
 TOKEN_TTL_SECONDS=2592000
 TTL_ADDED=false
 KEYS_ADDED=false
@@ -25,19 +26,33 @@ append_env_local() {
   echo "$1" >> "$ENV_LOCAL"
 }
 
+env_value() {
+  grep "^$2=" "$1" 2>/dev/null | tail -n 1 |
+    sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/"
+}
+
+for key in $ENCRYPTION_KEYS; do
+  dev_value="$(env_value "$ENV_DEV" "$key")"
+  local_value="$(env_value "$ENV_LOCAL" "$key")"
+  if [ -z "$dev_value$local_value" ]; then
+    echo "$key is not set in $ENV_DEV, so the e-mail workers cannot start." >&2
+    exit 1
+  fi
+  if [ -n "$dev_value" ] && [ -n "$local_value" ] && [ "$dev_value" != "$local_value" ]; then
+    echo "$key differs between $ENV_LOCAL and $ENV_DEV, so php and the e-mail workers would" >&2
+    echo "encrypt with different keys. Remove it from $ENV_LOCAL or make the values equal." >&2
+    exit 1
+  fi
+done
+
 if ! grep -q '^AUTH_ACCESS_TOKEN_TTL_SECONDS=' "$ENV_LOCAL" 2>/dev/null; then
   append_env_local "AUTH_ACCESS_TOKEN_TTL_SECONDS=$TOKEN_TTL_SECONDS"
   TTL_ADDED=true
 fi
 
-for key in OAUTH_ENCRYPTION_KEY TWO_FACTOR_ENCRYPTION_KEY; do
-  if ! grep -q "^$key=" "$ENV_LOCAL" 2>/dev/null; then
-    line="$(grep "^$key=" "$ENV_DEV" 2>/dev/null | tail -n 1 || true)"
-    if [ -z "$line" ]; then
-      echo "$key is not set in $ENV_DEV, so the e-mail workers cannot start." >&2
-      exit 1
-    fi
-    append_env_local "$line"
+for key in $ENCRYPTION_KEYS; do
+  if [ -z "$(env_value "$ENV_LOCAL" "$key")" ]; then
+    append_env_local "$(grep "^$key=" "$ENV_DEV" | tail -n 1)"
     KEYS_ADDED=true
   fi
 done

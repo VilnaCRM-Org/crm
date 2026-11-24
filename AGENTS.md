@@ -1033,7 +1033,8 @@ the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
 issue #116), `locale-formatter-core`, the `security-event-core` and its
 `auth-failure-monitor` leaf, the observability
-core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, the app-shell
+core/correlation-id/sentry-client/sentry-config/pii-scrubber/pii-text-scrubber/web-vitals leaves,
+the app-shell
 session (`auth-session-provider`) and the chip's current-user read (`current-user-client`,
 `current-user-source`, issue #362)) are exempt by
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,

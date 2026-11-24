@@ -50,12 +50,16 @@ test.describe('Social sign-in', () => {
   }
 
   test('signs in from /sign-up as well', async ({ page }) => {
-    await answerInitiate(page, 'e2e-code');
-    await answerComplete(page, signedIn());
+    const initiated = await answerInitiate(page, 'e2e-code');
+    const completed = await answerComplete(page, signedIn());
 
     await signInWith(page, 'Google', '/sign-up');
 
     await expect(page).toHaveURL(/\/$/);
+    expect(initiated.map((input) => input.provider)).toEqual(['google']);
+    expect(completed).toEqual([
+      expect.objectContaining({ provider: 'google', code: 'e2e-code', state: E2E_STATE }),
+    ]);
   });
 
   test('strips the code and state from the address bar', async ({ page }) => {

@@ -68,6 +68,7 @@ const SOCIAL_SIGN_IN_TOKENS = [
   AUTH_TOKENS.SocialSignInRepository,
   AUTH_TOKENS.SocialSignInTransformer,
   AUTH_TOKENS.SocialSignInProvider,
+  AUTH_TOKENS.AuthSession,
 ];
 const EVERY_TOKEN = [
   ...SOCIAL_SIGN_IN_TOKENS,
@@ -147,6 +148,7 @@ describe('user module composition root', () => {
       'AuthRepositoryDeps',
       'AuthRequestErrors',
       'AuthSecuritySignals',
+      'AuthSession',
       'AuthStore',
       'AuthStoreActionsDeps',
       'AuthUiErrorMapper',
