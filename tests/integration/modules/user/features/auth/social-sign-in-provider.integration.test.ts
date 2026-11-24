@@ -344,6 +344,29 @@ describe('SocialSignInProvider over the container and msw', () => {
     });
   });
 
+  it.each([
+    ['session', { token: 'newer-token' }],
+    ['2FA challenge', { pendingSessionId: 'newer-pending' }],
+  ])('keeps a newer %s that started while the completion ran', async (_label, newer) => {
+    useAuthStore.setState(CLEARED_AUTH_STATE);
+    answer('CompleteSocialSignIn', () => {
+      useAuthStore.setState(newer);
+      return HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken: buildToken(), pendingSessionId: null },
+          },
+        },
+      });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'aborted' });
+    expect(useAuthStore.getState()).toMatchObject({ ...CLEARED_AUTH_STATE, ...newer });
+    useAuthStore.setState(CLEARED_AUTH_STATE);
+  });
+
   it('reports nothing for a completion the caller already aborted', async () => {
     const seen = answer('CompleteSocialSignIn', () => refused('state_expired'));
     const controller = new AbortController();

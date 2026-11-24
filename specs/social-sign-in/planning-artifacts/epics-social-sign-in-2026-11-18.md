@@ -5,10 +5,11 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 3
+iteration: 4
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
   - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
+  - '2026-11-24 review: S2.4 superseded completions, encoded parameter names'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -152,7 +153,9 @@ _(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas fo
 > integration criteria above supersede the 2026-11-19 text, which mapped any network error to
 > `unavailable`, named no source for the reason code, credited the address-bar strip alone with
 > keeping `code`, `state` and `pendingSessionId` out of events, and asked the integration suite
-> for the FR12 responses only.
+> for the FR12 responses only. Added the same day from review: a completion that a newer session or
+> 2FA challenge overtook is dropped (NFR8), and percent-encoded `code` and `state` names are
+> redacted like plain ones (NFR7).
 
 ### S2.5 Initiation from the provider buttons — **independent**
 

@@ -1,4 +1,5 @@
 import type { DependencyContainer } from 'tsyringe';
+import type { StoreApi } from 'zustand';
 
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
@@ -7,7 +8,7 @@ import { GraphQLSocialSignInRepository } from '@auth/repositories';
 import authSessionProvider from '@auth/stores/auth-session-provider';
 import { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
-import type { AuthStateWriter } from '@auth/types/auth-store';
+import type { AuthState } from '@auth/types/auth-store';
 import type { EarlierSession } from '@auth/types/earlier-session';
 import type { SocialSignInDeps } from '@auth/types/social-sign-in/social-sign-in-deps';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
@@ -23,7 +24,7 @@ class SocialSignInRegistrar implements ModuleRegistrar {
     container.register<EarlierSession>(AUTH_TOKENS.AuthSession, { useValue: authSessionProvider });
     container.register<SocialSignInDeps>(AUTH_TOKENS.SocialSignInDeps, {
       useFactory: (c) => ({
-        authState: c.resolve<AuthStateWriter>(AUTH_TOKENS.AuthStore),
+        authState: c.resolve<StoreApi<AuthState>>(AUTH_TOKENS.AuthStore),
         securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
         session: c.resolve<EarlierSession>(AUTH_TOKENS.AuthSession),
         signedOut: CLEARED_AUTH_STATE,

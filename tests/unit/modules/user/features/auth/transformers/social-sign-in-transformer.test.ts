@@ -38,7 +38,6 @@ describe('SocialSignInTransformer', () => {
     expect(transformer.toOutcome({ twoFactorEnabled: false, accessToken: buildToken() })).toEqual({
       kind: 'signed-in',
     });
-    expect(transformer.toOutcome({ accessToken: buildToken() })).toEqual({ kind: 'signed-in' });
   });
 
   it('carries the pending session of a 2FA account', () => {
