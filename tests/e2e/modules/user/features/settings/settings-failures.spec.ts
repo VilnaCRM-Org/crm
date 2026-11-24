@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 
@@ -13,6 +15,7 @@ import {
 } from './utils/profile-stub';
 import {
   editName,
+  editPassword,
   emailField,
   expectErrorToast,
   expectNoPersonalDataInUrls,
@@ -20,14 +23,40 @@ import {
   expectSuccessToast,
   namePasswordField,
   openLoadedSettings,
+  saveButton,
   saveEditedEmail,
   saveEditedName,
   saveNameButton,
   text,
+  toastClose,
 } from './utils/settings-page';
 
 const NEW_NAME = buildFullName();
 const password = buildPassword();
+const newPassword = buildPassword();
+const TOAST_VIEWPORT = { width: 1440, height: 1000 };
+const RESIZED_HEIGHTS = [900, 700, 860];
+
+async function scrollToTop(page: Page): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  );
+}
+
+async function expectClearanceSettled(page: Page): Promise<void> {
+  const stack = toastClose(page).locator('../..');
+  await expect
+    .poll(() =>
+      stack.evaluate(
+        (node) =>
+          Number.parseFloat(document.documentElement.style.scrollPaddingBottom) -
+          (window.innerHeight - node.getBoundingClientRect().top)
+      )
+    )
+    .toBeCloseTo(0, 0);
+}
 
 test.describe('Settings save failures (issue #330)', () => {
   let contacted: () => string[] = () => [];
@@ -140,6 +169,46 @@ test.describe('Settings save failures (issue #330)', () => {
 
     await expect(close).toHaveCount(0);
     await expect(saveNameButton(page)).toBeFocused();
+  });
+
+  test('keeps the scroll the user chose when the window resizes under a toast', async ({
+    page,
+  }) => {
+    await page.setViewportSize(TOAST_VIEWPORT);
+    stub = await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
+    await openLoadedSettings(page);
+    await editPassword(page, password, newPassword);
+    await saveButton(page).click();
+    await expectErrorToast(page, text.transient);
+    await expect(saveButton(page)).toBeFocused();
+    await scrollToTop(page);
+
+    for (const height of RESIZED_HEIGHTS) {
+      await page.setViewportSize({ ...TOAST_VIEWPORT, height });
+      await expectClearanceSettled(page);
+
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    }
+  });
+
+  test('keeps a Save in view clear of the toast when the window shrinks', async ({ page }) => {
+    await page.setViewportSize(TOAST_VIEWPORT);
+    stub = await stubProfile(page, { UpdateUser: [replyWithStatus(503)] });
+    await openLoadedSettings(page);
+    await editPassword(page, password, newPassword);
+    await saveButton(page).click();
+    await expectErrorToast(page, text.transient);
+    await expect(saveButton(page)).toBeFocused();
+
+    for (const height of RESIZED_HEIGHTS) {
+      await page.setViewportSize({ ...TOAST_VIEWPORT, height });
+      await expectClearanceSettled(page);
+
+      await expect(saveButton(page)).toBeInViewport({ ratio: 1 });
+      const save = await saveButton(page).boundingBox();
+      const toast = await toastClose(page).locator('..').boundingBox();
+      expect((save?.y ?? Infinity) + (save?.height ?? 0)).toBeLessThanOrEqual(toast?.y ?? 0);
+    }
   });
 
   test('moves focus to the heading when a Save settles offline', async ({ page, context }) => {

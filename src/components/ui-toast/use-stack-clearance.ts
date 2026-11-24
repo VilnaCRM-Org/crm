@@ -2,10 +2,10 @@ import { type RefObject, useLayoutEffect } from 'react';
 
 import type { ToastItemSet } from '@/components/types/ui-toast';
 
-function revealFocused(stack: HTMLElement, top: number): void {
-  const focused = document.activeElement ?? document.body;
-  const outside = focused !== document.body && !stack.contains(focused);
-  if (outside && focused.getBoundingClientRect().bottom > top) {
+import FocusClearanceDetector from './focus-clearance-detector';
+
+function revealAbove(focused: Element | null, top: number): void {
+  if (focused !== null && focused.getBoundingClientRect().bottom > top) {
     focused.scrollIntoView({ block: 'nearest' });
   }
 }
@@ -20,18 +20,34 @@ function clearClearance(): void {
   document.body.style.removeProperty('padding-bottom');
 }
 
-function reserveClearance(stack: HTMLElement): () => void {
-  const reserve = (): void => {
-    const { top } = stack.getBoundingClientRect();
-    setClearance(`${window.innerHeight - top}px`);
-    revealFocused(stack, top);
-  };
-  reserve();
-  window.addEventListener('resize', reserve);
+function reserve(stack: HTMLElement, focus: FocusClearanceDetector, kept: Element | null): void {
+  const { top } = stack.getBoundingClientRect();
+  setClearance(`${window.innerHeight - top}px`);
+  if (top <= 0) return;
+  const focused = focus.focused();
+  if (focused === kept) revealAbove(focused, top);
+  focus.settle(top);
+}
+
+function listen(resized: () => void, moved: () => void): () => void {
+  window.addEventListener('resize', resized);
+  window.addEventListener('scroll', moved, true);
+  document.addEventListener('focusin', moved);
   return (): void => {
-    window.removeEventListener('resize', reserve);
+    window.removeEventListener('resize', resized);
+    window.removeEventListener('scroll', moved, true);
+    document.removeEventListener('focusin', moved);
     clearClearance();
   };
+}
+
+function reserveClearance(stack: HTMLElement): () => void {
+  const focus = new FocusClearanceDetector(stack);
+  reserve(stack, focus, focus.focused());
+  return listen(
+    () => reserve(stack, focus, focus.lastClear()),
+    () => focus.follow()
+  );
 }
 
 export default function useStackClearance(

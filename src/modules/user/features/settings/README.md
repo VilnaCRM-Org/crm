@@ -104,7 +104,9 @@ Built here:
   `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
 - `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
   region for success texts and an assertive one for error texts, both always mounted, at most three
-  on screen. The two-factor card reports inside its own card.
+  on screen. The two-factor card reports inside its own card. A window resize scrolls the focused
+  control clear of the stack only if it was clear of it before, so it never undoes the user's own
+  scroll (`useStackClearance`, `FocusClearanceDetector`).
 - The `SettingsGrid`, whose second slot holds the two-factor card.
 - The two-factor card itself (#331): `TwoFactorSettings` in that slot, the `TwoFactorSettingsEntity`,
   the `TwoFactorDto` and `TwoFactorCodeNormalizer` in the user module, and `twoFactorStatus` /

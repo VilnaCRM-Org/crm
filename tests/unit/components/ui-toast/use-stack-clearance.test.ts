@@ -25,6 +25,16 @@ const resize = (): void => {
   });
 };
 
+const scrolled = (): void => {
+  act(() => {
+    window.dispatchEvent(new Event('scroll'));
+  });
+};
+
+const moveTo = (control: HTMLElement, bottom: number): void => {
+  jest.mocked(control.getBoundingClientRect).mockReturnValue({ bottom } as DOMRect);
+};
+
 describe('useStackClearance', () => {
   let innerHeight: number;
 
@@ -174,6 +184,160 @@ describe('useStackClearance', () => {
 
       expect(scrollIntoView).toHaveBeenCalledTimes(1);
       expect(scrollIntoView.mock.contexts[0]).toBe(control);
+    });
+
+    it('leaves the scroll alone on a resize once the user has scrolled it under the stack', () => {
+      const control = focusedAt(560);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      moveTo(control, 890);
+      scrolled();
+      resize();
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('leaves the scroll alone on a resize once the user has scrolled past it', () => {
+      const control = focusedAt(560);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      moveTo(control, 0);
+      scrolled();
+      moveTo(control, 890);
+      resize();
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('is scrolled into view on a resize after the user scrolls it back above the stack', () => {
+      const control = focusedAt(560);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+      moveTo(control, 890);
+      scrolled();
+      moveTo(control, 1);
+      scrolled();
+
+      moveTo(control, 705);
+      resize();
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    });
+
+    it('follows focus to a control that takes it while the stack is shown', () => {
+      focusedAt(560);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+      const next = focusedAt(600);
+
+      moveTo(next, 720);
+      resize();
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView.mock.contexts[0]).toBe(next);
+    });
+
+    it('is not chased again by a resize when revealing it did not clear the stack', () => {
+      const control = focusedAt(720);
+      const ref = { current: stack(704) };
+      scrollIntoView.mockImplementation(() => moveTo(control, 704));
+      renderHook(() => useStackClearance(ref, toastSet(1)));
+
+      moveTo(control, 705);
+      resize();
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(2);
+
+      scrollIntoView.mockImplementation(() => undefined);
+      moveTo(control, 706);
+      resize();
+      resize();
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(3);
+    });
+
+    it.each([0, -15])('stays put while a resize leaves the stack top at %d', (top) => {
+      focusedAt(560);
+      const node = stack(704);
+      renderHook(() => useStackClearance({ current: node }, toastSet(1)));
+
+      jest.mocked(node.getBoundingClientRect).mockReturnValue({ top } as DOMRect);
+      resize();
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('is still revealed when a resize that leaves no room comes first', () => {
+      const control = focusedAt(560);
+      const node = stack(704);
+      renderHook(() => useStackClearance({ current: node }, toastSet(1)));
+
+      window.innerHeight = 1;
+      jest.mocked(node.getBoundingClientRect).mockReturnValue({ top: -15 } as DOMRect);
+      resize();
+      scrolled();
+      document.dispatchEvent(new Event('focusin'));
+      window.innerHeight = 600;
+      jest.mocked(node.getBoundingClientRect).mockReturnValue({ top: 512 } as DOMRect);
+      resize();
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView.mock.contexts[0]).toBe(control);
+    });
+
+    it.each([
+      ['width', { innerWidth: 320 }],
+      ['height', { innerHeight: 320 }],
+    ])('ignores a scroll the layout causes before the %s resize is reported', (_, size) => {
+      const { innerWidth } = window;
+      const control = focusedAt(560);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      Object.assign(window, size);
+      moveTo(control, 890);
+      scrolled();
+      resize();
+      window.innerWidth = innerWidth;
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    });
+
+    it('follows scrolls again at the size a resize has settled on', () => {
+      const control = focusedAt(560);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+      window.innerHeight = 600;
+      resize();
+
+      moveTo(control, 890);
+      scrolled();
+      resize();
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it('follows a scroll of a list inside the page', () => {
+      const list = document.createElement('div');
+      document.body.append(list);
+      const control = focusedAt(560, list);
+      renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+
+      moveTo(control, 890);
+      list.dispatchEvent(new Event('scroll'));
+      resize();
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['a scroll', window, 'scroll'],
+      ['a focus change', document, 'focusin'],
+    ])('stops following %s once the stack goes away', (_, target, type) => {
+      const control = focusedAt(560);
+      const { unmount } = renderHook(() => useStackClearance({ current: stack(704) }, toastSet(1)));
+      unmount();
+      const measured = jest.mocked(control.getBoundingClientRect).mock.calls.length;
+
+      target.dispatchEvent(new Event(type));
+
+      expect(control.getBoundingClientRect).toHaveBeenCalledTimes(measured);
     });
 
     it('stays put when it ends exactly at the top of the stack', () => {
