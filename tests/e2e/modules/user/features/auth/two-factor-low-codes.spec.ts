@@ -86,10 +86,11 @@ test.describe('Low recovery codes notice (issue #331)', () => {
 
   test('shows the shared focus ring on the link and the button after Tab', async ({ page }) => {
     await landWith(page, 1);
+    const link = page.getByRole('link', { name: openSettings });
+    await expect(link).toBeVisible();
     await page.getByRole('main').focus();
 
     await page.keyboard.press('Tab');
-    const link = page.getByRole('link', { name: openSettings });
     await expect(link).toBeFocused();
     await expect(link).toHaveCSS('outline-style', SHARED_RING.style);
     await expect(link).toHaveCSS('outline-width', SHARED_RING.width);
