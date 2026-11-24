@@ -989,6 +989,9 @@ install: ## Install node modules using Bun in the dev container — uses frozen 
 update: ## Update node modules to latest allowed versions — updates lockfile; runs on host or dev container depending on environment
 	$(BUN) update
 
+apollo-restart: ## Recreate only the Apollo GraphQL mock, applying OAUTH_* changes from .env
+	$(DOCKER_COMPOSE) up -d --force-recreate --no-deps apollo
+
 down: ## Stop the docker containers
 	$(DOCKER_COMPOSE) down --remove-orphans
 
