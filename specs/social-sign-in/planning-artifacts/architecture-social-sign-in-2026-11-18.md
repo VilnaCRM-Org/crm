@@ -5,7 +5,7 @@ bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 6
+iteration: 7
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
@@ -13,6 +13,7 @@ revisionPasses:
   - '2026-11-20 after #331 merged: 2FA hand-off to the challenge, session start, url-builder removed'
   - '2026-11-24 FR/NFR gate iteration 7: transport answers, scrubber, stale rows'
   - '2026-11-24 review: superseded completions, encoded parameter names'
+  - '2026-11-24 FR/NFR gate iteration 8: spent start marker'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'

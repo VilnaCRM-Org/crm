@@ -5,6 +5,13 @@ bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
+iteration: 6
+revisionPasses:
+  - '2026-11-19 GraphQL only, no ADR; review corrections'
+  - '2026-11-20 after #331 merged: D6, FR10-FR12'
+  - '2026-11-24 FR/NFR gate iteration 7: FR12, NFR10, NFR13, A3'
+  - '2026-11-24 review: NFR6, NFR7, NFR8'
+  - '2026-11-24 FR/NFR gate iteration 8: FR15, FR17'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -118,7 +125,7 @@ false` and an `accessToken` starts a session the way a password sign-in does: an
 ### Local verification
 
 - **FR16** _(2026-11-19)_ `OAUTH_MODE=mock` (default): the Apollo mock answers `initiateSocialSignInUser` with a Mockoon-hosted consent page URL that lists one link per outcome; each link redirects to the SPA callback with a scenario `code` and the issued `state`.
-- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code that is not blank for a state it issued, once, within ten minutes; it keeps the newest 1000 states. A blank code answers `missing_oauth_parameters`, an expired state `state_expired` _(2026-11-24)_.
+- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code that is not blank for a state it issued, once, before the state is ten minutes old; it keeps the newest 1000 states. A blank code answers `missing_oauth_parameters`, an expired state `state_expired` _(2026-11-24)_.
 - **FR18** _(2026-11-19)_ Switching mode needs only an `.env` edit and `make apollo-restart`, never a rebuild of the SPA.
 - **FR19** A local verification guide documents provider registration, redirect URIs, `.env`
   keys, commands, the expected screens per mode, and troubleshooting.

@@ -243,7 +243,9 @@ test.describe('Social sign-in', () => {
     await signInWith(page, 'Google');
     await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
     await page.getByRole('link', { name: backToSignIn }).click();
-    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page.getByRole('button', { name: button('Google') })).toBeVisible();
+    await expect(page.getByRole('main')).toBeFocused();
+    await expect.poll(() => page.evaluate(() => window.history.state?.usr?.focusMain)).toBe(false);
 
     await page.goBack();
 

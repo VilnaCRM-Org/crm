@@ -5,11 +5,12 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 4
+iteration: 5
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
   - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
   - '2026-11-24 review: S2.4 superseded completions, encoded parameter names'
+  - '2026-11-24 FR/NFR gate iteration 8: S1.1 blank code, expiry and bound, wave 5'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
