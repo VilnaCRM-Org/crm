@@ -16,6 +16,7 @@ export interface BellDismissal {
 export interface BellDisclosure extends BellDisclosureControls, BellDismissal {
   readonly expanded: boolean;
   readonly visited: boolean;
+  readonly opens: number;
   readonly bell: RefObject<HTMLButtonElement | null>;
   readonly wrapper: RefObject<HTMLDivElement | null>;
 }

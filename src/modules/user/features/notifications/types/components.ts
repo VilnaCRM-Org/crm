@@ -12,6 +12,16 @@ export interface NotificationChunkModule<TProps> {
   readonly default: ComponentType<TProps>;
 }
 
+export interface NotificationChunkSource<TProps> {
+  readonly load: (report: NotificationChunkReporter) => Promise<NotificationChunkModule<TProps>>;
+}
+
+export interface RetryableChunkOptions<TProps> {
+  readonly loader: NotificationChunkSource<TProps>;
+  readonly onChunkFailure: NotificationChunkReporter;
+  readonly attempt: number;
+}
+
 export interface NotificationHistoryPanelProps {
   readonly records: NotificationRecordSet;
   readonly onMarkAllRead: () => void;
@@ -33,6 +43,7 @@ export interface BellNotificationsProps {
 
 export interface LazyBellNoticeProps extends BellOutcomeNoticeProps {
   readonly hidden: boolean;
+  readonly revision: number;
   readonly onChunkFailure: ShellChunkFailureHandler;
 }
 

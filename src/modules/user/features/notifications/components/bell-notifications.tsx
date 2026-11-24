@@ -1,14 +1,6 @@
 import Box from '@mui/material/Box';
 import type { TFunction } from 'i18next';
-import {
-  type ComponentType,
-  type JSX,
-  lazy,
-  type LazyExoticComponent,
-  Suspense,
-  useId,
-  useState,
-} from 'react';
+import { type JSX, Suspense, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import HeaderIconButton from '@/components/ui-app-header/header-icon-button';
@@ -16,17 +8,16 @@ import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import UINotificationHistoryFrame from '@/components/ui-notification-history/history-frame';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
-import type { ShellChunkFailureHandler } from '@/routes/types/shell-slot';
 
 import useBellDisclosure from '../hooks/use-bell-disclosure';
 import useNotificationHistory from '../hooks/use-notification-history';
+import useRetryableChunk from '../hooks/use-retryable-chunk';
 import en from '../i18n/en.json';
 import uk from '../i18n/uk.json';
 import type {
   BellButtonProps,
   BellNotificationsProps,
   LazyBellNoticeProps,
-  NotificationHistoryPanelProps,
 } from '../types/components';
 
 import bellOutcomeNoticeLoader from './bell-outcome-notice-loader';
@@ -41,16 +32,6 @@ const STYLES = {
 
 function unreadDescription(t: TFunction, unread: number): string | undefined {
   return unread > 0 ? t('notification_center.bell.unread_count', { count: unread }) : undefined;
-}
-
-function useHistoryPanelChunk(
-  onChunkFailure: ShellChunkFailureHandler
-): LazyExoticComponent<ComponentType<NotificationHistoryPanelProps>> {
-  const [HistoryPanel] = useState(() =>
-    lazy(() => notificationHistoryPanelLoader.load(onChunkFailure))
-  );
-
-  return HistoryPanel;
 }
 
 function BellButton({ layout, unread, historyId, disclosure }: BellButtonProps): JSX.Element {
@@ -76,9 +57,14 @@ function BellButton({ layout, unread, historyId, disclosure }: BellButtonProps):
 function LazyBellNotice({
   bellRef,
   hidden,
+  revision,
   onChunkFailure,
 }: LazyBellNoticeProps): JSX.Element | null {
-  const [Notice] = useState(() => lazy(() => bellOutcomeNoticeLoader.load(onChunkFailure)));
+  const Notice = useRetryableChunk({
+    loader: bellOutcomeNoticeLoader,
+    onChunkFailure,
+    attempt: revision,
+  });
 
   return hidden ? null : (
     <Suspense fallback={<Box component="span" aria-hidden="true" sx={STYLES.noticePlaceholder} />}>
@@ -95,7 +81,11 @@ export default function BellNotifications({
   const historyId = useId();
   const { records, unread, markAllRead } = useNotificationHistory(revision, onChunkFailure);
   const disclosure = useBellDisclosure(layout);
-  const HistoryPanel = useHistoryPanelChunk(onChunkFailure);
+  const HistoryPanel = useRetryableChunk({
+    loader: notificationHistoryPanelLoader,
+    onChunkFailure,
+    attempt: disclosure.opens,
+  });
 
   return (
     <Box
@@ -111,6 +101,7 @@ export default function BellNotifications({
       <LazyBellNotice
         bellRef={disclosure.bell}
         hidden={disclosure.expanded}
+        revision={revision}
         onChunkFailure={onChunkFailure}
       />
     </Box>

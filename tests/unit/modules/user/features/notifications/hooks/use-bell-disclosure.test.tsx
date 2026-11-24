@@ -79,6 +79,18 @@ describe('useBellDisclosure', () => {
     expect(result.current.disclosure.visited).toBe(true);
   });
 
+  it('counts every time the panel is opened', () => {
+    const { result } = setup();
+    expect(result.current.disclosure.opens).toBe(0);
+
+    act(() => result.current.disclosure.show());
+    act(() => result.current.disclosure.close());
+    expect(result.current.disclosure.opens).toBe(1);
+
+    act(() => result.current.disclosure.show());
+    expect(result.current.disclosure.opens).toBe(2);
+  });
+
   it('toggles between open and closed', () => {
     const { result } = setup();
 
