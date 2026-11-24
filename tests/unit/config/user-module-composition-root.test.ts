@@ -68,6 +68,7 @@ const SOCIAL_SIGN_IN_TOKENS = [
   AUTH_TOKENS.SocialSignInRepository,
   AUTH_TOKENS.SocialSignInTransformer,
   AUTH_TOKENS.SocialSignInProvider,
+  AUTH_TOKENS.SocialSignInDeps,
   AUTH_TOKENS.AuthSession,
 ];
 const EVERY_TOKEN = [

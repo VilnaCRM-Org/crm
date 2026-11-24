@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
-import { buildUserId } from '@tests/builders';
+import { buildPendingSessionId } from '@tests/builders';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { challengeHeadingOf, codeCellsOf, typeCode } from '@tests/e2e/utils/reach-challenge';
@@ -46,7 +47,7 @@ test.describe('Social sign-in', () => {
       expect(completed).toEqual([
         expect.objectContaining({ provider, code: 'e2e-code', state: E2E_STATE }),
       ]);
-      await expect(page.locator('main')).toBeFocused();
+      await expect(page.getByRole('main')).toBeFocused();
     });
   }
 
@@ -147,7 +148,7 @@ test.describe('Social sign-in', () => {
   test('hands a 2FA account to the challenge and lands it on the page it came from', async ({
     page,
   }) => {
-    const pendingSessionId = buildUserId();
+    const pendingSessionId = buildPendingSessionId();
     await answerInitiate(page, 'e2e-code');
     await answerComplete(page, twoFactor(pendingSessionId));
     const challenge = await stubChallenge(page);
@@ -162,6 +163,8 @@ test.describe('Social sign-in', () => {
     await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toHaveCount(
       0
     );
+
+    await expectNoSecrets(page, { pendingSessionId });
 
     await typeCode(page, '246810');
 
@@ -187,6 +190,28 @@ test.describe('Social sign-in', () => {
     await page.keyboard.press('Enter');
 
     await expect.poll(() => initiated.map((input) => input.provider)).toEqual(['google', 'google']);
+  });
+
+  test('takes Space on Try again and Enter on Back to sign in', async ({ page }) => {
+    const initiated = await answerInitiate(page, 'e2e-code');
+    await answerComplete(page, refused(503, 'provider_unavailable'));
+    await signInWith(page, 'Google');
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: tryAgain })).toBeFocused();
+    await page.keyboard.press('Space');
+
+    await expect.poll(() => initiated).toHaveLength(2);
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: backToSignIn })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page.getByRole('main')).toBeFocused();
   });
 
   test.describe('dropped connection', () => {
@@ -238,7 +263,7 @@ test.describe('Social sign-in', () => {
     await page.getByRole('button', { name: button('Google') }).click();
 
     await expect(page).toHaveURL(PROTECTED_DESTINATION);
-    await expect(page.locator('main')).toBeFocused();
+    await expect(page.getByRole('main')).toBeFocused();
   });
 
   test('never starts again on Back to a failed start', async ({ page }) => {

@@ -1,3 +1,4 @@
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -188,6 +189,18 @@ describe('mockoon-social-oauth', () => {
       } finally {
         write.mockRestore();
       }
+    });
+
+    it('exits 1 with the reason on stderr when it is run without its paths', () => {
+      const script = path.join(__dirname, '..', '..', '..', 'scripts', 'mockoon-social-oauth.js');
+
+      const { status, stderr, stdout } = spawnSync(process.execPath, [script], {
+        encoding: 'utf8',
+      });
+
+      expect(status).toBe(1);
+      expect(stderr).toContain('usage: mockoon-social-oauth.js <imported.json> <output.json>');
+      expect(stdout).toBe('');
     });
 
     it('requires both paths', () => {

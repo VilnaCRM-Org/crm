@@ -206,6 +206,25 @@ describe('SocialSignInProvider', () => {
     expect(loginFailed).not.toHaveBeenCalled();
   });
 
+  it('reports a refused completion although a newer session overtook it', async () => {
+    const { provider, complete, store, setState, signedIn, loginFailed, signOut } = setup();
+    complete.mockImplementation(() => {
+      store.setState(signedInElsewhere);
+      setState.mockClear();
+      return Promise.reject(stateExpired());
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'failed', error: 'expired' });
+
+    expect(store.getState().token).toBe('newer-token');
+    expect(setState).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(signedIn).not.toHaveBeenCalled();
+    expect(loginFailed).toHaveBeenCalledTimes(1);
+  });
+
   it('drops a completion whose page went while the answer arrived', async () => {
     const { provider, complete, setState, signedIn, loginFailed } = setup();
     const controller = new AbortController();
