@@ -22,12 +22,16 @@ class NotificationRaiseBuilder {
     return {
       ...state,
       shown: { items: [...state.shown.items, ...added].slice(-MAX_SHOWN) },
-      raised: { items: added },
+      raised: { items: [...this.unrecorded(state), ...added] },
       announcement: this.announce(added.slice(-MAX_SHOWN), translate, marked),
       revision: state.revision + 1,
       nextId: state.nextId + added.length,
       marked,
     };
+  }
+
+  private unrecorded(state: NotificationOutletState): readonly ShownNotification[] {
+    return state.revision === state.recorded ? [] : state.raised.items;
   }
 
   private stamp(

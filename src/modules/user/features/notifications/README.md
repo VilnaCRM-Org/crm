@@ -36,6 +36,7 @@ operations, and each one returns a promise:
 | `list()`         | every record, newest first                  |
 | `countUnread()`  | how many records are unread                 |
 | `markAllRead()`  | nothing; every record is read afterwards    |
+| `forget()`       | nothing; only the seed is left afterwards   |
 
 A `NotificationRecord` holds only `id`, `kind`, `messageKey`, `createdAt` (epoch milliseconds) and
 `read`. It stores an i18n key, never translated text, and carries no action, e-mail, name,
@@ -115,6 +116,8 @@ All hooks in `hooks/` are container-free and read the repository through
   route change and a layout change close it. It is built from `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
+- `useSessionHistory()` forgets the history when the slot unmounts because the session ended, so the
+  next user of the tab starts from the seed. A slot that unmounts inside a live session keeps it.
 - `useBroadcastEvents(report)` opens the broadcast stream while the `notificationEventsUrl` setting
   names a service, records each event as unread, and returns how many have settled; the slot adds
   it to the recorder's revision, so the bell reloads for either.

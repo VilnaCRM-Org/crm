@@ -186,6 +186,26 @@ describe('SocialSignInProvider', () => {
     expect(loginFailed).not.toHaveBeenCalled();
   });
 
+  it('drops a completion during which the user signed out', async () => {
+    const { provider, complete, store, setState, signedIn, loginFailed, signOut } =
+      setup('earlier-token');
+    complete.mockImplementation(() => {
+      store.setState({ token: null });
+      setState.mockClear();
+      return Promise.resolve({ twoFactorEnabled: false, accessToken: buildToken() });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'aborted' });
+
+    expect(store.getState().token).toBeNull();
+    expect(setState).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(signedIn).not.toHaveBeenCalled();
+    expect(loginFailed).not.toHaveBeenCalled();
+  });
+
   it('drops a completion whose page went while the answer arrived', async () => {
     const { provider, complete, setState, signedIn, loginFailed } = setup();
     const controller = new AbortController();

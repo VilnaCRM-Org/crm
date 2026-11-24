@@ -106,6 +106,17 @@ describe('notification flow from a raised outcome into the history', () => {
     await waitFor(() => expect(flow.current.history.unread).toBe(before + 1));
   });
 
+  it('records every batch raised before the history is mounted', async () => {
+    const before = await inMemoryNotificationRepository.countUnread();
+    const port = renderHook(() => useNotifications()).result;
+    act(() => port.current.raise({ items: [saved] }));
+    act(() => port.current.raise({ items: [failed] }));
+
+    const flow = mount();
+
+    await waitFor(() => expect(flow.current.history.unread).toBe(before + 2));
+  });
+
   it('reports a history that cannot be read or marked read', async () => {
     const failure = new Error('repository failed');
     jest.spyOn(inMemoryNotificationRepository, 'list').mockRejectedValue(failure);
@@ -149,7 +160,9 @@ describe('notification flow from a raised outcome into the history', () => {
     const before = await inMemoryNotificationRepository.countUnread();
     const flow = mount();
 
-    act(() => flow.current.port.raise({ items: [saved] }));
+    const addressed = { ...saved, email, message: email };
+    act(() => flow.current.port.raise({ items: [addressed] }));
+    expect(JSON.stringify(useNotificationOutletStore.getState().raised)).toContain(email);
     await unreadBecomes(flow, 1, before);
     await act(async () => flow.current.history.markAllRead());
 
@@ -157,6 +170,17 @@ describe('notification flow from a raised outcome into the history', () => {
     expect(JSON.stringify(flow.current.history.records)).not.toContain(email);
     expect(window.localStorage).toHaveLength(0);
     expect(window.sessionStorage).toHaveLength(0);
+  });
+
+  it('forgets what a session recorded and read', async () => {
+    const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+    await repository.record({ items: [{ ...saved, createdAt: Date.now() }] });
+    await repository.markAllRead();
+
+    await repository.forget();
+
+    expect((await repository.list()).items).toHaveLength(NOTIFICATION_SEED.items.length);
+    expect(await repository.countUnread()).toBe(1);
   });
 
   it('starts a fresh document from the seed alone', async () => {

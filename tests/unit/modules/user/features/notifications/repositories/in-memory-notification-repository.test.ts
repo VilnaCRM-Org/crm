@@ -224,6 +224,19 @@ describe('InMemoryNotificationRepository', () => {
       expect((await repository.list()).items).toHaveLength(2);
     });
 
+    it('forgets every record and read mark and starts its ids again', async () => {
+      const repository = fresh();
+      const first = await repository.record(buildNotificationRecordDraftSet(2));
+      await repository.markAllRead();
+
+      await repository.forget();
+
+      expect((await repository.list()).items).toEqual(SEED_ROWS);
+      expect(await repository.countUnread()).toBe(1);
+      const again = await repository.record(buildNotificationRecordDraftSet(2));
+      expect(again.items.map((item) => item.id)).toEqual(first.items.map((item) => item.id));
+    });
+
     it('resolves every operation on a microtask', async () => {
       const repository = fresh();
 
@@ -231,6 +244,7 @@ describe('InMemoryNotificationRepository', () => {
       await expectMicrotask(() => repository.list());
       await expectMicrotask(() => repository.countUnread());
       await expectMicrotask(() => repository.markAllRead());
+      await expectMicrotask(() => repository.forget());
     });
 
     it('never calls fetch, XMLHttpRequest, localStorage or sessionStorage', async () => {
@@ -249,6 +263,7 @@ describe('InMemoryNotificationRepository', () => {
       await repository.list();
       await repository.countUnread();
       await repository.markAllRead();
+      await repository.forget();
       window.fetch = originalFetch;
       window.XMLHttpRequest = originalXhr;
 

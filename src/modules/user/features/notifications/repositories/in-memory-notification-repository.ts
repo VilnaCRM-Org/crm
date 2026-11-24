@@ -36,7 +36,7 @@ export class InMemoryNotificationRepository implements NotificationRepository {
 
   private sequence = 0;
 
-  constructor(seed: NotificationRecordSet) {
+  constructor(private readonly seed: NotificationRecordSet) {
     this.entries = seed.items;
   }
 
@@ -67,6 +67,13 @@ export class InMemoryNotificationRepository implements NotificationRepository {
 
   public markAllRead(): Promise<void> {
     this.entries = this.entries.map((entry): NotificationRecord => ({ ...entry, read: true }));
+
+    return Promise.resolve();
+  }
+
+  public forget(): Promise<void> {
+    this.entries = this.seed.items;
+    this.sequence = 0;
 
     return Promise.resolve();
   }

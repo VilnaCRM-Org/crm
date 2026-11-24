@@ -59,6 +59,7 @@ describe('NotificationOutletActions', () => {
     it('keeps the newest three shown and records only the new draft as raised', () => {
       const actions = createActions();
       actions.raise(buildNotificationDraftSet(3), translate);
+      useNotificationOutletStore.setState({ recorded: readState().revision });
       const fourth = buildNotificationDraft();
 
       actions.raise({ items: [fourth] }, translate);

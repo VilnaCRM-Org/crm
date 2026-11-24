@@ -4,8 +4,9 @@ import type { JSX } from 'react';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
 import BellSlotFrame from '@/components/ui-app-header/bell-slot-frame';
+import { storySession } from '@stories/current-user-decorators';
 import { withFreshNotificationRepository } from '@stories/notification-story-decorators';
-import { withMemoryRouter } from '@stories/router-decorators';
+import { withProtectedOutlet } from '@stories/router-decorators';
 import { noop } from '@stories/story-callbacks';
 
 import NotificationsShellSlot from './notifications-shell-slot';
@@ -43,7 +44,7 @@ const meta: Meta<typeof SlotStage> = {
   component: SlotStage,
   tags: ['autodocs'],
   args: { layout: 'desktop' },
-  decorators: [withMemoryRouter()],
+  decorators: [withProtectedOutlet(storySession)],
   parameters: {
     layout: 'fullscreen',
     docs: {
