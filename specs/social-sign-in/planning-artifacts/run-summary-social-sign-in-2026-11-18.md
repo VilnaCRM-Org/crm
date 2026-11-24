@@ -74,7 +74,7 @@ architecture §7). ADR-004 was deleted.
 
 ## Recommended next step
 
-Register the Google client and GitHub OAuth App now (guide §3-§4) — the redirect URIs do not
-depend on implementation — then run `/fe-sdlc-implement` against this bundle, wave 1 first
-(S1.1, S2.3, S3.1). S2.1 was withdrawn with the move to GraphQL only, and S2.2 when wave 1 found
-every runtime flag retired on `main` (PRD D7).
+_(2026-11-24)_ Every wave is implemented. Verify it with the local guide, registering the Google
+client and GitHub OAuth App (guide §3-§4) for Provider mode. Production then waits for user-service:
+the two mutations (W6) and #468 (W4). S2.1 was withdrawn with the move to GraphQL only, and S2.2
+when wave 1 found every runtime flag retired on `main` (PRD D7).

@@ -142,7 +142,7 @@ render `CardBackControl`. It stays a separate entry only so the challenge's owne
 The thirteenth covers the primary action of the social sign-in callback page
 (`#social-sign-in-actions > .MuiButton-contained`, specs/social-sign-in): "Спробувати ще раз", or
 "Повернутися до входу" when it is the only action, white on `#1EAEFF` at 2.45:1, the same
-design-owned debt as the submit button; the secondary text-variant link beside it uses the
+design-owned debt as the submit button; the secondary text-variant link below it uses the
 accessible `#0074B5` (5.04:1) and needs no entry.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the

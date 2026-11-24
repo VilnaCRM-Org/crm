@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import { ApolloError } from '@apollo/client';
+import { createStore, type StoreApi } from 'zustand';
 
 import SocialSignInProvider from '@auth/data-providers/social-sign-in-provider';
 import type { GraphQLSocialSignInRepository } from '@auth/repositories';
@@ -15,8 +16,8 @@ interface Harness {
   provider: SocialSignInProvider;
   initiate: jest.Mock;
   complete: jest.Mock;
-  getState: jest.Mock;
-  setState: jest.Mock;
+  store: StoreApi<AuthState>;
+  setState: jest.SpyInstance;
   signedIn: jest.Mock;
   loginFailed: jest.Mock;
   signOut: jest.Mock;
@@ -31,20 +32,20 @@ const SIGNED_OUT = {
 const setup = (earlierToken: string | null = null): Harness => {
   const initiate = jest.fn();
   const complete = jest.fn();
-  const getState = jest.fn(() => ({ ...SIGNED_OUT, token: earlierToken }));
-  const setState = jest.fn();
+  const store = createStore<AuthState>()(() => ({ ...SIGNED_OUT, token: earlierToken }));
+  const setState = jest.spyOn(store, 'setState');
   const signedIn = jest.fn();
   const loginFailed = jest.fn();
   const signOut = jest.fn();
   const repository = { initiate, complete } as unknown as GraphQLSocialSignInRepository;
   const deps = {
-    authState: { getState, setState },
+    authState: store,
     securitySignals: { signedIn, loginFailed },
     session: { token: () => earlierToken, signOut },
     signedOut: SIGNED_OUT,
   } as unknown as SocialSignInDeps;
   const provider = new SocialSignInProvider(repository, new SocialSignInTransformer(), deps);
-  return { provider, initiate, complete, getState, setState, signedIn, loginFailed, signOut };
+  return { provider, initiate, complete, store, setState, signedIn, loginFailed, signOut };
 };
 
 const stateExpired = (): ApolloError =>
@@ -144,13 +145,20 @@ describe('SocialSignInProvider', () => {
     );
   });
 
+  const signedInElsewhere = { token: 'newer-token' };
+  const challengedElsewhere = { pendingSessionId: 'newer-pending' };
+  const signedOutAgain = { token: null, pendingSessionId: null };
+
   it.each([
-    ['signed in', { token: 'newer-token', pendingSessionId: null }],
-    ['reached a 2FA challenge', { token: null, pendingSessionId: 'newer-pending' }],
-  ])('drops a completion the user has %s past', async (_label, newer) => {
-    const { provider, complete, getState, setState, signedIn, loginFailed, signOut } = setup();
+    ['a newer session', [signedInElsewhere]],
+    ['a newer 2FA challenge', [challengedElsewhere]],
+    ['a newer session that already ended', [signedInElsewhere, signedOutAgain]],
+    ['a newer 2FA challenge that already ended', [challengedElsewhere, signedOutAgain]],
+  ])('drops a completion overtaken by %s', async (_label, changes) => {
+    const { provider, complete, store, setState, signedIn, loginFailed, signOut } = setup();
     complete.mockImplementation(() => {
-      getState.mockReturnValue({ ...SIGNED_OUT, ...newer });
+      changes.forEach((change) => store.setState(change));
+      setState.mockClear();
       return Promise.resolve({ twoFactorEnabled: false, accessToken: buildToken() });
     });
 
@@ -162,6 +170,49 @@ describe('SocialSignInProvider', () => {
     expect(signOut).not.toHaveBeenCalled();
     expect(signedIn).not.toHaveBeenCalled();
     expect(loginFailed).not.toHaveBeenCalled();
+  });
+
+  it('drops a completion whose page went while the answer arrived', async () => {
+    const { provider, complete, setState, signedIn, loginFailed } = setup();
+    const controller = new AbortController();
+    complete.mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve({ twoFactorEnabled: true, pendingSessionId: 'late' });
+    });
+
+    await expect(provider.complete('google', PARAMS, controller.signal)).resolves.toEqual({
+      kind: 'aborted',
+    });
+    expect(setState).not.toHaveBeenCalled();
+    expect(signedIn).not.toHaveBeenCalled();
+    expect(loginFailed).not.toHaveBeenCalled();
+  });
+
+  it('keeps a completion while only other parts of the store change', async () => {
+    const { provider, complete, store } = setup();
+    const accessToken = buildToken();
+    complete.mockImplementation(() => {
+      store.setState({ email: 'typed@example.com', loginLoading: true });
+      return Promise.resolve({ twoFactorEnabled: false, accessToken });
+    });
+
+    await provider.complete('google', PARAMS, new AbortController().signal);
+
+    expect(store.getState().token).toBe(accessToken);
+  });
+
+  it.each([
+    ['settles', Promise.resolve({ twoFactorEnabled: true, pendingSessionId: 'p-1' })],
+    ['fails', null],
+  ])('stops watching the store once the completion %s', async (_label, answer) => {
+    const { provider, complete, store } = setup();
+    const stop = jest.fn();
+    jest.spyOn(store, 'subscribe').mockReturnValue(stop);
+    complete.mockImplementation(() => answer ?? Promise.reject(stateExpired()));
+
+    await provider.complete('google', PARAMS, new AbortController().signal);
+
+    expect(stop).toHaveBeenCalledTimes(1);
   });
 
   it('reports a refused completion with its reason code and returns its error kind', async () => {
