@@ -69,8 +69,16 @@ export interface SocialCompleteRelay {
 
 export type SocialRelay = SocialStartRelay | SocialCompleteRelay;
 
+export type SocialRelayStart = (signal: AbortSignal) => Promise<SocialCallbackView>;
+
 export interface SocialRelayGuard {
   active: boolean;
+}
+
+export interface SocialCallbackEntry {
+  readonly view: Promise<SocialCallbackView>;
+  readonly controller: AbortController;
+  readonly pages: Set<SocialRelayGuard>;
 }
 
 export interface SocialCallbackInitial {

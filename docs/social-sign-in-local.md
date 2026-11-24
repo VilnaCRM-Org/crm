@@ -33,8 +33,11 @@ The redirect URI is always a **frontend** URL:
 - dev server: `http://localhost:3000/auth/callback/<provider>`
 - prod-parity stack: `http://localhost:3001/auth/callback/<provider>`
 
-where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhost`, not
-`127.0.0.1` or a `*.localhost` subdomain: Google rejects non-public hosts other than `localhost`.
+where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhost` throughout: the
+mock issues this redirect URI (`OAUTH_SPA_ORIGIN`), and the tab's state lives in the
+`sessionStorage` of the origin that started the sign-in, so a tab opened on `127.0.0.1` would come
+back to another origin and be refused as expired. Google itself accepts `localhost` and loopback
+IPs, but no `*.localhost` subdomain.
 
 ## 2. Mock mode (no accounts needed)
 

@@ -74,7 +74,7 @@ user-service shipped social OAuth across epics #256-#261 (closed). Endpoints, fr
 
 Backend configuration (`user-service/.env`, block `oauth-social-signin`):
 
-```env
+```bash
 OAUTH_GOOGLE_CLIENT_ID=
 OAUTH_GOOGLE_CLIENT_SECRET=
 OAUTH_GOOGLE_REDIRECT_URI=${API_BASE_URL}/api/auth/social/google/callback

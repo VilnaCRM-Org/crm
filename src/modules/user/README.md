@@ -1287,6 +1287,9 @@ planning in `specs/social-sign-in/`).
   schemas come with the DI container chunk `AuthProviderLoader` loads.
 - **Single use.** Each mutation runs once per start or per `state`, even under StrictMode, and is
   never retried; "Try again" starts a new round trip and replaces the failed attempt's entry.
+- **Leaving.** The relay counts the pages that share a request and aborts it once none is left. A
+  completion whose page is gone, or that another sign-in, sign-out or 2FA challenge overtook,
+  changes no session and reports nothing.
 - **Destination.** The page a protected route sent the user from survives the round trip in
   `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
 - **2FA.** A `pendingSessionId` answer stores `{ ...CLEARED_AUTH_STATE, pendingSessionId }`, never a

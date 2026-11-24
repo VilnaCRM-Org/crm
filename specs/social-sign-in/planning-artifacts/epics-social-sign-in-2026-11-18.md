@@ -208,8 +208,9 @@ what went wrong and how to recover.
 - Loading uses `RouteFallback` with `auth.social.signing_in` announced politely (NFR6).
 - _(FR14 withdrawn 2026-11-19)_ An already signed-in user is **not** redirected: the page runs
   the flow and the new session replaces the old one.
-- The page never aborts a request it started (NFR8); an answer that arrives after unmount is
-  ignored, with no state update (no `act()` warnings — the console gate is the proof).
+- _(2026-11-24)_ The relay aborts its request once every page that shares it has unmounted, and
+  StrictMode's remount keeps it (NFR8); an answer that arrives after unmount is ignored, with no
+  view or auth-store update (no `act()` warnings — the console gate is the proof).
 - Lazy `social-callback` chunk; `performance-serving` golden test green.
 
 ### S3.3 2FA hand-off — **dependent on S3.2**

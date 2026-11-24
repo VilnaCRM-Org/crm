@@ -5,8 +5,8 @@ load './test_helper.bash'
 setup() {
   setup_stub_dir
   export USER_SERVICE_DIR="$BATS_TEST_TMPDIR/user-service"
-  export BUILT_DOCKERFILE="$BATS_TEST_TMPDIR/built.Dockerfile"
-  mkdir -p "$USER_SERVICE_DIR"
+  export BUILT_DIR="$BATS_TEST_TMPDIR/built"
+  mkdir -p "$USER_SERVICE_DIR" "$BUILT_DIR"
   printf '%s\n' 'OAUTH_ENCRYPTION_KEY=dev-oauth' 'TWO_FACTOR_ENCRYPTION_KEY=dev-2fa' \
     > "$USER_SERVICE_DIR/.env.dev"
   cat > "$USER_SERVICE_DIR/Dockerfile" << 'DOCKERFILE'
@@ -33,7 +33,7 @@ if [ "$1" = image ] && [ "$2" = inspect ]; then
   exit
 fi
 if [ "$1" = build ]; then
-  cat > "${BUILT_DOCKERFILE:?}"
+  cat > "${BUILT_DIR:?}/$5"
 fi
 exit 0
 STUB
@@ -210,12 +210,15 @@ lines() {
     "$COMMAND_LOG"
   grep -qx "docker build -f - --target app_workers -t user-service-local-workers $USER_SERVICE_DIR" \
     "$COMMAND_LOG"
-  [ "$(cat "$BUILT_DOCKERFILE")" = "$(lines \
+  local filtered
+  filtered="$(lines \
     'FROM php AS frankenphp_base' \
     'RUN echo before' \
     'RUN echo after' \
     'FROM frankenphp_base AS frankenphp_dev' \
-    'FROM frankenphp_base AS app_workers')" ]
+    'FROM frankenphp_base AS app_workers')"
+  [ "$(cat "$BUILT_DIR/frankenphp_dev")" = "$filtered" ]
+  [ "$(cat "$BUILT_DIR/app_workers")" = "$filtered" ]
 }
 
 @test "local stack start builds only the missing workers image" {
@@ -236,7 +239,7 @@ lines() {
 
   [ "$status" -eq 0 ]
   [ "$(grep -c '^docker build' "$COMMAND_LOG")" -eq 0 ]
-  [ ! -e "$BUILT_DOCKERFILE" ]
+  [ -z "$(ls -A "$BUILT_DIR")" ]
   [ "$(grep '^docker compose up' "$COMMAND_LOG" | head -n 2)" = "$(lines \
     'docker compose up --detach --no-build --wait php database redis mailer localstack' \
     'docker compose up --detach --no-build workers')" ]
