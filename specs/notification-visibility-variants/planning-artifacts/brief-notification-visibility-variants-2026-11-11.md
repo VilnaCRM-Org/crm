@@ -30,7 +30,8 @@ inputDocuments:
 
 > **Amended 2026-11-23.** The bell variant won and the other two are removed (run summary, "Decision
 > record, 2026-11-23"; PRD items 44–49). The scope statements of §4, §5, §7 and §10 that differ carry
-> a dated note in place.
+> a dated note in place. On every behaviour, colour, size and keyboard rule the PRD, with its
+> amendments, governs, and this brief's earlier wording is history.
 
 # Product Brief: three notification variants that are clearly seen
 
@@ -217,7 +218,7 @@ The notification stays where it is today, but stops looking like page content.
 - **Mobile.** Full width at the bottom with 15 px gutters, just below Save after focus returns
   there. The page keeps reserving space so the stack never hides the focused control.
 - **Success and error.** Green or red tone on border, bar and icon. The transient save error keeps
-  its Retry action; every toast keeps its close button, and closing returns focus to Save.
+  its Retry action; every toast keeps its close button, and closing the last one returns focus to Save.
 - **Causes addressed:** 1, 3, 4 and 5. It does not move the notification closer to Save (2).
 - **Figma:** no frame. A replaces today's look as soon as it merges (R5).
 
@@ -273,7 +274,8 @@ The outcome grows out of the header bell at the top right, as the designer drew 
   `377:18485`: the mocked history with read and unread rows and timestamps. The outcomes the
   user just raised appear in it as unread, and the badge counts them.
 - **Success and error.** Green or red tone on stroke and icon; the transient save error shows
-  Retry in the card; each row has a close button that returns focus to Save. (2026-11-23: the tone
+  Retry in the card; each row has a close button that moves focus to the next or previous row's
+  close button, then Save, then the `h1`, with the bell as the last fallback. (2026-11-23: the tone
   is on the icon only; PRD item 45.)
 - **Causes addressed:** 3 and 4, by elevation and motion. It makes cause 2 worse: about 943 px
   from Save at 1440 × 900, the farthest of the three (research §4.3).
@@ -412,7 +414,7 @@ A variant that misses one of these is not ready for review.
 | Edge contrast against its backdrop           | ≥ 3:1                  | token tests     |
 | Same text announced, same region and level   | identical to today     | unit + e2e      |
 | Focus moved when a notification appears      | never                  | keyboard spec   |
-| Focus after close (A, C)                     | Save, else the `h1`    | keyboard spec   |
+| Focus after close (A, C)                     | sibling, Save, `h1`    | keyboard spec   |
 | Focused control fully hidden                 | never, incl. 320 × 256 | e2e clearance   |
 | Movement under `prefers-reduced-motion`      | none                   | unit + visual   |
 | Auto-dismiss timer                           | none                   | unit            |
