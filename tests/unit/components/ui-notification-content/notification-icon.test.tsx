@@ -33,13 +33,12 @@ describe('NotificationIcon', () => {
       Icon: (await import('@/components/ui-notification-content/notification-icon')).default,
     }));
 
-    const success = library.render(<Icon kind="success" />);
-    expect(success.container.innerHTML).toContain(`d="M7.5 12L10.5 15L16.5 9${CIRCLE}"`);
-    success.unmount();
+    const { container, rerender, unmount } = library.render(<Icon kind="success" />);
+    expect(container.innerHTML).toContain(`d="M7.5 12L10.5 15L16.5 9${CIRCLE}"`);
 
-    const error = library.render(<Icon kind="error" />);
-    expect(error.container.innerHTML).toContain(`d="M12 8V12M12 16H12.01${CIRCLE}"`);
-    error.unmount();
+    rerender(<Icon kind="error" />);
+    expect(container.innerHTML).toContain(`d="M12 8V12M12 16H12.01${CIRCLE}"`);
+    unmount();
   });
 
   it.each(['success', 'error', 'close'] as const)(

@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router';
 import type { NotificationsPort } from '@/hooks/types/notifications-port';
 import useNotifications from '@/hooks/use-notifications';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
-import BellOutcomeNotice from '@/modules/user/features/notifications/components/bell-outcome-notice';
+import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
 import useBellDisclosure from '@/modules/user/features/notifications/hooks/use-bell-disclosure';
 import useBellNoticeViews from '@/modules/user/features/notifications/hooks/use-bell-notice-views';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
@@ -97,10 +97,10 @@ describe('the bell hooks when the notifications port changes', () => {
       },
     });
     usePort.mockReturnValue(first);
-    const { rerender } = render(<BellOutcomeNotice bellRef={NO_BELL} />, { wrapper });
+    const { rerender } = render(<Notice bellRef={NO_BELL} />, { wrapper });
 
     usePort.mockReturnValue(second);
-    rerender(<BellOutcomeNotice bellRef={NO_BELL} />);
+    rerender(<Notice bellRef={NO_BELL} />);
     await userEvent.click(screen.getByRole('button', { name: 'Close notification' }));
 
     expect(first.dismiss).not.toHaveBeenCalled();
